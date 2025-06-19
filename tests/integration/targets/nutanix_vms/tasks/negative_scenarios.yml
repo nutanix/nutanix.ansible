@@ -10,7 +10,7 @@
     msg: "Started Negative Creation Cases"
 
 - name: Unknown project name
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     name: Unknown project name
     timezone: "UTC"
@@ -37,7 +37,7 @@
     success_msg: " Success: returned error as expected "
 #############################################################
 - name: Check if error is produced when disk size is not given for storage container
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     name: VM with storage container
     timezone: GMT
@@ -67,7 +67,7 @@
     success_msg: " Success: returned error as expected "
 ##################################################################################
 - name: Unknown Cluster
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     name: Unknown Cluster
     timezone: "UTC"
@@ -94,7 +94,7 @@
     fail_msg: " Fail Vm created successfully with unknown cluster "
 ################################################################################
 - name: Unknown Cluster name
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     name: Unknown Cluster
     timezone: "UTC"
@@ -120,7 +120,7 @@
     fail_msg: " Fail Vm created successfully with unknown cluster "
 ###################################################################################
 - name: Unknown Network name
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     name: Unknown Network
     desc: "Unknown network"
@@ -147,7 +147,7 @@
     fail_msg: " Fail VM created successfully with unknown network name "
 ###################################################################################
 - name: Unknown Network uuid
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     name: Unknown Network
     desc: "Unknown network"
@@ -175,7 +175,7 @@
     fail_msg: " Fail VM created successfully with unknown network name "
 ###################################################################################
 - name: Unknown Image name
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     name: unknown image_vm
     timezone: "UTC"
@@ -201,7 +201,7 @@
     fail_msg: " Fail VM created successfully with not existed image "
 ########################################################################################
 - name: Wrong disk size value
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     name: "Wrong disk size value"
     timezone: "UTC"
@@ -226,7 +226,7 @@
     fail_msg: " Fail VM created successfully with invalid argument for size_gb "
 #############################################################################################
 - name: Image size less than actual
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     name: "image size less than actual"
     categories:
@@ -263,7 +263,7 @@
     fail_msg: " Fail: VM created successfully with image size is less than actual "
 #################################################################################
 - name: Unknown storage container name
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     name: unknown storage container
     timezone: "UTC"
@@ -287,7 +287,7 @@
     fail_msg: " Fail VM created successfully with unknown storage container name "
 #################################################################################
 - name: Delete vm with unknown uuid
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: absent
     vm_uuid: 5
   register: result
@@ -302,7 +302,7 @@
     fail_msg: " Fail deleting VM with unknown uuid "
 #################################################################################
 - name: Delete vm with missing uuid
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: absent
   register: result
   ignore_errors: true

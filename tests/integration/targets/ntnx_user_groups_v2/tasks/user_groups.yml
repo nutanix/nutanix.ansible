@@ -26,7 +26,7 @@
   with_items: "{{ usergroups }}"
 
 - name: Create LDAP user group with check mode enabled
-  ntnx_user_groups_v2:
+  nutanix.ncp.ntnx_user_groups_v2:
     distinguished_name: "{{ distinguished_name }}"
     idp_id: "{{ directory_service_uuid }}"
     group_type: LDAP
@@ -49,7 +49,7 @@
 #################################################################################
 
 - name: Fetch user groups to delete if already exist
-  ntnx_user_groups_info_v2:
+  nutanix.ncp.ntnx_user_groups_info_v2:
     filter: "{{ usergroups_query }}"
   register: result
   ignore_errors: true
@@ -68,7 +68,7 @@
     todelete: "{{ result.response | map(attribute='ext_id') | list }}"
 
 - name: Delete user groups if already exist
-  ntnx_user_groups_v2:
+  nutanix.ncp.ntnx_user_groups_v2:
     state: absent
     ext_id: "{{ item }}"
   register: result
@@ -92,7 +92,7 @@
 #################################################################################
 
 - name: Create LDAP user group
-  ntnx_user_groups_v2:
+  nutanix.ncp.ntnx_user_groups_v2:
     group_type: LDAP
     distinguished_name: "{{ distinguished_name }}"
     idp_id: "{{ directory_service_uuid }}"
@@ -121,7 +121,7 @@
 #################################################################################
 
 - name: Create LDAP user group that already exists
-  ntnx_user_groups_v2:
+  nutanix.ncp.ntnx_user_groups_v2:
     group_type: LDAP
     distinguished_name: "{{ distinguished_name }}"
     idp_id: "{{ directory_service_uuid }}"
@@ -144,7 +144,7 @@
 #################################################################################
 
 - name: Create SAML user group with check mode enabled
-  ntnx_user_groups_v2:
+  nutanix.ncp.ntnx_user_groups_v2:
     group_type: SAML
     idp_id: "{{ identity_provider_uuid }}"
     name: "{{ new_saml_user_group }}"
@@ -168,7 +168,7 @@
 ###############################################################################
 
 - name: Create SAML user group
-  ntnx_user_groups_v2:
+  nutanix.ncp.ntnx_user_groups_v2:
     group_type: SAML
     idp_id: "{{ identity_provider_uuid }}"
     name: "{{ new_saml_user_group }}"
@@ -196,7 +196,7 @@
 ###############################################################################
 
 - name: List all user groups
-  ntnx_user_groups_info_v2:
+  nutanix.ncp.ntnx_user_groups_info_v2:
   register: user_groups
   ignore_errors: true
 
@@ -216,7 +216,7 @@
 ###############################################################################
 
 - name: List user groups using user_group uuid criteria
-  ntnx_user_groups_info_v2:
+  nutanix.ncp.ntnx_user_groups_info_v2:
     ext_id: "{{ test_user_group_uuid }}"
   register: result
   ignore_errors: true
@@ -234,7 +234,7 @@
 ###############################################################################
 
 - name: List user groups using filter criteria
-  ntnx_user_groups_info_v2:
+  nutanix.ncp.ntnx_user_groups_info_v2:
     filter: name eq '{{ test_user_group_name }}'
   register: result
   ignore_errors: true
@@ -299,7 +299,7 @@
 ###############################################################################
 
 - name: List user groups using limit
-  ntnx_user_groups_info_v2:
+  nutanix.ncp.ntnx_user_groups_info_v2:
     limit: 1
   register: result
   ignore_errors: true
@@ -318,7 +318,7 @@
 ###############################################################################
 
 - name: Delete user group with check mode enabled
-  ntnx_user_groups_v2:
+  nutanix.ncp.ntnx_user_groups_v2:
     state: absent
     ext_id: "{{ todelete[0] }}"
   register: result
@@ -337,7 +337,7 @@
     success_msg: Delete user group with check mode enabled passed
 
 - name: Delete created user groups
-  ntnx_user_groups_v2:
+  nutanix.ncp.ntnx_user_groups_v2:
     state: absent
     ext_id: "{{ item }}"
   register: result

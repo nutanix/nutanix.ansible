@@ -25,7 +25,7 @@
         quarterly: 8
 ################################################################ create flow #########################################
 - name: Verify creation of slas with check mode
-  ntnx_ndb_slas:
+  nutanix.ncp.ntnx_ndb_slas:
     name: "{{ profile1_name }}"
     desc: testdesc
     frequency:
@@ -57,7 +57,7 @@
     success_msg: "Pass: Verify creation of slas with check mode finished successfully "
 ################################################################
 - name: Verify creation of slas
-  ntnx_ndb_slas:
+  nutanix.ncp.ntnx_ndb_slas:
     name: "{{ profile1_name }}"
     desc: testdesc
     frequency:
@@ -101,7 +101,7 @@
         quarterly: 14
 
 - name: Verify slas update flow
-  ntnx_ndb_slas:
+  nutanix.ncp.ntnx_ndb_slas:
     sla_uuid: "{{ result.sla_uuid }}"
     name: "{{ profile2_name }}"
     desc: newdesc
@@ -133,7 +133,7 @@
     success_msg: "Pass: verify slas update flow finished successfully"
 ################################################################ update flow #########################################
 - name: Verify slas update flow with check mode
-  ntnx_ndb_slas:
+  nutanix.ncp.ntnx_ndb_slas:
     sla_uuid: "{{ result.sla_uuid }}"
     name: "{{ profile2_name }}"
     desc: newdesc
@@ -166,7 +166,7 @@
     success_msg: "Pass: verify slas update flow with check mode finished successfully"
 ################################################################
 - name: Verify idempotency
-  ntnx_ndb_slas:
+  nutanix.ncp.ntnx_ndb_slas:
     sla_uuid: "{{ result.sla_uuid }}"
     name: "{{ profile2_name }}"
     desc: newdesc
@@ -196,7 +196,7 @@
     msg: Start testing ntnx_ndb_slas_info
 
 - name: List all era slas
-  ntnx_ndb_slas_info:
+  nutanix.ncp.ntnx_ndb_slas_info:
   register: slas
 
 - name: Check listing status
@@ -210,7 +210,7 @@
     success_msg: era slas listed successfully
 ################################################################
 - name: Get era slas using it's name
-  ntnx_ndb_slas_info:
+  nutanix.ncp.ntnx_ndb_slas_info:
     name: "{{ slas.response[0].name }}"
   register: result
 
@@ -225,7 +225,7 @@
     success_msg: get  era slas using it's name  successfully
 ################################################################
 - name: List slas use id
-  ntnx_ndb_slas_info:
+  nutanix.ncp.ntnx_ndb_slas_info:
     uuid: "{{ slas.response[0].id }}"
   register: result
 
@@ -241,7 +241,7 @@
 ################################################################
 
 - name: Get era slas with incorrect name
-  ntnx_ndb_slas_info:
+  nutanix.ncp.ntnx_ndb_slas_info:
     name: abcd
   register: result
   no_log: true
@@ -259,7 +259,7 @@
 ######################################################################## Delete flow #################################################
 
 - name: Delete Sla with check mode
-  ntnx_ndb_slas:
+  nutanix.ncp.ntnx_ndb_slas:
     state: absent
     sla_uuid: "{{ todelete[0] }}"
   register: output
@@ -277,7 +277,7 @@
     success_msg: "Delete Sla with check mode passed"
 
 - name: Verify slas delete flow
-  ntnx_ndb_slas:
+  nutanix.ncp.ntnx_ndb_slas:
     state: absent
     sla_uuid: "{{ item }}"
   register: result

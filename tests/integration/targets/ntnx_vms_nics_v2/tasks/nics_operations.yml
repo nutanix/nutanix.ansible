@@ -17,7 +17,7 @@
     vm_name: "{{ random_name }}_vm_test"
 
 - name: Create VM with minimum requirements
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     state: present
     name: "{{ vm_name }}"
     cluster:
@@ -48,7 +48,7 @@
 ################################################################################
 
 - name: Create nic - check mode is enabled
-  ntnx_vms_nics_v2:
+  nutanix.ncp.ntnx_vms_nics_v2:
     vm_ext_id: "{{ vm_uuid }}"
     state: present
     backing_info:
@@ -82,7 +82,7 @@
 ################################################################################
 
 - name: Create nic with static IP and secondary ip list - check mode is enabled
-  ntnx_vms_nics_v2:
+  nutanix.ncp.ntnx_vms_nics_v2:
     vm_ext_id: "{{ vm_uuid }}"
     state: present
     backing_info:
@@ -123,7 +123,7 @@
 ################################################################################
 
 - name: Create nic with allowing unknown macs - check mode is enabled
-  ntnx_vms_nics_v2:
+  nutanix.ncp.ntnx_vms_nics_v2:
     vm_ext_id: "{{ vm_uuid }}"
     state: present
     backing_info:
@@ -158,7 +158,7 @@
 
 ##################################################################################
 - name: Create nic with minimal spec
-  ntnx_vms_nics_v2:
+  nutanix.ncp.ntnx_vms_nics_v2:
     vm_ext_id: "{{ vm_uuid }}"
     state: present
     network_info:
@@ -182,7 +182,7 @@
 ##################################################################################
 
 - name: Create nic with network function nic type
-  ntnx_vms_nics_v2:
+  nutanix.ncp.ntnx_vms_nics_v2:
     vm_ext_id: "{{ vm_uuid }}"
     state: present
     backing_info:
@@ -217,7 +217,7 @@
 ################################################################################
 
 - name: Create Direct type NIC with dynamic IP
-  ntnx_vms_nics_v2:
+  nutanix.ncp.ntnx_vms_nics_v2:
     vm_ext_id: "{{ vm_uuid }}"
     state: present
     backing_info:
@@ -254,7 +254,7 @@
 ################################################################################
 
 - name: Create Normal type NIC with static IP
-  ntnx_vms_nics_v2:
+  nutanix.ncp.ntnx_vms_nics_v2:
     vm_ext_id: "{{ vm_uuid }}"
     state: present
     backing_info:
@@ -296,7 +296,7 @@
     seconds: 60
 
 - name: Get nics ids from VM
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -342,7 +342,7 @@
 ################################################################################
 
 - name: Update nic - check mode is enabled
-  ntnx_vms_nics_v2:
+  nutanix.ncp.ntnx_vms_nics_v2:
     vm_ext_id: "{{ vm_uuid }}"
     ext_id: "{{ todelete[1] }}"
     state: present
@@ -379,7 +379,7 @@
 ###############################################################################
 
 - name: Check for idempotency by updating the nic with same values
-  ntnx_vms_nics_v2:
+  nutanix.ncp.ntnx_vms_nics_v2:
     ext_id: "{{ todelete[3] }}"
     vm_ext_id: "{{ vm_uuid }}"
     state: present
@@ -414,7 +414,7 @@
 ###############################################################################
 
 - name: Update nic
-  ntnx_vms_nics_v2:
+  nutanix.ncp.ntnx_vms_nics_v2:
     vm_ext_id: "{{ vm_uuid }}"
     ext_id: "{{ todelete[0] }}"
     state: present
@@ -435,7 +435,7 @@
 ###############################################################################
 
 - name: Migrate nic to another subnet - check mode is enabled
-  ntnx_vms_nics_migrate_v2:
+  nutanix.ncp.ntnx_vms_nics_migrate_v2:
     ext_id: "{{ todelete[0] }}"
     vm_ext_id: "{{ vm_uuid }}"
     migrate_type: "ASSIGN_IP"
@@ -462,7 +462,7 @@
 ###############################################################################
 
 - name: Migrate nic to another subnet - migrate type = ASSIGN_IP
-  ntnx_vms_nics_migrate_v2:
+  nutanix.ncp.ntnx_vms_nics_migrate_v2:
     ext_id: "{{ todelete[0] }}"
     vm_ext_id: "{{ vm_uuid }}"
     migrate_type: "ASSIGN_IP"
@@ -489,7 +489,7 @@
 ################################################################################
 
 - name: Retrieve nic info after migrating nic to another subnet - migrate type = ASSIGN_IP
-  ntnx_vms_nics_info_v2:
+  nutanix.ncp.ntnx_vms_nics_info_v2:
     ext_id: "{{ todelete[0] }}"
     vm_ext_id: "{{ vm_uuid }}"
   register: result
@@ -511,7 +511,7 @@
 ###############################################################################
 
 - name: Migrate nic to another subnet - migrate type = RELEASE_IP
-  ntnx_vms_nics_migrate_v2:
+  nutanix.ncp.ntnx_vms_nics_migrate_v2:
     ext_id: "{{ todelete[0] }}"
     vm_ext_id: "{{ vm_uuid }}"
     migrate_type: "RELEASE_IP"
@@ -535,7 +535,7 @@
 ###############################################################################
 
 - name: Retrieve nic info after migrating nic to another subnet - migrate type = RELEASE_IP
-  ntnx_vms_nics_info_v2:
+  nutanix.ncp.ntnx_vms_nics_info_v2:
     ext_id: "{{ todelete[0] }}"
     vm_ext_id: "{{ vm_uuid }}"
   register: result
@@ -557,7 +557,7 @@
 ###############################################################################
 
 - name: Assign IP address to nic - check mode is enabled
-  ntnx_vms_nics_ip_v2:
+  nutanix.ncp.ntnx_vms_nics_ip_v2:
     state: present
     ext_id: "{{ todelete[0] }}"
     vm_ext_id: "{{ vm_uuid }}"
@@ -582,7 +582,7 @@
 ###############################################################################
 
 - name: Assign IP address to nic
-  ntnx_vms_nics_ip_v2:
+  nutanix.ncp.ntnx_vms_nics_ip_v2:
     state: present
     ext_id: "{{ todelete[0] }}"
     vm_ext_id: "{{ vm_uuid }}"
@@ -606,7 +606,7 @@
 ###############################################################################
 
 - name: Retrieve nic info after assigning IP to nic
-  ntnx_vms_nics_info_v2:
+  nutanix.ncp.ntnx_vms_nics_info_v2:
     ext_id: "{{ todelete[0] }}"
     vm_ext_id: "{{ vm_uuid }}"
   register: result
@@ -629,7 +629,7 @@
 ###############################################################################
 
 - name: Release IP address from nic - check mode is enabled
-  ntnx_vms_nics_ip_v2:
+  nutanix.ncp.ntnx_vms_nics_ip_v2:
     state: absent
     ext_id: "{{ todelete[0] }}"
     vm_ext_id: "{{ vm_uuid }}"
@@ -653,7 +653,7 @@
 ###############################################################################
 
 - name: Release IP address from nic
-  ntnx_vms_nics_ip_v2:
+  nutanix.ncp.ntnx_vms_nics_ip_v2:
     state: absent
     ext_id: "{{ todelete[0] }}"
     vm_ext_id: "{{ vm_uuid }}"
@@ -676,7 +676,7 @@
 ###############################################################################
 
 - name: Retrieve nic info after releasing IP from nic
-  ntnx_vms_nics_info_v2:
+  nutanix.ncp.ntnx_vms_nics_info_v2:
     ext_id: "{{ todelete[0] }}"
     vm_ext_id: "{{ vm_uuid }}"
   register: result
@@ -699,7 +699,7 @@
 ###############################################################################
 
 - name: List all nics for VM
-  ntnx_vms_nics_info_v2:
+  nutanix.ncp.ntnx_vms_nics_info_v2:
     vm_ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -746,7 +746,7 @@
 ################################################################################
 
 - name: List all nics for VM with limit 1
-  ntnx_vms_nics_info_v2:
+  nutanix.ncp.ntnx_vms_nics_info_v2:
     vm_ext_id: "{{ vm_uuid }}"
     limit: 1
   register: result
@@ -770,7 +770,7 @@
 ###############################################################################
 
 - name: List all nics for VM with limit 2
-  ntnx_vms_nics_info_v2:
+  nutanix.ncp.ntnx_vms_nics_info_v2:
     vm_ext_id: "{{ vm_uuid }}"
     limit: 2
   register: result
@@ -795,7 +795,7 @@
 ###############################################################################
 
 - name: Delete nic with check mode is enabled
-  ntnx_vms_nics_v2:
+  nutanix.ncp.ntnx_vms_nics_v2:
     state: absent
     vm_ext_id: "{{ vm_uuid }}"
     ext_id: "{{ todelete[0] }}"
@@ -816,7 +816,7 @@
 ################################################################################
 
 - name: Delete nics
-  ntnx_vms_nics_v2:
+  nutanix.ncp.ntnx_vms_nics_v2:
     state: absent
     vm_ext_id: "{{ vm_uuid }}"
     ext_id: "{{ item }}"
@@ -837,7 +837,7 @@
 #################################################################################
 
 - name: Verify that all nics are deleted
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -855,7 +855,7 @@
 ################################################################################
 
 - name: Delete the VM
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: absent
     vm_uuid: "{{ vm_uuid }}"
   register: result

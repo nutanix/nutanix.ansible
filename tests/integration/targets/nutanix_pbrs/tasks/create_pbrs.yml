@@ -11,7 +11,7 @@
 # - todelete
 
 - name: Create PBR with vpc name, source network, external destination, with reroute action and any type and code icmp
-  ntnx_pbrs:
+  nutanix.ncp.ntnx_pbrs:
     validate_certs: false
     state: present
     nutanix_host: "{{ ip }}"
@@ -47,7 +47,7 @@
     todelete: "{{ todelete + [  result.pbr_uuid ] }}"
 ################################################################################################################################
 - name: Create PBR with vpc name, any source, any destination, any protocol and deny action
-  ntnx_pbrs:
+  nutanix.ncp.ntnx_pbrs:
     state: present
     priority: "{{ priority.0 }}"
     vpc:
@@ -76,7 +76,7 @@
     todelete: "{{ todelete + [  result.pbr_uuid ] }}"
 ###############################################################################################
 - name: Create PBR with vpc uuid, any source, external destination and allow action with protocol number
-  ntnx_pbrs:
+  nutanix.ncp.ntnx_pbrs:
     state: present
     priority: "{{ priority.1 }}"
     vpc:
@@ -105,7 +105,7 @@
     todelete: "{{ todelete + [  result.pbr_uuid ] }}"
 #######################################################################################################
 - name: Create PBR with vpc name with source external and destination network with reroute action and tcp port rangelist
-  ntnx_pbrs:
+  nutanix.ncp.ntnx_pbrs:
     state: present
     priority: "{{ priority.2 }}"
     vpc:
@@ -138,7 +138,7 @@
     todelete: "{{ todelete + [  result.pbr_uuid ] }}"
 ##########################################################################################################
 - name: Create PBR with vpc name with source external and destination network with reroute action and any tcp port rangelist
-  ntnx_pbrs:
+  nutanix.ncp.ntnx_pbrs:
     state: present
     priority: "{{ priority.3 }}"
     vpc:
@@ -171,7 +171,7 @@
     todelete: "{{ todelete + [  result.pbr_uuid ] }}"
 ###########################################################################################################
 - name: Create PBR with vpc name, custom source network, external destination, reroute action and udp port rangelist
-  ntnx_pbrs:
+  nutanix.ncp.ntnx_pbrs:
     state: present
     priority: "{{ priority.4 }}"
     vpc:
@@ -204,7 +204,7 @@
     todelete: "{{ todelete + [  result.pbr_uuid ] }}"
 ##############################################################################################################
 - name: Create PBR with vpc name, custom source network, external destination, reroute action and any udp ports
-  ntnx_pbrs:
+  nutanix.ncp.ntnx_pbrs:
     state: present
     wait: true
     priority: "{{ priority.5 }}"
@@ -238,7 +238,7 @@
     todelete: "{{ todelete + [  result.pbr_uuid ] }}"
 ##################################################################################################################
 - name: Create PBR with vpc name, source network, external destination, with reroute action and icmp
-  ntnx_pbrs:
+  nutanix.ncp.ntnx_pbrs:
     state: present
     priority: "{{ priority.6 }}"
     wait: false
@@ -264,7 +264,7 @@
     todelete: "{{ todelete + [  result.pbr_uuid ] }}"
 ##################################################################################################################
 - name: Delete Pbr with check mode
-  ntnx_pbrs:
+  nutanix.ncp.ntnx_pbrs:
     state: absent
     pbr_uuid: "{{ result.pbr_uuid }}"
   register: output
@@ -282,7 +282,7 @@
     success_msg: "Delete Pbr with check mode passed"
 
 - name: Delete all created pbrs
-  ntnx_pbrs:
+  nutanix.ncp.ntnx_pbrs:
     state: absent
     pbr_uuid: "{{ item }}"
   register: result

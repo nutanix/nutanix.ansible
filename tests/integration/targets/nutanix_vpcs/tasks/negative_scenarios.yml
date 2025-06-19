@@ -4,7 +4,7 @@
     msg: "Started Negative Creation Cases"
 
 - name: Unknown subnet name
-  ntnx_vpcs:
+  nutanix.ncp.ntnx_vpcs:
     state: present
     name: MinVPC
     external_subnets:
@@ -20,7 +20,7 @@
     fail_msg: " Fail VPC created successfully with unknown subnet name "
 #######################################################
 - name: Unknown subnet uuid
-  ntnx_vpcs:
+  nutanix.ncp.ntnx_vpcs:
     state: present
     name: MinVPC
     external_subnets:
@@ -36,7 +36,7 @@
     fail_msg: " Fail VPC created successfully with unknown subnet name "
 #######################################################
 - name: Create VPC with same routable_ips
-  ntnx_vpcs:
+  nutanix.ncp.ntnx_vpcs:
     state: present
     name: vpc_with_routable_ips
     routable_ips:
@@ -56,7 +56,7 @@
     fail_msg: " Fail VPC created successfully with unknown subnet name "
 #######################################################
 - name: Delete vpc with unknown uuid
-  ntnx_vpcs:
+  nutanix.ncp.ntnx_vpcs:
     state: absent
     vpc_uuid: 5
   ignore_errors: true
@@ -69,7 +69,7 @@
     fail_msg: " Fail deleting vpc with unknown uuid "
 #######################################################
 - name: Delete vpc with missing uuid
-  ntnx_vpcs:
+  nutanix.ncp.ntnx_vpcs:
     state: absent
   ignore_errors: true
   register: result

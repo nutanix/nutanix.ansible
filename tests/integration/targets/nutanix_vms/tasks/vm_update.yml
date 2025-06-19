@@ -10,7 +10,7 @@
 # ########################### UPDATE_VM ################################
 
 - name: Create VM with minimum requirements to update
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     name: update vm
     cluster:
@@ -36,7 +36,7 @@
     success_msg: " VM with minimum requirements created successfully "
 ####################################################################
 - name: Update vm by set owner by uuid
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
     owner:
       uuid: "{{vm_owner.uuid}}"
@@ -62,7 +62,7 @@
     msg: Start update tests for memory vcpus cores_per_vcpu
 
 - name: Decrease values for memory, vcpus and corespervcpu with force_power_off
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
     vcpus: 2
     cores_per_vcpu: 2
@@ -83,7 +83,7 @@
     success_msg: " VM updated successfully by decrease the values for memory, vcpus and corespervcpu with force_power_off "
 
 - name: Increase values for memory, vcpus and corespervcpu
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
     vcpus: 4
     memory_gb: 4
@@ -101,7 +101,7 @@
     success_msg: " VM updated successfully by increase values for memory, vcpus  "
 
 - name: Increase values for corespervcpu with force_power_off
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
     cores_per_vcpu: 4
     force_power_off: true
@@ -124,7 +124,7 @@
     msg: Start update tests for vm categories
 
 - name: Update categories
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
     categories:
       Environment:
@@ -147,7 +147,7 @@
     success_msg: " VM categories updated successfully "
 
 - name: Remove all categories attached to vm
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
     remove_categories: true
   register: result
@@ -170,7 +170,7 @@
     msg: Start update tests for disks
 ##### CRUD operation for SCSI disks
 - name: Update VM by adding  SCSI disks
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
     disks:
       - type: "DISK"
@@ -200,7 +200,7 @@
     success_msg: " VM updated successfully by adding SCSI    disks "
 
 - name: Update VM by increasing the size of the SCSI disks
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
     disks:
       - type: "DISK"
@@ -226,7 +226,7 @@
     success_msg: " VM updated successfully by increasing the size of the SCSI  disks "
 
 - name: Update VM by removing SCSI disks
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
     disks:
       - state: absent
@@ -250,7 +250,7 @@
 #######
 ##### CRUD operation for PCI disks
 - name: Update VM by adding  PCI disks
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
     disks:
       - type: DISK
@@ -270,7 +270,7 @@
     success_msg: " VM updated successfully by adding PCI  disks "
 
 - name: Update VM by increasing the size of the PCI disks
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
     disks:
       - type: "DISK"
@@ -290,7 +290,7 @@
     success_msg: " VM updated successfully by increasing the size of the PCI  disks "
 
 - name: Update VM by removing PCI disks with force_power_off
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
     disks:
       - state: absent
@@ -310,7 +310,7 @@
     success_msg: " VM updated successfully by removing PCI disks with force_power_off "
 ##### CRUD operation for IDE disks
 - name: Update VM by adding  IDE disks with force_power_off
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
     disks:
       - type: "DISK"
@@ -334,7 +334,7 @@
     success_msg: " VM updated successfully by adding IDE disks with force_power_off "
 
 - name: Update VM by increasing the size of the IDE disks with force_power_off
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
     disks:
       - type: "DISK"
@@ -369,7 +369,7 @@
   register: result2
 
 - name: Update VM by cloning image into CD ROM
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
     disks:
       - type: "CDROM"
@@ -403,7 +403,7 @@
     success_msg: " VM updated successfully by cloning image into CD ROM"
 
 - name: Update VM by removing IDE disks with force_power_off
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
     disks:
       - state: absent
@@ -426,7 +426,7 @@
 #######
 ##### CRUD operation for SATA disks
 - name: Update VM by adding  SATA disks with force_power_off
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
     disks:
       - type: "DISK"
@@ -447,7 +447,7 @@
     success_msg: " VM updated successfully by adding SATA    disks with force_power_off"
 
 - name: Update VM by increasing the size of the SATA disks with force_power_off
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
     disks:
       - type: "DISK"
@@ -468,7 +468,7 @@
     success_msg: " VM updated successfully by increasing the size of the SATA  disks with force_power_off"
 
 - name: Update VM by removing SATA disks with force_power_off
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
     disks:
       - state: absent
@@ -493,7 +493,7 @@
     msg: Start update tests for network
 
 - name: Update VM by adding subnets
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
     networks:
       - is_connected: true
@@ -517,7 +517,7 @@
     success_msg: " VM updated successfully by adding subnets"
 
 - name: Update VM by editing a subnet is_connected
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
     desc: disconnect and connects nic's
     networks:
@@ -539,7 +539,7 @@
     success_msg: " VM updated successfully by editing a subnet "
 
 - name: Update VM by change the private ip for subnet
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
     name: updated
     desc: change ip
@@ -561,7 +561,7 @@
     success_msg: " VM updated successfully by editing private_ip for subnet"
 
 - name: Update VM by change vlan subnet
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
     name: updated
     desc: change vlan
@@ -587,7 +587,7 @@
     success_msg: " VM updated successfully by editing a subnet vlan "
 
 - name: Update VM by deleting a subnet
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
     networks:
       - state: absent
@@ -609,7 +609,7 @@
 # ####################################################################
 
 - name: Update VM by deleting it
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: absent
     vm_uuid: "{{ result.vm_uuid }}"
   register: result
