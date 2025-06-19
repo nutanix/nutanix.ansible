@@ -4,7 +4,7 @@
     msg: Start ntnx_image_placement_policy update tests
 
 - name: Create image placement policy with minimal spec for update tests
-  ntnx_image_placement_policy:
+  nutanix.ncp.ntnx_image_placement_policy:
     name: "test_policy_6"
     placement_type: soft
     image_categories:
@@ -36,7 +36,7 @@
 #############################################################################################
 
 - name: Test idempotency by defining same spec as before
-  ntnx_image_placement_policy:
+  nutanix.ncp.ntnx_image_placement_policy:
     state: present
     policy_uuid: "{{ setup_policy.response.metadata.uuid }}"
     placement_type: "soft"
@@ -64,7 +64,7 @@
 #####################################################################################################
 
 - name: Update all specs
-  ntnx_image_placement_policy:
+  nutanix.ncp.ntnx_image_placement_policy:
     state: present
     policy_uuid: "{{ setup_policy.response.metadata.uuid }}"
     placement_type: "hard"
@@ -102,7 +102,7 @@
 #####################################################################################################
 
 - name: Remove attached categories to the policy
-  ntnx_image_placement_policy:
+  nutanix.ncp.ntnx_image_placement_policy:
     state: present
     policy_uuid: "{{ setup_policy.response.metadata.uuid }}"
     remove_categories: true
@@ -121,7 +121,7 @@
 ################################################## CLEANUP #######################################################
 
 - name: Cleanup created entities
-  ntnx_image_placement_policy:
+  nutanix.ncp.ntnx_image_placement_policy:
     state: absent
     policy_uuid: "{{ item }}"
   register: result

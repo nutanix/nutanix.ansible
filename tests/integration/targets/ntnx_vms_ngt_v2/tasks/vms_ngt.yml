@@ -17,7 +17,7 @@
     vm_name: "{{ random_name }}_vm_test"
 
 - name: Create VM
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     state: present
     name: "{{ vm_name }}"
     cluster:
@@ -69,7 +69,7 @@
 ##############################################################################
 
 - name: Power on VM
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
     state: power_on
     ext_id: "{{ vm_uuid }}"
   register: result
@@ -88,7 +88,7 @@
 #################################################################################
 
 - name: Get VM info and check if IP address is assigned
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -110,7 +110,7 @@
 #################################################################################
 
 - name: Install NGT in VM with check mode enabled
-  ntnx_vms_ngt_v2:
+  nutanix.ncp.ntnx_vms_ngt_v2:
     state: present
     ext_id: "{{ vm_uuid }}"
     capabilities:
@@ -146,7 +146,7 @@
 ##################################################################################
 
 - name: Install NGT in VM with reboot preference set to IMMEDIATE
-  ntnx_vms_ngt_v2:
+  nutanix.ncp.ntnx_vms_ngt_v2:
     state: present
     ext_id: "{{ vm_uuid }}"
     capabilities:
@@ -179,7 +179,7 @@
     minutes: 2
 
 - name: Get NGT config from VM after NGT is installed
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -205,7 +205,7 @@
 ##################################################################################
 
 - name: Fetch NGT config after installing NGT in VM with reboot preference set to IMMEDIATE
-  ntnx_vms_ngt_info_v2:
+  nutanix.ncp.ntnx_vms_ngt_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -229,7 +229,7 @@
 ##################################################################################
 
 - name: Install NGT in VM while it is already installed
-  ntnx_vms_ngt_v2:
+  nutanix.ncp.ntnx_vms_ngt_v2:
     state: present
     ext_id: "{{ vm_uuid }}"
     capabilities:
@@ -261,7 +261,7 @@
     minutes: 2
 
 - name: Uninstall NGT in VM
-  ntnx_vms_ngt_v2:
+  nutanix.ncp.ntnx_vms_ngt_v2:
     state: absent
     ext_id: "{{ vm_uuid }}"
   register: result
@@ -286,7 +286,7 @@
     minutes: 2
 
 - name: Get VM info after NGT is uninstalled
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -305,7 +305,7 @@
 #################################################################################
 
 - name: Fetch NGT config after NGT is uninstalled
-  ntnx_vms_ngt_info_v2:
+  nutanix.ncp.ntnx_vms_ngt_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -324,7 +324,7 @@
 #################################################################################
 
 - name: Install NGT in VM with reboot preference set to SKIP
-  ntnx_vms_ngt_v2:
+  nutanix.ncp.ntnx_vms_ngt_v2:
     state: present
     ext_id: "{{ vm_uuid }}"
     capabilities:
@@ -359,7 +359,7 @@
     minutes: 2
 
 - name: Get NGT config from VM after NGT is installed
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -386,7 +386,7 @@
 ################################################################################
 
 - name: Fetch NGT config after installing NGT in VM with reboot preference set to SKIP
-  ntnx_vms_ngt_info_v2:
+  nutanix.ncp.ntnx_vms_ngt_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -411,7 +411,7 @@
 ##################################################################################
 
 - name: Update NGT in VM with check mode enabled
-  ntnx_vms_ngt_update_v2:
+  nutanix.ncp.ntnx_vms_ngt_update_v2:
     state: present
     ext_id: "{{ vm_uuid }}"
     is_enabled: false
@@ -442,7 +442,7 @@
 #################################################################################
 
 - name: Update NGT in VM by disabling it and setting capabilities to VSS_SNAPSHOT
-  ntnx_vms_ngt_update_v2:
+  nutanix.ncp.ntnx_vms_ngt_update_v2:
     state: present
     ext_id: "{{ vm_uuid }}"
     is_enabled: false
@@ -467,7 +467,7 @@
 ################################################################################
 
 - name: Get NGT config from VM after NGT is updated
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -493,7 +493,7 @@
 ################################################################################
 
 - name: Test idempotency by updating NGT in VM with same attributes
-  ntnx_vms_ngt_update_v2:
+  nutanix.ncp.ntnx_vms_ngt_update_v2:
     state: present
     ext_id: "{{ vm_uuid }}"
     is_enabled: false
@@ -517,7 +517,7 @@
 ################################################################################
 
 - name: Update NGT in VM by enabling it
-  ntnx_vms_ngt_update_v2:
+  nutanix.ncp.ntnx_vms_ngt_update_v2:
     state: present
     ext_id: "{{ vm_uuid }}"
     is_enabled: true
@@ -538,7 +538,7 @@
 #################################################################################
 
 - name: Get NGT config from VM after NGT is updated
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -564,7 +564,7 @@
 #################################################################################
 
 - name: Upgrade NGT in VM with check mode enabled
-  ntnx_vms_ngt_upgrade_v2:
+  nutanix.ncp.ntnx_vms_ngt_upgrade_v2:
     state: present
     ext_id: "{{ vm_uuid }}"
     reboot_preference:
@@ -615,7 +615,7 @@
 ################################################################################
 
 - name: Insert ISO into CD ROM in VM with is_config_only set to true and check mode enabled
-  ntnx_vms_ngt_insert_iso_v2:
+  nutanix.ncp.ntnx_vms_ngt_insert_iso_v2:
     state: present
     ext_id: "{{ vm_uuid }}"
     capabilities:
@@ -643,7 +643,7 @@
 #################################################################################
 
 - name: Insert ISO into CD ROM in VM with is_config_only set to false and check mode enabled
-  ntnx_vms_ngt_insert_iso_v2:
+  nutanix.ncp.ntnx_vms_ngt_insert_iso_v2:
     state: present
     ext_id: "{{ vm_uuid }}"
     capabilities:
@@ -671,7 +671,7 @@
 #################################################################################
 
 - name: Insert ISO into CD ROM in VM
-  ntnx_vms_ngt_insert_iso_v2:
+  nutanix.ncp.ntnx_vms_ngt_insert_iso_v2:
     state: present
     ext_id: "{{ vm_uuid }}"
     capabilities:
@@ -701,7 +701,7 @@
 #################################################################################
 
 - name: Get NGT config from VM after ISO is inserted
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -720,7 +720,7 @@
 ##################################################################################
 
 - name: Fetch NGT config
-  ntnx_vms_ngt_info_v2:
+  nutanix.ncp.ntnx_vms_ngt_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -748,7 +748,7 @@
     minutes: 2
 
 - name: Uninstall NGT in VM
-  ntnx_vms_ngt_v2:
+  nutanix.ncp.ntnx_vms_ngt_v2:
     state: absent
     ext_id: "{{ vm_uuid }}"
   register: result
@@ -769,7 +769,7 @@
 ##################################################################################
 
 - name: Fetch NGT config after NGT is uninstalled
-  ntnx_vms_ngt_info_v2:
+  nutanix.ncp.ntnx_vms_ngt_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -788,7 +788,7 @@
 #################################################################################
 
 - name: Uninstall NGT in VM to test idempotency
-  ntnx_vms_ngt_v2:
+  nutanix.ncp.ntnx_vms_ngt_v2:
     state: absent
     ext_id: "{{ vm_uuid }}"
   register: result
@@ -809,7 +809,7 @@
 ##################################################################################
 
 - name: Delete the VM
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: absent
     vm_uuid: "{{ vm_uuid }}"
   register: result

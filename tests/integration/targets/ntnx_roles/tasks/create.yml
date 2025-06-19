@@ -4,7 +4,7 @@
     msg: Start ntnx_roles create tests
 
 - name: Get Some permissions for test
-  ntnx_permissions_info:
+  nutanix.ncp.ntnx_permissions_info:
     length: 3
   register: result
 
@@ -20,7 +20,7 @@
 ##############################################################################################
 
 - name: Create roles with permissions
-  ntnx_roles:
+  nutanix.ncp.ntnx_roles:
     state: present
     name: test-ansible-role-1
     desc: test-ansible-role-1-desc
@@ -59,7 +59,7 @@
 ###################################################################################################
 
 - name: Check if role with existing name fails or not
-  ntnx_roles:
+  nutanix.ncp.ntnx_roles:
     state: present
     name: test-ansible-role-1
     permissions:
@@ -80,7 +80,7 @@
 
 ###################################################################################################
 - name: Check mode test
-  ntnx_roles:
+  nutanix.ncp.ntnx_roles:
     state: present
     name: test-ansible-role-2
     desc: test-ansible-role-1-desc
@@ -108,7 +108,7 @@
 ###################################################################################################
 
 - name: Cleanup created entities
-  ntnx_roles:
+  nutanix.ncp.ntnx_roles:
     state: absent
     role_uuid: "{{ todelete }}"
   register: result

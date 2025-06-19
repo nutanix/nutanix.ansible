@@ -34,7 +34,7 @@
     value2: "{{ random_name }}{{ suffix_name }}value2"
 ########################################################################
 - name: VM with minimum requirements
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     name: "{{ vm1_name }}"
     cluster:
@@ -56,7 +56,7 @@
     vm_uuid: "{{ result.vm_uuid }}"
 ########################################################################
 - name: Create new template from a vm with check mode
-  ntnx_templates_v2:
+  nutanix.ncp.ntnx_templates_v2:
     template_name: "{{ template_name }}"
     template_description: ansible test
     template_version_spec:
@@ -80,7 +80,7 @@
     success_msg: "Create new template from a vm with check mode passed"
 ########################################################################
 - name: Create new template from a vm
-  ntnx_templates_v2:
+  nutanix.ncp.ntnx_templates_v2:
     template_name: "{{ template_name }}"
     template_description: ansible test
     template_version_spec:
@@ -110,7 +110,7 @@
     success_msg: " New template created successfully "
 ########################################################################
 - name: List all templates
-  ntnx_templates_info_v2:
+  nutanix.ncp.ntnx_templates_info_v2:
   register: result
   ignore_errors: true
 
@@ -125,7 +125,7 @@
     success_msg: templates  listed successfully
 ########################################################################
 - name: Fetch template info using ext id
-  ntnx_templates_info_v2:
+  nutanix.ncp.ntnx_templates_info_v2:
     ext_id: "{{ template1_ext_id }}"
   register: result
   ignore_errors: true
@@ -143,7 +143,7 @@
     success_msg: template fetched using ext id successfully
 ########################################################################
 - name: Update template description & name & override_vm_config & guest_customization user_data with check mode
-  ntnx_templates_v2:
+  nutanix.ncp.ntnx_templates_v2:
     ext_id: "{{ template1_ext_id }}"
     template_version_spec:
       version_name: "{{ version_2_name }}"
@@ -193,7 +193,7 @@
 
 ########################################################################
 - name: Update template description & name & override_vm_config with guest_customization key_value_pairs with check mode
-  ntnx_templates_v2:
+  nutanix.ncp.ntnx_templates_v2:
     ext_id: "{{ template1_ext_id }}"
     template_version_spec:
       version_name: "{{ version_2_name }}"
@@ -261,7 +261,7 @@
     success_msg: "Update template description & name & override_vm_config with guest_customization key_value_pairs in check mode passed"
 ########################################################################
 - name: Update template description & name
-  ntnx_templates_v2:
+  nutanix.ncp.ntnx_templates_v2:
     ext_id: "{{ template1_ext_id }}"
     template_version_spec:
       version_name: "{{ version_2_name }}"
@@ -298,7 +298,7 @@
     success_msg: template description & name updated successfully
 ########################################################################
 - name: Retrieve the Template Version details for the given Template Version identifier.
-  ntnx_templates_versions_info_v2:
+  nutanix.ncp.ntnx_templates_versions_info_v2:
     ext_id: "{{ version2_ext_id }}"
     template_ext_id: "{{ template1_ext_id }}"
   register: result
@@ -322,7 +322,7 @@
     success_msg: template version fetched using ext id successfully
 ########################################################################
 - name: Set the Active Version
-  ntnx_templates_version_v2:
+  nutanix.ncp.ntnx_templates_version_v2:
     template_ext_id: "{{ template1_ext_id }}"
     version_id: "{{ version1_ext_id }}"
   register: result
@@ -343,7 +343,7 @@
 ########################################################################
 
 - name: Delete template version with check mode enabled
-  ntnx_templates_version_v2:
+  nutanix.ncp.ntnx_templates_version_v2:
     state: absent
     template_ext_id: "{{ template1_ext_id }}"
     version_id: "{{ version2_ext_id }}"
@@ -364,7 +364,7 @@
 ########################################################################
 
 - name: Delete Template Version
-  ntnx_templates_version_v2:
+  nutanix.ncp.ntnx_templates_version_v2:
     state: absent
     template_ext_id: "{{ template1_ext_id }}"
     version_id: "{{ version2_ext_id }}"
@@ -372,7 +372,7 @@
   ignore_errors: true
 
 - name: Retrieve the Template Version details for the given Template Version identifier.
-  ntnx_templates_versions_info_v2:
+  nutanix.ncp.ntnx_templates_versions_info_v2:
     ext_id: "{{ version2_ext_id }}"
     template_ext_id: "{{ template1_ext_id }}"
   register: result
@@ -389,7 +389,7 @@
     success_msg: template version deleted successfully
 ########################################################################
 - name: Deploy VM
-  ntnx_templates_deploy_v2:
+  nutanix.ncp.ntnx_templates_deploy_v2:
     ext_id: "{{ template1_ext_id }}"
     version_id: "{{ version1_ext_id }}"
     cluster_reference: "{{ cluster.uuid }}"
@@ -406,7 +406,7 @@
     success_msg: VM deployed successfully
 ########################################################################
 - name: Generate spec for deploying vm with override config with check mode
-  ntnx_templates_deploy_v2:
+  nutanix.ncp.ntnx_templates_deploy_v2:
     ext_id: "{{ template1_ext_id }}"
     version_id: "{{ version1_ext_id }}"
     cluster_reference: "{{ cluster.uuid }}"
@@ -441,7 +441,7 @@
 
 ########################################################################
 - name: Deploy vm and override config
-  ntnx_templates_deploy_v2:
+  nutanix.ncp.ntnx_templates_deploy_v2:
     ext_id: "{{ template1_ext_id }}"
     version_id: "{{ version1_ext_id }}"
     cluster_reference: "{{ cluster.uuid }}"
@@ -463,7 +463,7 @@
     fail_msg: Unable to deploy VM with override config
     success_msg: VM deployed with override config successfully
 - name: Get deployed vms using name filter criteria
-  ntnx_vms_info:
+  nutanix.ncp.ntnx_vms_info:
     filter:
       vm_name: "{{ vm3_name }}"
   register: result
@@ -487,7 +487,7 @@
     to_delete_vms: "{{ to_delete_vms + [result.response.entities[0].metadata.uuid] }}"
 ########################################################################
 - name: Initiate_guest_os_update with check mode
-  ntnx_templates_guest_os_v2:
+  nutanix.ncp.ntnx_templates_guest_os_v2:
     template_ext_id: "{{ template1_ext_id }}"
     version_id: "{{ version1_ext_id }}"
     state: start
@@ -507,7 +507,7 @@
     success_msg: "Initiate_guest_os_update with check mode passed"
 ########################################################################
 - name: Initiate_guest_os_update
-  ntnx_templates_guest_os_v2:
+  nutanix.ncp.ntnx_templates_guest_os_v2:
     template_ext_id: "{{ template1_ext_id }}"
     version_id: "{{ version1_ext_id }}"
     state: start
@@ -524,7 +524,7 @@
     success_msg: Guest os update initiated successfully
 ########################################################################
 - name: Cancel guest_os_update
-  ntnx_templates_guest_os_v2:
+  nutanix.ncp.ntnx_templates_guest_os_v2:
     template_ext_id: "{{ template1_ext_id }}"
     version_id: "{{ version1_ext_id }}"
     state: cancel
@@ -541,7 +541,7 @@
     success_msg: Guest os update cancel successfully
 ########################################################################
 - name: Initiate_guest_os_update
-  ntnx_templates_guest_os_v2:
+  nutanix.ncp.ntnx_templates_guest_os_v2:
     template_ext_id: "{{ template1_ext_id }}"
     version_id: "{{ version1_ext_id }}"
     state: start
@@ -558,7 +558,7 @@
     success_msg: Guest os update initiated successfully
 ########################################################################
 - name: Finish guest_os_update
-  ntnx_templates_guest_os_v2:
+  nutanix.ncp.ntnx_templates_guest_os_v2:
     template_ext_id: "{{ template1_ext_id }}"
     version_id: "{{ version1_ext_id }}"
     state: finish
@@ -582,7 +582,7 @@
     version3_ext_id: "{{ result.response.entities_affected.1.ext_id }}"
 
 - name: Retrieve the Template Version details for the given Template Version identifier.
-  ntnx_templates_versions_info_v2:
+  nutanix.ncp.ntnx_templates_versions_info_v2:
     ext_id: "{{ version3_ext_id }}"
     template_ext_id: "{{ template1_ext_id }}"
   register: result
@@ -602,7 +602,7 @@
     success_msg: template version fetched using ext id successfully
 ########################################################################
 - name: Create new template from a vm
-  ntnx_templates_v2:
+  nutanix.ncp.ntnx_templates_v2:
     template_name: "{{ template2_name }}"
     template_description: ansible test
     template_version_spec:
@@ -632,7 +632,7 @@
     success_msg: " New template created successfully "
 ########################################################################
 - name: List all templates
-  ntnx_templates_info_v2:
+  nutanix.ncp.ntnx_templates_info_v2:
     limit: 1
   register: result
   ignore_errors: true
@@ -648,7 +648,7 @@
     success_msg: templates  listed successfully
 ########################################################################
 - name: Get all templates with non existent name
-  ntnx_templates_info_v2:
+  nutanix.ncp.ntnx_templates_info_v2:
     filter: templateName eq '{{ template3_name }}'
   register: result
   ignore_errors: true
@@ -665,7 +665,7 @@
 ########################################################################
 
 - name: Delete template with check mode enabled
-  ntnx_templates_v2:
+  nutanix.ncp.ntnx_templates_v2:
     state: absent
     ext_id: "{{ template1_ext_id }}"
   register: result
@@ -685,7 +685,7 @@
 ########################################################################
 
 - name: Delete Template
-  ntnx_templates_v2:
+  nutanix.ncp.ntnx_templates_v2:
     state: absent
     ext_id: "{{ template1_ext_id }}"
   register: result
@@ -701,7 +701,7 @@
     success_msg: Template deleted successfully
 
 - name: Fetch template info using ext id
-  ntnx_templates_info_v2:
+  nutanix.ncp.ntnx_templates_info_v2:
     ext_id: "{{ template1_ext_id }}"
   register: result
   ignore_errors: true
@@ -717,7 +717,7 @@
     success_msg: Returned as expected
 ########################################################################
 - name: Delete created vms
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: absent
     vm_uuid: "{{ item }}"
   register: result
@@ -733,7 +733,7 @@
     success_msg: VM deleted successfully
 ########################################################################
 - name: Delete Created Templates
-  ntnx_templates_v2:
+  nutanix.ncp.ntnx_templates_v2:
     state: absent
     ext_id: "{{ template2_ext_id }}"
   register: result

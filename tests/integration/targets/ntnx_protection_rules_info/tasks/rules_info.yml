@@ -8,7 +8,7 @@
 
 ##################################################
 - name: Create protection rule with async schedule
-  ntnx_protection_rules:
+  nutanix.ncp.ntnx_protection_rules:
     state: present
     wait: true
     name: test-ansible-info-1
@@ -49,7 +49,7 @@
   register: rule_1
 
 - name: Create protection rule with async schedule
-  ntnx_protection_rules:
+  nutanix.ncp.ntnx_protection_rules:
     state: present
     wait: true
     name: test-ansible-info-2
@@ -92,7 +92,7 @@
 ##################################################
 
 - name: List all Protection rules
-  ntnx_protection_rules_info:
+  nutanix.ncp.ntnx_protection_rules_info:
   register: result
   ignore_errors: true
 
@@ -113,7 +113,7 @@
 ##################################################
 
 - name: List protection rule using uuid criteria
-  ntnx_protection_rules_info:
+  nutanix.ncp.ntnx_protection_rules_info:
     rule_uuid: "{{ test_rule_uuid }}"
   register: result
   ignore_errors: true
@@ -134,7 +134,7 @@
 ##################################################
 
 - name: List protection rules using filter criteria
-  ntnx_protection_rules_info:
+  nutanix.ncp.ntnx_protection_rules_info:
     filter:
       name: "{{ test_rule_name }}"
   register: result
@@ -155,7 +155,7 @@
 ##################################################
 
 - name: List rules using length and offset
-  ntnx_protection_rules_info:
+  nutanix.ncp.ntnx_protection_rules_info:
     length: 1
     offset: 1
   register: result
@@ -174,14 +174,14 @@
 ##################################################
 
 - name: Delete created protection policy
-  ntnx_protection_rules:
+  nutanix.ncp.ntnx_protection_rules:
     state: absent
     wait: true
     rule_uuid: "{{ rule_1.rule_uuid }}"
   register: result
 
 - name: Delete created protection policy
-  ntnx_protection_rules:
+  nutanix.ncp.ntnx_protection_rules:
     state: absent
     wait: true
     rule_uuid: "{{ rule_2.rule_uuid }}"

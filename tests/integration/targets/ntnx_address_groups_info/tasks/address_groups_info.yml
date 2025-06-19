@@ -4,7 +4,7 @@
     msg: Start testing ntnx_address_groups_info
 
 - name: Create address groups for tests
-  ntnx_address_groups:
+  nutanix.ncp.ntnx_address_groups:
     name: test-address-groups-info-1
     subnets:
       - network_ip: "10.0.2.0"
@@ -12,7 +12,7 @@
   register: ag_1
 
 - name: Create address groups for tests
-  ntnx_address_groups:
+  nutanix.ncp.ntnx_address_groups:
     name: test-address-groups-info-2
     subnets:
       - network_ip: "10.0.3.1"
@@ -22,7 +22,7 @@
 ##################################################
 
 - name: List all address groups
-  ntnx_address_groups_info:
+  nutanix.ncp.ntnx_address_groups_info:
   register: result
   ignore_errors: true
 
@@ -43,7 +43,7 @@
 ##################################################
 
 - name: List address groups using uuid criteria
-  ntnx_address_groups_info:
+  nutanix.ncp.ntnx_address_groups_info:
     address_group_uuid: "{{ test_address_groups_uuid }}"
   register: result
   ignore_errors: true
@@ -61,7 +61,7 @@
 ##################################################
 
 - name: List address groups using filter criteria
-  ntnx_address_groups_info:
+  nutanix.ncp.ntnx_address_groups_info:
     filter:
       name: "{{ test_address_groups_name }}"
   register: result
@@ -82,7 +82,7 @@
 ##################################################
 
 - name: List address groups using length and offset
-  ntnx_address_groups_info:
+  nutanix.ncp.ntnx_address_groups_info:
     length: 1
     offset: 1
   register: result
@@ -101,14 +101,14 @@
 ##################################################
 
 - name: Delete created address groups for tests
-  ntnx_address_groups:
+  nutanix.ncp.ntnx_address_groups:
     state: absent
     address_group_uuid: "{{ ag_1.address_group_uuid}}"
   register: result
   ignore_errors: true
 
 - name: Delete created address groups for tests
-  ntnx_address_groups:
+  nutanix.ncp.ntnx_address_groups:
     state: absent
     address_group_uuid: "{{ ag_2.address_group_uuid}}"
   register: result

@@ -22,7 +22,7 @@
     todelete: []
 
 - name: Create VM with minimum requirements
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     state: present
     name: "{{ vm_name }}"
     cluster:
@@ -49,7 +49,7 @@
 #################################################################################
 
 - name: Create a disk for a VM - check mode is enabled
-  ntnx_vms_disks_v2:
+  nutanix.ncp.ntnx_vms_disks_v2:
     vm_ext_id: "{{ vm_uuid }}"
     backing_info:
       vm_disk:
@@ -87,7 +87,7 @@
 #################################################################################
 
 - name: Create Disk with storage container
-  ntnx_vms_disks_v2:
+  nutanix.ncp.ntnx_vms_disks_v2:
     vm_ext_id: "{{ vm_uuid }}"
     backing_info:
       vm_disk:
@@ -120,7 +120,7 @@
 ################################################################################
 
 - name: Create Disk with image reference
-  ntnx_vms_disks_v2:
+  nutanix.ncp.ntnx_vms_disks_v2:
     vm_ext_id: "{{ vm_uuid }}"
     backing_info:
       vm_disk:
@@ -157,7 +157,7 @@
 ###############################################################################
 
 - name: Get disks ids from VM
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -190,7 +190,7 @@
 ################################################################################
 
 - name: Create Disk with disk reference
-  ntnx_vms_disks_v2:
+  nutanix.ncp.ntnx_vms_disks_v2:
     vm_ext_id: "{{ vm_uuid }}"
     backing_info:
       vm_disk:
@@ -233,7 +233,7 @@
 ################################################################################
 
 - name: Create Disk with minimum spec
-  ntnx_vms_disks_v2:
+  nutanix.ncp.ntnx_vms_disks_v2:
     vm_ext_id: "{{ vm_uuid }}"
     backing_info:
       vm_disk:
@@ -263,7 +263,7 @@
 #################################################################################
 
 - name: Create Volume group with min spec and no Auth
-  ntnx_volume_groups_v2:
+  nutanix.ncp.ntnx_volume_groups_v2:
     state: "present"
     name: "{{ vg_name }}"
     description: "Volume group with min spec and no Auth"
@@ -288,7 +288,7 @@
 ################################################################################
 
 - name: Create disk from volume group disk
-  ntnx_volume_groups_disks_v2:
+  nutanix.ncp.ntnx_volume_groups_disks_v2:
     state: "present"
     volume_group_ext_id: "{{ vg1_uuid }}"
     index: 6
@@ -320,7 +320,7 @@
 ################################################################################
 
 - name: Create Disk with VG reference
-  ntnx_vms_disks_v2:
+  nutanix.ncp.ntnx_vms_disks_v2:
     vm_ext_id: "{{ vm_uuid }}"
     backing_info:
       adsf_volume_group:
@@ -349,7 +349,7 @@
 ################################################################################
 
 - name: Get disks ids from VM and verify disks info
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -393,7 +393,7 @@
 #################################################################################
 
 - name: Update Disk - check mode is enabled
-  ntnx_vms_disks_v2:
+  nutanix.ncp.ntnx_vms_disks_v2:
     vm_ext_id: "{{ vm_uuid }}"
     ext_id: "{{ todelete[1] }}"
     backing_info:
@@ -457,7 +457,7 @@
 #################################################################################
 
 - name: Update disk data source and disk_size_bytes together
-  ntnx_vms_disks_v2:
+  nutanix.ncp.ntnx_vms_disks_v2:
     vm_ext_id: "{{ vm_uuid }}"
     ext_id: "{{ todelete[1] }}"
     backing_info:
@@ -486,7 +486,7 @@
 #################################################################################
 
 - name: Power on VM
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
     state: power_on
     ext_id: "{{ vm_uuid }}"
   register: result
@@ -507,7 +507,7 @@
     seconds: 10
 
 - name: Get VM power state
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -525,7 +525,7 @@
 ################################################################################
 
 - name: Update disk size when VM is powered on
-  ntnx_vms_disks_v2:
+  nutanix.ncp.ntnx_vms_disks_v2:
     vm_ext_id: "{{ vm_uuid }}"
     ext_id: "{{ todelete[1] }}"
     backing_info:
@@ -553,7 +553,7 @@
 ################################################################################
 
 - name: Check for idempotency by updating disk size with same value
-  ntnx_vms_disks_v2:
+  nutanix.ncp.ntnx_vms_disks_v2:
     vm_ext_id: "{{ vm_uuid }}"
     ext_id: "{{ todelete[1] }}"
     backing_info:
@@ -576,7 +576,7 @@
 #################################################################################
 
 - name: Get disk info
-  ntnx_vms_disks_info_v2:
+  nutanix.ncp.ntnx_vms_disks_info_v2:
     vm_ext_id: "{{ vm_uuid }}"
     ext_id: "{{ todelete[1] }}"
   register: result
@@ -601,7 +601,7 @@
 #################################################################################
 
 - name: Get disk info that does not exist
-  ntnx_vms_disks_info_v2:
+  nutanix.ncp.ntnx_vms_disks_info_v2:
     vm_ext_id: "{{ vm_uuid }}"
     ext_id: "12345678-1234-1234-1234-123456789123"
   register: result
@@ -620,7 +620,7 @@
 #################################################################################
 
 - name: List all disks from VM
-  ntnx_vms_disks_info_v2:
+  nutanix.ncp.ntnx_vms_disks_info_v2:
     vm_ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -641,7 +641,7 @@
 #################################################################################
 
 - name: List all disks from VM with limit 1
-  ntnx_vms_disks_info_v2:
+  nutanix.ncp.ntnx_vms_disks_info_v2:
     vm_ext_id: "{{ vm_uuid }}"
     limit: 1
   register: result
@@ -662,7 +662,7 @@
 #################################################################################
 
 - name: List all disks from VM with limit 2
-  ntnx_vms_disks_info_v2:
+  nutanix.ncp.ntnx_vms_disks_info_v2:
     vm_ext_id: "{{ vm_uuid }}"
     limit: 2
   register: result
@@ -683,7 +683,7 @@
 #################################################################################
 
 - name: Delete disk from VM with check mode enabled
-  ntnx_vms_disks_v2:
+  nutanix.ncp.ntnx_vms_disks_v2:
     vm_ext_id: "{{ vm_uuid }}"
     ext_id: "{{ todelete[0] }}"
     state: absent
@@ -704,7 +704,7 @@
 #################################################################################
 
 - name: Delete all disks from VM
-  ntnx_vms_disks_v2:
+  nutanix.ncp.ntnx_vms_disks_v2:
     vm_ext_id: "{{ vm_uuid }}"
     ext_id: "{{ item }}"
     state: absent
@@ -728,7 +728,7 @@
 ################################################################################
 
 - name: Delete Volume group
-  ntnx_volume_groups_v2:
+  nutanix.ncp.ntnx_volume_groups_v2:
     state: "absent"
     ext_id: "{{ vg1_uuid }}"
   register: result
@@ -748,7 +748,7 @@
 #################################################################################
 
 - name: Delete the VM
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     state: absent
     ext_id: "{{ vm_uuid }}"
   register: result

@@ -2,7 +2,7 @@
 - name: >-
     Create isolation security rule with first_entity_filter and
     second_entity_filter with check mode
-  ntnx_security_rules:
+  nutanix.ncp.ntnx_security_rules:
     name: test_isolation_rule
     isolation_rule:
       isolate_category:
@@ -34,7 +34,7 @@
 - name: >-
     Create isolation security rule with first_entity_filter and
     second_entity_filter
-  ntnx_security_rules:
+  nutanix.ncp.ntnx_security_rules:
     name: test_isolation_rule
     isolation_rule:
       isolate_category:
@@ -64,7 +64,7 @@
       second_entity_filter successfully
 
 - name: Update isolation security rule action with check_mode
-  ntnx_security_rules:
+  nutanix.ncp.ntnx_security_rules:
     security_rule_uuid: "{{ result.response.metadata.uuid }}"
     isolation_rule:
       policy_mode: APPLY
@@ -85,7 +85,7 @@
       pass: update isolation security rule action with check_mode successfully
 
 - name: Update isolation security rule action
-  ntnx_security_rules:
+  nutanix.ncp.ntnx_security_rules:
     security_rule_uuid: "{{ result.security_rule_uuid}}"
     isolation_rule:
       policy_mode: APPLY
@@ -103,7 +103,7 @@
     fail_msg: " fail: unable to update isolation rule action  "
     success_msg: "pass : update isolation rule action successfully"
 - name: Update isolation security with same values
-  ntnx_security_rules:
+  nutanix.ncp.ntnx_security_rules:
     security_rule_uuid: "{{result.security_rule_uuid}}"
     isolation_rule:
       policy_mode: APPLY
@@ -118,7 +118,7 @@
     fail_msg: " fail: unable to update isolation rule action  "
     success_msg: "pass : update isolation rule action successfully"
 - name: Delete isolation rule
-  ntnx_security_rules:
+  nutanix.ncp.ntnx_security_rules:
     state: absent
     security_rule_uuid: "{{ result.security_rule_uuid }}"
   register: output
