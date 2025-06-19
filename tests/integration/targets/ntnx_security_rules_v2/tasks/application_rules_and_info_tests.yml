@@ -1,4 +1,7 @@
 ---
+# Variables required before running this playbook:
+# - external_nat_subnet
+
 - name: Start testing application security rules
   ansible.builtin.debug:
     msg: Start testing application security rules

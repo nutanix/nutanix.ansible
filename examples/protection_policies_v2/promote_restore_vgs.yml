@@ -184,7 +184,7 @@
         cluster_reference: "{{ cluster.uuid }}"
       register: result
 
-    - name: Set VG UUID
+    - name: Set VG1 UUID
       ansible.builtin.set_fact:
         vg1_uuid: "{{ result.ext_id }}"
 
@@ -195,7 +195,7 @@
         cluster_reference: "{{ cluster.uuid }}"
       register: result
 
-    - name: Set VG UUID
+    - name: Set VG2 UUID
       ansible.builtin.set_fact:
         vg2_uuid: "{{ result.ext_id }}"
 
@@ -264,11 +264,11 @@
       nutanix.ncp.ntnx_volume_groups_info_v2:
       register: result
 
-    - name: Filter only protected VGs
+    - name: Filter only protected VGs on local cluster
       ansible.builtin.set_fact:
         protected_vgs: "{{ result.response | selectattr('name', 'search', random_name ~ '_ansible_protected_vg') | list }}"
 
-    - name: Extract external ids of protected VGs
+    - name: Extract external ids of protected VGs on local cluster
       ansible.builtin.set_fact:
         protected_vgs_ext_ids: "{{ protected_vgs | map(attribute='ext_id') | list }}"
 
@@ -284,11 +284,11 @@
         nutanix_host: "{{ availability_zone_pc_ip }}"
       register: result
 
-    - name: Filter only protected VGs
+    - name: Filter only protected VGs on remote cluster
       ansible.builtin.set_fact:
         protected_vgs: "{{ result.response | selectattr('name', 'search', random_name ~ '_ansible_protected_vg') | list }}"
 
-    - name: Extract external ids of protected VGs
+    - name: Extract external ids of protected VGs on remote cluster
       ansible.builtin.set_fact:
         protected_vgs_ext_ids: "{{ protected_vgs | map(attribute='ext_id') | list }}"
 

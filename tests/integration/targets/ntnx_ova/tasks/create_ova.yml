@@ -1,3 +1,7 @@
+---
+# Variables required before running this playbook:
+# - cluster
+
 - name: Start testing create ova for vm
   ansible.builtin.debug:
     msg: Start testing create ova for vm

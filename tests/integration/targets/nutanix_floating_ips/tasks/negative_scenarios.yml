@@ -1,3 +1,8 @@
+---
+# Variables required before running this playbook:
+# - external_nat_subnet
+# - private_ip
+
 - name: Started Negative Creation Cases
   ansible.builtin.debug:
     msg: "Started Negative Creation Cases"

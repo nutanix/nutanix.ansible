@@ -1,4 +1,13 @@
 ---
+# Variables required before running this playbook:
+# - vm
+# - external_nat_subnet
+# - external_nat_subnets
+# - project
+# - users
+# - overlay_subnet
+# - vpc
+
 - name: Start testing ntnx_floating_ips_v2 ntnx_floating_ips_info_v2
   ansible.builtin.debug:
     msg: Start testing ntnx_floating_ips_v2 ntnx_floating_ips_info_v2
