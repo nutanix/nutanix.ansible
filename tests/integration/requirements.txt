@@ -20,4 +20,4 @@ ntnx-volumes-py-client==4.0.1
 ntnx-dataprotection-py-client==4.0.1
 ntnx_datapolicies_py_client==4.0.1
 ntnx_lifecycle_py_client==4.0.1
-ntnx-objects-py-client==4.0.1b1
+ntnx-objects-py-client==4.0.1
