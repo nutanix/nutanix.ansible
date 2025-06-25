@@ -17,6 +17,7 @@ options:
   stretched_vlan_uuid:
     description:
       - uuid for update or delete of stretched vlan
+      - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
     type: str
   vlans:
     description:
@@ -184,6 +185,11 @@ def delete_stretched_vlan(module, result):
         module.fail_json(
             msg="stretched_vlan_uuid is required field for delete", **result
         )
+
+    result["uuid"] = uuid
+    if module.check_mode:
+        result["msg"] = "Stretched vlan with uuid:{0} will be deleted.".format(uuid)
+        return
 
     resp = stretched_vlan.delete_stretched_vlan(uuid)
 

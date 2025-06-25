@@ -677,6 +677,27 @@
 
 #################################################################################
 
+- name: Delete disk from VM with check mode enabled
+  ntnx_vms_disks_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ todelete[0] }}"
+    state: absent
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete disk from VM with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ todelete[0] }}"
+      - result.msg == "VM Disk with ext_id:{{ todelete[0] }} will be deleted."
+    fail_msg: "Delete disk from VM with check mode enabled failed"
+    success_msg: "Delete disk from VM with check mode enabled passed"
+#################################################################################
+
 - name: Delete all disks from VM
   ntnx_vms_disks_v2:
     vm_ext_id: "{{ vm_uuid }}"

@@ -534,6 +534,25 @@
 
 ################################################################################
 
+- name: Delete policy with check mode enabled
+  ntnx_image_placement_policies_v2:
+    state: absent
+    ext_id: "{{ todelete[0] }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ todelete[0] }}"
+      - result.msg == "Policy with ext_id:{{ todelete[0] }} will be deleted."
+    fail_msg: Delete policy with check mode enabled failed
+    success_msg: Delete policy with check mode enabled passed
+
 - name: Delete policies
   ntnx_image_placement_policies_v2:
     state: absent

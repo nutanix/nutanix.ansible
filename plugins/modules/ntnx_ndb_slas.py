@@ -10,9 +10,9 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_slas
-short_description: moudle for creating, updating and deleting slas
+short_description: module for creating, updating and deleting slas
 version_added: 1.8.0
-description: moudle for creating, updating and deleting slas
+description: module for creating, updating and deleting slas
 options:
       name:
         description:
@@ -25,6 +25,7 @@ options:
       sla_uuid:
         description:
             - sla uuid
+            - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
         type: str
       frequency:
         description:
@@ -206,6 +207,11 @@ def delete_sla(module, result):
     uuid = module.params.get("sla_uuid")
     if not uuid:
         module.fail_json(msg="uuid is required field for delete", **result)
+
+    result["uuid"] = uuid
+    if module.check_mode:
+        result["msg"] = "Sla with uuid:{0} will be deleted.".format(uuid)
+        return
 
     sla, err = _sla.get_sla(uuid=uuid)
     if err:

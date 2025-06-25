@@ -23,7 +23,6 @@
 ################################### Single instance postgres database tests #############################
 
 - name: Create spec for single instance postgres database on new db server vm
-  check_mode: true
   ntnx_ndb_databases:
     wait: true
     name: "{{ db1_name }}"
@@ -85,6 +84,8 @@
           pre_task_cmd: ls -l
           post_task_cmd: ls -F
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Set expected action arguments
   ansible.builtin.set_fact:
@@ -108,7 +109,8 @@
       description: TM-desc
       name: TM1
       schedule:
-        continuousSchedule: { enabled: true, logBackupInterval: 30, snapshotsPerDay: 2 }
+        continuousSchedule:
+          { enabled: true, logBackupInterval: 30, snapshotsPerDay: 2 }
         monthlySchedule: { dayOfMonth: 4, enabled: true }
         quartelySchedule: { dayOfMonth: 4, enabled: true, startMonth: JANUARY }
         snapshotTimeOfDay: { hours: 11, minutes: 10, seconds: 2 }
@@ -117,11 +119,18 @@
 
 - name: Set maintenance tasks
   ansible.builtin.set_fact:
-    mainetance_tasks:
+    maintenance_tasks:
       maintenanceWindowId: "{{ maintenance.window_uuid }}"
       tasks:
-        - { payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } }, taskType: OS_PATCHING }
-        - { payload: { prePostCommand: { postCommand: ls -F, preCommand: ls -l } }, taskType: DB_PATCHING }
+        - {
+          payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } },
+          taskType: OS_PATCHING,
+        }
+        - {
+          payload:
+            { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
+          taskType: DB_PATCHING,
+        }
 
 - name: Check mode status
   ansible.builtin.assert:
@@ -140,7 +149,7 @@
       - result.response.nodes | length == 1
       - result.response.nodeCount == 1
       - result.response.nodes[0].nxClusterId == "{{ cluster.cluster1.uuid }}"
-      - result.response.maintenanceTasks == mainetance_tasks
+      - result.response.maintenanceTasks == maintenance_tasks
       - result.response.createDbserver == True
     fail_msg: Unable to create single instance postgres database provision spec
     success_msg: single instance postgres database provision spec created successfully
@@ -263,7 +272,6 @@
 ################################### update tests #############################
 
 - name: Update database with check mode
-  check_mode: true
   ntnx_ndb_databases:
     wait: true
     db_uuid: "{{ db_uuid }}"
@@ -273,6 +281,8 @@
     tags:
       ansible-databases: single-instance-dbs-updated
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Check mode status
   ansible.builtin.assert:
@@ -335,13 +345,13 @@
 ################################### delete tests #############################
 
 - name: Create spec for delete db from vm
-  check_mode: true
   ntnx_ndb_databases:
     state: absent
     db_uuid: "{{ db_uuid }}"
     wait: true
     delete_db_from_vm: true
   register: result
+  check_mode: true
 
 - name: Verify delete check mode spec
   ansible.builtin.assert:
@@ -351,11 +361,11 @@
       - result.response.delete == True
       - result.response.remove == False
       - result.response.deleteTimeMachine == False
+      - result.uuid == db_uuid
     fail_msg: creation of spec for delete db from vm failed
     success_msg: spec for delete db from vm created successfully
 
 - name: Create spec for soft remove
-  check_mode: true
   ntnx_ndb_databases:
     state: absent
     db_uuid: "{{ db_uuid }}"
@@ -363,6 +373,8 @@
     soft_delete: true
     delete_time_machine: true
   register: result
+  ignore_errors: true
+  check_mode: true
 
 - name: Verify soft remove check mode spec
   ansible.builtin.assert:
@@ -373,6 +385,7 @@
       - result.response.remove == False
       - result.response.softRemove == True
       - result.response.deleteTimeMachine == True
+      - result.uuid == db_uuid
     fail_msg: creation of spec for soft remove with time machine delete failed
     success_msg: spec for soft remove with time machine delete created successfully
 
@@ -396,7 +409,6 @@
 ################################### single instance postgres database registration tests #############################
 
 - name: Create spec for registering previously unregistered database from previously created VM's ip
-  check_mode: true
   ntnx_ndb_register_database:
     wait: true
 
@@ -440,8 +452,9 @@
         - type: DB_PATCHING
           pre_task_cmd: ls -l
           post_task_cmd: ls -F
-
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Set expected action arguments
   ansible.builtin.set_fact:
@@ -459,7 +472,8 @@
       description: TM-desc
       name: TM1
       schedule:
-        continuousSchedule: { enabled: true, logBackupInterval: 30, snapshotsPerDay: 2 }
+        continuousSchedule:
+          { enabled: true, logBackupInterval: 30, snapshotsPerDay: 2 }
         monthlySchedule: { dayOfMonth: 4, enabled: true }
         quartelySchedule: { dayOfMonth: 4, enabled: true, startMonth: JANUARY }
         snapshotTimeOfDay: { hours: 11, minutes: 10, seconds: 2 }
@@ -468,11 +482,18 @@
 
 - name: Set maintenance tasks
   ansible.builtin.set_fact:
-    mainetance_tasks:
+    maintenance_tasks:
       maintenanceWindowId: "{{ maintenance.window_uuid }}"
       tasks:
-        - { payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } }, taskType: OS_PATCHING }
-        - { payload: { prePostCommand: { postCommand: ls -F, preCommand: ls -l } }, taskType: DB_PATCHING }
+        - {
+          payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } },
+          taskType: OS_PATCHING,
+        }
+        - {
+          payload:
+            { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
+          taskType: DB_PATCHING,
+        }
 
 - name: Check mode status
   ansible.builtin.assert:
@@ -486,12 +507,12 @@
       - result.response.autoTuneStagingDrive == False
       - result.response.timeMachineInfo == expected_time_machine_info
       - result.response.vmIp == "10.10.10.10"
-      - result.response.maintenanceTasks == mainetance_tasks
+      - result.response.maintenanceTasks == maintenance_tasks
       - result.response.workingDirectory == "/check"
     fail_msg: Unable to create register database spec
     success_msg: single instance postgres database register spec created successfully
 
-- name: Regsiter previously unregistered database from previously created VM
+- name: Register previously unregistered database from previously created VM
   ntnx_ndb_register_database:
     wait: true
 

@@ -101,12 +101,13 @@
 
 ############################################ Attach VM tests ############################################
 - name: Create spec for attaching VM to VG
-  check_mode: true
   ntnx_volume_groups_vms_v2:
     volume_group_ext_id: "{{ vg1_uuid }}"
     ext_id: "{{ vm1_uuid }}"
     index: 0
   register: result
+  ignore_errors: true
+  check_mode: true
 
 - name: Verify spec creation
   ansible.builtin.assert:

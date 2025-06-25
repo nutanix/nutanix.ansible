@@ -36,7 +36,7 @@
       - test_role.response is defined
       - test_role.changed == true
     fail_msg: "Unable to create roles with certain permissions"
-    success_msg: "Roles with given permissions created susccessfully"
+    success_msg: "Roles with given permissions created successfully"
 
 ###################################################################################################
 
@@ -64,7 +64,7 @@
       - result.response.status.resources.permission_reference_list | length == 1
 
     fail_msg: "Unable to update role"
-    success_msg: "Roles with given permissions updated susccessfully"
+    success_msg: "Roles with given permissions updated successfully"
 
 ###################################################################################################
 
@@ -92,7 +92,6 @@
 ###################################################################################################
 
 - name: Check mode test
-  check_mode: true
   ntnx_roles:
     state: present
     role_uuid: "{{test_role.role_uuid}}"
@@ -102,6 +101,8 @@
       - uuid: "{{ test_permission_1_uuid }}"
     wait: true
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Check mode Status
   ansible.builtin.assert:

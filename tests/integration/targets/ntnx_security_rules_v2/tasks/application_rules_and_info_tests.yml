@@ -289,10 +289,33 @@
     fail_msg: Failed to create security rule
     success_msg: Successfully created security rule
 
+- name: Set security rule external ID
+  ansible.builtin.set_fact:
+    todelete: "{{ result.ext_id }}"
+
+- name: Delete security rule with check mode enabled
+  ntnx_security_rules_v2:
+    state: absent
+    ext_id: "{{ todelete }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete security rule with check mode status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ todelete }}"
+      - result.msg == "Network security policy with ext_id:{{ todelete }} will be deleted."
+    fail_msg: Delete security rule with check mode failed
+    success_msg: Delete security rule with check mode passed
+
 - name: Delete created security rule
   ntnx_security_rules_v2:
     state: absent
-    ext_id: "{{ result.ext_id }}"
+    ext_id: "{{ todelete }}"
   register: result
 
 - name: Verify deletion status
@@ -531,7 +554,6 @@
 ######################################### Update tests #########################################
 
 - name: Generate spec to update the policy using check mode
-  check_mode: true
   ntnx_security_rules_v2:
     ext_id: "{{ policy_ext_id2 }}"
     name: "{{ rule_name_2 }}-updated"
@@ -611,6 +633,8 @@
               - "{{ address_group_ext_id }}"
             is_all_protocol_allowed: true
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Verify update spec
   ansible.builtin.assert:

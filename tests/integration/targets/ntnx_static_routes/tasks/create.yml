@@ -39,7 +39,7 @@
       - result.response.status.resources.default_route["nexthop"]["external_subnet_reference"]["name"] == "{{ external_nat_subnet.name }}"
 
     fail_msg: "Fail: Unable to update static routes of vpc"
-    success_msg: "Succes: static routes updated successfully"
+    success_msg: "Success: static routes updated successfully"
 
 - name: Wait 1 minute for static routes to be become active
   ansible.builtin.pause:
@@ -110,7 +110,7 @@
       - result.response.status.resources.static_routes_list[0]["destination"] == "10.2.4.0/24"
       - result.response.status.resources.static_routes_list[0]["nexthop"]["external_subnet_reference"]["name"] == "{{ external_nat_subnet.name }}"
     fail_msg: "Static routes overriding failed"
-    success_msg: "Static routes overriden successfully"
+    success_msg: "Static routes overridden successfully"
 
 - name: Wait 1 minute for static routes to be become active
   ansible.builtin.pause:
@@ -136,7 +136,7 @@
 
 ###########################################################################################################
 
-- name: Netgative scenario of cretaing multiple default routes
+- name: Negative scenario of creating multiple default routes
   ntnx_static_routes:
     vpc_uuid: "{{ vpc.uuid }}"
     static_routes:

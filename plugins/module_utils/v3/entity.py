@@ -179,6 +179,15 @@ class Entity(object):
             no_response=no_response,
             timeout=timeout,
         )
+        if resp and resp.get("state") == "ERROR":
+            if raise_error:
+                self.module.fail_json(
+                    msg="Failed fetching URL: {0}".format(url),
+                    error=resp.get("message_list"),
+                    response=resp,
+                )
+            else:
+                return resp
         if resp:
             custom_filters = self.module.params.get("custom_filter")
 
@@ -429,8 +438,13 @@ class Entity(object):
             return {"status_code": status_code}
 
         if resp_json is None:
+            if info.get("msg"):
+                resp_json_msg = "{}".format(info.get("msg"))
+            else:
+                resp_json_msg = "Failed to convert API response to json"
+
             self.module.fail_json(
-                msg="Failed to convert API response to json",
+                msg=resp_json_msg,
                 status_code=status_code,
                 error=body,
                 response=resp_json,
