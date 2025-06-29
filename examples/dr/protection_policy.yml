@@ -41,7 +41,7 @@
             auto_suspend_timeout: 10
       register: pr
 
-    - name: Delete the protection rule
+    - name: Delete the protection rule with synchronous schedule
       nutanix.ncp.ntnx_protection_rules:
         nutanix_host: <pc-ip>
         nutanix_username: <pc-username>

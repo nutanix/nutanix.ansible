@@ -129,7 +129,7 @@
       nutanix.ncp.ntnx_ndb_db_servers_info:
       register: db_servers
 
-    - name: Get NDB db_servers using it's name
+    - name: Get NDB db_servers using it's name with load metrics and databases
       nutanix.ncp.ntnx_ndb_db_servers_info:
         filters:
           load_metrics: true

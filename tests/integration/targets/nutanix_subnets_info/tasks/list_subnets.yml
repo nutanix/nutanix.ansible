@@ -1,3 +1,4 @@
+---
 - name: List subnets using subnet_type filter criteria
   ntnx_subnets_info:
     filter:

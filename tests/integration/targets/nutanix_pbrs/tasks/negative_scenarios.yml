@@ -1,3 +1,11 @@
+---
+# Variables required before running this playbook:
+# - priority
+# - network
+# - vpc
+# - icmp
+# - reroute_ip
+
 - name: Started Negative Creation Cases
   ansible.builtin.debug:
     msg: "Started Negative Creation Cases"

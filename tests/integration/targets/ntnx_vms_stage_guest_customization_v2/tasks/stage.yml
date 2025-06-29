@@ -1,4 +1,9 @@
 ---
+# Variables required before running this playbook:
+# - cluster
+# - storage_container
+# - disk_image
+
 - name: Start ntnx_vms_stage_guest_customization_v2 tests
   ansible.builtin.debug:
     msg: Start ntnx_vms_stage_guest_customization_v2 tests

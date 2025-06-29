@@ -26,17 +26,17 @@
 
     - name: Create category key & value
       nutanix.ncp.ntnx_categories_v2:
-        key: "{{key1}}"
-        value: "{{value1}}"
+        key: "{{ key1 }}"
+        value: "{{ value1 }}"
         description: "ansible test"
       register: output
       ignore_errors: true
 
     - name: Update category value and description
       nutanix.ncp.ntnx_categories_v2:
-        ext_id: "{{category_ext_id}}"
-        key: "{{key1}}"
-        value: "{{value2}}"
+        ext_id: "{{ category_ext_id }}"
+        key: "{{ key1 }}"
+        value: "{{ value2 }}"
         description: "ansible test New value"
       register: result
       ignore_errors: true
@@ -48,14 +48,14 @@
 
     - name: Fetch category using ext id & expand detailedAssociations
       nutanix.ncp.ntnx_categories_info_v2:
-        ext_id: "{{category_ext_id}}"
+        ext_id: "{{ category_ext_id }}"
         expand: detailedAssociations
       register: result
       ignore_errors: true
 
     - name: Delete Created category
       nutanix.ncp.ntnx_categories_v2:
-        ext_id: "{{category_ext_id}}"
+        ext_id: "{{ category_ext_id }}"
         state: absent
       register: result
       ignore_errors: true
