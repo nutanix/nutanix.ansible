@@ -99,6 +99,31 @@
 #     fail_msg: " Unable to update Ova "
 #     success_msg: " Ova updated successfully "
 
+- name: Sleep for 2 mins
+  ansible.builtin.pause:
+    seconds: 120
+
+- name: Deploy VM from Ova
+  nutanix.ncp.ntnx_ova_deploy_vm_v2:
+    ext_id: "{{ todelete[0] }}"
+    override_vm_config:
+      name: "{{ vm_name }}_from_ova"
+      nics:
+        - backing_info:
+            is_connected: true
+          network_info:
+            nic_type: NORMAL_NIC
+            subnet:
+              ext_id: "80fb7979-0a8f-4e1c-b353-46cd1a633cce"
+            vlan_mode: ACCESS
+    cluster_location_ext_id: "{{ cluster.uuid }}"
+  register: deploy_result
+  ignore_errors: true
+  check_mode: true
+
+- name: debug
+  ansible.builtin.debug:
+    msg: "{{ deploy_result }}"
 
 - name: Deploy VM from Ova
   nutanix.ncp.ntnx_ova_deploy_vm_v2:
