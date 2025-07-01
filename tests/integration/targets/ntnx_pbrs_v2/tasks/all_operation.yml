@@ -84,34 +84,6 @@
     fail_msg: " Unable to create Overlay Subnet with minimum requirements "
     success_msg: " Overlay Subnet with minimum requirements created successfully "
 
-# - name: Create overlay Subnet with minimum requirements
-#   nutanix.ncp.ntnx_subnets:
-#     state: present
-#     name: "{{random_name}}subnet_pbrs"
-#     overlay_subnet:
-#       vpc:
-#         uuid: "{{ pbr.vpc.uuid }}"
-#       ipam:
-#         network_ip: "{{ overlay_subnet.network_ip }}"
-#         network_prefix: "{{ overlay_subnet.network_prefix }}"
-#         gateway_ip: "{{ overlay_subnet.gateway_ip }}"
-#   register: result
-
-# - name: Creation Status
-#   ansible.builtin.assert:
-#     that:
-#       - result.response is defined
-#       - result.response.ext_id is defined
-#       - result.response.name == "{{random_name}}subnet_pbrs"
-#       - result.response.overlay_subnet.vpc_ext_id == "{{ pbr.vpc.uuid }}"
-#       - result.response.overlay_subnet.ipam.network_ip == "{{ overlay_subnet.network_ip }}"
-#       - result.response.overlay_subnet.ipam.network_prefix == {{ overlay_subnet.network_prefix }}
-#       - result.response.overlay_subnet.ipam.gateway_ip == "{{ overlay_subnet.gateway_ip }}"
-#       - result.changed == true
-#       - result.failed == false
-#     fail_msg: " Unable to create overlay Subnet with minimum requirements "
-#     success_msg: " Overlay Subnet with minimum requirements created successfully "
-
 - name: Set overlay subnet uuid
   ansible.builtin.set_fact:
     overlay_subnet_ext_id: "{{ result.ext_id }}"
