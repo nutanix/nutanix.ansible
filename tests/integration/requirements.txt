@@ -13,8 +13,8 @@ jmespath==0.10.0
 ntnx-clustermgmt-py-client==4.0.2
 ntnx-iam-py-client==4.0.1
 ntnx-microseg-py-client==4.1.1
-ntnx-networking-py-client==4.1.1
-ntnx-prism-py-client==4.1.1
+ntnx-networking-py-client==4.0.1
+ntnx-prism-py-client==4.0.1
 ntnx-vmm-py-client==4.1.1
 ntnx-volumes-py-client==4.1.1
 ntnx-dataprotection-py-client==4.1.1
