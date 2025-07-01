@@ -10,7 +10,7 @@ coverage==7.3.2
 shyaml==0.6.2
 markupsafe==2
 jmespath==0.10.0
-ntnx-clustermgmt-py-client==4.1.1
+ntnx-clustermgmt-py-client==4.0.2
 ntnx-iam-py-client==4.0.1
 ntnx-microseg-py-client==4.1.1
 ntnx-networking-py-client==4.1.1
