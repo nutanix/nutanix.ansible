@@ -628,11 +628,17 @@ def get_module_spec():
         second_isolation_group=dict(type="list", elements="str"),
     )
     application_rule_spec = dict(
+        secured_group_category_associated_entity_type=dict(type="str", choices=["SUBNET", "VM", "VPC"]),
         secured_group_category_references=dict(type="list", elements="str"),
+        secured_group_entity_group_reference=dict(type="str"),
         src_allow_spec=dict(type="str", choices=["ALL", "NONE"]),
         dest_allow_spec=dict(type="str", choices=["ALL", "NONE"]),
+        src_category_associated_entity_type=dict(type="str", choices=["SUBNET", "VM", "VPC"]),
         src_category_references=dict(type="list", elements="str"),
+        src_entity_group_reference=dict(type="str"),
+        dest_category_associated_entity_type=dict(type="str", choices=["SUBNET", "VM", "VPC"]),
         dest_category_references=dict(type="list", elements="str"),
+        dest_entity_group_reference=dict(type="str"),
         src_subnet=dict(
             type="dict", options=ip_address_sub_spec, obj=mic_sdk.IPv4Address
         ),
@@ -662,10 +668,32 @@ def get_module_spec():
             obj=mic_sdk.IcmpTypeCodeSpec,
         ),
         network_function_chain_reference=dict(type="str"),
+        network_function_reference=dict(type="str"),
     )
     entity_group_rule_spec = dict(
+        secured_group_category_associated_entity_type=dict(type="str", choices=["SUBNET", "VM", "VPC"]),
         secured_group_category_references=dict(type="list", elements="str"),
+        secured_group_entity_group_reference=dict(type="str"),
         secured_group_action=dict(type="str", choices=["ALLOW", "DENY"]),
+        secured_group_service_references=dict(type="list", elements="str"),
+        tcp_services=dict(
+            type="list",
+            elements="dict",
+            options=range_spec,
+            obj=mic_sdk.TcpPortRangeSpec,
+        ),
+        udp_services=dict(
+            type="list",
+            elements="dict",
+            options=range_spec,
+            obj=mic_sdk.UdpPortRangeSpec,
+        ),
+        icmp_services=dict(
+            type="list",
+            elements="dict",
+            options=icmp_service_spec,
+            obj=mic_sdk.IcmpTypeCodeSpec,
+        ),
     )
 
     isolation_groups_spec = dict(
@@ -841,7 +869,8 @@ def update_network_security_policy(module, result):
     )
     sg = SpecGenerator(module)
     update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
-
+    result["current_spec"] = strip_internal_attributes(current_spec.to_dict())
+    result["update_spec"] = strip_internal_attributes(update_spec.to_dict())
     if err:
         result["error"] = err
         module.fail_json(

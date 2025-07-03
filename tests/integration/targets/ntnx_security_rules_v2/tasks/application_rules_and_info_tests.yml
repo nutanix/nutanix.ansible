@@ -480,6 +480,15 @@
               - "{{ address_group_ext_id }}"
             is_all_protocol_allowed: true
   register: result
+  check_mode: true
+
+- name: debug
+  ansible.builtin.debug:
+    msg: "{{ result }}"
+
+- name: Exit
+  ansible.builtin.fail:
+    msg: "Check mode is not supported for this task. Please run without check mode."
 
 - name: Create default rule map
   ansible.builtin.set_fact:
@@ -846,6 +855,13 @@
     fail_msg: Failed to update security rule
     success_msg: Successfully updated security rule
 
+- name: Print policy external ID
+  ansible.builtin.debug:
+    msg: "Policy external ID: {{ policy_ext_id2 }}"
+
+- name: Exit with success
+  ansible.builtin.meta: end_play
+
 - name: Update policy rules and config with same value to check idempotency
   ntnx_security_rules_v2:
     ext_id: "{{ policy_ext_id2 }}"
@@ -932,6 +948,10 @@
               - "{{ address_group_ext_id }}"
             is_all_protocol_allowed: true
   register: result
+
+- name: Print result
+  ansible.builtin.debug:
+    var: result
 
 - name: Verify skip status
   ansible.builtin.assert:
