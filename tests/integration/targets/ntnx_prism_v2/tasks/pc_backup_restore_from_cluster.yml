@@ -627,10 +627,6 @@
     fail_msg: "Generated spec for restoring PC using check mode failed"
     success_msg: "Generated spec for restoring PC using check mode passed"
 
-- name: Set prefix length
-  ansible.builtin.set_fact:
-    prefix_length: "{{ (restore_point_details.response.domain_manager.network.external_address.ipv4.prefix_length | default(32, true)) }}"
-
 - name: Restore PC
   nutanix.ncp.ntnx_pc_restore_v2:
     nutanix_host: "{{ ip_pe }}"
@@ -646,10 +642,7 @@
         size: "{{ restore_point_details.response.domain_manager.config.size }}"
         resource_config: "{{ restore_point_details.response.domain_manager.config.resource_config }}"
       network:
-        external_address:
-          ipv4:
-            value: "{{ restore_point_details.response.domain_manager.network.external_address.ipv4.value }}"
-            prefix_length: "{{ prefix_length | int }}"
+        external_address: "{{ restore_point_details.response.domain_manager.network.external_address }}"
         name_servers: "{{ restore_point_details.response.domain_manager.network.name_servers }}"
         ntp_servers: "{{ restore_point_details.response.domain_manager.network.ntp_servers }}"
         external_networks: "{{ restore_point_details.response.domain_manager.network.external_networks }}"
