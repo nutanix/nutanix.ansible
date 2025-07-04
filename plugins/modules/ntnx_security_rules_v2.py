@@ -141,11 +141,23 @@ options:
             required: false
             type: dict
             suboptions:
+              secured_group_category_associated_entity_type:
+                description:
+                  - Type of entity where category is applicable.
+                type: str
+                choices:
+                  - SUBNET
+                  - VM
+                  - VPC
               secured_group_category_references:
                 description:
                   - A set of categories of vms which is protected by a Network Security Policy and defined as a list of categories.
                 type: list
                 elements: str
+              secured_group_entity_group_reference:
+                description:
+                  - External identifier of the entity group belonging to the secured group.
+                type: str
               src_allow_spec:
                 description:
                   - A specification to how allow mode traffic should be applied, either ALL or NONE.
@@ -160,16 +172,40 @@ options:
                 choices:
                   - ALL
                   - NONE
+              src_category_associated_entity_type:
+                description:
+                  - Type of entity where category is applicable.
+                type: str
+                choices:
+                  - SUBNET
+                  - VM
+                  - VPC
               src_category_references:
                 description:
                   - List of categories that define a set of network endpoints as inbound.
                 type: list
                 elements: str
+              src_entity_group_reference:
+                description:
+                  - External identifier of the entity group belonging to the source group.
+                type: str
+              dest_category_associated_entity_type:
+                description:
+                  - Type of entity where destination category is applicable.
+                type: str
+                choices:
+                  - SUBNET
+                  - VM
+                  - VPC
               dest_category_references:
                 description:
                   - List of categories that define a set of network endpoints as outbound.
                 type: list
                 elements: str
+              dest_entity_group_reference:
+                description:
+                  - External identifier of the entity group belonging to the destination group.
+                type: str
               src_subnet:
                 description:
                   - The source subnet/IP specification.
@@ -267,17 +303,33 @@ options:
                 description:
                   - A reference to the network function chain in the rule.
                 type: str
+              network_function_reference:
+                description:
+                  - A reference to the network function in the rule.
+                type: str
           intra_entity_group_rule_spec:
             description:
               - The specification of the intra entity group rule.
             required: false
             type: dict
             suboptions:
+              secured_group_category_associated_entity_type:
+                description:
+                  - Type of entity where category is applicable.
+                type: str
+                choices:
+                  - SUBNET
+                  - VM
+                  - VPC
               secured_group_category_references:
                 description:
                   - The list of secured group category references.
                 type: list
                 elements: str
+              secured_group_entity_group_reference:
+                description:
+                  - External identifier of the entity group belonging to the secured group.
+                type: str
               secured_group_action:
                 description:
                   - A specification to whether traffic between intra secured group entities should be allowed or denied.
@@ -285,6 +337,57 @@ options:
                 choices:
                   - ALLOW
                   - DENY
+              secured_group_service_references:
+                description:
+                  - A list of service group references.
+                type: list
+                elements: str
+              tcp_services:
+                description:
+                  - The list of TCP services.
+                type: list
+                elements: dict
+                suboptions:
+                  start_port:
+                    description:
+                      - The start port of the TCP service.
+                    type: int
+                  end_port:
+                    description:
+                      - The end port of the TCP service.
+                    type: int
+              udp_services:
+                description:
+                  - The list of UDP services.
+                type: list
+                elements: dict
+                suboptions:
+                  start_port:
+                    description:
+                      - The start port of the UDP service.
+                    type: int
+                  end_port:
+                    description:
+                      - The end port of the UDP service.
+                    type: int
+              icmp_services:
+                description:
+                  - Icmp Type Code List.
+                type: list
+                elements: dict
+                suboptions:
+                  is_all_allowed:
+                    description:
+                      - Icmp service All Allowed.
+                    type: bool
+                  type:
+                    description:
+                      - Icmp service Type. Ignore this field if Type has to be ANY.
+                    type: int
+                  code:
+                    description:
+                      - Icmp service Code. Ignore this field if Code has to be ANY.
+                    type: int
           multi_env_isolation_rule_spec:
             description:
               - The specification of the multi environment isolation rule.
@@ -834,8 +937,37 @@ def create_network_security_policy(module, result):
 
     result["changed"] = True
 
+def is_any_param_passed(params):
+    """
+    Check if any of the parameters related to secured_group_category_associated_entity_type,
+    src_category_associated_entity_type, dest_category_associated_entity_type are passed.
+    """
+    rules = params.get("rules", [])
+    for rule in rules:
+        if (
+            rule.get("spec", {}).get("application_rule_spec", {}).get(
+                "secured_group_category_associated_entity_type"
+            )
+            or rule.get("spec", {}).get("application_rule_spec", {}).get(
+                "src_category_associated_entity_type"
+            )
+            or rule.get("spec", {}).get("application_rule_spec", {}).get(
+                "dest_category_associated_entity_type"
+            )
+            or rule.get("spec", {}).get("intra_entity_group_rule_spec", {}).get(
+                "secured_group_category_associated_entity_type"
+            )
+        ):
+            return True
+    return False
 
-def check_network_security_policies_idempotency(old_spec, update_spec):
+
+def check_network_security_policies_idempotency(old_spec, update_spec, params):
+    if is_any_param_passed(params):
+        # If any of the parameters related to secured_group_category_associated_entity_type,
+        # src_category_associated_entity_type, dest_category_associated_entity_type are passed,
+        # we cannot consider it idempotent.
+        return False
 
     # check if numbers of rules are same
     if len(old_spec.get("rules", [])) != len(update_spec.get("rules", [])):
@@ -849,6 +981,26 @@ def check_network_security_policies_idempotency(old_spec, update_spec):
     # compare rules from old and new spec
     old_rules = old_spec.pop("rules")
     update_rules = update_spec.pop("rules")
+
+    def remove_specified_fields(rules):
+        """
+        Removes specific fields from nested specs in a list of rules.
+        Modifies the rules in-place.
+        """
+        for rule in rules:
+            spec = rule.get("spec")
+            if isinstance(spec, dict):
+                spec.pop("secured_group_category_associated_entity_type", None)
+                spec.pop("src_category_associated_entity_type", None)
+                spec.pop("dest_category_associated_entity_type", None)
+    # Removing secured_group_category_associated_entity_type,
+    # src_category_associated_entity_type, dest_category_associated_entity_type
+    # from rules as we are already adding a check before
+    # calling this function to check idempotency.
+    # Call the function for both lists
+    remove_specified_fields(old_rules)
+    remove_specified_fields(update_rules)
+         
     for rule in update_rules:
         if rule not in old_rules:
             return False
@@ -869,8 +1021,7 @@ def update_network_security_policy(module, result):
     )
     sg = SpecGenerator(module)
     update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
-    result["current_spec"] = strip_internal_attributes(current_spec.to_dict())
-    result["update_spec"] = strip_internal_attributes(update_spec.to_dict())
+
     if err:
         result["error"] = err
         module.fail_json(
@@ -883,9 +1034,10 @@ def update_network_security_policy(module, result):
     else:
         update_spec.state = current_spec.state
 
+    result["is_param_passed"] = is_any_param_passed(module.params)
     # check for idempotency
     if check_network_security_policies_idempotency(
-        current_spec.to_dict(), update_spec.to_dict()
+        current_spec.to_dict(), update_spec.to_dict(), module.params
     ):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
