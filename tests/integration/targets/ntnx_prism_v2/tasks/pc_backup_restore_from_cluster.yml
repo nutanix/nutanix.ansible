@@ -642,10 +642,26 @@
         size: "{{ restore_point_details.response.domain_manager.config.size }}"
         resource_config: "{{ restore_point_details.response.domain_manager.config.resource_config }}"
       network:
-        external_address: "{{ restore_point_details.response.domain_manager.network.external_address }}"
+        external_address:
+          ipv4:
+            value: "{{ restore_point_details.response.domain_manager.network.external_address.ipv4.value }}"
         name_servers: "{{ restore_point_details.response.domain_manager.network.name_servers }}"
         ntp_servers: "{{ restore_point_details.response.domain_manager.network.ntp_servers }}"
-        external_networks: "{{ restore_point_details.response.domain_manager.network.external_networks }}"
+        external_networks:
+          - network_ext_id: "{{ restore_point_details.response.domain_manager.network.external_networks[0].network_ext_id }}"
+            default_gateway:
+              ipv4:
+                value: "{{ restore_point_details.response.domain_manager.network.external_networks[0].default_gateway.ipv4.value }}"
+            subnet_mask:
+              ipv4:
+                value: "{{ restore_point_details.response.domain_manager.network.external_networks[0].subnet_mask.ipv4.value }}"
+            ip_ranges:
+              - begin:
+                  ipv4:
+                    value: "{{ restore_point_details.response.domain_manager.network.external_networks[0].ip_ranges[0].begin.ipv4.value }}"
+                end:
+                  ipv4:
+                    value: "{{ restore_point_details.response.domain_manager.network.external_networks[0].ip_ranges[0].end.ipv4.value }}"
   register: result
   ignore_errors: true
 
