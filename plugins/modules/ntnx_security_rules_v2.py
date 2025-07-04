@@ -731,15 +731,21 @@ def get_module_spec():
         second_isolation_group=dict(type="list", elements="str"),
     )
     application_rule_spec = dict(
-        secured_group_category_associated_entity_type=dict(type="str", choices=["SUBNET", "VM", "VPC"]),
+        secured_group_category_associated_entity_type=dict(
+            type="str", choices=["SUBNET", "VM", "VPC"]
+        ),
         secured_group_category_references=dict(type="list", elements="str"),
         secured_group_entity_group_reference=dict(type="str"),
         src_allow_spec=dict(type="str", choices=["ALL", "NONE"]),
         dest_allow_spec=dict(type="str", choices=["ALL", "NONE"]),
-        src_category_associated_entity_type=dict(type="str", choices=["SUBNET", "VM", "VPC"]),
+        src_category_associated_entity_type=dict(
+            type="str", choices=["SUBNET", "VM", "VPC"]
+        ),
         src_category_references=dict(type="list", elements="str"),
         src_entity_group_reference=dict(type="str"),
-        dest_category_associated_entity_type=dict(type="str", choices=["SUBNET", "VM", "VPC"]),
+        dest_category_associated_entity_type=dict(
+            type="str", choices=["SUBNET", "VM", "VPC"]
+        ),
         dest_category_references=dict(type="list", elements="str"),
         dest_entity_group_reference=dict(type="str"),
         src_subnet=dict(
@@ -774,7 +780,9 @@ def get_module_spec():
         network_function_reference=dict(type="str"),
     )
     entity_group_rule_spec = dict(
-        secured_group_category_associated_entity_type=dict(type="str", choices=["SUBNET", "VM", "VPC"]),
+        secured_group_category_associated_entity_type=dict(
+            type="str", choices=["SUBNET", "VM", "VPC"]
+        ),
         secured_group_category_references=dict(type="list", elements="str"),
         secured_group_entity_group_reference=dict(type="str"),
         secured_group_action=dict(type="str", choices=["ALLOW", "DENY"]),
@@ -937,6 +945,7 @@ def create_network_security_policy(module, result):
 
     result["changed"] = True
 
+
 def is_any_param_passed(params):
     """
     Check if any of the parameters related to secured_group_category_associated_entity_type,
@@ -945,18 +954,18 @@ def is_any_param_passed(params):
     rules = params.get("rules", [])
     for rule in rules:
         if (
-            rule.get("spec", {}).get("application_rule_spec", {}).get(
-                "secured_group_category_associated_entity_type"
-            )
-            or rule.get("spec", {}).get("application_rule_spec", {}).get(
-                "src_category_associated_entity_type"
-            )
-            or rule.get("spec", {}).get("application_rule_spec", {}).get(
-                "dest_category_associated_entity_type"
-            )
-            or rule.get("spec", {}).get("intra_entity_group_rule_spec", {}).get(
-                "secured_group_category_associated_entity_type"
-            )
+            rule.get("spec", {})
+            .get("application_rule_spec", {})
+            .get("secured_group_category_associated_entity_type")
+            or rule.get("spec", {})
+            .get("application_rule_spec", {})
+            .get("src_category_associated_entity_type")
+            or rule.get("spec", {})
+            .get("application_rule_spec", {})
+            .get("dest_category_associated_entity_type")
+            or rule.get("spec", {})
+            .get("intra_entity_group_rule_spec", {})
+            .get("secured_group_category_associated_entity_type")
         ):
             return True
     return False
@@ -993,6 +1002,7 @@ def check_network_security_policies_idempotency(old_spec, update_spec, params):
                 spec.pop("secured_group_category_associated_entity_type", None)
                 spec.pop("src_category_associated_entity_type", None)
                 spec.pop("dest_category_associated_entity_type", None)
+
     # Removing secured_group_category_associated_entity_type,
     # src_category_associated_entity_type, dest_category_associated_entity_type
     # from rules as we are already adding a check before
@@ -1000,7 +1010,7 @@ def check_network_security_policies_idempotency(old_spec, update_spec, params):
     # Call the function for both lists
     remove_specified_fields(old_rules)
     remove_specified_fields(update_rules)
-         
+
     for rule in update_rules:
         if rule not in old_rules:
             return False
