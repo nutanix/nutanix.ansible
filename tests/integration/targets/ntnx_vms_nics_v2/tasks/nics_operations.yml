@@ -786,7 +786,7 @@
       - item in nics_list
     fail_msg: "Unable to list all nics for VM "
     success_msg: "All nics for VM listed successfully "
-  loop: "{{ todelete }}"
+  loop: "{{ todelete[:-1] }}"
 
 ################################################################################
 

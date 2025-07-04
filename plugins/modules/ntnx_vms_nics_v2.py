@@ -413,6 +413,33 @@ def create_nic(module, result):
 
     result["changed"] = True
 
+def update_new_fields_in_spec(update_spec):
+    """
+    Update the spec with new fields that are not present in the current spec.
+    This is a workaround to ensure that the new fields are included in the update spec.
+    """
+    if hasattr(update_spec, "backing_info") and hasattr(update_spec, "nic_backing_info"):
+        update_spec.nic_backing_info.model = update_spec.backing_info.model
+        update_spec.nic_backing_info.is_connected = update_spec.backing_info.is_connected
+        update_spec.nic_backing_info.mac_address = update_spec.backing_info.mac_address
+        update_spec.nic_backing_info.num_queues = update_spec.backing_info.num_queues
+    
+    if hasattr(update_spec, "network_info") and hasattr(update_spec, "nic_network_info"):
+        update_spec.nic_network_info.nic_type = update_spec.network_info.nic_type
+        update_spec.nic_network_info.network_function_chain = (
+            update_spec.network_info.network_function_chain
+        )
+        update_spec.nic_network_info.network_function_nic_type = (
+            update_spec.network_info.network_function_nic_type
+        )
+        update_spec.nic_network_info.subnet = update_spec.network_info.subnet
+        update_spec.nic_network_info.vlan_mode = update_spec.network_info.vlan_mode
+        update_spec.nic_network_info.trunked_vlans = update_spec.network_info.trunked_vlans
+        update_spec.nic_network_info.should_allow_unknown_macs = (
+            update_spec.network_info.should_allow_unknown_macs
+        )
+        update_spec.nic_network_info.ipv4_config = update_spec.network_info.ipv4_config
+
 
 def check_idempotency(current_spec, update_spec):
     if current_spec != update_spec:
@@ -431,6 +458,10 @@ def update_nic(module, result):
 
     sg = SpecGenerator(module)
     update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
+    
+    # Workaround to Update the spec in the new fields
+    update_new_fields_in_spec(update_spec)
+
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating vm nic update spec", **result)
