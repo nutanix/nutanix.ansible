@@ -1,4 +1,8 @@
 ---
+# Variables required before running this playbook:
+# - acp
+# - project
+
 - name: Setting acp name variables
   ansible.builtin.set_fact:
     acp_name: "{{ query('community.general.random_string', upper=false, numbers=false, special=false)[0] }}"

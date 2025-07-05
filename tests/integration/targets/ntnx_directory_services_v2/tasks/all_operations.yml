@@ -1,4 +1,8 @@
 ---
+# Variables required before running this playbook:
+# - active_directory
+# - white_listed_groups
+
 - name: Start ntnx_directory_services_v2 tests
   ansible.builtin.debug:
     msg: start ntnx_directory_services_v2 tests

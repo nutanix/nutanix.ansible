@@ -19,9 +19,9 @@
     - name: Create image from local workstation
       nutanix.ncp.ntnx_images:
         state: "present"
-        source_path: "{{source_path}}"
+        source_path: "{{ source_path }}"
         clusters:
-          - name: "{{clusters_name}}"
+          - name: "{{ clusters_name }}"
         categories:
           AppFamily:
             - Backup
@@ -39,9 +39,9 @@
     - name: Create image from with source as remote server file location
       nutanix.ncp.ntnx_images:
         state: "present"
-        source_uri: "{{source_uri}}"
+        source_uri: "{{ source_uri }}"
         clusters:
-          - name: "{{clusters_name}}"
+          - name: "{{ clusters_name }}"
         categories:
           AppFamily:
             - Backup
@@ -59,7 +59,7 @@
     - name: Override categories of existing image
       nutanix.ncp.ntnx_images:
         state: "present"
-        image_uuid: "{{image-uuid}}"
+        image_uuid: "{{ image-uuid }}"
         categories:
           AppTier:
             - Default

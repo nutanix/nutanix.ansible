@@ -18,7 +18,7 @@
           uuid: "{{ cluster.uuid }}"
       register: output
 
-    - name: Print output
+    - name: Print output for creating Dhcp ndb vlan
       ansible.builtin.debug:
         msg: "{{ output }}"
 
@@ -38,6 +38,6 @@
         dns_domain: "{{ ndb_vlan.dns_domain }}"
       register: output
 
-    - name: Print output
+    - name: Print output for creating Static ndb vlan
       ansible.builtin.debug:
         msg: "{{ output }}"

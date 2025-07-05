@@ -1,4 +1,14 @@
 ---
+# Variables required before running this playbook:
+# - cluster
+# - k8s_version
+# - host_os
+# - network
+# - cni
+# - nutanix_cluster_password
+# - nutanix_cluster_username
+# - storage_container
+
 - name: Start negative test cases for  ntnx_karbon_clusters
   ansible.builtin.debug:
     msg: Start negative test cases for  ntnx_karbon_clusters
