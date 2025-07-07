@@ -821,6 +821,27 @@ def check_network_security_policies_idempotency(old_spec, update_spec):
     # compare rules from old and new spec
     old_rules = old_spec.pop("rules")
     update_rules = update_spec.pop("rules")
+
+    def remove_specified_fields(rules):
+        """
+        Removes specific fields from nested specs in a list of rules.
+        Modifies the rules in-place.
+        """
+        for rule in rules:
+            spec = rule.get("spec")
+            if isinstance(spec, dict):
+                spec.pop("secured_group_category_associated_entity_type", None)
+                spec.pop("src_category_associated_entity_type", None)
+                spec.pop("dest_category_associated_entity_type", None)
+
+    # Removing secured_group_category_associated_entity_type,
+    # src_category_associated_entity_type, dest_category_associated_entity_type
+    # from rules as we are already adding a check before
+    # calling this function to check idempotency.
+    # Call the function for both lists
+    remove_specified_fields(old_rules)
+    remove_specified_fields(update_rules)
+
     for rule in update_rules:
         if rule not in old_rules:
             return False
