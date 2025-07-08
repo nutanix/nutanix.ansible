@@ -422,7 +422,7 @@ class VmSpecs:
         ),
         project=dict(
             type="dict",
-            options=dict(ext_id=dict(type=str)),
+            options=dict(ext_id=dict(type="str")),
             obj=vmm_sdk.ProjectReference,
         ),
         host=dict(
