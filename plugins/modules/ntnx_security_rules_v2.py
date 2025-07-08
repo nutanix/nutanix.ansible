@@ -581,6 +581,7 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
+    remove_fields_from_spec,
 )
 
 SDK_IMP_ERROR = None
@@ -822,25 +823,14 @@ def check_network_security_policies_idempotency(old_spec, update_spec):
     old_rules = old_spec.pop("rules")
     update_rules = update_spec.pop("rules")
 
-    def remove_specified_fields(rules):
-        """
-        Removes specific fields from nested specs in a list of rules.
-        Modifies the rules in-place.
-        """
-        for rule in rules:
-            spec = rule.get("spec")
-            if isinstance(spec, dict):
-                spec.pop("secured_group_category_associated_entity_type", None)
-                spec.pop("src_category_associated_entity_type", None)
-                spec.pop("dest_category_associated_entity_type", None)
-
-    # Removing secured_group_category_associated_entity_type,
-    # src_category_associated_entity_type, dest_category_associated_entity_type
-    # from rules as we are already adding a check before
-    # calling this function to check idempotency.
-    # Call the function for both lists
-    remove_specified_fields(old_rules)
-    remove_specified_fields(update_rules)
+    fields_to_remove = [
+        "secured_group_category_associated_entity_type",
+        "src_category_associated_entity_type",
+        "dest_category_associated_entity_type",
+    ]
+    # remove specified fields from both old and update rules
+    remove_fields_from_spec(old_rules, fields_to_remove)
+    remove_fields_from_spec(update_rules, fields_to_remove)
 
     for rule in update_rules:
         if rule not in old_rules:

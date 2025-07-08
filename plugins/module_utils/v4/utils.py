@@ -129,3 +129,25 @@ def remove_empty_ip_config(obj):
         if empty_ipv6 and empty_ipv4:
             ip_config.remove(item)
     setattr(obj, "ip_config", ip_config)
+
+def remove_fields_from_spec(obj, fields_to_remove):
+    """
+    This method will remove specified fields from given object.
+    Works recursively and modifies the obj in-place.
+    Args:
+        obj (object): object spec
+    Returns:
+        object: object with stripped specified fields
+    """
+    def remove_fields_recursive(obj):
+        if isinstance(obj, dict):
+            keys_to_delete = [k for k in obj if k in fields_to_remove]
+            for key in keys_to_delete:
+                del obj[key]
+            for value in obj.values():
+                remove_fields_recursive(value)
+        elif isinstance(obj, list):
+            for item in obj:
+                remove_fields_recursive(item)
+
+    remove_fields_recursive(obj)
