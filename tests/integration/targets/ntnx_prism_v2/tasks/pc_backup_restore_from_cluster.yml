@@ -627,6 +627,10 @@
     fail_msg: "Generated spec for restoring PC using check mode failed"
     success_msg: "Generated spec for restoring PC using check mode passed"
 
+- name: Print restore point details
+  ansible.builtin.debug:
+    var: restore_point_details
+
 - name: Restore PC
   nutanix.ncp.ntnx_pc_restore_v2:
     nutanix_host: "{{ ip_pe }}"
@@ -662,6 +666,18 @@
                 end:
                   ipv4:
                     value: "{{ restore_point_details.response.domain_manager.network.external_networks[0].ip_ranges[0].end.ipv4.value }}"
+              - begin:
+                  ipv4:
+                    value: "{{ restore_point_details.response.domain_manager.network.external_networks[0].ip_ranges[1].begin.ipv4.value }}"
+                end:
+                  ipv4:
+                    value: "{{ restore_point_details.response.domain_manager.network.external_networks[0].ip_ranges[1].end.ipv4.value }}"
+              - begin:
+                  ipv4:
+                    value: "{{ restore_point_details.response.domain_manager.network.external_networks[0].ip_ranges[2].begin.ipv4.value }}"
+                end:
+                  ipv4:
+                    value: "{{ restore_point_details.response.domain_manager.network.external_networks[0].ip_ranges[2].end.ipv4.value }}"
   register: result
   ignore_errors: true
 
