@@ -580,8 +580,8 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
-    strip_internal_attributes,
     remove_fields_from_spec,
+    strip_internal_attributes,
 )
 
 SDK_IMP_ERROR = None
