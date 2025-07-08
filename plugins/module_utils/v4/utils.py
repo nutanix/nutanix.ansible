@@ -130,6 +130,7 @@ def remove_empty_ip_config(obj):
             ip_config.remove(item)
     setattr(obj, "ip_config", ip_config)
 
+
 def remove_fields_from_spec(obj, fields_to_remove):
     """
     This method will remove specified fields from given object.
@@ -139,6 +140,7 @@ def remove_fields_from_spec(obj, fields_to_remove):
     Returns:
         object: object with stripped specified fields
     """
+
     def remove_fields_recursive(obj):
         if isinstance(obj, dict):
             keys_to_delete = [k for k in obj if k in fields_to_remove]
