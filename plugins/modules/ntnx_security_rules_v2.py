@@ -829,8 +829,8 @@ def check_network_security_policies_idempotency(old_spec, update_spec):
         "dest_category_associated_entity_type",
     ]
     # remove specified fields from both old and update rules
-    remove_fields_from_spec(old_rules, fields_to_remove)
-    remove_fields_from_spec(update_rules, fields_to_remove)
+    remove_fields_from_spec(old_rules, fields_to_remove, deep=True)
+    remove_fields_from_spec(update_rules, fields_to_remove, deep=True)
 
     for rule in update_rules:
         if rule not in old_rules:
