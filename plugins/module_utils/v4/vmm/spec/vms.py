@@ -420,6 +420,16 @@ class VmSpecs:
             options=reference_spec,
             obj=vmm_sdk.AhvConfigCategoryReference,
         ),
+        project=dict(
+            type="dict",
+            options=dict(ext_id=dict(type="str")),
+            obj=vmm_sdk.ProjectReference,
+        ),
+        host=dict(
+            type="dict",
+            options=dict(ext_id=dict(type="str")),
+            obj=vmm_sdk.AhvConfigHostReference,
+        ),
         cluster=dict(
             type="dict", options=reference_spec, obj=vmm_sdk.AhvConfigClusterReference
         ),

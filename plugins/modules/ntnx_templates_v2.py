@@ -475,6 +475,20 @@ options:
                                 description: The globally unique identifier of a VM category. It should be of type UUID.
                                 type: str
                                 required: True
+                    project:
+                        description: Reference to a project.
+                        type: dict
+                        suboptions:
+                            ext_id:
+                                description: The globally unique identifier of a project. It should be of type UUID.
+                                type: str
+                    host:
+                        description: Reference to a host.
+                        type: dict
+                        suboptions:
+                            ext_id:
+                                description: The globally unique identifier of a host. It should be of type UUID.
+                                type: str
                     cluster:
                         description: Reference to a cluster.
                         type: dict
