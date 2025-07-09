@@ -1,4 +1,13 @@
 ---
+# Variables required before running this playbook:
+# - vpc
+# - ip_address_management
+# - ip_address_pools
+# - dhcp_settings
+# - ip
+# - username
+# - password
+
 - name: Overlay Subnet with IP_pools and DHCP
   ntnx_subnets:
     state: present

@@ -1,4 +1,10 @@
 ---
+# Variables required before running this playbook:
+# - cluster
+# - ngt_config
+# - network
+# - ngt_config
+
 - name: Start ntnx_power_actions_v2 tests
   ansible.builtin.debug:
     msg: Start ntnx_power_actions_v2 tests
@@ -179,8 +185,8 @@
       - "VSS_SNAPSHOT"
       - "SELF_SERVICE_RESTORE"
     credential:
-      username: "{{ VM_username }}"
-      password: "{{ VM_password }}"
+      username: "{{ ngt_config.username }}"
+      password: "{{ ngt_config.password }}"
     reboot_preference:
       schedule_type: "IMMEDIATE"
   register: result

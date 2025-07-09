@@ -1,4 +1,8 @@
 ---
+# Variables required before running this playbook:
+# - ndb_vlan
+# - cluster
+
 - name: Start testing ntnx_ndb_vlans
   ansible.builtin.debug:
     msg: Start testing ntnx_ndb_vlans

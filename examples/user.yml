@@ -23,7 +23,7 @@
         directory_service_uuid: "{{directory_service_uuid}}"
       register: result
 
-    - name: Delete created user
+    - name: Delete created local user
       nutanix.ncp.ntnx_users:
         state: absent
         user_uuid: "{{ result.user_uuid }}"
@@ -41,7 +41,7 @@
             - "Default"
       register: result
 
-    - name: Delete created user
+    - name: Delete created local user with project and categories
       nutanix.ncp.ntnx_users:
         state: absent
         user_uuid: "{{ result.user_uuid }}"
@@ -53,7 +53,7 @@
       register: result
       ignore_errors: true
 
-    - name: Delete created user
+    - name: Delete created idp user
       nutanix.ncp.ntnx_users:
         state: absent
         user_uuid: "{{ result.user_uuid }}"

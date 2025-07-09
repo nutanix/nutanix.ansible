@@ -72,7 +72,7 @@
 
       register: output
 
-    - name: Print output
+    - name: Print output for creating clone using snapshot
       ansible.builtin.debug:
         msg: "{{ output }}"
 
@@ -117,6 +117,6 @@
           timezone: Asia/Calcutta
       register: output
 
-    - name: Print output
+    - name: Print output for creating clone using point in time
       ansible.builtin.debug:
         msg: "{{ output }}"

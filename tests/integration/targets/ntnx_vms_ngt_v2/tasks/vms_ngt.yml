@@ -1,4 +1,9 @@
 ---
+# Variables required before running this playbook:
+# - cluster
+# - ngt_config
+# - network
+
 - name: Start testing ntnx_vms_ngt_v2
   ansible.builtin.debug:
     msg: Start testing ntnx_vms_ngt_v2
@@ -461,6 +466,10 @@
 
 ################################################################################
 
+- name: Sleep for 5 minutes to allow NGT update to complete
+  ansible.builtin.pause:
+    minutes: 5
+
 - name: Get NGT config from VM after NGT is updated
   ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
@@ -531,6 +540,10 @@
     success_msg: "NGT is updated successfully "
 
 #################################################################################
+
+- name: Sleep for 5 minutes to allow NGT update to complete
+  ansible.builtin.pause:
+    minutes: 5
 
 - name: Get NGT config from VM after NGT is updated
   ntnx_vms_info_v2:
