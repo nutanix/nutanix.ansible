@@ -46,6 +46,7 @@ This collection requires Python 3.10 or greater
 
 | Ansible Version |  AOS Version | PC version  | Other software versions | Supported |
 |  :--- |  :--- | :--- | :--- | :--- |
+| 2.2.0 | 7.0.1, 7.0, 7.3| pc2024.3, pc2024.3.1, pc7.3 or later| | yes |
 | 2.1.1 | 7.0.1, 7.0| pc2024.3, pc2024.3.1 or later| | yes |
 | 2.1.0 | 7.0.1, 7.0| pc2024.3, pc2024.3.1 or later| | yes |
 | 2.0.0 | 7.0 | pc2024.3 or later | nke v2.8, foundation v5.7, ndb v2.7| yes |
@@ -272,6 +273,10 @@ Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on p
 | - | ntnx_lcm_inventory_v2 |
 | - | ntnx_lcm_prechecks_v2 |
 | - | ntnx_lcm_upgrades_v2 |
+| - | ntnx_users_api_key_v2 |
+| - | ntnx_users_revoke_api_key_v2 |
+| - | ntnx_object_stores_v2 |
+| - | ntnx_object_stores_certificate_v2 |
 
 ## Data Sources
 
@@ -348,6 +353,9 @@ Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on p
 | - | ntnx_lcm_config_info_v2 |
 | - | ntnx_lcm_entities_info_v2 |
 | - | ntnx_lcm_status_info_v2 |
+| - | ntnx_users_api_key_info_v2 |
+| - | ntnx_object_stores_info_v2 |
+| - | ntnx_object_stores_certificate_info_v2 |
 
 
 ## Inventory Plugins
