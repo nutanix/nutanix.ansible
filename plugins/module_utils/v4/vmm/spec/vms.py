@@ -397,11 +397,6 @@ class VmSpecs:
             choices=["SELF_SERVICE_RESTORE", "VSS_SNAPSHOT"],
         ),
     )
-    ownership_info_spec = dict(
-        owner=dict(
-            type=dict, options=reference_spec, obj=vmm_sdk.AhvConfigOwnerReference
-        ),
-    )
 
     vm_spec = dict(
         ext_id=dict(type="str"),
@@ -424,21 +419,6 @@ class VmSpecs:
             elements="dict",
             options=reference_spec,
             obj=vmm_sdk.AhvConfigCategoryReference,
-        ),
-        project=dict(
-            type="dict",
-            options=dict(ext_id=dict(type=str)),
-            obj=vmm_sdk.ProjectReference,
-        ),
-        ownership_info=dict(
-            type="dict",
-            options=ownership_info_spec,
-            obj=vmm_sdk.AhvConfigOwnershipInfo,
-        ),
-        host=dict(
-            type="dict",
-            options=dict(ext_id=dict(type="str")),
-            obj=vmm_sdk.AhvConfigHostReference,
         ),
         cluster=dict(
             type="dict", options=reference_spec, obj=vmm_sdk.AhvConfigClusterReference
