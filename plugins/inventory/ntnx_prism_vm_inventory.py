@@ -4,7 +4,6 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
-
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -81,19 +80,19 @@ DOCUMENTATION = r"""
         - constructed
 """
 
-import json  # noqa: E402
-import tempfile  # noqa: E402
+import json
+import tempfile
 
-from ansible.errors import AnsibleError  # noqa: E402
-from ansible.plugins.inventory import BaseInventoryPlugin, Constructable  # noqa: E402
+from ansible.errors import AnsibleError
+from ansible.plugins.inventory import BaseInventoryPlugin, Constructable
 
-from ..module_utils.v3.prism import vms  # noqa: E402
+from jinja2 import Template  # 🔧 Added for compose rendering
+
+from ..module_utils.v3.prism import vms
 
 
 class Mock_Module:
-    def __init__(
-        self, host, port, username, password, validate_certs=False, fetch_all_vms=False
-    ):
+    def __init__(self, host, port, username, password, validate_certs=False, fetch_all_vms=False):
         self.tmpdir = tempfile.gettempdir()
         self.params = {
             "nutanix_host": host,
@@ -109,7 +108,6 @@ class Mock_Module:
         return json.dumps(data)
 
     def fail_json(self, msg, **kwargs):
-        """Fail with a message"""
         kwargs["failed"] = True
         kwargs["msg"] = msg
         print("\n%s" % self.jsonify(kwargs))
@@ -117,12 +115,9 @@ class Mock_Module:
 
 
 class InventoryModule(BaseInventoryPlugin, Constructable):
-    """Nutanix VM dynamic invetory module for ansible"""
-
     NAME = "nutanix.ncp.ntnx_prism_vm_inventory"
 
     def verify_file(self, path):
-        """Verify inventory configuration file"""
         if not super().verify_file(path):
             return False
 
@@ -135,9 +130,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         return path.endswith(inventory_file_fmts)
 
     def _build_host_vars(self, entity):
-        """
-        Build a dictionary of host variables from the raw entity.
-        """
         cluster = entity.get("status", {}).get("cluster_reference", {}).get("name")
         vm_name = entity.get("status", {}).get("name")
         vm_uuid = entity.get("metadata", {}).get("uuid")
@@ -153,7 +145,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 if vm_ip:
                     break
 
-        # Remove unwanted keys.
         for key in [
             "disk_list",
             "vnuma_config",
@@ -176,17 +167,12 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         }
         host_vars.update(vm_resources)
 
-        # Incorporate ntnx_categories if available.
         if "metadata" in entity and "categories" in entity["metadata"]:
             host_vars["ntnx_categories"] = entity["metadata"]["categories"]
 
         return host_vars
 
     def _should_add_host(self, host_vars, host_filters, strict):
-        """
-        Evaluate filter expressions against host_vars.
-        Returns True if the host should be added, False otherwise.
-        """
         if not host_filters:
             return True
 
@@ -213,7 +199,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         self.data = self.get_option("data")
         self.validate_certs = self.get_option("validate_certs")
         self.fetch_all_vms = self.get_option("fetch_all_vms")
-        # Determines if composed variables or groups using nonexistent variables is an error
         strict = self.get_option("strict")
         host_filters = self.get_option("filters")
 
@@ -225,16 +210,17 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             self.validate_certs,
             self.fetch_all_vms,
         )
+
         vm = vms.VM(module)
         self.data["offset"] = self.data.get("offset", 0)
         resp = vm.list(data=self.data, fetch_all_vms=self.fetch_all_vms)
+
         for entity in resp.get("entities", []):
             host_vars = self._build_host_vars(entity)
 
             if not self._should_add_host(host_vars, host_filters, strict):
                 continue
 
-            # Add host to inventory.
             vm_name = host_vars.get("name")
             cluster = host_vars.get("cluster")
             vm_ip = host_vars.get("ansible_host")
@@ -248,7 +234,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 self.inventory.set_variable(vm_name, "ansible_host", vm_ip)
                 self.inventory.set_variable(vm_name, "uuid", vm_uuid)
                 self.inventory.set_variable(vm_name, "name", vm_name)
-                # Set all host_vars as variables.
                 for key, value in host_vars.items():
                     self.inventory.set_variable(vm_name, key, value)
 
@@ -258,13 +243,15 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 entity.get("metadata", {}).get("project_reference", {}),
             )
 
-            # Add variables created by the user's Jinja2 expressions to the host
-            self._set_composite_vars(
-                self.get_option("compose"),
-                host_vars,
-                vm_name,
-                strict=strict,
-            )
+            # 🔧 NEW COMPOSE RENDERING using Jinja2
+            compose_data = self.get_option("compose")
+            for key, expression in compose_data.items():
+                try:
+                    rendered_value = Template(expression).render(**host_vars)
+                    self.inventory.set_variable(vm_name, key, rendered_value)
+                except Exception as e:
+                    self.display.warning(f"Failed to render compose field '{key}': {e}")
+
             self._add_host_to_composed_groups(
                 self.get_option("groups"),
                 host_vars,
