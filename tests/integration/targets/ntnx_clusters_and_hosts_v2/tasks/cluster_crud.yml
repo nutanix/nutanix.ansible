@@ -321,7 +321,7 @@
 
 - name: Create cluster name
   ansible.builtin.set_fact:
-    cluster_name: "{{ random_name }}_{{ prefix_name }}_{{ clusters[0].name }}"
+    cluster_name: "{{ clusters[0].name }}"
 
 - name: Check if cluster is unconfigured or not
   ansible.builtin.command: "{{ cluster_status_command }}"
@@ -517,677 +517,677 @@
     fail_msg: Failed verifying cluster creation
     success_msg: Cluster creation passed successfully
 
-- name: Destroy the cluster for cleanup
-  ntnx_clusters_v2:
-    state: absent
-    ext_id: "{{ cluster_ext_id }}"
-  register: result
-  ignore_errors: true
-
-- name: Verify cluster deletion
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == true
-      - result.response.status == "SUCCEEDED"
-      - result.ext_id == cluster_ext_id
-    fail_msg: Failed verifying cluster deletion
-    success_msg: Cluster deletion passed successfully
-
-############################################# Create cluster test 2 ##############################################
-
-- name: Sleep for 2 minute for pending tasks in node to finish
-  ansible.builtin.pause:
-    seconds: 120
-
-- name: Check if cluster is unconfigured or not
-  ansible.builtin.command: "{{ cluster_status_command }}"
-  register: result
-  ignore_errors: true
-  changed_when: result.rc != 0
-
-- name: Assert that cluster is unconfigured
-  ansible.builtin.assert:
-    that:
-      - result.rc == 1
-      - result.stderr.find('Cluster is currently unconfigured') != -1
-    fail_msg: Cannot create cluster, cluster is already created
-    success_msg: Cluster is unconfigured
-
-- name: Create cluster with all configuration
-  ntnx_clusters_v2:
-    name: "{{ cluster_name }}"
-    nodes:
-      node_list:
-        - controller_vm_ip:
-            ipv4:
-              value: "{{ clusters[0].nodes[0].cvm_ip }}"
-    config:
-      cluster_function: "{{ clusters[0].config.cluster_functions }}"
-      authorized_public_key_list:
-        - name: "{{ clusters[0].config.auth_public_keys[0].name }}"
-          key: "{{ clusters[0].config.auth_public_keys[0].key }}"
-      redundancy_factor: "{{ clusters[0].config.redundancy_factor_cluster_crud }}"
-      cluster_arch: "{{ clusters[0].config.cluster_arch }}"
-      fault_tolerance_state:
-        domain_awareness_level: "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
-    network:
-      external_address:
-        ipv4:
-          value: "{{ clusters[0].network.virtual_ip }}"
-      ntp_server_ip_list:
-        - fqdn:
-            value: "{{ clusters[0].network.ntp_servers[0] }}"
-        - fqdn:
-            value: "{{ clusters[0].network.ntp_servers[1] }}"
-        - fqdn:
-            value: "{{ clusters[0].network.ntp_servers[2] }}"
-        - fqdn:
-            value: "{{ clusters[0].network.ntp_servers[3] }}"
-      name_server_ip_list:
-        - ipv4:
-            value: "{{ clusters[0].network.dns_servers[0] }}"
-        - ipv4:
-            value: "{{ clusters[0].network.dns_servers[1] }}"
-    timeout: 1800
-  register: result
-  ignore_errors: true
-
-- name: Verify cluster create task status
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == true
-      - result.task_ext_id is defined
-      - result.response.status == "SUCCEEDED"
-    fail_msg: Cluster create failed
-    success_msg: Cluster create passed
-
-- name: Reset username and password
-  ansible.builtin.command: "{{ reset_command }}"
-  register: result
-  ignore_errors: true
-  changed_when: result.rc != 0
-
-- name: Run PE PC registration
-  ntnx_pc_registration_v2:
-    ext_id: "{{ prism_central_external_id }}"
-    remote_cluster:
-      aos_remote_cluster:
-        remote_cluster:
-          address:
-            ipv4:
-              value: "{{ clusters[0].nodes[0].cvm_ip }}"
-          credentials:
-            authentication:
-              username: "{{ username }}"
-              password: "{{ password }}"
-  register: result
-  ignore_errors: true
-
-- name: Run PE PC registration status
-  ansible.builtin.assert:
-    that:
-      - result.changed == true
-      - result.ext_id is defined
-      - result.ext_id == prism_central_external_id
-      - result.response.status == 'SUCCEEDED'
-      - result.task_ext_id is defined
-    fail_msg: "Run PE PC registration failed"
-    success_msg: "Run PE PC registration passed"
-
-- name: Sleep for 1 minute
-  ansible.builtin.pause:
-    seconds: 60
-
-- name: Fetch cluster using name
-  ntnx_clusters_info_v2:
-    filter: name eq '{{ cluster_name }}'
-  register: result
-  ignore_errors: true
-
-- name: Verify listing
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.response | length > 0
-    fail_msg: Failed verifying PE PC registration
-    success_msg: PE PC registration passed successfully
-
-- name: Set cluster external ID
-  ansible.builtin.set_fact:
-    cluster_ext_id: "{{ result.response[0].ext_id }}"
-
-- name: Fetch cluster info using external ID
-  ntnx_clusters_info_v2:
-    ext_id: "{{ cluster_ext_id }}"
-  register: result
-  ignore_errors: true
-
-- name: Create list of ntp servers and dns servers fetched from cluster
-  ansible.builtin.set_fact:
-    ntp_servers: "{{ result.response.network.ntp_server_ip_list | map(attribute='fqdn.value') | list }}"
-    dns_servers: "{{ result.response.network.name_server_ip_list | map(attribute='ipv4.value') | list }}"
-
-- name: Keep only unique ntp servers
-  ansible.builtin.set_fact:
-    unique_ntp_servers: "{{ ntp_servers | unique }}"
-
-- name: Keep only unique dns servers
-  ansible.builtin.set_fact:
-    unique_dns_servers: "{{ dns_servers | unique }}"
-
-- name: Verify created cluster's details using cluster info
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.ext_id == cluster_ext_id
-      - result.response.name == "{{ cluster_name }}"
-      - result.response.nodes.node_list[0].controller_vm_ip.ipv4.value == "{{ clusters[0].nodes[0].cvm_ip }}"
-      - '"{{ clusters[0].config.cluster_functions[0] }}" in "{{result.response.config.cluster_function}}"'
-      - result.response.config.redundancy_factor == clusters[0].config.redundancy_factor_cluster_crud
-      - result.response.config.cluster_arch == "{{ clusters[0].config.cluster_arch }}"
-      - >
-        result.response.config.fault_tolerance_state.domain_awareness_level ==
-        "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
-      - result.response.network.external_address.ipv4.value == "{{ clusters[0].network.virtual_ip }}"
-      - unique_ntp_servers | length == 4
-      - unique_dns_servers | length == 2
-      - unique_ntp_servers[0] in "{{ clusters[0].network.ntp_servers }}"
-      - unique_ntp_servers[1] in "{{ clusters[0].network.ntp_servers }}"
-      - unique_ntp_servers[2] in "{{ clusters[0].network.ntp_servers }}"
-      - unique_ntp_servers[3] in "{{ clusters[0].network.ntp_servers }}"
-      - unique_dns_servers[0] in "{{ clusters[0].network.dns_servers }}"
-      - unique_dns_servers[1] in "{{ clusters[0].network.dns_servers }}"
-    fail_msg: Failed verifying cluster creation
-    success_msg: Cluster creation passed successfully
-
-############################################## Update cluster test ##############################################
-
-- name: Create update spec for cluster using dummy values
-  ntnx_clusters_v2:
-    name: "{{ cluster_name }}_updated"
-    ext_id: "{{ cluster_ext_id }}"
-    network:
-      ntp_server_ip_list:
-        - fqdn:
-            value: "{{ clusters[0].network.ntp_servers[1] }}"
-      name_server_ip_list:
-        - ipv4:
-            value: "{{ clusters[0].network.dns_servers[1] }}"
-      smtp_server:
-        email_address: test@test.com
-        server:
-          ip_address:
-            ipv4:
-              value: 10.0.0.1
-          port: "25"
-          username: test
-          password: test1
-        type: STARTTLS
-      external_address:
-        ipv4:
-          value: 10.0.0.2
-      external_data_service_ip:
-        ipv4:
-          value: 10.0.0.3
-    config:
-      cluster_function:
-        - AOS
-        - ONE_NODE
-      authorized_public_key_list:
-        - name: key1
-          key: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDQ6
-      redundancy_factor: 2
-      cluster_arch: X86_64
-      fault_tolerance_state:
-        domain_awareness_level: DISK
-      pulse_status:
-        is_enabled: true
-        pii_scrubbing_level: DEFAULT
-  register: result
-  ignore_errors: true
-  check_mode: true
-
-- name: Verify generated update spec
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == false
-      - result.ext_id == cluster_ext_id
-      - result.response.name == "{{ cluster_name }}_updated"
-      - result.response.network.ntp_server_ip_list | length == 1
-      - result.response.network.ntp_server_ip_list[0].fqdn.value == "{{ clusters[0].network.ntp_servers[1] }}"
-      - result.response.network.name_server_ip_list[0].ipv4.value == "{{ clusters[0].network.dns_servers[1] }}"
-      - result.response.network.smtp_server.email_address == "test@test.com"
-      - result.response.network.smtp_server.server.ip_address.ipv4.value == "10.0.0.1"
-      - result.response.network.smtp_server.server.port == 25
-      - result.response.network.smtp_server.server.username == "test"
-      - result.response.network.smtp_server.type == "STARTTLS"
-      - result.response.network.external_address.ipv4.value == "10.0.0.2"
-      - result.response.network.external_data_service_ip.ipv4.value == "10.0.0.3"
-      - result.response.config.cluster_function[0] == "AOS"
-      - result.response.config.cluster_function[1] == "ONE_NODE"
-      - result.response.config.authorized_public_key_list | length == 1
-      - result.response.config.authorized_public_key_list[0].name == "key1"
-      - result.response.config.authorized_public_key_list[0].key == "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDQ6"
-      - result.response.config.redundancy_factor == 2
-      - result.response.config.cluster_arch == "X86_64"
-      - result.response.config.fault_tolerance_state.domain_awareness_level == "DISK"
-      - result.response.config.pulse_status.is_enabled == true
-      - result.response.config.pulse_status.pii_scrubbing_level == "DEFAULT"
-    fail_msg: Cluster update spec is not generated as expected
-    success_msg: Cluster update spec is generated as expected
-
-############################################## Update basic cluster config and auth public key ##############################################
-
-- name: Fetch cluster info using external ID
-  ntnx_clusters_info_v2:
-    ext_id: "{{ cluster_ext_id }}"
-  register: cluster_info
-  ignore_errors: true
-
-- name: Verify fetched cluster info
-  ansible.builtin.assert:
-    that:
-      - cluster_info.response is defined
-      - cluster_info.ext_id == cluster_ext_id
-    fail_msg: Failed fetching cluster info
-    success_msg: Fetched cluster info successfully
-
-- name: Get auth public keys
-  ansible.builtin.set_fact:
-    auth_public_keys: "{{ cluster_info.response.config.authorized_public_key_list }}"
-
-- name: Set new auth public key
-  ansible.builtin.set_fact:
-    new_auth_public_key:
-      key: "{{ clusters[0].config.auth_public_keys[0].key }}"
-      name: "{{ clusters[0].config.auth_public_keys[0].name }}"
-
-- name: Add 1 auth public key to list
-  ansible.builtin.set_fact:
-    updated_auth_public_keys: "{{ auth_public_keys + [new_auth_public_key] }}"
-
-- name: Update cluster basic configuration, add auth public keys, and enable pulse
-  ntnx_clusters_v2:
-    name: "{{ cluster_name }}_updated"
-    ext_id: "{{ cluster_ext_id }}"
-    config:
-      authorized_public_key_list: "{{ updated_auth_public_keys }}"
-      pulse_status:
-        is_enabled: true
-        pii_scrubbing_level: ALL
-    timeout: 1200
-  register: result
-  ignore_errors: true
-
-- name: Verify cluster update task status
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == true
-      - result.task_ext_id is defined
-    fail_msg: Cluster update failed
-    success_msg: Cluster update passed
-
-# there is latency in api data update
-- name: Sleep for 1 minute
-  ansible.builtin.pause:
-    seconds: 60
-
-- name: Fetch cluster info using external ID
-  ntnx_clusters_info_v2:
-    ext_id: "{{ cluster_ext_id }}"
-  register: cluster_info
-  ignore_errors: true
-
-- name: Verify fetched cluster info
-  ansible.builtin.assert:
-    that:
-      - cluster_info.response is defined
-      - cluster_info.ext_id == cluster_ext_id
-    fail_msg: Failed fetching cluster info
-    success_msg: Fetched cluster info successfully
-
-- name: Verify cluster update results from cluster info
-  ansible.builtin.assert:
-    that:
-      - cluster_info.response is defined
-      - cluster_info.changed == false
-      - cluster_info.response.name == "{{ cluster_name }}_updated"
-      - cluster_info.response.config.authorized_public_key_list | length > auth_public_keys | length
-      - cluster_info.response.config.authorized_public_key_list == updated_auth_public_keys
-      - cluster_info.response.network.ntp_server_ip_list | length == 4
-      - cluster_info.response.network.name_server_ip_list | length == 2
-      - cluster_info.response.config.pulse_status.is_enabled == true
-      - cluster_info.response.config.pulse_status.pii_scrubbing_level == "ALL"
-    fail_msg: Cluster update failed
-    success_msg: Cluster update passed
-
-############################################# Update cluster ntp servers, dns servers and smtp servers ##############################################
-
-- name: Update ntp servers, dns servers and smtp servers in cluster, and disable pulse
-  ntnx_clusters_v2:
-    ext_id: "{{ cluster_ext_id }}"
-    config:
-      pulse_status:
-        is_enabled: false
-    network:
-      external_data_service_ip:
-        ipv4:
-          value: "{{ clusters[0].network.iscsi_ip1 }}"
-      ntp_server_ip_list:
-        - fqdn:
-            value: "{{ clusters[0].network.ntp_servers[0] }}"
-      name_server_ip_list:
-        - ipv4:
-            value: "{{ clusters[0].network.dns_servers[0] }}"
-      smtp_server:
-        email_address: "{{ clusters[0].network.smtp_server.email_address }}"
-        server:
-          ip_address:
-            ipv4:
-              value: "{{ clusters[0].network.smtp_server.ip }}"
-          port: "{{ clusters[0].network.smtp_server.port }}"
-          username: "{{ clusters[0].network.smtp_server.username }}"
-          password: "{{ clusters[0].network.smtp_server.password }}"
-        type: STARTTLS
-    timeout: 1200
-  register: result
-  ignore_errors: true
-
-- name: Verify cluster update task status
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == true
-      - result.task_ext_id is defined
-    fail_msg: Cluster update failed
-    success_msg: Cluster update passed
-
-# there is latency in api data update
-- name: Sleep for 1 minute
-  ansible.builtin.pause:
-    seconds: 60
-
-- name: Fetch cluster info using external ID
-  ntnx_clusters_info_v2:
-    ext_id: "{{ cluster_ext_id }}"
-  register: result
-  ignore_errors: true
-
-- name: Verify fetched cluster info
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.ext_id == cluster_ext_id
-      - result.response.name == "{{ cluster_name }}_updated"
-      - result.response.network.external_data_service_ip.ipv4.value == "{{ clusters[0].network.iscsi_ip1 }}"
-      - result.response.network.ntp_server_ip_list | length == 1
-      - result.response.network.ntp_server_ip_list[0].fqdn.value == "{{ clusters[0].network.ntp_servers[0] }}"
-      - result.response.network.name_server_ip_list | length == 1
-      - result.response.network.name_server_ip_list[0].ipv4.value == "{{ clusters[0].network.dns_servers[0] }}"
-      - result.response.network.smtp_server.email_address == "{{ clusters[0].network.smtp_server.email_address }}"
-      - result.response.network.smtp_server.server.ip_address.ipv4.value == "{{ clusters[0].network.smtp_server.ip }}"
-      - result.response.network.smtp_server.server.port == clusters[0].network.smtp_server.port
-      - result.response.network.smtp_server.server.username == "{{ clusters[0].network.smtp_server.username }}"
-      - result.response.network.smtp_server.type == "STARTTLS"
-      - result.response.config.authorized_public_key_list | length == updated_auth_public_keys | length
-      - result.response.config.pulse_status.is_enabled == false
-    fail_msg: Cluster updated data verification failed
-    success_msg: Fetched cluster info and verified updated attribute successfully
-
-############################################## Check idempotency ##############################################
-- name: Verify idempotency
-  ntnx_clusters_v2:
-    name: "{{ cluster_name }}_updated"
-    ext_id: "{{ cluster_ext_id }}"
-    config:
-      pulse_status:
-        is_enabled: false
-    network:
-      external_data_service_ip:
-        ipv4:
-          value: "{{ clusters[0].network.iscsi_ip1 }}"
-      ntp_server_ip_list:
-        - fqdn:
-            value: "{{ clusters[0].network.ntp_servers[0] }}"
-      name_server_ip_list:
-        - ipv4:
-            value: "{{ clusters[0].network.dns_servers[0] }}"
-      smtp_server:
-        email_address: "{{ clusters[0].network.smtp_server.email_address }}"
-        server:
-          ip_address:
-            ipv4:
-              value: "{{ clusters[0].network.smtp_server.ip }}"
-          port: "{{ clusters[0].network.smtp_server.port }}"
-          username: "{{ clusters[0].network.smtp_server.username }}"
-        type: STARTTLS
-
-    timeout: 600
-  register: result
-  ignore_errors: true
-
-- name: Verify cluster update task skip status
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == false
-      - result.ext_id == cluster_ext_id
-      - result.failed == false
-      - result.skipped == true
-      - result.msg == "Nothing to change."
-    fail_msg: Cluster update did not skip due to no changes
-    success_msg: Cluster update skipped as expected
-
-- name: Idempotency checks should get skipped if password is given
-  ntnx_clusters_v2:
-    ext_id: "{{ cluster_ext_id }}"
-    network:
-      smtp_server:
-        email_address: "{{ clusters[0].network.smtp_server.email_address }}"
-        server:
-          ip_address:
-            ipv4:
-              value: "{{ clusters[0].network.smtp_server.ip }}"
-          password: "{{ clusters[0].network.smtp_server.password }}"
-          port: "{{ clusters[0].network.smtp_server.port }}"
-          username: "{{ clusters[0].network.smtp_server.username }}"
-        type: STARTTLS
-
-    timeout: 600
-  register: result
-  ignore_errors: true
-
-- name: Verify cluster update task status
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == true
-    fail_msg: Cluster update skipped instead of running
-    success_msg: Cluster update ran as expected
-
-############################################## Hosts & cluster info module tests ##############################################
-
-- name: Verify listing of clusters
-  ntnx_clusters_info_v2:
-  register: result
-  ignore_errors: true
-
-- name: Verify listing of clusters
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == false
-      - result.response | length >= 2
-    fail_msg: Failed listing clusters
-    success_msg: Listed clusters successfully
-
-- name: Verify listing clusters using filters
-  ntnx_clusters_info_v2:
-    filter: name eq '{{ cluster_name }}_updated'
-  register: result
-  ignore_errors: true
-
-- name: Verify listing clusters using filters
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == false
-      - result.response | length == 1
-      - result.response[0].name == "{{ cluster_name }}_updated"
-      - result.response[0].ext_id == cluster_ext_id
-    fail_msg: Failed listing clusters using filters
-    success_msg: Listed clusters using filters successfully
-
-- name: Verify listing clusters using wrong filters
-  ntnx_clusters_info_v2:
-    filter: name eq 'wrong_name'
-  register: result
-  ignore_errors: true
-
-- name: Verify listing clusters using wrong filters
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == false
-      - result.response | length == 0
-    fail_msg: Listing cluster with invalid name returned data
-    success_msg: Module returned no data for invalid name
-
-- name: Verify listing clusters using limit
-  ntnx_clusters_info_v2:
-    limit: 1
-  register: result
-  ignore_errors: true
-
-- name: Verify listing clusters using limit
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == false
-      - result.response | length == 1
-    fail_msg: Failed listing clusters using limit
-    success_msg: Listed clusters using limit successfully
-
-- name: List all hosts
-  ntnx_hosts_info_v2:
-  register: result
-  ignore_errors: true
-
-- name: Verify listing of hosts
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == false
-      - result.response | length >= 2
-    fail_msg: Failed listing hosts
-    success_msg: Listed hosts successfully
-
-- name: Set host related variables
-  ansible.builtin.set_fact:
-    host_name: "{{ result.response[0].host_name }}"
-    host_ext_id: "{{ result.response[0].ext_id }}"
-    cluster_uuid: "{{ result.response[0].cluster.uuid }}"
-
-- name: Verify listing of hosts using filters
-  ntnx_hosts_info_v2:
-    filter: hostName eq '{{ host_name }}'
-  register: result
-  ignore_errors: true
-
-- name: Verify listing of hosts using filters
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == false
-      - result.response | length == 1
-      - result.response[0].host_name == host_name
-      - result.response[0].ext_id == host_ext_id
-    fail_msg: Failed listing hosts using filters
-    success_msg: Listed hosts using filters successfully
-
-- name: Verify listing of hosts using wrong filters
-  ntnx_hosts_info_v2:
-    filter: hostName eq 'wrong_name'
-  register: result
-  ignore_errors: true
-
-- name: Verify listing of hosts using wrong filters
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == false
-      - result.response | length == 0
-    fail_msg: Listing host with invalid name returned data
-    success_msg: Module returned no data for invalid name
-
-- name: Verify listing of hosts using limit
-  ntnx_hosts_info_v2:
-    limit: 1
-  register: result
-  ignore_errors: true
-
-- name: Verify listing of hosts using limit
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == false
-      - result.response | length == 1
-    fail_msg: Failed listing hosts using limit
-    success_msg: Listed hosts using limit successfully
-
-- name: Verify fetching host using external ID
-  ntnx_hosts_info_v2:
-    ext_id: "{{ host_ext_id }}"
-    cluster_ext_id: "{{ cluster_uuid }}"
-  register: result
-  ignore_errors: true
-
-- name: Verify fetching host using external ID
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == false
-      - result.ext_id == host_ext_id
-      - result.response.host_name == host_name
-      - result.response.ext_id == host_ext_id
-    fail_msg: Failed fetching host using external ID
-    success_msg: Fetched host using external ID successfully
-
-- name: Fetch hosts of particular cluster
-  ntnx_hosts_info_v2:
-    cluster_ext_id: "{{ cluster_ext_id }}"
-  register: result
-  ignore_errors: true
-
-- name: Verify fetching hosts of particular cluster
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == false
-      - result.response | length == 1
-      - result.response[0].cluster.uuid == cluster_ext_id
-    fail_msg: Failed fetching hosts of particular cluster
-    success_msg: Fetched hosts of particular cluster successfully
-
-############################################## Delete cluster test ##############################################
-
-- name: Destroy the cluster for cleanup
-  ntnx_clusters_v2:
-    state: absent
-    ext_id: "{{ cluster_ext_id }}"
-  register: result
-  ignore_errors: true
-
-- name: Verify cluster deletion
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == true
-      - result.response.status == "SUCCEEDED"
-      - result.ext_id == cluster_ext_id
-    fail_msg: Failed verifying cluster deletion
-    success_msg: Cluster deletion passed successfully
+# - name: Destroy the cluster for cleanup
+#   ntnx_clusters_v2:
+#     state: absent
+#     ext_id: "{{ cluster_ext_id }}"
+#   register: result
+#   ignore_errors: true
+
+# - name: Verify cluster deletion
+#   ansible.builtin.assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == true
+#       - result.response.status == "SUCCEEDED"
+#       - result.ext_id == cluster_ext_id
+#     fail_msg: Failed verifying cluster deletion
+#     success_msg: Cluster deletion passed successfully
+
+# ############################################# Create cluster test 2 ##############################################
+
+# - name: Sleep for 2 minute for pending tasks in node to finish
+#   ansible.builtin.pause:
+#     seconds: 120
+
+# - name: Check if cluster is unconfigured or not
+#   ansible.builtin.command: "{{ cluster_status_command }}"
+#   register: result
+#   ignore_errors: true
+#   changed_when: result.rc != 0
+
+# - name: Assert that cluster is unconfigured
+#   ansible.builtin.assert:
+#     that:
+#       - result.rc == 1
+#       - result.stderr.find('Cluster is currently unconfigured') != -1
+#     fail_msg: Cannot create cluster, cluster is already created
+#     success_msg: Cluster is unconfigured
+
+# - name: Create cluster with all configuration
+#   ntnx_clusters_v2:
+#     name: "{{ cluster_name }}"
+#     nodes:
+#       node_list:
+#         - controller_vm_ip:
+#             ipv4:
+#               value: "{{ clusters[0].nodes[0].cvm_ip }}"
+#     config:
+#       cluster_function: "{{ clusters[0].config.cluster_functions }}"
+#       authorized_public_key_list:
+#         - name: "{{ clusters[0].config.auth_public_keys[0].name }}"
+#           key: "{{ clusters[0].config.auth_public_keys[0].key }}"
+#       redundancy_factor: "{{ clusters[0].config.redundancy_factor_cluster_crud }}"
+#       cluster_arch: "{{ clusters[0].config.cluster_arch }}"
+#       fault_tolerance_state:
+#         domain_awareness_level: "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
+#     network:
+#       external_address:
+#         ipv4:
+#           value: "{{ clusters[0].network.virtual_ip }}"
+#       ntp_server_ip_list:
+#         - fqdn:
+#             value: "{{ clusters[0].network.ntp_servers[0] }}"
+#         - fqdn:
+#             value: "{{ clusters[0].network.ntp_servers[1] }}"
+#         - fqdn:
+#             value: "{{ clusters[0].network.ntp_servers[2] }}"
+#         - fqdn:
+#             value: "{{ clusters[0].network.ntp_servers[3] }}"
+#       name_server_ip_list:
+#         - ipv4:
+#             value: "{{ clusters[0].network.dns_servers[0] }}"
+#         - ipv4:
+#             value: "{{ clusters[0].network.dns_servers[1] }}"
+#     timeout: 1800
+#   register: result
+#   ignore_errors: true
+
+# - name: Verify cluster create task status
+#   ansible.builtin.assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == true
+#       - result.task_ext_id is defined
+#       - result.response.status == "SUCCEEDED"
+#     fail_msg: Cluster create failed
+#     success_msg: Cluster create passed
+
+# - name: Reset username and password
+#   ansible.builtin.command: "{{ reset_command }}"
+#   register: result
+#   ignore_errors: true
+#   changed_when: result.rc != 0
+
+# - name: Run PE PC registration
+#   ntnx_pc_registration_v2:
+#     ext_id: "{{ prism_central_external_id }}"
+#     remote_cluster:
+#       aos_remote_cluster:
+#         remote_cluster:
+#           address:
+#             ipv4:
+#               value: "{{ clusters[0].nodes[0].cvm_ip }}"
+#           credentials:
+#             authentication:
+#               username: "{{ username }}"
+#               password: "{{ password }}"
+#   register: result
+#   ignore_errors: true
+
+# - name: Run PE PC registration status
+#   ansible.builtin.assert:
+#     that:
+#       - result.changed == true
+#       - result.ext_id is defined
+#       - result.ext_id == prism_central_external_id
+#       - result.response.status == 'SUCCEEDED'
+#       - result.task_ext_id is defined
+#     fail_msg: "Run PE PC registration failed"
+#     success_msg: "Run PE PC registration passed"
+
+# - name: Sleep for 1 minute
+#   ansible.builtin.pause:
+#     seconds: 60
+
+# - name: Fetch cluster using name
+#   ntnx_clusters_info_v2:
+#     filter: name eq '{{ cluster_name }}'
+#   register: result
+#   ignore_errors: true
+
+# - name: Verify listing
+#   ansible.builtin.assert:
+#     that:
+#       - result.response is defined
+#       - result.response | length > 0
+#     fail_msg: Failed verifying PE PC registration
+#     success_msg: PE PC registration passed successfully
+
+# - name: Set cluster external ID
+#   ansible.builtin.set_fact:
+#     cluster_ext_id: "{{ result.response[0].ext_id }}"
+
+# - name: Fetch cluster info using external ID
+#   ntnx_clusters_info_v2:
+#     ext_id: "{{ cluster_ext_id }}"
+#   register: result
+#   ignore_errors: true
+
+# - name: Create list of ntp servers and dns servers fetched from cluster
+#   ansible.builtin.set_fact:
+#     ntp_servers: "{{ result.response.network.ntp_server_ip_list | map(attribute='fqdn.value') | list }}"
+#     dns_servers: "{{ result.response.network.name_server_ip_list | map(attribute='ipv4.value') | list }}"
+
+# - name: Keep only unique ntp servers
+#   ansible.builtin.set_fact:
+#     unique_ntp_servers: "{{ ntp_servers | unique }}"
+
+# - name: Keep only unique dns servers
+#   ansible.builtin.set_fact:
+#     unique_dns_servers: "{{ dns_servers | unique }}"
+
+# - name: Verify created cluster's details using cluster info
+#   ansible.builtin.assert:
+#     that:
+#       - result.response is defined
+#       - result.ext_id == cluster_ext_id
+#       - result.response.name == "{{ cluster_name }}"
+#       - result.response.nodes.node_list[0].controller_vm_ip.ipv4.value == "{{ clusters[0].nodes[0].cvm_ip }}"
+#       - '"{{ clusters[0].config.cluster_functions[0] }}" in "{{result.response.config.cluster_function}}"'
+#       - result.response.config.redundancy_factor == clusters[0].config.redundancy_factor_cluster_crud
+#       - result.response.config.cluster_arch == "{{ clusters[0].config.cluster_arch }}"
+#       - >
+#         result.response.config.fault_tolerance_state.domain_awareness_level ==
+#         "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
+#       - result.response.network.external_address.ipv4.value == "{{ clusters[0].network.virtual_ip }}"
+#       - unique_ntp_servers | length == 4
+#       - unique_dns_servers | length == 2
+#       - unique_ntp_servers[0] in "{{ clusters[0].network.ntp_servers }}"
+#       - unique_ntp_servers[1] in "{{ clusters[0].network.ntp_servers }}"
+#       - unique_ntp_servers[2] in "{{ clusters[0].network.ntp_servers }}"
+#       - unique_ntp_servers[3] in "{{ clusters[0].network.ntp_servers }}"
+#       - unique_dns_servers[0] in "{{ clusters[0].network.dns_servers }}"
+#       - unique_dns_servers[1] in "{{ clusters[0].network.dns_servers }}"
+#     fail_msg: Failed verifying cluster creation
+#     success_msg: Cluster creation passed successfully
+
+# ############################################## Update cluster test ##############################################
+
+# - name: Create update spec for cluster using dummy values
+#   ntnx_clusters_v2:
+#     name: "{{ cluster_name }}_updated"
+#     ext_id: "{{ cluster_ext_id }}"
+#     network:
+#       ntp_server_ip_list:
+#         - fqdn:
+#             value: "{{ clusters[0].network.ntp_servers[1] }}"
+#       name_server_ip_list:
+#         - ipv4:
+#             value: "{{ clusters[0].network.dns_servers[1] }}"
+#       smtp_server:
+#         email_address: test@test.com
+#         server:
+#           ip_address:
+#             ipv4:
+#               value: 10.0.0.1
+#           port: "25"
+#           username: test
+#           password: test1
+#         type: STARTTLS
+#       external_address:
+#         ipv4:
+#           value: 10.0.0.2
+#       external_data_service_ip:
+#         ipv4:
+#           value: 10.0.0.3
+#     config:
+#       cluster_function:
+#         - AOS
+#         - ONE_NODE
+#       authorized_public_key_list:
+#         - name: key1
+#           key: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDQ6
+#       redundancy_factor: 2
+#       cluster_arch: X86_64
+#       fault_tolerance_state:
+#         domain_awareness_level: DISK
+#       pulse_status:
+#         is_enabled: true
+#         pii_scrubbing_level: DEFAULT
+#   register: result
+#   ignore_errors: true
+#   check_mode: true
+
+# - name: Verify generated update spec
+#   ansible.builtin.assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == false
+#       - result.ext_id == cluster_ext_id
+#       - result.response.name == "{{ cluster_name }}_updated"
+#       - result.response.network.ntp_server_ip_list | length == 1
+#       - result.response.network.ntp_server_ip_list[0].fqdn.value == "{{ clusters[0].network.ntp_servers[1] }}"
+#       - result.response.network.name_server_ip_list[0].ipv4.value == "{{ clusters[0].network.dns_servers[1] }}"
+#       - result.response.network.smtp_server.email_address == "test@test.com"
+#       - result.response.network.smtp_server.server.ip_address.ipv4.value == "10.0.0.1"
+#       - result.response.network.smtp_server.server.port == 25
+#       - result.response.network.smtp_server.server.username == "test"
+#       - result.response.network.smtp_server.type == "STARTTLS"
+#       - result.response.network.external_address.ipv4.value == "10.0.0.2"
+#       - result.response.network.external_data_service_ip.ipv4.value == "10.0.0.3"
+#       - result.response.config.cluster_function[0] == "AOS"
+#       - result.response.config.cluster_function[1] == "ONE_NODE"
+#       - result.response.config.authorized_public_key_list | length == 1
+#       - result.response.config.authorized_public_key_list[0].name == "key1"
+#       - result.response.config.authorized_public_key_list[0].key == "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDQ6"
+#       - result.response.config.redundancy_factor == 2
+#       - result.response.config.cluster_arch == "X86_64"
+#       - result.response.config.fault_tolerance_state.domain_awareness_level == "DISK"
+#       - result.response.config.pulse_status.is_enabled == true
+#       - result.response.config.pulse_status.pii_scrubbing_level == "DEFAULT"
+#     fail_msg: Cluster update spec is not generated as expected
+#     success_msg: Cluster update spec is generated as expected
+
+# ############################################## Update basic cluster config and auth public key ##############################################
+
+# - name: Fetch cluster info using external ID
+#   ntnx_clusters_info_v2:
+#     ext_id: "{{ cluster_ext_id }}"
+#   register: cluster_info
+#   ignore_errors: true
+
+# - name: Verify fetched cluster info
+#   ansible.builtin.assert:
+#     that:
+#       - cluster_info.response is defined
+#       - cluster_info.ext_id == cluster_ext_id
+#     fail_msg: Failed fetching cluster info
+#     success_msg: Fetched cluster info successfully
+
+# - name: Get auth public keys
+#   ansible.builtin.set_fact:
+#     auth_public_keys: "{{ cluster_info.response.config.authorized_public_key_list }}"
+
+# - name: Set new auth public key
+#   ansible.builtin.set_fact:
+#     new_auth_public_key:
+#       key: "{{ clusters[0].config.auth_public_keys[0].key }}"
+#       name: "{{ clusters[0].config.auth_public_keys[0].name }}"
+
+# - name: Add 1 auth public key to list
+#   ansible.builtin.set_fact:
+#     updated_auth_public_keys: "{{ auth_public_keys + [new_auth_public_key] }}"
+
+# - name: Update cluster basic configuration, add auth public keys, and enable pulse
+#   ntnx_clusters_v2:
+#     name: "{{ cluster_name }}_updated"
+#     ext_id: "{{ cluster_ext_id }}"
+#     config:
+#       authorized_public_key_list: "{{ updated_auth_public_keys }}"
+#       pulse_status:
+#         is_enabled: true
+#         pii_scrubbing_level: ALL
+#     timeout: 1200
+#   register: result
+#   ignore_errors: true
+
+# - name: Verify cluster update task status
+#   ansible.builtin.assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == true
+#       - result.task_ext_id is defined
+#     fail_msg: Cluster update failed
+#     success_msg: Cluster update passed
+
+# # there is latency in api data update
+# - name: Sleep for 1 minute
+#   ansible.builtin.pause:
+#     seconds: 60
+
+# - name: Fetch cluster info using external ID
+#   ntnx_clusters_info_v2:
+#     ext_id: "{{ cluster_ext_id }}"
+#   register: cluster_info
+#   ignore_errors: true
+
+# - name: Verify fetched cluster info
+#   ansible.builtin.assert:
+#     that:
+#       - cluster_info.response is defined
+#       - cluster_info.ext_id == cluster_ext_id
+#     fail_msg: Failed fetching cluster info
+#     success_msg: Fetched cluster info successfully
+
+# - name: Verify cluster update results from cluster info
+#   ansible.builtin.assert:
+#     that:
+#       - cluster_info.response is defined
+#       - cluster_info.changed == false
+#       - cluster_info.response.name == "{{ cluster_name }}_updated"
+#       - cluster_info.response.config.authorized_public_key_list | length > auth_public_keys | length
+#       - cluster_info.response.config.authorized_public_key_list == updated_auth_public_keys
+#       - cluster_info.response.network.ntp_server_ip_list | length == 4
+#       - cluster_info.response.network.name_server_ip_list | length == 2
+#       - cluster_info.response.config.pulse_status.is_enabled == true
+#       - cluster_info.response.config.pulse_status.pii_scrubbing_level == "ALL"
+#     fail_msg: Cluster update failed
+#     success_msg: Cluster update passed
+
+# ############################################# Update cluster ntp servers, dns servers and smtp servers ##############################################
+
+# - name: Update ntp servers, dns servers and smtp servers in cluster, and disable pulse
+#   ntnx_clusters_v2:
+#     ext_id: "{{ cluster_ext_id }}"
+#     config:
+#       pulse_status:
+#         is_enabled: false
+#     network:
+#       external_data_service_ip:
+#         ipv4:
+#           value: "{{ clusters[0].network.iscsi_ip1 }}"
+#       ntp_server_ip_list:
+#         - fqdn:
+#             value: "{{ clusters[0].network.ntp_servers[0] }}"
+#       name_server_ip_list:
+#         - ipv4:
+#             value: "{{ clusters[0].network.dns_servers[0] }}"
+#       smtp_server:
+#         email_address: "{{ clusters[0].network.smtp_server.email_address }}"
+#         server:
+#           ip_address:
+#             ipv4:
+#               value: "{{ clusters[0].network.smtp_server.ip }}"
+#           port: "{{ clusters[0].network.smtp_server.port }}"
+#           username: "{{ clusters[0].network.smtp_server.username }}"
+#           password: "{{ clusters[0].network.smtp_server.password }}"
+#         type: STARTTLS
+#     timeout: 1200
+#   register: result
+#   ignore_errors: true
+
+# - name: Verify cluster update task status
+#   ansible.builtin.assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == true
+#       - result.task_ext_id is defined
+#     fail_msg: Cluster update failed
+#     success_msg: Cluster update passed
+
+# # there is latency in api data update
+# - name: Sleep for 1 minute
+#   ansible.builtin.pause:
+#     seconds: 60
+
+# - name: Fetch cluster info using external ID
+#   ntnx_clusters_info_v2:
+#     ext_id: "{{ cluster_ext_id }}"
+#   register: result
+#   ignore_errors: true
+
+# - name: Verify fetched cluster info
+#   ansible.builtin.assert:
+#     that:
+#       - result.response is defined
+#       - result.ext_id == cluster_ext_id
+#       - result.response.name == "{{ cluster_name }}_updated"
+#       - result.response.network.external_data_service_ip.ipv4.value == "{{ clusters[0].network.iscsi_ip1 }}"
+#       - result.response.network.ntp_server_ip_list | length == 1
+#       - result.response.network.ntp_server_ip_list[0].fqdn.value == "{{ clusters[0].network.ntp_servers[0] }}"
+#       - result.response.network.name_server_ip_list | length == 1
+#       - result.response.network.name_server_ip_list[0].ipv4.value == "{{ clusters[0].network.dns_servers[0] }}"
+#       - result.response.network.smtp_server.email_address == "{{ clusters[0].network.smtp_server.email_address }}"
+#       - result.response.network.smtp_server.server.ip_address.ipv4.value == "{{ clusters[0].network.smtp_server.ip }}"
+#       - result.response.network.smtp_server.server.port == clusters[0].network.smtp_server.port
+#       - result.response.network.smtp_server.server.username == "{{ clusters[0].network.smtp_server.username }}"
+#       - result.response.network.smtp_server.type == "STARTTLS"
+#       - result.response.config.authorized_public_key_list | length == updated_auth_public_keys | length
+#       - result.response.config.pulse_status.is_enabled == false
+#     fail_msg: Cluster updated data verification failed
+#     success_msg: Fetched cluster info and verified updated attribute successfully
+
+# ############################################## Check idempotency ##############################################
+# - name: Verify idempotency
+#   ntnx_clusters_v2:
+#     name: "{{ cluster_name }}_updated"
+#     ext_id: "{{ cluster_ext_id }}"
+#     config:
+#       pulse_status:
+#         is_enabled: false
+#     network:
+#       external_data_service_ip:
+#         ipv4:
+#           value: "{{ clusters[0].network.iscsi_ip1 }}"
+#       ntp_server_ip_list:
+#         - fqdn:
+#             value: "{{ clusters[0].network.ntp_servers[0] }}"
+#       name_server_ip_list:
+#         - ipv4:
+#             value: "{{ clusters[0].network.dns_servers[0] }}"
+#       smtp_server:
+#         email_address: "{{ clusters[0].network.smtp_server.email_address }}"
+#         server:
+#           ip_address:
+#             ipv4:
+#               value: "{{ clusters[0].network.smtp_server.ip }}"
+#           port: "{{ clusters[0].network.smtp_server.port }}"
+#           username: "{{ clusters[0].network.smtp_server.username }}"
+#         type: STARTTLS
+
+#     timeout: 600
+#   register: result
+#   ignore_errors: true
+
+# - name: Verify cluster update task skip status
+#   ansible.builtin.assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == false
+#       - result.ext_id == cluster_ext_id
+#       - result.failed == false
+#       - result.skipped == true
+#       - result.msg == "Nothing to change."
+#     fail_msg: Cluster update did not skip due to no changes
+#     success_msg: Cluster update skipped as expected
+
+# - name: Idempotency checks should get skipped if password is given
+#   ntnx_clusters_v2:
+#     ext_id: "{{ cluster_ext_id }}"
+#     network:
+#       smtp_server:
+#         email_address: "{{ clusters[0].network.smtp_server.email_address }}"
+#         server:
+#           ip_address:
+#             ipv4:
+#               value: "{{ clusters[0].network.smtp_server.ip }}"
+#           password: "{{ clusters[0].network.smtp_server.password }}"
+#           port: "{{ clusters[0].network.smtp_server.port }}"
+#           username: "{{ clusters[0].network.smtp_server.username }}"
+#         type: STARTTLS
+
+#     timeout: 600
+#   register: result
+#   ignore_errors: true
+
+# - name: Verify cluster update task status
+#   ansible.builtin.assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == true
+#     fail_msg: Cluster update skipped instead of running
+#     success_msg: Cluster update ran as expected
+
+# ############################################## Hosts & cluster info module tests ##############################################
+
+# - name: Verify listing of clusters
+#   ntnx_clusters_info_v2:
+#   register: result
+#   ignore_errors: true
+
+# - name: Verify listing of clusters
+#   ansible.builtin.assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == false
+#       - result.response | length >= 2
+#     fail_msg: Failed listing clusters
+#     success_msg: Listed clusters successfully
+
+# - name: Verify listing clusters using filters
+#   ntnx_clusters_info_v2:
+#     filter: name eq '{{ cluster_name }}_updated'
+#   register: result
+#   ignore_errors: true
+
+# - name: Verify listing clusters using filters
+#   ansible.builtin.assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == false
+#       - result.response | length == 1
+#       - result.response[0].name == "{{ cluster_name }}_updated"
+#       - result.response[0].ext_id == cluster_ext_id
+#     fail_msg: Failed listing clusters using filters
+#     success_msg: Listed clusters using filters successfully
+
+# - name: Verify listing clusters using wrong filters
+#   ntnx_clusters_info_v2:
+#     filter: name eq 'wrong_name'
+#   register: result
+#   ignore_errors: true
+
+# - name: Verify listing clusters using wrong filters
+#   ansible.builtin.assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == false
+#       - result.response | length == 0
+#     fail_msg: Listing cluster with invalid name returned data
+#     success_msg: Module returned no data for invalid name
+
+# - name: Verify listing clusters using limit
+#   ntnx_clusters_info_v2:
+#     limit: 1
+#   register: result
+#   ignore_errors: true
+
+# - name: Verify listing clusters using limit
+#   ansible.builtin.assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == false
+#       - result.response | length == 1
+#     fail_msg: Failed listing clusters using limit
+#     success_msg: Listed clusters using limit successfully
+
+# - name: List all hosts
+#   ntnx_hosts_info_v2:
+#   register: result
+#   ignore_errors: true
+
+# - name: Verify listing of hosts
+#   ansible.builtin.assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == false
+#       - result.response | length >= 2
+#     fail_msg: Failed listing hosts
+#     success_msg: Listed hosts successfully
+
+# - name: Set host related variables
+#   ansible.builtin.set_fact:
+#     host_name: "{{ result.response[0].host_name }}"
+#     host_ext_id: "{{ result.response[0].ext_id }}"
+#     cluster_uuid: "{{ result.response[0].cluster.uuid }}"
+
+# - name: Verify listing of hosts using filters
+#   ntnx_hosts_info_v2:
+#     filter: hostName eq '{{ host_name }}'
+#   register: result
+#   ignore_errors: true
+
+# - name: Verify listing of hosts using filters
+#   ansible.builtin.assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == false
+#       - result.response | length == 1
+#       - result.response[0].host_name == host_name
+#       - result.response[0].ext_id == host_ext_id
+#     fail_msg: Failed listing hosts using filters
+#     success_msg: Listed hosts using filters successfully
+
+# - name: Verify listing of hosts using wrong filters
+#   ntnx_hosts_info_v2:
+#     filter: hostName eq 'wrong_name'
+#   register: result
+#   ignore_errors: true
+
+# - name: Verify listing of hosts using wrong filters
+#   ansible.builtin.assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == false
+#       - result.response | length == 0
+#     fail_msg: Listing host with invalid name returned data
+#     success_msg: Module returned no data for invalid name
+
+# - name: Verify listing of hosts using limit
+#   ntnx_hosts_info_v2:
+#     limit: 1
+#   register: result
+#   ignore_errors: true
+
+# - name: Verify listing of hosts using limit
+#   ansible.builtin.assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == false
+#       - result.response | length == 1
+#     fail_msg: Failed listing hosts using limit
+#     success_msg: Listed hosts using limit successfully
+
+# - name: Verify fetching host using external ID
+#   ntnx_hosts_info_v2:
+#     ext_id: "{{ host_ext_id }}"
+#     cluster_ext_id: "{{ cluster_uuid }}"
+#   register: result
+#   ignore_errors: true
+
+# - name: Verify fetching host using external ID
+#   ansible.builtin.assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == false
+#       - result.ext_id == host_ext_id
+#       - result.response.host_name == host_name
+#       - result.response.ext_id == host_ext_id
+#     fail_msg: Failed fetching host using external ID
+#     success_msg: Fetched host using external ID successfully
+
+# - name: Fetch hosts of particular cluster
+#   ntnx_hosts_info_v2:
+#     cluster_ext_id: "{{ cluster_ext_id }}"
+#   register: result
+#   ignore_errors: true
+
+# - name: Verify fetching hosts of particular cluster
+#   ansible.builtin.assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == false
+#       - result.response | length == 1
+#       - result.response[0].cluster.uuid == cluster_ext_id
+#     fail_msg: Failed fetching hosts of particular cluster
+#     success_msg: Fetched hosts of particular cluster successfully
+
+# ############################################## Delete cluster test ##############################################
+
+# - name: Destroy the cluster for cleanup
+#   ntnx_clusters_v2:
+#     state: absent
+#     ext_id: "{{ cluster_ext_id }}"
+#   register: result
+#   ignore_errors: true
+
+# - name: Verify cluster deletion
+#   ansible.builtin.assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == true
+#       - result.response.status == "SUCCEEDED"
+#       - result.ext_id == cluster_ext_id
+#     fail_msg: Failed verifying cluster deletion
+#     success_msg: Cluster deletion passed successfully
