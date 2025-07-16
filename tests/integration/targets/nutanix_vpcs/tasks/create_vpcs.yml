@@ -1,3 +1,9 @@
+---
+# Variables required before running this playbook:
+# - external_nat_subnet
+# - routable_ips
+# - dns_servers
+
 - name: Create min VPC with subnet name
   ntnx_vpcs:
     state: present

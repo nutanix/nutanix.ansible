@@ -1,4 +1,8 @@
 ---
+# Variables required before running this playbook:
+# - ip_pe_for_deploying_pc
+# - pc
+
 - name: Start ntnx_pc_deploy_v2 tests
   ansible.builtin.debug:
     msg: Start ntnx_pc_deploy_v2 tests

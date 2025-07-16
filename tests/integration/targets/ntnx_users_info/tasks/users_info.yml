@@ -1,3 +1,4 @@
+---
 - name: Start testing ntnx_users_info
   ansible.builtin.debug:
     msg: Start testing ntnx_users_info

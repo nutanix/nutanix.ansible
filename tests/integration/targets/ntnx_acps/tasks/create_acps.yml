@@ -1,4 +1,9 @@
 ---
+# Variables required before running this playbook:
+# - acp
+# - project
+# - network
+
 - name: Generate random name
   ansible.builtin.set_fact:
     random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12) }}"

@@ -1,3 +1,4 @@
+---
 - name: >-
     Create isolation security rule with first_entity_filter and
     second_entity_filter with check mode
