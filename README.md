@@ -85,10 +85,10 @@ This collection requires Python 3.10 or greater
 
 ## SDK-PC-PE Compatibility
 
-| PC | PE | SDK |
+| SDK | PC | PE |
 |  :--- |  :--- | :--- |
-| pc7.3 | 7.3 | v4.1, v4.0 |
-| pc2024.3.1, pc2024.3 | 7.0.1, 7.0 | v4.0 |
+| v4.1, v4.0 | pc7.3 | 7.3 |
+| v4.0 | pc2024.3.1, pc2024.3 | 7.0.1, 7.0 |
 
 ### Notes:
 1. Static routes module (ntnx_static_routes) is supported for PC versions >= pc.2022.1
