@@ -10,7 +10,28 @@ It is designed keeping simplicity as the core value. Hence it is
 
 Checkout this [blog](https://www.nutanix.dev/2022/08/05/getting-started-with-the-nutanix-ansible-module/) for getting started with nutanix ansible module.
 
-NOTE: The latest version of the Nutanix Ansible collection is [v2.1.1](https://github.com/nutanix/nutanix.ansible/releases/tag/v2.1.1).
+NOTE: The latest version of the Nutanix Ansible collection is [v2.2.0](https://github.com/nutanix/nutanix.ansible/releases/tag/v2.2.0).
+
+## Introducing Nutanix Ansible Collection Version v2.2.0
+
+We are excited to announce the release of **Nutanix Ansible Collection v2.2.0** — a major update that brings powerful new features and enhancements for automating your Nutanix infrastructure.
+
+### What's New in v2.2.0
+
+- **Built on v4.1 APIs/SDKs**  
+  This release is built on the latest Nutanix v4 APIs and SDKs, providing improved performance, stability, and alignment with the newest platform capabilities.
+
+- **New Resource Support**
+  - **Service Accounts**: Manage service accounts and their associated roles and permissions directly through Ansible.
+  - **Objects**: Automate Nutanix Objects (S3-compatible storage) management for scalable storage use cases.
+
+- **Bug Fixes and Stability Improvements**  
+  Multiple bugs have been resolved to improve the reliability and user experience across modules.
+
+---
+
+Upgrade now to take advantage of these powerful features and streamline your Nutanix automation workflows!
+
 
 ### Introducing Nutanix Ansible Collection Version 2.1.0
 We're excited to announce the release of Nutanix Ansible Collection Version 2.1.0! This major update brings significant improvements to your infrastructure management experience:
@@ -61,6 +82,13 @@ This collection requires Python 3.10 or greater
 | 1.3.0 | | pc2022.4, pc2022.1.0.2, pc2021.9.0.4 |  | no |
 | 1.2.0 | | pc2022.4, pc2022.1.0.2, pc.2021.9.0.5 | | no |
 | 1.1.0 | | pc2022.1.0.2, pc.2021.9.0.5, pc.2021.8.0.1 | foundation v5.2, foundation v5.1.1, foundation central v1.3, foundation central v1.2 | no |
+
+## SDK-PC-PE Compatibility
+
+| PC | PE | SDK |
+|  :--- |  :--- | :--- |
+| pc7.3 | 7.3 | v4.1, v4.0 |
+| pc2024.3.1, pc2024.3 | 7.0.1, 7.0 | v4.0 |
 
 ### Notes:
 1. Static routes module (ntnx_static_routes) is supported for PC versions >= pc.2022.1
