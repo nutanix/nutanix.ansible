@@ -1,4 +1,4 @@
-## v2.1.1 (17 July 2025)
+## v2.2.0 (17 July 2025)
 
 Releasing new modules for Object Stores, Service Accounts and Several Bugs using PC GA v4.1 sdks
 
