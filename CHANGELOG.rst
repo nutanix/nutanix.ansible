@@ -15,14 +15,14 @@ Releasing new modules for Object Stores, Service Accounts and Several Bugs using
 New Modules
 -----------
 
-- ntnx_object_stores_certificate_info_v2 - Fetch information about object stores certificates in Nutanix Prism Central.
-- ntnx_object_stores_certificate_v2 - Create, Update and Delete object stores certificates in Nutanix Prism Central.
-- ntnx_object_stores_info_v2 - Fetch information about object stores in Nutanix Prism Central.
-- ntnx_object_stores_v2 - Create, Update and Delete object stores in Nutanix Prism Central.
-- ntnx_users_api_key_info_v2 - Fetch API key information for a Service account user in Nutanix Prism Central.
-- ntnx_users_api_key_v2 - Generate or Delete API key for a Service account user in Nutanix Prism Central.
-- ntnx_users_revoke_api_key_v2 - Revoke API key for a Service account user in Nutanix Prism Central.
 - ntnx_users_v2 - Create Service account in Nutanix Prism Central using ntnx_users_v2 module.
+- ntnx_users_api_key_v2 - Generate or Delete API key for a Service account user in Nutanix Prism Central.
+- ntnx_users_api_key_info_v2 - Fetch API key information for a Service account user in Nutanix Prism Central.
+- ntnx_users_revoke_api_key_v2 - Revoke API key for a Service account user in Nutanix Prism Central.
+- ntnx_object_stores_v2 - Create, Update and Delete object stores in Nutanix Prism Central.
+- ntnx_object_stores_info_v2 - Fetch information about object stores in Nutanix Prism Central.
+- ntnx_object_stores_certificate_v2 - Create, Update and Delete object stores certificates in Nutanix Prism Central.
+- ntnx_object_stores_certificate_info_v2 - Fetch information about object stores certificates in Nutanix Prism Central.
 
 Bugfixes
 --------
