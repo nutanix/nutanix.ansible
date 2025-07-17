@@ -2,6 +2,20 @@
 
 Releasing new modules for Object Stores, Service Accounts and Several Bugs using PC GA v4.1 sdks
 
+**New modules:**
+
+Objects:
+- ntnx_object_stores_v2
+- ntnx_object_stores_info_v2
+- ntnx_object_stores_certificate_v2
+- ntnx_object_stores_certificate_info_v2
+
+IAM(Service Accounts):
+- ntnx_users_v2
+- ntnx_users_revoke_api_key_v2
+- ntnx_users_api_key_info_v2
+- ntnx_users_api_key_v2
+
 **Bugs:**
 
 - ntnx_acps - [Bug] Fix comparison of old_context_list and update_context_list in module ntnx_acps [[\#475](https://github.com/nutanix/nutanix.ansible/issues/475)]
@@ -26,20 +40,6 @@ Releasing new modules for Object Stores, Service Accounts and Several Bugs using
 - ntnx_prism_vm_inventory - [Imprv] Add support for retrieving all VMs without specifying length in inventory plugin [[\#651](https://github.com/nutanix/nutanix.ansible/issues/651)]
 - ntnx_prism_vm_inventory - [Imprv] Make changes to include project_reference in dynamic inventory for groupping [[\#500](https://github.com/nutanix/nutanix.ansible/issues/500)]
 - ntnx_vms_v2 - [Imprv] add functionality uefi boot_order to module ntnx_vms_v2 [[\#579](https://github.com/nutanix/nutanix.ansible/issues/579)]
-
-**New modules:**
-
-Objects:
-- ntnx_object_stores_v2
-- ntnx_object_stores_info_v2
-- ntnx_object_stores_certificate_v2
-- ntnx_object_stores_certificate_info_v2
-
-IAM(Service Accounts):
-- ntnx_users_v2
-- ntnx_users_revoke_api_key_v2
-- ntnx_users_api_key_info_v2
-- ntnx_users_api_key_v2
 
 **Full Changelog:** [here](https://github.com/nutanix/nutanix.ansible/compare/v2.1.1...v2.2.0)
 

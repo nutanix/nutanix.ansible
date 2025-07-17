@@ -12,14 +12,17 @@ Release Summary
 
 Releasing new modules for Object Stores, Service Accounts and Several Bugs using PC GA v4.1 sdks
 
-Minor Changes
--------------
+New Modules
+-----------
 
-- Check mode for delete - [Imprv] add functionality check_mode to module ntnx_vms [[\#334](https://github.com/nutanix/nutanix.ansible/issues/334)]
-- Documentation changes - [Imprv] Add detailed doc for using uuid in modules [[\#433](https://github.com/nutanix/nutanix.ansible/issues/433)]
-- ntnx_prism_vm_inventory - [Imprv] Add support for retrieving all VMs without specifying length in inventory plugin [[\#651](https://github.com/nutanix/nutanix.ansible/issues/651)]
-- ntnx_prism_vm_inventory - [Imprv] Make changes to include project_reference in dynamic inventory for groupping [[\#500](https://github.com/nutanix/nutanix.ansible/issues/500)]
-- ntnx_vms_v2 - [Imprv] add functionality uefi boot_order to module ntnx_vms_v2 [[\#579](https://github.com/nutanix/nutanix.ansible/issues/579)]
+- ntnx_object_stores_certificate_info_v2 - Fetch information about object stores certificates in Nutanix Prism Central.
+- ntnx_object_stores_certificate_v2 - Create, Update and Delete object stores certificates in Nutanix Prism Central.
+- ntnx_object_stores_info_v2 - Fetch information about object stores in Nutanix Prism Central.
+- ntnx_object_stores_v2 - Create, Update and Delete object stores in Nutanix Prism Central.
+- ntnx_users_api_key_info_v2 - Fetch API key information for a Service account user in Nutanix Prism Central.
+- ntnx_users_api_key_v2 - Generate or Delete API key for a Service account user in Nutanix Prism Central.
+- ntnx_users_revoke_api_key_v2 - Revoke API key for a Service account user in Nutanix Prism Central.
+- ntnx_users_v2 - Create Service account in Nutanix Prism Central using ntnx_users_v2 module.
 
 Bugfixes
 --------
@@ -39,17 +42,14 @@ Bugfixes
 - recovery_plans - [Bug] recovery_plan fails to create in module plugin_modules/prism/recovery_plans.py [[\#515](https://github.com/nutanix/nutanix.ansible/issues/515)]
 - v3 modules - [Bug] "Failed to convert API response into JSON" in all modules of Nutanix.ncp ansible collection [[\#490](https://github.com/nutanix/nutanix.ansible/issues/490)]
 
-New Modules
------------
+Minor Changes
+-------------
 
-- ntnx_object_stores_certificate_info_v2 - Fetch information about object stores certificates in Nutanix Prism Central.
-- ntnx_object_stores_certificate_v2 - Create, Update and Delete object stores certificates in Nutanix Prism Central.
-- ntnx_object_stores_info_v2 - Fetch information about object stores in Nutanix Prism Central.
-- ntnx_object_stores_v2 - Create, Update and Delete object stores in Nutanix Prism Central.
-- ntnx_users_api_key_info_v2 - Fetch API key information for a Service account user in Nutanix Prism Central.
-- ntnx_users_api_key_v2 - Generate or Delete API key for a Service account user in Nutanix Prism Central.
-- ntnx_users_revoke_api_key_v2 - Revoke API key for a Service account user in Nutanix Prism Central.
-- ntnx_users_v2 - Create Service account in Nutanix Prism Central using ntnx_users_v2 module.
+- Check mode for delete - [Imprv] add functionality check_mode to module ntnx_vms [[\#334](https://github.com/nutanix/nutanix.ansible/issues/334)]
+- Documentation changes - [Imprv] Add detailed doc for using uuid in modules [[\#433](https://github.com/nutanix/nutanix.ansible/issues/433)]
+- ntnx_prism_vm_inventory - [Imprv] Add support for retrieving all VMs without specifying length in inventory plugin [[\#651](https://github.com/nutanix/nutanix.ansible/issues/651)]
+- ntnx_prism_vm_inventory - [Imprv] Make changes to include project_reference in dynamic inventory for groupping [[\#500](https://github.com/nutanix/nutanix.ansible/issues/500)]
+- ntnx_vms_v2 - [Imprv] add functionality uefi boot_order to module ntnx_vms_v2 [[\#579](https://github.com/nutanix/nutanix.ansible/issues/579)]
 
 v2.1.1
 ======
