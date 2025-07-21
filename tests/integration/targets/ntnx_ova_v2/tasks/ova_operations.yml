@@ -79,29 +79,29 @@
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [ova_result.response.ext_id] }}"
 
-# - name: Update Ova
-#   nutanix.ncp.ntnx_ova_v2:
-#     ext_id: "{{ todelete[0] }}"
-#     name: "{{ ova_name }}_updated"
-#   register: update_result
-#   ignore_errors: true
+- name: Update Ova
+  nutanix.ncp.ntnx_ova_v2:
+    ext_id: "{{ todelete[0] }}"
+    name: "{{ ova_name }}_updated"
+  register: update_result
+  ignore_errors: true
 
-# - name: Ova Update Status
-#   ansible.builtin.assert:
-#     that:
-#       - update_result.response is defined
-#       - update_result.changed == True
-#       - update_result.failed == False
-#       - update_result.ext_id is defined
-#       - update_result.response.ext_id is defined
-#       - update_result.task_ext_id is defined
-#       - update_result.response.name == "{{ ova_name }}_updated"
-#     fail_msg: " Unable to update Ova "
-#     success_msg: " Ova updated successfully "
+- name: debug
+  ansible.builtin.debug:
+    msg: "{{ update_result }}"
 
-- name: Sleep for 2 mins
-  ansible.builtin.pause:
-    seconds: 120
+- name: Ova Update Status
+  ansible.builtin.assert:
+    that:
+      - update_result.response is defined
+      - update_result.changed == True
+      - update_result.failed == False
+      - update_result.ext_id is defined
+      - update_result.response.ext_id is defined
+      - update_result.task_ext_id is defined
+      - update_result.response.name == "{{ ova_name }}_updated"
+    fail_msg: " Unable to update Ova "
+    success_msg: " Ova updated successfully "
 
 - name: Deploy VM from Ova
   nutanix.ncp.ntnx_ova_deploy_vm_v2:
@@ -114,7 +114,7 @@
           network_info:
             nic_type: NORMAL_NIC
             subnet:
-              ext_id: "80fb7979-0a8f-4e1c-b353-46cd1a633cce"
+              ext_id: "{{ network.dhcp.uuid }}"
             vlan_mode: ACCESS
     cluster_location_ext_id: "{{ cluster.uuid }}"
   register: deploy_result
@@ -136,7 +136,7 @@
           network_info:
             nic_type: NORMAL_NIC
             subnet:
-              ext_id: "80fb7979-0a8f-4e1c-b353-46cd1a633cce"
+              ext_id: "{{ network.dhcp.uuid }}"
             vlan_mode: ACCESS
     cluster_location_ext_id: "{{ cluster.uuid }}"
   register: deploy_result
@@ -145,6 +145,10 @@
 - name: debug
   ansible.builtin.debug:
     msg: "{{ deploy_result }}"
+
+# - name: Sleep for 5 mins
+#   ansible.builtin.pause:
+#     seconds: 300
 
 - name: Delete Ova
   nutanix.ncp.ntnx_ova_v2:

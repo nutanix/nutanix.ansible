@@ -363,7 +363,8 @@ def update_ova(module, ova, result):
     etag_value = get_etag(current_spec)
 
     sg = SpecGenerator(module)
-    update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
+    default_spec = vmm_sdk.Ova()
+    update_spec, err = sg.generate_spec(obj=default_spec)
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating ova update spec", **result)
