@@ -1,3 +1,16 @@
+---
+# Variables required before running this playbook:
+# - vlan_subnets_ids
+# - virtual_switch
+# - cluster
+# - ip_address_management
+# - ip_address_pools
+# - dhcp_settings
+# - dhcp_server_address
+# - external_nonat_subnet
+# - external_nat_subnet
+# - vpc
+
 - name: VLAN subnet without IPAM
   ntnx_subnets:
     state: present

@@ -1,4 +1,7 @@
 ---
+# Variables required before running this playbook:
+# - url
+
 - name: Start ntnx_karbon_registries_info tests
   ansible.builtin.debug:
     msg: start ntnx_karbon_registries_info tests

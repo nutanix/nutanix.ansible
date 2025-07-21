@@ -21,9 +21,9 @@
         bus: SATA
         clone_image:
           name: "{{ item.image_name }}"
-  register: vm
+  register: vm_result
 - name: Print vm name and uuid
   ansible.builtin.debug:
     msg:
-      - "name: {{ vm.response.status.name }}"
-      - "uuid: {{ vm.vm_uuid }}"
+      - "name: {{ vm_result.response.status.name }}"
+      - "uuid: {{ vm_result.vm_uuid }}"

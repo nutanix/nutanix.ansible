@@ -97,7 +97,7 @@
       nutanix.ncp.ntnx_lcm_prechecks_v2:
         entity_update_specs:
           - entity_uuid: "{{ lcm_entity_external_id }}"
-            to_version: "{{ lcm_entity_model_version}}"
+            to_version: "{{ lcm_entity_model_version }}"
       register: lcm_prechecks
       ignore_errors: true
 
