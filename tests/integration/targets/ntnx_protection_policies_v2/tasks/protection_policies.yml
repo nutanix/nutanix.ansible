@@ -320,7 +320,7 @@
     description: "ansible-category"
   register: output
   ignore_errors: true
-  loop: "{{ range(0, 4) }}"
+  loop: "{{ range(0, 4) | list }}"
   loop_control:
     label: "{{ item }}"
 
