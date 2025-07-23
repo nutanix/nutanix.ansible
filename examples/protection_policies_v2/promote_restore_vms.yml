@@ -52,7 +52,7 @@
         value: "{{ values[item] }}"
         description: "ansible-category"
       register: output
-      loop: "{{ range(0, 2) }}"
+      loop: "{{ range(0, 2) | list }}"
       loop_control:
         label: "{{ item }}"
 
