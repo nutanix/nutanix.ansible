@@ -148,7 +148,12 @@ failed:
     returned: always
     type: bool
     sample: false
-
+total_available_results:
+    description:
+        - The total number of available object stores in PC.
+    type: int
+    returned: when all object stores are fetched
+    sample: 125
 """
 
 import warnings  # noqa: E402
@@ -196,6 +201,9 @@ def get_object_stores(module, object_stores_api, result):
             exception=e,
             msg="Api Exception raised while fetching object stores info",
         )
+
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
 
     resp = strip_internal_attributes(resp.to_dict()).get("data")
     if not resp:

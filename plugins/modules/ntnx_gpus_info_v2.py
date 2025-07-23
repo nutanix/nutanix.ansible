@@ -105,6 +105,12 @@ failed:
   description: Indicates whether the task failed.
   type: bool
   returned: always
+total_available_results:
+    description:
+        - The total number of available GPUs in PC.
+    type: int
+    returned: when all GPUs are fetched
+    sample: 125
 """
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
@@ -149,6 +155,10 @@ def get_gpus(module, gpus, result):
             exception=e,
             msg="Api Exception raised while fetching GPUs list using VM external ID",
         )
+
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
+
     resp = strip_internal_attributes(resp.to_dict()).get("data")
     if not resp:
         resp = []

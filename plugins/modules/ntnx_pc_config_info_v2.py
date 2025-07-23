@@ -210,7 +210,12 @@ failed:
     returned: always
     type: bool
     sample: false
-
+total_available_results:
+    description:
+        - The total number of available PC Configurations in PC.
+    type: int
+    returned: when all pc configurations are fetched
+    sample: 125
 """
 
 import warnings  # noqa: E402
@@ -260,6 +265,10 @@ def get_pc_configs(module, domain_manager_api, result):
             exception=e,
             msg="Api Exception raised while fetching PC Configuration info",
         )
+
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
+
     resp = strip_internal_attributes(resp.to_dict()).get("data")
     if not resp:
         resp = []

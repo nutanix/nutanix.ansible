@@ -91,6 +91,12 @@ ext_id:
     type: str
     returned: always
     sample: "dded1b87-e566-419a-aac0-fb282792fb83"
+total_available_results:
+    description:
+        - The total number of available categories in PC.
+    type: int
+    returned: when all categories are fetched
+    sample: 125
 """
 
 import traceback  # noqa: E402
@@ -170,6 +176,9 @@ def get_categories(module, result):
             exception=e,
             msg="Api Exception raised while fetching categories info",
         )
+
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
 
     result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
 

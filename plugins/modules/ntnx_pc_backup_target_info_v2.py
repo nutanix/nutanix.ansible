@@ -98,7 +98,12 @@ failed:
     returned: always
     type: bool
     sample: false
-
+total_available_results:
+    description:
+        - The total number of available backup targets.
+    type: int
+    returned: when all backup targets are fetched
+    sample: 125
 """
 
 import warnings  # noqa: E402
@@ -152,6 +157,9 @@ def get_backup_targets(module, domain_manager_backups_api, result):
             exception=e,
             msg="Api Exception raised while fetching backup targets info",
         )
+
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
 
     resp = strip_internal_attributes(resp.to_dict()).get("data")
     if not resp:
