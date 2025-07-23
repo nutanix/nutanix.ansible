@@ -75,15 +75,17 @@ def get_module_spec():
         memory_size_bytes=dict(type="int"),
         nics=dict(
             type="list",
+            elements="dict",
             options=vm_specs.get_nic_spec(),
             obj=vmm_sdk.AhvConfigNic,
             required=True,
         ),
         cd_roms=dict(
-            type="list", options=vm_specs.get_cd_rom_spec(), obj=vmm_sdk.AhvConfigCdRom
+            type="list", elements="dict", options=vm_specs.get_cd_rom_spec(), obj=vmm_sdk.AhvConfigCdRom
         ),
         categories=dict(
             type="list",
+            elements="dict",
             options=reference_spec,
             obj=vmm_sdk.AhvConfigCategoryReference,
         ),

@@ -81,8 +81,10 @@ def download_ova(module, result):
             exception=e,
             msg="Api Exception raised while downloading ova",
         )
-
-    result["response"] = strip_internal_attributes(resp.data.to_dict())
+    path = resp.to_dict().get("data").get("path")
+    result["response"] = {
+        "path": path,
+    }
     result["changed"] = True
 
 
