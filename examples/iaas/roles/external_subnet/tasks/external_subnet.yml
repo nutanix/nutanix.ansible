@@ -19,9 +19,9 @@
         ip_pools:
           - start_ip: "{{ item.sip }}"
             end_ip: "{{ item.eip }}"
-  register: external_network
+  register: external_subnet_result
 - name: Print external subnet name and uuid
   ansible.builtin.debug:
     msg:
       - "name: Ext_Nat"
-      - "uuid: {{ external_network.subnet_uuid }}"
+      - "uuid: {{ external_subnet_result.subnet_uuid }}"

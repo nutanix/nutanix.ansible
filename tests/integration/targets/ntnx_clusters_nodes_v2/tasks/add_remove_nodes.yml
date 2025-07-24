@@ -610,9 +610,9 @@
     fail_msg: "Expand cluster failed"
     success_msg: "Expand cluster passed"
 
-- name: Sleep for 5 minutes
+- name: Sleep for 10 minutes
   ansible.builtin.pause:
-    seconds: 300
+    seconds: 600
 
 - name: Remove node from cluster
   ntnx_clusters_nodes_v2:
