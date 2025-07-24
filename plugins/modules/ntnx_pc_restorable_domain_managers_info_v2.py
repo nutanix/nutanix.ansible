@@ -118,12 +118,6 @@ failed:
     type: bool
     sample: false
 
-total_available_results:
-    description:
-        - The total number of available restorable domain managers in PC.
-    type: int
-    returned: when all restorable domain managers are fetched
-    sample: 125
 """
 
 import warnings  # noqa: E402
