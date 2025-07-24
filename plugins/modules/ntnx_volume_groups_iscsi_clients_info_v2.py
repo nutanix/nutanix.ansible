@@ -86,6 +86,12 @@ changed:
     type: bool
     returned: always
     sample: true
+total_available_results:
+    description:
+        - The total number of available ISCSI clients in PC.
+    type: int
+    returned: when all iscsi clients are fetched
+    sample: 125
 """
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
@@ -142,6 +148,9 @@ def get_iscsi_clients(module, result):
             exception=e,
             msg="Api Exception raised while fetching all available ISCSI clients",
         )
+
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
 
     resp = strip_internal_attributes(resp.to_dict()).get("data")
     if not resp:

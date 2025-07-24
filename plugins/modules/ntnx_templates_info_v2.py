@@ -222,6 +222,12 @@ ext_id:
     type: str
     returned: always
     sample: "00000-00000-000000-000000"
+total_available_results:
+    description:
+        - The total number of available templates in PC.
+    type: int
+    returned: when all templates are fetched
+    sample: 125
 """
 
 import warnings  # noqa: E402
@@ -282,6 +288,10 @@ def get_templates(module, result):
             exception=e,
             msg="Api Exception raised while fetching templates info",
         )
+
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
+
     if not getattr(resp, "data", None):
         result["response"] = []
         return

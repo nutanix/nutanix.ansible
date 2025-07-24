@@ -119,6 +119,12 @@ ext_id:
   returned: always
   type: bool
   sample: "00000000-0000-0000-0000-000000000000"
+total_available_results:
+    description:
+        - The total number of available authorization policies in PC.
+    type: int
+    returned: when all authorization policies are fetched
+    sample: 125
 """
 
 import warnings  # noqa: E402
@@ -190,6 +196,9 @@ def get_authorization_policies(module, api_instance, result):
             exception=e,
             msg="Api Exception raised while fetching authorization_policies info",
         )
+
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
 
     policies = []
     if getattr(resp, "data", []):
