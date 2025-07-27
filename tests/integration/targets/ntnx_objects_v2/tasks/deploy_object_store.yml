@@ -107,10 +107,6 @@
     success_msg: "First object store with one worker node is deployed successfully"
     fail_msg: "First object store with one worker node is not deployed successfully"
 
-- name: Set object store external ID
-  ansible.builtin.set_fact:
-    object_store_ext_id_1: "{{ result.response.ext_id }}"
-
 - name: Fetch object store using external ID
   nutanix.ncp.ntnx_object_stores_info_v2:
     ext_id: "{{ object_store_ext_id_1 }}"
