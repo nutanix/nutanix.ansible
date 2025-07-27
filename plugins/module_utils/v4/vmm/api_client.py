@@ -92,3 +92,12 @@ def get_etag(data):
         data (dict): v4 api response
     """
     return ntnx_vmm_py_client.ApiClient.get_etag(data)
+
+def get_ova_api_instance(module):
+    """
+    This method will return OVA API instance
+    Args:
+        api_instance (obj): v4 OVA api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.OvasApi(api_client=api_client)
