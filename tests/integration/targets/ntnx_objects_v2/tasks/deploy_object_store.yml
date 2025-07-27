@@ -121,7 +121,7 @@
     object_name: "{{ result.response.name }}"
 
 - name: Generate AWS access key and secret key from username and password
-  set_fact:
+  ansible.builtin.set_fact:
     aws_access_key: "{{ (username + ':' + password) | b64encode }}"
     aws_secret_key: "{{ (username + ':' + password) | b64encode }}"
 
@@ -129,6 +129,7 @@
   ansible.builtin.shell: |
     aws configure set aws_access_key_id {{ aws_access_key }}
   register: aws_configure_access_key
+  ignore_errors: true
 
 - name: Assert AWS CLI access key is configured
   ansible.builtin.assert:
@@ -145,6 +146,7 @@
   ansible.builtin.shell: |
     aws configure set aws_secret_access_key {{ aws_secret_key }}
   register: aws_configure_secret_key
+  ignore_errors: true
 
 - name: Assert AWS CLI secret key is configured
   ansible.builtin.assert:
@@ -161,6 +163,7 @@
   ansible.builtin.shell: |
     aws configure set endpoint_url {{ objects_API }}
   register: aws_configure_endpoint_url
+  ignore_errors: true
 
 - name: Assert AWS CLI endpoint URL is configured
   ansible.builtin.assert:
@@ -178,6 +181,7 @@
     aws s3api put-object --bucket vmm-images --body {{ disk_image.dest }} --key {{ object_name }} --no-verify-ssl
   register: upload_result
   ignore_errors: true
+  changed_when: "'ETag' in upload_result.stdout"
 
 - name: Assert image upload to object store bucket succeeded
   ansible.builtin.assert:
@@ -355,11 +359,12 @@
   register: download_result
   ignore_errors: true
 
-- name: upload Ova to object store bucket using AWS CLI
+- name: Upload Ova to object store bucket using AWS CLI
   ansible.builtin.shell: |
     aws s3api put-object --bucket vmm-ovas --body {{ download_result.response.path }} --key {{ object_name }} --no-verify-ssl
   register: upload_ova_result
   ignore_errors: true
+  changed_when: "'ETag' in upload_ova_result.stdout"
 
 - name: Assert Ova upload to object store bucket succeeded
   ansible.builtin.assert:
