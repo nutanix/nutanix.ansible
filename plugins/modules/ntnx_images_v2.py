@@ -341,7 +341,7 @@ def get_module_spec():
         should_allow_insecure_url=dict(type="bool", default=False),
         basic_auth=dict(type="dict", options=basic_auth, obj=vmm_sdk.UrlBasicAuth),
     )
-    objects_lite_source = dict(key=dict(type="str", required=True))
+    objects_lite_source = dict(key=dict(type="str", required=True, no_log=True))
     source = dict(
         url_source=dict(type="dict", options=url_source),
         vm_disk_source=dict(type="dict", options=vm_disk_source),
