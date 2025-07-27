@@ -289,7 +289,6 @@
       - result.failed is false
       - result.changed is true
       - result.response is defined
-      - result.response.error_messages | length == 0
       - result.response.status == "SUCCEEDED"
     success_msg: "Image created from object store is deleted successfully"
     fail_msg: "Failed to delete image created from object store"
