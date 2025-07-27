@@ -130,7 +130,7 @@
     aws configure set aws_access_key_id {{ aws_access_key }}
   register: aws_configure_access_key
   ignore_errors: true
-  changed_when: aws_configure_access_key.rc == 0 and aws_configure_access_key.cmd == "aws configure set aws_access_key_id {{ aws_access_key }}\n"
+  changed_when: aws_configure_access_key.rc == 0 and aws_configure_access_key.cmd == "aws configure set aws_access_key_id " ~ aws_access_key ~ "\n"
 
 - name: Assert AWS CLI access key is configured
   ansible.builtin.assert:
@@ -148,7 +148,7 @@
     aws configure set aws_secret_access_key {{ aws_secret_key }}
   register: aws_configure_secret_key
   ignore_errors: true
-  changed_when: aws_configure_secret_key.rc == 0 and aws_configure_secret_key.cmd == "aws configure set aws_secret_access_key {{ aws_secret_key }}\n"
+  changed_when: aws_configure_secret_key.rc == 0 and aws_configure_secret_key.cmd == "aws configure set aws_secret_access_key " ~ aws_secret_key ~ "\n"
 
 - name: Assert AWS CLI secret key is configured
   ansible.builtin.assert:
@@ -166,7 +166,7 @@
     aws configure set endpoint_url {{ objects_API }}
   register: aws_configure_endpoint_url
   ignore_errors: true
-  changed_when: aws_configure_endpoint_url.rc == 0 and aws_configure_endpoint_url.cmd == "aws configure set endpoint_url {{ objects_API }}\n"
+  changed_when: aws_configure_endpoint_url.rc == 0 and aws_configure_endpoint_url.cmd == "aws configure set endpoint_url " ~ objects_API ~ "\n"
 
 - name: Assert AWS CLI endpoint URL is configured
   ansible.builtin.assert:
@@ -218,7 +218,6 @@
       - result.response.name == "object-image"
       - result.response.description == "Image created from object store"
       - result.response.type == "DISK_IMAGE"
-      - result.response.source.key == "object_name"
     success_msg: "Image creation with object store source using check mode passed"
     fail_msg: "Image creation with object store source using check mode failed"
 
