@@ -284,9 +284,8 @@
     success_msg: "Image created from object store is deleted successfully"
     fail_msg: "Failed to delete image created from object store"
 
-- name: Set VM name, ova name and to delete list
+- name: Set VM name, ova name
   ansible.builtin.set_fact:
-    todelete: []
     vm_name: "{{ random_name }}{{ suffix_name }}vm"
     ova_name: "{{ random_name }}{{ suffix_name }}ova"
 
@@ -299,9 +298,6 @@
     num_sockets: "{{ vm_num_sockets }}"
   register: result
   ignore_errors: true
-
-- debug:
-    var: result
 
 - name: Creation Status of VM with some specific requirements
   ansible.builtin.assert:
@@ -329,10 +325,6 @@
         disk_file_format: "QCOW2"
   register: ova_result
   ignore_errors: true
-
-- name: debug
-  ansible.builtin.debug:
-    msg: "{{ ova_result }}"
 
 - name: Ova Creation Status
   ansible.builtin.assert:
@@ -365,9 +357,6 @@
   register: upload_ova_result
   ignore_errors: true
 
-- ansible.builtin.debug:
-    var: upload_ova_result
-
 - name: Assert Ova upload to object store bucket succeeded
   ansible.builtin.assert:
     that:
@@ -390,9 +379,6 @@
   register: result
   check_mode: true
   ignore_errors: true
-
-- debug:
-    var: result
 
 - name: Assert Ova creation with check mode
   ansible.builtin.assert:
@@ -418,9 +404,6 @@
   register: result
   ignore_errors: true
 
-- debug:
-    var: result
-
 - name: Assert Ova is created from object store successfully
   ansible.builtin.assert:
     that:
@@ -432,8 +415,6 @@
       - result.response.cluster_location_ext_ids is defined
       - result.response.cluster_location_ext_ids[0] == "{{ cluster.uuid }}"
       - result.response.ext_id is defined
-      # - result.response.source.url is defined
-      # - "'objects' in result.response.source.url"
     success_msg: "Ova is created from object store successfully"
     fail_msg: "Failed to create Ova from object store"
 
