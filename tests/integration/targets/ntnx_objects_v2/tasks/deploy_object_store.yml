@@ -458,7 +458,7 @@
   nutanix.ncp.ntnx_ova_v2:
     ext_id: "{{ ova_ext_id }}"
     state: absent
-  register: result
+  register: delete_result
   ignore_errors: true
 
 - name: Ova Deletion Status
