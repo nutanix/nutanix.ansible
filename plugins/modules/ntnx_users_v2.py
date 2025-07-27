@@ -295,7 +295,6 @@ from ..module_utils.v4.utils import (  # noqa: E402
     strip_internal_attributes,
     strip_users_empty_attributes,
 )
-from ..module_utils.v4.iam.spec.iam import UserSpecs as user_specs  # noqa: E402
 
 SDK_IMP_ERROR = None
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
@@ -313,9 +312,36 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 
 def get_module_spec():
-    module_args = user_specs.get_users_spec()
-    module_args.update(
+    kvp_spec = dict(
+        name=dict(type="str"),
+        value=dict(type="str"),
+    )
+
+    module_args = dict(
         state=dict(type="str", choices=["present"], default="present"),
+        ext_id=dict(type="str"),
+        username=dict(type="str"),
+        user_type=dict(
+            type="str", choices=["LOCAL", "SAML", "LDAP", "EXTERNAL", "SERVICE_ACCOUNT"]
+        ),
+        display_name=dict(type="str"),
+        first_name=dict(type="str"),
+        middle_initial=dict(type="str"),
+        last_name=dict(type="str"),
+        email_id=dict(type="str"),
+        locale=dict(type="str"),
+        region=dict(type="str"),
+        password=dict(type="str", no_log=True),
+        idp_id=dict(type="str"),
+        is_force_reset_password_enabled=dict(type="bool", default=False),
+        additional_attributes=dict(
+            type="list", elements="dict", options=kvp_spec, obj=iam_sdk.KVPair
+        ),
+        status=dict(type="str", choices=["ACTIVE", "INACTIVE"]),
+        description=dict(type="str"),
+        creation_type=dict(
+            type="str", choices=["PREDEFINED", "SERVICEDEFINED", "USERDEFINED"]
+        ),
     )
     return module_args
 
