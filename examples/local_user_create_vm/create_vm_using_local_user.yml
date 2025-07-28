@@ -56,7 +56,7 @@
 
     - name: Read clould init script and encode it
       ansible.builtin.set_fact:
-        cloud_init_script: "{{item | b64encode}}"
+        cloud_init_script: "{{ item | b64encode }}"
       with_file:
         - "{{ cloud_init_file_path }}"
 
