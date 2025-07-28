@@ -28,13 +28,12 @@
 
     - name: Set variables
       ansible.builtin.set_fact:
-        image_name: "ubuntu-image-{{suffix}}"
+        image_name: "ubuntu-image-{{ suffix }}"
         cluster_name: "auto_cluster_prod_f6a56cf7a889"
         subnet_name: "vlan1"
         category_key: "DemoEnvironment"
-        category_value: "demo_user_{{suffix}}"
+        category_value: "demo_user_{{ suffix }}"
         cloud_init_file_path: "/home/username/scripts/cloud_init.yml" # Please provide full path to cloud init file
-
     - name: Fetch cluster info with given name
       nutanix.ncp.ntnx_clusters_info_v2:
         filter: name eq '{{ cluster_name }}'
