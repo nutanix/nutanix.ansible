@@ -50,13 +50,13 @@
     - name: Set ansible keys and values
       ansible.builtin.set_fact:
         keys:
-          - "{{random_name}}{{suffix_name}}key1"
-          - "{{random_name}}{{suffix_name}}key2"
-          - "{{random_name}}{{suffix_name}}key3"
+          - "{{ random_name }}{{ suffix_name }}key1"
+          - "{{ random_name }}{{ suffix_name }}key2"
+          - "{{ random_name }}{{ suffix_name }}key3"
         values:
-          - "{{random_name}}{{suffix_name}}value1"
-          - "{{random_name}}{{suffix_name}}value2"
-          - "{{random_name}}{{suffix_name}}value3"
+          - "{{ random_name }}{{ suffix_name }}value1"
+          - "{{ random_name }}{{ suffix_name }}value2"
+          - "{{ random_name }}{{ suffix_name }}value3"
 
     ########################################################################################
 
@@ -88,23 +88,23 @@
         name: "ansible-create-protection-policy-name"
         description: "ansible-create-protection-policy-description"
         replication_locations:
-          - label: "ansible-label-{{label1}}"
-            domain_manager_ext_id: "{{domain_manager_ext_id}}"
+          - label: "ansible-label-{{ label1 }}"
+            domain_manager_ext_id: "{{ domain_manager_ext_id }}"
             is_primary: true
             replication_sub_location:
               nutanix_cluster:
                 cluster_ext_ids:
                   - "{{ cluster.uuid }}"
-          - label: "ansible-label-{{label2}}"
-            domain_manager_ext_id: "{{availability_zone_pc_uuid}}"
+          - label: "ansible-label-{{ label2 }}"
+            domain_manager_ext_id: "{{ availability_zone_pc_uuid }}"
             is_primary: false
             replication_sub_location:
               nutanix_cluster:
                 cluster_ext_ids:
                   - "{{ cluster_availability_zone.uuid }}"
         replication_configurations:
-          - source_location_label: "ansible-label-{{label1}}"
-            remote_location_label: "ansible-label-{{label2}}"
+          - source_location_label: "ansible-label-{{ label1 }}"
+            remote_location_label: "ansible-label-{{ label2 }}"
             schedule:
               recovery_point_type: "CRASH_CONSISTENT"
               recovery_point_objective_time_seconds: 3600
@@ -114,8 +114,8 @@
                   remote: 1
               start_time: "13h:11m"
               sync_replication_auto_suspend_timeout_seconds: 300
-          - source_location_label: "ansible-label-{{label2}}"
-            remote_location_label: "ansible-label-{{label1}}"
+          - source_location_label: "ansible-label-{{ label2 }}"
+            remote_location_label: "ansible-label-{{ label1 }}"
             schedule:
               recovery_point_type: "CRASH_CONSISTENT"
               recovery_point_objective_time_seconds: 3600
@@ -134,26 +134,26 @@
 
     - name: Create linear retention protection policy
       nutanix.ncp.ntnx_protection_policies_v2:
-        name: "ansible-name-linear-{{random_name}}"
-        description: "ansible-description-linear-{{random_name}}"
+        name: "ansible-name-linear-{{ random_name }}"
+        description: "ansible-description-linear-{{ random_name }}"
         replication_locations:
-          - label: "ansible-label-{{label1}}"
-            domain_manager_ext_id: "{{domain_manager_ext_id}}"
+          - label: "ansible-label-{{ label1 }}"
+            domain_manager_ext_id: "{{ domain_manager_ext_id }}"
             is_primary: true
             replication_sub_location:
               nutanix_cluster:
                 cluster_ext_ids:
                   - "{{ cluster.uuid }}"
-          - label: "ansible-label-{{label2}}"
-            domain_manager_ext_id: "{{availability_zone_pc_uuid}}"
+          - label: "ansible-label-{{ label2 }}"
+            domain_manager_ext_id: "{{ availability_zone_pc_uuid }}"
             is_primary: false
             replication_sub_location:
               nutanix_cluster:
                 cluster_ext_ids:
                   - "{{ cluster_availability_zone.uuid }}"
         replication_configurations:
-          - source_location_label: "ansible-label-{{label1}}"
-            remote_location_label: "ansible-label-{{label2}}"
+          - source_location_label: "ansible-label-{{ label1 }}"
+            remote_location_label: "ansible-label-{{ label2 }}"
             schedule:
               recovery_point_type: "CRASH_CONSISTENT"
               recovery_point_objective_time_seconds: 3600
@@ -163,8 +163,8 @@
                   remote: 1
               start_time:
               sync_replication_auto_suspend_timeout_seconds: 300
-          - source_location_label: "ansible-label-{{label2}}"
-            remote_location_label: "ansible-label-{{label1}}"
+          - source_location_label: "ansible-label-{{ label2 }}"
+            remote_location_label: "ansible-label-{{ label1 }}"
             schedule:
               recovery_point_type: "CRASH_CONSISTENT"
               recovery_point_objective_time_seconds: 3600
@@ -175,7 +175,7 @@
               start_time:
               sync_replication_auto_suspend_timeout_seconds: 300
         category_ids:
-          - "{{category_ext_id_1}}"
+          - "{{ category_ext_id_1 }}"
       register: result
 
     - name: Add linear retention protection policy external ID to todelete list
@@ -186,26 +186,26 @@
 
     - name: Create auto retention protection policy
       nutanix.ncp.ntnx_protection_policies_v2:
-        name: "ansible-name-auto-{{random_name}}"
-        description: "ansible-description-auto-{{random_name}}"
+        name: "ansible-name-auto-{{ random_name }}"
+        description: "ansible-description-auto-{{ random_name }}"
         replication_locations:
-          - label: "ansible-label-{{label1}}"
-            domain_manager_ext_id: "{{domain_manager_ext_id}}"
+          - label: "ansible-label-{{ label1 }}"
+            domain_manager_ext_id: "{{ domain_manager_ext_id }}"
             is_primary: true
             replication_sub_location:
               nutanix_cluster:
                 cluster_ext_ids:
                   - "{{ cluster.uuid }}"
-          - label: "ansible-label-{{label2}}"
-            domain_manager_ext_id: "{{availability_zone_pc_uuid}}"
+          - label: "ansible-label-{{ label2 }}"
+            domain_manager_ext_id: "{{ availability_zone_pc_uuid }}"
             is_primary: false
             replication_sub_location:
               nutanix_cluster:
                 cluster_ext_ids:
                   - "{{ cluster_availability_zone.uuid }}"
         replication_configurations:
-          - source_location_label: "ansible-label-{{label1}}"
-            remote_location_label: "ansible-label-{{label2}}"
+          - source_location_label: "ansible-label-{{ label1 }}"
+            remote_location_label: "ansible-label-{{ label2 }}"
             schedule:
               recovery_point_type: "CRASH_CONSISTENT"
               recovery_point_objective_time_seconds: 60
@@ -219,8 +219,8 @@
                     frequency: 1
               start_time:
               sync_replication_auto_suspend_timeout_seconds: 300
-          - source_location_label: "ansible-label-{{label2}}"
-            remote_location_label: "ansible-label-{{label1}}"
+          - source_location_label: "ansible-label-{{ label2 }}"
+            remote_location_label: "ansible-label-{{ label1 }}"
             schedule:
               recovery_point_type: "CRASH_CONSISTENT"
               recovery_point_objective_time_seconds: 60
@@ -235,7 +235,7 @@
               start_time:
               sync_replication_auto_suspend_timeout_seconds: 300
         category_ids:
-          - "{{category_ext_id_2}}"
+          - "{{ category_ext_id_2 }}"
       register: result
 
     - name: Add auto retention protection policy external ID to todelete list
@@ -246,34 +246,34 @@
 
     - name: Create Synchronous replication protection policy for using category3
       nutanix.ncp.ntnx_protection_policies_v2:
-        name: "ansible-name-sync-vm-{{random_name}}"
-        description: "ansible-description-sync-vm-{{random_name}}"
+        name: "ansible-name-sync-vm-{{ random_name }}"
+        description: "ansible-description-sync-vm-{{ random_name }}"
         replication_locations:
-          - label: "ansible-label-{{label1}}"
-            domain_manager_ext_id: "{{domain_manager_ext_id}}"
+          - label: "ansible-label-{{ label1 }}"
+            domain_manager_ext_id: "{{ domain_manager_ext_id }}"
             is_primary: true
             replication_sub_location:
               nutanix_cluster:
                 cluster_ext_ids:
                   - "{{ cluster.uuid }}"
-          - label: "ansible-label-{{label2}}"
-            domain_manager_ext_id: "{{availability_zone_pc_uuid}}"
+          - label: "ansible-label-{{ label2 }}"
+            domain_manager_ext_id: "{{ availability_zone_pc_uuid }}"
             is_primary: false
             replication_sub_location:
               nutanix_cluster:
                 cluster_ext_ids:
                   - "{{ cluster_availability_zone.uuid }}"
         replication_configurations:
-          - source_location_label: "ansible-label-{{label1}}"
-            remote_location_label: "ansible-label-{{label2}}"
+          - source_location_label: "ansible-label-{{ label1 }}"
+            remote_location_label: "ansible-label-{{ label2 }}"
             schedule:
               recovery_point_type: "CRASH_CONSISTENT"
               retention: null
               recovery_point_objective_time_seconds: 0
               start_time:
               sync_replication_auto_suspend_timeout_seconds: 10
-          - source_location_label: "ansible-label-{{label2}}"
-            remote_location_label: "ansible-label-{{label1}}"
+          - source_location_label: "ansible-label-{{ label2 }}"
+            remote_location_label: "ansible-label-{{ label1 }}"
             schedule:
               recovery_point_type: "CRASH_CONSISTENT"
               retention: null
@@ -281,7 +281,7 @@
               start_time:
               sync_replication_auto_suspend_timeout_seconds: 10
         category_ids:
-          - "{{category_ext_id_3}}"
+          - "{{ category_ext_id_3 }}"
       register: result
 
     - name: Add synchronous protection policy external ID to todelete list
@@ -296,23 +296,23 @@
         name: "ansible-update-protection-policy-name"
         description: "ansible-update-protection-policy-description"
         replication_locations:
-          - label: "ansible-label-{{label1}}_updated"
-            domain_manager_ext_id: "{{domain_manager_ext_id}}"
+          - label: "ansible-label-{{ label1 }}_updated"
+            domain_manager_ext_id: "{{ domain_manager_ext_id }}"
             is_primary: true
             replication_sub_location:
               nutanix_cluster:
                 cluster_ext_ids:
                   - "{{ cluster.uuid }}"
-          - label: "ansible-label-{{label2}}_updated"
-            domain_manager_ext_id: "{{availability_zone_pc_uuid}}"
+          - label: "ansible-label-{{ label2 }}_updated"
+            domain_manager_ext_id: "{{ availability_zone_pc_uuid }}"
             is_primary: false
             replication_sub_location:
               nutanix_cluster:
                 cluster_ext_ids:
                   - "{{ cluster_availability_zone.uuid }}"
         replication_configurations:
-          - source_location_label: "ansible-label-{{label1}}_updated"
-            remote_location_label: "ansible-label-{{label2}}_updated"
+          - source_location_label: "ansible-label-{{ label1 }}_updated"
+            remote_location_label: "ansible-label-{{ label2 }}_updated"
             schedule:
               recovery_point_type: "CRASH_CONSISTENT"
               recovery_point_objective_time_seconds: 7200
@@ -322,8 +322,8 @@
                   remote: 2
               start_time: "14h:26m"
               sync_replication_auto_suspend_timeout_seconds: 90
-          - source_location_label: "ansible-label-{{label2}}_updated"
-            remote_location_label: "ansible-label-{{label1}}_updated"
+          - source_location_label: "ansible-label-{{ label2 }}_updated"
+            remote_location_label: "ansible-label-{{ label1 }}_updated"
             schedule:
               recovery_point_type: "CRASH_CONSISTENT"
               recovery_point_objective_time_seconds: 7200
@@ -334,7 +334,7 @@
               start_time: "14h:26m"
               sync_replication_auto_suspend_timeout_seconds: 90
         category_ids:
-          - "{{category_ext_id_1}}"
+          - "{{ category_ext_id_1 }}"
       register: result
       check_mode: true
 
@@ -343,26 +343,26 @@
     - name: Update linear retention protection policy
       nutanix.ncp.ntnx_protection_policies_v2:
         ext_id: "{{ todelete[0] }}"
-        name: "ansible-name-linear-{{random_name}}_updated"
-        description: "ansible-description-linear-{{random_name}}_updated"
+        name: "ansible-name-linear-{{ random_name }}_updated"
+        description: "ansible-description-linear-{{ random_name }}_updated"
         replication_locations:
-          - label: "ansible-label-{{label1}}_updated"
-            domain_manager_ext_id: "{{domain_manager_ext_id}}"
+          - label: "ansible-label-{{ label1 }}_updated"
+            domain_manager_ext_id: "{{ domain_manager_ext_id }}"
             is_primary: true
             replication_sub_location:
               nutanix_cluster:
                 cluster_ext_ids:
                   - "{{ cluster.uuid }}"
-          - label: "ansible-label-{{label2}}_updated"
-            domain_manager_ext_id: "{{availability_zone_pc_uuid}}"
+          - label: "ansible-label-{{ label2 }}_updated"
+            domain_manager_ext_id: "{{ availability_zone_pc_uuid }}"
             is_primary: false
             replication_sub_location:
               nutanix_cluster:
                 cluster_ext_ids:
                   - "{{ cluster_availability_zone.uuid }}"
         replication_configurations:
-          - source_location_label: "ansible-label-{{label1}}_updated"
-            remote_location_label: "ansible-label-{{label2}}_updated"
+          - source_location_label: "ansible-label-{{ label1 }}_updated"
+            remote_location_label: "ansible-label-{{ label2 }}_updated"
             schedule:
               recovery_point_type: "CRASH_CONSISTENT"
               recovery_point_objective_time_seconds: 7200
@@ -372,8 +372,8 @@
                   remote: 2
               start_time:
               sync_replication_auto_suspend_timeout_seconds: 90
-          - source_location_label: "ansible-label-{{label2}}_updated"
-            remote_location_label: "ansible-label-{{label1}}_updated"
+          - source_location_label: "ansible-label-{{ label2 }}_updated"
+            remote_location_label: "ansible-label-{{ label1 }}_updated"
             schedule:
               recovery_point_type: "CRASH_CONSISTENT"
               recovery_point_objective_time_seconds: 7200
@@ -384,7 +384,7 @@
               start_time:
               sync_replication_auto_suspend_timeout_seconds: 90
         category_ids:
-          - "{{category_ext_id_1}}"
+          - "{{ category_ext_id_1 }}"
       register: result
 
     ########################################################################################
@@ -392,26 +392,26 @@
     - name: Update auto retention protection policy
       nutanix.ncp.ntnx_protection_policies_v2:
         ext_id: "{{ todelete[1] }}"
-        name: "ansible-name-auto-{{random_name}}_updated"
-        description: "ansible-description-auto-{{random_name}}_updated"
+        name: "ansible-name-auto-{{ random_name }}_updated"
+        description: "ansible-description-auto-{{ random_name }}_updated"
         replication_locations:
-          - label: "ansible-label-{{label1}}_updated"
-            domain_manager_ext_id: "{{domain_manager_ext_id}}"
+          - label: "ansible-label-{{ label1 }}_updated"
+            domain_manager_ext_id: "{{ domain_manager_ext_id }}"
             is_primary: true
             replication_sub_location:
               nutanix_cluster:
                 cluster_ext_ids:
                   - "{{ cluster.uuid }}"
-          - label: "ansible-label-{{label2}}_updated"
-            domain_manager_ext_id: "{{availability_zone_pc_uuid}}"
+          - label: "ansible-label-{{ label2 }}_updated"
+            domain_manager_ext_id: "{{ availability_zone_pc_uuid }}"
             is_primary: false
             replication_sub_location:
               nutanix_cluster:
                 cluster_ext_ids:
                   - "{{ cluster_availability_zone.uuid }}"
         replication_configurations:
-          - source_location_label: "ansible-label-{{label1}}_updated"
-            remote_location_label: "ansible-label-{{label2}}_updated"
+          - source_location_label: "ansible-label-{{ label1 }}_updated"
+            remote_location_label: "ansible-label-{{ label2 }}_updated"
             schedule:
               recovery_point_type: "CRASH_CONSISTENT"
               recovery_point_objective_time_seconds: 3600
@@ -425,8 +425,8 @@
                     frequency: 2
               start_time:
               sync_replication_auto_suspend_timeout_seconds: 90
-          - source_location_label: "ansible-label-{{label2}}_updated"
-            remote_location_label: "ansible-label-{{label1}}_updated"
+          - source_location_label: "ansible-label-{{ label2 }}_updated"
+            remote_location_label: "ansible-label-{{ label1 }}_updated"
             schedule:
               recovery_point_type: "CRASH_CONSISTENT"
               recovery_point_objective_time_seconds: 3600
@@ -441,7 +441,7 @@
               start_time:
               sync_replication_auto_suspend_timeout_seconds: 90
         category_ids:
-          - "{{category_ext_id_2}}"
+          - "{{ category_ext_id_2 }}"
       register: result
 
     ########################################################################################
@@ -454,7 +454,7 @@
 
     - name: List all protection policies with filter
       nutanix.ncp.ntnx_protection_policies_info_v2:
-        filter: "name eq 'ansible-name-auto-{{random_name}}_updated'"
+        filter: "name eq 'ansible-name-auto-{{ random_name }}_updated'"
       register: result
 
     ########################################################################################
@@ -484,7 +484,7 @@
 
     - name: Delete Created categories
       nutanix.ncp.ntnx_categories_v2:
-        ext_id: "{{item}}"
+        ext_id: "{{ item }}"
         state: absent
       register: result
       loop: "{{ todelete_categories }}"
