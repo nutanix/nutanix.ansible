@@ -1022,6 +1022,8 @@
       - result.response is defined
       - result.changed == false
       - result.response | length >= 2
+      - result.total_available_results is defined
+      - result.total_available_results >= 2
     fail_msg: Failed listing clusters
     success_msg: Listed clusters successfully
 
@@ -1083,6 +1085,8 @@
       - result.response is defined
       - result.changed == false
       - result.response | length >= 2
+      - result.total_available_results is defined
+      - result.total_available_results >= 2
     fail_msg: Failed listing hosts
     success_msg: Listed hosts successfully
 

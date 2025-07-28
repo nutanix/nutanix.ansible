@@ -634,6 +634,8 @@
       - result.vm_ext_id == "{{ vm_uuid }}"
       - item.ext_id in todelete
       - result.response | length == todelete | length
+      - result.total_available_results is defined
+      - result.total_available_results == todelete | length
     fail_msg: "List all disks from VM failed"
     success_msg: "List all disks from VM passed"
   loop: "{{ result.response }}"

@@ -269,6 +269,8 @@
       - result.failed is false
       - result.response is defined
       - result.response | length >= 2
+      - result.total_available_results is defined
+      - result.total_available_results >= 2
     success_msg: "All object stores are listed successfully"
     fail_msg: "All object stores are not listed successfully"
 

@@ -440,6 +440,8 @@
     that:
       - result.response is defined
       - result.response | length == 2
+      - result.total_available_results is defined
+      - result.total_available_results == 2
     fail_msg: "List all routes failed "
     success_msg: "List all routes passed "
 
@@ -491,6 +493,8 @@
       - route_tables.failed == false
       - route_tables.changed == false
       - route_tables.response | length > 1
+      - route_tables.total_available_results is defined
+      - route_tables.total_available_results > 1
     fail_msg: "Failed to list route tables"
     success_msg: "Successfully listed route tables"
 

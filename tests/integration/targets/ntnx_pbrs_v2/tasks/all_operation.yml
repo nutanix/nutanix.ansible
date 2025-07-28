@@ -805,6 +805,8 @@
     that:
       - result.response is defined
       - result.response | length == 1
+      - result.total_available_results is defined
+      - result.total_available_results > 0
       - result.response[0].ext_id == "{{ todelete[-1] }}"
       - result.response[0].name == "{{pbr_name}}9"
       - result.response[0].vpc_ext_id == "{{pbr.vpc.uuid}}"

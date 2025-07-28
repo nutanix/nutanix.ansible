@@ -495,6 +495,8 @@
     that:
       - users.response is defined
       - users.response | length> 0
+      - users.total_available_results is defined
+      - users.total_available_results > 0
       - users.failed == false
       - users.changed == false
     fail_msg: Unable to list all users

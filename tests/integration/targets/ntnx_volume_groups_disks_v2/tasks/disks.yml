@@ -260,6 +260,8 @@
       - result.response is defined
       - result.changed == false
       - result.response | length == 3
+      - result.total_available_results is defined
+      - result.total_available_results == 3
       - result.volume_group_ext_id == "{{vg1_uuid}}"
 
     fail_msg: "Unable to fetch disks"

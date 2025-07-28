@@ -228,6 +228,8 @@
       - service_groups.changed == false
       - service_groups.failed == false
       - service_groups.response | length > 0
+      - service_groups.total_available_results is defined
+      - service_groups.total_available_results > 0
     fail_msg: Unable to list all service groups
     success_msg: service groups listed successfully
 ################################################################

@@ -2,9 +2,9 @@
 # Variables required before running this playbook:
 # - xml_content
 
-- name: Start ntnx_saml_identity_providers_v2   and ntnx_saml_identity_providers_info_v2 tests
+- name: Start ntnx_saml_identity_providers_v2 and ntnx_saml_identity_providers_info_v2 tests
   ansible.builtin.debug:
-    msg: start ntnx_saml_identity_providers_v2   and ntnx_saml_identity_providers_info_v2 tests
+    msg: start ntnx_saml_identity_providers_v2 and ntnx_saml_identity_providers_info_v2 tests
 
 - name: Generate random category  key & value
   ansible.builtin.set_fact:
@@ -227,6 +227,8 @@
       - result.changed == False
       - result.failed == False
       - result.response | length > 0
+      - result.total_available_results is defined
+      - result.total_available_results > 0
     fail_msg: " Unable to list all identity providers "
     success_msg: " list all identity providers successfully "
 

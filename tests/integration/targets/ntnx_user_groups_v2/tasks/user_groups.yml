@@ -200,11 +200,18 @@
   register: user_groups
   ignore_errors: true
 
+- ansible.builtin.debug:
+    var: user_groups
+
 - name: List all user groups Status
   ansible.builtin.assert:
     that:
       - user_groups.response is defined
       - user_groups.response | length > 0
+      - user_groups.changed == false
+      - user_groups.failed == false
+      - user_groups.total_available_results is defined
+      - user_groups.total_available_results > 0
     fail_msg: Unable to list all user groups
     success_msg: User groups info obtained successfully
 

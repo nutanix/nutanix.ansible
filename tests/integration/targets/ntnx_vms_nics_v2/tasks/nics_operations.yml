@@ -783,6 +783,8 @@
       - result.response is defined
       - result.changed == false
       - result.failed == false
+      - result.total_available_results is defined
+      - result.total_available_results == nics_list | length
       - item in nics_list
     fail_msg: "Unable to list all nics for VM "
     success_msg: "All nics for VM listed successfully "

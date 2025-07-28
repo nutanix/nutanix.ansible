@@ -261,6 +261,8 @@
     that:
       - vpcs.response is defined
       - vpcs.response | length > 3
+      - vpcs.total_available_results is defined
+      - vpcs.total_available_results > 3
     fail_msg: " Unable to list vpcs "
     success_msg: " VPCs listed successfully "
 ##########################################################
