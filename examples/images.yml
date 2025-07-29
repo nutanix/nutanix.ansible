@@ -59,7 +59,7 @@
     - name: Override categories of existing image
       nutanix.ncp.ntnx_images:
         state: "present"
-        image_uuid: "{{ image-uuid }}"
+        image_uuid: "{{ image_uuid }}"
         categories:
           AppTier:
             - Default

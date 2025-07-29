@@ -23,7 +23,7 @@
 
     - name: List vms using FIQL filter string
       nutanix.ncp.ntnx_vms_info:
-        filter_string: "vm_name=={{vm.name}};power_state==off"
+        filter_string: "vm_name=={{ vm.name }};power_state==off"
       register: result
       ignore_errors: true
 

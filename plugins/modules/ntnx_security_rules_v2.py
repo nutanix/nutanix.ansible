@@ -580,6 +580,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    remove_fields_from_spec,
     strip_internal_attributes,
 )
 
@@ -821,6 +822,16 @@ def check_network_security_policies_idempotency(old_spec, update_spec):
     # compare rules from old and new spec
     old_rules = old_spec.pop("rules")
     update_rules = update_spec.pop("rules")
+
+    fields_to_remove = [
+        "secured_group_category_associated_entity_type",
+        "src_category_associated_entity_type",
+        "dest_category_associated_entity_type",
+    ]
+    # remove specified fields from both old and update rules
+    remove_fields_from_spec(old_rules, fields_to_remove, deep=True)
+    remove_fields_from_spec(update_rules, fields_to_remove, deep=True)
+
     for rule in update_rules:
         if rule not in old_rules:
             return False
