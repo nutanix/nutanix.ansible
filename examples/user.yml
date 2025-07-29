@@ -19,8 +19,8 @@
 
     - name: Create local user
       nutanix.ncp.ntnx_users:
-        principal_name: "{{principal_name}}"
-        directory_service_uuid: "{{directory_service_uuid}}"
+        principal_name: "{{ principal_name }}"
+        directory_service_uuid: "{{ directory_service_uuid }}"
       register: result
 
     - name: Delete created local user
@@ -30,10 +30,10 @@
 
     - name: Create local user  with project and categories
       nutanix.ncp.ntnx_users:
-        principal_name: "{{principal_name}}"
-        directory_service_uuid: "{{directory_service_uuid}}"
+        principal_name: "{{ principal_name }}"
+        directory_service_uuid: "{{ directory_service_uuid }}"
         project:
-          uuid: "{{project.uuid}}"
+          uuid: "{{ project.uuid }}"
         categories:
           Environment:
             - "Dev"
@@ -48,7 +48,7 @@
 
     - name: Create idp user
       nutanix.ncp.ntnx_users:
-        identity_provider_uuid: "{{identity_provider_uuid}}"
+        identity_provider_uuid: "{{ identity_provider_uuid }}"
         username: testing_user
       register: result
       ignore_errors: true

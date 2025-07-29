@@ -28,13 +28,12 @@
 
     - name: Set variables
       ansible.builtin.set_fact:
-        image_name: "ubuntu-image-{{suffix}}"
+        image_name: "ubuntu-image-{{ suffix }}"
         cluster_name: "auto_cluster_prod_f6a56cf7a889"
         subnet_name: "vlan1"
         category_key: "DemoEnvironment"
-        category_value: "demo_user_{{suffix}}"
+        category_value: "demo_user_{{ suffix }}"
         cloud_init_file_path: "/home/username/scripts/cloud_init.yml" # Please provide full path to cloud init file
-
     - name: Fetch cluster info with given name
       nutanix.ncp.ntnx_clusters_info_v2:
         filter: name eq '{{ cluster_name }}'
@@ -57,14 +56,14 @@
 
     - name: Read clould init script and encode it
       ansible.builtin.set_fact:
-        cloud_init_script: "{{item | b64encode}}"
+        cloud_init_script: "{{ item | b64encode }}"
       with_file:
         - "{{ cloud_init_file_path }}"
 
     - name: Create VM with guest customization and categories attached
       nutanix.ncp.ntnx_vms_v2:
-        name: "ubuntu-vm-{{suffix}}"
-        description: "ubuntu-vm-{{suffix}}"
+        name: "ubuntu-vm-{{ suffix }}"
+        description: "ubuntu-vm-{{ suffix }}"
         num_sockets: 1
         num_cores_per_socket: 1
         memory_size_bytes: "{{ 4 * 1024 * 1024 * 1024 }}"
