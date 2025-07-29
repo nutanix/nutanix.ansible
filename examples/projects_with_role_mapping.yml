@@ -58,7 +58,7 @@
     - name: Update role mappings of project
       nutanix.ncp.ntnx_projects:
         state: present
-        project_uuid: "{{project1.project_uuid}}"
+        project_uuid: "{{ project1.project_uuid }}"
         name: "test-ansible-project-1"
         desc: "test-ansible-project-1-updated"
         collaboration: true
@@ -75,16 +75,16 @@
 
     - name: Read the updated project
       nutanix.ncp.ntnx_projects_info:
-        project_uuid: "{{updated_project.project_uuid}}"
+        project_uuid: "{{ updated_project.project_uuid }}"
         include_acps: true
       register: project_info
 
     - name: Print the project details
       ansible.builtin.debug:
-        msg: "{{project_info}}"
+        msg: "{{ project_info }}"
 
     - name: Delete the project
       nutanix.ncp.ntnx_projects:
         state: absent
-        project_uuid: "{{updated_project.project_uuid}}"
+        project_uuid: "{{ updated_project.project_uuid }}"
       register: op

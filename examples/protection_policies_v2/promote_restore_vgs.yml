@@ -30,9 +30,9 @@
     - name: Generate random names and set variables
       ansible.builtin.set_fact:
         cluster_ext_id: "00062f93-af62-1b48-0374-7a4d34c109e2"
-        random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
-        label1: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
-        label2: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+        random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+        label1: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+        label2: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
         suffix_name: "ansible-category"
         todelete_categories: []
         todelete: []
@@ -47,11 +47,11 @@
     - name: Set ansible keys and values
       ansible.builtin.set_fact:
         keys:
-          - "{{random_name}}{{suffix_name}}key1"
-          - "{{random_name}}{{suffix_name}}key2"
+          - "{{ random_name }}{{ suffix_name }}key1"
+          - "{{ random_name }}{{ suffix_name }}key2"
         values:
-          - "{{random_name}}{{suffix_name}}value1"
-          - "{{random_name}}{{suffix_name}}value2"
+          - "{{ random_name }}{{ suffix_name }}value1"
+          - "{{ random_name }}{{ suffix_name }}value2"
 
     ########################################################################################
 
@@ -61,13 +61,13 @@
         value: "{{ values[item] }}"
         description: "ansible-category"
       register: output
-      loop: "{{ range(0, 2) }}"
+      loop: "{{ range(0, 2) | list }}"
       loop_control:
         label: "{{ item }}"
 
     - name: Save external IDs to the list
       ansible.builtin.set_fact:
-        todelete_categories: "{{ todelete_categories + [ item.response.ext_id ] }}"
+        todelete_categories: "{{ todelete_categories + [item.response.ext_id] }}"
       with_items: "{{ output.results }}"
 
     - name: Set categories external ids
@@ -79,26 +79,26 @@
 
     - name: Create auto retention protection policy
       nutanix.ncp.ntnx_protection_policies_v2:
-        name: "ansible-name-auto-{{random_name}}"
-        description: "ansible-description-auto-{{random_name}}"
+        name: "ansible-name-auto-{{ random_name }}"
+        description: "ansible-description-auto-{{ random_name }}"
         replication_locations:
-          - label: "ansible-label-local-clusters-{{label1}}"
-            domain_manager_ext_id: "{{domain_manager_ext_id}}"
+          - label: "ansible-label-local-clusters-{{ label1 }}"
+            domain_manager_ext_id: "{{ domain_manager_ext_id }}"
             is_primary: true
             replication_sub_location:
               nutanix_cluster:
                 cluster_ext_ids:
                   - "{{ cluster.uuid }}"
-          - label: "ansible-label-local-clusters-{{label2}}"
-            domain_manager_ext_id: "{{availability_zone_pc_uuid}}"
+          - label: "ansible-label-local-clusters-{{ label2 }}"
+            domain_manager_ext_id: "{{ availability_zone_pc_uuid }}"
             is_primary: false
             replication_sub_location:
               nutanix_cluster:
                 cluster_ext_ids:
                   - "{{ cluster_availability_zone.uuid }}"
         replication_configurations:
-          - source_location_label: "ansible-label-local-clusters-{{label1}}"
-            remote_location_label: "ansible-label-local-clusters-{{label2}}"
+          - source_location_label: "ansible-label-local-clusters-{{ label1 }}"
+            remote_location_label: "ansible-label-local-clusters-{{ label2 }}"
             schedule:
               recovery_point_type: "CRASH_CONSISTENT"
               recovery_point_objective_time_seconds: 60
@@ -111,8 +111,8 @@
                     snapshot_interval_type: "DAILY"
                     frequency: 1
               sync_replication_auto_suspend_timeout_seconds: 300
-          - source_location_label: "ansible-label-local-clusters-{{label2}}"
-            remote_location_label: "ansible-label-local-clusters-{{label1}}"
+          - source_location_label: "ansible-label-local-clusters-{{ label2 }}"
+            remote_location_label: "ansible-label-local-clusters-{{ label1 }}"
             schedule:
               recovery_point_type: "CRASH_CONSISTENT"
               recovery_point_objective_time_seconds: 60
@@ -137,32 +137,32 @@
 
     - name: Create Synchronous replication protection policy for VG using category2
       nutanix.ncp.ntnx_protection_policies_v2:
-        name: "ansible-name-sync-vg-{{random_name}}"
-        description: "ansible-description-sync-vg-{{random_name}}"
+        name: "ansible-name-sync-vg-{{ random_name }}"
+        description: "ansible-description-sync-vg-{{ random_name }}"
         replication_locations:
-          - label: "ansible-label-local-clusters-{{label1}}"
-            domain_manager_ext_id: "{{domain_manager_ext_id}}"
+          - label: "ansible-label-local-clusters-{{ label1 }}"
+            domain_manager_ext_id: "{{ domain_manager_ext_id }}"
             is_primary: true
             replication_sub_location:
               nutanix_cluster:
                 cluster_ext_ids:
                   - "{{ cluster.uuid }}"
-          - label: "ansible-label-local-clusters-{{label2}}"
-            domain_manager_ext_id: "{{domain_manager_ext_id}}"
+          - label: "ansible-label-local-clusters-{{ label2 }}"
+            domain_manager_ext_id: "{{ domain_manager_ext_id }}"
             is_primary: false
             replication_sub_location:
               nutanix_cluster:
                 cluster_ext_ids:
                   - "{{ cluster_ext_id }}"
         replication_configurations:
-          - source_location_label: "ansible-label-local-clusters-{{label1}}"
-            remote_location_label: "ansible-label-local-clusters-{{label2}}"
+          - source_location_label: "ansible-label-local-clusters-{{ label1 }}"
+            remote_location_label: "ansible-label-local-clusters-{{ label2 }}"
             schedule:
               recovery_point_type: "CRASH_CONSISTENT"
               recovery_point_objective_time_seconds: 0
               sync_replication_auto_suspend_timeout_seconds: 10
-          - source_location_label: "ansible-label-local-clusters-{{label2}}"
-            remote_location_label: "ansible-label-local-clusters-{{label1}}"
+          - source_location_label: "ansible-label-local-clusters-{{ label2 }}"
+            remote_location_label: "ansible-label-local-clusters-{{ label1 }}"
             schedule:
               recovery_point_type: "CRASH_CONSISTENT"
               recovery_point_objective_time_seconds: 0
@@ -312,7 +312,7 @@
 
     - name: Delete Created categories
       nutanix.ncp.ntnx_categories_v2:
-        ext_id: "{{item}}"
+        ext_id: "{{ item }}"
         state: absent
       register: result
       loop: "{{ todelete_categories }}"
