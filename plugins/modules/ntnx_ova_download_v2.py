@@ -60,29 +60,16 @@ failed:
     sample: false
 """
 
-
-import traceback  # noqa: E402
 import warnings  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
-from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
-from ..module_utils.v4.utils import (  # noqa: E402
-    raise_api_exception,
-)
-from ..module_utils.v4.vmm.api_client import ( # noqa: E402
-    get_ova_api_instance,
-)
+from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
+from ..module_utils.v4.utils import raise_api_exception  # noqa: E402
+from ..module_utils.v4.vmm.api_client import get_ova_api_instance  # noqa: E402
 
 SDK_IMP_ERROR = None
-try:
-    import ntnx_vmm_py_client as vmm_sdk  # noqa: E402
-except ImportError:
-
-    from ..module_utils.v4.sdk_mock import mock_sdk as vmm_sdk  # noqa: E402
-
-    SDK_IMP_ERROR = traceback.format_exc()
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
@@ -120,6 +107,7 @@ def download_ova(module, result):
         "path": path,
     }
     result["changed"] = True
+
 
 def run_module():
     module = BaseInfoModule(

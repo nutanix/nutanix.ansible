@@ -93,6 +93,7 @@ def get_etag(data):
     """
     return ntnx_vmm_py_client.ApiClient.get_etag(data)
 
+
 def get_ova_api_instance(module):
     """
     This method will return OVA API instance

@@ -18,8 +18,10 @@ except ImportError:
 
     SDK_IMP_ERROR = traceback.format_exc()
 
+
 class UserSpecs:
     """Module specs related to IAM"""
+
     kvp_spec = dict(
         name=dict(type="str"),
         value=dict(type="str"),

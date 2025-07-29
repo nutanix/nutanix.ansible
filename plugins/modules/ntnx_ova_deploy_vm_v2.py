@@ -494,7 +494,7 @@ from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
 )
-from ..module_utils.v4.vmm.api_client import ( # noqa: E402
+from ..module_utils.v4.vmm.api_client import (  # noqa: E402
     get_ova_api_instance,
     get_vm_api_instance,
 )
@@ -532,7 +532,10 @@ def get_module_spec():
             required=True,
         ),
         cd_roms=dict(
-            type="list", elements="dict", options=vm_specs.get_cd_rom_spec(), obj=vmm_sdk.AhvConfigCdRom
+            type="list",
+            elements="dict",
+            options=vm_specs.get_cd_rom_spec(),
+            obj=vmm_sdk.AhvConfigCdRom,
         ),
         categories=dict(
             type="list",

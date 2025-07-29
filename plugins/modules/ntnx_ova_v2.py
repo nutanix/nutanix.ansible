@@ -1261,10 +1261,12 @@ from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
 )
-from ..module_utils.v4.vmm.api_client import get_etag, get_ova_api_instance # noqa: E402
+from ..module_utils.v4.vmm.api_client import (  # noqa: E402
+    get_etag,
+    get_ova_api_instance,
+)
 from ..module_utils.v4.vmm.helpers import get_ova  # noqa: E402
 from ..module_utils.v4.vmm.spec.vms import VmSpecs as vm_specs  # noqa: E402
-from ..module_utils.v4.iam.spec.iam import UserSpecs as user_specs  # noqa: E402
 
 SDK_IMP_ERROR = None
 try:
@@ -1290,14 +1292,12 @@ def get_module_spec():
         "objects_lite_source": vmm_sdk.ObjectsLiteSource,
     }
     ova_sha_checksum_spec = dict(
-        hex_digest= dict(type="str", required=True),
+        hex_digest=dict(type="str", required=True),
     )
     checksum_spec = dict(
-        ova_sha1_checksum=dict(
-            type="dict", options=ova_sha_checksum_spec),
-        ova_sha256_checksum=dict(
-            type="dict", options=ova_sha_checksum_spec),
-        )
+        ova_sha1_checksum=dict(type="dict", options=ova_sha_checksum_spec),
+        ova_sha256_checksum=dict(type="dict", options=ova_sha_checksum_spec),
+    )
     ova_url_source_spec = dict(
         url=dict(type="str", required=True),
         should_allow_insecure_url=dict(
@@ -1314,7 +1314,7 @@ def get_module_spec():
     )
     ova_vm_source_spec = dict(
         vm_ext_id=dict(type="str", required=True),
-        disk_file_format= dict(
+        disk_file_format=dict(
             type="str",
             choices=["VMDK", "QCOW2"],
             required=True,
@@ -1341,8 +1341,8 @@ def get_module_spec():
     vm_config_spec.pop("ext_id", None)
 
     module_args = dict(
-        name= dict(type="str"),
-        ext_id= dict(type="str"),
+        name=dict(type="str"),
+        ext_id=dict(type="str"),
         checksum=dict(
             type="dict",
             options=checksum_spec,
@@ -1357,7 +1357,7 @@ def get_module_spec():
                 ("ova_url_source", "ova_vm_source", "objects_lite_source")
             ],
         ),
-        cluster_location_ext_ids= dict(
+        cluster_location_ext_ids=dict(
             type="list",
             elements="str",
         ),
@@ -1366,10 +1366,10 @@ def get_module_spec():
             options=vm_config_spec,
             obj=vmm_sdk.AhvConfigVm,
         ),
-        disk_format= dict(
+        disk_format=dict(
             type="str",
             choices=["VMDK", "QCOW2"],
-        )
+        ),
     )
 
     return module_args
