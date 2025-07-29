@@ -101,6 +101,12 @@ error:
     type: str
     returned: When an error occurs
     sample: "Failed to generate info spec for entities"
+total_available_results:
+    description:
+        - The total number of available LCM entities in PC.
+    type: int
+    returned: when all LCM entities are fetched
+    sample: 125
 """
 
 import warnings  # noqa: E402
