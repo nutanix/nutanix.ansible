@@ -16,31 +16,30 @@ def strip_internal_attributes(data, exclude_attributes=None):
         data (dict): v4 api data
         exclude_attributes (list): list of attributes that need to exclude
     """
-    if obj.to_dict()['ip_config'] is not None:
-        internal_attributes = [
-            "_object_type",
-            "_reserved",
-            "_unknown_fields",
-            "$dataItemDiscriminator",
-        ]
-        if exclude_attributes is None:
-            exclude_attributes = []
-        if isinstance(data, dict):
-            for attr in internal_attributes:
-                if attr in data and attr not in exclude_attributes:
-                    data.pop(attr)
+    internal_attributes = [
+        "_object_type",
+        "_reserved",
+        "_unknown_fields",
+        "$dataItemDiscriminator",
+    ]
+    if exclude_attributes is None:
+        exclude_attributes = []
+    if isinstance(data, dict):
+        for attr in internal_attributes:
+            if attr in data and attr not in exclude_attributes:
+                data.pop(attr)
 
-            for key, val in data.items():
-                if isinstance(val, dict):
-                    strip_internal_attributes(val, exclude_attributes)
-                elif isinstance(val, list) and val and isinstance(val[0], dict):
-                    for item in val:
-                        strip_internal_attributes(item, exclude_attributes)
-        elif isinstance(data, list):
-            for item in data:
-                strip_internal_attributes(item, exclude_attributes)
+        for key, val in data.items():
+            if isinstance(val, dict):
+                strip_internal_attributes(val, exclude_attributes)
+            elif isinstance(val, list) and val and isinstance(val[0], dict):
+                for item in val:
+                    strip_internal_attributes(item, exclude_attributes)
+    elif isinstance(data, list):
+        for item in data:
+            strip_internal_attributes(item, exclude_attributes)
 
-        return data
+    return data
 
 
 def raise_api_exception(module, exception, msg=None):
@@ -103,33 +102,34 @@ def remove_empty_ip_config(obj):
     Returns:
         object: object with stripped empty ip_config
     """
-    internal_attributes = [
-        "_object_type",
-        "_reserved",
-        "_unknown_fields",
-        "$dataItemDiscriminator",
-    ]
+    if obj.to_dict()['ip_config'] is not None:
+        internal_attributes = [
+            "_object_type",
+            "_reserved",
+            "_unknown_fields",
+            "$dataItemDiscriminator",
+        ]
 
-    ip_config = obj.to_dict().get("ip_config", [])
-    empty_ipv4 = False
-    empty_ipv6 = False
-    for item in ip_config.copy():
-        if not item.get("ipv4") or all(
-            value is None
-            for key, value in item["ipv4"].items()
-            if key not in internal_attributes
-        ):
-            empty_ipv4 = True
-        if not item.get("ipv6") or all(
-            value is None
-            for key, value in item["ipv6"].items()
-            if key not in internal_attributes
-        ):
-            empty_ipv6 = True
+        ip_config = obj.to_dict().get("ip_config", [])
+        empty_ipv4 = False
+        empty_ipv6 = False
+        for item in ip_config.copy():
+            if not item.get("ipv4") or all(
+                value is None
+                for key, value in item["ipv4"].items()
+                if key not in internal_attributes
+            ):
+                empty_ipv4 = True
+            if not item.get("ipv6") or all(
+                value is None
+                for key, value in item["ipv6"].items()
+                if key not in internal_attributes
+            ):
+                empty_ipv6 = True
 
-        if empty_ipv6 and empty_ipv4:
-            ip_config.remove(item)
-    setattr(obj, "ip_config", ip_config)
+            if empty_ipv6 and empty_ipv4:
+                ip_config.remove(item)
+        setattr(obj, "ip_config", ip_config)
 
 
 def remove_fields_from_spec(obj, fields_to_remove, deep=False):
