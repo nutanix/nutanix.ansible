@@ -755,8 +755,7 @@ def update_subnet(module, result):
     result["ext_id"] = ext_id
     subnets = get_subnet_api_instance(module)
     current_spec = get_subnet(module, subnets, ext_id=ext_id)
-    if current_spec.to_dict()['ip_config'] is not None:
-        remove_empty_ip_config(current_spec)
+    remove_empty_ip_config(current_spec)
 
     sg = SpecGenerator(module)
     update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))

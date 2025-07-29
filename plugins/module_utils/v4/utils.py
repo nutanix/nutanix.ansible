@@ -16,30 +16,31 @@ def strip_internal_attributes(data, exclude_attributes=None):
         data (dict): v4 api data
         exclude_attributes (list): list of attributes that need to exclude
     """
-    internal_attributes = [
-        "_object_type",
-        "_reserved",
-        "_unknown_fields",
-        "$dataItemDiscriminator",
-    ]
-    if exclude_attributes is None:
-        exclude_attributes = []
-    if isinstance(data, dict):
-        for attr in internal_attributes:
-            if attr in data and attr not in exclude_attributes:
-                data.pop(attr)
+    if obj.to_dict()['ip_config'] is not None:
+        internal_attributes = [
+            "_object_type",
+            "_reserved",
+            "_unknown_fields",
+            "$dataItemDiscriminator",
+        ]
+        if exclude_attributes is None:
+            exclude_attributes = []
+        if isinstance(data, dict):
+            for attr in internal_attributes:
+                if attr in data and attr not in exclude_attributes:
+                    data.pop(attr)
 
-        for key, val in data.items():
-            if isinstance(val, dict):
-                strip_internal_attributes(val, exclude_attributes)
-            elif isinstance(val, list) and val and isinstance(val[0], dict):
-                for item in val:
-                    strip_internal_attributes(item, exclude_attributes)
-    elif isinstance(data, list):
-        for item in data:
-            strip_internal_attributes(item, exclude_attributes)
+            for key, val in data.items():
+                if isinstance(val, dict):
+                    strip_internal_attributes(val, exclude_attributes)
+                elif isinstance(val, list) and val and isinstance(val[0], dict):
+                    for item in val:
+                        strip_internal_attributes(item, exclude_attributes)
+        elif isinstance(data, list):
+            for item in data:
+                strip_internal_attributes(item, exclude_attributes)
 
-    return data
+        return data
 
 
 def raise_api_exception(module, exception, msg=None):
