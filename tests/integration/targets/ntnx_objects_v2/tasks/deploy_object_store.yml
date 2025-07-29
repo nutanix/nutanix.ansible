@@ -161,6 +161,8 @@
       - result.failed is false
       - result.response is defined
       - result.response | length == 1
+      - result.total_available_results is defined
+      - result.total_available_results == 1
     success_msg: "All certificates are listed successfully"
     fail_msg: "All certificates are not listed successfully"
 
@@ -234,6 +236,8 @@
       - result.failed is false
       - result.response is defined
       - result.response | length == 1
+      - result.total_available_results is defined
+      - result.total_available_results == 1
       - result.response[0].ext_id != "{{ certificate_ext_id }}"
     success_msg: "All certificates are listed successfully"
     fail_msg: "All certificates are not listed successfully"
