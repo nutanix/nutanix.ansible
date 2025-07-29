@@ -1341,7 +1341,7 @@ def get_module_spec():
     vm_config_spec.pop("ext_id", None)
 
     module_args = dict(
-        name= dict(type="str"), #Make this required for state present
+        name= dict(type="str"),
         ext_id= dict(type="str"),
         checksum=dict(
             type="dict",
@@ -1349,7 +1349,7 @@ def get_module_spec():
             obj=checksum_allowed_types,
             mutually_exclusive=[("ova_sha1_checksum", "ova_sha256_checksum")],
         ),
-        source=dict( #Make this required for create
+        source=dict(
             type="dict",
             options=source_spec,
             obj=source_allowed_types,
@@ -1497,11 +1497,9 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[
-            (
-                "state",
-                "absent",
-                ("ext_id",),
-            ),
+            ("state", "absent", ("ext_id",)),
+            ("state", "present", ("name",)),
+            ("state", "present", ("source",), True),
         ],
     )
     if SDK_IMP_ERROR:
