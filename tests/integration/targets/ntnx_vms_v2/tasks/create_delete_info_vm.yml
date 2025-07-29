@@ -167,7 +167,9 @@
       - result.response.boot_config.nvram_device.backing_storage_info.disk_size_bytes == 26843545600
     fail_msg: " Create VM with full requirements with check_mode failed"
     success_msg: "Create VM with full requirements with check_mode passed"
+
 ########################################################################
+
 - name: Create VM with minimum requirements
   ntnx_vms_v2:
     name: "{{ vm_name }}"
@@ -211,7 +213,9 @@
       - result.response[0].ext_id == "{{ todelete.0 }}"
     fail_msg: " Unable to fetch vm using filter name "
     success_msg: " vm fetched using filter name successfully "
+
 ########################################################################
+
 - name: Create VM with full requirements
   ntnx_vms_v2:
     name: "{{ vm_name }}"
@@ -273,7 +277,9 @@
 - name: Adding VM to todelete list
   ansible.builtin.set_fact:
     todelete: '{{ todelete + [result["ext_id"]] }}'
+
 ########################################################################
+
 - name: Create vm with different disks, using ubuntu image , with cdrom
   ntnx_vms_v2:
     name: "{{ vm_name }}"
@@ -359,7 +365,9 @@
       - result.response.cd_roms[0].disk_address.bus_type == "IDE"
     fail_msg: " Unable to fetch vm using ext_id "
     success_msg: " vm fetched using ext_id successfully "
+
 ########################################################################
+
 - name: List all categories
   ntnx_categories_info_v2:
     limit: 3
@@ -409,7 +417,9 @@
 - name: Adding VM to todelete list
   ansible.builtin.set_fact:
     todelete: '{{ todelete + [result["ext_id"]] }}'
+
 ########################################################################
+
 - name: Create vm with legacy_boot
   ntnx_vms_v2:
     name: "{{ vm_name }}"
@@ -475,7 +485,9 @@
 - name: Adding VM to todelete list
   ansible.builtin.set_fact:
     todelete: '{{ todelete + [result["ext_id"]] }}'
+
 ########################################################################
+
 - name: Create vm with nics,cloud_init script
   ntnx_vms_v2:
     name: "{{ vm_name }}"
@@ -543,6 +555,7 @@
 - name: Adding VM to todelete list
   ansible.builtin.set_fact:
     todelete: '{{ todelete + [result["ext_id"]] }}'
+
 ########################################################################
 
 - name: Read content from file
@@ -584,6 +597,32 @@
     todelete: '{{ todelete + [result["ext_id"]] }}'
 
 ########################################################################
+
+- name: Create VM without setting cluster
+  ntnx_vms_v2:
+    name: "{{ vm_name }}"
+    description: cluster automatic selection VM
+  ignore_errors: true
+  register: result
+
+- name: Creation status for VM without setting cluster
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.failed == False
+      - result.response.name == "{{ vm_name }}"
+      - result.response.description == "cluster automatic selection VM"
+      - result.response.cluster.ext_id is defined
+    fail_msg: " Unable to create VM without setting cluster "
+    success_msg: " VM without setting cluster created successfully "
+
+- name: Adding VM to todelete list
+  ansible.builtin.set_fact:
+    todelete: '{{ todelete + [result["ext_id"]] }}'
+
+########################################################################
+
 - name: List all VMs
   ntnx_vms_info_v2:
   register: result
@@ -619,6 +658,7 @@
     success_msg: "All VMs fetched successfully "
 
 ########################################################################
+
 - name: List all VMs with limit 3
   ntnx_vms_info_v2:
     limit: 3
@@ -634,6 +674,7 @@
       - result.response | length == 3
     fail_msg: "Unable to list VMs "
     success_msg: VMs  listed successfully
+
 ########################################################################
 
 - name: Delete VM with check mode is enabled
@@ -654,6 +695,7 @@
       - result.msg == "VM with ext_id:{{ todelete[0] }} will be deleted."
     fail_msg: "Delete VM with check mode is enabled failed"
     success_msg: "Delete VM with check mode is enabled passed"
+
 ########################################################################
 
 - name: Delete all Created VMs
