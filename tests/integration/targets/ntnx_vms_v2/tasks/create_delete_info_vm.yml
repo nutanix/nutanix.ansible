@@ -598,6 +598,15 @@
 
 ########################################################################
 
+- name: List all clusters in PC
+  ntnx_clusters_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Get all clusters external IDs
+  ansible.builtin.set_fact:
+    cluster_ext_ids: "{{ result.response | map(attribute='ext_id') | list }}"
+
 - name: Create VM without setting cluster
   ntnx_vms_v2:
     name: "{{ vm_name }}"
@@ -614,6 +623,7 @@
       - result.response.name == "{{ vm_name }}"
       - result.response.description == "cluster automatic selection VM"
       - result.response.cluster.ext_id is defined
+      - result.response.cluster.ext_id in cluster_ext_ids
     fail_msg: " Unable to create VM without setting cluster "
     success_msg: " VM without setting cluster created successfully "
 
