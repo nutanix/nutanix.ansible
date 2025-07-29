@@ -7,22 +7,57 @@
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
+
 DOCUMENTATION = r"""
 ---
 module: ntnx_ova_download_v2
 short_description: "Download an OVA file"
 version_added: 2.3.0
+description:
+    - Download an OVA file from Nutanix cluster using its external ID.
+    - This module uses PC v4 APIs based SDKs.
+options:
+    ova_ext_id:
+        description:
+            - External ID of the OVA to be downloaded.
+        type: str
+        required: true
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
 author:
  - Abhinav Bansal (@abhinavbansal29)
 """
+
 EXAMPLES = r"""
-
+- name: Download Ova using ext id
+  nutanix.ncp.ntnx_ova_download_v2:
+    ova_ext_id: "12345678-1234-1234-1234-123456789012"
+  register: result
 """
-RETURN = r"""
 
+RETURN = r"""
+response:
+  description: The path where the OVA file is downloaded.
+    type: dict
+    returned: always
+    sample: {
+        "path": "/path/to/downloaded/ova/file.ova"
+    }
+ext_id:
+    description: The external ID of the OVA that was downloaded.
+    type: str
+    returned: always
+    sample: "12345678-1234-1234-1234-123456789012"
+error:
+    description: Error message if something goes wrong.
+    type: str
+    returned: always
+failed:
+    description: Indicates if the module execution failed.
+    type: bool
+    returned: always
+    sample: false
 """
 
 
@@ -35,7 +70,6 @@ from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
-    strip_internal_attributes,
 )
 from ..module_utils.v4.vmm.api_client import ( # noqa: E402
     get_ova_api_instance,
@@ -87,7 +121,6 @@ def download_ova(module, result):
     }
     result["changed"] = True
 
-
 def run_module():
     module = BaseInfoModule(
         argument_spec=get_module_spec(),
@@ -100,10 +133,10 @@ def run_module():
 
     remove_param_with_none_value(module.params)
     result = {
-        "changed": False,
         "error": None,
         "response": None,
         "ext_id": None,
+        "changed": False,
     }
     download_ova(module, result)
 

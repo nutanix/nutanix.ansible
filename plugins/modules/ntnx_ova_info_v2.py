@@ -12,18 +12,114 @@ DOCUMENTATION = r"""
 module: ntnx_ova_info_v2
 short_description: Fetch information about ova(s)
 description:
-version_added: "2.2.1"
+    - This module fetches information about Nutanix OVA(s)
+    - The module can fetch information about all OVA(s) or a specific OVA
+    - This module uses PC v4 APIs based SDKs
+version_added: "2.3.0"
+options:
+    ext_id:
+        description:
+            - The external ID of the OVA.
+        type: str
+        required: false
 author:
- - Abhinav Bansal (@abhinavbansal29)
+    - Abhinav Bansal (@abhinavbansal29)
 extends_documentation_fragment:
-  - nutanix.ncp.ntnx_credentials
-  - nutanix.ncp.ntnx_info_v2
+    - nutanix.ncp.ntnx_credentials
+    - nutanix.ncp.ntnx_info_v2
 """
 
 EXAMPLES = r"""
+- name: List all Ovas
+  nutanix.ncp.ntnx_ova_info_v2:
+  register: result
+
+- name: List Ovas with filter
+  nutanix.ncp.ntnx_ova_info_v2:
+    filter:  "name eq 'test_ova'"
+  register: result
+
+- name: List Ovas with limit
+  nutanix.ncp.ntnx_ova_info_v2:
+    limit: 1
+  register: result
+
+- name: Get details of a specific Ova
+  nutanix.ncp.ntnx_ova_info_v2:
+    ext_id: "12345678-1234-1234-1234-123456789012"
+  register: result
 """
+
 RETURN = r"""
+response:
+    description:
+        - The response from the Nutanix PC OVA info v4 API.
+        - It can be a single OVA or a list of OVAs as per spec.
+    type: dict
+    returned: always
+    sample:
+        [
+            {
+                "checksum": {
+                    "hex_digest": "6c55d188e23983046a94f31f3d8b40d53d1db66f0d3676c77460e862dc577926"
+                },
+                "cluster_location_ext_ids": null,
+                "create_time": "2025-07-21T05:53:39.814198+00:00",
+                "created_by": {
+                    "additional_attributes": null,
+                    "buckets_access_keys": null,
+                    "created_by": null,
+                    "created_time": null,
+                    "creation_type": null,
+                    "description": null,
+                    "display_name": null,
+                    "email_id": null,
+                    "ext_id": "30303030-3030-3030-2d30-3030302d3030",
+                    "first_name": null,
+                    "idp_id": null,
+                    "is_force_reset_password_enabled": null,
+                    "last_login_time": null,
+                    "last_name": null,
+                    "last_updated_by": null,
+                    "last_updated_time": null,
+                    "links": null,
+                    "locale": null,
+                    "middle_initial": null,
+                    "password": null,
+                    "region": null,
+                    "status": null,
+                    "tenant_id": null,
+                    "user_type": null,
+                    "username": "admin"
+                },
+                "disk_format": "QCOW2",
+                "ext_id": "ddab0ab3-daf1-4253-bb0e-0b51cec16205",
+                "last_update_time": "2025-07-21T09:52:22.983006+00:00",
+                "links": null,
+                "name": "test_ova_123_update",
+                "parent_vm": "test_ansi_ova_vm",
+                "size_bytes": 10240,
+                "source": null,
+                "tenant_id": null,
+                "vm_config": null
+            }
+        ]
+error:
+    description: Error message if something goes wrong.
+    type: str
+    returned: always
+ext_id:
+    description: The external ID of the OVA that was fetched.
+    type: str
+    returned: when fetching a specific OVA
+    sample: "12345678-1234-1234-1234-123456789012"
+total_available_results:
+    description: The total number of available OVAs in PC.
+    type: int
+    returned: when all OVAs are fetched
+    sample: 125
 """
+
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
@@ -51,7 +147,7 @@ def get_ova_using_ext_id(module, ova, result):
         ext_id=ext_id,
     )
     result["ext_id"] = ext_id
-    result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    result["response"] = strip_internal_attributes(resp.to_dict())
 
 
 def get_ovas(module, ova, result):
@@ -70,7 +166,8 @@ def get_ovas(module, ova, result):
             exception=e,
             msg="Api Exception raised while fetching ovas info",
         )
-
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
     resp = strip_internal_attributes(resp.to_dict()).get("data")
     if not resp:
         resp = []

@@ -62,21 +62,6 @@
       ova_vm_source:
         vm_ext_id: "123e4567-e89b-12d3-a456-426614174000"
         disk_file_format: "QCOW2"
-    created_by:
-      username: "test_user"
-      user_type: "LOCAL"
-      idp_id: "123e4567-e89b-12d3-a456-426614174000"
-      display_name: "Test Ova"
-      first_name: "Test"
-      middle_initial: "Middle"
-      last_name: "User"
-      email_id: "xyz@nuatnix.com"
-      locale: "en_US"
-      region: "US"
-      password: "test_password"
-      is_force_reset_password_enabled: true
-      description: "Test Ova User Description"
-      creation_type: "USERDEFINED"
     cluster_location_ext_ids:
       - b7f9c1a2-4d3e-4c2a-9e2f-1a2b3c4d5e6f
       - 0a1b2c3d-4e5f-6789-abcd-ef0123456789
@@ -170,19 +155,6 @@
       - result.response.checksum.hex_digest == "1234567890abcdef1234567890abcdef12345678"
       - result.response.source.vm_ext_id == "123e4567-e89b-12d3-a456-426614174000"
       - result.response.source.disk_file_format == "QCOW2"
-      - result.response.created_by.username == "test_user"
-      - result.response.created_by.user_type == "LOCAL"
-      - result.response.created_by.idp_id == "123e4567-e89b-12d3-a456-426614174000"
-      - result.response.created_by.display_name == "Test Ova"
-      - result.response.created_by.first_name == "Test"
-      - result.response.created_by.middle_initial == "Middle"
-      - result.response.created_by.last_name == "User"
-      - result.response.created_by.email_id == "xyz@nuatnix.com"
-      - result.response.created_by.locale == "en_US"
-      - result.response.created_by.region == "US"
-      - result.response.created_by.is_force_reset_password_enabled == true
-      - result.response.created_by.description == "Test Ova User Description"
-      - result.response.created_by.creation_type == "USERDEFINED"
       - result.response.cluster_location_ext_ids == ["b7f9c1a2-4d3e-4c2a-9e2f-1a2b3c4d5e6f", "0a1b2c3d-4e5f-6789-abcd-ef0123456789"]
       - result.response.vm_config.name == "Test Ova VM"
       - result.response.vm_config.description == "Test Ova VM Description"
@@ -434,21 +406,6 @@
         basic_auth:
           username: "test_user"
           password: "test_password"
-    created_by:
-      username: "test_user"
-      user_type: "LOCAL"
-      idp_id: "123e4567-e89b-12d3-a456-426614174000"
-      display_name: "Test Ova"
-      first_name: "Test"
-      middle_initial: "Middle"
-      last_name: "User"
-      email_id: "xyz@nuatnix.com"
-      locale: "en_US"
-      region: "US"
-      password: "test_password"
-      is_force_reset_password_enabled: true
-      description: "Test Ova User Description"
-      creation_type: "USERDEFINED"
     cluster_location_ext_ids:
       - b7f9c1a2-4d3e-4c2a-9e2f-1a2b3c4d5e6f
       - 0a1b2c3d-4e5f-6789-abcd-ef0123456789
@@ -539,19 +496,6 @@
       - result.response.source.url == "https://example.com/path/to/ova/file.ova"
       - result.response.source.should_allow_insecure_url == true
       - result.response.source.basic_auth.username == "test_user"
-      - result.response.created_by.username == "test_user"
-      - result.response.created_by.user_type == "LOCAL"
-      - result.response.created_by.idp_id == "123e4567-e89b-12d3-a456-426614174000"
-      - result.response.created_by.display_name == "Test Ova"
-      - result.response.created_by.first_name == "Test"
-      - result.response.created_by.middle_initial == "Middle"
-      - result.response.created_by.last_name == "User"
-      - result.response.created_by.email_id == "xyz@nuatnix.com"
-      - result.response.created_by.locale == "en_US"
-      - result.response.created_by.region == "US"
-      - result.response.created_by.is_force_reset_password_enabled == true
-      - result.response.created_by.description == "Test Ova User Description"
-      - result.response.created_by.creation_type == "USERDEFINED"
       - result.response.cluster_location_ext_ids == ["b7f9c1a2-4d3e-4c2a-9e2f-1a2b3c4d5e6f", "0a1b2c3d-4e5f-6789-abcd-ef0123456789"]
       - result.response.vm_config.name == "Test Ova VM"
       - result.response.vm_config.description == "Test Ova VM Description"
@@ -772,6 +716,7 @@
       - result.response.nics[0].network_info.vlan_mode == "ACCESS"
       - result.response.cluster.ext_id == "{{ cluster.uuid }}"
       - result.response.num_sockets == {{ vm_num_sockets }}
+      - result.response.vm_ext_id is defined
     fail_msg: " Unable to deploy VM from Ova "
     success_msg: " VM deployed successfully from Ova "
 
@@ -815,6 +760,7 @@
       - result.response.nics[0].network_info.subnet.ext_id == "{{ network.dhcp.uuid }}"
       - result.response.nics[0].network_info.vlan_mode == "ACCESS"
       - result.response.cluster.ext_id == "{{ cluster.uuid }}"
+      - result.response.vm_ext_id is defined
     fail_msg: " Unable to deploy VM from Ova with changed VM config "
     success_msg: " VM deployed successfully from Ova with changed VM config "
 
@@ -872,8 +818,8 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.changed == False
       - result.failed == False
+      - result.changed == False
       - result.ext_id == "{{ todelete[0] }}"
       - result.msg == "Ova with ext_id:{{ todelete[0] }} will be downloaded."
     fail_msg: " Download Ova check mode failed "
@@ -895,8 +841,8 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.changed == False
       - result.failed == False
+      - result.changed == True
       - result.ext_id == "{{ todelete[0] }}"
       - result.response.path is defined
     fail_msg: " Unable to download Ova using valid ext id "
@@ -918,8 +864,8 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.changed == False
       - result.failed == True
+      - result.changed == False
       - result.msg == "Api Exception raised while downloading ova"
     fail_msg: " Unable to download Ova using invalid ext id "
     success_msg: " Ova download using invalid ext id failed as expected "
