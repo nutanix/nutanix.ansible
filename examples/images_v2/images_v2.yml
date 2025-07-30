@@ -31,15 +31,15 @@
     - name: Setting Variables
       ansible.builtin.set_fact:
         cluster:
-          name: "auto_cluster_prod_360022a75d58"
+          name: "cluster_name"
           uuid: "00063aa4-8cfe-3d59-185b-ac1f6b6f97e2"
         disk_image:
-          url: http://10.40.64.33/GoldImages/NuCalm/AHV-UVM-Images/CentOS-7-cloudinit.qcow2
-          checksum: 4badde35a5b82533bc21f20dca1151b40026ccf0
+          url: <disk_image_url>
+          checksum: <disk_image_checksum>
           image_ext_ids: [d3295dc6-84f5-4d66-b5fb-c8d326d8999a]
         iso_image:
-          url: http://10.40.64.33/GoldImages/NuCalm/ISO/Nutanix-VirtIO-1.1.4.iso
-          checksum: 66f6953a4812ef9fa6b1424f51e6956c757e056c
+          url: <iso_image_url>
+          checksum: <iso_image_checksum>
         object_name: "ansible-object-1"
 
     - name: Generate random name
