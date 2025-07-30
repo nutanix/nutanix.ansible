@@ -21,9 +21,9 @@ options:
         description:
             - State of the Ova to be created, updated or deleted
             - if C(state) is present, it will create or update the ova.
-            - If C(state) is set to C(present) and ext_id is not provided then the operation will be create the ova
-            - If C(state) is set to C(present) and ext_id is provided then the operation will be update the ova
-            - If C(state) is set to C(absent) and ext_id is provided , then operation will be delete the ova
+            - If C(state) is set to C(present) and ext_id is not provided, then the operation will be create the ova
+            - If C(state) is set to C(present) and ext_id is provided, then the operation will be update the ova
+            - If C(state) is set to C(absent) and ext_id is provided, then operation will be delete the ova
         type: str
         choices: ["present", "absent"]
         default: "present"
