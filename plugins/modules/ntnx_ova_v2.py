@@ -194,7 +194,7 @@ EXAMPLES = r"""
 
 RETURN = r"""
 response:
-    description: 
+    description:
         - Response when we create, update or delete an Ova.
         - Response will contain Ova details if C(wait) is true, if creating or updating Ova.
         - Response will contain Task details if C(wait) is true, if deleting Ova.

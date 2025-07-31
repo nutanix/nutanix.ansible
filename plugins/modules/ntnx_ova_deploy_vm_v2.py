@@ -323,7 +323,7 @@ EXAMPLES = r"""
 
 RETURN = r"""
 response:
-    description: 
+    description:
         - The response from the Nutanix API after deploying the VM from the OVA.
         - VM details if C(wait) is true.
         - Task details if C(wait) is false.
