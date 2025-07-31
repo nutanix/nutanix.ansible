@@ -599,7 +599,7 @@
 ########################################################################
 
 - name: List all clusters in PC
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
   register: result
   ignore_errors: true
 
@@ -608,7 +608,7 @@
     cluster_ext_ids: "{{ result.response | map(attribute='ext_id') | list }}"
 
 - name: Create VM without setting cluster
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     name: "{{ vm_name }}"
     description: cluster automatic selection VM
   ignore_errors: true
