@@ -100,7 +100,6 @@ options:
                                 description:
                                     - Password for basic authentication.
                                 type: str
-                                no_log: true
                                 required: true
             ova_vm_source:
                 description:
@@ -409,7 +408,7 @@ def get_module_spec():
         ),
     )
     objects_lite_source_spec = dict(
-        key=dict(type="str", required=True),
+        key=dict(type="str", required=True, no_log=True),
     )
     source_spec = dict(
         ova_url_source=dict(

@@ -25,7 +25,8 @@ options:
         description:
             - VM config override spec for OVA VM deploy endpoint.
         type: dict
-        options:
+        required: true
+        suboptions:
             name:
                 description: Name of the VM.
                 type: str
@@ -184,7 +185,6 @@ options:
                                                     - Can be skipped, default it will be 32.
                                                 type: int
                                                 required: false
-                                required: false
             cd_roms:
                 description:
                     - The list of CD-ROMs for the VM.
@@ -280,6 +280,23 @@ options:
                                                                     - The external ID of the VM.
                                                                 type: str
                                                                 required: true
+                    disk_address:
+                        description:
+                            - The address of the CDROM.
+                        type: dict
+                        suboptions:
+                            bus_type:
+                                description:
+                                    - Bus type for the device
+                                type: str
+                                choices:
+                                    - 'IDE'
+                                    - 'SATA'
+                            index:
+                                description:
+                                    - Device index on the bus.
+                                    - This field is ignored unless the bus details are specified.
+                                type: int
             categories:
                 description:
                     - The list of categories for the VM.
@@ -290,13 +307,17 @@ options:
                     ext_id:
                         description:
                             - The external ID of the category.
-                        required: true
                         type: str
-            wait:
-                description:
-                    - Whether to wait for the task to complete.
-                required: false
-                type: bool
+    cluster_location_ext_id:
+        description:
+            - The external ID of the cluster location where the VM will be deployed.
+        type: str
+        required: true
+    wait:
+        description:
+            - Whether to wait for the task to complete.
+        required: false
+        type: bool
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
@@ -449,7 +470,8 @@ response:
                 "vtpm_device": null
             }
         }
-ext_id: The external ID of the ova used to deploy the VM.
+ext_id:
+    description: The external ID of the ova used to deploy the VM.
     type: str
     returned: always
     sample: "ae577c01-f7ce-4fed-772e-dc012fcbb5ea"
