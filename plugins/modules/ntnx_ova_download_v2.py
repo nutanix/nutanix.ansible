@@ -60,8 +60,8 @@ import warnings  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
-from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.utils import raise_api_exception  # noqa: E402
 from ..module_utils.v4.vmm.api_client import get_ova_api_instance  # noqa: E402
 
