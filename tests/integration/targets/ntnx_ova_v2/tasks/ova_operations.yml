@@ -64,85 +64,10 @@
     cluster_location_ext_ids:
       - b7f9c1a2-4d3e-4c2a-9e2f-1a2b3c4d5e6f
       - 0a1b2c3d-4e5f-6789-abcd-ef0123456789
-    vm_config:
-      name: "Test Ova VM"
-      description: "Test Ova VM Description"
-      num_sockets: 2
-      num_cores_per_socket: 4
-      num_threads_per_core: 2
-      num_numa_nodes: 1
-      memory_size_bytes: 8192
-      is_vcpu_hard_pinning_enabled: true
-      is_cpu_passthrough_enabled: false
-      enabled_cpu_features:
-        - "HARDWARE_VIRTUALIZATION"
-      is_memory_overcommit_enabled: true
-      is_gpu_console_enabled: false
-      categories:
-        - ext_id: f47ac10b-58cc-4372-a567-0e02b2c3d479
-        - ext_id: 9c858901-8a57-4791-81fe-4c455b099bc9
-      cluster:
-        ext_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-      availability_zone:
-        ext_id: "d4c3b2a1-6f5e-0987-dcba-0123456789ef"
-      guest_tools:
-        is_enabled: false
-        capabilities:
-          - "VSS_SNAPSHOT"
-      hardware_clock_timezone: "UTC"
-      is_branding_enabled: true
-      boot_config:
-        legacy_boot:
-          boot_device:
-            boot_device_disk:
-              disk_address:
-                bus_type: "SCSI"
-                index: 0
-          boot_order:
-            - "DISK"
-            - "CDROM"
-      is_vga_console_enabled: true
-      is_agent_vm: false
-      disks:
-        - disk_address:
-            bus_type: "SCSI"
-            index: 0
-          backing_info:
-            vm_disk:
-              disk_size_bytes: 10737418240
-              storage_container:
-                ext_id: "e89b1234-5678-90ab-cdef-1234567890ab"
-              storage_config:
-                is_flash_mode_enabled: true
-      cd_roms:
-        - disk_address:
-            bus_type: "SATA"
-            index: 0
-          backing_info:
-            disk_size_bytes: 10737418240
-            storage_container:
-              ext_id: "e89b1234-5678-90ab-cdef-1234567890ab"
-            storage_config:
-              is_flash_mode_enabled: true
-      nics:
-        - backing_info:
-            is_connected: true
-          network_info:
-            nic_type: "NORMAL_NIC"
-            subnet:
-              ext_id: "123e4567-e89b-12d3-a456-426614174000"
-            vlan_mode: "ACCESS"
-      serial_ports:
-        - is_connected: true
-          index: 0
     disk_format: "QCOW2"
   register: result
   ignore_errors: true
   check_mode: true
-
-- name: debug
-  ansible.builtin.debug:
-    msg: "{{ result }}"
 
 - name: Create an Ova from a VM check mode status
   ansible.builtin.assert:
@@ -155,47 +80,6 @@
       - result.response.source.vm_ext_id == "123e4567-e89b-12d3-a456-426614174000"
       - result.response.source.disk_file_format == "QCOW2"
       - result.response.cluster_location_ext_ids == ["b7f9c1a2-4d3e-4c2a-9e2f-1a2b3c4d5e6f", "0a1b2c3d-4e5f-6789-abcd-ef0123456789"]
-      - result.response.vm_config.name == "Test Ova VM"
-      - result.response.vm_config.description == "Test Ova VM Description"
-      - result.response.vm_config.num_sockets == 2
-      - result.response.vm_config.num_cores_per_socket == 4
-      - result.response.vm_config.num_threads_per_core == 2
-      - result.response.vm_config.num_numa_nodes == 1
-      - result.response.vm_config.memory_size_bytes == 8192
-      - result.response.vm_config.is_vcpu_hard_pinning_enabled == true
-      - result.response.vm_config.is_cpu_passthrough_enabled == false
-      - result.response.vm_config.enabled_cpu_features == ["HARDWARE_VIRTUALIZATION"]
-      - result.response.vm_config.is_memory_overcommit_enabled == true
-      - result.response.vm_config.is_gpu_console_enabled == false
-      - result.response.vm_config.categories[0].ext_id == "f47ac10b-58cc-4372-a567-0e02b2c3d479"
-      - result.response.vm_config.categories[1].ext_id == "9c858901-8a57-4791-81fe-4c455b099bc9"
-      - result.response.vm_config.cluster.ext_id == "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-      - result.response.vm_config.availability_zone.ext_id == "d4c3b2a1-6f5e-0987-dcba-0123456789ef"
-      - result.response.vm_config.guest_tools.is_enabled == false
-      - result.response.vm_config.guest_tools.capabilities == ["VSS_SNAPSHOT"]
-      - result.response.vm_config.hardware_clock_timezone == "UTC"
-      - result.response.vm_config.is_branding_enabled == true
-      - result.response.vm_config.boot_config.boot_device.disk_address.bus_type == "SCSI"
-      - result.response.vm_config.boot_config.boot_device.disk_address.index == 0
-      - result.response.vm_config.boot_config.boot_order == ["DISK", "CDROM"]
-      - result.response.vm_config.is_vga_console_enabled == true
-      - result.response.vm_config.is_agent_vm == false
-      - result.response.vm_config.disks[0].disk_address.bus_type == "SCSI"
-      - result.response.vm_config.disks[0].disk_address.index == 0
-      - result.response.vm_config.disks[0].backing_info.disk_size_bytes == 10737418240
-      - result.response.vm_config.disks[0].backing_info.storage_container.ext_id == "e89b1234-5678-90ab-cdef-1234567890ab"
-      - result.response.vm_config.disks[0].backing_info.storage_config.is_flash_mode_enabled == true
-      - result.response.vm_config.cd_roms[0].disk_address.bus_type == "SATA"
-      - result.response.vm_config.cd_roms[0].disk_address.index == 0
-      - result.response.vm_config.cd_roms[0].backing_info.disk_size_bytes == 10737418240
-      - result.response.vm_config.cd_roms[0].backing_info.storage_container.ext_id == "e89b1234-5678-90ab-cdef-1234567890ab"
-      - result.response.vm_config.cd_roms[0].backing_info.storage_config.is_flash_mode_enabled == true
-      - result.response.vm_config.nics[0].backing_info.is_connected == true
-      - result.response.vm_config.nics[0].network_info.nic_type == "NORMAL_NIC"
-      - result.response.vm_config.nics[0].network_info.subnet.ext_id == "123e4567-e89b-12d3-a456-426614174000"
-      - result.response.vm_config.nics[0].network_info.vlan_mode == "ACCESS"
-      - result.response.vm_config.serial_ports[0].is_connected == true
-      - result.response.vm_config.serial_ports[0].index == 0
       - result.response.disk_format == "QCOW2"
     fail_msg: " Unable to create Ova from VM in check mode "
     success_msg: " Ova created successfully from VM in check mode "
@@ -211,10 +95,6 @@
         disk_file_format: "QCOW2"
   register: result
   ignore_errors: true
-
-- name: debug
-  ansible.builtin.debug:
-    msg: "{{ result }}"
 
 - name: Ova Creation Status
   ansible.builtin.assert:
@@ -237,24 +117,17 @@
 
 ############################################################################################################
 
-- name: Create Ova from the VM changing VM config
+- name: Create Ova from the VM changing VM name
   nutanix.ncp.ntnx_ova_v2:
     name: "{{ ova_name }}_changed"
     source:
       ova_vm_source:
         vm_ext_id: "{{ todelete_vm[0] }}"
         disk_file_format: "QCOW2"
-    vm_config:
-      name: "{{ vm_name }}_changed"
-      num_cores_per_socket: 4
   register: result
   ignore_errors: true
 
-- name: debug
-  ansible.builtin.debug:
-    msg: "{{ result }}"
-
-- name: Create Ova from the VM changing VM config status
+- name: Create Ova from the VM changing VM name status
   ansible.builtin.assert:
     that:
       - result.response is defined
@@ -264,10 +137,8 @@
       - result.response.ext_id is defined
       - result.task_ext_id is defined
       - result.response.name == "{{ ova_name }}_changed"
-      - result.response.vm_config.name == "{{ vm_name }}_changed"
-      - result.response.vm_config.num_cores_per_socket == 4
-    fail_msg: " Unable to create Ova from VM with changed VM config "
-    success_msg: " Ova created successfully from VM with changed VM config "
+    fail_msg: " Unable to create Ova from VM with changed VM name "
+    success_msg: " Ova created successfully from VM with changed VM name "
 
 - name: Add Ova ext_id to todelete list
   ansible.builtin.set_fact:
@@ -285,10 +156,6 @@
   register: result
   ignore_errors: true
 
-- name: debug
-  ansible.builtin.debug:
-    msg: "{{ result }}"
-
 - name: Ova Creation Status
   ansible.builtin.assert:
     that:
@@ -296,8 +163,8 @@
       - result.changed == False
       - result.failed == True
       - result.msg == "Task Failed"
-    fail_msg: " Ova creation from non-existent VM failed"
-    success_msg: " Ova creation from non-existent VM failed as expected "
+    fail_msg: " Test failed: Ova creation from non-existent VM did not fail as expected "
+    success_msg: " Test passed: Ova creation from non-existent VM failed as expected "
 
 ############################################################################################################
 
@@ -328,10 +195,6 @@
   register: result
   ignore_errors: true
 
-- name: debug
-  ansible.builtin.debug:
-    msg: "{{ result }}"
-
 - name: Ova Update Status
   ansible.builtin.assert:
     that:
@@ -354,10 +217,6 @@
   register: result
   ignore_errors: true
 
-- name: debug
-  ansible.builtin.debug:
-    msg: "{{ result }}"
-
 - name: Idempotency check in Ova update Status
   ansible.builtin.assert:
     that:
@@ -368,17 +227,13 @@
     success_msg: " Idempotency check in Ova update successful "
 
 #############################################################################################################
-      
+
 - name: Update an Ova that does not exist
   nutanix.ncp.ntnx_ova_v2:
     ext_id: "123e4567-e89b-12d3-a456-426614174000"
     name: "{{ ova_name }}_non_existent_updated"
   register: result
   ignore_errors: true
-
-- name: debug
-  ansible.builtin.debug:
-    msg: "{{ result }}"
 
 - name: Update an Ova that does not exist status
   ansible.builtin.assert:
@@ -387,8 +242,8 @@
       - result.changed == False
       - result.failed == True
       - result.msg == "Api Exception raised while fetching OVA info using ext_id"
-    fail_msg: " update non-existent Ova failed"
-    success_msg: " Non-existent Ova update passed "
+    fail_msg: " Test failed: update non-existent Ova did not fail as expected"
+    success_msg: " Test passed: Non-existent Ova update failed as expected"
 
 #############################################################################################################
 
@@ -408,77 +263,6 @@
     cluster_location_ext_ids:
       - b7f9c1a2-4d3e-4c2a-9e2f-1a2b3c4d5e6f
       - 0a1b2c3d-4e5f-6789-abcd-ef0123456789
-    vm_config:
-      name: "Test Ova VM"
-      description: "Test Ova VM Description"
-      num_sockets: 2
-      num_cores_per_socket: 4
-      num_threads_per_core: 2
-      num_numa_nodes: 1
-      memory_size_bytes: 8192
-      is_vcpu_hard_pinning_enabled: true
-      is_cpu_passthrough_enabled: false
-      enabled_cpu_features:
-        - "HARDWARE_VIRTUALIZATION"
-      is_memory_overcommit_enabled: true
-      is_gpu_console_enabled: false
-      categories:
-        - ext_id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
-        - ext_id: "9c858901-8a57-4791-81fe-4c455b099bc9"
-      cluster:
-        ext_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-      availability_zone:
-        ext_id: "d4c3b2a1-6f5e-0987-dcba-0123456789ef"
-      guest_tools:
-        is_enabled: false
-        capabilities:
-          - "VSS_SNAPSHOT"
-      hardware_clock_timezone: "UTC"
-      is_branding_enabled: true
-      boot_config:
-        legacy_boot:
-          boot_device:
-            boot_device_disk:
-              disk_address:
-                bus_type: "SCSI"
-                index: 0
-          boot_order:
-            - "DISK"
-            - "CDROM"
-      is_vga_console_enabled: true
-      is_agent_vm: false
-      disks:
-        - disk_address:
-            bus_type: "SCSI"
-            index: 0
-          backing_info:
-            vm_disk:
-              disk_size_bytes: 10737418240
-              storage_container:
-                ext_id: "e89b1234-5678-90ab-cdef-1234567890ab"
-              storage_config:
-                is_flash_mode_enabled: true
-      cd_roms:
-        - disk_address:
-            bus_type: "SATA"
-            index: 0
-          backing_info:
-            disk_size_bytes: 10737418240
-            storage_container:
-              ext_id: "e89b1234-5678-90ab-cdef-1234567890ab"
-            storage_config:
-              is_flash_mode_enabled: true
-      nics:
-        - backing_info:
-            is_connected: true
-          network_info:
-            nic_type: "NORMAL_NIC"
-            subnet:
-              ext_id: "123e4567-e89b-12d3-a456-426614174000"
-            vlan_mode: "ACCESS"
-      serial_ports:
-        - is_connected: true
-          index: 0
     disk_format: "QCOW2"
   register: result
   ignore_errors: true
@@ -496,47 +280,6 @@
       - result.response.source.should_allow_insecure_url == true
       - result.response.source.basic_auth.username == "test_user"
       - result.response.cluster_location_ext_ids == ["b7f9c1a2-4d3e-4c2a-9e2f-1a2b3c4d5e6f", "0a1b2c3d-4e5f-6789-abcd-ef0123456789"]
-      - result.response.vm_config.name == "Test Ova VM"
-      - result.response.vm_config.description == "Test Ova VM Description"
-      - result.response.vm_config.num_sockets == 2
-      - result.response.vm_config.num_cores_per_socket == 4
-      - result.response.vm_config.num_threads_per_core == 2
-      - result.response.vm_config.num_numa_nodes == 1
-      - result.response.vm_config.memory_size_bytes == 8192
-      - result.response.vm_config.is_vcpu_hard_pinning_enabled == true
-      - result.response.vm_config.is_cpu_passthrough_enabled == false
-      - result.response.vm_config.enabled_cpu_features == ["HARDWARE_VIRTUALIZATION"]
-      - result.response.vm_config.is_memory_overcommit_enabled == true
-      - result.response.vm_config.is_gpu_console_enabled == false
-      - result.response.vm_config.categories[0].ext_id == "f47ac10b-58cc-4372-a567-0e02b2c3d479"
-      - result.response.vm_config.categories[1].ext_id == "9c858901-8a57-4791-81fe-4c455b099bc9"
-      - result.response.vm_config.cluster.ext_id == "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-      - result.response.vm_config.availability_zone.ext_id == "d4c3b2a1-6f5e-0987-dcba-0123456789ef"
-      - result.response.vm_config.guest_tools.is_enabled == false
-      - result.response.vm_config.guest_tools.capabilities == ["VSS_SNAPSHOT"]
-      - result.response.vm_config.hardware_clock_timezone == "UTC"
-      - result.response.vm_config.is_branding_enabled == true
-      - result.response.vm_config.boot_config.boot_device.disk_address.bus_type == "SCSI"
-      - result.response.vm_config.boot_config.boot_device.disk_address.index == 0
-      - result.response.vm_config.boot_config.boot_order == ["DISK", "CDROM"]
-      - result.response.vm_config.is_vga_console_enabled == true
-      - result.response.vm_config.is_agent_vm == false
-      - result.response.vm_config.disks[0].disk_address.bus_type == "SCSI"
-      - result.response.vm_config.disks[0].disk_address.index == 0
-      - result.response.vm_config.disks[0].backing_info.disk_size_bytes == 10737418240
-      - result.response.vm_config.disks[0].backing_info.storage_container.ext_id == "e89b1234-5678-90ab-cdef-1234567890ab"
-      - result.response.vm_config.disks[0].backing_info.storage_config.is_flash_mode_enabled == true
-      - result.response.vm_config.cd_roms[0].disk_address.bus_type == "SATA"
-      - result.response.vm_config.cd_roms[0].disk_address.index == 0
-      - result.response.vm_config.cd_roms[0].backing_info.disk_size_bytes == 10737418240
-      - result.response.vm_config.cd_roms[0].backing_info.storage_container.ext_id == "e89b1234-5678-90ab-cdef-1234567890ab"
-      - result.response.vm_config.cd_roms[0].backing_info.storage_config.is_flash_mode_enabled == true
-      - result.response.vm_config.nics[0].backing_info.is_connected == true
-      - result.response.vm_config.nics[0].network_info.nic_type == "NORMAL_NIC"
-      - result.response.vm_config.nics[0].network_info.subnet.ext_id == "123e4567-e89b-12d3-a456-426614174000"
-      - result.response.vm_config.nics[0].network_info.vlan_mode == "ACCESS"
-      - result.response.vm_config.serial_ports[0].is_connected == true
-      - result.response.vm_config.serial_ports[0].index == 0
       - result.response.disk_format == "QCOW2"
     fail_msg: " Unable to create Ova from url in check mode "
     success_msg: " Ova created successfully from url in check mode "
@@ -554,10 +297,6 @@
       - "{{ cluster.uuid }}"
   register: result
   ignore_errors: true
-
-- name: debug
-  ansible.builtin.debug:
-    msg: "{{ result }}"
 
 - name: Create Ova from a valid url status
   ansible.builtin.assert:
@@ -579,7 +318,7 @@
 
 ##############################################################################################################
 
-- name: Create an ova from a invaild url
+- name: Create an ova from an invalid url
   nutanix.ncp.ntnx_ova_v2:
     name: "{{ ova_name }}_invalid_url"
     source:
@@ -590,19 +329,15 @@
   register: result
   ignore_errors: true
 
-- name: debug
-  ansible.builtin.debug:
-    msg: "{{ result }}"
-
-- name: Create an ova from a invaild url status
+- name: Create an ova from an invalid url status
   ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == False
       - result.failed == True
       - result.msg == "Api Exception raised while creating ova"
-    fail_msg: " Unable to create Ova from invalid url "
-    success_msg: " Ova creation from invalid url failed as expected "
+    fail_msg: " Test failed: Unable to create Ova from invalid url as expected "
+    success_msg: " Test passed: Ova creation from invalid url failed as expected "
 
 ##############################################################################################################
 
@@ -644,10 +379,6 @@
   register: result
   ignore_errors: true
   check_mode: true
-
-- name: debug
-  ansible.builtin.debug:
-    msg: "{{ result }}"
 
 - name: Deploy VM from Ova check mode status
   ansible.builtin.assert:
@@ -695,10 +426,6 @@
     cluster_location_ext_id: "{{ cluster.uuid }}"
   register: result
   ignore_errors: true
-
-- name: debug
-  ansible.builtin.debug:
-    msg: "{{ result }}"
 
 - name: Deploy VM from Ova status
   ansible.builtin.assert:
@@ -786,19 +513,15 @@
   register: result
   ignore_errors: true
 
-- name: debug
-  ansible.builtin.debug:
-    msg: "{{ result }}"
-
-- name:  Deploy a VM from an OVA that does not exist status
+- name: Deploy a VM from an OVA that does not exist status
   ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == False
       - result.failed == True
       - result.msg == "Api Exception raised while deploying vm using ova"
-    fail_msg: " Unable to deploy VM from non-existent Ova "
-    success_msg: " VM deployment from non-existent Ova failed as expected "
+    fail_msg: " Test failed: Unable to deploy VM from non-existent Ova as expected "
+    success_msg: " Test passed: VM deployment from non-existent Ova failed as expected "
 
 ###################################################################################################################
 
@@ -808,10 +531,6 @@
   register: result
   ignore_errors: true
   check_mode: true
-
-- name: debug
-  ansible.builtin.debug:
-    msg: "{{ result }}"
 
 - name: Download Ova check mode status
   ansible.builtin.assert:
@@ -832,10 +551,6 @@
   register: result
   ignore_errors: true
 
-- name: debug
-  ansible.builtin.debug:
-    msg: "{{ result }}"
-
 - name: Download Ova using valid ext id status
   ansible.builtin.assert:
     that:
@@ -855,10 +570,6 @@
   register: result
   ignore_errors: true
 
-- name: debug
-  ansible.builtin.debug:
-    msg: "{{ result }}"
-
 - name: Download Ova using invalid ext id status
   ansible.builtin.assert:
     that:
@@ -866,8 +577,8 @@
       - result.failed == True
       - result.changed == False
       - result.msg == "Api Exception raised while downloading ova"
-    fail_msg: " Unable to download Ova using invalid ext id "
-    success_msg: " Ova download using invalid ext id failed as expected "
+    fail_msg: " Test failed: Unable to download Ova using invalid ext id as expected "
+    success_msg: " Test passed: Ova download using invalid ext id failed as expected "
 
 #######################################################################################################################
 
@@ -876,10 +587,6 @@
   register: result
   ignore_errors: true
 
-- name: debug
-  ansible.builtin.debug:
-    msg: "{{ result }}"
-
 - name: List all Ovas status
   ansible.builtin.assert:
     that:
@@ -887,6 +594,7 @@
       - result.changed == False
       - result.failed == False
       - result.response | length >= 3
+      - result.total_available_results >= 3
     fail_msg: " Unable to list all Ovas "
     success_msg: " Ovas listed successfully "
 
@@ -894,13 +602,9 @@
 
 - name: List Ovas with filter
   nutanix.ncp.ntnx_ova_info_v2:
-    filter:  "name eq '{{ ova_name }}_updated'"
+    filter: "name eq '{{ ova_name }}_updated'"
   register: result
   ignore_errors: true
-
-- name: debug
-  ansible.builtin.debug:
-    msg: "{{ result }}"
 
 - name: List Ovas with filter status
   ansible.builtin.assert:
@@ -921,10 +625,6 @@
   register: result
   ignore_errors: true
 
-- name: debug
-  ansible.builtin.debug:
-    msg: "{{ result }}"
-
 - name: List Ovas with limit status
   ansible.builtin.assert:
     that:
@@ -943,10 +643,6 @@
     ext_id: "{{ todelete[0] }}"
   register: result
   ignore_errors: true
-
-- name: debug
-  ansible.builtin.debug:
-    msg: "{{ result }}"
 
 - name: Get details of a specific Ova status
   ansible.builtin.assert:
@@ -1014,10 +710,6 @@
   register: result
   ignore_errors: true
 
-- name: debug
-  ansible.builtin.debug:
-    msg: "{{ result }}"
-
 - name: Delete Ova with invalid ext id status
   ansible.builtin.assert:
     that:
@@ -1025,8 +717,8 @@
       - result.changed == False
       - result.failed == True
       - result.msg == "Api Exception raised while deleting ova"
-    fail_msg: " Unable to delete Ova with invalid ext id "
-    success_msg: " Ova deletion with invalid ext id failed as expected "
+    fail_msg: " Test failed: Unable to delete Ova with invalid ext id as expected "
+    success_msg: " Test passed: Ova deletion with invalid ext id failed as expected "
 
 #########################################################################################################################
 

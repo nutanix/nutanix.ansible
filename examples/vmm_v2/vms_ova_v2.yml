@@ -27,6 +27,9 @@
       ansible.builtin.set_fact:
         vm_uuid: "323e4567-8547-12d3-a456-426614174001"
         cluster_ext_id: "123e4567-e89b-12d3-a456-426614174000"
+        ova_url: "https://example.com/path/to/ova/file.ova"
+        subnet_uuid: "123e4567-e89b-12d3-a456-426614174002"
+        object_key_name: "object_name"
 
     - name: Create Ova from the VM
       nutanix.ncp.ntnx_ova_v2:
@@ -37,7 +40,7 @@
             disk_file_format: "QCOW2"
       register: result
       ignore_errors: true
-    
+
     - name: Store Ova ext_id
       ansible.builtin.set_fact:
         ova_ext_id: "{{ result.response.ext_id }}"
@@ -47,7 +50,7 @@
         name: "ova_name_url"
         source:
           ova_url_source:
-            url: "https://example.com/path/to/ova/file.ova"
+            url: "{{ ova_url }}"
             should_allow_insecure_url: true
         cluster_location_ext_ids:
           - "{{ cluster_ext_id }}"
@@ -59,12 +62,12 @@
         name: "object-ova"
         source:
           objects_lite_source:
-            key: "object_name"
+            key: "{{ object_key_name }}"
         cluster_location_ext_ids:
           - "{{ cluster_ext_id }}"
       register: result
       ignore_errors: true
-    
+
     - name: Update Ova
       nutanix.ncp.ntnx_ova_v2:
         ext_id: "{{ vm_uuid }}"
@@ -87,7 +90,7 @@
         cluster_location_ext_id: "{{ cluster_ext_id }}"
       register: result
       ignore_errors: true
-    
+
     - name: List all Ovas
       nutanix.ncp.ntnx_ova_info_v2:
       register: result
@@ -95,7 +98,7 @@
 
     - name: List Ovas with filter
       nutanix.ncp.ntnx_ova_info_v2:
-        filter:  "name eq 'test_ova'"
+        filter: "name eq 'test_ova'"
       register: result
       ignore_errors: true
 
@@ -111,6 +114,9 @@
       register: result
       ignore_errors: true
 
+# This will give a path from where you can get the path to download the Ova file
+# .tmp directory will be deleted automatically after the execution of the playbook
+# If needed, get the file from there before the playbook ends
     - name: Download Ova using ext id
       nutanix.ncp.ntnx_ova_download_v2:
         ova_ext_id: "{{ ova_ext_id }}"

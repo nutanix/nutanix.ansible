@@ -13,7 +13,8 @@ module: ntnx_ova_info_v2
 short_description: Fetch information about ova(s)
 description:
     - This module fetches information about Nutanix OVA(s)
-    - The module can fetch information about all OVA(s) or a specific OVA
+    - Fetch specific OVA using external ID
+    - Fetch list of multiple OVAs if external ID is not provided with optional filter
     - This module uses PC v4 APIs based SDKs
 version_added: "2.3.0"
 options:
@@ -54,7 +55,8 @@ RETURN = r"""
 response:
     description:
         - The response from the Nutanix PC OVA info v4 API.
-        - It can be a single OVA or a list of OVAs as per spec.
+        - It can be a single OVA if external ID is provided.
+        - List of multiple OVAs if external ID is not provided.
     type: dict
     returned: always
     sample:

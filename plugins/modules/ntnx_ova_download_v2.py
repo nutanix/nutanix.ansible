@@ -49,10 +49,6 @@ ext_id:
     type: str
     returned: always
     sample: "12345678-1234-1234-1234-123456789012"
-error:
-    description: Error message if something goes wrong.
-    type: str
-    returned: always
 failed:
     description: Indicates if the module execution failed.
     type: bool
@@ -121,7 +117,6 @@ def run_module():
 
     remove_param_with_none_value(module.params)
     result = {
-        "error": None,
         "response": None,
         "ext_id": None,
         "changed": False,

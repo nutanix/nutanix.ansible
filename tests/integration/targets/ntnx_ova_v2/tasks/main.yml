@@ -9,4 +9,3 @@
   block:
     - name: Import ova_operations.yml
       ansible.builtin.import_tasks: ova_operations.yml
-      ignore_errors: true

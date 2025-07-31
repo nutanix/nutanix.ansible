@@ -323,7 +323,10 @@ EXAMPLES = r"""
 
 RETURN = r"""
 response:
-    description: The response from the Nutanix API after deploying the VM from the OVA.
+    description: 
+        - The response from the Nutanix API after deploying the VM from the OVA.
+        - VM details if C(wait) is true.
+        - Task details if C(wait) is false.
     type: dict
     returned: always
     sample:
