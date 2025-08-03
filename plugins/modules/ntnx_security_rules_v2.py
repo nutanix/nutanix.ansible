@@ -170,6 +170,36 @@ options:
                   - List of categories that define a set of network endpoints as outbound.
                 type: list
                 elements: str
+              secured_group_category_associated_entity_type:
+                description:
+                  - The type of entity associated with the secured group category.
+                type: str
+                choices:
+                  - VM
+                  - SUBNET
+                  - VPC
+                default: VM
+                required: false
+              src_category_associated_entity_type:
+                description:
+                  - The type of entity associated with the source category.
+                type: str
+                choices:
+                  - VM
+                  - SUBNET
+                  - VPC
+                default: VM
+                required: false
+              dest_category_associated_entity_type:
+                description:
+                  - The type of entity associated with the destination category.
+                type: str
+                choices:
+                  - VM
+                  - SUBNET
+                  - VPC
+                default: VM
+                required: false
               src_subnet:
                 description:
                   - The source subnet/IP specification.
@@ -285,6 +315,73 @@ options:
                 choices:
                   - ALLOW
                   - DENY
+              secured_group_category_associated_entity_type:
+                description:
+                  - The type of entity associated with the secured group category.
+                type: str
+                choices:
+                  - VM
+                  - SUBNET
+                  - VPC
+                default: VM
+                required: false
+              secured_group_entity_group_reference:
+                description:
+                  - The reference to the secured group entity group.
+                type: str
+                required: false
+              secured_group_service_references:
+                description:
+                  - The list of secured group service references.
+                type: list
+                elements: str
+                required: false
+              tcp_services:
+                description:
+                  - The list of TCP services.
+                type: list
+                elements: dict
+                suboptions:
+                  start_port:
+                    description:
+                      - The start port of the TCP service.
+                    type: int
+                  end_port:
+                    description:
+                      - The end port of the TCP service.
+                    type: int
+              udp_services:
+                description:
+                  - The list of UDP services.
+                type: list
+                elements: dict
+                suboptions:
+                  start_port:
+                    description:
+                      - The start port of the UDP service.
+                    type: int
+                  end_port:
+                    description:
+                      - The end port of the UDP service.
+                    type: int
+              icmp_services:
+                description:
+                  - Icmp Type Code List.
+                type: list
+                elements: dict
+                suboptions:
+                  is_all_allowed:
+                    description:
+                      - Icmp service All Allowed.
+                    type: bool
+                  type:
+                    description:
+                      - Icmp service Type. Ignore this field if Type has to be ANY.
+                    type: int
+                  code:
+                    description:
+                      - Icmp service Code. Ignore this field if Code has to be ANY.
+                    type: int
           multi_env_isolation_rule_spec:
             description:
               - The specification of the multi environment isolation rule.
@@ -580,7 +677,6 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
-    remove_fields_from_spec,
     strip_internal_attributes,
 )
 
@@ -630,6 +726,15 @@ def get_module_spec():
     )
     application_rule_spec = dict(
         secured_group_category_references=dict(type="list", elements="str"),
+        secured_group_category_associated_entity_type=dict(
+            type="str", choices=["VM", "SUBNET", "VPC"], default="VM"
+        ),
+        src_category_associated_entity_type=dict(
+            type="str", choices=["VM", "SUBNET", "VPC"], default="VM"
+        ),
+        dest_category_associated_entity_type=dict(
+            type="str", choices=["VM", "SUBNET", "VPC"], default="VM"
+        ),
         src_allow_spec=dict(type="str", choices=["ALL", "NONE"]),
         dest_allow_spec=dict(type="str", choices=["ALL", "NONE"]),
         src_category_references=dict(type="list", elements="str"),
@@ -667,6 +772,29 @@ def get_module_spec():
     entity_group_rule_spec = dict(
         secured_group_category_references=dict(type="list", elements="str"),
         secured_group_action=dict(type="str", choices=["ALLOW", "DENY"]),
+        secured_group_category_associated_entity_type=dict(
+            type="str", choices=["VM", "SUBNET", "VPC"], default="VM"
+        ),
+        secured_group_entity_group_reference=dict(type="str"),
+        secured_group_service_references=dict(type="list", elements="str"),
+        tcp_services=dict(
+            type="list",
+            elements="dict",
+            options=range_spec,
+            obj=mic_sdk.TcpPortRangeSpec,
+        ),
+        udp_services=dict(
+            type="list",
+            elements="dict",
+            options=range_spec,
+            obj=mic_sdk.UdpPortRangeSpec,
+        ),
+        icmp_services=dict(
+            type="list",
+            elements="dict",
+            options=icmp_service_spec,
+            obj=mic_sdk.IcmpTypeCodeSpec,
+        ),
     )
 
     isolation_groups_spec = dict(
@@ -816,21 +944,26 @@ def check_network_security_policies_idempotency(old_spec, update_spec):
 
     # remove external ID from older spec's each rule.
     # since update will overlap all existing rules
+
     for rule in old_spec.get("rules", []):
         rule["ext_id"] = None
+
+    for rule in update_spec.get("rules", []):
+        rule["ext_id"] = None
+        if "spec" in rule:
+            if "src_category_references" in rule["spec"]:
+                if rule["spec"]["src_category_references"] is None:
+                    rule["spec"]["src_category_associated_entity_type"] = None
+            if "dest_category_references" in rule["spec"]:
+                if rule["spec"]["dest_category_references"] is None:
+                    rule["spec"]["dest_category_associated_entity_type"] = None
+            if "secured_group_category_references" in rule["spec"]:
+                if rule["spec"]["secured_group_category_references"] is None:
+                    rule["spec"]["secured_group_category_associated_entity_type"] = None
 
     # compare rules from old and new spec
     old_rules = old_spec.pop("rules")
     update_rules = update_spec.pop("rules")
-
-    fields_to_remove = [
-        "secured_group_category_associated_entity_type",
-        "src_category_associated_entity_type",
-        "dest_category_associated_entity_type",
-    ]
-    # remove specified fields from both old and update rules
-    remove_fields_from_spec(old_rules, fields_to_remove, deep=True)
-    remove_fields_from_spec(update_rules, fields_to_remove, deep=True)
 
     for rule in update_rules:
         if rule not in old_rules:
@@ -907,9 +1040,9 @@ def delete_network_security_policy(module, result):
     result["ext_id"] = ext_id
 
     if module.check_mode:
-        result[
-            "msg"
-        ] = "Network security policy with ext_id:{0} will be deleted.".format(ext_id)
+        result["msg"] = (
+            "Network security policy with ext_id:{0} will be deleted.".format(ext_id)
+        )
         return
 
     current_spec = get_network_security_policy(
