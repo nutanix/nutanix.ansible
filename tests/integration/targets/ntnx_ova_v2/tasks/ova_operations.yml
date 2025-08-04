@@ -442,7 +442,7 @@
       - result.response.nics[0].network_info.vlan_mode == "ACCESS"
       - result.response.cluster.ext_id == "{{ cluster.uuid }}"
       - result.response.num_sockets == {{ vm_num_sockets }}
-      - result.response.vm_ext_id is defined
+      - result.vm_ext_id is defined
     fail_msg: " Unable to deploy VM from Ova "
     success_msg: " VM deployed successfully from Ova "
 
@@ -486,7 +486,7 @@
       - result.response.nics[0].network_info.subnet.ext_id == "{{ network.dhcp.uuid }}"
       - result.response.nics[0].network_info.vlan_mode == "ACCESS"
       - result.response.cluster.ext_id == "{{ cluster.uuid }}"
-      - result.response.vm_ext_id is defined
+      - result.vm_ext_id is defined
     fail_msg: " Unable to deploy VM from Ova with changed VM config "
     success_msg: " VM deployed successfully from Ova with changed VM config "
 
