@@ -15,5 +15,5 @@
       ansible.builtin.import_tasks: "objects_ovas.yml"
     - name: Import delete_objects.yml
       ansible.builtin.import_tasks: "delete_objects.yml"
-    # - name: Import update_objects.yml
-    #   ansible.builtin.import_tasks: "update_objects.yml"
+    - name: Import update_objects.yml
+      ansible.builtin.import_tasks: "update_objects.yml"
