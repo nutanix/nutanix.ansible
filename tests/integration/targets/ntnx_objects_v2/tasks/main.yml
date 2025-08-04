@@ -7,7 +7,13 @@
       nutanix_password: "{{ password }}"
       validate_certs: "{{ validate_certs }}"
   block:
-    - name: Import deploy_object_store.yml
-      ansible.builtin.import_tasks: "deploy_object_store.yml"
-    - name: Import update_object_store.yml
-      ansible.builtin.import_tasks: "update_object_store.yml"
+    - name: Import deploy_objects.yml
+      ansible.builtin.import_tasks: "deploy_objects.yml"
+    - name: Import objects_images.yml
+      ansible.builtin.import_tasks: "objects_images.yml"
+    - name: Import objects_ovas.yml
+      ansible.builtin.import_tasks: "objects_ovas.yml"
+    - name: Import delete_objects.yml
+      ansible.builtin.import_tasks: "delete_objects.yml"
+    # - name: Import update_objects.yml
+    #   ansible.builtin.import_tasks: "update_objects.yml"
