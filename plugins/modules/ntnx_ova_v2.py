@@ -579,7 +579,15 @@ def run_module():
         required_if=[
             ("state", "absent", ("ext_id",)),
             ("state", "present", ("name",)),
-            ("state", "present", ("ext_id", "source",), True),
+            (
+                "state",
+                "present",
+                (
+                    "ext_id",
+                    "source",
+                ),
+                True,
+            ),
         ],
     )
     if SDK_IMP_ERROR:
