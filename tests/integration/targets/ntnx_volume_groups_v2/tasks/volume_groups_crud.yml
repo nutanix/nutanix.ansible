@@ -20,7 +20,7 @@
     vg2_name: "{{suffix_name}}-{{random_name}}2"
 
 - name: Create Volume group with check mode
-  ntnx_volume_groups_v2:
+  nutanix.ncp.ntnx_volume_groups_v2:
     name: "{{vg1_name}}"
     description: "Volume group 1"
     should_load_balance_vm_attachments: true
@@ -60,7 +60,7 @@
     success_msg: "Spec generated successfully for VG create"
 
 - name: Create Volume group with min spec and no Auth
-  ntnx_volume_groups_v2:
+  nutanix.ncp.ntnx_volume_groups_v2:
     name: "{{vg1_name}}"
     description: "Volume group 1"
     cluster_reference: "{{ cluster.uuid }}"
@@ -89,7 +89,7 @@
     vg1_uuid: "{{ result.ext_id }}"
 
 - name: Create Volume group with all config and enabled chap auth
-  ntnx_volume_groups_v2:
+  nutanix.ncp.ntnx_volume_groups_v2:
     name: "{{vg2_name}}"
     description: "Volume group 2"
     should_load_balance_vm_attachments: true
@@ -132,7 +132,7 @@
     vg2_uuid: "{{ result.ext_id }}"
 
 - name: Fetch above created VG
-  ntnx_volume_groups_info_v2:
+  nutanix.ncp.ntnx_volume_groups_info_v2:
     ext_id: "{{ vg1_uuid }}"
   register: result
   ignore_errors: true
@@ -151,7 +151,7 @@
     success_msg: "VG fetched successfully"
 
 - name: Fetch all VGs created above using filters
-  ntnx_volume_groups_info_v2:
+  nutanix.ncp.ntnx_volume_groups_info_v2:
     filter: "startswith(name, '{{suffix_name}}-{{random_name}}')"
   register: result
   ignore_errors: true
@@ -173,7 +173,7 @@
     success_msg: "VGs fetched successfully"
 
 - name: Apply limits on VG response from list
-  ntnx_volume_groups_info_v2:
+  nutanix.ncp.ntnx_volume_groups_info_v2:
     limit: 1
   register: result
   ignore_errors: true
@@ -189,7 +189,7 @@
     success_msg: "VGs fetched successfully"
 
 - name: Delete volume group with check mode is enabled
-  ntnx_volume_groups_v2:
+  nutanix.ncp.ntnx_volume_groups_v2:
     state: absent
     ext_id: "{{ vg1_uuid }}"
   register: result
@@ -208,7 +208,7 @@
     success_msg: "Delete volume group with check mode is enabled passed"
 
 - name: Delete Volume groups
-  ntnx_volume_groups_v2:
+  nutanix.ncp.ntnx_volume_groups_v2:
     state: absent
     ext_id: "{{ vg1_uuid }}"
   register: result
@@ -226,7 +226,7 @@
     success_msg: "VG deleted successfully"
 
 - name: Delete Volume groups
-  ntnx_volume_groups_v2:
+  nutanix.ncp.ntnx_volume_groups_v2:
     state: absent
     ext_id: "{{ vg2_uuid }}"
   register: result

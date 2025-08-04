@@ -15,7 +15,7 @@
     vm_name: "{{ random_name }}_vm_test"
 
 - name: Create VM
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     state: present
     name: "{{ vm_name }}"
     cluster:
@@ -73,7 +73,7 @@
 ################################################################################
 
 - name: Fetch VM details after Creating VM
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -106,7 +106,7 @@
 ################################################################################
 
 - name: Update VM with all attributes with check mode enabled
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     state: present
     ext_id: "{{ vm_uuid }}"
     name: "{{ vm_name }}_updated"
@@ -157,7 +157,7 @@
 ################################################################################
 
 - name: Update VM with all attributes
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     state: present
     ext_id: "{{ vm_uuid }}"
     name: "{{ vm_name }}_updated"
@@ -207,7 +207,7 @@
 ################################################################################
 
 - name: Update VM with all attributes to test idempotency
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     state: present
     ext_id: "{{ vm_uuid }}"
     name: "{{ vm_name }}_updated"
@@ -244,7 +244,7 @@
 ################################################################################
 
 - name: Fetch VM details after Updating VM attributes
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -277,7 +277,7 @@
 ################################################################################
 
 - name: Delete the VM
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     state: absent
     ext_id: "{{ vm_uuid }}"
   register: result

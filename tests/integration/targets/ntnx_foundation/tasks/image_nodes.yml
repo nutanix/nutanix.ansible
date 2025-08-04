@@ -4,7 +4,7 @@
     msg: Start testing ntnx_foundation
 
 - name: Get aos_packages_info from foundation
-  ntnx_foundation_aos_packages_info:
+  nutanix.ncp.ntnx_foundation_aos_packages_info:
   register: images
 
 - name: Get aos package name with given version filter from all packages
@@ -22,7 +22,7 @@
 ###################################
 
 - name: Image nodes with check mode
-  ntnx_foundation:
+  nutanix.ncp.ntnx_foundation:
     timeout: 3660
     nutanix_host: "{{foundation_host}}"
     cvm_gateway: "{{cvm_gateway}}"
@@ -70,7 +70,7 @@
 
 ###################################
 - name: Image bare metal, dos installed and aos running nodes and create cluster
-  ntnx_foundation:
+  nutanix.ncp.ntnx_foundation:
     timeout: 4500
     nutanix_host: "{{foundation_host}}"
     cvm_gateway: "{{cvm_gateway}}"

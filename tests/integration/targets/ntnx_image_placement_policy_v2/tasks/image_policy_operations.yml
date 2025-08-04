@@ -12,7 +12,7 @@
     image_name: "{{ random_name }}_image_test"
 
 - name: List all categories and choose the first one
-  ntnx_categories_info_v2:
+  nutanix.ncp.ntnx_categories_info_v2:
   register: result
   ignore_errors: true
 
@@ -38,7 +38,7 @@
 ##################################################################################
 
 - name: Create an image placement policy - check mode is enabled
-  ntnx_image_placement_policies_v2:
+  nutanix.ncp.ntnx_image_placement_policies_v2:
     state: present
     name: "{{ image_name }}1"
     description: "{{ image_name }}1_description"
@@ -76,7 +76,7 @@
 ###########################################################################################
 
 - name: Create an image placement policy with minimal spec
-  ntnx_image_placement_policies_v2:
+  nutanix.ncp.ntnx_image_placement_policies_v2:
     state: present
     name: "{{ image_name }}2"
     placement_type: SOFT
@@ -114,7 +114,7 @@
 ###########################################################################################
 
 - name: Create an image placement policy with all possible attributes
-  ntnx_image_placement_policies_v2:
+  nutanix.ncp.ntnx_image_placement_policies_v2:
     state: present
     name: "{{ image_name }}3"
     description: "{{ image_name }}3_description"
@@ -155,7 +155,7 @@
 ###########################################################################################
 
 - name: Create an image placement policy with suspended enforcement state
-  ntnx_image_placement_policies_v2:
+  nutanix.ncp.ntnx_image_placement_policies_v2:
     state: present
     name: "{{ image_name }}4"
     description: "{{ image_name }}4_description"
@@ -196,7 +196,7 @@
 ##########################################################################################
 
 - name: Update an existing image placement policy - check mode is enabled
-  ntnx_image_placement_policies_v2:
+  nutanix.ncp.ntnx_image_placement_policies_v2:
     state: present
     ext_id: "{{ todelete[1] }}"
     name: "{{ image_name }}5"
@@ -235,7 +235,7 @@
 ##########################################################################################
 
 - name: Update an existing image placement policy
-  ntnx_image_placement_policies_v2:
+  nutanix.ncp.ntnx_image_placement_policies_v2:
     state: present
     ext_id: "{{ todelete[1] }}"
     name: "{{ image_name }}5"
@@ -272,7 +272,7 @@
 # ###########################################################################################
 
 - name: Check for idempotency by updating the same policy
-  ntnx_image_placement_policies_v2:
+  nutanix.ncp.ntnx_image_placement_policies_v2:
     state: present
     ext_id: "{{ todelete[1] }}"
     name: "{{ image_name }}5"
@@ -304,7 +304,7 @@
 # ###########################################################################################
 
 - name: Update enforcement state in an existing policy
-  ntnx_image_placement_policies_v2:
+  nutanix.ncp.ntnx_image_placement_policies_v2:
     state: present
     ext_id: "{{ todelete[1] }}"
     enforcement_state: SUSPENDED
@@ -325,7 +325,7 @@
 ###########################################################################################
 
 - name: Check for idempotency by updating enforcement state to the same value
-  ntnx_image_placement_policies_v2:
+  nutanix.ncp.ntnx_image_placement_policies_v2:
     state: present
     ext_id: "{{ todelete[1] }}"
     enforcement_state: SUSPENDED
@@ -347,7 +347,7 @@
 ###########################################################################################
 
 - name: Suspend an existing policy - check mode is enabled
-  ntnx_image_placement_policies_v2:
+  nutanix.ncp.ntnx_image_placement_policies_v2:
     state: present
     ext_id: "{{ todelete[0] }}"
     enforcement_state: SUSPENDED
@@ -373,7 +373,7 @@
 # ###########################################################################################
 
 - name: Suspend an existing policy
-  ntnx_image_placement_policies_v2:
+  nutanix.ncp.ntnx_image_placement_policies_v2:
     state: present
     ext_id: "{{ todelete[0] }}"
     enforcement_state: SUSPENDED
@@ -400,7 +400,7 @@
 
 - name: Resume an existing policy
 
-  ntnx_image_placement_policies_v2:
+  nutanix.ncp.ntnx_image_placement_policies_v2:
     state: present
     ext_id: "{{ todelete[0] }}"
     enforcement_state: ACTIVE
@@ -425,7 +425,7 @@
 ###########################################################################################
 
 - name: Resume policy that does not exist
-  ntnx_image_placement_policies_v2:
+  nutanix.ncp.ntnx_image_placement_policies_v2:
     state: present
     ext_id: 12345678-1234-1234-1234-123456789123
     enforcement_state: ACTIVE
@@ -446,7 +446,7 @@
 ###############################################################################
 
 - name: Get an existing image placement policy
-  ntnx_image_placement_policies_info_v2:
+  nutanix.ncp.ntnx_image_placement_policies_info_v2:
     ext_id: "{{ todelete[0] }}"
   register: result
   ignore_errors: true
@@ -464,7 +464,7 @@
 ################################################################################
 
 - name: Retrieve all policies
-  ntnx_image_placement_policies_info_v2:
+  nutanix.ncp.ntnx_image_placement_policies_info_v2:
   register: result
   ignore_errors: true
 
@@ -481,7 +481,7 @@
 ################################################################################
 
 - name: Retrieve all policies and filter for name
-  ntnx_image_placement_policies_info_v2:
+  nutanix.ncp.ntnx_image_placement_policies_info_v2:
     filter: name eq '{{ image_name }}5'
   register: result
   ignore_errors: true
@@ -499,7 +499,7 @@
 ################################################################################
 
 - name: Retrieve all policies with limit 1
-  ntnx_image_placement_policies_info_v2:
+  nutanix.ncp.ntnx_image_placement_policies_info_v2:
     limit: 1
   register: result
   ignore_errors: true
@@ -517,7 +517,7 @@
 ################################################################################
 
 - name: Retrieve all policies with limit 2
-  ntnx_image_placement_policies_info_v2:
+  nutanix.ncp.ntnx_image_placement_policies_info_v2:
     limit: 2
   register: result
   ignore_errors: true
@@ -535,7 +535,7 @@
 ################################################################################
 
 - name: Delete policy with check mode enabled
-  ntnx_image_placement_policies_v2:
+  nutanix.ncp.ntnx_image_placement_policies_v2:
     state: absent
     ext_id: "{{ todelete[0] }}"
   register: result
@@ -554,7 +554,7 @@
     success_msg: Delete policy with check mode enabled passed
 
 - name: Delete policies
-  ntnx_image_placement_policies_v2:
+  nutanix.ncp.ntnx_image_placement_policies_v2:
     state: absent
     ext_id: "{{ item }}"
   register: result

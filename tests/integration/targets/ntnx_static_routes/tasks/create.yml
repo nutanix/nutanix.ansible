@@ -8,7 +8,7 @@
     msg: Start testing static routes update tests
 
 - name: Add default static route and external nat static route to the vpc route table
-  ntnx_static_routes:
+  nutanix.ncp.ntnx_static_routes:
     vpc_uuid: "{{ vpc.uuid }}"
     static_routes:
       - destination: "0.0.0.0/0"
@@ -51,7 +51,7 @@
     seconds: 60
 
 - name: Get all static routes
-  ntnx_static_routes_info:
+  nutanix.ncp.ntnx_static_routes_info:
     vpc_uuid: "{{ vpc.uuid }}"
   register: result
 
@@ -68,7 +68,7 @@
 ###########################################################################################################
 
 - name: Idempotency check
-  ntnx_static_routes:
+  nutanix.ncp.ntnx_static_routes:
     vpc_uuid: "{{ vpc.uuid }}"
     static_routes:
       - destination: "0.0.0.0/0"
@@ -97,7 +97,7 @@
 ###########################################################################################################
 
 - name: Override existing static routes
-  ntnx_static_routes:
+  nutanix.ncp.ntnx_static_routes:
     vpc_uuid: "{{ vpc.uuid }}"
     static_routes:
       - destination: "10.2.4.0/24"
@@ -122,7 +122,7 @@
     seconds: 60
 
 - name: Get all static routes
-  ntnx_static_routes_info:
+  nutanix.ncp.ntnx_static_routes_info:
     vpc_uuid: "{{ vpc.uuid }}"
   register: result
 
@@ -142,7 +142,7 @@
 ###########################################################################################################
 
 - name: Negative scenario of creating multiple default routes
-  ntnx_static_routes:
+  nutanix.ncp.ntnx_static_routes:
     vpc_uuid: "{{ vpc.uuid }}"
     static_routes:
       - destination: "0.0.0.0/0"
@@ -166,7 +166,7 @@
 
 ###########################################################################################################
 - name: Remove all routes
-  ntnx_static_routes:
+  nutanix.ncp.ntnx_static_routes:
     vpc_uuid: "{{ vpc.uuid }}"
     remove_all_routes: true
   register: result
