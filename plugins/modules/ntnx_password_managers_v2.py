@@ -42,6 +42,9 @@ author:
 EXAMPLES = r"""
 - name: Update password
   nutanix.ncp.ntnx_password_managers_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
     ext_id: "0a1b2c3d-4e5f-6789-abcd-ef0123456789"
     current_password: "Random.password123"
     new_password: "NewPassword.456"

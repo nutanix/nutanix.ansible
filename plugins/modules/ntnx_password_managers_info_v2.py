@@ -27,15 +27,24 @@ author:
 EXAMPLES = r"""
 - name: List password status of all system users
   nutanix.ncp.ntnx_password_managers_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
   register: password_status
 
 - name: List password status of system users with filter
   nutanix.ncp.ntnx_password_managers_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
     filter: "username eq 'admin'"
   register: list_passwords
 
 - name: List password status of system users with limit
   nutanix.ncp.ntnx_password_managers_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
     limit: 1
   register: limited_passwords
 """
