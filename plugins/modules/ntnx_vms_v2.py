@@ -108,6 +108,7 @@ options:
     cluster:
         description:
             - The cluster reference for the VM.
+            - Cluster automatic selection is supported.
         type: dict
         suboptions:
             ext_id:
