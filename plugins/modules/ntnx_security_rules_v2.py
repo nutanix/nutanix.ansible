@@ -950,16 +950,22 @@ def check_network_security_policies_idempotency(old_spec, update_spec):
 
     for rule in update_spec.get("rules", []):
         rule["ext_id"] = None
-        if "spec" in rule:
-            if "src_category_references" in rule["spec"]:
-                if rule["spec"]["src_category_references"] is None:
-                    rule["spec"]["src_category_associated_entity_type"] = None
-            if "dest_category_references" in rule["spec"]:
-                if rule["spec"]["dest_category_references"] is None:
-                    rule["spec"]["dest_category_associated_entity_type"] = None
-            if "secured_group_category_references" in rule["spec"]:
-                if rule["spec"]["secured_group_category_references"] is None:
-                    rule["spec"]["secured_group_category_associated_entity_type"] = None
+        spec = rule.get("spec", {})
+        if (
+            "src_category_references" in spec
+            and spec["src_category_references"] is None
+        ):
+            spec["src_category_associated_entity_type"] = None
+        if (
+            "dest_category_references" in spec
+            and spec["dest_category_references"] is None
+        ):
+            spec["dest_category_associated_entity_type"] = None
+        if (
+            "secured_group_category_references" in spec
+            and spec["secured_group_category_references"] is None
+        ):
+            spec["secured_group_category_associated_entity_type"] = None
 
     # compare rules from old and new spec
     old_rules = old_spec.pop("rules")
