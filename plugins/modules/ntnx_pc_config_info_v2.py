@@ -212,7 +212,7 @@ failed:
     sample: false
 total_available_results:
     description:
-        - The total number of available PC Configurations in PC.
+        - The total number of available PCs
         - This will always be 1.
     type: int
     returned: when all pc configurations are fetched
