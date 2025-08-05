@@ -347,6 +347,8 @@
     that:
       - fips.response is defined
       - fips.response | length >= 1
+      - fips.total_available_results is defined
+      - fips.total_available_results >= 1
     fail_msg: " Unable to list vpcs "
     success_msg: " Floating_ips listed successfully "
 ##############################################################

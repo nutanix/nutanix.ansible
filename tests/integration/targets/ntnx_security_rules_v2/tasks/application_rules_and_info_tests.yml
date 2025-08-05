@@ -1039,6 +1039,8 @@
       - result.response is defined
       - result.failed == false
       - result.response | length > 1
+      - result.total_available_results is defined
+      - result.total_available_results > 1
     fail_msg: Failed to list security rules
     success_msg: Successfully listed security rules
 

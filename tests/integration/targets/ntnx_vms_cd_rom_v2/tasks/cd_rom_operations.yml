@@ -328,6 +328,9 @@
       - result.response is defined
       - result.changed == false
       - result.failed == false
+      - result.response | length == 2
+      - result.total_available_results is defined
+      - result.total_available_results == 2
       - cd_rom_list | length == 2
       - cd_rom_list[0] == todelete[0]
       - cd_rom_list[1] == todelete[1]

@@ -959,6 +959,8 @@
       - result.failed == false
       - result.response is defined
       - result.response | length > 0
+      - result.total_available_results is defined
+      - result.total_available_results > 0
     fail_msg: "List all recovery points failed"
     success_msg: "List all recovery points passed"
 

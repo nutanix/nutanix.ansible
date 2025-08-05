@@ -167,6 +167,8 @@
       - result.changed == False
       - result.response is defined
       - result.response | length == 2
+      - result.total_available_results is defined
+      - result.total_available_results == 2
       - result.response[0].ext_id in expected_vgs
       - result.response[1].ext_id in expected_vgs
     fail_msg: "Unable to fetch VGs using filters"
