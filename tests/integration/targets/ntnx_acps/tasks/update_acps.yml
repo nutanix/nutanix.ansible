@@ -9,7 +9,7 @@
     acp_name_updated: "{{ query('community.general.random_string', upper=false, numbers=false, special=false)[0] }}"
 
 - name: Create min ACP for update
-  ntnx_acps:
+  nutanix.ncp.ntnx_acps:
     state: present
     wait: true
     name: "{{ acp_name }}"
@@ -34,7 +34,7 @@
 ############################################# UPDATE TESTS ########################################
 
 - name: Check idempotency
-  ntnx_acps:
+  nutanix.ncp.ntnx_acps:
     state: present
     acp_uuid: "{{ setup_acp.acp_uuid }}"
     name: "{{ acp_name }}"
@@ -54,7 +54,7 @@
 ########################################################################################
 
 - name: Update name, desc and filters
-  ntnx_acps:
+  nutanix.ncp.ntnx_acps:
     state: present
     acp_uuid: "{{ setup_acp.acp_uuid }}"
     name: "{{ acp_name_updated }}"
@@ -92,7 +92,7 @@
 ########################################################################################
 
 - name: Update name, desc and filters
-  ntnx_acps:
+  nutanix.ncp.ntnx_acps:
     state: present
     acp_uuid: "{{ setup_acp.acp_uuid }}"
     name: "{{ acp_name_updated }}"
@@ -123,7 +123,7 @@
 ########################################### Cleanup ###################################################
 
 - name: Cleanup created entities
-  ntnx_acps:
+  nutanix.ncp.ntnx_acps:
     state: absent
     acp_uuid: "{{ item }}"
   register: result

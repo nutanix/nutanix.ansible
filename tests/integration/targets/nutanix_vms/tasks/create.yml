@@ -23,7 +23,7 @@
       fqdn: myNutanixVM
 ##########################################################################
 - name: VM with none values
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     name: none
     timezone: GMT
@@ -57,7 +57,7 @@
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
 # ##################################################################################
 - name: VM with owner name
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     name: none
     timezone: GMT
@@ -93,7 +93,7 @@
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
 ##################################################################################
 - name: VM with ubuntu image and different specifications
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     project:
       name: "{{ project.name }}"
@@ -147,7 +147,7 @@
   when: result.response.status.state == 'COMPLETE'
 #########################################################################################
 - name: VM with CentOS-7-cloud-init image with disk image size
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     name: VM with CentOS-7-cloud-init image
     memory_gb: 1
@@ -180,7 +180,7 @@
   when: result.response.status.state == 'COMPLETE'
 #################################################################################
 - name: VM with CentOS-7-cloud-init image without disk image size
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     memory_gb: 1
     name: VM with CentOS-7-cloud-init image without image size
@@ -212,7 +212,7 @@
   when: result.response.status.state == 'COMPLETE'
 
 - name: Delete all Created VMs
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: absent
     vm_uuid: "{{ item }}"
   register: result
@@ -222,7 +222,7 @@
     todelete: []
 #################################################################################
 - name: VM with Cluster, Network, Universal time zone, one Disk
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     name: "VM with Cluster Network and Disk"
     memory_gb: 1
@@ -258,7 +258,7 @@
   when: result.response.status.state == 'COMPLETE'
 ########################################################################################
 - name: VM with Cluster, different Disks, Memory size
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     name: "VM with different disks"
     timezone: "UTC"
@@ -288,7 +288,7 @@
   when: result.response.status.state == 'COMPLETE'
 #####################################################################################
 - name: VM with Cluster, different CDROMs
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     memory_gb: 1
     wait: true
@@ -319,7 +319,7 @@
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
 
 - name: Delete all Created VMs
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: absent
     vm_uuid: "{{ item }}"
   register: result
@@ -329,7 +329,7 @@
     todelete: []
 ####################################################################################
 - name: VM with all specification
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     wait: true
     name: "All specification"
@@ -378,7 +378,7 @@
   when: result.response.status.state == 'COMPLETE'
 ##################################################################################################
 - name: VM with managed subnet
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     name: VM with managed subnet
     memory_gb: 1
@@ -405,7 +405,7 @@
   when: result.response.status.state == 'COMPLETE'
 ###################################################################################################
 - name: VM with minimum requirements
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     name: MinReqVM
     cluster:
@@ -427,7 +427,7 @@
   when: result.response.status.state == 'COMPLETE'
 
 - name: Delete all Created VMs
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: absent
     vm_uuid: "{{ item }}"
   register: result
@@ -437,7 +437,7 @@
     todelete: []
 ##################################################################################################
 - name: VM with unmanaged vlan
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     desc: "VM with unmanaged vlan"
     state: present
     name: VM with unmanaged vlan
@@ -475,7 +475,7 @@
   when: result.response.status.state == 'COMPLETE'
 
 - name: Delete all Created VM
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: absent
     vm_uuid: "{{ item }}"
   register: result
@@ -485,7 +485,7 @@
     todelete: []
 ######################################################################################
 - name: VM with managed and unmanaged network
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     name: VM_NIC
     timezone: UTC
@@ -541,7 +541,7 @@
   when: result.response.status.state == 'COMPLETE'
 #########################################################################################
 - name: VM with different disk types and different sizes with UEFI boot type
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     name: VM with UEFI boot type
     timezone: GMT
@@ -594,7 +594,7 @@
   when: result.response.status.state == 'COMPLETE'
 
 - name: Delete all Created VM
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: absent
     vm_uuid: "{{ item }}"
   register: result
@@ -605,7 +605,7 @@
     todelete: []
 ####################################################################################
 - name: VM with storage container
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     name: VM with UEFI boot type
     timezone: GMT
@@ -639,7 +639,7 @@
   when: result.response.status.state == 'COMPLETE'
 ####################################################################################
 - name: Delete all Created VMs
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: absent
     vm_uuid: "{{ item }}"
   register: result

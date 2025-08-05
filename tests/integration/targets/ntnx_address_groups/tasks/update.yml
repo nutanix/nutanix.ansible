@@ -19,7 +19,7 @@
 ##############################################################################################
 
 - name: Create address group with
-  ntnx_address_groups:
+  nutanix.ncp.ntnx_address_groups:
     state: present
     name: "{{ag1}}"
     desc: test-ansible-address-group-3-desc
@@ -41,7 +41,7 @@
 ###################################################################################################
 
 - name: Update all fields
-  ntnx_address_groups:
+  nutanix.ncp.ntnx_address_groups:
     state: present
     address_group_uuid: "{{test_ag.address_group_uuid}}"
     name: "{{ag2}}"
@@ -69,7 +69,7 @@
 ###################################################################################################
 
 - name: Idempotency check
-  ntnx_address_groups:
+  nutanix.ncp.ntnx_address_groups:
     state: present
     address_group_uuid: "{{test_ag.address_group_uuid}}"
     name: "{{ag2}}"
@@ -92,7 +92,7 @@
 ###################################################################################################
 
 - name: Check mode test
-  ntnx_address_groups:
+  nutanix.ncp.ntnx_address_groups:
     state: present
     address_group_uuid: "{{test_ag.address_group_uuid}}"
     name: "{{ag2}}"
@@ -125,7 +125,7 @@
 ###################################################################################################
 
 - name: Cleanup created entities
-  ntnx_address_groups:
+  nutanix.ncp.ntnx_address_groups:
     state: absent
     address_group_uuid: "{{test_ag.address_group_uuid}}"
   register: result

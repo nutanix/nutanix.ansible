@@ -7,5 +7,5 @@
       nutanix_password: "{{ password }}"
       validate_certs: "{{ validate_certs }}"
   block:
-    - name: Import service_account_operations.yml
-      ansible.builtin.import_tasks: service_account_operations.yml
+    - name: Import ova_operations.yml
+      ansible.builtin.import_tasks: ova_operations.yml

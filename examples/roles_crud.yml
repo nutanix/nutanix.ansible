@@ -40,7 +40,7 @@
 
     - name: Print the role details
       ansible.builtin.debug:
-        msg: "{{role1_info}}"
+        msg: "{{ role1_info }}"
 
     - name: Delete the role.
       nutanix.ncp.ntnx_roles:

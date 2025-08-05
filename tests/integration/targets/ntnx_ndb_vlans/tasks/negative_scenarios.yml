@@ -7,7 +7,7 @@
     msg: Start negative scenarios ntnx_ndb_vlans
 
 - name: Create Dhcp ndb vlan with static Configuration
-  ntnx_ndb_vlans:
+  nutanix.ncp.ntnx_ndb_vlans:
     name: "{{ ndb_vlan.name }}"
     vlan_type: DHCP
     gateway: "{{ ndb_vlan.gateway }}"
@@ -32,7 +32,7 @@
     success_msg: "pass: Returned error as expected"
 # ###############################
 - name: Create static ndb vlan with missing Configuration
-  ntnx_ndb_vlans:
+  nutanix.ncp.ntnx_ndb_vlans:
     name: "{{ ndb_vlan.name }}"
     vlan_type: Static
     gateway: "{{ ndb_vlan.gateway }}"
@@ -51,7 +51,7 @@
 
 ###########
 - name: Create Dhcp ndb vlan
-  ntnx_ndb_vlans:
+  nutanix.ncp.ntnx_ndb_vlans:
     name: "{{ ndb_vlan.name }}"
     vlan_type: DHCP
     cluster:
@@ -79,7 +79,7 @@
     todelete: "{{ todelete + [result.vlan_uuid] }}"
 ######################
 - name: Update dhcp ndb vlan with static Configuration
-  ntnx_ndb_vlans:
+  nutanix.ncp.ntnx_ndb_vlans:
     vlan_uuid: "{{ result.vlan_uuid }}"
     gateway: "{{ ndb_vlan.gateway }}"
     subnet_mask: "{{ ndb_vlan.subnet_mask }}"
@@ -107,7 +107,7 @@
 ##################################
 
 - name: Delete all created vlan's
-  ntnx_ndb_vlans:
+  nutanix.ncp.ntnx_ndb_vlans:
     state: absent
     vlan_uuid: "{{ item }}"
   register: result

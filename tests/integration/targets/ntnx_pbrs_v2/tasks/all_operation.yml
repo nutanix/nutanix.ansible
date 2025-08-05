@@ -29,7 +29,7 @@
     todelete: []
 
 - name: Create min VPC
-  ntnx_vpcs_v2:
+  nutanix.ncp.ntnx_vpcs_v2:
     state: present
     name: "{{random_name}}vpc"
   register: result
@@ -91,7 +91,7 @@
 ###############################################################################################################################
 
 - name: Create PBR with vpc, source network, external destination, with PERMIT action and icmp with check_mode
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     state: present
     name: "{{pbr_name}}1"
     priority: "{{ priority.0 }}"
@@ -137,7 +137,7 @@
     success_msg: " Create PBR with vpc, source network, external destination, with PERMIT action and icmp with check_mode passed"
 ###############################################################################################################################
 - name: Create PBR with vpc , source network, external destination, with PERMIT action and icmp
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     state: present
     name: "{{pbr_name}}1"
     priority: "{{ priority.0 }}"
@@ -189,7 +189,7 @@
     todelete: "{{ todelete + [  result.ext_id ] }}"
 ###############################################################################################################################
 - name: Check idempotency
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     state: present
     name: "{{pbr_name}}1"
     ext_id: "{{ result.ext_id }}"
@@ -208,7 +208,7 @@
     success_msg: " idempotency check finished successfully"
 ###############################################################################################################################
 - name: List pbr using priority and vpcExtId filter criteria
-  ntnx_pbrs_info_v2:
+  nutanix.ncp.ntnx_pbrs_info_v2:
     filter: "priority eq {{priority.0}} and vpcExtId eq '{{pbr.vpc.uuid}}' "
   register: result
   ignore_errors: true
@@ -233,7 +233,7 @@
     success_msg: " pbrs listed successfully using priority and vpcExtId filter criteria"
 ###############################################################################################################################
 - name: List pbrs using ext_id
-  ntnx_pbrs_info_v2:
+  nutanix.ncp.ntnx_pbrs_info_v2:
     ext_id: "{{todelete[-1]}}"
   register: result
   ignore_errors: true
@@ -257,7 +257,7 @@
     success_msg: " pbrs listed successfully using ext_id"
 ###############################################################################################################################
 - name: Create PBR with vpc, any source, any destination, any protocol and permit action
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
     state: present
     priority: "{{ priority.1 }}"
@@ -295,7 +295,7 @@
     todelete: "{{ todelete + [  result.ext_id ] }}"
 ##############################################################################################
 - name: Check idempotency
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
     state: present
     priority: "{{ priority.1 }}"
@@ -323,7 +323,7 @@
     success_msg: " Idempotency check finished successfully"
 ###############################################################################################################################
 - name: List pbrs using limit
-  ntnx_pbrs_info_v2:
+  nutanix.ncp.ntnx_pbrs_info_v2:
     limit: 1
   register: pbrs
   ignore_errors: true
@@ -337,7 +337,7 @@
     success_msg: " PBRs listed successfully using limit"
 ###############################################################################################################################
 - name: Create PBR with vpc, any source, external destination and deny action with protocol number
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
     state: present
     priority: "{{ priority.2 }}"
@@ -381,7 +381,7 @@
     todelete: "{{ todelete + [  result.ext_id ] }}"
 ######################################################################################################
 - name: Update PBR name ,description, priority
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     state: present
     ext_id: "{{ result.ext_id }}"
     priority: "{{ priority.8 }}"
@@ -405,7 +405,7 @@
     success_msg: " PBR name ,description, priority updated successfully "
 ######################################################################################################
 - name: Update PBR policy_action, policy_match, protocol_parameters
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     state: present
     ext_id: "{{ result.ext_id }}"
     policies:
@@ -437,7 +437,7 @@
     success_msg: " PBR name ,description, priority updated successfully "
 ######################################################################################################
 - name: Create PBR with vpc with source external and destination network with reroute action and with tcp protocol
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
     state: present
     priority: "{{ priority.3 }}"
@@ -505,7 +505,7 @@
 
 ##########################################################################################################
 - name: Create PBR with vpc with source external and destination network with reroute action and any tcp port rangelist
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
     state: present
     priority: "{{ priority.4 }}"
@@ -556,7 +556,7 @@
     todelete: "{{ todelete + [  result.ext_id ] }}"
 ###########################################################################################################
 - name: Create PBR with vpc, custom source network, external destination, reroute action and udp port rangelist
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
     state: present
     priority: "{{ priority.5 }}"
@@ -625,7 +625,7 @@
     todelete: "{{ todelete + [  result.ext_id ] }}"
 ##############################################################################################################
 - name: Create PBR with vpc name, custom source network, external destination, reroute action and any udp ports
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
     state: present
     priority: "{{ priority.6 }}"
@@ -684,7 +684,7 @@
     todelete: "{{ todelete + [  result.ext_id ] }}"
 ##################################################################################################################
 - name: Create PBR with vpc, source network, external destination, with reroute action and icmp
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
     state: present
     priority: "{{ priority.7 }}"
@@ -739,7 +739,7 @@
     todelete: "{{ todelete + [  result.ext_id ] }}"
 ##################################################################################################################
 - name: Create PBR with vpc, source network, external destination, with forward action and icmp
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
     state: present
     priority: "{{ priority.9 }}"
@@ -795,7 +795,7 @@
     todelete: "{{ todelete + [  result.ext_id ] }}"
 ##################################################################################################################
 - name: List pbrs using name filter criteria
-  ntnx_pbrs_info_v2:
+  nutanix.ncp.ntnx_pbrs_info_v2:
     filter: "name eq '{{pbr_name}}9'"
   register: result
   ignore_errors: true
@@ -821,7 +821,7 @@
 ###############################################################################################################################
 
 - name: Delete pbr with check mode enabled
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     state: absent
     ext_id: "{{ todelete[0] }}"
   register: result
@@ -841,7 +841,7 @@
 ###############################################################################################################################
 
 - name: Delete all created pbrs
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     state: absent
     ext_id: "{{ item }}"
   register: result
@@ -878,7 +878,7 @@
 #################################################################################################################################
 
 - name: Delete vpc
-  ntnx_vpcs_v2:
+  nutanix.ncp.ntnx_vpcs_v2:
     state: absent
     ext_id: "{{ pbr.vpc.uuid }}"
   register: result
