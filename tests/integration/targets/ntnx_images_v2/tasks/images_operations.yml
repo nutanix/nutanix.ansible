@@ -383,6 +383,8 @@
       - result.failed == false
       - result.response[0].name == "{{ disk_image_name }}"
       - result.response[0].type == "DISK_IMAGE"
+      - result.total_available_results is defined
+      - result.total_available_results >= 2
     fail_msg: "Unable to retrieve DISK image  "
     success_msg: "DISK image retrieved successfully "
 

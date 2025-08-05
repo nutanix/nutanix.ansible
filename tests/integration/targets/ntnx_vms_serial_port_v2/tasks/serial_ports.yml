@@ -65,6 +65,8 @@
     that:
       - result.response is defined
       - result.response | length == 1
+      - result.total_available_results is defined
+      - result.total_available_results == 1
       - result.response[0].is_connected == true
       - result.response[0].index == 0
       - result.vm_ext_id == '{{ vm_ext_id }}'

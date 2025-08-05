@@ -780,6 +780,8 @@
     that:
       - result.response is defined
       - result.response | length >= 1
+      - result.total_available_results is defined
+      - result.total_available_results >= 1
       - result.response.0.name == subnets.response.0.name
     fail_msg: " Unable to list subnets using subnet_type filter criteria "
     success_msg: " Subnets listed successfully using subnet_type filter criteria "
@@ -809,6 +811,8 @@
     that:
       - result.response is defined
       - result.response | length == 1
+      - result.total_available_results is defined
+      - result.total_available_results == 1
       - result.response[0].vpc_reference == "{{vpc_uuid}}"
     fail_msg: " Unable to list subnets using vpc_reference "
     success_msg: " Subnets listed successfully using vpc_reference"
@@ -824,6 +828,8 @@
     that:
       - result.response is defined
       - result.response | length > 0
+      - result.total_available_results is defined
+      - result.total_available_results > 0
       - result.response.0.cluster_reference == "{{ cluster.uuid }}"
     fail_msg: " Unable to list subnets using vpc_reference "
     success_msg: " Subnets listed successfully using vpc_reference"

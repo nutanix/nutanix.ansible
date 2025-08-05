@@ -15,6 +15,8 @@
       - result.changed == false
       - result.failed == false
       - result.response | length > 0
+      - result.total_available_results is defined
+      - result.total_available_results > 0
     fail_msg: Unable to list all operations
     success_msg: operations info obtained successfully
 

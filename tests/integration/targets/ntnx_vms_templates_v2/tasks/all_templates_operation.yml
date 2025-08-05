@@ -121,6 +121,8 @@
       - result.changed == False
       - result.failed == False
       - result.response | length > 0
+      - result.total_available_results is defined
+      - result.total_available_results > 0
     fail_msg: "Unable to list templates "
     success_msg: templates  listed successfully
 ########################################################################
@@ -600,6 +602,25 @@
       - result.response.is_active_version == true
     fail_msg: Unable to fetch template version using ext id
     success_msg: template version fetched using ext id successfully
+
+- name: Retrieve all Templates Versions details for the given Template identifier.
+  ntnx_templates_versions_info_v2:
+    template_ext_id: "{{ template1_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of all template versions
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response | length > 0
+      - result.total_available_results is defined
+      - result.total_available_results > 0
+    fail_msg: "Unable to list template versions "
+    success_msg: template versions listed successfully
+
 ########################################################################
 - name: Create new template from a vm
   nutanix.ncp.ntnx_templates_v2:
