@@ -108,6 +108,10 @@
         index: 0
       - is_connected: true
         index: 3
+    project:
+      ext_id: "{{ project.uuid }}"
+    host:
+      ext_id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
   register: result
   ignore_errors: true
   check_mode: true
@@ -165,6 +169,8 @@
       - result.response.boot_config.nvram_device.backing_storage_info.storage_container.ext_id == "{{ storage_container.uuid }}"
       - result.response.boot_config.nvram_device.backing_storage_info.data_source.reference.image_ext_id == "{{ disk_image.image_ext_ids[0] }}"
       - result.response.boot_config.nvram_device.backing_storage_info.disk_size_bytes == 26843545600
+      - result.response.project.ext_id == "{{ project.uuid }}"
+      - result.response.host.ext_id == "f47ac10b-58cc-4372-a567-0e02b2c3d479"
     fail_msg: " Create VM with full requirements with check_mode failed"
     success_msg: "Create VM with full requirements with check_mode passed"
 
@@ -242,6 +248,8 @@
       is_apc_enabled: false
     vtpm_config:
       is_vtpm_enabled: false
+    project:
+      ext_id: "{{ project.uuid }}"
   register: result
   ignore_errors: true
 
@@ -271,6 +279,7 @@
       - result.response.is_agent_vm == false
       - result.response.apc_config.is_apc_enabled == false
       - result.response.vtpm_config.is_vtpm_enabled == false
+      - result.response.project.ext_id == "{{ project.uuid }}"
     fail_msg: " Unable to create VM with full requirements "
     success_msg: " VM with full requirements created successfully "
 
