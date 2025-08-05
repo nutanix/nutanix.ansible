@@ -200,9 +200,6 @@
   register: user_groups
   ignore_errors: true
 
-- ansible.builtin.debug:
-    var: user_groups
-
 - name: List all user groups Status
   ansible.builtin.assert:
     that:

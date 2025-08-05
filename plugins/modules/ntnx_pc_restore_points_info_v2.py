@@ -136,9 +136,9 @@ failed:
 
 total_available_results:
     description:
-        - The total number of available VMs in PC.
+        - The total number of available restore points in the PC.
     type: int
-    returned: when all vms are fetched
+    returned: when all restore points are fetched
     sample: 125
 """
 

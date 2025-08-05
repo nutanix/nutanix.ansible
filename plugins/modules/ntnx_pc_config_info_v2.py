@@ -213,9 +213,10 @@ failed:
 total_available_results:
     description:
         - The total number of available PC Configurations in PC.
+        - This will always be 1.
     type: int
     returned: when all pc configurations are fetched
-    sample: 125
+    sample: 1
 """
 
 import warnings  # noqa: E402

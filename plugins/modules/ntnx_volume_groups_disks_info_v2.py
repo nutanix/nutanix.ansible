@@ -103,7 +103,7 @@ error:
     sample: "Api Exception raised while fetching volume group disk info"
 total_available_results:
     description:
-        - The total number of available Volume Group disks when all disks are fetched.
+        - The total number of available Volume Group disks when all Volume Group disks are fetched.
     type: int
     returned: when all volume group disks are fetched
     sample: 125
