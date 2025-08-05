@@ -146,6 +146,11 @@ options:
                   - A set of categories of vms which is protected by a Network Security Policy and defined as a list of categories.
                 type: list
                 elements: str
+              secured_group_entity_group_reference:
+                description:
+                  - A reference to the secured group entity group.
+                type: str
+
               src_allow_spec:
                 description:
                   - A specification to how allow mode traffic should be applied, either ALL or NONE.
@@ -170,9 +175,14 @@ options:
                   - List of categories that define a set of network endpoints as outbound.
                 type: list
                 elements: str
+              dest_entity_group_reference:
+                description:
+                  - A reference to the destination entity group.
+                type: str
               secured_group_category_associated_entity_type:
                 description:
                   - The type of entity associated with the secured group category.
+                  - Will have value only if secured_group_category_references is provided.
                 type: str
                 choices:
                   - VM
@@ -183,6 +193,7 @@ options:
               src_category_associated_entity_type:
                 description:
                   - The type of entity associated with the source category.
+                  - Will have value only if src_category_references is provided.
                 type: str
                 choices:
                   - VM
@@ -190,9 +201,14 @@ options:
                   - VPC
                 default: VM
                 required: false
+              src_entity_group_reference:
+                description:
+                  - A reference to the source entity group.
+                type: str
               dest_category_associated_entity_type:
                 description:
                   - The type of entity associated with the destination category.
+                  - Will have value only if dest_category_references is provided.
                 type: str
                 choices:
                   - VM
@@ -297,6 +313,10 @@ options:
                 description:
                   - A reference to the network function chain in the rule.
                 type: str
+              network_function_reference:
+                description:
+                  - A reference to the network function in the rule.
+                type: str
           intra_entity_group_rule_spec:
             description:
               - The specification of the intra entity group rule.
@@ -318,6 +338,7 @@ options:
               secured_group_category_associated_entity_type:
                 description:
                   - The type of entity associated with the secured group category.
+                  - Will have value only if secured_group_category_references is provided.
                 type: str
                 choices:
                   - VM
@@ -726,12 +747,14 @@ def get_module_spec():
     )
     application_rule_spec = dict(
         secured_group_category_references=dict(type="list", elements="str"),
+        secured_group_entity_group_reference=dict(type="str"),
         secured_group_category_associated_entity_type=dict(
             type="str", choices=["VM", "SUBNET", "VPC"], default="VM"
         ),
         src_category_associated_entity_type=dict(
             type="str", choices=["VM", "SUBNET", "VPC"], default="VM"
         ),
+        src_entity_group_reference=dict(type="str"),
         dest_category_associated_entity_type=dict(
             type="str", choices=["VM", "SUBNET", "VPC"], default="VM"
         ),
@@ -739,6 +762,7 @@ def get_module_spec():
         dest_allow_spec=dict(type="str", choices=["ALL", "NONE"]),
         src_category_references=dict(type="list", elements="str"),
         dest_category_references=dict(type="list", elements="str"),
+        dest_entity_group_reference=dict(type="str"),
         src_subnet=dict(
             type="dict", options=ip_address_sub_spec, obj=mic_sdk.IPv4Address
         ),
@@ -768,6 +792,7 @@ def get_module_spec():
             obj=mic_sdk.IcmpTypeCodeSpec,
         ),
         network_function_chain_reference=dict(type="str"),
+        network_function_reference=dict(type="str"),
     )
     entity_group_rule_spec = dict(
         secured_group_category_references=dict(type="list", elements="str"),
