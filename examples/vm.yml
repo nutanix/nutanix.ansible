@@ -39,7 +39,7 @@
           AppType:
             - "Apache_Spark"
         cluster:
-          name: "{{cluster_name}}"
+          name: "{{ cluster_name }}"
         networks:
           - is_connected: true
             vlan_mode: "ACCESS"
@@ -48,7 +48,7 @@
               # mention cluster only when there are multiple subnets with same name accross clusters
               # and subnet name is set above
               cluster:
-                name: "{{cluster_name}}"
+                name: "{{ cluster_name }}"
         disks:
           - type: "DISK"
             size_gb: 30
@@ -71,4 +71,4 @@
     - name: Delete VM
       nutanix.ncp.ntnx_vms:
         state: absent
-        vm_uuid: "{{output.vm_uuid}}"
+        vm_uuid: "{{ output.vm_uuid }}"

@@ -18,7 +18,7 @@
 ################################################ Test Setup ################################################
 
 - name: Create categories for tests
-  ntnx_categories_v2:
+  nutanix.ncp.ntnx_categories_v2:
     key: AnsibleSecurityRuleTest
     value: AnsibleSecurityRuleTest{{ random_name }}{{ item }}
     description: ansible test
@@ -45,7 +45,7 @@
 ################################################ Create tests ################################################
 
 - name: Generate spec for isolation type security rule creation using check mode
-  ntnx_security_rules_v2:
+  nutanix.ncp.ntnx_security_rules_v2:
     name: "{{ rule_name_1 }}"
     description: Ansible created rule
     type: ISOLATION
@@ -88,7 +88,7 @@
     success_msg: Successfully generated spec for isolation type security rule creation
 
 - name: Create isolation type security rule
-  ntnx_security_rules_v2:
+  nutanix.ncp.ntnx_security_rules_v2:
     name: "{{ rule_name_1 }}"
     description: Ansible created rule
     type: ISOLATION
@@ -139,7 +139,7 @@
 ################################################ Update tests ################################################
 
 - name: Update isolation type security rule
-  ntnx_security_rules_v2:
+  nutanix.ncp.ntnx_security_rules_v2:
     state: present
     ext_id: "{{ policy_ext_id1 }}"
     name: "{{ rule_name_1 }}-updated"
@@ -176,7 +176,7 @@
     success_msg: Successfully updated isolation type security rule
 
 - name: Update security rule with same values to check idempotency
-  ntnx_security_rules_v2:
+  nutanix.ncp.ntnx_security_rules_v2:
     state: present
     ext_id: "{{ policy_ext_id1 }}"
     name: "{{ rule_name_1 }}-updated"
@@ -208,7 +208,7 @@
 ######################################### Delete tests #########################################
 
 - name: Delete security rule
-  ntnx_security_rules_v2:
+  nutanix.ncp.ntnx_security_rules_v2:
     state: absent
     ext_id: "{{ policy_ext_id1 }}"
   register: result
@@ -225,7 +225,7 @@
 ######################################### Delete test setup created entities #########################################
 
 - name: Delete all categories
-  ntnx_categories_v2:
+  nutanix.ncp.ntnx_categories_v2:
     state: absent
     ext_id: "{{ item }}"
   register: result

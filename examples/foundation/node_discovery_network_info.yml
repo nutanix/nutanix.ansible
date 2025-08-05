@@ -16,8 +16,8 @@
       nutanix.ncp.ntnx_foundation_node_network_info:
         nutanix_host: 10.xx.xx.xx
         nodes:
-          - "{{discovered_nodes.blocks.0.nodes.0.ipv6_address}}"
-          - "{{discovered_nodes.blocks.1.nodes.0.ipv6_address}}"
+          - "{{ discovered_nodes.blocks.0.nodes.0.ipv6_address }}"
+          - "{{ discovered_nodes.blocks.1.nodes.0.ipv6_address }}"
       register: result
 
     - name: Print node network info

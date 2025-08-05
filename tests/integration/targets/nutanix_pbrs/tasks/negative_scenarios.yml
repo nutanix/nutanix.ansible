@@ -11,7 +11,7 @@
     msg: "Started Negative Creation Cases"
 
 - name: Create PBR with unknown vpc name
-  ntnx_pbrs:
+  nutanix.ncp.ntnx_pbrs:
     state: present
     priority: "{{ priority.8 }}"
     vpc:
@@ -38,7 +38,7 @@
     success_msg: " Success: returned error as expected "
 ##################################################################
 - name: Create PBR with priority less than 10
-  ntnx_pbrs:
+  nutanix.ncp.ntnx_pbrs:
     state: present
     priority: 8
     vpc:
@@ -65,7 +65,7 @@
     success_msg: " Success: returned error as expected "
 ###################################################################
 - name: Create PBR with invalid network ip
-  ntnx_pbrs:
+  nutanix.ncp.ntnx_pbrs:
     state: present
     priority: "{{ priority.5 }}"
     vpc:
@@ -93,7 +93,7 @@
 
 #################################################################
 - name: Create PBR with unknown vpc uuid
-  ntnx_pbrs:
+  nutanix.ncp.ntnx_pbrs:
     state: present
     priority: "{{ priority.8 }}"
     vpc:
@@ -120,7 +120,7 @@
     success_msg: " Success: returned error as expected "
 #################################################################
 - name: Create PBR with invalid type and code values for icmp
-  ntnx_pbrs:
+  nutanix.ncp.ntnx_pbrs:
     state: present
     priority: "{{ priority.8 }}"
     vpc:
@@ -147,7 +147,7 @@
     success_msg: " Success: returned error as expected "
 #####################################################################
 - name: Delete pbrs with unknown uuid
-  ntnx_pbrs:
+  nutanix.ncp.ntnx_pbrs:
     state: absent
     pbr_uuid: 5
   register: result

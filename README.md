@@ -10,14 +10,28 @@ It is designed keeping simplicity as the core value. Hence it is
 
 Checkout this [blog](https://www.nutanix.dev/2022/08/05/getting-started-with-the-nutanix-ansible-module/) for getting started with nutanix ansible module.
 
-NOTE: The latest version of the Nutanix Ansible collection is [v2.1.1](https://github.com/nutanix/nutanix.ansible/releases/tag/v2.1.1).
+NOTE: The latest version of the Nutanix Ansible collection is [v2.2.0](https://github.com/nutanix/nutanix.ansible/releases/tag/v2.2.0).
 
-### Introducing Nutanix Ansible Collection Version 2.1.0
-We're excited to announce the release of Nutanix Ansible Collection Version 2.1.0! This major update brings significant improvements to your infrastructure management experience:
+## Introducing Nutanix Ansible Collection Version v2.2.0
 
-- Built on the latest v4 APIs/SDKs: Leveraging the power of Nutanix v4 APIs/SDKs, this version offers enhanced functionality and better integration with the latest Nutanix features.
-- Expanded Resource Coverage:  Discover new resources and data sources, enabling you to model and manage a broader spectrum of Nutanix infrastructure components within your Ansible configurations.
-- Version Suffix: To easily distinguish resources and data sources specific to version 2.0.0 and later, they are marked with the *_v2 suffix.
+We are excited to announce the release of **Nutanix Ansible Collection v2.2.0** — a major update that brings powerful new features and enhancements for automating your Nutanix infrastructure.
+
+### What's New in v2.2.0
+
+- **Built on v4.1 APIs/SDKs**  
+  This release is built on the latest Nutanix v4 APIs and SDKs, providing improved performance, stability, and alignment with the newest platform capabilities.
+
+- **New Resource Support**
+  - **Objects**: Automate Nutanix Objects (S3-compatible storage) management for scalable storage use cases.
+  - **Service Accounts**: Manage service accounts and their associated roles and permissions directly through Ansible.
+
+- **Bug Fixes and Stability Improvements**  
+  Multiple bugs have been resolved to improve the reliability and user experience across modules.
+
+---
+
+Upgrade now to take advantage of these powerful features and streamline your Nutanix automation workflows!
+
 
 ## Important Notice
 Upcoming Deprecation of Legacy Nutanix Ansible Modules. Starting with the Nutanix Ansible Collection release planned for Q4-CY2026, legacy modules which are based on v0.8,v1,v2 and v3 APIs will be deprecated and no longer supported. For more information, visit
@@ -25,6 +39,7 @@ Upcoming Deprecation of Legacy Nutanix Ansible Modules. Starting with the Nutani
 [Legacy API Deprecation - FAQs](https://portal.nutanix.com/page/documents/kbs/details?targetId=kA0VO0000005rgP0AQ)
 Nutanix strongly encourages you to migrate your scripts and applications to the latest v2 version of the Nutanix Ansible modules, which are built on our v4 APIs/SDKs. By adopting the latest v2 version based on v4 APIs and SDKs, our users can leverage the enhanced capabilities and latest innovations from Nutanix.
 We understand that this transition may require some effort, and we are committed to supporting you throughout the process. Please refer to our documentation and support channels for guidance and assistance.
+Version Suffix: To easily distinguish resources and data sources specific to version 2.0.0 and later, they are marked with the *_v2 suffix.
 
 ## Support
 
@@ -46,6 +61,7 @@ This collection requires Python 3.10 or greater
 
 | Ansible Version |  AOS Version | PC version  | Other software versions | Supported |
 |  :--- |  :--- | :--- | :--- | :--- |
+| 2.2.0 | 7.0.1, 7.0, 7.3| pc2024.3, pc2024.3.1, pc7.3 or later| | yes |
 | 2.1.1 | 7.0.1, 7.0| pc2024.3, pc2024.3.1 or later| | yes |
 | 2.1.0 | 7.0.1, 7.0| pc2024.3, pc2024.3.1 or later| | yes |
 | 2.0.0 | 7.0 | pc2024.3 or later | nke v2.8, foundation v5.7, ndb v2.7| yes |
@@ -60,6 +76,13 @@ This collection requires Python 3.10 or greater
 | 1.3.0 | | pc2022.4, pc2022.1.0.2, pc2021.9.0.4 |  | no |
 | 1.2.0 | | pc2022.4, pc2022.1.0.2, pc.2021.9.0.5 | | no |
 | 1.1.0 | | pc2022.1.0.2, pc.2021.9.0.5, pc.2021.8.0.1 | foundation v5.2, foundation v5.1.1, foundation central v1.3, foundation central v1.2 | no |
+
+## SDK-PC-PE Compatibility
+
+| SDK | PC | PE |
+|  :--- |  :--- | :--- |
+| v4.1, v4.0 | pc7.3 | 7.3 |
+| v4.0 | pc2024.3.1, pc2024.3 | 7.0.1, 7.0 |
 
 ### Notes:
 1. Static routes module (ntnx_static_routes) is supported for PC versions >= pc.2022.1
@@ -272,6 +295,10 @@ Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on p
 | - | ntnx_lcm_inventory_v2 |
 | - | ntnx_lcm_prechecks_v2 |
 | - | ntnx_lcm_upgrades_v2 |
+| - | ntnx_users_api_key_v2 |
+| - | ntnx_users_revoke_api_key_v2 |
+| - | ntnx_object_stores_v2 |
+| - | ntnx_object_stores_certificate_v2 |
 
 ## Data Sources
 
@@ -348,6 +375,9 @@ Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on p
 | - | ntnx_lcm_config_info_v2 |
 | - | ntnx_lcm_entities_info_v2 |
 | - | ntnx_lcm_status_info_v2 |
+| - | ntnx_users_api_key_info_v2 |
+| - | ntnx_object_stores_info_v2 |
+| - | ntnx_object_stores_certificate_info_v2 |
 
 
 ## Inventory Plugins

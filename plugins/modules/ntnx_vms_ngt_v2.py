@@ -105,7 +105,7 @@ EXAMPLES = r"""
     ext_id: "98b9dc89-be08-3c56-b554-692b8b676fd1"
     capabilities:
       - SELF_SERVICE_RESTORE
-    credentials:
+    credential:
       username: "admin"
       password: "password"
     reboot_preference:

@@ -4,7 +4,7 @@
     msg: "Start ntnx_image_placement_policies_info tests"
 
 - name: Create image placement policy
-  ntnx_image_placement_policy:
+  nutanix.ncp.ntnx_image_placement_policy:
     placement_type: soft
     name: "test_policy_1"
     image_categories:
@@ -16,7 +16,7 @@
   register: policy_1
 
 - name: Create image placement policy
-  ntnx_image_placement_policy:
+  nutanix.ncp.ntnx_image_placement_policy:
     placement_type: soft
     name: "test_policy_2"
     image_categories:
@@ -37,7 +37,7 @@
 
 ###################################################################
 - name: Test getting all image placement policies
-  ntnx_image_placement_policies_info:
+  nutanix.ncp.ntnx_image_placement_policies_info:
   register: result
 
 - name: Check listing status
@@ -51,7 +51,7 @@
 ################################################################
 
 - name: Test getting particular image placement policy using filter
-  ntnx_image_placement_policies_info:
+  nutanix.ncp.ntnx_image_placement_policies_info:
     filter:
       name: "{{ policy_1.response.status.name }}"
     length: 1
@@ -69,7 +69,7 @@
 ################################################################
 
 - name: Test getting particular image placement policy using uuid
-  ntnx_image_placement_policies_info:
+  nutanix.ncp.ntnx_image_placement_policies_info:
     policy_uuid: "{{ policy_2.response.metadata.uuid }}"
   register: result
 
@@ -84,7 +84,7 @@
 #############################################################
 
 - name: List image placement policy using ascending name sorting
-  ntnx_image_placement_policies_info:
+  nutanix.ncp.ntnx_image_placement_policies_info:
     sort_order: "DESCENDING"
     sort_attribute: "name"
   register: result
@@ -99,7 +99,7 @@
 ################################################## CLEANUP #######################################################
 
 - name: Cleanup created entities
-  ntnx_image_placement_policy:
+  nutanix.ncp.ntnx_image_placement_policy:
     state: absent
     policy_uuid: "{{ item }}"
   register: result

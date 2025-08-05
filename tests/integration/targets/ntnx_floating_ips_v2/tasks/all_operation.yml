@@ -19,7 +19,7 @@
     fip3_name: "{{query('community.general.random_string',numbers=false, special=false,length=8).0}}"
 
 - name: Fetch vm nic reference for tests
-  ntnx_vms_info:
+  nutanix.ncp.ntnx_vms_info:
     vm_uuid: "{{ vm.uuid }}"
   register: result
 
@@ -28,7 +28,7 @@
     vm_nic_reference: "{{ result.response.status.resources.nic_list[0].uuid }}"
 
 - name: Fetch categories for assigning
-  ntnx_categories_info_v2:
+  nutanix.ncp.ntnx_categories_info_v2:
   register: result
 
 - name: Define variable
@@ -41,7 +41,7 @@
 
 ##############################################################
 - name: Create floating ip with external subnet uuid with check mode
-  ntnx_floating_ips_v2:
+  nutanix.ncp.ntnx_floating_ips_v2:
     state: present
     name: "{{ fip1_name }}"
     external_subnet_reference: "{{ external_nat_subnet.uuid }}"
@@ -65,7 +65,7 @@
     success_msg: " Floating ip with external subnet uuid created successfully with check mode"
 ##############################################################
 - name: Create floating ip with external subnet uuid
-  ntnx_floating_ips_v2:
+  nutanix.ncp.ntnx_floating_ips_v2:
     state: present
     name: "{{ fip1_name }}"
     external_subnet_reference: "{{ external_nat_subnet.uuid }}"
@@ -96,7 +96,7 @@
     success_msg: " Floating ip with external subnet uuid created successfully "
 
 - name: Fetch the created floating IP
-  ntnx_floating_ips_info_v2:
+  nutanix.ncp.ntnx_floating_ips_info_v2:
     filter: name eq '{{ fip1_name }}'
   register: result
 
@@ -122,7 +122,7 @@
     todelete: "{{ todelete + [result.response[0].ext_id] }}"
 
 - name: Get floating_ips using ext_id
-  ntnx_floating_ips_info_v2:
+  nutanix.ncp.ntnx_floating_ips_info_v2:
     ext_id: "{{ result.response[0].ext_id }}"
   register: result
   ignore_errors: true
@@ -139,7 +139,7 @@
 
 ##############################################################
 - name: Check idempotency
-  ntnx_floating_ips_v2:
+  nutanix.ncp.ntnx_floating_ips_v2:
     state: present
     name: "{{ fip1_name }}"
     external_subnet_reference: "{{ external_nat_subnet.uuid }}"
@@ -157,7 +157,7 @@
     success_msg: " Idempotency check finished successfully "
 ##############################################################
 - name: Create floating ip with vpc uuid and private ip association
-  ntnx_floating_ips_v2:
+  nutanix.ncp.ntnx_floating_ips_v2:
     state: present
     external_subnet_reference: "{{ external_nat_subnet.uuid }}"
     name: "{{ fip2_name }}"
@@ -184,7 +184,7 @@
     success_msg: " Floating ip with vpc uuid and external subnet uuid created successfully "
 
 - name: Fetch the created floating IP
-  ntnx_floating_ips_info_v2:
+  nutanix.ncp.ntnx_floating_ips_info_v2:
     filter: name eq '{{ fip2_name }}'
   register: result
 
@@ -208,7 +208,7 @@
     todelete: "{{ todelete + [result.response[0].ext_id] }}"
 ##########################################################
 - name: Update floating ip name with check mode
-  ntnx_floating_ips_v2:
+  nutanix.ncp.ntnx_floating_ips_v2:
     state: present
     name: "{{ fip2_name }}_updated"
     ext_id: "{{ fip_ext_id }}"
@@ -237,7 +237,7 @@
 
 ##########################################################
 - name: Update floating ip name and private IP
-  ntnx_floating_ips_v2:
+  nutanix.ncp.ntnx_floating_ips_v2:
     state: present
     name: "{{ fip2_name }}_updated"
     ext_id: "{{ fip_ext_id }}"
@@ -265,7 +265,7 @@
 
 ########################################################
 - name: Create floating ip with vm nic reference association
-  ntnx_floating_ips_v2:
+  nutanix.ncp.ntnx_floating_ips_v2:
     state: present
     external_subnet_reference: "{{ external_nat_subnet.uuid }}"
     association:
@@ -287,7 +287,7 @@
     success_msg: " Floating ip with external uuid and vm nic reference created successfully "
 
 - name: Fetch the created floating IP
-  ntnx_floating_ips_info_v2:
+  nutanix.ncp.ntnx_floating_ips_info_v2:
     filter: name eq '{{ fip3_name }}'
   register: result
 
@@ -313,7 +313,7 @@
 
 # using dummy reference here for generating spec only
 - name: Generate update spec for floating ip with vm nic reference
-  ntnx_floating_ips_v2:
+  nutanix.ncp.ntnx_floating_ips_v2:
     state: present
     ext_id: "{{ fip_ext_id }}"
     external_subnet_reference: "{{ external_nat_subnet.uuid }}"
@@ -338,7 +338,7 @@
 
 ##############################################################
 - name: List Floating_ips
-  ntnx_floating_ips_info_v2:
+  nutanix.ncp.ntnx_floating_ips_info_v2:
   register: fips
   ignore_errors: true
 
@@ -351,7 +351,7 @@
     success_msg: " Floating_ips listed successfully "
 ##############################################################
 - name: List floating_ips using limit
-  ntnx_floating_ips_info_v2:
+  nutanix.ncp.ntnx_floating_ips_info_v2:
     limit: 1
   register: result
   ignore_errors: true
@@ -365,7 +365,7 @@
     success_msg: " Floating_ips listed successfully "
 #############################################################
 - name: Get floating_ips using ext_id
-  ntnx_floating_ips_info_v2:
+  nutanix.ncp.ntnx_floating_ips_info_v2:
     ext_id: "{{ fips.response.1.ext_id }}"
   register: result
   ignore_errors: true
@@ -380,7 +380,7 @@
 #########################################################
 
 - name: Delete floating IP with check mode enabled
-  ntnx_floating_ips_v2:
+  nutanix.ncp.ntnx_floating_ips_v2:
     state: absent
     ext_id: "{{ fip_ext_id }}"
   register: result
@@ -399,7 +399,7 @@
     success_msg: "Delete floating ip with check mode passed"
 
 - name: Delete all created floating ips
-  ntnx_floating_ips_v2:
+  nutanix.ncp.ntnx_floating_ips_v2:
     state: absent
     ext_id: "{{ item }}"
   register: result

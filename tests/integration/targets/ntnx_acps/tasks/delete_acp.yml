@@ -12,7 +12,7 @@
     acp1_name: "{{ random_name[0] }}1"
 
 - name: Create ACP with all specifications
-  ntnx_acps:
+  nutanix.ncp.ntnx_acps:
     state: present
     name: "{{ acp1_name }}"
     role:
@@ -54,7 +54,7 @@
     success_msg: " ACP with all specifications created successfully "
 
 - name: Delete acp with check mode
-  ntnx_acps:
+  nutanix.ncp.ntnx_acps:
     state: absent
     acp_uuid: "{{ result.response.metadata.uuid }}"
   register: output
@@ -72,7 +72,7 @@
     success_msg: "Delete acp with check mode passed"
 
 - name: Delete acp
-  ntnx_acps:
+  nutanix.ncp.ntnx_acps:
     state: absent
     acp_uuid: "{{ result.acp_uuid }}"
   register: output
