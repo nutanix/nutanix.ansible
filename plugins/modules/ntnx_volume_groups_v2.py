@@ -13,16 +13,18 @@ DOCUMENTATION = r"""
 module: ntnx_volume_groups_v2
 short_description: Manage Nutanix volume group in PC
 description:
-    - This module allows you to create and delete volume group in Nutanix PC.
+    - This module allows you to create, update and delete volume group in Nutanix PC.
     - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)
+ - Abhinav Bansal (@abhinavbansal29)
 options:
     state:
         description:
             - Specify state
             - If C(state) is set to C(present) then module will create volume group.
+            - if C(state) is set to C(present) and C(ext_id) is provided then module will update volume group.
             - if C(state) is set to C(absent) then module will delete volume group.
         choices:
             - present
@@ -193,6 +195,21 @@ EXAMPLES = r"""
   register: result
   ignore_errors: true
 
+- name: Update Volume group
+  ntnx_volume_groups_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    state: "present"
+    ext_id: 0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b67
+    name: "{{ vg1_name }}-updated"
+    description: "Volume group 1 updated"
+    should_load_balance_vm_attachments: false
+    sharing_status: "NOT_SHARED"
+    is_hidden: false
+  register: result
+  ignore_errors: true
+
 - name: Delete Volume groups
   nutanix.ncp.ntnx_volume_groups_v2:
     nutanix_host: "{{ ip }}"
@@ -351,10 +368,12 @@ def create_vg(module, result):
 
     result["changed"] = True
 
+
 def check_idempotency(current_spec, update_spec):
     if current_spec != update_spec:
         return False
     return True
+
 
 def update_vg(module, result):
     ext_id = module.params.get("ext_id")
@@ -381,7 +400,7 @@ def update_vg(module, result):
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
         return
-    
+
     etag = get_etag(current_spec)
     kwargs = {"if_match": etag}
     resp = None
