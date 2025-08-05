@@ -109,7 +109,7 @@
       - is_connected: true
         index: 3
     project:
-      ext_id: "{{ project.uuid }}"
+      ext_id: "798b8f0c-2d3e-4f1a-9c5b-6d7e8f9a0b1c"
     host:
       ext_id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
   register: result
@@ -169,7 +169,7 @@
       - result.response.boot_config.nvram_device.backing_storage_info.storage_container.ext_id == "{{ storage_container.uuid }}"
       - result.response.boot_config.nvram_device.backing_storage_info.data_source.reference.image_ext_id == "{{ disk_image.image_ext_ids[0] }}"
       - result.response.boot_config.nvram_device.backing_storage_info.disk_size_bytes == 26843545600
-      - result.response.project.ext_id == "{{ project.uuid }}"
+      - result.response.project.ext_id == "798b8f0c-2d3e-4f1a-9c5b-6d7e8f9a0b1c"
       - result.response.host.ext_id == "f47ac10b-58cc-4372-a567-0e02b2c3d479"
     fail_msg: " Create VM with full requirements with check_mode failed"
     success_msg: "Create VM with full requirements with check_mode passed"
