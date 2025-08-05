@@ -266,6 +266,7 @@ changed:
 
 import traceback  # noqa: E402
 import warnings  # noqa: E402
+from copy import deepcopy  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
@@ -350,6 +351,59 @@ def create_vg(module, result):
 
     result["changed"] = True
 
+def check_idempotency(current_spec, update_spec):
+    if current_spec != update_spec:
+        return False
+    return True
+
+def update_vg(module, result):
+    ext_id = module.params.get("ext_id")
+    result["ext_id"] = ext_id
+
+    vgs = get_vg_api_instance(module)
+    current_spec = get_volume_group(module, vgs, ext_id)
+
+    sg = SpecGenerator(module)
+    update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
+
+    default_spec = volumes_sdk.VolumeGroup()
+    spec, err = sg.generate_spec(obj=default_spec)
+
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed generating update volume group spec", **result)
+
+    # check for idempotency
+    if check_idempotency(current_spec, update_spec):
+        result["skipped"] = True
+        module.exit_json(msg="Nothing to change.", **result)
+
+    if module.check_mode:
+        result["response"] = strip_internal_attributes(spec.to_dict())
+        return
+    
+    etag = get_etag(current_spec)
+    kwargs = {"if_match": etag}
+    resp = None
+    try:
+        resp = vgs.update_volume_group_by_id(extId=ext_id, body=spec, **kwargs)
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while updating volume group",
+        )
+
+    task_ext_id = resp.data.ext_id
+    result["task_ext_id"] = task_ext_id
+    result["response"] = strip_internal_attributes(resp.data.to_dict())
+    if task_ext_id and module.params.get("wait"):
+        wait_for_completion(module, task_ext_id)
+        resp = get_volume_group(module, vgs, ext_id)
+        result["response"] = strip_internal_attributes(resp.to_dict())
+
+    result["changed"] = True
+
 
 def delete_vg(module, result):
     ext_id = module.params.get("ext_id")
@@ -406,8 +460,7 @@ def run_module():
     state = module.params.get("state")
     if state == "present":
         if module.params.get("ext_id"):
-            # Update not supported for pc.2024.1 release.
-            pass
+            update_vg(module, result)
         else:
             create_vg(module, result)
     else:
