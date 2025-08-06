@@ -60,8 +60,8 @@ jobs:
           ansible-playbook tests/integration/targets/prepare_ndb_env/playbooks/prepare_env.yml
           ansible-playbook tests/integration/targets/prepare_fc_env/playbooks/prepare_fc_env.yml
           ansible-playbook tests/integration/targets/prepare_foundation_env/playbooks/prepare_foundation_env.yml
-          envsubst < examples/inventory_test/nutanix_original.yml > examples/inventory_test/nutanix.yml
-          ansible-playbook -i examples/inventory_test/nutanix.yml examples/inventory_test/inventory.yml
+          envsubst < tests/integration/targets/inventory_test/nutanix_original.yml > tests/integration/targets/inventory_test/nutanix.yml
+          ansible-playbook -i tests/integration/targets/inventory_test/nutanix.yml tests/integration/targets/inventory_test/inventory.yml
           ansible-test integration --continue-on-error --python ${{ matrix.python-version }} --coverage $flag
           ansible-test coverage report > coverage.txt
           ansible-playbook tests/integration/targets/prepare_env/playbooks/cleanup.yml
