@@ -1,0 +1,112 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Power off a VM
+# 2. Power on a VM
+# 3. Install NGT in a VM
+# 4. Shutdown VM using acpi
+# 5. Shutdown VM using NGT
+# 6. Reboot VM using NGT
+# 7. Reboot VM using acpi
+# 8. Force power cycle VM
+# 9. Reset VM
+# 10. Get VM power state
+
+- name: VM power actions playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        vm_uuid: "323e4567-e89b-12d3-a456-426614174001"
+        ngt_config:
+          username: <ngt_username>
+          password: <ngt_password>
+
+    - name: Power off VM
+      ntnx_vms_power_actions_v2:
+        state: power_off
+        ext_id: "{{ vm_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Power on VM
+      ntnx_vms_power_actions_v2:
+        state: power_on
+        ext_id: "{{ vm_uuid }}"
+      register: result
+      ignore_errors: true
+
+
+    - name: Install NGT in VM
+      ntnx_vms_ngt_v2:
+        state: present
+        ext_id: "{{ vm_uuid }}"
+        capabilities:
+          - "VSS_SNAPSHOT"
+          - "SELF_SERVICE_RESTORE"
+        credential:
+          username: "{{ ngt_config.username }}"
+          password: "{{ ngt_config.password }}"
+        reboot_preference:
+          schedule_type: "IMMEDIATE"
+      register: result
+      ignore_errors: true
+
+    - name: Sleep for 2 minutes until NGT is installed completely
+      ansible.builtin.pause:
+        minutes: 2
+    
+    - name: Shutdown VM using acpi
+      ntnx_vms_power_actions_v2:
+        state: shutdown
+        ext_id: "{{ vm_uuid }}"
+      register: result
+      ignore_errors: true
+    
+    - name: Shutdown VM using ngt
+      ntnx_vms_power_actions_v2:
+        state: guest_shutdown
+        ext_id: "{{ vm_uuid }}"
+      register: result
+      ignore_errors: true
+    
+    - name: Rebooting VM using ngt
+      ntnx_vms_power_actions_v2:
+        state: guest_reboot
+        ext_id: "{{ vm_uuid }}"
+      register: result
+      ignore_errors: true
+    
+    - name: Rebooting VM using acpi
+      ntnx_vms_power_actions_v2:
+        state: reboot
+        ext_id: "{{ vm_uuid }}"
+      register: result
+      ignore_errors: true
+    
+    - name: Force power cycle
+      ntnx_vms_power_actions_v2:
+        state: force_power_cycle
+        ext_id: "{{ vm_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Resetting VM
+      ntnx_vms_power_actions_v2:
+        state: reset
+        ext_id: "{{ vm_uuid }}"
+      register: result
+      ignore_errors: true
+    
+    - name: Get VM power state (look for power_state in result)
+      ntnx_vms_info_v2:
+        ext_id: "{{ vm_uuid }}"
+      register: result
+      ignore_errors: true
