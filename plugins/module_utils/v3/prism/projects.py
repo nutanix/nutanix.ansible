@@ -67,9 +67,9 @@ class Project(Prism):
         if err:
             return None, err
 
-        payload["spec"]["resources"][
-            "default_subnet_reference"
-        ] = Subnet.build_subnet_reference_spec(uuid)
+        payload["spec"]["resources"]["default_subnet_reference"] = (
+            Subnet.build_subnet_reference_spec(uuid)
+        )
         return payload, None
 
     def _build_spec_subnets(self, payload, subnet_ref_list):
