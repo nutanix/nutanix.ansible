@@ -108,6 +108,10 @@
         index: 0
       - is_connected: true
         index: 3
+    project:
+      ext_id: "798b8f0c-2d3e-4f1a-9c5b-6d7e8f9a0b1c"
+    host:
+      ext_id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
   register: result
   ignore_errors: true
   check_mode: true
@@ -165,9 +169,13 @@
       - result.response.boot_config.nvram_device.backing_storage_info.storage_container.ext_id == "{{ storage_container.uuid }}"
       - result.response.boot_config.nvram_device.backing_storage_info.data_source.reference.image_ext_id == "{{ disk_image.image_ext_ids[0] }}"
       - result.response.boot_config.nvram_device.backing_storage_info.disk_size_bytes == 26843545600
+      - result.response.project.ext_id == "798b8f0c-2d3e-4f1a-9c5b-6d7e8f9a0b1c"
+      - result.response.host.ext_id == "f47ac10b-58cc-4372-a567-0e02b2c3d479"
     fail_msg: " Create VM with full requirements with check_mode failed"
     success_msg: "Create VM with full requirements with check_mode passed"
+
 ########################################################################
+
 - name: Create VM with minimum requirements
   ntnx_vms_v2:
     name: "{{ vm_name }}"
@@ -211,7 +219,9 @@
       - result.response[0].ext_id == "{{ todelete.0 }}"
     fail_msg: " Unable to fetch vm using filter name "
     success_msg: " vm fetched using filter name successfully "
+
 ########################################################################
+
 - name: Create VM with full requirements
   ntnx_vms_v2:
     name: "{{ vm_name }}"
@@ -238,6 +248,8 @@
       is_apc_enabled: false
     vtpm_config:
       is_vtpm_enabled: false
+    project:
+      ext_id: "{{ project.uuid }}"
   register: result
   ignore_errors: true
 
@@ -267,13 +279,16 @@
       - result.response.is_agent_vm == false
       - result.response.apc_config.is_apc_enabled == false
       - result.response.vtpm_config.is_vtpm_enabled == false
+      - result.response.project.ext_id == "{{ project.uuid }}"
     fail_msg: " Unable to create VM with full requirements "
     success_msg: " VM with full requirements created successfully "
 
 - name: Adding VM to todelete list
   ansible.builtin.set_fact:
     todelete: '{{ todelete + [result["ext_id"]] }}'
+
 ########################################################################
+
 - name: Create vm with different disks, using ubuntu image , with cdrom
   ntnx_vms_v2:
     name: "{{ vm_name }}"
@@ -359,7 +374,9 @@
       - result.response.cd_roms[0].disk_address.bus_type == "IDE"
     fail_msg: " Unable to fetch vm using ext_id "
     success_msg: " vm fetched using ext_id successfully "
+
 ########################################################################
+
 - name: List all categories
   ntnx_categories_info_v2:
     limit: 3
@@ -409,7 +426,9 @@
 - name: Adding VM to todelete list
   ansible.builtin.set_fact:
     todelete: '{{ todelete + [result["ext_id"]] }}'
+
 ########################################################################
+
 - name: Create vm with legacy_boot
   ntnx_vms_v2:
     name: "{{ vm_name }}"
@@ -475,7 +494,9 @@
 - name: Adding VM to todelete list
   ansible.builtin.set_fact:
     todelete: '{{ todelete + [result["ext_id"]] }}'
+
 ########################################################################
+
 - name: Create vm with nics,cloud_init script
   ntnx_vms_v2:
     name: "{{ vm_name }}"
@@ -543,6 +564,7 @@
 - name: Adding VM to todelete list
   ansible.builtin.set_fact:
     todelete: '{{ todelete + [result["ext_id"]] }}'
+
 ########################################################################
 
 - name: Read content from file
@@ -584,6 +606,42 @@
     todelete: '{{ todelete + [result["ext_id"]] }}'
 
 ########################################################################
+
+- name: List all clusters in PC
+  nutanix.ncp.ntnx_clusters_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Get all clusters external IDs
+  ansible.builtin.set_fact:
+    cluster_ext_ids: "{{ result.response | map(attribute='ext_id') | list }}"
+
+- name: Create VM without setting cluster
+  nutanix.ncp.ntnx_vms_v2:
+    name: "{{ vm_name }}"
+    description: cluster automatic selection VM
+  ignore_errors: true
+  register: result
+
+- name: Creation status for VM without setting cluster
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.failed == False
+      - result.response.name == "{{ vm_name }}"
+      - result.response.description == "cluster automatic selection VM"
+      - result.response.cluster.ext_id is defined
+      - result.response.cluster.ext_id in cluster_ext_ids
+    fail_msg: " Unable to create VM without setting cluster "
+    success_msg: " VM without setting cluster created successfully "
+
+- name: Adding VM to todelete list
+  ansible.builtin.set_fact:
+    todelete: '{{ todelete + [result["ext_id"]] }}'
+
+########################################################################
+
 - name: List all VMs
   ntnx_vms_info_v2:
   register: result
@@ -619,6 +677,7 @@
     success_msg: "All VMs fetched successfully "
 
 ########################################################################
+
 - name: List all VMs with limit 3
   ntnx_vms_info_v2:
     limit: 3
@@ -634,6 +693,7 @@
       - result.response | length == 3
     fail_msg: "Unable to list VMs "
     success_msg: VMs  listed successfully
+
 ########################################################################
 
 - name: Delete VM with check mode is enabled
@@ -654,6 +714,7 @@
       - result.msg == "VM with ext_id:{{ todelete[0] }} will be deleted."
     fail_msg: "Delete VM with check mode is enabled failed"
     success_msg: "Delete VM with check mode is enabled passed"
+
 ########################################################################
 
 - name: Delete all Created VMs
