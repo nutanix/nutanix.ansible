@@ -4,7 +4,7 @@
     msg: Start ntnx_roles delete tests
 
 - name: Get Some permissions for test
-  ntnx_permissions_info:
+  nutanix.ncp.ntnx_permissions_info:
     length: 3
   register: result
 
@@ -15,7 +15,7 @@
 ##############################################################################################
 
 - name: Create role with permissions
-  ntnx_roles:
+  nutanix.ncp.ntnx_roles:
     state: present
     name: test-ansible-role-4
     desc: test-ansible-role-4-desc
@@ -34,7 +34,7 @@
 
 ###################################################################################################
 - name: Delete rule with check mode
-  ntnx_roles:
+  nutanix.ncp.ntnx_roles:
     state: absent
     role_uuid: "{{ test_role.role_uuid }}"
   register: output
@@ -52,7 +52,7 @@
     success_msg: "Delete role with check mode passed"
 
 - name: Delete role
-  ntnx_roles:
+  nutanix.ncp.ntnx_roles:
     state: absent
     role_uuid: "{{ test_role.role_uuid }}"
   register: result

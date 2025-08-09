@@ -19,7 +19,7 @@
 ############################################################################################
 
 - name: List subnets using subnet name and define external subnet variable
-  ntnx_subnets_info_v2:
+  nutanix.ncp.ntnx_subnets_info_v2:
     filter: name eq '{{ external_nat_subnets[0].name }}'
     limit: 1
   register: result
@@ -41,7 +41,7 @@
 ############################################################################################
 
 - name: Create first VPC
-  ntnx_vpcs_v2:
+  nutanix.ncp.ntnx_vpcs_v2:
     state: present
     name: "{{ vpc_name }}_1"
     external_subnets:
@@ -71,7 +71,7 @@
 ###########################################################################################################
 
 - name: Create second VPC
-  ntnx_vpcs_v2:
+  nutanix.ncp.ntnx_vpcs_v2:
     state: present
     name: "{{ vpc_name }}_2"
     external_subnets:
@@ -101,7 +101,7 @@
 ###########################################################################################################
 
 - name: Fetch first VPC route table with filter and set route table external ID
-  ntnx_route_tables_info_v2:
+  nutanix.ncp.ntnx_route_tables_info_v2:
     filter: vpcReference eq '{{ vpc_uuid_1 }}'
   register: route_tables_filter_1
   ignore_errors: true
@@ -124,7 +124,7 @@
 ###########################################################################################################
 
 - name: Fetch second VPC route table with filter and set route table external ID
-  ntnx_route_tables_info_v2:
+  nutanix.ncp.ntnx_route_tables_info_v2:
     filter: vpcReference eq '{{ vpc_uuid_2 }}'
   register: route_tables_filter_2
   ignore_errors: true
@@ -147,7 +147,7 @@
 ###########################################################################################################
 
 - name: Create route with check mode enabled
-  ntnx_routes_v2:
+  nutanix.ncp.ntnx_routes_v2:
     state: present
     name: "route_test"
     description: "Route for testing"
@@ -192,7 +192,7 @@
 ###########################################################################################################
 
 - name: Create first static route
-  ntnx_routes_v2:
+  nutanix.ncp.ntnx_routes_v2:
     state: present
     name: "{{ random_name }}_route_1"
     description: "Route for testing"
@@ -241,7 +241,7 @@
 ###########################################################################################################
 
 - name: Create second static route
-  ntnx_routes_v2:
+  nutanix.ncp.ntnx_routes_v2:
     state: present
     name: "{{ random_name }}_route_2"
     description: "Route for testing"
@@ -290,7 +290,7 @@
 ###########################################################################################################
 
 - name: Update route with check mode enabled
-  ntnx_routes_v2:
+  nutanix.ncp.ntnx_routes_v2:
     state: present
     name: "{{ random_name }}_route_updated"
     description: "Route for testing updated"
@@ -326,7 +326,7 @@
 ###########################################################################################################
 
 - name: Update route
-  ntnx_routes_v2:
+  nutanix.ncp.ntnx_routes_v2:
     state: present
     name: "{{ random_name }}_route_updated"
     description: "Route for testing updated"
@@ -362,7 +362,7 @@
 ###########################################################################################################
 
 - name: Check idempotency by updating route with the same data
-  ntnx_routes_v2:
+  nutanix.ncp.ntnx_routes_v2:
     state: present
     name: "{{ random_name }}_route_updated"
     description: "Route for testing updated"
@@ -400,7 +400,7 @@
 ###########################################################################################################
 
 - name: Fetch route by external ID
-  ntnx_routes_info_v2:
+  nutanix.ncp.ntnx_routes_info_v2:
     ext_id: "{{ static_route_external_id_1 }}"
     route_table_ext_id: "{{ route_table_external_id_1 }}"
   register: result
@@ -430,7 +430,7 @@
 ###########################################################################################################
 
 - name: List all routes
-  ntnx_routes_info_v2:
+  nutanix.ncp.ntnx_routes_info_v2:
     route_table_ext_id: "{{ route_table_external_id_1 }}"
   register: result
   ignore_errors: true
@@ -440,13 +440,15 @@
     that:
       - result.response is defined
       - result.response | length == 2
+      - result.total_available_results is defined
+      - result.total_available_results == 2
     fail_msg: "List all routes failed "
     success_msg: "List all routes passed "
 
 ###########################################################################################################
 
 - name: List all routes with limit
-  ntnx_routes_info_v2:
+  nutanix.ncp.ntnx_routes_info_v2:
     route_table_ext_id: "{{ route_table_external_id_1 }}"
     limit: 2
   register: result
@@ -463,7 +465,7 @@
 ###########################################################################################################
 
 - name: List all routes with filter
-  ntnx_routes_info_v2:
+  nutanix.ncp.ntnx_routes_info_v2:
     route_table_ext_id: "{{ route_table_external_id_1 }}"
     filter: name eq '{{ random_name }}_route_updated'
   register: result
@@ -480,7 +482,7 @@
 ###########################################################################################################
 
 - name: List all route tables
-  ntnx_route_tables_info_v2:
+  nutanix.ncp.ntnx_route_tables_info_v2:
   register: route_tables
   ignore_errors: true
 
@@ -491,6 +493,8 @@
       - route_tables.failed == false
       - route_tables.changed == false
       - route_tables.response | length > 1
+      - route_tables.total_available_results is defined
+      - route_tables.total_available_results > 1
     fail_msg: "Failed to list route tables"
     success_msg: "Successfully listed route tables"
 
@@ -501,7 +505,7 @@
 ###########################################################################################################
 
 - name: Fetch route table by external_id
-  ntnx_route_tables_info_v2:
+  nutanix.ncp.ntnx_route_tables_info_v2:
     ext_id: "{{ route_table_external_id_1 }}"
   register: route_table
   ignore_errors: true
@@ -521,7 +525,7 @@
 ###########################################################################################################
 
 - name: List all route tables with limit
-  ntnx_route_tables_info_v2:
+  nutanix.ncp.ntnx_route_tables_info_v2:
     limit: 2
   register: route_tables_limit
   ignore_errors: true
@@ -539,7 +543,7 @@
 ###########################################################################################################
 
 - name: List all route tables with filter
-  ntnx_route_tables_info_v2:
+  nutanix.ncp.ntnx_route_tables_info_v2:
     filter: vpcReference eq '{{ vpc_uuid_2 }}'
   register: route_tables_filter
   ignore_errors: true
@@ -559,7 +563,7 @@
 ###########################################################################################################
 
 - name: Delete static route with check mode enabled
-  ntnx_routes_v2:
+  nutanix.ncp.ntnx_routes_v2:
     state: absent
     ext_id: "{{ static_route_external_id_1 }}"
     route_table_ext_id: "{{ route_table_external_id_1 }}"
@@ -579,7 +583,7 @@
     success_msg: "Delete static route with check mode enabled passed "
 
 - name: Delete first static route
-  ntnx_routes_v2:
+  nutanix.ncp.ntnx_routes_v2:
     state: absent
     ext_id: "{{ static_route_external_id_1 }}"
     route_table_ext_id: "{{ route_table_external_id_1 }}"
@@ -604,7 +608,7 @@
 ###########################################################################################################
 
 - name: Delete second static route
-  ntnx_routes_v2:
+  nutanix.ncp.ntnx_routes_v2:
     state: absent
     ext_id: "{{ static_route_external_id_2 }}"
     route_table_ext_id: "{{ route_table_external_id_1 }}"
@@ -629,7 +633,7 @@
 ###########################################################################################################
 
 - name: Delete first VPC
-  ntnx_vpcs_v2:
+  nutanix.ncp.ntnx_vpcs_v2:
     state: absent
     ext_id: "{{ vpc_uuid_1 }}"
   register: result
@@ -649,7 +653,7 @@
 ############################################################################################
 
 - name: Delete second VPC
-  ntnx_vpcs_v2:
+  nutanix.ncp.ntnx_vpcs_v2:
     state: absent
     ext_id: "{{ vpc_uuid_2 }}"
   register: result

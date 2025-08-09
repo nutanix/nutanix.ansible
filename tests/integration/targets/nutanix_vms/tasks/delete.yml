@@ -2,7 +2,7 @@
 # Variables required before running this playbook:
 # - cluster
 - name: VM with minimum requirements
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     name: MinReqVM
     cluster:
@@ -19,7 +19,7 @@
     success_msg: " VM with minimum requirements created successfully "
 
 - name: Delete vm with check mode
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: absent
     vm_uuid: "{{  result.response.metadata.uuid }}"
   register: output
@@ -37,7 +37,7 @@
     success_msg: "Delete VM with check mode passed"
 
 - name: Delete VM
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: '{{ result["response"]["metadata"]["uuid"] }}'
     state: absent
   register: output

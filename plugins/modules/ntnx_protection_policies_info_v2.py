@@ -141,6 +141,12 @@ ext_id:
     type: str
     returned: when external ID is provided
     sample: "1ca2963d-77b6-453a-ae23-2c19e7a954a3"
+
+total_available_results:
+    description: The total number of available protection policies in PC.
+    type: int
+    returned: when all protection policies are fetched
+    sample: 125
 """
 
 import warnings  # noqa: E402
@@ -196,6 +202,9 @@ def get_protection_policies(module, protection_policies, result):
             exception=e,
             msg="Api Exception raised while fetching protection policies info",
         )
+
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
 
     resp = strip_internal_attributes(resp.to_dict()).get("data")
     if not resp:

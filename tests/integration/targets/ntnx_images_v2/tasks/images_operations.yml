@@ -23,7 +23,7 @@
     todelete: []
 
 - name: Create VM to test the images
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     state: present
     name: "{{ vm_name }}"
     cluster:
@@ -60,7 +60,7 @@
 ##################################################################################
 
 - name: List all categories and define variables
-  ntnx_categories_info_v2:
+  nutanix.ncp.ntnx_categories_info_v2:
   register: result
   ignore_errors: true
 
@@ -82,7 +82,7 @@
 ##################################################################################
 
 - name: Create ISO_IMAGE using valid source url - check mode is enabled
-  ntnx_images_v2:
+  nutanix.ncp.ntnx_images_v2:
     state: present
     type: ISO_IMAGE
     name: "{{ iso_image_name }}"
@@ -116,7 +116,7 @@
 ##################################################################################
 
 - name: Create DISK_IMAGE using valid source url - check mode is enabled
-  ntnx_images_v2:
+  nutanix.ncp.ntnx_images_v2:
     state: present
     type: DISK_IMAGE
     name: "{{ disk_image_name }}"
@@ -151,7 +151,7 @@
 ##################################################################################
 
 - name: Create ISO_IMAGE using valid source url
-  ntnx_images_v2:
+  nutanix.ncp.ntnx_images_v2:
     state: present
     type: ISO_IMAGE
     name: "{{ iso_image_name }}"
@@ -190,7 +190,7 @@
 ##################################################################################
 
 - name: Create DISK_IMAGE using valid source url
-  ntnx_images_v2:
+  nutanix.ncp.ntnx_images_v2:
     state: present
     type: DISK_IMAGE
     name: "{{ disk_image_name }}"
@@ -229,7 +229,7 @@
 ##################################################################################
 
 - name: Create ISO_IMAGE using invalid source url
-  ntnx_images_v2:
+  nutanix.ncp.ntnx_images_v2:
     state: present
     type: ISO_IMAGE
     name: "{{ iso_image_name }}"
@@ -258,7 +258,7 @@
 #################################################################################
 
 - name: Create DISK_IMAGE using valid disk source
-  ntnx_images_v2:
+  nutanix.ncp.ntnx_images_v2:
     state: present
     type: DISK_IMAGE
     name: "{{ disk_image_name }}"
@@ -293,7 +293,7 @@
 #################################################################################
 
 - name: Retrieve an existing ISO image
-  ntnx_images_info_v2:
+  nutanix.ncp.ntnx_images_info_v2:
     ext_id: "{{ todelete[0] }}"
   register: result
   ignore_errors: true
@@ -316,7 +316,7 @@
 ###################################################################################
 
 - name: Retrieve image that does not exist
-  ntnx_images_info_v2:
+  nutanix.ncp.ntnx_images_info_v2:
     ext_id: 12345678-1234-1234-1324-123456789123
   register: result
   ignore_errors: true
@@ -334,7 +334,7 @@
 #################################################################################
 
 - name: Retrieve all images with limit 1
-  ntnx_images_info_v2:
+  nutanix.ncp.ntnx_images_info_v2:
     limit: 1
   register: result
   ignore_errors: true
@@ -352,7 +352,7 @@
 #################################################################################
 
 - name: Retrieve all images with limit 2
-  ntnx_images_info_v2:
+  nutanix.ncp.ntnx_images_info_v2:
     limit: 2
   register: result
   ignore_errors: true
@@ -370,7 +370,7 @@
 #################################################################################
 
 - name: Retrieve all images and filter for disk image
-  ntnx_images_info_v2:
+  nutanix.ncp.ntnx_images_info_v2:
     filter: name eq '{{ disk_image_name }}'
   register: result
   ignore_errors: true
@@ -383,13 +383,15 @@
       - result.failed == false
       - result.response[0].name == "{{ disk_image_name }}"
       - result.response[0].type == "DISK_IMAGE"
+      - result.total_available_results is defined
+      - result.total_available_results >= 2
     fail_msg: "Unable to retrieve DISK image  "
     success_msg: "DISK image retrieved successfully "
 
 #################################################################################
 
 - name: Update DISK_IMAGE by changing its name and type - check mode is enabled
-  ntnx_images_v2:
+  nutanix.ncp.ntnx_images_v2:
     state: present
     ext_id: "{{ todelete[0] }}"
     type: ISO_IMAGE
@@ -418,7 +420,7 @@
 ##################################################################################
 
 - name: Update ISO_IMAGE by changing its name and type - check mode is enabled
-  ntnx_images_v2:
+  nutanix.ncp.ntnx_images_v2:
     state: present
     ext_id: "{{ todelete[0] }}"
     type: DISK_IMAGE
@@ -445,7 +447,7 @@
 ##################################################################################
 
 - name: Update DISK_IMAGE by changing its name and type
-  ntnx_images_v2:
+  nutanix.ncp.ntnx_images_v2:
     state: present
     ext_id: "{{ todelete[0] }}"
     type: ISO_IMAGE
@@ -473,7 +475,7 @@
 ##################################################################################
 
 - name: Update ISO_IMAGE by changing its name and type
-  ntnx_images_v2:
+  nutanix.ncp.ntnx_images_v2:
     state: present
     ext_id: "{{ todelete[0] }}"
     type: DISK_IMAGE
@@ -501,7 +503,7 @@
 #################################################################################
 
 - name: Update ISO_IMAGE by changing category
-  ntnx_images_v2:
+  nutanix.ncp.ntnx_images_v2:
     state: present
     ext_id: "{{ todelete[0] }}"
     category_ext_ids: "{{ category_ext_id1 }}"
@@ -527,7 +529,7 @@
 #################################################################################
 
 - name: Update Image that does not exist
-  ntnx_images_v2:
+  nutanix.ncp.ntnx_images_v2:
     state: present
     ext_id: 12345678-1234-1234-1324-123456789123
     type: DISK_IMAGE
@@ -548,7 +550,7 @@
 ##################################################################################
 
 - name: Delete image with check mode enabled
-  ntnx_images_v2:
+  nutanix.ncp.ntnx_images_v2:
     state: absent
     ext_id: "{{ todelete[0] }}"
   check_mode: true
@@ -569,7 +571,7 @@
 #################################################################################
 
 - name: Delete images
-  ntnx_images_v2:
+  nutanix.ncp.ntnx_images_v2:
     state: absent
     ext_id: "{{ item }}"
   register: result
@@ -590,7 +592,7 @@
 #################################################################################
 
 - name: Delete Image that does not exist
-  ntnx_images_v2:
+  nutanix.ncp.ntnx_images_v2:
     state: absent
     ext_id: 12345678-1234-1234-1324-123456789123
   register: result
@@ -610,7 +612,7 @@
 ##################################################################################
 
 - name: Delete the VM
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: absent
     vm_uuid: "{{ vm_uuid }}"
   register: result

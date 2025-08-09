@@ -4,7 +4,7 @@
     msg: Start testing ntnx_ndb_profiles_info
 
 - name: List profiles
-  ntnx_ndb_profiles_info:
+  nutanix.ncp.ntnx_ndb_profiles_info:
   register: profiles
   ignore_errors: true
 
@@ -19,7 +19,7 @@
     success_msg: NDB profiles listed successfully
 ################################################################
 - name: List profiles with postgres database engine
-  ntnx_ndb_profiles_info:
+  nutanix.ncp.ntnx_ndb_profiles_info:
     filters:
       engine: postgres_database
   register: result
@@ -36,7 +36,7 @@
     success_msg: NDB profiles with postgres database engine listed successfully
 ################################################################
 - name: List Database_Parameter profiles
-  ntnx_ndb_profiles_info:
+  nutanix.ncp.ntnx_ndb_profiles_info:
     filters:
       type: Database_Parameter
   register: result
@@ -53,7 +53,7 @@
     success_msg: Database_Parameter NDB profiles listed successfully
 ################################################################
 - name: List Network profiles
-  ntnx_ndb_profiles_info:
+  nutanix.ncp.ntnx_ndb_profiles_info:
     filters:
       type: Network
   register: result
@@ -71,7 +71,7 @@
 
 ################################################################
 - name: Get network profile with available IPs
-  ntnx_ndb_profiles_info:
+  nutanix.ncp.ntnx_ndb_profiles_info:
     name: "{{ static_network_profile.name }}"
     include_available_ips: true
   register: result
@@ -90,7 +90,7 @@
     success_msg: Network NDB profiles along with available IPs obtained successfully
 
 - name: Get network profile with available IPs
-  ntnx_ndb_profiles_info:
+  nutanix.ncp.ntnx_ndb_profiles_info:
     uuid: "{{ static_network_profile.uuid }}"
     include_available_ips: true
   register: result
@@ -108,7 +108,7 @@
     success_msg: Network NDB profiles along with available IPs obtained successfully
 ################################################################
 - name: List Compute profiles
-  ntnx_ndb_profiles_info:
+  nutanix.ncp.ntnx_ndb_profiles_info:
     filters:
       type: Compute
   register: result
@@ -125,7 +125,7 @@
     success_msg: Compute NDB profiles listed successfully
 ################################################################
 - name: List Software profiles
-  ntnx_ndb_profiles_info:
+  nutanix.ncp.ntnx_ndb_profiles_info:
     filters:
       type: Software
   register: result
@@ -142,7 +142,7 @@
     success_msg: Software NDB profiles listed successfully
 ################################################################
 - name: Get NDB profile using NDB profile name
-  ntnx_ndb_profiles_info:
+  nutanix.ncp.ntnx_ndb_profiles_info:
     name: "{{ profiles.response[0].name }}"
   register: result
   ignore_errors: true
@@ -158,7 +158,7 @@
     success_msg: get NDB profile using NDB profile name finished successfully
 ################################################################
 - name: List profiles
-  ntnx_ndb_profiles_info:
+  nutanix.ncp.ntnx_ndb_profiles_info:
     uuid: "{{ profiles.response[0].id }}"
     latest_version: true
   register: result
@@ -176,7 +176,7 @@
 ################################################################
 
 - name: Get NDB profiles with incorrect name
-  ntnx_ndb_profiles_info:
+  nutanix.ncp.ntnx_ndb_profiles_info:
     name: abcd
   register: result
   no_log: true
