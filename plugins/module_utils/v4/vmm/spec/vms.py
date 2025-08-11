@@ -58,6 +58,18 @@ class VmSpecs:
         "uefi_boot": vmm_sdk.UefiBoot,
     }
 
+    nic_backing_info_allowed_types = {
+        "virtual_ethernet_nic": vmm_sdk.VirtualEthernetNic,
+        "sriov_nic": vmm_sdk.SriovNic,
+        "dp_offload_nic": vmm_sdk.DpOffloadNic,
+    }
+
+    nic_network_info_allowed_types = {
+        "virtual_ethernet_nic_network_info": vmm_sdk.VirtualEthernetNicNetworkInfo,
+        "sriov_nic_network_info": vmm_sdk.SriovNicNetworkInfo,
+        "dp_offload_nic_network_info": vmm_sdk.DpOffloadNicNetworkInfo,
+    }
+
     reference_spec = dict(
         ext_id=dict(type="str", required=True),
     )
@@ -169,8 +181,39 @@ class VmSpecs:
     nic_backup_info_spec = dict(
         model=dict(type="str", choices=["VIRTIO", "E1000"]),
         mac_address=dict(type="str"),
-        is_connected=dict(type="bool"),
-        num_queues=dict(type="int"),
+        is_connected=dict(type="bool", default=True),
+        num_queues=dict(type="int", default=1),
+    )
+
+    virtual_ethernet_nic_spec = dict(
+        model=dict(type="str", choices=["VIRTIO", "E1000"]),
+        mac_address=dict(type="str"),
+        is_connected=dict(type="bool", default=True),
+        num_queues=dict(type="int", default=1),
+    )
+
+    sriov_nic_spec = dict(
+        sriov_profile_reference=dict(type="dict", options=reference_spec, obj=vmm_sdk.NicProfileReference, required=True),
+        host_pcie_device_reference=dict(type="dict", options=reference_spec, obj=vmm_sdk.HostPcieDeviceReference),
+        mac_address=dict(type="str"),
+        is_connected=dict(type="bool", default=True),
+    )
+    dp_offload_nic_spec = dict(
+        dp_offload_profile_reference=dict(
+            type="dict", options=reference_spec, obj=vmm_sdk.NicProfileReference, required=True
+        ),
+        host_pcie_device_reference=dict(type="dict", options=reference_spec, obj=vmm_sdk.HostPcieDeviceReference),
+        mac_address=dict(type="str"),
+        is_connected=dict(type="bool", default=True),
+    )
+
+    nic_backing_info_spec = dict(
+        virtual_ethernet_nic=dict(
+            type="dict", options=virtual_ethernet_nic_spec),
+        sriov_nic=dict(
+            type="dict", options=sriov_nic_spec),
+        dp_offload_nic=dict(
+            type="dict", options=dp_offload_nic_spec),
     )
 
     nic_info_spec = dict(
@@ -198,12 +241,55 @@ class VmSpecs:
         ipv4_config=dict(type="dict", options=ipv4_config_spec, obj=vmm_sdk.Ipv4Config),
     )
 
+    virtual_ethernet_nic_network_info_spec = nic_info_spec
+
+    sriov_nic_network_info_spec = dict(
+        vlan_id=dict(type="int"),
+    )
+
+    dp_offload_nic_network_info_spec = dict(
+        subnet=dict(
+            type="dict", options=reference_spec, obj=vmm_sdk.SubnetReference
+        ),
+        vlan_mode=dict(type="str", choices=["ACCESS", "TRUNK"]),
+        trunked_vlans=dict(type="list", elements="int"),
+        should_allow_unknown_macs=dict(type="bool"),
+        ipv4_config=dict(
+            type="dict", options=ipv4_config_spec, obj=vmm_sdk.Ipv4Config
+        ),
+    )
+
+    nic_network_info_spec = dict(
+        virtual_ethernet_nic_network_info=dict(
+            type="dict", options=virtual_ethernet_nic_network_info_spec
+        ),
+        sriov_nic_network_info=dict(
+            type="dict", options=sriov_nic_network_info_spec
+        ),
+        dp_offload_nic_network_info=dict(
+            type="dict", options=dp_offload_nic_network_info_spec
+        ),
+    )
+
     nic_spec = dict(
         backing_info=dict(
             type="dict", options=nic_backup_info_spec, obj=vmm_sdk.EmulatedNic
         ),
+        nic_backing_info=dict(
+            type="dict", options=nic_backing_info_spec, obj=nic_backing_info_allowed_types, mutually_exclusive=[
+                ("virtual_ethernet_nic", "sriov_nic", "dp_offload_nic")
+            ],
+        ),
         network_info=dict(
             type="dict", options=nic_info_spec, obj=vmm_sdk.AhvConfigNicNetworkInfo
+        ),
+        nic_network_info = dict(
+            type="dict",
+            options=nic_network_info_spec,
+            obj = nic_network_info_allowed_types,
+            mutually_exclusive=[
+                ("virtual_ethernet_nic_network_info", "sriov_nic_network_info", "dp_offload_nic_network_info")
+            ],
         ),
     )
 
