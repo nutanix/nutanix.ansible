@@ -1,0 +1,58 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Migrate all VM disks to the same storage container
+# 2. Migrate VM disks to different storage containers
+
+- name: VM disks playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        vm_ext_id: "6767d20e-cd0d-4fbf-7cda-cf3b6143e327"
+        vm_disks_ext_ids:
+          - "108275c8-6c92-409a-bc54-9ad3f2714a9a"
+          - "3611d280-8231-47b9-b413-c81dae891f06"
+          - "f148fd90-e3b3-4815-8eb4-40a028948b11"
+          - "319871f5-86d2-4386-8ae1-d9436d7ae6ae"
+          - "3aec0d15-c314-4870-ac5f-1937a041ba36"
+        storage_container_ext_ids:
+          - "77c1d0c6-aa90-4fdd-a63d-1eca02cbaaed"
+          - "32251d95-7d36-4020-83a4-5627b17c809d"
+
+    - name: Migrate all VM disks to the same storage container
+      nutanix.ncp.ntnx_vms_disks_migrate_v2:
+        vm_ext_id: "{{ vm_ext_id }}"
+        migrate_disks:
+          all_disks_migration_plan:
+            storage_container:
+              ext_id: "{{ storage_container_ext_ids[0] }}"
+      register: result
+      ignore_errors: true
+
+    - name: Migrate VM disks to different storage containers
+      nutanix.ncp.ntnx_vms_disks_migrate_v2:
+        vm_ext_id: "{{ vm_ext_id }}"
+        migrate_disks:
+          migration_plans:
+            plans:
+              - vm_disks:
+                  - disk_ext_id: "{{ vm_disks_ext_ids[0] }}"
+                  - disk_ext_id: "{{ vm_disks_ext_ids[1] }}"
+                  - disk_ext_id: "{{ vm_disks_ext_ids[2] }}"
+                storage_container:
+                  ext_id: "{{ storage_container_ext_ids[0] }}"
+              - vm_disks:
+                  - disk_ext_id: "{{ vm_disks_ext_ids[3] }}"
+                  - disk_ext_id: "{{ vm_disks_ext_ids[4] }}"
+                storage_container:
+                  ext_id: "{{ storage_container_ext_ids[1] }}"
+      register: result
+      ignore_errors: true
