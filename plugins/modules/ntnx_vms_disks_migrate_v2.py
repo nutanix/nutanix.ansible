@@ -410,6 +410,7 @@ def get_module_spec():
         vm_ext_id=dict(type="str", required=True),
         migrate_disks=dict(
             type="dict",
+            required=True,
             options=migrate_disks_spec,
             obj=migrate_disks_allowed_types,
             mutually_exclusive=[("migration_plans", "all_disks_migration_plan")],

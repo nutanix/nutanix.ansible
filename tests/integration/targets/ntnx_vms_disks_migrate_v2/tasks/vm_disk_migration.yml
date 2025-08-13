@@ -271,25 +271,25 @@
     success_msg: "Disk {{ item.disk }} in expected container {{ item.container }}"
   loop:
     - {
-        disk: "{{ vm_disks_ext_ids[0] }}",
-        container: "{{ storage_container_ext_ids[0] }}",
-      }
+      disk: "{{ vm_disks_ext_ids[0] }}",
+      container: "{{ storage_container_ext_ids[0] }}",
+    }
     - {
-        disk: "{{ vm_disks_ext_ids[1] }}",
-        container: "{{ storage_container_ext_ids[1] }}",
-      }
+      disk: "{{ vm_disks_ext_ids[1] }}",
+      container: "{{ storage_container_ext_ids[1] }}",
+    }
     - {
-        disk: "{{ vm_disks_ext_ids[2] }}",
-        container: "{{ storage_container_ext_ids[1] }}",
-      }
+      disk: "{{ vm_disks_ext_ids[2] }}",
+      container: "{{ storage_container_ext_ids[1] }}",
+    }
     - {
-        disk: "{{ vm_disks_ext_ids[3] }}",
-        container: "{{ storage_container_ext_ids[1] }}",
-      }
+      disk: "{{ vm_disks_ext_ids[3] }}",
+      container: "{{ storage_container_ext_ids[1] }}",
+    }
     - {
-        disk: "{{ vm_disks_ext_ids[4] }}",
-        container: "{{ storage_container_ext_ids[1] }}",
-      }
+      disk: "{{ vm_disks_ext_ids[4] }}",
+      container: "{{ storage_container_ext_ids[1] }}",
+    }
 
 - name: Migrate VM disks to different storage containers
   nutanix.ncp.ntnx_vms_disks_migrate_v2:
@@ -336,25 +336,25 @@
     success_msg: "Disk {{ item.disk }} in expected container {{ item.container }}"
   loop:
     - {
-        disk: "{{ vm_disks_ext_ids[0] }}",
-        container: "{{ storage_container_ext_ids[0] }}",
-      }
+      disk: "{{ vm_disks_ext_ids[0] }}",
+      container: "{{ storage_container_ext_ids[0] }}",
+    }
     - {
-        disk: "{{ vm_disks_ext_ids[1] }}",
-        container: "{{ storage_container_ext_ids[0] }}",
-      }
+      disk: "{{ vm_disks_ext_ids[1] }}",
+      container: "{{ storage_container_ext_ids[0] }}",
+    }
     - {
-        disk: "{{ vm_disks_ext_ids[2] }}",
-        container: "{{ storage_container_ext_ids[0] }}",
-      }
+      disk: "{{ vm_disks_ext_ids[2] }}",
+      container: "{{ storage_container_ext_ids[0] }}",
+    }
     - {
-        disk: "{{ vm_disks_ext_ids[3] }}",
-        container: "{{ storage_container_ext_ids[1] }}",
-      }
+      disk: "{{ vm_disks_ext_ids[3] }}",
+      container: "{{ storage_container_ext_ids[1] }}",
+    }
     - {
-        disk: "{{ vm_disks_ext_ids[4] }}",
-        container: "{{ storage_container_ext_ids[1] }}",
-      }
+      disk: "{{ vm_disks_ext_ids[4] }}",
+      container: "{{ storage_container_ext_ids[1] }}",
+    }
 
 - name: Migrate VM disks to different storage containers with non-existing disks
   nutanix.ncp.ntnx_vms_disks_migrate_v2:
