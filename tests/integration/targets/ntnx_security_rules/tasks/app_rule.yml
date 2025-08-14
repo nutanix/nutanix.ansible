@@ -3,7 +3,7 @@
 # - categories
 
 - name: Create app security rule with inbound and outbound list
-  ntnx_security_rules:
+  nutanix.ncp.ntnx_security_rules:
     name: test_app_rule
     desc: App Security Rule
     app_rule:
@@ -86,7 +86,7 @@
     success_msg: "pass: create app security rule with inbound and outbound list successfully"
 
 - name: Update app security rule by adding to outbound list and remove rule from inbound list
-  ntnx_security_rules:
+  nutanix.ncp.ntnx_security_rules:
     security_rule_uuid: "{{ result.response.metadata.uuid }}"
     desc: App Security Rule Updated
     app_rule:
@@ -119,7 +119,7 @@
     success_msg: "pass :update app security rule with   outbound list successfully"
 
 - name: Delete app security rule with check mode
-  ntnx_security_rules:
+  nutanix.ncp.ntnx_security_rules:
     state: absent
     security_rule_uuid: "{{ result.response.metadata.uuid }}"
   register: output
@@ -137,7 +137,7 @@
     success_msg: "Delete app security rule with check mode passed"
 
 - name: Delete app security rule
-  ntnx_security_rules:
+  nutanix.ncp.ntnx_security_rules:
     state: absent
     security_rule_uuid: "{{ result.response.metadata.uuid }}"
   register: output
@@ -153,7 +153,7 @@
     fail_msg: " fail: unable to delete app security rule "
     success_msg: "pass : delete app security rule successfully"
 - name: Create app security rule with allow all inbound and outbound list
-  ntnx_security_rules:
+  nutanix.ncp.ntnx_security_rules:
     name: test_app_rule
     app_rule:
       target_group:
@@ -186,7 +186,7 @@
     fail_msg: " fail: unable to create app security rule with allow all inbound and outbound list"
     success_msg: "pass: create app security rule with allow all inbound and outbound list successfully"
 - name: Delete app security rule
-  ntnx_security_rules:
+  nutanix.ncp.ntnx_security_rules:
     state: absent
     security_rule_uuid: "{{ result.response.metadata.uuid }}"
   register: result

@@ -4,7 +4,7 @@
     msg: Start testing ntnx_ndb_time_machine_clusters
 
 - name: Create data access instance with cluster name and sla name
-  ntnx_ndb_time_machine_clusters:
+  nutanix.ncp.ntnx_ndb_time_machine_clusters:
     time_machine_uuid: "{{ time_machine.uuid }}"
     cluster:
       name: "{{ cluster.cluster2.name }}"
@@ -24,7 +24,7 @@
     success_msg: "pass: create data access instance with cluster name and sla name finished successfully"
 #######################
 - name: Update data access instance with new sla name
-  ntnx_ndb_time_machine_clusters:
+  nutanix.ncp.ntnx_ndb_time_machine_clusters:
     time_machine_uuid: "{{ time_machine.uuid }}"
     cluster:
       name: "{{ cluster.cluster2.name }}"
@@ -45,7 +45,7 @@
     success_msg: "pass: update data access instance with new sla name finished successfully"
 
 - name: Idempotency checks
-  ntnx_ndb_time_machine_clusters:
+  nutanix.ncp.ntnx_ndb_time_machine_clusters:
     time_machine_uuid: "{{ time_machine.uuid }}"
     cluster:
       name: "{{ cluster.cluster2.name }}"
@@ -68,7 +68,7 @@
 # cluster2: secondary cluster
 
 - name: Create snapshot on cluster2
-  ntnx_ndb_database_snapshots:
+  nutanix.ncp.ntnx_ndb_database_snapshots:
     name: ansible-created-snapshot-on-{{ cluster.cluster2.name }}
     time_machine_uuid: "{{ time_machine.uuid }}"
     clusters:
@@ -93,7 +93,7 @@
     minutes: 2
 
 - name: Check the status of post of replication if snapshot is active
-  ntnx_ndb_snapshots_info:
+  nutanix.ncp.ntnx_ndb_snapshots_info:
     uuid: "{{ result.snapshot_uuid }}"
   register: result
 
@@ -106,7 +106,7 @@
     success_msg: "pass: snapshot replicated successfully on secondary cluster"
 
 - name: Create a snapshot on cluster1
-  ntnx_ndb_database_snapshots:
+  nutanix.ncp.ntnx_ndb_database_snapshots:
     name: ansible-created-snapshot-on-{{ cluster.cluster1.name }}
     time_machine_uuid: "{{ time_machine.uuid }}"
     clusters:
@@ -130,7 +130,7 @@
     snapshot_uuid: "{{ result.snapshot_uuid }}"
 
 - name: Create spec for replicating snapshot from cluster1 on cluster2
-  ntnx_ndb_replicate_database_snapshots:
+  nutanix.ncp.ntnx_ndb_replicate_database_snapshots:
     snapshot_uuid: "{{ snapshot_uuid }}"
     clusters:
       - name: "{{ cluster.cluster2.name }}"
@@ -160,7 +160,7 @@
     success_msg: "pass: snapshot replication spec created successfully"
 
 - name: Replicate snapshot on cluster2
-  ntnx_ndb_replicate_database_snapshots:
+  nutanix.ncp.ntnx_ndb_replicate_database_snapshots:
     snapshot_uuid: "{{ snapshot_uuid }}"
     clusters:
       - name: "{{ cluster.cluster2.name }}"
@@ -178,7 +178,7 @@
 
 #######################
 - name: Delete time machine  with check mode
-  ntnx_ndb_time_machine_clusters:
+  nutanix.ncp.ntnx_ndb_time_machine_clusters:
     state: absent
     time_machine_uuid: "{{ time_machine.uuid }}"
     cluster:
@@ -199,7 +199,7 @@
     success_msg: "Delete time machine with check mode passed"
 
 - name: Delete time machine
-  ntnx_ndb_time_machine_clusters:
+  nutanix.ncp.ntnx_ndb_time_machine_clusters:
     state: absent
     time_machine_uuid: "{{ time_machine.uuid }}"
     cluster:
@@ -224,7 +224,7 @@
 
 #####################
 - name: Create data access instance with cluster uuid and sla uuid
-  ntnx_ndb_time_machine_clusters:
+  nutanix.ncp.ntnx_ndb_time_machine_clusters:
     time_machine_uuid: "{{ time_machine.uuid }}"
     cluster:
       uuid: "{{ cluster.cluster2.uuid }}"
@@ -244,7 +244,7 @@
     success_msg: "pass: create data access instance with cluster uuid and sla uuid finished successfully"
 #######################
 - name: Update data access instance with sla uuid
-  ntnx_ndb_time_machine_clusters:
+  nutanix.ncp.ntnx_ndb_time_machine_clusters:
     time_machine_uuid: "{{ time_machine.uuid }}"
     cluster:
       uuid: "{{ cluster.cluster2.uuid }}"
@@ -265,7 +265,7 @@
     success_msg: "pass: update data access instance with sla uuid finished successfully"
 
 - name: Delete time machine
-  ntnx_ndb_time_machine_clusters:
+  nutanix.ncp.ntnx_ndb_time_machine_clusters:
     state: absent
     time_machine_uuid: "{{ result.time_machine_uuid }}"
     cluster:

@@ -8,7 +8,7 @@
 
 ############################################ CREATE Protection Policy tests #########################
 - name: Create protection rule with synchronous schedule and check mode
-  ntnx_protection_rules:
+  nutanix.ncp.ntnx_protection_rules:
     state: present
     wait: true
     name: test-ansible
@@ -61,7 +61,7 @@
 ##########################################################################################################################################################
 
 - name: Create protection rule with sync schedule
-  ntnx_protection_rules:
+  nutanix.ncp.ntnx_protection_rules:
     state: present
     wait: true
     name: test-ansible
@@ -112,7 +112,7 @@
     success_msg: "Protection policy with with synchronous schedule created successfully"
 
 - name: Delete created protection policy in order to avoid conflict in further tests
-  ntnx_protection_rules:
+  nutanix.ncp.ntnx_protection_rules:
     state: absent
     wait: true
     rule_uuid: "{{ result.rule_uuid }}"
@@ -121,7 +121,7 @@
 ##########################################################################################################################################################
 
 - name: Create protection rule with async schedule
-  ntnx_protection_rules:
+  nutanix.ncp.ntnx_protection_rules:
     state: present
     wait: true
     name: test-ansible
@@ -199,7 +199,7 @@
 ############################################################## UPDATE Protection Policy Tests ##################################################################
 
 - name: Update previously created protection policy
-  ntnx_protection_rules:
+  nutanix.ncp.ntnx_protection_rules:
     state: present
     wait: true
     rule_uuid: "{{result.rule_uuid}}"
@@ -276,7 +276,7 @@
 ####################################################################################
 
 - name: Idempotency Check
-  ntnx_protection_rules:
+  nutanix.ncp.ntnx_protection_rules:
     state: present
     wait: true
     rule_uuid: "{{result.rule_uuid}}"
@@ -330,7 +330,7 @@
 ####################################################################################
 
 - name: Check Mode while update
-  ntnx_protection_rules:
+  nutanix.ncp.ntnx_protection_rules:
     state: present
     wait: true
     rule_uuid: "{{result.rule_uuid}}"
@@ -351,7 +351,7 @@
 
 ############################################################## DELETE Protection Policy Tests ##################################################################
 - name: Delete protection with check mode
-  ntnx_protection_rules:
+  nutanix.ncp.ntnx_protection_rules:
     state: absent
     rule_uuid: "{{ result.rule_uuid }}"
   register: output
@@ -369,7 +369,7 @@
     success_msg: "Delete protection policy with check mode passed"
 
 - name: Delete created protection policy
-  ntnx_protection_rules:
+  nutanix.ncp.ntnx_protection_rules:
     state: absent
     wait: true
     rule_uuid: "{{ result.rule_uuid }}"

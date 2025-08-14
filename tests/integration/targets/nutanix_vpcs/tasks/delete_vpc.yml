@@ -4,7 +4,7 @@
 # - dns_servers
 # - routable_ips
 - name: Create VPC with all specifications
-  ntnx_vpcs:
+  nutanix.ncp.ntnx_vpcs:
     state: present
     name: vpc_with_add_specifications
     external_subnets:
@@ -25,7 +25,7 @@
     success_msg: " VPC with all specifications created successfully "
 
 - name: Delete vpc with check mode
-  ntnx_vpcs:
+  nutanix.ncp.ntnx_vpcs:
     state: absent
     vpc_uuid: "{{ result.vpc_uuid }}"
   register: output
@@ -43,6 +43,6 @@
     success_msg: "Delete vpc with check mode passed"
 
 - name: Delete vpc
-  ntnx_vpcs:
+  nutanix.ncp.ntnx_vpcs:
     state: absent
     vpc_uuid: "{{ result.vpc_uuid }}"

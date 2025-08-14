@@ -3,7 +3,7 @@
 # - quarantine_rule_uuid
 
 - name: Update quarantine_rule by adding inbound and outbound list
-  ntnx_security_rules:
+  nutanix.ncp.ntnx_security_rules:
     security_rule_uuid: "{{quarantine_rule_uuid}}"
     quarantine_rule:
       target_group:
