@@ -102,7 +102,7 @@
         subnet:
           ext_id: "89b8b8f0-c2d3-e4f1-a9c5-b6d7e8f9a0b1"
         vlan_mode: ACCESS
-        trunked_vlans: 
+        trunked_vlans:
           - 100
           - 200
         should_allow_unknown_macs: true
