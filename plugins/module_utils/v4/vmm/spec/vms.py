@@ -242,7 +242,7 @@ class VmSpecs:
             type="dict",
             options=nic_network_info_spec,
             obj=nic_network_info_allowed_types,
-            mutually_exclusive=[("virtual_ethernet_nic_network_info")],
+            mutually_exclusive=["virtual_ethernet_nic_network_info"],
         ),
     )
 
