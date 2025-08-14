@@ -449,6 +449,68 @@ def update_new_fields_in_spec(update_spec):
         )
         update_spec.nic_network_info.ipv4_config = update_spec.network_info.ipv4_config
 
+def update_acc_to_need(update_spec, params):
+    """
+    Update the spec according to the parameters provided in the module.
+    This is a workaround to ensure that the new fields are included in the update spec.
+    """
+    if hasattr(update_spec, "backing_info") and hasattr(
+        update_spec, "nic_backing_info"
+    ):
+        if params.get("nic_backing_info"):
+            update_spec.backing_info.model = update_spec.nic_backing_info.model
+            update_spec.backing_info.is_connected = (
+                update_spec.nic_backing_info.is_connected
+            )
+            update_spec.backing_info.mac_address = update_spec.nic_backing_info.mac_address
+            update_spec.backing_info.num_queues = update_spec.nic_backing_info.num_queues
+
+        if params.get("backing_info"):
+            update_spec.nic_backing_info.model = update_spec.backing_info.model
+            update_spec.nic_backing_info.is_connected = (
+                update_spec.backing_info.is_connected
+            )
+            update_spec.nic_backing_info.mac_address = update_spec.backing_info.mac_address
+            update_spec.nic_backing_info.num_queues = update_spec.backing_info.num_queues
+
+    if hasattr(update_spec, "network_info") and hasattr(
+        update_spec, "nic_network_info"
+    ):
+        if params.get("nic_network_info"):
+            update_spec.network_info.nic_type = update_spec.nic_network_info.nic_type
+            update_spec.network_info.network_function_chain = (
+                update_spec.nic_network_info.network_function_chain
+            )
+            update_spec.network_info.network_function_nic_type = (
+                update_spec.nic_network_info.network_function_nic_type
+            )
+            update_spec.network_info.subnet = update_spec.nic_network_info.subnet
+            update_spec.network_info.vlan_mode = update_spec.nic_network_info.vlan_mode
+            update_spec.network_info.trunked_vlans = (
+                update_spec.nic_network_info.trunked_vlans
+            )
+            update_spec.network_info.should_allow_unknown_macs = (
+                update_spec.nic_network_info.should_allow_unknown_macs
+            )
+            update_spec.network_info.ipv4_config = update_spec.nic_network_info.ipv4_config
+
+        if params.get("network_info"):
+            update_spec.nic_network_info.nic_type = update_spec.network_info.nic_type
+            update_spec.nic_network_info.network_function_chain = (
+                update_spec.network_info.network_function_chain
+            )
+            update_spec.nic_network_info.network_function_nic_type = (
+                update_spec.network_info.network_function_nic_type
+            )
+            update_spec.nic_network_info.subnet = update_spec.network_info.subnet
+            update_spec.nic_network_info.vlan_mode = update_spec.network_info.vlan_mode
+            update_spec.nic_network_info.trunked_vlans = (
+                update_spec.network_info.trunked_vlans
+            )
+            update_spec.nic_network_info.should_allow_unknown_macs = (
+                update_spec.network_info.should_allow_unknown_macs
+            )
+            update_spec.nic_network_info.ipv4_config = update_spec.network_info.ipv4_config
 
 def check_idempotency(current_spec, update_spec):
     if current_spec != update_spec:
@@ -464,12 +526,16 @@ def update_nic(module, result):
     result["vm_ext_id"] = vm_ext_id
 
     current_spec = get_nic(module, api_instance=vms, ext_id=ext_id, vm_ext_id=vm_ext_id)
+    result["current_spec"] = strip_internal_attributes(current_spec.to_dict())
 
     sg = SpecGenerator(module)
     update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
+    result["update_spec_before"] = strip_internal_attributes(update_spec.to_dict())
+    update_acc_to_need(update_spec, module.params)
 
-    # Workaround to Update the spec in the new fields
-    update_new_fields_in_spec(update_spec)
+    # # Workaround to Update the spec in the new fields
+    # update_new_fields_in_spec(update_spec)
+    result["update_spec_after"] = strip_internal_attributes(update_spec.to_dict())
 
     if err:
         result["error"] = err
@@ -545,7 +611,7 @@ def run_module():
         supports_check_mode=True,
         required_if=[
             ("state", "absent", ("ext_id",)),
-            ("state", "present", ("ext_id", "backing_info", "network_info"), True),
+            ("state", "present", ("ext_id", "backing_info", "nic_backing_info", "network_info", "nic_network_info"), True),
         ],
     )
     if SDK_IMP_ERROR:
