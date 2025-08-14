@@ -58,6 +58,14 @@ class VmSpecs:
         "uefi_boot": vmm_sdk.UefiBoot,
     }
 
+    nic_backing_info_allowed_types = {
+        "virtual_ethernet_nic": vmm_sdk.VirtualEthernetNic,
+    }
+
+    nic_network_info_allowed_types = {
+        "virtual_ethernet_nic_network_info": vmm_sdk.VirtualEthernetNicNetworkInfo,
+    }
+
     reference_spec = dict(
         ext_id=dict(type="str", required=True),
     )
@@ -173,6 +181,17 @@ class VmSpecs:
         num_queues=dict(type="int"),
     )
 
+    virtual_ethernet_nic_spec = dict(
+        model=dict(type="str", choices=["VIRTIO", "E1000"]),
+        mac_address=dict(type="str"),
+        is_connected=dict(type="bool"),
+        num_queues=dict(type="int"),
+    )
+
+    nic_backing_info_spec = dict(
+        virtual_ethernet_nic=dict(type="dict", options=virtual_ethernet_nic_spec),
+    )
+
     nic_info_spec = dict(
         nic_type=dict(
             type="str",
@@ -198,12 +217,30 @@ class VmSpecs:
         ipv4_config=dict(type="dict", options=ipv4_config_spec, obj=vmm_sdk.Ipv4Config),
     )
 
+    virtual_ethernet_nic_network_info_spec = nic_info_spec
+
+    nic_network_info_spec = dict(
+        virtual_ethernet_nic_network_info=dict(
+            type="dict", options=virtual_ethernet_nic_network_info_spec
+        ),
+    )
+
     nic_spec = dict(
         backing_info=dict(
             type="dict", options=nic_backup_info_spec, obj=vmm_sdk.EmulatedNic
         ),
+        nic_backing_info=dict(
+            type="dict",
+            options=nic_backing_info_spec,
+            obj=nic_backing_info_allowed_types,
+        ),
         network_info=dict(
             type="dict", options=nic_info_spec, obj=vmm_sdk.AhvConfigNicNetworkInfo
+        ),
+        nic_network_info=dict(
+            type="dict",
+            options=nic_network_info_spec,
+            obj=nic_network_info_allowed_types,
         ),
     )
 
