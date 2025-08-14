@@ -177,15 +177,15 @@ class VmSpecs:
     nic_backup_info_spec = dict(
         model=dict(type="str", choices=["VIRTIO", "E1000"]),
         mac_address=dict(type="str"),
-        is_connected=dict(type="bool", default=True),
-        num_queues=dict(type="int", default=1),
+        is_connected=dict(type="bool"),
+        num_queues=dict(type="int"),
     )
 
     virtual_ethernet_nic_spec = dict(
         model=dict(type="str", choices=["VIRTIO", "E1000"]),
         mac_address=dict(type="str"),
-        is_connected=dict(type="bool", default=True),
-        num_queues=dict(type="int", default=1),
+        is_connected=dict(type="bool"),
+        num_queues=dict(type="int"),
     )
 
     nic_backing_info_spec = dict(
@@ -233,7 +233,6 @@ class VmSpecs:
             type="dict",
             options=nic_backing_info_spec,
             obj=nic_backing_info_allowed_types,
-            mutually_exclusive=[("virtual_ethernet_nic",)],
         ),
         network_info=dict(
             type="dict", options=nic_info_spec, obj=vmm_sdk.AhvConfigNicNetworkInfo
@@ -242,7 +241,6 @@ class VmSpecs:
             type="dict",
             options=nic_network_info_spec,
             obj=nic_network_info_allowed_types,
-            mutually_exclusive=["virtual_ethernet_nic_network_info"],
         ),
     )
 
