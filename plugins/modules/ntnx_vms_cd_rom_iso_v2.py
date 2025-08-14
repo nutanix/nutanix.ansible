@@ -343,9 +343,9 @@ def eject_iso(module, vms, result):
     result["ext_id"] = ext_id
 
     if module.check_mode:
-        result[
-            "response"
-        ] = "ISO will be ejected from CD ROM with external ID: {0}".format(ext_id)
+        result["response"] = (
+            "ISO will be ejected from CD ROM with external ID: {0}".format(ext_id)
+        )
 
         return
 
