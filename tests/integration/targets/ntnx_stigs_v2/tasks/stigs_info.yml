@@ -7,9 +7,6 @@
   nutanix.ncp.ntnx_STIGs_v2:
   register: result_summary
 
-- ansible.builtin.debug:
-    var: result_summary
-
 - name: Verify summary report
   ansible.builtin.assert:
     that:
@@ -24,9 +21,6 @@
   nutanix.ncp.ntnx_STIGs_v2:
     stig_details: true
   register: result_details
-
-- ansible.builtin.debug:
-    var: result_details
 
 - name: Verify detailed STIG control information
   ansible.builtin.assert:
