@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_STIGs_v2
 short_description: Fetch STIG rule details and issue counts for each cluster
-version_added: 2.3.0
+version_added: 2.4.0
 description:
   - The Security Technical Implementation Guide (STIG) is a configuration standard consisting of cybersecurity requirements for a specific product.
   - Fetch the current number of issues found by STIG for each cluster.
@@ -91,15 +91,12 @@ import warnings  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
-from ..module_utils.v4.security.api_client import (  # noqa: E402
-    get_stigs_api_instance,
-)
+from ..module_utils.v4.security.api_client import get_stigs_api_instance  # noqa: E402
 from ..module_utils.v4.security.helpers import (  # noqa: E402
     get_stig_controls_details,
     get_stig_summary,
 )
 from ..module_utils.v4.utils import strip_internal_attributes  # noqa: E402
-
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
@@ -120,7 +117,7 @@ def run_module():
     result = {"changed": False, "error": None, "response": None}
     stig_api_instance = get_stigs_api_instance(module)
     resp = None
-    if module.params.get("stig_details") == True:
+    if module.params.get("stig_details"):
         resp = get_stig_controls_details(module, stig_api_instance)
     else:
         resp = get_stig_summary(module, stig_api_instance)
