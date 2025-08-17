@@ -1,0 +1,54 @@
+---
+- name: Start ntnx_stigs_v2 tests
+  ansible.builtin.debug:
+    msg: "Starting ntnx_stigs_v2 tests"
+
+- name: Fetch summary report for the current number of issues found by STIG for each cluster.
+  nutanix.ncp.ntnx_STIGs_v2:
+  register: result_summary
+
+- ansible.builtin.debug:
+    var: result_summary
+
+- name: Verify summary report
+  ansible.builtin.assert:
+    that:
+      - result_summary.changed == false
+      - result_summary.failed == false
+      - result_summary.response is defined
+      - result_summary.response | length > 0
+    fail_msg: "Summary report verification failed"
+    success_msg: "Summary report verification passed"
+
+- name: Fetch detailed STIG control information for each cluster.
+  nutanix.ncp.ntnx_STIGs_v2:
+    stig_details: true
+  register: result_details
+
+- ansible.builtin.debug:
+    var: result_details
+
+- name: Verify detailed STIG control information
+  ansible.builtin.assert:
+    that:
+      - result_details.changed == false
+      - result_details.failed == false
+      - result_details.response is defined
+      - result_details.response | length > 0
+    fail_msg: "Detailed STIG control information verification failed"
+    success_msg: "Detailed STIG control information verification passed"
+
+- name: Verify summary report matches detailed control information
+  ansible.builtin.assert:
+    that:
+      - >
+        (
+          result_details.response
+          | selectattr('affected_clusters', 'defined')
+          | selectattr('affected_clusters', 'contains', item.cluster_ext_id)
+          | list
+          | length
+        ) == item.failed_count
+    fail_msg: "Cluster {{ item.cluster_ext_id }} failed validation."
+    success_msg: "Cluster {{ item.cluster_ext_id }} passed validation."
+  loop: "{{ result_summary.response }}"
