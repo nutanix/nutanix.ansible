@@ -10,7 +10,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_STIGs_v2
+module: ntnx_stigs_v2
 short_description: Fetch STIG rule details and issue counts for each cluster
 version_added: 2.4.0
 description:
@@ -34,7 +34,7 @@ author:
 
 EXAMPLES = r"""
 - name: Fetch summary report for the current number of issues found by STIG for each cluster.
-  nutanix.ncp.ntnx_STIGs_v2:
+  nutanix.ncp.ntnx_stigs_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -42,7 +42,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Fetch detailed STIG control information for each cluster.
-  nutanix.ncp.ntnx_STIGs_v2:
+  nutanix.ncp.ntnx_stigs_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>

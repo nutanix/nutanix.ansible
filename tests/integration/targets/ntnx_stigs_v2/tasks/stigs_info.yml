@@ -4,7 +4,7 @@
     msg: "Starting ntnx_stigs_v2 tests"
 
 - name: Fetch summary report for the current number of issues found by STIG for each cluster.
-  nutanix.ncp.ntnx_STIGs_v2:
+  nutanix.ncp.ntnx_stigs_v2:
   register: result_summary
 
 - name: Verify summary report
@@ -18,7 +18,7 @@
     success_msg: "Summary report verification passed"
 
 - name: Fetch detailed STIG control information for each cluster.
-  nutanix.ncp.ntnx_STIGs_v2:
+  nutanix.ncp.ntnx_stigs_v2:
     stig_details: true
   register: result_details
 
