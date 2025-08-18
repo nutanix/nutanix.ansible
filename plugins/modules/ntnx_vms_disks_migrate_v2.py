@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2024, Nutanix
+# Copyright: (c) 2025, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -33,8 +33,9 @@ options:
         required: true
     migrate_disks:
         description:
-            - A migration plan defines how VM disks are moved to new storage containers
-            - Either all disks to one container with a single plan, or individual disks to different containers with separate plans.
+            - Specifies the VmDisks of a VM for migration and the migration plan for them.
+            - If all the disks of a VM need to be migrated to the same storage container, only a single migration plan with only the external ID of the destination storage container is needed.
+            - If the disks are being migrated to different containers, one plan per disk needs to be specified
         type: dict
         required: true
         suboptions:
@@ -98,6 +99,10 @@ extends_documentation_fragment:
 EXAMPLES = r"""
 - name: Migrate all disks of a VM to a new storage container
   nutanix.ncp.ntnx_vms_disks_migrate_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     vm_ext_id: "12345678-1234-1234-1234-123456789012"
     migrate_disks:
       all_disks_migration_plan:
@@ -106,6 +111,10 @@ EXAMPLES = r"""
 
 - name: Migrate specific disks of a VM to different storage containers
   nutanix.ncp.ntnx_vms_disks_migrate_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     vm_ext_id: "12345678-1234-1234-1234-123456789012"
     migrate_disks:
       migration_plans:
@@ -301,15 +310,18 @@ response:
 task_ext_id:
     description: The external ID of the task associated with the operation.
     type: str
+    sample: "ZXJnb24=:e104fad5-7e1e-51d3-bee8-0d566f6044e7"
 changed:
     description: Indicates whether the module made any changes.
     type: bool
+    sample: true
 error:
     description: The error message, if any, encountered.
     type: str
 vm_ext_id:
     description: VM external ID
     type: str
+    sample: "42c897ad-ef33-4d23-6888-33cd7d441e95"
 """
 
 import traceback  # noqa: E402

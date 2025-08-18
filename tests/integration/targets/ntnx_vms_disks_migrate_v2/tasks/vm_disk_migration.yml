@@ -142,6 +142,7 @@
       - result.response is defined
       - result.response.migrate_disks.storage_container.ext_id == "5007f144-f2f9-48d7-a47f-9f8739d55045"
       - result.vm_ext_id == "add18bfd-7477-4deb-6f67-e53d86f43e03"
+    fail_msg: "VM disks migration with check mode failed"
     success_msg: "VM disks migration with check mode succeeded"
 
 - name: Migrate all VM disks to the same storage container
@@ -184,8 +185,8 @@
       - result.response is defined
       - result.response.error_messages | length > 0
       - result.response.status == "FAILED"
-    fail_msg: "Migrate all disks to the same storage container using storage container that does not exist failed"
-    success_msg: "Migrate all disks to the same storage container using storage container that does not exist succeeded"
+    fail_msg: "Migrate all disks to non-existing storage container did not fail as expected"
+    success_msg: "Migrate all disks to non-existing storage container failed as expected"
 
 - name: Migrate VM disks to different storage containers with check mode enabled
   nutanix.ncp.ntnx_vms_disks_migrate_v2:
@@ -378,8 +379,8 @@
       - result.response is defined
       - result.response.error_messages | length > 0
       - result.response.status == "FAILED"
-    fail_msg: "Migrate VM disks to different storage containers with non-existing disks failed"
-    success_msg: "Migrate VM disks to different storage containers with non-existing disks succeeded"
+    fail_msg: "Migrate VM disks to different storage containers with non-existing disks did not fail as expected"
+    success_msg: "Migrate VM disks to different storage containers with non-existing disks failed as expected"
 
 - name: Migrate VM disks to different storage containers with non-existing storage container
   nutanix.ncp.ntnx_vms_disks_migrate_v2:
@@ -403,8 +404,8 @@
       - result.response is defined
       - result.response.error_messages | length > 0
       - result.response.status == "FAILED"
-    fail_msg: "Migrate VM disks to different storage containers with non-existing storage container failed"
-    success_msg: "Migrate VM disks to different storage containers with non-existing storage container succeeded"
+    fail_msg: "Migrate VM disks to different storage containers with non-existing storage container did not fail as expected"
+    success_msg: "Migrate VM disks to different storage containers with non-existing storage container failed as expected"
 
 - name: Delete VM
   nutanix.ncp.ntnx_vms_v2:
