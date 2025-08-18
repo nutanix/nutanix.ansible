@@ -61,7 +61,6 @@ options:
                         backing_info:
                             description:
                                 - The backing information for the NIC.
-                                - Deprecated, use C(nic_backing_info) instead.
                             type: dict
                             suboptions:
                                 model:
@@ -90,6 +89,7 @@ options:
                         nic_backing_info:
                             description:
                                 - Backing Information about how NIC is associated with a VM.
+                                - Will work with pc.7.5 and later.
                             type: dict
                             suboptions:
                                 virtual_ethernet_nic:
@@ -123,7 +123,6 @@ options:
                         network_info:
                             description:
                                 - The network configuration for the NIC.
-                                - Deprecated, use C(nic_network_info) instead.
                             type: dict
                             suboptions:
                                 nic_type:
@@ -233,6 +232,7 @@ options:
                         nic_network_info:
                             description:
                                 - Network configuration for the NIC.
+                                - Will work with pc.7.5 and later.
                             type: dict
                             suboptions:
                                 virtual_ethernet_nic_network_info:
