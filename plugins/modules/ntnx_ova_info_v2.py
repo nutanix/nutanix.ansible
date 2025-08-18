@@ -37,7 +37,7 @@ EXAMPLES = r"""
 
 - name: List Ovas with filter
   nutanix.ncp.ntnx_ova_info_v2:
-    filter:  "name eq 'test_ova'"
+    filter: "name eq 'test_ova'"
   register: result
 
 - name: List Ovas with limit
