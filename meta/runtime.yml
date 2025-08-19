@@ -224,3 +224,5 @@ action_groups:
     - ntnx_ova_info_v2
     - ntnx_ova_deploy_vm_v2
     - ntnx_ova_download_v2
+    - ntnx_pc_tasks_info_v2
+    - ntnx_pc_task_abort_v2
