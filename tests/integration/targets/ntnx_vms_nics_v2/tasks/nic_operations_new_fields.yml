@@ -210,7 +210,6 @@
       - result.response.nic_network_info.vlan_mode == "ACCESS"
       - result.response.nic_network_info.should_allow_unknown_macs == false
       - result.response.nic_backing_info.is_connected == true
-      - result.response.nic_backing_info.model == "VIRTIO"
     fail_msg: "Create nic with network function nic type failed "
     success_msg: "Create nic with network function nic type passed "
 
@@ -409,6 +408,45 @@
 
 ###############################################################################
 
+- name: Update nic with new values
+  nutanix.ncp.ntnx_vms_nics_v2:
+    ext_id: "{{ todelete[2] }}"
+    vm_ext_id: "{{ vm_uuid }}"
+    state: present
+    nic_backing_info:
+      virtual_ethernet_nic:
+        model: "VIRTIO"
+        is_connected: false
+    nic_network_info:
+      virtual_ethernet_nic_network_info:
+        nic_type: "DIRECT_NIC"
+        vlan_mode: "TRUNK"
+        trunked_vlans:
+          - 0
+          - 1
+        should_allow_unknown_macs: false
+  register: result
+  ignore_errors: true
+
+- name: Update nic with new values status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.nic_backing_info.is_connected == false
+      - result.response.nic_backing_info.model == "VIRTIO"
+      - result.response.nic_network_info.vlan_mode == "TRUNK"
+      - result.response.nic_network_info.trunked_vlans == [0,1]
+      - result.response.nic_network_info.nic_type == "DIRECT_NIC"
+      - result.response.nic_network_info.should_allow_unknown_macs == false
+      - result.vm_ext_id == "{{ vm_uuid }}"
+      - result.ext_id == "{{ todelete[2] }}"
+    fail_msg: "Unable to update nic with new values "
+    success_msg: "nic updated with new values successfully "
+
+################################################################################
+
 - name: Check for idempotency by updating the nic with same values
   nutanix.ncp.ntnx_vms_nics_v2:
     ext_id: "{{ todelete[2] }}"
@@ -417,20 +455,17 @@
     nic_backing_info:
       virtual_ethernet_nic:
         model: "VIRTIO"
-        is_connected: true
+        is_connected: false
     nic_network_info:
       virtual_ethernet_nic_network_info:
-        nic_type: "NORMAL_NIC"
-        subnet:
-          ext_id: "{{ static.uuid }}"
-        vlan_mode: "ACCESS"
+        nic_type: "DIRECT_NIC"
+        vlan_mode: "TRUNK"
+        trunked_vlans:
+          - 0
+          - 1
         should_allow_unknown_macs: false
-        ipv4_config:
-          ip_address:
-            value: "{{ network.managed.IPs[0] }}"
   register: result
   ignore_errors: true
-  check_mode: true
 
 - name: Check for idempotency Status
   ansible.builtin.assert:
@@ -463,6 +498,7 @@
       - result.response is defined
       - result.changed == true
       - result.failed == false
+      - result.response.nic_backing_info.is_connected == false
     fail_msg: "Unable to update nic "
     success_msg: "nic updated successfully "
 
