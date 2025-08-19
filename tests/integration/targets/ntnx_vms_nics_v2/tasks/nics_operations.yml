@@ -12,7 +12,7 @@
   ansible.builtin.set_fact:
     random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
 
-- name: Set VM and nics names
+- name: Set VM name
   ansible.builtin.set_fact:
     vm_name: "{{ random_name }}_vm_test"
 

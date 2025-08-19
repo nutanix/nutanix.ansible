@@ -584,7 +584,7 @@ def update_new_fields_in_spec(update_spec, params):
                 update_spec.nic_backing_info.num_queues
             )
 
-        if params.get("backing_info"):
+        elif params.get("backing_info"):
             update_spec.nic_backing_info.model = update_spec.backing_info.model
             update_spec.nic_backing_info.is_connected = (
                 update_spec.backing_info.is_connected
@@ -619,7 +619,7 @@ def update_new_fields_in_spec(update_spec, params):
                 update_spec.nic_network_info.ipv4_config
             )
 
-        if params.get("network_info"):
+        elif params.get("network_info"):
             update_spec.nic_network_info.nic_type = update_spec.network_info.nic_type
             update_spec.nic_network_info.network_function_chain = (
                 update_spec.network_info.network_function_chain
