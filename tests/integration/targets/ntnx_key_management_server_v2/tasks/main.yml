@@ -1,0 +1,12 @@
+---
+- name: Set module defaults
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: "{{ validate_certs }}"
+  block:
+    - name: Import kms crud tests
+      ansible.builtin.import_tasks: kms_crud.yml
+      ignore_errors: true
