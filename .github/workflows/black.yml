@@ -22,4 +22,4 @@ jobs:
       - name: black
         uses: psf/black@stable
         with:
-          version: 22.8.0
+          version: 25.1.0
