@@ -9,4 +9,3 @@
   block:
     - name: Import kms crud tests
       ansible.builtin.import_tasks: kms_crud.yml
-      ignore_errors: true
