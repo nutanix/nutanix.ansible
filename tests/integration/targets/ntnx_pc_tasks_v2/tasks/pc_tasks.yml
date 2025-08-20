@@ -79,7 +79,7 @@
     ext_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
   register: result
   ignore_errors: true
-  
+
 - name: Get the details of the image with wrong ext id status
   ansible.builtin.assert:
     that:
@@ -129,7 +129,7 @@
     limit: 1
   register: result
   ignore_errors: true
-  
+
 - name: Get task details using limit status
   ansible.builtin.assert:
     that:
