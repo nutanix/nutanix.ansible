@@ -1,0 +1,252 @@
+---
+# Variables required before running this playbook:
+# - cluster
+
+- name: "Start PC tasks tests"
+  ansible.builtin.debug:
+    msg: "Start PC tasks tests"
+
+- name: Generate random names
+  ansible.builtin.set_fact:
+    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+
+- name: Set suffix name
+  ansible.builtin.set_fact:
+    suffix_name: "ansible-image"
+
+- name: Set image name
+  ansible.builtin.set_fact:
+    image_name: "{{suffix_name}}-{{random_name}}1"
+
+- name: Create ISO_IMAGE using valid source url
+  nutanix.ncp.ntnx_images_v2:
+    state: present
+    type: ISO_IMAGE
+    name: "{{ image_name }}"
+    description: image created for testing pc tasks
+    checksum:
+      sha1:
+        hex_digest: "{{ iso_image.checksum }}"
+    source:
+      url_source:
+        url: "{{ iso_image.url }}"
+        should_allow_insecure_url: true
+    cluster_location_ext_ids: "{{ cluster.uuid }}"
+    wait: false
+  register: result
+  ignore_errors: true
+
+- name: Create DISK_IMAGE using valid source url status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.task_ext_id is defined
+
+- name: Store task ext id
+  ansible.builtin.set_fact:
+    task_ext_id: "{{ result.task_ext_id }}"
+
+- name: Get Task status till task is SUCCEEDED
+  nutanix.ncp.ntnx_pc_tasks_info_v2:
+    ext_id: "{{ task_ext_id }}"
+  register: result
+  until: result.response.status == 'SUCCEEDED'
+  retries: 100
+  delay: 10
+
+- name: Print result
+  ansible.builtin.debug:
+    msg: "{{ result }}"
+
+- name: Check task details
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+      - result.response.ext_id == "{{ task_ext_id }}"
+      - result.ext_id == "{{ task_ext_id }}"
+    fail_msg: "Task failed to complete"
+    success_msg: "Task completed successfully"
+
+- name: Store image ext id and operation name from task response
+  ansible.builtin.set_fact:
+    image_ext_id: "{{ result.response.entities_affected[0].ext_id }}"
+    operation_name: "{{ result.response.operation }}"
+
+- name: Get the details of the image with wrong ext id
+  nutanix.ncp.ntnx_images_v2:
+    ext_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+  register: result
+  ignore_errors: true
+  
+- name: Get the details of the image with wrong ext id status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == true
+      - result.changed == false
+      - result.msg == "Api Exception raised while fetching image info using ext_id"
+      - result.status == 404
+    fail_msg: "Failed"
+    success_msg: "Not able to get the details of the image with wrong ext id as expected "
+
+- name: Get all the tasks
+  nutanix.ncp.ntnx_pc_tasks_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Get all the tasks status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.response | length >= 1
+      - result.total_available_results is defined
+      - result.total_available_results >= 1
+    fail_msg: "Unable to list tasks "
+    success_msg: "tasks  listed successfully"
+
+- name: Get task details using filters
+  nutanix.ncp.ntnx_pc_tasks_info_v2:
+    filter: "operation eq '{{ operation_name }}'"
+  register: result
+  ignore_errors: true
+
+- name: Get task details using filters status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.response | length >= 1
+      - result.total_available_results is defined
+      - result.total_available_results >= 1
+    fail_msg: "Unable to get task details using filters"
+    success_msg: "Task details fetched successfully using filters"
+
+- name: Get task details using limit
+  nutanix.ncp.ntnx_pc_tasks_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+  
+- name: Get task details using limit status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.response | length == 1
+      - result.total_available_results is defined
+      - result.total_available_results >= 1
+    fail_msg: "Unable to get task details using limit"
+    success_msg: "Task details fetched successfully using limit"
+
+- name: Create ISO_IMAGE using valid source url
+  nutanix.ncp.ntnx_images_v2:
+    state: present
+    type: ISO_IMAGE
+    name: "{{ image_name }}_1"
+    description: image created for testing pc tasks
+    checksum:
+      sha1:
+        hex_digest: "{{ iso_image.checksum }}"
+    source:
+      url_source:
+        url: "{{ iso_image.url }}"
+        should_allow_insecure_url: true
+    cluster_location_ext_ids: "{{ cluster.uuid }}"
+    wait: false
+  register: result
+  ignore_errors: true
+
+- name: Create DISK_IMAGE using valid source url status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.task_ext_id is defined
+
+- name: Store task ext id
+  ansible.builtin.set_fact:
+    task_ext_id_1: "{{ result.task_ext_id }}"
+
+- name: Abort a task in check mode
+  nutanix.ncp.ntnx_pc_task_abort_v2:
+    task_ext_id: "11223344-5566-7788-99aa-bbccddeeff00"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Print result
+  ansible.builtin.debug:
+    msg: "{{ result }}"
+
+- name: Abort a task in check mode status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.failed == false
+      - result.changed == false
+      - result.msg == "Task with task_ext_id:11223344-5566-7788-99aa-bbccddeeff00 will be aborted."
+    fail_msg: "Failed to abort the task in check mode"
+    success_msg: "Aborted the task in check mode"
+
+- name: Abort a task
+  nutanix.ncp.ntnx_pc_task_abort_v2:
+    task_ext_id: "{{ task_ext_id_1 }}"
+  register: result
+  ignore_errors: true
+
+- name: Print result
+  ansible.builtin.debug:
+    msg: "{{ result }}"
+
+- name: Abort a task status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+    fail_msg: "Failed to abort the task"
+    success_msg: "Aborted the task"
+
+- name: Abort a task with wrong ext id
+  nutanix.ncp.ntnx_pc_task_abort_v2:
+    task_ext_id: "11223344-5566-7788-99aa-bbccddeeff00"
+  register: result
+  ignore_errors: true
+
+- name: Print result
+  ansible.builtin.debug:
+    msg: "{{ result }}"
+
+- name: Abort a task with wrong ext id status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == true
+      - result.changed == false
+      - result.msg == "Api Exception raised while aborting task"
+      - result.status == 400
+    fail_msg: "Failed to abort the task with wrong ext id"
+    success_msg: "Not able to abort the task with wrong ext id as expected "
+
+- name: Delete image
+  nutanix.ncp.ntnx_images_v2:
+    state: absent
+    ext_id: "{{ image_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete image status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+    fail_msg: "Unable to delete image "
+    success_msg: "Image deleted successfully "

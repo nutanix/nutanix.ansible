@@ -27,6 +27,27 @@ author:
 """
 
 EXAMPLES = r"""
+- name: Get Task status using task ext_id
+  nutanix.ncp.ntnx_pc_tasks_info_v2:
+    ext_id: "ZXJnb24=:e38e02b7-d946-4069-8291-e9407e3a15d8"
+  register: result
+
+- name: Get all the tasks
+  nutanix.ncp.ntnx_pc_tasks_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Get task details using filters
+  nutanix.ncp.ntnx_pc_tasks_info_v2:
+    filter: "operation eq 'kImageCreate'"
+  register: result
+  ignore_errors: true
+
+- name: Get task details using limit
+  nutanix.ncp.ntnx_pc_tasks_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
@@ -38,8 +59,51 @@ response:
     type: dict
     returned: always
     sample:
-        
-
+        {
+            "app_name": null,
+            "cluster_ext_ids": [
+                "00063a1c-a953-2048-0000-000000028f57"
+            ],
+            "completed_time": "2025-08-20T11:25:59.187167+00:00",
+            "completion_details": null,
+            "created_time": "2025-08-20T11:25:55.634964+00:00",
+            "entities_affected": [
+                {
+                    "ext_id": "c13300a6-d246-4d1f-9d0c-64b5dd31c393",
+                    "name": "ansible-image-LHAIPsToXnDF1",
+                    "rel": "vmm:content:image"
+                }
+            ],
+            "error_messages": null,
+            "ext_id": "ZXJnb24=:e38e02b7-d946-4069-8291-e9407e3a15d8",
+            "is_background_task": false,
+            "is_cancelable": true,
+            "last_updated_time": "2025-08-20T11:25:59.187166+00:00",
+            "legacy_error_message": null,
+            "number_of_entities_affected": 1,
+            "number_of_subtasks": 1,
+            "operation": "kImageCreate",
+            "operation_description": "Create Image",
+            "owned_by": {
+                "ext_id": "00000000-0000-0000-0000-000000000000",
+                "name": "admin"
+            },
+            "parent_task": null,
+            "progress_percentage": 100,
+            "resource_links": null,
+            "root_task": null,
+            "started_time": "2025-08-20T11:25:55.661704+00:00",
+            "status": "SUCCEEDED",
+            "sub_steps": null,
+            "sub_tasks": [
+                {
+                    "ext_id": "ZXJnb24=:0d18cb98-3362-412e-87ef-0566c65a4223",
+                    "href": "https://10.44.76.129:9440/api/prism/v4.1/config/tasks/ZXJnb24=:0d18cb98-3362-412e-87ef-0566c65a4223",
+                    "rel": "subtask"
+                }
+            ],
+            "warnings": null
+        }
 ext_id:
     description: External ID of the task
     type: str

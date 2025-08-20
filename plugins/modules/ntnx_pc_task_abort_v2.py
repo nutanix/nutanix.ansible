@@ -11,8 +11,15 @@ DOCUMENTATION = r"""
 module: ntnx_pc_task_abort_v2
 short_description: Deploys a Prism Central using the provided details
 version_added: 2.3.0
-
-    
+description:
+  - This module allows you to abort a task in Prism Central.
+  - This module uses PC v4 APIs based SDKs
+options:
+  task_ext_id:
+    description:
+      - The external ID of the task.
+    type: str
+    required: true
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
@@ -21,7 +28,14 @@ author:
 """
 
 EXAMPLES = r"""
-
+- name: Abort a task
+  nutanix.ncp.ntnx_pc_task_abort_v2:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    task_ext_id: "ZXJnb24=:a6c95b0b-4a97-4165-6619-f09ba156bea1"
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
@@ -30,6 +44,14 @@ response:
     returned: always
     type: dict
     sample:
+        {
+            "arguments_map": null,
+            "code": "TSKS-20901",
+            "error_group": "TASK_CANCELLATION_SUCCESS",
+            "locale": "en_US",
+            "message": "Task cancellation issued successfully as requested",
+            "severity": "INFO"
+        }
 
 task_ext_id:
     description: Task external ID.
@@ -42,11 +64,6 @@ changed:
     returned: always
     type: bool
     sample: true
-
-error:
-    description: This field typically holds information about if the task have errors that occurred during the task execution
-    returned: When an error occurs
-    type: str
 
 failed:
     description: This field typically holds information about if the task have failed
@@ -64,7 +81,6 @@ from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
 )
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
-    
     strip_internal_attributes,
 )
 
@@ -87,10 +103,11 @@ def abort_task(module, result):
         result (dict): Result object
     """
     task_ext_id = module.params.get("task_ext_id")
+    result["task_ext_id"] = task_ext_id
     task_api = get_tasks_api_instance(module)
 
     if module.check_mode:
-        result["msg"] = "Task with ext_id:{0} will be aborted.".format(task_ext_id)
+        result["msg"] = "Task with task_ext_id:{0} will be aborted.".format(task_ext_id)
         return
 
     resp = None
@@ -102,7 +119,6 @@ def abort_task(module, result):
             exception=e,
             msg="Api Exception raised while aborting task",
         )
-    result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     result["changed"] = True
 
@@ -117,7 +133,7 @@ def run_module():
     result = {
         "changed": False,
         "response": None,
-        "ext_id": None,
+        "task_ext_id": None,
     }
     abort_task(module, result)
 
