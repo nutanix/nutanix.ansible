@@ -34,7 +34,8 @@ options:
     migrate_disks:
         description:
             - Specifies the VmDisks of a VM for migration and the migration plan for them.
-            - If all the disks of a VM need to be migrated to the same storage container, only a single migration plan with only the external ID of the destination storage container is needed.
+            - If all the disks of a VM need to be migrated to the same storage container
+              only a single migration plan with only the external ID of the destination storage container is needed.
             - If the disks are being migrated to different containers, one plan per disk needs to be specified
         type: dict
         required: true
