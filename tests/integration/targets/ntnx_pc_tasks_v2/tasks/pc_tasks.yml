@@ -54,10 +54,6 @@
   retries: 100
   delay: 10
 
-- name: Print result
-  ansible.builtin.debug:
-    msg: "{{ result }}"
-
 - name: Check task details
   ansible.builtin.assert:
     that:
@@ -178,10 +174,6 @@
   check_mode: true
   ignore_errors: true
 
-- name: Print result
-  ansible.builtin.debug:
-    msg: "{{ result }}"
-
 - name: Abort a task in check mode status
   ansible.builtin.assert:
     that:
@@ -198,10 +190,6 @@
   register: result
   ignore_errors: true
 
-- name: Print result
-  ansible.builtin.debug:
-    msg: "{{ result }}"
-
 - name: Abort a task status
   ansible.builtin.assert:
     that:
@@ -216,10 +204,6 @@
     task_ext_id: "11223344-5566-7788-99aa-bbccddeeff00"
   register: result
   ignore_errors: true
-
-- name: Print result
-  ansible.builtin.debug:
-    msg: "{{ result }}"
 
 - name: Abort a task with wrong ext id status
   ansible.builtin.assert:
