@@ -1,6 +1,4 @@
 ---
-# Variables required before running this playbook:
-# - cluster
 
 - name: "Start PC tasks tests"
   ansible.builtin.debug:

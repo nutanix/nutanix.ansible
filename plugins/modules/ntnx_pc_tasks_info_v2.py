@@ -140,9 +140,7 @@ import warnings  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.prism.helpers import get_pc_task  # noqa: E402
-from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
-    get_tasks_api_instance,
-)
+from ..module_utils.v4.prism.pc_api_client import get_tasks_api_instance  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,

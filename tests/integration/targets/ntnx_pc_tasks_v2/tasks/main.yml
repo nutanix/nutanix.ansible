@@ -9,4 +9,3 @@
   block:
     - name: Import pc_tasks.yml
       ansible.builtin.import_tasks: "pc_tasks.yml"
-      ignore_errors: true
