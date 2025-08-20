@@ -35,13 +35,13 @@ options:
             - Key Management Server name.
             - Required for creating or updating the key management server.
         type: str
-        required: true
+        required: false
     access_information:
         description:
             - Access information for the Azure Key Vault.
             - Required for creating or updating the key management server.
         type: dict
-        required: true
+        required: false
         suboptions:
             endpoint_url:
                 description: Endpoint URL for the Azure Key Vault.
@@ -63,7 +63,6 @@ options:
                 description: Client secret for the Azure Key Vault.
                 type: str
                 required: true
-                no_log: true
             credential_expiry_date:
                 description: When the client secret is going to expire.
                 type: str
@@ -90,12 +89,12 @@ EXAMPLES = r"""
     validate_certs: false
     name: "Key_Management_Server_1"
     access_information:
-        endpoint_url: "https://demo-keyvault-001.vault.azure.net/"
-        key_id: "key_id"
-        tenant_id: "d4c8a8e5-91b3-4f7e-8c2e-77d6f4a22f11"
-        client_id: "e29f9c62-3e56-41d0-b123-7f8a22c0cdef"
-        client_secret: "7Z3uQ~vO4trhXk8B5M9qjwgT1pR2uC9yD1zF0wX3"
-        credential_expiry_date: "2026-09-01"
+      endpoint_url: "https://demo-keyvault-001.vault.azure.net/"
+      key_id: "key_id"
+      tenant_id: "d4c8a8e5-91b3-4f7e-8c2e-77d6f4a22f11"
+      client_id: "e29f9c62-3e56-41d0-b123-7f8a22c0cdef"
+      client_secret: "7Z3uQ~vO4trhXk8B5M9qjwgT1pR2uC9yD1zF0wX3"
+      credential_expiry_date: "2026-09-01"
 
 - name: Update key management server
   nutanix.ncp.ntnx_key_management_server_v2:
@@ -106,12 +105,12 @@ EXAMPLES = r"""
     ext_id: "13a6657d-fa96-49e3-7307-87e93a1fec3d"
     name: "Key_Management_Server_1_Updated"
     access_information:
-        endpoint_url: "https://demo-keyvault-001.vault.azure.net/"
-        key_id: "key_id_updated"
-        tenant_id: "d4c8a8e5-91b3-4f7e-8c2e-77d6f4a22f11"
-        client_id: "e29f9c62-3e56-41d0-b123-7f8a22c0cdef"
-        client_secret: "7Z3uQ~vO4trhXk8B5M9qjwgT1pR2uC9yD1zF0wX3"
-        credential_expiry_date: "2026-09-01"
+      endpoint_url: "https://demo-keyvault-001.vault.azure.net/"
+      key_id: "key_id_updated"
+      tenant_id: "d4c8a8e5-91b3-4f7e-8c2e-77d6f4a22f11"
+      client_id: "e29f9c62-3e56-41d0-b123-7f8a22c0cdef"
+      client_secret: "7Z3uQ~vO4trhXk8B5M9qjwgT1pR2uC9yD1zF0wX3"
+      credential_expiry_date: "2026-09-01"
 
 - name: Delete key management server
   nutanix.ncp.ntnx_key_management_server_v2:
@@ -159,7 +158,7 @@ failed:
 
 task_ext_id:
   description: The External ID of the task
-  returned: when creating or updating KMS
+  returned: always
   type: str
   sample: "13a6657d-fa96-49e3-7307-87e93a1fec3d"
 
@@ -180,16 +179,16 @@ msg:
 
 import traceback  # noqa: E402
 import warnings  # noqa: E402
-from copy import deepcopy  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
+
+from ..module_utils.base_module import BaseModule  # noqa: E402
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
 from ..module_utils.v4.prism.tasks import (  # noqa: E402
     get_entity_ext_id_from_task,
     wait_for_completion,
 )
-from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
-from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.security.api_client import (  # noqa: E402
     get_etag,
     get_kms_api_instance,
@@ -221,7 +220,7 @@ def get_module_spec():
         key_id=dict(type="str", required=True),
         tenant_id=dict(type="str", required=True),
         client_id=dict(type="str", required=True),
-        client_secret=dict(type="str", required=True),
+        client_secret=dict(type="str", required=True, no_log=True),
         credential_expiry_date=dict(type="str", required=True),
     )
 
@@ -278,19 +277,23 @@ def create_kms(module, kms_api_instance, result):
     result["changed"] = True
 
 
-def check_kms_idempotency(old_spec, update_spec, result):
+def check_kms_idempotency(old_spec, update_spec):
     old_spec = strip_internal_attributes(old_spec)
     update_spec = strip_internal_attributes(update_spec)
-    if "access_information" in old_spec:
-        old_spec["access_information"]["client_secret"] = None
-        old_spec["access_information"]["key_id"] = None
-        old_spec["access_information"]["truncated_client_secret"] = None
-    if "access_information" in update_spec:
-        update_spec["access_information"]["client_secret"] = None
-        update_spec["access_information"]["key_id"] = None
-        update_spec["access_information"]["truncated_client_secret"] = None
-    result["old_spec"] = old_spec
-    result["update_spec"] = update_spec
+    if old_spec.get("access_information"):
+        old_spec["access_information"].pop("client_secret", None)
+        old_spec["access_information"].pop("key_id", None)
+        old_spec["access_information"].pop("truncated_client_secret", None)
+    if update_spec.get("access_information"):
+        update_spec["access_information"].pop("client_secret", None)
+        update_spec["access_information"].pop("key_id", None)
+        update_spec["access_information"].pop("truncated_client_secret", None)
+    old_spec["access_information"]["credential_expiry_date"] = str(
+        old_spec["access_information"]["credential_expiry_date"]
+    )
+    update_spec["access_information"]["credential_expiry_date"] = str(
+        update_spec["access_information"]["credential_expiry_date"]
+    )
     if old_spec != update_spec:
         return False
     return True
@@ -305,9 +308,9 @@ def update_kms(module, kms_api_instance, result):
     update_spec, err = sg.generate_spec(obj=default_spec)
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating kms update spec", **result)
+        module.fail_json(msg="Failed generating KMS update spec", **result)
     # check for idempotency
-    if check_kms_idempotency(current_spec.to_dict(), update_spec.to_dict(), result):
+    if check_kms_idempotency(current_spec.to_dict(), update_spec.to_dict()):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
 
@@ -318,7 +321,7 @@ def update_kms(module, kms_api_instance, result):
     resp = None
     etag = get_etag(data=current_spec)
     if not etag:
-        return module.fail_json("unable to fetch etag for updating kms", **result)
+        return module.fail_json("unable to fetch etag for updating KMS", **result)
 
     kwargs = {"if_match": etag}
     try:
@@ -329,7 +332,7 @@ def update_kms(module, kms_api_instance, result):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while updating kms",
+            msg="Api Exception raised while updating KMS",
         )
 
     task_ext_id = resp.data.ext_id
@@ -353,27 +356,23 @@ def delete_kms(module, kms_api_instance, result):
         )
         return
 
-    current_spec = get_kms_by_ext_id(module, kms_api_instance, ext_id)
-
-    etag = get_etag(data=current_spec)
-    if not etag:
-        return module.fail_json("unable to fetch etag for deleting kms", **result)
-
-    kwargs = {"if_match": etag}
-
     try:
         resp = kms_api_instance.delete_key_management_server_by_id(
-            extId=ext_id, **kwargs
+            extId=ext_id,
         )
     except Exception as e:
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while deleting kms",
+            msg="Api Exception raised while deleting KMS",
         )
 
+    task_ext_id = resp.data.ext_id
+    result["task_ext_id"] = task_ext_id
+    if task_ext_id and module.params.get("wait"):
+        task_status = wait_for_completion(module, task_ext_id)
+        result["response"] = strip_internal_attributes(task_status.to_dict())
     result["changed"] = True
-    result["response"] = resp.to_dict()
 
 
 def run_module():

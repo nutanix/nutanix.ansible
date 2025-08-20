@@ -91,6 +91,34 @@
   ansible.builtin.set_fact:
     kms_ext_id: "{{ create_result.ext_id }}"
 
+- name: Create key management server with invalid access information
+  nutanix.ncp.ntnx_key_management_server_v2:
+    name: "{{ kms_name }}_invalid"
+    access_information:
+      endpoint_url: "https://invalid-keyvault-001.vault.azure.net/"
+      key_id: "invalid_key_id"
+      tenant_id: "ab414ed6-7d97-4f7a-b98f-fcba7cac3b8c"
+      client_id: "ae1a2b3c-5d6e-7f80-9a1b-2c3d4e5f6789"
+      client_secret: "98765432-10fe-dcba-9876-543210fedcba"
+      credential_expiry_date: "2025-09-01"
+  register: invalid_result
+  ignore_errors: true
+
+- name: Print invalid result
+  ansible.builtin.debug:
+    var: invalid_result
+
+- name: Assert invalid key management server creation
+  ansible.builtin.assert:
+    that:
+      - invalid_result.changed == false
+      - invalid_result.failed == true
+      - invalid_result.error is defined
+      - invalid_result.msg == "Api Exception raised while creating KMS"
+      - invalid_result.response.data.error | length > 0
+    fail_msg: "Create key management server with invalid access information did not fail as expected"
+    success_msg: "Successfully handled error for invalid key management server creation"
+
 - name: Generate spec for updating key management server using check mode
   nutanix.ncp.ntnx_key_management_server_v2:
     name: "{{ kms_name }}_updated"
@@ -194,6 +222,34 @@
     fail_msg: "Idempotency check failed"
     success_msg: "Idempotency check passed"
 
+- name: Update key management server with invalid access information
+  nutanix.ncp.ntnx_key_management_server_v2:
+    ext_id: "{{ kms_ext_id }}"
+    name: "{{ kms_name }}_updated"
+    access_information:
+      endpoint_url: "https://invalid-url.vault.azure.net/"
+      key_id: "invalid_key_id"
+      tenant_id: "a1b2c3d4-e5f6-7890-abcd-ef0123456789"
+      client_id: "b0a1c2d3-e4f5-6789-0abc-def987654321"
+      client_secret: "c1d2e3f4-5678-90ab-cdef-1234567890ab"
+      credential_expiry_date: "2026-07-08"
+  register: invalid_result
+  ignore_errors: true
+
+- name: Print invalid result
+  ansible.builtin.debug:
+    var: invalid_result
+
+- name: Assert invalid key management server update
+  ansible.builtin.assert:
+    that:
+      - invalid_result.changed == false
+      - invalid_result.failed == true
+      - invalid_result.response.error_messages | length > 0
+      - invalid_result.response.status == "FAILED"
+    fail_msg: "Update key management server with invalid access information did not fail as expected"
+    success_msg: "Successfully handled error for invalid key management server update"
+
 - name: Fetch key management server using external ID
   nutanix.ncp.ntnx_key_management_server_info_v2:
     ext_id: "{{ kms_ext_id }}"
@@ -220,6 +276,27 @@
       - '"{{ azure_kms.keyId }}" in "{{ fetch_result.response.access_information.key_id }}"'
     fail_msg: "Failed to fetch key management server"
     success_msg: "Successfully fetched key management server"
+
+- name: Fetch key management server using invalid external ID
+  nutanix.ncp.ntnx_key_management_server_info_v2:
+    ext_id: "d4e5f6a7-b8c9-0123-4567-89abcdef0123"
+  register: invalid_fetch_result
+  ignore_errors: true
+
+- name: Print invalid fetch result
+  ansible.builtin.debug:
+    var: invalid_fetch_result
+
+- name: Assert invalid fetch result
+  ansible.builtin.assert:
+    that:
+      - invalid_fetch_result.changed == false
+      - invalid_fetch_result.failed == true
+      - invalid_fetch_result.error is defined
+      - invalid_fetch_result.msg == "Api Exception raised while fetching KMS info using external ID"
+      - invalid_fetch_result.response.data.error | length > 0
+    fail_msg: "Fetch key management server using invalid external ID did not fail as expected"
+    success_msg: "Successfully handled error for fetch key management server using invalid external ID"
 
 - name: List all key management servers
   nutanix.ncp.ntnx_key_management_server_info_v2:
@@ -278,6 +355,29 @@
       - delete_result.failed == false
       - delete_result.ext_id == "{{ kms_ext_id }}"
       - delete_result.response is defined
+      - delete_result.task_ext_id is defined
       - delete_result.response.status == "SUCCEEDED"
     fail_msg: "Failed to delete key management server"
     success_msg: "Successfully deleted key management server"
+
+- name: Delete key management server using invalid external ID
+  nutanix.ncp.ntnx_key_management_server_v2:
+    ext_id: "{{ kms_ext_id }}"
+    state: absent
+  register: invalid_delete_result
+  ignore_errors: true
+
+- name: Print invalid delete result
+  ansible.builtin.debug:
+    var: invalid_delete_result
+
+- name: Assert invalid delete result
+  ansible.builtin.assert:
+    that:
+      - invalid_delete_result.changed == false
+      - invalid_delete_result.failed == true
+      - invalid_delete_result.error is defined
+      - invalid_delete_result.msg == "Api Exception raised while deleting KMS"
+      - invalid_delete_result.response.data.error | length > 0
+    fail_msg: "Delete key management server using invalid external ID did not fail as expected"
+    success_msg: "Successfully handled error for delete key management server using invalid external ID"
