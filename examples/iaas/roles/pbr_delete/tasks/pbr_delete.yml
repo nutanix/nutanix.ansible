@@ -1,6 +1,6 @@
 ---
 - name: Delete PBR "{{ item.pbr_uuid }}"
-  nutanix.ncp.nutanix.ncp.ntnx_pbrs:
+  nutanix.ncp.ntnx_pbrs:
     state: absent
     pbr_uuid: "{{ item.pbr_uuid }}"
   register: pbr_delete_result

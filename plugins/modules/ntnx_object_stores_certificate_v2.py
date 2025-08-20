@@ -223,10 +223,10 @@ def create_certificate(module, object_stores_api, result):
     if module.check_mode:
         result["object_store_ext_id"] = object_store_ext_id
         result["path"] = module.params.get("path")
-        result[
-            "msg"
-        ] = "New certificate will be created for the object store with ext_id:{0} using the certificate details file:{1}".format(
-            object_store_ext_id, path
+        result["msg"] = (
+            "New certificate will be created for the object store with ext_id:{0} using the certificate details file:{1}".format(
+                object_store_ext_id, path
+            )
         )
         return
 
