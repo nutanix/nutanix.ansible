@@ -25,6 +25,7 @@ def get_kms_by_ext_id(module, api_instance, ext_id):
             msg="Api Exception raised while fetching KMS info using external ID",
         )
 
+
 def list_kms(module, api_instance):
     """
     This method will return a list of all KMS instances.

@@ -66,4 +66,3 @@ def get_kms_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_security_py_client.KeyManagementServersApi(client)
-    
