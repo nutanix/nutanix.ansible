@@ -1,7 +1,7 @@
 ---
-- name: Started Negative Creation Cases
+- name: Start ntnx_acps negative_scenarios tests
   ansible.builtin.debug:
-    msg: "Started Negative Creation Cases"
+    msg: Start ntnx_acps negative_scenarios tests
 
 - name: Unknown role name
   nutanix.ncp.ntnx_acps:

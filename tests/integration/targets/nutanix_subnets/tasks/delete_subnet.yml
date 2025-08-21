@@ -8,6 +8,10 @@
 # - username
 # - password
 
+- name: Start nutanix_subnets delete_subnet tests
+  ansible.builtin.debug:
+    msg: Start nutanix_subnets delete_subnet tests
+
 - name: Overlay Subnet with IP_pools and DHCP
   nutanix.ncp.ntnx_subnets:
     state: present

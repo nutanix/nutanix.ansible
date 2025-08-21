@@ -5,6 +5,10 @@
 # - private_ip
 # - vm
 
+- name: Start nutanix_floating_ips create floating ip tests
+  ansible.builtin.debug:
+    msg: "Start nutanix_floating_ips create floating ip tests"
+
 - name: Create floating ip with external subnet uuid
   nutanix.ncp.ntnx_floating_ips:
     state: present

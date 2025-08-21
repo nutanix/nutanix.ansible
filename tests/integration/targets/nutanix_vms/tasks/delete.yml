@@ -1,6 +1,11 @@
 ---
 # Variables required before running this playbook:
 # - cluster
+
+- name: Start nutanix_vms delete tests
+  ansible.builtin.debug:
+    msg: Start nutanix_vms delete tests
+
 - name: VM with minimum requirements
   nutanix.ncp.ntnx_vms:
     state: present

@@ -1,7 +1,7 @@
 ---
-- name: Started Negative Creation Cases
+- name: Start nutanix_vpcs negative_scenarios tests
   ansible.builtin.debug:
-    msg: "Started Negative Creation Cases"
+    msg: Start nutanix_vpcs negative_scenarios tests
 
 - name: Unknown subnet name
   nutanix.ncp.ntnx_vpcs:

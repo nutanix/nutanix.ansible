@@ -6,9 +6,9 @@
 # - ip_address_management
 # - ip_address_pools
 
-- name: Started Negative Creation Cases
+- name: Start nutanix_subnets negative scenarios tests
   ansible.builtin.debug:
-    msg: "Started Negative Creation Cases"
+    msg: Start nutanix_subnets negative scenarios tests
 
 - name: Unknown virtual switch name
   nutanix.ncp.ntnx_subnets:

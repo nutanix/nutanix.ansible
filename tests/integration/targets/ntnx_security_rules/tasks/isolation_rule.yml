@@ -1,4 +1,9 @@
 ---
+
+- name: Start ntnx_security_rules isolation_rule tests
+  ansible.builtin.debug:
+    msg: Start ntnx_security_rules isolation_rule tests
+
 - name: >-
     Create isolation security rule with first_entity_filter and
     second_entity_filter with check mode

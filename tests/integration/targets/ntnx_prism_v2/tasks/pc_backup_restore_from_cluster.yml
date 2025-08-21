@@ -10,9 +10,9 @@
 #   - password: "password" # Prism Central UI password
 #   - ip: "10.0.0.6" # IP address of the Prism Central
 
-- name: Start testing PC backup restore with cluster as backup store.
+- name: Start ntnx_prism_v2 for PC backup restore with cluster as backup store tests.
   ansible.builtin.debug:
-    msg: Start testing PC backup restore with cluster as backup store.
+    msg: Start ntnx_prism_v2 for PC backup restore with cluster as backup store tests.
 
 #############################################################
 # List all clusters to get prism central external ID

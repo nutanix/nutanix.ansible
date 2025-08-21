@@ -11,6 +11,10 @@
 # - external_nat_subnet
 # - vpc
 
+- name: Start nutanix_subnets create_subnet tests
+  ansible.builtin.debug:
+    msg: Start nutanix_subnets create_subnet tests
+
 - name: VLAN subnet without IPAM
   nutanix.ncp.ntnx_subnets:
     state: present

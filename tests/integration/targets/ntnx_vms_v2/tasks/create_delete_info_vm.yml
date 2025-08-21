@@ -6,9 +6,9 @@
 # - network
 # - unattendxml
 
-- name: Start ntnx_vms_v2 tests
+- name: Start ntnx_vms_v2 tests for create_delete_info_vm
   ansible.builtin.debug:
-    msg: start ntnx_vms_v2 tests
+    msg: Start ntnx_vms_v2 tests for create_delete_info_vm
 
 - name: Generate random category key & value
   ansible.builtin.set_fact:

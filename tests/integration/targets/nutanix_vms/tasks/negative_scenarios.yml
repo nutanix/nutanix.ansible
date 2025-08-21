@@ -5,9 +5,9 @@
 # - storage_container
 # - network
 
-- name: Started Negative Creation Cases
+- name: Start nutanix_vms negative scenarios tests
   ansible.builtin.debug:
-    msg: "Started Negative Creation Cases"
+    msg: Start nutanix_vms negative scenarios tests
 
 - name: Unknown project name
   nutanix.ncp.ntnx_vms:

@@ -2,9 +2,9 @@
 # Variables required before running this playbook:
 # - external_nat_subnet
 
-- name: Start testing application security rules
+- name: Start ntnx_security_rules_v2 application security rules tests
   ansible.builtin.debug:
-    msg: Start testing application security rules
+    msg: Start ntnx_security_rules_v2 application security rules tests
 
 - name: Generate random names for security rules creation
   ansible.builtin.set_fact:

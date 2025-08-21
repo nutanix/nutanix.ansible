@@ -4,6 +4,10 @@
 # - project
 # - network
 
+- name: Start ntnx_acps create_acps tests
+  ansible.builtin.debug:
+    msg: Start ntnx_acps create_acps tests
+
 - name: Generate random name
   ansible.builtin.set_fact:
     random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12) }}"

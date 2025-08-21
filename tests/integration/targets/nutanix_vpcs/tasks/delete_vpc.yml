@@ -3,6 +3,11 @@
 # - external_nat_subnet
 # - dns_servers
 # - routable_ips
+
+- name: Start nutanix_vpcs delete_vpc tests
+  ansible.builtin.debug:
+    msg: Start nutanix_vpcs delete_vpc tests
+
 - name: Create VPC with all specifications
   nutanix.ncp.ntnx_vpcs:
     state: present
