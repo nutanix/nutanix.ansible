@@ -1,5 +1,5 @@
 ---
-- name: Start ntnx_address_groups create tests
+- name: Start ntnx_address_groups delete tests
   ansible.builtin.debug:
     msg: Start ntnx_address_groups delete tests
 

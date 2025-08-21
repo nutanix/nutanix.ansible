@@ -1,4 +1,9 @@
 ---
+
+- name: Start ntnx_security_rules vdi tests
+  ansible.builtin.debug:
+    msg: Start ntnx_security_rules vdi tests
+
 - name: Create ad security rule with inbound and outbound list
   nutanix.ncp.ntnx_security_rules:
     name: VDI Policy

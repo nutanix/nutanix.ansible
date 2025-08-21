@@ -2,9 +2,9 @@
 # Variables required before running this playbook:
 # - cluster
 
-- name: Start ntnx_vms_v2 tests
+- name: Start ntnx_vms_v2 for update vm tests
   ansible.builtin.debug:
-    msg: Start ntnx_vms_v2 tests
+    msg: Start ntnx_vms_v2 for update vm tests
 
 - name: Generate random name
   ansible.builtin.set_fact:

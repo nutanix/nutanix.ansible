@@ -2,6 +2,10 @@
 # Variables required before running this playbook:
 # - categories
 
+- name: Start ntnx_security_rules app_rule tests
+  ansible.builtin.debug:
+    msg: Start ntnx_security_rules app_rule tests
+
 - name: Create app security rule with inbound and outbound list
   nutanix.ncp.ntnx_security_rules:
     name: test_app_rule

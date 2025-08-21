@@ -4,6 +4,10 @@
 # - routable_ips
 # - dns_servers
 
+- name: Start nutanix_vpcs create_vpcs tests
+  ansible.builtin.debug:
+    msg: Start nutanix_vpcs create_vpcs tests
+
 - name: Create min VPC with subnet name
   nutanix.ncp.ntnx_vpcs:
     state: present

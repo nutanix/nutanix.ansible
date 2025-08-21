@@ -3,9 +3,10 @@
 # - external_nat_subnet
 # - private_ip
 
-- name: Started Negative Creation Cases
+- name: Start nutanix_floating_ips negative scenarios tests
   ansible.builtin.debug:
-    msg: "Started Negative Creation Cases"
+    msg: "Start nutanix_floating_ips negative scenarios tests"
+
 - name: Create floating ip with unknown external subnet name
   nutanix.ncp.ntnx_floating_ips:
     state: present

@@ -2,9 +2,9 @@
 # Variables required before running this playbook:
 # - cluster
 # - ubuntu
-- name: Start testing VM with different operations
+- name: Start nutanix_vms vm operations tests
   ansible.builtin.debug:
-    msg: Start testing VM with different operations
+    msg: Start nutanix_vms vm operations tests
 
 - name: Reset todelete list
   ansible.builtin.set_fact:

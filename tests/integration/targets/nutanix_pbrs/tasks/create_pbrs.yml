@@ -10,6 +10,10 @@
 # - reroute_ip
 # - todelete
 
+- name: Start nutanix_pbrs create_pbrs tests
+  ansible.builtin.debug:
+    msg: Start nutanix_pbrs create_pbrs tests.
+
 - name: Create PBR with vpc name, source network, external destination, with reroute action and any type and code icmp
   nutanix.ncp.ntnx_pbrs:
     validate_certs: false

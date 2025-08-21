@@ -15,9 +15,9 @@
 #       access_key: "qwertyuiopasdfgh" # S3 bucket access key
 #       secret_key: "jklzxcvbnm" # S3 bucket secret key
 
-- name: Start testing for modules for PC backup restore using objects store.
+- name: Start ntnx_prism_v2 for PC backup restore using objects store tests.
   ansible.builtin.debug:
-    msg: Start testing for modules for PC backup restore using objects store.
+    msg: Start ntnx_prism_v2 for PC backup restore using objects store tests.
 
 #############################################################
 # List all clusters to get prism central external ID

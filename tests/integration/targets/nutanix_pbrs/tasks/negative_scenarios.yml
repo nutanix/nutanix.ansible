@@ -6,9 +6,9 @@
 # - icmp
 # - reroute_ip
 
-- name: Started Negative Creation Cases
+- name: Start nutanix_vpcs negative_scenarios tests
   ansible.builtin.debug:
-    msg: "Started Negative Creation Cases"
+    msg: Start nutanix_vpcs negative_scenarios tests.
 
 - name: Create PBR with unknown vpc name
   nutanix.ncp.ntnx_pbrs:

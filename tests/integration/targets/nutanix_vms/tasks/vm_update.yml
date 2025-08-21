@@ -9,6 +9,10 @@
 
 # ########################### UPDATE_VM ################################
 
+- name: Start nutanix_vms vm update tests
+  ansible.builtin.debug:
+    msg: Start nutanix_vms vm update tests
+
 - name: Create VM with minimum requirements to update
   nutanix.ncp.ntnx_vms:
     state: present

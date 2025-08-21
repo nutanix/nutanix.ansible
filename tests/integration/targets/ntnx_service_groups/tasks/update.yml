@@ -1,4 +1,9 @@
 ---
+
+- name: Start ntnx_service_groups update tests
+  ansible.builtin.debug:
+    msg: Start ntnx_service_groups update tests.
+
 - name: Create tcp service group
   nutanix.ncp.ntnx_service_groups:
     name: tcp_srvive_group
