@@ -715,6 +715,7 @@ def create_subnet(module, result):
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
+        result["changed"] = True
         return
 
     resp = None
@@ -764,14 +765,16 @@ def update_subnet(module, result):
         result["error"] = err
         module.fail_json(msg="Failed generating subnets update spec", **result)
 
-    if module.check_mode:
-        result["response"] = strip_internal_attributes(update_spec.to_dict())
-        return
 
     # check for idempotency
     if check_subnets_idempotency(current_spec.to_dict(), update_spec.to_dict()):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
+
+    if module.check_mode:
+       result["response"] = strip_internal_attributes(update_spec.to_dict())
+       result["changed"] = True
+       return
 
     resp = None
     subnets = get_subnet_api_instance(module)
