@@ -1,4 +1,8 @@
 ---
+# Variables required before running this playbook:
+# - cluster
+# - static
+
 - name: Start testing nic_operations_new_old_fields
   ansible.builtin.debug:
     msg: Start testing nic_operations_new_old_fields
@@ -96,6 +100,10 @@
     fail_msg: "Create Direct type NIC with dynamic IP - both old and new fields with same values failed "
     success_msg: "Create Direct type NIC with dynamic IP - both old and new fields with same values passed "
 
+- name: Store nic ext id in todelete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.response.ext_id] }}"
+
 ################################################################################
 
 - name: Create Direct type NIC with dynamic IP - both old and new fields with different values
@@ -151,11 +159,15 @@
     fail_msg: "Create Direct type NIC with dynamic IP - both old and new fields with different values failed "
     success_msg: "Create Direct type NIC with dynamic IP - both old and new fields with different values passed "
 
+- name: Store nic ext id in todelete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.response.ext_id] }}"
+
 ################################################################################
 
-- name: Update nic with new values
+- name: Update nic with new fields only
   nutanix.ncp.ntnx_vms_nics_v2:
-    ext_id: "{{ todelete[2] }}"
+    ext_id: "{{ todelete[0] }}"
     vm_ext_id: "{{ vm_uuid }}"
     state: present
     nic_backing_info:
@@ -173,7 +185,7 @@
   register: result
   ignore_errors: true
 
-- name: Update nic with new values status
+- name: Update nic with new fields only status
   ansible.builtin.assert:
     that:
       - result.response is defined
@@ -192,15 +204,15 @@
       - result.response.network_info.nic_type == "DIRECT_NIC"
       - result.response.network_info.should_allow_unknown_macs == false
       - result.vm_ext_id == "{{ vm_uuid }}"
-      - result.ext_id == "{{ todelete[2] }}"
-    fail_msg: "Unable to update nic with new values "
-    success_msg: "nic updated with new values successfully "
+      - result.ext_id == "{{ todelete[0] }}"
+    fail_msg: "Unable to update nic with new fields only "
+    success_msg: "nic updated with new fields only successfully "
 
 ################################################################################
 
-- name: Update nic with new values
+- name: Update nic with new fields and old fields with same values
   nutanix.ncp.ntnx_vms_nics_v2:
-    ext_id: "{{ todelete[2] }}"
+    ext_id: "{{ todelete[0] }}"
     vm_ext_id: "{{ vm_uuid }}"
     state: present
     nic_backing_info:
@@ -228,7 +240,7 @@
   register: result
   ignore_errors: true
 
-- name: Update nic with new values status
+- name: Update nic with new fields and old fields with same values status
   ansible.builtin.assert:
     that:
       - result.response is defined
@@ -247,15 +259,15 @@
       - result.response.network_info.nic_type == "DIRECT_NIC"
       - result.response.network_info.should_allow_unknown_macs == false
       - result.vm_ext_id == "{{ vm_uuid }}"
-      - result.ext_id == "{{ todelete[2] }}"
-    fail_msg: "Unable to update nic with new values "
-    success_msg: "nic updated with new values successfully "
+      - result.ext_id == "{{ todelete[0] }}"
+    fail_msg: "Unable to update nic with new fields and old fields with same values "
+    success_msg: "nic updated with new fields and old fields with same values successfully "
 
 ################################################################################
 
 - name: Check for idempotency by updating the nic with same values
   nutanix.ncp.ntnx_vms_nics_v2:
-    ext_id: "{{ todelete[2] }}"
+    ext_id: "{{ todelete[0] }}"
     vm_ext_id: "{{ vm_uuid }}"
     state: present
     nic_backing_info:
@@ -291,15 +303,15 @@
       - result.failed == false
       - result.msg == "Nothing to change."
       - result.skipped == true
-      - result.ext_id == "{{ todelete[2] }}"
+      - result.ext_id == "{{ todelete[0] }}"
     fail_msg: "Check for idempotency by updating the nic with same values failed "
     success_msg: "Check for idempotency by updating the nic with same values passed "
 
 ################################################################################
 
-- name: Update nic with new values
+- name: Update nic with new fields and old fields with different values
   nutanix.ncp.ntnx_vms_nics_v2:
-    ext_id: "{{ todelete[2] }}"
+    ext_id: "{{ todelete[0] }}"
     vm_ext_id: "{{ vm_uuid }}"
     state: present
     nic_backing_info:
@@ -327,34 +339,34 @@
   register: result
   ignore_errors: true
 
-- name: Update nic with new values status
+- name: Update nic with new fields and old fields with different values status
   ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
       - result.failed == false
-      - result.response.nic_backing_info.is_connected == true
+      - result.response.nic_backing_info.is_connected == false
       - result.response.nic_backing_info.model == "VIRTIO"
-      - result.response.backing_info.is_connected == true
+      - result.response.backing_info.is_connected == false
       - result.response.backing_info.model == "VIRTIO"
       - result.response.nic_network_info.vlan_mode == "TRUNK"
-      - result.response.nic_network_info.trunked_vlans == [0,1]
+      - result.response.nic_network_info.trunked_vlans == [1,2]
       - result.response.nic_network_info.nic_type == "DIRECT_NIC"
       - result.response.nic_network_info.should_allow_unknown_macs == false
       - result.response.network_info.vlan_mode == "TRUNK"
-      - result.response.network_info.trunked_vlans == [0,1]
+      - result.response.network_info.trunked_vlans == [1,2]
       - result.response.network_info.nic_type == "DIRECT_NIC"
       - result.response.network_info.should_allow_unknown_macs == false
       - result.vm_ext_id == "{{ vm_uuid }}"
-      - result.ext_id == "{{ todelete[2] }}"
-    fail_msg: "Unable to update nic with new values "
-    success_msg: "nic updated with new values successfully "
+      - result.ext_id == "{{ todelete[0] }}"
+    fail_msg: "Unable to update nic with new fields and old fields with different values "
+    success_msg: "nic updated with new fields and old fields with different values successfully "
 
 ################################################################################
 
 - name: Idempotency check by updating the nic with same values
   nutanix.ncp.ntnx_vms_nics_v2:
-    ext_id: "{{ todelete[2] }}"
+    ext_id: "{{ todelete[0] }}"
     vm_ext_id: "{{ vm_uuid }}"
     state: present
     nic_backing_info:
@@ -390,14 +402,47 @@
       - result.failed == false
       - result.msg == "Nothing to change."
       - result.skipped == true
-      - result.ext_id == "{{ todelete[2] }}"
+      - result.ext_id == "{{ todelete[0] }}"
     fail_msg: "Idempotency check by updating the nic with same values failed "
     success_msg: "Idempotency check by updating the nic with same values passed "
 
 ################################################################################
 
-- name: Delete nic
+- name: Delete all the nics
   nutanix.ncp.ntnx_vms_nics_v2:
-    ext_id: "{{ todelete[2] }}"
-    vm_ext_id: "{{ vm_uuid }}"
     state: absent
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ item }}"
+  register: result
+  ignore_errors: true
+  loop: "{{ todelete[:-1] }}"
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.response.status == 'SUCCEEDED'
+    fail_msg: "Unable to delete nics "
+    success_msg: "nics deleted successfully "
+  loop: "{{ result.results }}"
+
+################################################################################
+
+- name: Delete the VM
+  nutanix.ncp.ntnx_vms:
+    state: absent
+    vm_uuid: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+      - result.vm_uuid == "{{ vm_uuid }}"
+    fail_msg: "Unable to delete VM  "
+    success_msg: "VM is deleted successfully "
