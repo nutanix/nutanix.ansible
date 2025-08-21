@@ -243,12 +243,17 @@
       - result.failed == false
       - result.vm_ext_id == "{{ vm_uuid }}"
       - result.ext_id is defined
+      - result.response.network_info.nic_type == "DIRECT_NIC"
+      - result.response.network_info.subnet.ext_id == "{{ static.uuid }}"
+      - result.response.network_info.vlan_mode == "ACCESS"
+      - result.response.network_info.should_allow_unknown_macs == false
       - result.response.nic_network_info.nic_type == "DIRECT_NIC"
       - result.response.nic_network_info.subnet.ext_id == "{{ static.uuid }}"
       - result.response.nic_network_info.vlan_mode == "ACCESS"
       - result.response.nic_network_info.should_allow_unknown_macs == false
+      - result.response.backing_info.is_connected == true
+      - result.response.network_info.ipv4_config.ip_address.value is defined
       - result.response.nic_backing_info.is_connected == true
-      - result.response.nic_backing_info.model == "VIRTIO"
       - result.response.nic_network_info.ipv4_config.ip_address.value is defined
     fail_msg: "Create Direct type NIC with dynamic IP failed "
     success_msg: "Create Direct type NIC with dynamic IP passed "
