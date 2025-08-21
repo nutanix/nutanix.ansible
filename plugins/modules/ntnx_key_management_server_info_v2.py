@@ -74,6 +74,13 @@ failed:
     returned: always
     type: bool
     sample: false
+
+total_available_results:
+description:
+    - The total number of available key management servers.
+type: int
+returned: when all key management servers are fetched
+sample: 1
 """
 
 import warnings  # noqa: E402
@@ -103,6 +110,8 @@ def get_kms(module, kms_api_instance, result):
 
 def get_all_kms(module, kms_api_instance, result):
     resp = list_kms(module, kms_api_instance)
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
     resp = strip_internal_attributes(resp.to_dict()).get("data")
     if not resp:
         resp = []

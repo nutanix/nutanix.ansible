@@ -297,6 +297,7 @@
       - list_result.failed == false
       - list_result.response is defined
       - list_result.response | length > 0
+      - list_result.total_available_results > 0
     fail_msg: "Failed to list key management servers"
     success_msg: "Successfully listed key management servers"
 
