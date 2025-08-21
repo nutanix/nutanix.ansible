@@ -55,7 +55,7 @@ response:
     description:
         - Response for fetching PC task info.
         - One PC task info if external ID is provided.
-        - PC tasks info if external ID is not provided.
+        - List of multiple PC tasks info if external ID is not provided.
     type: dict
     returned: always
     sample:
@@ -108,7 +108,7 @@ ext_id:
     description: External ID of the task
     type: str
     returned: when external ID is provided
-    sample: "cda893b8-2aee-34bf-817d-d2ee6026790b"
+    sample: "ZXJnb24=:cda893b8-2aee-34bf-817d-d2ee6026790b"
 
 changed:
     description: This indicates whether the task resulted in any changes

@@ -9,7 +9,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 module: ntnx_pc_task_abort_v2
-short_description: Deploys a Prism Central using the provided details
+short_description: Aborts a task in Prism Central
 version_added: 2.3.0
 description:
   - This module allows you to abort a task in Prism Central.

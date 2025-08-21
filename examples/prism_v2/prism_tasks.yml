@@ -31,7 +31,7 @@
       register: result
       ignore_errors: true
 
-    - name: Get task details using filters
+    - name: Get all the tasks using filters
       nutanix.ncp.ntnx_pc_tasks_info_v2:
         filter: "operation eq 'kImageCreate'"
       register: result
