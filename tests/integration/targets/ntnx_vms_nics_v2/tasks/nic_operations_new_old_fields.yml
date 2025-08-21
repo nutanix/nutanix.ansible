@@ -1,4 +1,47 @@
 ---
+- name: Start testing nic_operations_new_old_fields
+  ansible.builtin.debug:
+    msg: Start testing nic_operations_new_old_fields
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+
+- name: Set VM name
+  ansible.builtin.set_fact:
+    vm_name: "{{ random_name }}_vm_test"
+
+- name: Create VM with minimum requirements
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    name: "{{ vm_name }}"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    storage_config:
+      is_flash_mode_enabled: true
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.cluster.ext_id == "{{ cluster.uuid }}"
+    fail_msg: "Unable to Create VM with minimum requirements "
+    success_msg: "VM with minimum requirements created successfully "
+
+- name: Set vm_uuid
+  ansible.builtin.set_fact:
+    vm_uuid: '{{ result["ext_id"] }}'
+
+- name: Set todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+################################################################################
+
 - name: Create Direct type NIC with dynamic IP - both old and new fields with same values
   nutanix.ncp.ntnx_vms_nics_v2:
     vm_ext_id: "{{ vm_uuid }}"
@@ -85,7 +128,7 @@
   register: result
   ignore_errors: true
 
-- name: Create Direct type NIC with dynamic IP Status
+- name: Create Direct type NIC with dynamic IP - both old and new fields with different values Status
   ansible.builtin.assert:
     that:
       - result.response is defined
@@ -108,3 +151,253 @@
     fail_msg: "Create Direct type NIC with dynamic IP - both old and new fields with different values failed "
     success_msg: "Create Direct type NIC with dynamic IP - both old and new fields with different values passed "
 
+################################################################################
+
+- name: Update nic with new values
+  nutanix.ncp.ntnx_vms_nics_v2:
+    ext_id: "{{ todelete[2] }}"
+    vm_ext_id: "{{ vm_uuid }}"
+    state: present
+    nic_backing_info:
+      virtual_ethernet_nic:
+        model: "VIRTIO"
+        is_connected: false
+    nic_network_info:
+      virtual_ethernet_nic_network_info:
+        nic_type: "DIRECT_NIC"
+        vlan_mode: "TRUNK"
+        trunked_vlans:
+          - 0
+          - 1
+        should_allow_unknown_macs: false
+  register: result
+  ignore_errors: true
+
+- name: Update nic with new values status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.nic_backing_info.is_connected == false
+      - result.response.nic_backing_info.model == "VIRTIO"
+      - result.response.backing_info.is_connected == false
+      - result.response.backing_info.model == "VIRTIO"
+      - result.response.nic_network_info.vlan_mode == "TRUNK"
+      - result.response.nic_network_info.trunked_vlans == [0,1]
+      - result.response.nic_network_info.nic_type == "DIRECT_NIC"
+      - result.response.nic_network_info.should_allow_unknown_macs == false
+      - result.response.network_info.vlan_mode == "TRUNK"
+      - result.response.network_info.trunked_vlans == [0,1]
+      - result.response.network_info.nic_type == "DIRECT_NIC"
+      - result.response.network_info.should_allow_unknown_macs == false
+      - result.vm_ext_id == "{{ vm_uuid }}"
+      - result.ext_id == "{{ todelete[2] }}"
+    fail_msg: "Unable to update nic with new values "
+    success_msg: "nic updated with new values successfully "
+
+################################################################################
+
+- name: Update nic with new values
+  nutanix.ncp.ntnx_vms_nics_v2:
+    ext_id: "{{ todelete[2] }}"
+    vm_ext_id: "{{ vm_uuid }}"
+    state: present
+    nic_backing_info:
+      virtual_ethernet_nic:
+        model: "VIRTIO"
+        is_connected: true
+    backing_info:
+      model: "VIRTIO"
+      is_connected: true
+    nic_network_info:
+      virtual_ethernet_nic_network_info:
+        nic_type: "DIRECT_NIC"
+        vlan_mode: "TRUNK"
+        trunked_vlans:
+          - 0
+          - 1
+        should_allow_unknown_macs: false
+    network_info:
+      nic_type: "DIRECT_NIC"
+      vlan_mode: "TRUNK"
+      trunked_vlans:
+        - 0
+        - 1
+      should_allow_unknown_macs: false
+  register: result
+  ignore_errors: true
+
+- name: Update nic with new values status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.nic_backing_info.is_connected == true
+      - result.response.nic_backing_info.model == "VIRTIO"
+      - result.response.backing_info.is_connected == true
+      - result.response.backing_info.model == "VIRTIO"
+      - result.response.nic_network_info.vlan_mode == "TRUNK"
+      - result.response.nic_network_info.trunked_vlans == [0,1]
+      - result.response.nic_network_info.nic_type == "DIRECT_NIC"
+      - result.response.nic_network_info.should_allow_unknown_macs == false
+      - result.response.network_info.vlan_mode == "TRUNK"
+      - result.response.network_info.trunked_vlans == [0,1]
+      - result.response.network_info.nic_type == "DIRECT_NIC"
+      - result.response.network_info.should_allow_unknown_macs == false
+      - result.vm_ext_id == "{{ vm_uuid }}"
+      - result.ext_id == "{{ todelete[2] }}"
+    fail_msg: "Unable to update nic with new values "
+    success_msg: "nic updated with new values successfully "
+
+################################################################################
+
+- name: Check for idempotency by updating the nic with same values
+  nutanix.ncp.ntnx_vms_nics_v2:
+    ext_id: "{{ todelete[2] }}"
+    vm_ext_id: "{{ vm_uuid }}"
+    state: present
+    nic_backing_info:
+      virtual_ethernet_nic:
+        model: "VIRTIO"
+        is_connected: true
+    backing_info:
+      model: "VIRTIO"
+      is_connected: true
+    nic_network_info:
+      virtual_ethernet_nic_network_info:
+        nic_type: "DIRECT_NIC"
+        vlan_mode: "TRUNK"
+        trunked_vlans:
+          - 0
+          - 1
+        should_allow_unknown_macs: false
+    network_info:
+      nic_type: "DIRECT_NIC"
+      vlan_mode: "TRUNK"
+      trunked_vlans:
+        - 0
+        - 1
+      should_allow_unknown_macs: false
+  register: result
+  ignore_errors: true
+
+- name: Check for idempotency Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.msg == "Nothing to change."
+      - result.skipped == true
+      - result.ext_id == "{{ todelete[2] }}"
+    fail_msg: "Check for idempotency by updating the nic with same values failed "
+    success_msg: "Check for idempotency by updating the nic with same values passed "
+
+################################################################################
+
+- name: Update nic with new values
+  nutanix.ncp.ntnx_vms_nics_v2:
+    ext_id: "{{ todelete[2] }}"
+    vm_ext_id: "{{ vm_uuid }}"
+    state: present
+    nic_backing_info:
+      virtual_ethernet_nic:
+        model: "VIRTIO"
+        is_connected: false
+    backing_info:
+      model: "VIRTIO"
+      is_connected: true
+    nic_network_info:
+      virtual_ethernet_nic_network_info:
+        nic_type: "DIRECT_NIC"
+        vlan_mode: "TRUNK"
+        trunked_vlans:
+          - 1
+          - 2
+        should_allow_unknown_macs: false
+    network_info:
+      nic_type: "DIRECT_NIC"
+      vlan_mode: "TRUNK"
+      trunked_vlans:
+        - 0
+        - 1
+      should_allow_unknown_macs: false
+  register: result
+  ignore_errors: true
+
+- name: Update nic with new values status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.nic_backing_info.is_connected == true
+      - result.response.nic_backing_info.model == "VIRTIO"
+      - result.response.backing_info.is_connected == true
+      - result.response.backing_info.model == "VIRTIO"
+      - result.response.nic_network_info.vlan_mode == "TRUNK"
+      - result.response.nic_network_info.trunked_vlans == [0,1]
+      - result.response.nic_network_info.nic_type == "DIRECT_NIC"
+      - result.response.nic_network_info.should_allow_unknown_macs == false
+      - result.response.network_info.vlan_mode == "TRUNK"
+      - result.response.network_info.trunked_vlans == [0,1]
+      - result.response.network_info.nic_type == "DIRECT_NIC"
+      - result.response.network_info.should_allow_unknown_macs == false
+      - result.vm_ext_id == "{{ vm_uuid }}"
+      - result.ext_id == "{{ todelete[2] }}"
+    fail_msg: "Unable to update nic with new values "
+    success_msg: "nic updated with new values successfully "
+
+################################################################################
+
+- name: Idempotency check by updating the nic with same values
+  nutanix.ncp.ntnx_vms_nics_v2:
+    ext_id: "{{ todelete[2] }}"
+    vm_ext_id: "{{ vm_uuid }}"
+    state: present
+    nic_backing_info:
+      virtual_ethernet_nic:
+        model: "VIRTIO"
+        is_connected: false
+    backing_info:
+      model: "VIRTIO"
+      is_connected: true
+    nic_network_info:
+      virtual_ethernet_nic_network_info:
+        nic_type: "DIRECT_NIC"
+        vlan_mode: "TRUNK"
+        trunked_vlans:
+          - 1
+          - 2
+        should_allow_unknown_macs: false
+    network_info:
+      nic_type: "DIRECT_NIC"
+      vlan_mode: "TRUNK"
+      trunked_vlans:
+        - 0
+        - 1
+      should_allow_unknown_macs: false
+  register: result
+  ignore_errors: true
+
+- name: Check for idempotency Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.msg == "Nothing to change."
+      - result.skipped == true
+      - result.ext_id == "{{ todelete[2] }}"
+    fail_msg: "Idempotency check by updating the nic with same values failed "
+    success_msg: "Idempotency check by updating the nic with same values passed "
+
+################################################################################
+
+- name: Delete nic
+  nutanix.ncp.ntnx_vms_nics_v2:
+    ext_id: "{{ todelete[2] }}"
+    vm_ext_id: "{{ vm_uuid }}"
+    state: absent

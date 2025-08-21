@@ -441,10 +441,16 @@
       - result.failed == false
       - result.response.nic_backing_info.is_connected == false
       - result.response.nic_backing_info.model == "VIRTIO"
+      - result.response.backing_info.is_connected == false
+      - result.response.backing_info.model == "VIRTIO"
       - result.response.nic_network_info.vlan_mode == "TRUNK"
       - result.response.nic_network_info.trunked_vlans == [0,1]
       - result.response.nic_network_info.nic_type == "DIRECT_NIC"
       - result.response.nic_network_info.should_allow_unknown_macs == false
+      - result.response.network_info.vlan_mode == "TRUNK"
+      - result.response.network_info.trunked_vlans == [0,1]
+      - result.response.network_info.nic_type == "DIRECT_NIC"
+      - result.response.network_info.should_allow_unknown_macs == false
       - result.vm_ext_id == "{{ vm_uuid }}"
       - result.ext_id == "{{ todelete[2] }}"
     fail_msg: "Unable to update nic with new values "
