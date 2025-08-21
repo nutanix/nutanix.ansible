@@ -933,6 +933,56 @@
     fail_msg: Cluster updated data verification failed
     success_msg: Fetched cluster info and verified updated attribute successfully
 
+################################################################################
+
+- name: Update smtp servers in cluster with fqdn in server ip address
+  ntnx_clusters_v2:
+    ext_id: "{{ cluster_ext_id }}"
+    network:
+      smtp_server:
+        email_address: "{{ clusters[0].network.smtp_server.email_address }}"
+        server:
+          ip_address:
+            fqdn:
+              value: "{{ clusters[0].network.smtp_server.fqdn }}"
+          port: "{{ clusters[0].network.smtp_server.port }}"
+        type: "PLAIN"
+    timeout: 1200
+  register: result
+  ignore_errors: true
+
+- name: Verify cluster update task status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.task_ext_id is defined
+    fail_msg: Cluster update failed
+    success_msg: Cluster update passed
+
+- name: Fetch cluster info using external ID
+  ntnx_clusters_info_v2:
+    ext_id: "{{ cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify fetched cluster info
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id == cluster_ext_id
+      - result.response.name == "{{ cluster_name }}_updated"
+      - result.response.network.external_data_service_ip.ipv4.value == "{{ clusters[0].network.iscsi_ip1 }}"
+      - result.response.network.ntp_server_ip_list | length == 1
+      - result.response.network.ntp_server_ip_list[0].fqdn.value == "{{ clusters[0].network.ntp_servers[0] }}"
+      - result.response.network.name_server_ip_list | length == 1
+      - result.response.network.name_server_ip_list[0].ipv4.value == "{{ clusters[0].network.dns_servers[0] }}"
+      - result.response.network.smtp_server.email_address == "{{ clusters[0].network.smtp_server.email_address }}"
+      - result.response.network.smtp_server.server.ip_address.fqdn.value == "{{ clusters[0].network.smtp_server.fqdn }}"
+      - result.response.network.smtp_server.type == "PLAIN"
+    fail_msg: Cluster updated data verification failed
+    success_msg: Fetched cluster info and verified updated attribute successfully
+
 ############################################## Check idempotency ##############################################
 - name: Verify idempotency
   ntnx_clusters_v2:
