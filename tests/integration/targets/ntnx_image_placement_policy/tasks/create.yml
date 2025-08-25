@@ -4,7 +4,7 @@
     msg: Start ntnx_image_placement_policy create tests
 
 - name: Create image placement policy with minimal spec
-  ntnx_image_placement_policy:
+  nutanix.ncp.ntnx_image_placement_policy:
     name: "test_policy_1"
     placement_type: soft
     image_categories:
@@ -35,7 +35,7 @@
 ################################################################################################################
 
 - name: Create image placement policy with all specs and hard type
-  ntnx_image_placement_policy:
+  nutanix.ncp.ntnx_image_placement_policy:
     name: "test_policy_2"
     desc: "test_policy_2_desc"
     placement_type: hard
@@ -70,7 +70,7 @@
 ################################################################################################################
 
 - name: Create image placement policy in check mode
-  ntnx_image_placement_policy:
+  nutanix.ncp.ntnx_image_placement_policy:
     name: "test_policy_3"
     desc: "test_policy_3_desc"
     placement_type: hard
@@ -97,7 +97,7 @@
 ################################################################################################################
 
 - name: Create image placement policy with incorrect category
-  ntnx_image_placement_policy:
+  nutanix.ncp.ntnx_image_placement_policy:
     name: "test_policy_4"
     image_categories:
       Wrong:
@@ -120,7 +120,7 @@
 ################################################## CLEANUP #######################################################
 
 - name: Cleanup created entities
-  ntnx_image_placement_policy:
+  nutanix.ncp.ntnx_image_placement_policy:
     state: absent
     policy_uuid: "{{ item }}"
   register: result

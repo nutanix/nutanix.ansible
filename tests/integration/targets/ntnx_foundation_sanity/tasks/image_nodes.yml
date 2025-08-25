@@ -4,7 +4,7 @@
     msg: start testing ntnx_foundation test for bare metal imaging and cluster creation
 
 - name: Get aos_packages_info from foundation
-  ntnx_foundation_aos_packages_info:
+  nutanix.ncp.ntnx_foundation_aos_packages_info:
   register: images
 
 - name: Get aos package name with given version filter from all packages
@@ -20,7 +20,7 @@
     hypervisor_images: "{{ hypervisor_images.hypervisor_images.kvm | selectattr('filename', 'search', hypervisor_package_filter) | list }}"
 
 - name: Create spec for imaging and creating cluster out of bare metal nodes
-  ntnx_foundation:
+  nutanix.ncp.ntnx_foundation:
     timeout: 4500
     cvm_gateway: "{{ nodes.cvm_gateway }}"
     cvm_netmask: "{{ nodes.cvm_netmask }}"
@@ -128,7 +128,7 @@
     success_msg: "Success: spec generated successfully"
 
 - name: Image nodes without cluster creation
-  ntnx_foundation:
+  nutanix.ncp.ntnx_foundation:
     timeout: 4500
     cvm_gateway: "{{ nodes.cvm_gateway }}"
     cvm_netmask: "{{ nodes.cvm_netmask }}"
@@ -168,7 +168,7 @@
     success_msg: "Success: node imaging done successfully"
 
 - name: Image nodes and create cluster out of it
-  ntnx_foundation:
+  nutanix.ncp.ntnx_foundation:
     timeout: 4500
     cvm_gateway: "{{ nodes.cvm_gateway }}"
     cvm_netmask: "{{ nodes.cvm_netmask }}"

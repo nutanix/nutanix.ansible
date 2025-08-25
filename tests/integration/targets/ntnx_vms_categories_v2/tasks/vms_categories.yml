@@ -15,7 +15,7 @@
     vm_name: "{{ random_name }}_vm_test"
 
 - name: Create VM to test categories
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     state: present
     name: "{{ vm_name }}"
     cluster:
@@ -40,7 +40,7 @@
 ##################################################################################
 
 - name: List all categories and define variables
-  ntnx_categories_info_v2:
+  nutanix.ncp.ntnx_categories_info_v2:
   register: result
   ignore_errors: true
 
@@ -64,7 +64,7 @@
 ##################################################################################
 
 - name: Associate category to VM - check mode is enabled
-  ntnx_vms_categories_v2:
+  nutanix.ncp.ntnx_vms_categories_v2:
     state: present
     vm_ext_id: "{{ vm_uuid }}"
     categories:
@@ -93,7 +93,7 @@
 ###############################################################################
 
 - name: Associate category to VM
-  ntnx_vms_categories_v2:
+  nutanix.ncp.ntnx_vms_categories_v2:
     state: present
     vm_ext_id: "{{ vm_uuid }}"
     categories:
@@ -117,7 +117,7 @@
 ###############################################################################
 
 - name: Associate categories to VM
-  ntnx_vms_categories_v2:
+  nutanix.ncp.ntnx_vms_categories_v2:
     state: present
     vm_ext_id: "{{ vm_uuid }}"
     categories:
@@ -144,7 +144,7 @@
 ###############################################################################
 
 - name: Associate category to VM that is already associated to that VM
-  ntnx_vms_categories_v2:
+  nutanix.ncp.ntnx_vms_categories_v2:
     state: present
     vm_ext_id: "{{ vm_uuid }}"
     categories:
@@ -166,7 +166,7 @@
 ###############################################################################
 
 - name: Get categories from VM
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -192,7 +192,7 @@
 ##################################################################################
 
 - name: Disassociate category from VM - check mode is enabled
-  ntnx_vms_categories_v2:
+  nutanix.ncp.ntnx_vms_categories_v2:
     state: absent
     vm_ext_id: "{{ vm_uuid }}"
     categories:
@@ -221,7 +221,7 @@
 ###############################################################################
 
 - name: Disassociate category from VM that is not associated to that VM
-  ntnx_vms_categories_v2:
+  nutanix.ncp.ntnx_vms_categories_v2:
     state: absent
     vm_ext_id: "{{ vm_uuid }}"
     categories:
@@ -244,7 +244,7 @@
 ###############################################################################
 
 - name: Disassociate category from VM
-  ntnx_vms_categories_v2:
+  nutanix.ncp.ntnx_vms_categories_v2:
     state: absent
     vm_ext_id: "{{ vm_uuid }}"
     categories:
@@ -267,7 +267,7 @@
 ###############################################################################
 
 - name: Get categories from VM
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -292,7 +292,7 @@
 ###############################################################################
 
 - name: Delete the VM
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: absent
     vm_uuid: "{{ vm_uuid }}"
   register: result

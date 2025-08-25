@@ -19,7 +19,7 @@
     value2: "{{random_name}}{{suffix_name}}value2"
 ########################################################################
 - name: Create category key & value with check_mode
-  ntnx_categories_v2:
+  nutanix.ncp.ntnx_categories_v2:
     key: "{{key1}}"
     value: "{{value1}}"
     description: "ansible test"
@@ -39,7 +39,7 @@
     success_msg: "Check mode passed"
 ########################################################################
 - name: Create category key & value
-  ntnx_categories_v2:
+  nutanix.ncp.ntnx_categories_v2:
     key: "{{key1}}"
     value: "{{value1}}"
     description: "ansible test"
@@ -65,7 +65,7 @@
     todelete: '{{ todelete + [  output["response"]["ext_id"] ] }}'
 ########################################################################
 - name: Update category value and description
-  ntnx_categories_v2:
+  nutanix.ncp.ntnx_categories_v2:
     ext_id: "{{output.response.ext_id}}"
     key: "{{key1}}"
     value: "{{value2}}"
@@ -86,7 +86,7 @@
     success_msg: "Category description & value updated successfully"
 ########################################################################
 - name: Check idempotency
-  ntnx_categories_v2:
+  nutanix.ncp.ntnx_categories_v2:
     ext_id: "{{output.response.ext_id}}"
     key: "{{key1}}"
     value: "{{value2}}"
@@ -105,7 +105,7 @@
     success_msg: "Idempotency passed"
 ########################################################################
 - name: Update category value and description with check_mode
-  ntnx_categories_v2:
+  nutanix.ncp.ntnx_categories_v2:
     ext_id: "{{output.response.ext_id}}"
     key: "{{key1}}"
     value: "new value"
@@ -126,7 +126,7 @@
     success_msg: "Check mode passed"
 ########################################################################
 - name: List all categories
-  ntnx_categories_info_v2:
+  nutanix.ncp.ntnx_categories_info_v2:
   register: result
   ignore_errors: true
 
@@ -137,6 +137,8 @@
       - result.changed == False
       - result.failed == False
       - result.response | length > 0
+      - result.total_available_results is defined
+      - result.total_available_results > 0
     fail_msg: "Unable to list categories "
     success_msg: "categories  listed successfully"
 
@@ -146,7 +148,7 @@
 
 ########################################################################
 - name: List all categories with keyname & expand associations
-  ntnx_categories_info_v2:
+  nutanix.ncp.ntnx_categories_info_v2:
     expand: associations
     filter: "key eq '{{category_name}}'"
   register: result
@@ -164,7 +166,7 @@
     success_msg: "categories with keyname & expand  listed successfully"
 ########################################################################
 - name: Fetch category using ext id & expand detailedAssociations
-  ntnx_categories_info_v2:
+  nutanix.ncp.ntnx_categories_info_v2:
     ext_id: "{{result.response.0.ext_id}}"
     expand: detailedAssociations
   register: result
@@ -182,7 +184,7 @@
 ########################################################################
 
 - name: Delete category with check mode enabled
-  ntnx_categories_v2:
+  nutanix.ncp.ntnx_categories_v2:
     ext_id: "{{todelete[0]}}"
     state: absent
   register: result
@@ -203,7 +205,7 @@
 ########################################################################
 
 - name: Delete Created categories
-  ntnx_categories_v2:
+  nutanix.ncp.ntnx_categories_v2:
     ext_id: "{{item}}"
     state: absent
   register: result

@@ -26,7 +26,7 @@
 
 ################################### DB server VM Provision tests #############################
 - name: Create ndb vm using time machine and check mode
-  ntnx_ndb_db_server_vms:
+  nutanix.ncp.ntnx_ndb_db_server_vms:
     wait: true
     name: ansible-created-vm1-from-time-machine
     desc: ansible-created-vm1-from-time-machine-time-machine
@@ -128,7 +128,7 @@
     success_msg: DB server VM spec created successfully
 
 - name: Create spec for db server vm using software profile and names of profile
-  ntnx_ndb_db_server_vms:
+  nutanix.ncp.ntnx_ndb_db_server_vms:
     wait: true
     name: "{{ vm1_name }}"
     desc: ansible-created-vm1-desc
@@ -206,7 +206,7 @@
     success_msg: DB server VM spec created successfully
 
 - name: Create db server vm using software profile
-  ntnx_ndb_db_server_vms:
+  nutanix.ncp.ntnx_ndb_db_server_vms:
     wait: true
     name: "{{ vm1_name }}"
     desc: ansible-created-vm1-desc
@@ -271,7 +271,7 @@
 ################################### DB server VM update Tests #############################
 
 - name: Update db server vm name, desc, credentials, tags
-  ntnx_ndb_db_server_vms:
+  nutanix.ncp.ntnx_ndb_db_server_vms:
     wait: true
     uuid: "{{ db_server_uuid }}"
     name: "{{ vm1_name_updated }}"
@@ -304,7 +304,7 @@
     success_msg: DB server VM updated successfully
 
 - name: Check idempotency
-  ntnx_ndb_db_server_vms:
+  nutanix.ncp.ntnx_ndb_db_server_vms:
     wait: true
     uuid: "{{ db_server_uuid }}"
     name: "{{ vm1_name_updated }}"
@@ -323,7 +323,7 @@
     success_msg: db server vm update skipped successfully due to no changes in state
 
 - name: Update db server vm name with check mode and check defaults
-  ntnx_ndb_db_server_vms:
+  nutanix.ncp.ntnx_ndb_db_server_vms:
     wait: true
     uuid: "{{ db_server_uuid }}"
     update_credentials:
@@ -351,7 +351,7 @@
 ################################################################ Info module tests #############################################################
 
 - name: List NDB db_servers
-  ntnx_ndb_db_servers_info:
+  nutanix.ncp.ntnx_ndb_db_servers_info:
   register: db_servers
 
 - name: Check listing status
@@ -365,7 +365,7 @@
     success_msg: NDB db_servers listed successfully
 ################################################################
 - name: Get NDB db_servers using it's name
-  ntnx_ndb_db_servers_info:
+  nutanix.ncp.ntnx_ndb_db_servers_info:
     filters:
       load_metrics: true
       load_databases: true
@@ -389,7 +389,7 @@
 ################################################################
 
 - name: Get NDB db_servers using incorrect name
-  ntnx_ndb_db_servers_info:
+  nutanix.ncp.ntnx_ndb_db_servers_info:
     filters:
       load_metrics: true
       load_databases: true
@@ -409,7 +409,7 @@
     success_msg: Got empty response for incorrect name successfully
 ################################################################
 - name: Get NDB db_servers using it's ip
-  ntnx_ndb_db_servers_info:
+  nutanix.ncp.ntnx_ndb_db_servers_info:
     filters:
       value_type: ip
       value: "{{ db_servers.response[0].ipAddresses[0] }}"
@@ -427,7 +427,7 @@
     success_msg: get NDB db_server using it's ip finished successfully
 ################################################################
 - name: Get NDB db_servers using it's name
-  ntnx_ndb_db_servers_info:
+  nutanix.ncp.ntnx_ndb_db_servers_info:
     name: "{{ db_servers.response[0].name }}"
   register: result
 
@@ -443,7 +443,7 @@
     success_msg: get NDB db_server using it's name finished successfully
 ################################################################
 - name: Get NDB db_servers using it's id
-  ntnx_ndb_db_servers_info:
+  nutanix.ncp.ntnx_ndb_db_servers_info:
     uuid: "{{ db_servers.response[0].id }}"
   register: result
 
@@ -459,7 +459,7 @@
     success_msg: get NDB db_server using it's id finished successfully
 ################################################################
 - name: Get NDB db_servers using ip
-  ntnx_ndb_db_servers_info:
+  nutanix.ncp.ntnx_ndb_db_servers_info:
     server_ip: "{{ db_servers.response[0].ipAddresses[0] }}"
   register: result
 
@@ -477,7 +477,7 @@
 ################################################################
 
 - name: Get NDB db_servers with incorrect name
-  ntnx_ndb_db_servers_info:
+  nutanix.ncp.ntnx_ndb_db_servers_info:
     name: abcd
   register: result
   no_log: true
@@ -495,7 +495,7 @@
 ################################### maintenance tasks update tests #############################
 
 - name: Create spec for adding maintenance window tasks to db server vm
-  ntnx_ndb_maintenance_tasks:
+  nutanix.ncp.ntnx_ndb_maintenance_tasks:
     db_server_vms:
       - name: "{{ vm1_name_updated }}"
       - uuid: test_vm_1
@@ -550,7 +550,7 @@
     success_msg: spec for adding maintenance tasks for db server vm created successfully
 
 - name: Create spec for removing maintenance window tasks from above created vm
-  ntnx_ndb_maintenance_tasks:
+  nutanix.ncp.ntnx_ndb_maintenance_tasks:
     db_server_vms:
       - uuid: "{{ db_server_uuid }}"
     maintenance_window:
@@ -583,7 +583,7 @@
     success_msg: spec for removing maintenance tasks for db server vm created successfully
 
 - name: Db server vm already contains some tasks so remove maintenance window tasks from above created vm
-  ntnx_ndb_maintenance_tasks:
+  nutanix.ncp.ntnx_ndb_maintenance_tasks:
     db_server_vms:
       - uuid: "{{ db_server_uuid }}"
     maintenance_window:
@@ -619,7 +619,7 @@
     success_msg: maintenance tasks for given db server vm removed successfully
 
 - name: Add maintenance window task for vm
-  ntnx_ndb_maintenance_tasks:
+  nutanix.ncp.ntnx_ndb_maintenance_tasks:
     db_server_vms:
       - name: "{{ vm1_name_updated }}"
     maintenance_window:
@@ -664,7 +664,7 @@
     success_msg: maintenance tasks for given db server vm added successfully
 
 - name: Remove maintenance window tasks from above created vm
-  ntnx_ndb_maintenance_tasks:
+  nutanix.ncp.ntnx_ndb_maintenance_tasks:
     db_server_vms:
       - uuid: "{{ db_server_uuid }}"
     maintenance_window:
@@ -684,7 +684,7 @@
 ################################### DB server VM unregistration tests #############################
 
 - name: Generate check mode spec for unregister with default values
-  ntnx_ndb_db_server_vms:
+  nutanix.ncp.ntnx_ndb_db_server_vms:
     state: absent
     wait: true
     uuid: "{{ db_server_uuid }}"
@@ -707,7 +707,7 @@
     success_msg: DB server VM unregister spec generated successfully
 
 - name: Genereate check mode spec for delete vm with vgs and snapshots
-  ntnx_ndb_db_server_vms:
+  nutanix.ncp.ntnx_ndb_db_server_vms:
     state: absent
     uuid: "{{ db_server_uuid }}"
     delete_from_cluster: true
@@ -732,7 +732,7 @@
     success_msg: DB server VM update spec generated successfully
 
 - name: Unregister vm
-  ntnx_ndb_db_server_vms:
+  nutanix.ncp.ntnx_ndb_db_server_vms:
     state: absent
     wait: true
     uuid: "{{ db_server_uuid }}"
@@ -754,7 +754,7 @@
 ################################### DB server VM Registration tests #############################
 
 - name: Generate spec for registeration of the previous unregistered vm using check mode
-  ntnx_ndb_register_db_server_vm:
+  nutanix.ncp.ntnx_ndb_register_db_server_vm:
     ip: "{{ vm_ip }}"
     desc: register-vm-desc
     reset_desc_in_ntnx_cluster: true
@@ -827,7 +827,7 @@
     success_msg: DB server VM registration spec generated successfully
 
 - name: Register the previous unregistered vm
-  ntnx_ndb_register_db_server_vm:
+  nutanix.ncp.ntnx_ndb_register_db_server_vm:
     ip: "{{ vm_ip }}"
     desc: register-vm-desc
     cluster:
@@ -886,7 +886,7 @@
 
 ################################### DB server VM Delete test #############################
 - name: Delete db server vm with check mode
-  ntnx_ndb_db_server_vms:
+  nutanix.ncp.ntnx_ndb_db_server_vms:
     state: absent
     uuid: "{{ db_server_uuid }}"
   register: output
@@ -904,7 +904,7 @@
     success_msg: "Delete db server vm with check mode passed"
 
 - name: Unregister db server vm
-  ntnx_ndb_db_server_vms:
+  nutanix.ncp.ntnx_ndb_db_server_vms:
     state: absent
     wait: true
     uuid: "{{ db_server_uuid }}"
