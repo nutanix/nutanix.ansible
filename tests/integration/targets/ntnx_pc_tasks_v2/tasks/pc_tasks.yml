@@ -135,13 +135,13 @@
     fail_msg: "Unable to get all the tasks using filters"
     success_msg: "All tasks are fetched successfully using filters"
 
-- name: Get all the tasks using limit
+- name: Get task using limit
   nutanix.ncp.ntnx_pc_tasks_info_v2:
     limit: 1
   register: result
   ignore_errors: true
 
-- name: Get all the tasks using limit status
+- name: Get task using limit status
   ansible.builtin.assert:
     that:
       - result.response is defined
@@ -150,8 +150,8 @@
       - result.response | length == 1
       - result.total_available_results is defined
       - result.total_available_results >= 1
-    fail_msg: "Unable to get all the tasks using limit"
-    success_msg: "All tasks are fetched successfully using limit"
+    fail_msg: "Unable to get task using limit"
+    success_msg: "Task are fetched successfully using limit"
 
 ################################################################################
 
