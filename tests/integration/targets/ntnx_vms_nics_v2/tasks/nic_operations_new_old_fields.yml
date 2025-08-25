@@ -3,9 +3,9 @@
 # - cluster
 # - static
 
-- name: Start testing nic_operations_new_old_fields
+- name: Start testing ntnx_vms_nics_v2 nic_operations_new_old_fields tests
   ansible.builtin.debug:
-    msg: Start testing nic_operations_new_old_fields
+    msg: Start testing ntnx_vms_nics_v2 nic_operations_new_old_fields tests
 
 - name: Generate random name
   ansible.builtin.set_fact:
@@ -14,6 +14,10 @@
 - name: Set VM name
   ansible.builtin.set_fact:
     vm_name: "{{ random_name }}_vm_test"
+
+- name: Set todelete list
+  ansible.builtin.set_fact:
+    todelete: []
 
 - name: Create VM with minimum requirements
   nutanix.ncp.ntnx_vms_v2:
@@ -40,9 +44,63 @@
   ansible.builtin.set_fact:
     vm_uuid: '{{ result["ext_id"] }}'
 
-- name: Set todelete list
-  ansible.builtin.set_fact:
-    todelete: []
+################################################################################
+
+- name: Create spec for both old and new fields with same values check mode
+  nutanix.ncp.ntnx_vms_nics_v2:
+    vm_ext_id: "12345678-90ab-cdef-1234-567890abcdef"
+    state: present
+    backing_info:
+      model: "VIRTIO"
+      is_connected: true
+    nic_backing_info:
+      virtual_ethernet_nic:
+        model: "VIRTIO"
+        is_connected: true
+    network_info:
+      nic_type: "DIRECT_NIC"
+      subnet:
+        ext_id: "09876543-2109-8765-4321-098765432109"
+      vlan_mode: "ACCESS"
+      should_allow_unknown_macs: false
+      ipv4_config:
+        should_assign_ip: true
+    nic_network_info:
+      virtual_ethernet_nic_network_info:
+        nic_type: "DIRECT_NIC"
+        subnet:
+          ext_id: "09876543-2109-8765-4321-098765432109"
+        vlan_mode: "ACCESS"
+        should_allow_unknown_macs: false
+        ipv4_config:
+          should_assign_ip: true
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Create spec for both old and new fields with same values check mode Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.vm_ext_id == "12345678-90ab-cdef-1234-567890abcdef"
+      - result.response.backing_info.model == "VIRTIO"
+      - result.response.backing_info.is_connected == true
+      - result.response.nic_backing_info.model == "VIRTIO"
+      - result.response.nic_backing_info.is_connected == true
+      - result.response.network_info.nic_type == "DIRECT_NIC"
+      - result.response.network_info.subnet.ext_id == "09876543-2109-8765-4321-098765432109"
+      - result.response.network_info.vlan_mode == "ACCESS"
+      - result.response.network_info.should_allow_unknown_macs == false
+      - result.response.network_info.ipv4_config.should_assign_ip == true
+      - result.response.nic_network_info.nic_type == "DIRECT_NIC"
+      - result.response.nic_network_info.subnet.ext_id == "09876543-2109-8765-4321-098765432109"
+      - result.response.nic_network_info.vlan_mode == "ACCESS"
+      - result.response.nic_network_info.should_allow_unknown_macs == false
+      - result.response.nic_network_info.ipv4_config.should_assign_ip == true
+    fail_msg: "Create spec for both old and new fields with same values failed "
+    success_msg: "Create spec for both old and new fields with same values passed "
 
 ################################################################################
 
@@ -100,7 +158,7 @@
     fail_msg: "Create Direct type NIC with dynamic IP - both old and new fields with same values failed "
     success_msg: "Create Direct type NIC with dynamic IP - both old and new fields with same values passed "
 
-- name: Store nic ext id in todelete list
+- name: Store nic external ID in todelete list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [result.response.ext_id] }}"
 
@@ -165,51 +223,6 @@
 
 ################################################################################
 
-- name: Update nic with new fields only
-  nutanix.ncp.ntnx_vms_nics_v2:
-    ext_id: "{{ todelete[0] }}"
-    vm_ext_id: "{{ vm_uuid }}"
-    state: present
-    nic_backing_info:
-      virtual_ethernet_nic:
-        model: "VIRTIO"
-        is_connected: false
-    nic_network_info:
-      virtual_ethernet_nic_network_info:
-        nic_type: "DIRECT_NIC"
-        vlan_mode: "TRUNK"
-        trunked_vlans:
-          - 0
-          - 1
-        should_allow_unknown_macs: false
-  register: result
-  ignore_errors: true
-
-- name: Update nic with new fields only status
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == true
-      - result.failed == false
-      - result.response.nic_backing_info.is_connected == false
-      - result.response.nic_backing_info.model == "VIRTIO"
-      - result.response.backing_info.is_connected == false
-      - result.response.backing_info.model == "VIRTIO"
-      - result.response.nic_network_info.vlan_mode == "TRUNK"
-      - result.response.nic_network_info.trunked_vlans == [0,1]
-      - result.response.nic_network_info.nic_type == "DIRECT_NIC"
-      - result.response.nic_network_info.should_allow_unknown_macs == false
-      - result.response.network_info.vlan_mode == "TRUNK"
-      - result.response.network_info.trunked_vlans == [0,1]
-      - result.response.network_info.nic_type == "DIRECT_NIC"
-      - result.response.network_info.should_allow_unknown_macs == false
-      - result.vm_ext_id == "{{ vm_uuid }}"
-      - result.ext_id == "{{ todelete[0] }}"
-    fail_msg: "Unable to update nic with new fields only "
-    success_msg: "nic updated with new fields only successfully "
-
-################################################################################
-
 - name: Update nic with new fields and old fields with same values
   nutanix.ncp.ntnx_vms_nics_v2:
     ext_id: "{{ todelete[0] }}"
@@ -265,7 +278,7 @@
 
 ################################################################################
 
-- name: Check for idempotency by updating the nic with same values
+- name: Idempotency check by updating the nic with same values
   nutanix.ncp.ntnx_vms_nics_v2:
     ext_id: "{{ todelete[0] }}"
     vm_ext_id: "{{ vm_uuid }}"
@@ -295,7 +308,7 @@
   register: result
   ignore_errors: true
 
-- name: Check for idempotency Status
+- name: Idempotency check by updating the nic with same values Status
   ansible.builtin.assert:
     that:
       - result.response is defined
@@ -304,8 +317,8 @@
       - result.msg == "Nothing to change."
       - result.skipped == true
       - result.ext_id == "{{ todelete[0] }}"
-    fail_msg: "Check for idempotency by updating the nic with same values failed "
-    success_msg: "Check for idempotency by updating the nic with same values passed "
+    fail_msg: "Idempotency check by updating the nic with same values failed "
+    success_msg: "Idempotency check by updating the nic with same values passed "
 
 ################################################################################
 
@@ -364,7 +377,7 @@
 
 ################################################################################
 
-- name: Idempotency check by updating the nic with same values
+- name: Idempotency check by updating the nic with different values
   nutanix.ncp.ntnx_vms_nics_v2:
     ext_id: "{{ todelete[0] }}"
     vm_ext_id: "{{ vm_uuid }}"
@@ -394,7 +407,7 @@
   register: result
   ignore_errors: true
 
-- name: Check for idempotency Status
+- name: Idempotency check by updating the nic with different values Status
   ansible.builtin.assert:
     that:
       - result.response is defined
@@ -403,8 +416,8 @@
       - result.msg == "Nothing to change."
       - result.skipped == true
       - result.ext_id == "{{ todelete[0] }}"
-    fail_msg: "Idempotency check by updating the nic with same values failed "
-    success_msg: "Idempotency check by updating the nic with same values passed "
+    fail_msg: "Idempotency check by updating the nic with different values failed "
+    success_msg: "Idempotency check by updating the nic with different values passed "
 
 ################################################################################
 
@@ -415,9 +428,9 @@
     ext_id: "{{ item }}"
   register: result
   ignore_errors: true
-  loop: "{{ todelete[:-1] }}"
+  loop: "{{ todelete }}"
 
-- name: Deletion Status
+- name: Delete all the nics status
   ansible.builtin.assert:
     that:
       - item.changed == true
@@ -436,7 +449,7 @@
   register: result
   ignore_errors: true
 
-- name: Deletion Status
+- name: Delete VM status
   ansible.builtin.assert:
     that:
       - result.response is defined

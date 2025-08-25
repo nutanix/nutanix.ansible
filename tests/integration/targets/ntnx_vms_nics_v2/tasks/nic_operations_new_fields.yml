@@ -4,9 +4,9 @@
 # - static
 # - network
 
-- name: Start testing nic_operations_new_fields
+- name: Start testing ntnx_vms_nics_v2 nic_operations_new_fields tests
   ansible.builtin.debug:
-    msg: Start testing nic_operations_new_fields
+    msg: Start testing ntnx_vms_nics_v2 nic_operations_new_fields tests
 
 - name: Generate random name
   ansible.builtin.set_fact:
@@ -15,6 +15,10 @@
 - name: Set VM name
   ansible.builtin.set_fact:
     vm_name: "{{ random_name }}_vm_test"
+
+- name: Set todelete list
+  ansible.builtin.set_fact:
+    todelete: []
 
 - name: Create VM with minimum requirements
   nutanix.ncp.ntnx_vms_v2:
@@ -40,10 +44,6 @@
 - name: Set vm_uuid
   ansible.builtin.set_fact:
     vm_uuid: '{{ result["ext_id"] }}'
-
-- name: Set todelete list
-  ansible.builtin.set_fact:
-    todelete: []
 
 ################################################################################
 
