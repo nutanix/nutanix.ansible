@@ -387,7 +387,7 @@ EXAMPLES = r"""
           nic_type: "DIRECT_NIC"
   register: result
 
-- name: Update VLAN nic type
+- name: Delete NIC
   nutanix.ncp.ntnx_vms_nics_v2:
       nutanix_host: "<pc-ip>"
       nutanix_username: "<username>"

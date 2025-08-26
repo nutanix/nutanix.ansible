@@ -78,6 +78,26 @@ EXAMPLES = r"""
     volume_group_ext_id: 0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b35
     ext_id: 0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b213213
   register: result
+
+- name: Detach VM1 from VG
+  ntnx_volume_groups_vms_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    state: absent
+    volume_group_ext_id: 0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b35
+    ext_id: 0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b3b
+  register: result
+
+- name: Detach VM2 from VG
+  ntnx_volume_groups_vms_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    state: absent
+    volume_group_ext_id: 0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b35
+    ext_id: 0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b213213
+  register: result
 """
 
 RETURN = r"""

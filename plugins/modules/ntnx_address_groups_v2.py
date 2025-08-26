@@ -95,7 +95,7 @@ EXAMPLES = r"""
 
 - name: delete address group
   nutanix.ncp.ntnx_address_groups_v2:
-    state: present
+    state: absent
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
