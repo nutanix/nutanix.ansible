@@ -134,6 +134,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
     module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
         ext_id=dict(type="str", required=True),
         capabilities=dict(
             type="list",
@@ -207,11 +208,7 @@ def run_module():
             msg="vm ext_id is required to inserting NGT iso", **result
         )
     result["ext_id"] = ext_id
-    state = module.params.get("state")
-    if state == "present":
-        insert_ngt_iso(module, ext_id, result)
-    else:
-        module.fail_json(msg="State: {} is not supported".format(state), **result)
+    insert_ngt_iso(module, ext_id, result)
     module.exit_json(**result)
 
 

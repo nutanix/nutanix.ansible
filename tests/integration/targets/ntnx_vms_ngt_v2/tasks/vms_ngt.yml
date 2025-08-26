@@ -706,27 +706,7 @@
     fail_msg: "Unable to insert ISO into CD ROM in VM "
     success_msg: "ISO is inserted into CD ROM in VM successfully "
 
-#################################################################################
-
-- name: Try to insert ISO with unsupported state (absent)
-  ntnx_vms_ngt_insert_iso_v2:
-    state: absent
-    ext_id: "{{ vm_uuid }}"
-  register: result
-  ignore_errors: true
-
-- name: Try to insert ISO with unsupported state (absent) Status
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == false
-      - result.failed == true
-      - result.ext_id == "{{ vm_uuid }}"
-      - result.msg == "State: absent is not supported"
-    fail_msg: "Module did not fail as expected when using unsupported state "
-    success_msg: "Module failed as expected when using unsupported state "
-
-#################################################################################
+################################################################################
 
 - name: Get NGT config from VM after ISO is inserted
   ntnx_vms_info_v2:
