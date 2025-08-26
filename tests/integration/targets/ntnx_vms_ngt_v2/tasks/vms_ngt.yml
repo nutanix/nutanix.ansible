@@ -715,7 +715,7 @@
   register: result
   ignore_errors: true
 
-- name: Verify inserting ISO into CD ROM fails with unsupported state (absent) Status
+- name: Try to insert ISO with unsupported state (absent) Status
   ansible.builtin.assert:
     that:
       - result.response is defined
