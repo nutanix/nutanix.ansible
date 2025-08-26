@@ -706,7 +706,7 @@
     fail_msg: "Unable to insert ISO into CD ROM in VM "
     success_msg: "ISO is inserted into CD ROM in VM successfully "
 
-################################################################################
+#################################################################################
 
 - name: Get NGT config from VM after ISO is inserted
   ntnx_vms_info_v2:
