@@ -44,6 +44,7 @@ options:
             - Valid choices are "present" only.
             - If state is not present, the module will fail.
         type: str
+        choices: ['present']
         default: present
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
