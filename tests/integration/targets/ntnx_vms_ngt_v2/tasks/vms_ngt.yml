@@ -708,6 +708,26 @@
 
 #################################################################################
 
+- name: Insert ISO into CD ROM in VM with state set to absent
+  ntnx_vms_ngt_insert_iso_v2:
+    state: absent
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Insert ISO into CD ROM in VM with state set to absent Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == true
+      - result.ext_id == "{{ vm_uuid }}"
+      - result.msg == "State: absent is not supported"
+    fail_msg: "Test failed "
+    success_msg: "Test passed: Operation failed as expected "
+
+#################################################################################
+
 - name: Get NGT config from VM after ISO is inserted
   ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
