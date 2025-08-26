@@ -17,6 +17,15 @@ description:
     - Get Stats for a Storage Container
     - This module uses PC v4 APIs based SDKs
 options:
+  state:
+    description:
+      - State of the module.
+      - If state is present, the module will fetch storage container stats.
+      - If state is not present, the module will fail.
+    type: str
+    choices:
+      - present
+    default: present
   ext_id:
     description:
       - The external ID of the storage container.
@@ -331,6 +340,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def get_module_spec():
 
     module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
         ext_id=dict(type="str", required=True),
         start_time=dict(type="str", required=True),
         end_time=dict(type="str", required=True),
