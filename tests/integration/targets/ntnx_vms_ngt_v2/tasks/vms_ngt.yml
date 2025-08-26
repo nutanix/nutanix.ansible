@@ -708,14 +708,14 @@
 
 #################################################################################
 
-- name: Insert ISO into CD ROM in VM with state set to absent
+- name: Try to insert ISO with unsupported state (absent)
   ntnx_vms_ngt_insert_iso_v2:
     state: absent
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
 
-- name: Insert ISO into CD ROM in VM with state set to absent Status
+- name: Verify inserting ISO into CD ROM fails with unsupported state (absent) Status
   ansible.builtin.assert:
     that:
       - result.response is defined
@@ -723,8 +723,8 @@
       - result.failed == true
       - result.ext_id == "{{ vm_uuid }}"
       - result.msg == "State: absent is not supported"
-    fail_msg: "Test failed "
-    success_msg: "Test passed: Operation failed as expected "
+    fail_msg: "Module did not fail as expected when using unsupported state "
+    success_msg: "Module failed as expected when using unsupported state "
 
 #################################################################################
 
