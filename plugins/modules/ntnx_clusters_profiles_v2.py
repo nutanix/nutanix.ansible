@@ -551,6 +551,192 @@ author:
 """
 
 EXAMPLES = r"""
+- name: Create cluster profile
+  ntnx_clusters_profiles_v2:
+    name: "cluster_profile_1"
+    description: "Cluster profile description"
+    allowed_overrides: "NTP_SERVER_CONFIG"
+    name_server_ip_list:
+      - ipv4:
+          value: "240.29.254.180"
+          prefix_length: 32
+      - ipv6:
+            value: "1a7d:9a64:df8d:dfd8:39c6:c4ea:e35c:0ba4"
+            prefix_length: 128
+      - fqdn:
+            value: "server.example.com"
+    ntp_server_ip_list:
+      - ipv4:
+          value: "240.29.254.180"
+          prefix_length: 32
+      - ipv6:
+            value: "1a7d:9a64:df8d:dfd8:39c6:c4ea:e35c:0ba4"
+            prefix_length: 128
+      - fqdn:
+            value: "ntp.example.com"
+    smtp_server:
+      email_address: "email@example.com"
+      server:
+        ip_address:
+        - ipv4:
+            value: "240.29.254.180"
+            prefix_length: 32
+        - ipv6:
+            value: "1a7d:9a64:df8d:dfd8:39c6:c4ea:e35c:0ba4"
+            prefix_length: 128
+        - fqdn:
+            value: "smtp.example.com"
+        port: 465
+        username: "smtp-user"
+        password: "smtp-password"
+      type: "SSL"
+    nfs_subnet_whitelist:
+      - "10.110.106.45/255.255.255.255"
+    snmp_config:
+      is_enabled: false
+      users:
+        - username: "snmpuser1"
+          auth_type: "MD5"
+          auth_key: "Test_SNMP_user_authentication_key"
+          priv_type: "DES"
+          priv_key: "Test_SNMP_user_encryption_key"
+      transports:
+        - protocol: "UDP"
+          port: 21
+      traps:
+        - ipv4:
+            value: "240.29.254.180"
+            prefix_length: 32
+        - ipv6:
+            value: "1a7d:9a64:df8d:dfd8:39c6:c4ea:e35c:0ba4"
+            prefix_length: 128
+          username: "trapuser"
+          protocol: "UDP"
+          port: 59
+          should_inform: false
+          engine_id: "engine-01"
+          version: "V3"
+          receiver_name: "trap-receiver"
+          community_string: "snmp-server community public RO 192.168.1.0 255.255.255.0"
+    rsyslog_server_list:
+      - server_name: "testServer1"
+        ip_address:
+          - ipv4:
+            value: "240.29.254.180"
+            prefix_length: 32
+          - ipv6:
+            value: "1a7d:9a64:df8d:dfd8:39c6:c4ea:e35c:0ba4"
+            prefix_length: 128
+        port: 29
+        network_protocol: "UDP"
+        modules:
+          - name: "CASSANDRA"
+            log_severity_level: "EMERGENCY"
+            should_log_monitor_files: true
+          - name: "CURATOR"
+            log_severity_level: "ERROR"
+            should_log_monitor_files: false
+    pulse_status:
+      is_enabled: false
+      pii_scrubbing_level: "DEFAULT"
+  register: result
+
+- name: Update cluster profile
+  ntnx_clusters_profiles_v2:
+    name: "cluster_profile_1_updated"
+    ext_id: "1146f181-188b-49e2-5995-356bf1b74aeb"
+    description: "Cluster profile description"
+    allowed_overrides: "NTP_SERVER_CONFIG"
+    name_server_ip_list:
+      - ipv4:
+          value: "240.29.254.180"
+          prefix_length: 32
+      - ipv6:
+            value: "1a7d:9a64:df8d:dfd8:39c6:c4ea:e35c:0ba4"
+            prefix_length: 128
+      - fqdn:
+            value: "server.example.com"
+    ntp_server_ip_list:
+      - ipv4:
+          value: "240.29.254.180"
+          prefix_length: 32
+      - ipv6:
+            value: "1a7d:9a64:df8d:dfd8:39c6:c4ea:e35c:0ba4"
+            prefix_length: 128
+      - fqdn:
+            value: "ntp.example.com"
+    smtp_server:
+      email_address: "email@example.com"
+      server:
+        ip_address:
+        - ipv4:
+            value: "240.29.254.180"
+            prefix_length: 32
+        - ipv6:
+            value: "1a7d:9a64:df8d:dfd8:39c6:c4ea:e35c:0ba4"
+            prefix_length: 128
+        - fqdn:
+            value: "smtp.example.com"
+        port: 465
+        username: "smtp-user"
+        password: "smtp-password"
+      type: "SSL"
+    nfs_subnet_whitelist:
+      - "10.110.106.45/255.255.255.255"
+    snmp_config:
+      is_enabled: false
+      users:
+        - username: "snmpuser1"
+          auth_type: "MD5"
+          auth_key: "Test_SNMP_user_authentication_key"
+          priv_type: "DES"
+          priv_key: "Test_SNMP_user_encryption_key"
+      transports:
+        - protocol: "UDP"
+          port: 21
+      traps:
+        - ipv4:
+            value: "240.29.254.180"
+            prefix_length: 32
+        - ipv6:
+            value: "1a7d:9a64:df8d:dfd8:39c6:c4ea:e35c:0ba4"
+            prefix_length: 128
+          username: "trapuser"
+          protocol: "UDP"
+          port: 59
+          should_inform: false
+          engine_id: "engine-01"
+          version: "V3"
+          receiver_name: "trap-receiver"
+          community_string: "snmp-server community public RO 192.168.1.0 255.255.255.0"
+    rsyslog_server_list:
+      - server_name: "testServer1"
+        ip_address:
+          - ipv4:
+            value: "240.29.254.180"
+            prefix_length: 32
+          - ipv6:
+            value: "1a7d:9a64:df8d:dfd8:39c6:c4ea:e35c:0ba4"
+            prefix_length: 128
+        port: 29
+        network_protocol: "UDP"
+        modules:
+          - name: "CASSANDRA"
+            log_severity_level: "EMERGENCY"
+            should_log_monitor_files: true
+          - name: "CURATOR"
+            log_severity_level: "ERROR"
+            should_log_monitor_files: false
+    pulse_status:
+      is_enabled: false
+      pii_scrubbing_level: "DEFAULT"
+  register: result
+
+- name: Delete cluster profile
+  ntnx_clusters_profiles_v2:
+    ext_id: "1146f181-188b-49e2-5995-356bf1b74aeb"
+    state: "absent"
+  register: result[]
 """
 
 RETURN = r"""
