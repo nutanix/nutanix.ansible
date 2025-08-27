@@ -230,7 +230,8 @@ class ClusterProfileSpecs:
         name=dict(type="str", required=True),
         description=dict(type="str"),
         allowed_overrides=dict(
-            type="str",
+            type="list",
+            elements="str",
             obj=clusters_sdk.ConfigType,
             choices=[
                 "NFS_SUBNET_WHITELIST_CONFIG",

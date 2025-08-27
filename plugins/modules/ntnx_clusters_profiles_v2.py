@@ -46,7 +46,8 @@ options:
   allowed_overrides:
     description:
       - Indicates if a configuration of attached clusters can be skipped from monitoring.
-    type: str
+    type: list
+    elements: str
     required: false
     choices:
       - "NFS_SUBNET_WHITELIST_CONFIG"
@@ -555,7 +556,8 @@ EXAMPLES = r"""
   ntnx_clusters_profiles_v2:
     name: "cluster_profile_1"
     description: "Cluster profile description"
-    allowed_overrides: "NTP_SERVER_CONFIG"
+    allowed_overrides:
+      - "NTP_SERVER_CONFIG"
     name_server_ip_list:
       - ipv4:
           value: "240.29.254.180"
@@ -645,7 +647,8 @@ EXAMPLES = r"""
     name: "cluster_profile_1_updated"
     ext_id: "1146f181-188b-49e2-5995-356bf1b74aeb"
     description: "Cluster profile description"
-    allowed_overrides: "NTP_SERVER_CONFIG"
+    allowed_overrides:
+      - "NTP_SERVER_CONFIG"
     name_server_ip_list:
       - ipv4:
           value: "240.29.254.180"
