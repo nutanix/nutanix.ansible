@@ -46,6 +46,10 @@ options:
                     - Required when associating or disassociating a cluster profile.
                 type: str
                 required: true
+    dryrun:
+    description:
+      - Whether to run prechecks only.
+    type: bool
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
@@ -154,6 +158,7 @@ def get_module_spec():
             obj=clusters_sdk.ClusterReference,
             required=True,
         ),
+        dry_run=dict(type="bool", default=False),
     )
 
     return module_args
@@ -176,10 +181,12 @@ def associate_cluster_profile(module, cluster_profiles, result):
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
         return
-
+    dry_run = module.params.get("dryrun", False)
     resp = None
     try:
-        resp = cluster_profiles.apply_cluster_profile(extId=ext_id, body=spec)
+        resp = cluster_profiles.apply_cluster_profile(
+            extId=ext_id, body=spec, _dryrun=dry_run
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -192,7 +199,10 @@ def associate_cluster_profile(module, cluster_profiles, result):
     if task_ext_id and module.params.get("wait"):
         task_status = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_status.to_dict())
-    result["changed"] = True
+    if module.params.get("dryrun", False):
+        result["changed"] = False
+    else:
+        result["changed"] = True
 
 
 def disassociate_cluster_profile(module, cluster_profiles, result):
