@@ -743,9 +743,9 @@ def destroy_cluster_profile(module, cluster_profiles, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
     if module.check_mode:
-        result[
-            "msg"
-        ] = "Cluster Profile with external ID '{0}' will be deleted.".format(ext_id)
+        result["msg"] = (
+            "Cluster Profile with external ID '{0}' will be deleted.".format(ext_id)
+        )
         return
 
     current_spec = get_cluster_profile(module, cluster_profiles, ext_id=ext_id)
