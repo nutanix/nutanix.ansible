@@ -70,6 +70,7 @@ def get_storage_container(module, api_instance, ext_id):
             msg="Api Exception raised while fetching storage container info using ext_id",
         )
 
+
 def get_cluster_profile(module, api_instance, ext_id):
     """
     This method will return cluster profile info using external ID.
