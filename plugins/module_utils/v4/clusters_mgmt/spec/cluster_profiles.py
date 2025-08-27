@@ -67,7 +67,7 @@ class ClusterProfileSpecs:
         ip_address=dict(
             type="dict",
             options=ip_address_or_fqdn,
-            obj=clusters_sdk.IPAddress,
+            obj=clusters_sdk.IPAddressOrFQDN,
             required=True,
         ),
         port=dict(type="int"),
