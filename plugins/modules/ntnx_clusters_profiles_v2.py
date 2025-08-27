@@ -561,30 +561,28 @@ EXAMPLES = r"""
           value: "240.29.254.180"
           prefix_length: 32
       - ipv6:
-            value: "1a7d:9a64:df8d:dfd8:39c6:c4ea:e35c:0ba4"
-            prefix_length: 128
-      - fqdn:
-            value: "server.example.com"
+          value: "1a7d:9a64:df8d:dfd8:39c6:c4ea:e35c:0ba4"
+          prefix_length: 128
     ntp_server_ip_list:
       - ipv4:
           value: "240.29.254.180"
           prefix_length: 32
       - ipv6:
-            value: "1a7d:9a64:df8d:dfd8:39c6:c4ea:e35c:0ba4"
-            prefix_length: 128
+          value: "1a7d:9a64:df8d:dfd8:39c6:c4ea:e35c:0ba4"
+          prefix_length: 128
       - fqdn:
-            value: "ntp.example.com"
+          value: "ntp.example.com"
     smtp_server:
       email_address: "email@example.com"
       server:
         ip_address:
-        - ipv4:
+          ipv4:
             value: "240.29.254.180"
             prefix_length: 32
-        - ipv6:
+          ipv6:
             value: "1a7d:9a64:df8d:dfd8:39c6:c4ea:e35c:0ba4"
             prefix_length: 128
-        - fqdn:
+          fqdn:
             value: "smtp.example.com"
         port: 465
         username: "smtp-user"
@@ -604,27 +602,28 @@ EXAMPLES = r"""
         - protocol: "UDP"
           port: 21
       traps:
-        - ipv4:
-            value: "240.29.254.180"
-            prefix_length: 32
-        - ipv6:
-            value: "1a7d:9a64:df8d:dfd8:39c6:c4ea:e35c:0ba4"
-            prefix_length: 128
+        - address:
+            ipv4:
+              value: "240.29.254.180"
+              prefix_length: 32
+            ipv6:
+              value: "1a7d:9a64:df8d:dfd8:39c6:c4ea:e35c:0ba4"
+              prefix_length: 128
           username: "trapuser"
           protocol: "UDP"
           port: 59
           should_inform: false
-          engine_id: "engine-01"
+          engine_id: "abcd1234"
           version: "V3"
           receiver_name: "trap-receiver"
           community_string: "snmp-server community public RO 192.168.1.0 255.255.255.0"
     rsyslog_server_list:
       - server_name: "testServer1"
         ip_address:
-          - ipv4:
+          ipv4:
             value: "240.29.254.180"
             prefix_length: 32
-          - ipv6:
+          ipv6:
             value: "1a7d:9a64:df8d:dfd8:39c6:c4ea:e35c:0ba4"
             prefix_length: 128
         port: 29
@@ -652,30 +651,28 @@ EXAMPLES = r"""
           value: "240.29.254.180"
           prefix_length: 32
       - ipv6:
-            value: "1a7d:9a64:df8d:dfd8:39c6:c4ea:e35c:0ba4"
-            prefix_length: 128
-      - fqdn:
-            value: "server.example.com"
+          value: "1a7d:9a64:df8d:dfd8:39c6:c4ea:e35c:0ba4"
+          prefix_length: 128
     ntp_server_ip_list:
       - ipv4:
           value: "240.29.254.180"
           prefix_length: 32
       - ipv6:
-            value: "1a7d:9a64:df8d:dfd8:39c6:c4ea:e35c:0ba4"
-            prefix_length: 128
+          value: "1a7d:9a64:df8d:dfd8:39c6:c4ea:e35c:0ba4"
+          prefix_length: 128
       - fqdn:
-            value: "ntp.example.com"
+          value: "ntp.example.com"
     smtp_server:
       email_address: "email@example.com"
       server:
         ip_address:
-        - ipv4:
+          ipv4:
             value: "240.29.254.180"
             prefix_length: 32
-        - ipv6:
+          ipv6:
             value: "1a7d:9a64:df8d:dfd8:39c6:c4ea:e35c:0ba4"
             prefix_length: 128
-        - fqdn:
+          fqdn:
             value: "smtp.example.com"
         port: 465
         username: "smtp-user"
@@ -695,27 +692,28 @@ EXAMPLES = r"""
         - protocol: "UDP"
           port: 21
       traps:
-        - ipv4:
-            value: "240.29.254.180"
-            prefix_length: 32
-        - ipv6:
-            value: "1a7d:9a64:df8d:dfd8:39c6:c4ea:e35c:0ba4"
-            prefix_length: 128
+        - address:
+            ipv4:
+              value: "240.29.254.180"
+              prefix_length: 32
+            ipv6:
+              value: "1a7d:9a64:df8d:dfd8:39c6:c4ea:e35c:0ba4"
+              prefix_length: 128
           username: "trapuser"
           protocol: "UDP"
           port: 59
           should_inform: false
-          engine_id: "engine-01"
+          engine_id: "abcd1234"
           version: "V3"
           receiver_name: "trap-receiver"
           community_string: "snmp-server community public RO 192.168.1.0 255.255.255.0"
     rsyslog_server_list:
       - server_name: "testServer1"
         ip_address:
-          - ipv4:
+          ipv4:
             value: "240.29.254.180"
             prefix_length: 32
-          - ipv6:
+          ipv6:
             value: "1a7d:9a64:df8d:dfd8:39c6:c4ea:e35c:0ba4"
             prefix_length: 128
         port: 29
@@ -736,7 +734,7 @@ EXAMPLES = r"""
   ntnx_clusters_profiles_v2:
     ext_id: "1146f181-188b-49e2-5995-356bf1b74aeb"
     state: "absent"
-  register: result[]
+  register: result
 """
 
 RETURN = r"""
