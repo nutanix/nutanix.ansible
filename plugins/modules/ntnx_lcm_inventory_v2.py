@@ -21,7 +21,7 @@ options:
     state:
         description:
             - State of the module.
-            - If state is present, the module will perform inventory.
+            - If state is present, the module will perform LCM inventory.
             - If state is not present, the module will fail.
         type: str
         choices:
