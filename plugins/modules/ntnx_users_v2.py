@@ -18,11 +18,12 @@ description:
 options:
     state:
         description:
-            - State of the user. Whether to create, update, or delete.
+            - State of the user. Whether to create or update.
             - If C(state) is C(present) and C(ext_id) is not provided, create a new user.
             - If C(state) is C(present) and C(ext_id) is provided, update the user.
         type: str
         choices: ['present']
+        default: present
     ext_id:
         description:
             - External ID of the User.
