@@ -4,7 +4,7 @@
     msg: start testing ntnx_foundation_discover_nodes_info
 
 - name: Discover nodes
-  ntnx_foundation_discover_nodes_info:
+  nutanix.ncp.ntnx_foundation_discover_nodes_info:
   register: result
 
 - name: Creation Status
@@ -20,7 +20,7 @@
     success_msg: "Success: Discover nodes finished successfully "
 
 - name: Discover all nodes
-  ntnx_foundation_discover_nodes_info:
+  nutanix.ncp.ntnx_foundation_discover_nodes_info:
     include_configured: true
   register: result
 

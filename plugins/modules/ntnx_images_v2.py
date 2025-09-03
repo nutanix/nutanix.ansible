@@ -137,6 +137,17 @@ options:
                             - The unique identifier of the VM disk.
                         type: str
                         required: true
+            objects_lite_source:
+                description:
+                    - The Objects Lite source of the image.
+                type: dict
+                suboptions:
+                    key:
+                        description:
+                            - Key that identifies the source object in the bucket.
+                            - The resource implies the bucket, 'vmm-images' for Image and 'vmm-ovas' for OVA.
+                        type: str
+                        required: true
         required: false
     category_ext_ids:
         description:
@@ -311,6 +322,7 @@ def get_module_spec():
     source_allowed_objs = {
         "url_source": vmm_sdk.UrlSource,
         "vm_disk_source": vmm_sdk.VmDiskSource,
+        "objects_lite_source": vmm_sdk.ObjectsLiteSource,
     }
 
     # module specs
@@ -329,9 +341,11 @@ def get_module_spec():
         should_allow_insecure_url=dict(type="bool", default=False),
         basic_auth=dict(type="dict", options=basic_auth, obj=vmm_sdk.UrlBasicAuth),
     )
+    objects_lite_source = dict(key=dict(type="str", required=True, no_log=True))
     source = dict(
         url_source=dict(type="dict", options=url_source),
         vm_disk_source=dict(type="dict", options=vm_disk_source),
+        objects_lite_source=dict(type="dict", options=objects_lite_source),
     )
     module_args = dict(
         ext_id=dict(type="str"),
@@ -348,7 +362,9 @@ def get_module_spec():
             type="dict",
             options=source,
             obj=source_allowed_objs,
-            mutually_exclusive=[("url_source", "vm_disk_source")],
+            mutually_exclusive=[
+                ("url_source", "vm_disk_source", "objects_lite_source")
+            ],
         ),
         category_ext_ids=dict(type="list", elements="str"),
         cluster_location_ext_ids=dict(type="list", elements="str"),

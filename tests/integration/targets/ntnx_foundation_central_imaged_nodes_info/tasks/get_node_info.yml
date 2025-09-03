@@ -4,7 +4,7 @@
     msg: start testing ntnx_foundation_central_imaged_nodes_info module
 
 - name: Get all imaged nodes
-  ntnx_foundation_central_imaged_nodes_info:
+  nutanix.ncp.ntnx_foundation_central_imaged_nodes_info:
   register: nodes
   ignore_errors: true
 
@@ -20,7 +20,7 @@
     success_msg: "Success:  get all imaged nodes successfully  "
 
 - name: Get node by uuid
-  ntnx_foundation_central_imaged_nodes_info:
+  nutanix.ncp.ntnx_foundation_central_imaged_nodes_info:
     imaged_node_uuid: "{{nodes.response.imaged_nodes.0.imaged_node_uuid}}"
   register: result
   ignore_errors: true
@@ -36,7 +36,7 @@
     success_msg: "Success:  get node by uuid successfully "
 
 - name: Get imaged node using custom filter
-  ntnx_foundation_central_imaged_nodes_info:
+  nutanix.ncp.ntnx_foundation_central_imaged_nodes_info:
     custom_filter:
       node_serial: "{{nodes.response.imaged_nodes.0.node_serial}}"
   register: result

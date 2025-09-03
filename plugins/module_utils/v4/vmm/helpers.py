@@ -171,3 +171,23 @@ def get_gpu(module, api_instance, ext_id, vm_ext_id):
             exception=e,
             msg="Api Exception raised while fetching GPU info using ext_id",
         )
+
+
+def get_ova(module, api_instance, ext_id):
+    """
+    Get OVA by ext_id
+    Args:
+        module: Ansible module
+        api_instance: OvasApi instance from ntnx_vmm_py_client sdk
+        ext_id: ext_id of OVA
+    Returns:
+        ova (obj): OVA info object
+    """
+    try:
+        return api_instance.get_ova_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching OVA info using ext_id",
+        )

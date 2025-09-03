@@ -1,0 +1,226 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create a VM with a disk
+# 2. Create an ISO image using a valid source URL
+# 3. Create a disk image using a valid source URL
+# 4. Create a disk image using a valid disk source
+# 5. Create an image using object lite source
+# 6. Retrieve an existing ISO image
+# 7. Retrieve all images with limit 1 and 2
+# 8. Retrieve all images and filter for disk image
+# 9. Update a disk image by changing its name and type
+# 10. Update an ISO image by changing its name and type
+# 11. Update an ISO image by changing its category
+# 12. Delete an image
+# 13. Delete the VM
+
+
+- name: Images crud playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        cluster:
+          name: "cluster_name"
+          uuid: "00063aa4-8cfe-3d59-185b-ac1f6b6f97e2"
+        disk_image:
+          url: <disk_image_url>
+          checksum: <disk_image_checksum>
+          image_ext_ids: "d3295dc6-84f5-4d66-b5fb-c8d326d8999a"
+        iso_image:
+          url: <iso_image_url>
+          checksum: <iso_image_checksum>
+        object_name: "ansible-object-1"
+        vm_name: "ansible_vm_test"
+        iso_image_name: "ansible_iso_image_test"
+        disk_image_name: "ansible_disk_image_test"
+
+    - name: Create VM
+      nutanix.ncp.ntnx_vms_v2:
+        state: present
+        name: "{{ vm_name }}"
+        cluster:
+          ext_id: "{{ cluster.uuid }}"
+        disks:
+          - backing_info:
+              vm_disk:
+                disk_size_bytes: 26843545600
+                data_source:
+                  reference:
+                    image_reference:
+                      image_ext_id: "{{ disk_image.image_ext_ids }}"
+            disk_address:
+              bus_type: SCSI
+              index: 2
+      register: result
+
+    - name: Set vm_uuid and disk_uuid
+      ansible.builtin.set_fact:
+        vm_uuid: '{{ result["ext_id"] }}'
+        disk_uuid: '{{ result["response"]["disks"][0]["ext_id"] }}'
+
+    ##################################################################################
+
+    - name: List all categories and define variables
+      nutanix.ncp.ntnx_categories_info_v2:
+      register: result
+
+    - name: Set variables
+      ansible.builtin.set_fact:
+        category_ext_id: '{{ result["response"][0]["ext_id"] }}'
+        category_ext_id1: '{{ result["response"][1]["ext_id"] }}'
+
+    ##################################################################################
+
+    - name: Create ISO_IMAGE using valid source url
+      nutanix.ncp.ntnx_images_v2:
+        state: present
+        type: ISO_IMAGE
+        name: "{{ iso_image_name }}"
+        description: Creating ISO Image using source url
+        checksum:
+          sha1:
+            hex_digest: "{{ iso_image.checksum }}"
+        source:
+          url_source:
+            url: "{{ iso_image.url }}"
+            should_allow_insecure_url: true
+        cluster_location_ext_ids: "{{ cluster.uuid }}"
+      register: result
+
+    - name: Set image_iso external ID
+      ansible.builtin.set_fact:
+        image_iso_ext_id: "{{ result['ext_id'] }}"
+
+    ##################################################################################
+
+    - name: Create DISK_IMAGE using valid source url
+      nutanix.ncp.ntnx_images_v2:
+        state: present
+        type: DISK_IMAGE
+        name: "{{ disk_image_name }}"
+        description: Creating Disk Image using url
+        checksum:
+          sha1:
+            hex_digest: "{{ disk_image.checksum }}"
+        source:
+          url_source:
+            url: "{{ disk_image.url }}"
+            should_allow_insecure_url: true
+        category_ext_ids: "{{ category_ext_id }}"
+      register: result
+
+    #################################################################################
+
+    - name: Create DISK_IMAGE using valid disk source
+      nutanix.ncp.ntnx_images_v2:
+        state: present
+        type: DISK_IMAGE
+        name: "{{ disk_image_name }}"
+        description: Creating Disk Image using valid disk source
+        source:
+          vm_disk_source:
+            ext_id: "{{ disk_uuid }}"
+        category_ext_ids: "{{ category_ext_id }}"
+      register: result
+
+    - name: Set image_disk external ID
+      ansible.builtin.set_fact:
+        image_disk_ext_id: "{{ result['ext_id'] }}"
+
+    #################################################################################
+
+    - name: Create image using object lite source
+      nutanix.ncp.ntnx_images_v2:
+        name: "object-image"
+        description: "Image created from object store"
+        type: "DISK_IMAGE"
+        source:
+          objects_lite_source:
+            key: "{{ object_name }}"
+      register: result
+
+    #################################################################################
+
+    - name: Retrieve an existing ISO image
+      nutanix.ncp.ntnx_images_info_v2:
+        ext_id: "{{ image_iso_ext_id }}"
+      register: result
+
+    #################################################################################
+
+    - name: Retrieve all images with limit 1
+      nutanix.ncp.ntnx_images_info_v2:
+        limit: 1
+      register: result
+
+    #################################################################################
+
+    - name: Retrieve all images with limit 2
+      nutanix.ncp.ntnx_images_info_v2:
+        limit: 2
+      register: result
+
+    #################################################################################
+
+    - name: Retrieve all images and filter for disk image
+      nutanix.ncp.ntnx_images_info_v2:
+        filter: name eq '{{ disk_image_name }}'
+      register: result
+
+    #################################################################################
+
+    ##################################################################################
+
+    - name: Update DISK_IMAGE by changing its name and type
+      nutanix.ncp.ntnx_images_v2:
+        state: present
+        ext_id: "{{ image_disk_ext_id }}"
+        type: ISO_IMAGE
+        name: "{{ iso_image_name }}_updated"
+        category_ext_ids: "{{ category_ext_id }}"
+      register: result
+
+    ##################################################################################
+
+    - name: Update ISO_IMAGE by changing its name and type
+      nutanix.ncp.ntnx_images_v2:
+        state: present
+        ext_id: "{{ image_disk_ext_id }}"
+        type: DISK_IMAGE
+        name: "{{ disk_image_name }}"
+        category_ext_ids: "{{ category_ext_id }}"
+      register: result
+
+    #################################################################################
+
+    - name: Update ISO_IMAGE by changing category
+      nutanix.ncp.ntnx_images_v2:
+        state: present
+        ext_id: "{{ image_iso_ext_id }}"
+        category_ext_ids: "{{ category_ext_id1 }}"
+      register: result
+
+    #################################################################################
+
+    - name: Delete image
+      nutanix.ncp.ntnx_images_v2:
+        state: absent
+        ext_id: "{{ image_disk_ext_id }}"
+      register: result
+
+    ##################################################################################
+
+    - name: Delete the VM
+      nutanix.ncp.ntnx_vms:
+        state: absent
+        vm_uuid: "{{ vm_uuid }}"
+      register: result

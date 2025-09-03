@@ -131,6 +131,12 @@ changed:
   type: bool
   returned: always
   sample: False
+
+total_available_results:
+    description: The total number of available routes in the route table.
+    type: int
+    returned: when all routes are fetched
+    sample: 10
 """
 
 import warnings  # noqa: E402
@@ -196,6 +202,9 @@ def get_routes(module, route_api_instance, result):
             exception=e,
             msg="Api Exception raised while fetching routes info",
         )
+
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
 
     result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
 
