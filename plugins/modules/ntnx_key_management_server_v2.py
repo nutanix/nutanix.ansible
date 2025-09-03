@@ -215,7 +215,11 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
 
-    access_information_spec = dict(
+    access_information_obj_map = {
+        "azure_key_vault": security_sdk.AzureAccessInformation,
+    }
+
+    azure_key_vault_spec = dict(
         endpoint_url=dict(type="str", required=True),
         key_id=dict(type="str", required=True),
         tenant_id=dict(type="str", required=True),
@@ -224,13 +228,21 @@ def get_module_spec():
         credential_expiry_date=dict(type="str", required=True),
     )
 
+    access_information_spec = dict(
+        azure_key_vault=dict(
+            type="dict",
+            options=azure_key_vault_spec,
+        )
+    )
+
     module_args = dict(
         name=dict(type="str"),
         ext_id=dict(type="str"),
         access_information=dict(
             type="dict",
             options=access_information_spec,
-            obj=security_sdk.AzureAccessInformation,
+            obj=access_information_obj_map,
+            mutually_exclusive=[("azure_key_vault",)],
         ),
     )
     return module_args
