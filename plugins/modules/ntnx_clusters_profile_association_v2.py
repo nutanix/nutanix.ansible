@@ -147,7 +147,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
     clusters_spec = dict(
-        ext_id=dict(type="str", required=True),
+        uuid=dict(type="str", required=True),
     )
     module_args = dict(
         ext_id=dict(type="str", required=True),
@@ -158,7 +158,7 @@ def get_module_spec():
             obj=clusters_sdk.ClusterReference,
             required=True,
         ),
-        dry_run=dict(type="bool", default=False),
+        dryrun=dict(type="bool", default=False),
     )
 
     return module_args
@@ -169,7 +169,7 @@ def associate_cluster_profile(module, cluster_profiles, result):
     result["ext_id"] = ext_id
 
     sg = SpecGenerator(module)
-    default_spec = clusters_sdk.ClusterReference()
+    default_spec = clusters_sdk.ClusterReferenceListSpec()
     spec, err = sg.generate_spec(obj=default_spec)
 
     if err:
@@ -210,7 +210,7 @@ def disassociate_cluster_profile(module, cluster_profiles, result):
     result["ext_id"] = ext_id
 
     sg = SpecGenerator(module)
-    default_spec = clusters_sdk.ClusterReference()
+    default_spec = clusters_sdk.ClusterReferenceListSpec()
     spec, err = sg.generate_spec(obj=default_spec)
 
     if err:

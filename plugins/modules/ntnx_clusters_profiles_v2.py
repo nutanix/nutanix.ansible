@@ -398,7 +398,7 @@ options:
             choices:
               - "V2"
               - "V3"
-          receiver_name:
+          reciever_name:
             description:
               - SNMP receiver name.
             type: str
@@ -617,7 +617,7 @@ EXAMPLES = r"""
           should_inform: false
           engine_id: "abcd1234"
           version: "V3"
-          receiver_name: "trap-receiver"
+          reciever_name: "trap-receiver"
           community_string: "snmp-server community public RO 192.168.1.0 255.255.255.0"
     rsyslog_server_list:
       - server_name: "testServer1"
@@ -708,7 +708,7 @@ EXAMPLES = r"""
           should_inform: false
           engine_id: "abcd1234"
           version: "V3"
-          receiver_name: "trap-receiver"
+          reciever_name: "trap-receiver"
           community_string: "snmp-server community public RO 192.168.1.0 255.255.255.0"
     rsyslog_server_list:
       - server_name: "testServer1"
@@ -873,6 +873,25 @@ def create_cluster_profile(module, cluster_profiles, result):
 
 def check_cluster_idempotency(current_spec, update_spec):
 
+    users1 = current_spec.get("snmp_config", {}).get("users", [])
+    users2 = update_spec.get("snmp_config", {}).get("users", [])
+
+    if len(users1) != len(users2):
+        return False
+
+    if current_spec.get("smtp_server", {}).get("server") is not None:
+        current_spec["smtp_server"]["server"]["password"] = None
+    if update_spec.get("smtp_server", {}).get("server") is not None:
+        update_spec["smtp_server"]["server"]["password"] = None
+
+    for user1, user2 in zip(users1, users2):
+        if isinstance(user1, dict):
+            user1["auth_key"] = None
+            user1["priv_key"] = None
+        if isinstance(user2, dict):
+            user2["auth_key"] = None
+            user2["priv_key"] = None
+
     if current_spec != update_spec:
         return False
     return True
@@ -882,8 +901,6 @@ def update_cluster_profile(module, cluster_profiles, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
     sg = SpecGenerator(module)
-    default_spec = clusters_sdk.ClusterProfile()
-    spec, err = sg.generate_spec(obj=default_spec)
     current_spec = get_cluster_profile(module, cluster_profiles, ext_id)
     etag = get_etag(data=current_spec)
     if not etag:
@@ -900,14 +917,16 @@ def update_cluster_profile(module, cluster_profiles, result):
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
+    result["current_spec"] = strip_internal_attributes(current_spec.to_dict())
+    result["update_spec"] = strip_internal_attributes(update_spec.to_dict())
 
-    if check_cluster_idempotency(current_spec, update_spec):
+    if check_cluster_idempotency(current_spec.to_dict(), update_spec.to_dict()):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
     resp = None
     try:
-        resp = cluster_profiles.update_cluster_profile(
-            extId=ext_id, body=spec, **kwargs
+        resp = cluster_profiles.update_cluster_profile_by_id(
+            extId=ext_id, body=update_spec, **kwargs
         )
     except Exception as e:
         raise_api_exception(
@@ -926,7 +945,7 @@ def update_cluster_profile(module, cluster_profiles, result):
     result["changed"] = True
 
 
-def destroy_cluster_profile(module, cluster_profiles, result):
+def delete_cluster_profile(module, cluster_profiles, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
     if module.check_mode:
@@ -946,7 +965,7 @@ def destroy_cluster_profile(module, cluster_profiles, result):
     kwargs = {"if_match": etag}
     resp = None
     try:
-        resp = cluster_profiles.delete_cluster_profile(extId=ext_id, **kwargs)
+        resp = cluster_profiles.delete_cluster_profile_by_id(extId=ext_id, **kwargs)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -968,6 +987,10 @@ def run_module():
     module = BaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
+        required_if=[
+            ("state", "present", ("name",)),
+            ("state", "absent", ("ext_id",)),
+        ],
     )
     if SDK_IMP_ERROR:
         module.fail_json(
@@ -991,7 +1014,7 @@ def run_module():
         else:
             create_cluster_profile(module, cluster_profiles, result)
     else:
-        destroy_cluster_profile(module, cluster_profiles, result)
+        delete_cluster_profile(module, cluster_profiles, result)
     module.exit_json(**result)
 
 

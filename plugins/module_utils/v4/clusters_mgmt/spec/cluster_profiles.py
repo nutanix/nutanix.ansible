@@ -114,7 +114,7 @@ class ClusterProfileSpecs:
             choices=["V2", "V3"],
             obj=clusters_sdk.SnmpTrapVersion,
         ),
-        receiver_name=dict(type="str"),
+        reciever_name=dict(type="str"),
         community_string=dict(type="str", required=False),
     )
 
@@ -227,7 +227,7 @@ class ClusterProfileSpecs:
 
     cluster_profile = dict(
         ext_id=dict(type="str"),
-        name=dict(type="str", required=True),
+        name=dict(type="str"),
         description=dict(type="str"),
         allowed_overrides=dict(
             type="list",
@@ -268,7 +268,9 @@ class ClusterProfileSpecs:
             options=rsyslog_server_spec,
             obj=clusters_sdk.RsyslogServer,
         ),
-        pulse_status=dict(type="dict", options=pulse_status_spec),
+        pulse_status=dict(
+            type="dict", options=pulse_status_spec, obj=clusters_sdk.PulseStatus
+        ),
     )
 
     @classmethod

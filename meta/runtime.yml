@@ -220,3 +220,4 @@ action_groups:
     - ntnx_object_stores_certificate_info_v2
     - ntnx_clusters_profiles_v2
     - ntnx_clusters_profiles_info_v2
+    - ntnx_clusters_profile_association_v2
