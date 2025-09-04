@@ -21,7 +21,7 @@
         job_title: "job_title"
         company_name: "company_name"
 
-    - name: Get End of User License Agreement info 
+    - name: Get End of User License Agreement info
       nutanix.ncp.ntnx_eula_info_v2:
       register: result
       ignore_errors: true
