@@ -1,0 +1,119 @@
+---
+- name: Start ntnx_eula_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_eula_v2 tests
+
+- name: Generate random string
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Store variables for acceptance
+  ansible.builtin.set_fact:
+    user_name: "{{ random_name }}_username"
+    login_id: "{{ random_name }}_login_id"
+    job_title: "{{ random_name }}_job_title"
+    company_name: "{{ random_name }}_company_name"
+
+###################################################################################################
+
+- name: Get End of User License Agreement info before acceptance
+  nutanix.ncp.ntnx_eula_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Get End of User License Agreement info before acceptance status
+  ansible.builtin.assert:
+    that:
+      - result.response.content is defined
+      - result.response.version is defined
+      - result.response.acceptances is defined
+      - result.response.acceptances | length > 0
+    fail_msg: "Get End of User License Agreement info before acceptance failed"
+    success_msg: "Get End of User License Agreement info before acceptance passed"
+
+- name: Store initial acceptance list length
+  ansible.builtin.set_fact:
+    initial_acceptance_list_length: "{{ result.response.acceptances | length }}"
+
+###################################################################################################
+
+- name: Generate spec for Accept End of User License Agreement
+  nutanix.ncp.ntnx_eula_accept_v2:
+    user_name: "user_name"
+    login_id: "login_id"
+    job_title: "job_title"
+    company_name: "company_name" 
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Generate spec for Accept End of User License Agreement status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.user_name == "user_name"
+      - result.response.login_id == "login_id"
+      - result.response.job_title == "job_title"
+      - result.response.company_name == "company_name"
+      - result.changed == false
+      - result.failed == false
+    fail_msg: "Generate spec for Accept End of User License Agreement failed"
+    success_msg: "Generate spec for Accept End of User License Agreement passed"
+
+###################################################################################################
+
+- name: Accept End of User License Agreement without passing any parameter
+  nutanix.ncp.ntnx_eula_accept_v2:
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Accept End of User License Agreement without passing any parameter status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "missing required arguments: company_name, job_title, login_id, user_name"
+    fail_msg: "Accept End of User License Agreement without passing any parameter not failed as expected"
+    success_msg: "Accept End of User License Agreement without passing any parameter failed as expected"
+
+###################################################################################################
+
+- name: Accept End of User License Agreement in loop for 2 times with index as loop_index
+  nutanix.ncp.ntnx_eula_accept_v2:
+    user_name: "{{ user_name }}_{{ item }}"
+    login_id: "{{ login_id }}_{{ item }}"
+    job_title: "{{ job_title }}_{{ item }}"
+    company_name: "{{ company_name }}_{{ item }}" 
+  register: result
+  ignore_errors: true
+  loop: "{{ range(0, 2) }}"
+
+- name: Accept End of User License Agreement in loop for 2 times with index as loop_index status
+  ansible.builtin.assert:
+    that:
+      - item.changed == True
+      - item.failed == False
+      - item.response is defined
+    fail_msg: "Accept End of User License Agreement in loop for 2 times with index as loop_index failed"
+    success_msg: "Accept End of User License Agreement in loop for 2 times with index as loop_index passed"
+  loop: "{{ result.results }}"
+
+###################################################################################################
+
+- name: Get End of User License Agreement info after acceptance
+  nutanix.ncp.ntnx_eula_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Get End of User License Agreement info after acceptance status
+  ansible.builtin.assert:
+    that:
+      - result.response.content is defined
+      - result.response.version is defined
+      - result.response.acceptances is defined
+      - result.response.acceptances | length == {{ initial_acceptance_list_length }} + 2
+    fail_msg: "Get End of User License Agreement info after acceptance failed"
+    success_msg: "Get End of User License Agreement info after acceptance passed"
+
+###################################################################################################

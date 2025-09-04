@@ -1,0 +1,12 @@
+---
+- name: Ntnx_floating_ips_v2 integration test
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: "{{ validate_certs }}"
+  block:
+    - name: Import eula_operations.yml
+      ansible.builtin.import_tasks: "eula_operations.yml"
+      # ignore_errors: true
