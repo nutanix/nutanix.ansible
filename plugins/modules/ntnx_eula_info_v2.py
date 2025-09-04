@@ -105,6 +105,7 @@ def get_eula(module, result):
 
 def run_module():
     module = BaseInfoModule(
+        skip_info_args=True,
         argument_spec=dict(),
         supports_check_mode=False,
     )
