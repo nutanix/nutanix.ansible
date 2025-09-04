@@ -116,4 +116,19 @@
     fail_msg: "Get End of User License Agreement info after acceptance failed"
     success_msg: "Get End of User License Agreement info after acceptance passed"
 
+- name: Store acceptances list
+  ansible.builtin.set_fact:
+    acceptances_list: "{{ result.response.acceptances }}"
+
+- name: Check if both the added acceptances are present in the acceptances list
+  ansible.builtin.assert:
+    that:
+      - "\"{{ user_name }}_{{ item }}\" in (acceptances_list | map(attribute='accepted_by') | map(attribute='user_name') | list)"
+      - "\"{{ login_id }}_{{ item }}\" in (acceptances_list | map(attribute='accepted_by') | map(attribute='login_id') | list)"
+      - "\"{{ job_title }}_{{ item }}\" in (acceptances_list | map(attribute='accepted_by') | map(attribute='job_title') | list)"
+      - "\"{{ company_name }}_{{ item }}\" in (acceptances_list | map(attribute='accepted_by') | map(attribute='company_name') | list)"
+    fail_msg: "Check if both the added acceptances are present in the acceptances list failed"
+    success_msg: "Check if both the added acceptances are present in the acceptances list passed"
+  loop: "{{ range(0, 2) | list }}"
+
 ###################################################################################################
