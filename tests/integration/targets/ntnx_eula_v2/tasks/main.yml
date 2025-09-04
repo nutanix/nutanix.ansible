@@ -9,4 +9,3 @@
   block:
     - name: Import eula_operations.yml
       ansible.builtin.import_tasks: "eula_operations.yml"
-      # ignore_errors: true

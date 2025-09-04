@@ -54,7 +54,7 @@ EXAMPLES = r"""
     user_name: "user_name"
     login_id: "login_id"
     job_title: "job_title"
-    company_name: "company_name" 
+    company_name: "company_name"
   register: result
   ignore_errors: true
 """

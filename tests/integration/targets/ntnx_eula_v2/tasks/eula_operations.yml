@@ -42,7 +42,7 @@
     user_name: "user_name"
     login_id: "login_id"
     job_title: "job_title"
-    company_name: "company_name" 
+    company_name: "company_name"
   register: result
   ignore_errors: true
   check_mode: true
@@ -84,10 +84,10 @@
     user_name: "{{ user_name }}_{{ item }}"
     login_id: "{{ login_id }}_{{ item }}"
     job_title: "{{ job_title }}_{{ item }}"
-    company_name: "{{ company_name }}_{{ item }}" 
+    company_name: "{{ company_name }}_{{ item }}"
   register: result
   ignore_errors: true
-  loop: "{{ range(0, 2) }}"
+  loop: "{{ range(0, 2) | list }}"
 
 - name: Accept End of User License Agreement in loop for 2 times with index as loop_index status
   ansible.builtin.assert:
