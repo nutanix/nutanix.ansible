@@ -43,30 +43,34 @@ options:
         type: dict
         required: false
         suboptions:
-            endpoint_url:
-                description: Endpoint URL for the Azure Key Vault.
-                type: str
-                required: true
-            key_id:
-                description: Master key identifier for the Azure Key Vault.
-                type: str
-                required: true
-            tenant_id:
-                description: Tenant identifier for the Azure Key Vault.
-                type: str
-                required: true
-            client_id:
-                description: Client identifier for the Azure Key Vault.
-                type: str
-                required: true
-            client_secret:
-                description: Client secret for the Azure Key Vault.
-                type: str
-                required: true
-            credential_expiry_date:
-                description: When the client secret is going to expire.
-                type: str
-                required: true
+            azure_key_vault:
+                description: Access information for the Azure Key Vault.
+                type: dict
+                suboptions:
+                    endpoint_url:
+                        description: Endpoint URL for the Azure Key Vault.
+                        type: str
+                        required: true
+                    key_id:
+                        description: Master key identifier for the Azure Key Vault.
+                        type: str
+                        required: true
+                    tenant_id:
+                        description: Tenant identifier for the Azure Key Vault.
+                        type: str
+                        required: true
+                    client_id:
+                        description: Client identifier for the Azure Key Vault.
+                        type: str
+                        required: true
+                    client_secret:
+                        description: Client secret for the Azure Key Vault.
+                        type: str
+                        required: true
+                    credential_expiry_date:
+                        description: When the client secret is going to expire.
+                        type: str
+                        required: true
     wait:
         description:
             - Wait for the task to complete.
@@ -89,12 +93,13 @@ EXAMPLES = r"""
     validate_certs: false
     name: "Key_Management_Server_1"
     access_information:
-      endpoint_url: "https://demo-keyvault-001.vault.azure.net/"
-      key_id: "key_id"
-      tenant_id: "d4c8a8e5-91b3-4f7e-8c2e-77d6f4a22f11"
-      client_id: "e29f9c62-3e56-41d0-b123-7f8a22c0cdef"
-      client_secret: "7Z3uQ~vO4trhXk8B5M9qjwgT1pR2uC9yD1zF0wX3"
-      credential_expiry_date: "2026-09-01"
+      azure_key_vault:
+        endpoint_url: "https://demo-keyvault-001.vault.azure.net/"
+        key_id: "key_id"
+        tenant_id: "d4c8a8e5-91b3-4f7e-8c2e-77d6f4a22f11"
+        client_id: "e29f9c62-3e56-41d0-b123-7f8a22c0cdef"
+        client_secret: "7Z3uQ~vO4trhXk8B5M9qjwgT1pR2uC9yD1zF0wX3"
+        credential_expiry_date: "2026-09-01"
 
 - name: Update key management server
   nutanix.ncp.ntnx_key_management_server_v2:
@@ -105,12 +110,13 @@ EXAMPLES = r"""
     ext_id: "13a6657d-fa96-49e3-7307-87e93a1fec3d"
     name: "Key_Management_Server_1_Updated"
     access_information:
-      endpoint_url: "https://demo-keyvault-001.vault.azure.net/"
-      key_id: "key_id_updated"
-      tenant_id: "d4c8a8e5-91b3-4f7e-8c2e-77d6f4a22f11"
-      client_id: "e29f9c62-3e56-41d0-b123-7f8a22c0cdef"
-      client_secret: "7Z3uQ~vO4trhXk8B5M9qjwgT1pR2uC9yD1zF0wX3"
-      credential_expiry_date: "2026-09-01"
+      azure_key_vault:
+        endpoint_url: "https://demo-keyvault-001.vault.azure.net/"
+        key_id: "key_id_updated"
+        tenant_id: "d4c8a8e5-91b3-4f7e-8c2e-77d6f4a22f11"
+        client_id: "e29f9c62-3e56-41d0-b123-7f8a22c0cdef"
+        client_secret: "7Z3uQ~vO4trhXk8B5M9qjwgT1pR2uC9yD1zF0wX3"
+        credential_expiry_date: "2026-09-01"
 
 - name: Delete key management server
   nutanix.ncp.ntnx_key_management_server_v2:
@@ -232,6 +238,7 @@ def get_module_spec():
         azure_key_vault=dict(
             type="dict",
             options=azure_key_vault_spec,
+            no_log=True,
         )
     )
 
@@ -242,7 +249,6 @@ def get_module_spec():
             type="dict",
             options=access_information_spec,
             obj=access_information_obj_map,
-            mutually_exclusive=[("azure_key_vault",)],
         ),
     )
     return module_args
