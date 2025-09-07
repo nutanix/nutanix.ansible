@@ -351,10 +351,6 @@
   register: invalid_delete_result
   ignore_errors: true
 
-- name: Print invalid delete result
-  ansible.builtin.debug:
-    var: invalid_delete_result
-
 - name: Assert invalid delete result
   ansible.builtin.assert:
     that:
