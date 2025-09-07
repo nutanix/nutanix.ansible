@@ -294,7 +294,7 @@
       - fetch_result.response.access_information.client_id == "{{ azure_kms.clientId }}"
       - fetch_result.response.access_information.truncated_client_secret is defined
       - fetch_result.response.access_information.tenant_id == "{{ azure_kms.tenantId }}"
-      - fetch_result.response.access_information.credential_expiry_date == "{{ azure_kms.credentialExpiryDate }}"
+      - fetch_result.response.access_information.credential_expiry_date == "{{ azure_kms.credentialExpiryDateUpdated }}"
       - fetch_result.response.access_information.endpoint_url == "{{ azure_kms.endpointUrl }}"
       - '"{{ azure_kms.keyId }}" in "{{ fetch_result.response.access_information.key_id }}"'
     fail_msg: "Failed to fetch key management server"
