@@ -9,6 +9,7 @@ isort>=5.9.3
 coverage>=7.3.2
 shyaml>=0.6.2
 markupsafe>=2
+awscli>=1.22.34
 ntnx-clustermgmt-py-client>=4.0.1
 ntnx-iam-py-client>=4.0.1
 ntnx-microseg-py-client>=4.0.1
