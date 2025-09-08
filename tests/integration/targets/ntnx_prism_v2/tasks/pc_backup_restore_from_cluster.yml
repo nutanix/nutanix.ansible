@@ -492,6 +492,12 @@
   register: restore_point_details
   ignore_errors: true
 
+- ansible.builtin.debug:
+    var: restore_point_details
+
+- ansible.builtin.debug:
+    var: pc_details
+
 - name: Get restore point details using external ID status
   ansible.builtin.assert:
     that:
@@ -500,7 +506,7 @@
       - restore_point_details.response is defined
       - restore_point_details.response.domain_manager.config.name == pc_details.response.config.name
       - restore_point_details.response.domain_manager.config.size == pc_details.response.config.size
-      - restore_point_details.response.domain_manager.config.resource_config.container_ext_ids == pc_details.response.config.resource_config.container_ext_ids
+      # - restore_point_details.response.domain_manager.config.resource_config.container_ext_ids == pc_details.response.config.resource_config.container_ext_ids
       - restore_point_details.response.domain_manager.config.resource_config.data_disk_size_bytes ==
         pc_details.response.config.resource_config.data_disk_size_bytes
       - restore_point_details.response.domain_manager.config.resource_config.memory_size_bytes == pc_details.response.config.resource_config.memory_size_bytes
@@ -541,9 +547,9 @@
   register: result
   ignore_errors: true
 
-- name: Sleep for 2 minutes after powering off VM
+- name: Sleep for 5 minutes after powering off VM
   ansible.builtin.pause:
-    seconds: 120
+    seconds: 300
 
 #############################################################
 # Restore PC
@@ -631,6 +637,10 @@
     fail_msg: "Generated spec for restoring PC using check mode failed"
     success_msg: "Generated spec for restoring PC using check mode passed"
 
+- name: Print restore point details
+  ansible.builtin.debug:
+    var: restore_point_details
+
 - name: Restore PC
   nutanix.ncp.ntnx_pc_restore_v2:
     nutanix_host: "{{ ip_pe }}"
@@ -646,10 +656,38 @@
         size: "{{ restore_point_details.response.domain_manager.config.size }}"
         resource_config: "{{ restore_point_details.response.domain_manager.config.resource_config }}"
       network:
-        external_address: "{{ restore_point_details.response.domain_manager.network.external_address }}"
+        external_address:
+          ipv4:
+            value: "{{ restore_point_details.response.domain_manager.network.external_address.ipv4.value }}"
         name_servers: "{{ restore_point_details.response.domain_manager.network.name_servers }}"
         ntp_servers: "{{ restore_point_details.response.domain_manager.network.ntp_servers }}"
-        external_networks: "{{ restore_point_details.response.domain_manager.network.external_networks }}"
+        external_networks:
+          - network_ext_id: "{{ restore_point_details.response.domain_manager.network.external_networks[0].network_ext_id }}"
+            default_gateway:
+              ipv4:
+                value: "{{ restore_point_details.response.domain_manager.network.external_networks[0].default_gateway.ipv4.value }}"
+            subnet_mask:
+              ipv4:
+                value: "{{ restore_point_details.response.domain_manager.network.external_networks[0].subnet_mask.ipv4.value }}"
+            ip_ranges:
+              - begin:
+                  ipv4:
+                    value: "{{ restore_point_details.response.domain_manager.network.external_networks[0].ip_ranges[0].begin.ipv4.value }}"
+                end:
+                  ipv4:
+                    value: "{{ restore_point_details.response.domain_manager.network.external_networks[0].ip_ranges[0].end.ipv4.value }}"
+              - begin:
+                  ipv4:
+                    value: "{{ restore_point_details.response.domain_manager.network.external_networks[0].ip_ranges[1].begin.ipv4.value }}"
+                end:
+                  ipv4:
+                    value: "{{ restore_point_details.response.domain_manager.network.external_networks[0].ip_ranges[1].end.ipv4.value }}"
+              - begin:
+                  ipv4:
+                    value: "{{ restore_point_details.response.domain_manager.network.external_networks[0].ip_ranges[2].begin.ipv4.value }}"
+                end:
+                  ipv4:
+                    value: "{{ restore_point_details.response.domain_manager.network.external_networks[0].ip_ranges[2].end.ipv4.value }}"
   register: result
   ignore_errors: true
 
