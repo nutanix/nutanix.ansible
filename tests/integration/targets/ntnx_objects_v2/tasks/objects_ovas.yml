@@ -204,7 +204,7 @@
       - result.response.name == "object-ova"
       - result.response.cluster_location_ext_ids is defined
       - result.response.cluster_location_ext_ids[0] == "{{ cluster.uuid }}"
-      - result.response.source.key == object_name
+      - result.response.source.key == "object_name"
     success_msg: "Ova creation with object store source using check mode passed"
     fail_msg: "Ova creation with object store source using check mode failed"
 
