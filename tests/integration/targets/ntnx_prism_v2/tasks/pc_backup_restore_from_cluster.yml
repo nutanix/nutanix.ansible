@@ -492,10 +492,12 @@
   register: restore_point_details
   ignore_errors: true
 
-- ansible.builtin.debug:
+- name: Print restore point details
+  ansible.builtin.debug:
     var: restore_point_details
 
-- ansible.builtin.debug:
+- name: Print PC details
+  ansible.builtin.debug:
     var: pc_details
 
 - name: Get restore point details using external ID status
