@@ -7,8 +7,8 @@
       nutanix_password: "{{ password }}"
       validate_certs: "{{ validate_certs }}"
   block:
-    # - name: Import pc_backup_restore_from_cluster.yml
-    #   ansible.builtin.import_tasks: "pc_backup_restore_from_cluster.yml"
+    - name: Import pc_backup_restore_from_cluster.yml
+      ansible.builtin.import_tasks: "pc_backup_restore_from_cluster.yml"
     - name: Import pc_backup_restore_using_object_store.yml
       ansible.builtin.import_tasks: "pc_backup_restore_using_object_store.yml"
     - name: Import deploy_pc.yml
