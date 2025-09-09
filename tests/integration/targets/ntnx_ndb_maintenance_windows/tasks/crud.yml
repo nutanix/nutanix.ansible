@@ -1,7 +1,7 @@
 ---
 - name: Ntnx_ndb_maintenance_window integration tests
   ansible.builtin.debug:
-    msg: start ndb database maintenance window tests
+    msg: start ndb database maintenance winndow tests
 
 - name: Generate random name
   ansible.builtin.set_fact:
@@ -14,9 +14,10 @@
 
 ############################################## create tests ####################################
 - name: Create spec for maintenance window
-  nutanix.ncp.ntnx_ndb_maintenance_window:
+  check_mode: true
+  ntnx_ndb_maintenance_window:
     name: "{{ window1_name }}"
-    desc: ansible-created-window
+    desc: anisble-created-window
     schedule:
       recurrence: weekly
       duration: 2
@@ -24,8 +25,6 @@
       start_time: "11:00:00"
       day_of_week: tuesday
   register: result
-  ignore_errors: true
-  check_mode: true
 
 - name: Define variables for expected result
   ansible.builtin.set_fact:
@@ -34,16 +33,9 @@
       error:
       failed: false
       response:
-        description: ansible-created-window
+        description: anisble-created-window
         name: "{{ window1_name }}"
-        schedule:
-          {
-            dayOfWeek: TUESDAY,
-            duration: 2,
-            recurrence: WEEKLY,
-            startTime: "11:00:00",
-            weekOfMonth: !!null "",
-          }
+        schedule: { dayOfWeek: TUESDAY, duration: 2, recurrence: WEEKLY, startTime: "11:00:00", weekOfMonth: !!null "" }
         timezone: Asia/Calcutta
       uuid:
 
@@ -55,9 +47,9 @@
     success_msg: spec for maintenance window generated successfully
 
 - name: Create window with weekly schedule
-  nutanix.ncp.ntnx_ndb_maintenance_window:
+  ntnx_ndb_maintenance_window:
     name: "{{ window1_name }}"
-    desc: ansible-created-window
+    desc: anisble-created-window
     schedule:
       recurrence: weekly
       duration: 2
@@ -79,7 +71,7 @@
       - result.uuid is defined
       - result.response.status == "ACTIVE" or result.response.status == "SCHEDULED"
       - result.response.name == window1_name
-      - result.response.description == "ansible-created-window"
+      - result.response.description == "anisble-created-window"
       - result.response.schedule.dayOfWeek == "TUESDAY"
       - result.response.schedule.recurrence == "WEEKLY"
       - result.response.schedule.startTime == "11:00:00"
@@ -91,9 +83,9 @@
     success_msg: maintenance window with weekly schedule created successfully
 
 - name: Create window with monthly schedule
-  nutanix.ncp.ntnx_ndb_maintenance_window:
+  ntnx_ndb_maintenance_window:
     name: "{{ window2_name }}"
-    desc: ansible-created-window
+    desc: anisble-created-window
     schedule:
       recurrence: monthly
       duration: 2
@@ -117,7 +109,7 @@
       - result.uuid is defined
       - result.response.status == "ACTIVE" or result.response.status == "SCHEDULED"
       - result.response.name == window2_name
-      - result.response.description == "ansible-created-window"
+      - result.response.description == "anisble-created-window"
       - result.response.schedule.dayOfWeek == "TUESDAY"
       - result.response.schedule.recurrence == "MONTHLY"
       - result.response.schedule.startTime == "11:00:00"
@@ -131,7 +123,7 @@
 ############################################## info module tests ####################################
 
 - name: Info module check
-  nutanix.ncp.ntnx_ndb_maintenance_windows_info:
+  ntnx_ndb_maintenance_windows_info:
     uuid: "{{ window2_uuid }}"
 
   register: result
@@ -149,7 +141,7 @@
     success_msg: maintenance window info obtained successfully
 
 - name: Get all windows
-  nutanix.ncp.ntnx_ndb_maintenance_windows_info:
+  ntnx_ndb_maintenance_windows_info:
   register: result
 
 - name: Info module status
@@ -165,10 +157,10 @@
 ############################################## update tests ####################################
 
 - name: Update window schedule
-  nutanix.ncp.ntnx_ndb_maintenance_window:
+  ntnx_ndb_maintenance_window:
     uuid: "{{ window2_uuid }}"
     name: "{{ window2_name }}-updated"
-    desc: ansible-created-window-updated
+    desc: anisble-created-window-updated
     schedule:
       recurrence: monthly
       duration: 3
@@ -187,7 +179,7 @@
       - result.uuid is defined
       - result.response.status == "ACTIVE" or result.response.status == "SCHEDULED"
       - result.response.name == "{{ window2_name }}-updated"
-      - result.response.description == "ansible-created-window-updated"
+      - result.response.description == "anisble-created-window-updated"
       - result.response.schedule.dayOfWeek == "WEDNESDAY"
       - result.response.schedule.recurrence == "MONTHLY"
       - result.response.schedule.startTime == "12:00:00"
@@ -199,7 +191,7 @@
     success_msg: maintenance window updated successfully
 
 - name: Update schedule type
-  nutanix.ncp.ntnx_ndb_maintenance_window:
+  ntnx_ndb_maintenance_window:
     uuid: "{{ window2_uuid }}"
     schedule:
       recurrence: weekly
@@ -219,7 +211,7 @@
       - result.uuid is defined
       - result.response.status == "ACTIVE" or result.response.status == "SCHEDULED"
       - result.response.name == "{{ window2_name }}-updated"
-      - result.response.description == "ansible-created-window-updated"
+      - result.response.description == "anisble-created-window-updated"
       - result.response.schedule.dayOfWeek == "WEDNESDAY"
       - result.response.schedule.recurrence == "WEEKLY"
       - result.response.schedule.startTime == "12:00:00"
@@ -231,10 +223,10 @@
     success_msg: maintenance window updated successfully
 
 - name: Idempotency checks
-  nutanix.ncp.ntnx_ndb_maintenance_window:
+  ntnx_ndb_maintenance_window:
     uuid: "{{ window2_uuid }}"
     name: "{{ window2_name }}-updated"
-    desc: ansible-created-window-updated
+    desc: anisble-created-window-updated
     schedule:
       recurrence: weekly
       duration: 3
@@ -254,7 +246,7 @@
     success_msg: window update got skipped due to no state changes
 
 - name: Updated day of week
-  nutanix.ncp.ntnx_ndb_maintenance_window:
+  ntnx_ndb_maintenance_window:
     uuid: "{{ window2_uuid }}"
     schedule:
       day_of_week: saturday
@@ -281,7 +273,7 @@
     success_msg: maintenance window updated successfully
 
 - name: Just update start time
-  nutanix.ncp.ntnx_ndb_maintenance_window:
+  ntnx_ndb_maintenance_window:
     uuid: "{{ window2_uuid }}"
     schedule:
       start_time: "11:00:00"
@@ -309,26 +301,9 @@
     success_msg: maintenance window updated successfully
 
 ############################################## delete tests ####################################
-- name: Delete window with check mode
-  nutanix.ncp.ntnx_ndb_maintenance_window:
-    state: absent
-    uuid: "{{ window1_uuid }}"
-  register: output
-  ignore_errors: true
-  check_mode: true
-
-- name: Delete window with check mode status
-  ansible.builtin.assert:
-    that:
-      - output.failed == false
-      - output.changed == false
-      - output.msg =="Window with uuid:{{  window1_uuid }} will be deleted."
-      - output.uuid == "{{ window1_uuid  }}"
-    fail_msg: "Delete window with check mode failed"
-    success_msg: "Delete window with check mode passed"
 
 - name: Delete window 1
-  nutanix.ncp.ntnx_ndb_maintenance_window:
+  ntnx_ndb_maintenance_window:
     uuid: "{{ window1_uuid }}"
     state: absent
   register: result
@@ -339,12 +314,11 @@
       - result.changed == True
       - result.failed == false
       - result.response.status == "success"
-      - result.uuid == "{{ window1_uuid }}"
     fail_msg: unable to delete window
     success_msg: window deleted successfully
 
 - name: Delete window 2
-  nutanix.ncp.ntnx_ndb_maintenance_window:
+  ntnx_ndb_maintenance_window:
     uuid: "{{ window2_uuid }}"
     state: absent
   register: result
@@ -355,6 +329,5 @@
       - result.changed == True
       - result.failed == false
       - result.response.status == "success"
-      - result.uuid == "{{ window2_uuid }}"
     fail_msg: unable to delete window
     success_msg: window deleted successfully

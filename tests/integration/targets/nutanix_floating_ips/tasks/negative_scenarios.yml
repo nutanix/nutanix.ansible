@@ -1,14 +1,8 @@
----
-# Variables required before running this playbook:
-# - external_nat_subnet
-# - private_ip
-
-- name: Start nutanix_floating_ips negative scenarios tests
+- name: Started Negative Creation Cases
   ansible.builtin.debug:
-    msg: "Start nutanix_floating_ips negative scenarios tests"
-
+    msg: "Started Negative Creation Cases"
 - name: Create floating ip with unknown external subnet name
-  nutanix.ncp.ntnx_floating_ips:
+  ntnx_floating_ips:
     state: present
     external_subnet:
       name: "external_subnet"
@@ -23,7 +17,7 @@
     success_msg: " Success: returned error as expected "
 #################################################################
 - name: Create floating ip with unknown external subnet uuid
-  nutanix.ncp.ntnx_floating_ips:
+  ntnx_floating_ips:
     state: present
     wait: false
     external_subnet:
@@ -38,7 +32,7 @@
     success_msg: " Success: returned error as expected "
 ###############################################################
 - name: Create floating ip with unknown vpc
-  nutanix.ncp.ntnx_floating_ips:
+  ntnx_floating_ips:
     state: present
     external_subnet:
       name: "{{ external_nat_subnet.name}}"
@@ -56,7 +50,7 @@
     success_msg: " Success: returned error as expected "
 ###############################################################
 - name: Create floating ip with unknown vpc uuid
-  nutanix.ncp.ntnx_floating_ips:
+  ntnx_floating_ips:
     state: present
     external_subnet:
       name: "{{ external_nat_subnet.name }}"
@@ -73,7 +67,7 @@
     success_msg: " Success: returned error as expected "
 ##############################################################
 - name: Delete floating ip with unknown uuid
-  nutanix.ncp.ntnx_floating_ips:
+  ntnx_floating_ips:
     state: absent
     fip_uuid: 5
   register: result

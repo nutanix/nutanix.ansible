@@ -4,7 +4,7 @@
     msg: Start testing ntnx_ndb_clones_info
 
 - name: List all era clones
-  nutanix.ncp.ntnx_ndb_clones_info:
+  ntnx_ndb_clones_info:
   register: clones
 
 - name: Check listing status
@@ -18,7 +18,7 @@
     success_msg: era clones listed successfully
 ################################################################
 - name: Get era clones using it's name
-  nutanix.ncp.ntnx_ndb_clones_info:
+  ntnx_ndb_clones_info:
     name: "{{ clones.response[0].name }}"
   register: result
 
@@ -33,7 +33,7 @@
     success_msg: get  era clones using it's name  successfully
 ################################################################
 - name: List clones use id
-  nutanix.ncp.ntnx_ndb_clones_info:
+  ntnx_ndb_clones_info:
     uuid: "{{ clones.response[0].id }}"
   register: result
 
@@ -49,7 +49,7 @@
 ################################################################
 
 - name: Get era clones with incorrect name
-  nutanix.ncp.ntnx_ndb_clones_info:
+  ntnx_ndb_clones_info:
     name: abcd
   register: result
   no_log: true

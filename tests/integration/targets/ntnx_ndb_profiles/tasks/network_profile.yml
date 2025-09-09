@@ -15,7 +15,7 @@
     profile3_name: "{{ random_name }}{{ suffix_name }}3"
 ################################################################
 - name: Verify create of single cluster network profile
-  nutanix.ncp.ntnx_ndb_profiles:
+  ntnx_ndb_profiles:
     name: "{{ profile1_name }}"
     desc: testdesc
     type: network
@@ -47,7 +47,7 @@
     success_msg: "Pass: verify create of single cluster network profile finished successfully "
 ################################################################
 - name: Update the profile for single cluster by  name , desc , publish
-  nutanix.ncp.ntnx_ndb_profiles:
+  ntnx_ndb_profiles:
     name: "{{ profile2_name }}"
     desc: testdesc2
     network:
@@ -77,7 +77,7 @@
     todelete: "{{ todelete + [result.profile_uuid] }}"
 ################################################################
 - name: Verify idempotency check
-  nutanix.ncp.ntnx_ndb_profiles:
+  ntnx_ndb_profiles:
     name: "{{ profile2_name }}"
     desc: testdesc2
     profile_uuid: "{{ result.profile_uuid }}"
@@ -131,7 +131,7 @@
 #       - result.response.versions[0].propertiesMap.CLUSTER_NAME_0 == "{{network_profile.HA.cluster1.name}}"
 #       - result.response.versions[0].propertiesMap.CLUSTER_NAME_1 == "{{network_profile.HA.cluster2.name}}"
 #     fail_msg: "Fail: unable to verify create of multiple cluster network profile "
-#     success_msg: "Pass:  verify create of multiple cluster network profile finished successfully"
+#     success_msg: "Pass:  verify create of multiple cluster network profile finished sucessfully"
 
 # - ansible.builtin.set_fact:
 #     todelete: "{{ todelete + [  result.profile_uuid ] }}"
@@ -175,7 +175,7 @@
 #     success_msg: "Pass: update the profile for multiple cluster by  subnets, publish finished successfully"
 ################################################################
 - name: Delete all created network profiles
-  nutanix.ncp.ntnx_ndb_profiles:
+  ntnx_ndb_profiles:
     state: absent
     profile_uuid: "{{ item }}"
   register: result

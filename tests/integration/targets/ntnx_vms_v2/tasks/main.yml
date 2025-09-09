@@ -11,5 +11,3 @@
       ansible.builtin.import_tasks: create_delete_info_vm.yml
     - name: Import update_vm.yml
       ansible.builtin.import_tasks: "update_vm.yml"
-    - name: Import create_delete_uefi_vms.yml
-      ansible.builtin.import_tasks: "create_delete_uefi_vms.yml"

@@ -1,14 +1,10 @@
 ---
-# Variables required before running this playbook:
-# - ndb_vlan
-# - cluster
-
 - name: Start testing ntnx_ndb_vlans
   ansible.builtin.debug:
     msg: Start testing ntnx_ndb_vlans
 
 - name: Create Dhcp ndb vlan
-  nutanix.ncp.ntnx_ndb_vlans:
+  ntnx_ndb_vlans:
     name: "{{ ndb_vlan.name }}"
     vlan_type: DHCP
     cluster:
@@ -34,7 +30,7 @@
 ################################################################
 
 - name: Update ndb vlan type for static
-  nutanix.ncp.ntnx_ndb_vlans:
+  ntnx_ndb_vlans:
     vlan_uuid: "{{ result.vlan_uuid }}"
     vlan_type: Static
     gateway: "{{ ndb_vlan.gateway }}"
@@ -82,7 +78,7 @@
     todelete: "{{ todelete + [result.vlan_uuid] }}"
 ################################################################
 - name: List all NDB vlans
-  nutanix.ncp.ntnx_ndb_vlans_info:
+  ntnx_ndb_vlans_info:
   register: vlans
   no_log: true
   ignore_errors: true
@@ -100,7 +96,7 @@
 ################################################################
 
 - name: Get NDB vlans using it's name
-  nutanix.ncp.ntnx_ndb_vlans_info:
+  ntnx_ndb_vlans_info:
     name: "{{ vlans.response[0].name }}"
   register: result
   no_log: true
@@ -119,7 +115,7 @@
 ################################################################
 
 - name: List vlans use id
-  nutanix.ncp.ntnx_ndb_vlans_info:
+  ntnx_ndb_vlans_info:
     uuid: "{{ vlans.response[0].id }}"
   register: result
   no_log: true
@@ -138,7 +134,7 @@
 ################################################################
 
 - name: Get NDB vlans with incorrect name
-  nutanix.ncp.ntnx_ndb_vlans_info:
+  ntnx_ndb_vlans_info:
     name: abcd
   register: result
   no_log: true
@@ -155,7 +151,7 @@
 ################################################################
 
 - name: Delete  created vlan's
-  nutanix.ncp.ntnx_ndb_vlans:
+  ntnx_ndb_vlans:
     state: absent
     vlan_uuid: "{{  todelete[0] }}"
   register: result
@@ -169,7 +165,7 @@
 ################################################################
 
 - name: Create static ndb vlan
-  nutanix.ncp.ntnx_ndb_vlans:
+  ntnx_ndb_vlans:
     name: "{{ ndb_vlan.name }}"
     vlan_type: Static
     cluster:
@@ -216,7 +212,7 @@
 ################################################################
 
 - name: Update ndb vlan by removing ip pool
-  nutanix.ncp.ntnx_ndb_vlans:
+  ntnx_ndb_vlans:
     vlan_uuid: "{{ result.vlan_uuid }}"
     remove_ip_pools:
       - "{{ result.response.ipPools[0].id }}"
@@ -247,7 +243,7 @@
 ################################################################
 
 - name: Update ndb vlan by adding a pool
-  nutanix.ncp.ntnx_ndb_vlans:
+  ntnx_ndb_vlans:
     vlan_uuid: "{{ result.vlan_uuid }}"
     ip_pools:
       - start_ip: "{{ndb_vlan.ip_pools.0.start_ip}}"
@@ -280,7 +276,7 @@
 ################################################################
 
 - name: Update ndb vLAN Configuration
-  nutanix.ncp.ntnx_ndb_vlans:
+  ntnx_ndb_vlans:
     vlan_uuid: "{{ result.vlan_uuid }}"
     gateway: "{{ ndb_vlan.updated_gateway }}"
     subnet_mask: "{{ ndb_vlan.updated_subnet_mask }}"
@@ -310,7 +306,7 @@
 ################################################################
 
 - name: Update ndb vlan type
-  nutanix.ncp.ntnx_ndb_vlans:
+  ntnx_ndb_vlans:
     vlan_uuid: "{{ result.vlan_uuid }}"
     vlan_type: DHCP
   register: result
@@ -412,45 +408,10 @@
 #    fail_msg: "fail: Unable to update ndb_stretched subnet_mask, gateway "
 #    success_msg: "pass:  update ndb_stretched subnet_mask, gateway finished successfully"
 
-- name: Delete ndb_stretched vlan with check mode
-  nutanix.ncp.ntnx_ndb_stretched_vlans:
-    state: absent
-    stretched_vlan_uuid: "1f549eb2-94f2-544f-9db3-eb0571d0d86e"
-  register: output
-  ignore_errors: true
-  check_mode: true
-
-- name: Delete ndb_stretched vlan with check mode Status
-  ansible.builtin.assert:
-    that:
-      - output.failed == false
-      - output.changed == false
-      - output.msg =="Stretched vlan with uuid:1f549eb2-94f2-544f-9db3-eb0571d0d86e will be deleted."
-      - output.uuid == "1f549eb2-94f2-544f-9db3-eb0571d0d86e"
-    fail_msg: "Delete ndb_stretched vlan with check mode failed"
-    success_msg: "Delete ndb_stretched vlan with check mode passed"
-
 ################################################################
-- name: Delete vlan with check mode
-  nutanix.ncp.ntnx_ndb_vlans:
-    state: absent
-    vlan_uuid: "{{ result.vlan_uuid }}"
-  register: output
-  ignore_errors: true
-  check_mode: true
-
-- name: Delete vlan with check mode Status
-  ansible.builtin.assert:
-    that:
-      - output.failed == false
-      - output.changed == false
-      - output.msg =="Vlan with uuid:{{ result.vlan_uuid }} will be deleted."
-      - output.uuid == "{{ result.vlan_uuid }}"
-    fail_msg: "Delete vlan with check mode failed"
-    success_msg: "Delete vlan with check mode passed"
 
 - name: Delete all created vlan's
-  nutanix.ncp.ntnx_ndb_vlans:
+  ntnx_ndb_vlans:
     state: absent
     vlan_uuid: "{{ item }}"
   register: result

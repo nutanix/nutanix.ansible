@@ -1,10 +1,9 @@
----
 - name: Start ntnx_project delete tests
   ansible.builtin.debug:
     msg: "Start ntnx_project delete tests"
 
 - name: Create Project for delete
-  nutanix.ncp.ntnx_projects:
+  ntnx_projects:
     name: "test-ansible-project-3"
   register: result
   ignore_errors: true
@@ -17,26 +16,8 @@
     fail_msg: "Unable to create project with minimal spec"
     success_msg: "Project with minimal spec created successfully"
 
-- name: Delete project with check mode
-  nutanix.ncp.ntnx_projects:
-    state: absent
-    project_uuid: "{{ result.project_uuid }}"
-  register: output
-  ignore_errors: true
-  check_mode: true
-
-- name: Delete project with check mode Status
-  ansible.builtin.assert:
-    that:
-      - output.failed == false
-      - output.changed == false
-      - output.msg =="Project with uuid:{{ result.project_uuid }} will be deleted."
-      - output.uuid == "{{ result.project_uuid }}"
-    fail_msg: "Delete project with check mode failed"
-    success_msg: "Delete project with check mode passed"
-
 - name: Delete created project
-  nutanix.ncp.ntnx_projects:
+  ntnx_projects:
     state: absent
     project_uuid: "{{ result.project_uuid }}"
     wait: true

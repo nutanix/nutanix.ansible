@@ -1,15 +1,5 @@
----
-# Variables required before running this playbook:
-# - cluster
-# - ubuntu
-# - storage_container
-
-- name: Start nutanix_vms negative vm update tests
-  ansible.builtin.debug:
-    msg: Start nutanix_vms negative vm update tests
-
-- name: Create VM with minimum requirements to update
-  nutanix.ncp.ntnx_vms:
+- name: Create VM with minimum requiremnts to update
+  ntnx_vms:
     state: present
     name: update vm
     cluster:
@@ -53,11 +43,11 @@
       - vm.response.status.state == 'COMPLETE'
       - vm.vm_uuid
       - vm.task_uuid
-    fail_msg: " Unable to create VM with minimum requirements "
-    success_msg: " VM with minimum requirements created successfully "
+    fail_msg: " Unable to create VM with minimum requiremnts "
+    success_msg: " VM with minimum requiremnts created successfully "
 
 - name: Update vm without change any value
-  nutanix.ncp.ntnx_vms:
+  ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     vcpus: 4
     cores_per_vcpu: 4
@@ -79,7 +69,7 @@
     msg: Start negative update scenarios tests for memory vcpus cores_per_vcpu
 
 - name: Decrease values for vcpus  without force_power_off and vm is on
-  nutanix.ncp.ntnx_vms:
+  ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     vcpus: 3
   register: result
@@ -95,7 +85,7 @@
     success_msg: " Success: returned error as expected "
 
 - name: Decrease values for memory_gb  without force_power_off and vm is on
-  nutanix.ncp.ntnx_vms:
+  ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     memory_gb: 3
   register: result
@@ -111,7 +101,7 @@
     success_msg: " Success: returned error as expected "
 
 - name: Decrease values for cores_per_vcpu  without force_power_off and vm is on
-  nutanix.ncp.ntnx_vms:
+  ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     cores_per_vcpu: 3
   register: result
@@ -130,9 +120,9 @@
   ansible.builtin.debug:
     msg: Start negative update scenarios tests for disks
 
-############ negative test : Decrease size
+############ negative test : Decrase size
 - name: Update VM by decreasing the size of the disk that contains the image with SCSI bus type
-  nutanix.ncp.ntnx_vms:
+  ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:
       - type: "DISK"
@@ -149,7 +139,7 @@
     success_msg: " Success: returned error as expected "
 
 - name: Update VM by decreasing the size of the SCSI disk with storage container
-  nutanix.ncp.ntnx_vms:
+  ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:
       - type: "DISK"
@@ -166,7 +156,7 @@
     success_msg: " Success: returned error as expected "
 
 - name: Update VM by decreasing the size of the empty ide cdrom # error
-  nutanix.ncp.ntnx_vms:
+  ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:
       - type: "CDROM"
@@ -185,7 +175,7 @@
     success_msg: " Success: returned error as expected "
 
 - name: Update VM by decreasing the size of the pci disk
-  nutanix.ncp.ntnx_vms:
+  ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:
       - type: "DISK"
@@ -202,7 +192,7 @@
     success_msg: " Success: returned error as expected "
 
 - name: Update VM by decreasing the size of the sata disk
-  nutanix.ncp.ntnx_vms:
+  ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:
       - type: "DISK"
@@ -219,7 +209,7 @@
     success_msg: " Success: returned error as expected "
 
 - name: Update VM by decreasing the size of the SCSI disk
-  nutanix.ncp.ntnx_vms:
+  ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:
       - type: "DISK"
@@ -236,7 +226,7 @@
     success_msg: " Success: returned error as expected "
 
 - name: Update VM by decreasing the size of the  IDE disk
-  nutanix.ncp.ntnx_vms:
+  ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:
       - type: "DISK"
@@ -253,7 +243,7 @@
     success_msg: " Success: returned error as expected "
 ################
 - name: Update VM by change ths bus type of ide disk
-  nutanix.ncp.ntnx_vms:
+  ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:
       - type: "DISK"
@@ -268,10 +258,10 @@
       - result.msg == ' parameters are mutually exclusive: uuid|bus found in disks '
       - result.failed == true
     success_msg: " Success: returned error as expected "
-    fail_msg: " Fail: Update VM by change ths bus type of ide disk successfully "
+    fail_msg: " Fail: Update VM by change ths bus type of ide disk sucessfuly "
 ############
 - name: Update VM by adding  IDE disk while vm is on
-  nutanix.ncp.ntnx_vms:
+  ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:
       - type: DISK
@@ -290,7 +280,7 @@
     success_msg: " Success: returned error as expected "
 
 - name: Update VM by adding  SATA disk while vm is on
-  nutanix.ncp.ntnx_vms:
+  ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:
       - type: DISK
@@ -309,7 +299,7 @@
     success_msg: " Success: returned error as expected "
 #############
 - name: Update VM by removing IDE disks while vm is on
-  nutanix.ncp.ntnx_vms:
+  ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:
       - state: absent
@@ -326,7 +316,7 @@
     success_msg: " Success: returned error as expected "
 
 - name: Update VM by removing IDE disks while vm is on
-  nutanix.ncp.ntnx_vms:
+  ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:
       - state: absent
@@ -344,7 +334,7 @@
     success_msg: " Success: returned error as expected "
 
 - name: Update VM by removing PCI disks while vm is on
-  nutanix.ncp.ntnx_vms:
+  ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:
       - state: absent
@@ -362,7 +352,7 @@
     success_msg: " Success: returned error as expected "
 
 - name: Update VM by removing SATA disks while vm is on
-  nutanix.ncp.ntnx_vms:
+  ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:
       - state: absent
@@ -380,7 +370,7 @@
     success_msg: " Success: returned error as expected "
 ###########################################################
 - name: Delete created vm's
-  nutanix.ncp.ntnx_vms:
+  ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     state: absent
   ignore_errors: true
@@ -394,4 +384,4 @@
       - result.vm_uuid
       - result.task_uuid
     fail_msg: "Fail: Unable to delete created vm "
-    success_msg: "Success: Vm deleted successfully"
+    success_msg: "Success: Vm deleted sucessfully"

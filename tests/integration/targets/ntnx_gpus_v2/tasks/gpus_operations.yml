@@ -1,8 +1,4 @@
 ---
-# Variables required before running this playbook:
-# - cluster
-# - gpus
-
 - name: Start ntnx_gpus_v2 tests
   ansible.builtin.debug:
     msg: start ntnx_gpus_v2 tests
@@ -16,7 +12,7 @@
     vm_name: "{{ random_name }}_vm_test"
 
 - name: Generate spec for VM creation with GPU using check mode
-  nutanix.ncp.ntnx_vms_v2:
+  ntnx_vms_v2:
     name: "vm_test"
     cluster:
       ext_id: "00062742-82e3-b07b-0000-0000000136bb"
@@ -45,7 +41,7 @@
 ##################################################################################
 
 - name: Create VM with GPU attached
-  nutanix.ncp.ntnx_vms_v2:
+  ntnx_vms_v2:
     state: present
     name: "{{ vm_name }}"
     cluster:
@@ -77,7 +73,7 @@
 
 # here we are powering on the VM to check the full GPU details
 - name: Power on VM
-  nutanix.ncp.ntnx_vms_power_actions_v2:
+  ntnx_vms_power_actions_v2:
     state: power_on
     ext_id: "{{ vm_ext_id }}"
   register: result
@@ -98,7 +94,7 @@
     seconds: 20
 
 - name: Get VM info
-  nutanix.ncp.ntnx_vms_info_v2:
+  ntnx_vms_info_v2:
     ext_id: "{{ vm_ext_id }}"
   register: result
   ignore_errors: true
@@ -122,7 +118,7 @@
 
 # here we are powering off the VM to detach the GPU
 - name: Power off VM
-  nutanix.ncp.ntnx_vms_power_actions_v2:
+  ntnx_vms_power_actions_v2:
     state: power_off
     ext_id: "{{ vm_ext_id }}"
   register: result
@@ -143,7 +139,7 @@
     seconds: 15
 
 - name: Get VM power state
-  nutanix.ncp.ntnx_vms_info_v2:
+  ntnx_vms_info_v2:
     ext_id: "{{ vm_ext_id }}"
   register: result
   ignore_errors: true
@@ -161,7 +157,7 @@
 ##################################################################################
 
 - name: Detach GPU from VM
-  nutanix.ncp.ntnx_gpus_v2:
+  ntnx_gpus_v2:
     state: absent
     vm_ext_id: "{{ vm_ext_id }}"
     ext_id: "{{ gpu_ext_id }}"
@@ -182,7 +178,7 @@
 ##################################################################################
 
 - name: Attach GPU to VM
-  nutanix.ncp.ntnx_gpus_v2:
+  ntnx_gpus_v2:
     state: present
     vm_ext_id: "{{ vm_ext_id }}"
     mode: "{{ gpus[0].gpu_device_mode }}"
@@ -211,7 +207,7 @@
 
 # here we are powering on the VM to check the full GPU details
 - name: Power on VM
-  nutanix.ncp.ntnx_vms_power_actions_v2:
+  ntnx_vms_power_actions_v2:
     state: power_on
     ext_id: "{{ vm_ext_id }}"
   register: result
@@ -232,7 +228,7 @@
     seconds: 20
 
 - name: Get VM info
-  nutanix.ncp.ntnx_vms_info_v2:
+  ntnx_vms_info_v2:
     ext_id: "{{ vm_ext_id }}"
   register: result
   ignore_errors: true
@@ -257,7 +253,7 @@
 ##################################################################################
 
 - name: List all GPUs attached to the VM
-  nutanix.ncp.ntnx_gpus_info_v2:
+  ntnx_gpus_info_v2:
     vm_ext_id: "{{ vm_ext_id }}"
   register: result
   ignore_errors: true
@@ -278,7 +274,7 @@
 ##################################################################################
 
 - name: List GPUs attached to the VM with limit
-  nutanix.ncp.ntnx_gpus_info_v2:
+  ntnx_gpus_info_v2:
     vm_ext_id: "{{ vm_ext_id }}"
     limit: 1
   register: result
@@ -296,7 +292,7 @@
 ##################################################################################
 
 - name: Fetch GPU details using ext_id
-  nutanix.ncp.ntnx_gpus_info_v2:
+  ntnx_gpus_info_v2:
     vm_ext_id: "{{ vm_ext_id }}"
     ext_id: "{{ gpu_ext_id }}"
   register: result
@@ -318,7 +314,7 @@
 
 # here we are powering off the VM to detach the GPU
 - name: Power off VM
-  nutanix.ncp.ntnx_vms_power_actions_v2:
+  ntnx_vms_power_actions_v2:
     state: power_off
     ext_id: "{{ vm_ext_id }}"
   register: result
@@ -339,7 +335,7 @@
     seconds: 15
 
 - name: Get VM power state
-  nutanix.ncp.ntnx_vms_info_v2:
+  ntnx_vms_info_v2:
     ext_id: "{{ vm_ext_id }}"
   register: result
   ignore_errors: true
@@ -355,7 +351,7 @@
     success_msg: "VM is powered off successfully "
 
 - name: Detach GPU from VM
-  nutanix.ncp.ntnx_gpus_v2:
+  ntnx_gpus_v2:
     state: absent
     vm_ext_id: "{{ vm_ext_id }}"
     ext_id: "{{ gpu_ext_id }}"
@@ -376,7 +372,7 @@
 ##################################################################################
 
 - name: Delete VM
-  nutanix.ncp.ntnx_vms_v2:
+  ntnx_vms_v2:
     state: absent
     ext_id: "{{ vm_ext_id }}"
   register: result

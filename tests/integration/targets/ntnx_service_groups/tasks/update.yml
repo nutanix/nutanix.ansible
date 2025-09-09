@@ -1,11 +1,7 @@
 ---
 
-- name: Start ntnx_service_groups update tests
-  ansible.builtin.debug:
-    msg: Start ntnx_service_groups update tests.
-
 - name: Create tcp service group
-  nutanix.ncp.ntnx_service_groups:
+  ntnx_service_groups:
     name: tcp_srvive_group
     desc: desc
     service_details:
@@ -34,7 +30,7 @@
     todelete: "{{ todelete + [  service_group.service_group_uuid ] }}"
 ################################################################
 - name: Update tcp service group name and description and other protocols
-  nutanix.ncp.ntnx_service_groups:
+  ntnx_service_groups:
     service_group_uuid: "{{service_group.service_group_uuid}}"
     name: updated_name
     desc: updated_desc
@@ -48,7 +44,7 @@
   ignore_errors: true
 
 - name: Getting particular service_group using uuid
-  nutanix.ncp.ntnx_service_groups_info:
+  ntnx_service_groups_info:
     service_group_uuid: '{{ result.service_group_uuid }}'
   register: result
   ignore_errors: true
@@ -71,7 +67,7 @@
     success_msg: "Pass: tcp service group  update successfully"
 ################################################################
 - name: Update tcp service group with same values
-  nutanix.ncp.ntnx_service_groups:
+  ntnx_service_groups:
     service_group_uuid: "{{service_group.service_group_uuid}}"
     name: updated_name
     desc: updated_desc
@@ -94,7 +90,7 @@
     success_msg: "Pass : return as expected "
 ################################################################
 - name: Delete all created service groups
-  nutanix.ncp.ntnx_service_groups:
+  ntnx_service_groups:
     state: absent
     service_group_uuid: "{{ item }}"
   register: result

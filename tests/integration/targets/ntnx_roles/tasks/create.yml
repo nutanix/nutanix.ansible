@@ -4,7 +4,7 @@
     msg: Start ntnx_roles create tests
 
 - name: Get Some permissions for test
-  nutanix.ncp.ntnx_permissions_info:
+  ntnx_permissions_info:
     length: 3
   register: result
 
@@ -20,7 +20,7 @@
 ##############################################################################################
 
 - name: Create roles with permissions
-  nutanix.ncp.ntnx_roles:
+  ntnx_roles:
     state: present
     name: test-ansible-role-1
     desc: test-ansible-role-1-desc
@@ -50,7 +50,7 @@
           ("{{ p2 }}" == "{{ test_permission_1_uuid }}" and "{{ p1 }}" == "{{ test_permission_2_uuid }}")
         )
     fail_msg: "Unable to create roles with certain permissions"
-    success_msg: "Roles with given permissions created successfully"
+    success_msg: "Roles with given permissions created susccessfully"
 
 - name: Set role uuid to delete later
   ansible.builtin.set_fact:
@@ -59,7 +59,7 @@
 ###################################################################################################
 
 - name: Check if role with existing name fails or not
-  nutanix.ncp.ntnx_roles:
+  ntnx_roles:
     state: present
     name: test-ansible-role-1
     permissions:
@@ -80,7 +80,8 @@
 
 ###################################################################################################
 - name: Check mode test
-  nutanix.ncp.ntnx_roles:
+  check_mode: true
+  ntnx_roles:
     state: present
     name: test-ansible-role-2
     desc: test-ansible-role-1-desc
@@ -89,8 +90,6 @@
       - uuid: "{{ test_permission_2_uuid }}"
     wait: true
   register: result
-  check_mode: true
-  ignore_errors: true
 
 - name: Creation Status
   ansible.builtin.assert:
@@ -108,7 +107,7 @@
 ###################################################################################################
 
 - name: Cleanup created entities
-  nutanix.ncp.ntnx_roles:
+  ntnx_roles:
     state: absent
     role_uuid: "{{ todelete }}"
   register: result

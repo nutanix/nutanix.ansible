@@ -4,7 +4,7 @@
     msg: start testing ntnx_foundation_central_imaged_clusters_info module
 
 - name: Get imaged cluster using image_cluster_uuid
-  nutanix.ncp.ntnx_foundation_central_imaged_clusters_info:
+  ntnx_foundation_central_imaged_clusters_info:
     filters:
       archived: false
   register: clusters
@@ -17,10 +17,10 @@
       - clusters.failed==false
       - clusters.response is defined
     fail_msg: "fail: unable to get all imaged,archived cluster  "
-    success_msg: "Success:  get all imaged,archived cluster successfully "
+    success_msg: "succes:  get all imaged,archived cluster sucessfuly "
 
 - name: Get imaged cluster using image_cluster_uuid
-  nutanix.ncp.ntnx_foundation_central_imaged_clusters_info:
+  ntnx_foundation_central_imaged_clusters_info:
     imaged_cluster_uuid: "{{clusters.response.imaged_clusters.0.imaged_cluster_uuid}}"
   register: result
   ignore_errors: true
@@ -33,10 +33,10 @@
       - result.response is defined
       - result.response.imaged_cluster_uuid == "{{clusters.response.imaged_clusters.0.imaged_cluster_uuid}}"
     fail_msg: "fail: unable to get imaged cluster using image_cluster_uuid "
-    success_msg: "Success: get imaged cluster using image_cluster_uuid successfully "
+    success_msg: "succes: get imaged cluster using image_cluster_uuid sucessfuly "
 
 - name: Get imaged cluster using custom filter
-  nutanix.ncp.ntnx_foundation_central_imaged_clusters_info:
+  ntnx_foundation_central_imaged_clusters_info:
     custom_filter:
       destroyed: true
   register: result
@@ -49,7 +49,8 @@
       - result.failed==false
       - result.response.imaged_clusters is defined
     fail_msg: "fail: unable to get imaged cluster using custom filter "
-    success_msg: "Success: get imaged cluster using custom filter successfully"
+    success_msg: "succes: get imaged cluster using custom filter sucessfully"
+
 # still offset and length
 # - ansible.builtin.debug:
 #     var: clusters.response

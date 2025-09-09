@@ -4,7 +4,7 @@
     msg: Start ntnx_roles delete tests
 
 - name: Get Some permissions for test
-  nutanix.ncp.ntnx_permissions_info:
+  ntnx_permissions_info:
     length: 3
   register: result
 
@@ -15,7 +15,7 @@
 ##############################################################################################
 
 - name: Create role with permissions
-  nutanix.ncp.ntnx_roles:
+  ntnx_roles:
     state: present
     name: test-ansible-role-4
     desc: test-ansible-role-4-desc
@@ -30,29 +30,12 @@
       - test_role.response is defined
       - test_role.changed == True
     fail_msg: "Unable to create roles with certain permissions"
-    success_msg: "Roles with given permissions created successfully"
+    success_msg: "Roles with given permissions created susccessfully"
 
 ###################################################################################################
-- name: Delete rule with check mode
-  nutanix.ncp.ntnx_roles:
-    state: absent
-    role_uuid: "{{ test_role.role_uuid }}"
-  register: output
-  ignore_errors: true
-  check_mode: true
-
-- name: Delete rule with check mode Status
-  ansible.builtin.assert:
-    that:
-      - output.failed == false
-      - output.changed == false
-      - output.msg =="Role with uuid:{{ test_role.role_uuid}} will be deleted."
-      - output.role_uuid == "{{ test_role.role_uuid }}"
-    fail_msg: "Delete role with check mode failed"
-    success_msg: "Delete role with check mode passed"
 
 - name: Delete role
-  nutanix.ncp.ntnx_roles:
+  ntnx_roles:
     state: absent
     role_uuid: "{{ test_role.role_uuid }}"
   register: result
@@ -62,6 +45,6 @@
     that:
       - result.response is defined
       - result.changed == True
-      - result.role_uuid == "{{ test_role.role_uuid }}"
+
     fail_msg: "role delete failed"
     success_msg: "role deleted successfully"

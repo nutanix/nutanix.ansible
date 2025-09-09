@@ -4,7 +4,7 @@
     msg: start testing ntnx_foundation_aos_packages_info
 
 - name: Get aos_packages_info from foundation
-  nutanix.ncp.ntnx_foundation_aos_packages_info:
+  ntnx_foundation_aos_packages_info:
   register: result
 
 - name: Creation Status
@@ -15,4 +15,4 @@
       - result.failed==false
       - result.changed==false
     fail_msg: " Fail : unable to get aos_packages "
-    success_msg: "Success: got aos_packages successfully "
+    success_msg: "Succes: got aos_packages successfully "

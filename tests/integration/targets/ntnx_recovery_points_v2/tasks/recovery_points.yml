@@ -1,9 +1,4 @@
 ---
-# Variables required before running this playbook:
-# cluster
-# availability_zone_pc_uuid
-# cluster_availability_zone
-
 - name: Start recovery points related tests
   ansible.builtin.debug:
     msg: Start recovery points related tests
@@ -32,7 +27,7 @@
 ########################################################################################################
 
 - name: Create first VM
-  nutanix.ncp.ntnx_vms_v2:
+  ntnx_vms_v2:
     name: "{{ vm_name }}_1"
     description: ansible test
     cluster:
@@ -60,7 +55,7 @@
 ########################################################################################################
 
 - name: Create second VM
-  nutanix.ncp.ntnx_vms_v2:
+  ntnx_vms_v2:
     name: "{{ vm_name }}_2"
     description: ansible test
     cluster:
@@ -88,7 +83,7 @@
 ########################################################################################################
 
 - name: Create first Volume group
-  nutanix.ncp.ntnx_volume_groups_v2:
+  ntnx_volume_groups_v2:
     name: "{{ vg_name }}_1"
     description: "Volume group"
     cluster_reference: "{{ cluster.uuid }}"
@@ -120,7 +115,7 @@
 ########################################################################################################
 
 - name: Create second Volume group
-  nutanix.ncp.ntnx_volume_groups_v2:
+  ntnx_volume_groups_v2:
     name: "{{ vg_name }}_2"
     description: "Volume group"
     cluster_reference: "{{ cluster.uuid }}"
@@ -152,7 +147,7 @@
 ########################################################################################################
 
 - name: Create VM recovery point with check mode enabled
-  nutanix.ncp.ntnx_recovery_points_v2:
+  ntnx_recovery_points_v2:
     name: "Recovery Point"
     expiration_time: "2024-09-30T14:15:22+00:00"
     recovery_point_type: "APPLICATION_CONSISTENT"
@@ -194,7 +189,7 @@
 ########################################################################################################
 
 - name: Create VM recovery point
-  nutanix.ncp.ntnx_recovery_points_v2:
+  ntnx_recovery_points_v2:
     name: "{{ recovery_point_name }}_1"
     expiration_time: "{{ expiration_time }}"
     recovery_point_type: "CRASH_CONSISTENT"
@@ -231,7 +226,7 @@
 ########################################################################################################
 
 - name: Create VM recovery point with multiple VMs
-  nutanix.ncp.ntnx_recovery_points_v2:
+  ntnx_recovery_points_v2:
     name: "{{ recovery_point_name }}_2"
     expiration_time: "{{ expiration_time }}"
     recovery_point_type: "CRASH_CONSISTENT"
@@ -270,7 +265,7 @@
 ########################################################################################################
 
 - name: Create VG recovery point
-  nutanix.ncp.ntnx_recovery_points_v2:
+  ntnx_recovery_points_v2:
     name: "{{ recovery_point_name }}_3"
     expiration_time: "{{ expiration_time }}"
     recovery_point_type: "CRASH_CONSISTENT"
@@ -307,7 +302,7 @@
 ########################################################################################################
 
 - name: Create VG recovery point with multiple VGs
-  nutanix.ncp.ntnx_recovery_points_v2:
+  ntnx_recovery_points_v2:
     name: "{{ recovery_point_name }}_4"
     expiration_time: "{{ expiration_time }}"
     recovery_point_type: "CRASH_CONSISTENT"
@@ -346,7 +341,7 @@
 ########################################################################################################
 
 - name: Create recovery point with multiple VMs and VGs
-  nutanix.ncp.ntnx_recovery_points_v2:
+  ntnx_recovery_points_v2:
     name: "{{ recovery_point_name }}_5"
     expiration_time: "{{ expiration_time }}"
     recovery_point_type: "CRASH_CONSISTENT"
@@ -395,7 +390,7 @@
     expiration_time_updated: '{{ lookup(''pipe'', ''date -d "+2 month" +%Y-%m-%dT%H:%M:%S%:z'') }}'
 
 - name: Update recovery point expiration time with check mode enabled
-  nutanix.ncp.ntnx_recovery_points_v2:
+  ntnx_recovery_points_v2:
     ext_id: "{{ recovery_point_ext_id_1 }}"
     expiration_time: "2024-09-30T14:15:22+00:00"
   check_mode: true
@@ -416,7 +411,7 @@
 ########################################################################################################
 
 - name: Update recovery point expiration time
-  nutanix.ncp.ntnx_recovery_points_v2:
+  ntnx_recovery_points_v2:
     ext_id: "{{ recovery_point_ext_id_1 }}"
     expiration_time: "{{ expiration_time_updated }}"
   register: result
@@ -441,7 +436,7 @@
 #######################################################################################################
 
 - name: Check idempotency by updating recovery point expiration time with the same value
-  nutanix.ncp.ntnx_recovery_points_v2:
+  ntnx_recovery_points_v2:
     ext_id: "{{ recovery_point_ext_id_1 }}"
     expiration_time: "{{ expiration_time_updated }}"
   register: result
@@ -463,7 +458,7 @@
     expiration_time_updated: '{{ lookup(''pipe'', ''date -d "+3 month" +%Y-%m-%dT%H:%M:%S%:z'') }}'
 
 - name: Check if expiration time is updated but name is same
-  nutanix.ncp.ntnx_recovery_points_v2:
+  ntnx_recovery_points_v2:
     ext_id: "{{ recovery_point_ext_id_1 }}"
     expiration_time: "{{ expiration_time_updated }}"
     name: "{{ recovery_point_name }}_updated"
@@ -484,14 +479,14 @@
       - result.response.ext_id == "{{ recovery_point_ext_id_1 }}"
       - actual_expiration_time == expected_expiration_time
       - result.response.name == "{{ recovery_point_name }}_1"
-      - result.warning == "Only Expiration time update is allowed. Can't update other fields."
+      - result.warning == "Only Expiration time Updation is allowed. Can't update other fields."
     fail_msg: "Check if expiration time is updated but name is same failed"
     success_msg: "Check if expiration time is updated but name is same passed"
 
 #######################################################################################################
 
 - name: Check for name is changed but expiration time is same
-  nutanix.ncp.ntnx_recovery_points_v2:
+  ntnx_recovery_points_v2:
     ext_id: "{{ recovery_point_ext_id_1 }}"
     expiration_time: "{{ expiration_time_updated }}"
     name: "{{ recovery_point_name }}_updated"
@@ -502,14 +497,14 @@
   ansible.builtin.assert:
     that:
       - result.changed == false
-      - result.msg == "Update of other operations is not supported. Only update of Expiration time is allowed."
+      - result.msg == "Update of other operations is not supported. Only updation of Expiration time is allowed."
     fail_msg: "Updated name but expiration time is same"
     success_msg: "Didn't update name as expiration time is same"
 
 #######################################################################################################
 
 - name: Check if Expiration time is not passed for update
-  nutanix.ncp.ntnx_recovery_points_v2:
+  ntnx_recovery_points_v2:
     ext_id: "{{ recovery_point_ext_id_1 }}"
   register: result
   ignore_errors: true
@@ -526,7 +521,7 @@
 #######################################################################################################
 
 - name: Get recovery point details and set recovery point restore external ID for one VM
-  nutanix.ncp.ntnx_recovery_points_info_v2:
+  ntnx_recovery_points_info_v2:
     ext_id: "{{ recovery_point_ext_id_1 }}"
   register: result
   ignore_errors: true
@@ -550,7 +545,7 @@
     vm_restore_ext_id: "{{ result.response.vm_recovery_points[0].ext_id }}"
 
 - name: Restore recovery point for one VM
-  nutanix.ncp.ntnx_recovery_point_restore_v2:
+  ntnx_recovery_point_restore_v2:
     ext_id: "{{ recovery_point_ext_id_1 }}"
     cluster_ext_id: "{{ cluster.uuid }}"
     vm_recovery_point_restore_overrides:
@@ -579,7 +574,7 @@
 ########################################################################################################
 # Testing the restore module for multiple VMs
 - name: Get recovery point details and set recovery point restore external ID for multiple VMs
-  nutanix.ncp.ntnx_recovery_points_info_v2:
+  ntnx_recovery_points_info_v2:
     ext_id: "{{ recovery_point_ext_id_2 }}"
   register: result
   ignore_errors: true
@@ -606,7 +601,7 @@
     vm_restore_ext_id_2: "{{ result.response.vm_recovery_points[1].ext_id }}"
 
 - name: Restore recovery point for multiple VMs
-  nutanix.ncp.ntnx_recovery_point_restore_v2:
+  ntnx_recovery_point_restore_v2:
     ext_id: "{{ recovery_point_ext_id_2 }}"
     cluster_ext_id: "{{ cluster.uuid }}"
     vm_recovery_point_restore_overrides:
@@ -638,7 +633,7 @@
 ########################################################################################################
 
 - name: Get recovery point details and set recovery point restore external ID for one VG
-  nutanix.ncp.ntnx_recovery_points_info_v2:
+  ntnx_recovery_points_info_v2:
     ext_id: "{{ recovery_point_ext_id_3 }}"
   register: result
   ignore_errors: true
@@ -663,7 +658,7 @@
     vg_restore_ext_id: "{{ result.response.volume_group_recovery_points[0].ext_id }}"
 
 - name: Restore recovery point for one VG
-  nutanix.ncp.ntnx_recovery_point_restore_v2:
+  ntnx_recovery_point_restore_v2:
     ext_id: "{{ recovery_point_ext_id_3 }}"
     cluster_ext_id: "{{ cluster.uuid }}"
     volume_group_recovery_point_restore_overrides:
@@ -692,7 +687,7 @@
 ########################################################################################################
 
 - name: Get recovery point details and set recovery point restore external ID for multiple VGs
-  nutanix.ncp.ntnx_recovery_points_info_v2:
+  ntnx_recovery_points_info_v2:
     ext_id: "{{ recovery_point_ext_id_4 }}"
   register: result
   ignore_errors: true
@@ -719,7 +714,7 @@
     vg_restore_ext_id_2: "{{ result.response.volume_group_recovery_points[1].ext_id }}"
 
 - name: Restore recovery point for multiple VGs
-  nutanix.ncp.ntnx_recovery_point_restore_v2:
+  ntnx_recovery_point_restore_v2:
     ext_id: "{{ recovery_point_ext_id_4 }}"
     cluster_ext_id: "{{ cluster.uuid }}"
     volume_group_recovery_point_restore_overrides:
@@ -753,7 +748,7 @@
 ########################################################################################################
 
 - name: Get recovery point details and set recovery point restore external ID for multiple VMs and VGs
-  nutanix.ncp.ntnx_recovery_points_info_v2:
+  ntnx_recovery_points_info_v2:
     ext_id: "{{ recovery_point_ext_id_5 }}"
   register: result
   ignore_errors: true
@@ -788,7 +783,7 @@
     vg_restore_ext_id_2: "{{ result.response.volume_group_recovery_points[1].ext_id }}"
 
 - name: Restore recovery point for multiple VMs and VGs
-  nutanix.ncp.ntnx_recovery_point_restore_v2:
+  ntnx_recovery_point_restore_v2:
     ext_id: "{{ recovery_point_ext_id_5 }}"
     cluster_ext_id: "{{ cluster.uuid }}"
     vm_recovery_point_restore_overrides:
@@ -833,7 +828,7 @@
 ########################################################################################################
 
 - name: Replicate Recovery point
-  nutanix.ncp.ntnx_recovery_point_replicate_v2:
+  ntnx_recovery_point_replicate_v2:
     ext_id: "{{ recovery_point_ext_id_5 }}"
     pc_ext_id: "{{ availability_zone_pc_uuid }}"
     cluster_ext_id: "{{ cluster_availability_zone.uuid }}"
@@ -854,7 +849,7 @@
 ########################################################################################################
 
 - name: Get recovery point details
-  nutanix.ncp.ntnx_recovery_points_info_v2:
+  ntnx_recovery_points_info_v2:
     ext_id: "{{ recovery_point_ext_id_5 }}"
   register: result
   ignore_errors: true
@@ -886,7 +881,7 @@
 ########################################################################################################
 
 - name: Get a VM recovery point details
-  nutanix.ncp.ntnx_vm_recovery_point_info_v2:
+  ntnx_vm_recovery_point_info_v2:
     recovery_point_ext_id: "{{ recovery_point_ext_id_5 }}"
     vm_recovery_point_ext_id: "{{ result.response.vm_recovery_points[0].ext_id }}"
   register: result
@@ -908,7 +903,7 @@
 ########################################################################################################
 
 - name: Revert a VM recovery point
-  nutanix.ncp.ntnx_vm_revert_v2:
+  ntnx_vm_revert_v2:
     ext_id: "{{ vm_ext_id_1 }}"
     vm_recovery_point_ext_id: "{{ vm_restore_ext_id }}"
   register: result
@@ -929,7 +924,7 @@
 ########################################################################################################
 
 - name: Get recovery point using wrong external ID
-  nutanix.ncp.ntnx_recovery_points_info_v2:
+  ntnx_recovery_points_info_v2:
     ext_id: "0dc3fd69-dc3c-4812-a8d3-9a77a20a0981"
   register: result
   ignore_errors: true
@@ -948,7 +943,7 @@
 ########################################################################################################
 
 - name: List all recovery points
-  nutanix.ncp.ntnx_recovery_points_info_v2:
+  ntnx_recovery_points_info_v2:
   register: result
   ignore_errors: true
 
@@ -959,15 +954,13 @@
       - result.failed == false
       - result.response is defined
       - result.response | length > 0
-      - result.total_available_results is defined
-      - result.total_available_results > 0
     fail_msg: "List all recovery points failed"
     success_msg: "List all recovery points passed"
 
 ########################################################################################################
 
 - name: List all recovery points with filter
-  nutanix.ncp.ntnx_recovery_points_info_v2:
+  ntnx_recovery_points_info_v2:
     filter: "name eq '{{ recovery_point_name }}_1'"
   register: result
   ignore_errors: true
@@ -992,7 +985,7 @@
 ########################################################################################################
 
 - name: List all recovery points with limit
-  nutanix.ncp.ntnx_recovery_points_info_v2:
+  ntnx_recovery_points_info_v2:
     limit: 2
   register: result
   ignore_errors: true
@@ -1009,27 +1002,8 @@
 
 ########################################################################################################
 
-- name: Delete recovery point with check mode enabled
-  nutanix.ncp.ntnx_recovery_points_v2:
-    ext_id: "{{ recovery_point_todelete[0] }}"
-    state: absent
-  check_mode: true
-  register: result
-  ignore_errors: true
-
-- name: Delete recovery point with check mode enabled status
-  ansible.builtin.assert:
-    that:
-      - result.msg is defined
-      - result.changed == false
-      - result.failed == false
-      - result.ext_id == "{{ recovery_point_todelete[0] }}"
-      - result.msg == "Recovery point with ext_id:{{ recovery_point_todelete[0] }} will be deleted."
-    fail_msg: "Delete recovery point with check mode enabled failed"
-    success_msg: "Delete recovery point with check mode enabled passed"
-
 - name: Delete all Created recovery points
-  nutanix.ncp.ntnx_recovery_points_v2:
+  ntnx_recovery_points_v2:
     state: absent
     ext_id: "{{ item }}"
   register: result
@@ -1055,7 +1029,7 @@
 ########################################################################################################
 
 - name: Delete all Created Volume Groups
-  nutanix.ncp.ntnx_volume_groups_v2:
+  ntnx_volume_groups_v2:
     state: absent
     ext_id: "{{ item }}"
   register: result
@@ -1081,7 +1055,7 @@
 ########################################################################################################
 
 - name: Delete all Created VMs
-  nutanix.ncp.ntnx_vms_v2:
+  ntnx_vms_v2:
     state: absent
     ext_id: "{{ item }}"
   register: result

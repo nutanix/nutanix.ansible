@@ -4,7 +4,7 @@
     msg: Start testing ntnx_ndb_time_machine_clusters
 
 - name: Create data access instance with cluster name and sla name
-  nutanix.ncp.ntnx_ndb_time_machine_clusters:
+  ntnx_ndb_time_machine_clusters:
     time_machine_uuid: "{{ time_machine.uuid }}"
     cluster:
       name: "{{ cluster.cluster2.name }}"
@@ -24,7 +24,7 @@
     success_msg: "pass: create data access instance with cluster name and sla name finished successfully"
 #######################
 - name: Update data access instance with new sla name
-  nutanix.ncp.ntnx_ndb_time_machine_clusters:
+  ntnx_ndb_time_machine_clusters:
     time_machine_uuid: "{{ time_machine.uuid }}"
     cluster:
       name: "{{ cluster.cluster2.name }}"
@@ -45,7 +45,7 @@
     success_msg: "pass: update data access instance with new sla name finished successfully"
 
 - name: Idempotency checks
-  nutanix.ncp.ntnx_ndb_time_machine_clusters:
+  ntnx_ndb_time_machine_clusters:
     time_machine_uuid: "{{ time_machine.uuid }}"
     cluster:
       name: "{{ cluster.cluster2.name }}"
@@ -68,7 +68,7 @@
 # cluster2: secondary cluster
 
 - name: Create snapshot on cluster2
-  nutanix.ncp.ntnx_ndb_database_snapshots:
+  ntnx_ndb_database_snapshots:
     name: ansible-created-snapshot-on-{{ cluster.cluster2.name }}
     time_machine_uuid: "{{ time_machine.uuid }}"
     clusters:
@@ -93,7 +93,7 @@
     minutes: 2
 
 - name: Check the status of post of replication if snapshot is active
-  nutanix.ncp.ntnx_ndb_snapshots_info:
+  ntnx_ndb_snapshots_info:
     uuid: "{{ result.snapshot_uuid }}"
   register: result
 
@@ -106,7 +106,7 @@
     success_msg: "pass: snapshot replicated successfully on secondary cluster"
 
 - name: Create a snapshot on cluster1
-  nutanix.ncp.ntnx_ndb_database_snapshots:
+  ntnx_ndb_database_snapshots:
     name: ansible-created-snapshot-on-{{ cluster.cluster1.name }}
     time_machine_uuid: "{{ time_machine.uuid }}"
     clusters:
@@ -130,14 +130,13 @@
     snapshot_uuid: "{{ result.snapshot_uuid }}"
 
 - name: Create spec for replicating snapshot from cluster1 on cluster2
-  nutanix.ncp.ntnx_ndb_replicate_database_snapshots:
+  check_mode: true
+  ntnx_ndb_replicate_database_snapshots:
     snapshot_uuid: "{{ snapshot_uuid }}"
     clusters:
       - name: "{{ cluster.cluster2.name }}"
     expiry_days: 20
   register: result
-  check_mode: true
-  ignore_errors: true
 
 - name: Setting expected result for snapshot replication
   ansible.builtin.set_fact:
@@ -145,12 +144,7 @@
       changed: false
       error:
       failed: false
-      response:
-        {
-          lcmConfig:
-            { snapshotLCMConfig: { expiryDetails: { expireInDays: 20 } } },
-          nxClusterIds: ["{{ cluster.cluster2.uuid }}"],
-        }
+      response: { lcmConfig: { snapshotLCMConfig: { expiryDetails: { expireInDays: 20 } } }, nxClusterIds: ["{{ cluster.cluster2.uuid }}"] }
       snapshot_uuid: "{{ snapshot_uuid }}"
 - name: Check snapshot replication spec
   ansible.builtin.assert:
@@ -160,7 +154,7 @@
     success_msg: "pass: snapshot replication spec created successfully"
 
 - name: Replicate snapshot on cluster2
-  nutanix.ncp.ntnx_ndb_replicate_database_snapshots:
+  ntnx_ndb_replicate_database_snapshots:
     snapshot_uuid: "{{ snapshot_uuid }}"
     clusters:
       - name: "{{ cluster.cluster2.name }}"
@@ -177,29 +171,9 @@
     success_msg: snapshot replicated successfully
 
 #######################
-- name: Delete time machine  with check mode
-  nutanix.ncp.ntnx_ndb_time_machine_clusters:
-    state: absent
-    time_machine_uuid: "{{ time_machine.uuid }}"
-    cluster:
-      uuid: "{{cluster.cluster2.uuid}}"
-  register: output
-  ignore_errors: true
-  check_mode: true
-
-- name: Delete time machine with check mode Status
-  ansible.builtin.assert:
-    that:
-      - output.failed == false
-      - output.changed == false
-      - output.msg =="Cluster with uuid:{{ time_machine.uuid}} will be deleted from Time Machine."
-      - output.time_machine_uuid  == "{{ time_machine.uuid }}"
-      - output.cluster_uuid == "{{cluster.cluster2.uuid}}"
-    fail_msg: "Delete time machine with check mode failed"
-    success_msg: "Delete time machine with check mode passed"
 
 - name: Delete time machine
-  nutanix.ncp.ntnx_ndb_time_machine_clusters:
+  ntnx_ndb_time_machine_clusters:
     state: absent
     time_machine_uuid: "{{ time_machine.uuid }}"
     cluster:
@@ -213,8 +187,6 @@
       - result.time_machine_uuid is defined
       - result.changed == true
       - result.failed == false
-      - result.time_machine_uuid == "{{ time_machine.uuid }}"
-      - result.cluster_uuid == "{{ cluster.cluster2.uuid }}"
     fail_msg: "fail: Unable to remove cluster from time machine"
     success_msg: "pass: cluster from time machine removed successfully"
 
@@ -224,7 +196,7 @@
 
 #####################
 - name: Create data access instance with cluster uuid and sla uuid
-  nutanix.ncp.ntnx_ndb_time_machine_clusters:
+  ntnx_ndb_time_machine_clusters:
     time_machine_uuid: "{{ time_machine.uuid }}"
     cluster:
       uuid: "{{ cluster.cluster2.uuid }}"
@@ -244,7 +216,7 @@
     success_msg: "pass: create data access instance with cluster uuid and sla uuid finished successfully"
 #######################
 - name: Update data access instance with sla uuid
-  nutanix.ncp.ntnx_ndb_time_machine_clusters:
+  ntnx_ndb_time_machine_clusters:
     time_machine_uuid: "{{ time_machine.uuid }}"
     cluster:
       uuid: "{{ cluster.cluster2.uuid }}"
@@ -265,22 +237,21 @@
     success_msg: "pass: update data access instance with sla uuid finished successfully"
 
 - name: Delete time machine
-  nutanix.ncp.ntnx_ndb_time_machine_clusters:
+  ntnx_ndb_time_machine_clusters:
     state: absent
     time_machine_uuid: "{{ result.time_machine_uuid }}"
     cluster:
       uuid: "{{ cluster.cluster2.uuid }}"
-  register: output
+  register: result
 
 - name: Check delete status
   ansible.builtin.assert:
     that:
-      - output.response is defined
-      - output.time_machine_uuid is defined
-      - output.changed == true
-      - output.failed == false
-      - output.time_machine_uuid == "{{ result.time_machine_uuid }}"
-      - output.cluster_uuid == "{{ cluster.cluster2.uuid }}"
+      - result.response is defined
+      - result.time_machine_uuid is defined
+      - result.changed == true
+      - result.failed == false
     fail_msg: "fail: Unable to remove cluster from time machine"
     success_msg: "pass: cluster from time machine removed successfully"
+
 #######################

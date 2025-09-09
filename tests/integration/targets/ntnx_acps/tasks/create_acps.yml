@@ -1,13 +1,4 @@
 ---
-# Variables required before running this playbook:
-# - acp
-# - project
-# - network
-
-- name: Start ntnx_acps create_acps tests
-  ansible.builtin.debug:
-    msg: Start ntnx_acps create_acps tests
-
 - name: Generate random name
   ansible.builtin.set_fact:
     random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12) }}"
@@ -20,7 +11,7 @@
     acp4_name: "{{ random_name[0] }}4"
     acp5_name: "{{ random_name[0] }}5"
 - name: Create min ACP
-  nutanix.ncp.ntnx_acps:
+  ntnx_acps:
     state: present
     wait: true
     name: "{{ acp1_name }}"
@@ -41,7 +32,7 @@
     success_msg: " Min ACP with check mode passed"
 # ##########################################################
 - name: Create min ACP
-  nutanix.ncp.ntnx_acps:
+  ntnx_acps:
     state: present
     wait: true
     name: "{{ acp2_name }}"
@@ -65,7 +56,7 @@
     todelete: "{{ todelete + [result.acp_uuid] }}"
 ##########################################################
 - name: Create ACP with user reference
-  nutanix.ncp.ntnx_acps:
+  ntnx_acps:
     state: present
     name: "{{ acp5_name }}"
     role:
@@ -91,7 +82,7 @@
     todelete: "{{ todelete + [result.acp_uuid] }}"
 ##########################################################
 - name: Create ACP with user ad user group reference
-  nutanix.ncp.ntnx_acps:
+  ntnx_acps:
     state: present
     name: "{{ acp3_name }}"
     role:
@@ -119,8 +110,8 @@
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [result.acp_uuid] }}"
 ##########################################################
-- name: Create ACP with all specifications
-  nutanix.ncp.ntnx_acps:
+- name: Create ACP with all specfactions
+  ntnx_acps:
     state: present
     name: "{{ acp4_name }}"
     role:
@@ -183,15 +174,15 @@
       - result.response.status.resources.filter_list.context_list.1.entity_filter_expression_list.0.right_hand_side.collection == "ALL"
       - result.response.status.resources.filter_list.context_list.1.scope_filter_expression_list.0.operator == "IN"
       - result.response.status.resources.filter_list.context_list.1.scope_filter_expression_list.0.left_hand_side == "CATEGORY"
-    fail_msg: " Unable to Create ACP all specifications "
-    success_msg: " ACP with all specifications created successfully "
+    fail_msg: " Unable to Create ACP all specfactions "
+    success_msg: " ACP with all specfactions created successfully "
 
 - name: Set acp uuid to delete later
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [result.acp_uuid] }}"
 ##########################################################
 - name: Delete all created acps
-  nutanix.ncp.ntnx_acps:
+  ntnx_acps:
     state: absent
     acp_uuid: "{{ item }}"
   register: result

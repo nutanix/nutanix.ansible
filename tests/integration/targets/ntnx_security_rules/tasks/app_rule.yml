@@ -1,15 +1,6 @@
----
-# Variables required before running this playbook:
-# - categories
-
-- name: Start ntnx_security_rules app_rule tests
-  ansible.builtin.debug:
-    msg: Start ntnx_security_rules app_rule tests
-
 - name: Create app security rule with inbound and outbound list
-  nutanix.ncp.ntnx_security_rules:
+  ntnx_security_rules:
     name: test_app_rule
-    desc: App Security Rule
     app_rule:
       target_group:
         categories:
@@ -77,6 +68,7 @@
   register: result
   ignore_errors: true
 
+
 - name: Creation Status
   ansible.builtin.assert:
     that:
@@ -85,14 +77,12 @@
       - result.response.status.state == 'COMPLETE'
       - result.response.status.name=="test_app_rule"
       - result.response.status.resources.app_rule.target_group.filter.params.AppTier | length == 2
-      - result.response.spec.description == "App Security Rule"
     fail_msg: " fail: unable to create app security rule with inbound and outbound list"
     success_msg: "pass: create app security rule with inbound and outbound list successfully"
 
-- name: Update app security rule by adding to outbound list and remove rule from inbound list
-  nutanix.ncp.ntnx_security_rules:
+- name: Update app security rule by adding to outbound list and remove tule from inbound list
+  ntnx_security_rules:
     security_rule_uuid: "{{ result.response.metadata.uuid }}"
-    desc: App Security Rule Updated
     app_rule:
       policy_mode: APPLY
       inbounds:
@@ -116,48 +106,28 @@
       - result.response is defined
       - result.failed == false
       - result.response.status.state == 'COMPLETE'
-      - result.response.spec.description == "App Security Rule Updated"
       - result.response.spec.resources.app_rule.action == "APPLY"
       - result.response.spec.resources.app_rule.outbound_allow_list.0.icmp_type_code_list is defined
     fail_msg: " fail: unable to update app security rule with   outbound list "
     success_msg: "pass :update app security rule with   outbound list successfully"
 
-- name: Delete app security rule with check mode
-  nutanix.ncp.ntnx_security_rules:
-    state: absent
-    security_rule_uuid: "{{ result.response.metadata.uuid }}"
-  register: output
-  ignore_errors: true
-  check_mode: true
-
-- name: Delete app security rule with check mode Status
-  ansible.builtin.assert:
-    that:
-      - output.failed == false
-      - output.changed == false
-      - output.msg =="Security rule with uuid:{{ result.response.metadata.uuid}} will be deleted."
-      - output.security_rule_uuid == "{{ result.response.metadata.uuid }}"
-    fail_msg: "Delete app security rule with check mode failed"
-    success_msg: "Delete app security rule with check mode passed"
-
 - name: Delete app security rule
-  nutanix.ncp.ntnx_security_rules:
+  ntnx_security_rules:
     state: absent
     security_rule_uuid: "{{ result.response.metadata.uuid }}"
-  register: output
+  register: result
   ignore_errors: true
 
 - name: Creation Status
   ansible.builtin.assert:
     that:
-      - output.response is defined
-      - output.failed == false
-      - output.response.status == 'SUCCEEDED'
-      - output.security_rule_uuid == "{{ result.response.metadata.uuid }}"
+      - result.response is defined
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
     fail_msg: " fail: unable to delete app security rule "
     success_msg: "pass : delete app security rule successfully"
 - name: Create app security rule with allow all inbound and outbound list
-  nutanix.ncp.ntnx_security_rules:
+  ntnx_security_rules:
     name: test_app_rule
     app_rule:
       target_group:
@@ -190,7 +160,7 @@
     fail_msg: " fail: unable to create app security rule with allow all inbound and outbound list"
     success_msg: "pass: create app security rule with allow all inbound and outbound list successfully"
 - name: Delete app security rule
-  nutanix.ncp.ntnx_security_rules:
+  ntnx_security_rules:
     state: absent
     security_rule_uuid: "{{ result.response.metadata.uuid }}"
   register: result

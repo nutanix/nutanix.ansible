@@ -4,7 +4,7 @@
     msg: Start ntnx_roles update tests
 
 - name: Get Some permissions for test
-  nutanix.ncp.ntnx_permissions_info:
+  ntnx_permissions_info:
     length: 3
   register: result
 
@@ -20,7 +20,7 @@
 ##############################################################################################
 
 - name: Create role with permissions
-  nutanix.ncp.ntnx_roles:
+  ntnx_roles:
     state: present
     name: test-ansible-role-3
     desc: test-ansible-role-3-desc
@@ -36,12 +36,12 @@
       - test_role.response is defined
       - test_role.changed == true
     fail_msg: "Unable to create roles with certain permissions"
-    success_msg: "Roles with given permissions created successfully"
+    success_msg: "Roles with given permissions created susccessfully"
 
 ###################################################################################################
 
 - name: Update all fields
-  nutanix.ncp.ntnx_roles:
+  ntnx_roles:
     state: present
     role_uuid: "{{test_role.role_uuid}}"
     name: test-ansible-role-3-updated
@@ -64,12 +64,12 @@
       - result.response.status.resources.permission_reference_list | length == 1
 
     fail_msg: "Unable to update role"
-    success_msg: "Roles with given permissions updated successfully"
+    success_msg: "Roles with given permissions updated susccessfully"
 
 ###################################################################################################
 
 - name: Idempotency check
-  nutanix.ncp.ntnx_roles:
+  ntnx_roles:
     state: present
     role_uuid: "{{test_role.role_uuid}}"
     name: test-ansible-role-3-updated
@@ -92,7 +92,8 @@
 ###################################################################################################
 
 - name: Check mode test
-  nutanix.ncp.ntnx_roles:
+  check_mode: true
+  ntnx_roles:
     state: present
     role_uuid: "{{test_role.role_uuid}}"
     name: test-ansible-role-3
@@ -101,8 +102,6 @@
       - uuid: "{{ test_permission_1_uuid }}"
     wait: true
   register: result
-  check_mode: true
-  ignore_errors: true
 
 - name: Check mode Status
   ansible.builtin.assert:
@@ -120,7 +119,7 @@
 ###################################################################################################
 
 - name: Cleanup created entities
-  nutanix.ncp.ntnx_roles:
+  ntnx_roles:
     state: absent
     role_uuid: "{{ test_role.role_uuid }}"
   register: result

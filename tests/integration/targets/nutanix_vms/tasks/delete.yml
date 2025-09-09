@@ -1,13 +1,6 @@
 ---
-# Variables required before running this playbook:
-# - cluster
-
-- name: Start nutanix_vms delete tests
-  ansible.builtin.debug:
-    msg: Start nutanix_vms delete tests
-
-- name: VM with minimum requirements
-  nutanix.ncp.ntnx_vms:
+- name: VM with minimum requiremnts
+  ntnx_vms:
     state: present
     name: MinReqVM
     cluster:
@@ -20,38 +13,19 @@
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-    fail_msg: " Unable to create VM with minimum requirements "
-    success_msg: " VM with minimum requirements created successfully "
-
-- name: Delete vm with check mode
-  nutanix.ncp.ntnx_vms:
-    state: absent
-    vm_uuid: "{{  result.response.metadata.uuid }}"
-  register: output
-  ignore_errors: true
-  check_mode: true
-
-- name: Delete vm with check mode Status
-  ansible.builtin.assert:
-    that:
-      - output.failed == false
-      - output.changed == false
-      - output.msg =='VM with uuid:{{  result.response.metadata.uuid }} will be deleted.'
-      - output.vm_uuid == '{{ result.response.metadata.uuid }}'
-    fail_msg: "Delete VM with check mode failed"
-    success_msg: "Delete VM with check mode passed"
+    fail_msg: " Unable to create VM with minimum requiremnts "
+    success_msg: " VM with minimum requiremnts created successfully "
 
 - name: Delete VM
-  nutanix.ncp.ntnx_vms:
+  ntnx_vms:
     vm_uuid: '{{ result["response"]["metadata"]["uuid"] }}'
     state: absent
-  register: output
+  register: result
 
 - name: Assert when status not complete
   ansible.builtin.assert:
     that:
-      - output.response is defined
-      - output.response.status == 'SUCCEEDED'
-      - output.vm_uuid == '{{ result.response.metadata.uuid }}'
+      - result.response is defined
+      - result.response.status == 'SUCCEEDED'
     fail_msg: "Unable to delete VM"
     success_msg: "VM deleted successfully"

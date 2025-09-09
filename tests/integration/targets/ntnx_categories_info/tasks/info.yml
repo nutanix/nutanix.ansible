@@ -4,7 +4,7 @@
     msg: Start testing ntnx_categories_info
 
 - name: Test getting all categories
-  nutanix.ncp.ntnx_categories_info:
+  ntnx_categories_info:
   register: result
   ignore_errors: true
 
@@ -28,7 +28,7 @@
       - "value-c"
 
 - name: Create category key
-  nutanix.ncp.ntnx_categories:
+  ntnx_categories:
     state: "present"
     name: "{{category_name}}"
     values: "{{ values }}"
@@ -36,7 +36,7 @@
   ignore_errors: true
 
 - name: Test getting the category with filter by it's name
-  nutanix.ncp.ntnx_categories_info:
+  ntnx_categories_info:
     filter:
       name: "{{category_name}}"
   register: result
@@ -53,7 +53,7 @@
     success_msg: "category info obtained successfully by name filter"
 #####################################################################################################
 - name: Test getting the category  by it's name
-  nutanix.ncp.ntnx_categories_info:
+  ntnx_categories_info:
     name: "{{category_name}}"
   register: result
   ignore_errors: true
@@ -69,7 +69,7 @@
     success_msg: "category info obtained successfully by it's name"
 #####################################################################################################
 - name: Delete the category
-  nutanix.ncp.ntnx_categories:
+  ntnx_categories:
     state: "absent"
     name: "{{category_name}}"
   register: result

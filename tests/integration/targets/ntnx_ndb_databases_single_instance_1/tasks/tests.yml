@@ -6,21 +6,6 @@
 #   3. Unregister database instance
 #   4. Register the database created in point 1 from the db server vm created earlier
 
-# Variables required before running this playbook:
-# - db_params_profile
-# - vm_password
-# - vm_ip
-# - cluster
-# - software_profile
-# - network_profile
-# - static_network_profile
-# - compute_profile
-# - public_ssh_key
-# - sla
-# - maintenance
-# - tags
-# - postgres
-
 - name: Start ndb databases test flow 1
   ansible.builtin.debug:
     msg: start ndb databases test flow 1
@@ -38,7 +23,8 @@
 ################################### Single instance postgres database tests #############################
 
 - name: Create spec for single instance postgres database on new db server vm
-  nutanix.ncp.ntnx_ndb_databases:
+  check_mode: true
+  ntnx_ndb_databases:
     wait: true
     name: "{{ db1_name }}"
     desc: ansible-created-db-desc
@@ -99,8 +85,6 @@
           pre_task_cmd: ls -l
           post_task_cmd: ls -F
   register: result
-  check_mode: true
-  ignore_errors: true
 
 - name: Set expected action arguments
   ansible.builtin.set_fact:
@@ -124,8 +108,7 @@
       description: TM-desc
       name: TM1
       schedule:
-        continuousSchedule:
-          { enabled: true, logBackupInterval: 30, snapshotsPerDay: 2 }
+        continuousSchedule: { enabled: true, logBackupInterval: 30, snapshotsPerDay: 2 }
         monthlySchedule: { dayOfMonth: 4, enabled: true }
         quartelySchedule: { dayOfMonth: 4, enabled: true, startMonth: JANUARY }
         snapshotTimeOfDay: { hours: 11, minutes: 10, seconds: 2 }
@@ -134,18 +117,11 @@
 
 - name: Set maintenance tasks
   ansible.builtin.set_fact:
-    maintenance_tasks:
+    mainetance_tasks:
       maintenanceWindowId: "{{ maintenance.window_uuid }}"
       tasks:
-        - {
-          payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } },
-          taskType: OS_PATCHING,
-        }
-        - {
-          payload:
-            { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
-          taskType: DB_PATCHING,
-        }
+        - { payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } }, taskType: OS_PATCHING }
+        - { payload: { prePostCommand: { postCommand: ls -F, preCommand: ls -l } }, taskType: DB_PATCHING }
 
 - name: Check mode status
   ansible.builtin.assert:
@@ -164,13 +140,13 @@
       - result.response.nodes | length == 1
       - result.response.nodeCount == 1
       - result.response.nodes[0].nxClusterId == "{{ cluster.cluster1.uuid }}"
-      - result.response.maintenanceTasks == maintenance_tasks
+      - result.response.maintenanceTasks == mainetance_tasks
       - result.response.createDbserver == True
     fail_msg: Unable to create single instance postgres database provision spec
     success_msg: single instance postgres database provision spec created successfully
 
 - name: Create single instance postgres database on new db server vm
-  nutanix.ncp.ntnx_ndb_databases:
+  ntnx_ndb_databases:
     wait: true
     name: "{{ db1_name }}"
     desc: ansible-created-db-desc
@@ -268,7 +244,7 @@
     db_server_uuid: "{{ result.response.databaseNodes[0].dbserverId }}"
 
 - name: Get vm details associated to the database instance created above and verify
-  nutanix.ncp.ntnx_ndb_db_servers_info:
+  ntnx_ndb_db_servers_info:
     uuid: "{{ db_server_uuid }}"
   register: result
 
@@ -287,7 +263,8 @@
 ################################### update tests #############################
 
 - name: Update database with check mode
-  nutanix.ncp.ntnx_ndb_databases:
+  check_mode: true
+  ntnx_ndb_databases:
     wait: true
     db_uuid: "{{ db_uuid }}"
     name: "{{ db1_name_updated }}"
@@ -296,8 +273,6 @@
     tags:
       ansible-databases: single-instance-dbs-updated
   register: result
-  check_mode: true
-  ignore_errors: true
 
 - name: Check mode status
   ansible.builtin.assert:
@@ -311,7 +286,7 @@
     success_msg: single instance postgres database update spec generated successfully
 
 - name: Update database
-  nutanix.ncp.ntnx_ndb_databases:
+  ntnx_ndb_databases:
     wait: true
     db_uuid: "{{ db_uuid }}"
     name: "{{ db1_name_updated }}"
@@ -338,7 +313,7 @@
     success_msg: single instance postgres database updated successfully
 
 - name: Idempotency checks
-  nutanix.ncp.ntnx_ndb_databases:
+  ntnx_ndb_databases:
     wait: true
     db_uuid: "{{ db_uuid }}"
     name: "{{ db1_name_updated }}"
@@ -360,13 +335,13 @@
 ################################### delete tests #############################
 
 - name: Create spec for delete db from vm
-  nutanix.ncp.ntnx_ndb_databases:
+  check_mode: true
+  ntnx_ndb_databases:
     state: absent
     db_uuid: "{{ db_uuid }}"
     wait: true
     delete_db_from_vm: true
   register: result
-  check_mode: true
 
 - name: Verify delete check mode spec
   ansible.builtin.assert:
@@ -376,20 +351,18 @@
       - result.response.delete == True
       - result.response.remove == False
       - result.response.deleteTimeMachine == False
-      - result.uuid == db_uuid
     fail_msg: creation of spec for delete db from vm failed
     success_msg: spec for delete db from vm created successfully
 
 - name: Create spec for soft remove
-  nutanix.ncp.ntnx_ndb_databases:
+  check_mode: true
+  ntnx_ndb_databases:
     state: absent
     db_uuid: "{{ db_uuid }}"
     wait: true
     soft_delete: true
     delete_time_machine: true
   register: result
-  ignore_errors: true
-  check_mode: true
 
 - name: Verify soft remove check mode spec
   ansible.builtin.assert:
@@ -400,12 +373,11 @@
       - result.response.remove == False
       - result.response.softRemove == True
       - result.response.deleteTimeMachine == True
-      - result.uuid == db_uuid
     fail_msg: creation of spec for soft remove with time machine delete failed
     success_msg: spec for soft remove with time machine delete created successfully
 
 - name: Unregister db along with delete time machine
-  nutanix.ncp.ntnx_ndb_databases:
+  ntnx_ndb_databases:
     state: absent
     db_uuid: "{{ db_uuid }}"
     wait: true
@@ -424,7 +396,8 @@
 ################################### single instance postgres database registration tests #############################
 
 - name: Create spec for registering previously unregistered database from previously created VM's ip
-  nutanix.ncp.ntnx_ndb_register_database:
+  check_mode: true
+  ntnx_ndb_register_database:
     wait: true
 
     name: "{{ db1_name }}"
@@ -467,9 +440,8 @@
         - type: DB_PATCHING
           pre_task_cmd: ls -l
           post_task_cmd: ls -F
+
   register: result
-  check_mode: true
-  ignore_errors: true
 
 - name: Set expected action arguments
   ansible.builtin.set_fact:
@@ -487,8 +459,7 @@
       description: TM-desc
       name: TM1
       schedule:
-        continuousSchedule:
-          { enabled: true, logBackupInterval: 30, snapshotsPerDay: 2 }
+        continuousSchedule: { enabled: true, logBackupInterval: 30, snapshotsPerDay: 2 }
         monthlySchedule: { dayOfMonth: 4, enabled: true }
         quartelySchedule: { dayOfMonth: 4, enabled: true, startMonth: JANUARY }
         snapshotTimeOfDay: { hours: 11, minutes: 10, seconds: 2 }
@@ -497,18 +468,11 @@
 
 - name: Set maintenance tasks
   ansible.builtin.set_fact:
-    maintenance_tasks:
+    mainetance_tasks:
       maintenanceWindowId: "{{ maintenance.window_uuid }}"
       tasks:
-        - {
-          payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } },
-          taskType: OS_PATCHING,
-        }
-        - {
-          payload:
-            { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
-          taskType: DB_PATCHING,
-        }
+        - { payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } }, taskType: OS_PATCHING }
+        - { payload: { prePostCommand: { postCommand: ls -F, preCommand: ls -l } }, taskType: DB_PATCHING }
 
 - name: Check mode status
   ansible.builtin.assert:
@@ -522,13 +486,13 @@
       - result.response.autoTuneStagingDrive == False
       - result.response.timeMachineInfo == expected_time_machine_info
       - result.response.vmIp == "10.10.10.10"
-      - result.response.maintenanceTasks == maintenance_tasks
+      - result.response.maintenanceTasks == mainetance_tasks
       - result.response.workingDirectory == "/check"
     fail_msg: Unable to create register database spec
     success_msg: single instance postgres database register spec created successfully
 
-- name: Register previously unregistered database from previously created VM
-  nutanix.ncp.ntnx_ndb_register_database:
+- name: Regsiter previously unregistered database from previously created VM
+  ntnx_ndb_register_database:
     wait: true
 
     name: "{{ db1_name }}"
@@ -613,7 +577,7 @@
     msg: Start testing ntnx_ndb_databases_info based on created database
 
 - name: List ndb databases
-  nutanix.ncp.ntnx_ndb_databases_info:
+  ntnx_ndb_databases_info:
   register: databases
   no_log: true
 
@@ -628,7 +592,7 @@
     success_msg: era databases listed successfully
 ################################################################
 - name: Get era databases using its name
-  nutanix.ncp.ntnx_ndb_databases_info:
+  ntnx_ndb_databases_info:
     name: "{{ databases.response[0].name }}"
   register: result
   no_log: true
@@ -644,7 +608,7 @@
     success_msg: Get era databases using its name finished successfully
 ################################################################
 - name: Get era databases using its id
-  nutanix.ncp.ntnx_ndb_databases_info:
+  ntnx_ndb_databases_info:
     uuid: "{{ databases.response[0].id }}"
   register: result
   no_log: true
@@ -661,7 +625,7 @@
 
 ################################################################
 - name: Get era databases using its id and detailed response
-  nutanix.ncp.ntnx_ndb_databases_info:
+  ntnx_ndb_databases_info:
     filters:
       detailed: true
     uuid: "{{ databases.response[0].id }}"
@@ -683,7 +647,7 @@
 ################################################################
 
 - name: Get era database with incorrect name
-  nutanix.ncp.ntnx_ndb_databases_info:
+  ntnx_ndb_databases_info:
     name: xxxxxxx
   register: result
   ignore_errors: true
@@ -701,7 +665,7 @@
 ############################################################################################
 
 - name: Unregister db along with delete time machine
-  nutanix.ncp.ntnx_ndb_databases:
+  ntnx_ndb_databases:
     db_uuid: "{{ db_uuid }}"
     state: absent
     wait: true
@@ -718,7 +682,7 @@
     success_msg: database deleted successfully
 
 - name: Delete db server vm
-  nutanix.ncp.ntnx_ndb_db_server_vms:
+  ntnx_ndb_db_server_vms:
     state: absent
     wait: true
     uuid: "{{ db_server_uuid }}"

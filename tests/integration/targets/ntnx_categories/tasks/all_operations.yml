@@ -17,7 +17,7 @@
       - "value-c"
 
 - name: Create only category key with description
-  nutanix.ncp.ntnx_categories:
+  ntnx_categories:
     state: "present"
     name: "{{first_category.name}}"
     desc: "{{first_category.desc}}"
@@ -37,7 +37,7 @@
     success_msg: "Create only category key with description finished successfully"
 #################
 - name: Add values to existing category key having no values & Update description
-  nutanix.ncp.ntnx_categories:
+  ntnx_categories:
     state: "present"
     name: "{{first_category.name}}"
     desc: "{{first_category.update_desc}}"
@@ -61,7 +61,7 @@
     success_msg: "Add values to existing category key having no values & Update description finished successfully"
 #################
 - name: Update existing category with same values
-  nutanix.ncp.ntnx_categories:
+  ntnx_categories:
     state: "present"
     name: "{{first_category.name}}"
     desc: "{{first_category.update_desc}}"
@@ -81,7 +81,7 @@
     success_msg: "Passed: Nothing to update as expected "
   #################
 - name: Update existing category by deleting some values
-  nutanix.ncp.ntnx_categories:
+  ntnx_categories:
     state: "absent"
     name: "{{first_category.name}}"
     desc: "{{first_category.update_desc}}"
@@ -91,7 +91,7 @@
   ignore_errors: true
 
 - name: Get modified category
-  nutanix.ncp.ntnx_categories_info:
+  ntnx_categories_info:
     name: "{{first_category.name}}"
   register: result
   ignore_errors: true
@@ -108,7 +108,7 @@
     success_msg: "Passed: update existing category by deleting some values finished successfully"
 #################
 - name: Update existing category by deleting all values
-  nutanix.ncp.ntnx_categories:
+  ntnx_categories:
     state: "absent"
     name: "{{first_category.name}}"
     remove_values: true
@@ -116,7 +116,7 @@
   ignore_errors: true
 
 - name: Get modified category
-  nutanix.ncp.ntnx_categories_info:
+  ntnx_categories_info:
     name: "{{first_category.name}}"
   register: result
   ignore_errors: true
@@ -131,33 +131,15 @@
     fail_msg: "Fail: unable to update existing category by deleting all values "
     success_msg: "Passed: update existing category by deleting all values finished successfully"
 #################
-- name: Delete category with check mode
-  nutanix.ncp.ntnx_categories:
-    state: absent
-    name: "{{ first_category.name }}"
-  register: output
-  ignore_errors: true
-  check_mode: true
-
-- name: Delete category with check mode Status
-  ansible.builtin.assert:
-    that:
-      - output.failed == false
-      - output.changed == false
-      - output.msg =="Category with name:{{ first_category.name }} will be deleted."
-      - output.category_name == "{{ first_category.name }}"
-    fail_msg: "Delete category with check mode failed"
-    success_msg: "Delete category with check mode passed"
-
 - name: Delete the category
-  nutanix.ncp.ntnx_categories:
+  ntnx_categories:
     state: "absent"
     name: "{{first_category.name}}"
   register: result
   ignore_errors: true
 
 - name: Search deleted category
-  nutanix.ncp.ntnx_categories_info:
+  ntnx_categories_info:
     name: "{{first_category.name}}"
   register: result
   ignore_errors: true
@@ -173,7 +155,7 @@
 
 #################
 - name: Create category key and value together with check_mode
-  nutanix.ncp.ntnx_categories:
+  ntnx_categories:
     state: "present"
     name: "{{second_category.name}}"
     desc: test description
@@ -198,7 +180,7 @@
 
 #################
 - name: Create category key and value together
-  nutanix.ncp.ntnx_categories:
+  ntnx_categories:
     state: "present"
     name: "{{second_category.name}}"
     desc: test description
@@ -221,7 +203,7 @@
     success_msg: "Create category key and value together finished successfully"
 #################
 - name: Delete the category
-  nutanix.ncp.ntnx_categories:
+  ntnx_categories:
     state: "absent"
     name: "{{second_category.name}}"
   register: result

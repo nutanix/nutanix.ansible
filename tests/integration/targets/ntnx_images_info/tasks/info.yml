@@ -1,13 +1,10 @@
 ---
-# Variables required before running this playbook:
-# - disk_image
-
 - name: Start ntnx_images_info tests
   ansible.builtin.debug:
     msg: "Start ntnx_images_info tests"
 
 - name: Test getting all images
-  nutanix.ncp.ntnx_images_info:
+  ntnx_images_info:
   register: result
 
 - name: Check listing status
@@ -19,7 +16,7 @@
 ################################################################
 
 - name: Test getting particular image using filter
-  nutanix.ncp.ntnx_images_info:
+  ntnx_images_info:
     filter:
       name: "{{ disk_image.centos }}"
   register: result
@@ -35,13 +32,13 @@
 ################################################################
 
 - name: Getting image info for test
-  nutanix.ncp.ntnx_images_info:
+  ntnx_images_info:
     filter:
       name: "{{ disk_image.centos }}"
   register: result
 
 - name: Test getting particular image using uuid
-  nutanix.ncp.ntnx_images_info:
+  ntnx_images_info:
     image_uuid: '{{ result.response.entities[0].metadata.uuid }}'
   register: result
 

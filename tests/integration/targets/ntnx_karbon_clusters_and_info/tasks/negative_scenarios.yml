@@ -1,14 +1,4 @@
 ---
-# Variables required before running this playbook:
-# - cluster
-# - k8s_version
-# - host_os
-# - network
-# - cni
-# - nutanix_cluster_password
-# - nutanix_cluster_username
-# - storage_container
-
 - name: Start negative test cases for  ntnx_karbon_clusters
   ansible.builtin.debug:
     msg: Start negative test cases for  ntnx_karbon_clusters
@@ -19,7 +9,7 @@
 
 #############################
 - name: Create cluster with cpu less than minimum
-  nutanix.ncp.ntnx_karbon_clusters:
+  ntnx_karbon_clusters:
     cluster:
       name: "{{ cluster.name }}"
     name: "{{ karbon_name }}"
@@ -58,11 +48,11 @@
       - result.failed == true
       - result.error == "cpu cannot be less then 4"
       - result.msg == "Failed generating create cluster spec"
-    fail_msg: " Fail: cluster created with  cpu  less than minimum"
-    success_msg: " Pass:  Returned as expected"
+    fail_msg: " Fail: cluster creaeted with  cpu  less than minimum"
+    success_msg: " Pass:  Retunred as expected"
 #############################
 - name: Create cluster with memory_gb  less than minimum
-  nutanix.ncp.ntnx_karbon_clusters:
+  ntnx_karbon_clusters:
     cluster:
       name: "{{ cluster.name }}"
     name: "{{ karbon_name }}"
@@ -101,11 +91,11 @@
       - result.failed == true
       - result.error == "memory_gb cannot be less then 8"
       - result.msg == "Failed generating create cluster spec"
-    fail_msg: " Fail: cluster created with  memory_gb size  less than minimum"
-    success_msg: " Pass:  Returned as expected"
+    fail_msg: " Fail: cluster creaeted with  memory_gb size  less than minimum"
+    success_msg: " Pass:  Retunred as expected"
 #############################
 - name: Create cluster with wrong num_instances for master nodes
-  nutanix.ncp.ntnx_karbon_clusters:
+  ntnx_karbon_clusters:
     cluster:
       name: "{{ cluster.name }}"
     name: "{{ karbon_name }}"
@@ -144,11 +134,11 @@
       - result.failed == true
       - result.error ==  "value of masters.num_instances must be 1 or 2"
       - result.msg == "Failed generating create cluster spec"
-    fail_msg: " Fail: cluster created with wrong num_instances for master nodes"
-    success_msg: " Pass:  Returned as expected"
+    fail_msg: " Fail: cluster creaeted with wrong num_instances for master nodes"
+    success_msg: " Pass:  Retunred as expected"
 #############################
 - name: Create cluster with wrong num_instances for etcd nodes
-  nutanix.ncp.ntnx_karbon_clusters:
+  ntnx_karbon_clusters:
     cluster:
       name: "{{ cluster.name }}"
     name: "{{ karbon_name }}"
@@ -187,6 +177,6 @@
       - result.failed == true
       - result.error ==  "value of etcd.num_instances must be 1, 3 or 5"
       - result.msg == "Failed generating create cluster spec"
-    fail_msg: " Fail: cluster created with wrong num_instances for etcd nodes"
-    success_msg: " Pass:  Returned as expected"
+    fail_msg: " Fail: cluster creaeted with wrong num_instances for etcd nodes"
+    success_msg: " Pass:  Retunred as expected"
 #############################

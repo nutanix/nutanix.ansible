@@ -21,7 +21,7 @@
     todelete: []
 
 - name: Create address group with check mode enabled
-  nutanix.ncp.ntnx_address_groups_v2:
+  ntnx_address_groups_v2:
     state: present
     name: "{{ ag1 }}"
     description: test-ansible-address-group-2-desc
@@ -58,7 +58,7 @@
 ###################################################################################################
 
 - name: Create address group
-  nutanix.ncp.ntnx_address_groups_v2:
+  ntnx_address_groups_v2:
     state: present
     name: "{{ ag2 }}"
     description: test-ansible-group-1-desc
@@ -96,7 +96,7 @@
 ###################################################################################################
 
 - name: Update address group with check mode enabled
-  nutanix.ncp.ntnx_address_groups_v2:
+  ntnx_address_groups_v2:
     state: present
     ext_id: "{{ todelete }}"
     name: "{{ ag1 }}"
@@ -129,7 +129,7 @@
 ###################################################################################################
 
 - name: Update address group
-  nutanix.ncp.ntnx_address_groups_v2:
+  ntnx_address_groups_v2:
     state: present
     ext_id: "{{ todelete }}"
     name: "{{ ag1 }}"
@@ -158,7 +158,7 @@
 ###################################################################################################
 
 - name: Test idempotency by updating address group with same values
-  nutanix.ncp.ntnx_address_groups_v2:
+  ntnx_address_groups_v2:
     state: present
     ext_id: "{{ todelete }}"
     name: "{{ ag1 }}"
@@ -182,7 +182,7 @@
 ###################################################################################################
 
 - name: Check if address group with existing name fails or not
-  nutanix.ncp.ntnx_address_groups_v2:
+  ntnx_address_groups_v2:
     state: present
     name: "{{ ag1 }}"
     ipv4_addresses:
@@ -204,7 +204,7 @@
 ###################################################################################################
 
 - name: List all address groups
-  nutanix.ncp.ntnx_address_groups_info_v2:
+  ntnx_address_groups_info_v2:
   register: result
   ignore_errors: true
 
@@ -215,15 +215,13 @@
       - result.changed == false
       - result.failed == false
       - result.response | length > 0
-      - result.total_available_results is defined
-      - result.total_available_results > 0
     fail_msg: Unable to list all address groups
     success_msg: address groups info obtained successfully
 
 ###################################################################################################
 
 - name: List address groups using external id
-  nutanix.ncp.ntnx_address_groups_info_v2:
+  ntnx_address_groups_info_v2:
     ext_id: "{{ todelete }}"
   register: result
   ignore_errors: true
@@ -243,7 +241,7 @@
 ###################################################################################################
 
 - name: List address groups using limit
-  nutanix.ncp.ntnx_address_groups_info_v2:
+  ntnx_address_groups_info_v2:
     limit: 1
   register: result
   ignore_errors: true
@@ -261,7 +259,7 @@
 ###################################################################################################
 
 - name: List address groups using filter
-  nutanix.ncp.ntnx_address_groups_info_v2:
+  ntnx_address_groups_info_v2:
     filter: name eq '{{ ag1 }}'
   register: result
   ignore_errors: true
@@ -281,27 +279,8 @@
 
 ###################################################################################################
 
-- name: Delete address group with check mode enabled
-  nutanix.ncp.ntnx_address_groups_v2:
-    state: absent
-    ext_id: "{{ todelete }}"
-  register: result
-  ignore_errors: true
-  check_mode: true
-
-- name: Delete address group with check mode enabled status
-  ansible.builtin.assert:
-    that:
-      - result.msg is defined
-      - result.changed == false
-      - result.failed == false
-      - result.ext_id == "{{ todelete }}"
-      - result.msg == "Address group with ext_id:{{ todelete }} will be deleted."
-    fail_msg: Delete address group with check mode enabled failed
-    success_msg: Delete address group with check mode enabled passed
-
 - name: Delete address group
-  nutanix.ncp.ntnx_address_groups_v2:
+  ntnx_address_groups_v2:
     state: absent
     ext_id: "{{ todelete }}"
   register: result

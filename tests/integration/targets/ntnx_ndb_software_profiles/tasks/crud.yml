@@ -23,7 +23,8 @@
     profile2_name: "{{ random_name[0] }}2"
 
 - name: Create software profile create spec
-  nutanix.ncp.ntnx_ndb_profiles:
+  check_mode: true
+  ntnx_ndb_profiles:
     name: "{{ profile1_name }}"
     desc: "{{ profile1_name }}-desc"
     type: software
@@ -41,8 +42,6 @@
       - name: "{{ cluster.cluster1.name }}"
       - uuid: "{{ cluster.cluster2.uuid }}"
   register: result
-  check_mode: true
-  ignore_errors: true
 
 - name: Set expected result for profile create
   ansible.builtin.set_fact:
@@ -75,7 +74,7 @@
     success_msg: "Pass: Spec for creating software profile generated successfully"
 
 - name: Create software profile with base version and cluster instance topology. Replicated to multiple clusters
-  nutanix.ncp.ntnx_ndb_profiles:
+  ntnx_ndb_profiles:
     name: "{{ profile1_name }}-replicated"
     desc: "{{ profile1_name }}-desc-replicated"
     type: software
@@ -121,7 +120,7 @@
     success_msg: "Pass: Software profile with base version, cluster instance topology and replicated to multiple clusters created successfully"
 
 - name: Create software profile with base version and single instance topology
-  nutanix.ncp.ntnx_ndb_profiles:
+  ntnx_ndb_profiles:
     name: "{{ profile2_name }}"
     desc: "{{ profile2_name }}-desc"
     type: software
@@ -165,7 +164,7 @@
     profile_uuid: "{{ result.profile_uuid }}"
 
 - name: Update software profile
-  nutanix.ncp.ntnx_ndb_profiles:
+  ntnx_ndb_profiles:
     profile_uuid: "{{ profile_uuid }}"
     name: "{{ profile1_name }}-updated1"
     desc: "{{ profile1_name }}-desc-updated"
@@ -186,7 +185,7 @@
     success_msg: "Pass: Software profile updated successfully"
 
 - name: Idempotency checks
-  nutanix.ncp.ntnx_ndb_profiles:
+  ntnx_ndb_profiles:
     profile_uuid: "{{ profile_uuid }}"
     name: "{{ profile1_name }}-updated1"
     desc: "{{ profile1_name }}-desc-updated"
@@ -207,7 +206,8 @@
     success_msg: "Pass: Update skipped successfully due to no state changes"
 
 - name: Create software profile version spec
-  nutanix.ncp.ntnx_ndb_profiles:
+  check_mode: true
+  ntnx_ndb_profiles:
     profile_uuid: "{{ profile_uuid }}"
     database_type: postgres
     software:
@@ -218,9 +218,8 @@
         db_software: db_notes for v2
       db_server_vm:
         name: "{{ db_server_vm.name }}"
+
   register: result
-  check_mode: true
-  ignore_errors: true
 
 - name: Set expected result for version create
   ansible.builtin.set_fact:
@@ -253,7 +252,7 @@
     success_msg: "Pass: Spec for creating software profile version generated successfully"
 
 - name: Create software profile version
-  nutanix.ncp.ntnx_ndb_profiles:
+  ntnx_ndb_profiles:
     profile_uuid: "{{ profile_uuid }}"
     database_type: postgres
     software:
@@ -290,16 +289,16 @@
     version_uuid: "{{ result.version_uuid }}"
 
 - name: Create spec for update software profile version
-  nutanix.ncp.ntnx_ndb_profiles:
+  check_mode: true
+  ntnx_ndb_profiles:
     profile_uuid: "{{ profile_uuid }}"
     database_type: postgres
     software:
       version_uuid: "{{ result.version_uuid }}"
       name: v2.0-updated
       desc: v2.0-desc-updated
+
   register: result
-  check_mode: true
-  ignore_errors: true
 
 - name: Check status of spec
   ansible.builtin.assert:
@@ -317,7 +316,7 @@
     success_msg: "Pass: Spec for updating software profile version created successfully"
 
 - name: Update software profile version
-  nutanix.ncp.ntnx_ndb_profiles:
+  ntnx_ndb_profiles:
     profile_uuid: "{{ profile_uuid }}"
     database_type: postgres
     software:
@@ -353,7 +352,7 @@
     version_uuid: "{{ result.version_uuid }}"
 
 - name: Publish software profile version
-  nutanix.ncp.ntnx_ndb_profiles:
+  ntnx_ndb_profiles:
     profile_uuid: "{{ profile_uuid }}"
     software:
       version_uuid: "{{ version_uuid }}"
@@ -377,7 +376,7 @@
     success_msg: "Pass: Software profile version published successfully"
 
 - name: Unpublish software profile version
-  nutanix.ncp.ntnx_ndb_profiles:
+  ntnx_ndb_profiles:
     profile_uuid: "{{ profile_uuid }}"
     software:
       version_uuid: "{{ version_uuid }}"
@@ -401,7 +400,7 @@
     success_msg: "Pass: Software version unpublished successfully"
 
 - name: Deprecate software profile version
-  nutanix.ncp.ntnx_ndb_profiles:
+  ntnx_ndb_profiles:
     profile_uuid: "{{ profile_uuid }}"
     software:
       version_uuid: "{{ version_uuid }}"
@@ -425,7 +424,7 @@
     success_msg: "Pass: Software version deprecated successfully"
 
 - name: Delete software profile version
-  nutanix.ncp.ntnx_ndb_profiles:
+  ntnx_ndb_profiles:
     profile_uuid: "{{ profile_uuid }}"
     software:
       version_uuid: "{{ version_uuid }}"
@@ -446,7 +445,7 @@
     success_msg: "Pass: Software version deleted successfully"
 
 - name: Replicate software profile
-  nutanix.ncp.ntnx_ndb_profiles:
+  ntnx_ndb_profiles:
     profile_uuid: "{{ profile_uuid }}"
     clusters:
       - name: "{{ cluster.cluster2.name }}"
@@ -484,7 +483,7 @@
     success_msg: "Pass: Software profile replicated successfully"
 
 - name: Delete software profile
-  nutanix.ncp.ntnx_ndb_profiles:
+  ntnx_ndb_profiles:
     profile_uuid: "{{ profile_uuid }}"
     state: absent
   register: result

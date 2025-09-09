@@ -7,7 +7,7 @@
       nutanix_password: "{{ ndb_password }}"
       validate_certs: false
   block:
-    - name: Import create_vlans.yml
+    - name: Import tasks
       ansible.builtin.import_tasks: create_vlans.yml
-    - name: Import negative_scenarios.yml
-      ansible.builtin.import_tasks: negative_scenarios.yml
+    - name: Import tasks
+      ansible.builtin.import_tasks: negativ_scenarios.yml

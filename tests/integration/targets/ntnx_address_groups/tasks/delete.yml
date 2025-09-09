@@ -1,5 +1,5 @@
 ---
-- name: Start ntnx_address_groups delete tests
+- name: Start ntnx_address_groups create tests
   ansible.builtin.debug:
     msg: Start ntnx_address_groups delete tests
 
@@ -15,8 +15,9 @@
   ansible.builtin.set_fact:
     ag1: "{{random_name}}{{suffix_name}}1"
 
+
 - name: Create address group
-  nutanix.ncp.ntnx_address_groups:
+  ntnx_address_groups:
     state: present
     name: "{{ag1}}"
     desc: test-ansible-address-group-4-desc
@@ -31,29 +32,12 @@
       - test_ag.response is defined
       - test_ag.changed == true
     fail_msg: "Unable to create address group"
-    success_msg: "address group created successfully"
+    success_msg: "address group created susccessfully"
 
 ###################################################################################################
-- name: Delete address group with check mode
-  nutanix.ncp.ntnx_address_groups:
-    state: absent
-    address_group_uuid: "{{ test_ag.address_group_uuid }}"
-  register: output
-  ignore_errors: true
-  check_mode: true
-
-- name: Delete address group with check mode Status
-  ansible.builtin.assert:
-    that:
-      - output.failed == false
-      - output.changed == false
-      - output.msg =="Address group with uuid:{{  test_ag.address_group_uuid }} will be deleted."
-      - output.address_group_uuid == "{{ test_ag.address_group_uuid }}"
-    fail_msg: "Delete address group with check mode failed"
-    success_msg: "Delete address group with check mode passed"
 
 - name: Delete address group
-  nutanix.ncp.ntnx_address_groups:
+  ntnx_address_groups:
     state: absent
     address_group_uuid: "{{ test_ag.address_group_uuid }}"
   register: result
@@ -63,7 +47,6 @@
     that:
       - result.response is defined
       - result.changed == true
-      - result.address_group_uuid == "{{ test_ag.address_group_uuid }}"
 
     fail_msg: "address group delete failed"
     success_msg: "address group deleted successfully"

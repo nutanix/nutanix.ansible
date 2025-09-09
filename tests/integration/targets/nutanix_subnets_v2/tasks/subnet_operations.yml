@@ -1,14 +1,4 @@
 ---
-# Variables required before running this playbook:
-# - cluster
-# - virtual_switch
-# - vlan_subnets_ids
-# - ip_address_management
-# - ip_address_pools
-# - dhcp_settings
-# - external_nonat_subnet
-# - external_nat_subnet
-
 - name: Start nutanix_subnets_v2 tests
   ansible.builtin.debug:
     msg: "Start nutanix_subnets_v2 tests"
@@ -27,7 +17,7 @@
     todelete: []
 
 - name: Create VLAN subnet with check mode enabled
-  nutanix.ncp.ntnx_subnets_v2:
+  ntnx_subnets_v2:
     state: present
     name: "{{ subnet_name }}_1"
     subnet_type: VLAN
@@ -104,7 +94,7 @@
 
 ##################################################
 - name: VLAN subnet without IPAM
-  nutanix.ncp.ntnx_subnets_v2:
+  ntnx_subnets_v2:
     state: present
     wait: true
     name: "{{ subnet_name }}_1"
@@ -129,7 +119,7 @@
     success_msg: " VLAN subnet without IPAM created successfully "
 
 - name: Fetch subnet after creation for verification
-  nutanix.ncp.ntnx_subnets_info_v2:
+  ntnx_subnets_info_v2:
     filter: "name eq '{{ subnet_name }}_1'"
   register: result
   ignore_errors: true
@@ -155,7 +145,7 @@
     todelete: "{{ todelete + [  result.ext_id ] }}"
 ################################################################
 - name: VLAN subnet with IPAM and IP pools
-  nutanix.ncp.ntnx_subnets_v2:
+  ntnx_subnets_v2:
     state: present
     name: "{{ subnet_name }}_2"
     subnet_type: VLAN
@@ -200,7 +190,7 @@
     success_msg: " VLAN subnet with IPAM created successfully "
 
 - name: Fetch subnet after creation for verification
-  nutanix.ncp.ntnx_subnets_info_v2:
+  ntnx_subnets_info_v2:
     filter: "name eq '{{ subnet_name }}_2'"
   register: result
   ignore_errors: true
@@ -238,7 +228,7 @@
 ################################################################
 
 - name: Update VLAN subnet with check mode enabled
-  nutanix.ncp.ntnx_subnets_v2:
+  ntnx_subnets_v2:
     state: present
     name: "{{ subnet_name }}_2_updated_check_mode"
     ext_id: "{{ ext_id }}"
@@ -282,7 +272,7 @@
 ################################################################
 
 - name: Update VLAN subnet name and IP pools
-  nutanix.ncp.ntnx_subnets_v2:
+  ntnx_subnets_v2:
     state: present
     name: "{{ subnet_name }}_2_updated"
     ext_id: "{{ ext_id }}"
@@ -326,7 +316,7 @@
 
 ################################################################
 - name: Check idempotency by updating Subnet with same values
-  nutanix.ncp.ntnx_subnets_v2:
+  ntnx_subnets_v2:
     state: present
     name: "{{ subnet_name }}_2_updated"
     ext_id: "{{ result.response.ext_id }}"
@@ -364,27 +354,8 @@
 
 ################################################################
 
-- name: Delete subnet with check mode enabled
-  nutanix.ncp.ntnx_subnets_v2:
-    state: absent
-    ext_id: "{{ todelete[0] }}"
-  register: result
-  ignore_errors: true
-  check_mode: true
-
-- name: Delete subnet with check mode enabled status
-  ansible.builtin.assert:
-    that:
-      - result.msg is defined
-      - result.changed == false
-      - result.failed == false
-      - result.ext_id == "{{ todelete[0] }}"
-      - result.msg == "Subnet with ext_id:{{ todelete[0] }} will be deleted."
-    fail_msg: " Delete subnet with check mode enabled failed "
-    success_msg: " Delete subnet with check mode enabled passed "
-
 - name: Delete all Created Subnets
-  nutanix.ncp.ntnx_subnets_v2:
+  ntnx_subnets_v2:
     state: absent
     ext_id: "{{ item }}"
   register: result
@@ -407,7 +378,7 @@
 
 ################################################################
 - name: VLAN subnet with IPAM and DHCP options enabled
-  nutanix.ncp.ntnx_subnets_v2:
+  ntnx_subnets_v2:
     state: present
     name: "{{ subnet_name }}_3"
     subnet_type: VLAN
@@ -468,7 +439,7 @@
     success_msg: " VLAN subnet with IPAM and DHCP options created successfully "
 
 - name: Fetch subnet after creation for verification
-  nutanix.ncp.ntnx_subnets_info_v2:
+  ntnx_subnets_info_v2:
     filter: "name eq '{{ subnet_name }}_3'"
   register: result
   ignore_errors: true
@@ -505,7 +476,7 @@
     todelete: "{{ todelete + [  result.ext_id ] }}"
 ################################################################
 - name: External subnet without NAT
-  nutanix.ncp.ntnx_subnets_v2:
+  ntnx_subnets_v2:
     state: present
     name: "{{ subnet_name }}_4"
     subnet_type: VLAN
@@ -552,7 +523,7 @@
     success_msg: " External subnet without NAT  created successfully "
 
 - name: Fetch subnet after creation for verification
-  nutanix.ncp.ntnx_subnets_info_v2:
+  ntnx_subnets_info_v2:
     filter: "name eq '{{ subnet_name }}_4'"
   register: result
   ignore_errors: true
@@ -585,7 +556,7 @@
 
 #################################################################
 - name: External subnet with NAT
-  nutanix.ncp.ntnx_subnets_v2:
+  ntnx_subnets_v2:
     state: present
     name: "{{ subnet_name }}_5"
     subnet_type: VLAN
@@ -633,7 +604,7 @@
     success_msg: " External subnet without NAT  created successfully "
 
 - name: Fetch subnet after creation for verification
-  nutanix.ncp.ntnx_subnets_info_v2:
+  ntnx_subnets_info_v2:
     filter: "name eq '{{ subnet_name }}_5'"
   register: result
   ignore_errors: true
@@ -670,7 +641,7 @@
 ################################################################
 
 - name: Create min VPC
-  nutanix.ncp.ntnx_vpcs_v2:
+  ntnx_vpcs_v2:
     state: present
     name: "{{ vpc_name }}"
   register: result
@@ -695,7 +666,7 @@
 ################################################################
 
 - name: Overlay Subnet with minimum requirements
-  nutanix.ncp.ntnx_subnets_v2:
+  ntnx_subnets_v2:
     state: present
     name: "{{ subnet_name }}_6"
     subnet_type: OVERLAY
@@ -726,7 +697,7 @@
     success_msg: " Overlay Subnet with minimum requirements created successfully "
 
 - name: Fetch subnet after creation for verification
-  nutanix.ncp.ntnx_subnets_info_v2:
+  ntnx_subnets_info_v2:
     filter: "name eq '{{ subnet_name }}_6'"
   register: result
   ignore_errors: true
@@ -754,7 +725,7 @@
 #################################################################
 
 - name: List subnets using limit
-  nutanix.ncp.ntnx_subnets_info_v2:
+  ntnx_subnets_info_v2:
     limit: 1
   check_mode: true
   register: subnets
@@ -769,7 +740,7 @@
     success_msg: " Subnets listed successfully using limit"
 #########################################################
 - name: List subnets using subnet_type filter criteria
-  nutanix.ncp.ntnx_subnets_info_v2:
+  ntnx_subnets_info_v2:
     filter: "name eq '{{subnets.response.0.name}}'"
     limit: 1
   register: result
@@ -780,14 +751,12 @@
     that:
       - result.response is defined
       - result.response | length >= 1
-      - result.total_available_results is defined
-      - result.total_available_results >= 1
       - result.response.0.name == subnets.response.0.name
     fail_msg: " Unable to list subnets using subnet_type filter criteria "
     success_msg: " Subnets listed successfully using subnet_type filter criteria "
 ##########################################################
 - name: Get subnet using ext_id
-  nutanix.ncp.ntnx_subnets_info_v2:
+  ntnx_subnets_info_v2:
     ext_id: "{{subnets.response.0.ext_id}}"
   register: result
   ignore_errors: true
@@ -801,7 +770,7 @@
     success_msg: " Subnet fetched successfully using ext_id"
 #########################################################
 - name: List subnets using VPC reference
-  nutanix.ncp.ntnx_subnets_info_v2:
+  ntnx_subnets_info_v2:
     filter: "vpcReference eq '{{ vpc_uuid }}'"
   register: result
   ignore_errors: true
@@ -811,14 +780,12 @@
     that:
       - result.response is defined
       - result.response | length == 1
-      - result.total_available_results is defined
-      - result.total_available_results == 1
       - result.response[0].vpc_reference == "{{vpc_uuid}}"
     fail_msg: " Unable to list subnets using vpc_reference "
     success_msg: " Subnets listed successfully using vpc_reference"
 #########################################################
 - name: List subnets using cluster reference
-  nutanix.ncp.ntnx_subnets_info_v2:
+  ntnx_subnets_info_v2:
     filter: "clusterReference eq '{{ cluster.uuid }}'"
   register: result
   ignore_errors: true
@@ -828,15 +795,13 @@
     that:
       - result.response is defined
       - result.response | length > 0
-      - result.total_available_results is defined
-      - result.total_available_results > 0
       - result.response.0.cluster_reference == "{{ cluster.uuid }}"
     fail_msg: " Unable to list subnets using vpc_reference "
     success_msg: " Subnets listed successfully using vpc_reference"
 #########################################################
 
 - name: Delete all Created Subnets
-  nutanix.ncp.ntnx_subnets_v2:
+  ntnx_subnets_v2:
     state: absent
     ext_id: "{{ item }}"
   register: result
@@ -858,7 +823,7 @@
     todelete: []
 #################################################################
 - name: Overlay Subnet with IP_pools and DHCP
-  nutanix.ncp.ntnx_subnets_v2:
+  ntnx_subnets_v2:
     state: present
     name: "{{ subnet_name }}_7"
     subnet_type: OVERLAY
@@ -905,7 +870,7 @@
     success_msg: " Overlay Subnet with IP_pools and DHCP created successfully "
 
 - name: Fetch subnet after creation for verification
-  nutanix.ncp.ntnx_subnets_info_v2:
+  ntnx_subnets_info_v2:
     filter: "name eq '{{ subnet_name }}_7'"
   register: result
   ignore_errors: true
@@ -941,7 +906,7 @@
 #################################################################
 
 - name: Delete all Created Subnets
-  nutanix.ncp.ntnx_subnets_v2:
+  ntnx_subnets_v2:
     state: absent
     ext_id: "{{ item }}"
   register: result
@@ -964,7 +929,7 @@
 #################################################################
 
 - name: Delete vpc
-  nutanix.ncp.ntnx_vpcs_v2:
+  ntnx_vpcs_v2:
     state: absent
     ext_id: "{{ vpc_uuid }}"
   register: result

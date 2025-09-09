@@ -1,14 +1,10 @@
 ---
-# Variables required before running this playbook:
-# - disk_image
-# - cluster
-
 - name: Start ntnx_images update tests
   ansible.builtin.debug:
-    msg: Start ntnx_images update tests
+    msg: Start ntnx_image update tests
 
 - name: Create image for update tests
-  nutanix.ncp.ntnx_images:
+  ntnx_images:
     state: present
     name: integration-test-image-update
     desc: "image for integration"
@@ -46,7 +42,7 @@
 ############################################# UPDATE TESTS ########################################
 
 - name: Check idempotency
-  nutanix.ncp.ntnx_images:
+  ntnx_images:
     state: present
     image_uuid: "{{ setup_image.image_uuid }}"
     name: integration-test-image-update
@@ -71,7 +67,7 @@
 ########################################################################################
 
 - name: Update name, desc and categories
-  nutanix.ncp.ntnx_images:
+  ntnx_images:
     state: present
     image_uuid: "{{ setup_image.image_uuid }}"
     name: integration-test-image-after-update
@@ -119,7 +115,7 @@
 ########################################### Cleanup ###################################################
 
 - name: Cleanup created entities
-  nutanix.ncp.ntnx_images:
+  ntnx_images:
     state: absent
     image_uuid: "{{ item }}"
   register: result

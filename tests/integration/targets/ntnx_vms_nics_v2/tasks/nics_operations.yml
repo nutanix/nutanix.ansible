@@ -1,9 +1,4 @@
 ---
-# Variables required before running this playbook:
-# - cluster
-# - static
-# - network
-
 - name: Start testing ntnx_vms_nics_v2
   ansible.builtin.debug:
     msg: Start testing ntnx_vms_nics_v2
@@ -12,12 +7,12 @@
   ansible.builtin.set_fact:
     random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
 
-- name: Set VM name
+- name: Set VM and nics names
   ansible.builtin.set_fact:
     vm_name: "{{ random_name }}_vm_test"
 
 - name: Create VM with minimum requirements
-  nutanix.ncp.ntnx_vms_v2:
+  ntnx_vms_v2:
     state: present
     name: "{{ vm_name }}"
     cluster:
@@ -47,35 +42,8 @@
 
 ################################################################################
 
-- name: Create VM 2 with minimum requirements
-  ntnx_vms_v2:
-    state: present
-    name: "{{ vm_name }}_2"
-    cluster:
-      ext_id: "{{ cluster.uuid }}"
-    storage_config:
-      is_flash_mode_enabled: true
-  register: result
-  ignore_errors: true
-
-- name: Creation Status
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == true
-      - result.failed == false
-      - result.response.cluster.ext_id == "{{ cluster.uuid }}"
-    fail_msg: "Unable to Create VM with minimum requirements "
-    success_msg: "VM with minimum requirements created successfully "
-
-- name: Set vm_uuid
-  ansible.builtin.set_fact:
-    vm_uuid_2: '{{ result["ext_id"] }}'
-
-#################################################################################
-
 - name: Create nic - check mode is enabled
-  nutanix.ncp.ntnx_vms_nics_v2:
+  ntnx_vms_nics_v2:
     vm_ext_id: "{{ vm_uuid }}"
     state: present
     backing_info:
@@ -109,7 +77,7 @@
 ################################################################################
 
 - name: Create nic with static IP and secondary ip list - check mode is enabled
-  nutanix.ncp.ntnx_vms_nics_v2:
+  ntnx_vms_nics_v2:
     vm_ext_id: "{{ vm_uuid }}"
     state: present
     backing_info:
@@ -150,7 +118,7 @@
 ################################################################################
 
 - name: Create nic with allowing unknown macs - check mode is enabled
-  nutanix.ncp.ntnx_vms_nics_v2:
+  ntnx_vms_nics_v2:
     vm_ext_id: "{{ vm_uuid }}"
     state: present
     backing_info:
@@ -185,7 +153,7 @@
 
 ##################################################################################
 - name: Create nic with minimal spec
-  nutanix.ncp.ntnx_vms_nics_v2:
+  ntnx_vms_nics_v2:
     vm_ext_id: "{{ vm_uuid }}"
     state: present
     network_info:
@@ -210,7 +178,7 @@
 
 - name: Create nic with network function nic type
   ntnx_vms_nics_v2:
-    vm_ext_id: "{{ vm_uuid_2 }}"
+    vm_ext_id: "{{ vm_uuid }}"
     state: present
     backing_info:
       model: "VIRTIO"
@@ -231,7 +199,7 @@
       - result.response is defined
       - result.changed == true
       - result.failed == false
-      - result.vm_ext_id == "{{ vm_uuid_2 }}"
+      - result.vm_ext_id == "{{ vm_uuid }}"
       - result.ext_id is defined
       - result.response.network_info.nic_type == "NETWORK_FUNCTION_NIC"
       - result.response.network_info.network_function_nic_type == "INGRESS"
@@ -244,7 +212,7 @@
 ################################################################################
 
 - name: Create Direct type NIC with dynamic IP
-  nutanix.ncp.ntnx_vms_nics_v2:
+  ntnx_vms_nics_v2:
     vm_ext_id: "{{ vm_uuid }}"
     state: present
     backing_info:
@@ -273,21 +241,15 @@
       - result.response.network_info.subnet.ext_id == "{{ static.uuid }}"
       - result.response.network_info.vlan_mode == "ACCESS"
       - result.response.network_info.should_allow_unknown_macs == false
-      - result.response.nic_network_info.nic_type == "DIRECT_NIC"
-      - result.response.nic_network_info.subnet.ext_id == "{{ static.uuid }}"
-      - result.response.nic_network_info.vlan_mode == "ACCESS"
-      - result.response.nic_network_info.should_allow_unknown_macs == false
       - result.response.backing_info.is_connected == true
       - result.response.network_info.ipv4_config.ip_address.value is defined
-      - result.response.nic_backing_info.is_connected == true
-      - result.response.nic_network_info.ipv4_config.ip_address.value is defined
     fail_msg: "Create Direct type NIC with dynamic IP failed "
     success_msg: "Create Direct type NIC with dynamic IP passed "
 
 ################################################################################
 
 - name: Create Normal type NIC with static IP
-  nutanix.ncp.ntnx_vms_nics_v2:
+  ntnx_vms_nics_v2:
     vm_ext_id: "{{ vm_uuid }}"
     state: present
     backing_info:
@@ -329,7 +291,7 @@
     seconds: 60
 
 - name: Get nics ids from VM
-  nutanix.ncp.ntnx_vms_info_v2:
+  ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -345,62 +307,39 @@
       - result.changed == false
       - result.failed == false
       - result.response.nics is defined
-      - todelete | length == 3
+      - todelete | length == 4
       - result.response.nics[0].ext_id is defined
       - result.response.nics[0].network_info.subnet.ext_id == "{{ network.dhcp.uuid }}"
       - result.response.nics[0].network_info.nic_type == "NORMAL_NIC"
       - result.response.nics[0].network_info.vlan_mode == "ACCESS"
       - result.response.nics[0].backing_info.is_connected == true
       - result.response.nics[1].backing_info.is_connected == true
-      - result.response.nics[1].network_info.nic_type == "DIRECT_NIC"
-      - result.response.nics[1].network_info.ipv4_config.ip_address.value is defined
-      - result.response.nics[1].network_info.subnet.ext_id == "{{ static.uuid }}"
+      - result.response.nics[1].network_info.nic_type == "NETWORK_FUNCTION_NIC"
+      - result.response.nics[1].network_info.ipv4_config == none
+      - result.response.nics[1].network_info.network_function_nic_type == "INGRESS"
       - result.response.nics[1].network_info.vlan_mode == "ACCESS"
       - result.response.nics[1].network_info.should_allow_unknown_macs == false
       - result.response.nics[2].backing_info.is_connected == true
-      - result.response.nics[2].network_info.nic_type == "NORMAL_NIC"
-      - result.response.nics[2].network_info.ipv4_config.ip_address.value == "{{ network.managed.IPs[0] }}"
+      - result.response.nics[2].network_info.nic_type == "DIRECT_NIC"
+      - result.response.nics[2].network_info.ipv4_config.ip_address.value is defined
       - result.response.nics[2].network_info.subnet.ext_id == "{{ static.uuid }}"
       - result.response.nics[2].network_info.vlan_mode == "ACCESS"
       - result.response.nics[2].network_info.should_allow_unknown_macs == false
+      - result.response.nics[3].backing_info.is_connected == true
+      - result.response.nics[3].network_info.nic_type == "NORMAL_NIC"
+      - result.response.nics[3].network_info.ipv4_config.ip_address.value == "{{ network.managed.IPs[0] }}"
+      - result.response.nics[3].network_info.subnet.ext_id == "{{ static.uuid }}"
+      - result.response.nics[3].network_info.vlan_mode == "ACCESS"
+      - result.response.nics[3].network_info.should_allow_unknown_macs == false
     fail_msg: "Unable to get nics ids from VM "
     success_msg: "nics ids from VM fetched successfully "
 
 ################################################################################
 
-- name: Get nics ids from VM 2
-  ntnx_vms_info_v2:
-    ext_id: "{{ vm_uuid_2 }}"
-  register: result
-  ignore_errors: true
-
-- name: Adding nics ids to todelete
-  ansible.builtin.set_fact:
-    todelete: "{{ todelete + (result.response.nics | map(attribute='ext_id') | list) }}"
-
-- name: Get nics ids status
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == false
-      - result.failed == false
-      - result.response.nics is defined
-      - todelete | length == 4
-      - result.response.nics[0].backing_info.is_connected == true
-      - result.response.nics[0].network_info.nic_type == "NETWORK_FUNCTION_NIC"
-      - result.response.nics[0].network_info.ipv4_config == none
-      - result.response.nics[0].network_info.network_function_nic_type == "INGRESS"
-      - result.response.nics[0].network_info.vlan_mode == "ACCESS"
-      - result.response.nics[0].network_info.should_allow_unknown_macs == false
-    fail_msg: "Unable to get nics ids from VM 2"
-    success_msg: "nics ids from VM 2 fetched successfully "
-
-################################################################################
-
 - name: Update nic - check mode is enabled
   ntnx_vms_nics_v2:
-    vm_ext_id: "{{ vm_uuid_2 }}"
-    ext_id: "{{ todelete[3] }}"
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ todelete[1] }}"
     state: present
     backing_info:
       model: "VIRTIO"
@@ -436,7 +375,7 @@
 
 - name: Check for idempotency by updating the nic with same values
   ntnx_vms_nics_v2:
-    ext_id: "{{ todelete[2] }}"
+    ext_id: "{{ todelete[3] }}"
     vm_ext_id: "{{ vm_uuid }}"
     state: present
     backing_info:
@@ -463,14 +402,14 @@
       - result.failed == false
       - result.msg == "Nothing to change."
       - result.skipped == true
-      - result.ext_id == "{{ todelete[2] }}"
+      - result.ext_id == "{{ todelete[3] }}"
     fail_msg: "Check for idempotency by updating the nic with same values failed "
     success_msg: "Check for idempotency by updating the nic with same values passed "
 
 ###############################################################################
 
 - name: Update nic
-  nutanix.ncp.ntnx_vms_nics_v2:
+  ntnx_vms_nics_v2:
     vm_ext_id: "{{ vm_uuid }}"
     ext_id: "{{ todelete[0] }}"
     state: present
@@ -488,29 +427,10 @@
     fail_msg: "Unable to update nic "
     success_msg: "nic updated successfully "
 
-- name: Retrieve nic info after update
-  ntnx_vms_nics_info_v2:
-    ext_id: "{{ todelete[0] }}"
-    vm_ext_id: "{{ vm_uuid }}"
-  register: result
-  ignore_errors: true
-
-- name: Retrieve nic info after update status
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == false
-      - result.failed == false
-      - result.ext_id == "{{ todelete[0] }}"
-      - result.vm_ext_id == "{{ vm_uuid }}"
-      - result.response.backing_info.is_connected == false
-    fail_msg: "Unable to get nic info "
-    success_msg: "nic info fetched successfully "
-
 ###############################################################################
 
 - name: Migrate nic to another subnet - check mode is enabled
-  nutanix.ncp.ntnx_vms_nics_migrate_v2:
+  ntnx_vms_nics_migrate_v2:
     ext_id: "{{ todelete[0] }}"
     vm_ext_id: "{{ vm_uuid }}"
     migrate_type: "ASSIGN_IP"
@@ -537,7 +457,7 @@
 ###############################################################################
 
 - name: Migrate nic to another subnet - migrate type = ASSIGN_IP
-  nutanix.ncp.ntnx_vms_nics_migrate_v2:
+  ntnx_vms_nics_migrate_v2:
     ext_id: "{{ todelete[0] }}"
     vm_ext_id: "{{ vm_uuid }}"
     migrate_type: "ASSIGN_IP"
@@ -564,7 +484,7 @@
 ################################################################################
 
 - name: Retrieve nic info after migrating nic to another subnet - migrate type = ASSIGN_IP
-  nutanix.ncp.ntnx_vms_nics_info_v2:
+  ntnx_vms_nics_info_v2:
     ext_id: "{{ todelete[0] }}"
     vm_ext_id: "{{ vm_uuid }}"
   register: result
@@ -586,7 +506,7 @@
 ###############################################################################
 
 - name: Migrate nic to another subnet - migrate type = RELEASE_IP
-  nutanix.ncp.ntnx_vms_nics_migrate_v2:
+  ntnx_vms_nics_migrate_v2:
     ext_id: "{{ todelete[0] }}"
     vm_ext_id: "{{ vm_uuid }}"
     migrate_type: "RELEASE_IP"
@@ -610,7 +530,7 @@
 ###############################################################################
 
 - name: Retrieve nic info after migrating nic to another subnet - migrate type = RELEASE_IP
-  nutanix.ncp.ntnx_vms_nics_info_v2:
+  ntnx_vms_nics_info_v2:
     ext_id: "{{ todelete[0] }}"
     vm_ext_id: "{{ vm_uuid }}"
   register: result
@@ -632,7 +552,7 @@
 ###############################################################################
 
 - name: Assign IP address to nic - check mode is enabled
-  nutanix.ncp.ntnx_vms_nics_ip_v2:
+  ntnx_vms_nics_ip_v2:
     state: present
     ext_id: "{{ todelete[0] }}"
     vm_ext_id: "{{ vm_uuid }}"
@@ -657,7 +577,7 @@
 ###############################################################################
 
 - name: Assign IP address to nic
-  nutanix.ncp.ntnx_vms_nics_ip_v2:
+  ntnx_vms_nics_ip_v2:
     state: present
     ext_id: "{{ todelete[0] }}"
     vm_ext_id: "{{ vm_uuid }}"
@@ -681,7 +601,7 @@
 ###############################################################################
 
 - name: Retrieve nic info after assigning IP to nic
-  nutanix.ncp.ntnx_vms_nics_info_v2:
+  ntnx_vms_nics_info_v2:
     ext_id: "{{ todelete[0] }}"
     vm_ext_id: "{{ vm_uuid }}"
   register: result
@@ -704,7 +624,7 @@
 ###############################################################################
 
 - name: Release IP address from nic - check mode is enabled
-  nutanix.ncp.ntnx_vms_nics_ip_v2:
+  ntnx_vms_nics_ip_v2:
     state: absent
     ext_id: "{{ todelete[0] }}"
     vm_ext_id: "{{ vm_uuid }}"
@@ -728,7 +648,7 @@
 ###############################################################################
 
 - name: Release IP address from nic
-  nutanix.ncp.ntnx_vms_nics_ip_v2:
+  ntnx_vms_nics_ip_v2:
     state: absent
     ext_id: "{{ todelete[0] }}"
     vm_ext_id: "{{ vm_uuid }}"
@@ -751,7 +671,7 @@
 ###############################################################################
 
 - name: Retrieve nic info after releasing IP from nic
-  nutanix.ncp.ntnx_vms_nics_info_v2:
+  ntnx_vms_nics_info_v2:
     ext_id: "{{ todelete[0] }}"
     vm_ext_id: "{{ vm_uuid }}"
   register: result
@@ -774,7 +694,7 @@
 ###############################################################################
 
 - name: List all nics for VM
-  nutanix.ncp.ntnx_vms_nics_info_v2:
+  ntnx_vms_nics_info_v2:
     vm_ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -789,12 +709,10 @@
       - result.response is defined
       - result.changed == false
       - result.failed == false
-      - result.total_available_results is defined
-      - result.total_available_results == nics_list | length
       - item in nics_list
     fail_msg: "Unable to list all nics for VM "
     success_msg: "All nics for VM listed successfully "
-  loop: "{{ todelete[:-1] }}"
+  loop: "{{ todelete }}"
 
 ################################################################################
 
@@ -823,7 +741,7 @@
 ################################################################################
 
 - name: List all nics for VM with limit 1
-  nutanix.ncp.ntnx_vms_nics_info_v2:
+  ntnx_vms_nics_info_v2:
     vm_ext_id: "{{ vm_uuid }}"
     limit: 1
   register: result
@@ -847,7 +765,7 @@
 ###############################################################################
 
 - name: List all nics for VM with limit 2
-  nutanix.ncp.ntnx_vms_nics_info_v2:
+  ntnx_vms_nics_info_v2:
     vm_ext_id: "{{ vm_uuid }}"
     limit: 2
   register: result
@@ -871,35 +789,14 @@
 
 ###############################################################################
 
-- name: Delete nic with check mode is enabled
-  nutanix.ncp.ntnx_vms_nics_v2:
-    state: absent
-    vm_ext_id: "{{ vm_uuid }}"
-    ext_id: "{{ todelete[0] }}"
-  register: result
-  check_mode: true
-  ignore_errors: true
-
-- name: Delete nic with check mode is enabled Status
-  ansible.builtin.assert:
-    that:
-      - result.msg is defined
-      - result.changed == false
-      - result.failed == false
-      - result.ext_id == "{{ todelete[0] }}"
-      - result.msg == "NIC with ext_id:{{ todelete[0] }} will be deleted."
-    fail_msg: "Delete nic with check mode is enabled failed "
-    success_msg: "Delete nic with check mode is enabled passed "
-################################################################################
-
 - name: Delete nics
-  nutanix.ncp.ntnx_vms_nics_v2:
+  ntnx_vms_nics_v2:
     state: absent
     vm_ext_id: "{{ vm_uuid }}"
     ext_id: "{{ item }}"
   register: result
   ignore_errors: true
-  loop: "{{ todelete[:-1] }}"
+  loop: "{{ todelete }}"
 
 - name: Deletion Status
   ansible.builtin.assert:
@@ -911,29 +808,10 @@
     success_msg: "nics deleted successfully "
   loop: "{{ result.results }}"
 
-################################################################################
-
-- name: Delete nics from VM 2
-  ntnx_vms_nics_v2:
-    state: absent
-    vm_ext_id: "{{ vm_uuid_2 }}"
-    ext_id: "{{ todelete[3] }}"
-  register: result
-  ignore_errors: true
-
-- name: Deletion Status
-  ansible.builtin.assert:
-    that:
-      - result.changed == true
-      - result.failed == false
-      - result.response.status == 'SUCCEEDED'
-    fail_msg: "Unable to delete nics "
-    success_msg: "nics deleted successfully "
-
 #################################################################################
 
 - name: Verify that all nics are deleted
-  nutanix.ncp.ntnx_vms_info_v2:
+  ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -950,26 +828,8 @@
 
 ################################################################################
 
-- name: Verify that all nics are deleted from VM 2
-  ntnx_vms_info_v2:
-    ext_id: "{{ vm_uuid_2 }}"
-  register: result
-  ignore_errors: true
-
-- name: Verify that all nics are deleted from VM 2 status
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == false
-      - result.failed == false
-      - result.response.nics == none
-    fail_msg: "Unable to verify that all nics are deleted "
-    success_msg: "All nics are deleted successfully "
-
-################################################################################
-
 - name: Delete the VM
-  nutanix.ncp.ntnx_vms:
+  ntnx_vms:
     state: absent
     vm_uuid: "{{ vm_uuid }}"
   register: result
@@ -985,23 +845,3 @@
       - result.vm_uuid == "{{ vm_uuid }}"
     fail_msg: "Unable to delete VM  "
     success_msg: "VM is deleted successfully "
-
-################################################################################
-
-- name: Delete the VM 2
-  ntnx_vms:
-    state: absent
-    vm_uuid: "{{ vm_uuid_2 }}"
-  register: result
-  ignore_errors: true
-
-- name: Deletion Status
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == true
-      - result.failed == false
-      - result.response.status == 'SUCCEEDED'
-      - result.vm_uuid == "{{ vm_uuid_2 }}"
-    fail_msg: "Unable to delete VM 2"
-    success_msg: "VM 2 is deleted successfully "

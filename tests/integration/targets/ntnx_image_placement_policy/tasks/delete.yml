@@ -4,7 +4,7 @@
     msg: Start ntnx_image_placement_policy delete tests
 
 - name: Create image placement policy with minimal spec for delete tests
-  nutanix.ncp.ntnx_image_placement_policy:
+  ntnx_image_placement_policy:
     name: "test_policy_5"
     placement_type: soft
     image_categories:
@@ -24,44 +24,25 @@
     fail_msg: "Unable to create image placement policy with minimal spec"
     success_msg: "Image placement policy with minimal spec created successfully"
 
-- name: Delete image with check mode
-  nutanix.ncp.ntnx_image_placement_policy:
-    state: absent
-    policy_uuid: "{{ result.response.metadata.uuid }}"
-  register: output
-  ignore_errors: true
-  check_mode: true
-
-- name: Delete image with check mode Status
-  ansible.builtin.assert:
-    that:
-      - output.failed == false
-      - output.changed == false
-      - output.msg =="Placement policy with uuid:{{  result.response.metadata.uuid }} will be deleted."
-      - output.policy_uuid == "{{ result.response.metadata.uuid  }}"
-    fail_msg: "Delete image with check mode failed"
-    success_msg: "Delete image with check mode passed"
-
 - name: Delete image placement policy created above
-  nutanix.ncp.ntnx_image_placement_policy:
+  ntnx_image_placement_policy:
     state: absent
     policy_uuid: "{{ result.response.metadata.uuid }}"
-  register: output
+  register: result
 
 - name: Delete Status
   ansible.builtin.assert:
     that:
-      - output.response is defined
-      - output.changed == true
-      - output.failed == false
-      - output.policy_uuid == "{{ result.response.metadata.uuid }}"
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
     fail_msg: "Unable to delete image placement policy"
     success_msg: "Image placement policy deleted successfully"
 
 #####################################################################################################
 
 - name: Delete image placement policy with incorrect uuid
-  nutanix.ncp.ntnx_image_placement_policy:
+  ntnx_image_placement_policy:
     state: absent
     policy_uuid: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
   register: result

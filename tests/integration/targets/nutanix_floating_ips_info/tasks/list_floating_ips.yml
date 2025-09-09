@@ -1,6 +1,5 @@
----
 - name: List floating_ips using ip filter criteria
-  nutanix.ncp.ntnx_floating_ips_info:
+  ntnx_floating_ips_info:
     filter:
       floating_ip: "10.0.1.2"
     kind: floating_ip
@@ -12,10 +11,10 @@
     that:
       - result.response is defined
     fail_msg: " Unable to list floating_ips "
-    success_msg: " Floating_ips listed successfully "
+    success_msg: " Floatong_ips listed successfully "
 ##############################################################
 - name: List floating_ips using length and offset
-  nutanix.ncp.ntnx_floating_ips_info:
+  ntnx_floating_ips_info:
     length: 1
     offset: 0
   check_mode: true
@@ -27,10 +26,10 @@
     that:
       - result.response is defined
     fail_msg: " Unable to list floating_ips "
-    success_msg: " Floating_ips listed successfully "
+    success_msg: " Floatong_ips listed successfully "
 #############################################################
 - name: List floating_ips using ascending ip sorting
-  nutanix.ncp.ntnx_floating_ips_info:
+  ntnx_floating_ips_info:
     sort_order: "ASCENDING"
     sort_attribute: "floating_ip"
   register: result
@@ -41,5 +40,5 @@
     that:
       - result.response is defined
     fail_msg: " Unable to list floating_ips "
-    success_msg: " Floating_ips listed successfully "
+    success_msg: " Floatong_ips listed successfully "
 #############################################################
