@@ -701,9 +701,9 @@
   register: result
   ignore_errors: true
 
-- name: Sleep for 2 minutes after powering off VM
+- name: Sleep for 5 minutes after powering off VM
   ansible.builtin.pause:
-    seconds: 120
+    seconds: 300
 
 # #############################################################
 # Restore PC
