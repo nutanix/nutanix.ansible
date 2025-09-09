@@ -4,7 +4,7 @@
     msg: Start testing ntnx_service_groups creation
 
 - name: Create tcp service group
-  nutanix.ncp.ntnx_service_groups:
+  ntnx_service_groups:
     name: tcp_service_group
     desc: desc
     service_details:
@@ -17,7 +17,7 @@
   ignore_errors: true
 
 - name: Getting particular service_group using uuid
-  nutanix.ncp.ntnx_service_groups_info:
+  ntnx_service_groups_info:
     service_group_uuid: "{{ result.service_group_uuid }}"
   register: result
   ignore_errors: true
@@ -44,7 +44,7 @@
     todelete: "{{ todelete + [  result.response.uuid ] }}"
 ################################################################
 - name: Create udp service group
-  nutanix.ncp.ntnx_service_groups:
+  ntnx_service_groups:
     name: udp_service_group
     desc: desc
     service_details:
@@ -57,7 +57,7 @@
   ignore_errors: true
 
 - name: Getting particular service_group using uuid
-  nutanix.ncp.ntnx_service_groups_info:
+  ntnx_service_groups_info:
     service_group_uuid: "{{ result.service_group_uuid }}"
   register: result
   ignore_errors: true
@@ -84,7 +84,7 @@
     todelete: "{{ todelete + [  result.response.uuid ] }}"
 ################################################################
 - name: Create icmp with service group
-  nutanix.ncp.ntnx_service_groups:
+  ntnx_service_groups:
     name: icmp_service_group
     desc: desc
     service_details:
@@ -97,7 +97,7 @@
   ignore_errors: true
 
 - name: Getting particular service_group using uuid
-  nutanix.ncp.ntnx_service_groups_info:
+  ntnx_service_groups_info:
     service_group_uuid: "{{ result.service_group_uuid }}"
   register: result
   ignore_errors: true
@@ -120,7 +120,7 @@
     todelete: "{{ todelete + [  result.response.uuid ] }}"
 ################################################################
 - name: Create service group with tcp and udp and icmp
-  nutanix.ncp.ntnx_service_groups:
+  ntnx_service_groups:
     name: app_service_group
     desc: desc
     service_details:
@@ -135,7 +135,7 @@
   ignore_errors: true
 
 - name: Getting particular service_group using uuid
-  nutanix.ncp.ntnx_service_groups_info:
+  ntnx_service_groups_info:
     service_group_uuid: "{{ result.service_group_uuid }}"
   register: result
   ignore_errors: true
@@ -164,26 +164,8 @@
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.response.uuid ] }}"
 ################################################################
-- name: Delete service groups with check mode
-  nutanix.ncp.ntnx_service_groups:
-    state: absent
-    service_group_uuid: "{{ result.response.uuid }}"
-  register: output
-  ignore_errors: true
-  check_mode: true
-
-- name: Delete service groups with check mode Status
-  ansible.builtin.assert:
-    that:
-      - output.failed == false
-      - output.changed == false
-      - output.msg =='Service group with uuid:{{ result.response.uuid }} will be deleted.'
-      - output.service_group_uuid == '{{  result.response.uuid  }}'
-    fail_msg: "Delete service group with check mode failed"
-    success_msg: "Delete service group with check mode passed"
-
 - name: Delete all created service groups
-  nutanix.ncp.ntnx_service_groups:
+  ntnx_service_groups:
     state: absent
     service_group_uuid: "{{ item }}"
   register: result

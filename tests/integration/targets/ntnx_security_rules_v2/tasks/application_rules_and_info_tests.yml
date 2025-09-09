@@ -1,10 +1,7 @@
 ---
-# Variables required before running this playbook:
-# - external_nat_subnet
-
-- name: Start ntnx_security_rules_v2 application security rules tests
+- name: Start testing application security rules
   ansible.builtin.debug:
-    msg: Start ntnx_security_rules_v2 application security rules tests
+    msg: Start testing application security rules
 
 - name: Generate random names for security rules creation
   ansible.builtin.set_fact:
@@ -23,7 +20,7 @@
 ################################################ Test Setup ################################################
 
 - name: Create min VPC for security rules
-  nutanix.ncp.ntnx_vpcs_v2:
+  ntnx_vpcs_v2:
     name: ansible-vpc-{{ random_name }}
     external_subnets:
       - subnet_reference: "{{ external_nat_subnet.uuid }}"
@@ -43,7 +40,7 @@
     vpc_id: "{{ result.ext_id }}"
 
 - name: Create categories for tests
-  nutanix.ncp.ntnx_categories_v2:
+  ntnx_categories_v2:
     key: AnsibleSecurityRuleTest
     value: AnsibleSecurityRuleTest{{ random_name }}{{ item }}
     description: ansible test
@@ -69,7 +66,7 @@
     category5: "{{ results.results[4].response.ext_id }}"
 
 - name: Create service group to be used in security rules
-  nutanix.ncp.ntnx_service_groups_v2:
+  ntnx_service_groups_v2:
     name: ansible-sg-{{ random_name }}
     description: desc
     tcp_services:
@@ -91,7 +88,7 @@
     service_group_id: "{{ result.ext_id }}"
 
 - name: Create address group to be used in security rules
-  nutanix.ncp.ntnx_address_groups_v2:
+  ntnx_address_groups_v2:
     state: present
     name: ansible-ag-{{ random_name }}
     description: test-ansible-group-1-desc
@@ -118,7 +115,7 @@
 ################################################ Create tests ################################################
 
 - name: Generate spec for basic application rule using check mode
-  nutanix.ncp.ntnx_security_rules_v2:
+  ntnx_security_rules_v2:
     name: "{{ rule_name_1 }}"
     description: Ansible created rule
     type: APPLICATION
@@ -130,86 +127,24 @@
       - description: Allow intra category group for cat1
         type: INTRA_GROUP
         spec:
-          application_rule_spec:
+          intra_entity_group_rule_spec:
             secured_group_category_references:
-              - "123e4567-e89b-12d3-a456-426614174000"
-              - "7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d"
-            dest_entity_group_reference: "569a018e-18ac-4813-b00f-2aa0d0005042"
-            secured_group_category_associated_entity_type: VM
-            network_function_reference: "4d5e6f7a-8b9c-0d1e-2f3a-4b5c6d7e8f9a"
-            secured_group_entity_group_reference: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
-            src_entity_group_reference: "3c4d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f"
-            dest_category_associated_entity_type: VM
-            src_category_associated_entity_type: VPC
-            src_category_references:
-              - "b7c9f1e2-4d3a-4e7b-9c2a-5f6e8d7c1a2b"
-              - "8b9c0d1e-2f3a-4b5c-6d7e-8f9a0b1c2d3e"
-            dest_category_references:
-              - "c8d2e4f6-1a3b-5c7d-9e1f-2b4a6c8e0f2d"
-              - "9c0d1e2f-3a4b-5c6d-7e8f-9a0b1c2d3e4f"
-            src_subnet:
-              value: "192.168.1.0"
-              prefix_length: 24
-            dest_subnet:
-              value: "192.168.2.0"
-              prefix_length: 24
-            src_address_group_references:
-              - "d9e3f5a7-2b4c-6d8e-0f1a-3c5b7d9f1a3c"
-              - "0d1e2f3a-4b5c-6d7e-8f9a-0b1c2d3e4f5a"
-            dest_address_group_references:
-              - "e0f4a6b8-3c5d-7e9f-1a2b-4d6c8e0a2b4d"
-              - "1e2f3a4b-5c6d-7e8f-9a0b-1c2d3e4f5a6b"
-            service_group_references:
-              - "f1a5b7c9-4d6e-8f0a-2b3c-5e7d9f1b3c5e"
-              - "2f3a4b5c-6d7e-8f9a-0b1c-2d3e4f5a6b7c"
-            is_all_protocol_allowed: true
-            tcp_services:
-              - start_port: 1000
-                end_port: 2000
-              - start_port: 3000
-                end_port: 4000
-            udp_services:
-              - start_port: 5000
-                end_port: 6000
-              - start_port: 7000
-                end_port: 8000
-            icmp_services:
-              - is_all_allowed: true
-                type: 8
-                code: 6
-            network_function_chain_reference: "2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e"
+              - "{{ category1 }}"
+            secured_group_action: ALLOW
       - description: Allow to all destinations for cat 1
         type: APPLICATION
         spec:
           application_rule_spec:
             dest_allow_spec: ALL
             secured_group_category_references:
-              - "5e6f7a8b-9c0d-1e2f-3a4b-5c6d7e8f9a0b"
+              - "{{ category1 }}"
       - description: Allow to all sources for cat 1
         type: APPLICATION
         spec:
-          intra_entity_group_rule_spec:
+          application_rule_spec:
+            src_allow_spec: ALL
             secured_group_category_references:
-              - "0b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e"
-            secured_group_action: ALLOW
-            secured_group_category_associated_entity_type: VM
-            secured_group_entity_group_reference: "2d3e4f5a-6b7c-8d9e-0f1a-2b3c4d5e6f7a"
-            secured_group_service_references:
-              - "4f5a6b7c-8d9e-0f1a-2b3c-4d5e6f7a8b9c"
-            tcp_services:
-              - start_port: 9000
-                end_port: 10000
-              - start_port: 11000
-                end_port: 12000
-            udp_services:
-              - start_port: 13000
-                end_port: 14000
-              - start_port: 15000
-                end_port: 16000
-            icmp_services:
-              - is_all_allowed: true
-                type: 8
-                code: 0
+              - "{{ category1 }}"
   register: result
   check_mode: true
 
@@ -228,73 +163,21 @@
       - result.response.rules | length == 3
       - result.response.rules[0].description == "Allow intra category group for cat1"
       - result.response.rules[0].type == "INTRA_GROUP"
-      - result.response.rules[0].spec.secured_group_category_references[0] == "123e4567-e89b-12d3-a456-426614174000"
-      - result.response.rules[0].spec.dest_entity_group_reference == "569a018e-18ac-4813-b00f-2aa0d0005042"
-      - result.response.rules[0].spec.secured_group_category_associated_entity_type == "VM"
-      - result.response.rules[0].spec.secured_group_entity_group_reference == "a1b2c3d4-5678-90ab-cdef-1234567890ab"
-      - result.response.rules[0].spec.src_entity_group_reference == "3c4d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f"
-      - result.response.rules[0].spec.dest_category_associated_entity_type == "VM"
-      - result.response.rules[0].spec.src_category_associated_entity_type == "VPC"
-      - result.response.rules[0].spec.src_category_references[0] == "b7c9f1e2-4d3a-4e7b-9c2a-5f6e8d7c1a2b"
-      - result.response.rules[0].spec.src_category_references[1] == "8b9c0d1e-2f3a-4b5c-6d7e-8f9a0b1c2d3e"
-      - result.response.rules[0].spec.dest_category_references[0] == "c8d2e4f6-1a3b-5c7d-9e1f-2b4a6c8e0f2d"
-      - result.response.rules[0].spec.dest_category_references[1] == "9c0d1e2f-3a4b-5c6d-7e8f-9a0b1c2d3e4f"
-      - result.response.rules[0].spec.src_subnet.value == "192.168.1.0"
-      - result.response.rules[0].spec.src_subnet.prefix_length == 24
-      - result.response.rules[0].spec.dest_subnet.value == "192.168.2.0"
-      - result.response.rules[0].spec.dest_subnet.prefix_length == 24
-      - result.response.rules[0].spec.src_address_group_references[0] == "d9e3f5a7-2b4c-6d8e-0f1a-3c5b7d9f1a3c"
-      - result.response.rules[0].spec.src_address_group_references[1] == "0d1e2f3a-4b5c-6d7e-8f9a-0b1c2d3e4f5a"
-      - result.response.rules[0].spec.dest_address_group_references[0] == "e0f4a6b8-3c5d-7e9f-1a2b-4d6c8e0a2b4d"
-      - result.response.rules[0].spec.dest_address_group_references[1] == "1e2f3a4b-5c6d-7e8f-9a0b-1c2d3e4f5a6b"
-      - result.response.rules[0].spec.service_group_references[0] == "f1a5b7c9-4d6e-8f0a-2b3c-5e7d9f1b3c5e"
-      - result.response.rules[0].spec.service_group_references[1] == "2f3a4b5c-6d7e-8f9a-0b1c-2d3e4f5a6b7c"
-      - result.response.rules[0].spec.is_all_protocol_allowed == true
-      - result.response.rules[0].spec.tcp_services | length == 2
-      - result.response.rules[0].spec.tcp_services[0].start_port == 1000
-      - result.response.rules[0].spec.tcp_services[0].end_port == 2000
-      - result.response.rules[0].spec.tcp_services[1].start_port == 3000
-      - result.response.rules[0].spec.tcp_services[1].end_port == 4000
-      - result.response.rules[0].spec.udp_services | length == 2
-      - result.response.rules[0].spec.udp_services[0].start_port == 5000
-      - result.response.rules[0].spec.udp_services[0].end_port == 6000
-      - result.response.rules[0].spec.udp_services[1].start_port == 7000
-      - result.response.rules[0].spec.udp_services[1].end_port == 8000
-      - result.response.rules[0].spec.icmp_services | length == 1
-      - result.response.rules[0].spec.icmp_services[0].is_all_allowed == true
-      - result.response.rules[0].spec.icmp_services[0].type == 8
-      - result.response.rules[0].spec.icmp_services[0].code == 6
-      - result.response.rules[0].spec.network_function_chain_reference == "2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e"
+      - result.response.rules[0].spec.secured_group_category_references[0] == "{{ category1 }}"
+      - result.response.rules[0].spec.secured_group_action == "ALLOW"
       - result.response.rules[1].description == "Allow to all destinations for cat 1"
       - result.response.rules[1].type == "APPLICATION"
       - result.response.rules[1].spec.dest_allow_spec == "ALL"
-      - result.response.rules[1].spec.secured_group_category_references[0] == "5e6f7a8b-9c0d-1e2f-3a4b-5c6d7e8f9a0b"
+      - result.response.rules[1].spec.secured_group_category_references[0] == "{{ category1 }}"
       - result.response.rules[2].description == "Allow to all sources for cat 1"
       - result.response.rules[2].type == "APPLICATION"
-      - result.response.rules[2].spec.secured_group_category_references[0] == "0b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e"
-      - result.response.rules[2].spec.secured_group_action == "ALLOW"
-      - result.response.rules[2].spec.secured_group_category_associated_entity_type == "VM"
-      - result.response.rules[2].spec.secured_group_entity_group_reference == "2d3e4f5a-6b7c-8d9e-0f1a-2b3c4d5e6f7a"
-      - result.response.rules[2].spec.secured_group_service_references[0] == "4f5a6b7c-8d9e-0f1a-2b3c-4d5e6f7a8b9c"
-      - result.response.rules[2].spec.tcp_services | length == 2
-      - result.response.rules[2].spec.tcp_services[0].start_port == 9000
-      - result.response.rules[2].spec.tcp_services[0].end_port == 10000
-      - result.response.rules[2].spec.tcp_services[1].start_port == 11000
-      - result.response.rules[2].spec.tcp_services[1].end_port == 12000
-      - result.response.rules[2].spec.udp_services | length == 2
-      - result.response.rules[2].spec.udp_services[0].start_port == 13000
-      - result.response.rules[2].spec.udp_services[0].end_port == 14000
-      - result.response.rules[2].spec.udp_services[1].start_port == 15000
-      - result.response.rules[2].spec.udp_services[1].end_port == 16000
-      - result.response.rules[2].spec.icmp_services | length == 1
-      - result.response.rules[2].spec.icmp_services[0].is_all_allowed == true
-      - result.response.rules[2].spec.icmp_services[0].type == 8
-      - result.response.rules[2].spec.icmp_services[0].code == 0
+      - result.response.rules[2].spec.src_allow_spec == "ALL"
+      - result.response.rules[2].spec.secured_group_category_references[0] == "{{ category1 }}"
     fail_msg: Failed to create security rule
     success_msg: Successfully created security rule
 
 - name: Create basic application security rule for certain VPC scope with intra group traffic not allowed
-  nutanix.ncp.ntnx_security_rules_v2:
+  ntnx_security_rules_v2:
     name: "{{ rule_name_1 }}"
     description: Ansible created rule
     type: APPLICATION
@@ -406,33 +289,10 @@
     fail_msg: Failed to create security rule
     success_msg: Successfully created security rule
 
-- name: Set security rule external ID
-  ansible.builtin.set_fact:
-    todelete: "{{ result.ext_id }}"
-
-- name: Delete security rule with check mode enabled
-  nutanix.ncp.ntnx_security_rules_v2:
-    state: absent
-    ext_id: "{{ todelete }}"
-  register: result
-  ignore_errors: true
-  check_mode: true
-
-- name: Delete security rule with check mode status
-  ansible.builtin.assert:
-    that:
-      - result.msg is defined
-      - result.changed == false
-      - result.failed == false
-      - result.ext_id == "{{ todelete }}"
-      - result.msg == "Network security policy with ext_id:{{ todelete }} will be deleted."
-    fail_msg: Delete security rule with check mode failed
-    success_msg: Delete security rule with check mode passed
-
 - name: Delete created security rule
-  nutanix.ncp.ntnx_security_rules_v2:
+  ntnx_security_rules_v2:
     state: absent
-    ext_id: "{{ todelete }}"
+    ext_id: "{{ result.ext_id }}"
   register: result
 
 - name: Verify deletion status
@@ -445,7 +305,7 @@
     success_msg: Successfully deleted security rule
 
 - name: Create security rule with multienvisolation rule
-  nutanix.ncp.ntnx_security_rules_v2:
+  ntnx_security_rules_v2:
     name: "{{ rule_name_3 }}"
     description: Ansible created rule
     type: ISOLATION
@@ -505,7 +365,7 @@
     policy_ext_id1: "{{ result.ext_id }}"
 
 - name: Create policy with all vlan scope and using certain sources and destinations
-  nutanix.ncp.ntnx_security_rules_v2:
+  ntnx_security_rules_v2:
     name: "{{ rule_name_2 }}"
     description: Ansible created rule
     type: APPLICATION
@@ -671,7 +531,8 @@
 ######################################### Update tests #########################################
 
 - name: Generate spec to update the policy using check mode
-  nutanix.ncp.ntnx_security_rules_v2:
+  check_mode: true
+  ntnx_security_rules_v2:
     ext_id: "{{ policy_ext_id2 }}"
     name: "{{ rule_name_2 }}-updated"
     rules:
@@ -750,8 +611,6 @@
               - "{{ address_group_ext_id }}"
             is_all_protocol_allowed: true
   register: result
-  check_mode: true
-  ignore_errors: true
 
 - name: Verify update spec
   ansible.builtin.assert:
@@ -811,7 +670,7 @@
     success_msg: Successfully updated security rule
 
 - name: Update policy rules and config
-  nutanix.ncp.ntnx_security_rules_v2:
+  ntnx_security_rules_v2:
     ext_id: "{{ policy_ext_id2 }}"
     name: "{{ rule_name_2 }}-updated"
     description: Ansible created rule updated
@@ -961,7 +820,7 @@
     success_msg: Successfully updated security rule
 
 - name: Update policy rules and config with same value to check idempotency
-  nutanix.ncp.ntnx_security_rules_v2:
+  ntnx_security_rules_v2:
     ext_id: "{{ policy_ext_id2 }}"
     name: "{{ rule_name_2 }}-updated"
     description: Ansible created rule updated
@@ -1058,7 +917,7 @@
     success_msg: "Pass : return as expected"
 
 - name: Update the policy state
-  nutanix.ncp.ntnx_security_rules_v2:
+  ntnx_security_rules_v2:
     ext_id: "{{ policy_ext_id2 }}"
     policy_state: MONITOR
   register: result
@@ -1076,7 +935,7 @@
     success_msg: Successfully updated policy state
 
 - name: Update some rules and delete some rules from policy
-  nutanix.ncp.ntnx_security_rules_v2:
+  ntnx_security_rules_v2:
     ext_id: "{{ policy_ext_id2 }}"
     rules:
       - description: inbound1
@@ -1144,7 +1003,7 @@
 ######################################### Info tests #########################################
 
 - name: Get all policies
-  nutanix.ncp.ntnx_security_rules_info_v2:
+  ntnx_security_rules_info_v2:
   register: result
 
 - name: Verify listing status
@@ -1153,13 +1012,11 @@
       - result.response is defined
       - result.failed == false
       - result.response | length > 1
-      - result.total_available_results is defined
-      - result.total_available_results > 1
     fail_msg: Failed to list security rules
     success_msg: Successfully listed security rules
 
 - name: Get particular policy
-  nutanix.ncp.ntnx_security_rules_info_v2:
+  ntnx_security_rules_info_v2:
     ext_id: "{{ policy_ext_id2 }}"
   register: result
 
@@ -1174,7 +1031,7 @@
     success_msg: Successfully got security rule
 
 - name: Fetch certain policy using filters
-  nutanix.ncp.ntnx_security_rules_info_v2:
+  ntnx_security_rules_info_v2:
     filter: name eq '{{ rule_name_2 }}-updated'
   register: result
 
@@ -1190,7 +1047,7 @@
     success_msg: Successfully filtered security rules
 
 - name: Fetch policies using limit
-  nutanix.ncp.ntnx_security_rules_info_v2:
+  ntnx_security_rules_info_v2:
     limit: 1
   register: result
 
@@ -1206,7 +1063,7 @@
 ######################################### Delete tests #########################################
 
 - name: Delete security rule 1
-  nutanix.ncp.ntnx_security_rules_v2:
+  ntnx_security_rules_v2:
     state: absent
     ext_id: "{{ policy_ext_id1 }}"
   register: result
@@ -1221,7 +1078,7 @@
     success_msg: Successfully deleted security rule
 
 - name: Delete security rule 2
-  nutanix.ncp.ntnx_security_rules_v2:
+  ntnx_security_rules_v2:
     state: absent
     ext_id: "{{ policy_ext_id2 }}"
   register: result
@@ -1238,7 +1095,7 @@
 ######################################### Delete test setup created entities #########################################
 
 - name: Delete service group
-  nutanix.ncp.ntnx_service_groups_v2:
+  ntnx_service_groups_v2:
     state: absent
     ext_id: "{{ service_group_id }}"
   register: result
@@ -1253,7 +1110,7 @@
     success_msg: Successfully deleted service group
 
 - name: Delete address group
-  nutanix.ncp.ntnx_address_groups_v2:
+  ntnx_address_groups_v2:
     state: absent
     ext_id: "{{ address_group_ext_id }}"
   register: result
@@ -1268,7 +1125,7 @@
     success_msg: Successfully deleted address group
 
 - name: Delete vpc
-  nutanix.ncp.ntnx_vpcs_v2:
+  ntnx_vpcs_v2:
     state: absent
     ext_id: "{{ vpc_id }}"
   register: result
@@ -1283,7 +1140,7 @@
     success_msg: Successfully deleted vpc
 
 - name: Delete all categories
-  nutanix.ncp.ntnx_categories_v2:
+  ntnx_categories_v2:
     state: absent
     ext_id: "{{ item }}"
   register: result

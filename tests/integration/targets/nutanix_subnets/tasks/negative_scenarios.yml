@@ -1,17 +1,10 @@
 ---
-# Variables required before running this playbook:
-# - vlan_subnets_ids
-# - virtual_switch
-# - cluster
-# - ip_address_management
-# - ip_address_pools
-
-- name: Start nutanix_subnets negative scenarios tests
+- name: Started Negative Creation Cases
   ansible.builtin.debug:
-    msg: Start nutanix_subnets negative scenarios tests
+    msg: "Started Negative Creation Cases"
 
-- name: Unknown virtual switch name
-  nutanix.ncp.ntnx_subnets:
+- name: Unknow virtual switch name
+  ntnx_subnets:
     state: present
     name: VLAN subnet without IPAM
     vlan_subnet:
@@ -30,8 +23,8 @@
       - result.msg=="Failed generating subnet spec"
     success_msg: " Success: returned error as expected "
 ###############################################################
-- name: Unknown virtual switch uuid
-  nutanix.ncp.ntnx_subnets:
+- name: Unknow virtual switch uuid
+  ntnx_subnets:
     state: present
     name: VLAN subnet with IPAM
     vlan_subnet:
@@ -54,7 +47,7 @@
     success_msg: " Success: returned error as expected "
 ###############################################################
 - name: Unknown Cluster
-  nutanix.ncp.ntnx_subnets:
+  ntnx_subnets:
     state: present
     name: VLAN subnet with IPAM and IP pools
     vlan_subnet:
@@ -80,10 +73,10 @@
     success_msg: " Success: returned error as expected "
 ###############################################################
 - name: Delete subnet with unknown uuid
-  nutanix.ncp.ntnx_subnets:
+  ntnx_subnets:
     state: absent
     subnet_uuid: 5
-  register: result
+  register: resultt
   ignore_errors: true
 
 - name: Creation Status

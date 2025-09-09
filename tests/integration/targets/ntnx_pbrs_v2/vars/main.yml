@@ -17,10 +17,3 @@ udp:
 icmp:
   code: 3
   type: 3
-overlay_subnet:
-  network_ip: "192.168.2.0"
-  network_prefix: 24
-  gateway_ip: "192.168.2.1"
-  private_ip1: "192.168.2.100"
-  private_ip2: "192.168.2.101"
-  private_ip3: "192.168.2.102"

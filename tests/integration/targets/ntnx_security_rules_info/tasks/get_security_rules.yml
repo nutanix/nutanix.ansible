@@ -1,10 +1,9 @@
----
 - name: Start testing ntnx_security_rules_info
   ansible.builtin.debug:
     msg: Start testing ntnx_security_rules_info
 ###################################
 - name: Create isolation_rule for testing
-  nutanix.ncp.ntnx_security_rules:
+  ntnx_security_rules:
     name: isolation_test_rule
     isolation_rule:
       isolate_category:
@@ -28,7 +27,7 @@
     success_msg: "pass:  isolation_rule for testing  created successfully  "
 ###################################
 - name: Getting all security rules
-  nutanix.ncp.ntnx_security_rules_info:
+  ntnx_security_rules_info:
   register: result
   ignore_errors: true
 
@@ -43,8 +42,8 @@
     fail_msg: " fail: unable to get security rules "
     success_msg: "pass: get all security rules successfully "
 ###################################
-- name: Getting particular security rule using security_rule_uuid
-  nutanix.ncp.ntnx_security_rules_info:
+- name: Getting particlar security rule using security_rule_uuid
+  ntnx_security_rules_info:
     security_rule_uuid: "{{ first_rule.response.metadata.uuid }}"
   register: result
   ignore_errors: true
@@ -57,11 +56,11 @@
       - result.failed == false
       - result.response.status.state == 'COMPLETE'
       - first_rule.response.metadata.uuid == result.response.metadata.uuid
-    fail_msg: " fail : unable to get particular security rule using security_rule_uuid"
-    success_msg: "pass: getting  security rule using security_rule_uuid successfully"
+    fail_msg: " fail : unable to get particlar security rule using security_rule_uuid"
+    success_msg: "pass: getting  security rule using security_rule_uuid succesfuly"
 ###################################
 - name: Getting all security rules sorted
-  nutanix.ncp.ntnx_security_rules_info:
+  ntnx_security_rules_info:
     sort_order: ASCENDING
     sort_attribute: Name
   register: result
@@ -80,7 +79,7 @@
     success_msg: "pass: getting all security rules sorted successfully "
 ###################################
 - name: Delete security rule
-  nutanix.ncp.ntnx_security_rules:
+  ntnx_security_rules:
     state: absent
     security_rule_uuid: "{{ first_rule.response.metadata.uuid }}"
   register: result
@@ -92,6 +91,6 @@
       - result.response is defined
       - result.failed == false
       - result.response.status == 'SUCCEEDED'
-    fail_msg: " fail: unable to delete security rule "
+    fail_msg: " fail: unable to delete secutiry rule "
     success_msg: "pass: security rule deleted successfully "
 ###################################

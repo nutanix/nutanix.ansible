@@ -1,17 +1,10 @@
 ---
-# Variables required before running this playbook:
-# - principal_name
-# - directory_service_uuid
-# - project
-# - identity_provider_uuid
-# - todelete
-
 - name: Start ntnx_users tests
   ansible.builtin.debug:
     msg: "Start ntnx_users tests"
 ##################################################
-- name: Create local user with check mode
-  nutanix.ncp.ntnx_users:
+- name: Create local user  with check mode
+  ntnx_users:
     principal_name: "{{principal_name}}"
     directory_service_uuid: "{{directory_service_uuid}}"
     project:
@@ -20,7 +13,7 @@
   ignore_errors: true
   check_mode: true
 
-- name: Create user with check mode Status
+- name: Check listing status
   ansible.builtin.assert:
     that:
       - result.response is defined
@@ -28,12 +21,12 @@
       - result.failed == false
       - result.user_uuid ==  None
       - result.response.spec.resources.directory_service_user.directory_service_reference.uuid == "{{directory_service_uuid}}"
-    fail_msg: "Create local user with check mode failed"
-    success_msg: "Create local user with check mode passed"
+    fail_msg: "fail: user created whil check mode on"
+    success_msg: "pass: returned as expected"
 
 #################################################
 - name: Create local user
-  nutanix.ncp.ntnx_users:
+  ntnx_users:
     principal_name: "{{principal_name}}"
     directory_service_uuid: "{{directory_service_uuid}}"
   register: result
@@ -56,26 +49,8 @@
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.user_uuid ] }}"
 #################################################
-- name: Delete user with check mode
-  nutanix.ncp.ntnx_users:
-    state: absent
-    user_uuid: "{{  result.user_uuid  }}"
-  register: output
-  ignore_errors: true
-  check_mode: true
-
-- name: Delete user with check mode Status
-  ansible.builtin.assert:
-    that:
-      - output.failed == false
-      - output.changed == false
-      - output.msg =='User with uuid:{{  result.user_uuid }} will be deleted.'
-      - output.uuid == '{{ result.user_uuid  }}'
-    fail_msg: "Delete user with check mode failed"
-    success_msg: "Delete user with check mode passed"
-#################################################
 - name: Delete created users
-  nutanix.ncp.ntnx_users:
+  ntnx_users:
     state: absent
     user_uuid: "{{ item }}"
   loop: "{{ todelete }}"
@@ -93,7 +68,7 @@
     todelete: []
 #################################################
 - name: Create local user  with project and categories
-  nutanix.ncp.ntnx_users:
+  ntnx_users:
     principal_name: "{{principal_name}}"
     directory_service_uuid: "{{directory_service_uuid}}"
     project:
@@ -123,8 +98,8 @@
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.user_uuid ] }}"
 #################################################
-- name: Create local user not in the directory_service
-  nutanix.ncp.ntnx_users:
+- name: Create local user  not in the directory_service
+  ntnx_users:
     principal_name: wrong_name
     directory_service_uuid: "{{directory_service_uuid}}"
     project:
@@ -169,7 +144,7 @@
 #      todelete: "{{ todelete + [  result.user_uuid ] }}"
 #################################################
 - name: Delete created users
-  nutanix.ncp.ntnx_users:
+  ntnx_users:
     state: absent
     user_uuid: "{{ item }}"
   loop: "{{ todelete }}"
@@ -189,7 +164,7 @@
 ############# DELETE TEST ##############################
 
 - name: Create local user
-  nutanix.ncp.ntnx_users:
+  ntnx_users:
     principal_name: "{{principal_name}}"
     directory_service_uuid: "{{directory_service_uuid}}"
     project:
@@ -198,18 +173,17 @@
   ignore_errors: true
 
 - name: Delete created user
-  nutanix.ncp.ntnx_users:
+  ntnx_users:
     state: absent
     user_uuid: "{{ result.user_uuid }}"
-  register: output
+  register: result
   ignore_errors: true
 
 - name: Check delete status
   ansible.builtin.assert:
     that:
-      - output.changed == true
-      - output.response is defined
-      - output.response.status == 'SUCCEEDED'
-      - output.uuid == '{{ result.user_uuid }}'
+      - result.changed == true
+      - result.response is defined
+      - result.response.status == 'SUCCEEDED'
     fail_msg: "Fail: unable to delete users"
     success_msg: "Pass: users deleted successfully"

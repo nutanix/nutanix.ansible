@@ -4,7 +4,7 @@
     msg: Start testing ntnx_ndb_time_machines_info
 
 - name: List all NDB tms
-  nutanix.ncp.ntnx_ndb_time_machines_info:
+  ntnx_ndb_time_machines_info:
   register: tms
 
 - name: Check listing status
@@ -18,7 +18,7 @@
     success_msg: NDB tms listed successfully
 ################################################################
 - name: List all NDB tms using filter
-  nutanix.ncp.ntnx_ndb_time_machines_info:
+  ntnx_ndb_time_machines_info:
     filters:
       value_type: name
       value: "{{ tms.response[0].name }}"
@@ -36,7 +36,7 @@
     success_msg: NDB tms listed successfully using filter
 ################################################################
 - name: Get NDB tms using it's name
-  nutanix.ncp.ntnx_ndb_time_machines_info:
+  ntnx_ndb_time_machines_info:
     name: "{{ tms.response[0].name }}"
   register: result
 
@@ -51,7 +51,7 @@
     success_msg: get  NDB tms using it's name  successfully
 ################################################################
 - name: List tms use id
-  nutanix.ncp.ntnx_ndb_time_machines_info:
+  ntnx_ndb_time_machines_info:
     uuid: "{{ tms.response[0].id }}"
   register: result
 
@@ -68,7 +68,7 @@
 ################################################################
 
 - name: List tms use id and load database as well
-  nutanix.ncp.ntnx_ndb_time_machines_info:
+  ntnx_ndb_time_machines_info:
     uuid: "{{ tms.response[0].id }}"
     filters:
       load_database: true
@@ -88,7 +88,7 @@
 ################################################################
 
 - name: Get NDB timemachine with incorrect name
-  nutanix.ncp.ntnx_ndb_time_machines_info:
+  ntnx_ndb_time_machines_info:
     name: abcd
   register: result
   no_log: true

@@ -1,11 +1,3 @@
----
-# Variables required before running this playbook:
-# - cluster
-# - ubuntu
-# - static
-# - network
-# - password
-
 - name: Start testing VM clone
   ansible.builtin.debug:
     msg: Start testing VM clone
@@ -22,8 +14,8 @@
           expire: False
       fqdn: myNutanixVM
 
-- name: VM with minimum requirements to clone
-  nutanix.ncp.ntnx_vms:
+- name: VM with minimum requiremnts to clone
+  ntnx_vms:
     state: present
     name: integration_test_clone_vm
     cluster:
@@ -42,12 +34,12 @@
     that:
       - vm.response is defined
       - vm.response.status.state == 'COMPLETE'
-    fail_msg: "Fail: Unable to create VM with minimum requirements to clone "
-    success_msg: "Success: VM with minimum requirements created successfully "
+    fail_msg: "Fail: Unable to create VM with minimum requiremnts to clone "
+    success_msg: "Succes: VM with minimum requiremnts created successfully "
 ##############################
 
 - name: Clone vm  and change vcpus,memory_gb,cores_per_vcpu,timezone,desc,name with force_power_off
-  nutanix.ncp.ntnx_vms_clone:
+  ntnx_vms_clone:
     src_vm_uuid: "{{ vm.vm_uuid }}"
     vcpus: 2
     cores_per_vcpu: 2
@@ -64,14 +56,14 @@
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
     fail_msg: "Fail: Unable to clone vm and change vcpus,memory_gb,cores_per_vcpu,timezone,desc,name with force_power_off"
-    success_msg: "Success: VM cloned  successfully and change vcpus,memory_gb,cores_per_vcpu,timezone,desc,name with force_power_off "
+    success_msg: "Succes: VM cloned  successfully and change vcpus,memory_gb,cores_per_vcpu,timezone,desc,name with force_power_off "
 
 - name: Adding VM uuid to delete list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.vm_uuid ] }}"
 ##############################
 - name: Clone vm and add network
-  nutanix.ncp.ntnx_vms_clone:
+  ntnx_vms_clone:
     src_vm_uuid: "{{ vm.vm_uuid }}"
     networks:
       - is_connected: true
@@ -86,14 +78,14 @@
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
     fail_msg: "Fail: Unable to clone vm while it is off "
-    success_msg: "Success: VM cloned  successfully "
+    success_msg: "Succes: VM cloned  successfully "
 
 - name: Adding VM uuid to delete list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.vm_uuid ] }}"
 ###########################################
 - name: Clone vm  with check mode
-  nutanix.ncp.ntnx_vms_clone:
+  ntnx_vms_clone:
     src_vm_uuid: "{{ vm.vm_uuid }}"
     networks:
       - is_connected: false
@@ -114,7 +106,7 @@
     fail_msg: " Fail: clone vm with check_mode  "
 ###########################################
 - name: Clone vm  with script
-  nutanix.ncp.ntnx_vms_clone:
+  ntnx_vms_clone:
     src_vm_uuid: "{{ vm.vm_uuid }}"
     guest_customization:
       type: "cloud_init"
@@ -129,19 +121,19 @@
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
     fail_msg: "Fail: Unable to clone vm vm  with script"
-    success_msg: "Success: VM cloned   with script  successfully "
+    success_msg: "Succes: VM cloned   with script  successfully "
 
 - name: Adding VM uuid to delete list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.vm_uuid ] }}"
 ###########################################
 - name: Delete all Created VMs
-  nutanix.ncp.ntnx_vms:
+  ntnx_vms:
     state: absent
     vm_uuid: "{{ item }}"
   loop: "{{ todelete }}"
 
 - name: Delete all Created VMs
-  nutanix.ncp.ntnx_vms:
+  ntnx_vms:
     state: absent
     vm_uuid: "{{ vm.vm_uuid }}"

@@ -1,11 +1,10 @@
----
 - name: Start testing ntnx_permissions_info
   ansible.builtin.debug:
     msg: Start testing ntnx_permissions_info
 ##################################################
 
 - name: List all permissions
-  nutanix.ncp.ntnx_permissions_info:
+  ntnx_permissions_info:
   register: result
   ignore_errors: true
 
@@ -26,7 +25,7 @@
     test_permission_name: "Create_Playbook"
 
 - name: List permissions using filter criteria
-  nutanix.ncp.ntnx_permissions_info:
+  ntnx_permissions_info:
     filter:
       name: "{{ test_permission_name }}"
   register: result
@@ -51,7 +50,7 @@
 ##################################################
 
 - name: List permission using uuid criteria
-  nutanix.ncp.ntnx_permissions_info:
+  ntnx_permissions_info:
     permission_uuid: "{{ test_permission_uuid }}"
   register: result
   ignore_errors: true
@@ -67,10 +66,11 @@
     fail_msg: "Unable to list permission using uuid"
     success_msg: "permission info obtained successfully"
 
+
 ##################################################
 
 - name: List permissions using length and offset
-  nutanix.ncp.ntnx_permissions_info:
+  ntnx_permissions_info:
     length: 1
     offset: 1
   register: result

@@ -6,20 +6,6 @@
 #   3. Unregister database instance (db1) and db server vm (vm1)
 #   4. Register db1 from unregistered vm1
 
-# Variables required before running this playbook:
-# - db_params_profile
-# - vm_password
-# - vm_username
-# - cluster
-# - software_profile
-# - network_profile
-# - compute_profile
-# - public_ssh_key
-# - sla
-# - maintenance
-# - tags
-# - postgres
-
 - name: Start ndb databases test flow 2
   ansible.builtin.debug:
     msg: start ndb databases test flow 2
@@ -35,7 +21,7 @@
     vm1_name: "{{ random_name[0] }}-vm"
 
 - name: Create db server vm using software profile
-  nutanix.ncp.ntnx_ndb_db_server_vms:
+  ntnx_ndb_db_server_vms:
     wait: true
     name: "{{ vm1_name }}"
     desc: ansible-created-vm1-desc
@@ -72,7 +58,7 @@
     _vm_ip: "{{ result.response.ipAddresses[0] }}"
 
 - name: Create new single instance postgres database on vm created earlier
-  nutanix.ncp.ntnx_ndb_databases:
+  ntnx_ndb_databases:
     wait: true
     name: "{{ db1_name }}"
     desc: ansible-created-db-desc
@@ -146,8 +132,8 @@
     fail_msg: Unable to create single instance postgres database
     success_msg: single instance postgres database created successfully
 
-- name: Unregister db along with delete time machine and unregister db server vm
-  nutanix.ncp.ntnx_ndb_databases:
+- name: Unregister db along with delete time machine and unregister db servr vm
+  ntnx_ndb_databases:
     state: absent
     db_uuid: "{{ db_uuid }}"
     wait: true
@@ -166,7 +152,8 @@
     success_msg: database unregistered successfully
 
 - name: Create spec for registering previously unregistered DB from previously unregistered DB server vm
-  nutanix.ncp.ntnx_ndb_register_database:
+  check_mode: true
+  ntnx_ndb_register_database:
     wait: true
     name: "{{ db1_name }}"
     desc: ansible-created-db-desc
@@ -205,9 +192,8 @@
         - type: DB_PATCHING
           pre_task_cmd: ls -l
           post_task_cmd: ls -F
+
   register: result
-  check_mode: true
-  ignore_errors: true
 
 - name: Set expected action arguments
   ansible.builtin.set_fact:
@@ -221,29 +207,15 @@
 
 - name: Set expected time machine info
   ansible.builtin.set_fact:
-    expected_time_machine_info:
-      {
-        autoTuneLogDrive: true,
-        description: TM-desc,
-        name: TM1,
-        schedule: {},
-        slaId: "{{ sla.uuid }}",
-      }
+    expected_time_machine_info: { autoTuneLogDrive: true, description: TM-desc, name: TM1, schedule: {}, slaId: "{{ sla.uuid }}"}
 
 - name: Set maintenance tasks
   ansible.builtin.set_fact:
-    maintenance_tasks:
+    mainetance_tasks:
       maintenanceWindowId: "{{ maintenance.window_uuid }}"
       tasks:
-        - {
-          payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } },
-          taskType: OS_PATCHING,
-        }
-        - {
-          payload:
-            { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
-          taskType: DB_PATCHING,
-        }
+        - { payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } }, taskType: OS_PATCHING }
+        - { payload: { prePostCommand: { postCommand: ls -F, preCommand: ls -l } }, taskType: DB_PATCHING }
 
 - name: Check mode status
   ansible.builtin.assert:
@@ -261,13 +233,13 @@
       - result.response.databaseType == "postgres_database"
       - result.response.timeMachineInfo == expected_time_machine_info
       - result.response.nxClusterId == cluster.cluster1.uuid
-      - result.response.maintenanceTasks == maintenance_tasks
+      - result.response.maintenanceTasks == mainetance_tasks
       - result.response.workingDirectory == "/tmp"
     fail_msg: Unable to create register database spec
     success_msg: single instance postgres database register spec created successfully
 
 - name: Register previously unregistered DB from previously unregistered DB server vm
-  nutanix.ncp.ntnx_ndb_register_database:
+  ntnx_ndb_register_database:
     wait: true
     name: "{{ db1_name }}"
     desc: ansible-created-db-desc
@@ -354,7 +326,7 @@
     success_msg: single instance postgres database registered successfully
 
 - name: Delete db along with delete time machine and db server vms
-  nutanix.ncp.ntnx_ndb_databases:
+  ntnx_ndb_databases:
     db_uuid: "{{ result.db_uuid }}"
     state: absent
     wait: true

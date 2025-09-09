@@ -4,7 +4,7 @@
     msg: start testing ntnx_foundation_bmc_ipmi_config
 
 - name: Configure ipmi
-  nutanix.ncp.ntnx_foundation_bmc_ipmi_config:
+  ntnx_foundation_bmc_ipmi_config:
     ipmi_user: "{{ bmc.ipmi_user }}"
     ipmi_password: "{{ bmc.ipmi_password }}"
     ipmi_netmask: "{{ bmc.ipmi_netmask }}"
@@ -25,4 +25,4 @@
       - result.response.blocks.0.nodes.0.ipmi_configure_successful==true
       - result.response.blocks.0.nodes.0.ipmi_message is defined
     fail_msg: bmc ipmi configure was failed with error result.error
-    success_msg: bmc ipmi configure was successful
+    success_msg: bmc ipmi configure was successfull

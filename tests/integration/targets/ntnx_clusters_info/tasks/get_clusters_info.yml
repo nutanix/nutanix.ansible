@@ -4,7 +4,7 @@
     msg: Start testing ntnx_clusters_info
 
 - name: Test getting all clusters
-  nutanix.ncp.ntnx_clusters_info:
+  ntnx_clusters_info:
   register: clusters
   ignore_errors: true
 
@@ -19,7 +19,7 @@
     success_msg: "clusters listed successfully"
 
 - name: Test getting particular cluster using uuid
-  nutanix.ncp.ntnx_clusters_info:
+  ntnx_clusters_info:
     cluster_uuid: "{{ clusters.response.entities[0].metadata.uuid }}"
   register: result
   ignore_errors: true

@@ -1,10 +1,10 @@
 ---
 - name: Image upload with wrong installer_type
-  nutanix.ncp.ntnx_foundation_image_upload:
+  ntnx_foundation_image_upload:
     state: present
     source: "{{ source }}"
     filename: integration-test-ntnx-package.tar.gz
-    installer_type: wrong installer type
+    installer_type: wrong installler type
     timeout: 3600
   register: result
   ignore_errors: true
@@ -14,6 +14,6 @@
     that:
       - result.failed==true
       - result.changed==false
-      - "result.msg == 'value of installer_type must be one of: kvm, esx, hyperv, xen, nos, got: wrong installer type'"
+      - "result.msg == 'value of installer_type must be one of: kvm, esx, hyperv, xen, nos, got: wrong installler type'"
     fail_msg: " Fail : image uploaded with wrong installer type"
-    success_msg: "Success: returned error as expected "
+    success_msg: "Succes: returned error as expected "

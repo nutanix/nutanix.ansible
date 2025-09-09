@@ -1,14 +1,10 @@
----
-# Variables required before running this playbook:
-# - dr
-
 - name: Start testing ntnx_protection_rules_info
   ansible.builtin.debug:
     msg: Start testing ntnx_protection_rules_info
 
 ##################################################
 - name: Create protection rule with async schedule
-  nutanix.ncp.ntnx_protection_rules:
+  ntnx_protection_rules:
     state: present
     wait: true
     name: test-ansible-info-1
@@ -49,7 +45,7 @@
   register: rule_1
 
 - name: Create protection rule with async schedule
-  nutanix.ncp.ntnx_protection_rules:
+  ntnx_protection_rules:
     state: present
     wait: true
     name: test-ansible-info-2
@@ -92,7 +88,7 @@
 ##################################################
 
 - name: List all Protection rules
-  nutanix.ncp.ntnx_protection_rules_info:
+  ntnx_protection_rules_info:
   register: result
   ignore_errors: true
 
@@ -113,7 +109,7 @@
 ##################################################
 
 - name: List protection rule using uuid criteria
-  nutanix.ncp.ntnx_protection_rules_info:
+  ntnx_protection_rules_info:
     rule_uuid: "{{ test_rule_uuid }}"
   register: result
   ignore_errors: true
@@ -134,7 +130,7 @@
 ##################################################
 
 - name: List protection rules using filter criteria
-  nutanix.ncp.ntnx_protection_rules_info:
+  ntnx_protection_rules_info:
     filter:
       name: "{{ test_rule_name }}"
   register: result
@@ -155,7 +151,7 @@
 ##################################################
 
 - name: List rules using length and offset
-  nutanix.ncp.ntnx_protection_rules_info:
+  ntnx_protection_rules_info:
     length: 1
     offset: 1
   register: result
@@ -174,14 +170,14 @@
 ##################################################
 
 - name: Delete created protection policy
-  nutanix.ncp.ntnx_protection_rules:
+  ntnx_protection_rules:
     state: absent
     wait: true
     rule_uuid: "{{ rule_1.rule_uuid }}"
   register: result
 
 - name: Delete created protection policy
-  nutanix.ncp.ntnx_protection_rules:
+  ntnx_protection_rules:
     state: absent
     wait: true
     rule_uuid: "{{ rule_2.rule_uuid }}"

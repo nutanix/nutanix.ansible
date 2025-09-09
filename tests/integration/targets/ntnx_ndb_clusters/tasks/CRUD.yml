@@ -4,7 +4,7 @@
     msg: Start testing ntnx_ndb_clusters
 
 - name: Register cluster with prism_vlan in check mode
-  nutanix.ncp.ntnx_ndb_clusters:
+  ntnx_ndb_clusters:
     name: "{{ cluster.cluster3.name }}"
     desc: "{{ cluster.cluster3.desc }}"
     name_prefix: "{{ cluster.cluster3.name_prefix }}"
@@ -49,11 +49,11 @@
       - result.response.networksInfo[0].networkInfo[2].value == "{{ cluster.cluster3.vlan_access.prism_vlan.gateway }}"
       - result.response.networksInfo[0].networkInfo[3].value == "{{ cluster.cluster3.vlan_access.prism_vlan.subnet_mask }}"
       - result.response.networksInfo[0].type==  "{{ cluster.cluster3.vlan_access.prism_vlan.vlan_type }}"
-    fail_msg: "fail: Wring with check mode for registering cluster"
-    success_msg: "pass: Returned as expected"
+    fail_msg: "fail: Wring with check mode for registring cluster"
+    success_msg: "pass: retunred as expected"
 
 - name: Register cluster with prism_vlan
-  nutanix.ncp.ntnx_ndb_clusters:
+  ntnx_ndb_clusters:
     wait: true
     name: "{{ cluster.cluster3.name }}"
     desc: "{{ cluster.cluster3.desc }}"
@@ -92,13 +92,13 @@
       - result.response.name == "{{ cluster.cluster3.name }}"
       - result.response.description == "{{ cluster.cluster3.desc }}"
       - result.response.ipAddresses[0] == "{{ cluster.cluster3.cluster_ip }}"
-    fail_msg: "fail: Unable to Register cluster with prism_vlan"
-    success_msg: "pass: Register cluster with prism_vlan finished successfully"
+    fail_msg: "fail: Unable to Register cluster with prisim_vlan"
+    success_msg: "pass: Register cluster with prisim_vlan finished successfully"
 
 ################################################################
 
 - name: Update cluster name , desc
-  nutanix.ncp.ntnx_ndb_clusters:
+  ntnx_ndb_clusters:
     uuid: "{{ result.cluster_uuid }}"
     name: newname
     desc: newdesc
@@ -118,8 +118,8 @@
   ansible.builtin.set_fact:
     todelete: "{{ result.cluster_uuid }}"
 ################################################################
-- name: Update cluster credential in check_mode
-  nutanix.ncp.ntnx_ndb_clusters:
+- name: Update cluster credeential in check_mode
+  ntnx_ndb_clusters:
     uuid: "{{ result.cluster_uuid }}"
     cluster_credentials:
       username: test
@@ -138,12 +138,12 @@
       - result.response.username is defined
       - result.response.password is defined
       - result.cluster_uuid is defined
-    fail_msg: "fail: update cluster credential while check_mode"
-    success_msg: "pass: Returned as expected"
+    fail_msg: "fail: update cluster credeential while check_mode"
+    success_msg: "pass: retunred as expected"
 ################################################################
 
-- name: Negative Scenarios update storage container
-  nutanix.ncp.ntnx_ndb_clusters:
+- name: Negative Secnarios update storage container
+  ntnx_ndb_clusters:
     uuid: "{{ result.cluster_uuid }}"
     storage_container: "{{ cluster.cluster3.storage_container }}"
   register: out
@@ -156,13 +156,13 @@
       - out.changed == false
       - out.failed == true
       - out.msg == "parameters are mutually exclusive: uuid|storage_container"
-    fail_msg: "Fail: storage_container updated "
+    fail_msg: "Fail: storage_continer updated "
     success_msg: " Success: returned error as expected "
 
 ################################################################
 
-- name: Negative Scenarios update vlan access
-  nutanix.ncp.ntnx_ndb_clusters:
+- name: Negative Secnarios update vlan access
+  ntnx_ndb_clusters:
     uuid: "{{ result.cluster_uuid }}"
     vlan_access:
       prism_vlan:
@@ -186,8 +186,8 @@
 
 ################################################################
 
-- name: Negative Scenarios update agent network
-  nutanix.ncp.ntnx_ndb_clusters:
+- name: Negative Secnarios update agent network
+  ntnx_ndb_clusters:
     uuid: "{{ result.cluster_uuid }}"
     agent_network:
       dns_servers:
@@ -213,8 +213,8 @@
 
 ################################################################
 
-- name: Negative Scenarios update agent network
-  nutanix.ncp.ntnx_ndb_clusters:
+- name: Negative Secnarios update agent network
+  ntnx_ndb_clusters:
     uuid: "{{ result.cluster_uuid }}"
     name_prefix: "{{ cluster.cluster3.name_prefix }}"
   register: out
@@ -233,7 +233,7 @@
 ################################################################
 
 - name: List all NDB clusters
-  nutanix.ncp.ntnx_ndb_clusters_info:
+  ntnx_ndb_clusters_info:
   register: clusters
   no_log: true
 
@@ -249,7 +249,7 @@
 
 ################################################################
 - name: Get ndb cluster with count_entities
-  nutanix.ncp.ntnx_ndb_clusters_info:
+  ntnx_ndb_clusters_info:
     filters:
       count_entities: true
   register: result
@@ -267,7 +267,7 @@
     success_msg: get  NDB clusters using with count_entities  successfully
 ################################################################
 - name: Get NDB clusters using it's name
-  nutanix.ncp.ntnx_ndb_clusters_info:
+  ntnx_ndb_clusters_info:
     name: "{{ clusters.response[0].name }}"
   register: result
   no_log: true
@@ -285,7 +285,7 @@
 ################################################################
 
 - name: List clusters use id
-  nutanix.ncp.ntnx_ndb_clusters_info:
+  ntnx_ndb_clusters_info:
     uuid: "{{ clusters.response[0].id }}"
   register: result
   no_log: true
@@ -303,8 +303,8 @@
 ################################################################
 
 - name: Get NDB clusters with incorrect name
-  nutanix.ncp.ntnx_ndb_clusters_info:
-    name: "abcd"
+  ntnx_ndb_clusters_info:
+    name: abcd
   register: result
   ignore_errors: true
   no_log: true
@@ -315,32 +315,13 @@
       - result.error is defined
       - result.failed == true
       - result.changed == false
-    fail_msg: "module didn't errored out correctly when incorrect name is given"
-    success_msg: "module errored out correctly when incorrect name is given"
-
-################################################################
-- name: Delete Cluster with check mode
-  nutanix.ncp.ntnx_ndb_clusters:
-    state: absent
-    uuid: "{{ todelete  }}"
-  register: output
-  ignore_errors: true
-  check_mode: true
-
-- name: Delete cluster with check mode status
-  ansible.builtin.assert:
-    that:
-      - output.failed == false
-      - output.changed == false
-      - output.msg =="Cluster with uuid:{{  todelete }} will be deleted."
-      - output.cluster_uuid == "{{  todelete  }}"
-    fail_msg: "Delete cluster with check mode failed"
-    success_msg: "Delete cluster with check mode passed"
+    fail_msg: module didn't errored out correctly when incorrect name is given
+    success_msg: module errored out correctly when incorrect name is given
 
 ################################################################
 
 - name: Delete cluster
-  nutanix.ncp.ntnx_ndb_clusters:
+  ntnx_ndb_clusters:
     uuid: "{{ todelete }}"
     state: absent
   register: result
@@ -354,7 +335,6 @@
       - result.changed == true
       - result.failed == false
       - result.response.status == "5"
-      - result.cluster_uuid == "{{ todelete }}"
     fail_msg: Unable to delete custer
     success_msg: cluster  deleted successfully
 

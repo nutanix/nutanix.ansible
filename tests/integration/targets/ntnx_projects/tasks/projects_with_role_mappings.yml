@@ -1,16 +1,3 @@
----
-# Variables required before running this playbook:
-# - cluster
-# - network
-# - static
-# - overlay
-# - vpc
-# - accounts
-# - users
-# - user_groups
-# - project
-# - todelete
-
 - name: Start ntnx_project tests with role mappings
   ansible.builtin.debug:
     msg: "Start ntnx_project tests with role mappings"
@@ -30,7 +17,7 @@
     project3_name: "{{random_name}}{{suffix_name}}3"
 
 - name: Create Project with min spec
-  nutanix.ncp.ntnx_projects:
+  ntnx_projects:
     name: "{{project1_name}}"
     desc: "project with role mappings"
     collaboration: true
@@ -69,7 +56,7 @@
 ################################################################
 
 - name: Create project with all specs
-  nutanix.ncp.ntnx_projects:
+  ntnx_projects:
     name: "{{project2_name}}"
     desc: desc-123
     clusters:
@@ -156,7 +143,7 @@
   no_log: true
 
 - name: Update Project role mappings and subnets and quotas
-  nutanix.ncp.ntnx_projects:
+  ntnx_projects:
     project_uuid: "{{result.project_uuid}}"
     name: "{{project3_name}}"
     subnets:
@@ -277,7 +264,7 @@
     success_msg: "Project with all specifications updated successfully"
 
 - name: Idempotency check
-  nutanix.ncp.ntnx_projects:
+  ntnx_projects:
     project_uuid: "{{result.project_uuid}}"
     name: "{{project3_name}}"
     subnets:
@@ -318,7 +305,7 @@
     success_msg: "Project got skipped successfully for no change in spec"
 
 - name: Create project with existing name
-  nutanix.ncp.ntnx_projects:
+  ntnx_projects:
     name: "{{project3_name}}"
     collaboration: true
     role_mappings:
@@ -343,7 +330,7 @@
 
 #################################################################
 - name: Delete all Created Projects
-  nutanix.ncp.ntnx_projects:
+  ntnx_projects:
     state: absent
     project_uuid: "{{ item }}"
   register: result
@@ -355,7 +342,7 @@
     todelete: []
 
 - name: Delete user group
-  nutanix.ncp.ntnx_user_groups:
+  ntnx_user_groups:
     state: absent
     user_group_uuid: "{{user_group_to_delete}}"
   register: result
@@ -369,10 +356,10 @@
       - result.changed == true
       - result.response.status == "SUCCEEDED" or  result.response.status.state == "DELETE_PENDING"
     fail_msg: "Unable to delete user  group  "
-    success_msg: "user group deleted successfully"
+    success_msg: "user group deletd successfully"
 
 - name: Delete user
-  nutanix.ncp.ntnx_users:
+  ntnx_users:
     state: absent
     user_uuid: "{{user_to_delete}}"
   register: result
@@ -386,4 +373,4 @@
       - result.changed == true
       - result.response.status == "SUCCEEDED" or  result.response.status.state == "DELETE_PENDING"
     fail_msg: "Unable to delete user  "
-    success_msg: "user deleted successfully"
+    success_msg: "user deletd successfully"

@@ -1,11 +1,5 @@
----
-
-- name: Start ntnx_security_rules vdi tests
-  ansible.builtin.debug:
-    msg: Start ntnx_security_rules vdi tests
-
 - name: Create ad security rule with inbound and outbound list
-  nutanix.ncp.ntnx_security_rules:
+  ntnx_security_rules:
     name: VDI Policy
     vdi_rule:
       target_group:
@@ -64,7 +58,7 @@
     success_msg: >-
       pass: create ad security rule with inbound and outbound list finished successfully
 - name: Update VDI security rule action
-  nutanix.ncp.ntnx_security_rules:
+  ntnx_security_rules:
     security_rule_uuid: "{{ result.response.metadata.uuid }}"
     vdi_rule:
       inbounds:
@@ -86,7 +80,7 @@
     success_msg: "pass : update vdi_rule   successfully"
 
 - name: Delete vdi_rule rule
-  nutanix.ncp.ntnx_security_rules:
+  ntnx_security_rules:
     state: absent
     security_rule_uuid: "{{ result.response.metadata.uuid }}"
   register: result

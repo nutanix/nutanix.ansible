@@ -1,21 +1,5 @@
----
-# Variables required before running this playbook:
-# - vpc
-# - network
-# - priority
-# - protocol
-# - tcp
-# - udp
-# - icmp
-# - reroute_ip
-# - todelete
-
-- name: Start nutanix_pbrs create_pbrs tests
-  ansible.builtin.debug:
-    msg: Start nutanix_pbrs create_pbrs tests.
-
 - name: Create PBR with vpc name, source network, external destination, with reroute action and any type and code icmp
-  nutanix.ncp.ntnx_pbrs:
+  ntnx_pbrs:
     validate_certs: false
     state: present
     nutanix_host: "{{ ip }}"
@@ -51,7 +35,7 @@
     todelete: "{{ todelete + [  result.pbr_uuid ] }}"
 ################################################################################################################################
 - name: Create PBR with vpc name, any source, any destination, any protocol and deny action
-  nutanix.ncp.ntnx_pbrs:
+  ntnx_pbrs:
     state: present
     priority: "{{ priority.0 }}"
     vpc:
@@ -80,7 +64,7 @@
     todelete: "{{ todelete + [  result.pbr_uuid ] }}"
 ###############################################################################################
 - name: Create PBR with vpc uuid, any source, external destination and allow action with protocol number
-  nutanix.ncp.ntnx_pbrs:
+  ntnx_pbrs:
     state: present
     priority: "{{ priority.1 }}"
     vpc:
@@ -109,7 +93,7 @@
     todelete: "{{ todelete + [  result.pbr_uuid ] }}"
 #######################################################################################################
 - name: Create PBR with vpc name with source external and destination network with reroute action and tcp port rangelist
-  nutanix.ncp.ntnx_pbrs:
+  ntnx_pbrs:
     state: present
     priority: "{{ priority.2 }}"
     vpc:
@@ -142,7 +126,7 @@
     todelete: "{{ todelete + [  result.pbr_uuid ] }}"
 ##########################################################################################################
 - name: Create PBR with vpc name with source external and destination network with reroute action and any tcp port rangelist
-  nutanix.ncp.ntnx_pbrs:
+  ntnx_pbrs:
     state: present
     priority: "{{ priority.3 }}"
     vpc:
@@ -175,7 +159,7 @@
     todelete: "{{ todelete + [  result.pbr_uuid ] }}"
 ###########################################################################################################
 - name: Create PBR with vpc name, custom source network, external destination, reroute action and udp port rangelist
-  nutanix.ncp.ntnx_pbrs:
+  ntnx_pbrs:
     state: present
     priority: "{{ priority.4 }}"
     vpc:
@@ -208,7 +192,7 @@
     todelete: "{{ todelete + [  result.pbr_uuid ] }}"
 ##############################################################################################################
 - name: Create PBR with vpc name, custom source network, external destination, reroute action and any udp ports
-  nutanix.ncp.ntnx_pbrs:
+  ntnx_pbrs:
     state: present
     wait: true
     priority: "{{ priority.5 }}"
@@ -242,7 +226,7 @@
     todelete: "{{ todelete + [  result.pbr_uuid ] }}"
 ##################################################################################################################
 - name: Create PBR with vpc name, source network, external destination, with reroute action and icmp
-  nutanix.ncp.ntnx_pbrs:
+  ntnx_pbrs:
     state: present
     priority: "{{ priority.6 }}"
     wait: false
@@ -267,26 +251,8 @@
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.pbr_uuid ] }}"
 ##################################################################################################################
-- name: Delete Pbr with check mode
-  nutanix.ncp.ntnx_pbrs:
-    state: absent
-    pbr_uuid: "{{ result.pbr_uuid }}"
-  register: output
-  ignore_errors: true
-  check_mode: true
-
-- name: Delete Pbr with check mode Status
-  ansible.builtin.assert:
-    that:
-      - output.failed == false
-      - output.changed == false
-      - output.msg =="Pbr with uuid:{{ result.pbr_uuid}} will be deleted."
-      - output.pbr_uuid == "{{ result.pbr_uuid }}"
-    fail_msg: "Delete Pbr with check mode failed"
-    success_msg: "Delete Pbr with check mode passed"
-
 - name: Delete all created pbrs
-  nutanix.ncp.ntnx_pbrs:
+  ntnx_pbrs:
     state: absent
     pbr_uuid: "{{ item }}"
   register: result

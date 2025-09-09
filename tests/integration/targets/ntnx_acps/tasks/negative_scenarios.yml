@@ -1,10 +1,9 @@
----
-- name: Start ntnx_acps negative_scenarios tests
+- name: Started Negative Creation Cases
   ansible.builtin.debug:
-    msg: Start ntnx_acps negative_scenarios tests
+    msg: "Started Negative Creation Cases"
 
 - name: Unknown role name
-  nutanix.ncp.ntnx_acps:
+  ntnx_acps:
     state: present
     name: MinACP2
     role:
@@ -21,7 +20,7 @@
     fail_msg: " Fail ACP created successfully with unknown role name "
 #######################################################
 - name: Unknown role uuid
-  nutanix.ncp.ntnx_acps:
+  ntnx_acps:
     state: present
     name: MinACP2
     role:
@@ -37,7 +36,7 @@
     fail_msg: " Fail acp created successfully with unknown role uuid "
 #######################################################
 - name: Delete acp with unknown uuid
-  nutanix.ncp.ntnx_acps:
+  ntnx_acps:
     state: absent
     acp_uuid: 5
   ignore_errors: true
@@ -50,7 +49,7 @@
     fail_msg: " Fail deleting acp with unknown uuid "
 #######################################################
 - name: Delete acp with missing uuid
-  nutanix.ncp.ntnx_acps:
+  ntnx_acps:
     state: absent
   ignore_errors: true
   register: result

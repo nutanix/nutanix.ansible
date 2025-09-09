@@ -1,17 +1,9 @@
----
-# Variables required before running this playbook:
-# - priority
-# - network
-# - vpc
-# - icmp
-# - reroute_ip
-
-- name: Start nutanix_vpcs negative_scenarios tests
+- name: Started Negative Creation Cases
   ansible.builtin.debug:
-    msg: Start nutanix_vpcs negative_scenarios tests.
+    msg: "Started Negative Creation Cases"
 
 - name: Create PBR with unknown vpc name
-  nutanix.ncp.ntnx_pbrs:
+  ntnx_pbrs:
     state: present
     priority: "{{ priority.8 }}"
     vpc:
@@ -38,7 +30,7 @@
     success_msg: " Success: returned error as expected "
 ##################################################################
 - name: Create PBR with priority less than 10
-  nutanix.ncp.ntnx_pbrs:
+  ntnx_pbrs:
     state: present
     priority: 8
     vpc:
@@ -65,7 +57,7 @@
     success_msg: " Success: returned error as expected "
 ###################################################################
 - name: Create PBR with invalid network ip
-  nutanix.ncp.ntnx_pbrs:
+  ntnx_pbrs:
     state: present
     priority: "{{ priority.5 }}"
     vpc:
@@ -93,7 +85,7 @@
 
 #################################################################
 - name: Create PBR with unknown vpc uuid
-  nutanix.ncp.ntnx_pbrs:
+  ntnx_pbrs:
     state: present
     priority: "{{ priority.8 }}"
     vpc:
@@ -120,7 +112,7 @@
     success_msg: " Success: returned error as expected "
 #################################################################
 - name: Create PBR with invalid type and code values for icmp
-  nutanix.ncp.ntnx_pbrs:
+  ntnx_pbrs:
     state: present
     priority: "{{ priority.8 }}"
     vpc:
@@ -147,7 +139,7 @@
     success_msg: " Success: returned error as expected "
 #####################################################################
 - name: Delete pbrs with unknown uuid
-  nutanix.ncp.ntnx_pbrs:
+  ntnx_pbrs:
     state: absent
     pbr_uuid: 5
   register: result

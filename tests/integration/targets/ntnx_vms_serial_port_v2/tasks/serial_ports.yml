@@ -1,7 +1,4 @@
 ---
-# Variables required before running this playbook:
-# - cluster
-
 - name: Create, Update, Fetch and Delete Serial Ports
   ansible.builtin.debug:
     msg: "Create, Update, Fetch and Delete Serial Ports"
@@ -10,7 +7,7 @@
     todelete: []
 
 - name: VM with minimum requirements
-  nutanix.ncp.ntnx_vms:
+  ntnx_vms:
     state: present
     name: MinReqVM
     cluster:
@@ -32,7 +29,7 @@
   when: result.response.status.state == 'COMPLETE'
 
 - name: Create Serial Port
-  nutanix.ncp.ntnx_vms_serial_port_v2:
+  ntnx_vms_serial_port_v2:
     vm_ext_id: "{{ vm_ext_id }}"
     state: present
     index: 0
@@ -55,7 +52,7 @@
     success_msg: " Serial Port created successfully "
 
 - name: Fetch information about all serial ports of a vm
-  nutanix.ncp.ntnx_vms_serial_port_info_v2:
+  ntnx_vms_serial_port_info_v2:
     vm_ext_id: "{{ vm_ext_id }}"
   register: result
   ignore_errors: true
@@ -65,8 +62,6 @@
     that:
       - result.response is defined
       - result.response | length == 1
-      - result.total_available_results is defined
-      - result.total_available_results == 1
       - result.response[0].is_connected == true
       - result.response[0].index == 0
       - result.vm_ext_id == '{{ vm_ext_id }}'
@@ -77,7 +72,7 @@
     todelete: "{{ todelete + [ result.response.0.ext_id  ] }}"
 
 - name: Update Serial Port connection status
-  nutanix.ncp.ntnx_vms_serial_port_v2:
+  ntnx_vms_serial_port_v2:
     vm_ext_id: "{{ vm_ext_id }}"
     ext_id: "{{ result.response.0.ext_id }}"
     state: present
@@ -98,7 +93,7 @@
     success_msg: " Serial Port connection status updated successfully "
 
 - name: Fetch information about a specific serial port
-  nutanix.ncp.ntnx_vms_serial_port_info_v2:
+  ntnx_vms_serial_port_info_v2:
     vm_ext_id: "{{ vm_ext_id }}"
     ext_id: "{{result.response.ext_id}}"
   register: result
@@ -115,7 +110,7 @@
     success_msg: " Information about a specific serial port fetched successfully "
 
 - name: Update Serial Port index
-  nutanix.ncp.ntnx_vms_serial_port_v2:
+  ntnx_vms_serial_port_v2:
     vm_ext_id: "{{ vm_ext_id }}"
     ext_id: "{{ result.response.ext_id }}"
     state: present
@@ -137,28 +132,8 @@
     fail_msg: " Unable to create Serial Port "
     success_msg: " Serial Port created successfully "
 
-- name: Delete Serial Port with check mode is enabled
-  nutanix.ncp.ntnx_vms_serial_port_v2:
-    state: absent
-    vm_ext_id: "{{ vm_ext_id }}"
-    ext_id: "{{ todelete[0] }}"
-  check_mode: true
-  register: result
-  ignore_errors: true
-
-- name: Delete Serial Port with check mode is enabled Status
-  ansible.builtin.assert:
-    that:
-      - result.msg is defined
-      - result.changed == false
-      - result.failed == false
-      - result.ext_id == "{{ todelete[0] }}"
-      - result.msg == "Serial port with ext_id:{{ todelete[0] }} will be deleted."
-    fail_msg: " Delete Serial Port with check mode is enabled failed "
-    success_msg: " Delete Serial Port with check mode is enabled passed "
-
 - name: Delete Serial Port
-  nutanix.ncp.ntnx_vms_serial_port_v2:
+  ntnx_vms_serial_port_v2:
     state: absent
     ext_id: "{{item}}"
     vm_ext_id: "{{ vm_ext_id }}"
@@ -175,7 +150,7 @@
     success_msg: " Serial Port deleted successfully "
 
 - name: Fetch information about all serial ports of a vm
-  nutanix.ncp.ntnx_vms_serial_port_info_v2:
+  ntnx_vms_serial_port_info_v2:
     vm_ext_id: "{{ vm_ext_id }}"
   register: result
   ignore_errors: true
@@ -189,7 +164,7 @@
     success_msg: " Information about all serial ports of a vm fetched successfully "
 
 - name: Delete Created VM
-  nutanix.ncp.ntnx_vms:
+  ntnx_vms:
     state: absent
     vm_uuid: "{{ vm_ext_id }}"
   register: result

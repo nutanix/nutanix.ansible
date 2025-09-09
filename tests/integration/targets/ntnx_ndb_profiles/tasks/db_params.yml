@@ -38,7 +38,7 @@
     profile4_name: "{{ random_name }}{{ suffix_name }}4"
 ################################################################
 - name: Verify creation of db params profile
-  nutanix.ncp.ntnx_ndb_profiles:
+  ntnx_ndb_profiles:
     name: "{{ profile1_name }}"
     desc: testdesc
     type: database_parameter
@@ -111,7 +111,7 @@
     todelete: "{{ todelete + [result.profile_uuid] }}"
 ################################################################
 - name: Verify update of params in database_parameter profile and publish profile
-  nutanix.ncp.ntnx_ndb_profiles:
+  ntnx_ndb_profiles:
     name: "{{ profile2_name }}"
     desc: newdesc
     profile_uuid: "{{ result.profile_uuid }}"
@@ -145,7 +145,7 @@
     success_msg: "Pass: verify update of params in database_parameter profile and publish profile finished successfully"
 ################################################################
 - name: Verify unpublish flow in database_parameter profile
-  nutanix.ncp.ntnx_ndb_profiles:
+  ntnx_ndb_profiles:
     profile_uuid: "{{ result.profile_uuid }}"
     database_parameter:
       publish: false
@@ -164,8 +164,8 @@
     fail_msg: "Fail: verify unpublish flow in database_parameter profile "
     success_msg: "Pass: verify unpublish flow in database_parameter profile finished successfully "
 ################################################################
-- name: Verify creation of db params profile with defaults
-  nutanix.ncp.ntnx_ndb_profiles:
+- name: Verify creatition of db params profile with defaults
+  ntnx_ndb_profiles:
     name: "{{ profile3_name }}"
     desc: testdesc
     type: database_parameter
@@ -183,15 +183,15 @@
       - result.response.description == "testdesc"
       - result.response.type == "Database_Parameter"
       - result.response.versions is defined
-    fail_msg: "Fail: Unable to verify creation of db params profile with defaults "
-    success_msg: "Pass: verify creation of db params profile with defaults finished successfully "
+    fail_msg: "Fail: Unable to verify creatition of db params profile with defaults "
+    success_msg: "Pass: verify creatition of db params profile with defaults finished successfully "
 
 - name: Define variable to delete created profile
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [result.profile_uuid] }}"
 ################################################################
 - name: Verify idempotency check
-  nutanix.ncp.ntnx_ndb_profiles:
+  ntnx_ndb_profiles:
     name: "{{ profile3_name }}"
     desc: testdesc
     profile_uuid: "{{ result.profile_uuid }}"
@@ -211,7 +211,7 @@
     success_msg: "Pass: verify idempotency check finished successfully"
 ################################################################
 - name: Delete all created Database_Parameter profiles
-  nutanix.ncp.ntnx_ndb_profiles:
+  ntnx_ndb_profiles:
     state: absent
     profile_uuid: "{{ item }}"
   register: result

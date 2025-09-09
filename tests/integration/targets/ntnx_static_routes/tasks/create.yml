@@ -1,14 +1,9 @@
----
-# Variables required before running this playbook:
-# - vpc
-# - external_nat_subnet
-
 - name: Start testing static routes update tests
   ansible.builtin.debug:
     msg: Start testing static routes update tests
 
 - name: Add default static route and external nat static route to the vpc route table
-  nutanix.ncp.ntnx_static_routes:
+  ntnx_static_routes:
     vpc_uuid: "{{ vpc.uuid }}"
     static_routes:
       - destination: "0.0.0.0/0"
@@ -44,14 +39,14 @@
       - result.response.status.resources.default_route["nexthop"]["external_subnet_reference"]["name"] == "{{ external_nat_subnet.name }}"
 
     fail_msg: "Fail: Unable to update static routes of vpc"
-    success_msg: "Success: static routes updated successfully"
+    success_msg: "Succes: static routes updated successfully"
 
 - name: Wait 1 minute for static routes to be become active
   ansible.builtin.pause:
     seconds: 60
 
 - name: Get all static routes
-  nutanix.ncp.ntnx_static_routes_info:
+  ntnx_static_routes_info:
     vpc_uuid: "{{ vpc.uuid }}"
   register: result
 
@@ -68,7 +63,7 @@
 ###########################################################################################################
 
 - name: Idempotency check
-  nutanix.ncp.ntnx_static_routes:
+  ntnx_static_routes:
     vpc_uuid: "{{ vpc.uuid }}"
     static_routes:
       - destination: "0.0.0.0/0"
@@ -97,7 +92,7 @@
 ###########################################################################################################
 
 - name: Override existing static routes
-  nutanix.ncp.ntnx_static_routes:
+  ntnx_static_routes:
     vpc_uuid: "{{ vpc.uuid }}"
     static_routes:
       - destination: "10.2.4.0/24"
@@ -115,14 +110,14 @@
       - result.response.status.resources.static_routes_list[0]["destination"] == "10.2.4.0/24"
       - result.response.status.resources.static_routes_list[0]["nexthop"]["external_subnet_reference"]["name"] == "{{ external_nat_subnet.name }}"
     fail_msg: "Static routes overriding failed"
-    success_msg: "Static routes overridden successfully"
+    success_msg: "Static routes overriden successfully"
 
 - name: Wait 1 minute for static routes to be become active
   ansible.builtin.pause:
     seconds: 60
 
 - name: Get all static routes
-  nutanix.ncp.ntnx_static_routes_info:
+  ntnx_static_routes_info:
     vpc_uuid: "{{ vpc.uuid }}"
   register: result
 
@@ -141,8 +136,8 @@
 
 ###########################################################################################################
 
-- name: Negative scenario of creating multiple default routes
-  nutanix.ncp.ntnx_static_routes:
+- name: Netgative scenario of cretaing multiple default routes
+  ntnx_static_routes:
     vpc_uuid: "{{ vpc.uuid }}"
     static_routes:
       - destination: "0.0.0.0/0"
@@ -166,7 +161,7 @@
 
 ###########################################################################################################
 - name: Remove all routes
-  nutanix.ncp.ntnx_static_routes:
+  ntnx_static_routes:
     vpc_uuid: "{{ vpc.uuid }}"
     remove_all_routes: true
   register: result

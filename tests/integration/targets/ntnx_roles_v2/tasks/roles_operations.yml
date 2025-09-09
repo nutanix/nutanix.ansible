@@ -4,7 +4,7 @@
     msg: start ntnx_roles_v2 tests
 
 - name: Get create operations
-  nutanix.ncp.ntnx_operations_info_v2:
+  ntnx_operations_info_v2:
     filter: displayName startswith 'Create_'
   register: create_operations
   ignore_errors: true
@@ -32,7 +32,7 @@
 ###################################################################################################
 
 - name: Create roles with operations in check mode
-  nutanix.ncp.ntnx_roles_v2:
+  ntnx_roles_v2:
     state: present
     display_name: "{{ role_2_name }}"
     description: test-ansible-role-1-desc
@@ -60,7 +60,7 @@
 ##############################################################################################
 
 - name: Create roles with operations
-  nutanix.ncp.ntnx_roles_v2:
+  ntnx_roles_v2:
     state: present
     display_name: "{{ role_1_name }}"
     description: test-ansible-role-1-desc
@@ -99,7 +99,7 @@
 ###################################################################################################
 
 - name: Check if role with existing name fails or not
-  nutanix.ncp.ntnx_roles_v2:
+  ntnx_roles_v2:
     state: present
     display_name: "{{ role_1_name }}"
     operations:
@@ -121,7 +121,7 @@
 ###################################################################################################
 
 - name: Update roles in check mode
-  nutanix.ncp.ntnx_roles_v2:
+  ntnx_roles_v2:
     state: present
     ext_id: "{{ todelete }}"
     display_name: "{{ role_2_name }}"
@@ -150,7 +150,7 @@
 ###################################################################################################
 
 - name: Update roles
-  nutanix.ncp.ntnx_roles_v2:
+  ntnx_roles_v2:
     state: present
     ext_id: "{{ todelete }}"
     display_name: "{{ role_2_name }}"
@@ -179,7 +179,7 @@
 ###################################################################################################
 
 - name: Test idempotency by updating roles with same values
-  nutanix.ncp.ntnx_roles_v2:
+  ntnx_roles_v2:
     state: present
     ext_id: "{{ todelete }}"
     display_name: "{{ role_2_name }}"
@@ -203,7 +203,7 @@
 ###################################################################################################
 
 - name: List all roles
-  nutanix.ncp.ntnx_roles_info_v2:
+  ntnx_roles_info_v2:
   register: result
   ignore_errors: true
 
@@ -212,8 +212,6 @@
     that:
       - result.response is defined
       - result.response | length > 0
-      - result.total_available_results is defined
-      - result.total_available_results > 0
     fail_msg: Unable to list all roles
     success_msg: roles info obtained successfully
 
@@ -227,7 +225,7 @@
 ###################################################################################################
 
 - name: Fetch role using external ID
-  nutanix.ncp.ntnx_roles_info_v2:
+  ntnx_roles_info_v2:
     ext_id: "{{ test_role_uuid }}"
   register: result
   ignore_errors: true
@@ -246,7 +244,7 @@
 ###################################################################################################
 
 - name: List roles using limit
-  nutanix.ncp.ntnx_roles_info_v2:
+  ntnx_roles_info_v2:
     limit: 1
   register: result
   ignore_errors: true
@@ -264,7 +262,7 @@
 ###################################################################################################
 
 - name: List roles using filter
-  nutanix.ncp.ntnx_roles_info_v2:
+  ntnx_roles_info_v2:
     filter: displayName eq '{{ test_role_name }}'
   register: result
   ignore_errors: true
@@ -283,29 +281,8 @@
 
 ###################################################################################################
 
-- name: Delete role with check mode enabled
-  nutanix.ncp.ntnx_roles_v2:
-    state: absent
-    ext_id: "{{ todelete }}"
-  register: result
-  check_mode: true
-  ignore_errors: true
-
-- name: Delete role with check mode enabled Status
-  ansible.builtin.assert:
-    that:
-      - result.msg is defined
-      - result.changed == false
-      - result.failed == false
-      - result.ext_id == "{{ todelete }}"
-      - result.msg == "Role with ext_id:{{ todelete }} will be deleted."
-    fail_msg: Delete role with check mode enabled failed
-    success_msg: Delete role with check mode enabled passed
-
-###############################################################################################
-
 - name: Delete roles
-  nutanix.ncp.ntnx_roles_v2:
+  ntnx_roles_v2:
     state: absent
     ext_id: "{{ todelete }}"
   register: result

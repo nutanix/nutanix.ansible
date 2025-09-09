@@ -1,5 +1,5 @@
 ---
-- name: Ntnx_ndb_profiles_info integration tests
+- name: Ntnx_ndb_profiles_info integration testsw
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: "{{ ndb_ip }}"

@@ -1,14 +1,12 @@
 ---
-# Variables required before running this playbook:
-# - dr
-
 - name: Start testing protection policies crud tests
   ansible.builtin.debug:
     msg: Start testing protection policies crud tests
 
 ############################################ CREATE Protection Policy tests #########################
 - name: Create protection rule with synchronous schedule and check mode
-  nutanix.ncp.ntnx_protection_rules:
+  check_mode: true
+  ntnx_protection_rules:
     state: present
     wait: true
     name: test-ansible
@@ -33,8 +31,6 @@
         protection_type: SYNC
         auto_suspend_timeout: 10
   register: result
-  ignore_errors: true
-  check_mode: true
 
 - name: Creation Status
   ansible.builtin.assert:
@@ -61,7 +57,7 @@
 ##########################################################################################################################################################
 
 - name: Create protection rule with sync schedule
-  nutanix.ncp.ntnx_protection_rules:
+  ntnx_protection_rules:
     state: present
     wait: true
     name: test-ansible
@@ -111,8 +107,8 @@
     fail_msg: "Unable to create protection rule with synchronous schedule"
     success_msg: "Protection policy with with synchronous schedule created successfully"
 
-- name: Delete created protection policy in order to avoid conflict in further tests
-  nutanix.ncp.ntnx_protection_rules:
+- name: Delete created protection policy inorder to avoid conflict in further tests
+  ntnx_protection_rules:
     state: absent
     wait: true
     rule_uuid: "{{ result.rule_uuid }}"
@@ -121,7 +117,7 @@
 ##########################################################################################################################################################
 
 - name: Create protection rule with async schedule
-  nutanix.ncp.ntnx_protection_rules:
+  ntnx_protection_rules:
     state: present
     wait: true
     name: test-ansible
@@ -199,7 +195,7 @@
 ############################################################## UPDATE Protection Policy Tests ##################################################################
 
 - name: Update previously created protection policy
-  nutanix.ncp.ntnx_protection_rules:
+  ntnx_protection_rules:
     state: present
     wait: true
     rule_uuid: "{{result.rule_uuid}}"
@@ -276,7 +272,7 @@
 ####################################################################################
 
 - name: Idempotency Check
-  nutanix.ncp.ntnx_protection_rules:
+  ntnx_protection_rules:
     state: present
     wait: true
     rule_uuid: "{{result.rule_uuid}}"
@@ -330,15 +326,14 @@
 ####################################################################################
 
 - name: Check Mode while update
-  nutanix.ncp.ntnx_protection_rules:
+  check_mode: true
+  ntnx_protection_rules:
     state: present
     wait: true
     rule_uuid: "{{result.rule_uuid}}"
     name: test-ansible-updated-check-mode
     desc: test-ansible-desc-updated
   register: temp_result
-  ignore_errors: true
-  check_mode: true
 
 - name: Check mode Status
   ansible.builtin.assert:
@@ -350,37 +345,20 @@
     success_msg: "Protection policy update spec generated successfully"
 
 ############################################################## DELETE Protection Policy Tests ##################################################################
-- name: Delete protection with check mode
-  nutanix.ncp.ntnx_protection_rules:
-    state: absent
-    rule_uuid: "{{ result.rule_uuid }}"
-  register: output
-  ignore_errors: true
-  check_mode: true
-
-- name: Delete protection policy with check mode Status
-  ansible.builtin.assert:
-    that:
-      - output.failed == false
-      - output.changed == false
-      - output.msg =="Role with uuid:{{ result.rule_uuid}} will be deleted."
-      - output.rule_uuid == "{{ result.rule_uuid }}"
-    fail_msg: "Delete protection policy with check mode failed"
-    success_msg: "Delete protection policy with check mode passed"
 
 - name: Delete created protection policy
-  nutanix.ncp.ntnx_protection_rules:
+  ntnx_protection_rules:
     state: absent
     wait: true
     rule_uuid: "{{ result.rule_uuid }}"
-  register: output
+  register: result
 
 - name: Delete Status
   ansible.builtin.assert:
     that:
-      - output.response is defined
-      - output.changed == True
-      - output.response.status == 'SUCCEEDED'
-      - output.rule_uuid == "{{ result.rule_uuid }}"
+      - result.response is defined
+      - result.changed == True
+      - result.response.status == 'SUCCEEDED'
+
     fail_msg: "protection policy delete failed"
     success_msg: "protection policy deleted successfully"

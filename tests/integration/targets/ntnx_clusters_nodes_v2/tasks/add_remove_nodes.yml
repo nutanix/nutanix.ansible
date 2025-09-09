@@ -1,9 +1,4 @@
 ---
-# Variables required before running this playbook:
-# - clusters
-# - username
-# - password
-
 - name: Start ntnx_clusters_nodes_v2 tests
   ansible.builtin.debug:
     msg: Start ntnx_clusters_nodes_v2 tests
@@ -23,7 +18,7 @@
     reset_command: '{{ pe_ssh_cmd }} "{{ reset_username_password }}"'
 
 - name: Generate spec for fetching network info for an unconfigured node using check mode
-  nutanix.ncp.ntnx_nodes_network_info_v2:
+  ntnx_nodes_network_info_v2:
     cluster_ext_id: "000625a6-246f-7d5d-0000-00000001381e"
     node_list:
       - node_uuid: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
@@ -106,7 +101,7 @@
     success_msg: "Generate spec for fetching network info for an unconfigured node using check mode passed"
 
 - name: Generate spec for discovering unconfigured nodes using check mode
-  nutanix.ncp.ntnx_discover_unconfigured_nodes_v2:
+  ntnx_discover_unconfigured_nodes_v2:
     address_type: "IPV4"
     ip_filter_list:
       - ipv4:
@@ -128,7 +123,7 @@
     success_msg: "Generate spec for discovering unconfigured nodes using check mode passed"
 
 - name: Generate spec for expanding cluster using check mode
-  nutanix.ncp.ntnx_clusters_nodes_v2:
+  ntnx_clusters_nodes_v2:
     node_params:
       node_list:
         - node_uuid: "6750557f-673b-462a-9b58-3acd29e15eaa"
@@ -234,7 +229,7 @@
     success_msg: Generate spec for expanding cluster using check mode passed
 
 - name: Generate spec for removing node from cluster using check mode
-  nutanix.ncp.ntnx_clusters_nodes_v2:
+  ntnx_clusters_nodes_v2:
     state: absent
     cluster_ext_id: "000625a6-246f-7d5d-0000-00000001381e"
     should_skip_prechecks: true
@@ -284,7 +279,7 @@
     success_msg: All cluster nodes are unconfigured
 
 - name: Discover unconfigured nodes
-  nutanix.ncp.ntnx_discover_unconfigured_nodes_v2:
+  ntnx_discover_unconfigured_nodes_v2:
     address_type: "IPV4"
     ip_filter_list:
       - ipv4:
@@ -307,7 +302,7 @@
   no_log: true
 
 - name: Run cluster create prechecks
-  nutanix.ncp.ntnx_clusters_v2:
+  ntnx_clusters_v2:
     name: "{{ clusters[0].name }}"
     nodes:
       node_list:
@@ -376,7 +371,7 @@
     success_msg: Cluster create prechecks passed
 
 - name: Create 3 nodes cluster with minimum spec
-  nutanix.ncp.ntnx_clusters_v2:
+  ntnx_clusters_v2:
     name: "{{cluster_name}}"
     nodes:
       node_list:
@@ -416,7 +411,7 @@
   changed_when: result.rc != 0
 
 - name: List all clusters to get prism central external ID
-  nutanix.ncp.ntnx_clusters_info_v2:
+  ntnx_clusters_info_v2:
     filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
   register: result
   ignore_errors: true
@@ -426,7 +421,7 @@
     prism_central_external_id: "{{ result.response[0].ext_id }}"
 
 - name: Run PE PC registration
-  nutanix.ncp.ntnx_pc_registration_v2:
+  ntnx_pc_registration_v2:
     ext_id: "{{ prism_central_external_id }}"
     remote_cluster:
       aos_remote_cluster:
@@ -457,7 +452,7 @@
     seconds: 60
 
 - name: Fetch cluster using name
-  nutanix.ncp.ntnx_clusters_info_v2:
+  ntnx_clusters_info_v2:
     filter: name eq '{{ cluster_name }}'
   register: result
   ignore_errors: true
@@ -467,7 +462,7 @@
     that:
       - result.response is defined
       - result.response | length > 0
-    fail_msg: Failed verifying PE PC registration
+    fail_msg: Failed vefifying PE PC registration
     success_msg: PE PC registration passed successfully
 
 - name: Set cluster external ID
@@ -475,7 +470,7 @@
     cluster_ext_id: "{{ result.response[0].ext_id }}"
 
 - name: Fetch cluster info using external ID
-  nutanix.ncp.ntnx_clusters_info_v2:
+  ntnx_clusters_info_v2:
     ext_id: "{{ cluster_ext_id }}"
   register: result
   ignore_errors: true
@@ -499,7 +494,7 @@
     success_msg: Cluster creation passed successfully
 
 - name: Discover unconfigured node
-  nutanix.ncp.ntnx_discover_unconfigured_nodes_v2:
+  ntnx_discover_unconfigured_nodes_v2:
     cluster_ext_id: "{{ cluster_ext_id }}"
     address_type: "IPV4"
     ip_filter_list:
@@ -520,7 +515,7 @@
     success_msg: "Discover unconfigured node passed"
 
 - name: Get network info of unconfigured node
-  nutanix.ncp.ntnx_nodes_network_info_v2:
+  ntnx_nodes_network_info_v2:
     cluster_ext_id: "{{ cluster_ext_id }}"
     node_list:
       - cvm_ip:
@@ -547,7 +542,7 @@
     success_msg: "Get network info of unconfigured node passed"
 
 - name: Expand cluster by adding a node
-  nutanix.ncp.ntnx_clusters_nodes_v2:
+  ntnx_clusters_nodes_v2:
     cluster_ext_id: "{{ cluster_ext_id }}"
     node_params:
       node_list:
@@ -610,12 +605,12 @@
     fail_msg: "Expand cluster failed"
     success_msg: "Expand cluster passed"
 
-- name: Sleep for 10 minutes
+- name: Sleep for 5 minutes
   ansible.builtin.pause:
-    seconds: 600
+    seconds: 300
 
 - name: Remove node from cluster
-  nutanix.ncp.ntnx_clusters_nodes_v2:
+  ntnx_clusters_nodes_v2:
     state: absent
     cluster_ext_id: "{{ cluster_ext_id }}"
     node_uuids:
@@ -637,7 +632,7 @@
     seconds: 60
 
 - name: Destroy the cluster for cleanup
-  nutanix.ncp.ntnx_clusters_v2:
+  ntnx_clusters_v2:
     state: absent
     ext_id: "{{ cluster_ext_id }}"
   register: result

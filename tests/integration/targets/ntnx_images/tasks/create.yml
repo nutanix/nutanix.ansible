@@ -1,14 +1,10 @@
 ---
-# Variables required before running this playbook:
-# - disk_image
-# - cluster
-
 - name: Start ntnx_image create tests
   ansible.builtin.debug:
     msg: Start ntnx_image create tests
 
 - name: Create image with minimal spec and source uri
-  nutanix.ncp.ntnx_images:
+  ntnx_images:
     state: present
     image_type: DISK_IMAGE
     source_uri: "{{ disk_image.url }}"
@@ -34,7 +30,7 @@
 ##################################################################################
 
 - name: Create image with all spec and using local image upload
-  nutanix.ncp.ntnx_images:
+  ntnx_images:
     state: present
     name: integration-test-image-with-upload
     desc: "uploaded image during integration test"
@@ -78,7 +74,8 @@
 ###############################################################################################
 
 - name: Verify check mode for ntnx_image
-  nutanix.ncp.ntnx_images:
+  check_mode: true
+  ntnx_images:
     state: present
     name: integration-test-image
     desc: "uploaded image during integration test"
@@ -99,8 +96,6 @@
       checksum_value: "{{ disk_image.checksum }}"
     wait: true
   register: result
-  check_mode: true
-  ignore_errors: true
 
 - name: Creation Status
   ansible.builtin.assert:
@@ -123,7 +118,7 @@
 ##############################################################################################
 
 - name: "Negative scenario when create image with invalid source uri"
-  nutanix.ncp.ntnx_images:
+  ntnx_images:
     state: present
     source_uri: "www.google.com"
     image_type: "DISK_IMAGE"
@@ -144,7 +139,7 @@
 
 ###################################################################################################
 - name: Cleanup created entities
-  nutanix.ncp.ntnx_images:
+  ntnx_images:
     state: absent
     image_uuid: "{{ item }}"
   register: result

@@ -4,7 +4,7 @@
     msg: Start testing ntnx_hosts_info
 
 - name: Test getting all hosts
-  nutanix.ncp.ntnx_hosts_info:
+  ntnx_hosts_info:
   register: hosts_info
   ignore_errors: true
 
@@ -20,7 +20,7 @@
 
 
 - name: Test getting particular host using uuid
-  nutanix.ncp.ntnx_hosts_info:
+  ntnx_hosts_info:
     host_uuid: '{{ hosts_info.response.entities[0].metadata.uuid }}'
   register: result
 
@@ -35,8 +35,9 @@
     fail_msg: "Unable to get particular host"
     success_msg: "host info obtained successfully"
 
+
 - name: List hosts using length, offset, sort order and name sort attribute
-  nutanix.ncp.ntnx_hosts_info:
+  ntnx_hosts_info:
     length: 2
     offset: 0
     sort_order: "ASCENDING"

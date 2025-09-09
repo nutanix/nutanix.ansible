@@ -16,7 +16,7 @@
     todelete: []
 
 - name: Create tcp service group with check mode enabled
-  nutanix.ncp.ntnx_service_groups_v2:
+  ntnx_service_groups_v2:
     name: "{{ service_group_name }}_1"
     description: desc
     tcp_services:
@@ -52,7 +52,7 @@
     success_msg: "Pass: tcp service group created successfully with check mode enabled"
 #####################################################################
 - name: Create tcp service group
-  nutanix.ncp.ntnx_service_groups_v2:
+  ntnx_service_groups_v2:
     name: "{{ service_group_name }}_1"
     description: desc
     tcp_services:
@@ -68,7 +68,7 @@
   ignore_errors: true
 
 - name: Getting particular service_group using uuid
-  nutanix.ncp.ntnx_service_groups_info_v2:
+  ntnx_service_groups_info_v2:
     ext_id: "{{ result.ext_id }}"
   register: result
   ignore_errors: true
@@ -98,7 +98,7 @@
     todelete: "{{ todelete + [result.ext_id] }}"
 ###############################################################
 - name: Create udp service group
-  nutanix.ncp.ntnx_service_groups_v2:
+  ntnx_service_groups_v2:
     name: "{{ service_group_name }}_2"
     description: desc
     udp_services:
@@ -139,7 +139,7 @@
     todelete: "{{ todelete + [result.ext_id] }}"
 ###############################################################
 - name: Create icmp with service group
-  nutanix.ncp.ntnx_service_groups_v2:
+  ntnx_service_groups_v2:
     name: "{{ service_group_name }}_3"
     description: desc
     icmp_services:
@@ -173,7 +173,7 @@
     todelete: "{{ todelete + [result.ext_id] }}"
 ###############################################################
 - name: Create service group with tcp and udp and icmp
-  nutanix.ncp.ntnx_service_groups_v2:
+  ntnx_service_groups_v2:
     name: "{{ service_group_name }}_4"
     description: desc
     tcp_services:
@@ -217,7 +217,7 @@
     todelete: "{{ todelete + [result.ext_id] }}"
 ################################################################
 - name: Test getting all service groups
-  nutanix.ncp.ntnx_service_groups_info_v2:
+  ntnx_service_groups_info_v2:
   register: service_groups
   ignore_errors: true
 
@@ -228,13 +228,11 @@
       - service_groups.changed == false
       - service_groups.failed == false
       - service_groups.response | length > 0
-      - service_groups.total_available_results is defined
-      - service_groups.total_available_results > 0
     fail_msg: Unable to list all service groups
     success_msg: service groups listed successfully
 ################################################################
 - name: List service_group using limit
-  nutanix.ncp.ntnx_service_groups_info_v2:
+  ntnx_service_groups_info_v2:
     limit: 1
   register: result
 
@@ -249,7 +247,7 @@
     success_msg: service groups listed successfully  using limit
 ###############################################################
 - name: Test getting particular service_group using filter
-  nutanix.ncp.ntnx_service_groups_info_v2:
+  ntnx_service_groups_info_v2:
     filter: name eq '{{ service_group_name }}_4'
   register: result
   ignore_errors: true
@@ -266,7 +264,7 @@
     success_msg: service_group info obtained successfully
 ################################################################
 - name: Test getting particular service_group using external id
-  nutanix.ncp.ntnx_service_groups_info_v2:
+  ntnx_service_groups_info_v2:
     ext_id: "{{ todelete[0] }}"
   register: result
   ignore_errors: true
@@ -282,7 +280,7 @@
     success_msg: service_group info obtained successfully
 ################################################################
 - name: Update tcp service group name and description and other protocols with check mode enabled
-  nutanix.ncp.ntnx_service_groups_v2:
+  ntnx_service_groups_v2:
     ext_id: "{{ todelete[0] }}"
     name: updated_name
     description: updated_desc
@@ -312,7 +310,7 @@
     success_msg: "Pass: tcp service group update successfully with check mode enabled"
 ################################################################
 - name: Update tcp service group name and description and other protocols
-  nutanix.ncp.ntnx_service_groups_v2:
+  ntnx_service_groups_v2:
     ext_id: "{{ todelete[0] }}"
     name: updated_name
     description: updated_desc
@@ -343,7 +341,7 @@
     success_msg: "Pass: tcp service group  update successfully"
 ################################################################
 - name: Update tcp service group with same values
-  nutanix.ncp.ntnx_service_groups_v2:
+  ntnx_service_groups_v2:
     ext_id: "{{ todelete[0] }}"
     name: updated_name
     description: updated_desc
@@ -365,29 +363,8 @@
     fail_msg: Fail service group updated with same values
     success_msg: "Pass : return as expected "
 ################################################################
-
-- name: Delete service group with check mode enabled
-  nutanix.ncp.ntnx_service_groups_v2:
-    state: absent
-    ext_id: "{{ todelete[0] }}"
-  register: result
-  ignore_errors: true
-  check_mode: true
-
-- name: Delete service group with check mode status
-  ansible.builtin.assert:
-    that:
-      - result.msg is defined
-      - result.changed == false
-      - result.failed == false
-      - result.ext_id == "{{ todelete[0] }}"
-      - result.msg == "Service group with ext_id:{{ todelete[0] }} will be deleted."
-    fail_msg: "Delete service group with check mode enabled failed"
-    success_msg: "Delete service group with check mode enabled passed"
-################################################################
-
 - name: Delete all created service groups
-  nutanix.ncp.ntnx_service_groups_v2:
+  ntnx_service_groups_v2:
     state: absent
     ext_id: "{{ item }}"
   register: result

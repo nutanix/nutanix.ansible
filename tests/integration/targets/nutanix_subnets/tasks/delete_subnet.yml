@@ -1,19 +1,6 @@
 ---
-# Variables required before running this playbook:
-# - vpc
-# - ip_address_management
-# - ip_address_pools
-# - dhcp_settings
-# - ip
-# - username
-# - password
-
-- name: Start nutanix_subnets delete_subnet tests
-  ansible.builtin.debug:
-    msg: Start nutanix_subnets delete_subnet tests
-
 - name: Overlay Subnet with IP_pools and DHCP
-  nutanix.ncp.ntnx_subnets:
+  ntnx_subnets:
     state: present
     name: Overlay Subnet with IP_pools and DHCP
     overlay_subnet:
@@ -43,26 +30,8 @@
     fail_msg: " Unable to create Overlay Subnet with IP_pools and DHCP "
     success_msg: " Overlay Subnet with IP_pools and DHCP created successfully "
 
-- name: Delete subnet with check mode
-  nutanix.ncp.ntnx_subnets:
-    state: absent
-    subnet_uuid: "{{ result.subnet_uuid }}"
-  register: output
-  ignore_errors: true
-  check_mode: true
-
-- name: Delete subnet with check mode Status
-  ansible.builtin.assert:
-    that:
-      - output.failed == false
-      - output.changed == false
-      - output.msg =="Subnet with uuid:{{ result.subnet_uuid }} will be deleted."
-      - output.subnet_uuid == "{{ result.subnet_uuid }}"
-    fail_msg: "Delete subnet with check mode failed"
-    success_msg: "Delete subnet with check mode passed"
-
 - name: Delete subnet
-  nutanix.ncp.ntnx_subnets:
+  ntnx_subnets:
     state: absent
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

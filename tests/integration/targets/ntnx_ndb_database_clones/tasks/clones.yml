@@ -7,17 +7,6 @@
 #   4. Authorization and deauthorization of db server vm wrt to time machines
 #   5. Creation of clone on authorized db server vm
 
-# Variables required before running this playbook:
-# - db_params_profile
-# - vm_password
-# - cluster
-# - software_profile
-# - network_profile
-# - compute_profile
-# - public_ssh_key
-# - sla
-# - tags
-
 - name: Start ndb database clone tests
   ansible.builtin.debug:
     msg: start ndb database clone tests
@@ -37,7 +26,7 @@
 ############################################ setup db and its snapshot for clone tests ###########################################
 
 - name: Create single instance postgres database on new db server vm
-  nutanix.ncp.ntnx_ndb_databases:
+  ntnx_ndb_databases:
     wait: true
     name: "{{ db1_name }}"
     desc: ansible-created-db-desc
@@ -106,7 +95,7 @@
     db_server_uuid: "{{ result.response.databaseNodes[0].dbserverId }}"
 
 - name: Create manual snapshot of database
-  nutanix.ncp.ntnx_ndb_database_snapshots:
+  ntnx_ndb_database_snapshots:
     time_machine_uuid: "{{ time_machine_uuid }}"
     name: "{{ snapshot_name }}"
   register: result
@@ -129,7 +118,8 @@
 ############################################ create clone on new db server vm tests ###########################################
 
 - name: Create spec for clone of database created above on new db server vm
-  nutanix.ncp.ntnx_ndb_database_clones:
+  check_mode: true
+  ntnx_ndb_database_clones:
     name: "{{ clone_db1 }}"
     desc: ansible-created-clone
 
@@ -173,8 +163,6 @@
     tags:
       ansible-clones: ansible-test-db-clones
   register: result
-  check_mode: true
-  ignore_errors: true
 
 - name: Define variables for expected response
   ansible.builtin.set_fact:
@@ -192,19 +180,8 @@
       latestSnapshot: false
       lcmConfig:
         databaseLCMConfig:
-          expiryDetails:
-            {
-              deleteDatabase: true,
-              expireInDays: 2,
-              expiryDateTimezone: Asia/Calcutta,
-              remindBeforeInDays: 1,
-            }
-          refreshDetails:
-            {
-              refreshDateTimezone: Asia/Calcutta,
-              refreshInDays: 2,
-              refreshTime: "12:00:00",
-            }
+          expiryDetails: { deleteDatabase: true, expireInDays: 2, expiryDateTimezone: Asia/Calcutta, remindBeforeInDays: 1 }
+          refreshDetails: { refreshDateTimezone: Asia/Calcutta, refreshInDays: 2, refreshTime: "12:00:00" }
       name: "{{ clone_db1 }}"
       networkProfileId: "{{ network_profile.uuid }}"
       nodeCount: 1
@@ -217,14 +194,7 @@
       nxClusterId: "{{ cluster.cluster1.uuid }}"
       snapshotId:
       sshPublicKey: VALUE_SPECIFIED_IN_NO_LOG_PARAMETER
-      tags:
-        [
-          {
-            tagId: "{{ tags.clones.uuid }}",
-            tagName: ansible-clones,
-            value: ansible-test-db-clones,
-          },
-        ]
+      tags: [{ tagId: "{{ tags.clones.uuid }}", tagName: ansible-clones, value: ansible-test-db-clones }]
       timeMachineId: "{{ time_machine_uuid }}"
       timeZone: UTC
       userPitrTimestamp: "2023-02-04 07:29:36"
@@ -241,7 +211,7 @@
     success_msg: DB clone create spec generated successfully using check_mode
 
 - name: Create clone using snapshot of previously created database
-  nutanix.ncp.ntnx_ndb_database_clones:
+  ntnx_ndb_database_clones:
     name: "{{ clone_db1 }}"
     desc: ansible-created-clone
 
@@ -330,7 +300,7 @@
 ############################################ clone update and removal/refresh schedules related tests ###########################################
 
 - name: Update name, desc, tags and schedules
-  nutanix.ncp.ntnx_ndb_database_clones:
+  ntnx_ndb_database_clones:
     uuid: "{{ clone_uuid }}"
     name: "{{ clone_db1 }}-updated"
     desc: ansible-created-clone-updated
@@ -370,10 +340,10 @@
       - result.response.tags[0].value == "ansible-test-db-clones-updated"
 
     fail_msg: Unable to update clone
-    success_msg: Database clone updated successfully
+    success_msg: Database clone updated succefully
 
 - name: Check idempotency
-  nutanix.ncp.ntnx_ndb_database_clones:
+  ntnx_ndb_database_clones:
     uuid: "{{ clone_uuid }}"
     name: "{{ clone_db1 }}-updated"
     desc: ansible-created-clone-updated
@@ -403,7 +373,7 @@
     success_msg: database clone update got skipped due to no state changes
 
 - name: Remove schedules
-  nutanix.ncp.ntnx_ndb_database_clones:
+  ntnx_ndb_database_clones:
     uuid: "{{ clone_uuid }}"
 
     removal_schedule:
@@ -424,18 +394,17 @@
       - result.response.lcmConfig.expiryDetails == None
       - result.response.lcmConfig.refreshDetails == None
     fail_msg: schedules update failed
-    success_msg: schedules removed successfully
+    success_msg: schedules removed succefully
 
 ########################################### refresh clone ###########################################
 
 - name: Create spec for refresh clone to a pitr timestamp
-  nutanix.ncp.ntnx_ndb_database_clone_refresh:
+  check_mode: true
+  ntnx_ndb_database_clone_refresh:
     uuid: "{{ clone_uuid }}"
     pitr_timestamp: "2023-02-04 07:29:36"
     timezone: UTC
   register: result
-  check_mode: true
-  ignore_errors: true
 
 - name: Check refresh db with pitr spec
   ansible.builtin.assert:
@@ -448,7 +417,7 @@
     success_msg: refresh db clone spec created successfully
 
 - name: Refresh db clone
-  nutanix.ncp.ntnx_ndb_database_clone_refresh:
+  ntnx_ndb_database_clone_refresh:
     uuid: "{{ clone_uuid }}"
     snapshot_uuid: "{{ snapshot_uuid }}"
   register: result
@@ -461,18 +430,17 @@
       - result.uuid is defined
       - result.response.status == "READY"
     fail_msg: database refresh failed
-    success_msg: database refresh completed successfully
+    success_msg: database refresh completed succefully
 
 ########################################### delete clone tests###########################################
 
 - name: Create soft remove spec
-  nutanix.ncp.ntnx_ndb_database_clones:
+  check_mode: true
+  ntnx_ndb_database_clones:
     state: absent
     uuid: "{{ clone_uuid }}"
     soft_remove: true
   register: result
-  check_mode: true
-  ignore_errors: true
 
 - name: Verify soft remove  spec
   ansible.builtin.assert:
@@ -486,12 +454,11 @@
     success_msg: spec for soft remove created successfully
 
 - name: Create unregistration spec
-  nutanix.ncp.ntnx_ndb_database_clones:
+  check_mode: true
+  ntnx_ndb_database_clones:
     state: absent
     uuid: "{{ clone_uuid }}"
   register: result
-  check_mode: true
-  ignore_errors: true
 
 - name: Verify unregistration spec
   ansible.builtin.assert:
@@ -504,26 +471,8 @@
     fail_msg: creation of spec for unregistration failed
     success_msg: spec for unregistration created successfully
 
-- name: Delete clone db with check mode
-  nutanix.ncp.ntnx_ndb_database_clones:
-    state: absent
-    uuid: "{{clone_uuid}}"
-  register: output
-  ignore_errors: true
-  check_mode: true
-
-- name: Delete clone db with check mode status
-  ansible.builtin.assert:
-    that:
-      - output.failed == false
-      - output.changed == false
-      - output.msg =="Db clone with uuid:{{  clone_uuid }} will be deleted."
-      - output.uuid == "{{  clone_uuid }}"
-    fail_msg: "Delete clone db with check mode failed"
-    success_msg: "Delete clone db with check mode passed"
-
 - name: Delete clone db
-  nutanix.ncp.ntnx_ndb_database_clones:
+  ntnx_ndb_database_clones:
     state: absent
     uuid: "{{ clone_uuid }}"
     delete_from_vm: true
@@ -541,7 +490,7 @@
 ########################################### authorize and deauthorize db server vms###########################################
 
 - name: Authorize db server vms
-  nutanix.ncp.ntnx_ndb_authorize_db_server_vms:
+  ntnx_ndb_authorize_db_server_vms:
     time_machine:
       name: "{{ tm1 }}"
     db_server_vms:
@@ -558,7 +507,7 @@
     success_msg: database authorization with time machine successfully
 
 - name: Deauthorize db server vms
-  nutanix.ncp.ntnx_ndb_authorize_db_server_vms:
+  ntnx_ndb_authorize_db_server_vms:
     state: absent
     time_machine:
       name: "{{ tm1 }}"
@@ -576,7 +525,7 @@
     success_msg: database deauthorization with time machine went successfully
 
 - name: Authorize db server vms for hosting clone
-  nutanix.ncp.ntnx_ndb_authorize_db_server_vms:
+  ntnx_ndb_authorize_db_server_vms:
     time_machine:
       name: "{{ tm1 }}"
     db_server_vms:
@@ -598,7 +547,7 @@
   ansible.builtin.set_fact:
     timestamp: "2123-11-08 12:36:15"
 - name: Create clone using snapshot on authorized server
-  nutanix.ncp.ntnx_ndb_database_clones:
+  ntnx_ndb_database_clones:
     name: "{{ clone_db1 }}"
     desc: ansible-created-clone
 
@@ -645,14 +594,14 @@
       - result.response.databaseNodes[0].dbserverId == db_server_uuid
       - result.response.parentTimeMachineId ==  time_machine_uuid
     fail_msg: Unable to create clone
-    success_msg: Database clone created successfully
+    success_msg: Database clone created succefully
 
 - name: Define variable for delete clone
   ansible.builtin.set_fact:
     delete_clone_uuid: "{{ result.uuid }}"
 
 - name: Delete clone db
-  nutanix.ncp.ntnx_ndb_database_clones:
+  ntnx_ndb_database_clones:
     state: absent
     uuid: "{{ delete_clone_uuid }}"
     delete_from_vm: true
@@ -670,7 +619,7 @@
 ########################################### create clone from latest snapshot ##################################
 
 - name: Authorize again db server vm
-  nutanix.ncp.ntnx_ndb_authorize_db_server_vms:
+  ntnx_ndb_authorize_db_server_vms:
     time_machine:
       name: "{{ tm1 }}"
     db_server_vms:
@@ -687,7 +636,7 @@
     success_msg: database authorization with time machine successfully
 
 - name: Create clone using latest snapshot on authorized server
-  nutanix.ncp.ntnx_ndb_database_clones:
+  ntnx_ndb_database_clones:
     name: "{{ clone_db1 }}fromLatestSnapshot"
     desc: ansible-created-clone from latest snapshot
 
@@ -746,7 +695,7 @@
     msg: Start testing ntnx_ndb_clones_info
 
 - name: List all era clones
-  nutanix.ncp.ntnx_ndb_clones_info:
+  ntnx_ndb_clones_info:
   register: clones
 
 - name: Check listing status
@@ -760,7 +709,7 @@
     success_msg: era clones listed successfully
 ################################################################
 - name: Get era clones using it's name
-  nutanix.ncp.ntnx_ndb_clones_info:
+  ntnx_ndb_clones_info:
     name: "{{ clones.response[0].name }}"
   register: result
 
@@ -775,7 +724,7 @@
     success_msg: get  era clones using it's name  successfully
 ################################################################
 - name: List clones use id
-  nutanix.ncp.ntnx_ndb_clones_info:
+  ntnx_ndb_clones_info:
     uuid: "{{ clones.response[0].id }}"
   register: result
 
@@ -791,7 +740,7 @@
 ################################################################
 
 - name: Get era clones with incorrect name
-  nutanix.ncp.ntnx_ndb_clones_info:
+  ntnx_ndb_clones_info:
     name: abcd
   register: result
   no_log: true
@@ -808,7 +757,7 @@
 ############################################ cleanup###########################################
 
 - name: Delete clone db
-  nutanix.ncp.ntnx_ndb_database_clones:
+  ntnx_ndb_database_clones:
     state: absent
     uuid: "{{ delete_clone_uuid }}"
     delete_from_vm: true
@@ -824,7 +773,7 @@
     success_msg: database delete successfully
 
 - name: Delete db server vm
-  nutanix.ncp.ntnx_ndb_db_server_vms:
+  ntnx_ndb_db_server_vms:
     state: absent
     uuid: "{{ db_server_uuid }}"
     delete_from_cluster: true
@@ -840,7 +789,7 @@
     success_msg: db server vm deleted successfully
 
 - name: Delete database created earlier
-  nutanix.ncp.ntnx_ndb_databases:
+  ntnx_ndb_databases:
     state: absent
     db_uuid: "{{ db_uuid }}"
     delete_db_server_vms: true

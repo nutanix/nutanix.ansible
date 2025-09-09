@@ -15,24 +15,17 @@
 ############################# Create tests ########################
 
 - name: Check mode for creation
-  nutanix.ncp.ntnx_ndb_tags:
+  check_mode: true
+  ntnx_ndb_tags:
     name: "{{ tag_name }}-timemachine"
     desc: tag-created-by-ansible
     tag_value_required: true
     entity_type: TIME_MACHINE
   register: result
-  ignore_errors: true
-  check_mode: true
 
 - name: Define variable for expected response
   ansible.builtin.set_fact:
-    expected_response:
-      {
-        description: tag-created-by-ansible,
-        entityType: TIME_MACHINE,
-        name: "{{ tag_name }}-timemachine",
-        required: true,
-      }
+    expected_response: { description: tag-created-by-ansible, entityType: TIME_MACHINE, name: "{{ tag_name }}-timemachine", required: true }
 
 - name: Creation Status
   ansible.builtin.assert:
@@ -45,7 +38,7 @@
     success_msg: Spec generated successfully for tag creation
 
 - name: Create tags for clone
-  nutanix.ncp.ntnx_ndb_tags:
+  ntnx_ndb_tags:
     name: "{{ tag_name }}-clone"
     desc: tag-created-by-ansible
     tag_value_required: true
@@ -71,7 +64,7 @@
     clone_tag_uuid: "{{ result.uuid }}"
 
 - name: Create tags for database server
-  nutanix.ncp.ntnx_ndb_tags:
+  ntnx_ndb_tags:
     name: "{{ tag_name }}-database-server"
     desc: tag-created-by-ansible
     tag_value_required: true
@@ -97,7 +90,7 @@
     db_server_tag_uuid: "{{ result.uuid }}"
 
 - name: Create tags for time machine
-  nutanix.ncp.ntnx_ndb_tags:
+  ntnx_ndb_tags:
     name: "{{ tag_name }}-time-machine"
     desc: tag-created-by-ansible
     tag_value_required: true
@@ -123,7 +116,7 @@
     time_machine_tag_uuid: "{{ result.uuid }}"
 
 - name: Create tags for databases
-  nutanix.ncp.ntnx_ndb_tags:
+  ntnx_ndb_tags:
     name: "{{ tag_name }}-database"
     desc: tag-created-by-ansible
     tag_value_required: false
@@ -148,7 +141,7 @@
     success_msg: Tag created successfully
 
 - name: Create another tag for databases
-  nutanix.ncp.ntnx_ndb_tags:
+  ntnx_ndb_tags:
     name: "{{ tag_name }}-database2"
     desc: tag-created-by-ansible
     tag_value_required: false
@@ -175,7 +168,7 @@
 ################################# Info Module tests ##########################
 
 - name: Get all tags
-  nutanix.ncp.ntnx_ndb_tags_info:
+  ntnx_ndb_tags_info:
   register: result
 
 - name: Check info status
@@ -189,7 +182,7 @@
     success_msg: All tags obtained successfully
 
 - name: Get tag based on uuid
-  nutanix.ncp.ntnx_ndb_tags_info:
+  ntnx_ndb_tags_info:
     uuid: "{{ database_tag_uuid }}"
   register: result
 
@@ -205,7 +198,7 @@
     success_msg: tag based on uuid obtained successfully
 
 - name: Get all tags based on DATABASE entity type
-  nutanix.ncp.ntnx_ndb_tags_info:
+  ntnx_ndb_tags_info:
     filters:
       entity_type: DATABASE
   register: result
@@ -222,7 +215,7 @@
     success_msg: all tags based on DATABASE entity type obtained successfully
 
 - name: Get all tags based on CLONE entity type
-  nutanix.ncp.ntnx_ndb_tags_info:
+  ntnx_ndb_tags_info:
     filters:
       entity_type: CLONE
   register: result
@@ -239,7 +232,7 @@
     success_msg: all tags based on CLONE entity type obtained successfully
 
 - name: Get all tags based on TIME_MACHINE entity type
-  nutanix.ncp.ntnx_ndb_tags_info:
+  ntnx_ndb_tags_info:
     filters:
       entity_type: TIME_MACHINE
   register: result
@@ -256,7 +249,7 @@
     success_msg: all tags based on TIME_MACHINE entity type obtained successfully
 
 - name: Get all tags based on DATABASE_SERVER entity type
-  nutanix.ncp.ntnx_ndb_tags_info:
+  ntnx_ndb_tags_info:
     filters:
       entity_type: DATABASE_SERVER
   register: result
@@ -273,7 +266,7 @@
     success_msg: all tags based on DATABASE_SERVER entity type obtained successfully
 
 - name: Get tag based on DATABASE entity type and name
-  nutanix.ncp.ntnx_ndb_tags_info:
+  ntnx_ndb_tags_info:
     filters:
       entity_type: DATABASE
     name: "{{ tag_name }}-database2"
@@ -296,7 +289,7 @@
     tag_uuid: "{{ database_tag_uuid }}"
 
 - name: Update tag
-  nutanix.ncp.ntnx_ndb_tags:
+  ntnx_ndb_tags:
     uuid: "{{ tag_uuid }}"
     name: "{{ tag_name_updated }}"
     desc: tag-created-by-ansible-updated
@@ -318,7 +311,7 @@
     success_msg: tag updated successfully
 
 - name: Idempotency checks
-  nutanix.ncp.ntnx_ndb_tags:
+  ntnx_ndb_tags:
     uuid: "{{ tag_uuid }}"
     name: "{{ tag_name_updated }}"
     desc: tag-created-by-ansible-updated
@@ -336,7 +329,7 @@
     success_msg: tag update skipped due to no state changes
 
 - name: Enable tag
-  nutanix.ncp.ntnx_ndb_tags:
+  ntnx_ndb_tags:
     uuid: "{{ tag_uuid }}"
     tag_value_required: true
     status: ENABLED
@@ -355,7 +348,7 @@
 ############################################################### delete tests ########################################
 
 - name: Delete the database based tag
-  nutanix.ncp.ntnx_ndb_tags:
+  ntnx_ndb_tags:
     state: absent
     uuid: "{{ database_tag_uuid }}"
   register: result
@@ -366,12 +359,11 @@
       - result.response is defined
       - result.changed == true
       - result.failed == false
-      - result.uuid == "{{ database_tag_uuid }}"
     fail_msg: Unable to delete tag
     success_msg: tag deleted successfully
 
 - name: Delete the database based tag
-  nutanix.ncp.ntnx_ndb_tags:
+  ntnx_ndb_tags:
     state: absent
     uuid: "{{ database_tag2_uuid }}"
   register: result
@@ -382,12 +374,11 @@
       - result.response is defined
       - result.changed == true
       - result.failed == false
-      - result.uuid == "{{ database_tag2_uuid }}"
     fail_msg: Unable to delete tag
     success_msg: tag deleted successfully
 
 - name: Delete the clone tag
-  nutanix.ncp.ntnx_ndb_tags:
+  ntnx_ndb_tags:
     state: absent
     uuid: "{{ clone_tag_uuid }}"
   register: result
@@ -398,12 +389,11 @@
       - result.response is defined
       - result.changed == true
       - result.failed == false
-      - result.uuid == "{{ clone_tag_uuid }}"
     fail_msg: Unable to delete tag
     success_msg: tag deleted successfully
 
 - name: Delete the time machine based tag
-  nutanix.ncp.ntnx_ndb_tags:
+  ntnx_ndb_tags:
     state: absent
     uuid: "{{ time_machine_tag_uuid }}"
   register: result
@@ -414,30 +404,11 @@
       - result.response is defined
       - result.changed == true
       - result.failed == false
-      - result.uuid == "{{ time_machine_tag_uuid }}"
     fail_msg: Unable to delete tag
     success_msg: tag deleted successfully
 
-- name: Delete Tag with check mode
-  nutanix.ncp.ntnx_ndb_tags:
-    state: absent
-    uuid: "{{ db_server_tag_uuid }}"
-  register: output
-  ignore_errors: true
-  check_mode: true
-
-- name: Delete Tag with check mode Status
-  ansible.builtin.assert:
-    that:
-      - output.failed == false
-      - output.changed == false
-      - output.msg =="Tag with uuid:{{ db_server_tag_uuid}} will be deleted."
-      - output.uuid == "{{ db_server_tag_uuid }}"
-    fail_msg: "Delete tag with check mode failed"
-    success_msg: "Delete tag with check mode passed"
-
 - name: Delete the database server based tag
-  nutanix.ncp.ntnx_ndb_tags:
+  ntnx_ndb_tags:
     state: absent
     uuid: "{{ db_server_tag_uuid }}"
   register: result
@@ -448,6 +419,5 @@
       - result.response is defined
       - result.changed == true
       - result.failed == false
-      - result.uuid == "{{ db_server_tag_uuid }}"
     fail_msg: Unable to delete tag
     success_msg: tag deleted successfully

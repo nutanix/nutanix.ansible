@@ -1,10 +1,7 @@
 ---
-# Variables required before running this playbook:
-# - availability_zone_pc_uuid
-
-- name: Start ntnx_prism_v2 for Unregister PC-PC connection (removing PC as availability_zone) tests
+- name: Start Unregister PC-PC connection (removing PC as availbility_zone) tests
   ansible.builtin.debug:
-    msg: Start ntnx_prism_v2 for Unregister PC-PC connection (removing PC as availability_zone) tests
+    msg: Start Unregister PC-PC connection (removing PC as availbility_zone) tests
 
 #############################################################
 # List all clusters to get prism central external ID

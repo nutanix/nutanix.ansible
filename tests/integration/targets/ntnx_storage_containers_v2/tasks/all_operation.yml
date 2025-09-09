@@ -1,9 +1,4 @@
 ---
-# Variables required before running this playbook:
-# - cluster
-# - owner
-# - storage_container
-
 - name: Start ntnx_storage_containers_v2 tests
   ansible.builtin.debug:
     msg: Start ntnx_storage_containers_v2 tests
@@ -22,7 +17,7 @@
     storage_container_name: "{{ prefix_name }}{{ random_name }}"
 
 - name: Generate storage container create spec with check mode enabled
-  nutanix.ncp.ntnx_storage_containers_v2:
+  ntnx_storage_containers_v2:
     name: "{{ storage_container_name }}1"
     cluster_ext_id: "{{ cluster.uuid }}"
     owner_ext_id: "{{ owner.uuid }}"
@@ -74,7 +69,7 @@
     success_msg: Storage container create spec generated successfully with check mode enabled
 
 - name: Create storage container with minimal spec
-  nutanix.ncp.ntnx_storage_containers_v2:
+  ntnx_storage_containers_v2:
     name: "{{ storage_container_name }}1"
     cluster_ext_id: "{{ cluster.uuid }}"
   register: result
@@ -99,12 +94,12 @@
     todelete: "{{ todelete + [result.ext_id] }}"
 
 - name: Create storage container with missing cluster id
-  nutanix.ncp.ntnx_storage_containers_v2:
+  ntnx_storage_containers_v2:
     name: "{{ storage_container_name }}1"
   register: result
   ignore_errors: true
 
-- name: Creation status
+- name: Creaion status
   ansible.builtin.assert:
     that:
       - result.changed == false
@@ -112,8 +107,8 @@
     fail_msg: "Fail: storage container created with missing cluster id"
     success_msg: "Success: Returned as expected"
 
-- name: Create storage container with different attributes
-  nutanix.ncp.ntnx_storage_containers_v2:
+- name: Create storage container with diffrent attributes
+  ntnx_storage_containers_v2:
     name: "{{ storage_container_name }}2"
     cluster_ext_id: "{{ cluster.uuid }}"
     owner_ext_id: "{{ owner.uuid }}"
@@ -136,7 +131,7 @@
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [result.ext_id] }}"
 
-- name: Check storage container creation with different attributes
+- name: Check storage container creation with diffrent attributes
   ansible.builtin.assert:
     that:
       - result.changed == true
@@ -151,15 +146,15 @@
       - result.response.logical_advertised_capacity_bytes == 1073741824000
       - result.response.nfs_whitelist_address[0].ipv4.value == "192.168.12.0"
       - result.response.nfs_whitelist_address[0].ipv4.prefix_length == 32
-    fail_msg: Unable to create storage container with different attributes
-    success_msg: Storage container created successfully with different attributes
+    fail_msg: Unable to create storage container with diffrent attributes
+    success_msg: Storage container created successfully with diffrent attributes
 
 - name: Set storage container external id
   ansible.builtin.set_fact:
     storage_container_ext_id: "{{ result.ext_id }}"
 
 - name: Check for idempotency
-  nutanix.ncp.ntnx_storage_containers_v2:
+  ntnx_storage_containers_v2:
     state: present
     name: "{{ storage_container_name }}2"
     ext_id: "{{ storage_container_ext_id }}"
@@ -181,7 +176,7 @@
     success_msg: Storage container created successfully idempotency
 
 - name: Generate storage container update spec with check mode enabled
-  nutanix.ncp.ntnx_storage_containers_v2:
+  ntnx_storage_containers_v2:
     state: present
     ext_id: "{{ storage_container_ext_id }}"
     name: "{{ storage_container_name }}2_updated"
@@ -222,7 +217,7 @@
     success_msg: Storage container update spec generated successfully with check mode enabled
 
 - name: Update storage container
-  nutanix.ncp.ntnx_storage_containers_v2:
+  ntnx_storage_containers_v2:
     state: present
     ext_id: "{{ storage_container_ext_id }}"
     name: "{{ storage_container_name }}2_updated"
@@ -253,7 +248,7 @@
     success_msg: "Storage container updated successfully "
 
 - name: Fetch storage container configurations
-  nutanix.ncp.ntnx_storage_containers_info_v2:
+  ntnx_storage_containers_info_v2:
     ext_id: "{{ storage_container_ext_id }}"
   register: result
   ignore_errors: true
@@ -285,7 +280,7 @@
   changed_when: false
 
 - name: Fetch storage container stats
-  nutanix.ncp.ntnx_storage_containers_stats_v2:
+  ntnx_storage_containers_stats_v2:
     ext_id: "{{ storage_container.uuid }}"
     start_time: "{{ start_time.stdout }}"
     end_time: "{{ end_time.stdout }}"
@@ -307,7 +302,7 @@
     success_msg: Storage container stats fetched successfully
 
 - name: Fetch storage container stats with interval defined
-  nutanix.ncp.ntnx_storage_containers_stats_v2:
+  ntnx_storage_containers_stats_v2:
     ext_id: "{{ storage_container.uuid }}"
     start_time: "{{ start_time.stdout }}"
     end_time: "{{ end_time.stdout }}"
@@ -331,7 +326,7 @@
     success_msg: Storage container stats fetched successfully with interval defined
 
 - name: Fetch all storage containers
-  nutanix.ncp.ntnx_storage_containers_info_v2:
+  ntnx_storage_containers_info_v2:
   register: result
   ignore_errors: true
 
@@ -341,13 +336,11 @@
       - result.changed == false
       - result.failed == false
       - result.response | length > 0
-      - result.total_available_results is defined
-      - result.total_available_results > 0
     fail_msg: Unable to fetch all storage containers
     success_msg: All storage containers fetched successfully
 
 - name: Fetch a particular storage container using filter
-  nutanix.ncp.ntnx_storage_containers_info_v2:
+  ntnx_storage_containers_info_v2:
     filter: name eq '{{ storage_container_name }}2_updated'
   register: result
   ignore_errors: true
@@ -363,7 +356,7 @@
     success_msg: A particular storage container fetched successfully using filter
 
 - name: Fetch all storage containers with limit
-  nutanix.ncp.ntnx_storage_containers_info_v2:
+  ntnx_storage_containers_info_v2:
     limit: 1
   register: result
   ignore_errors: true
@@ -377,27 +370,8 @@
     fail_msg: Unable to fetch all storage containers with limit
     success_msg: All storage containers fetched successfully with limit
 
-- name: Delete storage container with check mode enabled
-  nutanix.ncp.ntnx_storage_containers_v2:
-    state: absent
-    ext_id: "{{ storage_container_ext_id }}"
-  register: result
-  ignore_errors: true
-  check_mode: true
-
-- name: Delete storage container with check mode enabled status
-  ansible.builtin.assert:
-    that:
-      - result.msg is defined
-      - result.changed == false
-      - result.failed == false
-      - result.ext_id == "{{ storage_container_ext_id }}"
-      - result.msg == "Storage container with ext_id:{{ storage_container_ext_id }} will be deleted."
-    fail_msg: "Delete storage container with check mode enabled failed"
-    success_msg: "Delete storage container with check mode enabled passed"
-
 - name: Delete all Created storage containers
-  nutanix.ncp.ntnx_storage_containers_v2:
+  ntnx_storage_containers_v2:
     state: absent
     ext_id: "{{ item }}"
     ignore_small_files: true

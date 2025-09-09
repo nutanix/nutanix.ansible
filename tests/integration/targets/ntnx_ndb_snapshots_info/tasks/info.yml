@@ -4,7 +4,7 @@
     msg: Start testing ntnx_ndb_snapshots_info
 
 - name: List all NDB snapshots
-  nutanix.ncp.ntnx_ndb_snapshots_info:
+  ntnx_ndb_snapshots_info:
   register: snapshots
 
 - name: Check listing status
@@ -18,7 +18,7 @@
     success_msg: NDB snapshots listed successfully
 ################################################################
 - name: Get NDB snapshots using it's UTC time_zone
-  nutanix.ncp.ntnx_ndb_snapshots_info:
+  ntnx_ndb_snapshots_info:
     filters:
       time_zone: UTC
   register: result
@@ -36,7 +36,7 @@
 
 ################################################################
 - name: Get NDB snapshots with time-machine id
-  nutanix.ncp.ntnx_ndb_snapshots_info:
+  ntnx_ndb_snapshots_info:
     filters:
       value: "{{ snapshots.response[0].timeMachineId }}"
       value_type: time-machine
@@ -54,7 +54,7 @@
     success_msg: get  NDB snapshots using with time-machine id
 ################################################################
 - name: Get NDB snapshots using it's uuid
-  nutanix.ncp.ntnx_ndb_snapshots_info:
+  ntnx_ndb_snapshots_info:
     uuid: "{{ snapshots.response[0].id }}"
   register: result
   ignore_errors: true
@@ -70,7 +70,7 @@
     success_msg: get  NDB snapshots using it's uuid  successfully
 # ################################################################
 - name: List snapshots use uuid and get snapshot files
-  nutanix.ncp.ntnx_ndb_snapshots_info:
+  ntnx_ndb_snapshots_info:
     uuid: "{{ snapshots.response[0].id }}"
     get_files: true
   register: result
@@ -88,7 +88,7 @@
     success_msg: get  NDB snapshots using it's id and get files  successfully
 # ################################################################
 - name: Get NDB snapshots with incorrect uuid
-  nutanix.ncp.ntnx_ndb_snapshots_info:
+  ntnx_ndb_snapshots_info:
     uuid: abcd
   register: result
   no_log: true
