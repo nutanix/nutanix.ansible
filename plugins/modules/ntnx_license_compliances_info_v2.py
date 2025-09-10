@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 module: ntnx_license_compliances_info_v2
 short_description: Reports compliance status of the cluster.
-description: 
+description:
     - Reports compliance status of the cluster.
     - This module uses PC v4 APIs based SDKs.
 version_added: "2.4.0"

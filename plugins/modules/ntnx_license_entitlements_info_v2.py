@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 module: ntnx_license_entitlements_info_v2
 short_description: Shows the effective license entitlements
-description: 
+description:
     - Shows the effective license entitlements.
     - This module uses PC v4 APIs based SDKs.
 version_added: "2.4.0"

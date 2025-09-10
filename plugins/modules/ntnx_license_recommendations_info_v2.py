@@ -28,7 +28,7 @@ options:
   select:
     description:
       - The attribute name to select
-    type: str 
+    type: str
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
 """
@@ -96,11 +96,11 @@ from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.licensing.api_client import (  # noqa: E402
     get_licensing_api_instance,
 )
+from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
 )
-from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
