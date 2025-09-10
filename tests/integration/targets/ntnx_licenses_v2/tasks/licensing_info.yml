@@ -122,6 +122,25 @@
 
 ##########################################################################################
 
+- name: Get applied license inventory info using expand
+  nutanix.ncp.ntnx_license_applied_inventory_info_v2:
+    expand: consumptionDetails
+  register: result
+  ignore_errors: true
+
+- name: Get applied license inventory info using expand status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response[0].consumption_details is defined
+      - result.total_available_results is defined
+    fail_msg: "Failed to get applied license inventory info using expand"
+    success_msg: "Applied license inventory info is fetched successfully using expand"
+
+##########################################################################################
+
 - name: Get license config info
   nutanix.ncp.ntnx_license_config_info_v2:
   register: result
@@ -251,6 +270,25 @@
 
 ##########################################################################################
 
+- name: Get license allowances info using expand
+  nutanix.ncp.ntnx_license_allowances_info_v2:
+    expand: details
+  register: result
+  ignore_errors: true
+
+- name: Get license allowances info using expand status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response[0].details is defined
+      - result.total_available_results is defined
+    fail_msg: "Failed to get license allowances info using expand"
+    success_msg: "License allowances info is fetched successfully using expand"
+
+##########################################################################################
+
 - name: Get license entitlements info
   nutanix.ncp.ntnx_license_entitlements_info_v2:
   register: result
@@ -304,6 +342,25 @@
       - result.total_available_results is defined
     fail_msg: "Failed to get license entitlements info using filter"
     success_msg: "License entitlements info is fetched successfully using filter"
+
+##########################################################################################
+
+- name: Get license entitlements info using expand
+  nutanix.ncp.ntnx_license_entitlements_info_v2:
+    expand: details
+  register: result
+  ignore_errors: true
+
+- name: Get license entitlements info using expand status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response[0].details is defined
+      - result.total_available_results is defined
+    fail_msg: "Failed to get license entitlements info using expand"
+    success_msg: "License entitlements info is fetched successfully using expand"
 
 ##########################################################################################
 
@@ -361,6 +418,22 @@
     success_msg: "License compliances info is fetched successfully using filter"
 
 ##########################################################################################
+
+- name: Get license compliances info using expand
+  nutanix.ncp.ntnx_license_compliances_info_v2:
+    expand: compliance
+  register: result
+  ignore_errors: true
+
+- name: Get license compliances info using expand status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.total_available_results is defined
+    fail_msg: "Failed to get license compliances info using expand"
+    success_msg: "License compliances info is fetched successfully using expand"
 
 - name: Get license recommendations info
   nutanix.ncp.ntnx_license_recommendations_info_v2:

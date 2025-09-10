@@ -284,7 +284,7 @@ def get_module_spec():
 
 def license_allowances_info(module, licensing_api_instance, result):
     sg = SpecGenerator(module)
-    kwargs, err = sg.get_info_spec(attr=module.params)
+    kwargs, err = sg.get_info_spec(attr=module.params, extra_params=["expand"])
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating license allowances info Spec", **result)
