@@ -22,6 +22,34 @@ extends_documentation_fragment:
 """
 
 EXAMPLES = r"""
+- name: Get license features info
+  nutanix.ncp.ntnx_license_features_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+  register: result
+  ignore_errors: true
+
+- name: Get license features info using limit
+  nutanix.ncp.ntnx_license_features_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Get license features info using filter
+  nutanix.ncp.ntnx_license_features_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    filter: licenseCategory eq Licensing.Config.LicenseCategory'STARTER'
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
@@ -31,6 +59,20 @@ response:
   type: dict
   returned: always
   sample:
+    [
+        {
+            "ext_id": "fb0df363-6536-3627-8637-56c0388df23e",
+            "license_category": "APPAUTOMATION",
+            "license_sub_category": "ADDON",
+            "license_type": "NCM",
+            "links": null,
+            "name": "vcenter_monitoring",
+            "scope": "PC",
+            "tenant_id": null,
+            "value": false,
+            "value_type": "BOOLEAN"
+        }
+    ]
 changed:
     description:
         - Indicates whether the module has made any changes.

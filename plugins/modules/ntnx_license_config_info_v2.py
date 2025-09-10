@@ -31,6 +31,24 @@ extends_documentation_fragment:
 """
 
 EXAMPLES = r"""
+- name: Get license config info
+  nutanix.ncp.ntnx_license_config_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+  register: result
+  ignore_errors: true
+
+- name: Get license config info using limit
+  nutanix.ncp.ntnx_license_config_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    limit: 1
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
@@ -40,6 +58,32 @@ response:
   type: dict
   returned: always
   sample:
+    [
+        {
+            "enforcement_policy": "ALL",
+            "ext_id": "00063e5a-2715-c792-0000-000000028f57",
+            "has_non_compliant_features": false,
+            "has_ultimate_trial_ended": false,
+            "is_license_check_disabled": false,
+            "is_multicluster": false,
+            "is_standby": false,
+            "license_class": "APPLIANCE",
+            "license_key": null,
+            "links": null,
+            "logical_version": {
+                "cluster_version": 0,
+                "license_version": 0
+            },
+            "post_paid_config": {
+                "billing_plan": "$UNKNOWN",
+                "category": "$UNKNOWN",
+                "consumption_type": "$UNKNOWN",
+                "id": null,
+                "is_pulse_required": false
+            },
+            "tenant_id": null
+        }
+    ]
 changed:
     description:
         - Indicates whether the module has made any changes.

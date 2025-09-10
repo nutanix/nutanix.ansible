@@ -56,6 +56,15 @@ extends_documentation_fragment:
 """
 
 EXAMPLES = r"""
+- name: Upload Cluster Summary using Seamless Licensing Action
+  nutanix.ncp.ntnx_license_seamless_action_v2:
+    operation: UPLOAD_CLUSTER_SUMMARY
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
@@ -64,7 +73,48 @@ response:
     type: dict
     returned: always
     sample:
-        
+        {
+            "app_name": null,
+            "cluster_ext_ids": null,
+            "completed_time": "2025-09-10T07:11:24.294372+00:00",
+            "completion_details": [
+                {
+                    "name": "portal_csf_id",
+                    "value": "68c1249c7e6ffc001a2e8dec"
+                }
+            ],
+            "created_time": "2025-09-10T07:11:22.222990+00:00",
+            "entities_affected": [
+                {
+                    "ext_id": "a1c444e3-a1d0-4bf8-b34c-782e5d46176b",
+                    "name": null,
+                    "rel": "licensing:config:licensing_config"
+                }
+            ],
+            "error_messages": null,
+            "ext_id": "ZXJnb24=:87401b59-13df-4d53-8a38-21930b541fdb",
+            "is_background_task": false,
+            "is_cancelable": false,
+            "last_updated_time": "2025-09-10T07:11:24.294371+00:00",
+            "legacy_error_message": null,
+            "number_of_entities_affected": 1,
+            "number_of_subtasks": 0,
+            "operation": "upload_cluster_summary",
+            "operation_description": "Upload cluster summary file",
+            "owned_by": {
+                "ext_id": "00000000-0000-0000-0000-000000000000",
+                "name": null
+            },
+            "parent_task": null,
+            "progress_percentage": 100,
+            "resource_links": null,
+            "root_task": null,
+            "started_time": "2025-09-10T07:11:22.249213+00:00",
+            "status": "SUCCEEDED",
+            "sub_steps": null,
+            "sub_tasks": null,
+            "warnings": null
+        }
 task_ext_id:
     description: The task external ID
     type: str

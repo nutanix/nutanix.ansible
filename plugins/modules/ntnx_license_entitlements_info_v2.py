@@ -22,6 +22,34 @@ extends_documentation_fragment:
 """
 
 EXAMPLES = r"""
+- name: Get license entitlements info
+  nutanix.ncp.ntnx_license_entitlements_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+  register: result
+  ignore_errors: true
+
+- name: Get license entitlements info using limit
+  nutanix.ncp.ntnx_license_entitlements_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Get license entitlements info using filter
+  nutanix.ncp.ntnx_license_entitlements_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    filter: type eq Licensing.Config.ClusterType'NUTANIX'
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
@@ -31,6 +59,40 @@ response:
   type: dict
   returned: always
   sample:
+    [
+        {
+            "cluster_ext_id": null,
+            "details": [
+                {
+                    "category": "ULTIMATE",
+                    "earliest_expiry_date": "2025-12-31",
+                    "meter": "CORES",
+                    "name": "NCM ULTIMATE",
+                    "quantity": 16.0,
+                    "scope": "$UNKNOWN",
+                    "sub_category": "$UNKNOWN",
+                    "type": "NCM"
+                },
+                {
+                    "category": "STANDARD",
+                    "earliest_expiry_date": "2030-12-31",
+                    "meter": "NODE",
+                    "name": "FLOW",
+                    "quantity": 1.0,
+                    "scope": "$UNKNOWN",
+                    "sub_category": "$UNKNOWN",
+                    "type": "FLOW"
+                }
+            ],
+            "ext_id": "00063e5a-2715-c792-0000-000000028f57",
+            "is_multicluster": false,
+            "is_registered": true,
+            "links": null,
+            "name": "auto_cluster_prod_e97a5f710501",
+            "tenant_id": null,
+            "type": "NUTANIX"
+        }
+    ]
 changed:
     description:
         - Indicates whether the module has made any changes.

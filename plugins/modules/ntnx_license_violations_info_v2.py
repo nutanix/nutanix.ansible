@@ -30,6 +30,24 @@ extends_documentation_fragment:
 """
 
 EXAMPLES = r"""
+- name: Get license violations info
+  nutanix.ncp.ntnx_license_violations_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+  register: result
+  ignore_errors: true
+
+- name: Get license violations info using limit
+  nutanix.ncp.ntnx_license_violations_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    limit: 1
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
@@ -39,6 +57,17 @@ response:
   type: dict
   returned: always
   sample:
+    [
+        {
+            "capacity_violations": null,
+            "expired_licenses": null,
+            "ext_id": "00063e5a-2715-c792-0000-000000028f57",
+            "feature_violations": null,
+            "is_multicluster": false,
+            "links": null,
+            "tenant_id": null
+        }
+    ]
 changed:
     description:
         - Indicates whether the module has made any changes.

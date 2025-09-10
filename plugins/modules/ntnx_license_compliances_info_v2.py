@@ -22,6 +22,34 @@ extends_documentation_fragment:
 """
 
 EXAMPLES = r"""
+- name: Get license compliances info
+  nutanix.ncp.ntnx_license_compliances_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+  register: result
+  ignore_errors: true
+
+- name: Get license compliances info using limit
+  nutanix.ncp.ntnx_license_compliances_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Get license compliances info using filter
+  nutanix.ncp.ntnx_license_compliances_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    filter: type eq Licensing.Config.ClusterType'NUTANIX'
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
@@ -31,6 +59,42 @@ response:
   type: dict
   returned: always
   sample:
+    [
+        {
+            "cluster_ext_id": null,
+            "ext_id": "00063e5a-2715-c792-0000-000000028f57",
+            "is_multicluster": false,
+            "links": null,
+            "services": [
+                {
+                    "enforcement_actions": null,
+                    "enforcement_level": "$UNKNOWN",
+                    "is_compliant": true,
+                    "license_type": "FLOW",
+                    "name": "FLOW",
+                    "violations": null
+                },
+                {
+                    "enforcement_actions": null,
+                    "enforcement_level": "$UNKNOWN",
+                    "is_compliant": true,
+                    "license_type": "NCM",
+                    "name": "PRISM",
+                    "violations": null
+                },
+                {
+                    "enforcement_actions": null,
+                    "enforcement_level": "$UNKNOWN",
+                    "is_compliant": true,
+                    "license_type": "NCM",
+                    "name": "CALM",
+                    "violations": null
+                }
+            ],
+            "tenant_id": null,
+            "type": "NUTANIX"
+        }
+    ]
 changed:
     description:
         - Indicates whether the module has made any changes.

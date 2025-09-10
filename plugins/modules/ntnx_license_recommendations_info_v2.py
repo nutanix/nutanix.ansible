@@ -34,6 +34,24 @@ extends_documentation_fragment:
 """
 
 EXAMPLES = r"""
+- name: Get license recommendations info
+  nutanix.ncp.ntnx_license_recommendations_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+  register: result
+  ignore_errors: true
+
+- name: Get license recommendations info using limit
+  nutanix.ncp.ntnx_license_recommendations_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    limit: 1
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
@@ -43,6 +61,20 @@ response:
   type: dict
   returned: always
   sample:
+    [
+        {
+            "details": null,
+            "ext_id": "00063e5a-2715-c792-0000-000000028f57",
+            "links": null,
+            "tenant_id": null
+        },
+        {
+            "details": null,
+            "ext_id": "a1c444e3-a1d0-4bf8-b34c-782e5d46176b",
+            "links": null,
+            "tenant_id": null
+        }
+    ]
 changed:
     description:
         - Indicates whether the module has made any changes.

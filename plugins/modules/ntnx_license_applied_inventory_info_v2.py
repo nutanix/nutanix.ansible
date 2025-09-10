@@ -22,6 +22,34 @@ extends_documentation_fragment:
 """
 
 EXAMPLES = r"""
+- name: Get applied license inventory info
+  nutanix.ncp.ntnx_license_applied_inventory_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+  register: result
+  ignore_errors: true
+
+- name: Get applied license inventory info using limit
+  nutanix.ncp.ntnx_license_applied_inventory_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Get applied license inventory info using filter
+  nutanix.ncp.ntnx_license_applied_inventory_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    filter: category eq Licensing.Config.LicenseCategory'ULTIMATE'
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
@@ -31,6 +59,23 @@ response:
   type: dict
   returned: always
   sample:
+    [
+        {
+            "category": "ULTIMATE",
+            "consumption_details": null,
+            "expiry_date": "2025-12-31",
+            "ext_id": "c7ada829-7279-4635-9fd0-b2bb8ec7a4d5",
+            "links": null,
+            "meter": "CORES",
+            "name": "NCM Ultimate",
+            "quantity": 16.0,
+            "salesforce_license_id": "LIC-02547941",
+            "scope": "PC",
+            "sub_category": "$UNKNOWN",
+            "tenant_id": null,
+            "type": "NCM"
+        }
+    ]
 changed:
     description:
         - Indicates whether the module has made any changes.

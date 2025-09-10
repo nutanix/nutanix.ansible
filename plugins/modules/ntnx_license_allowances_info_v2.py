@@ -22,6 +22,34 @@ extends_documentation_fragment:
 """
 
 EXAMPLES = r"""
+- name: Get license allowances info
+  nutanix.ncp.ntnx_license_allowances_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+  register: result
+  ignore_errors: true
+
+- name: Get license allowances info using limit
+  nutanix.ncp.ntnx_license_allowances_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Get license allowances info using filter
+  nutanix.ncp.ntnx_license_allowances_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    filter: type eq Licensing.Config.ClusterType'NUTANIX'
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
@@ -31,6 +59,186 @@ response:
   type: dict
   returned: always
   sample:
+    [
+        {
+            "details": [
+                {
+                    "feature_id": "WHAT_IF_ANALYSIS",
+                    "scope": "PC",
+                    "value": "TRUE",
+                    "value_type": "BOOLEAN"
+                },
+                {
+                    "feature_id": "CAPACITY_FORECAST",
+                    "scope": "PC",
+                    "value": "TRUE",
+                    "value_type": "BOOLEAN"
+                },
+                {
+                    "feature_id": "ONE_CLICK_UPGRADES_LCM",
+                    "scope": "PC",
+                    "value": "TRUE",
+                    "value_type": "BOOLEAN"
+                },
+                {
+                    "feature_id": "CUSTOM_DASHBOARD",
+                    "scope": "PC",
+                    "value": "TRUE",
+                    "value_type": "BOOLEAN"
+                },
+                {
+                    "feature_id": "SEARCH",
+                    "scope": "PC",
+                    "value": "TRUE",
+                    "value_type": "BOOLEAN"
+                },
+                {
+                    "feature_id": "ANALYSIS_SESSION",
+                    "scope": "PC",
+                    "value": "TRUE",
+                    "value_type": "BOOLEAN"
+                },
+                {
+                    "feature_id": "ADV_ORCH_RUNBOOKS",
+                    "scope": "PC",
+                    "value": "TRUE",
+                    "value_type": "BOOLEAN"
+                },
+                {
+                    "feature_id": "XDISCOVER",
+                    "scope": "PC",
+                    "value": "TRUE",
+                    "value_type": "BOOLEAN"
+                },
+                {
+                    "feature_id": "BUDGETING_CHARGEBACK",
+                    "scope": "PC",
+                    "value": "TRUE",
+                    "value_type": "BOOLEAN"
+                },
+                {
+                    "feature_id": "MAX_TRIAL_PERIOD_DAYS",
+                    "scope": "PC",
+                    "value": "0",
+                    "value_type": "INTEGER"
+                },
+                {
+                    "feature_id": "SQL_SERVER_MONITORING",
+                    "scope": "PC",
+                    "value": "TRUE",
+                    "value_type": "BOOLEAN"
+                },
+                {
+                    "feature_id": "XPILOT",
+                    "scope": "PC",
+                    "value": "TRUE",
+                    "value_type": "BOOLEAN"
+                },
+                {
+                    "feature_id": "SPEND_VISIBILITY_ANALYSIS",
+                    "scope": "PC",
+                    "value": "TRUE",
+                    "value_type": "BOOLEAN"
+                },
+                {
+                    "feature_id": "INFRASTRUCTURE_MGMT",
+                    "scope": "PC",
+                    "value": "TRUE",
+                    "value_type": "BOOLEAN"
+                },
+                {
+                    "feature_id": "VULCAN",
+                    "scope": "PC",
+                    "value": "TRUE",
+                    "value_type": "BOOLEAN"
+                },
+                {
+                    "feature_id": "SMART_ALERTS",
+                    "scope": "PC",
+                    "value": "TRUE",
+                    "value_type": "BOOLEAN"
+                },
+                {
+                    "feature_id": "MULTI_VM_APPS_BLUEPRINTS",
+                    "scope": "PC",
+                    "value": "TRUE",
+                    "value_type": "BOOLEAN"
+                },
+                {
+                    "feature_id": "IAAS_SINGLE_VM_BLUEPRINTS",
+                    "scope": "PC",
+                    "value": "TRUE",
+                    "value_type": "BOOLEAN"
+                },
+                {
+                    "feature_id": "ANOMALY_DETECTION",
+                    "scope": "PC",
+                    "value": "TRUE",
+                    "value_type": "BOOLEAN"
+                },
+                {
+                    "feature_id": "SELF_SERVICE_APPROVALS",
+                    "scope": "PC",
+                    "value": "TRUE",
+                    "value_type": "BOOLEAN"
+                },
+                {
+                    "feature_id": "VM_INEFFICIENCY_DETECTION",
+                    "scope": "PC",
+                    "value": "TRUE",
+                    "value_type": "BOOLEAN"
+                },
+                {
+                    "feature_id": "PC_REPORTING",
+                    "scope": "PC",
+                    "value": "TRUE",
+                    "value_type": "BOOLEAN"
+                },
+                {
+                    "feature_id": "SELF_SERVICE_SCHEDULER",
+                    "scope": "PC",
+                    "value": "TRUE",
+                    "value_type": "BOOLEAN"
+                },
+                {
+                    "feature_id": "COST_METERING",
+                    "scope": "PC",
+                    "value": "TRUE",
+                    "value_type": "BOOLEAN"
+                },
+                {
+                    "feature_id": "APP_MONITORING",
+                    "scope": "PC",
+                    "value": "TRUE",
+                    "value_type": "BOOLEAN"
+                },
+                {
+                    "feature_id": "VCENTER_MONITORING",
+                    "scope": "PC",
+                    "value": "TRUE",
+                    "value_type": "BOOLEAN"
+                },
+                {
+                    "feature_id": "SELF_SERVICE_MARKETPLACE",
+                    "scope": "PC",
+                    "value": "TRUE",
+                    "value_type": "BOOLEAN"
+                },
+                {
+                    "feature_id": "MONITORING_TROUBLESHOOTING",
+                    "scope": "PC",
+                    "value": "TRUE",
+                    "value_type": "BOOLEAN"
+                }
+            ],
+            "ext_id": "00063e5a-2715-c792-0000-000000028f57",
+            "is_multicluster": false,
+            "links": null,
+            "name": "auto_cluster_prod_e97a5f710501",
+            "tenant_id": null,
+            "type": "NUTANIX"
+        }
+    ]
 changed:
     description:
         - Indicates whether the module has made any changes.
