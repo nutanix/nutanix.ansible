@@ -14,10 +14,6 @@
   register: result
   ignore_errors: true
 
-- name: Debug result
-  ansible.builtin.debug:
-    msg: "{{ result }}"
-
 - name: Get license features info status
   ansible.builtin.assert:
     that:
@@ -36,10 +32,6 @@
     limit: 1
   register: result
   ignore_errors: true
-
-- name: Print result
-  ansible.builtin.debug:
-    msg: "{{ result }}"
 
 - name: Get license features info using limit status
   ansible.builtin.assert:
@@ -61,10 +53,6 @@
   register: result
   ignore_errors: true
 
-- name: Print result
-  ansible.builtin.debug:
-    msg: "{{ result }}"
-
 - name: Get license features info using filter status
   ansible.builtin.assert:
     that:
@@ -84,10 +72,6 @@
   register: result
   ignore_errors: true
 
-- name: Print result
-  ansible.builtin.debug:
-    msg: "{{ result }}"
-
 - name: Get applied license inventory info status
   ansible.builtin.assert:
     that:
@@ -105,10 +89,6 @@
     limit: 1
   register: result
   ignore_errors: true
-
-- name: Print result
-  ansible.builtin.debug:
-    msg: "{{ result }}"
 
 - name: Get applied license inventory info using limit status
   ansible.builtin.assert:
@@ -129,10 +109,6 @@
   register: result
   ignore_errors: true
 
-- name: Print result
-  ansible.builtin.debug:
-    msg: "{{ result }}"
-
 - name: Get applied license inventory info using filter status
   ansible.builtin.assert:
     that:
@@ -151,10 +127,6 @@
   register: result
   ignore_errors: true
 
-- name: Debug license config info result
-  ansible.builtin.debug:
-    msg: "{{ result }}"
-
 - name: Get license config info status
   ansible.builtin.assert:
     that:
@@ -172,10 +144,6 @@
     limit: 1
   register: result
   ignore_errors: true
-
-- name: Print result
-  ansible.builtin.debug:
-    msg: "{{ result }}"
 
 - name: Get license config info using limit status
   ansible.builtin.assert:
@@ -196,10 +164,6 @@
   register: result
   ignore_errors: true
 
-- name: Print result
-  ansible.builtin.debug:
-    msg: "{{ result }}"
-
 - name: Get license violations info status
   ansible.builtin.assert:
     that:
@@ -217,10 +181,6 @@
     limit: 1
   register: result
   ignore_errors: true
-
-- name: Print result
-  ansible.builtin.debug:
-    msg: "{{ result }}"
 
 - name: Get license violations info using limit status
   ansible.builtin.assert:
@@ -241,10 +201,6 @@
   register: result
   ignore_errors: true
 
-- name: Print result
-  ansible.builtin.debug:
-    msg: "{{ result }}"
-
 - name: Get license allowances info status
   ansible.builtin.assert:
     that:
@@ -262,10 +218,6 @@
     limit: 1
   register: result
   ignore_errors: true
-
-- name: Print result
-  ansible.builtin.debug:
-    msg: "{{ result }}"
 
 - name: Get license allowances info using limit status
   ansible.builtin.assert:
@@ -286,10 +238,6 @@
   register: result
   ignore_errors: true
 
-- name: Print result
-  ansible.builtin.debug:
-    msg: "{{ result }}"
-
 - name: Get license allowances info using filter status
   ansible.builtin.assert:
     that:
@@ -308,10 +256,6 @@
   register: result
   ignore_errors: true
 
-- name: Print result
-  ansible.builtin.debug:
-    msg: "{{ result }}"
-
 - name: Get license entitlements info status
   ansible.builtin.assert:
     that:
@@ -329,10 +273,6 @@
     limit: 1
   register: result
   ignore_errors: true
-
-- name: Print result
-  ansible.builtin.debug:
-    msg: "{{ result }}"
 
 - name: Get license entitlements info using limit status
   ansible.builtin.assert:
@@ -354,10 +294,6 @@
   register: result
   ignore_errors: true
 
-- name: Print result
-  ansible.builtin.debug:
-    msg: "{{ result }}"
-
 - name: Get license entitlements info using filter status
   ansible.builtin.assert:
     that:
@@ -376,10 +312,6 @@
   register: result
   ignore_errors: true
 
-- name: Print result
-  ansible.builtin.debug:
-    msg: "{{ result }}"
-
 - name: Get license compliances info status
   ansible.builtin.assert:
     that:
@@ -397,10 +329,6 @@
     limit: 1
   register: result
   ignore_errors: true
-
-- name: Print result
-  ansible.builtin.debug:
-    msg: "{{ result }}"
 
 - name: Get license compliances info using limit status
   ansible.builtin.assert:
@@ -421,10 +349,6 @@
   register: result
   ignore_errors: true
 
-- name: Print result
-  ansible.builtin.debug:
-    msg: "{{ result }}"
-
 - name: Get license compliances info using filter status
   ansible.builtin.assert:
     that:
@@ -442,10 +366,6 @@
   nutanix.ncp.ntnx_license_recommendations_info_v2:
   register: result
   ignore_errors: true
-
-- name: Print result
-  ansible.builtin.debug:
-    msg: "{{ result }}"
 
 - name: Get license recommendations info status
   ansible.builtin.assert:
@@ -465,10 +385,6 @@
   register: result
   ignore_errors: true
 
-- name: Print result
-  ansible.builtin.debug:
-    msg: "{{ result }}"
-
 - name: Get license recommendations info using limit status
   ansible.builtin.assert:
     that:
@@ -479,7 +395,6 @@
       - result.total_available_results is defined
     fail_msg: "Failed to get license recommendations info using limit"
     success_msg: "License recommendations info is fetched successfully using limit"
-  ignore_errors: true
 
 ##########################################################################################
 
@@ -495,11 +410,7 @@
   check_mode: true
   register: result
   ignore_errors: true
-  
-- name: Print result
-  ansible.builtin.debug:
-    msg: "{{ result }}"
-  
+
 - name: Generate spec for upload cluster summary using check mode status
   ansible.builtin.assert:
     that:
@@ -519,10 +430,6 @@
     operation: UPLOAD_CLUSTER_SUMMARY
   register: result
   ignore_errors: true
-
-- name: Print result
-  ansible.builtin.debug:
-    msg: "{{ result }}"
 
 - name: Upload Cluster Summary using Seamless Licensing Action status
   ansible.builtin.assert:
