@@ -82,7 +82,9 @@ import warnings  # noqa: E402
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
-from ..module_utils.v4.lcm.api_client import get_inventory_api_instance  # noqa: E402
+from ..module_utils.v4.licensing.api_client import (
+    get_licensing_api_instance,
+)  # noqa: E402
 from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
@@ -140,7 +142,7 @@ def license_seamless_action(module, api_instance, result):
     resp = None
 
     try:
-        resp = api_instance.perform_seamless_action(spec)
+        resp = api_instance.sync_license_state(spec)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -169,7 +171,7 @@ def run_module():
         "response": None,
         "task_ext_id": None,
     }
-    api_instance = get_inventory_api_instance(module)
+    api_instance = get_licensing_api_instance(module)
     license_seamless_action(module, api_instance, result)
     module.exit_json(**result)
 
