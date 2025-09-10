@@ -27,7 +27,8 @@ options:
             - UPLOAD_CLUSTER_SUMMARY -> Operation type for posting the cluster summary file to the licensing portal.
             - UPDATE_METADATA -> Operation type for updating metadata like enforcement policy and cluster type.
             - RECLAIM -> Reclaims licenses for the provided list of clusters.
-            - APPLY_LICENSE_SUMMARY_WITH_METADATA -> Fetch latest license summary and metadata(like enforcement policy, cluster type) from licensing portal and apply the same to cluster.
+            - APPLY_LICENSE_SUMMARY_WITH_METADATA -> Fetch latest license summary and metadata(like enforcement policy, cluster type) from licensing portal \
+                and apply the same to cluster.
             - RENEW -> Operation type for renewing the licenses.
             - REBALANCE -> Operation type for rebalance the licenses which is required when cluster has been expanded or downsized.
         type: str
