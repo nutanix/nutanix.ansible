@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 module: ntnx_license_allowances_info_v2
 short_description: Lists features allowed for use under the applied license
-description: 
+description:
     - Lists features allowed for use under the applied license.
     - This module uses PC v4 APIs based SDKs.
 version_added: "2.4.0"
