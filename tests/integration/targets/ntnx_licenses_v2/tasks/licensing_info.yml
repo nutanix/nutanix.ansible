@@ -1,0 +1,480 @@
+---
+
+- name: Start testing licenses namespace modules testing
+  ansible.builtin.debug:
+    msg: start testing licenses namespace modules testing
+
+##########################################################################################
+
+- name: Get license features info
+  nutanix.ncp.ntnx_license_features_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    msg: "{{ result }}"
+
+- name: Get license features info status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.total_available_results is defined
+      - result.total_available_results > 0
+    fail_msg: "Failed to get license features info"
+    success_msg: "License features info is fetched successfully"
+
+##########################################################################################
+
+- name: Get license features info using limit
+  nutanix.ncp.ntnx_license_features_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Print result
+  ansible.builtin.debug:
+    msg: "{{ result }}"
+
+- name: Get license features info using limit status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response | length == 1
+      - result.changed == false
+      - result.failed == false
+      - result.total_available_results is defined
+      - result.total_available_results > 0
+    fail_msg: "Failed to get license features info using limit"
+    success_msg: "License features info is fetched successfully using limit"
+
+##########################################################################################
+
+- name: Get license features info using filter
+  nutanix.ncp.ntnx_license_features_info_v2:
+    filter: licenseCategory eq Licensing.Config.LicenseCategory'STARTER'
+  register: result
+  ignore_errors: true
+
+- name: Print result
+  ansible.builtin.debug:
+    msg: "{{ result }}"
+
+- name: Get license features info using filter status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response[0].license_category == 'STARTER'
+      - result.changed == false
+      - result.failed == false
+      - result.total_available_results is defined
+      - result.total_available_results > 0
+    fail_msg: "Failed to get license features info using filter"
+    success_msg: "License features info is fetched successfully using filter"
+
+##########################################################################################
+
+- name: Get applied license inventory info
+  nutanix.ncp.ntnx_license_applied_inventory_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Print result
+  ansible.builtin.debug:
+    msg: "{{ result }}"
+
+- name: Get applied license inventory info status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.total_available_results is defined
+    fail_msg: "Failed to get applied license inventory info"
+    success_msg: "Applied license inventory info is fetched successfully"
+
+##########################################################################################
+
+- name: Get applied license inventory info using limit
+  nutanix.ncp.ntnx_license_applied_inventory_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Print result
+  ansible.builtin.debug:
+    msg: "{{ result }}"
+
+- name: Get applied license inventory info using limit status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response | length <= 1
+      - result.changed == false
+      - result.failed == false
+      - result.total_available_results is defined
+    fail_msg: "Failed to get applied license inventory info using limit"
+    success_msg: "Applied license inventory info is fetched successfully using limit"
+
+##########################################################################################
+
+- name: Get applied license inventory info using filter
+  nutanix.ncp.ntnx_license_applied_inventory_info_v2:
+    filter: type eq Licensing.Config.LicenseType'PRISM'
+  register: result
+  ignore_errors: true
+
+- name: Print result
+  ansible.builtin.debug:
+    msg: "{{ result }}"
+
+- name: Get applied license inventory info using filter status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response[0].type == 'PRISM'
+      - result.changed == false
+      - result.failed == false
+      - result.total_available_results is defined
+    fail_msg: "Failed to get applied license inventory info using filter"
+    success_msg: "Applied license inventory info is fetched successfully using filter"
+
+##########################################################################################
+
+- name: Get license config info
+  nutanix.ncp.ntnx_license_config_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Debug license config info result
+  ansible.builtin.debug:
+    msg: "{{ result }}"
+
+- name: Get license config info status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.total_available_results is defined
+    fail_msg: "Failed to get license config info"
+    success_msg: "License config info is fetched successfully"
+
+##########################################################################################
+
+- name: Get license config info using limit
+  nutanix.ncp.ntnx_license_config_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Print result
+  ansible.builtin.debug:
+    msg: "{{ result }}"
+
+- name: Get license config info using limit status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response | length == 1
+      - result.changed == false
+      - result.failed == false
+      - result.total_available_results is defined
+      - result.total_available_results > 0
+    fail_msg: "Failed to get license config info using limit"
+    success_msg: "License config info is fetched successfully using limit"
+
+##########################################################################################
+
+- name: Get license violations info
+  nutanix.ncp.ntnx_license_violations_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Print result
+  ansible.builtin.debug:
+    msg: "{{ result }}"
+
+- name: Get license violations info status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.total_available_results is defined
+    fail_msg: "Failed to get license violations info"
+    success_msg: "License violations info is fetched successfully"
+
+##########################################################################################
+
+- name: Get license violations info using limit
+  nutanix.ncp.ntnx_license_violations_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Print result
+  ansible.builtin.debug:
+    msg: "{{ result }}"
+
+- name: Get license violations info using limit status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response | length == 1
+      - result.changed == false
+      - result.failed == false
+      - result.total_available_results is defined
+      - result.total_available_results > 0
+    fail_msg: "Failed to get license violations info using limit"
+    success_msg: "License violations info is fetched successfully using limit"
+
+##########################################################################################
+
+- name: Get license allowances info
+  nutanix.ncp.ntnx_license_allowances_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Print result
+  ansible.builtin.debug:
+    msg: "{{ result }}"
+
+- name: Get license allowances info status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.total_available_results is defined
+    fail_msg: "Failed to get license allowances info"
+    success_msg: "License allowances info is fetched successfully"
+
+##########################################################################################
+
+- name: Get license allowances info using limit
+  nutanix.ncp.ntnx_license_allowances_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Print result
+  ansible.builtin.debug:
+    msg: "{{ result }}"
+
+- name: Get license allowances info using limit status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response | length <= 1
+      - result.changed == false
+      - result.failed == false
+      - result.total_available_results is defined
+    fail_msg: "Failed to get license allowances info using limit"
+    success_msg: "License allowances info is fetched successfully using limit"
+
+##########################################################################################
+
+- name: Get license allowances info using filter
+  nutanix.ncp.ntnx_license_allowances_info_v2:
+    filter: type eq Licensing.Config.ClusterType'NUTANIX'
+  register: result
+  ignore_errors: true
+
+- name: Print result
+  ansible.builtin.debug:
+    msg: "{{ result }}"
+
+- name: Get license allowances info using filter status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response[0].type == 'NUTANIX'
+      - result.changed == false
+      - result.failed == false
+      - result.total_available_results is defined
+    fail_msg: "Failed to get license allowances info using filter"
+    success_msg: "License allowances info is fetched successfully using filter"
+
+##########################################################################################
+
+- name: Get license entitlements info
+  nutanix.ncp.ntnx_license_entitlements_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Print result
+  ansible.builtin.debug:
+    msg: "{{ result }}"
+
+- name: Get license entitlements info status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.total_available_results is defined
+    fail_msg: "Failed to get license entitlements info"
+    success_msg: "License entitlements info is fetched successfully"
+
+##########################################################################################
+
+- name: Get license entitlements info using limit
+  nutanix.ncp.ntnx_license_entitlements_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Print result
+  ansible.builtin.debug:
+    msg: "{{ result }}"
+
+- name: Get license entitlements info using limit status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response | length <= 1
+      - result.changed == false
+      - result.failed == false
+      - result.total_available_results is defined
+      - result.total_available_results > 0
+    fail_msg: "Failed to get license entitlements info using limit"
+    success_msg: "License entitlements info is fetched successfully using limit"
+
+##########################################################################################
+
+- name: Get license entitlements info using filter
+  nutanix.ncp.ntnx_license_entitlements_info_v2:
+    filter: type eq Licensing.Config.ClusterType'NUTANIX'
+  register: result
+  ignore_errors: true
+
+- name: Print result
+  ansible.builtin.debug:
+    msg: "{{ result }}"
+
+- name: Get license entitlements info using filter status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response[0].type == 'NUTANIX'
+      - result.changed == false
+      - result.failed == false
+      - result.total_available_results is defined
+    fail_msg: "Failed to get license entitlements info using filter"
+    success_msg: "License entitlements info is fetched successfully using filter"
+
+##########################################################################################
+
+- name: Get license compliances info
+  nutanix.ncp.ntnx_license_compliances_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Print result
+  ansible.builtin.debug:
+    msg: "{{ result }}"
+
+- name: Get license compliances info status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.total_available_results is defined
+    fail_msg: "Failed to get license compliances info"
+    success_msg: "License compliances info is fetched successfully"
+
+##########################################################################################
+
+- name: Get license compliances info using limit
+  nutanix.ncp.ntnx_license_compliances_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Print result
+  ansible.builtin.debug:
+    msg: "{{ result }}"
+
+- name: Get license compliances info using limit status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response | length <= 1
+      - result.changed == false
+      - result.failed == false
+      - result.total_available_results is defined
+    fail_msg: "Failed to get license compliances info using limit"
+    success_msg: "License compliances info is fetched successfully using limit"
+
+##########################################################################################
+
+- name: Get license compliances info using filter
+  nutanix.ncp.ntnx_license_compliances_info_v2:
+    filter: type eq Licensing.Config.ClusterType'NUTANIX'
+  register: result
+  ignore_errors: true
+
+- name: Print result
+  ansible.builtin.debug:
+    msg: "{{ result }}"
+
+- name: Get license compliances info using filter status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response[0].type == 'NUTANIX'
+      - result.changed == false
+      - result.failed == false
+      - result.total_available_results is defined
+    fail_msg: "Failed to get license compliances info using filter"
+    success_msg: "License compliances info is fetched successfully using filter"
+
+##########################################################################################
+
+- name: Get license recommendations info
+  nutanix.ncp.ntnx_license_recommendations_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Print result
+  ansible.builtin.debug:
+    msg: "{{ result }}"
+
+- name: Get license recommendations info status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.total_available_results is defined
+    fail_msg: "Failed to get license recommendations info"
+    success_msg: "License recommendations info is fetched successfully"
+
+##########################################################################################
+
+- name: Get license recommendations info using limit
+  nutanix.ncp.ntnx_license_recommendations_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Print result
+  ansible.builtin.debug:
+    msg: "{{ result }}"
+
+- name: Get license recommendations info using limit status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response | length <= 1
+      - result.changed == false
+      - result.failed == false
+      - result.total_available_results is defined
+    fail_msg: "Failed to get license recommendations info using limit"
+    success_msg: "License recommendations info is fetched successfully using limit"
+
+##########################################################################################
