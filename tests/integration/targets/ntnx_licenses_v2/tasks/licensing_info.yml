@@ -1,4 +1,7 @@
 ---
+# Prerequisites:
+# - Turn on Seamless Licensing in Prism Central
+# - Add NCM Ultimate License in Prism Central
 
 - name: Start testing licenses namespace modules testing
   ansible.builtin.debug:
@@ -122,7 +125,7 @@
 
 - name: Get applied license inventory info using filter
   nutanix.ncp.ntnx_license_applied_inventory_info_v2:
-    filter: type eq Licensing.Config.LicenseType'PRISM'
+    filter: category eq Licensing.Config.LicenseCategory'ULTIMATE'
   register: result
   ignore_errors: true
 
@@ -134,7 +137,7 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.response[0].type == 'PRISM'
+      - result.response[0].category == 'ULTIMATE'
       - result.changed == false
       - result.failed == false
       - result.total_available_results is defined
@@ -476,5 +479,61 @@
       - result.total_available_results is defined
     fail_msg: "Failed to get license recommendations info using limit"
     success_msg: "License recommendations info is fetched successfully using limit"
+  ignore_errors: true
+
+##########################################################################################
+
+- name: Generate spec for upload cluster summary using check mode
+  nutanix.ncp.ntnx_license_seamless_action_v2:
+    operation: UPLOAD_CLUSTER_SUMMARY
+    cluster_ext_ids:
+      - "00062db4-a450-e685-0fda-cdf9ca935bfd"
+      - "00075331-6502-2174-057e-350953139335"
+    entitlement_names:
+      - "NUTANIX_STANDARD"
+      - "NUTANIX_ADVANCED"
+  check_mode: true
+  register: result
+  ignore_errors: true
+  
+- name: Print result
+  ansible.builtin.debug:
+    msg: "{{ result }}"
+  
+- name: Generate spec for upload cluster summary using check mode status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.operation == 'UPLOAD_CLUSTER_SUMMARY'
+      - result.response.cluster_ext_ids == ['00062db4-a450-e685-0fda-cdf9ca935bfd', '00075331-6502-2174-057e-350953139335']
+      - result.response.entitlement_names == ['NUTANIX_STANDARD', 'NUTANIX_ADVANCED']
+    fail_msg: "Failed to generate spec for upload cluster summary using check mode"
+    success_msg: "Spec for upload cluster summary using check mode is generated successfully"
+
+##########################################################################################
+
+- name: Upload Cluster Summary using Seamless Licensing Action
+  nutanix.ncp.ntnx_license_seamless_action_v2:
+    operation: UPLOAD_CLUSTER_SUMMARY
+  register: result
+  ignore_errors: true
+
+- name: Print result
+  ansible.builtin.debug:
+    msg: "{{ result }}"
+
+- name: Upload Cluster Summary using Seamless Licensing Action status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.task_ext_id is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+      - result.response.operation == 'upload_cluster_summary'
+    fail_msg: "Failed to upload cluster summary using Seamless Licensing Action"
+    success_msg: "Cluster summary is uploaded successfully using Seamless Licensing Action"
 
 ##########################################################################################
