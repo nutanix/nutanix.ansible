@@ -14,6 +14,11 @@ description:
     - Lists features allowed for use under the applied license.
     - This module uses PC v4 APIs based SDKs.
 version_added: "2.4.0"
+options:
+  expand:
+    description:
+      - The expand parameter is used to expand the response.
+    type: str
 author:
   - Abhinav Bansal (@abhinavbansal29)
 extends_documentation_fragment:
@@ -270,6 +275,13 @@ from ..module_utils.v4.utils import (  # noqa: E402
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
+def get_module_spec():
+    module_args = dict(
+        expand=dict(type="str"),
+    )
+    return module_args
+
+
 def license_allowances_info(module, licensing_api_instance, result):
     sg = SpecGenerator(module)
     kwargs, err = sg.get_info_spec(attr=module.params)
@@ -296,7 +308,7 @@ def license_allowances_info(module, licensing_api_instance, result):
 
 def run_module():
     module = BaseInfoModule(
-        argument_spec=dict(),
+        argument_spec=get_module_spec(),
         supports_check_mode=False,
     )
 
