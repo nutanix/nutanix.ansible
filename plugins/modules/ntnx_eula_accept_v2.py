@@ -11,10 +11,10 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_eula_accept_v2
-short_description: Users to accept End User License Agreement.
+short_description: Allows users to accept End User License Agreement.
 version_added: 2.4.0
 description:
-  - Users to accept End User License Agreement.
+  - Allows users to accept End User License Agreement.
   - This module uses PC v4 APIs based SDKs
 options:
     user_name:

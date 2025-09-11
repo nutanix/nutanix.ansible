@@ -24,6 +24,8 @@
 - name: Get End of User License Agreement info before acceptance status
   ansible.builtin.assert:
     that:
+      - result.changed == false
+      - result.failed == false
       - result.response.content is defined
       - result.response.version is defined
       - result.response.acceptances is defined
@@ -66,7 +68,6 @@
   nutanix.ncp.ntnx_eula_accept_v2:
   register: result
   ignore_errors: true
-  check_mode: true
 
 - name: Accept End of User License Agreement without passing any parameter status
   ansible.builtin.assert:
@@ -74,7 +75,7 @@
       - result.changed == false
       - result.failed == true
       - result.msg == "missing required arguments: company_name, job_title, login_id, user_name"
-    fail_msg: "Accept End of User License Agreement without passing any parameter not failed as expected"
+    fail_msg: "Accept End of User License Agreement without passing any parameter did not fail as expected"
     success_msg: "Accept End of User License Agreement without passing any parameter failed as expected"
 
 ###################################################################################################
@@ -92,8 +93,8 @@
 - name: Accept End of User License Agreement in loop for 2 times with index as loop_index status
   ansible.builtin.assert:
     that:
-      - item.changed == True
-      - item.failed == False
+      - item.changed == true
+      - item.failed == false
       - item.response is defined
     fail_msg: "Accept End of User License Agreement in loop for 2 times with index as loop_index failed"
     success_msg: "Accept End of User License Agreement in loop for 2 times with index as loop_index passed"
@@ -109,6 +110,8 @@
 - name: Get End of User License Agreement info after acceptance status
   ansible.builtin.assert:
     that:
+      - result.changed == false
+      - result.failed == false
       - result.response.content is defined
       - result.response.version is defined
       - result.response.acceptances is defined

@@ -72,6 +72,12 @@ failed:
   returned: always
   type: bool
   sample: false
+
+changed:
+  description: This indicates whether the task resulted in any changes
+  returned: always
+  type: bool
+  sample: false
 """
 
 import warnings  # noqa: E402

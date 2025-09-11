@@ -1,5 +1,5 @@
 ---
-- name: Ntnx_floating_ips_v2 integration test
+- name: ntnx_eula_v2 integration test
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: "{{ ip }}"
