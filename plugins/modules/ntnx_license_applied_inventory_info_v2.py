@@ -55,6 +55,16 @@ EXAMPLES = r"""
     filter: category eq Licensing.Config.LicenseCategory'ULTIMATE'
   register: result
   ignore_errors: true
+
+- name: Get applied license inventory info using expand
+  nutanix.ncp.ntnx_license_applied_inventory_info_v2:
+    expand: consumptionDetails
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""

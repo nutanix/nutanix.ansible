@@ -55,6 +55,16 @@ EXAMPLES = r"""
     filter: type eq Licensing.Config.ClusterType'NUTANIX'
   register: result
   ignore_errors: true
+
+- name: Get license compliances info using expand
+  nutanix.ncp.ntnx_license_compliances_info_v2:
+    expand: compliance
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
