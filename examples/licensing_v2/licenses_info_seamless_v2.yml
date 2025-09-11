@@ -1,0 +1,190 @@
+---
+# Prerequisites:
+# - Turn on Seamless Licensing in Prism Central
+# - Add NCM Ultimate License in Prism Central
+
+# Summary:
+# 1. Get license features info
+# 2. Get license features info using limit
+# 3. Get license features info using filter
+# 4. Get applied license inventory info
+# 5. Get applied license inventory info using limit
+# 6. Get applied license inventory info using filter
+# 7. Get applied license inventory info using expand
+# 8. Get license config info
+# 9. Get license config info using limit
+# 10. Get license violations info
+# 11. Get license violations info using limit
+# 12. Get license allowances info
+# 13. Get license allowances info using limit
+# 14. Get license allowances info using filter
+# 15. Get license allowances info using expand
+# 16. Get license entitlements info
+# 17. Get license entitlements info using limit
+# 18. Get license entitlements info using filter
+# 19. Get license entitlements info using expand
+# 20. Get license compliances info
+# 21. Get license compliances info using limit
+# 22. Get license compliances info using filter
+# 23. Get license compliances info using expand
+# 24. Get license recommendations info
+# 25. Get license recommendations info using limit
+# 26. Upload Cluster Summary using Seamless Licensing Action
+
+- name: Prism playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Get license features info
+      nutanix.ncp.ntnx_license_features_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Get license features info using limit
+      nutanix.ncp.ntnx_license_features_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: Get license features info using filter
+      nutanix.ncp.ntnx_license_features_info_v2:
+        filter: licenseCategory eq Licensing.Config.LicenseCategory'STARTER'
+      register: result
+      ignore_errors: true
+
+    - name: Get applied license inventory info
+      nutanix.ncp.ntnx_license_applied_inventory_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Get applied license inventory info using limit
+      nutanix.ncp.ntnx_license_applied_inventory_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: Get applied license inventory info using filter
+      nutanix.ncp.ntnx_license_applied_inventory_info_v2:
+        filter: category eq Licensing.Config.LicenseCategory'ULTIMATE'
+      register: result
+      ignore_errors: true
+
+    - name: Get applied license inventory info using expand
+      nutanix.ncp.ntnx_license_applied_inventory_info_v2:
+        expand: consumptionDetails
+      register: result
+      ignore_errors: true
+
+    - name: Get license config info
+      nutanix.ncp.ntnx_license_config_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Get license config info using limit
+      nutanix.ncp.ntnx_license_config_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: Get license violations info
+      nutanix.ncp.ntnx_license_violations_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Get license violations info using limit
+      nutanix.ncp.ntnx_license_violations_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: Get license allowances info
+      nutanix.ncp.ntnx_license_allowances_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Get license allowances info using limit
+      nutanix.ncp.ntnx_license_allowances_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: Get license allowances info using filter
+      nutanix.ncp.ntnx_license_allowances_info_v2:
+        filter: type eq Licensing.Config.ClusterType'NUTANIX'
+      register: result
+      ignore_errors: true
+
+    - name: Get license allowances info using expand
+      nutanix.ncp.ntnx_license_allowances_info_v2:
+        expand: details
+      register: result
+      ignore_errors: true
+
+    - name: Get license entitlements info
+      nutanix.ncp.ntnx_license_entitlements_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Get license entitlements info using limit
+      nutanix.ncp.ntnx_license_entitlements_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: Get license entitlements info using filter
+      nutanix.ncp.ntnx_license_entitlements_info_v2:
+        filter: type eq Licensing.Config.ClusterType'NUTANIX'
+      register: result
+      ignore_errors: true
+
+    - name: Get license entitlements info using expand
+      nutanix.ncp.ntnx_license_entitlements_info_v2:
+        expand: details
+      register: result
+      ignore_errors: true
+
+    - name: Get license compliances info
+      nutanix.ncp.ntnx_license_compliances_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Get license compliances info using limit
+      nutanix.ncp.ntnx_license_compliances_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: Get license compliances info using filter
+      nutanix.ncp.ntnx_license_compliances_info_v2:
+        filter: type eq Licensing.Config.ClusterType'NUTANIX'
+      register: result
+      ignore_errors: true
+
+    - name: Get license compliances info using expand
+      nutanix.ncp.ntnx_license_compliances_info_v2:
+        expand: compliance
+      register: result
+      ignore_errors: true
+
+    - name: Get license recommendations info
+      nutanix.ncp.ntnx_license_recommendations_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Get license recommendations info using limit
+      nutanix.ncp.ntnx_license_recommendations_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: Upload Cluster Summary using Seamless Licensing Action
+      nutanix.ncp.ntnx_license_seamless_action_v2:
+        operation: UPLOAD_CLUSTER_SUMMARY
+      register: result
+      ignore_errors: true
