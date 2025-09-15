@@ -1,5 +1,5 @@
 ---
-- name: ntnx_eula_v2 integration test
+- name: Set module defaults
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: "{{ ip }}"

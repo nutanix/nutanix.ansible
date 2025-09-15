@@ -160,7 +160,10 @@ def accept_eula(module, result):
             msg="Api Exception raised while accepting End User License Agreement",
         )
 
-    result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    resp = strip_internal_attributes(resp.to_dict()).get("data")
+    if not resp:
+        resp = []
+    result["response"] = resp
     result["changed"] = True
 
 
