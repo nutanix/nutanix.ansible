@@ -129,7 +129,7 @@
       nutanix.ncp.ntnx_ndb_db_servers_info:
       register: db_servers
 
-    - name: Get NDB db_servers using it's name
+    - name: Get NDB db_servers using it's name with load metrics and databases
       nutanix.ncp.ntnx_ndb_db_servers_info:
         filters:
           load_metrics: true
@@ -169,8 +169,8 @@
           - name: "{{ vm1_name_updated }}"
           - uuid: test_vm_1
         db_server_clusters:
-          - uuid: test_cluter_1
-          - uuid: test_cluter_2
+          - uuid: test_cluster_1
+          - uuid: test_cluster_2
         maintenance_window:
           name: "{{ maintenance.window_name }}"
         tasks:
@@ -201,7 +201,7 @@
         tasks: []
       register: result
 
-    - name: Add maitenance window task for vm
+    - name: Add maintenance window task for vm
       nutanix.ncp.ntnx_ndb_maintenance_tasks:
         db_server_vms:
           - name: "{{ vm1_name_updated }}"
@@ -226,7 +226,7 @@
         uuid: "{{ db_server_uuid }}"
       register: result
 
-    - name: Genereate check mode spec for delete vm with vgs and snapshots
+    - name: Generate check mode spec for delete vm with vgs and snapshots
       check_mode: true
       nutanix.ncp.ntnx_ndb_db_server_vms:
         state: absent
@@ -249,7 +249,7 @@
 
     ################################### DB server VM Registration tasks #############################
 
-    - name: Generate spec for registeration of the previous unregistered vm using check mode
+    - name: Generate spec for registration of the previous unregistered vm using check mode
       check_mode: true
       nutanix.ncp.ntnx_ndb_register_db_server_vm:
         ip: "{{ vm_ip }}"

@@ -1,3 +1,4 @@
+---
 - name: Start testing ntnx_permissions_info
   ansible.builtin.debug:
     msg: Start testing ntnx_permissions_info
@@ -65,7 +66,6 @@
       - result.response.metadata.kind == "permission"
     fail_msg: "Unable to list permission using uuid"
     success_msg: "permission info obtained successfully"
-
 
 ##################################################
 

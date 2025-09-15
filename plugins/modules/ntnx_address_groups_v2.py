@@ -95,7 +95,7 @@ EXAMPLES = r"""
 
 - name: delete address group
   nutanix.ncp.ntnx_address_groups_v2:
-    state: present
+    state: absent
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -322,6 +322,10 @@ def delete_address_group(module, result):
     address_groups = get_address_groups_api_instance(module)
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
+
+    if module.check_mode:
+        result["msg"] = "Address group with ext_id:{0} will be deleted.".format(ext_id)
+        return
 
     current_spec = get_address_group(module, address_groups, ext_id)
 

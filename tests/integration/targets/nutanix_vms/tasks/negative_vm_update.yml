@@ -1,4 +1,9 @@
-- name: Create VM with minimum requiremnts to update
+---
+# Variables required before running this playbook:
+# - cluster
+# - ubuntu
+# - storage_container
+- name: Create VM with minimum requirements to update
   ntnx_vms:
     state: present
     name: update vm
@@ -43,8 +48,8 @@
       - vm.response.status.state == 'COMPLETE'
       - vm.vm_uuid
       - vm.task_uuid
-    fail_msg: " Unable to create VM with minimum requiremnts "
-    success_msg: " VM with minimum requiremnts created successfully "
+    fail_msg: " Unable to create VM with minimum requirements "
+    success_msg: " VM with minimum requirements created successfully "
 
 - name: Update vm without change any value
   ntnx_vms:
@@ -120,7 +125,7 @@
   ansible.builtin.debug:
     msg: Start negative update scenarios tests for disks
 
-############ negative test : Decrase size
+############ negative test : Decrease size
 - name: Update VM by decreasing the size of the disk that contains the image with SCSI bus type
   ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
@@ -258,7 +263,7 @@
       - result.msg == ' parameters are mutually exclusive: uuid|bus found in disks '
       - result.failed == true
     success_msg: " Success: returned error as expected "
-    fail_msg: " Fail: Update VM by change ths bus type of ide disk sucessfuly "
+    fail_msg: " Fail: Update VM by change ths bus type of ide disk successfully "
 ############
 - name: Update VM by adding  IDE disk while vm is on
   ntnx_vms:
@@ -384,4 +389,4 @@
       - result.vm_uuid
       - result.task_uuid
     fail_msg: "Fail: Unable to delete created vm "
-    success_msg: "Success: Vm deleted sucessfully"
+    success_msg: "Success: Vm deleted successfully"

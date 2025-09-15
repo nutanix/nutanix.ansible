@@ -11,7 +11,7 @@ jobs:
     strategy:
       max-parallel: 1
       matrix:
-        python-version: ["3.9"]
+        python-version: ["3.10"]
     if: github.event_name == 'repository_dispatch'
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
@@ -26,6 +26,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r tests/integration/requirements.txt
+          ansible-galaxy collection install community.general --force
       - name: Build and install the collection
         run: |
           NAMESPACE=$(cat galaxy.yml | shyaml get-value namespace)
@@ -55,6 +56,13 @@ jobs:
           echo '${{ secrets.FC_CONFIG }}' > tests/integration/targets/prepare_fc_env/vars/main.yml
           echo '${{ secrets.PC_CONFIG }}' > tests/integration/targets/prepare_env/vars/main.yml
           echo '${{ secrets.NDB_CONFIG }}' > tests/integration/targets/prepare_ndb_env/vars/main.yml
+          echo "NUTANIX_HOST=${{ secrets.PC_IP }}" >> $GITHUB_ENV
+          echo "NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}" >> $GITHUB_ENV
+          echo "NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}" >> $GITHUB_ENV
+          echo $NUTANIX_HOST
+          echo $NUTANIX_USERNAME
+          echo $NUTANIX_PASSWORD
+          ansible-playbook -i tests/integration/targets/inventory_test/nutanix.yml tests/integration/targets/inventory_test/inventory.yml
           ansible-playbook tests/integration/targets/prepare_env/playbooks/prepare_env.yml
           ansible-playbook tests/integration/targets/prepare_ndb_env/playbooks/prepare_env.yml
           ansible-playbook tests/integration/targets/prepare_fc_env/playbooks/prepare_fc_env.yml
@@ -69,7 +77,6 @@ jobs:
         run: |
           cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
           ansible-test coverage html
-          sshpass -p '${{ secrets.FILER_PASSWORD }}' scp -r tests/output ${{ secrets.FILER_LOCATION }}
           echo "Code coverage: Checking if code coverage is above threshold..."
           export COVERAGE_THRESHOLD=70
           echo "Threshold: $COVERAGE_THRESHOLD %"

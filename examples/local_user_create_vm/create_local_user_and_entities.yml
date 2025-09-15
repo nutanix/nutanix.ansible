@@ -1,0 +1,116 @@
+---
+# This playbook will setup Prism Central(PC) with required entities
+# 1. Upload local image to PC
+# 2. Create categories that can be attached to the user vm
+# 3. Fetch roles info
+# 4. Create local user
+# 5. Fetch cluster and subnet info
+# 6. Assign given role to user and give access to image, cluster, subnet and category
+
+# This playbook should be run with user having permissions to create above entities on PC
+# Tested on PC version 2024.3
+
+# Pre-requisites:
+# 1. Please provide your PC IP, username and password in the module_defaults section
+# 2. Have disk image in local to upload to PC
+# 3. Create role with create vm related permissions. Make sure it has "Create New Virtual Machine" permission
+- name: Setup playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: # Please provide your PC IP (10.1.2.3)
+      nutanix_username: # Please provide user username ("admin")
+      nutanix_password: # Please provide user password ("password")
+      validate_certs: false
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        suffix: "dummy" # this suffix will be added to names of all entities created below
+        image_source: "/home/username/images/image1.qcow2" # Please provide path to local image file
+        create_vm_role_name: "CreateVMRole" # Please provide role name
+        cluster_name: "auto_cluster_prod_f6a56cf7a889" # Please provide cluster name for giving permission to user
+        subnet_name: "vlan1" # Please provide subnet name for giving permission to user
+        category_key: "DemoEnvironment" # Please provide category key
+
+    - name: Create ubuntu image from local workstation
+      nutanix.ncp.ntnx_images:
+        state: "present"
+        name: "ubuntu-image-{{ suffix }}"
+        source_path: "{{ image_source }}"
+        clusters:
+          - name: "{{ cluster_name }}"
+        desc: "demo vm image"
+        image_type: "DISK_IMAGE"
+        wait: true
+      register: image_create_result
+
+    - name: Set category value
+      ansible.builtin.set_fact:
+        category_value: "demo_user_{{ suffix }}"
+    - name: Create category key & value
+      nutanix.ncp.ntnx_categories_v2:
+        key: "{{ category_key }}"
+        value: "{{ category_value }}"
+      register: category_create_result
+
+    - name: Fetch roles info with given name
+      nutanix.ncp.ntnx_roles_info_v2:
+        filter: displayName eq '{{ create_vm_role_name }}'
+      register: roles_info
+
+    - name: Create local user
+      nutanix.ncp.ntnx_users_v2:
+        user_type: LOCAL
+        username: "demo_user_{{ suffix }}"
+        first_name: "demo"
+        last_name: "user_{{ suffix }}"
+        display_name: "Demo User {{ suffix }}"
+        password: "demo_user_{{ suffix }}_password" # Please provide password for local user
+        status: ACTIVE
+        wait: true
+      register: user_create_result
+
+    - name: Fetch cluster info with given name
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: name eq '{{ cluster_name }}'
+      register: clusters_info
+
+    - name: Fetch subnet info with given name
+      nutanix.ncp.ntnx_subnets_info_v2:
+        filter: name eq '{{ subnet_name }}'
+      register: subnets_info
+
+    - name: Assign given role to user and give access to specific entities
+      nutanix.ncp.ntnx_authorization_policies_v2:
+        state: present
+        display_name: "Authz-Policy-{{ suffix }}"
+        description: demo authz policy {{ suffix }}
+        role: "{{ roles_info.response[0].ext_id }}"
+        authorization_policy_type: USER_DEFINED
+        entities:
+          - image:
+              uuid:
+                anyof:
+                  - "{{ image_create_result.image_uuid }}"
+          - cluster:
+              uuid:
+                anyof:
+                  - "{{ clusters_info.response[0].ext_id }}"
+          - subnet:
+              uuid:
+                anyof:
+                  - "{{ subnets_info.response[0].ext_id }}"
+          - category:
+              uuid:
+                anyof:
+                  - "{{ category_create_result.ext_id }}"
+          - "*":
+              owner_uuid:
+                eq: SELF_OWNED
+        identities:
+          - user:
+              uuid:
+                anyof:
+                  - "{{ user_create_result.ext_id }}"
+      register: authz_policy_create_result

@@ -120,7 +120,9 @@ options:
                                                             type: dict
                                                             suboptions:
                                                                     datasource_type:
-                                                                        description: Type of cloud-init datasource
+                                                                        description:
+                                                                            - Type of cloud-init datasource
+                                                                            - Required when using user_data
                                                                         type: str
                                                                         choices: ["CONFIG_DRIVE_V2"]
                                                                     metadata:
@@ -137,7 +139,8 @@ options:
                                                                                     type: dict
                                                                                     suboptions:
                                                                                         value:
-                                                                                            description: The actual user data script content
+                                                                                            description:
+                                                                                                - base64 encoded cloud init script.
                                                                                             type: str
                                                                                             required: True
                                                                                 custom_key_values:
@@ -192,110 +195,291 @@ options:
                                             type: list
                                             elements: dict
                                             suboptions:
-                                                    backing_info:
-                                                        description: Defines a NIC emulated by the hypervisor
-                                                        type: dict
-                                                        suboptions:
-                                                            model:
-                                                                description: Model of the NIC
-                                                                type: str
-                                                                choices: ["VIRTIO", "E1000"]
-                                                            mac_address:
-                                                                description: MAC address of the emulated NIC.
-                                                                type: str
-                                                            is_connected:
-                                                                description: Indicates whether the NIC is connected or not. Default is True.
-                                                                type: bool
-                                                            num_queues:
-                                                                description: The number of Tx/Rx queue pairs for this NIC.
-                                                                type: int
-                                                    network_info:
-                                                        description: Network information for a NIC.
-                                                        type: dict
-                                                        suboptions:
-                                                            nic_type:
-                                                                description: Type of the NIC
-                                                                type: str
-                                                                choices: ["NORMAL_NIC", "DIRECT_NIC", "NETWORK_FUNCTION_NIC", "SPAN_DESTINATION_NIC"]
-                                                            network_function_chain:
-                                                                description:
-                                                                    - The network function chain associates with the NIC.
-                                                                      Only valid if nic_type is NORMAL_NIC.
-                                                                type: dict
-                                                                suboptions:
-                                                                    ext_id:
-                                                                        description:
-                                                                            - The globally unique identifier of a network function chain.
-                                                                              It should be of type UUID.
-                                                                        required: true
-                                                                        type: str
-                                                            network_function_nic_type:
-                                                                description: The type of this Network function NIC. Defaults to INGRESS.
-                                                                type: str
-                                                                choices: ["INGRESS", "EGRESS", "TAP"]
-                                                            subnet:
-                                                                description:
-                                                                    - Network identifier for this adapter.
-                                                                      Only valid if nic_type is NORMAL_NIC or DIRECT_NIC.
-                                                                type: dict
-                                                                suboptions:
-                                                                    ext_id:
-                                                                        description: The globally unique identifier of a subnet. It should be of type UUID.
-                                                                        required: true
-                                                                        type: str
-                                                            vlan_mode:
-                                                                description:
-                                                                    - By default, all the virtual NICs are created in ACCESS mode,
-                                                                      which permits only one VLAN per virtual network.
-                                                                      TRUNKED mode allows multiple VLANs on a single VM NIC for network-aware user VMs.
-                                                                type: str
-                                                                choices: ["ACCESS", "TRUNK"]
-                                                            trunked_vlans:
-                                                                description:
-                                                                    - List of networks to trunk if VLAN mode is marked as TRUNKED.
-                                                                      If empty and VLAN mode is set to TRUNKED, all the VLANs are trunked.
-                                                                type: list
-                                                                elements: int
-                                                            should_allow_unknown_macs:
-                                                                description:
-                                                                    - Indicates whether an unknown unicast traffic is forwarded to this NIC or not.
-                                                                      This is applicable only for the NICs on the overlay subnets.
-                                                                type: bool
-                                                            ipv4_config:
-                                                                description: The IP address configurations.
-                                                                type: dict
-                                                                suboptions:
-                                                                    should_assign_ip:
-                                                                        description:
-                                                                            - If set to true (default value), an IP address must be assigned to the VM NIC
-                                                                              either the one explicitly specified by the user or allocated automatically
-                                                                              by the IPAM service by not specifying the IP address.
-                                                                              If false, then no IP assignment is required for this VM NIC.
-                                                                        type: bool
-                                                                    ip_address:
-                                                                        description: Primary IP address configuration
-                                                                        type: dict
-                                                                        suboptions:
-                                                                            value:
-                                                                                description: IP address
-                                                                                type: str
-                                                                                required: True
-                                                                            prefix_length:
-                                                                                description: Prefix length of the IP address
-                                                                                type: int
-                                                                    secondary_ip_address_list:
-                                                                        description: List of secondary IP addresses
-                                                                        type: list
-                                                                        elements: dict
-                                                                        suboptions:
-                                                                            value:
-                                                                                description: IP address
-                                                                                type: str
-                                                                                required: True
-                                                                            prefix_length:
-                                                                                description: Prefix length of the IP address
-                                                                                type: int
-
+                                                backing_info:
+                                                    description:
+                                                        - The backing information for the NIC.
+                                                    type: dict
+                                                    suboptions:
+                                                        model:
+                                                            description:
+                                                                - The model of the NIC.
+                                                            type: str
+                                                            choices:
+                                                                - VIRTIO
+                                                                - E1000
+                                                            required: false
+                                                        mac_address:
+                                                            description:
+                                                                - The MAC address of the NIC.
+                                                            type: str
+                                                            required: false
+                                                        is_connected:
+                                                            description:
+                                                                - Whether the NIC needs to be connected or not.
+                                                            type: bool
+                                                            required: false
+                                                        num_queues:
+                                                            description:
+                                                                - The number of queues for the NIC.
+                                                            type: int
+                                                            required: false
+                                                nic_backing_info:
+                                                    description:
+                                                        - Backing Information about how NIC is associated with a VM.
+                                                        - Will work with pc.7.5 and later.
+                                                    type: dict
+                                                    suboptions:
+                                                        virtual_ethernet_nic:
+                                                            description:
+                                                                - The virtual ethernet NIC information.
+                                                            type: dict
+                                                            suboptions:
+                                                                model:
+                                                                    description:
+                                                                        - The model of the NIC.
+                                                                    type: str
+                                                                    choices:
+                                                                        - VIRTIO
+                                                                        - E1000
+                                                                    required: false
+                                                                mac_address:
+                                                                    description:
+                                                                        - The MAC address of the NIC.
+                                                                    type: str
+                                                                    required: false
+                                                                is_connected:
+                                                                    description:
+                                                                        - Whether the NIC needs to be connected or not.
+                                                                    type: bool
+                                                                    required: false
+                                                                num_queues:
+                                                                    description:
+                                                                        - The number of queues for the NIC.
+                                                                    type: int
+                                                                    required: false
+                                                network_info:
+                                                    description:
+                                                        - The network configuration for the NIC.
+                                                    type: dict
+                                                    suboptions:
+                                                        nic_type:
+                                                            description:
+                                                                - The type of the NIC.
+                                                            type: str
+                                                            choices:
+                                                                - NORMAL_NIC
+                                                                - DIRECT_NIC
+                                                                - NETWORK_FUNCTION_NIC
+                                                                - SPAN_DESTINATION_NIC
+                                                            required: false
+                                                        network_function_chain:
+                                                            description:
+                                                                - The network function chain for the NIC.
+                                                            type: dict
+                                                            suboptions:
+                                                                ext_id:
+                                                                    description:
+                                                                        - The external ID of the network function chain.
+                                                                    type: str
+                                                                    required: true
+                                                            required: false
+                                                        network_function_nic_type:
+                                                            description:
+                                                                - The type of the network function NIC.
+                                                            type: str
+                                                            choices:
+                                                                - INGRESS
+                                                                - EGRESS
+                                                                - TAP
+                                                            required: false
+                                                        subnet:
+                                                            description:
+                                                                - The subnet for the NIC.
+                                                            type: dict
+                                                            suboptions:
+                                                                ext_id:
+                                                                    description:
+                                                                        - The external ID of the subnet.
+                                                                    type: str
+                                                                    required: true
+                                                            required: false
+                                                        vlan_mode:
+                                                            description:
+                                                                - The VLAN mode for the NIC.
+                                                            type: str
+                                                            choices:
+                                                                - ACCESS
+                                                                - TRUNK
+                                                            required: false
+                                                        trunked_vlans:
+                                                            description:
+                                                                - The trunked VLANs for the NIC.
+                                                            type: list
+                                                            elements: int
+                                                            required: false
+                                                        should_allow_unknown_macs:
+                                                            description:
+                                                                - Whether to allow unknown MAC addresses or not.
+                                                            type: bool
+                                                            required: false
+                                                        ipv4_config:
+                                                            description:
+                                                                - The IPv4 configuration for the NIC.
+                                                            type: dict
+                                                            suboptions:
+                                                                should_assign_ip:
+                                                                    description:
+                                                                        - Whether to assign an IP address or not.
+                                                                    type: bool
+                                                                    required: false
+                                                                ip_address:
+                                                                    description:
+                                                                        - The IP address for the NIC.
+                                                                    type: dict
+                                                                    suboptions:
+                                                                        value:
+                                                                            description:
+                                                                                - The IP address value.
+                                                                            type: str
+                                                                            required: True
+                                                                        prefix_length:
+                                                                            description:
+                                                                                - The prefix length for the IP address.
+                                                                                - Can be skipped, default it will be 32.
+                                                                            type: int
+                                                                            required: false
+                                                                secondary_ip_address_list:
+                                                                    description:
+                                                                        - The list of secondary IP addresses for the NIC.
+                                                                    type: list
+                                                                    elements: dict
+                                                                    suboptions:
+                                                                        value:
+                                                                            description:
+                                                                                - The IP address value.
+                                                                            type: str
+                                                                            required: true
+                                                                        prefix_length:
+                                                                            description:
+                                                                                - The prefix length for the IP address.
+                                                                                - Can be skipped, default it will be 32.
+                                                                            type: int
+                                                                            required: false
+                                                            required: false
+                                                nic_network_info:
+                                                    description:
+                                                        - Network configuration for the NIC.
+                                                        - Will work with pc.7.5 and later.
+                                                    type: dict
+                                                    suboptions:
+                                                        virtual_ethernet_nic_network_info:
+                                                            description:
+                                                                - The network configuration for the virtual ethernet NIC.
+                                                            type: dict
+                                                            suboptions:
+                                                                nic_type:
+                                                                    description:
+                                                                        - The type of the NIC.
+                                                                    type: str
+                                                                    choices:
+                                                                        - NORMAL_NIC
+                                                                        - DIRECT_NIC
+                                                                        - NETWORK_FUNCTION_NIC
+                                                                        - SPAN_DESTINATION_NIC
+                                                                    required: false
+                                                                network_function_chain:
+                                                                    description:
+                                                                        - The network function chain for the NIC.
+                                                                    type: dict
+                                                                    suboptions:
+                                                                        ext_id:
+                                                                            description:
+                                                                                - The external ID of the network function chain.
+                                                                            type: str
+                                                                            required: true
+                                                                    required: false
+                                                                network_function_nic_type:
+                                                                    description:
+                                                                        - The type of the network function NIC.
+                                                                    type: str
+                                                                    choices:
+                                                                        - INGRESS
+                                                                        - EGRESS
+                                                                        - TAP
+                                                                    required: false
+                                                                subnet:
+                                                                    description:
+                                                                        - The subnet for the NIC.
+                                                                    type: dict
+                                                                    suboptions:
+                                                                        ext_id:
+                                                                            description:
+                                                                                - The external ID of the subnet.
+                                                                            type: str
+                                                                            required: true
+                                                                    required: false
+                                                                vlan_mode:
+                                                                    description:
+                                                                        - The VLAN mode for the NIC.
+                                                                    type: str
+                                                                    choices:
+                                                                        - ACCESS
+                                                                        - TRUNK
+                                                                    required: false
+                                                                trunked_vlans:
+                                                                    description:
+                                                                        - The trunked VLANs for the NIC.
+                                                                    type: list
+                                                                    elements: int
+                                                                    required: false
+                                                                should_allow_unknown_macs:
+                                                                    description:
+                                                                        - Whether to allow unknown MAC addresses or not.
+                                                                    type: bool
+                                                                    required: false
+                                                                ipv4_config:
+                                                                    description:
+                                                                        - The IPv4 configuration for the NIC.
+                                                                    type: dict
+                                                                    suboptions:
+                                                                        should_assign_ip:
+                                                                            description:
+                                                                                - Whether to assign an IP address or not.
+                                                                            type: bool
+                                                                            required: false
+                                                                        ip_address:
+                                                                            description:
+                                                                                - The IP address for the NIC.
+                                                                            type: dict
+                                                                            suboptions:
+                                                                                value:
+                                                                                    description:
+                                                                                        - The IP address value.
+                                                                                    type: str
+                                                                                    required: True
+                                                                                prefix_length:
+                                                                                    description:
+                                                                                        - The prefix length for the IP address.
+                                                                                        - Can be skipped, default it will be 32.
+                                                                                    type: int
+                                                                                    required: false
+                                                                        secondary_ip_address_list:
+                                                                            description:
+                                                                                - The list of secondary IP addresses for the NIC.
+                                                                            type: list
+                                                                            elements: dict
+                                                                            suboptions:
+                                                                                value:
+                                                                                    description:
+                                                                                        - The IP address value.
+                                                                                    type: str
+                                                                                    required: true
+                                                                                prefix_length:
+                                                                                    description:
+                                                                                        - The prefix length for the IP address.
+                                                                                        - Can be skipped, default it will be 32.
+                                                                                    type: int
+                                                                                    required: false
                                         guest_customization:
                                             description:
                                                 - Stage a Sysprep or cloud-init configuration file to be used by the guest for the next boot.
@@ -352,7 +536,9 @@ options:
                                                             type: dict
                                                             suboptions:
                                                                     datasource_type:
-                                                                        description: Type of cloud-init datasource
+                                                                        description:
+                                                                            - Type of cloud-init datasource
+                                                                            - Required when using user_data
                                                                         type: str
                                                                         choices: ["CONFIG_DRIVE_V2"]
                                                                     metadata:
@@ -369,7 +555,8 @@ options:
                                                                                     type: dict
                                                                                     suboptions:
                                                                                         value:
-                                                                                            description: The actual user data script content
+                                                                                            description:
+                                                                                                - base64 encoded cloud init script.
                                                                                             type: str
                                                                                             required: True
                                                                                 custom_key_values:
@@ -469,6 +656,20 @@ options:
                                 description: The globally unique identifier of a VM category. It should be of type UUID.
                                 type: str
                                 required: True
+                    project:
+                        description: Reference to a project.
+                        type: dict
+                        suboptions:
+                            ext_id:
+                                description: The globally unique identifier of a project. It should be of type UUID.
+                                type: str
+                    host:
+                        description: Reference to a host.
+                        type: dict
+                        suboptions:
+                            ext_id:
+                                description: The globally unique identifier of a host. It should be of type UUID.
+                                type: str
                     cluster:
                         description: Reference to a cluster.
                         type: dict
@@ -486,98 +687,101 @@ options:
                                 type: str
                                 required: True
                     guest_customization:
-                                            description:
-                                                - Stage a Sysprep or cloud-init configuration file to be used by the guest for the next boot.
-                                                  Note that the Sysprep command must be used to generalize the Windows VMs before triggering this API call.
-                                            type: dict
-                                            suboptions:
-                                                config:
+                        description:
+                            - Stage a Sysprep or cloud-init configuration file to be used by the guest for the next boot.
+                                Note that the Sysprep command must be used to generalize the Windows VMs before triggering this API call.
+                        type: dict
+                        suboptions:
+                            config:
+                                type: dict
+                                description: The Nutanix Guest Tools customization settings.
+                                suboptions:
+                                    sysprep:
+                                        description: Sysprep configuration for Windows guests
+                                        type: dict
+                                        suboptions:
+                                                install_type:
+                                                    description:
+                                                        - Indicates whether the guest will be freshly installed
+                                                            using this unattend configuration, or this unattend
+                                                            configuration will be applied to a pre-prepared image.
+                                                            Default is 'PREPARED'.
+                                                    type: str
+                                                    choices: ["FRESH", "PREPARED"]
+                                                sysprep_script:
+                                                    description: Parameters for the sysprep script
                                                     type: dict
-                                                    description: The Nutanix Guest Tools customization settings.
                                                     suboptions:
-                                                        sysprep:
-                                                            description: Sysprep configuration for Windows guests
-                                                            type: dict
-                                                            suboptions:
-                                                                    install_type:
-                                                                        description:
-                                                                            - Indicates whether the guest will be freshly installed
-                                                                              using this unattend configuration, or this unattend
-                                                                              configuration will be applied to a pre-prepared image.
-                                                                              Default is 'PREPARED'.
+                                                            unattendxml:
+                                                                description: unattend.xml settings
+                                                                type: dict
+                                                                suboptions:
+                                                                    value:
+                                                                        description: XML content for unattend.xml
                                                                         type: str
-                                                                        choices: ["FRESH", "PREPARED"]
-                                                                    sysprep_script:
-                                                                        description: Parameters for the sysprep script
-                                                                        type: dict
+                                                            custom_key_values:
+                                                                description: Custom key-value pairs
+                                                                type: dict
+                                                                suboptions:
+                                                                    key_value_pairs:
+                                                                        description: The list of the individual KeyValuePair elements.
+                                                                        type: list
+                                                                        elements: dict
                                                                         suboptions:
-                                                                                unattendxml:
-                                                                                    description: unattend.xml settings
-                                                                                    type: dict
-                                                                                    suboptions:
-                                                                                        value:
-                                                                                            description: XML content for unattend.xml
-                                                                                            type: str
-                                                                                custom_key_values:
-                                                                                    description: Custom key-value pairs
-                                                                                    type: dict
-                                                                                    suboptions:
-                                                                                        key_value_pairs:
-                                                                                            description: The list of the individual KeyValuePair elements.
-                                                                                            type: list
-                                                                                            elements: dict
-                                                                                            suboptions:
-                                                                                                name:
-                                                                                                    description: The key of this key-value pair
-                                                                                                    type: str
-                                                                                                value:
-                                                                                                    description:
-                                                                                                        - The value associated with the key
-                                                                                                          for this key-value pair
-                                                                                                    type: raw
+                                                                            name:
+                                                                                description: The key of this key-value pair
+                                                                                type: str
+                                                                            value:
+                                                                                description:
+                                                                                    - The value associated with the key
+                                                                                        for this key-value pair
+                                                                                type: raw
 
-                                                        cloudinit:
-                                                            description: Cloud-init configuration for Linux guests
-                                                            type: dict
-                                                            suboptions:
-                                                                    datasource_type:
-                                                                        description: Type of cloud-init datasource
-                                                                        type: str
-                                                                        choices: ["CONFIG_DRIVE_V2"]
-                                                                    metadata:
+                                    cloudinit:
+                                        description: Cloud-init configuration for Linux guests
+                                        type: dict
+                                        suboptions:
+                                                datasource_type:
+                                                    description:
+                                                        - Type of cloud-init datasource
+                                                        - Required when using user_data
+                                                    type: str
+                                                    choices: ["CONFIG_DRIVE_V2"]
+                                                metadata:
+                                                    description:
+                                                        - The contents of the meta_data configuration for cloud-init.
+                                                            This can be formatted as YAML or JSON. The value must be base64 encoded.
+                                                    type: str
+                                                cloud_init_script:
+                                                    description: The script to use for cloud-init.
+                                                    type: dict
+                                                    suboptions:
+                                                            user_data:
+                                                                description: User data script
+                                                                type: dict
+                                                                suboptions:
+                                                                    value:
                                                                         description:
-                                                                            - The contents of the meta_data configuration for cloud-init.
-                                                                              This can be formatted as YAML or JSON. The value must be base64 encoded.
+                                                                            - base64 encoded cloud init script.
                                                                         type: str
-                                                                    cloud_init_script:
-                                                                        description: The script to use for cloud-init.
-                                                                        type: dict
+                                                                        required: True
+                                                            custom_key_values:
+                                                                description: Custom key-value pairs
+                                                                type: dict
+                                                                suboptions:
+                                                                    key_value_pairs:
+                                                                        description: The list of the individual KeyValuePair elements.
+                                                                        type: list
+                                                                        elements: dict
                                                                         suboptions:
-                                                                                user_data:
-                                                                                    description: User data script
-                                                                                    type: dict
-                                                                                    suboptions:
-                                                                                        value:
-                                                                                            description: The actual user data script content
-                                                                                            type: str
-                                                                                            required: True
-                                                                                custom_key_values:
-                                                                                    description: Custom key-value pairs
-                                                                                    type: dict
-                                                                                    suboptions:
-                                                                                        key_value_pairs:
-                                                                                            description: The list of the individual KeyValuePair elements.
-                                                                                            type: list
-                                                                                            elements: dict
-                                                                                            suboptions:
-                                                                                                name:
-                                                                                                    description: The key of this key-value pair
-                                                                                                    type: str
-                                                                                                value:
-                                                                                                    description:
-                                                                                                        - The value associated with the key
-                                                                                                          for this key-value pair
-                                                                                                    type: raw
+                                                                            name:
+                                                                                description: The key of this key-value pair
+                                                                                type: str
+                                                                            value:
+                                                                                description:
+                                                                                    - The value associated with the key
+                                                                                        for this key-value pair
+                                                                                type: raw
                     hardware_clock_timezone:
                         description: VM hardware clock timezone in IANA TZDB format (America/Los_Angeles).
                         type: str
@@ -594,49 +798,89 @@ options:
                                 description: Legacy boot configuration
                                 type: dict
                                 suboptions:
-                                                    boot_device:
-                                                        description: Boot device settings for legacy boot
+                                    boot_device:
+                                        description: Boot device settings for legacy boot
+                                        type: dict
+                                        suboptions:
+                                            boot_device_disk:
+                                                description: Boot device from disk
+                                                type: dict
+                                                suboptions:
+                                                    disk_address:
+                                                        description: Disk address for boot device
                                                         type: dict
                                                         suboptions:
-                                                            boot_device_disk:
-                                                                description: Boot device from disk
-                                                                type: dict
-                                                                suboptions:
-                                                                    disk_address:
-                                                                        description: Disk address for boot device
-                                                                        type: dict
-                                                                        suboptions:
-                                                                            bus_type:
-                                                                                description:
-                                                                                    - Bus type for the device.
-                                                                                      The acceptable values are SCSI, IDE, PCI, SATA, SPAPR (only PPC).
-                                                                                type: str
-                                                                                choices: ["SCSI", "IDE", "PCI", "SATA", "SPAPR"]
-                                                                                required: True
-                                                                            index:
-                                                                                description:
-                                                                                    - Device index on the bus.
-                                                                                      This field is ignored unless the bus details are specified.
-                                                                                type: int
-                                                            boot_device_nic:
-                                                                description: Boot device from NIC
-                                                                type: dict
-                                                                suboptions:
-                                                                    mac_address:
-                                                                        description: MAC address of the NIC
-                                                                        type: str
-                                                    boot_order:
-                                                            description:
-                                                                - Indicates the order of device types in which the VM should try to boot from.
-                                                                  If the boot device order is not provided the system will
-                                                                  decide an appropriate boot device order.
-                                                            type: list
-                                                            elements: str
-                                                            choices: ["CDROM", "NETWORK", "DISK"]
+                                                            bus_type:
+                                                                description:
+                                                                    - Bus type for the device.
+                                                                        The acceptable values are SCSI, IDE, PCI, SATA, SPAPR (only PPC).
+                                                                type: str
+                                                                choices: ["SCSI", "IDE", "PCI", "SATA", "SPAPR"]
+                                                                required: True
+                                                            index:
+                                                                description:
+                                                                    - Device index on the bus.
+                                                                        This field is ignored unless the bus details are specified.
+                                                                type: int
+                                            boot_device_nic:
+                                                description: Boot device from NIC
+                                                type: dict
+                                                suboptions:
+                                                    mac_address:
+                                                        description: MAC address of the NIC
+                                                        type: str
+                                    boot_order:
+                                            description:
+                                                - Indicates the order of device types in which the VM should try to boot from.
+                                                    If the boot device order is not provided the system will
+                                                    decide an appropriate boot device order.
+                                            type: list
+                                            elements: str
+                                            choices: ["CDROM", "NETWORK", "DISK"]
                             uefi_boot:
                                 description: UEFI boot configuration
                                 type: dict
                                 suboptions:
+                                    boot_device:
+                                        description:
+                                            - The boot device settings for UEFI boot.
+                                        type: dict
+                                        suboptions:
+                                            boot_device_disk:
+                                                description: Specification for booting from disk.
+                                                type: dict
+                                                suboptions:
+                                                    disk_address:
+                                                        description: Address specification for the disk.
+                                                        type: dict
+                                                        suboptions:
+                                                            bus_type:
+                                                                description:
+                                                                    - Bus type for the device.
+                                                                    - The acceptable values are SCSI, IDE, PCI, SATA, SPAPR (only PPC).
+                                                                type: str
+                                                                choices: ["SCSI", "IDE", "PCI", "SATA", "SPAPR"]
+                                                                required: true
+                                                            index:
+                                                                description:
+                                                                    - Device index on the bus.
+                                                                    - This field is ignored unless the bus details are specified.
+                                                                type: int
+                                            boot_device_nic:
+                                                description: Specification for booting from network interface controller (NIC).
+                                                type: dict
+                                                suboptions:
+                                                        mac_address:
+                                                                description: Mac address
+                                                                type: str
+                                    boot_order:
+                                        description:
+                                            - Indicates the order of device types in which the VM should try to boot from.
+                                                If the boot device order is not provided the system will
+                                                decide an appropriate boot device order.
+                                        type: list
+                                        elements: str
+                                        choices: ["CDROM", "NETWORK", "DISK"]
                                     is_secure_boot_enabled:
                                         description: Indicate whether to enable secure boot or not.
                                         type: bool
@@ -973,104 +1217,291 @@ options:
                         type: list
                         elements: dict
                         suboptions:
-                                backing_info:
-                                    description: Defines a NIC emulated by the hypervisor
-                                    type: dict
-                                    suboptions:
-                                        model:
-                                            description: Model of the NIC
-                                            type: str
-                                            choices: ["VIRTIO", "E1000"]
-                                        mac_address:
-                                            description: MAC address of the emulated NIC.
-                                            type: str
-                                        is_connected:
-                                            description: Indicates whether the NIC is connected or not. Default is True.
-                                            type: bool
-                                        num_queues:
-                                            description: The number of Tx/Rx queue pairs for this NIC.
-                                            type: int
-                                network_info:
-                                    description: Network information for a NIC.
-                                    type: dict
-                                    suboptions:
-                                        nic_type:
-                                            description: Type of the NIC
-                                            type: str
-                                            choices: ["NORMAL_NIC", "DIRECT_NIC", "NETWORK_FUNCTION_NIC", "SPAN_DESTINATION_NIC"]
-                                        network_function_chain:
-                                            description: The network function chain associates with the NIC. Only valid if nic_type is NORMAL_NIC.
-                                            type: dict
-                                            suboptions:
-                                                ext_id:
-                                                    description: The globally unique identifier of a network function chain. It should be of type UUID.
-                                                    required: true
-                                                    type: str
-                                        network_function_nic_type:
-                                            description: The type of this Network function NIC. Defaults to INGRESS.
-                                            type: str
-                                            choices: ["INGRESS", "EGRESS", "TAP"]
-                                        subnet:
-                                            description: Network identifier for this adapter. Only valid if nic_type is NORMAL_NIC or DIRECT_NIC.
-                                            type: dict
-                                            suboptions:
-                                                ext_id:
-                                                    description: The globally unique identifier of a subnet. It should be of type UUID.
-                                                    required: true
-                                                    type: str
-                                        vlan_mode:
-                                            description:
-                                                - By default, all the virtual NICs are created in ACCESS mode,
-                                                  which permits only one VLAN per virtual network.
-                                                  TRUNKED mode allows multiple VLANs on a single
-                                                  VM NIC for network-aware user VMs.
-                                            type: str
-                                            choices: ["ACCESS", "TRUNK"]
-                                        trunked_vlans:
-                                            description:
-                                                - List of networks to trunk if VLAN mode is marked as TRUNKED.
-                                                  If empty and VLAN mode is set to TRUNKED, all the VLANs are trunked.
-                                            type: list
-                                            elements: int
-                                        should_allow_unknown_macs:
-                                            description:
-                                                - Indicates whether an unknown unicast traffic is forwarded to this NIC or not.
-                                                  This is applicable only for the NICs on the overlay subnets.
-                                            type: bool
-                                        ipv4_config:
-                                            description: The IP address configurations.
-                                            type: dict
-                                            suboptions:
-                                                should_assign_ip:
-                                                    description:
-                                                        - If set to true (default value), an IP address must be assigned to the VM NIC
-                                                          either the one explicitly specified by the user
-                                                          or allocated automatically by the IPAM service by not specifying the IP address.
-                                                          If false, then no IP assignment is required for this VM NIC.
-                                                    type: bool
-                                                ip_address:
-                                                    description: Primary IP address configuration
-                                                    type: dict
-                                                    suboptions:
-                                                        value:
-                                                            description: IP address
-                                                            type: str
-                                                            required: True
-                                                        prefix_length:
-                                                            description: Prefix length of the IP address
-                                                            type: int
-                                                secondary_ip_address_list:
-                                                    description: List of secondary IP addresses
-                                                    type: list
-                                                    elements: dict
-                                                    suboptions:
-                                                        value:
-                                                            description: IP address
-                                                            type: str
-                                                            required: True
-                                                        prefix_length:
-                                                            description: Prefix length of the IP address
-                                                            type: int
+                            backing_info:
+                                description:
+                                    - The backing information for the NIC.
+                                type: dict
+                                suboptions:
+                                    model:
+                                        description:
+                                            - The model of the NIC.
+                                        type: str
+                                        choices:
+                                            - VIRTIO
+                                            - E1000
+                                        required: false
+                                    mac_address:
+                                        description:
+                                            - The MAC address of the NIC.
+                                        type: str
+                                        required: false
+                                    is_connected:
+                                        description:
+                                            - Whether the NIC needs to be connected or not.
+                                        type: bool
+                                        required: false
+                                    num_queues:
+                                        description:
+                                            - The number of queues for the NIC.
+                                        type: int
+                                        required: false
+                            nic_backing_info:
+                                description:
+                                    - Backing Information about how NIC is associated with a VM.
+                                    - Will work with pc.7.5 and later.
+                                type: dict
+                                suboptions:
+                                    virtual_ethernet_nic:
+                                        description:
+                                            - The virtual ethernet NIC information.
+                                        type: dict
+                                        suboptions:
+                                            model:
+                                                description:
+                                                    - The model of the NIC.
+                                                type: str
+                                                choices:
+                                                    - VIRTIO
+                                                    - E1000
+                                                required: false
+                                            mac_address:
+                                                description:
+                                                    - The MAC address of the NIC.
+                                                type: str
+                                                required: false
+                                            is_connected:
+                                                description:
+                                                    - Whether the NIC needs to be connected or not.
+                                                type: bool
+                                                required: false
+                                            num_queues:
+                                                description:
+                                                    - The number of queues for the NIC.
+                                                type: int
+                                                required: false
+                            network_info:
+                                description:
+                                    - The network configuration for the NIC.
+                                type: dict
+                                suboptions:
+                                    nic_type:
+                                        description:
+                                            - The type of the NIC.
+                                        type: str
+                                        choices:
+                                            - NORMAL_NIC
+                                            - DIRECT_NIC
+                                            - NETWORK_FUNCTION_NIC
+                                            - SPAN_DESTINATION_NIC
+                                        required: false
+                                    network_function_chain:
+                                        description:
+                                            - The network function chain for the NIC.
+                                        type: dict
+                                        suboptions:
+                                            ext_id:
+                                                description:
+                                                    - The external ID of the network function chain.
+                                                type: str
+                                                required: true
+                                        required: false
+                                    network_function_nic_type:
+                                        description:
+                                            - The type of the network function NIC.
+                                        type: str
+                                        choices:
+                                            - INGRESS
+                                            - EGRESS
+                                            - TAP
+                                        required: false
+                                    subnet:
+                                        description:
+                                            - The subnet for the NIC.
+                                        type: dict
+                                        suboptions:
+                                            ext_id:
+                                                description:
+                                                    - The external ID of the subnet.
+                                                type: str
+                                                required: true
+                                        required: false
+                                    vlan_mode:
+                                        description:
+                                            - The VLAN mode for the NIC.
+                                        type: str
+                                        choices:
+                                            - ACCESS
+                                            - TRUNK
+                                        required: false
+                                    trunked_vlans:
+                                        description:
+                                            - The trunked VLANs for the NIC.
+                                        type: list
+                                        elements: int
+                                        required: false
+                                    should_allow_unknown_macs:
+                                        description:
+                                            - Whether to allow unknown MAC addresses or not.
+                                        type: bool
+                                        required: false
+                                    ipv4_config:
+                                        description:
+                                            - The IPv4 configuration for the NIC.
+                                        type: dict
+                                        suboptions:
+                                            should_assign_ip:
+                                                description:
+                                                    - Whether to assign an IP address or not.
+                                                type: bool
+                                                required: false
+                                            ip_address:
+                                                description:
+                                                    - The IP address for the NIC.
+                                                type: dict
+                                                suboptions:
+                                                    value:
+                                                        description:
+                                                            - The IP address value.
+                                                        type: str
+                                                        required: True
+                                                    prefix_length:
+                                                        description:
+                                                            - The prefix length for the IP address.
+                                                            - Can be skipped, default it will be 32.
+                                                        type: int
+                                                        required: false
+                                            secondary_ip_address_list:
+                                                description:
+                                                    - The list of secondary IP addresses for the NIC.
+                                                type: list
+                                                elements: dict
+                                                suboptions:
+                                                    value:
+                                                        description:
+                                                            - The IP address value.
+                                                        type: str
+                                                        required: true
+                                                    prefix_length:
+                                                        description:
+                                                            - The prefix length for the IP address.
+                                                            - Can be skipped, default it will be 32.
+                                                        type: int
+                                                        required: false
+                                        required: false
+                            nic_network_info:
+                                description:
+                                    - Network configuration for the NIC.
+                                    - Will work with pc.7.5 and later.
+                                type: dict
+                                suboptions:
+                                    virtual_ethernet_nic_network_info:
+                                        description:
+                                            - The network configuration for the virtual ethernet NIC.
+                                        type: dict
+                                        suboptions:
+                                            nic_type:
+                                                description:
+                                                    - The type of the NIC.
+                                                type: str
+                                                choices:
+                                                    - NORMAL_NIC
+                                                    - DIRECT_NIC
+                                                    - NETWORK_FUNCTION_NIC
+                                                    - SPAN_DESTINATION_NIC
+                                                required: false
+                                            network_function_chain:
+                                                description:
+                                                    - The network function chain for the NIC.
+                                                type: dict
+                                                suboptions:
+                                                    ext_id:
+                                                        description:
+                                                            - The external ID of the network function chain.
+                                                        type: str
+                                                        required: true
+                                                required: false
+                                            network_function_nic_type:
+                                                description:
+                                                    - The type of the network function NIC.
+                                                type: str
+                                                choices:
+                                                    - INGRESS
+                                                    - EGRESS
+                                                    - TAP
+                                                required: false
+                                            subnet:
+                                                description:
+                                                    - The subnet for the NIC.
+                                                type: dict
+                                                suboptions:
+                                                    ext_id:
+                                                        description:
+                                                            - The external ID of the subnet.
+                                                        type: str
+                                                        required: true
+                                                required: false
+                                            vlan_mode:
+                                                description:
+                                                    - The VLAN mode for the NIC.
+                                                type: str
+                                                choices:
+                                                    - ACCESS
+                                                    - TRUNK
+                                                required: false
+                                            trunked_vlans:
+                                                description:
+                                                    - The trunked VLANs for the NIC.
+                                                type: list
+                                                elements: int
+                                                required: false
+                                            should_allow_unknown_macs:
+                                                description:
+                                                    - Whether to allow unknown MAC addresses or not.
+                                                type: bool
+                                                required: false
+                                            ipv4_config:
+                                                description:
+                                                    - The IPv4 configuration for the NIC.
+                                                type: dict
+                                                suboptions:
+                                                    should_assign_ip:
+                                                        description:
+                                                            - Whether to assign an IP address or not.
+                                                        type: bool
+                                                        required: false
+                                                    ip_address:
+                                                        description:
+                                                            - The IP address for the NIC.
+                                                        type: dict
+                                                        suboptions:
+                                                            value:
+                                                                description:
+                                                                    - The IP address value.
+                                                                type: str
+                                                                required: True
+                                                            prefix_length:
+                                                                description:
+                                                                    - The prefix length for the IP address.
+                                                                    - Can be skipped, default it will be 32.
+                                                                type: int
+                                                                required: false
+                                                    secondary_ip_address_list:
+                                                        description:
+                                                            - The list of secondary IP addresses for the NIC.
+                                                        type: list
+                                                        elements: dict
+                                                        suboptions:
+                                                            value:
+                                                                description:
+                                                                    - The IP address value.
+                                                                type: str
+                                                                required: true
+                                                            prefix_length:
+                                                                description:
+                                                                    - The prefix length for the IP address.
+                                                                    - Can be skipped, default it will be 32.
+                                                                type: int
+                                                                required: false
                     gpus:
                         description: GPUs attached to the VM.
                         type: list
@@ -1595,6 +2026,10 @@ def delete_template(module, result):
     templates = get_templates_api_instance(module)
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
+
+    if module.check_mode:
+        result["msg"] = "Template with ext_id:{0} will be deleted.".format(ext_id)
+        return
 
     current_spec = get_template(module, templates, ext_id)
 

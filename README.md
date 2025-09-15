@@ -10,42 +10,60 @@ It is designed keeping simplicity as the core value. Hence it is
 
 Checkout this [blog](https://www.nutanix.dev/2022/08/05/getting-started-with-the-nutanix-ansible-module/) for getting started with nutanix ansible module.
 
-NOTE: The latest version of the Nutanix Ansible collection is [v2.0.0](https://github.com/nutanix/nutanix.ansible/releases/tag/v2.0.0).
+NOTE: The latest version of the Nutanix Ansible collection is [v2.2.0](https://github.com/nutanix/nutanix.ansible/releases/tag/v2.2.0).
 
-### Introducing Nutanix Ansible Collection Version 2.0.0
-We're excited to announce the release of Nutanix Ansible Collection Version 2.0.0! This major update brings significant improvements to your infrastructure management experience:
- 
-- Built on the latest v4 APIs/SDKs: Leveraging the power of Nutanix v4 APIs/SDKs, this version offers enhanced functionality and better integration with the latest Nutanix features.
-- Expanded Resource Coverage:  Discover new resources and data sources, enabling you to model and manage a broader spectrum of Nutanix infrastructure components within your Ansible configurations.
-- Version Suffix: To easily distinguish resources and data sources specific to version 2.0.0, they are marked with the *_v2 suffix.
+## Introducing Nutanix Ansible Collection Version v2.2.0
 
-## Important Notice 
-Upcoming Deprecation of Legacy Nutanix Ansible Modules. Starting with the Nutanix Ansible Collection release planned for Q4-CY2026, legacy modules which are based on v0.8,v1,v2 and v3 APIs will be deprecated and no longer supported. For more information, visit 
+We are excited to announce the release of **Nutanix Ansible Collection v2.2.0** — a major update that brings powerful new features and enhancements for automating your Nutanix infrastructure.
+
+### What's New in v2.2.0
+
+- **Built on v4.1 APIs/SDKs**  
+  This release is built on the latest Nutanix v4 APIs and SDKs, providing improved performance, stability, and alignment with the newest platform capabilities.
+
+- **New Resource Support**
+  - **Objects**: Automate Nutanix Objects (S3-compatible storage) management for scalable storage use cases.
+  - **Service Accounts**: Manage service accounts and their associated roles and permissions directly through Ansible.
+
+- **Bug Fixes and Stability Improvements**  
+  Multiple bugs have been resolved to improve the reliability and user experience across modules.
+
+---
+
+Upgrade now to take advantage of these powerful features and streamline your Nutanix automation workflows!
+
+
+## Important Notice
+Upcoming Deprecation of Legacy Nutanix Ansible Modules. Starting with the Nutanix Ansible Collection release planned for Q4-CY2026, legacy modules which are based on v0.8,v1,v2 and v3 APIs will be deprecated and no longer supported. For more information, visit
 [Legacy API Deprecation Announcement](https://portal.nutanix.com/page/documents/eol/list?type=announcement)
 [Legacy API Deprecation - FAQs](https://portal.nutanix.com/page/documents/kbs/details?targetId=kA0VO0000005rgP0AQ)
-Nutanix strongly encourages you to migrate your scripts and applications to the latest v2 version of the Nutanix Ansible modules, which are built on our v4 APIs/SDKs. By adopting the latest v2 version based on v4 APIs and SDKs, our users can leverage the enhanced capabilities and latest innovations from Nutanix. 
+Nutanix strongly encourages you to migrate your scripts and applications to the latest v2 version of the Nutanix Ansible modules, which are built on our v4 APIs/SDKs. By adopting the latest v2 version based on v4 APIs and SDKs, our users can leverage the enhanced capabilities and latest innovations from Nutanix.
 We understand that this transition may require some effort, and we are committed to supporting you throughout the process. Please refer to our documentation and support channels for guidance and assistance.
+Version Suffix: To easily distinguish resources and data sources specific to version 2.0.0 and later, they are marked with the *_v2 suffix.
 
 ## Support
 
-Update!! 
+Update!!
 We now have a brand new developer-centric Support Program designed for organizations that require a deeper level of developer support to manage their Nutanix environment and build applications quickly and efficiently. As part of this new Advanced API/SDK Support Program, you will get access to trusted technical advisors who specialize in developer tools including Nutanix Ansible Collections and receive support for your unique development needs and custom integration queries.
 [Visit our Support Portal - Premium Add-On Support Programs](https://www.nutanix.com/support-services/product-support/premium-support-programs)  to learn more about this program.<br /><br />
-Contributions to open-source Nutanix Ansible Collections repository will continue to leverage a community-supported model. Visit https://portal.nutanix.com/kb/13424  for more details. 
+Customers not taking advantage of the [Advanced API/SDK Support Program](https://www.nutanix.com/support-services/product-support/premium-support-programs) will continue to receive the support through our standard, community-supported model. This community model also provides support for contributions to the open-source Nutanix Ansible Collections repository.Visit https://portal.nutanix.com/kb/13424   for more details.
 
 
 # Version compatibility
 
 ## Ansible
-This collection requires ansible-core>=2.15.0
+This collection requires ansible-core>=2.16.0. This should be installed explicitly if ansible-core version is not installed previously or is below the specified version.
 
 ## Python
-This collection requires Python 3.9 or greater
+This collection requires Python 3.10 or greater
 
 ## Releases
 
 | Ansible Version |  AOS Version | PC version  | Other software versions | Supported |
 |  :--- |  :--- | :--- | :--- | :--- |
+| 2.2.0 | 7.0.1, 7.0, 7.3| pc2024.3, pc2024.3.1, pc7.3 or later| | yes |
+| 2.1.1 | 7.0.1, 7.0| pc2024.3, pc2024.3.1 or later| | yes |
+| 2.1.0 | 7.0.1, 7.0| pc2024.3, pc2024.3.1 or later| | yes |
 | 2.0.0 | 7.0 | pc2024.3 or later | nke v2.8, foundation v5.7, ndb v2.7| yes |
 | 1.9.2 | | pc2024.1 | | yes |
 | 1.9.1 | | pc2023.1.0.2, pc2023.3 | ndb v2.5.1.1, nke v2.8.0, foundation v5.2 | yes |
@@ -58,6 +76,13 @@ This collection requires Python 3.9 or greater
 | 1.3.0 | | pc2022.4, pc2022.1.0.2, pc2021.9.0.4 |  | no |
 | 1.2.0 | | pc2022.4, pc2022.1.0.2, pc.2021.9.0.5 | | no |
 | 1.1.0 | | pc2022.1.0.2, pc.2021.9.0.5, pc.2021.8.0.1 | foundation v5.2, foundation v5.1.1, foundation central v1.3, foundation central v1.2 | no |
+
+## SDK-PC-PE Compatibility
+
+| SDK | PC | PE |
+|  :--- |  :--- | :--- |
+| v4.1, v4.0 | pc7.3 | 7.3 |
+| v4.0 | pc2024.3.1, pc2024.3 | 7.0.1, 7.0 |
 
 ### Notes:
 1. Static routes module (ntnx_static_routes) is supported for PC versions >= pc.2022.1
@@ -86,6 +111,23 @@ This collection requires Python 3.9 or greater
 
 Ansible should be pre-installed. If not, please follow official ansible [install guide](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html) .
 
+Installation can be done as per usage using below methods:
+
+## **1. Install from Ansible Galaxy Portal:**
+
+Published at : https://galaxy.ansible.com/ui/repo/published/nutanix/ncp/
+
+Installation:
+
+```ansible-galaxy collection install nutanix.ncp```
+
+Install [requirements](https://github.com/nutanix/nutanix.ansible/blob/main/requirements.txt) from repository if dependencies are missing in environment (Ref: https://github.com/nutanix/nutanix.ansible/issues/600):
+
+```pip install -r requirements.txt```
+
+
+## **2. Build and install from code:**
+
 For <font color=royalblue>Developers</font>, please follow [this install guide](https://docs.ansible.com/ansible/latest/dev_guide/developing_modules_general.html) for setting up dev environment.
 
 **1. Clone the GitHub repository to a local directory**
@@ -95,6 +137,10 @@ For <font color=royalblue>Developers</font>, please follow [this install guide](
 **2. Git checkout release version**
 
 ```git checkout <release_version> -b <release_version>```
+
+**3. Install requirements**
+
+```pip install -r requirements.txt```
 
 **3. Build the collection**
 
@@ -236,6 +282,23 @@ Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on p
 | - | ntnx_discover_unconfigured_nodes_v2 |
 | - | ntnx_storage_containers_stats_v2 |
 | - | ntnx_storage_containers_v2 |
+| - | ntnx_pc_unregistration_v2 |
+| - | ntnx_pc_backup_target_v2 |
+| - | ntnx_pc_deploy_v2 |
+| - | ntnx_pc_restore_v2 |
+| - | ntnx_pc_restore_source_v2 |
+| - | ntnx_protection_policies_v2 |
+| - | ntnx_promote_protected_resources_v2 |
+| - | ntnx_restore_protected_resources_v2 |
+| - | ntnx_volume_groups_categories_v2 |
+| - | ntnx_lcm_config_v2 |
+| - | ntnx_lcm_inventory_v2 |
+| - | ntnx_lcm_prechecks_v2 |
+| - | ntnx_lcm_upgrades_v2 |
+| - | ntnx_users_api_key_v2 |
+| - | ntnx_users_revoke_api_key_v2 |
+| - | ntnx_object_stores_v2 |
+| - | ntnx_object_stores_certificate_v2 |
 
 ## Data Sources
 
@@ -302,6 +365,19 @@ Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on p
 | - | ntnx_gpus_info_v2 |
 | - | ntnx_nodes_network_info_v2 |
 | - | ntnx_storage_containers_info_v2 |
+| - | ntnx_pc_backup_target_info_v2 |
+| - | ntnx_pc_config_info_v2 |
+| - | ntnx_pc_restore_source_info_v2 |
+| - | ntnx_pc_restorable_domain_managers_info_v2 |
+| - | ntnx_pc_restore_points_info_v2 |
+| - | ntnx_protection_policies_info_v2 |
+| - | ntnx_protected_resources_info_v2 |
+| - | ntnx_lcm_config_info_v2 |
+| - | ntnx_lcm_entities_info_v2 |
+| - | ntnx_lcm_status_info_v2 |
+| - | ntnx_users_api_key_info_v2 |
+| - | ntnx_object_stores_info_v2 |
+| - | ntnx_object_stores_certificate_info_v2 |
 
 
 ## Inventory Plugins

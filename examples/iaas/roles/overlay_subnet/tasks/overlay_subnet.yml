@@ -21,9 +21,9 @@
           dns_servers: "{{ item.dns_servers }}"
           domain_name: "{{ item.domain_name }}"
           domain_search: "{{ item.domain_search }}"
-  register: overlay
+  register: overlay_subnet_result
 - name: Print overlay name and uuid
   ansible.builtin.debug:
     msg:
-      - "name: {{ overlay.response.status.name }}"
-      - "uuid: {{ overlay.subnet_uuid }}"
+      - "name: {{ overlay_subnet_result.response.status.name }}"
+      - "uuid: {{ overlay_subnet_result.subnet_uuid }}"

@@ -1,3 +1,16 @@
+---
+# Variables required before running this playbook:
+# - cluster
+# - network
+# - static
+# - overlay
+# - vpc
+# - accounts
+# - users
+# - user_groups
+# - project
+# - todelete
+
 - name: Start ntnx_project tests with role mappings
   ansible.builtin.debug:
     msg: "Start ntnx_project tests with role mappings"
@@ -356,7 +369,7 @@
       - result.changed == true
       - result.response.status == "SUCCEEDED" or  result.response.status.state == "DELETE_PENDING"
     fail_msg: "Unable to delete user  group  "
-    success_msg: "user group deletd successfully"
+    success_msg: "user group deleted successfully"
 
 - name: Delete user
   ntnx_users:
@@ -373,4 +386,4 @@
       - result.changed == true
       - result.response.status == "SUCCEEDED" or  result.response.status.state == "DELETE_PENDING"
     fail_msg: "Unable to delete user  "
-    success_msg: "user deletd successfully"
+    success_msg: "user deleted successfully"

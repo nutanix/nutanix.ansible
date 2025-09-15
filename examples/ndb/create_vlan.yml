@@ -18,7 +18,7 @@
           uuid: "{{ cluster.uuid }}"
       register: output
 
-    - name: Print output
+    - name: Print output for creating Dhcp ndb vlan
       ansible.builtin.debug:
         msg: "{{ output }}"
 
@@ -29,15 +29,15 @@
         gateway: "{{ ndb_vlan.gateway }}"
         subnet_mask: "{{ ndb_vlan.subnet_mask }}"
         ip_pools:
-          - start_ip: "{{ndb_vlan.ip_pools.0.start_ip}}"
-            end_ip: "{{ndb_vlan.ip_pools.0.end_ip}}"
-          - start_ip: "{{ndb_vlan.ip_pools.1.start_ip}}"
-            end_ip: "{{ndb_vlan.ip_pools.1.end_ip}}"
+          - start_ip: "{{ ndb_vlan.ip_pools.0.start_ip }}"
+            end_ip: "{{ ndb_vlan.ip_pools.0.end_ip }}"
+          - start_ip: "{{ ndb_vlan.ip_pools.1.start_ip }}"
+            end_ip: "{{ ndb_vlan.ip_pools.1.end_ip }}"
         primary_dns: "{{ ndb_vlan.primary_dns }}"
         secondary_dns: "{{ ndb_vlan.secondary_dns }}"
         dns_domain: "{{ ndb_vlan.dns_domain }}"
       register: output
 
-    - name: Print output
+    - name: Print output for creating Static ndb vlan
       ansible.builtin.debug:
         msg: "{{ output }}"

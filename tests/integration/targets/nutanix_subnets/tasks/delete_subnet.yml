@@ -1,4 +1,13 @@
 ---
+# Variables required before running this playbook:
+# - vpc
+# - ip_address_management
+# - ip_address_pools
+# - dhcp_settings
+# - ip
+# - username
+# - password
+
 - name: Overlay Subnet with IP_pools and DHCP
   ntnx_subnets:
     state: present
@@ -29,6 +38,24 @@
       - result.response.status.state == 'COMPLETE'
     fail_msg: " Unable to create Overlay Subnet with IP_pools and DHCP "
     success_msg: " Overlay Subnet with IP_pools and DHCP created successfully "
+
+- name: Delete subnet with check mode
+  ntnx_subnets:
+    state: absent
+    subnet_uuid: "{{ result.subnet_uuid }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete subnet with check mode Status
+  ansible.builtin.assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Subnet with uuid:{{ result.subnet_uuid }} will be deleted."
+      - output.subnet_uuid == "{{ result.subnet_uuid }}"
+    fail_msg: "Delete subnet with check mode failed"
+    success_msg: "Delete subnet with check mode passed"
 
 - name: Delete subnet
   ntnx_subnets:

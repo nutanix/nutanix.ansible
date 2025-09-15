@@ -1,3 +1,103 @@
+## v2.2.0 (17 July 2025)
+
+Releasing new modules for Object Stores, Service Accounts and Several Bugs using PC GA v4.1 sdks
+
+**New modules:**
+
+Objects:
+- ntnx_object_stores_v2
+- ntnx_object_stores_info_v2
+- ntnx_object_stores_certificate_v2
+- ntnx_object_stores_certificate_info_v2
+
+IAM(Service Accounts):
+- ntnx_users_v2
+- ntnx_users_revoke_api_key_v2
+- ntnx_users_api_key_info_v2
+- ntnx_users_api_key_v2
+
+**Bugs:**
+
+- ntnx_acps - [Bug] Fix comparison of old_context_list and update_context_list in module ntnx_acps [[\#475](https://github.com/nutanix/nutanix.ansible/issues/475)]
+- ntnx_prism_vm_inventory - [Bug] API failure is not in shown while creating dynamic inventory [[\#421](https://github.com/nutanix/nutanix.ansible/issues/421)]
+- ntnx_prism_vm_inventory - [Bug] Results of VMs is not more then 500 by default in module inventory [[\#354](https://github.com/nutanix/nutanix.ansible/issues/354)]
+- ntnx_prism_vm_inventory - [Bug] galaxy.ansible doc for ntnx_prism_vm_inventory is having Documentation Syntax Error. [[\#453](https://github.com/nutanix/nutanix.ansible/issues/453)]
+- ntnx_protection_rules - [Bug] Fix invalid OU check in user_groups module [[\#481](https://github.com/nutanix/nutanix.ansible/issues/481)]
+- ntnx_security_rules - [Bug] Purpose field mandatory to update the security policy from Ansible in module ntnx_security_rules [[\#485](https://github.com/nutanix/nutanix.ansible/issues/485)]
+- ntnx_vmm - [Bug] "not enough positional arguments" in module plugins/modules/ntnx_vmy.py, line 881 [[\#465](https://github.com/nutanix/nutanix.ansible/issues/465)]
+- ntnx_vms - [Bug] Attaching image to existing disk in module ntnx_vms [[\#454](https://github.com/nutanix/nutanix.ansible/issues/454)]
+- ntnx_vms - [Bug] Cannot assign IP address on an unmanaged network in module ntnx_vms [[\#593](https://github.com/nutanix/nutanix.ansible/issues/593)]
+- ntnx_vms_info_v2 - [Bug] Can't fetch all VMs [[\#662](https://github.com/nutanix/nutanix.ansible/issues/662)]
+- ntnx_vms_v2 - [Bug] No disk resizing in module ntnx_vms_v2 [[\#578](https://github.com/nutanix/nutanix.ansible/issues/578)]
+- ntnx_vms_v2 - [Bug] state absent does not respect --check mode in module nutanix_vms [[\#534](https://github.com/nutanix/nutanix.ansible/issues/534)]
+- recovery_plans - [Bug] recovery_plan fails to create in module plugin_modules/prism/recovery_plans.py [[\#515](https://github.com/nutanix/nutanix.ansible/issues/515)]
+- v3 modules - [Bug] "Failed to convert API response into JSON" in all modules of Nutanix.ncp ansible collection [[\#490](https://github.com/nutanix/nutanix.ansible/issues/490)]
+
+**Improvements:**
+
+- Check mode for delete - [Imprv] add functionality check_mode to module ntnx_vms [[\#334](https://github.com/nutanix/nutanix.ansible/issues/334)]
+- Documentation changes - [Imprv] Add detailed doc for using uuid in modules [[\#433](https://github.com/nutanix/nutanix.ansible/issues/433)]
+- ntnx_prism_vm_inventory - [Imprv] Add support for retrieving all VMs without specifying length in inventory plugin [[\#651](https://github.com/nutanix/nutanix.ansible/issues/651)]
+- ntnx_prism_vm_inventory - [Imprv] Make changes to include project_reference in dynamic inventory for groupping [[\#500](https://github.com/nutanix/nutanix.ansible/issues/500)]
+- ntnx_vms_v2 - [Imprv] add functionality uefi boot_order to module ntnx_vms_v2 [[\#579](https://github.com/nutanix/nutanix.ansible/issues/579)]
+
+**Full Changelog:** [here](https://github.com/nutanix/nutanix.ansible/compare/v2.1.1...v2.2.0)
+
+## v2.1.1 (9 April 2025)
+
+Releasing this to make it inline with guidelines of Redhat by removing version cap or fixed version from requirements.txt
+
+**Bugs:**
+
+- requirements file - [Bug] The entries in the requirements file MUST NOT have a version cap or be fixed [[\#631](https://github.com/nutanix/nutanix.ansible/issues/631)]
+
+**Full Changelog:** [here](https://github.com/nutanix/nutanix.ansible/compare/v2.1.0...v2.1.1)
+
+## v2.1.0 (7 April 2025)
+
+Releasing new modules for Prism, Data Protection, Data Policies, LCM and Volumes using PC GA v4 sdks
+
+**Breaking Changes:**
+
+- nutanix.ncp collection - We are deprecating support for ansible-core==2.15.0 and minimum version to use this collection is ansible-core==2.16.0.
+
+**New modules:**
+
+Prism:
+- ntnx_pc_unregistration_v2
+- ntnx_pc_backup_target_info_v2
+- ntnx_pc_backup_target_v2
+- ntnx_pc_config_info_v2
+- ntnx_pc_deploy_v2
+- ntnx_pc_restore_v2
+- ntnx_pc_restore_source_info_v2
+- ntnx_pc_restore_source_v2
+- ntnx_pc_restorable_domain_managers_info_v2
+- ntnx_pc_restore_points_info_v2
+
+Data Policies:
+- ntnx_protection_policies_info_v2
+- ntnx_protection_policies_v2
+
+Data Protection:
+- ntnx_promote_protected_resources_v2
+- ntnx_restore_protected_resources_v2
+- ntnx_protected_resources_info_v2
+
+Volumes:
+- ntnx_volume_groups_categories_v2
+
+LCM:
+- ntnx_lcm_config_info_v2
+- ntnx_lcm_config_v2
+- ntnx_lcm_inventory_v2
+- ntnx_lcm_prechecks_v2
+- ntnx_lcm_upgrades_v2
+- ntnx_lcm_entities_info_v2
+- ntnx_lcm_status_info_v2
+
+**Full Changelog:** [here](https://github.com/nutanix/nutanix.ansible/compare/v2.0.0...v2.1.0)
+
 ## v2.0.0 (7 Jan 2025)
 
 Releasing new modules using PC GA v4 sdks

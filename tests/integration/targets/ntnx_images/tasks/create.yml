@@ -1,4 +1,8 @@
 ---
+# Variables required before running this playbook:
+# - disk_image
+# - cluster
+
 - name: Start ntnx_image create tests
   ansible.builtin.debug:
     msg: Start ntnx_image create tests
@@ -74,7 +78,6 @@
 ###############################################################################################
 
 - name: Verify check mode for ntnx_image
-  check_mode: true
   ntnx_images:
     state: present
     name: integration-test-image
@@ -96,6 +99,8 @@
       checksum_value: "{{ disk_image.checksum }}"
     wait: true
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Creation Status
   ansible.builtin.assert:

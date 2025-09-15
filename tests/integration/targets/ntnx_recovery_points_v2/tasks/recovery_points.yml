@@ -1,4 +1,9 @@
 ---
+# Variables required before running this playbook:
+# cluster
+# availability_zone_pc_uuid
+# cluster_availability_zone
+
 - name: Start recovery points related tests
   ansible.builtin.debug:
     msg: Start recovery points related tests
@@ -479,7 +484,7 @@
       - result.response.ext_id == "{{ recovery_point_ext_id_1 }}"
       - actual_expiration_time == expected_expiration_time
       - result.response.name == "{{ recovery_point_name }}_1"
-      - result.warning == "Only Expiration time Updation is allowed. Can't update other fields."
+      - result.warning == "Only Expiration time update is allowed. Can't update other fields."
     fail_msg: "Check if expiration time is updated but name is same failed"
     success_msg: "Check if expiration time is updated but name is same passed"
 
@@ -497,7 +502,7 @@
   ansible.builtin.assert:
     that:
       - result.changed == false
-      - result.msg == "Update of other operations is not supported. Only updation of Expiration time is allowed."
+      - result.msg == "Update of other operations is not supported. Only update of Expiration time is allowed."
     fail_msg: "Updated name but expiration time is same"
     success_msg: "Didn't update name as expiration time is same"
 
@@ -830,7 +835,7 @@
 - name: Replicate Recovery point
   ntnx_recovery_point_replicate_v2:
     ext_id: "{{ recovery_point_ext_id_5 }}"
-    pc_ext_id: "{{ pc_uuid }}"
+    pc_ext_id: "{{ availability_zone_pc_uuid }}"
     cluster_ext_id: "{{ cluster_availability_zone.uuid }}"
   register: result
   ignore_errors: true
@@ -1001,6 +1006,25 @@
     success_msg: "List all recovery points with limit passed"
 
 ########################################################################################################
+
+- name: Delete recovery point with check mode enabled
+  ntnx_recovery_points_v2:
+    ext_id: "{{ recovery_point_todelete[0] }}"
+    state: absent
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Delete recovery point with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ recovery_point_todelete[0] }}"
+      - result.msg == "Recovery point with ext_id:{{ recovery_point_todelete[0] }} will be deleted."
+    fail_msg: "Delete recovery point with check mode enabled failed"
+    success_msg: "Delete recovery point with check mode enabled passed"
 
 - name: Delete all Created recovery points
   ntnx_recovery_points_v2:

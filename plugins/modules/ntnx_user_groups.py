@@ -18,10 +18,7 @@ options:
         description:
         - Specify state
         - If C(state) is set to C(present) then the operation will be  create the item.
-        - if C(state) is set to C(present) and C(user_group_uuid) is given then it will update that user_group.
-        - >-
-            If C(state) is set to C(absent) and if the item exists, then
-            item is removed.
+        - If C(state) is set to C(absent) and if the item exists, then item is removed.
         choices:
         - present
         - absent
@@ -49,7 +46,7 @@ options:
         type: dict
     remove_categories:
         description:
-            - set this flag to remove dettach all categories attached to user_group
+            - set this flag to remove detach all categories attached to user_group
             - mutually_exclusive with C(categories)
         type: bool
         required: false
@@ -250,9 +247,17 @@ def delete_user_group(module, result):
         module.fail_json(msg="Failed deleting user_group", **result)
 
     user_group = UserGroup(module)
+
+    result["uuid"] = uuid
+    if module.check_mode:
+
+        result["msg"] = "User group with uuid:{0} will be deleted.".format(uuid)
+        return
+
     resp = user_group.delete(uuid)
     result["response"] = resp
     result["changed"] = True
+
     task_uuid = resp["status"]["execution_context"]["task_uuid"]
 
     if module.params.get("wait"):

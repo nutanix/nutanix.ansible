@@ -7,6 +7,17 @@
 #   4. Authorization and deauthorization of db server vm wrt to time machines
 #   5. Creation of clone on authorized db server vm
 
+# Variables required before running this playbook:
+# - db_params_profile
+# - vm_password
+# - cluster
+# - software_profile
+# - network_profile
+# - compute_profile
+# - public_ssh_key
+# - sla
+# - tags
+
 - name: Start ndb database clone tests
   ansible.builtin.debug:
     msg: start ndb database clone tests
@@ -118,7 +129,6 @@
 ############################################ create clone on new db server vm tests ###########################################
 
 - name: Create spec for clone of database created above on new db server vm
-  check_mode: true
   ntnx_ndb_database_clones:
     name: "{{ clone_db1 }}"
     desc: ansible-created-clone
@@ -163,6 +173,8 @@
     tags:
       ansible-clones: ansible-test-db-clones
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Define variables for expected response
   ansible.builtin.set_fact:
@@ -180,8 +192,19 @@
       latestSnapshot: false
       lcmConfig:
         databaseLCMConfig:
-          expiryDetails: { deleteDatabase: true, expireInDays: 2, expiryDateTimezone: Asia/Calcutta, remindBeforeInDays: 1 }
-          refreshDetails: { refreshDateTimezone: Asia/Calcutta, refreshInDays: 2, refreshTime: "12:00:00" }
+          expiryDetails:
+            {
+              deleteDatabase: true,
+              expireInDays: 2,
+              expiryDateTimezone: Asia/Calcutta,
+              remindBeforeInDays: 1,
+            }
+          refreshDetails:
+            {
+              refreshDateTimezone: Asia/Calcutta,
+              refreshInDays: 2,
+              refreshTime: "12:00:00",
+            }
       name: "{{ clone_db1 }}"
       networkProfileId: "{{ network_profile.uuid }}"
       nodeCount: 1
@@ -194,7 +217,14 @@
       nxClusterId: "{{ cluster.cluster1.uuid }}"
       snapshotId:
       sshPublicKey: VALUE_SPECIFIED_IN_NO_LOG_PARAMETER
-      tags: [{ tagId: "{{ tags.clones.uuid }}", tagName: ansible-clones, value: ansible-test-db-clones }]
+      tags:
+        [
+          {
+            tagId: "{{ tags.clones.uuid }}",
+            tagName: ansible-clones,
+            value: ansible-test-db-clones,
+          },
+        ]
       timeMachineId: "{{ time_machine_uuid }}"
       timeZone: UTC
       userPitrTimestamp: "2023-02-04 07:29:36"
@@ -340,7 +370,7 @@
       - result.response.tags[0].value == "ansible-test-db-clones-updated"
 
     fail_msg: Unable to update clone
-    success_msg: Database clone updated succefully
+    success_msg: Database clone updated successfully
 
 - name: Check idempotency
   ntnx_ndb_database_clones:
@@ -394,17 +424,18 @@
       - result.response.lcmConfig.expiryDetails == None
       - result.response.lcmConfig.refreshDetails == None
     fail_msg: schedules update failed
-    success_msg: schedules removed succefully
+    success_msg: schedules removed successfully
 
 ########################################### refresh clone ###########################################
 
 - name: Create spec for refresh clone to a pitr timestamp
-  check_mode: true
   ntnx_ndb_database_clone_refresh:
     uuid: "{{ clone_uuid }}"
     pitr_timestamp: "2023-02-04 07:29:36"
     timezone: UTC
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Check refresh db with pitr spec
   ansible.builtin.assert:
@@ -430,17 +461,18 @@
       - result.uuid is defined
       - result.response.status == "READY"
     fail_msg: database refresh failed
-    success_msg: database refresh completed succefully
+    success_msg: database refresh completed successfully
 
 ########################################### delete clone tests###########################################
 
 - name: Create soft remove spec
-  check_mode: true
   ntnx_ndb_database_clones:
     state: absent
     uuid: "{{ clone_uuid }}"
     soft_remove: true
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Verify soft remove  spec
   ansible.builtin.assert:
@@ -454,11 +486,12 @@
     success_msg: spec for soft remove created successfully
 
 - name: Create unregistration spec
-  check_mode: true
   ntnx_ndb_database_clones:
     state: absent
     uuid: "{{ clone_uuid }}"
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Verify unregistration spec
   ansible.builtin.assert:
@@ -470,6 +503,24 @@
       - result.response.softRemove == False
     fail_msg: creation of spec for unregistration failed
     success_msg: spec for unregistration created successfully
+
+- name: Delete clone db with check mode
+  ntnx_ndb_database_clones:
+    state: absent
+    uuid: "{{clone_uuid}}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete clone db with check mode status
+  ansible.builtin.assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Db clone with uuid:{{  clone_uuid }} will be deleted."
+      - output.uuid == "{{  clone_uuid }}"
+    fail_msg: "Delete clone db with check mode failed"
+    success_msg: "Delete clone db with check mode passed"
 
 - name: Delete clone db
   ntnx_ndb_database_clones:
@@ -594,7 +645,7 @@
       - result.response.databaseNodes[0].dbserverId == db_server_uuid
       - result.response.parentTimeMachineId ==  time_machine_uuid
     fail_msg: Unable to create clone
-    success_msg: Database clone created succefully
+    success_msg: Database clone created successfully
 
 - name: Define variable for delete clone
   ansible.builtin.set_fact:

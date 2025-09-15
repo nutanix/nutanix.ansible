@@ -19,7 +19,9 @@ options:
     required: False
     type: str
   acp_uuid:
-    description: acp UUID
+    description:
+        - acp UUID
+        - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
     type: str
   desc:
     description: The description of the association of a role to a user in a given context
@@ -155,14 +157,14 @@ EXAMPLES = r"""
     user_group_uuids:
       - "{{ user_group_uuid }}"
 
-- name: Create ACP with all specfactions
+- name: Create ACP with all specifications
   ntnx_acps:
     validate_certs: false
     state: present
     nutanix_host: "{{ IP }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    name: acp_with_all_specfactions
+    name: acp_with_all_specifications
     role:
       uuid: "{{ role.uuid }}"
     user_uuids:
@@ -421,6 +423,10 @@ def check_acp_idempotency(old_spec, update_spec):
         if context not in update_context_list:
             return False
 
+    for context in update_context_list:
+        if context not in old_context_list:
+            return False
+
     return True
 
 
@@ -466,11 +472,15 @@ def delete_acp(module, result):
         result["error"] = "Missing parameter acp_uuid in playbook"
         module.fail_json(msg="Failed deleting acp", **result)
 
+    result["acp_uuid"] = acp_uuid
+    if module.check_mode:
+        result["msg"] = "Acp with uuid:{0} will be deleted.".format(acp_uuid)
+        return
+
     acp = ACP(module)
     resp = acp.delete(acp_uuid)
     result["changed"] = True
     result["response"] = resp
-    result["acp_uuid"] = acp_uuid
     result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
 
     if module.params.get("wait"):

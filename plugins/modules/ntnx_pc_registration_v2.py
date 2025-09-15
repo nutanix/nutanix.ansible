@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2024, Nutanix
+# Copyright: (c) 2025, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -15,7 +15,7 @@ short_description: Registers a domain manager (Prism Central) instance to other 
 version_added: 2.0.0
 description:
     - Registers a domain manager (Prism Central) instance to other entities like PE and PC
-    - Unregisteration of a domain manager (Prism Central) instance is not supported
+    - Unregistration of a domain manager (Prism Central) instance is not supported
     - This module uses PC v4 APIs based SDKs
 options:
   wait:
@@ -301,9 +301,8 @@ changed:
 
 error:
   description: This field typically holds information about if the task have errors that occurred during the task execution
-  returned: always
-  type: bool
-  sample: false
+  returned: When an error occurs
+  type: str
 
 ext_id:
   description: The external ID of the prism central cluster.
@@ -513,7 +512,6 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "ext_id": None,
     }

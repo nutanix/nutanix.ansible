@@ -1,3 +1,7 @@
+---
+# Variables required before running this playbook:
+# - cluster
+
 - name: "Start Volume groups tests"
   ansible.builtin.debug:
     msg: "Start Volume groups tests"
@@ -16,7 +20,6 @@
     vg2_name: "{{suffix_name}}-{{random_name}}2"
 
 - name: Create Volume group with check mode
-  check_mode: true
   ntnx_volume_groups_v2:
     name: "{{vg1_name}}"
     description: "Volume group 1"
@@ -34,6 +37,7 @@
       enabled_authentications: "CHAP"
   register: result
   ignore_errors: true
+  check_mode: true
 
 - name: Verify spec of VG
   ansible.builtin.assert:
@@ -127,6 +131,120 @@
   ansible.builtin.set_fact:
     vg2_uuid: "{{ result.ext_id }}"
 
+- name: Update Volume group with check mode
+  ntnx_volume_groups_v2:
+    ext_id: "{{ vg1_uuid }}"
+    name: "{{ vg1_name }}-updated"
+    description: "Volume group 1 updated"
+    should_load_balance_vm_attachments: false
+    sharing_status: "NOT_SHARED"
+    target_prefix: "vg1-updated"
+    is_hidden: false
+    storage_features:
+      flash_mode:
+        is_enabled: false
+    iscsi_features:
+      target_secret: "Secret123456"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Verify spec of Volume group update
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.response is defined
+      - result.changed == false
+      - result.ext_id == "{{ vg1_uuid }}"
+      - result.response.name == "{{ vg1_name }}-updated"
+      - result.response.description == "Volume group 1 updated"
+      - result.response.should_load_balance_vm_attachments == false
+      - result.response.sharing_status == "NOT_SHARED"
+      - result.response.target_prefix == "vg1-updated"
+      - result.response.is_hidden == false
+      - result.response.storage_features.flash_mode.is_enabled == false
+    fail_msg: "Unable to create spec for VG update"
+    success_msg: "Spec generated successfully for VG update"
+
+- name: Update Volume group
+  ntnx_volume_groups_v2:
+    ext_id: "{{ vg1_uuid }}"
+    name: "{{ vg1_name }}-updated"
+    description: "Volume group 1 updated"
+    should_load_balance_vm_attachments: false
+    sharing_status: "NOT_SHARED"
+    is_hidden: false
+  register: result
+  ignore_errors: true
+
+- name: Verify update of Volume group
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.ext_id == "{{ vg1_uuid }}"
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.changed == true
+      - result.response.ext_id == "{{ vg1_uuid }}"
+      - result.response.cluster_reference == "{{ cluster.uuid }}"
+      - result.response.name == "{{vg1_name}}-updated"
+      - result.response.description == "Volume group 1 updated"
+      - result.response.should_load_balance_vm_attachments == false
+      - result.response.sharing_status == "NOT_SHARED"
+      - result.response.is_hidden == false
+    fail_msg: "Unable to update VG"
+    success_msg: "VG updated successfully"
+
+- name: Idempotency check for Volume group update
+  ntnx_volume_groups_v2:
+    ext_id: "{{ vg1_uuid }}"
+    name: "{{ vg1_name }}-updated"
+    description: "Volume group 1 updated"
+    should_load_balance_vm_attachments: false
+    sharing_status: "NOT_SHARED"
+    is_hidden: false
+  register: result
+  ignore_errors: true
+
+- name: Verify idempotency of Volume group update
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.ext_id == "{{ vg1_uuid }}"
+      - result.msg is defined
+      - result.changed == false
+      - result.msg == "Nothing to change."
+    fail_msg: "Idempotency check for Volume group update failed"
+    success_msg: "Idempotency check for Volume group update passed"
+
+- name: Update Volume group back to original state
+  ntnx_volume_groups_v2:
+    ext_id: "{{ vg1_uuid }}"
+    name: "{{ vg1_name }}"
+    description: "Volume group 1"
+    should_load_balance_vm_attachments: true
+    sharing_status: "SHARED"
+    is_hidden: true
+  register: result
+  ignore_errors: true
+
+- name: Verify update of Volume group back to original state
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.ext_id == "{{ vg1_uuid }}"
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.changed == true
+      - result.response.ext_id == "{{ vg1_uuid }}"
+      - result.response.name == "{{vg1_name}}"
+      - result.response.description == "Volume group 1"
+      - result.response.should_load_balance_vm_attachments == true
+      - result.response.sharing_status == "SHARED"
+      - result.response.is_hidden == true
+    fail_msg: "Unable to update VG back to original state"
+    success_msg: "VG updated back to original state successfully"
+
 - name: Fetch above created VG
   ntnx_volume_groups_info_v2:
     ext_id: "{{ vg1_uuid }}"
@@ -183,6 +301,25 @@
       - result.response | length == 1
     fail_msg: "Unable to fetch VGs using limits"
     success_msg: "VGs fetched successfully"
+
+- name: Delete volume group with check mode is enabled
+  ntnx_volume_groups_v2:
+    state: absent
+    ext_id: "{{ vg1_uuid }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete volume group with check mode is enabled status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ vg1_uuid }}"
+      - result.msg == "VG with ext_id:{{ vg1_uuid }} will be deleted."
+    fail_msg: "Delete volume group with check mode is enabled failed"
+    success_msg: "Delete volume group with check mode is enabled passed"
 
 - name: Delete Volume groups
   ntnx_volume_groups_v2:

@@ -4,6 +4,106 @@ Nutanix.Ncp Release Notes
 
 .. contents:: Topics
 
+v2.2.0
+======
+
+Release Summary
+---------------
+
+Releasing new modules for Object Stores, Service Accounts and Several Bugs using PC GA v4.1 sdks
+
+New Modules
+-----------
+
+- ntnx_users_v2 - Create Service account in Nutanix Prism Central using ntnx_users_v2 module.
+- ntnx_users_api_key_v2 - Generate or Delete API key for a Service account user in Nutanix Prism Central.
+- ntnx_users_api_key_info_v2 - Fetch API key information for a Service account user in Nutanix Prism Central.
+- ntnx_users_revoke_api_key_v2 - Revoke API key for a Service account user in Nutanix Prism Central.
+- ntnx_object_stores_v2 - Create, Update and Delete object stores in Nutanix Prism Central.
+- ntnx_object_stores_info_v2 - Fetch information about object stores in Nutanix Prism Central.
+- ntnx_object_stores_certificate_v2 - Create, Update and Delete object stores certificates in Nutanix Prism Central.
+- ntnx_object_stores_certificate_info_v2 - Fetch information about object stores certificates in Nutanix Prism Central.
+
+Bugfixes
+--------
+
+- ntnx_acps - [Bug] Fix comparison of old_context_list and update_context_list in module ntnx_acps [[\#475](https://github.com/nutanix/nutanix.ansible/issues/475)]]
+- ntnx_prism_vm_inventory - [Bug] API failure is not in shown while creating dynamic inventory [[\#421](https://github.com/nutanix/nutanix.ansible/issues/421)]
+- ntnx_prism_vm_inventory - [Bug] Results of VMs is not more then 500 by default in module inventory [[\#354](https://github.com/nutanix/nutanix.ansible/issues/354)]
+- ntnx_prism_vm_inventory - [Bug] galaxy.ansible doc for ntnx_prism_vm_inventory is having Documentation Syntax Error. [[\#453](https://github.com/nutanix/nutanix.ansible/issues/453)]
+- ntnx_protection_rules - [Bug] Fix invalid OU check in user_groups module [[\#481](https://github.com/nutanix/nutanix.ansible/issues/481)]
+- ntnx_security_rules - [Bug] Purpose field mandatory to update the security policy from Ansible in module ntnx_security_rules [[\#485](https://github.com/nutanix/nutanix.ansible/issues/485)]
+- ntnx_vmm - [Bug] "not enough positional arguments" in module plugins/modules/ntnx_vmy.py, line 881 [[\#465](https://github.com/nutanix/nutanix.ansible/issues/465)]
+- ntnx_vms - [Bug] Attaching image to existing disk in module ntnx_vms [[\#454](https://github.com/nutanix/nutanix.ansible/issues/454)]
+- ntnx_vms - [Bug] Cannot assign IP address on an unmanaged network in module ntnx_vms [[\#593](https://github.com/nutanix/nutanix.ansible/issues/593)]
+- ntnx_vms_info_v2 - [Bug] Can't fetch all VMs [[\#662](https://github.com/nutanix/nutanix.ansible/issues/662)]
+- ntnx_vms_v2 - [Bug] No disk resizing in module ntnx_vms_v2 [[\#578](https://github.com/nutanix/nutanix.ansible/issues/578)]
+- ntnx_vms_v2 - [Bug] state absent does not respect --check mode in module nutanix_vms [[\#534](https://github.com/nutanix/nutanix.ansible/issues/534)]
+- recovery_plans - [Bug] recovery_plan fails to create in module plugin_modules/prism/recovery_plans.py [[\#515](https://github.com/nutanix/nutanix.ansible/issues/515)]
+- v3 modules - [Bug] "Failed to convert API response into JSON" in all modules of Nutanix.ncp ansible collection [[\#490](https://github.com/nutanix/nutanix.ansible/issues/490)]
+
+Minor Changes
+-------------
+
+- Check mode for delete - [Imprv] add functionality check_mode to module ntnx_vms [[\#334](https://github.com/nutanix/nutanix.ansible/issues/334)]
+- Documentation changes - [Imprv] Add detailed doc for using uuid in modules [[\#433](https://github.com/nutanix/nutanix.ansible/issues/433)]
+- ntnx_prism_vm_inventory - [Imprv] Add support for retrieving all VMs without specifying length in inventory plugin [[\#651](https://github.com/nutanix/nutanix.ansible/issues/651)]
+- ntnx_prism_vm_inventory - [Imprv] Make changes to include project_reference in dynamic inventory for groupping [[\#500](https://github.com/nutanix/nutanix.ansible/issues/500)]
+- ntnx_vms_v2 - [Imprv] add functionality uefi boot_order to module ntnx_vms_v2 [[\#579](https://github.com/nutanix/nutanix.ansible/issues/579)]
+
+v2.1.1
+======
+
+Release Summary
+---------------
+
+Releasing this to make it inline with guidelines of Redhat by removing version cap or fixed version from requirements.txt
+
+Bugfixes
+--------
+
+- requirements file - [Bug] The entries in the requirements file MUST NOT have a version cap or be fixed [[\#631](https://github.com/nutanix/nutanix.ansible/issues/631)]
+
+v2.1.0
+======
+
+Release Summary
+---------------
+
+Releasing new modules for Prism, Data Protection, Data Policies, LCM and Volumes using PC GA v4 sdks
+
+Breaking Changes / Porting Guide
+--------------------------------
+
+- nutanix.ncp collection - We are deprecating support for ansible-core==2.15.0 and minimum version to use this collection is ansible-core==2.16.0.
+
+New Modules
+-----------
+
+- ntnx_lcm_config_info_v2 - Fetch LCM Configuration
+- ntnx_lcm_config_v2 - Update LCM Configuration
+- ntnx_lcm_entities_info_v2 - Fetch LCM Entities Info
+- ntnx_lcm_inventory_v2 - Perform Inventory
+- ntnx_lcm_prechecks_v2 - Perform LCM Prechecks
+- ntnx_lcm_status_info_v2 - Get the LCM framework status.
+- ntnx_lcm_upgrades_v2 - Perform LCM upgrades
+- ntnx_pc_backup_target_info_v2 - Get PC backup targets info
+- ntnx_pc_backup_target_v2 - Create, Update and Delete a PC backup target.
+- ntnx_pc_config_info_v2 - Get PC Configuration info
+- ntnx_pc_deploy_v2 - Deploys a Prism Central using the provided details
+- ntnx_pc_restorable_domain_managers_info_v2 - Fetch restorable domain managers info
+- ntnx_pc_restore_points_info_v2 - Fetch pc restore points info
+- ntnx_pc_restore_source_info_v2 - Get PC restore source info
+- ntnx_pc_restore_source_v2 - Creates or Deletes a restore source pointing to a cluster or object store to restore the domain manager.
+- ntnx_pc_restore_v2 - Restores a domain manager(PC) from a cluster or object store backup location based on the selected restore point.
+- ntnx_pc_unregistration_v2 - Unregister a PC-PC setup connected using availability zone.
+- ntnx_promote_protected_resources_v2 - Module to promote a protected resource in Nutanix Prism Central.
+- ntnx_protected_resources_info_v2 - Module to fetch protected resource in Nutanix Prism Central.
+- ntnx_protection_policies_info_v2 - Fetch protection policies info in Nutanix Prism Central
+- ntnx_protection_policies_v2 - Create, Update, Delete protection policy in Nutanix Prism Central
+- ntnx_restore_protected_resources_v2 - Module to restore a protected resource in Nutanix Prism Central.
+- ntnx_volume_groups_categories_v2 - Module to associate or disassociate categories with a volume group in Nutanix Prism Central.
+
 v2.0.0
 ======
 
@@ -34,7 +134,7 @@ New Modules
 - ntnx_image_placement_policies_v2 - Manage image placement policies in Nutanix Prism Central
 - ntnx_images_info_v2 - Fetch information about Nutanix images
 - ntnx_images_v2 - Manage Nutanix Prism Central images.
-- ntnx_nodes_network_info_v2 - Get netowrk information for uncofigured cluster nodes
+- ntnx_nodes_network_info_v2 - Get network information for unconfigured cluster nodes
 - ntnx_operations_info_v2 - Module to fetch IAM operations info (previously `permissions`)
 - ntnx_pbrs_info_v2 - Routing Policies info module
 - ntnx_pbrs_v2 - Module for create, update and delete of Policy based routing.
@@ -54,8 +154,8 @@ New Modules
 - ntnx_security_rules_v2 - Manage network security policies in Nutanix Prism Central
 - ntnx_service_groups_info_v2 - service_group info module
 - ntnx_service_groups_v2 - Create, Update, Delete service groups
-- ntnx_storage_containers_info_v2 - Retrieve information about Nutanix storage continer from PC
-- ntnx_storage_containers_stats_v2 - Retrieve stats about Nutanix storage continer from PC
+- ntnx_storage_containers_info_v2 - Retrieve information about Nutanix storage container from PC
+- ntnx_storage_containers_stats_v2 - Retrieve stats about Nutanix storage container from PC
 - ntnx_storage_containers_v2 - Manage storage containers in Nutanix Prism Central
 - ntnx_subnets_info_v2 - subnet info module
 - ntnx_subnets_v2 - subnets module which supports Create, Update, Delete subnets
@@ -197,14 +297,14 @@ New Modules
 - ntnx_ndb_db_servers_info - info module for ndb db server vms info
 - ntnx_ndb_linked_databases - module to manage linked databases of a database instance
 - ntnx_ndb_maintenance_tasks - module to add and remove maintenance related tasks
-- ntnx_ndb_maintenance_window - module to create, update and delete mainetance window
+- ntnx_ndb_maintenance_window - module to create, update and delete maintenance window
 - ntnx_ndb_maintenance_windows_info - module for fetching maintenance windows info
 - ntnx_ndb_profiles - module for create, update and delete of profiles
 - ntnx_ndb_profiles_info - info module for ndb profiles
 - ntnx_ndb_register_database - module for database instance registration
 - ntnx_ndb_register_db_server_vm - module for registration of database server vm
 - ntnx_ndb_replicate_database_snapshots - module for replicating database snapshots across clusters of time machine
-- ntnx_ndb_slas - moudle for creating, updating and deleting slas
+- ntnx_ndb_slas - module for creating, updating and deleting slas
 - ntnx_ndb_slas_info - info module for ndb slas
 - ntnx_ndb_snapshots_info - info module for ndb snapshots info
 - ntnx_ndb_stretched_vlans - Module for create, update and delete of stretched vlan.
@@ -340,8 +440,8 @@ New Modules
 - ntnx_foundation_central - Nutanix module to imaged Nodes and optionally create cluster
 - ntnx_foundation_central_api_keys - Nutanix module which creates api key for foundation central
 - ntnx_foundation_central_api_keys_info - Nutanix module which returns the api key
-- ntnx_foundation_central_imaged_clusters_info - Nutanix module which returns the imaged clusters within the Foudation Central
-- ntnx_foundation_central_imaged_nodes_info - Nutanix module which returns the imaged nodes within the Foudation Central
+- ntnx_foundation_central_imaged_clusters_info - Nutanix module which returns the imaged clusters within the Foundation Central
+- ntnx_foundation_central_imaged_nodes_info - Nutanix module which returns the imaged nodes within the Foundation Central
 - ntnx_foundation_discover_nodes_info - Nutanix module which returns nodes discovered by Foundation
 - ntnx_foundation_hypervisor_images_info - Nutanix module which returns the hypervisor images uploaded to Foundation
 - ntnx_foundation_image_upload - Nutanix module which uploads hypervisor or AOS image to foundation vm.

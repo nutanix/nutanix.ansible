@@ -1,4 +1,9 @@
 ---
+# Variables required before running this playbook:
+# - clusters
+# - username
+# - password
+
 - name: Start ntnx_clusters_nodes_v2 tests
   ansible.builtin.debug:
     msg: Start ntnx_clusters_nodes_v2 tests
@@ -7,7 +12,9 @@
   ansible.builtin.set_fact:
     node_indices: [0, 1, 2, 3]
     prefix_name: ansible_cluster_test
-    pe_ssh_cmd: sshpass -p '{{ clusters[0].pe_password }}' ssh -o StrictHostKeyChecking=no {{ clusters[0].pe_username }}@{{ clusters[0].nodes[0].cvm_ip }}
+    pe_ssh_cmd:
+      sshpass -p '{{ clusters[0].pe_password }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+      {{ clusters[0].pe_username }}@{{ clusters[0].nodes[0].cvm_ip }}
     reset_username_password: /home/nutanix/prism/cli/ncli user reset-password user-name={{ username }} password={{ password }}
 
 - name: Set cluster name and reset command
@@ -259,7 +266,7 @@
 
 - name: Check if each cluster node is unconfigured
   ansible.builtin.command:
-    'sshpass -p "{{ clusters[0].pe_password }}" ssh -o StrictHostKeyChecking=no \
+    'sshpass -p "{{ clusters[0].pe_password }}" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
     {{ clusters[0].pe_username }}@{{ clusters[0].nodes[item].cvm_ip }} "/usr/local/nutanix/cluster/bin/cluster status"'
   loop: "{{ node_indices }}"
   register: results
@@ -460,7 +467,7 @@
     that:
       - result.response is defined
       - result.response | length > 0
-    fail_msg: Failed vefifying PE PC registration
+    fail_msg: Failed verifying PE PC registration
     success_msg: PE PC registration passed successfully
 
 - name: Set cluster external ID
@@ -603,9 +610,9 @@
     fail_msg: "Expand cluster failed"
     success_msg: "Expand cluster passed"
 
-- name: Sleep for 5 minutes
+- name: Sleep for 10 minutes
   ansible.builtin.pause:
-    seconds: 300
+    seconds: 600
 
 - name: Remove node from cluster
   ntnx_clusters_nodes_v2:

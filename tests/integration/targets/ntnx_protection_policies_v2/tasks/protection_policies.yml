@@ -1,0 +1,1988 @@
+---
+# Pre-requisites:
+# These variables from prepare_env/vars/main.yml are defined and set correctly:
+#   - pe_ssh_password: "password"
+#   - pe_ssh_username: "nutanix"
+#   - ip_pe: "10.0.0.1"
+#   - virtual_ip_pe: "10.0.0.2"
+#   - username: "admin"
+#   - password: "password"
+#   - clusters:
+#       - name: "ansible-test-cluster"
+#         pe_username: "admin"
+#         pe_password: "password"
+#         nodes:
+#           - cvm_ip: "10.0.0.3"
+#         network:
+#           virtual_ip: "10.0.0.4"
+#         config:
+#           cluster_functions:
+#             - "PRISM_CENTRAL"
+#           redundancy_factor_cluster_crud: 1
+#           cluster_arch: "HYPERCONVERGED"
+#           fault_tolerance_state:
+#             domain_awareness_level_cluster_crud: "DOMAIN_AWARE"
+#   - firewall_ports:
+#       - 2020
+#       - 2030
+#       - 2040
+#       - 2050
+#       - 2060
+#   - availability_zone_pc_ip: "10.0.0.8"
+#   - availability_zone_pc_uuid: "00000000-0000-0000-0000-000000000000"
+#   - cluster_availability_zone:
+#       - name: "auto_cluster_prod_360f737a18b9"
+#         uuid: "00062ffc-95ad-19e9-185b-ac1f6b6f97e2"
+
+- name: Start protection policies and data protection tests
+  ansible.builtin.debug:
+    msg: Start protection policies and data protection tests
+
+- name: Generate random names
+  ansible.builtin.set_fact:
+    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+    label1: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+    label2: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+    suffix_name: "ansible-category"
+    todelete_categories: []
+    todelete: []
+
+- name: Set prefix name for clusters
+  ansible.builtin.set_fact:
+    prefix_name: ansible_test
+
+- name: Set command split for resetting cluster username and password
+  ansible.builtin.set_fact:
+    pe1_ssh_cmd: sshpass -p '{{ pe_ssh_password }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {{ pe_ssh_username }}@{{ ip_pe }}
+    pe2_ssh_cmd:
+      sshpass -p '{{ clusters[0].pe_password }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+      {{ clusters[0].pe_username }}@{{ clusters[0].nodes[0].cvm_ip }}
+    reset_username_password: /home/nutanix/prism/cli/ncli user reset-password user-name={{ username }} password={{ password }}
+    cluster_status: /usr/local/nutanix/cluster/bin/cluster status
+    modify_firewall_cmd_cluster1: >
+      /usr/local/nutanix/cluster/bin/modify_firewall -f -r
+      {{ clusters[0].nodes[0].cvm_ip }},{{ clusters[0].network.virtual_ip }} -p
+      {{ firewall_ports[0] }},{{ firewall_ports[1] }},{{ firewall_ports[2] }},{{ firewall_ports[3] }},{{ firewall_ports[4] }} -i eth0
+    modify_firewall_cmd_cluster2: >
+      /usr/local/nutanix/cluster/bin/modify_firewall -f -r
+      {{ ip_pe }},{{ virtual_ip_pe }} -p
+      {{ firewall_ports[0] }},{{ firewall_ports[1] }},{{ firewall_ports[2] }},{{ firewall_ports[3] }},{{ firewall_ports[4] }} -i eth0
+
+- name: Set command for resetting cluster username and password
+  ansible.builtin.set_fact:
+    reset_command: '{{ pe2_ssh_cmd }} "{{ reset_username_password }}"'
+    cluster_status_command: '{{ pe2_ssh_cmd }} "{{ cluster_status }}"'
+    modify_firewall_command_cluster1: '{{ pe1_ssh_cmd }} "{{ modify_firewall_cmd_cluster1 }}"'
+    modify_firewall_command_cluster2: '{{ pe2_ssh_cmd }} "{{ modify_firewall_cmd_cluster2 }}"'
+
+- name: Set ansible keys and values
+  ansible.builtin.set_fact:
+    keys:
+      - "{{random_name}}{{suffix_name}}key1"
+      - "{{random_name}}{{suffix_name}}key2"
+      - "{{random_name}}{{suffix_name}}key3"
+      - "{{random_name}}{{suffix_name}}key4"
+    values:
+      - "{{random_name}}{{suffix_name}}value1"
+      - "{{random_name}}{{suffix_name}}value2"
+      - "{{random_name}}{{suffix_name}}value3"
+      - "{{random_name}}{{suffix_name}}value4"
+
+########################################################################################
+# Create cluster for promoting VG
+
+- name: List all clusters to get prism central external ID
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
+  register: result
+  ignore_errors: true
+
+- name: Get prism central external ID
+  ansible.builtin.set_fact:
+    domain_manager_ext_id: "{{ result.response[0].ext_id }}"
+
+- name: Discover unconfigured node
+  nutanix.ncp.ntnx_discover_unconfigured_nodes_v2:
+    address_type: "IPV4"
+    ip_filter_list:
+      - ipv4:
+          value: "{{ clusters[0].nodes[0].cvm_ip }}"
+  register: result
+  ignore_errors: true
+
+- name: Discover unconfigured node status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.cluster_ext_id is defined
+      - result.task_ext_id is defined
+      - result.response.ext_id is defined
+      - result.response.response.node_list[0].cvm_ip.ipv4.value == "{{ clusters[0].nodes[0].cvm_ip }}"
+    fail_msg: Discover unconfigured node failed
+    success_msg: Discover unconfigured node passed
+
+- name: Run cluster create prechecks
+  nutanix.ncp.ntnx_clusters_v2:
+    name: "{{ clusters[0].name }}"
+    nodes:
+      node_list:
+        - controller_vm_ip:
+            ipv4:
+              value: "{{ clusters[0].nodes[0].cvm_ip }}"
+    config:
+      cluster_function: "{{ clusters[0].config.cluster_functions }}"
+      redundancy_factor: "{{ clusters[0].config.redundancy_factor_cluster_crud }}"
+      cluster_arch: "{{ clusters[0].config.cluster_arch }}"
+      fault_tolerance_state:
+        domain_awareness_level: "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
+    network:
+      external_address:
+        ipv4:
+          value: "{{ clusters[0].network.virtual_ip }}"
+    dryrun: true
+    timeout: 1800
+  register: result
+  ignore_errors: true
+
+- name: Verify cluster create prechecks run
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Cluster create prechecks failed
+    success_msg: Cluster create prechecks passed
+
+- name: Create cluster name
+  ansible.builtin.set_fact:
+    cluster_name: "{{random_name}}_{{ prefix_name }}_{{ clusters[0].name }}"
+
+- name: Check if cluster is unconfigured or not
+  ansible.builtin.command: "{{ cluster_status_command }}"
+  register: result
+  ignore_errors: true
+  changed_when: result.rc != 0
+
+- name: Assert that cluster is unconfigured
+  ansible.builtin.assert:
+    that:
+      - result.rc == 1
+      - result.stderr.find('Cluster is currently unconfigured') != -1
+    fail_msg: Cannot create cluster, cluster is already created
+    success_msg: Cluster is unconfigured
+
+- name: Create cluster with minimum spec
+  nutanix.ncp.ntnx_clusters_v2:
+    name: "{{cluster_name}}"
+    nodes:
+      node_list:
+        - controller_vm_ip:
+            ipv4:
+              value: "{{ clusters[0].nodes[0].cvm_ip }}"
+    config:
+      cluster_function: "{{ clusters[0].config.cluster_functions }}"
+      redundancy_factor: "{{ clusters[0].config.redundancy_factor_cluster_crud }}"
+      cluster_arch: "{{ clusters[0].config.cluster_arch }}"
+      fault_tolerance_state:
+        domain_awareness_level: "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
+    network:
+      external_address:
+        ipv4:
+          value: "{{ clusters[0].network.virtual_ip }}"
+    timeout: 1800
+  register: result
+  ignore_errors: true
+
+- name: Verify cluster create task status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Cluster create failed
+    success_msg: Cluster create passed
+
+- name: Reset username and password
+  ansible.builtin.command: "{{ reset_command }}"
+  register: result
+  ignore_errors: true
+  changed_when: result.rc != 0
+  no_log: true
+
+- name: Run PE PC registration
+  nutanix.ncp.ntnx_pc_registration_v2:
+    ext_id: "{{ domain_manager_ext_id }}"
+    remote_cluster:
+      aos_remote_cluster:
+        remote_cluster:
+          address:
+            ipv4:
+              value: "{{ clusters[0].nodes[0].cvm_ip }}"
+          credentials:
+            authentication:
+              username: "{{ username }}"
+              password: "{{ password }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify PE PC registration
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.ext_id is defined
+      - result.ext_id == domain_manager_ext_id
+      - result.response.status == 'SUCCEEDED'
+      - result.task_ext_id is defined
+    fail_msg: "PE PC registration failed"
+    success_msg: "PE PC registration passed"
+
+- name: Sleep for 1 minute
+  ansible.builtin.pause:
+    seconds: 60
+
+- name: Fetch cluster using name
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: name eq '{{ cluster_name }}'
+  register: result
+  ignore_errors: true
+
+- name: Verify listing
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response | length > 0
+    fail_msg: Failed verifying PE PC registration
+    success_msg: PE PC registration passed successfully
+
+- name: Set cluster external ID
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ result.response[0].ext_id }}"
+
+- name: Fetch cluster info using external ID
+  nutanix.ncp.ntnx_clusters_info_v2:
+    ext_id: "{{ cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify created cluster's details using cluster info
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id == cluster_ext_id
+      - result.response.name == "{{ cluster_name }}"
+      - result.response.nodes.node_list[0].controller_vm_ip.ipv4.value == "{{ clusters[0].nodes[0].cvm_ip }}"
+      - '"{{ clusters[0].config.cluster_functions[0] }}" in "{{result.response.config.cluster_function}}"'
+      - result.response.config.redundancy_factor == clusters[0].config.redundancy_factor_cluster_crud
+      - result.response.config.cluster_arch == "{{ clusters[0].config.cluster_arch }}"
+      - >
+        result.response.config.fault_tolerance_state.domain_awareness_level ==
+        "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
+    fail_msg: Failed verifying cluster creation
+    success_msg: Cluster creation passed successfully
+
+- name: Modify firewall rules for cluster 1
+  ansible.builtin.command: "{{ modify_firewall_command_cluster1 }}"
+  register: result
+  ignore_errors: true
+  changed_when: result.rc != 0
+
+- name: Assert that firewall rules are modified for cluster 1
+  ansible.builtin.assert:
+    that:
+      - result.rc == 0
+      - result.stderr.find('Firewall config updated') != -1
+    fail_msg: Cannot modify firewall rules for cluster 1
+    success_msg: Firewall rules modified for cluster 1
+
+- name: Modify firewall rules for cluster 2
+  ansible.builtin.command: "{{ modify_firewall_command_cluster2 }}"
+  register: result
+  ignore_errors: true
+  changed_when: result.rc != 0
+
+- name: Assert that firewall rules are modified for cluster 2
+  ansible.builtin.assert:
+    that:
+      - result.rc == 0
+      - result.stderr.find('Firewall config updated') != -1
+    fail_msg: Cannot modify firewall rules for cluster 2
+    success_msg: Firewall rules modified for cluster 2
+
+########################################################################################
+
+- name: Create categories for protection policies
+  nutanix.ncp.ntnx_categories_v2:
+    key: "{{ keys[item] }}"
+    value: "{{ values[item] }}"
+    description: "ansible-category"
+  register: output
+  ignore_errors: true
+  loop: "{{ range(0, 4) | list }}"
+  loop_control:
+    label: "{{ item }}"
+
+- name: Create categories for protection policies status
+  ansible.builtin.assert:
+    that:
+      - output is defined
+      - output.changed == true
+      - output.results | length == 4
+      - output.msg == "All items completed"
+    success_msg: "Categories created successfully"
+    fail_msg: "Categories creation failed"
+
+- name: Save external IDs to the list
+  ansible.builtin.set_fact:
+    todelete_categories: "{{ todelete_categories + [ item.response.ext_id ] }}"
+  with_items: "{{ output.results }}"
+
+- name: Set categories external ids
+  ansible.builtin.set_fact:
+    category_ext_id_1: "{{ todelete_categories[0] }}"
+    category_ext_id_2: "{{ todelete_categories[1] }}"
+    category_ext_id_3: "{{ todelete_categories[2] }}"
+    category_ext_id_4: "{{ todelete_categories[3] }}"
+
+########################################################################################
+
+- name: Generate spec for creating protection policy using check mode
+  nutanix.ncp.ntnx_protection_policies_v2:
+    name: "ansible-create-protection-policy-name"
+    description: "ansible-create-protection-policy-description"
+    replication_locations:
+      - label: "ansible-label-{{label1}}"
+        domain_manager_ext_id: "{{domain_manager_ext_id}}"
+        is_primary: true
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster.uuid }}"
+      - label: "ansible-label-{{label2}}"
+        domain_manager_ext_id: "{{availability_zone_pc_uuid}}"
+        is_primary: false
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster_availability_zone.uuid }}"
+    replication_configurations:
+      - source_location_label: "ansible-label-{{label1}}"
+        remote_location_label: "ansible-label-{{label2}}"
+        schedule:
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 3600
+          retention:
+            linear_retention:
+              local: 1
+              remote: 1
+          start_time: "13h:11m"
+          sync_replication_auto_suspend_timeout_seconds: 300
+      - source_location_label: "ansible-label-{{label2}}"
+        remote_location_label: "ansible-label-{{label1}}"
+        schedule:
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 3600
+          retention:
+            linear_retention:
+              local: 1
+              remote: 1
+          start_time: "13h:11m"
+          sync_replication_auto_suspend_timeout_seconds: 300
+    category_ids:
+      - "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Status for generating spec for creating protection policy using check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "ansible-create-protection-policy-name"
+      - result.response.description == "ansible-create-protection-policy-description"
+      - (result.response.replication_locations[0].label == "ansible-label-{{label1}}"
+        and result.response.replication_locations[0].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[0].is_primary == true
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[0].domain_manager_ext_id == "{{ availability_zone_pc_uuid }}"
+        and result.response.replication_locations[0].label == "ansible-label-{{label2}}"
+        and result.response.replication_locations[0].is_primary == false
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_availability_zone.uuid }}")
+      - (result.response.replication_locations[1].label == "ansible-label-{{label1}}"
+        and result.response.replication_locations[1].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[1].is_primary == true
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[1].domain_manager_ext_id == "{{ availability_zone_pc_uuid }}"
+        and result.response.replication_locations[1].label == "ansible-label-{{label2}}"
+        and result.response.replication_locations[1].is_primary == false
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_availability_zone.uuid }}")
+      - (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label1}}"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label2}}"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 3600
+        and result.response.replication_configurations[0].schedule.retention.local == 1
+        and result.response.replication_configurations[0].schedule.retention.remote == 1
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+        or (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label2}}"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label1}}"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 3600
+        and result.response.replication_configurations[0].schedule.retention.local == 1
+        and result.response.replication_configurations[0].schedule.retention.remote == 1
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+      - (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label1}}"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label2}}"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 3600
+        and result.response.replication_configurations[1].schedule.retention.local == 1
+        and result.response.replication_configurations[1].schedule.retention.remote == 1
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+        or (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label2}}"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label1}}"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 3600
+        and result.response.replication_configurations[1].schedule.retention.local == 1
+        and result.response.replication_configurations[1].schedule.retention.remote == 1
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+      - result.response.replication_locations[0] != result.response.replication_locations[1]
+      - result.response.replication_configurations[0] != result.response.replication_configurations[1]
+      - result.response.category_ids[0] == "00000000-0000-0000-0000-000000000000"
+    success_msg: "Protection policy spec generated successfully"
+    fail_msg: "Protection policy spec generation failed"
+
+########################################################################################
+
+- name: Create linear retention protection policy
+  nutanix.ncp.ntnx_protection_policies_v2:
+    name: "ansible-name-linear-{{random_name}}"
+    description: "ansible-description-linear-{{random_name}}"
+    replication_locations:
+      - label: "ansible-label-{{label1}}"
+        domain_manager_ext_id: "{{domain_manager_ext_id}}"
+        is_primary: true
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster.uuid }}"
+      - label: "ansible-label-{{label2}}"
+        domain_manager_ext_id: "{{availability_zone_pc_uuid}}"
+        is_primary: false
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster_availability_zone.uuid }}"
+    replication_configurations:
+      - source_location_label: "ansible-label-{{label1}}"
+        remote_location_label: "ansible-label-{{label2}}"
+        schedule:
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 3600
+          retention:
+            linear_retention:
+              local: 1
+              remote: 1
+          sync_replication_auto_suspend_timeout_seconds: 300
+      - source_location_label: "ansible-label-{{label2}}"
+        remote_location_label: "ansible-label-{{label1}}"
+        schedule:
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 3600
+          retention:
+            linear_retention:
+              local: 1
+              remote: 1
+          sync_replication_auto_suspend_timeout_seconds: 300
+    category_ids:
+      - "{{category_ext_id_1}}"
+  register: result
+  ignore_errors: true
+
+- name: Status for creating linear retention protection policy
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.ext_id == result.protection_policy_ext_id
+      - result.response.name == "ansible-name-linear-{{random_name}}"
+      - result.response.description == "ansible-description-linear-{{random_name}}"
+      - (result.response.replication_locations[0].label == "ansible-label-{{label1}}"
+        and result.response.replication_locations[0].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[0].is_primary == true
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[0].domain_manager_ext_id == "{{ availability_zone_pc_uuid }}"
+        and result.response.replication_locations[0].label == "ansible-label-{{label2}}"
+        and result.response.replication_locations[0].is_primary == false
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_availability_zone.uuid }}")
+      - (result.response.replication_locations[1].label == "ansible-label-{{label1}}"
+        and result.response.replication_locations[1].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[1].is_primary == true
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[1].domain_manager_ext_id == "{{ availability_zone_pc_uuid }}"
+        and result.response.replication_locations[1].label == "ansible-label-{{label2}}"
+        and result.response.replication_locations[1].is_primary == false
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_availability_zone.uuid }}")
+      - (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label1}}"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label2}}"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 3600
+        and result.response.replication_configurations[0].schedule.retention.local == 1
+        and result.response.replication_configurations[0].schedule.retention.remote == 1
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+        or (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label2}}"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label1}}"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 3600
+        and result.response.replication_configurations[0].schedule.retention.local == 1
+        and result.response.replication_configurations[0].schedule.retention.remote == 1
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+      - (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label1}}"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label2}}"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 3600
+        and result.response.replication_configurations[1].schedule.retention.local == 1
+        and result.response.replication_configurations[1].schedule.retention.remote == 1
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+        or (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label2}}"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label1}}"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 3600
+        and result.response.replication_configurations[1].schedule.retention.local == 1
+        and result.response.replication_configurations[1].schedule.retention.remote == 1
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+      - result.response.replication_locations[0] != result.response.replication_locations[1]
+      - result.response.replication_configurations[0] != result.response.replication_configurations[1]
+      - result.response.category_ids[0] == "{{category_ext_id_1}}"
+    success_msg: "Protection policy created successfully"
+    fail_msg: "Protection policy creation failed"
+
+- name: Add linear retention protection policy external ID to todelete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.response.ext_id] }}"
+
+########################################################################################
+
+- name: Create auto retention protection policy
+  nutanix.ncp.ntnx_protection_policies_v2:
+    name: "ansible-name-auto-{{random_name}}"
+    description: "ansible-description-auto-{{random_name}}"
+    replication_locations:
+      - label: "ansible-label-{{label1}}"
+        domain_manager_ext_id: "{{domain_manager_ext_id}}"
+        is_primary: true
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster.uuid }}"
+      - label: "ansible-label-{{label2}}"
+        domain_manager_ext_id: "{{availability_zone_pc_uuid}}"
+        is_primary: false
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster_availability_zone.uuid }}"
+    replication_configurations:
+      - source_location_label: "ansible-label-{{label1}}"
+        remote_location_label: "ansible-label-{{label2}}"
+        schedule:
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 60
+          retention:
+            auto_rollup_retention:
+              local:
+                snapshot_interval_type: "DAILY"
+                frequency: 1
+              remote:
+                snapshot_interval_type: "DAILY"
+                frequency: 1
+          sync_replication_auto_suspend_timeout_seconds: 300
+      - source_location_label: "ansible-label-{{label2}}"
+        remote_location_label: "ansible-label-{{label1}}"
+        schedule:
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 60
+          retention:
+            auto_rollup_retention:
+              local:
+                snapshot_interval_type: "DAILY"
+                frequency: 1
+              remote:
+                snapshot_interval_type: "DAILY"
+                frequency: 1
+          sync_replication_auto_suspend_timeout_seconds: 300
+    category_ids:
+      - "{{category_ext_id_2}}"
+  register: result
+  ignore_errors: true
+
+- name: Status for creating auto retention protection policy
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.ext_id == result.protection_policy_ext_id
+      - result.response.name == "ansible-name-auto-{{random_name}}"
+      - result.response.description == "ansible-description-auto-{{random_name}}"
+      - (result.response.replication_locations[0].label == "ansible-label-{{label1}}"
+        and result.response.replication_locations[0].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[0].is_primary == true
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[0].domain_manager_ext_id == "{{ availability_zone_pc_uuid }}"
+        and result.response.replication_locations[0].label == "ansible-label-{{label2}}"
+        and result.response.replication_locations[0].is_primary == false
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_availability_zone.uuid }}")
+      - (result.response.replication_locations[1].label == "ansible-label-{{label1}}"
+        and result.response.replication_locations[1].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[1].is_primary == true
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[1].domain_manager_ext_id == "{{ availability_zone_pc_uuid }}"
+        and result.response.replication_locations[1].label == "ansible-label-{{label2}}"
+        and result.response.replication_locations[1].is_primary == false
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_availability_zone.uuid }}")
+      - (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label1}}"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label2}}"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 60
+        and result.response.replication_configurations[0].schedule.retention.local.snapshot_interval_type == "DAILY"
+        and result.response.replication_configurations[0].schedule.retention.local.frequency == 1
+        and result.response.replication_configurations[0].schedule.retention.remote.snapshot_interval_type == "DAILY"
+        and result.response.replication_configurations[0].schedule.retention.remote.frequency == 1
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+        or (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label2}}"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label1}}"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 60
+        and result.response.replication_configurations[0].schedule.retention.local.snapshot_interval_type == "DAILY"
+        and result.response.replication_configurations[0].schedule.retention.local.frequency == 1
+        and result.response.replication_configurations[0].schedule.retention.remote.snapshot_interval_type == "DAILY"
+        and result.response.replication_configurations[0].schedule.retention.remote.frequency == 1
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+      - (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label1}}"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label2}}"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 60
+        and result.response.replication_configurations[1].schedule.retention.local.snapshot_interval_type == "DAILY"
+        and result.response.replication_configurations[1].schedule.retention.local.frequency == 1
+        and result.response.replication_configurations[1].schedule.retention.remote.snapshot_interval_type == "DAILY"
+        and result.response.replication_configurations[1].schedule.retention.remote.frequency == 1
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+        or (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label2}}"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label1}}"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 60
+        and result.response.replication_configurations[1].schedule.retention.local.snapshot_interval_type == "DAILY"
+        and result.response.replication_configurations[1].schedule.retention.local.frequency == 1
+        and result.response.replication_configurations[1].schedule.retention.remote.snapshot_interval_type == "DAILY"
+        and result.response.replication_configurations[1].schedule.retention.remote.frequency == 1
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+      - result.response.replication_locations[0] != result.response.replication_locations[1]
+      - result.response.replication_configurations[0] != result.response.replication_configurations[1]
+      - result.response.category_ids[0] == "{{category_ext_id_2}}"
+    success_msg: "Protection policy created successfully"
+    fail_msg: "Protection policy creation failed"
+
+- name: Add auto retention protection policy external ID to todelete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.response.ext_id] }}"
+
+########################################################################################
+
+- name: Create Synchronous replication protection policy for VM using category3
+  nutanix.ncp.ntnx_protection_policies_v2:
+    name: "ansible-name-sync-vm-{{random_name}}"
+    description: "ansible-description-sync-vm-{{random_name}}"
+    replication_locations:
+      - label: "ansible-label-{{label1}}"
+        domain_manager_ext_id: "{{domain_manager_ext_id}}"
+        is_primary: true
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster.uuid }}"
+      - label: "ansible-label-{{label2}}"
+        domain_manager_ext_id: "{{availability_zone_pc_uuid}}"
+        is_primary: false
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster_availability_zone.uuid }}"
+    replication_configurations:
+      - source_location_label: "ansible-label-{{label1}}"
+        remote_location_label: "ansible-label-{{label2}}"
+        schedule:
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 0
+          sync_replication_auto_suspend_timeout_seconds: 10
+      - source_location_label: "ansible-label-{{label2}}"
+        remote_location_label: "ansible-label-{{label1}}"
+        schedule:
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 0
+          sync_replication_auto_suspend_timeout_seconds: 10
+    category_ids:
+      - "{{category_ext_id_3}}"
+  register: result
+  ignore_errors: true
+
+- name: Status for creating Synchronous replication protection policy for VM using category3
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.ext_id == result.protection_policy_ext_id
+      - result.response.name == "ansible-name-sync-vm-{{random_name}}"
+      - result.response.description == "ansible-description-sync-vm-{{random_name}}"
+      - (result.response.replication_locations[0].label == "ansible-label-{{label1}}"
+        and result.response.replication_locations[0].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[0].is_primary == true
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[0].domain_manager_ext_id == "{{ availability_zone_pc_uuid }}"
+        and result.response.replication_locations[0].label == "ansible-label-{{label2}}"
+        and result.response.replication_locations[0].is_primary == false
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_availability_zone.uuid }}")
+      - (result.response.replication_locations[1].label == "ansible-label-{{label1}}"
+        and result.response.replication_locations[1].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[1].is_primary == true
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[1].domain_manager_ext_id == "{{ availability_zone_pc_uuid }}"
+        and result.response.replication_locations[1].label == "ansible-label-{{label2}}"
+        and result.response.replication_locations[1].is_primary == false
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_availability_zone.uuid }}")
+      - (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label1}}"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label2}}"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 0
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 10)
+        or (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label2}}"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label1}}"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 0
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 10)
+      - (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label1}}"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label2}}"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 0
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 10)
+        or (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label2}}"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label1}}"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 0
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 10)
+      - result.response.replication_locations[0] != result.response.replication_locations[1]
+      - result.response.replication_configurations[0] != result.response.replication_configurations[1]
+      - result.response.category_ids[0] == "{{category_ext_id_3}}"
+    success_msg: "Protection policy for VM using category3 created successfully"
+    fail_msg: "Protection policy for VM using category3 creation failed"
+
+- name: Add synchronous protection policy external ID to todelete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.response.ext_id] }}"
+
+########################################################################################
+
+- name: Create Synchronous replication protection policy for VG using category4
+  nutanix.ncp.ntnx_protection_policies_v2:
+    name: "ansible-name-sync-vg-{{random_name}}"
+    description: "ansible-description-sync-vg-{{random_name}}"
+    replication_locations:
+      - label: "ansible-label-local-clusters-{{label1}}"
+        domain_manager_ext_id: "{{domain_manager_ext_id}}"
+        is_primary: true
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster.uuid }}"
+      - label: "ansible-label-local-clusters-{{label2}}"
+        domain_manager_ext_id: "{{domain_manager_ext_id}}"
+        is_primary: false
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster_ext_id }}"
+    replication_configurations:
+      - source_location_label: "ansible-label-local-clusters-{{label1}}"
+        remote_location_label: "ansible-label-local-clusters-{{label2}}"
+        schedule:
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 0
+          sync_replication_auto_suspend_timeout_seconds: 10
+      - source_location_label: "ansible-label-local-clusters-{{label2}}"
+        remote_location_label: "ansible-label-local-clusters-{{label1}}"
+        schedule:
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 0
+          sync_replication_auto_suspend_timeout_seconds: 10
+    category_ids:
+      - "{{category_ext_id_4}}"
+  register: result
+  ignore_errors: true
+
+- name: Status for creating Synchronous replication protection policy for VG using category4
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.ext_id == result.protection_policy_ext_id
+      - result.response.name == "ansible-name-sync-vg-{{random_name}}"
+      - result.response.description == "ansible-description-sync-vg-{{random_name}}"
+      - (result.response.replication_locations[0].label == "ansible-label-local-clusters-{{label1}}"
+        and result.response.replication_locations[0].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[0].is_primary == true
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[0].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[0].label == "ansible-label-local-clusters-{{label2}}"
+        and result.response.replication_locations[0].is_primary == false
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_ext_id }}")
+      - (result.response.replication_locations[1].label == "ansible-label-local-clusters-{{label1}}"
+        and result.response.replication_locations[1].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[1].is_primary == true
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[1].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[1].label == "ansible-label-local-clusters-{{label2}}"
+        and result.response.replication_locations[1].is_primary == false
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_ext_id }}")
+      - (result.response.replication_configurations[0].source_location_label == "ansible-label-local-clusters-{{label1}}"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-local-clusters-{{label2}}"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 0
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 10)
+        or (result.response.replication_configurations[0].source_location_label == "ansible-label-local-clusters-{{label2}}"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-local-clusters-{{label1}}"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 0
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 10)
+      - (result.response.replication_configurations[1].source_location_label == "ansible-label-local-clusters-{{label1}}"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-local-clusters-{{label2}}"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 0
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 10)
+        or (result.response.replication_configurations[1].source_location_label == "ansible-label-local-clusters-{{label2}}"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-local-clusters-{{label1}}"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 0
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 10)
+      - result.response.replication_locations[0] != result.response.replication_locations[1]
+      - result.response.replication_configurations[0] != result.response.replication_configurations[1]
+      - result.response.category_ids[0] == "{{category_ext_id_4}}"
+    success_msg: "Protection policy for VG using category4 created successfully"
+    fail_msg: "Protection policy for VG using category4 creation failed"
+
+- name: Add synchronous protection policy external ID to todelete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.response.ext_id] }}"
+
+########################################################################################
+
+- name: Create a Protected VM to be promoted
+  nutanix.ncp.ntnx_vms_v2:
+    name: "{{ random_name }}_ansible_protected_vm_promote"
+    description: "Protected VM for promote"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    categories:
+      - ext_id: "{{ category_ext_id_3 }}"
+  register: result
+  ignore_errors: true
+
+- name: Status for creating a Protected VM to be promoted
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "{{ random_name }}_ansible_protected_vm_promote"
+      - result.response.description == "Protected VM for promote"
+      - result.response.cluster.ext_id == cluster.uuid
+      - result.response.categories[0].ext_id == "{{ category_ext_id_3 }}"
+    success_msg: "Protected VM created successfully"
+    fail_msg: "Protected VM creation failed"
+
+- name: Set VM external ID
+  ansible.builtin.set_fact:
+    vm_ext_id_1: "{{ result.response.ext_id }}"
+
+- name: Create a Protected VM to be restored
+  nutanix.ncp.ntnx_vms_v2:
+    name: "{{ random_name }}_ansible_protected_vm_restore"
+    description: "Protected VM for restore"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    categories:
+      - ext_id: "{{ category_ext_id_2 }}"
+  register: result
+  ignore_errors: true
+
+- name: Status for creating a Protected VM to be restored
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "{{ random_name }}_ansible_protected_vm_restore"
+      - result.response.description == "Protected VM for restore"
+      - result.response.cluster.ext_id == cluster.uuid
+      - result.response.categories[0].ext_id == "{{ category_ext_id_2 }}"
+    success_msg: "Protected VM created successfully"
+    fail_msg: "Protected VM creation failed"
+
+- name: Set VM external ID
+  ansible.builtin.set_fact:
+    vm_ext_id_2: "{{ result.response.ext_id }}"
+
+- name: Create Volume group to be promoted
+  nutanix.ncp.ntnx_volume_groups_v2:
+    name: "{{ random_name }}_ansible_protected_vg_promote"
+    description: "Volume group for promote"
+    cluster_reference: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Status for creating Volume group to be promoted
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.changed == true
+      - result.ext_id == result.response.ext_id
+      - result.response.cluster_reference == "{{cluster.uuid}}"
+      - result.response.name == "{{ random_name }}_ansible_protected_vg_promote"
+      - result.response.description == "Volume group for promote"
+    fail_msg: "Unable to create VG"
+    success_msg: "VG created successfully"
+
+- name: Set VG UUID
+  ansible.builtin.set_fact:
+    vg1_uuid: "{{ result.ext_id }}"
+
+- name: Create Volume group to be restored
+  nutanix.ncp.ntnx_volume_groups_v2:
+    name: "{{ random_name }}_ansible_protected_vg_restore"
+    description: "Volume group for restore"
+    cluster_reference: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Status for creating Volume group to be restored
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.changed == true
+      - result.ext_id == result.response.ext_id
+      - result.response.cluster_reference == "{{cluster.uuid}}"
+      - result.response.name == "{{ random_name }}_ansible_protected_vg_restore"
+      - result.response.description == "Volume group for restore"
+    fail_msg: "Unable to create VG"
+    success_msg: "VG created successfully"
+
+- name: Set VG UUID
+  ansible.builtin.set_fact:
+    vg2_uuid: "{{ result.ext_id }}"
+
+- name: Associate category with first VG
+  nutanix.ncp.ntnx_volume_groups_categories_v2:
+    ext_id: "{{ vg1_uuid }}"
+    categories:
+      - ext_id: "{{ category_ext_id_4 }}"
+        entity_type: "CATEGORY"
+  register: result
+  ignore_errors: true
+
+- name: Status for associating category with first VG
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    success_msg: "Category associated with VG successfully"
+    fail_msg: "Category association with VG failed"
+
+- name: Fetch category info after association
+  nutanix.ncp.ntnx_categories_info_v2:
+    expand: associations
+    filter: "extId eq '{{ category_ext_id_4 }}'"
+  register: result
+  ignore_errors: true
+
+- name: Assert that category is associated with VG
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response[0].ext_id == category_ext_id_4
+      - "'ENTITY' in result.response[0].associations | map(attribute='resource_group') | list"
+      - "'VOLUMEGROUP' in result.response[0].associations | map(attribute='resource_type') | list"
+    success_msg: "Category associated with VG successfully"
+    fail_msg: "Category association with VG failed"
+
+- name: Associate category with second VG
+  nutanix.ncp.ntnx_volume_groups_categories_v2:
+    ext_id: "{{ vg2_uuid }}"
+    categories:
+      - ext_id: "{{ category_ext_id_2 }}"
+        entity_type: "CATEGORY"
+  register: result
+  ignore_errors: true
+
+- name: Status for associating category with second VG
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    success_msg: "Category associated with VG successfully"
+    fail_msg: "Category association with VG failed"
+
+- name: Fetch category info after association
+  nutanix.ncp.ntnx_categories_info_v2:
+    expand: associations
+    filter: "extId eq '{{ category_ext_id_2 }}'"
+  register: result
+  ignore_errors: true
+
+- name: Assert that category is associated with VG
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response[0].ext_id == category_ext_id_2
+      - "'ENTITY' in result.response[0].associations | map(attribute='resource_group') | list"
+      - "'VOLUMEGROUP' in result.response[0].associations | map(attribute='resource_type') | list"
+    success_msg: "Category associated with VG successfully"
+    fail_msg: "Category association with VG failed"
+
+# Wait for the first VM to be protected
+- name: Wait for the first VM to be protected by fetching VM using ext_id
+  nutanix.ncp.ntnx_vms_info_v2:
+    ext_id: "{{ vm_ext_id_1 }}"
+  register: result
+  until: result.response.protection_type == "RULE_PROTECTED"
+  retries: 60
+  delay: 10
+  ignore_errors: true
+
+- name: Status for fetching VM using ext_id
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.ext_id == vm_ext_id_1
+      - result.response.name == "{{ random_name }}_ansible_protected_vm_promote"
+      - result.response.description == "Protected VM for promote"
+      - result.response.cluster.ext_id == cluster.uuid
+      - result.response.categories[0].ext_id == "{{ category_ext_id_3 }}"
+      - result.response.protection_type == "RULE_PROTECTED"
+    success_msg: "VM is protected successfully"
+    fail_msg: "VM protection failed"
+
+# Wait for the second VM to be protected
+- name: Wait for the second VM to be protected by fetching VM using ext_id
+  nutanix.ncp.ntnx_vms_info_v2:
+    ext_id: "{{ vm_ext_id_2 }}"
+  register: result
+  until: result.response.protection_type == "RULE_PROTECTED"
+  retries: 60
+  delay: 10
+  ignore_errors: true
+
+- name: Status for fetching VM using ext_id
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.ext_id == vm_ext_id_2
+      - result.response.name == "{{ random_name }}_ansible_protected_vm_restore"
+      - result.response.description == "Protected VM for restore"
+      - result.response.cluster.ext_id == cluster.uuid
+      - result.response.categories[0].ext_id == "{{ category_ext_id_2 }}"
+      - result.response.protection_type == "RULE_PROTECTED"
+    success_msg: "VM is protected successfully"
+    fail_msg: "VM protection failed"
+
+- name: Sleep for 5 minutes until VMs and VGs are protected
+  ansible.builtin.pause:
+    seconds: 300
+
+- name: Get a protected resource
+  nutanix.ncp.ntnx_protected_resources_info_v2:
+    ext_id: "{{ vm_ext_id_1 }}"
+  register: result
+  ignore_errors: true
+
+- name: Status for getting a protected resource
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.entity_ext_id == vm_ext_id_1
+      - result.response.entity_type == "VM"
+      - result.response.replication_states[0].replication_status == "IN_SYNC"
+      - result.response.replication_states[0].target_site_reference.cluster_ext_id == cluster_availability_zone.uuid
+      - result.response.source_site_reference.cluster_ext_id == cluster.uuid
+      - result.response.site_protection_info[0].location_reference.cluster_ext_id == cluster.uuid
+    success_msg: "Protected resource fetched successfully"
+    fail_msg: "Protected resource fetch failed"
+
+- name: Promote VM in secondary site PC
+  nutanix.ncp.ntnx_promote_protected_resources_v2:
+    nutanix_host: "{{ availability_zone_pc_ip }}"
+    ext_id: "{{ vm_ext_id_1 }}"
+  register: result
+  ignore_errors: true
+
+- name: Status for promoting VM
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    success_msg: "VM promoted successfully"
+    fail_msg: "VM promotion failed"
+
+- name: Restore VM in secondary site PC
+  nutanix.ncp.ntnx_restore_protected_resources_v2:
+    nutanix_host: "{{ availability_zone_pc_ip }}"
+    ext_id: "{{ vm_ext_id_2 }}"
+    cluster_ext_id: "{{ cluster_availability_zone.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Status for restoring VM
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    success_msg: "VM restored successfully"
+    fail_msg: "VM restore failed"
+
+- name: Promote VG
+  nutanix.ncp.ntnx_promote_protected_resources_v2:
+    ext_id: "{{ vg1_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Status for promoting VG
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    success_msg: "VG promoted successfully"
+    fail_msg: "VG promotion failed"
+
+- name: Restore VG in secondary site PC
+  nutanix.ncp.ntnx_restore_protected_resources_v2:
+    nutanix_host: "{{ availability_zone_pc_ip }}"
+    ext_id: "{{ vg2_uuid }}"
+    cluster_ext_id: "{{ cluster_availability_zone.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Status for restoring VG
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    success_msg: "VG restored successfully"
+    fail_msg: "VG restore failed"
+
+########################################################################################
+
+- name: Sleep for 5 minutes until VMs and VGs are promoted and restored
+  ansible.builtin.pause:
+    seconds: 300
+
+- name: Generate spec for updating linear retention protection policy using check mode
+  nutanix.ncp.ntnx_protection_policies_v2:
+    ext_id: "{{ todelete[0] }}"
+    name: "ansible-update-protection-policy-name"
+    description: "ansible-update-protection-policy-description"
+    replication_locations:
+      - label: "ansible-label-{{label1}}_updated"
+        domain_manager_ext_id: "{{domain_manager_ext_id}}"
+        is_primary: true
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster.uuid }}"
+      - label: "ansible-label-{{label2}}_updated"
+        domain_manager_ext_id: "{{availability_zone_pc_uuid}}"
+        is_primary: false
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster_availability_zone.uuid }}"
+    replication_configurations:
+      - source_location_label: "ansible-label-{{label1}}_updated"
+        remote_location_label: "ansible-label-{{label2}}_updated"
+        schedule:
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 7200
+          retention:
+            linear_retention:
+              local: 2
+              remote: 2
+          start_time: "14h:26m"
+          sync_replication_auto_suspend_timeout_seconds: 90
+      - source_location_label: "ansible-label-{{label2}}_updated"
+        remote_location_label: "ansible-label-{{label1}}_updated"
+        schedule:
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 7200
+          retention:
+            linear_retention:
+              local: 2
+              remote: 2
+          start_time: "14h:26m"
+          sync_replication_auto_suspend_timeout_seconds: 90
+    category_ids:
+      - "{{category_ext_id_1}}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Status for generating spec for updating linear retention protection policy using check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.ext_id == "{{ todelete[0] }}"
+      - result.response.name == "ansible-update-protection-policy-name"
+      - result.response.description == "ansible-update-protection-policy-description"
+      - (result.response.replication_locations[0].label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_locations[0].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[0].is_primary == true
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[0].domain_manager_ext_id == "{{ availability_zone_pc_uuid }}"
+        and result.response.replication_locations[0].label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_locations[0].is_primary == false
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_availability_zone.uuid }}")
+      - (result.response.replication_locations[1].label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_locations[1].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[1].is_primary == true
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[1].domain_manager_ext_id == "{{ availability_zone_pc_uuid }}"
+        and result.response.replication_locations[1].label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_locations[1].is_primary == false
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_availability_zone.uuid }}")
+      - (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 7200
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
+        or (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 7200
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
+      - (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 7200
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
+        or (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 7200
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
+      - result.response.replication_configurations[0] != result.response.replication_configurations[1]
+      - result.response.category_ids[0] == "{{category_ext_id_1}}"
+    success_msg: "Protection policy spec generated successfully"
+    fail_msg: "Protection policy spec generation failed"
+
+########################################################################################
+
+- name: Update linear retention protection policy name, description, labels, and schedule
+  nutanix.ncp.ntnx_protection_policies_v2:
+    ext_id: "{{ todelete[0] }}"
+    name: "ansible-name-linear-{{random_name}}_updated"
+    description: "ansible-description-linear-{{random_name}}_updated"
+    replication_locations:
+      - label: "ansible-label-{{label1}}_updated"
+        domain_manager_ext_id: "{{domain_manager_ext_id}}"
+        is_primary: true
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster.uuid }}"
+      - label: "ansible-label-{{label2}}_updated"
+        domain_manager_ext_id: "{{availability_zone_pc_uuid}}"
+        is_primary: false
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster_availability_zone.uuid }}"
+    replication_configurations:
+      - source_location_label: "ansible-label-{{label1}}_updated"
+        remote_location_label: "ansible-label-{{label2}}_updated"
+        schedule:
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 7200
+          retention:
+            linear_retention:
+              local: 2
+              remote: 2
+          sync_replication_auto_suspend_timeout_seconds: 90
+      - source_location_label: "ansible-label-{{label2}}_updated"
+        remote_location_label: "ansible-label-{{label1}}_updated"
+        schedule:
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 7200
+          retention:
+            linear_retention:
+              local: 2
+              remote: 2
+          sync_replication_auto_suspend_timeout_seconds: 90
+    category_ids:
+      - "{{category_ext_id_1}}"
+  register: result
+  ignore_errors: true
+
+- name: Status for updating linear retention protection policy
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.ext_id == "{{ todelete[0] }}"
+      - result.response.name == "ansible-name-linear-{{random_name}}_updated"
+      - result.response.description == "ansible-description-linear-{{random_name}}_updated"
+      - (result.response.replication_locations[0].label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_locations[0].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[0].is_primary == true
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[0].domain_manager_ext_id == "{{ availability_zone_pc_uuid }}"
+        and result.response.replication_locations[0].label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_locations[0].is_primary == false
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_availability_zone.uuid }}")
+      - (result.response.replication_locations[1].label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_locations[1].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[1].is_primary == true
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[1].domain_manager_ext_id == "{{ availability_zone_pc_uuid }}"
+        and result.response.replication_locations[1].label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_locations[1].is_primary == false
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_availability_zone.uuid }}")
+      - (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 7200
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
+        or (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 7200
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
+      - (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 7200
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
+        or (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 7200
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
+      - result.response.replication_configurations[0] != result.response.replication_configurations[1]
+      - result.response.category_ids[0] == "{{category_ext_id_1}}"
+    success_msg: "Protection policy updated successfully"
+    fail_msg: "Protection policy update failed"
+
+########################################################################################
+
+- name: Test idempotency by updating protection policy with same attributes
+  nutanix.ncp.ntnx_protection_policies_v2:
+    ext_id: "{{ todelete[0] }}"
+    name: "ansible-name-linear-{{random_name}}_updated"
+    description: "ansible-description-linear-{{random_name}}_updated"
+    replication_locations:
+      - label: "ansible-label-{{label1}}_updated"
+        domain_manager_ext_id: "{{domain_manager_ext_id}}"
+        is_primary: true
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster.uuid }}"
+      - label: "ansible-label-{{label2}}_updated"
+        domain_manager_ext_id: "{{availability_zone_pc_uuid}}"
+        is_primary: false
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster_availability_zone.uuid }}"
+    replication_configurations:
+      - source_location_label: "ansible-label-{{label1}}_updated"
+        remote_location_label: "ansible-label-{{label2}}_updated"
+        schedule:
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 7200
+          retention:
+            linear_retention:
+              local: 2
+              remote: 2
+          sync_replication_auto_suspend_timeout_seconds: 90
+      - source_location_label: "ansible-label-{{label2}}_updated"
+        remote_location_label: "ansible-label-{{label1}}_updated"
+        schedule:
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 7200
+          retention:
+            linear_retention:
+              local: 2
+              remote: 2
+          sync_replication_auto_suspend_timeout_seconds: 90
+    category_ids:
+      - "{{category_ext_id_1}}"
+  register: result
+  ignore_errors: true
+
+- name: Status for idempotency test
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.msg == "Nothing to change."
+    success_msg: "Update Protection Policy to test idempotency passed"
+    fail_msg: "Update Protection Policy to test idempotency failed"
+
+########################################################################################
+
+- name: Update auto retention protection policy
+  nutanix.ncp.ntnx_protection_policies_v2:
+    ext_id: "{{ todelete[1] }}"
+    name: "ansible-name-auto-{{random_name}}_updated"
+    description: "ansible-description-auto-{{random_name}}_updated"
+    replication_locations:
+      - label: "ansible-label-{{label1}}_updated"
+        domain_manager_ext_id: "{{domain_manager_ext_id}}"
+        is_primary: true
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster.uuid }}"
+      - label: "ansible-label-{{label2}}_updated"
+        domain_manager_ext_id: "{{availability_zone_pc_uuid}}"
+        is_primary: false
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster_availability_zone.uuid }}"
+    replication_configurations:
+      - source_location_label: "ansible-label-{{label1}}_updated"
+        remote_location_label: "ansible-label-{{label2}}_updated"
+        schedule:
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 3600
+          retention:
+            auto_rollup_retention:
+              local:
+                snapshot_interval_type: "DAILY"
+                frequency: 2
+              remote:
+                snapshot_interval_type: "DAILY"
+                frequency: 2
+          sync_replication_auto_suspend_timeout_seconds: 90
+      - source_location_label: "ansible-label-{{label2}}_updated"
+        remote_location_label: "ansible-label-{{label1}}_updated"
+        schedule:
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 3600
+          retention:
+            auto_rollup_retention:
+              local:
+                snapshot_interval_type: "DAILY"
+                frequency: 2
+              remote:
+                snapshot_interval_type: "DAILY"
+                frequency: 2
+          sync_replication_auto_suspend_timeout_seconds: 90
+    category_ids:
+      - "{{category_ext_id_2}}"
+  register: result
+  ignore_errors: true
+
+- name: Status for updating auto retention protection policy
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.ext_id == "{{ todelete[1] }}"
+      - result.response.name == "ansible-name-auto-{{random_name}}_updated"
+      - result.response.description == "ansible-description-auto-{{random_name}}_updated"
+      - (result.response.replication_locations[0].label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_locations[0].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[0].is_primary == true
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[0].domain_manager_ext_id == "{{ availability_zone_pc_uuid }}"
+        and result.response.replication_locations[0].label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_locations[0].is_primary == false
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_availability_zone.uuid }}")
+      - (result.response.replication_locations[1].label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_locations[1].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[1].is_primary == true
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[1].domain_manager_ext_id == "{{ availability_zone_pc_uuid }}"
+        and result.response.replication_locations[1].label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_locations[1].is_primary == false
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_availability_zone.uuid }}")
+      - (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 3600
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
+        or (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 3600
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
+      - (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 3600
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
+        or (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 3600
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
+      - result.response.replication_configurations[0] != result.response.replication_configurations[1]
+      - result.response.category_ids[0] == "{{category_ext_id_2}}"
+    success_msg: "Protection policy updated successfully"
+    fail_msg: "Protection policy update failed"
+
+########################################################################################
+
+- name: List all protection policies
+  nutanix.ncp.ntnx_protection_policies_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Status for listing all protection policies
+  ansible.builtin.assert:
+    that:
+      - result.changed == False
+      - result.failed == False
+      - result.response is defined
+      - result.response | length >= 2
+    fail_msg: "Unable to list protection policies"
+    success_msg: "Protection policies listed successfully"
+
+########################################################################################
+
+- name: List all protection policies with filter
+  nutanix.ncp.ntnx_protection_policies_info_v2:
+    filter: "name eq 'ansible-name-auto-{{random_name}}_updated'"
+  register: result
+  ignore_errors: true
+
+- name: Status for listing all protection policies with filter
+  ansible.builtin.assert:
+    that:
+      - result.changed == False
+      - result.failed == False
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].name == "ansible-name-auto-{{random_name}}_updated"
+    fail_msg: "Unable to list protection policies with filter"
+    success_msg: "Protection policies listed successfully"
+
+########################################################################################
+
+- name: List all protection policies with limit
+  nutanix.ncp.ntnx_protection_policies_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Status for listing all protection policies with limit
+  ansible.builtin.assert:
+    that:
+      - result.changed == False
+      - result.failed == False
+      - result.response is defined
+      - result.response | length == 1
+    fail_msg: "Unable to list protection policies with limit"
+    success_msg: "Protection policies listed successfully"
+
+########################################################################################
+
+- name: Fetch protection policy by external ID
+  nutanix.ncp.ntnx_protection_policies_info_v2:
+    ext_id: "{{ todelete[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: Status for fetching protection policy by external ID
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.ext_id == "{{ todelete[0] }}"
+      - result.response.name == "ansible-name-linear-{{random_name}}_updated"
+      - result.response.description == "ansible-description-linear-{{random_name}}_updated"
+      - (result.response.replication_locations[0].label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_locations[0].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[0].is_primary == true
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[0].domain_manager_ext_id == "{{ availability_zone_pc_uuid }}"
+        and result.response.replication_locations[0].label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_locations[0].is_primary == false
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_availability_zone.uuid }}")
+      - (result.response.replication_locations[1].label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_locations[1].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[1].is_primary == true
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[1].domain_manager_ext_id == "{{ availability_zone_pc_uuid }}"
+        and result.response.replication_locations[1].label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_locations[1].is_primary == false
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_availability_zone.uuid }}")
+      - (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 7200
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
+        or (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 7200
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
+      - (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 7200
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
+        or (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 7200
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
+      - result.response.replication_configurations[0] != result.response.replication_configurations[1]
+      - result.response.category_ids[0] == "{{category_ext_id_1}}"
+    success_msg: "Protection policy fetched successfully"
+    fail_msg: "Protection policy fetch failed"
+
+########################################################################################
+
+- name: Disassociate category from first VG
+  nutanix.ncp.ntnx_volume_groups_categories_v2:
+    ext_id: "{{ vg1_uuid }}"
+    state: absent
+    categories:
+      - ext_id: "{{ category_ext_id_4 }}"
+        entity_type: "CATEGORY"
+  register: result
+  ignore_errors: true
+
+- name: Status for disassociating category from first VG
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    success_msg: "Category disassociated from VG successfully"
+    fail_msg: "Category disassociation from VG failed"
+
+- name: Disassociate category from second VG
+  nutanix.ncp.ntnx_volume_groups_categories_v2:
+    ext_id: "{{ vg2_uuid }}"
+    state: absent
+    categories:
+      - ext_id: "{{ category_ext_id_2 }}"
+        entity_type: "CATEGORY"
+  register: result
+  ignore_errors: true
+
+- name: Status for disassociating category from second VG
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    success_msg: "Category disassociated from VG successfully"
+    fail_msg: "Category disassociation from VG failed"
+
+- name: Fetch all VGs on local cluster
+  nutanix.ncp.ntnx_volume_groups_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Filter only protected VGs
+  ansible.builtin.set_fact:
+    protected_vgs: "{{ result.response | selectattr('name', 'search', random_name ~ '_ansible_protected_vg') | list }}"
+
+- name: Extract external ids of protected VGs
+  ansible.builtin.set_fact:
+    protected_vgs_ext_ids: "{{ protected_vgs | map(attribute='ext_id') | list }}"
+
+- name: Assert that VGs are present
+  ansible.builtin.assert:
+    that:
+      - protected_vgs | length == 2
+    fail_msg: "No VGs found"
+    success_msg: "VGs found"
+
+- name: Delete all Created VGs on local cluster
+  nutanix.ncp.ntnx_volume_groups_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  loop: "{{ protected_vgs_ext_ids }}"
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.response.status == 'SUCCEEDED'
+      - item.response is defined
+      - item.changed == True
+      - item.failed == False
+      - item.ext_id == "{{ protected_vgs_ext_ids[vgs_index] }}"
+    fail_msg: "Unable to delete VG "
+    success_msg: "VG is deleted successfully "
+  loop: "{{ result.results }}"
+  loop_control:
+    index_var: vgs_index
+
+- name: Fetch all VGs on remote cluster
+  nutanix.ncp.ntnx_volume_groups_info_v2:
+    nutanix_host: "{{ availability_zone_pc_ip }}"
+  register: result
+  ignore_errors: true
+
+- name: Filter only protected VGs
+  ansible.builtin.set_fact:
+    protected_vgs: "{{ result.response | selectattr('name', 'search', random_name ~ '_ansible_protected_vg') | list }}"
+
+- name: Extract external ids of protected VGs
+  ansible.builtin.set_fact:
+    protected_vgs_ext_ids: "{{ protected_vgs | map(attribute='ext_id') | list }}"
+
+- name: Assert that VG is present
+  ansible.builtin.assert:
+    that:
+      - protected_vgs | length == 1
+    fail_msg: "No VGs found"
+    success_msg: "VGs found"
+
+- name: Delete Created VG on remote cluster
+  nutanix.ncp.ntnx_volume_groups_v2:
+    nutanix_host: "{{ availability_zone_pc_ip }}"
+    state: absent
+    ext_id: "{{ protected_vgs_ext_ids[0] }}"
+  register: result
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.status == 'SUCCEEDED'
+    fail_msg: "Unable to delete VG "
+    success_msg: "VG is deleted successfully "
+
+########################################################################################
+
+- name: Fetch all VMs on local cluster
+  nutanix.ncp.ntnx_vms_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Filter only protected VMs
+  ansible.builtin.set_fact:
+    protected_vms: "{{ result.response | selectattr('name', 'search', random_name ~ '_ansible_protected_vm') | list }}"
+
+- name: Extract external ids of protected VMs
+  ansible.builtin.set_fact:
+    protected_vms_ext_ids: "{{ protected_vms | map(attribute='ext_id') | list }}"
+
+- name: Assert that VMs are present
+  ansible.builtin.assert:
+    that:
+      - protected_vms | length == 2
+    fail_msg: "No VMs found"
+    success_msg: "VMs found"
+
+- name: Delete all Created VMs on local cluster
+  nutanix.ncp.ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  loop: "{{ protected_vms_ext_ids }}"
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.response.status == 'SUCCEEDED'
+      - item.response is defined
+      - item.changed == True
+      - item.failed == False
+      - item.ext_id == "{{ protected_vms_ext_ids[vms_index] }}"
+    fail_msg: "Unable to delete VM "
+    success_msg: "VM is deleted successfully "
+  loop: "{{ result.results }}"
+  loop_control:
+    index_var: vms_index
+
+- name: Fetch all VMs on remote cluster
+  nutanix.ncp.ntnx_vms_info_v2:
+    nutanix_host: "{{ availability_zone_pc_ip }}"
+  register: result
+  ignore_errors: true
+
+- name: Filter only protected VMs
+  ansible.builtin.set_fact:
+    protected_vms: "{{ result.response | selectattr('name', 'search', random_name ~ '_ansible_protected_vm') | list }}"
+
+- name: Extract external ids of protected VMs
+  ansible.builtin.set_fact:
+    protected_vms_ext_ids: "{{ protected_vms | map(attribute='ext_id') | list }}"
+
+- name: Assert that VM is present
+  ansible.builtin.assert:
+    that:
+      - protected_vms | length == 2
+    fail_msg: "No VMs found"
+    success_msg: "VMs found"
+
+- name: Delete all Created VMs on remote cluster
+  nutanix.ncp.ntnx_vms_v2:
+    nutanix_host: "{{ availability_zone_pc_ip }}"
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  loop: "{{ protected_vms_ext_ids }}"
+  ignore_errors: true
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.response.status == 'SUCCEEDED'
+      - item.response is defined
+      - item.changed == True
+      - item.failed == False
+      - item.ext_id == "{{ protected_vms_ext_ids[vms_index] }}"
+    fail_msg: "Unable to delete VM "
+    success_msg: "VM is deleted successfully "
+  loop: "{{ result.results }}"
+  loop_control:
+    index_var: vms_index
+
+########################################################################################
+
+- name: Delete protection policy with check mode enabled
+  nutanix.ncp.ntnx_protection_policies_v2:
+    ext_id: "{{ todelete[0] }}"
+    state: absent
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete protection policy with check mode status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ todelete[0] }}"
+      - result.msg == "Protection policy with ext_id:{{ todelete[0] }} will be deleted."
+    fail_msg: "Delete protection policy with check mode failed"
+    success_msg: "Delete protection policy with check mode passed"
+
+- name: Delete all protection policies
+  nutanix.ncp.ntnx_protection_policies_v2:
+    ext_id: "{{ item }}"
+    state: absent
+  loop: "{{ todelete }}"
+  register: result
+  ignore_errors: true
+
+- name: Status for deleting all protection policies
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.response is defined
+      - item.ext_id in todelete
+      - item.response.status == "SUCCEEDED"
+      - result.results | length == todelete | length
+    fail_msg: "Unable to delete protection policies"
+    success_msg: "Protection policies deleted successfully"
+  loop: "{{ result.results }}"
+
+########################################################################################
+# Destroy cluster
+
+- name: Sleep for 10 minutes before destroying the cluster
+  ansible.builtin.pause:
+    seconds: 600
+
+- name: Destroy the cluster for cleanup
+  nutanix.ncp.ntnx_clusters_v2:
+    state: absent
+    ext_id: "{{ cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify cluster deletion
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.response.status == "SUCCEEDED"
+      - result.ext_id == cluster_ext_id
+    fail_msg: Failed verifying cluster deletion
+    success_msg: Cluster deletion passed successfully
+
+########################################################################################
+
+- name: Delete Created categories
+  nutanix.ncp.ntnx_categories_v2:
+    ext_id: "{{item}}"
+    state: absent
+  register: result
+  loop: "{{ todelete_categories }}"
+  ignore_errors: true
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - result.changed == True
+      - result.results | length == todelete_categories | length
+      - result.msg == "All items completed"
+    fail_msg: "Unable to delete category key & value"
+    success_msg: "Category key & value deleted successfully"

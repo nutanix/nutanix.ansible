@@ -1,4 +1,8 @@
 ---
+# Variables required before running this playbook:
+# - active_directory
+# - white_listed_groups
+
 - name: Start ntnx_directory_services_v2 tests
   ansible.builtin.debug:
     msg: start ntnx_directory_services_v2 tests
@@ -362,6 +366,27 @@
       - result.response | length == 1
     fail_msg: Unable to list all directory services with limit
     success_msg: All directory services listed with limit successfully
+
+########################################################################
+
+- name: Delete directory service with check mode enabled
+  ntnx_directory_services_v2:
+    state: absent
+    ext_id: "{{ todelete }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete directory service with check mode status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ todelete }}"
+      - result.msg == "Directory service with ext_id:{{ todelete }} will be deleted."
+    fail_msg: Delete directory service with check mode failed
+    success_msg: Delete directory service with check mode passed
 
 ########################################################################
 

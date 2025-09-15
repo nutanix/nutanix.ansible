@@ -1,4 +1,14 @@
 ---
+# Variables required before running this playbook:
+# - cluster
+# - k8s_version
+# - host_os
+# - network
+# - cni
+# - nutanix_cluster_password
+# - nutanix_cluster_username
+# - storage_container
+
 - name: Start testing ntnx_karbon_clusters and ntnx_karbon_clusters_info
   ansible.builtin.debug:
     msg: Start testing ntnx_karbon_clusters and ntnx_karbon_clusters_info
@@ -149,23 +159,42 @@
     fail_msg: " Fail: unable to  create  DEV cluster with Flannel network provider"
     success_msg: " Pass:  create  DEV cluster with Flannel network provider successfully "
 #############################
-- name: Delete  dev cluster  with Flannel network provider
+- name: Delete Cluster with check mode
   ntnx_karbon_clusters:
     state: absent
     name: "{{ result.response.name }}"
-  register: result
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete Cluster with check mode Status
+  ansible.builtin.assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Cluster with name:{{  result.response.name }} will be deleted."
+      - output.cluster_name == "{{ result.response.name }}"
+    fail_msg: "Delete cluster with check mode failed"
+    success_msg: "Delete cluster with check mode passed"
+
+- name: Delete dev cluster with Flannel network provider
+  ntnx_karbon_clusters:
+    state: absent
+    name: "{{ result.response.name }}"
+  register: output
   ignore_errors: true
 
 - name: Creation Status
   ansible.builtin.assert:
     that:
-      - result.response is defined
-      - result.changed == true
-      - result.failed == false
-      - result.response.status == "SUCCEEDED"
+      - output.response is defined
+      - output.changed == true
+      - output.failed == false
+      - output.response.status == "SUCCEEDED"
+      - output.cluster_name == "{{ result.response.name }}"
     fail_msg: " Fail: unable to delete  dev cluster  with Flannel network provider"
     success_msg: " Pass: delete  dev cluster  with Flannel network provider finished successfully"
-#############################
+############################
 - name: Create  DEV cluster with Calico network provider
   ntnx_karbon_clusters:
     cluster:
@@ -337,7 +366,7 @@
       - result.changed == false
       - result.failed == false
       - result.msg == "Nothing to change."
-    fail_msg: "Fail: idempotecy check fail "
+    fail_msg: "Fail: idempotency check fail "
     success_msg: "Passed: Returned as expected "
 #################################
 - name: Try to update node pool config with wrong labels
@@ -447,6 +476,26 @@
     fail_msg: "Fail: Unable to update pool by decreasing cpu,memory_gb,num_instances and add remove labels "
     success_msg: "Passed: update pool by decreasing cpu,memory_gb,num_instances and add remove labels finished successfully "
 ################################
+- name: Delete pool with check mode
+  ntnx_karbon_clusters_node_pools:
+    state: absent
+    node_pool_name: "{{node1_name}}"
+    cluster_name: "{{karbon_name}}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete pool with check mode Status
+  ansible.builtin.assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Pool with name:{{ node1_name }} will be deleted."
+      - output.cluster_name == "{{karbon_name}}"
+      - output.node_pool_name == "{{node1_name}}"
+    fail_msg: "Delete pool with check mode failed"
+    success_msg: "Delete pool with check mode passed"
+
 - name: Delete pool
   ntnx_karbon_clusters_node_pools:
     state: absent
@@ -462,6 +511,8 @@
       - result.response.status == 'SUCCEEDED'
       - result.failed == false
       - result.changed == true
+      - result.cluster_name == "{{ karbon_name }}"
+      - result.node_pool_name == "{{ node1_name }}"
     fail_msg: " Unable to delete node pool "
     success_msg: " node pool has been deleted successfully "
 #################################

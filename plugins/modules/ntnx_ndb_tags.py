@@ -22,6 +22,7 @@ options:
     uuid:
         description:
             - uuid of tag for update and delete
+            - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
         type: str
     desc:
         description:
@@ -198,6 +199,11 @@ def delete_tags(module, result):
     uuid = module.params.get("uuid")
     if not uuid:
         module.fail_json(msg="'uuid' is required field for delete", **result)
+
+    result["uuid"] = uuid
+    if module.check_mode:
+        result["msg"] = "Tag with uuid:{0} will be deleted.".format(uuid)
+        return
 
     resp = tags.delete(uuid=uuid)
     result["response"] = resp

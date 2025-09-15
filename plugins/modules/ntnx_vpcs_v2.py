@@ -368,10 +368,8 @@ changed:
 
 error:
   description: This field typically holds information about if the task have errors that occurred during the task execution
-  returned: always
-  type: bool
-  sample: false
-
+  returned: When an error occurs
+  type: str
 
 ext_id:
   description: The external ID of VPC
@@ -599,6 +597,10 @@ def delete_vpc(module, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
+    if module.check_mode:
+        result["msg"] = "VPC with ext_id:{0} will be deleted.".format(ext_id)
+        return
+
     current_spec = get_vpc(module, vpcs, ext_id=ext_id)
 
     etag = get_etag(data=current_spec)
@@ -645,7 +647,6 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "ext_id": None,
     }

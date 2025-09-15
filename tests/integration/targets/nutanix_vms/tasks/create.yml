@@ -1,3 +1,15 @@
+---
+# Variables required before running this playbook:
+# - password
+# - project
+# - cluster
+# - vm_owner
+# - network
+# - ubuntu
+# - centos
+# - storage_container
+# - static
+
 - name: Create Cloud-init Script file
   ansible.builtin.copy:
     mode: "0644"
@@ -96,6 +108,7 @@
       name: "{{ cluster.name }}"
     networks:
       - is_connected: true
+        vlan_mode: "ACCESS"
         subnet:
           name: "{{ network.dhcp.name }}"
     disks:
@@ -120,6 +133,11 @@
       - result.response.status.state == 'COMPLETE'
       - result.response.metadata.categories_mapping["AppType"] == ["Default"]
       - result.response.metadata.categories_mapping["Environment"] == ["Dev"]
+      - result.response.spec.name == "VM with Ubuntu image"
+      - result.response.spec.cluster_reference.name == "{{ cluster.name }}"
+      - result.response.spec.resources.nic_list[0].subnet_reference.name == "{{ network.dhcp.name }}"
+      - result.response.spec.resources.nic_list[0].vlan_mode == "ACCESS"
+      - result.response.spec.resources.nic_list[0].is_connected == true
     fail_msg: "Unable to Create VM with Ubuntu image and different specifications  "
     success_msg: "VM with Ubuntu image and different specifications created successfully "
 
@@ -213,6 +231,7 @@
       name: "{{ cluster.name }}"
     networks:
       - is_connected: false
+        vlan_mode: "TRUNKED"
         subnet:
           uuid: "{{ network.dhcp.uuid }}"
     disks:
@@ -225,6 +244,11 @@
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
+      - result.response.spec.name == "VM with Cluster Network and Disk"
+      - result.response.spec.cluster_reference.name == "{{ cluster.name }}"
+      - result.response.spec.resources.nic_list[0].subnet_reference.uuid == "{{ network.dhcp.uuid }}"
+      - result.response.spec.resources.nic_list[0].vlan_mode == "TRUNKED"
+      - result.response.spec.resources.nic_list[0].is_connected == false
     fail_msg: "Unable to create VM with Cluster , Network, Universal time zone, one Disk"
     success_msg: "VM with Cluster , Network, Universal time zone, one Disk created successfully "
 
@@ -380,7 +404,7 @@
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
   when: result.response.status.state == 'COMPLETE'
 ###################################################################################################
-- name: VM with minimum requiremnts
+- name: VM with minimum requirements
   ntnx_vms:
     state: present
     name: MinReqVM
@@ -394,8 +418,8 @@
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-    fail_msg: " Unable to create VM with minimum requiremnts "
-    success_msg: " VM with minimum requiremnts created successfully "
+    fail_msg: " Unable to create VM with minimum requirements "
+    success_msg: " VM with minimum requirements created successfully "
 
 - name: Adding VM uuid to todelete list
   ansible.builtin.set_fact:
@@ -516,7 +540,7 @@
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
   when: result.response.status.state == 'COMPLETE'
 #########################################################################################
-- name: VM with diffrent disk types and diffrent sizes with UEFI boot type
+- name: VM with different disk types and different sizes with UEFI boot type
   ntnx_vms:
     state: present
     name: VM with UEFI boot type
@@ -561,8 +585,8 @@
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-    fail_msg: " Unable to create VM with diffrent disk types and diffrent sizes with UEFI boot type "
-    success_msg: " VM with diffrent disk types and diffrent sizes with UEFI boot type created successfully "
+    fail_msg: " Unable to create VM with different disk types and different sizes with UEFI boot type "
+    success_msg: " VM with different disk types and different sizes with UEFI boot type created successfully "
 
 - name: Adding VM uuid to todelete list
   ansible.builtin.set_fact:
@@ -606,7 +630,7 @@
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-    fail_msg: " Unable to create VM withstorage container "
+    fail_msg: " Unable to create VM with storage container "
     success_msg: " VM with storage container created successfully "
 
 - name: Adding VM uuid to todelete list

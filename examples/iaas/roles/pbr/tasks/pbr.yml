@@ -15,9 +15,9 @@
       any: true
     action:
       deny: true
-  register: pbr
+  register: pbr_result
 - name: Print vpc name and pbr uuid
   ansible.builtin.debug:
     msg:
       - "vpc_name: {{ item.vpc_name }}"
-      - "uuid: {{ pbr.pbr_uuid }}"
+      - "uuid: {{ pbr_result.pbr_uuid }}"

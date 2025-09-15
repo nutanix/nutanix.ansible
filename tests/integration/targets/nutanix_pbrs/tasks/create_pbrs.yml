@@ -1,3 +1,15 @@
+---
+# Variables required before running this playbook:
+# - vpc
+# - network
+# - priority
+# - protocol
+# - tcp
+# - udp
+# - icmp
+# - reroute_ip
+# - todelete
+
 - name: Create PBR with vpc name, source network, external destination, with reroute action and any type and code icmp
   ntnx_pbrs:
     validate_certs: false
@@ -251,6 +263,24 @@
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.pbr_uuid ] }}"
 ##################################################################################################################
+- name: Delete Pbr with check mode
+  ntnx_pbrs:
+    state: absent
+    pbr_uuid: "{{ result.pbr_uuid }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete Pbr with check mode Status
+  ansible.builtin.assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Pbr with uuid:{{ result.pbr_uuid}} will be deleted."
+      - output.pbr_uuid == "{{ result.pbr_uuid }}"
+    fail_msg: "Delete Pbr with check mode failed"
+    success_msg: "Delete Pbr with check mode passed"
+
 - name: Delete all created pbrs
   ntnx_pbrs:
     state: absent

@@ -1,6 +1,6 @@
 namespace: "nutanix"
 name: "ncp"
-version: "2.0.0"
+version: "2.2.0"
 readme: "README.md"
 authors:
   - "Abhishek Chaudhary (@abhimutant)"
@@ -11,7 +11,7 @@ authors:
   - "Abhinav Bansal (@abhinavbansal29)"
   - "George Ghawali (@george-ghawali)"
 description: Nutanix Ansible Collection
-license_file: 'LICENSE'
+license_file: "LICENSE"
 tags: [nutanix, prism, ahv, cloud, infrastructure]
 repository: https://github.com/nutanix/nutanix.ansible
 documentation: https://galaxy.ansible.com/ui/repo/published/nutanix/ncp/
