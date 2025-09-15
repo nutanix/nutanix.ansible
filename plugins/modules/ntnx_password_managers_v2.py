@@ -206,12 +206,16 @@ def update_password(module, password_manager_api, result):
         except Exception as e:
             result["count"] += 1
             if "Invalid credentials" in str(e) and "401" in str(e):
-                module.params["nutanix_password"] = module.params.get(
-                    "current_password"
-                )
-            wait_for_completion(module, task_ext_id)
+                module.params["nutanix_password"] = module.params.get("new_password")
+            task_status = wait_for_completion(module, task_ext_id)
 
-        result["response"] = strip_internal_attributes(task_status.to_dict())
+        if task_status is None:
+            module.fail_json(
+                msg="Failed to fetch task status for task {}".format(task_ext_id),
+                **result,
+            )
+        else:
+            result["response"] = strip_internal_attributes(task_status.to_dict())
 
     result["changed"] = True
 
