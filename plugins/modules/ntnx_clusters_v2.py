@@ -742,7 +742,7 @@ options:
   categories:
     description:
       - The categories of the cluster.
-    type: dict
+    type: list
   container_name:
     description:
       - The name of the container.
