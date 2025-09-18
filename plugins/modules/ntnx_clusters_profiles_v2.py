@@ -304,7 +304,7 @@ options:
             description:
               - SNMP protocol type
             type: str
-            required: true
+            required: false
             choices:
               - "UDP"
               - "TCP"
@@ -369,7 +369,7 @@ options:
             description:
               - SNMP protocol type
             type: str
-            required: true
+            required: false
             choices:
               - "UDP"
               - "TCP"
@@ -379,7 +379,7 @@ options:
             description:
               - SNMP transport port
             type: int
-            required: true
+            required: false
           should_inform:
             description:
               - SNMP information status.
