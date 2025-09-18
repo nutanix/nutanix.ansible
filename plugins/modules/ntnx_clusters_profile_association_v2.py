@@ -47,9 +47,9 @@ options:
                 type: str
                 required: true
     dryrun:
-    description:
-      - Whether to run prechecks only.
-    type: bool
+        description:
+          - Whether to run prechecks only.
+        type: bool
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
