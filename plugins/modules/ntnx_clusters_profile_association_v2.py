@@ -40,7 +40,7 @@ options:
         elements: dict
         required: true
         suboptions:
-            ext_id:
+            uuid:
                 description:
                     - The external identifier of the cluster.
                     - Required when associating or disassociating a cluster profile.
@@ -50,6 +50,7 @@ options:
         description:
           - Whether to run prechecks only.
         type: bool
+        default: false
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2

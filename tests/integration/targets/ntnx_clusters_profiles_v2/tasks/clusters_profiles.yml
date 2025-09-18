@@ -882,7 +882,8 @@
       - result.response.rsyslog_server_list[0].network_protocol == "{{ cluster_profiles[0].rsyslog_server_list[0].network_protocol }}"
       - result.response.rsyslog_server_list[0].modules[0].name == "{{ cluster_profiles[0].rsyslog_server_list[0].modules[0].name }}"
       - result.response.rsyslog_server_list[0].modules[0].log_severity_level == "{{ cluster_profiles[0].rsyslog_server_list[0].modules[0].log_severity_level }}"
-      - result.response.rsyslog_server_list[0].modules[0].should_log_monitor_files == {{ cluster_profiles[0].rsyslog_server_list[0].modules[0].should_log_monitor_files }}
+      - result.response.rsyslog_server_list[0].modules[0].should_log_monitor_files ==
+        {{ cluster_profiles[0].rsyslog_server_list[0].modules[0].should_log_monitor_files }}
       - result.response.rsyslog_server_list[0].modules[1].name == "{{ cluster_profiles[0].rsyslog_server_list[0].modules[1].name }}"
       - result.response.rsyslog_server_list[0].modules[1].log_severity_level == "{{ cluster_profiles[0].rsyslog_server_list[0].modules[1].log_severity_level }}"
       - result.response.rsyslog_server_list[0].modules[1].should_log_monitor_files ==
@@ -894,7 +895,7 @@
     success_msg: "Second cluster profile is created successfully"
 
 - name: Set second cluster profile external ID
-  set_fact:
+  ansible.builtin.set_fact:
     cluster_profile_ext_id_2: "{{ result.response.ext_id }}"
 
 - name: Create cluster profile with same name
@@ -1258,7 +1259,8 @@
       - result.response.rsyslog_server_list[0].network_protocol == "{{ cluster_profiles[0].rsyslog_server_list[0].network_protocol }}"
       - result.response.rsyslog_server_list[0].modules[0].name == "{{ cluster_profiles[0].rsyslog_server_list[0].modules[0].name }}"
       - result.response.rsyslog_server_list[0].modules[0].log_severity_level == "{{ cluster_profiles[0].rsyslog_server_list[0].modules[0].log_severity_level }}"
-      - result.response.rsyslog_server_list[0].modules[0].should_log_monitor_files == {{ cluster_profiles[0].rsyslog_server_list[0].modules[0].should_log_monitor_files }}
+      - result.response.rsyslog_server_list[0].modules[0].should_log_monitor_files ==
+        {{ cluster_profiles[0].rsyslog_server_list[0].modules[0].should_log_monitor_files }}
       - result.response.rsyslog_server_list[0].modules[1].name == "{{ cluster_profiles[0].rsyslog_server_list[0].modules[1].name }}"
       - result.response.rsyslog_server_list[0].modules[1].log_severity_level == "{{ cluster_profiles[0].rsyslog_server_list[0].modules[1].log_severity_level }}"
       - result.response.rsyslog_server_list[0].modules[1].should_log_monitor_files ==
