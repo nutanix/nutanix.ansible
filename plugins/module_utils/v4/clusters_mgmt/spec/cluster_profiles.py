@@ -96,7 +96,6 @@ class ClusterProfileSpecs:
         type="str",
         choices=["UDP", "TCP", "UDP6", "TCP6"],
         obj=clusters_sdk.SnmpProtocol,
-        required=True,
     )
 
     traps_spec = dict(
@@ -105,7 +104,7 @@ class ClusterProfileSpecs:
         ),
         username=dict(type="str"),
         protocol=protocol_spec,
-        port=dict(type="int", required=True),
+        port=dict(type="int"),
         should_inform=dict(type="bool"),
         engine_id=dict(type="str", required=False),
         version=dict(
