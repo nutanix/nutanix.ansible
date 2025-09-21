@@ -37,7 +37,7 @@ options:
     description:
       - The name of the cluster profile.
     type: str
-    required: true
+    required: false
   description:
     description:
       - The description of the cluster profile.

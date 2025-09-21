@@ -226,7 +226,7 @@ class ClusterProfileSpecs:
 
     cluster_profile = dict(
         ext_id=dict(type="str"),
-        name=dict(type="str", required=True),
+        name=dict(type="str"),
         description=dict(type="str"),
         allowed_overrides=dict(
             type="list",

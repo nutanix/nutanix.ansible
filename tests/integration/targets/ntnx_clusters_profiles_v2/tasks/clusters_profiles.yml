@@ -929,7 +929,7 @@
     that:
       - result.changed == false
       - result.failed == true
-      - "'missing required arguments: name' in result.msg"
+      - "'state is present but all of the following are missing: name' in result.msg"
     fail_msg: "Create cluster profile without providing name did not fail as expected"
     success_msg: "Create cluster profile without providing name failed as expected"
 
