@@ -5,13 +5,17 @@
 #   2. Run cluster create prechecks
 #   3. Create cluster with minimum spec and register PE PC for verifying cluster creation
 #   4. Create cluster with auth keys, configs, network details, etc. and register PE PC for verifying cluster creation
-#   5. Generate spec for cluster update using check mode
-#   6. Update config public auth keys
-#   7. Update ntp servers and dns servers and smtp server
-#   8. Verify idempotency of module
-#   9. Test info module for fetching cluster details
-#   10. Test info module for fetching host details
-#   11. Test cluster destroy
+#   5. Create categories for cluster
+#   6. Associate categories with cluster
+#   7. Disassociate categories from cluster
+#   8. Delete categories
+#   9. Generate spec for cluster update using check mode
+#   10. Update config public auth keys
+#   11. Update ntp servers and dns servers and smtp server
+#   12. Verify idempotency of module
+#   13. Test info module for fetching cluster details
+#   14. Test info module for fetching host details
+#   15. Test cluster destroy
 
 # Variables required before running this test:
 # - clusters: List of clusters with all required nested fields (nodes, config, network, etc.)
@@ -29,6 +33,11 @@
 - name: Set prefix name for clusters
   ansible.builtin.set_fact:
     prefix_name: ansible_test
+
+- name: Set suffix name
+  ansible.builtin.set_fact:
+    suffix_name: "ansible-ag"
+    cluster_ext_id: "{{ cluster.uuid }}"
 
 - name: Set command split for resetting cluster username and password
   ansible.builtin.set_fact:
@@ -701,6 +710,246 @@
       - unique_dns_servers[1] in "{{ clusters[0].network.dns_servers }}"
     fail_msg: Failed verifying cluster creation
     success_msg: Cluster creation passed successfully
+
+############################################## Associate categories with cluster ##############################################
+
+- name: Set category key & value
+  ansible.builtin.set_fact:
+    todelete: []
+    key1: "{{random_name}}{{suffix_name}}key1"
+    value1: "{{random_name}}{{suffix_name}}value1"
+
+- name: Create category key & value
+  nutanix.ncp.ntnx_categories_v2:
+    key: "{{key1}}"
+    value: "{{value1}}"
+    description: "ansible test"
+  register: output
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - output.response is defined
+      - output.response.key == "{{key1}}"
+      - output.response.value == "{{value1}}"
+      - output.response.type == "USER"
+      - output.response.ext_id is defined
+      - output.changed == True
+      - output.failed == False
+      - output.response.description == "ansible test"
+    fail_msg: "Unable to create category key & value"
+    success_msg: "Category key & value created successfully"
+
+- name: Set category external ID
+  ansible.builtin.set_fact:
+    category_ext_id: "{{ output.response.ext_id }}"
+
+- name: Create spec for Associate categories with cluster using check mode
+  nutanix.ncp.ntnx_clusters_categories_v2:
+    cluster_ext_id: "0006361b-6855-3644-7458-2268f8ffb2bd"
+    categories:
+      - "12n8p-2779-4b30-9156-521b0b6b3293"
+      - "98j8p-5779-4b30-9156-521b0b6b3293"
+    state: present
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Verify generated spec for Associate categories with cluster using check mode
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.response.categories | length == 2
+      - result.cluster_ext_id == "0006361b-6855-3644-7458-2268f8ffb2bd"
+      - result.response.categories == ["12n8p-2779-4b30-9156-521b0b6b3293", "98j8p-5779-4b30-9156-521b0b6b3293"]
+    fail_msg: "Unable to generate spec for Associate categories with cluster using check mode"
+    success_msg: "Spec for Associate categories with cluster using check mode generated successfully"
+
+- name: Associate categories with cluster without passing cluster_ext_id and categories
+  nutanix.ncp.ntnx_clusters_categories_v2:
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Verify error without passing cluster_ext_id and categories
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.error.msg == "missing required arguments: categories, cluster_ext_id"
+      - result.changed == false
+    fail_msg: "Test failed, expected error not found"
+    success_msg: "Test passed, expected error found"
+
+- name: Associate categories with cluster passing wrong cluster_ext_id
+  nutanix.ncp.ntnx_clusters_categories_v2:
+    cluster_ext_id: "0006361b-6855-3644-7458-2268f8ffb2bd"
+    categories:
+      - "12n8p-2779-4b30-9156-521b0b6b3293"
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Verify error passing wrong cluster_ext_id
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.error is defined
+      - result.msg == "Api Exception raised while associating categories"
+      - result.changed == false
+    fail_msg: "Test failed, expected error not found"
+    success_msg: "Test passed, expected error found"
+
+- name: Associate categories with cluster passing wrong categories
+  nutanix.ncp.ntnx_clusters_categories_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    categories:
+      - "12n8p-2779-4b30-9156-521b0b6b3293"
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Verify error passing wrong categories
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.msg == "Api Exception raised while associating categories"
+      - result.changed == false
+    fail_msg: "Test failed, expected error not found"
+    success_msg: "Test passed, expected error found"
+
+- name: Associate categories with cluster
+  nutanix.ncp.ntnx_clusters_categories_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    categories:
+      - "{{ category_ext_id }}"
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Verify category association
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.cluster_ext_id == cluster_ext_id
+      - result.response.categories | length == 1
+      - result.response.categories[0] == category_ext_id
+      - result.task_ext_id is defined
+    fail_msg: "Unable to associate category with cluster"
+    success_msg: "Category associated with cluster successfully"
+
+############################################## Disassociate categories from cluster ##############################################
+
+- name: Create spec for Disassociate categories from cluster using check mode
+  nutanix.ncp.ntnx_clusters_categories_v2:
+    cluster_ext_id: "0006361b-6855-3644-7458-2268f8ffb2bd"
+    categories:
+      - "12n8p-2779-4b30-9156-521b0b6b3293"
+      - "98j8p-5779-4b30-9156-521b0b6b3293"
+    state: absent
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Verify generated spec for Disassociate categories from cluster using check mode
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.response.categories | length == 2
+      - result.cluster_ext_id == "0006361b-6855-3644-7458-2268f8ffb2bd"
+      - result.response.categories == ["12n8p-2779-4b30-9156-521b0b6b3293", "98j8p-5779-4b30-9156-521b0b6b3293"]
+    fail_msg: "Unable to generate spec for Disassociate categories from cluster using check mode"
+    success_msg: "Spec for Disassociate categories from cluster using check mode generated successfully"
+
+- name: Disassociate categories from cluster without passing cluster_ext_id and categories
+  nutanix.ncp.ntnx_clusters_categories_v2:
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Verify error without passing cluster_ext_id and categories
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.error.msg == "missing required arguments: categories, cluster_ext_id"
+      - result.changed == false
+    fail_msg: "Test failed, expected error not found"
+    success_msg: "Test passed, expected error found"
+
+- name: Disassociate categories from cluster passing wrong cluster_ext_id
+  nutanix.ncp.ntnx_clusters_categories_v2:
+    cluster_ext_id: "0006361b-6855-3644-7458-2268f8ffb2bd"
+    categories:
+      - "{{ category_ext_id }}"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Verify error passing wrong cluster_ext_id
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.msg == "Api Exception raised while disassociating categories"
+      - result.changed == false
+    fail_msg: "Test failed, expected error not found"
+    success_msg: "Test passed, expected error found"
+
+- name: Disassociate categories from cluster passing wrong categories
+  nutanix.ncp.ntnx_clusters_categories_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    categories:
+      - "12n8p-2779-4b30-9156-521b0b6b3293"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Verify error passing wrong categories
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.msg == "Api Exception raised while disassociating categories"
+      - result.changed == false
+    fail_msg: "Test failed, expected error not found"
+    success_msg: "Test passed, expected error found"
+
+- name: Disassociate categories from cluster
+  nutanix.ncp.ntnx_clusters_categories_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    categories:
+      - "{{ category_ext_id }}"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Verify category disassociation
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.cluster_ext_id == cluster_ext_id
+      - result.response.categories == none
+      - result.task_ext_id is defined
+    fail_msg: "Unable to disassociate category from cluster"
+    success_msg: "Category disassociated from cluster successfully"
+
+- name: Delete Created categories
+  nutanix.ncp.ntnx_categories_v2:
+    ext_id: "{{ category_ext_id }}"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - result.changed == True
+      - result.failed == False
+      - result.ext_id == category_ext_id
+    fail_msg: "Unable to delete category key & value"
+    success_msg: "Category key & value deleted successfully"
 
 ############################################## Update cluster test ##############################################
 
