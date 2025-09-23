@@ -83,19 +83,19 @@ response:
             "config": {
                 "authorized_public_key_list": [
                     {
-                        "key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCmzou3agmGUD2eQqOBG4mZ/89BA3Z5yCUeQZ6HGY1u+Gw/vJIa5URkkpL9OwEz3O1Ob0PUx8yGjMntl/2vMZX/HdYy0DZ7WQe0cfn3/iSKH3qZ1xNZSq2kGzHSn/8uwPbojTyRvExTDcsIHZb17ZyOcyb7lS86AGOV8QweTo1ytqckvmDguB+UoFDL3GYzn/uyqi+s0RajNPxeprHbhk0TBUfr07sCJbbzxWNP6GZS+uK3JyjnjiH4SYb2I+TP+J0w7cjurv8oBtO1ihGjXCeiNlyg7MPlU93GydAha0fHGH+FUFspYSJzVijeKInQeIM35OHgQ6f/RjoYC9MSHcWKXmuhQhvYmR9/RCKByln3e7g75nvkFCM/3stperwNOvIz8FQ9F2mcrRCqkEkmsBjkqbYh/UWtop6MK21NYICA1ab6rEi5ahtlkKZZeZ3KSmNVTOUwslANmLGXVQtDjyEQT9ai5WCoE+C7bc47Ad/KdxQ7pbrbBWBnLY5lfyhCusc= nutanix@ntnx-18fm6g460083-d-cvm",
+                        "key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDQ6",
                         "name": "cb48351c-ed6d-4791-930a-0d61bd0060bf"
                     },
                     {
-                        "key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCeJSY+W91leFtVlITfUmMMG9xONf0oYo40xcu/eFibPNYkOPyXm7gq4AHrqvlpwA+0VPyKtlSYU99CHLlV+EGbDgM75Dim31Y+yqidoX5cAK5gp3RrrXx+yzQVTUbXThfienRF1tgobON1Rg7qQXOoz+UhhgaETuKshl2T/Yl7JlXVOyVfVKNSjuU+ReFfX5UipJDbcu0ZEfyuimTa9rMHukh44bW004y2lKaF9HMuA3yoV+nuSe+x+Ii8UYb33ehmWnHFQ6WiL7p1IKZgEsald1JLBkwvwAU4laIks+4H8nYT3aDZrab1tHvOTyQJG5KmLz87ReISHI24EJ3TAOaQ9kyOv9GpjqTfuTRTirKb4GEQYywXtLm99JD7ovQQgAi/jgnQyXpOFuWriU7o0JM9H/tMutYdaUroTooVq3dhLSTN/NtqhiBo6cXI0/H+ieEvSfE2FLQKT70XNuzNQsSYI0Bd8kS6YGIwwYCGI1elLtEJXim27Us+sKVtaycl7zk= root@phoenix",
+                        "key": "ssh-rsa AAAAB3NzaC1yc2EAA= root@phoenix",
                         "name": "10.46.136.28"
                     },
                     {
-                        "key": "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAw8NhpiLG/6c8c0LocaQVM6+x8yBvLS+z13nYlqzSKr64HQSH+IIx14bS+uh0xf8ou5ROnbUa44YM9qG2RBK1hBVrwTIKZBwFwOTxDuXH9YoswqflnOeyTGUFerrMxlg5iYvKE01QIErKWt/BJ+hK/qVQi6SHh/WhyjAGNQPxjPBG3oEUFoLV9uDLX9RT/sLIQpBf91DCbF9+2rSToqjydj36d38JbmuGJGqr+DrEd0lKzfiJiQ39t3AXBE1bY2ISX+uwq07XkYZbrHaijrxnOBFZE7ETQmyxdcOvgDxvhnhZpFsUqbPqIqa45CwFWV+btzITvpJkveYjGSGR7ZJNHQ== nutanix@titan",
+                        "key": "ssh-rsa AAAAB3NzaC1yc2EAAAAQ== nutanix@titan",
                         "name": "agave"
                     },
                     {
-                        "key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC6oDEABPvDtwtOFEJhu7sx9oUZskh0R4CWW6IM9uIxVtjYR/XXu587rXKac34InclJ3U3+PFQcAgEvdw2qiCEWWWMFMiALMneDELPd5qepKRrFJxc3hkyfagot3n7i6r7Y83ceIII4qM1mGLdUA3XdSWlttbgugnBrfB9yLq/BgtVqBvBVFayTGb6IsoMUSbODX6zZEt9Uzh/Yr49DV40ULpGhSYS9vWFB3GrajrliQ9Ea8oOB+8vK9Cavf7IOsaIaPsGI20mypeKFn4qcinBKc6O3PqU3YyYv7pLJWAvwXr9D9+rukgNAhKnd1fFQVLj4sAHA4ixfQk9+0kgAJM4P",
+                        "key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC6oD",
                         "name": "nutest"
                     }
                 ],
