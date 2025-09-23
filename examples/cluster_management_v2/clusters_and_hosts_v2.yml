@@ -185,7 +185,7 @@
         ext_id: "{{ cluster_ext_id }}"
       register: result
       ignore_errors: true
-    
+
     - name: Associate categories with cluster
       nutanix.ncp.ntnx_clusters_categories_v2:
         cluster_ext_id: "{{ cluster_ext_id }}"
@@ -245,7 +245,7 @@
         cluster_ext_id: "{{ cluster_ext_id }}"
       register: result
       ignore_errors: true
-    
+
     - name: Disassociate categories from cluster
       nutanix.ncp.ntnx_clusters_categories_v2:
         cluster_ext_id: "{{ cluster_ext_id }}"
