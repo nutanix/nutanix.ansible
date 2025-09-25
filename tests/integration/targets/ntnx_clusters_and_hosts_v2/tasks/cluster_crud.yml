@@ -144,7 +144,7 @@
   ignore_errors: true
 
 - name: Verify generated spec
-  ansible.builtin.assert: 
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
