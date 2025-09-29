@@ -71,17 +71,19 @@ jobs:
           ansible-playbook tests/integration/targets/prepare_foundation_env/playbooks/prepare_foundation_env.yml
           echo "===> Running integration tests..."
           if [ -n "$regex_pattern" ]; then
-              echo "Filtering integration tests by path regex: $regex_pattern"
-              # Collect matching target directories only
-              mapfile -t matched_dirs < <(find tests/integration/targets -maxdepth 1 -type d | grep -E "$regex_pattern" || true)
+              echo "Filtering integration tests by regex: $regex_pattern"
+              # Find matching target directories under tests/integration/targets
+              mapfile -t matched_dirs < <(find tests/integration/targets -maxdepth 1 -mindepth 1 -type d -printf "%f\n" | grep -E "$regex_pattern" || true)
 
               if [ ${#matched_dirs[@]} -eq 0 ]; then
                   echo "No targets matched regex: '$regex_pattern'. Nothing to run."
               else
                   echo "Running ${#matched_dirs[@]} matching integration target(s):"
                   printf '%s\n' "${matched_dirs[@]}"
-                  ansible-test integration --continue-on-error --python ${{ matrix.python-version }} --coverage "${matched_dirs[@]}" --allow-disabled
+                  ansible-test integration --continue-on-error --python ${{ matrix.python-version }} --coverage "${matched_dirs[@]}"
               fi
+          else
+              ansible-test integration --continue-on-error --python ${{ matrix.python-version }} --coverage
           fi
           ansible-test integration --continue-on-error --python ${{ matrix.python-version }} --coverage $flag
           ansible-test coverage report > coverage.txt
