@@ -51,6 +51,8 @@ jobs:
           if [ "$args" = "allow-disabled" ]
                       then
                           flag="--allow-disabled"
+          elif [ -n "$args" ]; then
+              regex_pattern="$args"
           fi
           echo '${{ secrets.FOUNDATION_CONFIG }}' > tests/integration/targets/prepare_foundation_env/vars/main.yml
           echo '${{ secrets.FC_CONFIG }}' > tests/integration/targets/prepare_fc_env/vars/main.yml
@@ -67,6 +69,19 @@ jobs:
           ansible-playbook tests/integration/targets/prepare_ndb_env/playbooks/prepare_env.yml
           ansible-playbook tests/integration/targets/prepare_fc_env/playbooks/prepare_fc_env.yml
           ansible-playbook tests/integration/targets/prepare_foundation_env/playbooks/prepare_foundation_env.yml
+          echo "===> Running integration tests..."
+          if [ -n "$regex_pattern" ]; then
+              echo "Filtering integration tests by path regex: $regex_pattern"
+              # Find test files whose path matches the regex. If none match, we skip running tests.
+              mapfile -t matched_files < <(find tests/integration -type f | grep -E "$regex_pattern" || true)
+
+              if [ ${#matched_files[@]} -eq 0 ]; then
+                  echo "No tests matched regex: '$regex_pattern'. Nothing to run."
+              else
+                  echo "Running ${#matched_files[@]} matching test file(s)..."
+                  ansible-test integration --continue-on-error --python ${{ matrix.python-version }} --coverage "${matched_files[@]}" --allow-disabled
+              fi
+          fi
           ansible-test integration --continue-on-error --python ${{ matrix.python-version }} --coverage $flag
           ansible-test coverage report > coverage.txt
           ansible-playbook tests/integration/targets/prepare_env/playbooks/cleanup.yml
