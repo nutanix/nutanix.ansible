@@ -72,14 +72,15 @@ jobs:
           echo "===> Running integration tests..."
           if [ -n "$regex_pattern" ]; then
               echo "Filtering integration tests by path regex: $regex_pattern"
-              # Find test files whose path matches the regex. If none match, we skip running tests.
-              mapfile -t matched_files < <(find tests/integration -type f | grep -E "$regex_pattern" || true)
+              # Collect matching target directories only
+              mapfile -t matched_dirs < <(find tests/integration/targets -maxdepth 1 -type d | grep -E "$regex_pattern" || true)
 
-              if [ ${#matched_files[@]} -eq 0 ]; then
-                  echo "No tests matched regex: '$regex_pattern'. Nothing to run."
+              if [ ${#matched_dirs[@]} -eq 0 ]; then
+                  echo "No targets matched regex: '$regex_pattern'. Nothing to run."
               else
-                  echo "Running ${#matched_files[@]} matching test file(s)..."
-                  ansible-test integration --continue-on-error --python ${{ matrix.python-version }} --coverage "${matched_files[@]}" --allow-disabled
+                  echo "Running ${#matched_dirs[@]} matching integration target(s):"
+                  printf '%s\n' "${matched_dirs[@]}"
+                  ansible-test integration --continue-on-error --python ${{ matrix.python-version }} --coverage "${matched_dirs[@]}" --allow-disabled
               fi
           fi
           ansible-test integration --continue-on-error --python ${{ matrix.python-version }} --coverage $flag
