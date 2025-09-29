@@ -56,6 +56,11 @@ DOCUMENTATION = r"""
                 - Set to C(False) to fetch specified number of VMs based on offset and length
                 - If set to C(True), offset and length will be ignored
                 - By default, this is set to C(False)
+        vm_fqdn_expr:
+            description:
+                - Optional expression to construct the FQDN for a VM.
+            required: false
+            type: str
         data:
             description:
                 - Pagination support for listing VMs
@@ -84,6 +89,7 @@ DOCUMENTATION = r"""
 import json  # noqa: E402
 import socket  # noqa: E402
 import tempfile  # noqa: E402
+import re  # noqa: E402
 
 from ansible.errors import AnsibleError  # noqa: E402
 from ansible.plugins.inventory import BaseInventoryPlugin, Constructable  # noqa: E402
@@ -93,7 +99,14 @@ from ..module_utils.v3.prism import vms  # noqa: E402
 
 class Mock_Module:
     def __init__(
-        self, host, port, username, password, validate_certs=False, fetch_all_vms=False
+        self,
+        host,
+        port,
+        username,
+        password,
+        validate_certs=False,
+        fetch_all_vms=False,
+        vm_fqdn_expr=None,
     ):
         self.tmpdir = tempfile.gettempdir()
         self.params = {
@@ -103,6 +116,7 @@ class Mock_Module:
             "nutanix_password": password,
             "validate_certs": validate_certs,
             "fetch_all_vms": fetch_all_vms,
+            "vm_fqdn_expr": vm_fqdn_expr,
             "load_params_without_defaults": False,
         }
 
@@ -128,6 +142,19 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         )
         return path.endswith(inventory_file_fmts)
 
+    def resolve_fqdn_expression(self, entity):
+        def repl(match):
+            path = match.group(1).strip()
+            val = entity
+            for part in path.split("."):
+                if isinstance(val, dict) and part in val:
+                    val = val[part]
+                else:
+                    return ""
+            return str(val) if val is not None else ""
+
+        return re.sub(r"\{([^}]+)\}", repl, self.vm_fqdn_expr)
+
     def _build_host_vars(self, entity):
         """
         Build a dictionary of host variables from the raw entity.
@@ -152,6 +179,8 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 vm_fqdn = socket.gethostbyaddr(vm_ip)[0]
             except Exception:
                 vm_fqdn = None
+        if self.vm_fqdn_expr:
+            vm_ip = self.resolve_fqdn_expression(entity)
 
         # Remove unwanted keys.
         for key in [
@@ -214,6 +243,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         self.data = self.get_option("data")
         self.validate_certs = self.get_option("validate_certs")
         self.fetch_all_vms = self.get_option("fetch_all_vms")
+        self.vm_fqdn_expr = self.get_option("vm_fqdn_expr")
         # Determines if composed variables or groups using nonexistent variables is an error
         strict = self.get_option("strict")
         host_filters = self.get_option("filters")
@@ -225,6 +255,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             self.nutanix_password,
             self.validate_certs,
             self.fetch_all_vms,
+            self.vm_fqdn_expr,
         )
         vm = vms.VM(module)
         self.data["offset"] = self.data.get("offset", 0)
