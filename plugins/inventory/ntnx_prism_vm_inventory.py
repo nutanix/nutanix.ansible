@@ -142,25 +142,14 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         )
         return path.endswith(inventory_file_fmts)
 
-    def resolve_fqdn_expression(self, entity):
-        def repl(match):
-            path = match.group(1).strip()
-            val = entity
-            for part in path.split("."):
-                if isinstance(val, dict) and part in val:
-                    val = val[part]
-                else:
-                    return ""
-            return str(val) if val is not None else ""
-
-        return re.sub(r"\{([^}]+)\}", repl, self.vm_fqdn_expr)
-
     def _build_host_vars(self, entity):
         """
         Build a dictionary of host variables from the raw entity.
         """
         cluster = entity.get("status", {}).get("cluster_reference", {}).get("name")
+        cluster_uuid = entity.get("status", {}).get("cluster_reference", {}).get("uuid")
         vm_name = entity.get("status", {}).get("name")
+        vm_description = entity.get("status", {}).get("description")
         vm_uuid = entity.get("metadata", {}).get("uuid")
         vm_ip = None
         vm_fqdn = None
@@ -180,7 +169,20 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             except Exception:
                 vm_fqdn = None
         if self.vm_fqdn_expr:
-            vm_ip = self.resolve_fqdn_expression(entity)
+            lookup = {
+                "cluster": cluster,
+                "cluster_uuid": cluster_uuid,
+                "vm_name": vm_name,
+                "vm_description": vm_description,
+                "vm_uuid": vm_uuid,
+            }
+
+            def repl(match):
+                val = match.group(1).strip()
+                val = lookup.get(val, "")
+                return val
+
+            vm_ip = re.sub(r"\{([^}]+)\}", repl, self.vm_fqdn_expr)
 
         # Remove unwanted keys.
         for key in [
