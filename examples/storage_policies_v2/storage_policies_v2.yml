@@ -1,0 +1,129 @@
+---
+# Summary:
+# This playbook will do the following:
+# 1. Create a storage policy with all attributes
+# 2. Update the storage policy with all attributes
+# 3. Fetch the storage policy using external ID
+# 4. List all storage policies
+# 5. List all storage policies with filter
+# 6. List all storage policies with limit
+# 7. Delete the storage policy
+# Pre-requisites:
+# Set the following variables:
+# - category_ext_id_1
+# - category_ext_id_2
+# - category_ext_id_3
+# - storage_policy_name
+
+- name: Storage policies playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        category_ext_id_1: <category_ext_id_1> # eg: 0a236cc2-7a89-4faf-a05f-c5b358307aa9
+        category_ext_id_2: <category_ext_id_2> # eg: b422bd2d-a765-4fc3-9231-890c85d1d208
+        category_ext_id_3: <category_ext_id_3> # eg: 0ded28e5-0452-4ccc-9f5a-3cb0af58f8a6
+        storage_policy_name: <storage_policy_name> # eg: storage_policy_test
+
+    - name: Create storage policy with all attributes
+      nutanix.ncp.ntnx_storage_policies_v2:
+        name: "{{ storage_policy_name }}"
+        category_ext_ids:
+          - "{{ category_ext_id_1 }}"
+          - "{{ category_ext_id_2 }}"
+        compression_spec:
+          compression_state: "INLINE"
+        encryption_spec:
+          encryption_state: "ENABLED"
+        qos_spec:
+          throttled_iops: 100
+        fault_tolerance_spec:
+          replication_factor: "TWO"
+      register: result
+      ignore_errors: true
+
+    - name: Print result for creating storage policy with all attributes
+      ansible.builtin.debug:
+        var: result
+
+    - name: Set storage policy external ID
+      ansible.builtin.set_fact:
+        storage_policy_ext_id: "{{ result.response.ext_id }}"
+
+    - name: Update storage policy with all attributes
+      nutanix.ncp.ntnx_storage_policies_v2:
+        ext_id: "{{ storage_policy_ext_id }}"
+        name: "storage_policy_name_updated"
+        category_ext_ids:
+          - "{{ category_ext_id_3 }}"
+        compression_spec:
+          compression_state: "POSTPROCESS"
+        encryption_spec:
+          encryption_state: "ENABLED"
+        qos_spec:
+          throttled_iops: 1000
+        fault_tolerance_spec:
+          replication_factor: "THREE"
+      register: result
+      ignore_errors: true
+
+    - name: Print result for updating storage policy with all attributes
+      ansible.builtin.debug:
+        var: result
+
+    - name: Fetch storage policy using external ID
+      nutanix.ncp.ntnx_storage_policies_info_v2:
+        ext_id: "{{ storage_policy_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Print result for fetch storage policy using external ID
+      ansible.builtin.debug:
+        var: result
+
+    - name: List all storage policies
+      nutanix.ncp.ntnx_storage_policies_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Print result for listing all storage policies
+      ansible.builtin.debug:
+        var: result
+
+    - name: List all storage policies with filter
+      nutanix.ncp.ntnx_storage_policies_info_v2:
+        filter: name eq 'storage_policy_name_updated'
+      register: result
+      ignore_errors: true
+
+    - name: Print result for listing all storage policies with filter
+      ansible.builtin.debug:
+        var: result
+
+    - name: List all storage policies with limit
+      nutanix.ncp.ntnx_storage_policies_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: Print result for listing all storage policies with limit
+      ansible.builtin.debug:
+        var: result
+
+    - name: Delete storage policy
+      nutanix.ncp.ntnx_storage_policies_v2:
+        ext_id: "{{ storage_policy_ext_id }}"
+        state: absent
+      register: result
+      ignore_errors: true
+
+    - name: Print result for deleting storage policy
+      ansible.builtin.debug:
+        var: result
