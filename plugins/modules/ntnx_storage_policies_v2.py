@@ -37,22 +37,25 @@ options:
   name:
     description:
       - Name of the storage policy.
+      - Required for create operation.
+      - Name of the storage policy should be unique.
     type: str
     required: false
   category_ext_ids:
     description:
-      - List of category external IDs to associate with the storage policy.
+      - List of external identifiers of Categories included or to be included in the Storage Policy.
     type: list
     elements: str
     required: false
   compression_spec:
     description:
-      - Compression configuration for the storage policy.
+      - Compression parameters for the entities governed by the Storage Policy.
     type: dict
     suboptions:
       compression_state:
         description:
-          - Compression state for the storage policy.
+          - Enable or disable Compression for entities governed by the policy.
+          - If the user has no explicit Compression preference, the system chooses an appropriate value.
         type: str
         choices:
           - INLINE
@@ -63,12 +66,13 @@ options:
     required: false
   encryption_spec:
     description:
-      - Encryption configuration for the storage policy.
+      - Encryption parameters for the entities governed by the Storage Policy.
     type: dict
     suboptions:
       encryption_state:
         description:
-          - Encryption state for the storage policy.
+          - Enable Encryption for entities. Once enabled, it cannot be disabled.
+          - If the user does not have an explicit preference to enable Encryption, the system decides on an appropriate value.
         type: str
         choices:
           - ENABLED
@@ -77,23 +81,23 @@ options:
     required: false
   qos_spec:
     description:
-      - Quality of Service configuration for the storage policy.
+      - Storage QOS parameters for the entities.
     type: dict
     suboptions:
       throttled_iops:
         description:
-          - Throttled IOPS value for the storage policy.
+          - Throttled IOPS for the entities being governed. The block size for the IO is 32kB.
         type: int
         required: true
     required: false
   fault_tolerance_spec:
     description:
-      - Fault tolerance configuration for the storage policy.
+      - Fault Tolerance parameters for the entities.
     type: dict
     suboptions:
       replication_factor:
         description:
-          - Replication factor for the storage policy.
+          - Number of data copies for entities governed by the Storage Policy.
         type: str
         choices:
           - TWO
