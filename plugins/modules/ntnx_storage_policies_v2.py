@@ -38,7 +38,7 @@ options:
     description:
       - Name of the storage policy.
     type: str
-    required: true
+    required: false
   category_ext_ids:
     description:
       - List of category external IDs to associate with the storage policy.
