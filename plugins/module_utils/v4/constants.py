@@ -41,6 +41,7 @@ class Tasks:
         STORAGE_CONTAINER = "clustermgmt:config:storage-containers"
         ROUTE = "networking:config:route"
         OBJECTS = "objects:config:object-store"
+        CLUSTER_PROFILE = "clustermgmt:config:cluster-profile"
 
     class CompletetionDetailsName:
         """Completion details name for the task entities affected"""
