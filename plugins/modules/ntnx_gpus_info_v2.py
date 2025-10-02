@@ -149,6 +149,7 @@ def get_gpus(module, gpus, result):
             exception=e,
             msg="Api Exception raised while fetching GPUs list using VM external ID",
         )
+
     resp = strip_internal_attributes(resp.to_dict()).get("data")
     if not resp:
         resp = []

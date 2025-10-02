@@ -4,7 +4,7 @@
     msg: "Start ntnx_service_groups_info tests"
 
 - name: Test getting all service groups
-  ntnx_service_groups_info:
+  nutanix.ncp.ntnx_service_groups_info:
   register: service_groups
   ignore_errors: true
 
@@ -20,7 +20,7 @@
     success_msg: "service groups listed successfully"
 ################################################################
 - name: List service_group using length, offset, sort order and name sort attribute
-  ntnx_service_groups_info:
+  nutanix.ncp.ntnx_service_groups_info:
     length: 1
     offset: 1
     sort_order: "ASCENDING"
@@ -39,7 +39,7 @@
     success_msg: "service groups listed successfully  using length, offset, sort order and name sort attribute"
 ################################################################
 - name: Test getting particular service_group using filter
-  ntnx_service_groups_info:
+  nutanix.ncp.ntnx_service_groups_info:
     filter:
       name: "{{ service_groups.response.entities[0].service_group.name }}"
     kind: service_group
@@ -59,7 +59,7 @@
     success_msg: "service_group info obtained successfully"
 ################################################################
 - name: Test getting particular service_group using uuid
-  ntnx_service_groups_info:
+  nutanix.ncp.ntnx_service_groups_info:
     service_group_uuid: "{{ result.response.entities[0].uuid }}"
   register: result
   ignore_errors: true

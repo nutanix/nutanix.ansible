@@ -26,7 +26,7 @@
 # Secure Boot with Boot Order DISK and specified boot device - Check Mode
 ########################################################################
 - name: Create Secure Boot UEFI VM with Boot Order DISK and specified boot device with check_mode
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     name: "uefi-vm01"
     description: ansible test for uefi boot secure boot with boot order disk and boot device specified
     cluster:
@@ -116,7 +116,7 @@
 # Secure Boot Boot with Boot Order DISK and specified boot device - Actual Build
 ########################################################################
 - name: Create Secure Boot UEFI VM with Boot Order DISK and specified boot device
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     name: "{{ vm_name }}"
     description: ansible test for uefi boot secure boot with boot order disk and boot device specified
     cluster:
@@ -202,7 +202,7 @@
     success_msg: "Secure Boot UEFI VM with Boot Order DISK and specified boot device created successfully"
 
 - name: Fetch vm using ext_id
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ result.ext_id }}"
   register: result
   ignore_errors: true
@@ -318,7 +318,7 @@
 # Secure Boot Boot with Boot Order NETWORK - Actual Build
 ########################################################################
 - name: Create Secure Boot UEFI VM with Boot Order NETWORK
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     name: "{{ vm_name }}"
     description: ansible test for uefi boot secure boot with boot order network
     cluster:
@@ -398,7 +398,7 @@
     success_msg: "Secure Boot UEFI VM with Boot Order NETWORK created successfully"
 
 - name: Fetch vm using ext_id
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ result.ext_id }}"
   register: result
   ignore_errors: true
@@ -507,7 +507,7 @@
 # Delete VMS
 #########################################################################
 - name: Delete all Created VMs
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     state: absent
     ext_id: "{{ item }}"
   register: result

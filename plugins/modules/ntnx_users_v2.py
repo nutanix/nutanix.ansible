@@ -18,11 +18,12 @@ description:
 options:
     state:
         description:
-            - State of the user. Whether to create, update, or delete.
+            - State of the user. Whether to create or update.
             - If C(state) is C(present) and C(ext_id) is not provided, create a new user.
             - If C(state) is C(present) and C(ext_id) is provided, update the user.
         type: str
         choices: ['present']
+        default: present
     ext_id:
         description:
             - External ID of the User.
@@ -289,6 +290,7 @@ from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.iam.api_client import get_user_api_instance  # noqa: E402
 from ..module_utils.v4.iam.helpers import get_user  # noqa: E402
+from ..module_utils.v4.iam.spec.iam import UserSpecs as user_specs  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
@@ -312,36 +314,9 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 
 def get_module_spec():
-    kvp_spec = dict(
-        name=dict(type="str"),
-        value=dict(type="str"),
-    )
-
-    module_args = dict(
+    module_args = user_specs.get_users_spec()
+    module_args.update(
         state=dict(type="str", choices=["present"], default="present"),
-        ext_id=dict(type="str"),
-        username=dict(type="str"),
-        user_type=dict(
-            type="str", choices=["LOCAL", "SAML", "LDAP", "EXTERNAL", "SERVICE_ACCOUNT"]
-        ),
-        display_name=dict(type="str"),
-        first_name=dict(type="str"),
-        middle_initial=dict(type="str"),
-        last_name=dict(type="str"),
-        email_id=dict(type="str"),
-        locale=dict(type="str"),
-        region=dict(type="str"),
-        password=dict(type="str", no_log=True),
-        idp_id=dict(type="str"),
-        is_force_reset_password_enabled=dict(type="bool", default=False),
-        additional_attributes=dict(
-            type="list", elements="dict", options=kvp_spec, obj=iam_sdk.KVPair
-        ),
-        status=dict(type="str", choices=["ACTIVE", "INACTIVE"]),
-        description=dict(type="str"),
-        creation_type=dict(
-            type="str", choices=["PREDEFINED", "SERVICEDEFINED", "USERDEFINED"]
-        ),
     )
     return module_args
 

@@ -1,5 +1,5 @@
 ---
-- name: Start ntnx_address_groups create tests
+- name: Start ntnx_address_groups delete tests
   ansible.builtin.debug:
     msg: Start ntnx_address_groups delete tests
 
@@ -16,7 +16,7 @@
     ag1: "{{random_name}}{{suffix_name}}1"
 
 - name: Create address group
-  ntnx_address_groups:
+  nutanix.ncp.ntnx_address_groups:
     state: present
     name: "{{ag1}}"
     desc: test-ansible-address-group-4-desc
@@ -35,7 +35,7 @@
 
 ###################################################################################################
 - name: Delete address group with check mode
-  ntnx_address_groups:
+  nutanix.ncp.ntnx_address_groups:
     state: absent
     address_group_uuid: "{{ test_ag.address_group_uuid }}"
   register: output
@@ -53,7 +53,7 @@
     success_msg: "Delete address group with check mode passed"
 
 - name: Delete address group
-  ntnx_address_groups:
+  nutanix.ncp.ntnx_address_groups:
     state: absent
     address_group_uuid: "{{ test_ag.address_group_uuid }}"
   register: result

@@ -16,6 +16,15 @@ description:
         from a cluster or object store backup location based on the selected restore point.
     - Please provide Prism Element IP address here in C(nutanix_host)
 options:
+    state:
+        description:
+            - State of the module.
+            - If state is present, the module will restore a Prism Central.
+            - If state is not present, the module will fail.
+        type: str
+        choices:
+            - present
+        default: present
     ext_id:
         description:
             - Restore point ID for the backup created in cluster/object store.
@@ -799,6 +808,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
     module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
         ext_id=dict(type="str", required=True),
         restore_source_ext_id=dict(type="str", required=True),
         restorable_domain_manager_ext_id=dict(type="str", required=True),

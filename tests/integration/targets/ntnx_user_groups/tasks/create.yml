@@ -8,7 +8,7 @@
     msg: Start ntnx_user_groups and info tests
 
 - name: Create user  group
-  ntnx_user_groups:
+  nutanix.ncp.ntnx_user_groups:
     distinguished_name: "{{distinguished_name}}"
     project:
       uuid: "{{project.uuid}}"
@@ -38,7 +38,7 @@
 ############################# INFO Tests #####################
 
 - name: List all user groups
-  ntnx_user_groups_info:
+  nutanix.ncp.ntnx_user_groups_info:
   register: user_groups
   ignore_errors: true
 
@@ -58,7 +58,7 @@
 ##################################################
 
 - name: List user_groups using user_group uuid criteria
-  ntnx_user_groups_info:
+  nutanix.ncp.ntnx_user_groups_info:
     usergroup_uuid: "{{ test_user_group_uuid }}"
   register: result
   ignore_errors: true
@@ -77,7 +77,7 @@
 ##################################################
 
 - name: List user_groups using filter criteria
-  ntnx_user_groups_info:
+  nutanix.ncp.ntnx_user_groups_info:
     filter:
       name: "{{ test_user_group_name }}"
   register: result
@@ -98,7 +98,7 @@
 ##################################################
 
 - name: List user groups using length and offset
-  ntnx_user_groups_info:
+  nutanix.ncp.ntnx_user_groups_info:
     length: 2
     offset: 1
   register: result
@@ -134,7 +134,7 @@
 #     success_msg: "user groups listed successfully using ascending name sorting"
 
 - name: Delete user group with check mode
-  ntnx_user_groups:
+  nutanix.ncp.ntnx_user_groups:
     state: absent
     user_group_uuid: "{{ user_group_to_delete }}"
   register: output
@@ -152,7 +152,7 @@
     success_msg: "Delete user group with check mode passed"
 
 - name: Delete user group
-  ntnx_user_groups:
+  nutanix.ncp.ntnx_user_groups:
     state: absent
     user_group_uuid: "{{user_group_to_delete}}"
   register: result
