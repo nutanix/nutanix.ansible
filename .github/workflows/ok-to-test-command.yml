@@ -145,7 +145,7 @@ jobs:
           echo "- Coverage: ${{ env.TOTAL_COVERAGE }}%" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Detailed Test Results" >> $GITHUB_STEP_SUMMARY
-      
+
           cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
           if [ -f results.json ]; then
             jq -r '.results[] | "- " + .name + ": " + (.status // "unknown")' results.json >> $GITHUB_STEP_SUMMARY
