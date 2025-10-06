@@ -128,4 +128,3 @@
             echo "### Integration Test Summary" >> $GITHUB_STEP_SUMMARY
             echo "- Status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
             echo "- Coverage: ${{ env.TOTAL_COVERAGE }}%" >> $GITHUB_STEP_SUMMARY
-  
