@@ -98,9 +98,14 @@ jobs:
           cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
           echo "### Detailed Test Results" >> $GITHUB_STEP_SUMMARY
           if [ -f test_output.log ]; then
-            grep -E "SUCCESS|FAIL" test_output.log | sed 's/^/ - /' >> $GITHUB_STEP_SUMMARY || echo "No results parsed" >> $GITHUB_STEP_SUMMARY
+            grep -E "SUCCESS|FAIL" test_output.log | sed 's/^/ - /' >> parsed_results.log || echo "No results parsed" > parsed_results.log
+            cat parsed_results.log >> $GITHUB_STEP_SUMMARY
+            echo "RESULTS<<EOF" >> $GITHUB_ENV
+            cat parsed_results.log >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
           else
             echo "No test_output.log found" >> $GITHUB_STEP_SUMMARY
+            echo "RESULTS=No detailed results (test_output.log missing)" >> $GITHUB_ENV
           fi
 
       - name: Code Coverage Check
@@ -136,7 +141,7 @@ jobs:
 
             ### Detailed Test Results
             ```text
-            $(grep -E "SUCCESS|FAIL" test_output.log | sed 's/^/ - /')
+            ${{ env.RESULTS }}
             ```
           reaction-type: hooray
 
