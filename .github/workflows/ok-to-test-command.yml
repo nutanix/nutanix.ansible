@@ -136,7 +136,6 @@ jobs:
             echo "RESULTS=No detailed results (test_output.log missing)" >> $GITHUB_ENV
           fi
 
-
       - name: Code Coverage Check
         if: ${{ always() }}
         run: |
