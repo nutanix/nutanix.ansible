@@ -82,13 +82,26 @@ jobs:
               else
                   echo "Running ${#matched_dirs[@]} matching integration target(s):"
                   printf '%s\n' "${matched_dirs[@]}"
-                  ansible-test integration --continue-on-error --python ${{ matrix.python-version }} --coverage "${matched_dirs[@]}" --allow-disabled
+                  ansible-test integration --continue-on-error \
+                    --python ${{ matrix.python-version }} --coverage "${matched_dirs[@]}" \
+                    --allow-disabled 2>&1 | tee test_output.log
               fi
           fi
-          ansible-test integration --continue-on-error --python ${{ matrix.python-version }} --coverage $flag
+          ansible-test integration --continue-on-error --python ${{ matrix.python-version }} --coverage $flag 2>&1 | tee -a test_output.log
           ansible-test coverage report > coverage.txt
           ansible-playbook tests/integration/targets/prepare_env/playbooks/cleanup.yml
           ansible-playbook tests/integration/targets/prepare_foundation_env/playbooks/cleanup.yml
+
+      - name: Generate test summary
+        if: ${{ always() }}
+        run: |
+          cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
+          echo "### Detailed Test Results" >> $GITHUB_STEP_SUMMARY
+          if [ -f test_output.log ]; then
+            grep -E "SUCCESS|FAIL" test_output.log | sed 's/^/ - /' >> $GITHUB_STEP_SUMMARY || echo "No results parsed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No test_output.log found" >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Code Coverage Check
         if: ${{ always() }}
@@ -120,6 +133,11 @@ jobs:
             > Integration test run status is : ${{ job.status }}
             > Coverage is : ${{ env.TOTAL_COVERAGE }} %
             > Job link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            ### Detailed Test Results
+            ```text
+            $(grep -E "SUCCESS|FAIL" test_output.log | sed 's/^/ - /')
+            ```
           reaction-type: hooray
 
       - name: Add summary
@@ -128,3 +146,12 @@ jobs:
           echo "### Integration Test Summary" >> $GITHUB_STEP_SUMMARY
           echo "- Status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
           echo "- Coverage: ${{ env.TOTAL_COVERAGE }}%" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Detailed Test Results" >> $GITHUB_STEP_SUMMARY
+
+          cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
+          if [ -f test_output.log ]; then
+            grep -E "SUCCESS|FAIL" test_output.log | sed 's/^/ - /' >> $GITHUB_STEP_SUMMARY || echo "No results parsed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No detailed results (test_output.log missing)" >> $GITHUB_STEP_SUMMARY
+          fi
