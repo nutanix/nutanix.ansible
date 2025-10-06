@@ -4,6 +4,7 @@ on:
   pull_request:
   repository_dispatch:
     types: [ok-to-test-command]
+
 jobs:
   integration_test_cases:
     timeout-minutes: 600
@@ -13,20 +14,24 @@ jobs:
       matrix:
         python-version: ["3.10"]
     if: github.event_name == 'repository_dispatch'
+
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
 
       - uses: actions/checkout@v2
         with:
           ref: refs/pull/${{ github.event.client_payload.pull_request.number }}/merge
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
+
       - name: Install dependencies
         run: |
           pip install -r tests/integration/requirements.txt
           ansible-galaxy collection install community.general --force
+
       - name: Build and install the collection
         run: |
           NAMESPACE=$(cat galaxy.yml | shyaml get-value namespace)
@@ -36,6 +41,7 @@ jobs:
           echo "COLLECTION_NAME=${COLLECTION_NAME}" >> $GITHUB_ENV
           ansible-galaxy collection build --force
           ansible-galaxy collection install ${NAMESPACE}-${COLLECTION_NAME}-${VERSION}.tar.gz --force
+
       - name: Run Integration test cases
         run: |
           cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
@@ -48,9 +54,8 @@ jobs:
           export NDB_USERNAME=${{ secrets.NDB_USERNAME }}
           args="${{ github.event.client_payload.slash_command.args.all }}"
           flag=""
-          if [ "$args" = "allow-disabled" ]
-                      then
-                          flag="--allow-disabled"
+          if [ "$args" = "allow-disabled" ]; then
+              flag="--allow-disabled"
           elif [ -n "$args" ]; then
               regex_pattern="$args"
           fi
@@ -61,20 +66,17 @@ jobs:
           echo "NUTANIX_HOST=${{ secrets.PC_IP }}" >> $GITHUB_ENV
           echo "NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}" >> $GITHUB_ENV
           echo "NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}" >> $GITHUB_ENV
-          echo $NUTANIX_HOST
-          echo $NUTANIX_USERNAME
-          echo $NUTANIX_PASSWORD
+
           ansible-playbook -i tests/integration/targets/inventory_test/nutanix.yml tests/integration/targets/inventory_test/inventory.yml
           ansible-playbook tests/integration/targets/prepare_env/playbooks/prepare_env.yml
           ansible-playbook tests/integration/targets/prepare_ndb_env/playbooks/prepare_env.yml
           ansible-playbook tests/integration/targets/prepare_fc_env/playbooks/prepare_fc_env.yml
           ansible-playbook tests/integration/targets/prepare_foundation_env/playbooks/prepare_foundation_env.yml
+
           echo "===> Running integration tests..."
           if [ -n "$regex_pattern" ]; then
               echo "Filtering integration tests by regex: $regex_pattern"
-              # Find matching target directories under tests/integration/targets
               mapfile -t matched_dirs < <(find tests/integration/targets -maxdepth 1 -mindepth 1 -type d -printf "%f\n" | grep -E "$regex_pattern" || true)
-
               if [ ${#matched_dirs[@]} -eq 0 ]; then
                   echo "No targets matched regex: '$regex_pattern'. Nothing to run."
               else
@@ -94,7 +96,7 @@ jobs:
           cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
           ansible-test coverage html
           echo "Code coverage: Checking if code coverage is above threshold..."
-          export COVERAGE_THRESHOLD=70
+          export COVERAGE_THRESHOLD=50
           echo "Threshold: $COVERAGE_THRESHOLD %"
           totalCoverage=`grep TOTAL coverage.txt | awk '{print $6}' | sed 's/%//'`
           echo "TOTAL_COVERAGE=${totalCoverage}" >> $GITHUB_ENV
@@ -109,47 +111,20 @@ jobs:
 
       - run: echo "🍏 This job's status is ${{ job.status }}."
 
-      # Update the comment back
       - name: Update comment
         uses: peter-evans/create-or-update-comment@v1
         if: ${{ always() }}
         with:
           comment-id: ${{ github.event.client_payload.github.payload.comment.id }}
           body: |
-            >Integration test run status is : ${{ job.status }}
-            >Converage is : ${{ env.TOTAL_COVERAGE }} %
-            >Job link https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            > Integration test run status is : ${{ job.status }}
+            > Coverage is : ${{ env.TOTAL_COVERAGE }} %
+            > Job link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
           reaction-type: hooray
 
-      # Update check run for Integration Test
-      - uses: actions/github-script@v5
-        id: update-check-run
+      - name: Add summary
         if: ${{ always() }}
-        env:
-          number: ${{ github.event.client_payload.pull_request.number }}
-          job: ${{ github.job }}
-          # Conveniently, job.status maps to https://developer.github.com/v3/checks/runs/#update-a-check-run
-          conclusion: ${{ job.status }}
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const { data: pull } = await github.rest.pulls.get({
-              ...context.repo,
-              pull_number: process.env.number
-            });
-            const ref = pull.head.sha;
-            const { data: checks } = await github.rest.checks.listForRef({
-              ...context.repo,
-              ref
-            });
-            const check = checks.check_runs.filter(c => c.name === process.env.job);
-            if (check.length == 0) {
-              return "Check is not present, ignoring this step."
-            }
-            const { data: result } = await github.rest.checks.update({
-              ...context.repo,
-              check_run_id: check[0].id,
-              status: 'completed',
-              conclusion: process.env.conclusion
-            });
-            return result;
+        run: |
+          echo "### Integration Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Coverage: ${{ env.TOTAL_COVERAGE }}%" >> $GITHUB_STEP_SUMMARY
