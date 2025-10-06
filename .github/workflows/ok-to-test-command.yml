@@ -97,16 +97,45 @@ jobs:
         run: |
           cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
           echo "### Detailed Test Results" >> $GITHUB_STEP_SUMMARY
-          if [ -f test_output.log ]; then
-            grep -E "SUCCESS|FAIL" test_output.log | sed 's/^/ - /' >> parsed_results.log || echo "No results parsed" > parsed_results.log
-            cat parsed_results.log >> $GITHUB_STEP_SUMMARY
+
+          LOG_FILE="test_output.log"
+          declare -A test_results
+          current_test=""
+
+          if [ -f "$LOG_FILE" ]; then
+            while IFS= read -r line; do
+                # Detect the start of a test role
+                if [[ $line =~ ^Running\ ([^[:space:]]+)\ integration\ test\ role ]]; then
+                    current_test="${BASH_REMATCH[1]}"
+                fi
+
+                # Detect PLAY RECAP for that test
+                if [[ $line =~ ^PLAY\ RECAP ]]; then
+                    read -r recap_line
+                    if [[ $recap_line =~ failed=([0-9]+) ]]; then
+                        failed_count="${BASH_REMATCH[1]}"
+                        if [[ "$failed_count" -eq 0 ]]; then
+                            test_results["$current_test"]="PASSED"
+                        else
+                            test_results["$current_test"]="FAILED"
+                        fi
+                    fi
+                fi
+            done < "$LOG_FILE"
+
+            # Write results to summary and env
             echo "RESULTS<<EOF" >> $GITHUB_ENV
-            cat parsed_results.log >> $GITHUB_ENV
+            for test in "${!test_results[@]}"; do
+                echo "- $test : ${test_results[$test]}" | tee -a parsed_results.log >> $GITHUB_STEP_SUMMARY
+                echo "- $test : ${test_results[$test]}"
+            done >> $GITHUB_ENV
             echo "EOF" >> $GITHUB_ENV
+
           else
             echo "No test_output.log found" >> $GITHUB_STEP_SUMMARY
             echo "RESULTS=No detailed results (test_output.log missing)" >> $GITHUB_ENV
           fi
+
 
       - name: Code Coverage Check
         if: ${{ always() }}
