@@ -1,130 +1,130 @@
 ---
-  name: Integration Test cases
-  on:
-    pull_request:
-    repository_dispatch:
-      types: [ok-to-test-command]
-  
-  jobs:
-    integration_test_cases:
-      timeout-minutes: 600
-      runs-on: self-hosted
-      strategy:
-        max-parallel: 1
-        matrix:
-          python-version: ["3.10"]
-      if: github.event_name == 'repository_dispatch'
-  
-      steps:
-        - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
-  
-        - uses: actions/checkout@v2
-          with:
-            ref: refs/pull/${{ github.event.client_payload.pull_request.number }}/merge
-  
-        - name: Set up Python ${{ matrix.python-version }}
-          uses: actions/setup-python@v2
-          with:
-            python-version: ${{ matrix.python-version }}
-  
-        - name: Install dependencies
-          run: |
-            pip install -r tests/integration/requirements.txt
-            ansible-galaxy collection install community.general --force
-  
-        - name: Build and install the collection
-          run: |
-            NAMESPACE=$(cat galaxy.yml | shyaml get-value namespace)
-            COLLECTION_NAME=$(cat galaxy.yml | shyaml get-value name)
-            VERSION=$(cat galaxy.yml | shyaml get-value version)
-            echo "NAMESPACE=${NAMESPACE}" >> $GITHUB_ENV
-            echo "COLLECTION_NAME=${COLLECTION_NAME}" >> $GITHUB_ENV
-            ansible-galaxy collection build --force
-            ansible-galaxy collection install ${NAMESPACE}-${COLLECTION_NAME}-${VERSION}.tar.gz --force
-  
-        - name: Run Integration test cases
-          run: |
-            cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
-            export NUTANIX_HOST=${{ secrets.PC_IP }}
-            export NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}
-            export NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}
-            export NUTANIX_DR_SITE=${{ secrets.NUTANIX_DR_SITE }}
-            export NDB_HOST=${{ secrets.NDB_HOST }}
-            export NDB_PASSWORD=${{ secrets.NDB_PASSWORD }}
-            export NDB_USERNAME=${{ secrets.NDB_USERNAME }}
-            args="${{ github.event.client_payload.slash_command.args.all }}"
-            flag=""
-            if [ "$args" = "allow-disabled" ]; then
-                flag="--allow-disabled"
-            elif [ -n "$args" ]; then
-                regex_pattern="$args"
-            fi
-            echo '${{ secrets.FOUNDATION_CONFIG }}' > tests/integration/targets/prepare_foundation_env/vars/main.yml
-            echo '${{ secrets.FC_CONFIG }}' > tests/integration/targets/prepare_fc_env/vars/main.yml
-            echo '${{ secrets.PC_CONFIG }}' > tests/integration/targets/prepare_env/vars/main.yml
-            echo '${{ secrets.NDB_CONFIG }}' > tests/integration/targets/prepare_ndb_env/vars/main.yml
-            echo "NUTANIX_HOST=${{ secrets.PC_IP }}" >> $GITHUB_ENV
-            echo "NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}" >> $GITHUB_ENV
-            echo "NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}" >> $GITHUB_ENV
-  
-            ansible-playbook -i tests/integration/targets/inventory_test/nutanix.yml tests/integration/targets/inventory_test/inventory.yml
-            ansible-playbook tests/integration/targets/prepare_env/playbooks/prepare_env.yml
-            ansible-playbook tests/integration/targets/prepare_ndb_env/playbooks/prepare_env.yml
-            ansible-playbook tests/integration/targets/prepare_fc_env/playbooks/prepare_fc_env.yml
-            ansible-playbook tests/integration/targets/prepare_foundation_env/playbooks/prepare_foundation_env.yml
-  
-            echo "===> Running integration tests..."
-            if [ -n "$regex_pattern" ]; then
-                echo "Filtering integration tests by regex: $regex_pattern"
-                mapfile -t matched_dirs < <(find tests/integration/targets -maxdepth 1 -mindepth 1 -type d -printf "%f\n" | grep -E "$regex_pattern" || true)
-                if [ ${#matched_dirs[@]} -eq 0 ]; then
-                    echo "No targets matched regex: '$regex_pattern'. Nothing to run."
-                else
-                    echo "Running ${#matched_dirs[@]} matching integration target(s):"
-                    printf '%s\n' "${matched_dirs[@]}"
-                    ansible-test integration --continue-on-error --python ${{ matrix.python-version }} --coverage "${matched_dirs[@]}" --allow-disabled
-                fi
-            fi
-            ansible-test integration --continue-on-error --python ${{ matrix.python-version }} --coverage $flag
-            ansible-test coverage report > coverage.txt
-            ansible-playbook tests/integration/targets/prepare_env/playbooks/cleanup.yml
-            ansible-playbook tests/integration/targets/prepare_foundation_env/playbooks/cleanup.yml
-  
-        - name: Code Coverage Check
-          if: ${{ always() }}
-          run: |
-            cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
-            ansible-test coverage html
-            echo "Code coverage: Checking if code coverage is above threshold..."
-            export COVERAGE_THRESHOLD=50
-            echo "Threshold: $COVERAGE_THRESHOLD %"
-            totalCoverage=`grep TOTAL coverage.txt | awk '{print $6}' | sed 's/%//'`
-            echo "TOTAL_COVERAGE=${totalCoverage}" >> $GITHUB_ENV
-            echo "Current integration test coverage : $totalCoverage %"
-            if (( $(echo "$totalCoverage $COVERAGE_THRESHOLD" | awk '{print ($1 > $2)}') )); then
-                echo "Coverage passed"
-            else
-                echo "Current integration test coverage is below threshold. Please add more integration tests or adjust threshold to a lower value."
-                echo "Coverage check failed"
-                exit 1
-            fi
-  
-        - run: echo "🍏 This job's status is ${{ job.status }}."
-  
-        - name: Update comment
-          uses: peter-evans/create-or-update-comment@v1
-          if: ${{ always() }}
-          with:
-            comment-id: ${{ github.event.client_payload.github.payload.comment.id }}
-            body: |
-              > Integration test run status is : ${{ job.status }}
-              > Coverage is : ${{ env.TOTAL_COVERAGE }} %
-              > Job link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-            reaction-type: hooray
-  
-        - name: Add summary
-          if: ${{ always() }}
-          run: |
-            echo "### Integration Test Summary" >> $GITHUB_STEP_SUMMARY
-            echo "- Status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
-            echo "- Coverage: ${{ env.TOTAL_COVERAGE }}%" >> $GITHUB_STEP_SUMMARY
+name: Integration Test cases
+on:
+  pull_request:
+  repository_dispatch:
+    types: [ok-to-test-command]
+
+jobs:
+  integration_test_cases:
+    timeout-minutes: 600
+    runs-on: self-hosted
+    strategy:
+      max-parallel: 1
+      matrix:
+        python-version: ["3.10"]
+    if: github.event_name == 'repository_dispatch'
+
+    steps:
+      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
+
+      - uses: actions/checkout@v2
+        with:
+          ref: refs/pull/${{ github.event.client_payload.pull_request.number }}/merge
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          pip install -r tests/integration/requirements.txt
+          ansible-galaxy collection install community.general --force
+
+      - name: Build and install the collection
+        run: |
+          NAMESPACE=$(cat galaxy.yml | shyaml get-value namespace)
+          COLLECTION_NAME=$(cat galaxy.yml | shyaml get-value name)
+          VERSION=$(cat galaxy.yml | shyaml get-value version)
+          echo "NAMESPACE=${NAMESPACE}" >> $GITHUB_ENV
+          echo "COLLECTION_NAME=${COLLECTION_NAME}" >> $GITHUB_ENV
+          ansible-galaxy collection build --force
+          ansible-galaxy collection install ${NAMESPACE}-${COLLECTION_NAME}-${VERSION}.tar.gz --force
+
+      - name: Run Integration test cases
+        run: |
+          cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
+          export NUTANIX_HOST=${{ secrets.PC_IP }}
+          export NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}
+          export NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}
+          export NUTANIX_DR_SITE=${{ secrets.NUTANIX_DR_SITE }}
+          export NDB_HOST=${{ secrets.NDB_HOST }}
+          export NDB_PASSWORD=${{ secrets.NDB_PASSWORD }}
+          export NDB_USERNAME=${{ secrets.NDB_USERNAME }}
+          args="${{ github.event.client_payload.slash_command.args.all }}"
+          flag=""
+          if [ "$args" = "allow-disabled" ]; then
+              flag="--allow-disabled"
+          elif [ -n "$args" ]; then
+              regex_pattern="$args"
+          fi
+          echo '${{ secrets.FOUNDATION_CONFIG }}' > tests/integration/targets/prepare_foundation_env/vars/main.yml
+          echo '${{ secrets.FC_CONFIG }}' > tests/integration/targets/prepare_fc_env/vars/main.yml
+          echo '${{ secrets.PC_CONFIG }}' > tests/integration/targets/prepare_env/vars/main.yml
+          echo '${{ secrets.NDB_CONFIG }}' > tests/integration/targets/prepare_ndb_env/vars/main.yml
+          echo "NUTANIX_HOST=${{ secrets.PC_IP }}" >> $GITHUB_ENV
+          echo "NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}" >> $GITHUB_ENV
+          echo "NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}" >> $GITHUB_ENV
+
+          ansible-playbook -i tests/integration/targets/inventory_test/nutanix.yml tests/integration/targets/inventory_test/inventory.yml
+          ansible-playbook tests/integration/targets/prepare_env/playbooks/prepare_env.yml
+          ansible-playbook tests/integration/targets/prepare_ndb_env/playbooks/prepare_env.yml
+          ansible-playbook tests/integration/targets/prepare_fc_env/playbooks/prepare_fc_env.yml
+          ansible-playbook tests/integration/targets/prepare_foundation_env/playbooks/prepare_foundation_env.yml
+
+          echo "===> Running integration tests..."
+          if [ -n "$regex_pattern" ]; then
+              echo "Filtering integration tests by regex: $regex_pattern"
+              mapfile -t matched_dirs < <(find tests/integration/targets -maxdepth 1 -mindepth 1 -type d -printf "%f\n" | grep -E "$regex_pattern" || true)
+              if [ ${#matched_dirs[@]} -eq 0 ]; then
+                  echo "No targets matched regex: '$regex_pattern'. Nothing to run."
+              else
+                  echo "Running ${#matched_dirs[@]} matching integration target(s):"
+                  printf '%s\n' "${matched_dirs[@]}"
+                  ansible-test integration --continue-on-error --python ${{ matrix.python-version }} --coverage "${matched_dirs[@]}" --allow-disabled
+              fi
+          fi
+          ansible-test integration --continue-on-error --python ${{ matrix.python-version }} --coverage $flag
+          ansible-test coverage report > coverage.txt
+          ansible-playbook tests/integration/targets/prepare_env/playbooks/cleanup.yml
+          ansible-playbook tests/integration/targets/prepare_foundation_env/playbooks/cleanup.yml
+
+      - name: Code Coverage Check
+        if: ${{ always() }}
+        run: |
+          cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
+          ansible-test coverage html
+          echo "Code coverage: Checking if code coverage is above threshold..."
+          export COVERAGE_THRESHOLD=50
+          echo "Threshold: $COVERAGE_THRESHOLD %"
+          totalCoverage=`grep TOTAL coverage.txt | awk '{print $6}' | sed 's/%//'`
+          echo "TOTAL_COVERAGE=${totalCoverage}" >> $GITHUB_ENV
+          echo "Current integration test coverage : $totalCoverage %"
+          if (( $(echo "$totalCoverage $COVERAGE_THRESHOLD" | awk '{print ($1 > $2)}') )); then
+              echo "Coverage passed"
+          else
+              echo "Current integration test coverage is below threshold. Please add more integration tests or adjust threshold to a lower value."
+              echo "Coverage check failed"
+              exit 1
+          fi
+
+      - run: echo "🍏 This job's status is ${{ job.status }}."
+
+      - name: Update comment
+        uses: peter-evans/create-or-update-comment@v1
+        if: ${{ always() }}
+        with:
+          comment-id: ${{ github.event.client_payload.github.payload.comment.id }}
+          body: |
+            > Integration test run status is : ${{ job.status }}
+            > Coverage is : ${{ env.TOTAL_COVERAGE }} %
+            > Job link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          reaction-type: hooray
+
+      - name: Add summary
+        if: ${{ always() }}
+        run: |
+          echo "### Integration Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Coverage: ${{ env.TOTAL_COVERAGE }}%" >> $GITHUB_STEP_SUMMARY
