@@ -81,7 +81,9 @@ jobs:
               else
                   echo "Running ${#matched_dirs[@]} matching integration target(s):"
                   printf '%s\n' "${matched_dirs[@]}"
-                  ansible-test integration --continue-on-error --python ${{ matrix.python-version }} --coverage "${matched_dirs[@]}" --allow-disabled 2>&1 | tee test_output.log
+                  ansible-test integration --continue-on-error \
+                    --python ${{ matrix.python-version }} --coverage "${matched_dirs[@]}" \
+                    --allow-disabled 2>&1 | tee test_output.log
               fi
           fi
           ansible-test integration --continue-on-error --python ${{ matrix.python-version }} --coverage $flag 2>&1 | tee -a test_output.log
