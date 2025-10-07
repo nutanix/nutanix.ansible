@@ -3,46 +3,97 @@
   ansible.builtin.debug:
     msg: "Starting ntnx_stigs_v2 tests"
 
-- name: Fetch summary report for the current number of issues found by STIG for each cluster.
-  nutanix.ncp.ntnx_stigs_v2:
-  register: result_summary
-
-- name: Verify summary report
-  ansible.builtin.assert:
-    that:
-      - result_summary.changed == false
-      - result_summary.failed == false
-      - result_summary.response is defined
-      - result_summary.response | length > 0
-    fail_msg: "Summary report verification failed"
-    success_msg: "Summary report verification passed"
-
 - name: Fetch detailed STIG control information for each cluster.
   nutanix.ncp.ntnx_stigs_v2:
-    stig_details: true
-  register: result_details
+  register: result
+
+- ansible.builtin.debug:
+    var: result
 
 - name: Verify detailed STIG control information
   ansible.builtin.assert:
     that:
-      - result_details.changed == false
-      - result_details.failed == false
-      - result_details.response is defined
-      - result_details.response | length > 0
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length > 0
     fail_msg: "Detailed STIG control information verification failed"
     success_msg: "Detailed STIG control information verification passed"
 
-- name: Verify summary report matches detailed control information
+- name: Count number of STIG controls with severity LOW, MEDIUM, HIGH
+  ansible.builtin.set_fact:
+    low_severity_count: "{{ result.response | selectattr('severity', 'equalto', 'LOW') | list | length }}"
+    medium_severity_count: "{{ result.response | selectattr('severity', 'equalto', 'MEDIUM') | list | length }}"
+    high_severity_count: "{{ result.response | selectattr('severity', 'equalto', 'HIGH') | list | length }}"
+
+- name: Fetch detailed STIG control information for each cluster with filter set to LOW
+  nutanix.ncp.ntnx_stigs_v2:
+    filter: "severity eq Security.Report.Severity'LOW'"
+  register: result_filter
+
+- ansible.builtin.debug:
+    var: result_filter
+
+- name: Verify detailed STIG control information with filter set to LOW
   ansible.builtin.assert:
     that:
-      - >
-        (
-          result_details.response
-          | selectattr('affected_clusters', 'defined')
-          | selectattr('affected_clusters', 'contains', item.cluster_ext_id)
-          | list
-          | length
-        ) == item.failed_count
-    fail_msg: "Cluster {{ item.cluster_ext_id }} failed validation."
-    success_msg: "Cluster {{ item.cluster_ext_id }} passed validation."
-  loop: "{{ result_summary.response }}"
+      - result_filter.changed == false
+      - result_filter.failed == false
+      - result_filter.response is defined
+      - result_filter.response | length == {{ low_severity_count }}
+    fail_msg: "Detailed STIG control information with filter set to LOW verification failed"
+    success_msg: "Detailed STIG control information with filter set to LOW verification passed"
+
+- name: Fetch detailed STIG control information for each cluster with filter set to MEDIUM
+  nutanix.ncp.ntnx_stigs_v2:
+    filter: "severity eq Security.Report.Severity'MEDIUM'"
+  register: result_medium
+
+- ansible.builtin.debug:
+    var: result_medium
+
+- name: Verify detailed STIG control information with filter set to MEDIUM
+  ansible.builtin.assert:
+    that:
+      - result_medium.changed == false
+      - result_medium.failed == false
+      - result_medium.response is defined
+      - result_medium.response | length == {{ medium_severity_count }}
+    fail_msg: "Detailed STIG control information with filter set to MEDIUM verification failed"
+    success_msg: "Detailed STIG control information with filter set to MEDIUM verification passed"
+
+- name: Fetch detailed STIG control information for each cluster with filter set to HIGH
+  nutanix.ncp.ntnx_stigs_v2:
+    filter: "severity eq Security.Report.Severity'HIGH'"
+  register: result_high
+
+- ansible.builtin.debug:
+    var: result_high
+
+- name: Verify detailed STIG control information with filter set to HIGH
+  ansible.builtin.assert:
+    that:
+      - result_high.changed == false
+      - result_high.failed == false
+      - result_high.response is defined
+      - result_high.response | length == {{ high_severity_count }}
+    fail_msg: "Detailed STIG control information with filter set to HIGH verification failed"
+    success_msg: "Detailed STIG control information with filter set to HIGH verification passed"
+
+- name: fetch detailed STIG control information for each cluster with limit
+  nutanix.ncp.ntnx_stigs_v2:
+    limit: 1
+  register: result_limit
+
+- ansible.builtin.debug:
+    var: result_limit
+
+- name: Verify detailed STIG control information with limit
+  ansible.builtin.assert:
+    that:
+      - result_limit.changed == false
+      - result_limit.failed == false
+      - result_limit.response is defined
+      - result_limit.response | length == 1
+    fail_msg: "Detailed STIG control information with limit verification failed"
+    success_msg: "Detailed STIG control information with limit verification passed"

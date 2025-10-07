@@ -15,16 +15,8 @@ short_description: Fetch STIG rule details and issue counts for each cluster
 version_added: 2.4.0
 description:
   - The Security Technical Implementation Guide (STIG) is a configuration standard consisting of cybersecurity requirements for a specific product.
-  - Fetch the current number of issues found by STIG for each cluster.
-  - Fetch the STIG controls details for STIG rules on each cluster if C(stig_details) is true.
+  - Fetch the STIG controls details for STIG rules on each cluster.
   - This module uses PC v4 APIs based SDKs
-options:
-  stig_details:
-    description:
-      - Whether to fetch detailed STIG control information.
-      - If true, detailed information about each STIG control will be retrieved.
-    type: bool
-    default: false
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_info_v2
@@ -33,94 +25,117 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Fetch summary report for the current number of issues found by STIG for each cluster.
-  nutanix.ncp.ntnx_stigs_v2:
-    nutanix_host: <pc_ip>
-    nutanix_username: <user>
-    nutanix_password: <pass>
-    stig_summary: true
-  register: result
-
 - name: Fetch detailed STIG control information for each cluster.
   nutanix.ncp.ntnx_stigs_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
-    stig_details: true
   register: result
+
+- name: Fetch detailed STIG control information for each cluster with filter
+  nutanix.ncp.ntnx_stigs_v2:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    filter: "severity eq Security.Report.Severity'LOW'"
+  register: result_filter
+
+  - name: Fetch detailed STIG control information for each cluster with limit
+  nutanix.ncp.ntnx_stigs_v2:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    limit: 1
+  register: result_limit
 """
 
 RETURN = r"""
 response:
-    description:
-        - Response for fetching STIG details.
-        - A list of STIG control details for each cluster.
-        - If C(stig_details) is true, it will contain detailed information about each STIG control.
-        - If C(stig_details) is false or not provided, it will contain a summary of STIG issues.
-    type: dict
-    returned: always
-    sample:
-      [
-        {
-          "cluster_ext_id": "00063a1c-a953-2048-0000-000000028f57",
-          "ext_id": "7c38080b-feec-4098-5cb3-5c4acc6e6f64",
-          "failed_count": 17,
-          "links": null,
-          "not_applicable_count": 46,
-          "passed_count": 68,
-          "tenant_id": null
-        }
-      ]
+  description:
+    - Response for fetching STIG details.
+    - A list of STIG control details for each cluster.
+    - Contains
+  type: dict
+  returned: always
+  sample:
+    [
+      {
+        "affected_clusters": ["00063e6e-18f3-aefb-0ace-e59ff1cc2885"],
+        "benchmark_id": "RHEL_8_V2R2",
+        "comments": null,
+        "ext_id": "15c1f2d3-4849-4929-50ba-5c7da6a748ba",
+        "fix_text": "Configure RHEL 8 to enable kernel page-table isolation with the following command:\n\n$ sudo grubby --update-kernel=ALL --args=\"pti=on\"\n\nAdd or modify the following line in \"/etc/default/grub\" to ensure the configuration survives kernel updates:\n\nGRUB_CMDLINE_LINUX=\"pti=on\"",
+        "identifiers": null,
+        "links": null,
+        "rule_id": "SV-230491r1017274_rule",
+        "severity": "LOW",
+        "status": "APPLICABLE",
+        "stig_version": "RHEL-08-040004",
+        "tenant_id": null,
+        "title": "RHEL 8 must enable mitigations against processor-based vulnerabilities.",
+      },
+      {
+        "affected_clusters": ["00063e6e-18f3-aefb-0ace-e59ff1cc2885"],
+        "benchmark_id": "RHEL_8_V2R2",
+        "comments": null,
+        "ext_id": "4a4863a1-93b3-4cc9-6f88-bdd0c8eec7dc",
+        "fix_text": "Set the mode of the local initialization files to \"0740\" with the following command:\n\nNote: The example will be for the smithj user, who has a home directory of \"/home/smithj\".\n\n $ sudo chmod 0740 /home/smithj/.<INIT_FILE>",
+        "identifiers": null,
+        "links": null,
+        "rule_id": "SV-230325r1017136_rule",
+        "severity": "MEDIUM",
+        "status": "APPLICABLE",
+        "stig_version": "RHEL-08-010770",
+        "tenant_id": null,
+        "title": "All RHEL 8 local initialization files must have mode 0740 or less permissive.",
+      },
+    ]
 changed:
-    description: Indicates if any changes were made by the module.
-    type: bool
-    returned: always
-    sample: false
+  description: Indicates if any changes were made by the module.
+  type: bool
+  returned: always
+  sample: false
 failed:
-    description: Indicates if the module execution failed.
-    type: bool
-    returned: always
-    sample: false
+  description: Indicates if the module execution failed.
+  type: bool
+  returned: always
+  sample: false
 error:
-    description: Error message if any.
-    type: str
-    returned: always
+  description: Error message if any.
+  type: str
+  returned: always
 """
 
 import warnings  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
+from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.security.api_client import get_stigs_api_instance  # noqa: E402
-from ..module_utils.v4.security.helpers import (  # noqa: E402
-    get_stig_controls_details,
-    get_stig_summary,
-)
+from ..module_utils.v4.security.helpers import get_stig_controls_details  # noqa: E402
+
 from ..module_utils.v4.utils import strip_internal_attributes  # noqa: E402
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
-def get_module_spec():
-    module_args = dict(stig_details=dict(type="bool", default=False))
-    return module_args
-
-
 def run_module():
     module = BaseInfoModule(
-        argument_spec=get_module_spec(),
+        argument_spec=dict(),
         supports_check_mode=False,
     )
 
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None}
     stig_api_instance = get_stigs_api_instance(module)
+    sg = SpecGenerator(module)
+    kwargs, err = sg.get_info_spec(attr=module.params)
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed generating STIGs info Spec", **result)
     resp = None
-    if module.params.get("stig_details"):
-        resp = get_stig_controls_details(module, stig_api_instance)
-    else:
-        resp = get_stig_summary(module, stig_api_instance)
+    resp = get_stig_controls_details(module, stig_api_instance, **kwargs)
     resp = strip_internal_attributes(resp.to_dict()).get("data")
     if not resp:
         resp = []
