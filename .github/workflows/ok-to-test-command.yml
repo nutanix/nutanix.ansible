@@ -215,8 +215,11 @@ jobs:
 
             ### Detailed Test Results
             ```text
-            ${{ env.RESULTS || (env.NO_REGEX_MATCH && 'No integration test targets matched regex. Only inventory tests executed.') || 
-              'No detailed results found.' }}
+            >-
+              ${{ env.RESULTS ||
+                  (env.NO_REGEX_MATCH &&
+                  'No integration test targets matched regex. Only inventory tests executed.')
+                  || 'No detailed results found.' }}
             ```
           reaction-type: hooray
 
