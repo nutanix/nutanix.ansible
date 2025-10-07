@@ -80,11 +80,12 @@ jobs:
               if [ ${#matched_dirs[@]} -eq 0 ]; then
                   echo "❌ No integration test targets matched regex: '$regex_pattern'."
                   echo "No test execution performed." | tee test_output.log
-                  echo "RESULTS=No tests matched regex pattern '$regex_pattern'. Skipping test run. Only Inventory tests are executed." >> $GITHUB_ENV
+                  echo "NO_REGEX_MATCH=true" >> $GITHUB_ENV
+                  echo "RESULTS=No tests matched regex pattern '$regex_pattern'. Skipping test run. Only Inventory tests executed." >> $GITHUB_ENV
+
                   echo "### Detailed Test Results" >> $GITHUB_STEP_SUMMARY
                   echo "- No integration test targets matched regex pattern: \`$regex_pattern\`" >> $GITHUB_STEP_SUMMARY
                   echo "- No tests executed. Only Inventory tests are executed." >> $GITHUB_STEP_SUMMARY
-                  exit 0
               else
                   echo "Running ${#matched_dirs[@]} matching integration target(s):"
                   printf '%s\n' "${matched_dirs[@]}"
@@ -97,8 +98,13 @@ jobs:
               ansible-test integration --continue-on-error \
                 --python ${{ matrix.python-version }} --coverage $flag 2>&1 | tee test_output.log
           fi
-
           ansible-test coverage report > coverage.txt
+
+      - name: Cleanup Environments
+        if: ${{ always() }}
+        run: |
+          cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
+          echo "🧹 Cleaning up environments..."
           ansible-playbook tests/integration/targets/prepare_env/playbooks/cleanup.yml
           ansible-playbook tests/integration/targets/prepare_foundation_env/playbooks/cleanup.yml
 
@@ -206,10 +212,10 @@ jobs:
             > Integration test run status is : ${{ job.status }}
             > Coverage is : ${{ env.TOTAL_COVERAGE }} %
             > Job link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
+      
             ### Detailed Test Results
             ```text
-            ${{ env.RESULTS }}
+            ${{ env.RESULTS || (env.NO_REGEX_MATCH && 'No integration test targets matched regex. Only inventory tests executed.') || 'No detailed results found.' }}
             ```
           reaction-type: hooray
 
