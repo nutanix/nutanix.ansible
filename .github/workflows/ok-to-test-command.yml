@@ -212,7 +212,7 @@ jobs:
             > Integration test run status is : ${{ job.status }}
             > Coverage is : ${{ env.TOTAL_COVERAGE }} %
             > Job link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-      
+
             ### Detailed Test Results
             ```text
             ${{ env.RESULTS || (env.NO_REGEX_MATCH && 'No integration test targets matched regex. Only inventory tests executed.') || 'No detailed results found.' }}
