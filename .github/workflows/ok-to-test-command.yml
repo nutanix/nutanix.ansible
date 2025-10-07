@@ -45,6 +45,7 @@ jobs:
       - name: Run Integration test cases
         run: |
           cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
+          export ANSIBLE_STDOUT_CALLBACK=default
           export NUTANIX_HOST=${{ secrets.PC_IP }}
           export NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}
           export NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}
@@ -59,6 +60,7 @@ jobs:
           elif [ -n "$args" ]; then
               regex_pattern="$args"
           fi
+
           echo '${{ secrets.FOUNDATION_CONFIG }}' > tests/integration/targets/prepare_foundation_env/vars/main.yml
           echo '${{ secrets.FC_CONFIG }}' > tests/integration/targets/prepare_fc_env/vars/main.yml
           echo '${{ secrets.PC_CONFIG }}' > tests/integration/targets/prepare_env/vars/main.yml
@@ -67,7 +69,10 @@ jobs:
           echo "NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}" >> $GITHUB_ENV
           echo "NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}" >> $GITHUB_ENV
 
-          ansible-playbook -i tests/integration/targets/inventory_test/nutanix.yml tests/integration/targets/inventory_test/inventory.yml
+          echo "===> Running inventory tests..."
+          ansible-playbook -i tests/integration/targets/inventory_test/nutanix.yml \
+            tests/integration/targets/inventory_test/inventory.yml | tee test_output.log
+
           ansible-playbook tests/integration/targets/prepare_env/playbooks/prepare_env.yml
           ansible-playbook tests/integration/targets/prepare_ndb_env/playbooks/prepare_env.yml
           ansible-playbook tests/integration/targets/prepare_fc_env/playbooks/prepare_fc_env.yml
@@ -79,7 +84,7 @@ jobs:
               mapfile -t matched_dirs < <(find tests/integration/targets -maxdepth 1 -mindepth 1 -type d -printf "%f\n" | grep -E "$regex_pattern" || true)
               if [ ${#matched_dirs[@]} -eq 0 ]; then
                   echo "❌ No integration test targets matched regex: '$regex_pattern'."
-                  echo "No test execution performed." | tee test_output.log
+                  echo "No test execution performed." | tee -a test_output.log
                   echo "NO_REGEX_MATCH=true" >> $GITHUB_ENV
                   echo "RESULTS=No tests matched regex pattern '$regex_pattern'. Skipping test run. Only Inventory tests executed." >> $GITHUB_ENV
 
@@ -91,13 +96,14 @@ jobs:
                   printf '%s\n' "${matched_dirs[@]}"
                   ansible-test integration --continue-on-error \
                     --python ${{ matrix.python-version }} --coverage "${matched_dirs[@]}" \
-                    --allow-disabled 2>&1 | tee test_output.log
+                    --allow-disabled 2>&1 | tee -a test_output.log
               fi
           else
               echo "Running all integration tests..."
               ansible-test integration --continue-on-error \
-                --python ${{ matrix.python-version }} --coverage $flag 2>&1 | tee test_output.log
+                --python ${{ matrix.python-version }} --coverage $flag 2>&1 | tee -a test_output.log
           fi
+
           ansible-test coverage report > coverage.txt
 
       - name: Cleanup Environments
@@ -120,12 +126,9 @@ jobs:
 
           if [ -f "$LOG_FILE" ]; then
             while IFS= read -r line; do
-                # Detect the start of a test role
                 if [[ $line =~ ^Running\ ([^[:space:]]+)\ integration\ test\ role ]]; then
                     current_test="${BASH_REMATCH[1]}"
                 fi
-
-                # Detect PLAY RECAP for that test
                 if [[ $line =~ ^PLAY\ RECAP ]]; then
                     read -r recap_line
                     if [[ $recap_line =~ failed=([0-9]+) ]]; then
@@ -139,7 +142,6 @@ jobs:
                 fi
             done < "$LOG_FILE"
 
-            # Group tests by status
             passed_tests=()
             failed_tests=()
 
@@ -171,7 +173,6 @@ jobs:
               echo "- None" >> $GITHUB_STEP_SUMMARY
             fi
 
-            # Save environment summary
             for test in "${!test_results[@]}"; do
               echo "- $test : ${test_results[$test]}"
             done >> $GITHUB_ENV
@@ -215,11 +216,10 @@ jobs:
 
             ### Detailed Test Results
             ```text
-            >-
-              ${{ env.RESULTS ||
-                  (env.NO_REGEX_MATCH &&
-                  'No integration test targets matched regex. Only inventory tests executed.')
-                  || 'No detailed results found.' }}
+            ${{ env.RESULTS ||
+                (env.NO_REGEX_MATCH &&
+                'No integration test targets matched regex. Only inventory tests executed.')
+                || 'No detailed results found.' }}
             ```
           reaction-type: hooray
 
