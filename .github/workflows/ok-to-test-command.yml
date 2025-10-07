@@ -78,7 +78,13 @@ jobs:
               echo "Filtering integration tests by regex: $regex_pattern"
               mapfile -t matched_dirs < <(find tests/integration/targets -maxdepth 1 -mindepth 1 -type d -printf "%f\n" | grep -E "$regex_pattern" || true)
               if [ ${#matched_dirs[@]} -eq 0 ]; then
-                  echo "No targets matched regex: '$regex_pattern'. Nothing to run."
+                  echo "❌ No integration test targets matched regex: '$regex_pattern'."
+                  echo "No test execution performed." | tee test_output.log
+                  echo "RESULTS=No tests matched regex pattern '$regex_pattern'. Skipping test run. Only Inventory tests are executed." >> $GITHUB_ENV
+                  echo "### Detailed Test Results" >> $GITHUB_STEP_SUMMARY
+                  echo "- No integration test targets matched regex pattern: \`$regex_pattern\`" >> $GITHUB_STEP_SUMMARY
+                  echo "- No tests executed. Only Inventory tests are executed." >> $GITHUB_STEP_SUMMARY
+                  exit 0
               else
                   echo "Running ${#matched_dirs[@]} matching integration target(s):"
                   printf '%s\n' "${matched_dirs[@]}"
@@ -86,8 +92,12 @@ jobs:
                     --python ${{ matrix.python-version }} --coverage "${matched_dirs[@]}" \
                     --allow-disabled 2>&1 | tee test_output.log
               fi
+          else
+              echo "Running all integration tests..."
+              ansible-test integration --continue-on-error \
+                --python ${{ matrix.python-version }} --coverage $flag 2>&1 | tee test_output.log
           fi
-          ansible-test integration --continue-on-error --python ${{ matrix.python-version }} --coverage $flag 2>&1 | tee -a test_output.log
+
           ansible-test coverage report > coverage.txt
           ansible-playbook tests/integration/targets/prepare_env/playbooks/cleanup.yml
           ansible-playbook tests/integration/targets/prepare_foundation_env/playbooks/cleanup.yml
@@ -123,11 +133,41 @@ jobs:
                 fi
             done < "$LOG_FILE"
 
-            # Write results to summary and env
-            echo "RESULTS<<EOF" >> $GITHUB_ENV
+            # Group tests by status
+            passed_tests=()
+            failed_tests=()
+
             for test in "${!test_results[@]}"; do
-                echo "- $test : ${test_results[$test]}" | tee -a parsed_results.log >> $GITHUB_STEP_SUMMARY
-                echo "- $test : ${test_results[$test]}"
+              if [ "${test_results[$test]}" = "PASSED" ]; then
+                passed_tests+=("$test")
+              else
+                failed_tests+=("$test")
+              fi
+            done
+
+            echo "RESULTS<<EOF" >> $GITHUB_ENV
+            echo "### Passed Tests:" >> $GITHUB_STEP_SUMMARY
+            if [ ${#passed_tests[@]} -gt 0 ]; then
+              for test in "${passed_tests[@]}"; do
+                echo "- $test" | tee -a parsed_results.log >> $GITHUB_STEP_SUMMARY
+              done
+            else
+              echo "- None" >> $GITHUB_STEP_SUMMARY
+            fi
+
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Failed Tests:" >> $GITHUB_STEP_SUMMARY
+            if [ ${#failed_tests[@]} -gt 0 ]; then
+              for test in "${failed_tests[@]}"; do
+                echo "- $test" | tee -a parsed_results.log >> $GITHUB_STEP_SUMMARY
+              done
+            else
+              echo "- None" >> $GITHUB_STEP_SUMMARY
+            fi
+
+            # Save environment summary
+            for test in "${!test_results[@]}"; do
+              echo "- $test : ${test_results[$test]}"
             done >> $GITHUB_ENV
             echo "EOF" >> $GITHUB_ENV
 
