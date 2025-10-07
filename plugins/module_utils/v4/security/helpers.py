@@ -8,7 +8,7 @@ __metaclass__ = type
 from ..utils import raise_api_exception  # noqa: E402
 
 
-def get_stig_controls_details(module, api_instance):
+def get_stig_controls_details(module, api_instance, **kwargs):
     """
     This method will return STIG controls details on each cluster.
     Args:
@@ -18,29 +18,10 @@ def get_stig_controls_details(module, api_instance):
         stig_control_info (object): STIG control info
     """
     try:
-        return api_instance.list_stigs()
+        return api_instance.list_stigs(**kwargs)
     except Exception as e:
         raise_api_exception(
             module=module,
             exception=e,
             msg="Api Exception raised while fetching STIG control details",
-        )
-
-
-def get_stig_summary(module, api_instance):
-    """
-    This method will return STIG summary for each cluster.
-    Args:
-        module: Ansible module
-        api_instance: STIGsApi instance from ntnx_security_py_client sdk
-    return:
-        stig_summary (object): STIG summary info
-    """
-    try:
-        return api_instance.list_stig_summaries()
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while fetching STIG summary",
         )
