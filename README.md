@@ -504,3 +504,9 @@ By following these steps, you can perform comprehensive integration testing for 
         - {vm_name: "Dev-Wordpress-App"}
 
 ```
+
+## License
+
+GNU General Public License v3.0 or later
+
+See [LICENSE](LICENSE) to see the full text.
