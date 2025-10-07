@@ -42,65 +42,65 @@ jobs:
           ansible-galaxy collection build --force
           ansible-galaxy collection install ${NAMESPACE}-${COLLECTION_NAME}-${VERSION}.tar.gz --force
 
-          - name: Run Integration test cases
-          run: |
-            cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
-            export NUTANIX_HOST=${{ secrets.PC_IP }}
-            export NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}
-            export NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}
-            export NUTANIX_DR_SITE=${{ secrets.NUTANIX_DR_SITE }}
-            export NDB_HOST=${{ secrets.NDB_HOST }}
-            export NDB_PASSWORD=${{ secrets.NDB_PASSWORD }}
-            export NDB_USERNAME=${{ secrets.NDB_USERNAME }}
-            args="${{ github.event.client_payload.slash_command.args.all }}"
-            flag=""
-            if [ "$args" = "allow-disabled" ]; then
-                flag="--allow-disabled"
-            elif [ -n "$args" ]; then
-                regex_pattern="$args"
-            fi
-            echo '${{ secrets.FOUNDATION_CONFIG }}' > tests/integration/targets/prepare_foundation_env/vars/main.yml
-            echo '${{ secrets.FC_CONFIG }}' > tests/integration/targets/prepare_fc_env/vars/main.yml
-            echo '${{ secrets.PC_CONFIG }}' > tests/integration/targets/prepare_env/vars/main.yml
-            echo '${{ secrets.NDB_CONFIG }}' > tests/integration/targets/prepare_ndb_env/vars/main.yml
-            echo "NUTANIX_HOST=${{ secrets.PC_IP }}" >> $GITHUB_ENV
-            echo "NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}" >> $GITHUB_ENV
-            echo "NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}" >> $GITHUB_ENV
+      - name: Run Integration test cases
+        run: |
+          cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
+          export NUTANIX_HOST=${{ secrets.PC_IP }}
+          export NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}
+          export NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}
+          export NUTANIX_DR_SITE=${{ secrets.NUTANIX_DR_SITE }}
+          export NDB_HOST=${{ secrets.NDB_HOST }}
+          export NDB_PASSWORD=${{ secrets.NDB_PASSWORD }}
+          export NDB_USERNAME=${{ secrets.NDB_USERNAME }}
+          args="${{ github.event.client_payload.slash_command.args.all }}"
+          flag=""
+          if [ "$args" = "allow-disabled" ]; then
+              flag="--allow-disabled"
+          elif [ -n "$args" ]; then
+              regex_pattern="$args"
+          fi
+          echo '${{ secrets.FOUNDATION_CONFIG }}' > tests/integration/targets/prepare_foundation_env/vars/main.yml
+          echo '${{ secrets.FC_CONFIG }}' > tests/integration/targets/prepare_fc_env/vars/main.yml
+          echo '${{ secrets.PC_CONFIG }}' > tests/integration/targets/prepare_env/vars/main.yml
+          echo '${{ secrets.NDB_CONFIG }}' > tests/integration/targets/prepare_ndb_env/vars/main.yml
+          echo "NUTANIX_HOST=${{ secrets.PC_IP }}" >> $GITHUB_ENV
+          echo "NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}" >> $GITHUB_ENV
+          echo "NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}" >> $GITHUB_ENV
 
-            ansible-playbook -i tests/integration/targets/inventory_test/nutanix.yml tests/integration/targets/inventory_test/inventory.yml
-            ansible-playbook tests/integration/targets/prepare_env/playbooks/prepare_env.yml
-            ansible-playbook tests/integration/targets/prepare_ndb_env/playbooks/prepare_env.yml
-            ansible-playbook tests/integration/targets/prepare_fc_env/playbooks/prepare_fc_env.yml
-            ansible-playbook tests/integration/targets/prepare_foundation_env/playbooks/prepare_foundation_env.yml
+          ansible-playbook -i tests/integration/targets/inventory_test/nutanix.yml tests/integration/targets/inventory_test/inventory.yml
+          ansible-playbook tests/integration/targets/prepare_env/playbooks/prepare_env.yml
+          ansible-playbook tests/integration/targets/prepare_ndb_env/playbooks/prepare_env.yml
+          ansible-playbook tests/integration/targets/prepare_fc_env/playbooks/prepare_fc_env.yml
+          ansible-playbook tests/integration/targets/prepare_foundation_env/playbooks/prepare_foundation_env.yml
 
-            echo "===> Running integration tests..."
-            if [ -n "$regex_pattern" ]; then
-                echo "Filtering integration tests by regex: $regex_pattern"
-                mapfile -t matched_dirs < <(find tests/integration/targets -maxdepth 1 -mindepth 1 -type d -printf "%f\n" | grep -E "$regex_pattern" || true)
-                if [ ${#matched_dirs[@]} -eq 0 ]; then
-                    echo "❌ No integration test targets matched regex: '$regex_pattern'."
-                    echo "No test execution performed." | tee test_output.log
-                    echo "RESULTS=No tests matched regex pattern '$regex_pattern'. Skipping test run. Only Inventory tests are executed." >> $GITHUB_ENV
-                    echo "### Detailed Test Results" >> $GITHUB_STEP_SUMMARY
-                    echo "- No integration test targets matched regex pattern: \`$regex_pattern\`" >> $GITHUB_STEP_SUMMARY
-                    echo "- No tests executed. Only Inventory tests are executed." >> $GITHUB_STEP_SUMMARY
-                    exit 0
-                else
-                    echo "Running ${#matched_dirs[@]} matching integration target(s):"
-                    printf '%s\n' "${matched_dirs[@]}"
-                    ansible-test integration --continue-on-error \
-                      --python ${{ matrix.python-version }} --coverage "${matched_dirs[@]}" \
-                      --allow-disabled 2>&1 | tee test_output.log
-                fi
-            else
-                echo "Running all integration tests..."
-                ansible-test integration --continue-on-error \
-                  --python ${{ matrix.python-version }} --coverage $flag 2>&1 | tee test_output.log
-            fi
+          echo "===> Running integration tests..."
+          if [ -n "$regex_pattern" ]; then
+              echo "Filtering integration tests by regex: $regex_pattern"
+              mapfile -t matched_dirs < <(find tests/integration/targets -maxdepth 1 -mindepth 1 -type d -printf "%f\n" | grep -E "$regex_pattern" || true)
+              if [ ${#matched_dirs[@]} -eq 0 ]; then
+                  echo "❌ No integration test targets matched regex: '$regex_pattern'."
+                  echo "No test execution performed." | tee test_output.log
+                  echo "RESULTS=No tests matched regex pattern '$regex_pattern'. Skipping test run. Only Inventory tests are executed." >> $GITHUB_ENV
+                  echo "### Detailed Test Results" >> $GITHUB_STEP_SUMMARY
+                  echo "- No integration test targets matched regex pattern: \`$regex_pattern\`" >> $GITHUB_STEP_SUMMARY
+                  echo "- No tests executed. Only Inventory tests are executed." >> $GITHUB_STEP_SUMMARY
+                  exit 0
+              else
+                  echo "Running ${#matched_dirs[@]} matching integration target(s):"
+                  printf '%s\n' "${matched_dirs[@]}"
+                  ansible-test integration --continue-on-error \
+                    --python ${{ matrix.python-version }} --coverage "${matched_dirs[@]}" \
+                    --allow-disabled 2>&1 | tee test_output.log
+              fi
+          else
+              echo "Running all integration tests..."
+              ansible-test integration --continue-on-error \
+                --python ${{ matrix.python-version }} --coverage $flag 2>&1 | tee test_output.log
+          fi
 
-            ansible-test coverage report > coverage.txt
-            ansible-playbook tests/integration/targets/prepare_env/playbooks/cleanup.yml
-            ansible-playbook tests/integration/targets/prepare_foundation_env/playbooks/cleanup.yml
+          ansible-test coverage report > coverage.txt
+          ansible-playbook tests/integration/targets/prepare_env/playbooks/cleanup.yml
+          ansible-playbook tests/integration/targets/prepare_foundation_env/playbooks/cleanup.yml
 
       - name: Generate test summary
         if: ${{ always() }}
