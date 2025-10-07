@@ -152,7 +152,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         vm_description = entity.get("status", {}).get("description")
         vm_uuid = entity.get("metadata", {}).get("uuid")
         vm_ip = None
-        vm_fqdn = None
 
         vm_resources = entity.get("status", {}).get("resources", {}).copy()
         for nics in vm_resources.get("nic_list", []):
@@ -163,14 +162,10 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                         break
                 if vm_ip:
                     break
-        if vm_ip:
-            try:
-                vm_fqdn = socket.gethostbyaddr(vm_ip)[0]
-            except Exception:
-                vm_fqdn = None
+
         if self.vm_fqdn_expr:
             lookup = {
-                "cluster": cluster,
+                "cluster_name": cluster,
                 "cluster_uuid": cluster_uuid,
                 "vm_name": vm_name,
                 "vm_description": vm_description,
@@ -201,10 +196,9 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
 
         host_vars = {
             "ansible_host": vm_ip,
-            "ansible_fqdn": vm_fqdn,
             "uuid": vm_uuid,
             "name": vm_name,
-            "cluster": cluster,
+            "cluster_name": cluster,
         }
         host_vars.update(vm_resources)
 
@@ -272,7 +266,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             vm_name = host_vars.get("name")
             cluster = host_vars.get("cluster")
             vm_ip = host_vars.get("ansible_host")
-            vm_fqdn = host_vars.get("ansible_fqdn")
             vm_uuid = host_vars.get("uuid")
 
             if cluster:
@@ -281,7 +274,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             if vm_name:
                 self.inventory.add_host(vm_name, group=cluster)
                 self.inventory.set_variable(vm_name, "ansible_host", vm_ip)
-                self.inventory.set_variable(vm_name, "ansible_fqdn", vm_fqdn)
                 self.inventory.set_variable(vm_name, "uuid", vm_uuid)
                 self.inventory.set_variable(vm_name, "name", vm_name)
                 # Set all host_vars as variables.
