@@ -191,7 +191,7 @@ def update_ssl_certificates(module, result):
     etag = get_etag(data=current_spec)
     if not etag:
         return module.fail_json(
-            "unable to fetch etag for updating ssl certificates for the cluster",
+            msg="unable to fetch etag for updating ssl certificates for the cluster",
             **result,
         )
 
