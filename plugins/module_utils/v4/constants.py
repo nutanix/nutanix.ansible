@@ -41,6 +41,7 @@ class Tasks:
         STORAGE_CONTAINER = "clustermgmt:config:storage-containers"
         ROUTE = "networking:config:route"
         OBJECTS = "objects:config:object-store"
+        SSL_CERTIFICATES = "security:config:ssl-certs"
 
     class CompletetionDetailsName:
         """Completion details name for the task entities affected"""
