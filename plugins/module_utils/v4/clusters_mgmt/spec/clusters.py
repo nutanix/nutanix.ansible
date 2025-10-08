@@ -252,7 +252,7 @@ class ClusterSpecs:
             obj=clusters_sdk.ClusterNetworkReference,
         ),
         container_name=dict(type="str"),
-        categories=dict(type="dict"),
+        categories=dict(type="list", elements="str"),
     )
 
     @classmethod
