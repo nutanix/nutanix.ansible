@@ -14,8 +14,8 @@ module: ntnx_ssl_certificates_info_v2
 short_description: Provides detailed information about the SSL certificate for specific cluster
 version_added: 2.4.0
 description:
-    - This module provides detailed information about the SSL certificate for specific cluster.
-    - This module uses PC v4 APIs based SDKs
+  - This module provides detailed information about the SSL certificate for specific cluster.
+  - This module uses PC v4 APIs based SDKs
 options:
   ext_id:
     description:
@@ -24,9 +24,9 @@ options:
     type: str
     required: true
 extends_documentation_fragment:
-      - nutanix.ncp.ntnx_credentials
+  - nutanix.ncp.ntnx_credentials
 author:
- - George Ghawali (@george-ghawali)
+  - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
@@ -41,33 +41,33 @@ EXAMPLES = r"""
 
 RETURN = r"""
 response:
-    description: Response for fetching SSL certificates info for specific cluster.
-    type: dict
-    returned: always
-    sample:
+  description: Response for fetching SSL certificates info for specific cluster.
+  type: dict
+  returned: always
+  sample:
 
 changed:
-    description: This indicates whether the task resulted in any changes
-    returned: always
-    type: bool
-    sample: true
+  description: This indicates whether the task resulted in any changes
+  returned: always
+  type: bool
+  sample: true
 
 error:
-    description: This field typically holds information about if the task have errors that occurred during the task execution
-    returned: When an error occurs
-    type: str
+  description: This field typically holds information about if the task have errors that occurred during the task execution
+  returned: When an error occurs
+  type: str
 
 failed:
-    description: This field typically holds information about if the task have failed
-    returned: always
-    type: bool
-    sample: false
+  description: This field typically holds information about if the task have failed
+  returned: always
+  type: bool
+  sample: false
 
 ext_id:
-    description: The external ID of the cluster.
-    type: str
-    returned: always
-    sample: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
+  description: The external ID of the cluster.
+  type: str
+  returned: always
+  sample: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
 """
 
 import warnings  # noqa: E402

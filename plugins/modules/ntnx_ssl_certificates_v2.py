@@ -13,9 +13,9 @@ DOCUMENTATION = r"""
 module: ntnx_ssl_certificates_v2
 short_description: Update SSL certificates for a specific cluster in Nutanix Prism Central
 description:
-    - This module allows you to update the SSL certificate for a specific cluster
-    - Certificate payload should be in Base64 format
-    - This module uses PC v4 APIs based SDKs
+  - This module allows you to update the SSL certificate for a specific cluster
+  - Certificate payload should be in Base64 format
+  - This module uses PC v4 APIs based SDKs
 version_added: 2.4.0
 options:
   ext_id:
@@ -49,20 +49,20 @@ options:
     type: str
     required: true
     choices:
-    - ECDSA_256
-    - JKS
-    - RSA_2048
-    - ECDSA_521
-    - KRB_KEYTAB
-    - PKCS12
-    - RSA_4096
-    - RSA_PUBLIC
-    - ECDSA_384
+      - ECDSA_256
+      - JKS
+      - RSA_2048
+      - ECDSA_521
+      - KRB_KEYTAB
+      - PKCS12
+      - RSA_4096
+      - RSA_PUBLIC
+      - ECDSA_384
 extends_documentation_fragment:
-      - nutanix.ncp.ntnx_credentials
-      - nutanix.ncp.ntnx_operations_v2
+  - nutanix.ncp.ntnx_credentials
+  - nutanix.ncp.ntnx_operations_v2
 author:
- - George Ghawali (@george-ghawali)
+  - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
@@ -81,26 +81,26 @@ EXAMPLES = r"""
 
 RETURN = r"""
 response:
-    description:
-        - Response for updating SSL certificate for a specific cluster.
-        - Task details if C(wait) is false.
-        - SSL certificate details if C(wait) is true.
-    type: dict
-    returned: always
-    sample:
+  description:
+    - Response for updating SSL certificate for a specific cluster.
+    - Task details if C(wait) is false.
+    - SSL certificate details if C(wait) is true.
+  type: dict
+  returned: always
+  sample:
 
 task_ext_id:
-    description:
-        - Task external ID.
-    type: str
-    returned: always
-    sample: ZXJnb24=:d0fe946a-83b7-464d-bafb-4826282a75b1
+  description:
+    - Task external ID.
+  type: str
+  returned: always
+  sample: ZXJnb24=:d0fe946a-83b7-464d-bafb-4826282a75b1
 ext_id:
-    description:
-        - External ID of the cluster.
-    type: str
-    returned: always
-    sample: 00064079-9b02-8c5e-185b-ac1f6b6f97e2
+  description:
+    - External ID of the cluster.
+  type: str
+  returned: always
+  sample: 00064079-9b02-8c5e-185b-ac1f6b6f97e2
 changed:
   description: This indicates whether the task resulted in any changes
   returned: always
