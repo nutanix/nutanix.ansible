@@ -150,11 +150,25 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str", required=True),
-        passphrase=dict(type="str", required=False),
-        private_key=dict(type="str", required=False),
+        passphrase=dict(type="str", required=False, no_log=True),
+        private_key=dict(type="str", required=False, no_log=True),
         public_certificate=dict(type="str", required=False),
         ca_chain=dict(type="str", required=False),
-        private_key_algorithm=dict(type="str", required=True),
+        private_key_algorithm=dict(
+            type="str",
+            required=True,
+            choices=[
+                "ECDSA_256",
+                "JKS",
+                "RSA_2048",
+                "ECDSA_521",
+                "KRB_KEYTAB",
+                "PKCS12",
+                "RSA_4096",
+                "RSA_PUBLIC",
+                "ECDSA_384",
+            ],
+        ),
     )
     return module_args
 
