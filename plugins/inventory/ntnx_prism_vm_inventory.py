@@ -85,6 +85,26 @@ DOCUMENTATION = r"""
     extends_documentation_fragment:
         - constructed
 """
+Examples = r"""
+---
+plugin: nutanix.ncp.ntnx_prism_vm_inventory
+# If these are not set, values will be taken from environment variables:
+# nutanix_hostname: "hostname"
+# nutanix_username: "username"
+# nutanix_password: "password"
+validate_certs: false
+data: { offset: 0, length: 20 }
+fetch_all_vms: false
+groups:
+  group_1: "'integration' in name"
+  group_2: "'auto' in name"
+  group_3: "'integration' not in name and 'auto' not in name"
+keyed_groups:
+  - prefix: host
+    separator: "_"
+    key: ansible_host
+vm_fqdn_expr: "{vm_name}.nutanix1.{cluster_name}.nutanix2.{cluster_uuid}.nutanix3.{vm_uuid}.nutanix4.com"
+"""
 
 import json  # noqa: E402
 import re  # noqa: E402
@@ -206,6 +226,8 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             "uuid": vm_uuid,
             "name": vm_name,
             "cluster_name": cluster,
+            "cluster_uuid": cluster_uuid,
+            "description": vm_description,
         }
         host_vars.update(vm_resources)
 
