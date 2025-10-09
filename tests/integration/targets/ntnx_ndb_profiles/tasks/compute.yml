@@ -18,7 +18,7 @@
     profile2_name: "{{ random_name }}{{ suffix_name }}2"
 ################################################################
 - name: Verify creation of compute profile with defaults in check mode
-  ntnx_ndb_profiles:
+  nutanix.ncp.ntnx_ndb_profiles:
     name: "{{ profile1_name }}"
     desc: testdesc
     type: compute
@@ -45,7 +45,7 @@
     success_msg: "Pass: Verify creation of compute profile with defaults in check mode "
 ################################################################
 - name: Verify creation of compute profile
-  ntnx_ndb_profiles:
+  nutanix.ncp.ntnx_ndb_profiles:
     name: "{{ profile1_name }}"
     desc: testdesc
     type: compute
@@ -78,7 +78,7 @@
     todelete: "{{ todelete + [result.profile_uuid] }}"
 ################################################################
 - name: Verify update of params in compute profile and publish profile
-  ntnx_ndb_profiles:
+  nutanix.ncp.ntnx_ndb_profiles:
     name: "{{ profile2_name }}"
     desc: newdesc
     profile_uuid: "{{ result.profile_uuid }}"
@@ -109,7 +109,7 @@
     success_msg: "Pass:  verify update of params in compute profile and publish profile finished successfully"
 ################################################################
 - name: Verify idempotency check  in compute profile
-  ntnx_ndb_profiles:
+  nutanix.ncp.ntnx_ndb_profiles:
     profile_uuid: "{{ result.profile_uuid }}"
     name: "{{ profile2_name }}"
     desc: newdesc
@@ -127,7 +127,7 @@
     success_msg: "Pass: verify idempotency check  in compute profile finished successfully"
 ################################################################
 - name: Verify unpublish flow in compute profile
-  ntnx_ndb_profiles:
+  nutanix.ncp.ntnx_ndb_profiles:
     profile_uuid: "{{ result.profile_uuid }}"
 
     type: compute
@@ -148,7 +148,7 @@
     success_msg: "Pass: verify unpublish flow in compute profile finished successfully"
 ################################################################
 - name: Delete profiles with check mode
-  ntnx_ndb_profiles:
+  nutanix.ncp.ntnx_ndb_profiles:
     state: absent
     profile_uuid: "{{ todelete[0] }}"
   register: output
@@ -167,7 +167,7 @@
 ################################################################
 
 - name: Delete all created cmpute profiles
-  ntnx_ndb_profiles:
+  nutanix.ncp.ntnx_ndb_profiles:
     state: absent
     profile_uuid: "{{ item }}"
   register: result

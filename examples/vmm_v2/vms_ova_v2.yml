@@ -1,0 +1,130 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create Ova from a VM
+# 2. Create Ova from a valid URL
+# 3. Create Ova using object store source
+# 4. Update Ova
+# 5. Deploy VM from Ova
+# 6. List all Ovas
+# 7. List Ovas with filter
+# 8. List Ovas with limit
+# 9. Get details of a specific Ova
+# 10. Download Ova using ext id
+# 11. Delete Ova
+
+- name: VM ovas playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        vm_uuid: "323e4567-8547-12d3-a456-426614174001"
+        cluster_ext_id: "123e4567-e89b-12d3-a456-426614174000"
+        ova_url: "https://example.com/path/to/ova/file.ova"
+        subnet_uuid: "123e4567-e89b-12d3-a456-426614174002"
+        object_key_name: "object_name"
+
+    - name: Create Ova from the VM
+      nutanix.ncp.ntnx_ova_v2:
+        name: "ova_name"
+        source:
+          ova_vm_source:
+            vm_ext_id: "{{ vm_uuid }}"
+            disk_file_format: "QCOW2"
+      register: result
+      ignore_errors: true
+
+    - name: Store Ova ext_id
+      ansible.builtin.set_fact:
+        ova_ext_id: "{{ result.response.ext_id }}"
+
+    - name: Create Ova from a valid url
+      nutanix.ncp.ntnx_ova_v2:
+        name: "ova_name_url"
+        source:
+          ova_url_source:
+            url: "{{ ova_url }}"
+            should_allow_insecure_url: true
+        cluster_location_ext_ids:
+          - "{{ cluster_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Create ova using object store source
+      nutanix.ncp.ntnx_ova_v2:
+        name: "object-ova"
+        source:
+          objects_lite_source:
+            key: "{{ object_key_name }}"
+        cluster_location_ext_ids:
+          - "{{ cluster_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Update Ova
+      nutanix.ncp.ntnx_ova_v2:
+        ext_id: "{{ vm_uuid }}"
+        name: "ova_name_updated"
+      register: result
+      ignore_errors: true
+
+    - name: Deploy VM from Ova
+      nutanix.ncp.ntnx_ova_deploy_vm_v2:
+        ext_id: "{{ ova_ext_id }}"
+        override_vm_config:
+          nics:
+            - backing_info:
+                is_connected: true
+              network_info:
+                nic_type: "NORMAL_NIC"
+                subnet:
+                  ext_id: "{{ subnet_uuid }}"
+                vlan_mode: "ACCESS"
+        cluster_location_ext_id: "{{ cluster_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all Ovas
+      nutanix.ncp.ntnx_ova_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List Ovas with filter
+      nutanix.ncp.ntnx_ova_info_v2:
+        filter: "name eq 'test_ova'"
+      register: result
+      ignore_errors: true
+
+    - name: List Ovas with limit
+      nutanix.ncp.ntnx_ova_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: Get details of a specific Ova
+      nutanix.ncp.ntnx_ova_info_v2:
+        ext_id: "{{ ova_ext_id }}"
+      register: result
+      ignore_errors: true
+
+# This will give a path from where you can get the path to download the Ova file
+# .tmp directory will be deleted automatically after the execution of the playbook
+# If needed, get the file from there before the playbook ends
+    - name: Download Ova using ext id
+      nutanix.ncp.ntnx_ova_download_v2:
+        ova_ext_id: "{{ ova_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Delete Ova
+      nutanix.ncp.ntnx_ova_v2:
+        ext_id: "{{ ova_ext_id }}"
+        state: absent
+      register: result

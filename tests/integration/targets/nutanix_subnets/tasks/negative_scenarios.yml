@@ -6,12 +6,12 @@
 # - ip_address_management
 # - ip_address_pools
 
-- name: Started Negative Creation Cases
+- name: Start nutanix_subnets negative scenarios tests
   ansible.builtin.debug:
-    msg: "Started Negative Creation Cases"
+    msg: Start nutanix_subnets negative scenarios tests
 
 - name: Unknown virtual switch name
-  ntnx_subnets:
+  nutanix.ncp.ntnx_subnets:
     state: present
     name: VLAN subnet without IPAM
     vlan_subnet:
@@ -31,7 +31,7 @@
     success_msg: " Success: returned error as expected "
 ###############################################################
 - name: Unknown virtual switch uuid
-  ntnx_subnets:
+  nutanix.ncp.ntnx_subnets:
     state: present
     name: VLAN subnet with IPAM
     vlan_subnet:
@@ -54,7 +54,7 @@
     success_msg: " Success: returned error as expected "
 ###############################################################
 - name: Unknown Cluster
-  ntnx_subnets:
+  nutanix.ncp.ntnx_subnets:
     state: present
     name: VLAN subnet with IPAM and IP pools
     vlan_subnet:
@@ -80,7 +80,7 @@
     success_msg: " Success: returned error as expected "
 ###############################################################
 - name: Delete subnet with unknown uuid
-  ntnx_subnets:
+  nutanix.ncp.ntnx_subnets:
     state: absent
     subnet_uuid: 5
   register: result

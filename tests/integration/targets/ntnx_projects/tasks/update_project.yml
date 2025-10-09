@@ -27,7 +27,7 @@
     project1_name: "{{ random_name }}{{ suffix_name }}1"
 
 - name: Create Project
-  ntnx_projects:
+  nutanix.ncp.ntnx_projects:
     name: "{{ project1_name }}"
     desc: desc-123
     subnets:
@@ -56,7 +56,7 @@
 #################################################################
 
 - name: Check check mode for update
-  ntnx_projects:
+  nutanix.ncp.ntnx_projects:
     project_uuid: "{{ result.project_uuid }}"
     desc: desc-123-updated
     clusters:
@@ -96,7 +96,7 @@
 #################################################################
 
 - name: Update project. Change subnets, users, quotas and add vpcs
-  ntnx_projects:
+  nutanix.ncp.ntnx_projects:
     project_uuid: "{{ result.project_uuid }}"
     desc: desc-123-updated
     clusters:
@@ -142,7 +142,7 @@
 #################################################################
 
 - name: Idempotency check
-  ntnx_projects:
+  nutanix.ncp.ntnx_projects:
     project_uuid: "{{ result.project_uuid }}"
     desc: desc-123-updated
     subnets:
@@ -174,7 +174,7 @@
 #################################################################
 
 - name: Delete all Created Projects
-  ntnx_projects:
+  nutanix.ncp.ntnx_projects:
     state: absent
     project_uuid: "{{ item }}"
   register: result

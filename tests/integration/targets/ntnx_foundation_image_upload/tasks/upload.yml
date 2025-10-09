@@ -11,7 +11,7 @@
   no_log: true
 
 - name: Image upload with nos installer_type
-  ntnx_foundation_image_upload:
+  nutanix.ncp.ntnx_foundation_image_upload:
     state: present
     source: "{{ source }}"
     filename: integration-test-ntnx-package.tar.gz
@@ -31,7 +31,7 @@
     success_msg: "Success: upload image  with nos installer_type successfully "
 
 - name: Delete Image with nos installer_type with check mode
-  ntnx_foundation_image_upload:
+  nutanix.ncp.ntnx_foundation_image_upload:
     state: absent
     filename: "integration-test-ntnx-package.tar.gz"
     installer_type: nos
@@ -50,7 +50,7 @@
     success_msg: "Delete image with nos installer_type with check mode passed"
 
 - name: Delete Image with nos installer_type
-  ntnx_foundation_image_upload:
+  nutanix.ncp.ntnx_foundation_image_upload:
     state: absent
     filename: integration-test-ntnx-package.tar.gz
     installer_type: nos

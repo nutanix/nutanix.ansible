@@ -4,7 +4,7 @@
     msg: Start ntnx_image_placement_policy delete tests
 
 - name: Create image placement policy with minimal spec for delete tests
-  ntnx_image_placement_policy:
+  nutanix.ncp.ntnx_image_placement_policy:
     name: "test_policy_5"
     placement_type: soft
     image_categories:
@@ -25,7 +25,7 @@
     success_msg: "Image placement policy with minimal spec created successfully"
 
 - name: Delete image with check mode
-  ntnx_image_placement_policy:
+  nutanix.ncp.ntnx_image_placement_policy:
     state: absent
     policy_uuid: "{{ result.response.metadata.uuid }}"
   register: output
@@ -43,7 +43,7 @@
     success_msg: "Delete image with check mode passed"
 
 - name: Delete image placement policy created above
-  ntnx_image_placement_policy:
+  nutanix.ncp.ntnx_image_placement_policy:
     state: absent
     policy_uuid: "{{ result.response.metadata.uuid }}"
   register: output
@@ -61,7 +61,7 @@
 #####################################################################################################
 
 - name: Delete image placement policy with incorrect uuid
-  ntnx_image_placement_policy:
+  nutanix.ncp.ntnx_image_placement_policy:
     state: absent
     policy_uuid: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
   register: result

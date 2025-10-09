@@ -17,6 +17,15 @@ description:
     - Restore recovery points using external ID
     - This module uses PC v4 APIs based SDKs
 options:
+    state:
+        description:
+            - State of the module.
+            - If state is present, the module will restore a recovery point.
+            - If state is not present, the module will fail.
+        type: str
+        choices:
+            - present
+        default: present
     ext_id:
         description:
             - External ID to restore recovery point
@@ -219,6 +228,7 @@ def get_module_spec():
     )
 
     module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
         ext_id=dict(type="str", required=True),
         cluster_ext_id=dict(type="str"),
         vm_recovery_point_restore_overrides=dict(

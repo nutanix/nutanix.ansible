@@ -1,0 +1,50 @@
+---
+# Summary:
+# 1. Get Task status
+# 2. Get all the tasks
+# 3. Get task details using filters
+# 4. Get task details using limit
+# 5. Abort a task
+
+- name: Prism playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        task_ext_id: "ZXJnb24=:e38e02b7-d946-4069-8291-e9407e3a15d8"
+
+    - name: Get Task status
+      nutanix.ncp.ntnx_pc_tasks_info_v2:
+        ext_id: "{{ task_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Get all the tasks
+      nutanix.ncp.ntnx_pc_tasks_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Get all the tasks using filters
+      nutanix.ncp.ntnx_pc_tasks_info_v2:
+        filter: "operation eq 'kImageCreate'"
+      register: result
+      ignore_errors: true
+
+    - name: Get task details using limit
+      nutanix.ncp.ntnx_pc_tasks_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: Abort a task
+      nutanix.ncp.ntnx_pc_task_abort_v2:
+        task_ext_id: "{{ task_ext_id }}"
+      register: result
+      ignore_errors: true

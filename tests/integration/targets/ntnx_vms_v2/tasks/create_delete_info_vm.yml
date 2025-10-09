@@ -6,9 +6,9 @@
 # - network
 # - unattendxml
 
-- name: Start ntnx_vms_v2 tests
+- name: Start ntnx_vms_v2 tests for create_delete_info_vm
   ansible.builtin.debug:
-    msg: start ntnx_vms_v2 tests
+    msg: Start ntnx_vms_v2 tests for create_delete_info_vm
 
 - name: Generate random category key & value
   ansible.builtin.set_fact:
@@ -24,7 +24,7 @@
     vm_name: "{{ random_name }}{{ suffix_name }}vm"
 
 - name: Create VM with full requirements with check_mode
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     name: "{{ vm_name }}"
     description: ansible test
     cluster:
@@ -269,7 +269,7 @@
 ########################################################################
 
 - name: Create VM with minimum requirements
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     name: "{{ vm_name }}"
     description: ansible test
     cluster:
@@ -294,7 +294,7 @@
     todelete: '{{ todelete + [result["ext_id"]] }}'
 
 - name: Get vm using filter name
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     filter: name eq '{{ vm_name }}'
   register: result
   ignore_errors: true
@@ -315,7 +315,7 @@
 ########################################################################
 
 - name: Create VM with full requirements
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     name: "{{ vm_name }}"
     description: ansible test
     cluster:
@@ -382,7 +382,7 @@
 ########################################################################
 
 - name: Create vm with different disks, using ubuntu image , with cdrom
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     name: "{{ vm_name }}"
     description: ansible test
     cluster:
@@ -442,7 +442,7 @@
     todelete: '{{ todelete + [result["ext_id"]] }}'
 
 - name: Fetch vm using ext_id
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ result.ext_id }}"
   register: result
   ignore_errors: true
@@ -470,7 +470,7 @@
 ########################################################################
 
 - name: List all categories
-  ntnx_categories_info_v2:
+  nutanix.ncp.ntnx_categories_info_v2:
     limit: 3
   register: result
   ignore_errors: true
@@ -481,7 +481,7 @@
     category_ext_id_2: "{{ result.response[1].ext_id }}"
 
 - name: Create vm with multiple serial port, and categories
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     name: "{{ vm_name }}"
     description: ansible test
     cluster:
@@ -522,7 +522,7 @@
 ########################################################################
 
 - name: Create vm with legacy_boot
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     name: "{{ vm_name }}"
     description: ansible test
     cluster:
@@ -590,7 +590,7 @@
 ########################################################################
 
 - name: Create vm with nics,cloud_init script
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     name: "{{ vm_name }}"
     description: ansible test
     cluster:
@@ -739,7 +739,7 @@
     xml_file_content: "{{ lookup('file', unattendxml.dest + '/unattendxml.txt') }}"
 
 - name: Create vm with windows unattend xml file
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     name: "{{ vm_name }}"
     description: ansible test
     cluster:
@@ -810,7 +810,7 @@
 ########################################################################
 
 - name: List all VMs
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
   register: result
   ignore_errors: true
 
@@ -825,7 +825,7 @@
 
 # all_vms is a list of all available VMs details
 - name: Get all VMs
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     limit: "{{ num_vms_per_page }}"
     page: "{{ item }}"
   register: all_vms
@@ -846,7 +846,7 @@
 ########################################################################
 
 - name: List all VMs with limit 3
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     limit: 3
   register: result
   ignore_errors: true
@@ -864,7 +864,7 @@
 ########################################################################
 
 - name: Delete VM with check mode is enabled
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     state: absent
     ext_id: "{{ todelete[0] }}"
   register: result
@@ -885,7 +885,7 @@
 ########################################################################
 
 - name: Delete all Created VMs
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     state: absent
     ext_id: "{{ item }}"
   register: result
