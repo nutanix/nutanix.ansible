@@ -1,4 +1,7 @@
 ---
+# Variables required before running this playbook:
+# - cluster
+
 - name: >
     Start ntnx_templates_deploy_v2,ntnx_templates_guest_os_v2,ntnx_templates_v2,ntnx_templates_info_v2,
     ntnx_templates_version_v2,ntnx_templates_versions_info_v2 tests
@@ -64,7 +67,7 @@
   ignore_errors: true
   check_mode: true
 
-- name: Verify spec
+- name: Verify spec for creating new template from a vm
   ansible.builtin.assert:
     that:
       - result.response is defined
@@ -73,8 +76,8 @@
       - result.response.template_name == "{{ template_name }}"
       - result.response.template_description == "ansible test"
       - result.response.template_version_spec.version_source.ext_id == "{{ vm_uuid }}"
-    fail_msg: " Template created successfully in check mode "
-    success_msg: Returned as expected in check mode
+    fail_msg: "Create new template from a vm with check mode failed"
+    success_msg: "Create new template from a vm with check mode passed"
 ########################################################################
 - name: Create new template from a vm
   ntnx_templates_v2:
@@ -165,7 +168,7 @@
   ignore_errors: true
   check_mode: true
 
-- name: Update status
+- name: Update template description & name & override_vm_config with guest_customization user_data key_value_pairs with check mode
   ansible.builtin.assert:
     that:
       - result.changed == False
@@ -185,8 +188,8 @@
         result.response.template_version_spec.version_source.override_vm_config.guest_customization.config.cloud_init_script.value
         == "I2Nsb3VkLWNvbmZpZwpkaXNhYmxlX3Jvb3Q6IGZhbHNlCnNzaF9wd2F1dGg6ICAgdHJ1ZQ=="
       - result.response.template_version_spec.version_source.override_vm_config.guest_customization.config.metadata == "test"
-    fail_msg: Finished update template description & name in check mode
-    success_msg: Returned as expected in check mode
+    fail_msg: "Update template description & name in check mode failed"
+    success_msg: "Update template description & name in check mode passed"
 
 ########################################################################
 - name: Update template description & name & override_vm_config with guest_customization key_value_pairs with check mode
@@ -219,7 +222,7 @@
   ignore_errors: true
   check_mode: true
 
-- name: Update status
+- name: Update template description & name & override_vm_config with guest_customization user_data key_value_pairs with check mode
   ansible.builtin.assert:
     that:
       - result.changed == False
@@ -254,8 +257,8 @@
         result.response.template_version_spec.version_source.override_vm_config.guest_customization.
         config.cloud_init_script.key_value_pairs[1].value == "test2_value"
       - result.response.template_version_spec.version_source.override_vm_config.guest_customization.config.metadata == "test"
-    fail_msg: Finished update template description & name in check mode
-    success_msg: Returned as expected in check mode
+    fail_msg: "Update template description & name & override_vm_config with guest_customization key_value_pairs in check mode failed"
+    success_msg: "Update template description & name & override_vm_config with guest_customization key_value_pairs in check mode passed"
 ########################################################################
 - name: Update template description & name
   ntnx_templates_v2:
@@ -338,6 +341,28 @@
     fail_msg: Unable to set the Active Version
     success_msg: Active Version set successfully
 ########################################################################
+
+- name: Delete template version with check mode enabled
+  ntnx_templates_version_v2:
+    state: absent
+    template_ext_id: "{{ template1_ext_id }}"
+    version_id: "{{ version2_ext_id }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete template version with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ version2_ext_id }}"
+      - result.msg == "Template version with ext_id:{{ version2_ext_id }} will be deleted."
+    fail_msg: Delete template version with check mode enabled failed
+    success_msg: Delete template version with check mode enabled passed
+########################################################################
+
 - name: Delete Template Version
   ntnx_templates_version_v2:
     state: absent
@@ -395,7 +420,7 @@
   ignore_errors: true
   check_mode: true
 
-- name: Status of VM deployment
+- name: Generate spec for deploying vm with override config with check mode status
   ansible.builtin.assert:
     that:
       - result.changed == False
@@ -411,8 +436,9 @@
       - result.response.cluster_reference == "{{ cluster.uuid }}"
       - result.msg == "Template ({{ template1_ext_id }}) with given version ({{ version1_ext_id }}) will be deployed."
 
-    fail_msg: VM deployed with override config successfully with check mode
-    success_msg: Returned as expected with check mode
+    fail_msg: "Generate spec for deploying vm with override config with check mode failed"
+    success_msg: "Generate spec for deploying vm with override config with check mode passed"
+
 ########################################################################
 - name: Deploy vm and override config
   ntnx_templates_deploy_v2:
@@ -469,7 +495,7 @@
   ignore_errors: true
   check_mode: true
 
-- name: Status of guest os update
+- name: Initiate_guest_os_update with check mode status
   ansible.builtin.assert:
     that:
       - result.changed == False
@@ -477,8 +503,8 @@
       - result.response.version_id == "{{ version1_ext_id }}"
       - result.template_ext_id == "{{ template1_ext_id }}"
       - result.msg == "Guest OS update will be initiated"
-    fail_msg: Guest os update initiated successfully with check mode
-    success_msg: Returned as expected with check mode
+    fail_msg: "Initiate_guest_os_update with check mode failed"
+    success_msg: "Initiate_guest_os_update with check mode passed"
 ########################################################################
 - name: Initiate_guest_os_update
   ntnx_templates_guest_os_v2:
@@ -637,6 +663,27 @@
     fail_msg: Template listed with non existent name
     success_msg: Returned as expected
 ########################################################################
+
+- name: Delete template with check mode enabled
+  ntnx_templates_v2:
+    state: absent
+    ext_id: "{{ template1_ext_id }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete template with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ template1_ext_id }}"
+      - result.msg == "Template with ext_id:{{ template1_ext_id }} will be deleted."
+    fail_msg: Delete template with check mode enabled failed
+    success_msg: Delete template with check mode enabled passed
+########################################################################
+
 - name: Delete Template
   ntnx_templates_v2:
     state: absent

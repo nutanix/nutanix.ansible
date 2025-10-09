@@ -1,4 +1,10 @@
 ---
+# Variables required before running this test:
+# - users: List of user UUIDs (used as users[0], users[1])
+# - user_groups: List of user group UUIDs (used as user_groups[0])
+# - directory_service_uuid: Directory service UUID (used in entities)
+# - project: Project object with 'uuid' field (used as project.uuid)
+
 - name: Start authorization CRUD tests
   ansible.builtin.debug:
     msg: Start authorization CRUD tests
@@ -460,6 +466,27 @@
     fail_msg: Unable to fetch using filters
     success_msg: Fetched using filters successfully
 ###################################################### Delete Tests ########################################################
+
+- name: Delete auth policy with check mode enabled
+  ntnx_authorization_policies_v2:
+    state: absent
+    ext_id: "{{ policy_ext_id }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete auth policy with check mode status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.msg is defined
+      - result.changed == False
+      - result.failed == False
+      - result.ext_id == "{{ policy_ext_id }}"
+      - result.msg == "Authorization policy with ext_id:{{ policy_ext_id }} will be deleted."
+    fail_msg: Delete auth policy with check mode failed
+    success_msg: Delete auth policy with check mode passed
+
 - name: Delete created auth policies
   ntnx_authorization_policies_v2:
     state: absent

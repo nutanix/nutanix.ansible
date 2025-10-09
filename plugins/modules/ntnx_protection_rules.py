@@ -654,7 +654,7 @@ def check_rule_idempotency(rule_spec, update_spec):
     ].get("category_filter"):
         return False
 
-    # check if availibility zones have updated
+    # check if availability zones have updated
     if len(rule_spec["spec"]["resources"]["ordered_availability_zone_list"]) != len(
         update_spec["spec"]["resources"]["ordered_availability_zone_list"]
     ):
@@ -678,6 +678,12 @@ def check_rule_idempotency(rule_spec, update_spec):
             not in rule_spec["spec"]["resources"]["availability_zone_connectivity_list"]
         ):
             return False
+
+    # check if start_time has been updated
+    if rule_spec["spec"]["resources"].get("start_time") != update_spec["spec"][
+        "resources"
+    ].get("start_time"):
+        return False
 
     return True
 
@@ -720,6 +726,13 @@ def update_protection_rule(module, result):
 def delete_protection_rule(module, result):
     protection_rule = ProtectionRule(module)
     rule_uuid = module.params["rule_uuid"]
+
+    result["rule_uuid"] = rule_uuid
+    if module.check_mode:
+
+        result["msg"] = "Role with uuid:{0} will be deleted.".format(rule_uuid)
+        return
+
     resp = protection_rule.delete(uuid=rule_uuid)
     task_uuid = resp["status"]["execution_context"]["task_uuid"]
     result["changed"] = True

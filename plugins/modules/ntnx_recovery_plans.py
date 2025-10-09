@@ -475,7 +475,6 @@ EXAMPLES = r"""
             name: "{{dr.recovery_site_network}}"
 
 - name: Update stage categories
-  check_mode: true
   ntnx_recovery_plans:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -497,6 +496,7 @@ EXAMPLES = r"""
       - categories:
           - key: Environment
             value: Testing
+  check_mode: true
 
 - name: Delete created recovery plans
   ntnx_recovery_plans:
@@ -566,7 +566,7 @@ spec:
                                             {
                                                 "ip_config_list": [
                                                     {
-                                                        "ip_address": "cutom_ip_1"
+                                                        "ip_address": "custom_ip_1"
                                                     }
                                                 ],
                                                 "vm_reference": {
@@ -1044,7 +1044,7 @@ def check_recovery_plan_idempotency(old_spec, update_spec):
         if config not in old_ip_assignments:
             return False
 
-    # comparing availibility zones
+    # comparing availability zones
     if (
         old_spec["spec"]["resources"]["parameters"]["availability_zone_list"]
         != update_spec["spec"]["resources"]["parameters"]["availability_zone_list"]
@@ -1102,6 +1102,12 @@ def update_recovery_plan(module, result):
 def delete_recovery_plan(module, result):
     recovery_plan = RecoveryPlan(module)
     plan_uuid = module.params["plan_uuid"]
+
+    result["plan_uuid"] = plan_uuid
+    if module.check_mode:
+        result["msg"] = "Recovery plan with uuid:{0} will be deleted.".format(plan_uuid)
+        return
+
     resp = recovery_plan.delete(uuid=plan_uuid)
     task_uuid = resp["status"]["execution_context"]["task_uuid"]
     result["changed"] = True

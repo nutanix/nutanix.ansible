@@ -386,7 +386,7 @@ options:
                         cluster:
                           description:
                             - cluster where they will be hosted
-                            - this will overide default cluster provided for all vms
+                            - this will override default cluster provided for all vms
                           type: dict
                           suboptions:
                             name:
@@ -402,7 +402,7 @@ options:
                         network_profile:
                           description:
                             - network profile details
-                            - this will overide default network profile provided for all vms
+                            - this will override default network profile provided for all vms
                           type: dict
                           suboptions:
                             name:
@@ -418,7 +418,7 @@ options:
                         compute_profile:
                           description:
                             - compute profile details for the node
-                            - this will overide default compute profile provided for all vms
+                            - this will override default compute profile provided for all vms
                           type: dict
                           suboptions:
                             name:
@@ -1500,6 +1500,7 @@ def delete_db_servers(module, result, database_info):
         spec = db_servers.get_default_delete_spec(
             delete=module.params.get("delete_db_server_vms", False)
         )
+
         resp = db_servers.delete(uuid=uuid, data=spec)
 
         ops_uuid = resp["operationId"]
@@ -1523,9 +1524,11 @@ def delete_instance(module, result):
     database = _databases.read(uuid, query=query)
 
     spec = _databases.get_delete_spec()
+    result["uuid"] = uuid
 
     if module.check_mode:
         result["response"] = spec
+        result["msg"] = "Instance with uuid:{0} will be deleted.".format(uuid)
         return
 
     resp = _databases.delete(uuid, data=spec)

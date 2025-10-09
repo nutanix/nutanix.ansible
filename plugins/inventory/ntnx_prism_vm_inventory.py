@@ -91,6 +91,7 @@ import re  # noqa: E402
 import tempfile  # noqa: E402
 
 from ansible.errors import AnsibleError  # noqa: E402
+from ansible.module_utils.basic import env_fallback  # noqa: E402
 from ansible.plugins.inventory import BaseInventoryPlugin, Constructable  # noqa: E402
 
 from ..module_utils.v3.prism import vms  # noqa: E402
@@ -121,6 +122,13 @@ class Mock_Module:
 
     def jsonify(self, data):
         return json.dumps(data)
+
+    def fail_json(self, msg, **kwargs):
+        """Fail with a message"""
+        kwargs["failed"] = True
+        kwargs["msg"] = msg
+        print("\n%s" % self.jsonify(kwargs))
+        raise AnsibleError(self.jsonify(kwargs))
 
 
 class InventoryModule(BaseInventoryPlugin, Constructable):
@@ -231,10 +239,18 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         super().parse(inventory, loader, path, cache=cache)
         self._read_config_data(path)
 
-        self.nutanix_hostname = self.get_option("nutanix_hostname")
-        self.nutanix_username = self.get_option("nutanix_username")
-        self.nutanix_password = self.get_option("nutanix_password")
-        self.nutanix_port = self.get_option("nutanix_port")
+        self.nutanix_hostname = self.get_option("nutanix_hostname") or env_fallback(
+            "NUTANIX_HOSTNAME"
+        )
+        self.nutanix_username = self.get_option("nutanix_username") or env_fallback(
+            "NUTANIX_USERNAME"
+        )
+        self.nutanix_password = self.get_option("nutanix_password") or env_fallback(
+            "NUTANIX_PASSWORD"
+        )
+        self.nutanix_port = self.get_option("nutanix_port") or env_fallback(
+            "NUTANIX_PORT"
+        )
         self.data = self.get_option("data")
         self.validate_certs = self.get_option("validate_certs")
         self.fetch_all_vms = self.get_option("fetch_all_vms")

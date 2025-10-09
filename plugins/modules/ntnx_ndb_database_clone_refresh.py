@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 module: ntnx_ndb_database_clone_refresh
 short_description: module for database clone refresh.
 version_added: 1.8.0
-description: moudle for refreshing database clone to certain point in time or snapshot.
+description: module for refreshing database clone to certain point in time or snapshot.
 options:
       uuid:
         description:
@@ -45,12 +45,12 @@ author:
 """
 EXAMPLES = r"""
 - name: create spec for refresh clone to a pitr timestamp
-  check_mode: true
   ntnx_ndb_database_clone_refresh:
     uuid: "{{clone_uuid}}"
     pitr_timestamp: "2023-02-04 07:29:36"
     timezone: "UTC"
   register: result
+  check_mode: true
 
 - name: refresh db clone
   ntnx_ndb_database_clone_refresh:

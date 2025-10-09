@@ -1,4 +1,7 @@
 ---
+# Variables required before running this playbook:
+# - xml_content
+
 - name: Start ntnx_saml_identity_providers_v2   and ntnx_saml_identity_providers_info_v2 tests
   ansible.builtin.debug:
     msg: start ntnx_saml_identity_providers_v2   and ntnx_saml_identity_providers_info_v2 tests
@@ -226,6 +229,25 @@
       - result.response | length > 0
     fail_msg: " Unable to list all identity providers "
     success_msg: " list all identity providers successfully "
+
+- name: Delete SAML identity provider with check mode enabled
+  ntnx_saml_identity_providers_v2:
+    state: absent
+    ext_id: "{{ todelete[0] }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete SAML identity provider with check mode status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ todelete[0] }}"
+      - result.msg == "Identity provider with ext_id:{{ todelete[0] }} will be deleted."
+    fail_msg: " Delete SAML identity provider with check mode enabled failed "
+    success_msg: " Delete SAML identity provider with check mode enabled successfully "
 
 - name: Delete the created SAML identity providers
   ntnx_saml_identity_providers_v2:

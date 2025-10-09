@@ -35,7 +35,6 @@
     fail_msg: "Unable to get particular host"
     success_msg: "host info obtained successfully"
 
-
 - name: List hosts using length, offset, sort order and name sort attribute
   ntnx_hosts_info:
     length: 2

@@ -127,7 +127,7 @@ options:
 
             use_authorized_server:
                 description:
-                    - conifgure authorized database server VM for hosting database clone
+                    - configure authorized database server VM for hosting database clone
                 type: dict
                 suboptions:
                     name:
@@ -894,6 +894,8 @@ def delete_db_clone(module, result):
     _clones = DatabaseClone(module)
 
     uuid = module.params.get("uuid")
+    result["uuid"] = uuid
+
     if not uuid:
         module.fail_json(msg="uuid is required field for delete", **result)
 
@@ -907,6 +909,7 @@ def delete_db_clone(module, result):
 
     if module.check_mode:
         result["response"] = spec
+        result["msg"] = "Db clone with uuid:{0} will be deleted.".format(uuid)
         return
 
     resp = _clones.delete(uuid, data=spec)

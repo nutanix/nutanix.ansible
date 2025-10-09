@@ -160,7 +160,10 @@ class RecoveryPlan(Prism):
             }
             if self.module.params["primary_location"].get("cluster"):
                 primary_location["cluster_reference_list"] = [
-                    {"uuid": self.module.params["primary_location"]["cluster"]}
+                    {
+                        "uuid": self.module.params["primary_location"]["cluster"],
+                        "kind": "cluster",
+                    }
                 ]
         else:
             primary_location_index = payload["spec"]["resources"]["parameters"][
@@ -176,7 +179,10 @@ class RecoveryPlan(Prism):
             }
             if self.module.params["recovery_location"].get("cluster"):
                 recovery_location["cluster_reference_list"] = [
-                    {"uuid": self.module.params["recovery_location"]["cluster"]}
+                    {
+                        "uuid": self.module.params["recovery_location"]["cluster"],
+                        "kind": "cluster",
+                    }
                 ]
         else:
             recovery_location_index = (
@@ -243,7 +249,9 @@ class RecoveryPlan(Prism):
         spec = {"availability_zone_url": primary_location["url"]}
 
         if primary_location.get("cluster"):
-            spec["cluster_reference_list"] = [{"uuid": primary_location["cluster"]}]
+            spec["cluster_reference_list"] = [
+                {"uuid": primary_location["cluster"], "kind": "cluster"}
+            ]
 
         payload["spec"]["resources"]["parameters"]["availability_zone_list"][
             primary_location_index
@@ -257,7 +265,9 @@ class RecoveryPlan(Prism):
         spec = {"availability_zone_url": recovery_location["url"]}
 
         if recovery_location.get("cluster"):
-            spec["cluster_reference_list"] = [{"uuid": recovery_location["cluster"]}]
+            spec["cluster_reference_list"] = [
+                {"uuid": recovery_location["cluster"], "kind": "cluster"}
+            ]
 
         payload["spec"]["resources"]["parameters"]["availability_zone_list"][
             recovery_location_index
@@ -312,9 +322,9 @@ class RecoveryPlan(Prism):
 
                 vm_ip_assignment_specs.append(ip_assignment_spec)
 
-            floating_ip_assignment_spec[
-                "vm_ip_assignment_list"
-            ] = vm_ip_assignment_specs
+            floating_ip_assignment_spec["vm_ip_assignment_list"] = (
+                vm_ip_assignment_specs
+            )
             floating_ip_assignment_specs.append(floating_ip_assignment_spec)
 
         payload["spec"]["resources"]["parameters"][

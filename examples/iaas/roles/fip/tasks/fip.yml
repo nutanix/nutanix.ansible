@@ -6,9 +6,9 @@
       name: Ext-Nat
     vm:
       name: "{{ item.vm_name }}"
-  register: fip
+  register: fip_result
 - name: Print fip uuid and vm name
   ansible.builtin.debug:
     msg:
       - "VM name: {{ item.vm_name }}"
-      - "uuid: {{ fip.fip_uuid }}"
+      - "uuid: {{ fip_result.fip_uuid }}"

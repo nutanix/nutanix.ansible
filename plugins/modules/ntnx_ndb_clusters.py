@@ -141,7 +141,7 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Register Cluster with prisim_vlan
+- name: Register Cluster with prism_vlan
   ntnx_ndb_clusters:
     nutanix_host: "<ndb_era_ip>"
     nutanix_username: "<ndb_era_username>"
@@ -425,6 +425,12 @@ def delete_cluster(module, result):
     cluster_uuid = module.params["uuid"]
 
     cluster = Cluster(module)
+    result["cluster_uuid"] = cluster_uuid
+
+    if module.check_mode:
+        result["msg"] = "Cluster with uuid:{0} will be deleted.".format(cluster_uuid)
+        return
+
     resp, err = cluster.delete(cluster_uuid)
     if err:
         result["error"] = err

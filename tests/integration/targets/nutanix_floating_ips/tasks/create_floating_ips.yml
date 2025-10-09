@@ -1,4 +1,10 @@
 ---
+# Variables required before running this playbook:
+# - external_nat_subnet
+# - vpc
+# - private_ip
+# - vm
+
 - name: Create floating ip with external subnet uuid
   ntnx_floating_ips:
     state: present
@@ -42,6 +48,24 @@
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.fip_uuid ] }}"
 ##########################################################
+- name: Delete Floating ip with check mode
+  ntnx_floating_ips:
+    state: absent
+    fip_uuid: "{{ result.fip_uuid  }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete Floating ip with check mode Status
+  ansible.builtin.assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Floating IP with uuid:{{  result.fip_uuid }} will be deleted."
+      - output.fip_uuid == "{{ result.fip_uuid   }}"
+    fail_msg: "Delete floating ip with check mode failed"
+    success_msg: "Delete floating ip with check mode passed"
+
 - name: Delete all created floating ips
   ntnx_floating_ips:
     state: absent

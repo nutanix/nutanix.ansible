@@ -13,6 +13,11 @@
 #   10. Test info module for fetching host details
 #   11. Test cluster destroy
 
+# Variables required before running this test:
+# - clusters: List of clusters with all required nested fields (nodes, config, network, etc.)
+# - username: Cluster admin username (used for SSH and registration)
+# - password: Cluster admin password (used for SSH and registration)
+
 - name: Start clusters crud tests
   ansible.builtin.debug:
     msg: start clusters crud tests
@@ -129,6 +134,9 @@
       http_proxy_white_list:
         - target_type: IPV4_NETWORK_MASK
           target: test
+    categories:
+      - "cc16efb4-6591-4b89-a643-8c835f035393"
+      - "d1b5f4e2-2b3c-4e8e-9f4a-2c9f0e6f7a12"
     container_name: test-container
     dryrun: true
   register: result
@@ -184,6 +192,9 @@
       - result.response.network.http_proxy_list[0].proxy_types[1] == "HTTPS"
       - result.response.network.http_proxy_white_list[0].target_type == "IPV4_NETWORK_MASK"
       - result.response.network.http_proxy_white_list[0].target == "test"
+      - result.response.categories | length == 2
+      - result.response.categories[0] == "cc16efb4-6591-4b89-a643-8c835f035393"
+      - result.response.categories[1] == "d1b5f4e2-2b3c-4e8e-9f4a-2c9f0e6f7a12"
       - result.response.container_name == "test-container"
     fail_msg: Cluster create spec is not generated as expected
     success_msg: Cluster create spec is generated as expected
@@ -700,7 +711,6 @@
 ############################################## Update cluster test ##############################################
 
 - name: Create update spec for cluster using dummy values
-  check_mode: true
   ntnx_clusters_v2:
     name: "{{ cluster_name }}_updated"
     ext_id: "{{ cluster_ext_id }}"
@@ -743,6 +753,7 @@
         pii_scrubbing_level: DEFAULT
   register: result
   ignore_errors: true
+  check_mode: true
 
 - name: Verify generated update spec
   ansible.builtin.assert:

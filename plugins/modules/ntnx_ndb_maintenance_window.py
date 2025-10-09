@@ -9,9 +9,9 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_maintenance_window
-short_description: module to create, update and delete mainetance window
+short_description: module to create, update and delete maintenance window
 version_added: 1.8.0
-description: module to create, update and delete mainetance window
+description: module to create, update and delete maintenance window
 options:
     name:
         description:
@@ -51,11 +51,11 @@ options:
                 type: str
             week_of_month:
                 description:
-                    - week of month for maitenance
+                    - week of month for maintenance
                 type: str
             day_of_week:
                 description:
-                    - day of week for maitenance
+                    - day of week for maintenance
                 type: str
 
 extends_documentation_fragment:
@@ -71,7 +71,7 @@ EXAMPLES = r"""
 - name: create window with weekly schedule
   ntnx_ndb_maintenance_window:
     name: "{{window1_name}}"
-    desc: "anisble-created-window"
+    desc: "ansible-created-window"
     schedule:
       recurrence: "weekly"
       duration: 2
@@ -83,7 +83,7 @@ EXAMPLES = r"""
 - name: create window with monthly schedule
   ntnx_ndb_maintenance_window:
     name: "{{window2_name}}"
-    desc: "anisble-created-window"
+    desc: "ansible-created-window"
     schedule:
       recurrence: "monthly"
       duration: 2
@@ -235,6 +235,11 @@ def delete_window(module, result):
     uuid = module.params.get("uuid")
     if not uuid:
         module.fail_json(msg="uuid is required field for delete", **result)
+
+    result["uuid"] = uuid
+    if module.check_mode:
+        result["msg"] = "Window with uuid:{0} will be deleted.".format(uuid)
+        return
 
     resp = _maintenance_window.delete(uuid=uuid, data={})
     result["response"] = resp

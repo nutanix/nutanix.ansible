@@ -47,6 +47,7 @@ options:
     backing_info:
         description:
             - The backing information for the NIC.
+            - Deprecated, use C(nic_backing_info) instead.
         type: dict
         suboptions:
             model:
@@ -72,9 +73,43 @@ options:
                     - The number of queues for the NIC.
                 type: int
                 required: false
+    nic_backing_info:
+        description:
+            - Backing Information about how NIC is associated with a VM.
+        type: dict
+        suboptions:
+            virtual_ethernet_nic:
+                description:
+                    - The virtual ethernet NIC information.
+                type: dict
+                suboptions:
+                    model:
+                        description:
+                            - The model of the NIC.
+                        type: str
+                        choices:
+                            - VIRTIO
+                            - E1000
+                        required: false
+                    mac_address:
+                        description:
+                            - The MAC address of the NIC.
+                        type: str
+                        required: false
+                    is_connected:
+                        description:
+                            - Whether the NIC needs to be connected or not.
+                        type: bool
+                        required: false
+                    num_queues:
+                        description:
+                            - The number of queues for the NIC.
+                        type: int
+                        required: false
     network_info:
         description:
             - The network configuration for the NIC.
+            - Deprecated, use C(nic_network_info) instead.
         type: dict
         suboptions:
             nic_type:
@@ -181,6 +216,121 @@ options:
                                 type: int
                                 required: false
                 required: false
+    nic_network_info:
+        description:
+            - Network configuration for the NIC.
+        type: dict
+        suboptions:
+            virtual_ethernet_nic_network_info:
+                description:
+                    - The network configuration for the virtual ethernet NIC.
+                type: dict
+                suboptions:
+                    nic_type:
+                        description:
+                            - The type of the NIC.
+                        type: str
+                        choices:
+                            - NORMAL_NIC
+                            - DIRECT_NIC
+                            - NETWORK_FUNCTION_NIC
+                            - SPAN_DESTINATION_NIC
+                        required: false
+                    network_function_chain:
+                        description:
+                            - The network function chain for the NIC.
+                        type: dict
+                        suboptions:
+                            ext_id:
+                                description:
+                                    - The external ID of the network function chain.
+                                type: str
+                                required: true
+                        required: false
+                    network_function_nic_type:
+                        description:
+                            - The type of the network function NIC.
+                        type: str
+                        choices:
+                            - INGRESS
+                            - EGRESS
+                            - TAP
+                        required: false
+                    subnet:
+                        description:
+                            - The subnet for the NIC.
+                        type: dict
+                        suboptions:
+                            ext_id:
+                                description:
+                                    - The external ID of the subnet.
+                                type: str
+                                required: true
+                        required: false
+                    vlan_mode:
+                        description:
+                            - The VLAN mode for the NIC.
+                        type: str
+                        choices:
+                            - ACCESS
+                            - TRUNK
+                        required: false
+                    trunked_vlans:
+                        description:
+                            - The trunked VLANs for the NIC.
+                        type: list
+                        elements: int
+                        required: false
+                    should_allow_unknown_macs:
+                        description:
+                            - Whether to allow unknown MAC addresses or not.
+                        type: bool
+                        required: false
+                    ipv4_config:
+                        description:
+                            - The IPv4 configuration for the NIC.
+                        type: dict
+                        suboptions:
+                            should_assign_ip:
+                                description:
+                                    - Whether to assign an IP address or not.
+                                type: bool
+                                required: false
+                            ip_address:
+                                description:
+                                    - The IP address for the NIC.
+                                type: dict
+                                suboptions:
+                                    value:
+                                        description:
+                                            - The IP address value.
+                                        type: str
+                                        required: True
+                                    prefix_length:
+                                        description:
+                                            - The prefix length for the IP address.
+                                            - Can be skipped, default it will be 32.
+                                        type: int
+                                        required: false
+                            secondary_ip_address_list:
+                                description:
+                                    - The list of secondary IP addresses for the NIC.
+                                type: list
+                                elements: dict
+                                suboptions:
+                                    value:
+                                        description:
+                                            - The IP address value.
+                                        type: str
+                                        required: true
+                                    prefix_length:
+                                        description:
+                                            - The prefix length for the IP address.
+                                            - Can be skipped, default it will be 32.
+                                        type: int
+                                        required: false
+                        required: false
+        required: false
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
@@ -237,7 +387,7 @@ EXAMPLES = r"""
           nic_type: "DIRECT_NIC"
   register: result
 
-- name: Update VLAN nic type
+- name: Delete NIC
   nutanix.ncp.ntnx_vms_nics_v2:
       nutanix_host: "<pc-ip>"
       nutanix_username: "<username>"
@@ -414,6 +564,82 @@ def create_nic(module, result):
     result["changed"] = True
 
 
+def update_new_fields_in_spec(update_spec, params):
+    """
+    Update the spec according to the parameters provided in the module.
+    This is a workaround to ensure that the new fields are included in the update spec.
+    """
+    if hasattr(update_spec, "backing_info") and hasattr(
+        update_spec, "nic_backing_info"
+    ):
+        if params.get("nic_backing_info"):
+            update_spec.backing_info.model = update_spec.nic_backing_info.model
+            update_spec.backing_info.is_connected = (
+                update_spec.nic_backing_info.is_connected
+            )
+            update_spec.backing_info.mac_address = (
+                update_spec.nic_backing_info.mac_address
+            )
+            update_spec.backing_info.num_queues = (
+                update_spec.nic_backing_info.num_queues
+            )
+
+        elif params.get("backing_info"):
+            update_spec.nic_backing_info.model = update_spec.backing_info.model
+            update_spec.nic_backing_info.is_connected = (
+                update_spec.backing_info.is_connected
+            )
+            update_spec.nic_backing_info.mac_address = (
+                update_spec.backing_info.mac_address
+            )
+            update_spec.nic_backing_info.num_queues = (
+                update_spec.backing_info.num_queues
+            )
+
+    if hasattr(update_spec, "network_info") and hasattr(
+        update_spec, "nic_network_info"
+    ):
+        if params.get("nic_network_info"):
+            update_spec.network_info.nic_type = update_spec.nic_network_info.nic_type
+            update_spec.network_info.network_function_chain = (
+                update_spec.nic_network_info.network_function_chain
+            )
+            update_spec.network_info.network_function_nic_type = (
+                update_spec.nic_network_info.network_function_nic_type
+            )
+            update_spec.network_info.subnet = update_spec.nic_network_info.subnet
+            update_spec.network_info.vlan_mode = update_spec.nic_network_info.vlan_mode
+            update_spec.network_info.trunked_vlans = (
+                update_spec.nic_network_info.trunked_vlans
+            )
+            update_spec.network_info.should_allow_unknown_macs = (
+                update_spec.nic_network_info.should_allow_unknown_macs
+            )
+            update_spec.network_info.ipv4_config = (
+                update_spec.nic_network_info.ipv4_config
+            )
+
+        elif params.get("network_info"):
+            update_spec.nic_network_info.nic_type = update_spec.network_info.nic_type
+            update_spec.nic_network_info.network_function_chain = (
+                update_spec.network_info.network_function_chain
+            )
+            update_spec.nic_network_info.network_function_nic_type = (
+                update_spec.network_info.network_function_nic_type
+            )
+            update_spec.nic_network_info.subnet = update_spec.network_info.subnet
+            update_spec.nic_network_info.vlan_mode = update_spec.network_info.vlan_mode
+            update_spec.nic_network_info.trunked_vlans = (
+                update_spec.network_info.trunked_vlans
+            )
+            update_spec.nic_network_info.should_allow_unknown_macs = (
+                update_spec.network_info.should_allow_unknown_macs
+            )
+            update_spec.nic_network_info.ipv4_config = (
+                update_spec.network_info.ipv4_config
+            )
+
+
 def check_idempotency(current_spec, update_spec):
     if current_spec != update_spec:
         return False
@@ -431,6 +657,9 @@ def update_nic(module, result):
 
     sg = SpecGenerator(module)
     update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
+
+    update_new_fields_in_spec(update_spec, module.params)
+
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating vm nic update spec", **result)
@@ -473,6 +702,10 @@ def delete_nic(module, result):
     result["vm_ext_id"] = vm_ext_id
     result["ext_id"] = ext_id
 
+    if module.check_mode:
+        result["msg"] = "NIC with ext_id:{0} will be deleted.".format(ext_id)
+        return
+
     vms = get_vm_api_instance(module)
     nic = get_nic(module, api_instance=vms, ext_id=ext_id, vm_ext_id=vm_ext_id)
     etag = get_etag(nic)
@@ -501,7 +734,18 @@ def run_module():
         supports_check_mode=True,
         required_if=[
             ("state", "absent", ("ext_id",)),
-            ("state", "present", ("ext_id", "backing_info", "network_info"), True),
+            (
+                "state",
+                "present",
+                (
+                    "ext_id",
+                    "backing_info",
+                    "nic_backing_info",
+                    "network_info",
+                    "nic_network_info",
+                ),
+                True,
+            ),
         ],
     )
     if SDK_IMP_ERROR:

@@ -1,3 +1,4 @@
+---
 # Pre-requisite:
 # - Ensure that These variables from prepare_env/vars/main.yml are defined and set correctly:
 #   - cluster:
@@ -9,7 +10,6 @@
 #   - password: "password" # Prism Central UI password
 #   - ip: "10.0.0.6" # IP address of the Prism Central
 
----
 - name: Start testing PC backup restore with cluster as backup store.
   ansible.builtin.debug:
     msg: Start testing PC backup restore with cluster as backup store.
@@ -346,6 +346,26 @@
 - name: Set restore source cluster external ID
   ansible.builtin.set_fact:
     restore_source_ext_id: "{{ result.response.ext_id }}"
+
+- name: Delete restore source cluster with check mode enabled
+  nutanix.ncp.ntnx_pc_restore_source_v2:
+    nutanix_host: "{{ ip_pe }}"
+    ext_id: "{{ restore_source_ext_id }}"
+    state: absent
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete restore source cluster with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ restore_source_ext_id }}"
+      - result.msg == "Restore source with ext_id:{{ restore_source_ext_id }} will be deleted."
+    fail_msg: "Delete restore source cluster with check mode enabled failed"
+    success_msg: "Delete restore source cluster with check mode enabled passed"
 
 - name: Delete restore source cluster
   nutanix.ncp.ntnx_pc_restore_source_v2:
@@ -697,6 +717,26 @@
 
 #############################################################
 # Delete backup target cluster
+
+- name: Delete backup target cluster with check mode enabled
+  nutanix.ncp.ntnx_pc_backup_target_v2:
+    ext_id: "{{ backup_target_ext_id }}"
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    state: absent
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete backup target cluster with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ backup_target_ext_id }}"
+      - result.msg == "Backup target with ext_id:{{ backup_target_ext_id }} will be deleted."
+    fail_msg: "Delete backup target cluster with check mode enabled failed"
+    success_msg: "Delete backup target cluster with check mode enabled passed"
 
 - name: Delete backup target cluster
   nutanix.ncp.ntnx_pc_backup_target_v2:

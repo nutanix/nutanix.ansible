@@ -170,6 +170,22 @@ EXAMPLES = r"""
             image_ext_id: "b988b5ae-da2d-424c-8530-51529a0efb52"
     state: present
     wait: true
+
+- name: Eject ISO from CD ROM of a VM
+  ntnx_vms_cd_rom_iso_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    state: absent
+    vm_ext_id: "98b9dc89-be08-3c56-b554-692b8b676fd6"
+    ext_id: "e1651169-f9df-4785-bdff-7a94b1cf04e0"
+    backing_info:
+      data_source:
+        reference:
+          image_reference:
+            image_ext_id: "b988b5ae-da2d-424c-8530-51529a0efb52"
+  register: result
 """
 
 RETURN = r"""
@@ -343,9 +359,9 @@ def eject_iso(module, vms, result):
     result["ext_id"] = ext_id
 
     if module.check_mode:
-        result[
-            "response"
-        ] = "ISO will be ejected from CD ROM with external ID: {0}".format(ext_id)
+        result["response"] = (
+            "ISO will be ejected from CD ROM with external ID: {0}".format(ext_id)
+        )
 
         return
 

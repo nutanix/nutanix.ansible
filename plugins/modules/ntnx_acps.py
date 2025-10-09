@@ -157,14 +157,14 @@ EXAMPLES = r"""
     user_group_uuids:
       - "{{ user_group_uuid }}"
 
-- name: Create ACP with all specfactions
+- name: Create ACP with all specifications
   ntnx_acps:
     validate_certs: false
     state: present
     nutanix_host: "{{ IP }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    name: acp_with_all_specfactions
+    name: acp_with_all_specifications
     role:
       uuid: "{{ role.uuid }}"
     user_uuids:
@@ -472,11 +472,15 @@ def delete_acp(module, result):
         result["error"] = "Missing parameter acp_uuid in playbook"
         module.fail_json(msg="Failed deleting acp", **result)
 
+    result["acp_uuid"] = acp_uuid
+    if module.check_mode:
+        result["msg"] = "Acp with uuid:{0} will be deleted.".format(acp_uuid)
+        return
+
     acp = ACP(module)
     resp = acp.delete(acp_uuid)
     result["changed"] = True
     result["response"] = resp
-    result["acp_uuid"] = acp_uuid
     result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
 
     if module.params.get("wait"):

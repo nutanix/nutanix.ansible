@@ -21,7 +21,7 @@ options:
   state:
     description:
       - State of the route.
-      - if C(state) is C(present) and route exteral ID is given, then route will be updated.
+      - if C(state) is C(present) and route external ID is given, then route will be updated.
       - if C(state) is C(present) and route external ID is absent, then route will be created.
       - if C(state) is C(absent) and route external ID is given, then route will be deleted.
     choices: ["present", "absent"]
@@ -536,6 +536,11 @@ def delete_route_table(module, route_api_instance, result):
     route_table_ext_id = module.params.get("route_table_ext_id")
     result["ext_id"] = ext_id
     result["route_table_ext_id"] = route_table_ext_id
+
+    if module.check_mode:
+        result["msg"] = "Route table with ext_id:{0} will be deleted.".format(ext_id)
+        return
+
     resp = None
     try:
         resp = route_api_instance.delete_route_for_route_table_by_id(

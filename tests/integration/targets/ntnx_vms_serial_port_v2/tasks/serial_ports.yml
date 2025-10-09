@@ -1,4 +1,7 @@
 ---
+# Variables required before running this playbook:
+# - cluster
+
 - name: Create, Update, Fetch and Delete Serial Ports
   ansible.builtin.debug:
     msg: "Create, Update, Fetch and Delete Serial Ports"
@@ -131,6 +134,26 @@
       - result.task_ext_id is defined
     fail_msg: " Unable to create Serial Port "
     success_msg: " Serial Port created successfully "
+
+- name: Delete Serial Port with check mode is enabled
+  ntnx_vms_serial_port_v2:
+    state: absent
+    vm_ext_id: "{{ vm_ext_id }}"
+    ext_id: "{{ todelete[0] }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Delete Serial Port with check mode is enabled Status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ todelete[0] }}"
+      - result.msg == "Serial port with ext_id:{{ todelete[0] }} will be deleted."
+    fail_msg: " Delete Serial Port with check mode is enabled failed "
+    success_msg: " Delete Serial Port with check mode is enabled passed "
 
 - name: Delete Serial Port
   ntnx_vms_serial_port_v2:

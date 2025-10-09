@@ -1,4 +1,9 @@
 ---
+# Variables required before running this playbook:
+# - clusters
+# - username
+# - password
+
 - name: Start ntnx_clusters_nodes_v2 tests
   ansible.builtin.debug:
     msg: Start ntnx_clusters_nodes_v2 tests
@@ -462,7 +467,7 @@
     that:
       - result.response is defined
       - result.response | length > 0
-    fail_msg: Failed vefifying PE PC registration
+    fail_msg: Failed verifying PE PC registration
     success_msg: PE PC registration passed successfully
 
 - name: Set cluster external ID
@@ -605,9 +610,9 @@
     fail_msg: "Expand cluster failed"
     success_msg: "Expand cluster passed"
 
-- name: Sleep for 5 minutes
+- name: Sleep for 10 minutes
   ansible.builtin.pause:
-    seconds: 300
+    seconds: 600
 
 - name: Remove node from cluster
   ntnx_clusters_nodes_v2:

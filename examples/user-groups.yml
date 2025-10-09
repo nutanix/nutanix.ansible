@@ -18,11 +18,11 @@
         project:
           uuid: ""
 
-    - name: Create user  group
+    - name: Create user group
       nutanix.ncp.ntnx_user_groups:
-        distinguished_name: "{{distinguished_name}}"
+        distinguished_name: "{{ distinguished_name }}"
         project:
-          uuid: "{{project.uuid}}"
+          uuid: "{{ project.uuid }}"
         categories:
           Environment:
             - "Dev"
@@ -31,18 +31,18 @@
     - name: Delete user group
       nutanix.ncp.ntnx_user_groups:
         state: absent
-        user_group_uuid: "{{result.user_group_uuid}}"
+        user_group_uuid: "{{ result.user_group_uuid }}"
       register: result
 
     - name: Create user group with idp
       nutanix.ncp.ntnx_user_groups:
         idp:
-          idp_uuid: "{{identity_provider_uuid}}"
+          idp_uuid: "{{ identity_provider_uuid }}"
           group_name: test_group_987
       register: result
 
-    - name: Delete user group
+    - name: Delete user group with idp
       nutanix.ncp.ntnx_user_groups:
         state: absent
-        user_group_uuid: "{{result.user_group_uuid}}"
+        user_group_uuid: "{{ result.user_group_uuid }}"
       register: result

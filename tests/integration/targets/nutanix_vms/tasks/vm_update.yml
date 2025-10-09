@@ -1,6 +1,15 @@
+---
+# Variables required before running this playbook:
+# - cluster
+# - vm_owner
+# - network
+# - ubuntu
+# - storage_container
+# - static
+
 # ########################### UPDATE_VM ################################
 
-- name: Create VM with minimum requiremnts to update
+- name: Create VM with minimum requirements to update
   ntnx_vms:
     state: present
     name: update vm
@@ -110,7 +119,7 @@
     success_msg: " VM updated successfully by increase values for  corespervcpu with force_power_off "
 
 ####################################################################
-- name: Start update tests for vm categoies
+- name: Start update tests for vm categories
   ansible.builtin.debug:
     msg: Start update tests for vm categories
 
@@ -137,7 +146,7 @@
     fail_msg: " Unable to update categories attached to vm"
     success_msg: " VM categories updated successfully "
 
-- name: Remove all categoies attached to vm
+- name: Remove all categories attached to vm
   ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
     remove_categories: true
@@ -159,7 +168,7 @@
 - name: Start update tests for disks
   ansible.builtin.debug:
     msg: Start update tests for disks
-##### CRUD opperation for SCSI disks
+##### CRUD operation for SCSI disks
 - name: Update VM by adding  SCSI disks
   ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
@@ -239,7 +248,7 @@
     fail_msg: " Unable to update vm by removing SCSI disks "
     success_msg: " VM updated successfully by removing SCSI disks "
 #######
-##### CRUD opperation for PCI disks
+##### CRUD operation for PCI disks
 - name: Update VM by adding  PCI disks
   ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
@@ -415,7 +424,7 @@
     fail_msg: " Unable to update vm by removing IDE disks with force_power_off"
     success_msg: " VM updated successfully by removing IDE disks with force_power_off"
 #######
-##### CRUD opperation for SATA disks
+##### CRUD operation for SATA disks
 - name: Update VM by adding  SATA disks with force_power_off
   ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
@@ -614,4 +623,4 @@
       - result.vm_uuid
       - result.task_uuid
     fail_msg: "Fail: Unable to delete created vm "
-    success_msg: "Success: Vm deleted sucessfully"
+    success_msg: "Success: Vm deleted successfully"

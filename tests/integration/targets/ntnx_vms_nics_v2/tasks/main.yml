@@ -9,3 +9,7 @@
   block:
     - name: Import nics_operations.yml
       ansible.builtin.import_tasks: "nics_operations.yml"
+    - name: Import nic_operations_new_fields.yml
+      ansible.builtin.import_tasks: "nic_operations_new_fields.yml"
+    - name: Import nic_operations_new_old_fields.yml
+      ansible.builtin.import_tasks: "nic_operations_new_old_fields.yml"
