@@ -542,7 +542,7 @@
 
 ############################################# Create cluster test 2 ##############################################
 
-- name: Sleep for 2 minute for pending tasks in node to finish
+- name: Sleep for 2 minutes for pending tasks in node to finish
   ansible.builtin.pause:
     seconds: 120
 
