@@ -56,11 +56,18 @@ DOCUMENTATION = r"""
                 - Set to C(False) to fetch specified number of VMs based on offset and length
                 - If set to C(True), offset and length will be ignored
                 - By default, this is set to C(False)
-        vm_fqdn_expr:
+        custom_ansible_host:
             description:
-                - Optional expression to construct the FQDN for a VM.
+                - Optional expression to construct the ansible_host for a VM instead of VM IP.
+                - If provided, it will override ansible_host value.
+                - If not provided, ansible_host value will be set to VM IP.
             required: false
-            type: str
+            type: dict
+            suboptions:
+                expr:
+                    description:
+                        - Expression to construct the ansible_host for a VM.
+                    type: str
         data:
             description:
                 - Pagination support for listing VMs
@@ -103,7 +110,8 @@ keyed_groups:
   - prefix: host
     separator: "_"
     key: ansible_host
-vm_fqdn_expr: "{vm_name}.nutanix1.{cluster_name}.nutanix2.{cluster_uuid}.nutanix3.{vm_uuid}.nutanix4.com"
+custom_ansible_host:
+  expr: "{vm_name}.nutanix1.{cluster_name}.nutanix2.{cluster_uuid}.nutanix3.{vm_uuid}.nutanix4.com"
 """
 
 import json  # noqa: E402
@@ -126,7 +134,7 @@ class Mock_Module:
         password,
         validate_certs=False,
         fetch_all_vms=False,
-        vm_fqdn_expr=None,
+        custom_ansible_host=None,
     ):
         self.tmpdir = tempfile.gettempdir()
         self.params = {
@@ -136,7 +144,7 @@ class Mock_Module:
             "nutanix_password": password,
             "validate_certs": validate_certs,
             "fetch_all_vms": fetch_all_vms,
-            "vm_fqdn_expr": vm_fqdn_expr,
+            "custom_ansible_host": custom_ansible_host,
             "load_params_without_defaults": False,
         }
 
@@ -190,7 +198,9 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 if vm_ip:
                     break
 
-        if self.vm_fqdn_expr:
+        if getattr(self, "custom_ansible_host", None) and self.custom_ansible_host.get(
+            "expr"
+        ):
             lookup = {
                 "cluster_name": cluster,
                 "cluster_uuid": cluster_uuid,
@@ -204,7 +214,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 val = lookup.get(val, "")
                 return val
 
-            vm_ip = re.sub(r"\{([^}]+)\}", repl, self.vm_fqdn_expr)
+            vm_ip = re.sub(r"\{([^}]+)\}", repl, self.custom_ansible_host.get("expr"))
 
         # Remove unwanted keys.
         for key in [
@@ -276,7 +286,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         self.data = self.get_option("data")
         self.validate_certs = self.get_option("validate_certs")
         self.fetch_all_vms = self.get_option("fetch_all_vms")
-        self.vm_fqdn_expr = self.get_option("vm_fqdn_expr")
+        self.custom_ansible_host = self.get_option("custom_ansible_host")
         # Determines if composed variables or groups using nonexistent variables is an error
         strict = self.get_option("strict")
         host_filters = self.get_option("filters")
@@ -288,7 +298,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             self.nutanix_password,
             self.validate_certs,
             self.fetch_all_vms,
-            self.vm_fqdn_expr,
+            self.custom_ansible_host,
         )
         vm = vms.VM(module)
         self.data["offset"] = self.data.get("offset", 0)
