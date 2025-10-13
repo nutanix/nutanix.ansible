@@ -23,13 +23,13 @@
       run_once: true
       when: fetch_all_vms
 
-    - name: Assert that host vars are defined like ansible_host, uuid, name, cluster_name
+    - name: Assert that host vars are defined like ansible_host, uuid, name, cluster
       ansible.builtin.assert:
         that:
           - hostvars[inventory_hostname].ansible_host is defined
           - hostvars[inventory_hostname].uuid is defined
           - hostvars[inventory_hostname].name is defined
-          - hostvars[inventory_hostname].cluster_name is defined
+          - hostvars[inventory_hostname].cluster is defined
         fail_msg: "Host vars not found for {{ inventory_hostname }}"
         success_msg: "Host vars found for {{ inventory_hostname }}"
 
@@ -43,7 +43,7 @@
           {{
             hostvars[inventory_hostname].name
             ~ '.nutanix1.'
-            ~ hostvars[inventory_hostname].cluster_name
+            ~ hostvars[inventory_hostname].cluster
             ~ '.nutanix2.'
             ~ (hostvars[inventory_hostname].cluster_uuid | default(''))
             ~ '.nutanix3.'

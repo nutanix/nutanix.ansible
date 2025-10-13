@@ -111,7 +111,7 @@ keyed_groups:
     separator: "_"
     key: ansible_host
 custom_ansible_host:
-  expr: "{vm_name}.nutanix1.{cluster_name}.nutanix2.{cluster_uuid}.nutanix3.{vm_uuid}.nutanix4.com"
+  expr: "{vm_name}.nutanix1.{cluster}.nutanix2.{cluster_uuid}.nutanix3.{vm_uuid}.nutanix4.com"
 """
 
 import json  # noqa: E402
@@ -202,7 +202,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             "expr"
         ):
             lookup = {
-                "cluster_name": cluster,
+                "cluster": cluster,
                 "cluster_uuid": cluster_uuid,
                 "vm_name": vm_name,
                 "vm_description": vm_description,
@@ -235,7 +235,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             "ansible_host": vm_ip,
             "uuid": vm_uuid,
             "name": vm_name,
-            "cluster_name": cluster,
+            "cluster": cluster,
             "cluster_uuid": cluster_uuid,
             "description": vm_description,
         }
