@@ -39,7 +39,17 @@
 
     - name: Set expected FQDN
       ansible.builtin.set_fact:
-        expected_fqdn: "{{ hostvars[inventory_hostname].name ~ '.nutanix1.' ~ hostvars[inventory_hostname].cluster_name ~ '.nutanix2.' ~ (hostvars[inventory_hostname].cluster_uuid | default('')) ~ '.nutanix3.' ~ hostvars[inventory_hostname].uuid ~ '.nutanix4.com' }}"
+        expected_fqdn: >-
+          {{
+            hostvars[inventory_hostname].name
+            ~ '.nutanix1.'
+            ~ hostvars[inventory_hostname].cluster_name
+            ~ '.nutanix2.'
+            ~ (hostvars[inventory_hostname].cluster_uuid | default(''))
+            ~ '.nutanix3.'
+            ~ hostvars[inventory_hostname].uuid
+            ~ '.nutanix4.com'
+          }}
 
     - name: Assert that host_fqdn matches the expected FQDN expression
       ansible.builtin.assert:
