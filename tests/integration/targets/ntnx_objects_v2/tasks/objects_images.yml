@@ -157,6 +157,10 @@
   ansible.builtin.set_fact:
     image_ext_id: "{{ result.response.ext_id }}"
 
+- name: Sleep for 20 seconds to allow image creation to complete
+  ansible.builtin.pause:
+    seconds: 20
+
 - name: Create image using wrong object lite source key
   nutanix.ncp.ntnx_images_v2:
     name: "object-image-wrong-key"
