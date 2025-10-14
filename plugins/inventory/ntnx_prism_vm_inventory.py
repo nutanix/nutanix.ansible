@@ -238,9 +238,13 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 val = lookup.get(val_key, "")
                 if val == "":
                     allowed_vars = ", ".join(f"'{k}'" for k in lookup.keys())
-                    raise AnsibleError(f"Variable '{val_key}' not found when formatting ansible_host expression.\nPlease use one of the following allowedvariables: {allowed_vars}")
+                    raise AnsibleError(
+                        f"Variable '{val_key}' not found when formatting ansible_host expression.\nPlease use one of the following allowedvariables: {allowed_vars}"
+                    )
                 elif val is None:
-                    raise AnsibleError(f"Variable '{val_key}' is None when formatting ansible_host expression.")
+                    raise AnsibleError(
+                        f"Variable '{val_key}' is None when formatting ansible_host expression."
+                    )
                 return val
 
             vm_ip = re.sub(r"\{([^}]+)\}", repl, self.custom_ansible_host.get("expr"))
