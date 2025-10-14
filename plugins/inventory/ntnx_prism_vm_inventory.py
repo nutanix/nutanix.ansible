@@ -59,8 +59,8 @@ DOCUMENTATION = r"""
         custom_ansible_host:
             description:
                 - Optional expression to construct the ansible_host for a VM instead of VM IP.
-                - If provided, it will override ansible_host value.
-                - If not provided, ansible_host value will be set to VM IP.
+                - If provided, it will override ansible_host value with resolved value of the expression.
+                - If not provided, ansible_host value will be set to VM IP as default.
             required: false
             type: dict
             suboptions:
@@ -68,11 +68,11 @@ DOCUMENTATION = r"""
                     description:
                         - Expression to construct the ansible_host for a VM.
                         - The expression can use the following variables:
-                           - uuid (VM UUID)
-                           - name (VM Name)
+                           - vm_name (VM Name)
                            - cluster (Cluster Name)
                            - cluster_uuid (Cluster UUID)
-                           - description (VM Description)
+                           - vm_uuid (VM UUID)
+                           - vm_description (VM Description)
                     type: str
         data:
             description:
@@ -234,8 +234,13 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             }
 
             def repl(match):
-                val = match.group(1).strip()
-                val = lookup.get(val, "")
+                val_key = match.group(1).strip()
+                val = lookup.get(val_key, "")
+                if val == "":
+                    allowed_vars = ", ".join(f"'{k}'" for k in lookup.keys())
+                    raise AnsibleError(f"Variable '{val_key}' not found when formatting ansible_host expression.\nPlease use one of the following allowedvariables: {allowed_vars}")
+                elif val is None:
+                    raise AnsibleError(f"Variable '{val_key}' is None when formatting ansible_host expression.")
                 return val
 
             vm_ip = re.sub(r"\{([^}]+)\}", repl, self.custom_ansible_host.get("expr"))
