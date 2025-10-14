@@ -67,6 +67,12 @@ DOCUMENTATION = r"""
                 expr:
                     description:
                         - Expression to construct the ansible_host for a VM.
+                        - The expression can use the following variables:
+                           - uuid (VM UUID)
+                           - name (VM Name)
+                           - cluster (Cluster Name)
+                           - cluster_uuid (Cluster UUID)
+                           - description (VM Description)
                     type: str
         data:
             description:
@@ -93,7 +99,25 @@ DOCUMENTATION = r"""
         - constructed
 """
 Examples = r"""
----
+# Example 1: sample inventory file without using custom_ansible_host
+plugin: nutanix.ncp.ntnx_prism_vm_inventory
+# If these are not set, values will be taken from environment variables:
+# nutanix_hostname: "hostname"
+# nutanix_username: "username"
+# nutanix_password: "password"
+validate_certs: false
+data: { offset: 0, length: 20 }
+fetch_all_vms: false
+groups:
+  group_1: "'integration' in name"
+  group_2: "'auto' in name"
+  group_3: "'integration' not in name and 'auto' not in name"
+keyed_groups:
+  - prefix: host
+    separator: "_"
+    key: ansible_host
+
+# Example 2: sample inventory file with using custom_ansible_host
 plugin: nutanix.ncp.ntnx_prism_vm_inventory
 # If these are not set, values will be taken from environment variables:
 # nutanix_hostname: "hostname"
