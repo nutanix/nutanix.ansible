@@ -68,11 +68,11 @@ DOCUMENTATION = r"""
                     description:
                         - Expression to construct the ansible_host for a VM.
                         - The expression can use the following variables:
-                           - vm_name (VM Name)
-                           - cluster (Cluster Name)
-                           - cluster_uuid (Cluster UUID)
-                           - vm_uuid (VM UUID)
-                           - vm_description (VM Description)
+                        - vm_name (VM Name)
+                        - cluster (Cluster Name)
+                        - cluster_uuid (Cluster UUID)
+                        - vm_uuid (VM UUID)
+                        - vm_description (VM Description)
                     type: str
         data:
             description:

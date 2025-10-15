@@ -11,6 +11,7 @@
           --graph
       register: inventory_result
       ignore_errors: true
+      changed_when: false
 
     - name: Assert error message contains expected variable not found
       ansible.builtin.assert:
