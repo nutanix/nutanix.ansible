@@ -229,28 +229,18 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 "vm_uuid": vm_uuid,
             }
 
-            def repl(match):
-                val_key = match.group(1).strip()
-                val = lookup.get(val_key, "")
-                if val_key not in lookup:
-                    allowed_vars = ", ".join(f"'{k}'" for k in lookup.keys())
-                    raise AnsibleError(
-                        "Variable '{val_key}' not found when formatting ansible_host expression. ".format(
-                            val_key=val_key
-                        )
-                        + "Please use one of the following allowed variables: {allowed_vars}.".format(
-                            allowed_vars=allowed_vars
-                        )
+            try:
+                vm_ip = re.sub(
+                    r"\{([^}]+)\}",
+                    self.get_replacement_function(lookup),
+                    self.custom_ansible_host.get("expr"),
+                )
+            except Exception as e:
+                raise AnsibleError(
+                    "Error formatting ansible_host expression for VM {vm_name}. with uuid {vm_uuid}: {e}".format(
+                        vm_name=vm_name, vm_uuid=vm_uuid, e=str(e)
                     )
-                elif val is None or val == "":
-                    raise AnsibleError(
-                        "Variable '{val_key}' is not defined or empty when formatting ansible_host expression for VM {vm_name}. with uuid {vm_uuid}.".format(
-                            val_key=val_key, vm_name=vm_name, vm_uuid=vm_uuid
-                        )
-                    )
-                return val
-
-            vm_ip = re.sub(r"\{([^}]+)\}", repl, self.custom_ansible_host.get("expr"))
+                )
 
         # Remove unwanted keys.
         for key in [
@@ -392,3 +382,28 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
 
             except (AnsibleError, Exception) as e:
                 self.display.error(str(e))
+
+    def get_replacement_function(self, lookup):
+
+        def repl(match):
+            val_key = match.group(1).strip()
+            val = lookup.get(val_key, "")
+            if val_key not in lookup:
+                allowed_vars = ", ".join(f"'{k}'" for k in lookup.keys())
+                raise Exception(
+                    "Variable '{val_key}' not found when formatting ansible_host expression. ".format(
+                        val_key=val_key
+                    )
+                    + "Please use one of the following allowed variables: {allowed_vars}.".format(
+                        allowed_vars=allowed_vars
+                    )
+                )
+            elif val is None or val == "":
+                raise Exception(
+                    "Variable '{val_key}' is not defined or empty".format(
+                        val_key=val_key
+                    )
+                )
+            return val
+
+        return repl
