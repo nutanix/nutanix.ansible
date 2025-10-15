@@ -48,7 +48,9 @@
             ~ (hostvars[inventory_hostname].cluster_uuid | default(''))
             ~ '.nutanix3.'
             ~ hostvars[inventory_hostname].uuid
-            ~ '.nutanix4.com'
+            ~ '.nutanix4.'
+            ~ hostvars[inventory_hostname].description
+            ~ '.com'
           }}
 
     - name: Assert that host_fqdn matches the expected FQDN expression

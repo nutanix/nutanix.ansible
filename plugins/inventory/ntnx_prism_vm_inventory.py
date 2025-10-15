@@ -236,14 +236,14 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             def repl(match):
                 val_key = match.group(1).strip()
                 val = lookup.get(val_key, "")
-                if val == "":
+                if val_key not in lookup:
                     allowed_vars = ", ".join(f"'{k}'" for k in lookup.keys())
                     raise AnsibleError(
-                        f"Variable '{val_key}' not found when formatting ansible_host expression.\nPlease use one of the following allowedvariables: {allowed_vars}"
+                        f"Variable '{val_key}' not found when formatting ansible_host expression. Please use one of the following allowed variables: {allowed_vars}."
                     )
-                elif val is None:
+                elif val is None or val == "":
                     raise AnsibleError(
-                        f"Variable '{val_key}' is None when formatting ansible_host expression."
+                        f"Variable '{val_key}' is not defined or empty when formatting ansible_host expression for VM {vm_name}. with uuid {vm_uuid}."
                     )
                 return val
 
@@ -337,51 +337,55 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         self.data["offset"] = self.data.get("offset", 0)
         resp = vm.list(data=self.data, fetch_all_vms=self.fetch_all_vms)
         for entity in resp.get("entities", []):
-            host_vars = self._build_host_vars(entity)
+            try:
+                host_vars = self._build_host_vars(entity)
 
-            if not self._should_add_host(host_vars, host_filters, strict):
-                continue
+                if not self._should_add_host(host_vars, host_filters, strict):
+                    continue
 
-            # Add host to inventory.
-            vm_name = host_vars.get("name")
-            cluster = host_vars.get("cluster")
-            vm_ip = host_vars.get("ansible_host")
-            vm_uuid = host_vars.get("uuid")
+                # Add host to inventory.
+                vm_name = host_vars.get("name")
+                cluster = host_vars.get("cluster")
+                vm_ip = host_vars.get("ansible_host")
+                vm_uuid = host_vars.get("uuid")
 
-            if cluster:
-                self.inventory.add_group(cluster)
-                self.inventory.add_child("all", cluster)
-            if vm_name:
-                self.inventory.add_host(vm_name, group=cluster)
-                self.inventory.set_variable(vm_name, "ansible_host", vm_ip)
-                self.inventory.set_variable(vm_name, "uuid", vm_uuid)
-                self.inventory.set_variable(vm_name, "name", vm_name)
-                # Set all host_vars as variables.
-                for key, value in host_vars.items():
-                    self.inventory.set_variable(vm_name, key, value)
+                if cluster:
+                    self.inventory.add_group(cluster)
+                    self.inventory.add_child("all", cluster)
+                if vm_name:
+                    self.inventory.add_host(vm_name, group=cluster)
+                    self.inventory.set_variable(vm_name, "ansible_host", vm_ip)
+                    self.inventory.set_variable(vm_name, "uuid", vm_uuid)
+                    self.inventory.set_variable(vm_name, "name", vm_name)
+                    # Set all host_vars as variables.
+                    for key, value in host_vars.items():
+                        self.inventory.set_variable(vm_name, key, value)
 
-            self.inventory.set_variable(
-                vm_name,
-                "project_reference",
-                entity.get("metadata", {}).get("project_reference", {}),
-            )
+                self.inventory.set_variable(
+                    vm_name,
+                    "project_reference",
+                    entity.get("metadata", {}).get("project_reference", {}),
+                )
 
-            # Add variables created by the user's Jinja2 expressions to the host
-            self._set_composite_vars(
-                self.get_option("compose"),
-                host_vars,
-                vm_name,
-                strict=strict,
-            )
-            self._add_host_to_composed_groups(
-                self.get_option("groups"),
-                host_vars,
-                vm_name,
-                strict=strict,
-            )
-            self._add_host_to_keyed_groups(
-                self.get_option("keyed_groups"),
-                host_vars,
-                vm_name,
-                strict=strict,
-            )
+                # Add variables created by the user's Jinja2 expressions to the host
+                self._set_composite_vars(
+                    self.get_option("compose"),
+                    host_vars,
+                    vm_name,
+                    strict=strict,
+                )
+                self._add_host_to_composed_groups(
+                    self.get_option("groups"),
+                    host_vars,
+                    vm_name,
+                    strict=strict,
+                )
+                self._add_host_to_keyed_groups(
+                    self.get_option("keyed_groups"),
+                    host_vars,
+                    vm_name,
+                    strict=strict,
+                )
+
+            except AnsibleError as e:
+                self.display.error(str(e))
