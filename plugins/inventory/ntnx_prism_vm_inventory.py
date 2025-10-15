@@ -66,13 +66,13 @@ DOCUMENTATION = r"""
             suboptions:
                 expr:
                     description:
-                        - Expression to construct the ansible_host for a VM.
-                        - The expression can use the following variables:
-                        - vm_name  # VM Name
-                        - cluster  # Cluster Name
-                        - cluster_uuid  # Cluster UUID
-                        - vm_uuid  # VM UUID
-                        - vm_description  # VM Description
+                        - "Expression to construct the ansible_host for a VM."
+                        - "The expression can use the following variables:"
+                        - "vm_name (VM Name)"
+                        - "cluster (Cluster Name)"
+                        - "cluster_uuid (Cluster UUID)"
+                        - "vm_uuid (VM UUID)"
+                        - "vm_description (VM Description)"
                     type: str
         data:
             description:
@@ -239,7 +239,8 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 if val_key not in lookup:
                     allowed_vars = ", ".join(f"'{k}'" for k in lookup.keys())
                     raise AnsibleError(
-                        f"Variable '{val_key}' not found when formatting ansible_host expression. Please use one of the following allowed variables: {allowed_vars}."
+                        f"Variable '{val_key}' not found when formatting ansible_host expression. "
+                        f"Please use one of the following allowed variables: {allowed_vars}."
                     )
                 elif val is None or val == "":
                     raise AnsibleError(
