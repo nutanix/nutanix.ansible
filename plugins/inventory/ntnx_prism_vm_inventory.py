@@ -100,8 +100,8 @@ DOCUMENTATION = r"""
 """
 Examples = r"""
 Example 1: sample inventory file without using custom_ansible_host
-if nutanix_hostname, nutanix_username, nutanix_password are not set, values will be taken from environment variables:
-inventory file starts from here:
+if nutanix_hostname, nutanix_username, nutanix_password are not set, values will be taken from environment variables
+inventory file starts from here
 plugin: nutanix.ncp.ntnx_prism_vm_inventory
 validate_certs: false
 data: { offset: 0, length: 20 }
@@ -116,7 +116,8 @@ keyed_groups:
     key: ansible_host
 
 Example 2: sample inventory file with using custom_ansible_host
-if nutanix_hostname, nutanix_username, nutanix_password are not set, values will be taken from environment variables:
+if nutanix_hostname, nutanix_username, nutanix_password are not set, values will be taken from environment variables
+inventory file starts from here
 plugin: nutanix.ncp.ntnx_prism_vm_inventory
 validate_certs: false
 data: { offset: 0, length: 20 }
@@ -234,12 +235,18 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 if val_key not in lookup:
                     allowed_vars = ", ".join(f"'{k}'" for k in lookup.keys())
                     raise AnsibleError(
-                        "Variable '{val_key}' not found when formatting ansible_host expression. ".format(val_key=val_key) +
-                        "Please use one of the following allowed variables: {allowed_vars}.".format(allowed_vars=allowed_vars)
+                        "Variable '{val_key}' not found when formatting ansible_host expression. ".format(
+                            val_key=val_key
+                        )
+                        + "Please use one of the following allowed variables: {allowed_vars}.".format(
+                            allowed_vars=allowed_vars
+                        )
                     )
                 elif val is None or val == "":
                     raise AnsibleError(
-                        "Variable '{val_key}' is not defined or empty when formatting ansible_host expression for VM {vm_name}. with uuid {vm_uuid}.".format(val_key=val_key, vm_name=vm_name, vm_uuid=vm_uuid)
+                        "Variable '{val_key}' is not defined or empty when formatting ansible_host expression for VM {vm_name}. with uuid {vm_uuid}.".format(
+                            val_key=val_key, vm_name=vm_name, vm_uuid=vm_uuid
+                        )
                     )
                 return val
 
