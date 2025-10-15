@@ -23,7 +23,7 @@
       run_once: true
       when: fetch_all_vms
 
-    - name: Assert that host vars are defined like ansible_host, uuid, name, cluster
+    - name: Assert that host vars are defined like ansible_host, uuid, name, cluster name
       ansible.builtin.assert:
         that:
           - hostvars[inventory_hostname].ansible_host is defined
