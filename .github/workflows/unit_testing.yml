@@ -25,6 +25,18 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Setup Docker
         uses: docker/setup-docker-action@v4
+
+      - name: Verify which requirements.txt is being used
+        run: |
+          echo "Current working directory:"
+          pwd
+          echo "Listing tests directory:"
+          ls -R tests || echo "tests directory not found"
+          echo "Listing integration directory:"
+          ls -R tests/integration || echo "tests/integration not found"
+          echo "Contents of tests/integration/requirements.txt (if it exists):"
+          cat tests/integration/requirements.txt || echo "tests/integration/requirements.txt not found"
+      
       - name: Install ansible
         run: |
           pip install -r tests/integration/requirements.txt
