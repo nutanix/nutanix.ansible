@@ -29,7 +29,7 @@
     project2_name: "{{random_name}}{{suffix_name}}2"
 
 - name: Create Project with minimal spec
-  ntnx_projects:
+  nutanix.ncp.ntnx_projects:
     name: "{{project1_name}}"
   register: result
   ignore_errors: true
@@ -51,7 +51,7 @@
 #################################################################
 
 - name: Create Project with check mode
-  ntnx_projects:
+  nutanix.ncp.ntnx_projects:
     name: "{{project2_name}}"
     desc: desc-123
     subnets:
@@ -93,7 +93,7 @@
 #################################################################
 
 - name: Create Project with all specs
-  ntnx_projects:
+  nutanix.ncp.ntnx_projects:
     name: "{{project2_name}}"
     desc: desc-123
     clusters:
@@ -155,7 +155,7 @@
 
 #################################################################
 - name: Create Project with already existing project name
-  ntnx_projects:
+  nutanix.ncp.ntnx_projects:
     name: "{{ project.name }}"
   register: result
   ignore_errors: true
@@ -170,7 +170,7 @@
 
 #################################################################
 - name: Delete all Created Projects
-  ntnx_projects:
+  nutanix.ncp.ntnx_projects:
     state: absent
     project_uuid: "{{ item }}"
   register: result

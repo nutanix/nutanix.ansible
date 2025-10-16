@@ -4,7 +4,7 @@
     msg: Start testing ntnx_ndb_clusters
 
 - name: Register cluster with prism_vlan in check mode
-  ntnx_ndb_clusters:
+  nutanix.ncp.ntnx_ndb_clusters:
     name: "{{ cluster.cluster3.name }}"
     desc: "{{ cluster.cluster3.desc }}"
     name_prefix: "{{ cluster.cluster3.name_prefix }}"
@@ -53,7 +53,7 @@
     success_msg: "pass: Returned as expected"
 
 - name: Register cluster with prism_vlan
-  ntnx_ndb_clusters:
+  nutanix.ncp.ntnx_ndb_clusters:
     wait: true
     name: "{{ cluster.cluster3.name }}"
     desc: "{{ cluster.cluster3.desc }}"
@@ -98,7 +98,7 @@
 ################################################################
 
 - name: Update cluster name , desc
-  ntnx_ndb_clusters:
+  nutanix.ncp.ntnx_ndb_clusters:
     uuid: "{{ result.cluster_uuid }}"
     name: newname
     desc: newdesc
@@ -119,7 +119,7 @@
     todelete: "{{ result.cluster_uuid }}"
 ################################################################
 - name: Update cluster credential in check_mode
-  ntnx_ndb_clusters:
+  nutanix.ncp.ntnx_ndb_clusters:
     uuid: "{{ result.cluster_uuid }}"
     cluster_credentials:
       username: test
@@ -143,7 +143,7 @@
 ################################################################
 
 - name: Negative Scenarios update storage container
-  ntnx_ndb_clusters:
+  nutanix.ncp.ntnx_ndb_clusters:
     uuid: "{{ result.cluster_uuid }}"
     storage_container: "{{ cluster.cluster3.storage_container }}"
   register: out
@@ -162,7 +162,7 @@
 ################################################################
 
 - name: Negative Scenarios update vlan access
-  ntnx_ndb_clusters:
+  nutanix.ncp.ntnx_ndb_clusters:
     uuid: "{{ result.cluster_uuid }}"
     vlan_access:
       prism_vlan:
@@ -187,7 +187,7 @@
 ################################################################
 
 - name: Negative Scenarios update agent network
-  ntnx_ndb_clusters:
+  nutanix.ncp.ntnx_ndb_clusters:
     uuid: "{{ result.cluster_uuid }}"
     agent_network:
       dns_servers:
@@ -214,7 +214,7 @@
 ################################################################
 
 - name: Negative Scenarios update agent network
-  ntnx_ndb_clusters:
+  nutanix.ncp.ntnx_ndb_clusters:
     uuid: "{{ result.cluster_uuid }}"
     name_prefix: "{{ cluster.cluster3.name_prefix }}"
   register: out
@@ -233,7 +233,7 @@
 ################################################################
 
 - name: List all NDB clusters
-  ntnx_ndb_clusters_info:
+  nutanix.ncp.ntnx_ndb_clusters_info:
   register: clusters
   no_log: true
 
@@ -249,7 +249,7 @@
 
 ################################################################
 - name: Get ndb cluster with count_entities
-  ntnx_ndb_clusters_info:
+  nutanix.ncp.ntnx_ndb_clusters_info:
     filters:
       count_entities: true
   register: result
@@ -267,7 +267,7 @@
     success_msg: get  NDB clusters using with count_entities  successfully
 ################################################################
 - name: Get NDB clusters using it's name
-  ntnx_ndb_clusters_info:
+  nutanix.ncp.ntnx_ndb_clusters_info:
     name: "{{ clusters.response[0].name }}"
   register: result
   no_log: true
@@ -285,7 +285,7 @@
 ################################################################
 
 - name: List clusters use id
-  ntnx_ndb_clusters_info:
+  nutanix.ncp.ntnx_ndb_clusters_info:
     uuid: "{{ clusters.response[0].id }}"
   register: result
   no_log: true
@@ -303,7 +303,7 @@
 ################################################################
 
 - name: Get NDB clusters with incorrect name
-  ntnx_ndb_clusters_info:
+  nutanix.ncp.ntnx_ndb_clusters_info:
     name: "abcd"
   register: result
   ignore_errors: true
@@ -320,7 +320,7 @@
 
 ################################################################
 - name: Delete Cluster with check mode
-  ntnx_ndb_clusters:
+  nutanix.ncp.ntnx_ndb_clusters:
     state: absent
     uuid: "{{ todelete  }}"
   register: output
@@ -340,7 +340,7 @@
 ################################################################
 
 - name: Delete cluster
-  ntnx_ndb_clusters:
+  nutanix.ncp.ntnx_ndb_clusters:
     uuid: "{{ todelete }}"
     state: absent
   register: result

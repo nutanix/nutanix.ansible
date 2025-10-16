@@ -19,7 +19,7 @@
 
 #############################
 - name: Verify check mode for PROD karbon cluster
-  ntnx_karbon_clusters:
+  nutanix.ncp.ntnx_karbon_clusters:
     cluster:
       uuid: "{{ cluster.uuid }}"
     name: "{{ karbon_name }}"
@@ -78,7 +78,7 @@
 #############################
 
 - name: Verify check mode for ntnx_karbon_clusters
-  ntnx_karbon_clusters:
+  nutanix.ncp.ntnx_karbon_clusters:
     cluster:
       uuid: "{{ cluster.uuid }}"
     name: "{{ karbon_name }}"
@@ -119,7 +119,7 @@
     fail_msg: Check mode for ntnx_karbon_clusters failed
 ############################
 - name: Create  DEV cluster with Flannel network provider
-  ntnx_karbon_clusters:
+  nutanix.ncp.ntnx_karbon_clusters:
     cluster:
       uuid: "{{ cluster.uuid }}"
     name: "{{ karbon_name }}"
@@ -160,7 +160,7 @@
     success_msg: " Pass:  create  DEV cluster with Flannel network provider successfully "
 #############################
 - name: Delete Cluster with check mode
-  ntnx_karbon_clusters:
+  nutanix.ncp.ntnx_karbon_clusters:
     state: absent
     name: "{{ result.response.name }}"
   register: output
@@ -178,7 +178,7 @@
     success_msg: "Delete cluster with check mode passed"
 
 - name: Delete dev cluster with Flannel network provider
-  ntnx_karbon_clusters:
+  nutanix.ncp.ntnx_karbon_clusters:
     state: absent
     name: "{{ result.response.name }}"
   register: output
@@ -196,7 +196,7 @@
     success_msg: " Pass: delete  dev cluster  with Flannel network provider finished successfully"
 ############################
 - name: Create  DEV cluster with Calico network provider
-  ntnx_karbon_clusters:
+  nutanix.ncp.ntnx_karbon_clusters:
     cluster:
       name: "{{ cluster.name }}"
     name: "{{ karbon_name }}"
@@ -254,7 +254,7 @@
 #############################
 
 - name: Test getting  dev cluster using name
-  ntnx_karbon_clusters_info:
+  nutanix.ncp.ntnx_karbon_clusters_info:
     cluster_name: "{{ karbon_cluster.response.name }}"
   register: result
   ignore_errors: true
@@ -271,7 +271,7 @@
 
 ####################################################
 - name: Test getting cluster with ssh config using cluster name
-  ntnx_karbon_clusters_info:
+  nutanix.ncp.ntnx_karbon_clusters_info:
     cluster_name: "{{ karbon_cluster.response.name }}"
     fetch_ssh_credentials: true
   register: result
@@ -288,7 +288,7 @@
     success_msg: " Pass: Cluster info obtained successfully with it's ssh config  "
 ####################################################
 - name: Test getting cluster with kubeconfig config using cluster name
-  ntnx_karbon_clusters_info:
+  nutanix.ncp.ntnx_karbon_clusters_info:
     cluster_name: "{{ karbon_cluster.response.name }}"
     fetch_kubeconfig: true
   register: result
@@ -323,7 +323,7 @@
     msg: Start testing ntnx_karbon_clusters_node_pools
 
 - name: Create node pool  with subnet uuid
-  ntnx_karbon_clusters_node_pools:
+  nutanix.ncp.ntnx_karbon_clusters_node_pools:
     node_subnet:
       uuid: "{{ network.dhcp.uuid }}"
     node_pool_name: "{{ node1_name }}"
@@ -349,7 +349,7 @@
     success_msg: "Passed: Create node pool finished successfully "
 #################################
 - name: Try to update node pool config with same values
-  ntnx_karbon_clusters_node_pools:
+  nutanix.ncp.ntnx_karbon_clusters_node_pools:
     node_pool_name: "{{ node1_name }}"
     cluster_name: "{{ karbon_name }}"
     pool_config:
@@ -370,7 +370,7 @@
     success_msg: "Passed: Returned as expected "
 #################################
 - name: Try to update node pool config with wrong labels
-  ntnx_karbon_clusters_node_pools:
+  nutanix.ncp.ntnx_karbon_clusters_node_pools:
     node_pool_name: "{{ node1_name }}"
     cluster_name: "{{ karbon_name }}"
     pool_config:
@@ -394,7 +394,7 @@
     success_msg: "Passed: Returned as expected "
 #################################
 - name: Update pool by increasing cpu,memory_gb,num_instances and try to add wrong labels
-  ntnx_karbon_clusters_node_pools:
+  nutanix.ncp.ntnx_karbon_clusters_node_pools:
     wait: true
     node_pool_name: "{{ node1_name }}"
     cluster_name: "{{ karbon_name }}"
@@ -425,7 +425,7 @@
     success_msg: "Passed: update pool by increasing cpu,memory_gb,num_instances and try to add wrong labels  finished successfully "
 # #################################
 - name: Update pool by add  labels
-  ntnx_karbon_clusters_node_pools:
+  nutanix.ncp.ntnx_karbon_clusters_node_pools:
     wait: true
     node_pool_name: "{{ node1_name }}"
     cluster_name: "{{ karbon_name }}"
@@ -449,7 +449,7 @@
     success_msg: "Passed: update pool by add  labels  finished successfully "
 #################################
 - name: Update pool by decreasing cpu,memory_gb,num_instances and add remove labels
-  ntnx_karbon_clusters_node_pools:
+  nutanix.ncp.ntnx_karbon_clusters_node_pools:
     wait: true
     node_pool_name: "{{ node1_name }}"
     cluster_name: "{{ karbon_name }}"
@@ -477,7 +477,7 @@
     success_msg: "Passed: update pool by decreasing cpu,memory_gb,num_instances and add remove labels finished successfully "
 ################################
 - name: Delete pool with check mode
-  ntnx_karbon_clusters_node_pools:
+  nutanix.ncp.ntnx_karbon_clusters_node_pools:
     state: absent
     node_pool_name: "{{node1_name}}"
     cluster_name: "{{karbon_name}}"
@@ -497,7 +497,7 @@
     success_msg: "Delete pool with check mode passed"
 
 - name: Delete pool
-  ntnx_karbon_clusters_node_pools:
+  nutanix.ncp.ntnx_karbon_clusters_node_pools:
     state: absent
     node_pool_name: "{{ node1_name }}"
     cluster_name: "{{ karbon_name }}"
@@ -518,7 +518,7 @@
 #################################
 
 - name: Create node pool  with subnet name  with default values
-  ntnx_karbon_clusters_node_pools:
+  nutanix.ncp.ntnx_karbon_clusters_node_pools:
     node_subnet:
       name: "{{ network.dhcp.name }}"
     node_pool_name: "{{ node2_name }}"
@@ -539,7 +539,7 @@
     success_msg: "Passed:  Create node pool  with subnet name  with default values finished successfully "
 #################################
 - name: Delete pool
-  ntnx_karbon_clusters_node_pools:
+  nutanix.ncp.ntnx_karbon_clusters_node_pools:
     state: absent
     node_pool_name: "{{ node2_name }}"
     cluster_name: "{{ karbon_name }}"
@@ -557,7 +557,7 @@
     success_msg: " node pool has been deleted successfully "
 #################################
 - name: Delete  dev cluster
-  ntnx_karbon_clusters:
+  nutanix.ncp.ntnx_karbon_clusters:
     state: absent
     name: "{{ karbon_cluster.response.name }}"
   register: result

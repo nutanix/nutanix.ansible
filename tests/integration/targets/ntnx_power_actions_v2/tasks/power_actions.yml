@@ -18,7 +18,7 @@
     vm_name: "{{ random_name }}_vm_test"
 
 - name: Create VM to test the power actions
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     state: present
     name: "{{ vm_name }}"
     cluster:
@@ -81,7 +81,7 @@
 ################################################################################
 
 - name: Power off VM
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
     state: power_off
     ext_id: "{{ vm_uuid }}"
   register: result
@@ -99,7 +99,7 @@
     success_msg: "VM is powered off successfully "
 
 - name: Get VM power state
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -117,7 +117,7 @@
 ###############################################################################
 
 - name: Power on VM
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
     state: power_on
     ext_id: "{{ vm_uuid }}"
   register: result
@@ -138,7 +138,7 @@
     seconds: 20
 
 - name: Get VM power state
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -156,7 +156,7 @@
 ################################################################################
 
 - name: Get VM info and check if IP address is assigned
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -178,7 +178,7 @@
 # #################################################################################
 
 - name: Install NGT in VM
-  ntnx_vms_ngt_v2:
+  nutanix.ncp.ntnx_vms_ngt_v2:
     state: present
     ext_id: "{{ vm_uuid }}"
     capabilities:
@@ -213,7 +213,7 @@
     minutes: 2
 
 - name: Power off VM
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
     state: power_off
     ext_id: "{{ vm_uuid }}"
   register: result
@@ -234,7 +234,7 @@
     seconds: 15
 
 - name: Get VM power state
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -252,7 +252,7 @@
 ################################################################################
 
 - name: Shutdown VM using acpi
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
     state: shutdown
     ext_id: "{{ vm_uuid }}"
   register: result
@@ -270,7 +270,7 @@
     success_msg: "VM is shutdown successfully "
 
 - name: Get VM power state
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -288,7 +288,7 @@
 ################################################################################
 
 - name: Shutdown VM using ngt
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
     state: guest_shutdown
     ext_id: "{{ vm_uuid }}"
   register: result
@@ -306,7 +306,7 @@
     success_msg: "VM is shutdown successfully "
 
 - name: Get VM power state
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -324,7 +324,7 @@
 ################################################################################
 
 - name: Generate spec for rebooting VM using ngt with check mode
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
     state: guest_reboot
     ext_id: "0005a7b8-0b0b-4b3b-0000-000000000000"
     guest_power_state_transition_config:
@@ -346,7 +346,7 @@
     success_msg: "Spec for rebooting VM using ngt with check mode is generated successfully "
 
 - name: Rebooting VM using ngt
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
     state: guest_reboot
     ext_id: "{{ vm_uuid }}"
   register: result
@@ -364,7 +364,7 @@
     success_msg: "VM is rebooted successfully "
 
 - name: Get VM power state
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -382,7 +382,7 @@
 ################################################################################
 
 - name: Rebooting VM using acpi
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
     state: reboot
     ext_id: "{{ vm_uuid }}"
   register: result
@@ -400,7 +400,7 @@
     success_msg: "VM is rebooted successfully "
 
 - name: Get VM power state
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -418,7 +418,7 @@
 ################################################################################
 
 - name: Force power cycle
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
     state: force_power_cycle
     ext_id: "{{ vm_uuid }}"
   register: result
@@ -436,7 +436,7 @@
     success_msg: "Force power cycle on VM is completed successfully "
 
 - name: Get VM power state
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -454,7 +454,7 @@
 ################################################################################
 
 - name: Resetting VM
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
     state: reset
     ext_id: "{{ vm_uuid }}"
   register: result
@@ -472,7 +472,7 @@
     success_msg: "Reset VM is completed successfully "
 
 - name: Get VM power state
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -490,7 +490,7 @@
 ################################################################################
 
 - name: Power on VM
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
     state: power_on
     ext_id: "{{ vm_uuid }}"
   register: result
@@ -511,7 +511,7 @@
     seconds: 20
 
 - name: Get VM power state
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -533,7 +533,7 @@
     seconds: 30
 
 - name: Rebooting VM using ngt
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
     state: guest_reboot
     ext_id: "{{ vm_uuid }}"
   register: result
@@ -554,7 +554,7 @@
     seconds: 15
 
 - name: Get VM power state
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -576,7 +576,7 @@
     seconds: 30
 
 - name: Rebooting VM using acpi
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
     state: reboot
     ext_id: "{{ vm_uuid }}"
   register: result
@@ -597,7 +597,7 @@
     seconds: 15
 
 - name: Get VM power state
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -615,7 +615,7 @@
 ################################################################################
 
 - name: Resetting VM
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
     state: reset
     ext_id: "{{ vm_uuid }}"
   register: result
@@ -636,7 +636,7 @@
     seconds: 15
 
 - name: Get VM power state
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -654,7 +654,7 @@
 ################################################################################
 
 - name: Force power cycle
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
     state: force_power_cycle
     ext_id: "{{ vm_uuid }}"
   register: result
@@ -675,7 +675,7 @@
     seconds: 20
 
 - name: Get VM power state
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -697,7 +697,7 @@
     seconds: 30
 
 - name: Shutdown VM using acpi
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
     state: shutdown
     ext_id: "{{ vm_uuid }}"
   register: result
@@ -714,13 +714,13 @@
     success_msg: "Shutdown VM using acpi is completed successfully"
 
 - name: Get VM power state
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
 
 - name: Get VM power state
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -729,7 +729,7 @@
   delay: 1
 
 - name: Get VM power state
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -747,7 +747,7 @@
 ################################################################################
 
 - name: Power on VM
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
     state: power_on
     ext_id: "{{ vm_uuid }}"
   register: result
@@ -768,7 +768,7 @@
     seconds: 20
 
 - name: Get VM power state
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -790,7 +790,7 @@
     seconds: 30
 
 - name: Generate spec for shutting down VM using ngt with check mode
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
     state: guest_shutdown
     ext_id: "0005a7b8-0b0b-4b3b-1234-847530000000"
     guest_power_state_transition_config:
@@ -812,7 +812,7 @@
     success_msg: "Spec for shutting down VM using ngt with check mode is generated successfully "
 
 - name: Shutdown VM using ngt
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
     state: guest_shutdown
     ext_id: "{{ vm_uuid }}"
   register: result
@@ -833,7 +833,7 @@
     seconds: 15
 
 - name: Get VM power state
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -851,7 +851,7 @@
 ################################################################################
 
 - name: Delete the VM
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: absent
     vm_uuid: "{{ vm_uuid }}"
   register: result

@@ -16,6 +16,15 @@ description:
     - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 options:
+    state:
+        description:
+            - State of the module.
+            - If state is present, the module will deploy a template.
+            - If state is not present, the module will fail.
+        type: str
+        choices:
+            - present
+        default: present
     ext_id:
         description:
             - The external ID of the template to deploy.
@@ -611,6 +620,7 @@ def get_override_vm_config_schema():
 
 def get_module_spec():
     module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
         ext_id=dict(type="str", required=True),
         version_id=dict(type="str"),
         number_of_vms=dict(type="int"),

@@ -16,6 +16,15 @@ description:
   - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 options:
+  state:
+    description:
+      - State of the module.
+      - If state is present, the module will discover unconfigured nodes.
+      - If state is not present, the module will fail.
+    type: str
+    choices:
+      - present
+    default: present
   address_type:
     description:
       - Specifies the type of address, either IPv4 or IPv6.
@@ -202,6 +211,7 @@ def get_module_spec():
         ipv6=dict(type="dict", options=ipv6_spec),
     )
     module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
         address_type=dict(type="str", choices=["IPV4", "IPV6"]),
         ip_filter_list=dict(type="list", elements="dict", options=ip_address_spec),
         uuid_filter_list=dict(type="list", elements="str"),

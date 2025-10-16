@@ -96,3 +96,27 @@ def get_restore_point(
             exception=e,
             msg="Api Exception raised while fetching restore point info using ext_id",
         )
+
+
+def get_pc_task(
+    module,
+    api_instance,
+    ext_id,
+):
+    """
+    This method will return pc task info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: TasksApi instance from ntnx_prism_py_client sdk
+        ext_id (str): pc task external ID
+    return:
+        pc_task_info (object): pc task info
+    """
+    try:
+        return api_instance.get_task_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching pc task info using ext_id",
+        )

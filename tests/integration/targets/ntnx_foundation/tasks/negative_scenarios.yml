@@ -4,7 +4,7 @@
     msg: Start negative_scenarios for ntnx_foundation
 
 - name: Get aos_packages_info from foundation
-  ntnx_foundation_aos_packages_info:
+  nutanix.ncp.ntnx_foundation_aos_packages_info:
   register: images
 
 - name: Get aos package name with given version filter from all packages
@@ -21,7 +21,7 @@
 
 ###################################
 - name: Image nodes with wrong serial
-  ntnx_foundation:
+  nutanix.ncp.ntnx_foundation:
     timeout: 3660
     nutanix_host: "{{foundation_host}}"
     cvm_gateway: "{{cvm_gateway}}"
@@ -56,7 +56,7 @@
     success_msg: "Success: unable to image node with wrong serial "
 ###################################
 - name: Image nodes with wrong hypervisor
-  ntnx_foundation:
+  nutanix.ncp.ntnx_foundation:
     timeout: 3660
     cvm_gateway: "{{cvm_gateway}}"
     cvm_netmask: "{{cvm_netmask}}"
