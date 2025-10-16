@@ -36,7 +36,7 @@ jobs:
           ls -R tests/integration || echo "tests/integration not found"
           echo "Contents of tests/integration/requirements.txt (if it exists):"
           cat tests/integration/requirements.txt || echo "tests/integration/requirements.txt not found"
-      
+
       - name: Install ansible
         run: |
           pip install -r tests/integration/requirements.txt
