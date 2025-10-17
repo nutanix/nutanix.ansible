@@ -329,6 +329,7 @@ def get_module_spec():
         name=dict(type="str", required=False),
         desc=dict(type="str", required=False),
         source_uri=dict(type="str", required=False),
+        source_uri_allow_insecure_connection=dict(type="bool", required=False, default=False),
         source_path=dict(type="str", required=False),
         remove_categories=dict(type="bool", required=False, default=False),
         categories=dict(type="dict", required=False),

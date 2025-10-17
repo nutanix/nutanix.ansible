@@ -83,6 +83,13 @@ class Image(Prism):
 
     def _build_spec_source_uri(self, payload, source_uri):
         payload["spec"]["resources"]["source_uri"] = source_uri
+
+        # We need to ensure source_options exists so we can set allow_insecure_connection
+        if "source_options" not in payload["spec"]["resources"]:
+            payload["spec"]["resources"]["source_options"] = {}
+
+        allow_insecure = self.module.params.get("source_uri_allow_insecure_connection", False)
+        payload["spec"]["resources"]["source_options"]["allow_insecure_connection"] = allow_insecure
         return payload, None
 
     def _build_spec_checksum(self, payload, checksum):
