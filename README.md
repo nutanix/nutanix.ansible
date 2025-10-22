@@ -36,6 +36,7 @@ We are excited to announce the release of **Nutanix Ansible Collection v2.3.0** 
   - **Images (VMM)**: Added support for the objectsLite parameter.
   - **VM (VMM)**: Added Automatic Cluster Selection support.
   - **Project Reference (VMM)**: Added Project Reference parameter for VMs.
+  - **Volume Groups (VG)**: Added Update Volume Group support.
 
 - **Bug Fixes and Stability Improvements**  
   Resolved multiple issues to enhance reliability and overall user experience across modules.

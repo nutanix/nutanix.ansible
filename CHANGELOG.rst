@@ -4,6 +4,50 @@ Nutanix.Ncp Release Notes
 
 .. contents:: Topics
 
+v2.3.0
+======
+
+Release Summary
+---------------
+
+This release introduces new modules for OVA and Password Management in Nutanix Prism Central, along with major improvements and bug fixes across multiple modules. Built on v4.1 APIs/SDKs.
+
+New Modules
+-----------
+
+- ntnx_ova_v2 - Create, Update and Delete OVA in Nutanix Prism Central.
+- ntnx_ova_info_v2 - Fetch information about OVA in Nutanix Prism Central.
+- ntnx_ova_deploy_vm_v2 - Deploy a VM from an OVA in Nutanix Prism Central.
+- ntnx_ova_download_v2 - Download an OVA from Nutanix Prism Central.
+- ntnx_password_managers_info_v2 - Fetch information about Password Managers in Nutanix Prism Central.
+- ntnx_password_managers_v2 - Update Password of System Users in Nutanix Prism Central.
+- ntnx_pc_tasks_info_v2 - Fetch information about PC Tasks in Nutanix Prism Central.
+- ntnx_pc_task_abort_v2 - Abort a PC Task in Nutanix Prism Central.
+- ntnx_vms_disks_migrate_v2 - Migrate disks of a VM in Nutanix Prism Central.
+
+Minor Changes
+-------------
+
+- ntnx_security_rules_v2 - [Imprv] add support for additional fields in ntnx_security_rules_v2 [[#719](https://github.com/nutanix/nutanix.ansible/issues/719)]
+- ntnx_vms_power_actions_v2 - [Imprv] add examples for module ntnx_vms_power_actions_v2 [[#727](https://github.com/nutanix/nutanix.ansible/issues/727)]
+- ntnx_volume_groups_v2 - [Feat] Add update support to ntnx_volume_groups_v2 Ansible module [[#705](https://github.com/nutanix/nutanix.ansible/issues/705)]
+- ntnx_vms_v2 - [Imprv] add automatic cluster selection verification to ntnx_vms_v2 tests [[#728](https://github.com/nutanix/nutanix.ansible/issues/728)]
+- ntnx_vms_v2 - [Imprv] add functionality to specify project to module ntnx_vms_v2 [[#690](https://github.com/nutanix/nutanix.ansible/issues/690)]
+- ntnx_vms_v2 - [Imprv] add support for additional fields in nics in ntnx_vms_v2 [[#724](https://github.com/nutanix/nutanix.ansible/issues/724)]
+- ntnx_images_v2 - [Imprv] add tests for creating images and OVAs using Objects Lite Source [[#717](https://github.com/nutanix/nutanix.ansible/issues/717)]
+- ntnx_images_v2 - [Imprv] add complete example playbook for module ntnx_images_v2 covering multiple image sources and operations [[#718](https://github.com/nutanix/nutanix.ansible/issues/718)]
+- All info modules - [Imprv] Enhance Info Modules to Return Total Entities Count for Improved Data Retrieval [[#614](https://github.com/nutanix/nutanix.ansible/issues/614)]
+- All modules - [Imprv] add functionality to disable the state which are not applicable for all the modules [[#746](https://github.com/nutanix/nutanix.ansible/issues/746)]
+- ntnx_prism_vm_inventory - [Imprv] add functionality to be able to set a variable when using module ntnx_prism_vm_inventory [[#644](https://github.com/nutanix/nutanix.ansible/issues/644)]
+- requirements.txt - [Imprv] Remove extra python packages from the requirements.txt file [[#785](https://github.com/nutanix/nutanix.ansible/issues/785)]
+
+Bugfixes
+--------
+
+- ntnx_vms_ngt_v2 - [Bug] Documentation is incorrect in module ntnx_vms_ngt_v2 [[#693](https://github.com/nutanix/nutanix.ansible/issues/693)]
+- ntnx_vms_ngt_insert_iso_v2 - [Bug] How to unmount NGT ISO after install? [[#739](https://github.com/nutanix/nutanix.ansible/issues/739)]
+- ntnx_clusters_v2 - [Bug] Data type mismatch for categories attribute in module ntnx_clusters_v2 [[#759](https://github.com/nutanix/nutanix.ansible/issues/759)]
+
 v2.2.0
 ======
 
