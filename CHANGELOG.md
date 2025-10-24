@@ -1,4 +1,4 @@
-## v2.3.0 (16 October 2025)
+## v2.3.0 (29 October 2025)
 
 Built on v4.1 SDKs. Adds OVA management, Password Managers, and VM Disk Migration modules with several improvements and bug fixes.
 
