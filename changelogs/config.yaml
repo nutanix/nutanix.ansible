@@ -1,5 +1,6 @@
-changelog_filename_template: ../CHANGELOG.rst
-changelog_filename_version_depth: 0
+add_plugin_period: true
+changelog_nice_yaml: false
+changelog_sort: alphanumerical
 changes_file: changelog.yaml
 changes_format: combined
 ignore_other_fragment_extensions: true
@@ -7,6 +8,11 @@ keep_fragments: false
 mention_ancestor: true
 new_plugins_after_name: removed_features
 notesdir: fragments
+output:
+  - file: CHANGELOG.rst
+    format: rst
+  - file: CHANGELOG.md
+    format: md
 prelude_section_name: release_summary
 prelude_section_title: Release Summary
 sanitize_changelog: true
@@ -29,3 +35,5 @@ sections:
     - Known Issues
 title: Nutanix.Ncp
 trivial_section_name: trivial
+use_fqcn: true
+vcs: auto
