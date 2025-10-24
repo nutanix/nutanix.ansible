@@ -32,7 +32,7 @@ VM Management:
 - ntnx_security_rules_v2 - [Imprv] add support for additional fields in ntnx_security_rules_v2 [[#719](https://github.com/nutanix/nutanix.ansible/issues/719)]
 - ntnx_vms_power_actions_v2 - [Imprv] add examples for module ntnx_vms_power_actions_v2 [[#727](https://github.com/nutanix/nutanix.ansible/issues/727)]
 - ntnx_volume_groups_v2 - [Feat] Add update support to ntnx_volume_groups_v2 Ansible module [[#705](https://github.com/nutanix/nutanix.ansible/issues/705)]
-- ntnx_vms_v2 - [Imprv] add automatic cluster selection verification to ntnx_vms_v2 tests [[#728](https://github.com/nutanix/nutanix.ansible/issues/728)]
+- ntnx_vms_v2 - [Imprv] add automatic cluster selection verification to ntnx_vms_v2 tests [[#715](https://github.com/nutanix/nutanix.ansible/issues/715)]
 - ntnx_vms_v2 - [Imprv] add functionality to specify project to module ntnx_vms_v2 [[#690](https://github.com/nutanix/nutanix.ansible/issues/690)]
 - ntnx_vms_v2 - [Imprv] add support for additional fields in nics in ntnx_vms_v2 [[#724](https://github.com/nutanix/nutanix.ansible/issues/724)]
 - ntnx_images_v2 - [Imprv] add tests for creating images and OVAs using Objects Lite Source [[#717](https://github.com/nutanix/nutanix.ansible/issues/717)]

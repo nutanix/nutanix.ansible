@@ -9,10 +9,10 @@ mention_ancestor: true
 new_plugins_after_name: removed_features
 notesdir: fragments
 output:
-- file: CHANGELOG.rst
-  format: rst
-- file: CHANGELOG.md
-  format: md
+  - file: CHANGELOG.rst
+    format: rst
+  - file: CHANGELOG.md
+    format: md
 prelude_section_name: release_summary
 prelude_section_title: Release Summary
 sanitize_changelog: true
