@@ -1,0 +1,66 @@
+---
+# Complete example showing how to use debug logging
+- name: Nutanix Debug Logging Complete Example
+  hosts: localhost
+  gather_facts: false
+  vars:
+    # Enable debug logging globally via environment variable
+    NUTANIX_DEBUG_LOGGING: true
+    NUTANIX_DEBUG_LOG_FILE: /tmp/nutanix_complete_debug.log
+  
+  tasks:
+    - name: Example 1 - VM operations with debug logging
+      block:
+        - name: Get VM list with debug logging
+          nutanix.ncp.nutanix_vm_info:
+            nutanix_host: "{{ nutanix_host }}"
+            nutanix_username: "{{ nutanix_username }}"
+            nutanix_password: "{{ nutanix_password }}"
+            debug_logging: true
+          register: vm_list
+          
+        - name: Display VM count
+          debug:
+            msg: "Found {{ vm_list.entities | length }} VMs"
+      
+    - name: Example 2 - Cluster operations with debug logging
+      block:
+        - name: Get cluster info with debug logging
+          nutanix.ncp.nutanix_cluster_info:
+            nutanix_host: "{{ nutanix_host }}"
+            nutanix_username: "{{ nutanix_username }}"
+            nutanix_password: "{{ nutanix_password }}"
+            debug_logging: true
+          register: cluster_info
+          
+        - name: Display cluster details
+          debug:
+            msg: "Cluster: {{ cluster_info.entities[0].name if cluster_info.entities else 'No clusters found' }}"
+    
+    - name: Example 3 - Network operations with debug logging
+      block:
+        - name: Get subnet info with debug logging
+          nutanix.ncp.nutanix_subnet_info:
+            nutanix_host: "{{ nutanix_host }}"
+            nutanix_username: "{{ nutanix_username }}"
+            nutanix_password: "{{ nutanix_password }}"
+            debug_logging: true
+          register: subnet_info
+          
+        - name: Display subnet count
+          debug:
+            msg: "Found {{ subnet_info.entities | length }} subnets"
+    
+    - name: Show debug log location
+      debug:
+        msg: |
+          Debug logs have been written to: /tmp/nutanix_complete_debug.log
+          
+          To view the logs:
+          cat /tmp/nutanix_complete_debug.log
+          
+          To follow logs in real-time:
+          tail -f /tmp/nutanix_complete_debug.log
+
+
+

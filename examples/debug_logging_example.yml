@@ -1,0 +1,98 @@
+---
+# Example playbook demonstrating debug logging functionality
+# This playbook shows how to enable API call logging for debugging
+
+- name: Nutanix Ansible Collection Debug Logging Example
+  hosts: localhost
+  gather_facts: false
+  vars:
+    # Enable debug logging via environment variable
+    NUTANIX_DEBUG_LOGGING: true
+    NUTANIX_DEBUG_LOG_FILE: /tmp/nutanix_debug_example.log
+  
+  tasks:
+    - name: Example 1 - Enable debug logging via environment variable
+      block:
+        - name: Get VM info with debug logging
+          nutanix.ncp.nutanix_vm_info:
+            nutanix_host: "{{ nutanix_host }}"
+            nutanix_username: "{{ nutanix_username }}"
+            nutanix_password: "{{ nutanix_password }}"
+            # debug_logging will be enabled automatically via environment variable
+          register: vm_info_result
+          
+        - name: Display VM info
+          debug:
+            var: vm_info_result
+
+    - name: Example 2 - Enable debug logging via module parameter
+      block:
+        - name: Get cluster info with explicit debug logging
+          nutanix.ncp.nutanix_cluster_info:
+            nutanix_host: "{{ nutanix_host }}"
+            nutanix_username: "{{ nutanix_username }}"
+            nutanix_password: "{{ nutanix_password }}"
+            debug_logging: true  # Explicitly enable debug logging
+          register: cluster_info_result
+          
+        - name: Display cluster info
+          debug:
+            var: cluster_info_result
+
+    - name: Example 3 - Mixed usage (some tasks with logging, some without)
+      block:
+        - name: Get subnet info with debug logging
+          nutanix.ncp.nutanix_subnet_info:
+            nutanix_host: "{{ nutanix_host }}"
+            nutanix_username: "{{ nutanix_username }}"
+            nutanix_password: "{{ nutanix_password }}"
+            debug_logging: true
+          register: subnet_info_result
+          
+        - name: Get project info without debug logging
+          nutanix.ncp.nutanix_project_info:
+            nutanix_host: "{{ nutanix_host }}"
+            nutanix_username: "{{ nutanix_username }}"
+            nutanix_password: "{{ nutanix_password }}"
+            # debug_logging not specified - will use environment variable setting
+          register: project_info_result
+
+    - name: Example 4 - Custom log file location
+      block:
+        - name: Set custom log file
+          set_fact:
+            custom_log_file: "/tmp/custom_nutanix_debug.log"
+          
+        - name: Get image info with custom log file
+          environment:
+            NUTANIX_DEBUG_LOG_FILE: "{{ custom_log_file }}"
+          nutanix.ncp.nutanix_image_info:
+            nutanix_host: "{{ nutanix_host }}"
+            nutanix_username: "{{ nutanix_username }}"
+            nutanix_password: "{{ nutanix_password }}"
+            debug_logging: true
+          register: image_info_result
+
+    - name: Display log file locations
+      debug:
+        msg: |
+          Debug logs have been written to:
+          - Default location: /tmp/nutanix_debug_example.log
+          - Custom location: /tmp/custom_nutanix_debug.log
+          
+          To view the logs:
+          cat /tmp/nutanix_debug_example.log
+          cat /tmp/custom_nutanix_debug.log
+
+    - name: Show log file contents (first few lines)
+      shell: head -20 /tmp/nutanix_debug_example.log
+      register: log_contents
+      when: ansible_check_mode is not defined or not ansible_check_mode
+      
+    - name: Display log contents
+      debug:
+        var: log_contents.stdout_lines
+      when: log_contents is defined and log_contents.stdout_lines is defined
+
+
+

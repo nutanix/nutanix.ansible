@@ -9,6 +9,8 @@ import traceback
 from base64 import b64encode
 
 from ansible.module_utils.basic import missing_required_lib
+from ..api_logger import get_logger
+from .logging_wrapper import add_logging_to_client
 
 objects_SDK_IMP_ERROR = None
 try:
@@ -47,6 +49,10 @@ def get_api_client(module):
         encoded_cred = b64encode(bytes(cred).encode("ascii")).decode("ascii")
     auth_header = "Basic " + encoded_cred
     client.add_default_header(header_name="Authorization", header_value=auth_header)
+
+    # Add logging wrapper if debug logging is enabled
+    client = add_logging_to_client(client, module)
+
     return client
 
 

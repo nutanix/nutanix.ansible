@@ -1,0 +1,11 @@
+---
+modules:
+  - "ntnx_ova_v2 - Create, Update and Delete OVA in Nutanix Prism Central."
+  - "ntnx_ova_info_v2 - Fetch information about OVA in Nutanix Prism Central."
+  - "ntnx_ova_deploy_vm_v2 - Deploy a VM from an OVA in Nutanix Prism Central."
+  - "ntnx_ova_download_v2 - Download an OVA from Nutanix Prism Central."
+  - "ntnx_password_managers_info_v2 - Fetch information about Password Managers in Nutanix Prism Central."
+  - "ntnx_password_managers_v2 - Update Password of System Users in Nutanix Prism Central."
+  - "ntnx_pc_tasks_info_v2 - Fetch information about PC Tasks in Nutanix Prism Central."
+  - "ntnx_pc_task_abort_v2 - Abort a PC Task in Nutanix Prism Central."
+  - "ntnx_vms_disks_migrate_v2 - Migrate disks of a VM in Nutanix Prism Central."

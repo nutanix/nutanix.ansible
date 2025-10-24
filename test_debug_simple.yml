@@ -1,0 +1,33 @@
+---
+# Simple test to generate debug logs
+- name: Test Debug Logging
+  hosts: localhost
+  gather_facts: false
+  vars:
+    NUTANIX_DEBUG_LOGGING: true
+    NUTANIX_DEBUG_LOG_FILE: /tmp/nutanix_dev_debug.log
+  
+  tasks:
+    - name: Test debug logging with a simple module
+      nutanix.ncp.nutanix_vm_info:
+        nutanix_host: "{{ nutanix_host | default('10.0.0.1') }}"
+        nutanix_username: "{{ nutanix_username | default('admin') }}"
+        nutanix_password: "{{ nutanix_password | default('password') }}"
+        debug_logging: true
+      register: vm_result
+      ignore_errors: true  # Don't fail if connection fails
+      
+    - name: Show log file location
+      debug:
+        msg: "Log file should be at: /tmp/nutanix_dev_debug.log"
+        
+    - name: Check if log file exists
+      stat:
+        path: /tmp/nutanix_dev_debug.log
+      register: log_file_stat
+      
+    - name: Display log file status
+      debug:
+        msg: "Log file exists: {{ log_file_stat.stat.exists }}"
+
+

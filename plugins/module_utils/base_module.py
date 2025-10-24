@@ -32,6 +32,12 @@ class BaseModule(AnsibleModule):
         validate_certs=dict(
             type="bool", default=True, fallback=(env_fallback, ["VALIDATE_CERTS"])
         ),
+        debug_logging=dict(
+            type="bool",
+            default=False,
+            fallback=(env_fallback, ["NUTANIX_DEBUG_LOGGING"]),
+            description="Enable detailed API call logging for debugging purposes",
+        ),
         state=dict(type="str", choices=["present", "absent"], default="present"),
         wait=dict(type="bool", default=True),
     )

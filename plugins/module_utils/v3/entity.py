@@ -13,6 +13,7 @@ from ansible.module_utils._text import to_text
 from ansible.module_utils.urls import fetch_url
 
 from .. import utils
+from ..api_logger import get_logger
 
 try:
     from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
@@ -365,6 +366,9 @@ class Entity(object):
         timeout=30,
         **kwargs  # fmt: skip
     ):
+        # Get logger instance
+        logger = get_logger(self.module)
+
         # only jsonify if content-type supports, added to avoid incase of form-url-encodeded type data
         if self.headers["Content-Type"] == "application/json" and data is not None:
             data = self.module.jsonify(data)
@@ -372,6 +376,9 @@ class Entity(object):
         headers = copy.deepcopy(self.headers)
         if kwargs.get("additional_headers"):
             headers.update(kwargs.get("additional_headers"))
+
+        # Log the request
+        logger.log_request(method, url, headers, data, timeout)
 
         resp, info = fetch_url(
             self.module,
@@ -414,6 +421,9 @@ class Entity(object):
             resp_json = json.loads(to_text(body)) if body else None
         except ValueError:
             resp_json = None
+
+        # Log the response
+        logger.log_response(logger.request_id, status_code, info.get("headers"), body)
 
         if not raise_error:
             return resp_json
