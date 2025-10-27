@@ -3,7 +3,7 @@ Official Nutanix Ansible Collection
 
 ## Requirements
 
-To run any Nutanix Ansible module, the host must have the Python dependencies listed in [requirements.txt](https://github.com/nutanix/nutanix.ansible/blob/release/2.3.0/requirements.txt)
+To run any Nutanix Ansible module, the host must have the Python dependencies listed in [requirements.txt](https://github.com/nutanix/nutanix.ansible/blob/v2.3.0/requirements.txt)
 Once the collection is installed, install these dependencies into your Python environment using pip: `pip install -r ~/.ansible/collections/ansible_collections/nutanix/ncp/requirements.txt`
 
 # About
@@ -135,7 +135,7 @@ Installation:
 
 ```ansible-galaxy collection install nutanix.ncp```
 
-Install [requirements](https://github.com/nutanix/nutanix.ansible/blob/main/requirements.txt) from repository if dependencies are missing in environment (Ref: https://github.com/nutanix/nutanix.ansible/issues/600):
+Install [requirements](https://github.com/nutanix/nutanix.ansible/blob/v2.3.0/requirements.txt) from repository if dependencies are missing in environment (Ref: https://github.com/nutanix/nutanix.ansible/issues/600):
 
 ```pip install -r requirements.txt```
 
@@ -227,7 +227,9 @@ Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on p
 | ntnx_subnets | ntnx_subnets_v2 |
 | ntnx_users | ntnx_users_v2 |
 | ntnx_user_groups | ntnx_user_groups_v2 |
-| ntnx_vms_ova | - |
+| ntnx_vms_ova | ntnx_ova_v2 |
+| - | ntnx_ova_deploy_vm_v2 |
+| - | ntnx_ova_download_v2 |
 | ntnx_vms_clone | ntnx_vms_clone_v2 |
 | ntnx_vms | ntnx_vms_v2 |
 | ntnx_vpcs | ntnx_vpcs_v2 |
@@ -313,6 +315,10 @@ Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on p
 | - | ntnx_users_revoke_api_key_v2 |
 | - | ntnx_object_stores_v2 |
 | - | ntnx_object_stores_certificate_v2 |
+| - | ntnx_password_managers_v2 |
+| - | ntnx_pc_task_abort_v2 |
+| - | ntnx_vms_disks_migrate_v2 |
+
 
 ## Data Sources
 
@@ -392,6 +398,9 @@ Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on p
 | - | ntnx_users_api_key_info_v2 |
 | - | ntnx_object_stores_info_v2 |
 | - | ntnx_object_stores_certificate_info_v2 |
+| - | ntnx_password_managers_info_v2 |
+| - | ntnx_ova_info_v2 |
+| - | ntnx_pc_tasks_info_v2 |
 
 
 ## Inventory Plugins
