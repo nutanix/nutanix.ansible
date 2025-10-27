@@ -122,11 +122,8 @@ from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
     get_ssl_certificates_api_instance,
 )
 from ..module_utils.v4.clusters_mgmt.helpers import get_ssl_certificates  # noqa: E402
-from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
-from ..module_utils.v4.prism.tasks import (  # noqa: E402
-    get_entity_ext_id_from_task,
-    wait_for_completion,
-)
+from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
+
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
