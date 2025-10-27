@@ -211,15 +211,10 @@ def update_ssl_certificates(module, result):
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
-        task_status = wait_for_completion(module, task_ext_id)
-        result["response"] = strip_internal_attributes(task_status.to_dict())
-        ext_id = get_entity_ext_id_from_task(
-            task_status, rel=TASK_CONSTANTS.RelEntityType.SSL_CERTIFICATES
-        )
-        if ext_id:
-            resp = get_ssl_certificates(module, ssl_certificates_api, ext_id)
-            result["ext_id"] = ext_id
-            result["response"] = strip_internal_attributes(resp.to_dict())
+        wait_for_completion(module, task_ext_id)
+        resp = get_ssl_certificates(module, ssl_certificates_api, cluster_ext_id)
+        result["ext_id"] = cluster_ext_id
+        result["response"] = strip_internal_attributes(resp.to_dict())
 
     result["changed"] = True
 
@@ -227,7 +222,7 @@ def update_ssl_certificates(module, result):
 def run_module():
     module = BaseModule(
         argument_spec=get_module_spec(),
-        supports_check_mode=False,
+        supports_check_mode=True,
     )
     if SDK_IMP_ERROR:
         module.fail_json(
