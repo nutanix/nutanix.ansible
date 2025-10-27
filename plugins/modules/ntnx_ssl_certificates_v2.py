@@ -123,7 +123,6 @@ from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
 )
 from ..module_utils.v4.clusters_mgmt.helpers import get_ssl_certificates  # noqa: E402
 from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
-
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
