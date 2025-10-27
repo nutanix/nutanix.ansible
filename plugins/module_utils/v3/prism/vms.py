@@ -391,14 +391,17 @@ class VM(Prism):
         return payload, None
 
     def _build_spec_gc(self, payload, param):
-        fpath = param["script_path"]
+        if param.get("script_path"):
+            fpath = param["script_path"]
 
-        if not os.path.exists(fpath):
-            error = "File not found: {0}".format(fpath)
-            return None, error
+            if not os.path.exists(fpath):
+                error = "File not found: {0}".format(fpath)
+                return None, error
 
-        with open(fpath, "rb") as f:
-            content = base64.b64encode(f.read())
+            with open(fpath, "rb") as f:
+                content = base64.b64encode(f.read())
+        elif param.get("script"):
+            content = base64.b64encode(param["script"].encode("ascii"))
         gc_spec = {"guest_customization": {}}
 
         if "sysprep" in param["type"]:
