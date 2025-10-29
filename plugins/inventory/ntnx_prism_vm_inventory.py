@@ -239,7 +239,11 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 )
             except Exception as e:
                 if strict:
-                    self.display.error(str(e))
+                    self.display.error(
+                        "Error formatting ansible_host expression for VM {vm_name}. with uuid {vm_uuid}: {e}".format(
+                            vm_name=vm_name, vm_uuid=vm_uuid, e=str(e)
+                        )
+                    )
                     raise AnsibleError(
                         "Error formatting ansible_host expression for VM {vm_name}. with uuid {vm_uuid}: {e}".format(
                             vm_name=vm_name, vm_uuid=vm_uuid, e=str(e)
