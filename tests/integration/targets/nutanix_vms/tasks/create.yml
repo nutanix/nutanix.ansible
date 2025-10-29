@@ -150,9 +150,8 @@
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
   when: result.response.status.state == 'COMPLETE'
 #########################################################################################
-
-- name: Create VM with guest customization script
-  ntnx_vms:
+- name: VM with CentOS-7-cloud-init image with disk image size
+  nutanix.ncp.ntnx_vms:
     state: present
     name: VM with guest customization script
     timezone: "UTC"
