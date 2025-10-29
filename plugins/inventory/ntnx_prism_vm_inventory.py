@@ -78,6 +78,7 @@ DOCUMENTATION = r"""
                           "Then the expression {vm_name}.nutanix1.{cluster}.nutanix2.com will be resolved to
                           VM_123.nutanix1.Cluster_456.nutanix2.com as ansible_host"
                     type: str
+        data:
             description:
                 - Pagination support for listing VMs
                 - Default length(number of records to retrieve) has been set to 500
