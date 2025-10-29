@@ -28,7 +28,7 @@ New Modules
 Bugfixes
 --------
 
-- ntnx_vms_ngt_v2 - [Bug] Documentation is incorrect in module ntnx_vms_ngt_v2 [[\#693]](https://github.com/nutanix/nutanix.ansible/issues/693)
+- ntnx_vms_ngt_v2 - [Bug] Documentation is incorrect in module ntnx_vms_ngt_v2 [#693](https://github.com/nutanix/nutanix.ansible/issues/693)
 - ntnx_vms_ngt_insert_iso_v2 - [Bug] How to unmount NGT ISO after install? [[\#739](https://github.com/nutanix/nutanix.ansible/issues/739)]
 - ntnx_clusters_v2 - [Bug] Data type mismatch for categories attribute in module ntnx_clusters_v2 [[\#759](https://github.com/nutanix/nutanix.ansible/issues/759)]
 
