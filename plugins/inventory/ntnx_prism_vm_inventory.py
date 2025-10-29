@@ -73,6 +73,8 @@ DOCUMENTATION = r"""
                         - "cluster_uuid (Cluster UUID)"
                         - "vm_uuid (VM UUID)"
                         - "vm_description (VM Description)"
+                        - "example: Suppose we have a VM with name VM_123 and cluster name Cluster_456"
+                        - "Then the expression {vm_name}.nutanix1.{cluster}.nutanix2.com will be resolved to VM_123.nutanix1.Cluster_456.nutanix2.com as ansible_host"
                     type: str
         data:
             description:
@@ -197,7 +199,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         )
         return path.endswith(inventory_file_fmts)
 
-    def _build_host_vars(self, entity):
+    def _build_host_vars(self, entity, strict=False):
         """
         Build a dictionary of host variables from the raw entity.
         """
@@ -236,11 +238,13 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                     self.custom_ansible_host.get("expr"),
                 )
             except Exception as e:
-                raise AnsibleError(
-                    "Error formatting ansible_host expression for VM {vm_name}. with uuid {vm_uuid}: {e}".format(
-                        vm_name=vm_name, vm_uuid=vm_uuid, e=str(e)
+                if strict:
+                    self.display.error(str(e))
+                    raise AnsibleError(
+                        "Error formatting ansible_host expression for VM {vm_name}. with uuid {vm_uuid}: {e}".format(
+                            vm_name=vm_name, vm_uuid=vm_uuid, e=str(e)
+                        )
                     )
-                )
 
         # Remove unwanted keys.
         for key in [
@@ -330,58 +334,54 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         self.data["offset"] = self.data.get("offset", 0)
         resp = vm.list(data=self.data, fetch_all_vms=self.fetch_all_vms)
         for entity in resp.get("entities", []):
-            try:
-                host_vars = self._build_host_vars(entity)
+            host_vars = self._build_host_vars(entity, strict=strict)
 
-                if not self._should_add_host(host_vars, host_filters, strict):
-                    continue
+            if not self._should_add_host(host_vars, host_filters, strict):
+                continue
 
-                # Add host to inventory.
-                vm_name = host_vars.get("name")
-                cluster = host_vars.get("cluster")
-                vm_ip = host_vars.get("ansible_host")
-                vm_uuid = host_vars.get("uuid")
+            # Add host to inventory.
+            vm_name = host_vars.get("name")
+            cluster = host_vars.get("cluster")
+            vm_ip = host_vars.get("ansible_host")
+            vm_uuid = host_vars.get("uuid")
 
-                if cluster:
-                    self.inventory.add_group(cluster)
-                    self.inventory.add_child("all", cluster)
-                if vm_name:
-                    self.inventory.add_host(vm_name, group=cluster)
-                    self.inventory.set_variable(vm_name, "ansible_host", vm_ip)
-                    self.inventory.set_variable(vm_name, "uuid", vm_uuid)
-                    self.inventory.set_variable(vm_name, "name", vm_name)
-                    # Set all host_vars as variables.
-                    for key, value in host_vars.items():
-                        self.inventory.set_variable(vm_name, key, value)
+            if cluster:
+                self.inventory.add_group(cluster)
+                self.inventory.add_child("all", cluster)
+            if vm_name:
+                self.inventory.add_host(vm_name, group=cluster)
+                self.inventory.set_variable(vm_name, "ansible_host", vm_ip)
+                self.inventory.set_variable(vm_name, "uuid", vm_uuid)
+                self.inventory.set_variable(vm_name, "name", vm_name)
+                # Set all host_vars as variables.
+                for key, value in host_vars.items():
+                    self.inventory.set_variable(vm_name, key, value)
 
-                self.inventory.set_variable(
-                    vm_name,
-                    "project_reference",
-                    entity.get("metadata", {}).get("project_reference", {}),
-                )
+            self.inventory.set_variable(
+                vm_name,
+                "project_reference",
+                entity.get("metadata", {}).get("project_reference", {}),
+            )
 
-                # Add variables created by the user's Jinja2 expressions to the host
-                self._set_composite_vars(
-                    self.get_option("compose"),
-                    host_vars,
-                    vm_name,
-                    strict=strict,
-                )
-                self._add_host_to_composed_groups(
-                    self.get_option("groups"),
-                    host_vars,
-                    vm_name,
-                    strict=strict,
-                )
-                self._add_host_to_keyed_groups(
-                    self.get_option("keyed_groups"),
-                    host_vars,
-                    vm_name,
-                    strict=strict,
-                )
-
-            except (AnsibleError, Exception) as e:
-                self.display.error(str(e))
+            # Add variables created by the user's Jinja2 expressions to the host
+            self._set_composite_vars(
+                self.get_option("compose"),
+                host_vars,
+                vm_name,
+                strict=strict,
+            )
+            self._add_host_to_composed_groups(
+                self.get_option("groups"),
+                host_vars,
+                vm_name,
+                strict=strict,
+            )
+            self._add_host_to_keyed_groups(
+                self.get_option("keyed_groups"),
+                host_vars,
+                vm_name,
+                strict=strict,
+            )
 
     def get_replacement_function(self, lookup):
 

@@ -5,6 +5,9 @@ nutanix_username: <username>
 nutanix_password: <password>
 validate_certs: false
 data: { offset: 0, length: 1000 }
+fetch_all_vms: true
+custom_ansible_host:
+  expr: "{vm_name}.nutanix1.{cluster}.nutanix2.com"
 groups:
   group_1: "'<name_prefix>' in name"
   group_2: "'<vm_name>'==name"
