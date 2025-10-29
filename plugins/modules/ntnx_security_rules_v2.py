@@ -549,6 +549,7 @@ EXAMPLES = r"""
     nutanix_host: "<pc_ip>"
     nutanix_username: "<pc_username>"
     nutanix_password: "<pc_password>"
+    state: absent
     ext_id: "f83d766b-f3e8-42f0-a32f-24983h3tr8d032"
   register: result
 """

@@ -2,9 +2,9 @@
 # Variables required before running this playbook:
 # - external_nat_subnet
 
-- name: Start testing application security rules
+- name: Start ntnx_security_rules_v2 application security rules tests
   ansible.builtin.debug:
-    msg: Start testing application security rules
+    msg: Start ntnx_security_rules_v2 application security rules tests
 
 - name: Generate random names for security rules creation
   ansible.builtin.set_fact:
@@ -23,7 +23,7 @@
 ################################################ Test Setup ################################################
 
 - name: Create min VPC for security rules
-  ntnx_vpcs_v2:
+  nutanix.ncp.ntnx_vpcs_v2:
     name: ansible-vpc-{{ random_name }}
     external_subnets:
       - subnet_reference: "{{ external_nat_subnet.uuid }}"
@@ -43,7 +43,7 @@
     vpc_id: "{{ result.ext_id }}"
 
 - name: Create categories for tests
-  ntnx_categories_v2:
+  nutanix.ncp.ntnx_categories_v2:
     key: AnsibleSecurityRuleTest
     value: AnsibleSecurityRuleTest{{ random_name }}{{ item }}
     description: ansible test
@@ -69,7 +69,7 @@
     category5: "{{ results.results[4].response.ext_id }}"
 
 - name: Create service group to be used in security rules
-  ntnx_service_groups_v2:
+  nutanix.ncp.ntnx_service_groups_v2:
     name: ansible-sg-{{ random_name }}
     description: desc
     tcp_services:
@@ -91,7 +91,7 @@
     service_group_id: "{{ result.ext_id }}"
 
 - name: Create address group to be used in security rules
-  ntnx_address_groups_v2:
+  nutanix.ncp.ntnx_address_groups_v2:
     state: present
     name: ansible-ag-{{ random_name }}
     description: test-ansible-group-1-desc
@@ -118,7 +118,7 @@
 ################################################ Create tests ################################################
 
 - name: Generate spec for basic application rule using check mode
-  ntnx_security_rules_v2:
+  nutanix.ncp.ntnx_security_rules_v2:
     name: "{{ rule_name_1 }}"
     description: Ansible created rule
     type: APPLICATION
@@ -294,7 +294,7 @@
     success_msg: Successfully created security rule
 
 - name: Create basic application security rule for certain VPC scope with intra group traffic not allowed
-  ntnx_security_rules_v2:
+  nutanix.ncp.ntnx_security_rules_v2:
     name: "{{ rule_name_1 }}"
     description: Ansible created rule
     type: APPLICATION
@@ -411,7 +411,7 @@
     todelete: "{{ result.ext_id }}"
 
 - name: Delete security rule with check mode enabled
-  ntnx_security_rules_v2:
+  nutanix.ncp.ntnx_security_rules_v2:
     state: absent
     ext_id: "{{ todelete }}"
   register: result
@@ -430,7 +430,7 @@
     success_msg: Delete security rule with check mode passed
 
 - name: Delete created security rule
-  ntnx_security_rules_v2:
+  nutanix.ncp.ntnx_security_rules_v2:
     state: absent
     ext_id: "{{ todelete }}"
   register: result
@@ -445,7 +445,7 @@
     success_msg: Successfully deleted security rule
 
 - name: Create security rule with multienvisolation rule
-  ntnx_security_rules_v2:
+  nutanix.ncp.ntnx_security_rules_v2:
     name: "{{ rule_name_3 }}"
     description: Ansible created rule
     type: ISOLATION
@@ -505,7 +505,7 @@
     policy_ext_id1: "{{ result.ext_id }}"
 
 - name: Create policy with all vlan scope and using certain sources and destinations
-  ntnx_security_rules_v2:
+  nutanix.ncp.ntnx_security_rules_v2:
     name: "{{ rule_name_2 }}"
     description: Ansible created rule
     type: APPLICATION
@@ -671,7 +671,7 @@
 ######################################### Update tests #########################################
 
 - name: Generate spec to update the policy using check mode
-  ntnx_security_rules_v2:
+  nutanix.ncp.ntnx_security_rules_v2:
     ext_id: "{{ policy_ext_id2 }}"
     name: "{{ rule_name_2 }}-updated"
     rules:
@@ -811,7 +811,7 @@
     success_msg: Successfully updated security rule
 
 - name: Update policy rules and config
-  ntnx_security_rules_v2:
+  nutanix.ncp.ntnx_security_rules_v2:
     ext_id: "{{ policy_ext_id2 }}"
     name: "{{ rule_name_2 }}-updated"
     description: Ansible created rule updated
@@ -961,7 +961,7 @@
     success_msg: Successfully updated security rule
 
 - name: Update policy rules and config with same value to check idempotency
-  ntnx_security_rules_v2:
+  nutanix.ncp.ntnx_security_rules_v2:
     ext_id: "{{ policy_ext_id2 }}"
     name: "{{ rule_name_2 }}-updated"
     description: Ansible created rule updated
@@ -1058,7 +1058,7 @@
     success_msg: "Pass : return as expected"
 
 - name: Update the policy state
-  ntnx_security_rules_v2:
+  nutanix.ncp.ntnx_security_rules_v2:
     ext_id: "{{ policy_ext_id2 }}"
     policy_state: MONITOR
   register: result
@@ -1076,7 +1076,7 @@
     success_msg: Successfully updated policy state
 
 - name: Update some rules and delete some rules from policy
-  ntnx_security_rules_v2:
+  nutanix.ncp.ntnx_security_rules_v2:
     ext_id: "{{ policy_ext_id2 }}"
     rules:
       - description: inbound1
@@ -1144,7 +1144,7 @@
 ######################################### Info tests #########################################
 
 - name: Get all policies
-  ntnx_security_rules_info_v2:
+  nutanix.ncp.ntnx_security_rules_info_v2:
   register: result
 
 - name: Verify listing status
@@ -1153,11 +1153,13 @@
       - result.response is defined
       - result.failed == false
       - result.response | length > 1
+      - result.total_available_results is defined
+      - result.total_available_results > 1
     fail_msg: Failed to list security rules
     success_msg: Successfully listed security rules
 
 - name: Get particular policy
-  ntnx_security_rules_info_v2:
+  nutanix.ncp.ntnx_security_rules_info_v2:
     ext_id: "{{ policy_ext_id2 }}"
   register: result
 
@@ -1172,7 +1174,7 @@
     success_msg: Successfully got security rule
 
 - name: Fetch certain policy using filters
-  ntnx_security_rules_info_v2:
+  nutanix.ncp.ntnx_security_rules_info_v2:
     filter: name eq '{{ rule_name_2 }}-updated'
   register: result
 
@@ -1188,7 +1190,7 @@
     success_msg: Successfully filtered security rules
 
 - name: Fetch policies using limit
-  ntnx_security_rules_info_v2:
+  nutanix.ncp.ntnx_security_rules_info_v2:
     limit: 1
   register: result
 
@@ -1204,7 +1206,7 @@
 ######################################### Delete tests #########################################
 
 - name: Delete security rule 1
-  ntnx_security_rules_v2:
+  nutanix.ncp.ntnx_security_rules_v2:
     state: absent
     ext_id: "{{ policy_ext_id1 }}"
   register: result
@@ -1219,7 +1221,7 @@
     success_msg: Successfully deleted security rule
 
 - name: Delete security rule 2
-  ntnx_security_rules_v2:
+  nutanix.ncp.ntnx_security_rules_v2:
     state: absent
     ext_id: "{{ policy_ext_id2 }}"
   register: result
@@ -1236,7 +1238,7 @@
 ######################################### Delete test setup created entities #########################################
 
 - name: Delete service group
-  ntnx_service_groups_v2:
+  nutanix.ncp.ntnx_service_groups_v2:
     state: absent
     ext_id: "{{ service_group_id }}"
   register: result
@@ -1251,7 +1253,7 @@
     success_msg: Successfully deleted service group
 
 - name: Delete address group
-  ntnx_address_groups_v2:
+  nutanix.ncp.ntnx_address_groups_v2:
     state: absent
     ext_id: "{{ address_group_ext_id }}"
   register: result
@@ -1266,7 +1268,7 @@
     success_msg: Successfully deleted address group
 
 - name: Delete vpc
-  ntnx_vpcs_v2:
+  nutanix.ncp.ntnx_vpcs_v2:
     state: absent
     ext_id: "{{ vpc_id }}"
   register: result
@@ -1281,7 +1283,7 @@
     success_msg: Successfully deleted vpc
 
 - name: Delete all categories
-  ntnx_categories_v2:
+  nutanix.ncp.ntnx_categories_v2:
     state: absent
     ext_id: "{{ item }}"
   register: result

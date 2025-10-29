@@ -5,7 +5,7 @@
 ##################################################
 
 - name: List roles
-  ntnx_roles_info:
+  nutanix.ncp.ntnx_roles_info:
     length: 2
   register: result
   ignore_errors: true
@@ -27,7 +27,7 @@
 ##################################################
 
 - name: List role using uuid criteria
-  ntnx_roles_info:
+  nutanix.ncp.ntnx_roles_info:
     role_uuid: "{{ test_role_uuid }}"
   register: result
   ignore_errors: true
@@ -46,7 +46,7 @@
 ##################################################
 
 - name: List roles using filter criteria
-  ntnx_roles_info:
+  nutanix.ncp.ntnx_roles_info:
     filter:
       name: "{{ test_role_name }}"
   register: result
@@ -67,7 +67,7 @@
 ##################################################
 
 - name: List roles using length and offset
-  ntnx_roles_info:
+  nutanix.ncp.ntnx_roles_info:
     length: 1
     offset: 1
   register: result

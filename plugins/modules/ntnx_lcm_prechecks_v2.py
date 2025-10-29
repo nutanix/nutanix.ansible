@@ -18,6 +18,15 @@ author:
  - George Ghawali (@george-ghawali)
  - Abhinav Bansal (@abhinavbansal29)
 options:
+    state:
+        description:
+            - State of the module.
+            - If state is present, the module will perform LCM prechecks.
+            - If state is not present, the module will fail.
+        type: str
+        choices:
+            - present
+        default: present
     management_server:
         description:
             - Cluster management server configuration used while updating clusters with ESX or Hyper-V.
@@ -206,6 +215,7 @@ def get_module_spec():
     )
 
     module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
         management_server=dict(
             type="dict",
             options=management_server_spec,
