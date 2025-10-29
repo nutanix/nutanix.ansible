@@ -74,9 +74,10 @@ DOCUMENTATION = r"""
                         - "vm_uuid (VM UUID)"
                         - "vm_description (VM Description)"
                         - "example: Suppose we have a VM with name VM_123 and cluster name Cluster_456"
-                        - "Then the expression {vm_name}.nutanix1.{cluster}.nutanix2.com will be resolved to VM_123.nutanix1.Cluster_456.nutanix2.com as ansible_host"
+                        - >
+                          "Then the expression {vm_name}.nutanix1.{cluster}.nutanix2.com will be resolved to
+                          VM_123.nutanix1.Cluster_456.nutanix2.com as ansible_host"
                     type: str
-        data:
             description:
                 - Pagination support for listing VMs
                 - Default length(number of records to retrieve) has been set to 500
@@ -239,11 +240,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 )
             except Exception as e:
                 if strict:
-                    self.display.error(
-                        "Error formatting ansible_host expression for VM {vm_name}. with uuid {vm_uuid}: {e}".format(
-                            vm_name=vm_name, vm_uuid=vm_uuid, e=str(e)
-                        )
-                    )
                     raise AnsibleError(
                         "Error formatting ansible_host expression for VM {vm_name}. with uuid {vm_uuid}: {e}".format(
                             vm_name=vm_name, vm_uuid=vm_uuid, e=str(e)
