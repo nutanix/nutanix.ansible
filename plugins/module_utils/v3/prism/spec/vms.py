@@ -41,9 +41,12 @@ class DefaultVMSpec:
 
     gc_spec = dict(
         type=dict(type="str", choices=["cloud_init", "sysprep"], required=True),
-        script_path=dict(type="path", required=True),
+        script_path=dict(type="path", required=False),
+        script=dict(type="str", required=False),
         is_overridable=dict(type="bool", default=False),
     )
+
+    gc_mutually_exclusive = [("script", "script_path")]
 
     vm_argument_spec = dict(
         name=dict(type="str", required=False),
@@ -62,7 +65,9 @@ class DefaultVMSpec:
         memory_gb=dict(type="int"),
         networks=dict(type="list", elements="dict", options=network_spec),
         boot_config=dict(type="dict", options=boot_config_spec),
-        guest_customization=dict(type="dict", options=gc_spec),
+        guest_customization=dict(
+            type="dict", options=gc_spec, mutually_exclusive=gc_mutually_exclusive
+        ),
         timezone=dict(type="str", default="UTC"),
         categories=dict(type="dict"),
         force_power_off=dict(type="bool", default=False),
