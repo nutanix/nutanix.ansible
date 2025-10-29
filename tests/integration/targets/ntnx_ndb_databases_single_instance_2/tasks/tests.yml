@@ -35,7 +35,7 @@
     vm1_name: "{{ random_name[0] }}-vm"
 
 - name: Create db server vm using software profile
-  ntnx_ndb_db_server_vms:
+  nutanix.ncp.ntnx_ndb_db_server_vms:
     wait: true
     name: "{{ vm1_name }}"
     desc: ansible-created-vm1-desc
@@ -72,7 +72,7 @@
     _vm_ip: "{{ result.response.ipAddresses[0] }}"
 
 - name: Create new single instance postgres database on vm created earlier
-  ntnx_ndb_databases:
+  nutanix.ncp.ntnx_ndb_databases:
     wait: true
     name: "{{ db1_name }}"
     desc: ansible-created-db-desc
@@ -147,7 +147,7 @@
     success_msg: single instance postgres database created successfully
 
 - name: Unregister db along with delete time machine and unregister db server vm
-  ntnx_ndb_databases:
+  nutanix.ncp.ntnx_ndb_databases:
     state: absent
     db_uuid: "{{ db_uuid }}"
     wait: true
@@ -166,7 +166,7 @@
     success_msg: database unregistered successfully
 
 - name: Create spec for registering previously unregistered DB from previously unregistered DB server vm
-  ntnx_ndb_register_database:
+  nutanix.ncp.ntnx_ndb_register_database:
     wait: true
     name: "{{ db1_name }}"
     desc: ansible-created-db-desc
@@ -267,7 +267,7 @@
     success_msg: single instance postgres database register spec created successfully
 
 - name: Register previously unregistered DB from previously unregistered DB server vm
-  ntnx_ndb_register_database:
+  nutanix.ncp.ntnx_ndb_register_database:
     wait: true
     name: "{{ db1_name }}"
     desc: ansible-created-db-desc
@@ -354,7 +354,7 @@
     success_msg: single instance postgres database registered successfully
 
 - name: Delete db along with delete time machine and db server vms
-  ntnx_ndb_databases:
+  nutanix.ncp.ntnx_ndb_databases:
     db_uuid: "{{ result.db_uuid }}"
     state: absent
     wait: true
