@@ -106,6 +106,12 @@ changed:
     type: bool
     returned: always
     sample: true
+total_available_results:
+    description:
+        - The total number of available Volume groups in PC.
+    type: int
+    returned: when all volume groups are fetched
+    sample: 125
 """
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
@@ -160,6 +166,9 @@ def get_vgs(module, result):
             exception=e,
             msg="Api Exception raised while fetching volume groups info",
         )
+
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
 
     resp = strip_internal_attributes(resp.to_dict()).get("data")
     if not resp:

@@ -21,7 +21,7 @@
 ######################################################################## Test setup ########################################################################
 
 - name: Get create operations
-  ntnx_operations_info_v2:
+  nutanix.ncp.ntnx_operations_info_v2:
     filter: displayName startswith 'Create_'
   register: create_operations
   ignore_errors: true
@@ -32,7 +32,7 @@
     test_operation_2_uuid: "{{ create_operations.response[1].ext_id }}"
 
 - name: Create roles with operations
-  ntnx_roles_v2:
+  nutanix.ncp.ntnx_roles_v2:
     state: present
     display_name: "{{ acp_name }}-ansible-ag-role"
     description: Role for ansible acp tests
@@ -59,7 +59,7 @@
     fail_msg: Create roles with operations failed
 ######################################################################## Create Tests ########################################################################
 - name: Create auth policy spec using check mode
-  ntnx_authorization_policies_v2:
+  nutanix.ncp.ntnx_authorization_policies_v2:
     state: present
     display_name: "{{ acp_name }}1"
     description: ansible created acps
@@ -117,7 +117,7 @@
     success_msg: Auth policy spec created successfully in check mode
 
 - name: Create auth policy
-  ntnx_authorization_policies_v2:
+  nutanix.ncp.ntnx_authorization_policies_v2:
     state: present
     display_name: "{{ acp_name }}1"
     description: ansible created acps
@@ -176,7 +176,7 @@
     todelete: "{{ todelete + [result.ext_id] }}"
 
 - name: Create another auth policy
-  ntnx_authorization_policies_v2:
+  nutanix.ncp.ntnx_authorization_policies_v2:
     state: present
     display_name: "{{ acp_name }}2"
     role: "{{ role_ext_id }}"
@@ -218,7 +218,7 @@
 ###################################################### Update tests ########################################################
 
 - name: Generate spec with checkmode for updating acp
-  ntnx_authorization_policies_v2:
+  nutanix.ncp.ntnx_authorization_policies_v2:
     state: present
     ext_id: "{{ policy_ext_id }}"
     entities:
@@ -254,7 +254,7 @@
     success_msg: Spec for updating acps created successfully
 
 - name: Add access to self owned marketplace_item and certain projects
-  ntnx_authorization_policies_v2:
+  nutanix.ncp.ntnx_authorization_policies_v2:
     state: present
     ext_id: "{{ policy_ext_id }}"
     entities:
@@ -289,7 +289,7 @@
     success_msg: Policy updated successfully
 
 - name: Give access to users and remove access of user groups
-  ntnx_authorization_policies_v2:
+  nutanix.ncp.ntnx_authorization_policies_v2:
     state: present
     ext_id: "{{ policy_ext_id }}"
     identities:
@@ -320,7 +320,7 @@
     success_msg: Policy updated successfully
 
 - name: Remove access of certain users and certain entities
-  ntnx_authorization_policies_v2:
+  nutanix.ncp.ntnx_authorization_policies_v2:
     state: present
     ext_id: "{{ policy_ext_id }}"
     entities:
@@ -355,7 +355,7 @@
     success_msg: Policy updated successfully
 
 - name: Try update with same data to check idempotency
-  ntnx_authorization_policies_v2:
+  nutanix.ncp.ntnx_authorization_policies_v2:
     state: present
     ext_id: "{{ policy_ext_id }}"
     display_name: "{{ acp_name }}2"
@@ -388,7 +388,7 @@
     success_msg: Policy auth update skipped successfully
 
 - name: Update name of policy
-  ntnx_authorization_policies_v2:
+  nutanix.ncp.ntnx_authorization_policies_v2:
     state: present
     ext_id: "{{ policy_ext_id }}"
     display_name: "{{ acp_name }}2-updated"
@@ -416,7 +416,7 @@
 ###################################################### Read Tests ########################################################
 
 - name: Get all auth policies
-  ntnx_authorization_policies_info_v2:
+  nutanix.ncp.ntnx_authorization_policies_info_v2:
     limit: 5
   register: result
   ignore_errors: true
@@ -426,11 +426,13 @@
     that:
       - result.response is defined
       - result.response | length == 5
+      - result.total_available_results is defined
+      - result.total_available_results > 0
     fail_msg: Unable to get all auth policies
     success_msg: All auth policies fetched successfully
 
 - name: Get specific auth policy
-  ntnx_authorization_policies_info_v2:
+  nutanix.ncp.ntnx_authorization_policies_info_v2:
     ext_id: "{{ policy_ext_id }}"
   register: result
   ignore_errors: true
@@ -452,7 +454,7 @@
     success_msg: Specific auth policy fetched successfully
 
 - name: Fetch using filters
-  ntnx_authorization_policies_info_v2:
+  nutanix.ncp.ntnx_authorization_policies_info_v2:
     filter: displayName eq '{{ acp_name }}2-updated'
   register: result
   ignore_errors: true
@@ -468,7 +470,7 @@
 ###################################################### Delete Tests ########################################################
 
 - name: Delete auth policy with check mode enabled
-  ntnx_authorization_policies_v2:
+  nutanix.ncp.ntnx_authorization_policies_v2:
     state: absent
     ext_id: "{{ policy_ext_id }}"
   register: result
@@ -488,7 +490,7 @@
     success_msg: Delete auth policy with check mode passed
 
 - name: Delete created auth policies
-  ntnx_authorization_policies_v2:
+  nutanix.ncp.ntnx_authorization_policies_v2:
     state: absent
     ext_id: "{{ item }}"
   register: result
@@ -518,7 +520,7 @@
 ###################################################### Deleted role ########################################################
 
 - name: Delete role
-  ntnx_roles_v2:
+  nutanix.ncp.ntnx_roles_v2:
     state: absent
     ext_id: "{{ role_ext_id }}"
   register: result

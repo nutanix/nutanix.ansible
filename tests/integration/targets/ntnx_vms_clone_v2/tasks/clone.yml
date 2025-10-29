@@ -19,7 +19,7 @@
     todelete: []
 
 - name: Create VM to use it for cloning
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     state: present
     name: "{{ vm_name }}"
     cluster:
@@ -51,7 +51,7 @@
 ##################################################################################
 
 - name: Clone VM - check mode is enabled
-  ntnx_vms_clone_v2:
+  nutanix.ncp.ntnx_vms_clone_v2:
     ext_id: "{{ vm_uuid }}"
     name: "{{ vm_name }}_clone"
     num_sockets: 2
@@ -78,7 +78,7 @@
 #################################################################################
 
 - name: Clone VM with same attributes values
-  ntnx_vms_clone_v2:
+  nutanix.ncp.ntnx_vms_clone_v2:
     ext_id: "{{ vm_uuid }}"
     name: "{{ vm_name }}_clone1"
   register: result
@@ -104,7 +104,7 @@
 #################################################################################
 
 - name: Clone VM with different attributes values
-  ntnx_vms_clone_v2:
+  nutanix.ncp.ntnx_vms_clone_v2:
     ext_id: "{{ vm_uuid }}"
     name: "{{ vm_name }}_clone2"
     num_sockets: 2
@@ -133,7 +133,7 @@
 ##################################################################################
 
 - name: Clone VM with guest customization
-  ntnx_vms_clone_v2:
+  nutanix.ncp.ntnx_vms_clone_v2:
     ext_id: "{{ vm_uuid }}"
     name: "{{ vm_name }}_clone3"
     guest_customization:
@@ -164,7 +164,7 @@
 ##################################################################################
 
 - name: Clone VM - check mode is enabled
-  ntnx_vms_clone_v2:
+  nutanix.ncp.ntnx_vms_clone_v2:
     ext_id: "{{ vm_uuid }}"
     name: "{{ vm_name }}_clone2"
     num_sockets: 4
@@ -191,7 +191,7 @@
 ##################################################################################
 
 - name: Clone VM that does not exist
-  ntnx_vms_clone_v2:
+  nutanix.ncp.ntnx_vms_clone_v2:
     ext_id: "12345678-1234-1234-1234-123456789123"
     name: "{{ vm_name }}_clone4"
     num_sockets: 2
@@ -213,7 +213,7 @@
 ##################################################################################
 
 - name: Delete all VMs
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: absent
     vm_uuid: "{{ item }}"
   register: result

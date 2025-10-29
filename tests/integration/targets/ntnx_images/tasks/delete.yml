@@ -7,7 +7,7 @@
     msg: Start ntnx_images delete tests
 
 - name: Create image with minimal spec and source uri for delete tests
-  ntnx_images:
+  nutanix.ncp.ntnx_images:
     state: present
     image_type: DISK_IMAGE
     source_uri: "{{ disk_image.url }}"
@@ -25,7 +25,7 @@
     success_msg: "Image with minimal spec created successfully"
 
 - name: Delete image with check mode
-  ntnx_images:
+  nutanix.ncp.ntnx_images:
     state: absent
     image_uuid: "{{ result.response.metadata.uuid }}"
   register: output
@@ -43,7 +43,7 @@
     success_msg: "Delete image with check mode passed"
 
 - name: Delete image created above
-  ntnx_images:
+  nutanix.ncp.ntnx_images:
     state: absent
     image_uuid: "{{ result.response.metadata.uuid }}"
   register: output
@@ -61,7 +61,7 @@
 #####################################################################################################
 
 - name: "Negative scenario when delete image with incorrect uuid"
-  ntnx_images:
+  nutanix.ncp.ntnx_images:
     state: absent
     image_uuid: abcd
   register: result

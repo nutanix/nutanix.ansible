@@ -1590,6 +1590,8 @@
       - result.failed == False
       - result.response is defined
       - result.response | length >= 2
+      - result.total_available_results is defined
+      - result.total_available_results >= 2
     fail_msg: "Unable to list protection policies"
     success_msg: "Protection policies listed successfully"
 
