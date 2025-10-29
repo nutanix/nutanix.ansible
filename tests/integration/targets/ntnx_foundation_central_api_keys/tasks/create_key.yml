@@ -4,7 +4,7 @@
     msg: start testing ntnx_foundation_central_api_keys module
 
 - name: Create api key with check_mode
-  ntnx_foundation_central_api_keys:
+  nutanix.ncp.ntnx_foundation_central_api_keys:
     alias: test
   check_mode: true
   register: result
@@ -25,7 +25,7 @@
     random_alias: "{{ query('community.general.random_string', numbers=false, special=false, length=12) }}"
 
 - name: Create api key with random alias
-  ntnx_foundation_central_api_keys:
+  nutanix.ncp.ntnx_foundation_central_api_keys:
     alias: "{{random_alias.0}}"
   register: result
   ignore_errors: true
@@ -41,7 +41,7 @@
     success_msg: "Success: api key created successfully "
 
 - name: Create duplicate api key with same alias
-  ntnx_foundation_central_api_keys:
+  nutanix.ncp.ntnx_foundation_central_api_keys:
     alias: "{{random_alias.0}}"
   register: result
   ignore_errors: true

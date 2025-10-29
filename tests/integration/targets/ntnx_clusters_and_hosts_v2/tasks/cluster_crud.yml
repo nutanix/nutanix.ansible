@@ -55,7 +55,7 @@
 ############################################## Create cluster test 1 ##############################################
 
 - name: Create spec for cluster create with dummy values using check mode
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     name: cluster1
     nodes:
       node_list:
@@ -143,6 +143,9 @@
       http_proxy_white_list:
         - target_type: IPV4_NETWORK_MASK
           target: test
+    categories:
+      - "cc16efb4-6591-4b89-a643-8c835f035393"
+      - "d1b5f4e2-2b3c-4e8e-9f4a-2c9f0e6f7a12"
     container_name: test-container
     dryrun: true
   register: result
@@ -198,12 +201,15 @@
       - result.response.network.http_proxy_list[0].proxy_types[1] == "HTTPS"
       - result.response.network.http_proxy_white_list[0].target_type == "IPV4_NETWORK_MASK"
       - result.response.network.http_proxy_white_list[0].target == "test"
+      - result.response.categories | length == 2
+      - result.response.categories[0] == "cc16efb4-6591-4b89-a643-8c835f035393"
+      - result.response.categories[1] == "d1b5f4e2-2b3c-4e8e-9f4a-2c9f0e6f7a12"
       - result.response.container_name == "test-container"
     fail_msg: Cluster create spec is not generated as expected
     success_msg: Cluster create spec is generated as expected
 
 - name: Generate spec for discovering unconfigured nodes using check mode
-  ntnx_discover_unconfigured_nodes_v2:
+  nutanix.ncp.ntnx_discover_unconfigured_nodes_v2:
     is_manual_discovery: true
     address_type: "IPV4"
     ip_filter_list:
@@ -235,7 +241,7 @@
     success_msg: Generate spec for discovering unconfigured nodes using check mode passed
 
 - name: List all clusters to get prism central external ID
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
     filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
   register: result
   ignore_errors: true
@@ -245,7 +251,7 @@
     prism_central_external_id: "{{ result.response[0].ext_id }}"
 
 - name: Discover unconfigured node
-  ntnx_discover_unconfigured_nodes_v2:
+  nutanix.ncp.ntnx_discover_unconfigured_nodes_v2:
     address_type: "IPV4"
     ip_filter_list:
       - ipv4:
@@ -266,7 +272,7 @@
     success_msg: Discover unconfigured node passed
 
 - name: Run cluster create prechecks
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     name: "{{ clusters[0].name }}"
     nodes:
       node_list:
@@ -347,7 +353,7 @@
     success_msg: Cluster is unconfigured
 
 - name: Create cluster with minimum spec
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     name: "{{cluster_name}}"
     nodes:
       node_list:
@@ -381,7 +387,7 @@
   changed_when: result.rc != 0
 
 - name: Generate spec for aos remote cluster PE PC registration using check mode
-  ntnx_pc_registration_v2:
+  nutanix.ncp.ntnx_pc_registration_v2:
     ext_id: d2f9994f-44fb-4d4c-ad3c-92055316444f
     remote_cluster:
       aos_remote_cluster:
@@ -408,7 +414,7 @@
     success_msg: "Generate spec for aos remote cluster PE PC registration using check mode passed"
 
 - name: Generate spec for PC and domain manager(PC) remote cluster registration using check mode
-  ntnx_pc_registration_v2:
+  nutanix.ncp.ntnx_pc_registration_v2:
     ext_id: d2f9994f-44fb-4d4c-ad3c-92055316444f
     remote_cluster:
       domain_manager_remote_cluster:
@@ -437,7 +443,7 @@
     success_msg: "Generate spec for PC and domain manager(PC) remote cluster registration using check mode passed"
 
 - name: Generate spec for PC registration using cluster reference
-  ntnx_pc_registration_v2:
+  nutanix.ncp.ntnx_pc_registration_v2:
     ext_id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
     remote_cluster:
       cluster_reference:
@@ -456,7 +462,7 @@
     success_msg: "Generate spec for PC registration using cluster reference passed"
 
 - name: Run PE PC registration
-  ntnx_pc_registration_v2:
+  nutanix.ncp.ntnx_pc_registration_v2:
     ext_id: "{{ prism_central_external_id }}"
     remote_cluster:
       aos_remote_cluster:
@@ -487,7 +493,7 @@
     seconds: 60
 
 - name: Fetch cluster using name
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
     filter: name eq '{{ cluster_name }}'
   register: result
   ignore_errors: true
@@ -505,7 +511,7 @@
     cluster_ext_id: "{{ result.response[0].ext_id }}"
 
 - name: Fetch cluster info using external ID
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
     ext_id: "{{ cluster_ext_id }}"
   register: result
   ignore_errors: true
@@ -527,7 +533,7 @@
     success_msg: Cluster creation passed successfully
 
 - name: Destroy the cluster for cleanup
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     state: absent
     ext_id: "{{ cluster_ext_id }}"
   register: result
@@ -545,7 +551,7 @@
 
 ############################################# Create cluster test 2 ##############################################
 
-- name: Sleep for 2 minute for pending tasks in node to finish
+- name: Sleep for 2 minutes for pending tasks in node to finish
   ansible.builtin.pause:
     seconds: 120
 
@@ -564,7 +570,7 @@
     success_msg: Cluster is unconfigured
 
 - name: Create cluster with all configuration
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     name: "{{ cluster_name }}"
     nodes:
       node_list:
@@ -619,7 +625,7 @@
   changed_when: result.rc != 0
 
 - name: Run PE PC registration
-  ntnx_pc_registration_v2:
+  nutanix.ncp.ntnx_pc_registration_v2:
     ext_id: "{{ prism_central_external_id }}"
     remote_cluster:
       aos_remote_cluster:
@@ -650,7 +656,7 @@
     seconds: 60
 
 - name: Fetch cluster using name
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
     filter: name eq '{{ cluster_name }}'
   register: result
   ignore_errors: true
@@ -668,7 +674,7 @@
     cluster_ext_id: "{{ result.response[0].ext_id }}"
 
 - name: Fetch cluster info using external ID
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
     ext_id: "{{ cluster_ext_id }}"
   register: result
   ignore_errors: true
@@ -954,7 +960,7 @@
 ############################################## Update cluster test ##############################################
 
 - name: Create update spec for cluster using dummy values
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     name: "{{ cluster_name }}_updated"
     ext_id: "{{ cluster_ext_id }}"
     network:
@@ -1031,7 +1037,7 @@
 ############################################## Update basic cluster config and auth public key ##############################################
 
 - name: Fetch cluster info using external ID
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
     ext_id: "{{ cluster_ext_id }}"
   register: cluster_info
   ignore_errors: true
@@ -1059,7 +1065,7 @@
     updated_auth_public_keys: "{{ auth_public_keys + [new_auth_public_key] }}"
 
 - name: Update cluster basic configuration, add auth public keys, and enable pulse
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     name: "{{ cluster_name }}_updated"
     ext_id: "{{ cluster_ext_id }}"
     config:
@@ -1086,7 +1092,7 @@
     seconds: 60
 
 - name: Fetch cluster info using external ID
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
     ext_id: "{{ cluster_ext_id }}"
   register: cluster_info
   ignore_errors: true
@@ -1117,7 +1123,7 @@
 ############################################# Update cluster ntp servers, dns servers and smtp servers ##############################################
 
 - name: Update ntp servers, dns servers and smtp servers in cluster, and disable pulse
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     ext_id: "{{ cluster_ext_id }}"
     config:
       pulse_status:
@@ -1161,7 +1167,7 @@
     seconds: 60
 
 - name: Fetch cluster info using external ID
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
     ext_id: "{{ cluster_ext_id }}"
   register: result
   ignore_errors: true
@@ -1189,7 +1195,7 @@
 
 ############################################## Check idempotency ##############################################
 - name: Verify idempotency
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     name: "{{ cluster_name }}_updated"
     ext_id: "{{ cluster_ext_id }}"
     config:
@@ -1232,7 +1238,7 @@
     success_msg: Cluster update skipped as expected
 
 - name: Idempotency checks should get skipped if password is given
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     ext_id: "{{ cluster_ext_id }}"
     network:
       smtp_server:
@@ -1261,7 +1267,7 @@
 ############################################## Hosts & cluster info module tests ##############################################
 
 - name: Verify listing of clusters
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
   register: result
   ignore_errors: true
 
@@ -1271,11 +1277,13 @@
       - result.response is defined
       - result.changed == false
       - result.response | length >= 2
+      - result.total_available_results is defined
+      - result.total_available_results >= 2
     fail_msg: Failed listing clusters
     success_msg: Listed clusters successfully
 
 - name: Verify listing clusters using filters
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
     filter: name eq '{{ cluster_name }}_updated'
   register: result
   ignore_errors: true
@@ -1292,7 +1300,7 @@
     success_msg: Listed clusters using filters successfully
 
 - name: Verify listing clusters using wrong filters
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
     filter: name eq 'wrong_name'
   register: result
   ignore_errors: true
@@ -1307,7 +1315,7 @@
     success_msg: Module returned no data for invalid name
 
 - name: Verify listing clusters using limit
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
     limit: 1
   register: result
   ignore_errors: true
@@ -1322,7 +1330,7 @@
     success_msg: Listed clusters using limit successfully
 
 - name: List all hosts
-  ntnx_hosts_info_v2:
+  nutanix.ncp.ntnx_hosts_info_v2:
   register: result
   ignore_errors: true
 
@@ -1332,6 +1340,8 @@
       - result.response is defined
       - result.changed == false
       - result.response | length >= 2
+      - result.total_available_results is defined
+      - result.total_available_results >= 2
     fail_msg: Failed listing hosts
     success_msg: Listed hosts successfully
 
@@ -1342,7 +1352,7 @@
     cluster_uuid: "{{ result.response[0].cluster.uuid }}"
 
 - name: Verify listing of hosts using filters
-  ntnx_hosts_info_v2:
+  nutanix.ncp.ntnx_hosts_info_v2:
     filter: hostName eq '{{ host_name }}'
   register: result
   ignore_errors: true
@@ -1359,7 +1369,7 @@
     success_msg: Listed hosts using filters successfully
 
 - name: Verify listing of hosts using wrong filters
-  ntnx_hosts_info_v2:
+  nutanix.ncp.ntnx_hosts_info_v2:
     filter: hostName eq 'wrong_name'
   register: result
   ignore_errors: true
@@ -1374,7 +1384,7 @@
     success_msg: Module returned no data for invalid name
 
 - name: Verify listing of hosts using limit
-  ntnx_hosts_info_v2:
+  nutanix.ncp.ntnx_hosts_info_v2:
     limit: 1
   register: result
   ignore_errors: true
@@ -1389,7 +1399,7 @@
     success_msg: Listed hosts using limit successfully
 
 - name: Verify fetching host using external ID
-  ntnx_hosts_info_v2:
+  nutanix.ncp.ntnx_hosts_info_v2:
     ext_id: "{{ host_ext_id }}"
     cluster_ext_id: "{{ cluster_uuid }}"
   register: result
@@ -1407,7 +1417,7 @@
     success_msg: Fetched host using external ID successfully
 
 - name: Fetch hosts of particular cluster
-  ntnx_hosts_info_v2:
+  nutanix.ncp.ntnx_hosts_info_v2:
     cluster_ext_id: "{{ cluster_ext_id }}"
   register: result
   ignore_errors: true
@@ -1425,7 +1435,7 @@
 ############################################## Delete cluster test ##############################################
 
 - name: Destroy the cluster for cleanup
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     state: absent
     ext_id: "{{ cluster_ext_id }}"
   register: result

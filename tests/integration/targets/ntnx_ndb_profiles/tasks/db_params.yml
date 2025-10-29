@@ -38,7 +38,7 @@
     profile4_name: "{{ random_name }}{{ suffix_name }}4"
 ################################################################
 - name: Verify creation of db params profile
-  ntnx_ndb_profiles:
+  nutanix.ncp.ntnx_ndb_profiles:
     name: "{{ profile1_name }}"
     desc: testdesc
     type: database_parameter
@@ -111,7 +111,7 @@
     todelete: "{{ todelete + [result.profile_uuid] }}"
 ################################################################
 - name: Verify update of params in database_parameter profile and publish profile
-  ntnx_ndb_profiles:
+  nutanix.ncp.ntnx_ndb_profiles:
     name: "{{ profile2_name }}"
     desc: newdesc
     profile_uuid: "{{ result.profile_uuid }}"
@@ -145,7 +145,7 @@
     success_msg: "Pass: verify update of params in database_parameter profile and publish profile finished successfully"
 ################################################################
 - name: Verify unpublish flow in database_parameter profile
-  ntnx_ndb_profiles:
+  nutanix.ncp.ntnx_ndb_profiles:
     profile_uuid: "{{ result.profile_uuid }}"
     database_parameter:
       publish: false
@@ -165,7 +165,7 @@
     success_msg: "Pass: verify unpublish flow in database_parameter profile finished successfully "
 ################################################################
 - name: Verify creation of db params profile with defaults
-  ntnx_ndb_profiles:
+  nutanix.ncp.ntnx_ndb_profiles:
     name: "{{ profile3_name }}"
     desc: testdesc
     type: database_parameter
@@ -191,7 +191,7 @@
     todelete: "{{ todelete + [result.profile_uuid] }}"
 ################################################################
 - name: Verify idempotency check
-  ntnx_ndb_profiles:
+  nutanix.ncp.ntnx_ndb_profiles:
     name: "{{ profile3_name }}"
     desc: testdesc
     profile_uuid: "{{ result.profile_uuid }}"
@@ -211,7 +211,7 @@
     success_msg: "Pass: verify idempotency check finished successfully"
 ################################################################
 - name: Delete all created Database_Parameter profiles
-  ntnx_ndb_profiles:
+  nutanix.ncp.ntnx_ndb_profiles:
     state: absent
     profile_uuid: "{{ item }}"
   register: result

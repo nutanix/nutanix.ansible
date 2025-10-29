@@ -1,6 +1,6 @@
 ---
 - name: Image upload with wrong installer_type
-  ntnx_foundation_image_upload:
+  nutanix.ncp.ntnx_foundation_image_upload:
     state: present
     source: "{{ source }}"
     filename: integration-test-ntnx-package.tar.gz
