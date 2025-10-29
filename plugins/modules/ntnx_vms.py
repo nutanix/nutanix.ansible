@@ -982,7 +982,6 @@ def run_module():
         supports_check_mode=True,
         mutually_exclusive=[
             ("categories", "remove_categories"),
-            ("script", "script_path"),
         ],
         required_if=[("vm_uuid", None, ("name",)), ("state", "absent", ("vm_uuid",))],
     )

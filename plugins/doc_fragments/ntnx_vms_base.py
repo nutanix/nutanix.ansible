@@ -52,7 +52,7 @@ options:
           - Absolute file path to the script.
           - Mutually exclusive with C(script)
         type: path
-        required: true
+        required: false
       is_overridable:
         description:
           - Flag to allow override of customization during deployment.

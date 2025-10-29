@@ -172,7 +172,7 @@
             root: "{{ password }}"
             expire: False
         fqdn: myNutanixVM
-      is_overridable: True
+      is_overridable: true
   register: result
   ignore_errors: true
 
