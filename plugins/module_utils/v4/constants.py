@@ -41,6 +41,7 @@ class Tasks:
         STORAGE_CONTAINER = "clustermgmt:config:storage-containers"
         ROUTE = "networking:config:route"
         OBJECTS = "objects:config:object-store"
+        OVA = "vmm:content:ova"
         KMS = "security:encryption:key-management-server"
 
     class CompletetionDetailsName:

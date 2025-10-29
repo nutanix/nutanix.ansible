@@ -17,6 +17,15 @@ description:
 author:
     - Pradeepsingh Bhati (@bhati-pradeep)
 options:
+    state:
+        description:
+            - State of the module.
+            - If state is present, the module will migrate a NIC.
+            - If state is not present, the module will fail.
+        type: str
+        choices:
+            - present
+        default: present
     wait:
         description: Wait for the operation to complete.
         type: bool
@@ -179,6 +188,7 @@ def get_module_spec():
         ext_id=dict(type="str", required=True),
     )
     module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
         ext_id=dict(type="str", required=True),
         vm_ext_id=dict(type="str", required=True),
         migrate_type=dict(

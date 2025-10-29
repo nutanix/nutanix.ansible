@@ -7,7 +7,7 @@
     msg: Start testing create ova for vm
 
 - name: VM with minimum requirements
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     name: integration_test_ova_vm
     cluster:
@@ -24,7 +24,7 @@
     success_msg: "Success: VM with minimum requirements created successfully "
 #########################################
 - name: Create_ova_image  with check mode
-  ntnx_vms_ova:
+  nutanix.ncp.ntnx_vms_ova:
     src_vm_uuid: "{{ vm.vm_uuid }}"
     name: integration_test_VMDK_ova
     file_format: VMDK
@@ -43,7 +43,7 @@
     fail_msg: " Fail: create_ova_image  with check mode "
 #########################################
 - name: Create QCOW2 ova_image
-  ntnx_vms_ova:
+  nutanix.ncp.ntnx_vms_ova:
     src_vm_uuid: "{{ vm.vm_uuid }}"
     name: integration_test_QCOW2_ova
     file_format: QCOW2
@@ -59,7 +59,7 @@
     success_msg: "Success: create QCOW2 ova_image successfully "
 #########################################
 - name: Create VMDK ova_image
-  ntnx_vms_ova:
+  nutanix.ncp.ntnx_vms_ova:
     src_vm_uuid: "{{ vm.vm_uuid }}"
     name: integration_test_VMDK_ova
     file_format: VMDK
@@ -75,6 +75,6 @@
     success_msg: "Success: create VMDK ova_image successfully "
 #########################################
 - name: Delete all Created VMs
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: absent
     vm_uuid: "{{ vm.vm_uuid }}"

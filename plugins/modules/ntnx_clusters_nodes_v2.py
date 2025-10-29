@@ -528,6 +528,7 @@ EXAMPLES = r"""
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
+    state: absent
     cluster_ext_id: "000628e4-4c8f-1239-5575-0cc47a9a3e6d"
     node_uuids:
       - "54b7581b-2e35-413e-8608-0531b065a5d8"

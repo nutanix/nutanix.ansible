@@ -10,7 +10,7 @@
 
 ##################################################
 - name: Create recovery plan with network
-  ntnx_recovery_plans:
+  nutanix.ncp.ntnx_recovery_plans:
     state: "present"
     name: test-integration-rp-1
     desc: test-integration-rp-desc
@@ -40,7 +40,7 @@
   register: recovery_plan1
 
 - name: Create recovery plan with networks
-  ntnx_recovery_plans:
+  nutanix.ncp.ntnx_recovery_plans:
     state: "present"
     name: test-integration-rp-2
     desc: test-integration-rp-desc
@@ -72,7 +72,7 @@
 ##################################################
 
 - name: List all Recovery plans
-  ntnx_recovery_plans_info:
+  nutanix.ncp.ntnx_recovery_plans_info:
   register: result
   ignore_errors: true
 
@@ -93,7 +93,7 @@
 ##################################################
 
 - name: List recovery plans using uuid criteria
-  ntnx_recovery_plans_info:
+  nutanix.ncp.ntnx_recovery_plans_info:
     plan_uuid: "{{ test_plan_uuid }}"
   register: result
   ignore_errors: true
@@ -114,7 +114,7 @@
 ##################################################
 
 - name: List recovery plans using filter criteria
-  ntnx_recovery_plans_info:
+  nutanix.ncp.ntnx_recovery_plans_info:
     filter:
       name: "{{ test_plan_name }}"
   register: result
@@ -135,7 +135,7 @@
 ##################################################
 
 - name: List recovery plan using length and offset
-  ntnx_recovery_plans_info:
+  nutanix.ncp.ntnx_recovery_plans_info:
     length: 1
     offset: 1
   register: result
@@ -158,7 +158,7 @@
     msg: Start testing ntnx_recovery_plan_jobs_info
 
 - name: Run validation job, eventually will fail due to some tech issues but can be used for info tests.
-  ntnx_recovery_plan_jobs:
+  nutanix.ncp.ntnx_recovery_plan_jobs:
     nutanix_host: "{{recovery_site_ip}}"
     state: "present"
     name: "{{ query('community.general.random_string', upper=false, numbers=false, special=false)[0] }}"
@@ -174,7 +174,7 @@
   no_log: true
 
 - name: Run validation job, eventually will fail due to some tech issues but can be used for info tests.
-  ntnx_recovery_plan_jobs:
+  nutanix.ncp.ntnx_recovery_plan_jobs:
     nutanix_host: "{{recovery_site_ip}}"
     state: "present"
     name: "{{ query('community.general.random_string', upper=false, numbers=false, special=false)[0] }}"
@@ -192,7 +192,7 @@
 ##################################################
 
 - name: List all recovery plan jobs
-  ntnx_recovery_plan_jobs_info:
+  nutanix.ncp.ntnx_recovery_plan_jobs_info:
     nutanix_host: "{{recovery_site_ip}}"
   register: result
   ignore_errors: true
@@ -217,7 +217,7 @@
 ##################################################
 
 - name: List recovery plan jobs using uuid criteria
-  ntnx_recovery_plan_jobs_info:
+  nutanix.ncp.ntnx_recovery_plan_jobs_info:
     nutanix_host: "{{recovery_site_ip}}"
     job_uuid: "{{ test_job_uuid }}"
   register: result
@@ -238,7 +238,7 @@
 ##################################################
 
 - name: List recovery plan jobs using filter criteria
-  ntnx_recovery_plan_jobs_info:
+  nutanix.ncp.ntnx_recovery_plan_jobs_info:
     nutanix_host: "{{recovery_site_ip}}"
     filter:
       name: "{{ test_job_name_1 }}"
@@ -260,7 +260,7 @@
 ##################################################
 
 - name: List recovery plan job using length and offset
-  ntnx_recovery_plan_jobs_info:
+  nutanix.ncp.ntnx_recovery_plan_jobs_info:
     nutanix_host: "{{recovery_site_ip}}"
     length: 2
     offset: 1
@@ -280,14 +280,14 @@
 ################################################## Delete recovery plans #########################################################
 
 - name: Delete created recovery plans
-  ntnx_recovery_plans:
+  nutanix.ncp.ntnx_recovery_plans:
     state: absent
     wait: true
     plan_uuid: "{{ recovery_plan1.plan_uuid }}"
   register: result
 
 - name: Delete created recovery plans
-  ntnx_recovery_plans:
+  nutanix.ncp.ntnx_recovery_plans:
     state: absent
     wait: true
     plan_uuid: "{{ recovery_plan2.plan_uuid }}"

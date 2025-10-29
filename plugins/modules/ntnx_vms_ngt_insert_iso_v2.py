@@ -38,6 +38,14 @@ options:
               and the ISO is being inserted to update the configuration of these tools.
         type: bool
         default: false
+    state:
+        description:
+            - If state is present, the module will insert the NGT ISO into the virtual machine.
+            - Valid choices are "present" only.
+            - If state is not present, the module will fail.
+        type: str
+        choices: ['present']
+        default: present
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
@@ -127,6 +135,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
     module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
         ext_id=dict(type="str", required=True),
         capabilities=dict(
             type="list",
@@ -138,15 +147,8 @@ def get_module_spec():
     return module_args
 
 
-def insert_ngt_iso(module, result):
+def insert_ngt_iso(module, ext_id, result):
     vmm = get_vm_api_instance(module)
-    ext_id = module.params.get("ext_id")
-    if not ext_id:
-        return module.fail_json(
-            msg="vm ext_id is required to inserting NGT iso", **result
-        )
-
-    result["ext_id"] = ext_id
 
     status = vmm.get_guest_tools_by_id(extId=ext_id)
     etag = get_etag(status)
@@ -201,7 +203,13 @@ def run_module():
         "response": None,
         "ext_id": None,
     }
-    insert_ngt_iso(module, result)
+    ext_id = module.params.get("ext_id")
+    if not ext_id:
+        return module.fail_json(
+            msg="vm ext_id is required to inserting NGT iso", **result
+        )
+    result["ext_id"] = ext_id
+    insert_ngt_iso(module, ext_id, result)
     module.exit_json(**result)
 
 

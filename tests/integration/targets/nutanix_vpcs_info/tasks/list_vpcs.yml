@@ -3,7 +3,7 @@
 # - vpc
 
 - name: List VPC using name filter criteria
-  ntnx_vpcs_info:
+  nutanix.ncp.ntnx_vpcs_info:
     filter:
       name: "{{ vpc.name }}"
   register: result
@@ -17,7 +17,7 @@
     success_msg: " VPCs listed successfully "
 ########################################################
 - name: List VPC using length and offset
-  ntnx_vpcs_info:
+  nutanix.ncp.ntnx_vpcs_info:
     length: 1
     offset: 1
   check_mode: true
@@ -32,7 +32,7 @@
     success_msg: " VPCs listed successfully "
 ##########################################################
 - name: List VPC using descending name sorting
-  ntnx_vpcs_info:
+  nutanix.ncp.ntnx_vpcs_info:
     sort_order: "DESCENDING"
     sort_attribute: "name"
   register: result
