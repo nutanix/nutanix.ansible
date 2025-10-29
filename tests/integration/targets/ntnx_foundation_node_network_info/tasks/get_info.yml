@@ -4,11 +4,11 @@
     msg: start testing ntnx_foundation_node_network_info
 
 - name: Discover nodes
-  ntnx_foundation_discover_nodes_info:
+  nutanix.ncp.ntnx_foundation_discover_nodes_info:
   register: result
 
 - name: Get node network info
-  ntnx_foundation_node_network_info:
+  nutanix.ncp.ntnx_foundation_node_network_info:
     nodes:
       - "{{result.blocks.0.nodes.0.ipv6_address}}"
       - "{{result.blocks.1.nodes.0.ipv6_address}}"

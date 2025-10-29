@@ -17,7 +17,7 @@
     ag2: "{{random_name}}{{suffix_name}}2"
 
 - name: Create address group
-  ntnx_address_groups:
+  nutanix.ncp.ntnx_address_groups:
     state: present
     name: "{{ag1}}"
     desc: test-ansible-group-1-desc
@@ -51,7 +51,7 @@
 ###################################################################################################
 
 - name: Check if address group with existing name fails or not
-  ntnx_address_groups:
+  nutanix.ncp.ntnx_address_groups:
     state: present
     name: "{{ag1}}"
     subnets:
@@ -71,7 +71,7 @@
 
 ###################################################################################################
 - name: Check mode test
-  ntnx_address_groups:
+  nutanix.ncp.ntnx_address_groups:
     state: present
     name: "{{ag2}}"
     desc: test-ansible-address-group-2-desc
@@ -101,7 +101,7 @@
 ###################################################################################################
 
 - name: Cleanup created entities
-  ntnx_address_groups:
+  nutanix.ncp.ntnx_address_groups:
     state: absent
     address_group_uuid: "{{ todelete }}"
   register: result

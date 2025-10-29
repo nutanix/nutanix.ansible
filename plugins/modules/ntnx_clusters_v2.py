@@ -741,8 +741,9 @@ options:
             required: true
   categories:
     description:
-      - The categories of the cluster.
-    type: dict
+      - The extIDs of categories of the cluster.
+    type: list
+    elements: str
   container_name:
     description:
       - The name of the container.

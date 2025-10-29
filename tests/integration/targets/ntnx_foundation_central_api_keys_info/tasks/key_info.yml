@@ -8,7 +8,7 @@
     random_alias: "{{ query('community.general.random_string', numbers=false, special=false, length=12) }}"
 
 - name: Create api key with random alias
-  ntnx_foundation_central_api_keys:
+  nutanix.ncp.ntnx_foundation_central_api_keys:
     alias: "{{random_alias.0}}"
   register: key
   ignore_errors: true
@@ -25,7 +25,7 @@
     success_msg: "Success: api key created successfully "
 
 - name: Get api key with key_uuid
-  ntnx_foundation_central_api_keys_info:
+  nutanix.ncp.ntnx_foundation_central_api_keys_info:
     key_uuid: "{{ key.response.key_uuid }}"
   register: result
   ignore_errors: true
@@ -39,7 +39,7 @@
     success_msg: "Success: get api key with key_uuid "
 
 - name: Get api key with alias
-  ntnx_foundation_central_api_keys_info:
+  nutanix.ncp.ntnx_foundation_central_api_keys_info:
     alias: "{{random_alias.0}}"
   register: result
   ignore_errors: true
@@ -53,7 +53,7 @@
     success_msg: "Success: get api key with alias name "
 
 - name: Get api key with custom filter
-  ntnx_foundation_central_api_keys_info:
+  nutanix.ncp.ntnx_foundation_central_api_keys_info:
     custom_filter:
       created_timestamp: "{{ key.response.created_timestamp }}"
       alias: "{{ key.response.alias }}"
