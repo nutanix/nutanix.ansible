@@ -25,6 +25,13 @@ New Modules
 - ntnx_pc_task_abort_v2 - Abort a PC Task in Nutanix Prism Central.
 - ntnx_vms_disks_migrate_v2 - Migrate disks of a VM in Nutanix Prism Central.
 
+Bugfixes
+--------
+
+- ntnx_vms_ngt_v2 - [Bug] Documentation is incorrect in module ntnx_vms_ngt_v2 [[#693](https://github.com/nutanix/nutanix.ansible/issues/693)]
+- ntnx_vms_ngt_insert_iso_v2 - [Bug] How to unmount NGT ISO after install? [[#739](https://github.com/nutanix/nutanix.ansible/issues/739)]
+- ntnx_clusters_v2 - [Bug] Data type mismatch for categories attribute in module ntnx_clusters_v2 [[#759](https://github.com/nutanix/nutanix.ansible/issues/759)]
+
 Minor Changes
 -------------
 
@@ -40,13 +47,6 @@ Minor Changes
 - All modules - [Imprv] add functionality to disable the state which are not applicable for all the modules [[#746](https://github.com/nutanix/nutanix.ansible/issues/746)]
 - ntnx_prism_vm_inventory - [Imprv] add functionality to be able to set a variable when using module ntnx_prism_vm_inventory [[#644](https://github.com/nutanix/nutanix.ansible/issues/644)]
 - requirements.txt - [Imprv] Remove extra python packages from the requirements.txt file [[#785](https://github.com/nutanix/nutanix.ansible/issues/785)]
-
-Bugfixes
---------
-
-- ntnx_vms_ngt_v2 - [Bug] Documentation is incorrect in module ntnx_vms_ngt_v2 [[#693](https://github.com/nutanix/nutanix.ansible/issues/693)]
-- ntnx_vms_ngt_insert_iso_v2 - [Bug] How to unmount NGT ISO after install? [[#739](https://github.com/nutanix/nutanix.ansible/issues/739)]
-- ntnx_clusters_v2 - [Bug] Data type mismatch for categories attribute in module ntnx_clusters_v2 [[#759](https://github.com/nutanix/nutanix.ansible/issues/759)]
 
 v2.2.0
 ======
