@@ -1,5 +1,10 @@
 # Nutanix Ansible
-Official nutanix ansible collection
+Official Nutanix Ansible Collection
+
+## Requirements
+
+To run any Nutanix Ansible module, the host must have the Python dependencies listed in [requirements.txt](https://github.com/nutanix/nutanix.ansible/blob/v2.3.0/requirements.txt)
+Once the collection is installed, install these dependencies into your Python environment using pip: `pip install -r ~/.ansible/collections/ansible_collections/nutanix/ncp/requirements.txt`
 
 # About
 Nutanix ansible collection <font color=rolyalblue>nutanix.ncp</font> is the official Nutanix ansible collection to automate Nutanix Cloud Platform (ncp).
@@ -10,23 +15,31 @@ It is designed keeping simplicity as the core value. Hence it is
 
 Checkout this [blog](https://www.nutanix.dev/2022/08/05/getting-started-with-the-nutanix-ansible-module/) for getting started with nutanix ansible module.
 
-NOTE: The latest version of the Nutanix Ansible collection is [v2.2.0](https://github.com/nutanix/nutanix.ansible/releases/tag/v2.2.0).
+NOTE: The latest version of the Nutanix Ansible collection is [v2.3.0](https://github.com/nutanix/nutanix.ansible/releases/tag/v2.3.0).
 
-## Introducing Nutanix Ansible Collection Version v2.2.0
+## Introducing Nutanix Ansible Collection Version v2.3.0
 
-We are excited to announce the release of **Nutanix Ansible Collection v2.2.0** — a major update that brings powerful new features and enhancements for automating your Nutanix infrastructure.
+We are excited to announce the release of **Nutanix Ansible Collection v2.3.0** — a major update that brings powerful new features and enhancements for automating your Nutanix infrastructure.
 
-### What's New in v2.2.0
+### What's New in v2.3.0
 
 - **Built on v4.1 APIs/SDKs**  
   This release is built on the latest Nutanix v4 APIs and SDKs, providing improved performance, stability, and alignment with the newest platform capabilities.
 
 - **New Resource Support**
-  - **Objects**: Automate Nutanix Objects (S3-compatible storage) management for scalable storage use cases.
-  - **Service Accounts**: Manage service accounts and their associated roles and permissions directly through Ansible.
+  - **Ovas (VMM)**: Automate creation, updating, and deletion of OVAs. Deploy VMs from OVAs and retrieve lists of OVAs.
+  - **Password Manager (Cluster Management)**: Manage system user passwords and list password details for clusters.
+  - **Disk Migration**: Migrate a VM disk from one storage container to another.
+  - **Task Operations**: Interact with tasks representing long-running operations. Tasks record intent, progress, and other relevant details, enabling asynchronous operation management.
+
+- **Major Improvements**
+  - **Images (VMM)**: Added support for the objectsLite parameter.
+  - **VM (VMM)**: Added Automatic Cluster Selection support.
+  - **Project Reference (VMM)**: Added Project Reference parameter for VMs.
+  - **Volume Groups (VG)**: Added Update Volume Group support.
 
 - **Bug Fixes and Stability Improvements**  
-  Multiple bugs have been resolved to improve the reliability and user experience across modules.
+  Resolved multiple issues to enhance reliability and overall user experience across modules.
 
 ---
 
@@ -61,9 +74,10 @@ This collection requires Python 3.10 or greater
 
 | Ansible Version |  AOS Version | PC version  | Other software versions | Supported |
 |  :--- |  :--- | :--- | :--- | :--- |
-| 2.2.0 | 7.0.1, 7.0, 7.3| pc2024.3, pc2024.3.1, pc7.3 or later| | yes |
-| 2.1.1 | 7.0.1, 7.0| pc2024.3, pc2024.3.1 or later| | yes |
-| 2.1.0 | 7.0.1, 7.0| pc2024.3, pc2024.3.1 or later| | yes |
+| 2.3.0 | 7.3, 7.3.1 |  pc7.3, pc7.3.1 or later| | yes |
+| 2.2.0 | 7.0.1, 7.0, 7.3 | pc2024.3, pc2024.3.1, pc7.3 or later| | yes |
+| 2.1.1 | 7.0.1, 7.0 | pc2024.3, pc2024.3.1 or later| | yes |
+| 2.1.0 | 7.0.1, 7.0 | pc2024.3, pc2024.3.1 or later| | yes |
 | 2.0.0 | 7.0 | pc2024.3 or later | nke v2.8, foundation v5.7, ndb v2.7| yes |
 | 1.9.2 | | pc2024.1 | | yes |
 | 1.9.1 | | pc2023.1.0.2, pc2023.3 | ndb v2.5.1.1, nke v2.8.0, foundation v5.2 | yes |
@@ -81,7 +95,7 @@ This collection requires Python 3.10 or greater
 
 | SDK | PC | PE |
 |  :--- |  :--- | :--- |
-| v4.1, v4.0 | pc7.3 | 7.3 |
+| v4.1, v4.0 | pc7.3, pc7.3.1 | 7.3, 7.3.1 |
 | v4.0 | pc2024.3.1, pc2024.3 | 7.0.1, 7.0 |
 
 ### Notes:
@@ -121,7 +135,7 @@ Installation:
 
 ```ansible-galaxy collection install nutanix.ncp```
 
-Install [requirements](https://github.com/nutanix/nutanix.ansible/blob/main/requirements.txt) from repository if dependencies are missing in environment (Ref: https://github.com/nutanix/nutanix.ansible/issues/600):
+Install [requirements](https://github.com/nutanix/nutanix.ansible/blob/v2.3.0/requirements.txt) from repository if dependencies are missing in environment (Ref: https://github.com/nutanix/nutanix.ansible/issues/600):
 
 ```pip install -r requirements.txt```
 
@@ -213,7 +227,9 @@ Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on p
 | ntnx_subnets | ntnx_subnets_v2 |
 | ntnx_users | ntnx_users_v2 |
 | ntnx_user_groups | ntnx_user_groups_v2 |
-| ntnx_vms_ova | - |
+| ntnx_vms_ova | ntnx_ova_v2 |
+| - | ntnx_ova_deploy_vm_v2 |
+| - | ntnx_ova_download_v2 |
 | ntnx_vms_clone | ntnx_vms_clone_v2 |
 | ntnx_vms | ntnx_vms_v2 |
 | ntnx_vpcs | ntnx_vpcs_v2 |
@@ -299,6 +315,10 @@ Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on p
 | - | ntnx_users_revoke_api_key_v2 |
 | - | ntnx_object_stores_v2 |
 | - | ntnx_object_stores_certificate_v2 |
+| - | ntnx_password_managers_v2 |
+| - | ntnx_pc_task_abort_v2 |
+| - | ntnx_vms_disks_migrate_v2 |
+
 
 ## Data Sources
 
@@ -378,6 +398,9 @@ Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on p
 | - | ntnx_users_api_key_info_v2 |
 | - | ntnx_object_stores_info_v2 |
 | - | ntnx_object_stores_certificate_info_v2 |
+| - | ntnx_password_managers_info_v2 |
+| - | ntnx_ova_info_v2 |
+| - | ntnx_pc_tasks_info_v2 |
 
 
 ## Inventory Plugins
@@ -504,3 +527,9 @@ By following these steps, you can perform comprehensive integration testing for 
         - {vm_name: "Dev-Wordpress-App"}
 
 ```
+
+## License
+
+GNU General Public License v3.0 or later
+
+See [LICENSE](LICENSE) to see the full text.

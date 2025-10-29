@@ -4,7 +4,7 @@
     msg: start testing ntnx_foundation_central module
 
 - name: Api
-  ntnx_foundation_central:
+  nutanix.ncp.ntnx_foundation_central:
     cluster_name: "{{ cluster_name }}"
     skip_cluster_creation: false
     redundancy_factor: 2
@@ -61,7 +61,7 @@
     imaged_cluster_uuid: "{{result.imaged_cluster_uuid}}"
 
 - name: Check mode for delete operation
-  ntnx_foundation_central:
+  nutanix.ncp.ntnx_foundation_central:
     state: absent
     imaged_cluster_uuid: "{{imaged_cluster_uuid}}"
     check_mode: true
