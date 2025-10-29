@@ -42,6 +42,7 @@ class Tasks:
         ROUTE = "networking:config:route"
         OBJECTS = "objects:config:object-store"
         OVA = "vmm:content:ova"
+        KMS = "security:encryption:key-management-server"
 
     class CompletetionDetailsName:
         """Completion details name for the task entities affected"""
