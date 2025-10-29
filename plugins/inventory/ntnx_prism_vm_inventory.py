@@ -73,7 +73,7 @@ DOCUMENTATION = r"""
                         - "cluster_uuid (Cluster UUID)"
                         - "vm_uuid (VM UUID)"
                         - "vm_description (VM Description)"
-                        - "example: Suppose we have a VM with name VM_123 and cluster name Cluster_456"
+                        - "Suppose we have a VM with name VM_123 and cluster name Cluster_456"
                         - >
                           "Then the expression {vm_name}.nutanix1.{cluster}.nutanix2.com will be resolved to
                           VM_123.nutanix1.Cluster_456.nutanix2.com as ansible_host"
