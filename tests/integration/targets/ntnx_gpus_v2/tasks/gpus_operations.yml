@@ -16,7 +16,7 @@
     vm_name: "{{ random_name }}_vm_test"
 
 - name: Generate spec for VM creation with GPU using check mode
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     name: "vm_test"
     cluster:
       ext_id: "00062742-82e3-b07b-0000-0000000136bb"
@@ -45,7 +45,7 @@
 ##################################################################################
 
 - name: Create VM with GPU attached
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     state: present
     name: "{{ vm_name }}"
     cluster:
@@ -77,7 +77,7 @@
 
 # here we are powering on the VM to check the full GPU details
 - name: Power on VM
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
     state: power_on
     ext_id: "{{ vm_ext_id }}"
   register: result
@@ -98,7 +98,7 @@
     seconds: 20
 
 - name: Get VM info
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_ext_id }}"
   register: result
   ignore_errors: true
@@ -122,7 +122,7 @@
 
 # here we are powering off the VM to detach the GPU
 - name: Power off VM
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
     state: power_off
     ext_id: "{{ vm_ext_id }}"
   register: result
@@ -143,7 +143,7 @@
     seconds: 15
 
 - name: Get VM power state
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_ext_id }}"
   register: result
   ignore_errors: true
@@ -161,7 +161,7 @@
 ##################################################################################
 
 - name: Detach GPU from VM
-  ntnx_gpus_v2:
+  nutanix.ncp.ntnx_gpus_v2:
     state: absent
     vm_ext_id: "{{ vm_ext_id }}"
     ext_id: "{{ gpu_ext_id }}"
@@ -182,7 +182,7 @@
 ##################################################################################
 
 - name: Attach GPU to VM
-  ntnx_gpus_v2:
+  nutanix.ncp.ntnx_gpus_v2:
     state: present
     vm_ext_id: "{{ vm_ext_id }}"
     mode: "{{ gpus[0].gpu_device_mode }}"
@@ -211,7 +211,7 @@
 
 # here we are powering on the VM to check the full GPU details
 - name: Power on VM
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
     state: power_on
     ext_id: "{{ vm_ext_id }}"
   register: result
@@ -232,7 +232,7 @@
     seconds: 20
 
 - name: Get VM info
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_ext_id }}"
   register: result
   ignore_errors: true
@@ -257,7 +257,7 @@
 ##################################################################################
 
 - name: List all GPUs attached to the VM
-  ntnx_gpus_info_v2:
+  nutanix.ncp.ntnx_gpus_info_v2:
     vm_ext_id: "{{ vm_ext_id }}"
   register: result
   ignore_errors: true
@@ -278,7 +278,7 @@
 ##################################################################################
 
 - name: List GPUs attached to the VM with limit
-  ntnx_gpus_info_v2:
+  nutanix.ncp.ntnx_gpus_info_v2:
     vm_ext_id: "{{ vm_ext_id }}"
     limit: 1
   register: result
@@ -296,7 +296,7 @@
 ##################################################################################
 
 - name: Fetch GPU details using ext_id
-  ntnx_gpus_info_v2:
+  nutanix.ncp.ntnx_gpus_info_v2:
     vm_ext_id: "{{ vm_ext_id }}"
     ext_id: "{{ gpu_ext_id }}"
   register: result
@@ -318,7 +318,7 @@
 
 # here we are powering off the VM to detach the GPU
 - name: Power off VM
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
     state: power_off
     ext_id: "{{ vm_ext_id }}"
   register: result
@@ -339,7 +339,7 @@
     seconds: 15
 
 - name: Get VM power state
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_ext_id }}"
   register: result
   ignore_errors: true
@@ -355,7 +355,7 @@
     success_msg: "VM is powered off successfully "
 
 - name: Detach GPU from VM
-  ntnx_gpus_v2:
+  nutanix.ncp.ntnx_gpus_v2:
     state: absent
     vm_ext_id: "{{ vm_ext_id }}"
     ext_id: "{{ gpu_ext_id }}"
@@ -376,7 +376,7 @@
 ##################################################################################
 
 - name: Delete VM
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     state: absent
     ext_id: "{{ vm_ext_id }}"
   register: result
