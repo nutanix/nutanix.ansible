@@ -135,8 +135,9 @@ import os  # noqa: E402
 
 from ansible.errors import AnsibleError  # noqa: E402
 from ansible.plugins.inventory import BaseInventoryPlugin, Constructable  # noqa: E402
-from ..module_utils.v4.vmm.api_client import get_vm_api_instance  # noqa: E402
+
 from ..module_utils.v4.utils import strip_internal_attributes  # noqa: E402
+from ..module_utils.v4.vmm.api_client import get_vm_api_instance  # noqa: E402
 
 
 class Mock_Module:
