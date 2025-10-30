@@ -1,3 +1,7 @@
+---
+# Variables required before running this playbook:
+# - cluster
+
 - name: "Start Volume groups disks tests"
   ansible.builtin.debug:
     msg: "Start Volume groups disks tests"
@@ -17,7 +21,7 @@
 ############################################ Test Setup ############################################
 
 - name: List all available ISCSI connections already attached to the VGs
-  ntnx_volume_groups_iscsi_clients_info_v2:
+  nutanix.ncp.ntnx_volume_groups_iscsi_clients_info_v2:
   register: result
 
 - name: Verify iscsi client list
@@ -27,6 +31,8 @@
       - result.response is defined
       - result.changed == false
       - result.response | length >= 0
+      - result.total_available_results is defined
+      - result.total_available_results >= 0
 
     fail_msg: "Unable to list iscsi clients"
     success_msg: "ISCSI clients listed successfully"
@@ -37,7 +43,7 @@
     iscsi_client_uuid: "{{ result.response[0].ext_id }}"
 
 - name: Create Volume group for tests
-  ntnx_volume_groups_v2:
+  nutanix.ncp.ntnx_volume_groups_v2:
     name: "{{vg1_name}}"
     description: "Volume group for iscsi client tests tests"
     target_prefix: "vg1"
@@ -63,7 +69,7 @@
 ############################################ Verify check modes ############################################
 
 - name: Generate check mode response for Iscsi attachments using IQN
-  ntnx_volume_groups_iscsi_clients_v2:
+  nutanix.ncp.ntnx_volume_groups_iscsi_clients_v2:
     volume_group_ext_id: "{{ vg1_uuid }}"
     iscsi_initiator_name: "{{ iscsi_client_name }}"
     num_virtual_targets: 32
@@ -89,7 +95,7 @@
     success_msg: "ISCSI client attach spec generated successfully using IQN"
 
 - name: Generate check mode response for Iscsi attachments using Ipv4
-  ntnx_volume_groups_iscsi_clients_v2:
+  nutanix.ncp.ntnx_volume_groups_iscsi_clients_v2:
     volume_group_ext_id: "{{ vg1_uuid }}"
     num_virtual_targets: 32
     enabled_authentications: CHAP
@@ -113,7 +119,7 @@
     success_msg: "ISCSI client attach spec generated successfully using IPv4"
 
 - name: Generate check mode response for Iscsi attachments using fqdn
-  ntnx_volume_groups_iscsi_clients_v2:
+  nutanix.ncp.ntnx_volume_groups_iscsi_clients_v2:
     volume_group_ext_id: "{{ vg1_uuid }}"
     num_virtual_targets: 32
     enabled_authentications: CHAP
@@ -140,7 +146,7 @@
 ############################################ Attachment/Detachment tests ############################################
 
 - name: Attach iscsi client to VG using initiator name
-  ntnx_volume_groups_iscsi_clients_v2:
+  nutanix.ncp.ntnx_volume_groups_iscsi_clients_v2:
     volume_group_ext_id: "{{ vg1_uuid }}"
     iscsi_initiator_name: "{{ iscsi_client_name }}"
     num_virtual_targets: 32
@@ -160,7 +166,7 @@
     success_msg: "ISCSI client attached successfully using initiator name"
 
 - name: Fetch specific client
-  ntnx_volume_groups_iscsi_clients_info_v2:
+  nutanix.ncp.ntnx_volume_groups_iscsi_clients_info_v2:
     ext_id: "{{ iscsi_client_uuid }}"
   register: result
 
@@ -177,7 +183,7 @@
     success_msg: "Specific ISCSI client fetched successfully"
 
 - name: Detach client from VG
-  ntnx_volume_groups_iscsi_clients_v2:
+  nutanix.ncp.ntnx_volume_groups_iscsi_clients_v2:
     volume_group_ext_id: "{{ vg1_uuid }}"
     ext_id: "{{ iscsi_client_uuid }}"
     state: absent
@@ -196,7 +202,7 @@
     success_msg: "ISCSI client detached successfully using initiator name"
 
 - name: Attach iscsi client to VG using iscsi client id
-  ntnx_volume_groups_iscsi_clients_v2:
+  nutanix.ncp.ntnx_volume_groups_iscsi_clients_v2:
     volume_group_ext_id: "{{ vg1_uuid }}"
     ext_id: "{{ iscsi_client_uuid }}"
   register: result
@@ -215,7 +221,7 @@
     success_msg: "ISCSI client attached successfully using ext_id"
 
 - name: Detach client from VG
-  ntnx_volume_groups_iscsi_clients_v2:
+  nutanix.ncp.ntnx_volume_groups_iscsi_clients_v2:
     volume_group_ext_id: "{{ vg1_uuid }}"
     ext_id: "{{ iscsi_client_uuid }}"
     state: absent
@@ -236,7 +242,7 @@
 ############################################ Cleanup ############################################
 
 - name: Delete Volume group
-  ntnx_volume_groups_v2:
+  nutanix.ncp.ntnx_volume_groups_v2:
     state: absent
     ext_id: "{{ vg1_uuid }}"
   register: result

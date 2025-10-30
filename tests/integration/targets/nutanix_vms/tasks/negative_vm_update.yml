@@ -1,5 +1,15 @@
+---
+# Variables required before running this playbook:
+# - cluster
+# - ubuntu
+# - storage_container
+
+- name: Start nutanix_vms negative vm update tests
+  ansible.builtin.debug:
+    msg: Start nutanix_vms negative vm update tests
+
 - name: Create VM with minimum requirements to update
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     name: update vm
     cluster:
@@ -47,7 +57,7 @@
     success_msg: " VM with minimum requirements created successfully "
 
 - name: Update vm without change any value
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     vcpus: 4
     cores_per_vcpu: 4
@@ -69,7 +79,7 @@
     msg: Start negative update scenarios tests for memory vcpus cores_per_vcpu
 
 - name: Decrease values for vcpus  without force_power_off and vm is on
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     vcpus: 3
   register: result
@@ -85,7 +95,7 @@
     success_msg: " Success: returned error as expected "
 
 - name: Decrease values for memory_gb  without force_power_off and vm is on
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     memory_gb: 3
   register: result
@@ -101,7 +111,7 @@
     success_msg: " Success: returned error as expected "
 
 - name: Decrease values for cores_per_vcpu  without force_power_off and vm is on
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     cores_per_vcpu: 3
   register: result
@@ -122,7 +132,7 @@
 
 ############ negative test : Decrease size
 - name: Update VM by decreasing the size of the disk that contains the image with SCSI bus type
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:
       - type: "DISK"
@@ -139,7 +149,7 @@
     success_msg: " Success: returned error as expected "
 
 - name: Update VM by decreasing the size of the SCSI disk with storage container
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:
       - type: "DISK"
@@ -156,7 +166,7 @@
     success_msg: " Success: returned error as expected "
 
 - name: Update VM by decreasing the size of the empty ide cdrom # error
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:
       - type: "CDROM"
@@ -175,7 +185,7 @@
     success_msg: " Success: returned error as expected "
 
 - name: Update VM by decreasing the size of the pci disk
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:
       - type: "DISK"
@@ -192,7 +202,7 @@
     success_msg: " Success: returned error as expected "
 
 - name: Update VM by decreasing the size of the sata disk
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:
       - type: "DISK"
@@ -209,7 +219,7 @@
     success_msg: " Success: returned error as expected "
 
 - name: Update VM by decreasing the size of the SCSI disk
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:
       - type: "DISK"
@@ -226,7 +236,7 @@
     success_msg: " Success: returned error as expected "
 
 - name: Update VM by decreasing the size of the  IDE disk
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:
       - type: "DISK"
@@ -243,7 +253,7 @@
     success_msg: " Success: returned error as expected "
 ################
 - name: Update VM by change ths bus type of ide disk
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:
       - type: "DISK"
@@ -261,7 +271,7 @@
     fail_msg: " Fail: Update VM by change ths bus type of ide disk successfully "
 ############
 - name: Update VM by adding  IDE disk while vm is on
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:
       - type: DISK
@@ -280,7 +290,7 @@
     success_msg: " Success: returned error as expected "
 
 - name: Update VM by adding  SATA disk while vm is on
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:
       - type: DISK
@@ -299,7 +309,7 @@
     success_msg: " Success: returned error as expected "
 #############
 - name: Update VM by removing IDE disks while vm is on
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:
       - state: absent
@@ -316,7 +326,7 @@
     success_msg: " Success: returned error as expected "
 
 - name: Update VM by removing IDE disks while vm is on
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:
       - state: absent
@@ -334,7 +344,7 @@
     success_msg: " Success: returned error as expected "
 
 - name: Update VM by removing PCI disks while vm is on
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:
       - state: absent
@@ -352,7 +362,7 @@
     success_msg: " Success: returned error as expected "
 
 - name: Update VM by removing SATA disks while vm is on
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:
       - state: absent
@@ -370,7 +380,7 @@
     success_msg: " Success: returned error as expected "
 ###########################################################
 - name: Delete created vm's
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     state: absent
   ignore_errors: true

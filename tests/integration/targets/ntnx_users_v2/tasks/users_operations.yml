@@ -1,4 +1,12 @@
 ---
+# Variables required before running this playbook:
+# - users
+# - new_user
+# - new_saml_user
+# - directory_service_uuid
+# - identity_provider_uuid
+# - todelete
+
 - name: Start ntnx_users_v2 tests
   ansible.builtin.debug:
     msg: start ntnx_users_v2 tests
@@ -29,7 +37,7 @@
   with_items: "{{ users }}"
 
 - name: Create local user with check mode
-  ntnx_users_v2:
+  nutanix.ncp.ntnx_users_v2:
     user_type: LOCAL
     username: "{{ random }}_username_1"
     first_name: "{{ random }}_firstname_1"
@@ -68,7 +76,7 @@
 ################################################
 # Commented as the delete API is not available using v1 instead
 - name: Fetch users to delete if already exist
-  ntnx_users_info_v2:
+  nutanix.ncp.ntnx_users_info_v2:
     filter: "{{ users_query }}"
   register: result
   ignore_errors: true
@@ -105,7 +113,7 @@
 #   when: todelete | length > 0
 
 - name: Delete users if already exist
-  ntnx_users:
+  nutanix.ncp.ntnx_users:
     state: absent
     user_uuid: "{{ item }}"
   loop: "{{ todelete }}"
@@ -129,7 +137,7 @@
 ################################################
 
 - name: Create active local user
-  ntnx_users_v2:
+  nutanix.ncp.ntnx_users_v2:
     user_type: LOCAL
     username: "{{ random }}_username_1"
     first_name: "{{ random }}_firstname_1"
@@ -172,7 +180,7 @@
 #################################################
 
 - name: Create inactive local user
-  ntnx_users_v2:
+  nutanix.ncp.ntnx_users_v2:
     user_type: LOCAL
     username: "{{ random }}_username_2"
     first_name: "{{ random }}_firstname_2"
@@ -214,7 +222,7 @@
 #################################################
 
 - name: Create local user that already exists
-  ntnx_users_v2:
+  nutanix.ncp.ntnx_users_v2:
     user_type: LOCAL
     username: "{{ random }}_username_1"
     first_name: "{{ random }}_firstname_1"
@@ -245,7 +253,7 @@
 #################################################
 
 - name: Create SAML user
-  ntnx_users_v2:
+  nutanix.ncp.ntnx_users_v2:
     user_type: SAML
     username: "{{ users[2] }}"
     idp_id: "{{ identity_provider_uuid }}"
@@ -273,7 +281,7 @@
 #################################################
 
 - name: Create LDAP user with minimum config
-  ntnx_users_v2:
+  nutanix.ncp.ntnx_users_v2:
     user_type: LDAP
     username: "{{ new_user }}"
     idp_id: "{{ directory_service_uuid }}"
@@ -301,7 +309,7 @@
 #################################################
 
 - name: Update local user with check mode enabled
-  ntnx_users_v2:
+  nutanix.ncp.ntnx_users_v2:
     ext_id: "{{ todelete[0] }}"
     first_name: "{{ random }}_firstname_1_updated"
     last_name: "{{ random }}_lastname_1_updated"
@@ -333,7 +341,7 @@
 #################################################
 
 - name: Update local user
-  ntnx_users_v2:
+  nutanix.ncp.ntnx_users_v2:
     ext_id: "{{ todelete[0] }}"
     first_name: "{{ random }}_firstname_1_updated"
     last_name: "{{ random }}_lastname_1_updated"
@@ -364,7 +372,7 @@
 #################################################
 
 - name: Verify if module is idempotent if same config is provided
-  ntnx_users_v2:
+  nutanix.ncp.ntnx_users_v2:
     ext_id: "{{ todelete[0] }}"
     first_name: "{{ random }}_firstname_1_updated"
     last_name: "{{ random }}_lastname_1_updated"
@@ -389,7 +397,7 @@
 #################################################
 
 - name: Verify if idempotency checks are skipped if password is provided
-  ntnx_users_v2:
+  nutanix.ncp.ntnx_users_v2:
     ext_id: "{{ todelete[0] }}"
     first_name: "{{ random }}_firstname_1_updated"
     last_name: "{{ random }}_lastname_1_updated"
@@ -478,7 +486,7 @@
 ####################################################
 
 - name: List all users
-  ntnx_users_info_v2:
+  nutanix.ncp.ntnx_users_info_v2:
   register: users
   ignore_errors: true
 
@@ -487,6 +495,8 @@
     that:
       - users.response is defined
       - users.response | length> 0
+      - users.total_available_results is defined
+      - users.total_available_results > 0
       - users.failed == false
       - users.changed == false
     fail_msg: Unable to list all users
@@ -500,7 +510,7 @@
 ##################################################
 
 - name: Fetch only local users
-  ntnx_users_info_v2:
+  nutanix.ncp.ntnx_users_info_v2:
     filter: userType eq Schema.Enums.UserType'LOCAL'
   register: result
   ignore_errors: true
@@ -524,7 +534,7 @@
 ####################################################
 
 - name: Fetch user info using user ext_id criteria
-  ntnx_users_info_v2:
+  nutanix.ncp.ntnx_users_info_v2:
     ext_id: "{{ test_user_uuid }}"
   register: result
   ignore_errors: true
@@ -543,7 +553,7 @@
 ##################################################
 
 - name: List users with specific username
-  ntnx_users_info_v2:
+  nutanix.ncp.ntnx_users_info_v2:
     filter: username eq '{{ test_user_name }}'
   register: result
   ignore_errors: true
@@ -564,7 +574,7 @@
 ##################################################
 
 - name: List users using limit
-  ntnx_users_info_v2:
+  nutanix.ncp.ntnx_users_info_v2:
     limit: 1
   register: result
   ignore_errors: true
@@ -606,7 +616,7 @@
 #   when: todelete | length > 0 and result | length > 0
 
 - name: Delete created users
-  ntnx_users:
+  nutanix.ncp.ntnx_users:
     state: absent
     user_uuid: "{{ item }}"
   loop: "{{ todelete }}"

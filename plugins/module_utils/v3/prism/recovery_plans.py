@@ -322,9 +322,9 @@ class RecoveryPlan(Prism):
 
                 vm_ip_assignment_specs.append(ip_assignment_spec)
 
-            floating_ip_assignment_spec[
-                "vm_ip_assignment_list"
-            ] = vm_ip_assignment_specs
+            floating_ip_assignment_spec["vm_ip_assignment_list"] = (
+                vm_ip_assignment_specs
+            )
             floating_ip_assignment_specs.append(floating_ip_assignment_spec)
 
         payload["spec"]["resources"]["parameters"][

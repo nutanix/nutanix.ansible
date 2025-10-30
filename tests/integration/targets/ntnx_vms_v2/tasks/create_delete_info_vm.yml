@@ -1,7 +1,14 @@
 ---
-- name: Start ntnx_vms_v2 tests
+# Variables required before running this playbook:
+# - cluster
+# - disk_image
+# - storage_container
+# - network
+# - unattendxml
+
+- name: Start ntnx_vms_v2 tests for create_delete_info_vm
   ansible.builtin.debug:
-    msg: start ntnx_vms_v2 tests
+    msg: Start ntnx_vms_v2 tests for create_delete_info_vm
 
 - name: Generate random category key & value
   ansible.builtin.set_fact:
@@ -17,7 +24,7 @@
     vm_name: "{{ random_name }}{{ suffix_name }}vm"
 
 - name: Create VM with full requirements with check_mode
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     name: "{{ vm_name }}"
     description: ansible test
     cluster:
@@ -96,11 +103,72 @@
               reference:
                 image_reference:
                   image_ext_id: "{{ disk_image.image_ext_ids[0] }}"
+    nics:
+      - backing_info:
+          model: VIRTIO
+          mac_address: "00:11:22:33:44:55"
+          is_connected: true
+          num_queues: 1
+        nic_backing_info:
+          virtual_ethernet_nic:
+            model: VIRTIO
+            mac_address: "00:11:22:33:44:66"
+            is_connected: true
+            num_queues: 1
+        network_info:
+          nic_type: NORMAL_NIC
+          network_function_chain:
+            ext_id: "31415926-5358-9793-2384-626433832795"
+          network_function_nic_type: TAP
+          subnet:
+            ext_id: "89b8b8f0-c2d3-e4f1-a9c5-b6d7e8f9a0b1"
+          vlan_mode: ACCESS
+          trunked_vlans:
+            - 100
+            - 200
+          should_allow_unknown_macs: true
+          ipv4_config:
+            should_assign_ip: true
+            ip_address:
+              value: "192.168.1.100"
+              prefix_length: 24
+            secondary_ip_address_list:
+              - value: "192.168.1.101"
+                prefix_length: 24
+              - value: "192.168.1.102"
+                prefix_length: 24
+        nic_network_info:
+          virtual_ethernet_nic_network_info:
+            nic_type: NORMAL_NIC
+            network_function_chain:
+              ext_id: "31415926-5358-9793-2384-626433832795"
+            network_function_nic_type: TAP
+            subnet:
+              ext_id: "89b8b8f0-c2d3-e4f1-a9c5-b6d7e8f9a0b1"
+            vlan_mode: ACCESS
+            trunked_vlans:
+              - 100
+              - 200
+            should_allow_unknown_macs: true
+            ipv4_config:
+              should_assign_ip: true
+              ip_address:
+                value: "192.168.1.100"
+                prefix_length: 24
+              secondary_ip_address_list:
+                - value: "192.168.1.101"
+                  prefix_length: 24
+                - value: "192.168.1.102"
+                  prefix_length: 24
     serial_ports:
       - is_connected: true
         index: 0
       - is_connected: true
         index: 3
+    project:
+      ext_id: "798b8f0c-2d3e-4f1a-9c5b-6d7e8f9a0b1c"
+    host:
+      ext_id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
   register: result
   ignore_errors: true
   check_mode: true
@@ -151,6 +219,41 @@
       - result.response.gpus[0].pci_address.device == 0
       - result.response.gpus[0].pci_address.bus == 1
       - result.response.availability_zone.ext_id == "00000000-0000-0000-0000-000000000000"
+      - result.response.nics[0].backing_info.model == "VIRTIO"
+      - result.response.nics[0].backing_info.mac_address == "00:11:22:33:44:55"
+      - result.response.nics[0].backing_info.is_connected == true
+      - result.response.nics[0].backing_info.num_queues == 1
+      - result.response.nics[0].network_info.nic_type == "NORMAL_NIC"
+      - result.response.nics[0].network_info.network_function_chain.ext_id == "31415926-5358-9793-2384-626433832795"
+      - result.response.nics[0].network_info.network_function_nic_type == "TAP"
+      - result.response.nics[0].network_info.subnet.ext_id == "89b8b8f0-c2d3-e4f1-a9c5-b6d7e8f9a0b1"
+      - result.response.nics[0].network_info.vlan_mode == "ACCESS"
+      - result.response.nics[0].network_info.trunked_vlans == [100, 200]
+      - result.response.nics[0].network_info.should_allow_unknown_macs == true
+      - result.response.nics[0].network_info.ipv4_config.should_assign_ip == true
+      - result.response.nics[0].network_info.ipv4_config.ip_address.value == "192.168.1.100"
+      - result.response.nics[0].network_info.ipv4_config.ip_address.prefix_length == 24
+      - result.response.nics[0].network_info.ipv4_config.secondary_ip_address_list[0].value == "192.168.1.101"
+      - result.response.nics[0].network_info.ipv4_config.secondary_ip_address_list[0].prefix_length == 24
+      - result.response.nics[0].network_info.ipv4_config.secondary_ip_address_list[1].value == "192.168.1.102"
+      - result.response.nics[0].network_info.ipv4_config.secondary_ip_address_list[1].prefix_length == 24
+      - result.response.nics[0].nic_backing_info.is_connected == true
+      - result.response.nics[0].nic_backing_info.mac_address == "00:11:22:33:44:66"
+      - result.response.nics[0].nic_backing_info.num_queues == 1
+      - result.response.nics[0].nic_network_info.nic_type == "NORMAL_NIC"
+      - result.response.nics[0].nic_network_info.network_function_chain.ext_id == "31415926-5358-9793-2384-626433832795"
+      - result.response.nics[0].nic_network_info.network_function_nic_type == "TAP"
+      - result.response.nics[0].nic_network_info.subnet.ext_id == "89b8b8f0-c2d3-e4f1-a9c5-b6d7e8f9a0b1"
+      - result.response.nics[0].nic_network_info.vlan_mode == "ACCESS"
+      - result.response.nics[0].nic_network_info.trunked_vlans == [100, 200]
+      - result.response.nics[0].nic_network_info.should_allow_unknown_macs == true
+      - result.response.nics[0].nic_network_info.ipv4_config.should_assign_ip == true
+      - result.response.nics[0].nic_network_info.ipv4_config.ip_address.value == "192.168.1.100"
+      - result.response.nics[0].nic_network_info.ipv4_config.ip_address.prefix_length == 24
+      - result.response.nics[0].nic_network_info.ipv4_config.secondary_ip_address_list[0].value == "192.168.1.101"
+      - result.response.nics[0].nic_network_info.ipv4_config.secondary_ip_address_list[0].prefix_length == 24
+      - result.response.nics[0].nic_network_info.ipv4_config.secondary_ip_address_list[1].value == "192.168.1.102"
+      - result.response.nics[0].nic_network_info.ipv4_config.secondary_ip_address_list[1].prefix_length == 24
       - result.response.serial_ports[0].is_connected == true
       - result.response.serial_ports[0].index == 0
       - result.response.serial_ports[1].is_connected == true
@@ -158,11 +261,15 @@
       - result.response.boot_config.nvram_device.backing_storage_info.storage_container.ext_id == "{{ storage_container.uuid }}"
       - result.response.boot_config.nvram_device.backing_storage_info.data_source.reference.image_ext_id == "{{ disk_image.image_ext_ids[0] }}"
       - result.response.boot_config.nvram_device.backing_storage_info.disk_size_bytes == 26843545600
+      - result.response.project.ext_id == "798b8f0c-2d3e-4f1a-9c5b-6d7e8f9a0b1c"
+      - result.response.host.ext_id == "f47ac10b-58cc-4372-a567-0e02b2c3d479"
     fail_msg: " Create VM with full requirements with check_mode failed"
     success_msg: "Create VM with full requirements with check_mode passed"
+
 ########################################################################
+
 - name: Create VM with minimum requirements
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     name: "{{ vm_name }}"
     description: ansible test
     cluster:
@@ -187,7 +294,7 @@
     todelete: '{{ todelete + [result["ext_id"]] }}'
 
 - name: Get vm using filter name
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     filter: name eq '{{ vm_name }}'
   register: result
   ignore_errors: true
@@ -204,9 +311,11 @@
       - result.response[0].ext_id == "{{ todelete.0 }}"
     fail_msg: " Unable to fetch vm using filter name "
     success_msg: " vm fetched using filter name successfully "
+
 ########################################################################
+
 - name: Create VM with full requirements
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     name: "{{ vm_name }}"
     description: ansible test
     cluster:
@@ -231,6 +340,8 @@
       is_apc_enabled: false
     vtpm_config:
       is_vtpm_enabled: false
+    project:
+      ext_id: "{{ project.uuid }}"
   register: result
   ignore_errors: true
 
@@ -260,15 +371,18 @@
       - result.response.is_agent_vm == false
       - result.response.apc_config.is_apc_enabled == false
       - result.response.vtpm_config.is_vtpm_enabled == false
+      - result.response.project.ext_id == "{{ project.uuid }}"
     fail_msg: " Unable to create VM with full requirements "
     success_msg: " VM with full requirements created successfully "
 
 - name: Adding VM to todelete list
   ansible.builtin.set_fact:
     todelete: '{{ todelete + [result["ext_id"]] }}'
+
 ########################################################################
+
 - name: Create vm with different disks, using ubuntu image , with cdrom
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     name: "{{ vm_name }}"
     description: ansible test
     cluster:
@@ -328,7 +442,7 @@
     todelete: '{{ todelete + [result["ext_id"]] }}'
 
 - name: Fetch vm using ext_id
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ result.ext_id }}"
   register: result
   ignore_errors: true
@@ -352,9 +466,11 @@
       - result.response.cd_roms[0].disk_address.bus_type == "IDE"
     fail_msg: " Unable to fetch vm using ext_id "
     success_msg: " vm fetched using ext_id successfully "
+
 ########################################################################
+
 - name: List all categories
-  ntnx_categories_info_v2:
+  nutanix.ncp.ntnx_categories_info_v2:
     limit: 3
   register: result
   ignore_errors: true
@@ -365,7 +481,7 @@
     category_ext_id_2: "{{ result.response[1].ext_id }}"
 
 - name: Create vm with multiple serial port, and categories
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     name: "{{ vm_name }}"
     description: ansible test
     cluster:
@@ -402,9 +518,11 @@
 - name: Adding VM to todelete list
   ansible.builtin.set_fact:
     todelete: '{{ todelete + [result["ext_id"]] }}'
+
 ########################################################################
+
 - name: Create vm with legacy_boot
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     name: "{{ vm_name }}"
     description: ansible test
     cluster:
@@ -468,9 +586,11 @@
 - name: Adding VM to todelete list
   ansible.builtin.set_fact:
     todelete: '{{ todelete + [result["ext_id"]] }}'
+
 ########################################################################
+
 - name: Create vm with nics,cloud_init script
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     name: "{{ vm_name }}"
     description: ansible test
     cluster:
@@ -536,6 +656,82 @@
 - name: Adding VM to todelete list
   ansible.builtin.set_fact:
     todelete: '{{ todelete + [result["ext_id"]] }}'
+
+########################################################################
+
+- name: Create vm with nic (new fields),cloud_init script
+  ntnx_vms_v2:
+    name: "{{ vm_name }}_2"
+    description: ansible test
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    nics:
+      - nic_network_info:
+          virtual_ethernet_nic_network_info:
+            subnet:
+              ext_id: "{{ network.dhcp.uuid }}"
+    disks:
+      - backing_info:
+          vm_disk:
+            disk_size_bytes: 26843545600
+            storage_container:
+              ext_id: "{{ storage_container.uuid }}"
+        disk_address:
+          bus_type: SCSI
+          index: 2
+      - backing_info:
+          vm_disk:
+            disk_size_bytes: 26843545600
+            data_source:
+              reference:
+                image_reference:
+                  image_ext_id: "{{ disk_image.image_ext_ids[0] }}"
+        disk_address:
+          bus_type: SCSI
+          index: 3
+    guest_customization:
+      config:
+        cloudinit:
+          datasource_type: CONFIG_DRIVE_V2
+          cloud_init_script:
+            user_data:
+              value: I2Nsb3VkLWNvbmZpZwpkaXNhYmxlX3Jvb3Q6IGZhbHNlCnNzaF9wd2F1dGg6ICAgdHJ1ZQ==
+  register: result
+  ignore_errors: true
+
+- name: Creation status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.failed == False
+      - result.response.cluster.ext_id == "{{ cluster.uuid }}"
+      - result.response.name == "{{ vm_name }}_2"
+      - result.response.description == "ansible test"
+      - result.response.disks[0].backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
+      - result.response.disks[0].disk_address.bus_type == "SCSI"
+      - result.response.disks[0].disk_address.index == 2
+      - result.response.disks[1].backing_info.data_source.reference.image_ext_id == "{{ disk_image.image_ext_ids[0] }}"
+      - result.response.disks[1].disk_address.bus_type == "SCSI"
+      - result.response.disks[1].disk_address.index == 3
+      - result.response.nics[0].network_info.subnet.ext_id == "{{ network.dhcp.uuid }}"
+      - result.response.nics[0].backing_info.is_connected == true
+      - result.response.nics[0].network_info.nic_type == "NORMAL_NIC"
+      - result.response.nics[0].network_info.vlan_mode == "ACCESS"
+      - result.response.nics[0].network_info.subnet.ext_id == "{{ network.dhcp.uuid }}"
+      - result.response.nics[0].nic_network_info.subnet.ext_id == "{{ network.dhcp.uuid }}"
+      - result.response.nics[0].nic_network_info.nic_type == "NORMAL_NIC"
+      - result.response.nics[0].nic_network_info.vlan_mode == "ACCESS"
+      - result.response.nics[0].nic_network_info.nic_type == "NORMAL_NIC"
+      - result.response.cd_roms[0] is defined
+      - result.response.cd_roms[0].iso_type == "GUEST_CUSTOMIZATION"
+    fail_msg: " Unable to create VM with cloud_init script "
+    success_msg: " VM with cloud_init script created successfully "
+
+- name: Adding VM to todelete list
+  ansible.builtin.set_fact:
+    todelete: '{{ todelete + [result["ext_id"]] }}'
+
 ########################################################################
 
 - name: Read content from file
@@ -543,7 +739,7 @@
     xml_file_content: "{{ lookup('file', unattendxml.dest + '/unattendxml.txt') }}"
 
 - name: Create vm with windows unattend xml file
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     name: "{{ vm_name }}"
     description: ansible test
     cluster:
@@ -577,8 +773,44 @@
     todelete: '{{ todelete + [result["ext_id"]] }}'
 
 ########################################################################
+
+- name: List all clusters in PC
+  nutanix.ncp.ntnx_clusters_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Get all clusters external IDs
+  ansible.builtin.set_fact:
+    cluster_ext_ids: "{{ result.response | map(attribute='ext_id') | list }}"
+
+- name: Create VM without setting cluster
+  nutanix.ncp.ntnx_vms_v2:
+    name: "{{ vm_name }}"
+    description: cluster automatic selection VM
+  ignore_errors: true
+  register: result
+
+- name: Creation status for VM without setting cluster
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.failed == False
+      - result.response.name == "{{ vm_name }}"
+      - result.response.description == "cluster automatic selection VM"
+      - result.response.cluster.ext_id is defined
+      - result.response.cluster.ext_id in cluster_ext_ids
+    fail_msg: " Unable to create VM without setting cluster "
+    success_msg: " VM without setting cluster created successfully "
+
+- name: Adding VM to todelete list
+  ansible.builtin.set_fact:
+    todelete: '{{ todelete + [result["ext_id"]] }}'
+
+########################################################################
+
 - name: List all VMs
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
   register: result
   ignore_errors: true
 
@@ -593,7 +825,7 @@
 
 # all_vms is a list of all available VMs details
 - name: Get all VMs
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     limit: "{{ num_vms_per_page }}"
     page: "{{ item }}"
   register: all_vms
@@ -612,8 +844,9 @@
     success_msg: "All VMs fetched successfully "
 
 ########################################################################
+
 - name: List all VMs with limit 3
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     limit: 3
   register: result
   ignore_errors: true
@@ -627,10 +860,11 @@
       - result.response | length == 3
     fail_msg: "Unable to list VMs "
     success_msg: VMs  listed successfully
+
 ########################################################################
 
 - name: Delete VM with check mode is enabled
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     state: absent
     ext_id: "{{ todelete[0] }}"
   register: result
@@ -647,10 +881,11 @@
       - result.msg == "VM with ext_id:{{ todelete[0] }} will be deleted."
     fail_msg: "Delete VM with check mode is enabled failed"
     success_msg: "Delete VM with check mode is enabled passed"
+
 ########################################################################
 
 - name: Delete all Created VMs
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     state: absent
     ext_id: "{{ item }}"
   register: result

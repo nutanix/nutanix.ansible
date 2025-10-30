@@ -1,4 +1,13 @@
 ---
+# Variables required before running this playbook:
+# - acp
+# - project
+# - network
+
+- name: Start ntnx_acps create_acps tests
+  ansible.builtin.debug:
+    msg: Start ntnx_acps create_acps tests
+
 - name: Generate random name
   ansible.builtin.set_fact:
     random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12) }}"
@@ -11,7 +20,7 @@
     acp4_name: "{{ random_name[0] }}4"
     acp5_name: "{{ random_name[0] }}5"
 - name: Create min ACP
-  ntnx_acps:
+  nutanix.ncp.ntnx_acps:
     state: present
     wait: true
     name: "{{ acp1_name }}"
@@ -32,7 +41,7 @@
     success_msg: " Min ACP with check mode passed"
 # ##########################################################
 - name: Create min ACP
-  ntnx_acps:
+  nutanix.ncp.ntnx_acps:
     state: present
     wait: true
     name: "{{ acp2_name }}"
@@ -56,7 +65,7 @@
     todelete: "{{ todelete + [result.acp_uuid] }}"
 ##########################################################
 - name: Create ACP with user reference
-  ntnx_acps:
+  nutanix.ncp.ntnx_acps:
     state: present
     name: "{{ acp5_name }}"
     role:
@@ -82,7 +91,7 @@
     todelete: "{{ todelete + [result.acp_uuid] }}"
 ##########################################################
 - name: Create ACP with user ad user group reference
-  ntnx_acps:
+  nutanix.ncp.ntnx_acps:
     state: present
     name: "{{ acp3_name }}"
     role:
@@ -111,7 +120,7 @@
     todelete: "{{ todelete + [result.acp_uuid] }}"
 ##########################################################
 - name: Create ACP with all specifications
-  ntnx_acps:
+  nutanix.ncp.ntnx_acps:
     state: present
     name: "{{ acp4_name }}"
     role:
@@ -182,7 +191,7 @@
     todelete: "{{ todelete + [result.acp_uuid] }}"
 ##########################################################
 - name: Delete all created acps
-  ntnx_acps:
+  nutanix.ncp.ntnx_acps:
     state: absent
     acp_uuid: "{{ item }}"
   register: result

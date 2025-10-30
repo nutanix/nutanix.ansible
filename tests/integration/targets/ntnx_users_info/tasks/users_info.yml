@@ -1,10 +1,11 @@
+---
 - name: Start testing ntnx_users_info
   ansible.builtin.debug:
     msg: Start testing ntnx_users_info
 ##################################################
 
 - name: List all users
-  ntnx_users_info:
+  nutanix.ncp.ntnx_users_info:
   register: users
   ignore_errors: true
 
@@ -24,7 +25,7 @@
 ##################################################
 
 - name: List users using user uuid criteria
-  ntnx_users_info:
+  nutanix.ncp.ntnx_users_info:
     user_uuid: "{{ test_user_uuid }}"
   register: result
   ignore_errors: true
@@ -43,7 +44,7 @@
 ##################################################
 
 - name: List users using filter criteria
-  ntnx_users_info:
+  nutanix.ncp.ntnx_users_info:
     filter:
       username: "{{ test_user_name }}"
   register: result
@@ -64,7 +65,7 @@
 ##################################################
 
 - name: List users using length and offset
-  ntnx_users_info:
+  nutanix.ncp.ntnx_users_info:
     length: 2
     offset: 1
   register: result

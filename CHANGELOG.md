@@ -1,3 +1,94 @@
+## v2.3.0 (29 October 2025)
+
+Built on v4.1 SDKs. Adds OVA management, Password Managers, and VM Disk Migration modules with several improvements and bug fixes.
+
+**New modules:**
+
+OVA:
+- ntnx_ova_v2
+- ntnx_ova_info_v2
+- ntnx_ova_deploy_vm_v2
+- ntnx_ova_download_v2
+
+Password Managers:
+- ntnx_password_managers_info_v2
+- ntnx_password_managers_v2
+
+Tasks:
+- ntnx_pc_tasks_info_v2
+- ntnx_pc_task_abort_v2
+
+VM Management:
+- ntnx_vms_disks_migrate_v2
+
+**Bugs:**
+
+- ntnx_vms_ngt_v2 - [Bug] Documentation is incorrect in module ntnx_vms_ngt_v2 [[#693](https://github.com/nutanix/nutanix.ansible/issues/693)]
+- ntnx_vms_ngt_insert_iso_v2 - [Bug] How to unmount NGT ISO after install? [[#739](https://github.com/nutanix/nutanix.ansible/issues/739)]
+- ntnx_clusters_v2 - [Bug] Data type mismatch for categories attribute in module ntnx_clusters_v2 [[#759](https://github.com/nutanix/nutanix.ansible/issues/759)]
+
+**Improvements:**
+
+- ntnx_security_rules_v2 - [Imprv] add support for additional fields in ntnx_security_rules_v2 [[#719](https://github.com/nutanix/nutanix.ansible/issues/719)]
+- ntnx_vms_power_actions_v2 - [Imprv] add examples for module ntnx_vms_power_actions_v2 [[#727](https://github.com/nutanix/nutanix.ansible/issues/727)]
+- ntnx_volume_groups_v2 - [Feat] Add update support to ntnx_volume_groups_v2 Ansible module [[#705](https://github.com/nutanix/nutanix.ansible/issues/705)]
+- ntnx_vms_v2 - [Imprv] add automatic cluster selection verification to ntnx_vms_v2 tests [[#715](https://github.com/nutanix/nutanix.ansible/issues/715)]
+- ntnx_vms_v2 - [Imprv] add functionality to specify project to module ntnx_vms_v2 [[#690](https://github.com/nutanix/nutanix.ansible/issues/690)]
+- ntnx_vms_v2 - [Imprv] add support for additional fields in nics in ntnx_vms_v2 [[#724](https://github.com/nutanix/nutanix.ansible/issues/724)]
+- ntnx_images_v2 - [Imprv] add tests for creating images and OVAs using Objects Lite Source [[#717](https://github.com/nutanix/nutanix.ansible/issues/717)]
+- ntnx_images_v2 - [Imprv] add complete example playbook for module ntnx_images_v2 covering multiple image sources and operations [[#718](https://github.com/nutanix/nutanix.ansible/issues/718)]
+- All info modules - [Imprv] Enhance Info Modules to Return Total Entities Count for Improved Data Retrieval [[#614](https://github.com/nutanix/nutanix.ansible/issues/614)]
+- All modules - [Imprv] add functionality to disable the state which are not applicable for all the modules [[#746](https://github.com/nutanix/nutanix.ansible/issues/746)]
+- ntnx_prism_vm_inventory - [Imprv] add functionality to be able to set a variable when using module ntnx_prism_vm_inventory [[#644](https://github.com/nutanix/nutanix.ansible/issues/644)]
+- requirements.txt - [Imprv] Remove extra python packages from the requirements.txt file [[#785](https://github.com/nutanix/nutanix.ansible/issues/785)]
+
+**Full Changelog:** [here](https://github.com/nutanix/nutanix.ansible/compare/v2.2.0...v2.3.0)
+
+## v2.2.0 (17 July 2025)
+
+Releasing new modules for Object Stores, Service Accounts and Several Bugs using PC GA v4.1 sdks
+
+**New modules:**
+
+Objects:
+- ntnx_object_stores_v2
+- ntnx_object_stores_info_v2
+- ntnx_object_stores_certificate_v2
+- ntnx_object_stores_certificate_info_v2
+
+IAM(Service Accounts):
+- ntnx_users_v2
+- ntnx_users_revoke_api_key_v2
+- ntnx_users_api_key_info_v2
+- ntnx_users_api_key_v2
+
+**Bugs:**
+
+- ntnx_acps - [Bug] Fix comparison of old_context_list and update_context_list in module ntnx_acps [[\#475](https://github.com/nutanix/nutanix.ansible/issues/475)]
+- ntnx_prism_vm_inventory - [Bug] API failure is not in shown while creating dynamic inventory [[\#421](https://github.com/nutanix/nutanix.ansible/issues/421)]
+- ntnx_prism_vm_inventory - [Bug] Results of VMs is not more then 500 by default in module inventory [[\#354](https://github.com/nutanix/nutanix.ansible/issues/354)]
+- ntnx_prism_vm_inventory - [Bug] galaxy.ansible doc for ntnx_prism_vm_inventory is having Documentation Syntax Error. [[\#453](https://github.com/nutanix/nutanix.ansible/issues/453)]
+- ntnx_protection_rules - [Bug] Fix invalid OU check in user_groups module [[\#481](https://github.com/nutanix/nutanix.ansible/issues/481)]
+- ntnx_security_rules - [Bug] Purpose field mandatory to update the security policy from Ansible in module ntnx_security_rules [[\#485](https://github.com/nutanix/nutanix.ansible/issues/485)]
+- ntnx_vmm - [Bug] "not enough positional arguments" in module plugins/modules/ntnx_vmy.py, line 881 [[\#465](https://github.com/nutanix/nutanix.ansible/issues/465)]
+- ntnx_vms - [Bug] Attaching image to existing disk in module ntnx_vms [[\#454](https://github.com/nutanix/nutanix.ansible/issues/454)]
+- ntnx_vms - [Bug] Cannot assign IP address on an unmanaged network in module ntnx_vms [[\#593](https://github.com/nutanix/nutanix.ansible/issues/593)]
+- ntnx_vms_info_v2 - [Bug] Can't fetch all VMs [[\#662](https://github.com/nutanix/nutanix.ansible/issues/662)]
+- ntnx_vms_v2 - [Bug] No disk resizing in module ntnx_vms_v2 [[\#578](https://github.com/nutanix/nutanix.ansible/issues/578)]
+- ntnx_vms_v2 - [Bug] state absent does not respect --check mode in module nutanix_vms [[\#534](https://github.com/nutanix/nutanix.ansible/issues/534)]
+- recovery_plans - [Bug] recovery_plan fails to create in module plugin_modules/prism/recovery_plans.py [[\#515](https://github.com/nutanix/nutanix.ansible/issues/515)]
+- v3 modules - [Bug] "Failed to convert API response into JSON" in all modules of Nutanix.ncp ansible collection [[\#490](https://github.com/nutanix/nutanix.ansible/issues/490)]
+
+**Improvements:**
+
+- Check mode for delete - [Imprv] add functionality check_mode to module ntnx_vms [[\#334](https://github.com/nutanix/nutanix.ansible/issues/334)]
+- Documentation changes - [Imprv] Add detailed doc for using uuid in modules [[\#433](https://github.com/nutanix/nutanix.ansible/issues/433)]
+- ntnx_prism_vm_inventory - [Imprv] Add support for retrieving all VMs without specifying length in inventory plugin [[\#651](https://github.com/nutanix/nutanix.ansible/issues/651)]
+- ntnx_prism_vm_inventory - [Imprv] Make changes to include project_reference in dynamic inventory for groupping [[\#500](https://github.com/nutanix/nutanix.ansible/issues/500)]
+- ntnx_vms_v2 - [Imprv] add functionality uefi boot_order to module ntnx_vms_v2 [[\#579](https://github.com/nutanix/nutanix.ansible/issues/579)]
+
+**Full Changelog:** [here](https://github.com/nutanix/nutanix.ansible/compare/v2.1.1...v2.2.0)
+
 ## v2.1.1 (9 April 2025)
 
 Releasing this to make it inline with guidelines of Redhat by removing version cap or fixed version from requirements.txt

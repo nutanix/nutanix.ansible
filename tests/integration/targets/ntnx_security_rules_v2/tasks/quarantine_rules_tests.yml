@@ -1,7 +1,7 @@
 ---
-- name: Start testing quarantine security rules
+- name: Start ntnx_security_rules_v2 quarantine security rules tests
   ansible.builtin.debug:
-    msg: Start testing quarantine security rules
+    msg: Start ntnx_security_rules_v2 quarantine security rules tests
 
 - name: Generate random names for security rules creation
   ansible.builtin.set_fact:
@@ -18,7 +18,7 @@
 ################################################ Create tests ################################################
 
 - name: Generate spec for quarantine rule using check mode
-  ntnx_security_rules_v2:
+  nutanix.ncp.ntnx_security_rules_v2:
     name: "{{ rule_name_1 }}"
     description: Ansible created rule
     type: QUARANTINE

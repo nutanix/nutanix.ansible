@@ -8,8 +8,8 @@
         next_hop:
           external_subnet_ref:
             name: "{{ item.subnet_name }}"
-  register: static_route
+  register: static_route_result
 - name: Print static route uuid
   ansible.builtin.debug:
     msg:
-      - "uuid: {{ static_route.response.metadata.uuid }}"
+      - "uuid: {{ static_route_result.response.metadata.uuid }}"

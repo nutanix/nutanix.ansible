@@ -4,6 +4,10 @@
 #   - lcm_entity_model: "Calm Policy Engine"
 #   - lcm_entity_model_version: "4.0.0"
 
+# Variables required before running this playbook:
+# - lcm_entity_model
+# - lcm_entity_model_version
+
 - name: Start testing lcm namespace modules testing
   ansible.builtin.debug:
     msg: start testing lcm namespace modules testing
@@ -163,6 +167,8 @@
       - lcm_entities.changed == false
       - lcm_entities.failed == false
       - lcm_entities.response | length > 0
+      - lcm_entities.total_available_results is defined
+      - lcm_entities.total_available_results > 0
     fail_msg: "Failed to list all LCM entities details"
     success_msg: "All LCM entities details are listed successfully"
 

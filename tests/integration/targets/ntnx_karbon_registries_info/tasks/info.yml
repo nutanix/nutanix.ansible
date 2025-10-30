@@ -1,4 +1,7 @@
 ---
+# Variables required before running this playbook:
+# - url
+
 - name: Start ntnx_karbon_registries_info tests
   ansible.builtin.debug:
     msg: start ntnx_karbon_registries_info tests
@@ -14,13 +17,13 @@
     registry_name2: "{{ random_name2[0] }}"
 
 - name: Create registries for tests
-  ntnx_karbon_registries:
+  nutanix.ncp.ntnx_karbon_registries:
     name: "{{ registry_name1 }}"
     url: "{{ url }}"
   register: r1
 
 - name: Create registries for tests
-  ntnx_karbon_registries:
+  nutanix.ncp.ntnx_karbon_registries:
     name: "{{ registry_name2 }}"
     url: "{{ url }}"
   register: r2
@@ -28,7 +31,7 @@
 ################################################################
 
 - name: Test getting all registries
-  ntnx_karbon_registries_info:
+  nutanix.ncp.ntnx_karbon_registries_info:
   register: registries
 
 - name: Check listing status
@@ -42,7 +45,7 @@
     success_msg: registries listed successfully
 ################################################################
 - name: Test getting particular register using name
-  ntnx_karbon_registries_info:
+  nutanix.ncp.ntnx_karbon_registries_info:
     registry_name: "{{ registries.response[1].name }}"
   register: result
 
@@ -59,14 +62,14 @@
 ################################################################
 
 - name: Delete registry entry
-  ntnx_karbon_registries:
+  nutanix.ncp.ntnx_karbon_registries:
     name: "{{ registry_name1 }}"
     state: absent
   register: result
   ignore_errors: true
 
 - name: Delete registry
-  ntnx_karbon_registries:
+  nutanix.ncp.ntnx_karbon_registries:
     name: "{{ registry_name2 }}"
     state: absent
   register: result

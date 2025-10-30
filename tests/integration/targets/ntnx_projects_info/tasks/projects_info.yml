@@ -1,3 +1,9 @@
+---
+# Variables required before running this playbook:
+# - role_mappings
+# - users
+# - todelete
+
 - name: Start ntnx_project_info tests
   ansible.builtin.debug:
     msg: "Start ntnx_project_info tests"
@@ -16,13 +22,13 @@
     project2_name: "{{random_name}}{{suffix_name}}2"
 
 - name: Create Project with minimal spec
-  ntnx_projects:
+  nutanix.ncp.ntnx_projects:
     name: "{{project1_name}}"
   register: project_1
   ignore_errors: true
 
 - name: Create Project with role mappings
-  ntnx_projects:
+  nutanix.ncp.ntnx_projects:
     name: "{{project2_name}}"
     collaboration: true
     role_mappings:
@@ -44,7 +50,7 @@
 ##################################################
 
 - name: List project using name filter criteria
-  ntnx_projects_info:
+  nutanix.ncp.ntnx_projects_info:
     filter:
       name: "{{project1_name}}"
   register: result
@@ -61,7 +67,7 @@
 ##################################################
 
 - name: List all projects
-  ntnx_projects_info:
+  nutanix.ncp.ntnx_projects_info:
   register: result
   ignore_errors: true
 
@@ -76,7 +82,7 @@
 ##################################################
 
 - name: List project using project uuid criteria
-  ntnx_projects_info:
+  nutanix.ncp.ntnx_projects_info:
     project_uuid: "{{ project_2.project_uuid }}"
   register: result
   ignore_errors: true
@@ -93,7 +99,7 @@
 ##################################################
 
 - name: List project using project uuid criteria including acps
-  ntnx_projects_info:
+  nutanix.ncp.ntnx_projects_info:
     project_uuid: "{{ project_2.project_uuid }}"
     include_acps: true
   register: result
@@ -112,7 +118,7 @@
 
 ##################################################
 - name: List project using length and offset
-  ntnx_projects_info:
+  nutanix.ncp.ntnx_projects_info:
     length: 1
     offset: 1
   register: result
@@ -127,7 +133,7 @@
 
 ##################################################
 - name: List projects using ascending name sorting
-  ntnx_projects_info:
+  nutanix.ncp.ntnx_projects_info:
     sort_order: "ASCENDING"
     sort_attribute: "name"
     kind: project
@@ -143,7 +149,7 @@
 
 #################################################################
 - name: Delete all Created Projects
-  ntnx_projects:
+  nutanix.ncp.ntnx_projects:
     state: absent
     project_uuid: "{{ item }}"
   register: result

@@ -18,6 +18,15 @@ description:
     - Unregistration of a domain manager (Prism Central) instance is not supported
     - This module uses PC v4 APIs based SDKs
 options:
+  state:
+    description:
+      - State of the module.
+      - If state is present, the module will register a Prism Central.
+      - If state is not present, the module will fail.
+    type: str
+    choices:
+      - present
+    default: present
   wait:
       description: Wait for the operation to complete.
       type: bool
@@ -433,6 +442,7 @@ def get_module_spec():
         "cluster_reference": prism_sdk.ClusterReference,
     }
     module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
         ext_id=dict(type="str", required=True),
         remote_cluster=dict(
             type="dict",

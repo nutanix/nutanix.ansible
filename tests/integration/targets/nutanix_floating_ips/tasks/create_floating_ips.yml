@@ -1,6 +1,16 @@
 ---
+# Variables required before running this playbook:
+# - external_nat_subnet
+# - vpc
+# - private_ip
+# - vm
+
+- name: Start nutanix_floating_ips create floating ip tests
+  ansible.builtin.debug:
+    msg: "Start nutanix_floating_ips create floating ip tests"
+
 - name: Create floating ip with external subnet uuid
-  ntnx_floating_ips:
+  nutanix.ncp.ntnx_floating_ips:
     state: present
     wait: true
     external_subnet:
@@ -20,7 +30,7 @@
     todelete: "{{ todelete + [  result.fip_uuid ] }}"
 ##############################################################
 - name: Create floating ip with vpc name and external subnet uuid
-  ntnx_floating_ips:
+  nutanix.ncp.ntnx_floating_ips:
     state: present
     external_subnet:
       uuid: "{{external_nat_subnet.uuid}}"
@@ -43,7 +53,7 @@
     todelete: "{{ todelete + [  result.fip_uuid ] }}"
 ##########################################################
 - name: Delete Floating ip with check mode
-  ntnx_floating_ips:
+  nutanix.ncp.ntnx_floating_ips:
     state: absent
     fip_uuid: "{{ result.fip_uuid  }}"
   register: output
@@ -61,7 +71,7 @@
     success_msg: "Delete floating ip with check mode passed"
 
 - name: Delete all created floating ips
-  ntnx_floating_ips:
+  nutanix.ncp.ntnx_floating_ips:
     state: absent
     fip_uuid: "{{ item }}"
   register: result
@@ -72,7 +82,7 @@
     todelete: []
 ###########################################################
 - name: Create floating ip with external subnet name
-  ntnx_floating_ips:
+  nutanix.ncp.ntnx_floating_ips:
     state: present
     wait: true
     external_subnet:
@@ -93,7 +103,7 @@
     todelete: "{{ todelete + [  result.fip_uuid ] }}"
 ############################################################
 - name: Create floating ip with vpc uuid and external subnet name
-  ntnx_floating_ips:
+  nutanix.ncp.ntnx_floating_ips:
     state: present
     external_subnet:
       name: "{{ external_nat_subnet.name }}"
@@ -116,7 +126,7 @@
     todelete: "{{ todelete + [  result.fip_uuid ] }}"
 ############################################################
 - name: Delete all created floating ips
-  ntnx_floating_ips:
+  nutanix.ncp.ntnx_floating_ips:
     state: absent
     fip_uuid: "{{ item }}"
   register: result
@@ -128,7 +138,7 @@
     todelete: []
 #########################################################
 - name: Create floating ip with external subnet and vm name
-  ntnx_floating_ips:
+  nutanix.ncp.ntnx_floating_ips:
     state: present
     external_subnet:
       name: "{{ external_nat_subnet.name }}"
@@ -150,7 +160,7 @@
     todelete: "{{ todelete + [  result.fip_uuid ] }}"
 #########################################################
 - name: Delete all created floating ips
-  ntnx_floating_ips:
+  nutanix.ncp.ntnx_floating_ips:
     state: absent
     fip_uuid: "{{ item }}"
   register: result
@@ -162,7 +172,7 @@
     todelete: []
 #########################################################
 - name: Create floating ip with external subnet and vm uuid
-  ntnx_floating_ips:
+  nutanix.ncp.ntnx_floating_ips:
     state: present
     external_subnet:
       name: "{{ external_nat_subnet.name }}"
@@ -184,7 +194,7 @@
     todelete: "{{ todelete + [  result.fip_uuid ] }}"
 ##########################################################
 - name: Delete all created floating ips
-  ntnx_floating_ips:
+  nutanix.ncp.ntnx_floating_ips:
     state: absent
     fip_uuid: "{{ item }}"
   register: result

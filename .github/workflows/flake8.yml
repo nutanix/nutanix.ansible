@@ -21,5 +21,5 @@ jobs:
           python-version: "3.10"
       - name: Run Flake8
         run: |
-          pip install -r requirements.txt
+          pip install -r tests/integration/requirements.txt
           flake8

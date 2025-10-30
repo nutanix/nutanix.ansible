@@ -5,6 +5,16 @@
 #   2. Create HA postgres database instance with multicluster nodes
 #   3. Create HA postgres database instance with static IP and cluster IP assignments
 
+# Variables required before running this playbook:
+# - postgres_ha_profiles
+# - cluster
+# - sla
+# - maintenance
+# - vm_password
+# - public_ssh_key
+# - cluster_ips
+# - tags
+
 - name: Start ndb databases test flow for testing high availability databases
   ansible.builtin.debug:
     msg: start ndb databases test flow for testing high availability databases
@@ -20,7 +30,7 @@
     cluster1_name: "{{ random_name[0] }}-cluster"
 
 - name: Create HA instance postgres database spec using check mode
-  ntnx_ndb_databases:
+  nutanix.ncp.ntnx_ndb_databases:
     wait: true
     name: "{{ db1_name }}"
     desc: ansible-created-db-desc
@@ -197,7 +207,7 @@
     success_msg: HA instance postgres database spec created successfully
 
 - name: Create HA instance postgres database with static IP assignments
-  ntnx_ndb_databases:
+  nutanix.ncp.ntnx_ndb_databases:
     wait: true
     timeout: 5400
     name: "{{ db1_name }}"
@@ -321,7 +331,7 @@
     success_msg: postgres HA database instance provision successfully
 
 - name: Unregister db along with delete time machine and db server vms
-  ntnx_ndb_databases:
+  nutanix.ncp.ntnx_ndb_databases:
     db_uuid: "{{ result.db_uuid }}"
     state: absent
     wait: true
@@ -340,7 +350,7 @@
     success_msg: database deleted successfully
 
 - name: Create HA instance postgres database with multicluster vms
-  ntnx_ndb_databases:
+  nutanix.ncp.ntnx_ndb_databases:
     timeout: 5400
     wait: true
     name: "{{ db1_name }}"
@@ -450,7 +460,7 @@
     success_msg: postgres HA database instance provision successfully
 
 - name: Unregister db along with delete time machine and db server vms
-  ntnx_ndb_databases:
+  nutanix.ncp.ntnx_ndb_databases:
     db_uuid: "{{ result.db_uuid }}"
     state: absent
     wait: true

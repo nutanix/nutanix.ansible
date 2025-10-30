@@ -1,10 +1,15 @@
 ---
+# Variables required before running this playbook:
+# - cluster
+# - storage_container
+# - disk_image
+
 - name: Start ntnx_vms_stage_guest_customization_v2 tests
   ansible.builtin.debug:
     msg: Start ntnx_vms_stage_guest_customization_v2 tests
 
 - name: Create vm with different disks, using ubuntu image , with cdrom
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     name: test
     description: ansible test
     cluster:
@@ -63,7 +68,7 @@
 ######################################################################################################################
 
 - name: Generate spec with all attributes for linux vm
-  ntnx_vms_stage_guest_customization_v2:
+  nutanix.ncp.ntnx_vms_stage_guest_customization_v2:
     ext_id: "{{ vm_uuid }}"
     config:
       cloudinit:
@@ -88,7 +93,7 @@
 ######################################################################################################################
 
 - name: Generate spec with all attributes for sysprep
-  ntnx_vms_stage_guest_customization_v2:
+  nutanix.ncp.ntnx_vms_stage_guest_customization_v2:
     ext_id: "{{ vm_uuid }}"
     config:
       sysprep:
@@ -113,7 +118,7 @@
 ######################################################################################################################
 
 - name: Update guest script
-  ntnx_vms_stage_guest_customization_v2:
+  nutanix.ncp.ntnx_vms_stage_guest_customization_v2:
     ext_id: "{{ vm_uuid }}"
     config:
       cloudinit:
@@ -136,7 +141,7 @@
 ######################################################################################################################
 
 - name: Power on a VM
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
     ext_id: "{{ vm_uuid }}"
     state: power_on
     wait: true
@@ -155,7 +160,7 @@
 ######################################################################################################################
 
 - name: Delete all Created VMs
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     state: absent
     ext_id: "{{ vm_uuid }}"
   register: result

@@ -9,6 +9,16 @@
 #   6. Scale database
 #   7. Add/Remove linked databases
 
+# Variables required before running this playbook:
+# - db_params_profile
+# - vm_password
+# - cluster
+# - software_profile
+# - network_profile
+# - compute_profile
+# - public_ssh_key
+# - sla
+
 - name: Start ndb database day2 actions tests
   ansible.builtin.debug:
     msg: start ndb database day2 actions tests
@@ -27,7 +37,7 @@
 ############################################ setup db ###########################################
 
 - name: Create single instance postgres database on new db server vm
-  ntnx_ndb_databases:
+  nutanix.ncp.ntnx_ndb_databases:
     wait: true
     name: "{{ db1_name }}"
     desc: ansible-created-db-desc
@@ -98,7 +108,7 @@
 ############################################ snapshots test ###########################################
 
 - name: Create snapshot create spec
-  ntnx_ndb_database_snapshots:
+  nutanix.ncp.ntnx_ndb_database_snapshots:
     name: "{{ snapshot_name }}"
     time_machine_uuid: "{{ time_machine_uuid }}"
     clusters:
@@ -134,7 +144,7 @@
     success_msg: Snapshot create spec generated successfully using check mode
 
 - name: Create snapshot with minimal spec
-  ntnx_ndb_database_snapshots:
+  nutanix.ncp.ntnx_ndb_database_snapshots:
     name: "{{ snapshot_name }}1"
     time_machine_uuid: "{{ time_machine_uuid }}"
   register: result
@@ -151,7 +161,7 @@
     success_msg: Snapshot created successfully
 
 - name: Create snapshot with expiry
-  ntnx_ndb_database_snapshots:
+  nutanix.ncp.ntnx_ndb_database_snapshots:
     name: "{{ snapshot_name }}2"
     time_machine_uuid: "{{ time_machine_uuid }}"
     expiry_days: 4
@@ -174,7 +184,7 @@
     success_msg: Snapshot with expiry config created successfully
 
 - name: Rename snapshot
-  ntnx_ndb_database_snapshots:
+  nutanix.ncp.ntnx_ndb_database_snapshots:
     snapshot_uuid: "{{ snapshot_uuid }}"
     name: "{{ snapshot_name }}2-updated"
   register: result
@@ -191,7 +201,7 @@
     success_msg: Snapshot renamed successfully
 
 - name: Update expiry
-  ntnx_ndb_database_snapshots:
+  nutanix.ncp.ntnx_ndb_database_snapshots:
     snapshot_uuid: "{{ snapshot_uuid }}"
     expiry_days: 5
   register: result
@@ -208,7 +218,7 @@
     success_msg: snapshot expiry updated successfully
 
 - name: Remove expiry schedule
-  ntnx_ndb_database_snapshots:
+  nutanix.ncp.ntnx_ndb_database_snapshots:
     snapshot_uuid: "{{ snapshot_uuid }}"
     remove_expiry: true
   register: result
@@ -225,7 +235,7 @@
     success_msg: snapshot expiry schedule removed successfully
 
 - name: Add expiry schedule and rename
-  ntnx_ndb_database_snapshots:
+  nutanix.ncp.ntnx_ndb_database_snapshots:
     snapshot_uuid: "{{ snapshot_uuid }}"
     name: "{{ snapshot_name }}2"
     expiry_days: 6
@@ -245,7 +255,7 @@
     success_msg: Snapshot updated successfully
 
 - name: Idempotency check
-  ntnx_ndb_database_snapshots:
+  nutanix.ncp.ntnx_ndb_database_snapshots:
     snapshot_uuid: "{{ snapshot_uuid }}"
     expiry_days: 6
   register: result
@@ -260,7 +270,7 @@
     success_msg: snapshot update got skipped due to no state changes
 
 - name: Delete snapshot with check mode
-  ntnx_ndb_database_snapshots:
+  nutanix.ncp.ntnx_ndb_database_snapshots:
     snapshot_uuid: "{{ snapshot_uuid }}"
   register: result
   ignore_errors: true
@@ -279,7 +289,7 @@
 ############################################ log catchup ######################################
 
 - name: Create spec for log catchup
-  ntnx_ndb_database_log_catchup:
+  nutanix.ncp.ntnx_ndb_database_log_catchup:
     time_machine_uuid: "{{ time_machine_uuid }}"
   register: result
   ignore_errors: true
@@ -308,7 +318,7 @@
     success_msg: log catchup spec created successfully
 
 - name: Create spec for log catchup for restore
-  ntnx_ndb_database_log_catchup:
+  nutanix.ncp.ntnx_ndb_database_log_catchup:
     time_machine_uuid: "{{ time_machine_uuid }}"
     for_restore: true
   register: result
@@ -339,7 +349,7 @@
     success_msg: log catchup spec created successfully
 
 - name: Perform log catchup
-  ntnx_ndb_database_log_catchup:
+  nutanix.ncp.ntnx_ndb_database_log_catchup:
     time_machine_uuid: "{{ time_machine_uuid }}"
     for_restore: true
 
@@ -357,7 +367,7 @@
 ########################################### restore ###########################################
 
 - name: Create restore database spec using pitr timestamp
-  ntnx_ndb_database_restore:
+  nutanix.ncp.ntnx_ndb_database_restore:
     db_uuid: "{{ db_uuid }}"
     pitr_timestamp: "2023-01-02 11:02:22"
     timezone: UTC
@@ -387,7 +397,7 @@
     success_msg: Spec for database restore using pitr timestamp created successfully
 
 - name: Create restore database spec with latest snapshot
-  ntnx_ndb_database_restore:
+  nutanix.ncp.ntnx_ndb_database_restore:
     db_uuid: "{{ db_uuid }}"
   register: result
   ignore_errors: true
@@ -415,7 +425,7 @@
     success_msg: Spec for database restore using latest snapshot created successfully
 
 - name: Create restore database spec using snapshot uuid
-  ntnx_ndb_database_restore:
+  nutanix.ncp.ntnx_ndb_database_restore:
     db_uuid: "{{ db_uuid }}"
     snapshot_uuid: "{{ snapshot_uuid }}"
   register: result
@@ -444,7 +454,7 @@
     success_msg: Spec for database restore using snapshot uuid created successfully
 
 - name: Perform restore using latest snapshot
-  ntnx_ndb_database_restore:
+  nutanix.ncp.ntnx_ndb_database_restore:
     db_uuid: "{{ db_uuid }}"
     snapshot_uuid: "{{ snapshot_uuid }}"
   register: result
@@ -459,7 +469,7 @@
     success_msg: database restored successfully using latest snapshot
 
 - name: Perform restore using snapshot uuid
-  ntnx_ndb_database_restore:
+  nutanix.ncp.ntnx_ndb_database_restore:
     db_uuid: "{{ db_uuid }}"
     snapshot_uuid: "{{ snapshot_uuid }}"
   register: result
@@ -476,7 +486,7 @@
 ########################################### scaling ###########################################
 
 - name: Create spec for scaling
-  ntnx_ndb_database_scale:
+  nutanix.ncp.ntnx_ndb_database_scale:
     db_uuid: "{{ db_uuid }}"
     storage_gb: 10
     pre_update_cmd: ls
@@ -508,7 +518,7 @@
     success_msg: Spec for database scaling with pre post commands created successfully
 
 - name: Extend database storage for scaling database
-  ntnx_ndb_database_scale:
+  nutanix.ncp.ntnx_ndb_database_scale:
     db_uuid: "{{ db_uuid }}"
     storage_gb: 2
     pre_update_cmd: ls
@@ -528,7 +538,7 @@
 ############################################ add / remove linked databases ###########################################
 
 - name: Create databases in database instance
-  ntnx_ndb_linked_databases:
+  nutanix.ncp.ntnx_ndb_linked_databases:
     db_instance_uuid: "{{ db_uuid }}"
     databases:
       - test1
@@ -559,7 +569,7 @@
     success_msg: Spec for adding databases in database instance created successfully
 
 - name: Add databases in database instance
-  ntnx_ndb_linked_databases:
+  nutanix.ncp.ntnx_ndb_linked_databases:
     db_instance_uuid: "{{ db_uuid }}"
     databases:
       - test1
@@ -587,7 +597,7 @@
     success_msg: databases added to database instance successfully
 
 - name: Remove databases in database instance  with check mode
-  ntnx_ndb_linked_databases:
+  nutanix.ncp.ntnx_ndb_linked_databases:
     state: absent
     db_instance_uuid: "{{db_uuid}}"
     database_uuid: "{{linked_databases.test1}}"
@@ -607,7 +617,7 @@
     success_msg: "Remove databases in database instance with check mode passed"
 
 - name: Remove databases in database instance
-  ntnx_ndb_linked_databases:
+  nutanix.ncp.ntnx_ndb_linked_databases:
     state: absent
     db_instance_uuid: "{{ db_uuid }}"
     database_uuid: "{{ linked_databases.test1 }}"
@@ -645,7 +655,7 @@
 ############################################ cleanup ###########################################
 
 - name: Delete database created earlier
-  ntnx_ndb_databases:
+  nutanix.ncp.ntnx_ndb_databases:
     state: absent
     db_uuid: "{{ db_uuid }}"
     delete_db_server_vms: true

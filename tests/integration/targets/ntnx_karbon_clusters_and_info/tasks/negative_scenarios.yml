@@ -1,4 +1,14 @@
 ---
+# Variables required before running this playbook:
+# - cluster
+# - k8s_version
+# - host_os
+# - network
+# - cni
+# - nutanix_cluster_password
+# - nutanix_cluster_username
+# - storage_container
+
 - name: Start negative test cases for  ntnx_karbon_clusters
   ansible.builtin.debug:
     msg: Start negative test cases for  ntnx_karbon_clusters
@@ -9,7 +19,7 @@
 
 #############################
 - name: Create cluster with cpu less than minimum
-  ntnx_karbon_clusters:
+  nutanix.ncp.ntnx_karbon_clusters:
     cluster:
       name: "{{ cluster.name }}"
     name: "{{ karbon_name }}"
@@ -52,7 +62,7 @@
     success_msg: " Pass:  Returned as expected"
 #############################
 - name: Create cluster with memory_gb  less than minimum
-  ntnx_karbon_clusters:
+  nutanix.ncp.ntnx_karbon_clusters:
     cluster:
       name: "{{ cluster.name }}"
     name: "{{ karbon_name }}"
@@ -95,7 +105,7 @@
     success_msg: " Pass:  Returned as expected"
 #############################
 - name: Create cluster with wrong num_instances for master nodes
-  ntnx_karbon_clusters:
+  nutanix.ncp.ntnx_karbon_clusters:
     cluster:
       name: "{{ cluster.name }}"
     name: "{{ karbon_name }}"
@@ -138,7 +148,7 @@
     success_msg: " Pass:  Returned as expected"
 #############################
 - name: Create cluster with wrong num_instances for etcd nodes
-  ntnx_karbon_clusters:
+  nutanix.ncp.ntnx_karbon_clusters:
     cluster:
       name: "{{ cluster.name }}"
     name: "{{ karbon_name }}"

@@ -1,3 +1,4 @@
+---
 # Pre-requisite:
 # - Ensure that These variables from prepare_env/vars/main.yml are defined and set correctly:
 #   - cluster:
@@ -14,10 +15,9 @@
 #       access_key: "qwertyuiopasdfgh" # S3 bucket access key
 #       secret_key: "jklzxcvbnm" # S3 bucket secret key
 
----
-- name: Start testing for modules for PC backup restore using objects store.
+- name: Start ntnx_prism_v2 for PC backup restore using objects store tests.
   ansible.builtin.debug:
-    msg: Start testing for modules for PC backup restore using objects store.
+    msg: Start ntnx_prism_v2 for PC backup restore using objects store tests.
 
 #############################################################
 # List all clusters to get prism central external ID
@@ -387,6 +387,8 @@
       - result.failed == false
       - result.response is defined
       - result.response | length > 0
+      - result.total_available_results is defined
+      - result.total_available_results > 0
     fail_msg: "List all PCs failed"
     success_msg: "List all PCs passed"
 
@@ -636,6 +638,8 @@
     that:
       - result.response is defined
       - result.response | length > 0
+      - result.total_available_results is defined
+      - result.total_available_results > 0
     fail_msg: "List all restore points failed"
     success_msg: "List all restore points passed"
 

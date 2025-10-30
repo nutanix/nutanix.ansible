@@ -1,4 +1,12 @@
 ---
+# Variables required before running this playbook:
+# - dr
+# - dr_vm_name
+# - dr_vm
+# - network
+# - static
+# - recovery_site_ip
+
 - name: Start testing recovery plan and recovery plan jobs
   ansible.builtin.debug:
     msg: Start testing recovery plan and recovery plan jobs
@@ -166,7 +174,7 @@
       }
 
 - name: Create checkmode spec for recovery plan with networks and 2 stage
-  ntnx_recovery_plans:
+  nutanix.ncp.ntnx_recovery_plans:
     state: "present"
     name: test-integration-rp
     desc: test-integration-rp-desc
@@ -212,7 +220,7 @@
     success_msg: "Recovery plan check mode spec created successfully"
 
 - name: Create recovery plan with networks and 2 stage
-  ntnx_recovery_plans:
+  nutanix.ncp.ntnx_recovery_plans:
     state: "present"
     name: test-integration-rp
     desc: test-integration-rp-desc
@@ -405,7 +413,7 @@
       }
 
 - name: Checkmode spec for Update recovery plan. Update networks and stages.
-  ntnx_recovery_plans:
+  nutanix.ncp.ntnx_recovery_plans:
     plan_uuid: "{{plan_uuid}}"
     state: "present"
     name: test-integration-rp-updated
@@ -464,7 +472,7 @@
     success_msg: "Recovery plan update spec created successfully"
 
 - name: Update recovery plan. Add another stage, vm and update networks.
-  ntnx_recovery_plans:
+  nutanix.ncp.ntnx_recovery_plans:
     plan_uuid: "{{plan_uuid}}"
     state: "present"
     name: test-integration-rp-updated
@@ -523,7 +531,7 @@
     success_msg: "Recovery plan updated successfully"
 
 - name: Idempotency Check
-  ntnx_recovery_plans:
+  nutanix.ncp.ntnx_recovery_plans:
     plan_uuid: "{{plan_uuid}}"
     state: "present"
     name: test-integration-rp-updated
@@ -576,7 +584,7 @@
 ######################################### Run Recovery Plan Jobs############################################
 
 - name: Run Test Failover with validation errors for checking negative scenario. It will fail in validation phase
-  ntnx_recovery_plan_jobs:
+  nutanix.ncp.ntnx_recovery_plan_jobs:
     nutanix_host: "{{recovery_site_ip}}"
     state: "present"
     name: test-failover-with-errors
@@ -604,7 +612,7 @@
     success_msg: "Test failover failed as expected due to validation errors"
 
 - name: Run Test Failover
-  ntnx_recovery_plan_jobs:
+  nutanix.ncp.ntnx_recovery_plan_jobs:
     nutanix_host: "{{recovery_site_ip}}"
     state: "present"
     name: test-failover
@@ -636,7 +644,7 @@
     success_msg: "Test failover job run successfully"
 
 - name: Run Cleanup
-  ntnx_recovery_plan_jobs:
+  nutanix.ncp.ntnx_recovery_plan_jobs:
     job_uuid: "{{test_failover_job.job_uuid}}"
     nutanix_host: "{{recovery_site_ip}}"
     state: "present"
@@ -658,7 +666,7 @@
 
 ######################################### Delete Recovery Plan Test###########################################################
 - name: Delete Recovery plan with check mode
-  ntnx_recovery_plans:
+  nutanix.ncp.ntnx_recovery_plans:
     state: absent
     plan_uuid: "{{ recovery_plan.plan_uuid }}"
   register: output
@@ -676,7 +684,7 @@
     success_msg: "Delete recovery plan with check mode passed"
 
 - name: Delete recovery plan
-  ntnx_recovery_plans:
+  nutanix.ncp.ntnx_recovery_plans:
     plan_uuid: "{{recovery_plan.plan_uuid}}"
     state: "absent"
   register: result

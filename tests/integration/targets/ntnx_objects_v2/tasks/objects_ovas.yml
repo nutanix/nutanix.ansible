@@ -1,0 +1,277 @@
+---
+- name: Start objects ovas tests
+  ansible.builtin.debug:
+    msg: Start objects ovas tests
+
+- name: Generate random string
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set variables
+  ansible.builtin.set_fact:
+    suffix_name: ansible-ag
+    vm_num_sockets: 2
+    vm_description: ansible test ova
+
+- name: Set VM name, ova name
+  ansible.builtin.set_fact:
+    vm_name: "{{ random_name }}{{ suffix_name }}vm"
+    ova_name: "{{ random_name }}{{ suffix_name }}ova"
+
+- name: List all object stores with filter
+  nutanix.ncp.ntnx_object_stores_info_v2:
+    filter: name eq '{{ object_1_name }}'
+  register: result
+  ignore_errors: true
+
+- name: List object stores with filter status
+  ansible.builtin.assert:
+    that:
+      - result.changed is false
+      - result.failed is false
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].name == "{{ object_1_name }}"
+    success_msg: "Object stores are listed successfully with filter"
+    fail_msg: "Object stores are not listed successfully with filter"
+
+- name: Set object store external ID
+  ansible.builtin.set_fact:
+    object_store_ext_id_1: "{{ result.response[0].ext_id }}"
+
+- name: Fetch object store using external ID
+  nutanix.ncp.ntnx_object_stores_info_v2:
+    ext_id: "{{ object_store_ext_id_1 }}"
+  register: result
+
+- name: Generate AWS access key and secret key from username and password
+  ansible.builtin.set_fact:
+    aws_access_key: "{{ (username + ':' + password) | b64encode }}"
+    aws_secret_key: "{{ (username + ':' + password) | b64encode }}"
+
+- name: Configure AWS CLI access key
+  ansible.builtin.shell: |
+    aws configure set aws_access_key_id {{ aws_access_key }}
+  register: aws_configure_access_key
+  ignore_errors: true
+  changed_when: aws_configure_access_key.rc == 0 and aws_configure_access_key.cmd == "aws configure set aws_access_key_id " ~ aws_access_key ~ "\n"
+
+- name: Assert AWS CLI access key is configured
+  ansible.builtin.assert:
+    that:
+      - aws_configure_access_key is defined
+      - aws_configure_access_key.changed is true
+      - aws_configure_access_key.failed is false
+      - aws_configure_access_key.rc == 0
+      - aws_configure_access_key.cmd == "aws configure set aws_access_key_id {{ aws_access_key }}\n"
+    success_msg: "AWS CLI access key configured successfully"
+    fail_msg: "Failed to configure AWS CLI access key"
+
+- name: Configure AWS CLI secret key
+  ansible.builtin.shell: |
+    aws configure set aws_secret_access_key {{ aws_secret_key }}
+  register: aws_configure_secret_key
+  ignore_errors: true
+  changed_when: aws_configure_secret_key.rc == 0 and aws_configure_secret_key.cmd == "aws configure set aws_secret_access_key " ~ aws_secret_key ~ "\n"
+
+- name: Assert AWS CLI secret key is configured
+  ansible.builtin.assert:
+    that:
+      - aws_configure_secret_key is defined
+      - aws_configure_secret_key.changed is true
+      - aws_configure_secret_key.failed is false
+      - aws_configure_secret_key.rc == 0
+      - aws_configure_secret_key.cmd == "aws configure set aws_secret_access_key {{ aws_secret_key }}\n"
+    success_msg: "AWS CLI secret key configured successfully"
+    fail_msg: "Failed to configure AWS CLI secret key"
+
+- name: Configure AWS CLI endpoint URL
+  ansible.builtin.shell: |
+    aws configure set endpoint_url {{ objects_API }}
+  register: aws_configure_endpoint_url
+  ignore_errors: true
+  changed_when: aws_configure_endpoint_url.rc == 0 and aws_configure_endpoint_url.cmd == "aws configure set endpoint_url " ~ objects_API ~ "\n"
+
+- name: Assert AWS CLI endpoint URL is configured
+  ansible.builtin.assert:
+    that:
+      - aws_configure_endpoint_url is defined
+      - aws_configure_endpoint_url.changed is true
+      - aws_configure_endpoint_url.failed is false
+      - aws_configure_endpoint_url.rc == 0
+      - aws_configure_endpoint_url.cmd == "aws configure set endpoint_url {{ objects_API }}\n"
+    success_msg: "AWS CLI endpoint URL configured successfully"
+    fail_msg: "Failed to configure AWS CLI endpoint URL"
+
+- name: Create VM with some specific requirements
+  nutanix.ncp.ntnx_vms_v2:
+    name: "{{ vm_name }}"
+    description: "{{ vm_description }}"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    num_sockets: "{{ vm_num_sockets }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status of VM with some specific requirements
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.failed == False
+      - result.response.cluster.ext_id == "{{ cluster.uuid }}"
+      - result.response.name == vm_name
+      - result.response.description == vm_description
+      - result.response.num_sockets == {{ vm_num_sockets }}
+    fail_msg: " Unable to create VM with specific requirements "
+    success_msg: " VM with specific requirements created successfully "
+
+- name: Store Vm ext_id
+  ansible.builtin.set_fact:
+    vm_ext_id: "{{ result.response.ext_id }}"
+
+- name: Create Ova from the VM
+  nutanix.ncp.ntnx_ova_v2:
+    name: "{{ ova_name }}"
+    source:
+      ova_vm_source:
+        vm_ext_id: "{{ vm_ext_id }}"
+        disk_file_format: "QCOW2"
+  register: ova_result
+  ignore_errors: true
+
+- name: Ova Creation Status
+  ansible.builtin.assert:
+    that:
+      - ova_result.response is defined
+      - ova_result.changed == True
+      - ova_result.failed == False
+      - ova_result.ext_id is defined
+      - ova_result.response.ext_id is defined
+      - ova_result.task_ext_id is defined
+      - ova_result.response.name == ova_name
+      - ova_result.response.vm_config.name == vm_name
+      - ova_result.response.disk_format == "QCOW2"
+    fail_msg: " Unable to create Ova from VM "
+    success_msg: " Ova created successfully from VM "
+
+- name: Set Ova external ID
+  ansible.builtin.set_fact:
+    ova_ext_id: "{{ ova_result.response.ext_id }}"
+
+- name: Download Ova
+  nutanix.ncp.ntnx_ova_download_v2:
+    ova_ext_id: "{{ ova_ext_id }}"
+  register: download_result
+  ignore_errors: true
+
+- name: Upload Ova to object store bucket using AWS CLI
+  ansible.builtin.shell: |
+    aws s3api put-object --bucket vmm-ovas --body {{ download_result.response.path }} --key {{ object_1_name }} --no-verify-ssl
+  register: upload_ova_result
+  ignore_errors: true
+  changed_when: "'ETag' in upload_ova_result.stdout"
+
+- name: Assert Ova upload to object store bucket succeeded
+  ansible.builtin.assert:
+    that:
+      - upload_ova_result is defined
+      - upload_ova_result.failed is false
+      - upload_ova_result.rc == 0
+      - upload_ova_result.changed is true
+      - upload_ova_result.stdout is search('"ETag"')
+    success_msg: "Ova uploaded to object store bucket successfully"
+    fail_msg: "Failed to upload Ova to object store bucket"
+
+- name: Create ova using object store source with check mode enabled
+  nutanix.ncp.ntnx_ova_v2:
+    name: "object-ova"
+    source:
+      objects_lite_source:
+        key: "object_name"
+    cluster_location_ext_ids:
+      - "{{ cluster.uuid }}"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert Ova creation with check mode
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed is false
+      - result.changed is false
+      - result.response.name == "object-ova"
+      - result.response.cluster_location_ext_ids is defined
+      - result.response.cluster_location_ext_ids[0] == "{{ cluster.uuid }}"
+    success_msg: "Ova creation with object store source using check mode passed"
+    fail_msg: "Ova creation with object store source using check mode failed"
+
+- name: Create ova using object store source
+  nutanix.ncp.ntnx_ova_v2:
+    name: "object-ova"
+    source:
+      objects_lite_source:
+        key: "{{ object_1_name }}"
+    cluster_location_ext_ids:
+      - "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert Ova is created from object store successfully
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed is false
+      - result.changed is true
+      - result.response is defined
+      - result.response.name == "object-ova"
+      - result.response.cluster_location_ext_ids is defined
+      - result.response.cluster_location_ext_ids[0] == "{{ cluster.uuid }}"
+      - result.response.ext_id is defined
+    success_msg: "Ova is created from object store successfully"
+    fail_msg: "Failed to create Ova from object store"
+
+- name: Set Ova external ID
+  ansible.builtin.set_fact:
+    ova_ext_id: "{{ result.response.ext_id }}"
+
+- name: Create ova using wrong object lite source key
+  nutanix.ncp.ntnx_ova_v2:
+    name: "object-ova-wrong-key"
+    source:
+      objects_lite_source:
+        key: "wrong_key"
+    cluster_location_ext_ids:
+      - "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert Ova creation with wrong object lite source key
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed is true
+      - result.changed is false
+      - result.response.error_messages | length > 0
+      - result.response.status == "FAILED"
+    success_msg: "Ova creation with wrong object lite source key failed as expected"
+    fail_msg: "Ova creation with wrong object lite source key did not fail as expected"
+
+- name: Delete the Ova created from object store
+  nutanix.ncp.ntnx_ova_v2:
+    ext_id: "{{ ova_ext_id }}"
+    state: absent
+  register: delete_result
+  ignore_errors: true
+
+- name: Ova Deletion Status
+  ansible.builtin.assert:
+    that:
+      - delete_result.response.status == 'SUCCEEDED'
+      - delete_result.response is defined
+      - delete_result.changed == True
+      - delete_result.failed == False
+      - delete_result.ext_id == ova_ext_id
+    fail_msg: " Unable to delete Ova "
+    success_msg: " Ova deleted successfully "

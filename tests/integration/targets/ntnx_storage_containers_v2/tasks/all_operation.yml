@@ -1,4 +1,9 @@
 ---
+# Variables required before running this playbook:
+# - cluster
+# - owner
+# - storage_container
+
 - name: Start ntnx_storage_containers_v2 tests
   ansible.builtin.debug:
     msg: Start ntnx_storage_containers_v2 tests
@@ -17,7 +22,7 @@
     storage_container_name: "{{ prefix_name }}{{ random_name }}"
 
 - name: Generate storage container create spec with check mode enabled
-  ntnx_storage_containers_v2:
+  nutanix.ncp.ntnx_storage_containers_v2:
     name: "{{ storage_container_name }}1"
     cluster_ext_id: "{{ cluster.uuid }}"
     owner_ext_id: "{{ owner.uuid }}"
@@ -69,7 +74,7 @@
     success_msg: Storage container create spec generated successfully with check mode enabled
 
 - name: Create storage container with minimal spec
-  ntnx_storage_containers_v2:
+  nutanix.ncp.ntnx_storage_containers_v2:
     name: "{{ storage_container_name }}1"
     cluster_ext_id: "{{ cluster.uuid }}"
   register: result
@@ -94,7 +99,7 @@
     todelete: "{{ todelete + [result.ext_id] }}"
 
 - name: Create storage container with missing cluster id
-  ntnx_storage_containers_v2:
+  nutanix.ncp.ntnx_storage_containers_v2:
     name: "{{ storage_container_name }}1"
   register: result
   ignore_errors: true
@@ -108,7 +113,7 @@
     success_msg: "Success: Returned as expected"
 
 - name: Create storage container with different attributes
-  ntnx_storage_containers_v2:
+  nutanix.ncp.ntnx_storage_containers_v2:
     name: "{{ storage_container_name }}2"
     cluster_ext_id: "{{ cluster.uuid }}"
     owner_ext_id: "{{ owner.uuid }}"
@@ -154,7 +159,7 @@
     storage_container_ext_id: "{{ result.ext_id }}"
 
 - name: Check for idempotency
-  ntnx_storage_containers_v2:
+  nutanix.ncp.ntnx_storage_containers_v2:
     state: present
     name: "{{ storage_container_name }}2"
     ext_id: "{{ storage_container_ext_id }}"
@@ -176,7 +181,7 @@
     success_msg: Storage container created successfully idempotency
 
 - name: Generate storage container update spec with check mode enabled
-  ntnx_storage_containers_v2:
+  nutanix.ncp.ntnx_storage_containers_v2:
     state: present
     ext_id: "{{ storage_container_ext_id }}"
     name: "{{ storage_container_name }}2_updated"
@@ -217,7 +222,7 @@
     success_msg: Storage container update spec generated successfully with check mode enabled
 
 - name: Update storage container
-  ntnx_storage_containers_v2:
+  nutanix.ncp.ntnx_storage_containers_v2:
     state: present
     ext_id: "{{ storage_container_ext_id }}"
     name: "{{ storage_container_name }}2_updated"
@@ -248,7 +253,7 @@
     success_msg: "Storage container updated successfully "
 
 - name: Fetch storage container configurations
-  ntnx_storage_containers_info_v2:
+  nutanix.ncp.ntnx_storage_containers_info_v2:
     ext_id: "{{ storage_container_ext_id }}"
   register: result
   ignore_errors: true
@@ -280,7 +285,7 @@
   changed_when: false
 
 - name: Fetch storage container stats
-  ntnx_storage_containers_stats_v2:
+  nutanix.ncp.ntnx_storage_containers_stats_v2:
     ext_id: "{{ storage_container.uuid }}"
     start_time: "{{ start_time.stdout }}"
     end_time: "{{ end_time.stdout }}"
@@ -302,7 +307,7 @@
     success_msg: Storage container stats fetched successfully
 
 - name: Fetch storage container stats with interval defined
-  ntnx_storage_containers_stats_v2:
+  nutanix.ncp.ntnx_storage_containers_stats_v2:
     ext_id: "{{ storage_container.uuid }}"
     start_time: "{{ start_time.stdout }}"
     end_time: "{{ end_time.stdout }}"
@@ -326,7 +331,7 @@
     success_msg: Storage container stats fetched successfully with interval defined
 
 - name: Fetch all storage containers
-  ntnx_storage_containers_info_v2:
+  nutanix.ncp.ntnx_storage_containers_info_v2:
   register: result
   ignore_errors: true
 
@@ -336,11 +341,13 @@
       - result.changed == false
       - result.failed == false
       - result.response | length > 0
+      - result.total_available_results is defined
+      - result.total_available_results > 0
     fail_msg: Unable to fetch all storage containers
     success_msg: All storage containers fetched successfully
 
 - name: Fetch a particular storage container using filter
-  ntnx_storage_containers_info_v2:
+  nutanix.ncp.ntnx_storage_containers_info_v2:
     filter: name eq '{{ storage_container_name }}2_updated'
   register: result
   ignore_errors: true
@@ -356,7 +363,7 @@
     success_msg: A particular storage container fetched successfully using filter
 
 - name: Fetch all storage containers with limit
-  ntnx_storage_containers_info_v2:
+  nutanix.ncp.ntnx_storage_containers_info_v2:
     limit: 1
   register: result
   ignore_errors: true
@@ -371,7 +378,7 @@
     success_msg: All storage containers fetched successfully with limit
 
 - name: Delete storage container with check mode enabled
-  ntnx_storage_containers_v2:
+  nutanix.ncp.ntnx_storage_containers_v2:
     state: absent
     ext_id: "{{ storage_container_ext_id }}"
   register: result
@@ -390,7 +397,7 @@
     success_msg: "Delete storage container with check mode enabled passed"
 
 - name: Delete all Created storage containers
-  ntnx_storage_containers_v2:
+  nutanix.ncp.ntnx_storage_containers_v2:
     state: absent
     ext_id: "{{ item }}"
     ignore_small_files: true

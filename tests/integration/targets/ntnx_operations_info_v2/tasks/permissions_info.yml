@@ -4,7 +4,7 @@
     msg: start testing ntnx_operations_info_v2
 
 - name: List all operations
-  ntnx_operations_info_v2:
+  nutanix.ncp.ntnx_operations_info_v2:
   register: result
   ignore_errors: true
 
@@ -15,6 +15,8 @@
       - result.changed == false
       - result.failed == false
       - result.response | length > 0
+      - result.total_available_results is defined
+      - result.total_available_results > 0
     fail_msg: Unable to list all operations
     success_msg: operations info obtained successfully
 
@@ -25,7 +27,7 @@
 ##################################################
 
 - name: List operations using filter criteria
-  ntnx_operations_info_v2:
+  nutanix.ncp.ntnx_operations_info_v2:
     filter: displayName eq '{{ test_permission_name }}'
   register: result
   ignore_errors: true
@@ -48,7 +50,7 @@
 ##################################################
 
 - name: List permission using ext_id criteria
-  ntnx_operations_info_v2:
+  nutanix.ncp.ntnx_operations_info_v2:
     ext_id: "{{ test_permission_uuid }}"
   register: result
   ignore_errors: true
@@ -66,7 +68,7 @@
 ##################################################
 
 - name: List operations using limit
-  ntnx_operations_info_v2:
+  nutanix.ncp.ntnx_operations_info_v2:
     limit: 1
   register: result
   ignore_errors: true
