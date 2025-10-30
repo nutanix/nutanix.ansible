@@ -135,9 +135,10 @@ import os  # noqa: E402
 
 from ansible.errors import AnsibleError  # noqa: E402
 from ansible.plugins.inventory import BaseInventoryPlugin, Constructable  # noqa: E402
-from ..module_utils.v4.clusters_mgmt.api_client import (
+
+from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
     get_clusters_api_instance,
-)  # noqa: E402
+)
 from ..module_utils.v4.utils import strip_internal_attributes  # noqa: E402
 
 
