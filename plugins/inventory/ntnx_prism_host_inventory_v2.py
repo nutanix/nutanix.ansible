@@ -129,32 +129,6 @@ nutanix_password: password
 validate_certs: false
 filter: "startswith(hostName, 'prod')"
 
-# Use Jinja2 filters
-plugin: nutanix.ncp.ntnx_prism_host_inventory_v2
-nutanix_host: 10.x.x.x
-nutanix_username: admin
-nutanix_password: password
-validate_certs: false
-filters:
-  - node_status == 'NORMAL'
-  - host_type == 'HYPER_CONVERGED'
-
-# Use constructed features
-plugin: nutanix.ncp.ntnx_prism_host_inventory_v2
-nutanix_host: 10.x.x.x
-nutanix_username: admin
-nutanix_password: password
-validate_certs: false
-compose:
-  ansible_user: "'root'"
-  memory_gb: memory_size_bytes / 1073741824 if memory_size_bytes else 0
-keyed_groups:
-  - key: node_status
-    prefix: status
-  - key: host_type
-    prefix: type
-groups:
-  ahv_hosts: hypervisor.type == 'AHV' if hypervisor else false
 """
 
 import os  # noqa: E402
@@ -230,19 +204,19 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
 
                 if resp and hasattr(resp, "data") and resp.data:
                     # Convert response objects to dictionaries
-                    for h in resp.data:
-                        hosts.append(strip_internal_attributes(h.to_dict()))
+                    for item in resp.data:
+                        hosts.append(strip_internal_attributes(item.to_dict()))
                 else:
                     break
 
-                # Check if we've fetched all hosts
+                # Check if all hosts have been fetched successfully
                 total_available = getattr(resp.metadata, "total_available_results", 0)
                 if len(hosts) >= total_available:
                     break
 
                 current_page += 1
         else:
-            # Fetch specific page
+            # Fetch specific number of hosts based on page and limit
             try:
                 kwargs = {"_page": page, "_limit": limit}
                 if filter:
@@ -253,8 +227,8 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 raise AnsibleError("Failed to fetch hosts from PC: {0}".format(str(e)))
 
             if resp and hasattr(resp, "data") and resp.data:
-                for h in resp.data:
-                    hosts.append(strip_internal_attributes(h.to_dict()))
+                for item in resp.data:
+                    hosts.append(strip_internal_attributes(item.to_dict()))
 
         return hosts
 
@@ -302,17 +276,14 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 continue
             host_vars[key] = value
 
-        # Set 'name' from 'host_name' for inventory compatibility
         if "host_name" in host_vars:
             host_vars["name"] = host_vars["host_name"]
 
         host_vars["ansible_host"] = host_ip
 
-        # Add convenience fields
         cluster = host.get("cluster")
         if cluster and isinstance(cluster, dict):
-            # Use uuid if ext_id is not present
-            host_vars["cluster_ext_id"] = cluster.get("ext_id") or cluster.get("uuid")
+            host_vars["cluster_ext_id"] = cluster.get("uuid")
 
         return host_vars
 
@@ -376,7 +347,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         self.limit = self.get_option("limit")
         self.filter = self.get_option("filter")
 
-        # Determines if composed variables or groups using nonexistent variables is an error
         strict = self.get_option("strict")
         host_filters = self.get_option("filters")
 
