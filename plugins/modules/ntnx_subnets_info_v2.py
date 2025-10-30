@@ -184,6 +184,13 @@ changed:
   type: bool
   returned: always
   sample: False
+
+total_available_results:
+  description:
+      - The total number of available subnets in PC.
+  type: int
+  returned: when all subnets are fetched
+  sample: 125
 """
 
 import warnings  # noqa: E402
@@ -245,6 +252,10 @@ def get_subnets(module, result):
             exception=e,
             msg="Api Exception raised while fetching subnets info",
         )
+
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
+
     if not resp or not resp.to_dict().get("data"):
         result["response"] = []
     else:

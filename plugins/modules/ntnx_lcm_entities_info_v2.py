@@ -101,6 +101,12 @@ error:
     type: str
     returned: When an error occurs
     sample: "Failed to generate info spec for entities"
+total_available_results:
+    description:
+        - The total number of available LCM entities in PC.
+    type: int
+    returned: when all LCM entities are fetched
+    sample: 125
 """
 
 import warnings  # noqa: E402
@@ -151,6 +157,9 @@ def get_entities(module, api_instance, result):
             exception=e,
             msg="Api Exception raised while fetching LCM entities info",
         )
+
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
 
     resp = strip_internal_attributes(resp.to_dict()).get("data")
     if not resp:

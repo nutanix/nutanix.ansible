@@ -4,7 +4,7 @@
     msg: start testing ntnx_foundation_bmc_ipmi_config
 
 - name: Configure ipmi
-  ntnx_foundation_bmc_ipmi_config:
+  nutanix.ncp.ntnx_foundation_bmc_ipmi_config:
     ipmi_user: "{{ bmc.ipmi_user }}"
     ipmi_password: "{{ bmc.ipmi_password }}"
     ipmi_netmask: "{{ bmc.ipmi_netmask }}"

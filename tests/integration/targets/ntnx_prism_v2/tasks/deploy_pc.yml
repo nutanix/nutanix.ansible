@@ -3,9 +3,9 @@
 # - ip_pe_for_deploying_pc
 # - pc
 
-- name: Start ntnx_pc_deploy_v2 tests
+- name: Start ntnx_prism_v2 deploy pc tests
   ansible.builtin.debug:
-    msg: Start ntnx_pc_deploy_v2 tests
+    msg: Start ntnx_prism_v2 deploy pc tests
 
 - name: Generate random strings
   ansible.builtin.set_fact:

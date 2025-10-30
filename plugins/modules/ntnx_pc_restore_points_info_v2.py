@@ -133,6 +133,13 @@ failed:
     returned: always
     type: bool
     sample: false
+
+total_available_results:
+    description:
+        - The total number of available restore points in the PC.
+    type: int
+    returned: when all restore points are fetched
+    sample: 125
 """
 
 import warnings  # noqa: E402
@@ -184,6 +191,9 @@ def get_restore_points(module, domain_manager_backups_api, result):
             exception=e,
             msg="Api Exception raised while fetching restore points info",
         )
+
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
 
     resp = strip_internal_attributes(resp.to_dict()).get("data")
     if not resp:

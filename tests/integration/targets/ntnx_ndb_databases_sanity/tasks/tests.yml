@@ -33,7 +33,7 @@
 ################################### Single instance postgres database tests #############################
 
 - name: Create spec for single instance postgres database on new db server vm
-  ntnx_ndb_databases:
+  nutanix.ncp.ntnx_ndb_databases:
     wait: true
     name: "{{ db1_name }}"
     desc: ansible-created-db-desc
@@ -165,7 +165,7 @@
     success_msg: single instance postgres database provision spec created successfully
 
 - name: Create single instance postgres database on new db server vm
-  ntnx_ndb_databases:
+  nutanix.ncp.ntnx_ndb_databases:
     wait: true
     name: "{{ db1_name }}"
     desc: ansible-created-db-desc
@@ -270,7 +270,7 @@
     db_server_uuid: "{{ result.response.databaseNodes[0].dbserverId }}"
 
 - name: Get vm details associated to the database instance created above and verify
-  ntnx_ndb_db_servers_info:
+  nutanix.ncp.ntnx_ndb_db_servers_info:
     uuid: "{{ db_server_uuid }}"
   register: result
 
@@ -289,7 +289,7 @@
 ################################### update tests #############################
 
 - name: Update database with check mode
-  ntnx_ndb_databases:
+  nutanix.ncp.ntnx_ndb_databases:
     wait: true
     db_uuid: "{{ db_uuid }}"
     name: "{{ db1_name_updated }}"
@@ -313,7 +313,7 @@
     success_msg: single instance postgres database update spec generated successfully
 
 - name: Update database
-  ntnx_ndb_databases:
+  nutanix.ncp.ntnx_ndb_databases:
     wait: true
     db_uuid: "{{ db_uuid }}"
     name: "{{ db1_name_updated }}"
@@ -340,7 +340,7 @@
     success_msg: single instance postgres database updated successfully
 
 - name: Idempotency checks
-  ntnx_ndb_databases:
+  nutanix.ncp.ntnx_ndb_databases:
     wait: true
     db_uuid: "{{ db_uuid }}"
     name: "{{ db1_name_updated }}"
@@ -362,7 +362,7 @@
 ################################### delete tests #############################
 
 - name: Create spec for delete db from vm
-  ntnx_ndb_databases:
+  nutanix.ncp.ntnx_ndb_databases:
     state: absent
     db_uuid: "{{ db_uuid }}"
     wait: true
@@ -383,7 +383,7 @@
     success_msg: spec for delete db from vm created successfully
 
 - name: Create spec for soft remove
-  ntnx_ndb_databases:
+  nutanix.ncp.ntnx_ndb_databases:
     state: absent
     db_uuid: "{{ db_uuid }}"
     wait: true
@@ -412,7 +412,7 @@
     msg: Start testing ntnx_ndb_databases_info based on created database
 
 - name: List ndb databases
-  ntnx_ndb_databases_info:
+  nutanix.ncp.ntnx_ndb_databases_info:
   register: databases
   no_log: true
 
@@ -427,7 +427,7 @@
     success_msg: era databases listed successfully
 ################################################################
 - name: Get era databases using its name
-  ntnx_ndb_databases_info:
+  nutanix.ncp.ntnx_ndb_databases_info:
     name: "{{ databases.response[0].name }}"
   register: result
   no_log: true
@@ -443,7 +443,7 @@
     success_msg: Get era databases using its name finished successfully
 ################################################################
 - name: Get era databases using its id
-  ntnx_ndb_databases_info:
+  nutanix.ncp.ntnx_ndb_databases_info:
     uuid: "{{ databases.response[0].id }}"
   register: result
   no_log: true
@@ -460,7 +460,7 @@
 
 ################################################################
 - name: Get era databases using its id and detailed response
-  ntnx_ndb_databases_info:
+  nutanix.ncp.ntnx_ndb_databases_info:
     filters:
       detailed: true
     uuid: "{{ databases.response[0].id }}"
@@ -482,7 +482,7 @@
 ################################################################
 
 - name: Get era database with incorrect name
-  ntnx_ndb_databases_info:
+  nutanix.ncp.ntnx_ndb_databases_info:
     name: xxxxxxx
   register: result
   ignore_errors: true
@@ -500,7 +500,7 @@
 ############################################################################################
 
 - name: Unregister db along with delete time machine
-  ntnx_ndb_databases:
+  nutanix.ncp.ntnx_ndb_databases:
     db_uuid: "{{ db_uuid }}"
     state: absent
     wait: true
@@ -517,7 +517,7 @@
     success_msg: database deleted successfully
 
 - name: Delete db server vm
-  ntnx_ndb_db_server_vms:
+  nutanix.ncp.ntnx_ndb_db_server_vms:
     state: absent
     wait: true
     uuid: "{{ db_server_uuid }}"
