@@ -280,7 +280,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             host_vars["description"] = entity["spec"]["description"]
         else:
             host_vars["description"] = ""
-            
         return host_vars
 
     def _should_add_host(self, host_vars, host_filters, strict):
