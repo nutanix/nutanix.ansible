@@ -278,6 +278,8 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         # Incorporate description if available.
         if "metadata" in entity and "description" in entity["spec"]:
             host_vars["description"] = entity["spec"]["description"]
+        else:
+            host_vars["description"] = ""
             
         return host_vars
 
