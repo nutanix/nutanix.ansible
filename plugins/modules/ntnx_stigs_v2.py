@@ -40,7 +40,7 @@ EXAMPLES = r"""
     filter: "severity eq Security.Report.Severity'LOW'"
   register: result_filter
 
-  - name: Fetch detailed STIG control information for each cluster with limit
+- name: Fetch detailed STIG control information for each cluster with limit
   nutanix.ncp.ntnx_stigs_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
@@ -64,7 +64,11 @@ response:
         "benchmark_id": "RHEL_8_V2R2",
         "comments": null,
         "ext_id": "15c1f2d3-4849-4929-50ba-5c7da6a748ba",
-        "fix_text": "Configure RHEL 8 to enable kernel page-table isolation with the following command:\n\n$ sudo grubby --update-kernel=ALL --args=\"pti=on\"\n\nAdd or modify the following line in \"/etc/default/grub\" to ensure the configuration survives kernel updates:\n\nGRUB_CMDLINE_LINUX=\"pti=on\"",
+        "fix_text": "Configure RHEL 8 to enable kernel page-table isolation with the following command:\n\n
+          $ sudo grubby --update-kernel=ALL --args=\"pti=on\"\n\n
+          Add or modify the following line in \"/etc/default/grub\"
+          to ensure the configuration survives kernel updates:\n\n
+          GRUB_CMDLINE_LINUX=\"pti=on\"",
         "identifiers": null,
         "links": null,
         "rule_id": "SV-230491r1017274_rule",
@@ -79,7 +83,9 @@ response:
         "benchmark_id": "RHEL_8_V2R2",
         "comments": null,
         "ext_id": "4a4863a1-93b3-4cc9-6f88-bdd0c8eec7dc",
-        "fix_text": "Set the mode of the local initialization files to \"0740\" with the following command:\n\nNote: The example will be for the smithj user, who has a home directory of \"/home/smithj\".\n\n $ sudo chmod 0740 /home/smithj/.<INIT_FILE>",
+        "fix_text": "Set the mode of the local initialization files to \"0740\" with the following command:\n\n
+          Note: The example will be for the smithj user, who has a home directory of \"/home/smithj\".\n\n
+          $ sudo chmod 0740 /home/smithj/.<INIT_FILE>",
         "identifiers": null,
         "links": null,
         "rule_id": "SV-230325r1017136_rule",
