@@ -16,9 +16,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python 3.x (latest)
-        uses: actions/setup-python@v2
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v6
         with:
-          python-version: 3.x
+          python-version: "3.13"
+
       - name: Run ansible-lint
         uses: ansible/ansible-lint@main
