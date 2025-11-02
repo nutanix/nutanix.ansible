@@ -18,7 +18,7 @@ DOCUMENTATION = r"""
         - User needs to have API View access for resources for this inventory module to work.
         - Requires ntnx_vmm_py_client SDK to be installed.
     author:
-        - "Nutanix Ansible Team"
+        - George Ghawali (@george-ghawali)
     requirements:
         - "ntnx_vmm_py_client"
     options:
