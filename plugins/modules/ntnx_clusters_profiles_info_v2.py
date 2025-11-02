@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_clusters_profiles_info_v2
 short_description: Retrieve information about Nutanix cluster profiles from PC
-version_added: 2.0.0
+version_added: 2.4.0
 description:
     - This module retrieves information about Nutanix cluster profiles from PC.
     - Fetch particular cluster profile info using external ID
