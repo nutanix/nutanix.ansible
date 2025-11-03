@@ -120,9 +120,11 @@ import warnings  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.security.api_client import get_stigs_api_instance  # noqa: E402
-from ..module_utils.v4.security.helpers import get_stig_controls_details  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
-from ..module_utils.v4.utils import strip_internal_attributes  # noqa: E402
+from ..module_utils.v4.utils import (
+    raise_api_exception,
+    strip_internal_attributes,
+)  # noqa: E402
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
@@ -141,9 +143,19 @@ def run_module():
     kwargs, err = sg.get_info_spec(attr=module.params)
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating Security Technical Implementation Guide info Spec", **result)
+        module.fail_json(
+            msg="Failed generating Security Technical Implementation Guide info Spec",
+            **result,
+        )
     resp = None
-    resp = get_stig_controls_details(module, stig_api_instance, **kwargs)
+    try:
+        resp = stig_api_instance.list_stigs(**kwargs)
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching Security Technical Implementation Guide control details",
+        )
     resp = strip_internal_attributes(resp.to_dict()).get("data")
     if not resp:
         resp = []
