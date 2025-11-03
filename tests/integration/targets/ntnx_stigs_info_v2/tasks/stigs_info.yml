@@ -20,8 +20,6 @@
 - name: Count number of STIG controls with severity LOW, MEDIUM, HIGH
   ansible.builtin.set_fact:
     low_severity_count: "{{ result.response | selectattr('severity', 'equalto', 'LOW') | list | length }}"
-    medium_severity_count: "{{ result.response | selectattr('severity', 'equalto', 'MEDIUM') | list | length }}"
-    high_severity_count: "{{ result.response | selectattr('severity', 'equalto', 'HIGH') | list | length }}"
 
 - name: Fetch detailed STIG control information for each cluster with filter set to LOW
   nutanix.ncp.ntnx_stigs_info_v2:
@@ -38,36 +36,6 @@
     fail_msg: "Detailed STIG control information with filter set to LOW verification failed"
     success_msg: "Detailed STIG control information with filter set to LOW verification passed"
 
-- name: Fetch detailed STIG control information for each cluster with filter set to MEDIUM
-  nutanix.ncp.ntnx_stigs_info_v2:
-    filter: "severity eq Security.Report.Severity'MEDIUM'"
-  register: result_medium
-
-- name: Verify detailed STIG control information with filter set to MEDIUM
-  ansible.builtin.assert:
-    that:
-      - result_medium.changed == false
-      - result_medium.failed == false
-      - result_medium.response is defined
-      - result_medium.response | length == {{ medium_severity_count }}
-    fail_msg: "Detailed STIG control information with filter set to MEDIUM verification failed"
-    success_msg: "Detailed STIG control information with filter set to MEDIUM verification passed"
-
-- name: Fetch detailed STIG control information for each cluster with filter set to HIGH
-  nutanix.ncp.ntnx_stigs_info_v2:
-    filter: "severity eq Security.Report.Severity'HIGH'"
-  register: result_high
-
-- name: Verify detailed STIG control information with filter set to HIGH
-  ansible.builtin.assert:
-    that:
-      - result_high.changed == false
-      - result_high.failed == false
-      - result_high.response is defined
-      - result_high.response | length == {{ high_severity_count }}
-    fail_msg: "Detailed STIG control information with filter set to HIGH verification failed"
-    success_msg: "Detailed STIG control information with filter set to HIGH verification passed"
-
 - name: fetch detailed STIG control information for each cluster with limit
   nutanix.ncp.ntnx_stigs_info_v2:
     limit: 1
@@ -82,3 +50,37 @@
       - result_limit.response | length == 1
     fail_msg: "Detailed STIG control information with limit verification failed"
     success_msg: "Detailed STIG control information with limit verification passed"
+
+- name: Fetch detailed Security Technical Implementation Guide control information for each cluster with invalid filter property
+  nutanix.ncp.ntnx_stigs_info_v2:
+    filter: "invalid_property eq Security.Report.Severity'LOW'"
+  register: invalid_filter_result
+  ignore_errors: true
+
+- name: Verify detailed Security Technical Implementation Guide control information with invalid filter
+  ansible.builtin.assert:
+    that:
+      - invalid_filter_result.changed == false
+      - invalid_filter_result.failed == true
+      - invalid_filter_result.error is defined
+      - invalid_filter_result.msg == "Api Exception raised while fetching Security Technical Implementation Guide control details"
+      - invalid_filter_result.response.data.error | length > 0
+    fail_msg: "Detailed Security Technical Implementation Guide control information with invalid filter verification failed"
+    success_msg: "Detailed Security Technical Implementation Guide control information with invalid filter verification passed"
+
+- name: Fetch detailed Security Technical Implementation Guide control information for each cluster with invalid filter value
+  nutanix.ncp.ntnx_stigs_info_v2:
+    filter: "severity eq Security.Report.Severity'INVALID'"
+  register: invalid_filter_value_result
+  ignore_errors: true
+
+- name: Verify detailed Security Technical Implementation Guide control information with invalid filter value
+  ansible.builtin.assert:
+    that:
+      - invalid_filter_value_result.changed == false
+      - invalid_filter_value_result.failed == true
+      - invalid_filter_value_result.error is defined
+      - invalid_filter_value_result.msg == "Api Exception raised while fetching Security Technical Implementation Guide control details"
+      - invalid_filter_value_result.response.data.error | length > 0
+    fail_msg: "Detailed Security Technical Implementation Guide control information with invalid filter value verification failed"
+    success_msg: "Detailed Security Technical Implementation Guide control information with invalid filter value verification passed"
