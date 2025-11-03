@@ -20,8 +20,8 @@ options:
     state:
         description:
             - The state of the category association.
-            - If C(present), the module will associate the categories with the cluster.
-            - If C(absent), the module will disassociate the categories from the cluster.
+            - If C(present), the module will associate the provided categories with the cluster.
+            - If C(absent), the module will disassociate the provided categories from the cluster.
         type: str
         choices: [present, absent]
         default: present
@@ -69,8 +69,8 @@ RETURN = r"""
 response:
     description:
         - The response from the clusters categories API.
-        - When wait is true, the response will be the details of the cluster.
-        - When wait is false, the response will be the task response when triggered.
+        - If C(wait) is true, response will be cluster details
+        - If C(wait) is false, response will be task details
     type: dict
     returned: always
     sample:
@@ -268,11 +268,6 @@ error:
     description: This field typically holds information about if the task have errors that occurred during the task execution
     type: str
     returned: When an error occurs
-skipped:
-    description: Indicates if the operation was skipped.
-    type: bool
-    returned: When the operation was skipped
-    sample: false
 failed:
     description: Indicates if the operation failed.
     type: bool
@@ -338,7 +333,9 @@ def associate_categories(module, result):
     spec, err = sg.generate_spec(obj=default_spec)
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating cluster category spec", **result)
+        module.fail_json(
+            msg="Failed generating cluster associate category spec", **result
+        )
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
@@ -377,7 +374,9 @@ def disassociate_categories(module, result):
     spec, err = sg.generate_spec(obj=default_spec)
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating cluster category spec", **result)
+        module.fail_json(
+            msg="Failed generating cluster disassociate category spec", **result
+        )
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())

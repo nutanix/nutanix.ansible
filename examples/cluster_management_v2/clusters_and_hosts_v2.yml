@@ -31,6 +31,7 @@
         cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
         host_ext_id: "0005f1e6-4a87-6b06-185b-ac1f6b6f97e2"
         host_name: "host1"
+        category_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
         clusters:
           nodes:
             - cvm_ip: "10.0.0.1"

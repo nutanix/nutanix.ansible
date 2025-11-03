@@ -37,7 +37,6 @@
 - name: Set suffix name
   ansible.builtin.set_fact:
     suffix_name: "ansible-ag"
-    cluster_ext_id: "{{ cluster.uuid }}"
 
 - name: Set command split for resetting cluster username and password
   ansible.builtin.set_fact:
@@ -733,7 +732,7 @@
   register: output
   ignore_errors: true
 
-- name: Creation Status
+- name: Creation category key & value status
   ansible.builtin.assert:
     that:
       - output.response is defined
@@ -741,8 +740,8 @@
       - output.response.value == "{{value1}}"
       - output.response.type == "USER"
       - output.response.ext_id is defined
-      - output.changed == True
-      - output.failed == False
+      - output.changed == true
+      - output.failed == false
       - output.response.description == "ansible test"
     fail_msg: "Unable to create category key & value"
     success_msg: "Category key & value created successfully"
@@ -951,8 +950,8 @@
 - name: Deletion Status
   ansible.builtin.assert:
     that:
-      - result.changed == True
-      - result.failed == False
+      - result.changed == true
+      - result.failed == false
       - result.ext_id == category_ext_id
     fail_msg: "Unable to delete category key & value"
     success_msg: "Category key & value deleted successfully"
