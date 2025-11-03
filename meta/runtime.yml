@@ -218,7 +218,6 @@ action_groups:
     - ntnx_object_stores_info_v2
     - ntnx_object_stores_certificate_v2
     - ntnx_object_stores_certificate_info_v2
-    - ntnx_stigs_v2
     - ntnx_password_managers_info_v2
     - ntnx_password_managers_v2
     - ntnx_ova_v2
@@ -228,3 +227,4 @@ action_groups:
     - ntnx_pc_tasks_info_v2
     - ntnx_pc_task_abort_v2
     - ntnx_vms_disks_migrate_v2
+    - ntnx_stigs_info_v2

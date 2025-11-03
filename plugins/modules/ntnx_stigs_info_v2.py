@@ -10,13 +10,17 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_stigs_v2
-short_description: Fetch STIG rule details and issue counts for each cluster
+module: ntnx_stigs_info_v2
+short_description: Fetch Security Technical Implementation Guide (STIG) rule details and issue counts for each cluster
 version_added: 2.4.0
 description:
-  - The Security Technical Implementation Guide (STIG) is a configuration standard consisting of cybersecurity requirements for a specific product.
-  - Fetch the STIG controls details for STIG rules on each cluster.
-  - This module uses PC v4 APIs based SDKs
+  - A Security Technical Implementation Guide (STIG) is a cybersecurity methodology for standardizing security protocols within networks, servers, computers,
+    and logical designs to enhance overall security.
+  - These guides, when implemented, enhance security for software, hardware, and physical and logical architectures to further reduce vulnerabilities.
+  - This module retrieves Security Technical Implementation Guide (STIG) control details for each cluster.
+  - Each STIG record represents a specific rule or control evaluated against one or more clusters, containing metadata such as rule ID, severity, compliance status,
+    and remediation guidance.
+  - This module uses PC v4 APIs based SDKs.
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_info_v2
@@ -25,23 +29,23 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Fetch detailed STIG control information for each cluster.
-  nutanix.ncp.ntnx_stigs_v2:
+- name: Fetch detailed Security Technical Implementation Guide control information for each cluster.
+  nutanix.ncp.ntnx_stigs_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
   register: result
 
-- name: Fetch detailed STIG control information for each cluster with filter
-  nutanix.ncp.ntnx_stigs_v2:
+- name: Fetch detailed Security Technical Implementation Guide control information for each cluster with filter
+  nutanix.ncp.ntnx_stigs_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
     filter: "severity eq Security.Report.Severity'LOW'"
   register: result_filter
 
-- name: Fetch detailed STIG control information for each cluster with limit
-  nutanix.ncp.ntnx_stigs_v2:
+- name: Fetch detailed Security Technical Implementation Guide control information for each cluster with limit
+  nutanix.ncp.ntnx_stigs_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -52,16 +56,15 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - Response for fetching STIG details.
-    - A list of STIG control details for each cluster.
-    - Contains
+    - Response for fetching Security Technical Implementation Guide details.
+    - A list of Security Technical Implementation Guide control details for each cluster.
   type: dict
   returned: always
   sample:
     [
       {
         "affected_clusters": ["00063e6e-18f3-aefb-0ace-e59ff1cc2885"],
-        "benchmark_id": "RHEL_8_V2R2",
+        "benchmark_id": "RHEL_8_V2R2",docuemntation
         "comments": null,
         "ext_id": "15c1f2d3-4849-4929-50ba-5c7da6a748ba",
         "fix_text": "Configure RHEL 8 to enable kernel page-table isolation with the following command:\n\n
@@ -132,13 +135,13 @@ def run_module():
     )
 
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None}
+    result = {"changed": False, "failed": False, "error": None, "response": None}
     stig_api_instance = get_stigs_api_instance(module)
     sg = SpecGenerator(module)
     kwargs, err = sg.get_info_spec(attr=module.params)
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating STIGs info Spec", **result)
+        module.fail_json(msg="Failed generating Security Technical Implementation Guide info Spec", **result)
     resp = None
     resp = get_stig_controls_details(module, stig_api_instance, **kwargs)
     resp = strip_internal_attributes(resp.to_dict()).get("data")
