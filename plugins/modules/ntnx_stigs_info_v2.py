@@ -145,7 +145,7 @@ def run_module():
         result["error"] = err
         module.fail_json(
             msg="Failed generating Security Technical Implementation Guide info Spec",
-            **result,
+            **result  # fmt: skip
         )
     resp = None
     try:
