@@ -92,10 +92,10 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.security.api_client import get_kms_api_instance  # noqa: E402
 from ..module_utils.v4.security.helpers import get_kms_by_ext_id  # noqa: E402
-from ..module_utils.v4.utils import (
+from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
-)  # noqa: E402
+)
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")

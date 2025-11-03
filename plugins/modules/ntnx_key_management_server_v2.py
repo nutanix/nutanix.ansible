@@ -12,134 +12,149 @@ DOCUMENTATION = r"""
 module: ntnx_key_management_server_v2
 short_description: Create, update, and delete key management servers.
 description:
-    - This module allows you to create, update, and delete key management servers.
-    - Key management server is used to secure encryption keys when data encryption is enabled.
-    - This module uses PC v4 APIs based SDKs
+  - This module allows you to create, update, and delete key management servers.
+  - Key management server is used to secure encryption keys when data encryption is enabled.
+  - This module uses PC v4 APIs based SDKs
 version_added: "2.4.0"
 options:
-    state:
-        description:
-            - State of the key management server. Whether to create, update, or delete.
-            - If C(state) is C(present) and C(ext_id) is not provided, create a new key management server.
-            - If C(state) is C(present) and C(ext_id) is provided, update the key management server.
-            - If C(state) is C(absent), and ext_id is provided, it will delete the key management server with the given External ID.
-        type: str
-        choices: ['present', 'absent']
-    ext_id:
-        description:
-            - Key Management Server External ID.
-            - Required for updating or deleting the key management server.
-        type: str
-        required: false
-    name:
-        description:
-            - Key Management Server name.
-            - Required for creating or updating the key management server.
-        type: str
-        required: false
-    access_information:
-        description:
-            - Key Management Server access information.
-            - Required for creating the key management server.
+  state:
+    description:
+      - State of the key management server. Whether to create, update, or delete.
+      - If C(state) is C(present) and C(ext_id) is not provided, create a new key management server.
+      - If C(state) is C(present) and C(ext_id) is provided, update the key management server.
+      - If C(state) is C(absent), and ext_id is provided, it will delete the key management server with the given External ID.
+    type: str
+    choices: ["present", "absent"]
+  ext_id:
+    description:
+      - Key Management Server External ID.
+      - Required for updating or deleting the key management server.
+    type: str
+    required: false
+  name:
+    description:
+      - Key Management Server name.
+      - Required for creating or updating the key management server.
+    type: str
+    required: false
+  access_information:
+    description:
+      - Key Management Server access information.
+      - Required for creating the key management server.
+    type: dict
+    required: false
+    suboptions:
+      azure_key_vault:
+        description: Access information for the Azure Key Vault.
         type: dict
-        required: false
         suboptions:
-            azure_key_vault:
-                description: Access information for the Azure Key Vault.
+          endpoint_url:
+            description: Endpoint URL for the Azure Key Vault.
+            type: str
+            required: true
+          key_id:
+            description: Master key identifier for the Azure Key Vault.
+            type: str
+            required: true
+          tenant_id:
+            description: Tenant identifier for the Azure Key Vault.
+            type: str
+            required: true
+          client_id:
+            description: Client identifier for the Azure Key Vault.
+            type: str
+            required: true
+          client_secret:
+            description: Client secret for the Azure Key Vault.
+            type: str
+            required: true
+          credential_expiry_date:
+            description: When the client secret is going to expire.
+            type: str
+            required: true
+      KMIP_based_external_key:
+        description: Access information for the KMIP based external key.
+        type: dict
+        suboptions:
+          cert_pem:
+            description: Certificate PEM used by the external key manager
+            type: str
+            required: true
+          private_key:
+            description: Private key used by the external key manager
+            type: str
+            required: true
+          ca_name:
+            description: Name of the certificate authority
+            type: str
+            required: true
+          ca_pem:
+            description: Certificate authority PEM used by the external key manager
+            type: str
+            required: true
+          endpoints:
+            description: List of endpoints of the external key manager
+            type: list
+            elements: dict
+            required: true
+            suboptions:
+              ip_address:
+                description: IP address or FQDN for the endpoint.
                 type: dict
+                required: true
                 suboptions:
-                    endpoint_url:
-                        description: Endpoint URL for the Azure Key Vault.
+                  ipv4:
+                    description: IPv4 address for the endpoint.
+                    type: dict
+                    required: false
+                    suboptions:
+                      value:
+                        description: Value for the IPv4 address.
                         type: str
                         required: true
-                    key_id:
-                        description: Master key identifier for the Azure Key Vault.
+                      prefix_length:
+                        description: Prefix length for the IPv4 address.
+                        type: int
+                        required: false
+                        default: 32
+                  ipv6:
+                    description: IPv6 address for the endpoint.
+                    type: dict
+                    required: false
+                    suboptions:
+                      value:
+                        description: Value for the IPv6 address.
                         type: str
                         required: true
-                    tenant_id:
-                        description: Tenant identifier for the Azure Key Vault.
+                      prefix_length:
+                        description: Prefix length for the IPv6 address.
+                        type: int
+                        required: false
+                        default: 128
+                  fqdn:
+                    description: FQDN for the endpoint.
+                    type: dict
+                    required: false
+                    suboptions:
+                      value:
+                        description: Value for the FQDN.
                         type: str
                         required: true
-                    client_id:
-                        description: Client identifier for the Azure Key Vault.
-                        type: str
-                        required: true
-                    client_secret:
-                        description: Client secret for the Azure Key Vault.
-                        type: str
-                        required: true
-                    credential_expiry_date:
-                        description: When the client secret is going to expire.
-                        type: str
-                        required: true
-            KMIP_based_external_key:
-                description: Access information for the KMIP based external key.
-                type: dict
-                suboptions:
-                    cert_pem:
-                        description: Certificate PEM used by the external key manager
-                        type: str
-                        required: true
-                    private_key:
-                        description: Private key used by the external key manager
-                        type: str
-                        required: true
-                    ca_name:
-                        description: Name of the certificate authority
-                        type: str
-                        required: true
-                    ca_pem:
-                        description: Certificate authority PEM used by the external key manager
-                        type: str
-                        required: true
-                    endpoints:
-                        description: List of endpoints of the external key manager
-                        type: list
-                        elements: dict
-                        suboptions:
-                            ip_address:
-                                description: IP address for the endpoint.
-                                type: dict
-                                options:
-                                    ipv4:
-                                        description: IPv4 address for the endpoint.
-                                        type: dict
-                                        options:
-                                            value:
-                                                description: Value for the IPv4 address.
-                                                type: str
-                                                required: true
-                                            prefix_length:
-                                                description: Prefix length for the IPv4 address.
-                                                type: int
-                                                required: false
-                                            ipv6:
-                                                description: IPv6 address for the endpoint.
-                                                type: dict
-                                                options:
-                                                    value:
-                                                        description: Value for the IPv6 address.
-                                                        type: str
-                                                        required: true
-                                                    prefix_length:
-                                                        description: Prefix length for the IPv6 address.
-                                                        type: int
-                                                        required: false
-                                                    fqdn:
-                                                        description: FQDN for the endpoint.
-                                                        type: dict
-                                                        options:
-    wait:
-        description:
-            - Wait for the task to complete.
-        type: bool
-        required: false
-        default: true
+              port:
+                description: Port for the endpoint.
+                type: int
+                required: true
+  wait:
+    description:
+      - Wait for the task to complete.
+    type: bool
+    required: false
+    default: true
 extends_documentation_fragment:
-      - nutanix.ncp.ntnx_credentials
-      - nutanix.ncp.ntnx_operations_v2
+  - nutanix.ncp.ntnx_credentials
+  - nutanix.ncp.ntnx_operations_v2
 author:
- - George Ghawali (@george-ghawali)
+  - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
@@ -313,9 +328,9 @@ def get_module_spec():
     }
 
     azure_key_vault_spec = dict(
-        endpoint_url=dict(type="str",no_log=True, required=True),
-        key_id=dict(type="str",no_log=True, required=True),
-        tenant_id=dict(type="str",no_log=True, required=True),
+        endpoint_url=dict(type="str", no_log=True, required=True),
+        key_id=dict(type="str", no_log=True, required=True),
+        tenant_id=dict(type="str", no_log=True, required=True),
         client_id=dict(type="str", no_log=True, required=True),
         client_secret=dict(type="str", no_log=True, required=True),
         credential_expiry_date=dict(type="str", required=True),
