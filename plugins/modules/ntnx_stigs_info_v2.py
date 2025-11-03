@@ -18,8 +18,8 @@ description:
     and logical designs to enhance overall security.
   - These guides, when implemented, enhance security for software, hardware, and physical and logical architectures to further reduce vulnerabilities.
   - This module retrieves Security Technical Implementation Guide (STIG) control details for each cluster.
-  - Each STIG record represents a specific rule or control evaluated against one or more clusters, containing metadata such as rule ID, severity, compliance status,
-    and remediation guidance.
+  - Each STIG record represents a specific rule or control evaluated against one or more clusters, containing metadata such as rule ID, severity
+    compliance status, and remediation guidance.
   - This module uses PC v4 APIs based SDKs.
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
@@ -64,7 +64,7 @@ response:
     [
       {
         "affected_clusters": ["00063e6e-18f3-aefb-0ace-e59ff1cc2885"],
-        "benchmark_id": "RHEL_8_V2R2",docuemntation
+        "benchmark_id": "RHEL_8_V2R2",docuemntation,
         "comments": null,
         "ext_id": "15c1f2d3-4849-4929-50ba-5c7da6a748ba",
         "fix_text": "Configure RHEL 8 to enable kernel page-table isolation with the following command:\n\n
@@ -121,10 +121,10 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.security.api_client import get_stigs_api_instance  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
-from ..module_utils.v4.utils import (
+from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
-)  # noqa: E402
+)
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
