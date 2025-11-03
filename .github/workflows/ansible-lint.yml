@@ -26,4 +26,4 @@ jobs:
           pip install ansible-core ansible-lint
       - name: Run ansible-lint
         run: |
-          ansible-lint .
+          ansible-lint
