@@ -15,12 +15,14 @@ short_description: Get key management server info
 version_added: 2.4.0
 description:
     - Get key management server info using key management server external ID or list all key management servers
+    - If Key Management Server external ID is provided, fetches that particular key management server
+    - If no external ID is provided, list all key management servers with optional filter
+    - Key management server is used to secure encryption keys when data encryption is enabled.
     - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
         description:
-            - This module is used to get key management server info
-            - It can be used to get key management server info using key management server external ID or list all key management servers
+            - External ID of the Key Management Server
         type: str
         required: false
 extends_documentation_fragment:
@@ -30,7 +32,7 @@ author:
  - George Ghawali (@george-ghawali)
 """
 EXAMPLES = r"""
-- name: List key management servers
+- name: List allkey management servers
   nutanix.ncp.ntnx_key_management_server_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -38,7 +40,7 @@ EXAMPLES = r"""
     validate_certs: false
   register: result
 
-- name: Fetch key management server using uuid criteria
+- name: Fetch a particular key management server using ext_id
   nutanix.ncp.ntnx_key_management_server_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -52,7 +54,8 @@ RETURN = r"""
 response:
     description:
         - Response for fetching key management server info.
-        - Returns key management server info using key management server external ID or list all key management servers.
+        - Returns specific key management server info if ext_id is provided
+        - Returns list of all key management servers if no ext_id is provided
     type: dict
     returned: always
     sample:
@@ -88,8 +91,11 @@ import warnings  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.security.api_client import get_kms_api_instance  # noqa: E402
-from ..module_utils.v4.security.helpers import get_kms_by_ext_id, list_kms  # noqa: E402
-from ..module_utils.v4.utils import strip_internal_attributes  # noqa: E402
+from ..module_utils.v4.security.helpers import get_kms_by_ext_id  # noqa: E402
+from ..module_utils.v4.utils import (
+    raise_api_exception,
+    strip_internal_attributes,
+)  # noqa: E402
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
@@ -102,14 +108,22 @@ def get_module_spec():
     return module_args
 
 
-def get_kms(module, kms_api_instance, result):
+def get_kms_using_ext_id(module, kms_api_instance, result):
     ext_id = module.params.get("ext_id")
     resp = get_kms_by_ext_id(module, kms_api_instance, ext_id)
     result["response"] = strip_internal_attributes(resp.to_dict())
 
 
 def get_all_kms(module, kms_api_instance, result):
-    resp = list_kms(module, kms_api_instance)
+    resp = None
+    try:
+        resp = kms_api_instance.list_key_management_servers()
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching Key Management Server list",
+        )
     resp = strip_internal_attributes(resp.to_dict())
     total_available_results = resp.get("metadata").get("total_available_results")
     result["total_available_results"] = total_available_results
@@ -125,10 +139,10 @@ def run_module():
         supports_check_mode=False,
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None}
+    result = {"changed": False, "failed": False, "error": None, "response": None}
     kms_api_instance = get_kms_api_instance(module)
     if module.params.get("ext_id"):
-        get_kms(module, kms_api_instance, result)
+        get_kms_using_ext_id(module, kms_api_instance, result)
     else:
         get_all_kms(module, kms_api_instance, result)
 

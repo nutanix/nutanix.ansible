@@ -13,6 +13,7 @@ module: ntnx_key_management_server_v2
 short_description: Create, update, and delete key management servers.
 description:
     - This module allows you to create, update, and delete key management servers.
+    - Key management server is used to secure encryption keys when data encryption is enabled.
     - This module uses PC v4 APIs based SDKs
 version_added: "2.4.0"
 options:
@@ -21,7 +22,7 @@ options:
             - State of the key management server. Whether to create, update, or delete.
             - If C(state) is C(present) and C(ext_id) is not provided, create a new key management server.
             - If C(state) is C(present) and C(ext_id) is provided, update the key management server.
-            - If C(state) is C(absent), it will delete the key management server with the given External ID.
+            - If C(state) is C(absent), and ext_id is provided, it will delete the key management server with the given External ID.
         type: str
         choices: ['present', 'absent']
     ext_id:
@@ -38,8 +39,8 @@ options:
         required: false
     access_information:
         description:
-            - Access information for the Azure Key Vault.
-            - Required for creating or updating the key management server.
+            - Key Management Server access information.
+            - Required for creating the key management server.
         type: dict
         required: false
         suboptions:
@@ -71,6 +72,63 @@ options:
                         description: When the client secret is going to expire.
                         type: str
                         required: true
+            KMIP_based_external_key:
+                description: Access information for the KMIP based external key.
+                type: dict
+                suboptions:
+                    cert_pem:
+                        description: Certificate PEM used by the external key manager
+                        type: str
+                        required: true
+                    private_key:
+                        description: Private key used by the external key manager
+                        type: str
+                        required: true
+                    ca_name:
+                        description: Name of the certificate authority
+                        type: str
+                        required: true
+                    ca_pem:
+                        description: Certificate authority PEM used by the external key manager
+                        type: str
+                        required: true
+                    endpoints:
+                        description: List of endpoints of the external key manager
+                        type: list
+                        elements: dict
+                        suboptions:
+                            ip_address:
+                                description: IP address for the endpoint.
+                                type: dict
+                                options:
+                                    ipv4:
+                                        description: IPv4 address for the endpoint.
+                                        type: dict
+                                        options:
+                                            value:
+                                                description: Value for the IPv4 address.
+                                                type: str
+                                                required: true
+                                            prefix_length:
+                                                description: Prefix length for the IPv4 address.
+                                                type: int
+                                                required: false
+                                            ipv6:
+                                                description: IPv6 address for the endpoint.
+                                                type: dict
+                                                options:
+                                                    value:
+                                                        description: Value for the IPv6 address.
+                                                        type: str
+                                                        required: true
+                                                    prefix_length:
+                                                        description: Prefix length for the IPv6 address.
+                                                        type: int
+                                                        required: false
+                                                    fqdn:
+                                                        description: FQDN for the endpoint.
+                                                        type: dict
+                                                        options:
     wait:
         description:
             - Wait for the task to complete.
@@ -131,8 +189,8 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
     description:
-        - Response of kms operations.
-        - KMS details if C(wait) is True and C(state) is present
+        - Response of key management server operations.
+        - Key management server details if C(wait) is True and C(state) is present
         - Task details if C(wait) is False or C(state) is absent
     returned: always
     type: dict
@@ -151,7 +209,7 @@ error:
   sample: false
 
 ext_id:
-  description: The External ID of the created KMS
+  description: The External ID of the created Key Management Server
   returned: always
   type: str
   sample: "13a6657d-fa96-49e3-7307-87e93a1fec3d"
@@ -176,7 +234,7 @@ skipped:
 
 msg:
     description: Message indicating the behavior of the operation
-    returned: When running delete operation with check mode or when we have idempotency
+    returned: When there is a value for this field
     type: str
     sample: "Key Management Server with ext_id:13a6657d-fa96-49e3-7307-87e93a1fec3d will be deleted."
 
@@ -221,17 +279,64 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
 
+    ipv4_address = dict(
+        value=dict(type="str", required=True),
+        prefix_length=dict(type="int", required=False, default=32),
+    )
+
+    ipv6_address = dict(
+        value=dict(type="str", required=True),
+        prefix_length=dict(type="int", required=False, default=128),
+    )
+
+    fqdn = dict(value=dict(type="str", required=True))
+
+    ip_address_or_fqdn = dict(
+        ipv4=dict(
+            type="dict",
+            options=ipv4_address,
+            obj=security_sdk.IPv4Address,
+            required=False,
+        ),
+        ipv6=dict(
+            type="dict",
+            options=ipv6_address,
+            obj=security_sdk.IPv6Address,
+            required=False,
+        ),
+        fqdn=dict(type="dict", options=fqdn, obj=security_sdk.FQDN, required=False),
+    )
+
     access_information_obj_map = {
         "azure_key_vault": security_sdk.AzureAccessInformation,
+        "KMIP_based_external_key": security_sdk.KmipAccessInformation,
     }
 
     azure_key_vault_spec = dict(
-        endpoint_url=dict(type="str", required=True),
-        key_id=dict(type="str", required=True),
-        tenant_id=dict(type="str", required=True),
-        client_id=dict(type="str", required=True),
-        client_secret=dict(type="str", required=True, no_log=True),
+        endpoint_url=dict(type="str",no_log=True, required=True),
+        key_id=dict(type="str",no_log=True, required=True),
+        tenant_id=dict(type="str",no_log=True, required=True),
+        client_id=dict(type="str", no_log=True, required=True),
+        client_secret=dict(type="str", no_log=True, required=True),
         credential_expiry_date=dict(type="str", required=True),
+    )
+
+    endpoint_spec = dict(
+        ip_address=dict(type="dict", options=ip_address_or_fqdn, required=True),
+        port=dict(type="int", required=True),
+    )
+
+    kmip_access_information_spec = dict(
+        cert_pem=dict(type="str", required=True, no_log=True),
+        private_key=dict(type="str", required=True, no_log=True),
+        ca_name=dict(type="str", required=True),
+        ca_pem=dict(type="str", required=True, no_log=True),
+        endpoints=dict(
+            type="list",
+            elements="dict",
+            options=endpoint_spec,
+            required=True,
+        ),
     )
 
     access_information_spec = dict(
@@ -239,7 +344,10 @@ def get_module_spec():
             type="dict",
             options=azure_key_vault_spec,
             no_log=True,
-        )
+        ),
+        KMIP_based_external_key=dict(
+            type="dict", options=kmip_access_information_spec, no_log=True
+        ),
     )
 
     module_args = dict(
@@ -249,6 +357,7 @@ def get_module_spec():
             type="dict",
             options=access_information_spec,
             obj=access_information_obj_map,
+            mutually_exclusive=[("azure_key_vault", "KMIP_based_external_key")],
         ),
     )
     return module_args
@@ -262,7 +371,9 @@ def create_kms(module, kms_api_instance, result):
 
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating create KMS Spec", **result)
+        module.fail_json(
+            msg="Failed generating create Key Management Server Spec", **result
+        )
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
@@ -275,14 +386,14 @@ def create_kms(module, kms_api_instance, result):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while creating KMS",
+            msg="Api Exception raised while creating Key Management Server",
         )
 
     task_ext_id = resp.data.ext_id
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
-        task_status = wait_for_completion(module, task_ext_id, True)
+        task_status = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_status.to_dict())
         ext_id = get_entity_ext_id_from_task(
             task_status, rel=TASK_CONSTANTS.RelEntityType.KMS
@@ -326,7 +437,9 @@ def update_kms(module, kms_api_instance, result):
     update_spec, err = sg.generate_spec(obj=default_spec)
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating KMS update spec", **result)
+        module.fail_json(
+            msg="Failed generating Key Management Server update spec", **result
+        )
     # check for idempotency
     if check_kms_idempotency(current_spec.to_dict(), update_spec.to_dict()):
         result["skipped"] = True
@@ -339,7 +452,9 @@ def update_kms(module, kms_api_instance, result):
     resp = None
     etag = get_etag(data=current_spec)
     if not etag:
-        return module.fail_json("unable to fetch etag for updating KMS", **result)
+        return module.fail_json(
+            "Unable to fetch etag for updating Key Management Server", **result
+        )
 
     kwargs = {"if_match": etag}
     try:
@@ -350,7 +465,7 @@ def update_kms(module, kms_api_instance, result):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while updating KMS",
+            msg="Api Exception raised while updating Key Management Server",
         )
 
     task_ext_id = resp.data.ext_id
@@ -382,7 +497,7 @@ def delete_kms(module, kms_api_instance, result):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while deleting KMS",
+            msg="Api Exception raised while deleting Key Management Server",
         )
 
     task_ext_id = resp.data.ext_id
@@ -410,6 +525,7 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
+        "failed": False,
         "error": None,
         "response": None,
         "ext_id": None,
