@@ -283,9 +283,6 @@
   register: fetch_result
   ignore_errors: true
 
-- ansible.builtin.debug:
-    msg: "{{ fetch_result }}"
-
 - name: Assert fetch result
   ansible.builtin.assert:
     that:

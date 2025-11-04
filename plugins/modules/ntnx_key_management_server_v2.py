@@ -142,17 +142,17 @@ response:
     sample:
       {
         "access_information": {
-            "client_id": "ab414ed6-7d97-4f7a-b98f-fcba7cac3b8c",
+            "client_id": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER",
             "client_secret": null,
-            "credential_expiry_date": "2027-09-01",
-            "endpoint_url": "https://test-kms-server-1.vault.azure.net/",
-            "key_id": "test-kms-server-1-key:707213e0523744d9ad27bc7d58efde0e",
-            "tenant_id": "bb047546-786f-4de1-bd75-24e5b6f79043",
+            "credential_expiry_date": "2026-11-01",
+            "endpoint_url": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER",
+            "key_id": "********:707213e0523744d9ad27bc7d58efde0e",
+            "tenant_id": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER",
             "truncated_client_secret": "0PJ"
         },
-        "ext_id": "99540f69-5e1d-49f3-8260-ceb7e34fe4ae",
+        "ext_id": "19595599-6719-4a2f-94b1-4cde1b84ce60",
         "links": null,
-        "name": "ansible_test_RcwzBKOAEUuy_updated",
+        "name": "ansible_test_GFMHxYZYEhIB",
         "tenant_id": null
       }
 
@@ -256,6 +256,7 @@ def get_module_spec():
         azure_key_vault=dict(
             type="dict",
             options=azure_key_vault_spec,
+            no_log=True,
         )
     )
 
