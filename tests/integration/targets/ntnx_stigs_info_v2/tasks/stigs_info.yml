@@ -36,7 +36,7 @@
     fail_msg: "Detailed STIG control information with filter set to LOW verification failed"
     success_msg: "Detailed STIG control information with filter set to LOW verification passed"
 
-- name: fetch detailed STIG control information for each cluster with limit
+- name: Fetch detailed STIG control information for each cluster with limit
   nutanix.ncp.ntnx_stigs_info_v2:
     limit: 1
   register: result_limit
