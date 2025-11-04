@@ -35,12 +35,14 @@ options:
     description:
       - Key Management Server name.
       - Required for creating or updating the key management server.
+      - Supported in the idempotency check.
     type: str
     required: false
   access_information:
     description:
       - Key Management Server access information.
       - Required for creating the key management server.
+      - Access information credentials are not supported in the idempotency check.
     type: dict
     required: false
     suboptions:
@@ -72,78 +74,6 @@ options:
             description: When the client secret is going to expire.
             type: str
             required: true
-      KMIP_based_external_key:
-        description: Access information for the KMIP based external key.
-        type: dict
-        suboptions:
-          cert_pem:
-            description: Certificate PEM used by the external key manager
-            type: str
-            required: true
-          private_key:
-            description: Private key used by the external key manager
-            type: str
-            required: true
-          ca_name:
-            description: Name of the certificate authority
-            type: str
-            required: true
-          ca_pem:
-            description: Certificate authority PEM used by the external key manager
-            type: str
-            required: true
-          endpoints:
-            description: List of endpoints of the external key manager
-            type: list
-            elements: dict
-            required: true
-            suboptions:
-              ip_address:
-                description: IP address or FQDN for the endpoint.
-                type: dict
-                required: true
-                suboptions:
-                  ipv4:
-                    description: IPv4 address for the endpoint.
-                    type: dict
-                    required: false
-                    suboptions:
-                      value:
-                        description: Value for the IPv4 address.
-                        type: str
-                        required: true
-                      prefix_length:
-                        description: Prefix length for the IPv4 address.
-                        type: int
-                        required: false
-                        default: 32
-                  ipv6:
-                    description: IPv6 address for the endpoint.
-                    type: dict
-                    required: false
-                    suboptions:
-                      value:
-                        description: Value for the IPv6 address.
-                        type: str
-                        required: true
-                      prefix_length:
-                        description: Prefix length for the IPv6 address.
-                        type: int
-                        required: false
-                        default: 128
-                  fqdn:
-                    description: FQDN for the endpoint.
-                    type: dict
-                    required: false
-                    suboptions:
-                      value:
-                        description: Value for the FQDN.
-                        type: str
-                        required: true
-              port:
-                description: Port for the endpoint.
-                type: int
-                required: true
   wait:
     description:
       - Wait for the task to complete.
@@ -210,6 +140,21 @@ response:
     returned: always
     type: dict
     sample:
+      {
+        "access_information": {
+            "client_id": "ab414ed6-7d97-4f7a-b98f-fcba7cac3b8c",
+            "client_secret": null,
+            "credential_expiry_date": "2027-09-01",
+            "endpoint_url": "https://test-kms-server-1.vault.azure.net/",
+            "key_id": "test-kms-server-1-key:707213e0523744d9ad27bc7d58efde0e",
+            "tenant_id": "bb047546-786f-4de1-bd75-24e5b6f79043",
+            "truncated_client_secret": "0PJ"
+        },
+        "ext_id": "99540f69-5e1d-49f3-8260-ceb7e34fe4ae",
+        "links": null,
+        "name": "ansible_test_RcwzBKOAEUuy_updated",
+        "tenant_id": null
+      }
 
 changed:
   description: This indicates whether the task resulted in any changes
@@ -294,75 +239,24 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
 
-    ipv4_address = dict(
-        value=dict(type="str", required=True),
-        prefix_length=dict(type="int", required=False, default=32),
-    )
-
-    ipv6_address = dict(
-        value=dict(type="str", required=True),
-        prefix_length=dict(type="int", required=False, default=128),
-    )
-
-    fqdn = dict(value=dict(type="str", required=True))
-
-    ip_address_or_fqdn = dict(
-        ipv4=dict(
-            type="dict",
-            options=ipv4_address,
-            obj=security_sdk.IPv4Address,
-            required=False,
-        ),
-        ipv6=dict(
-            type="dict",
-            options=ipv6_address,
-            obj=security_sdk.IPv6Address,
-            required=False,
-        ),
-        fqdn=dict(type="dict", options=fqdn, obj=security_sdk.FQDN, required=False),
-    )
-
     access_information_obj_map = {
         "azure_key_vault": security_sdk.AzureAccessInformation,
-        "KMIP_based_external_key": security_sdk.KmipAccessInformation,
     }
 
     azure_key_vault_spec = dict(
-        endpoint_url=dict(type="str", no_log=True, required=True),
-        key_id=dict(type="str", no_log=True, required=True),
-        tenant_id=dict(type="str", no_log=True, required=True),
-        client_id=dict(type="str", no_log=True, required=True),
+        endpoint_url=dict(type="str", required=True),
+        key_id=dict(type="str", required=True),
+        tenant_id=dict(type="str", required=True),
+        client_id=dict(type="str", required=True),
         client_secret=dict(type="str", no_log=True, required=True),
         credential_expiry_date=dict(type="str", required=True),
-    )
-
-    endpoint_spec = dict(
-        ip_address=dict(type="dict", options=ip_address_or_fqdn, required=True),
-        port=dict(type="int", required=True),
-    )
-
-    kmip_access_information_spec = dict(
-        cert_pem=dict(type="str", required=True, no_log=True),
-        private_key=dict(type="str", required=True, no_log=True),
-        ca_name=dict(type="str", required=True),
-        ca_pem=dict(type="str", required=True, no_log=True),
-        endpoints=dict(
-            type="list",
-            elements="dict",
-            options=endpoint_spec,
-            required=True,
-        ),
     )
 
     access_information_spec = dict(
         azure_key_vault=dict(
             type="dict",
             options=azure_key_vault_spec,
-            no_log=True,
-        ),
-        KMIP_based_external_key=dict(
-            type="dict", options=kmip_access_information_spec, no_log=True
-        ),
+        )
     )
 
     module_args = dict(
@@ -372,7 +266,6 @@ def get_module_spec():
             type="dict",
             options=access_information_spec,
             obj=access_information_obj_map,
-            mutually_exclusive=[("azure_key_vault", "KMIP_based_external_key")],
         ),
     )
     return module_args
@@ -424,6 +317,7 @@ def create_kms(module, kms_api_instance, result):
 def check_kms_idempotency(old_spec, update_spec):
     old_spec = strip_internal_attributes(old_spec)
     update_spec = strip_internal_attributes(update_spec)
+    # removing access information credentials from the spec since they are not supported in the idempotency check
     if old_spec.get("access_information"):
         old_spec["access_information"].pop("client_secret", None)
         old_spec["access_information"].pop("key_id", None)
@@ -432,6 +326,7 @@ def check_kms_idempotency(old_spec, update_spec):
         update_spec["access_information"].pop("client_secret", None)
         update_spec["access_information"].pop("key_id", None)
         update_spec["access_information"].pop("truncated_client_secret", None)
+    # converting credential expiry date to string
     old_spec["access_information"]["credential_expiry_date"] = str(
         old_spec["access_information"]["credential_expiry_date"]
     )
@@ -488,7 +383,7 @@ def update_kms(module, kms_api_instance, result):
     result["response"] = strip_internal_attributes(resp.data.to_dict())
 
     if task_ext_id and module.params.get("wait"):
-        wait_for_completion(module, task_ext_id, True)
+        wait_for_completion(module, task_ext_id)
         resp = get_kms_by_ext_id(module, kms_api_instance, ext_id)
         result["response"] = strip_internal_attributes(resp.to_dict())
     result["changed"] = True

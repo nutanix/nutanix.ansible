@@ -59,6 +59,21 @@ response:
     type: dict
     returned: always
     sample:
+      {
+        "access_information": {
+            "client_id": "ab414ed6-7d97-4f7a-b98f-fcba7cac3b8c",
+            "client_secret": null,
+            "credential_expiry_date": "2027-09-01",
+            "endpoint_url": "https://test-kms-server-1.vault.azure.net/",
+            "key_id": "test-kms-server-1-key:707213e0523744d9ad27bc7d58efde0e",
+            "tenant_id": "bb047546-786f-4de1-bd75-24e5b6f79043",
+            "truncated_client_secret": "0PJ"
+        },
+        "ext_id": "99540f69-5e1d-49f3-8260-ceb7e34fe4ae",
+        "links": null,
+        "name": "ansible_test_RcwzBKOAEUuy_updated",
+        "tenant_id": null
+      }
 
 changed:
   description: This indicates whether the task resulted in any changes

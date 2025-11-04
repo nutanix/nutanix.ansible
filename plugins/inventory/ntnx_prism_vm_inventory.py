@@ -275,7 +275,11 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         # Incorporate ntnx_categories if available.
         if "metadata" in entity and "categories" in entity["metadata"]:
             host_vars["ntnx_categories"] = entity["metadata"]["categories"]
-
+        # Incorporate description if available.
+        if "spec" in entity and "description" in entity["spec"]:
+            host_vars["description"] = entity["spec"]["description"]
+        else:
+            host_vars["description"] = ""
         return host_vars
 
     def _should_add_host(self, host_vars, host_filters, strict):

@@ -106,7 +106,7 @@
         tenant_id: "ab414ed6-7d97-4f7a-b98f-fcba7cac3b8c"
         client_id: "ae1a2b3c-5d6e-7f80-9a1b-2c3d4e5f6789"
         client_secret: "98765432-10fe-dcba-9876-543210fedcba"
-        credential_expiry_date: "2025-09-01"
+        credential_expiry_date: "3000-09-01"
   register: invalid_result
   ignore_errors: true
 
@@ -116,7 +116,7 @@
       - invalid_result.changed == false
       - invalid_result.failed == true
       - invalid_result.error is defined
-      - invalid_result.msg == "Api Exception raised while creating KMS"
+      - invalid_result.msg == "Api Exception raised while creating Key Management Server"
       - invalid_result.response.data.error | length > 0
     fail_msg: "Create key management server with invalid access information did not fail as expected"
     success_msg: "Create key management server with invalid access information failed as expected"
@@ -247,7 +247,7 @@
       - invalid_ext_id_result.changed == false
       - invalid_ext_id_result.failed == true
       - invalid_ext_id_result.error is defined
-      - invalid_ext_id_result.msg == "Api Exception raised while fetching KMS info using external ID"
+      - invalid_ext_id_result.msg == "Api Exception raised while fetching Key Management Server info using external ID"
       - invalid_ext_id_result.response.data.error | length > 0
     fail_msg: "Update key management server with invalid external ID did not fail as expected"
     success_msg: "Update key management server with invalid external ID failed as expected"
@@ -283,6 +283,9 @@
   register: fetch_result
   ignore_errors: true
 
+- ansible.builtin.debug:
+    msg: "{{ fetch_result }}"
+
 - name: Assert fetch result
   ansible.builtin.assert:
     that:
@@ -312,7 +315,7 @@
       - invalid_fetch_result.changed == false
       - invalid_fetch_result.failed == true
       - invalid_fetch_result.error is defined
-      - invalid_fetch_result.msg == "Api Exception raised while fetching KMS info using external ID"
+      - invalid_fetch_result.msg == "Api Exception raised while fetching Key Management Server info using external ID"
       - invalid_fetch_result.response.data.error | length > 0
     fail_msg: "Fetch key management server using invalid external ID did not fail as expected"
     success_msg: "Fetch key management server using invalid external ID failed as expected"
@@ -362,7 +365,7 @@
       - invalid_delete_result.changed == false
       - invalid_delete_result.failed == true
       - invalid_delete_result.error is defined
-      - invalid_delete_result.msg == "Api Exception raised while deleting KMS"
+      - invalid_delete_result.msg == "Api Exception raised while deleting Key Management Server"
       - invalid_delete_result.response.data.error | length > 0
     fail_msg: "Delete key management server using invalid external ID did not fail as expected"
     success_msg: "Delete key management server using invalid external ID failed as expected"
