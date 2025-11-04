@@ -27,25 +27,36 @@ DOCUMENTATION = r"""
             required: true
             choices: ['ntnx_prism_vm_inventory', 'nutanix.ncp.ntnx_prism_vm_inventory']
         nutanix_hostname:
-            description: Prism central hostname or IP address
-            required: true
+            description:
+                - Prism central hostname or IP address
+                - If not provided, values will be taken from environment variables NUTANIX_HOSTNAME or NUTANIX_HOST
+                - If both are set, NUTANIX_HOSTNAME is preferred over NUTANIX_HOST
+            required: false
             type: str
             env:
                 - name: NUTANIX_HOSTNAME
+                - name: NUTANIX_HOST
         nutanix_username:
-            description: Prism central username
-            required: true
+            description:
+                - Prism central username
+                - If not provided, values will be taken from environment variable NUTANIX_USERNAME
+            required: false
             type: str
             env:
                 - name: NUTANIX_USERNAME
         nutanix_password:
-            description: Prism central password
-            required: true
+            description:
+                - Prism central password
+                - If not provided, values will be taken from environment variable NUTANIX_PASSWORD
+            required: false
             type: str
             env:
                 - name: NUTANIX_PASSWORD
         nutanix_port:
-            description: Prism central port
+            description:
+                - Prism central port
+                - If not provided, values will be taken from environment variable NUTANIX_PORT
+            required: false
             default: "9440"
             type: str
             env:
@@ -306,8 +317,10 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         super().parse(inventory, loader, path, cache=cache)
         self._read_config_data(path)
 
-        self.nutanix_hostname = self.get_option("nutanix_hostname") or env_fallback(
-            "NUTANIX_HOSTNAME"
+        self.nutanix_hostname = (
+            self.get_option("nutanix_hostname")
+            or env_fallback("NUTANIX_HOSTNAME")
+            or env_fallback("NUTANIX_HOST")
         )
         self.nutanix_username = self.get_option("nutanix_username") or env_fallback(
             "NUTANIX_USERNAME"
