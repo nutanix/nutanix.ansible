@@ -164,7 +164,7 @@ jobs:
             # Write multi-line RESULTS env var for PR comment step
             {
               echo "RESULTS<<EOF"
-              echo "**Summary:**"
+              echo "### Summary:"
               echo "- Total Tests: $total_count"
               echo "- Passed: $pass_count"
               echo "- Failed: $fail_count"
@@ -193,7 +193,7 @@ jobs:
 
             # Append same info to job summary (visible in Actions UI)
             {
-              echo "**Summary:**"
+              echo "### Summary:"
               echo "- Total Tests: $total_count"
               echo "- Passed: $pass_count"
               echo "- Failed: $fail_count"
