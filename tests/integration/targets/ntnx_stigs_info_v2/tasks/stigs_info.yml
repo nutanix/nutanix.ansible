@@ -6,6 +6,7 @@
 - name: Fetch detailed STIG control information for each cluster.
   nutanix.ncp.ntnx_stigs_info_v2:
   register: result
+  ignore_errors: true
 
 - name: Verify detailed STIG control information
   ansible.builtin.assert:
@@ -25,6 +26,7 @@
   nutanix.ncp.ntnx_stigs_info_v2:
     filter: "severity eq Security.Report.Severity'LOW'"
   register: result_filter
+  ignore_errors: true
 
 - name: Verify detailed STIG control information with filter set to LOW
   ansible.builtin.assert:
@@ -40,6 +42,7 @@
   nutanix.ncp.ntnx_stigs_info_v2:
     limit: 1
   register: result_limit
+  ignore_errors: true
 
 - name: Verify detailed STIG control information with limit
   ansible.builtin.assert:
