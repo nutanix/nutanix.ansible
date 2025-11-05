@@ -45,6 +45,7 @@ jobs:
       - name: Run Integration test cases
         run: |
           cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
+
           export NUTANIX_HOST=${{ secrets.PC_IP }}
           export NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}
           export NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}
@@ -67,12 +68,14 @@ jobs:
           echo "NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}" >> $GITHUB_ENV
           echo "NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}" >> $GITHUB_ENV
 
+          echo "===> Preparing environments..."
           ansible-playbook tests/integration/targets/prepare_env/playbooks/prepare_env.yml
           ansible-playbook tests/integration/targets/prepare_ndb_env/playbooks/prepare_env.yml
           ansible-playbook tests/integration/targets/prepare_fc_env/playbooks/prepare_fc_env.yml
           ansible-playbook tests/integration/targets/prepare_foundation_env/playbooks/prepare_foundation_env.yml
 
           echo "===> Running integration tests..."
+          set +e
           if [ -n "$regex_pattern" ]; then
               echo "Filtering integration tests by regex: $regex_pattern"
               mapfile -t matched_dirs < <(find tests/integration/targets -maxdepth 1 -mindepth 1 -type d -printf "%f\n" | grep -E "$regex_pattern" || true)
@@ -81,24 +84,30 @@ jobs:
                   echo "No test execution performed." | tee test_output.log
                   echo "NO_REGEX_MATCH=true" >> $GITHUB_ENV
                   echo "RESULTS=No tests matched regex pattern '$regex_pattern'. Skipping test run." >> $GITHUB_ENV
-
-                  echo "### Detailed Test Results" >> $GITHUB_STEP_SUMMARY
-                  echo "- No integration test targets matched regex pattern: \`$regex_pattern\`" >> $GITHUB_STEP_SUMMARY
-                  echo "- No tests executed. Only Inventory tests are executed." >> $GITHUB_STEP_SUMMARY
+                  TEST_EXIT_CODE=0
               else
-                  echo "Running ${#matched_dirs[@]} matching integration target(s):"
-                  printf '%s\n' "${matched_dirs[@]}"
                   ansible-test integration --continue-on-error \
-                    --python ${{ matrix.python-version }} --coverage "${matched_dirs[@]}" \
-                    --allow-disabled 2>&1 | tee -a test_output.log
+                    --python ${{ matrix.python-version }} --coverage "${matched_dirs[@]}" --allow-disabled 2>&1 | tee test_output.log
+                  TEST_EXIT_CODE=${PIPESTATUS[0]}
               fi
           else
-              echo "Running all integration tests..."
               ansible-test integration --continue-on-error \
-                --python ${{ matrix.python-version }} --coverage $flag 2>&1 | tee -a test_output.log
+                --python ${{ matrix.python-version }} --coverage $flag 2>&1 | tee test_output.log
+              TEST_EXIT_CODE=${PIPESTATUS[0]}
           fi
+          set -e
 
+          echo "===> Generating coverage report..."
           ansible-test coverage report > coverage.txt
+
+          if [ "$TEST_EXIT_CODE" -ne 0 ]; then
+              echo "❌ One or more integration tests failed."
+              echo "INTEGRATION_STATUS=failed" >> $GITHUB_ENV
+              exit 1
+          else
+              echo "✅ All integration tests passed successfully."
+              echo "INTEGRATION_STATUS=passed" >> $GITHUB_ENV
+          fi
 
       - name: Cleanup Environments
         if: ${{ always() }}
@@ -119,6 +128,7 @@ jobs:
           current_test=""
 
           if [ -f "$LOG_FILE" ]; then
+            # Parse test_output.log and populate test_results[current_test]="PASSED"|"FAILED"
             while IFS= read -r line; do
                 if [[ $line =~ ^Running\ ([^[:space:]]+)\ integration\ test\ role ]]; then
                     current_test="${BASH_REMATCH[1]}"
@@ -136,9 +146,9 @@ jobs:
                 fi
             done < "$LOG_FILE"
 
+            # Build ordered lists
             passed_tests=()
             failed_tests=()
-
             for test in "${!test_results[@]}"; do
               if [ "${test_results[$test]}" = "PASSED" ]; then
                 passed_tests+=("$test")
@@ -147,30 +157,65 @@ jobs:
               fi
             done
 
-            echo "RESULTS<<EOF" >> $GITHUB_ENV
-            echo "### Passed Tests:" >> $GITHUB_STEP_SUMMARY
-            if [ ${#passed_tests[@]} -gt 0 ]; then
-              for test in "${passed_tests[@]}"; do
-                echo "- $test" | tee -a parsed_results.log >> $GITHUB_STEP_SUMMARY
-              done
-            else
-              echo "- None" >> $GITHUB_STEP_SUMMARY
-            fi
+            pass_count=${#passed_tests[@]}
+            fail_count=${#failed_tests[@]}
+            total_count=$((pass_count + fail_count))
 
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "### Failed Tests:" >> $GITHUB_STEP_SUMMARY
-            if [ ${#failed_tests[@]} -gt 0 ]; then
-              for test in "${failed_tests[@]}"; do
-                echo "- $test" | tee -a parsed_results.log >> $GITHUB_STEP_SUMMARY
-              done
-            else
-              echo "- None" >> $GITHUB_STEP_SUMMARY
-            fi
+            # Write multi-line RESULTS env var for PR comment step
+            {
+              echo "RESULTS<<EOF"
+              echo "### Summary:"
+              echo "- Total Tests: $total_count"
+              echo "- Passed: $pass_count"
+              echo "- Failed: $fail_count"
+              echo ""
+              echo "### Passed Tests:"
+              if [ $pass_count -gt 0 ]; then
+                for t in "${passed_tests[@]}"; do
+                  echo "- $t"
+                done
+              else
+                echo "- None"
+              fi
+              echo ""
+              echo "### Failed Tests:"
+              if [ $fail_count -gt 0 ]; then
+                for t in "${failed_tests[@]}"; do
+                  echo "- $t"
+                done
+              else
+                echo "- None"
+              fi
+              echo ""
+              echo "Raw log file: test_output.log"
+              echo "EOF"
+            } >> $GITHUB_ENV
 
-            for test in "${!test_results[@]}"; do
-              echo "- $test : ${test_results[$test]}"
-            done >> $GITHUB_ENV
-            echo "EOF" >> $GITHUB_ENV
+            # Append same info to job summary (visible in Actions UI)
+            {
+              echo "### Summary:"
+              echo "- Total Tests: $total_count"
+              echo "- Passed: $pass_count"
+              echo "- Failed: $fail_count"
+              echo ""
+              echo "### Passed Tests:"
+              if [ $pass_count -gt 0 ]; then
+                for t in "${passed_tests[@]}"; do
+                  echo "- $t"
+                done
+              else
+                echo "- None"
+              fi
+              echo ""
+              echo "### Failed Tests:"
+              if [ $fail_count -gt 0 ]; then
+                for t in "${failed_tests[@]}"; do
+                  echo "- $t"
+                done
+              else
+                echo "- None"
+              fi
+            } >> $GITHUB_STEP_SUMMARY
 
           else
             echo "No test_output.log found" >> $GITHUB_STEP_SUMMARY
