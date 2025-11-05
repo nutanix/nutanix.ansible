@@ -15,6 +15,9 @@ short_description: Module to associate or disassociate cluster profile with a cl
 version_added: 2.4.0
 description:
   - This module can be used to associate or disassociate cluster profile with a cluster in Nutanix Prism Central.
+  - Associate cluster profile with a cluster will apply the cluster profile configuration to the cluster.
+  - Disassociate cluster profile from a cluster will remove the cluster profile external ID from the cluster.
+  - This module will not remove the cluster profile configuration from the cluster. It will only remove the cluster profile external ID from the cluster.
   - This module uses PC v4 APIs based SDKs
 options:
     state:
@@ -85,6 +88,106 @@ response:
     type: dict
     returned: always
     sample:
+        {
+            "app_name": null,
+            "cluster_ext_ids": [
+                "000642d8-a2e0-e442-0b82-606eab989991"
+            ],
+            "completed_time": "2025-11-05T13:23:32.384983+00:00",
+            "completion_details": null,
+            "created_time": "2025-11-05T13:21:50.094877+00:00",
+            "entities_affected": [
+                {
+                    "ext_id": "e5a0f246-0880-44f2-7b51-0aad170ac45e",
+                    "name": "cluster_profile_1_2",
+                    "rel": "clustermgmt:config:cluster-profile"
+                }
+            ],
+            "error_messages": null,
+            "ext_id": "ZXJnb24=:2bf53fdd-309b-5971-9f4b-436c86e8f92f",
+            "is_background_task": false,
+            "is_cancelable": false,
+            "last_updated_time": "2025-11-05T13:23:32.384982+00:00",
+            "legacy_error_message": null,
+            "number_of_entities_affected": 1,
+            "number_of_subtasks": 12,
+            "operation": "applyClusterProfile",
+            "operation_description": "Apply Cluster Profile",
+            "owned_by": {
+                "ext_id": "00000000-0000-0000-0000-000000000000",
+                "name": "admin"
+            },
+            "parent_task": null,
+            "progress_percentage": 100,
+            "resource_links": null,
+            "root_task": null,
+            "started_time": "2025-11-05T13:21:50.525912+00:00",
+            "status": "SUCCEEDED",
+            "sub_steps": null,
+            "sub_tasks": [
+                {
+                    "ext_id": "ZXJnb24=:03832fb1-ff0e-4074-5829-0c116803d528",
+                    "href": "https://10.98.145.91:9440/api/prism/v4.1/config/tasks/ZXJnb24=:03832fb1-ff0e-4074-5829-0c116803d528",
+                    "rel": "subtask"
+                },
+                {
+                    "ext_id": "ZXJnb24=:070dd938-dd47-4a0b-50b3-196da96cb65d",
+                    "href": "https://10.98.145.91:9440/api/prism/v4.1/config/tasks/ZXJnb24=:070dd938-dd47-4a0b-50b3-196da96cb65d",
+                    "rel": "subtask"
+                },
+                {
+                    "ext_id": "ZXJnb24=:17b09ddf-aa52-4108-6133-05fb4f3d6346",
+                    "href": "https://10.98.145.91:9440/api/prism/v4.1/config/tasks/ZXJnb24=:17b09ddf-aa52-4108-6133-05fb4f3d6346",
+                    "rel": "subtask"
+                },
+                {
+                    "ext_id": "ZXJnb24=:1ddb0485-91dd-4981-4c54-42edc480865a",
+                    "href": "https://10.98.145.91:9440/api/prism/v4.1/config/tasks/ZXJnb24=:1ddb0485-91dd-4981-4c54-42edc480865a",
+                    "rel": "subtask"
+                },
+                {
+                    "ext_id": "ZXJnb24=:3b5786a2-414c-4272-52e1-ea6a95be1755",
+                    "href": "https://10.98.145.91:9440/api/prism/v4.1/config/tasks/ZXJnb24=:3b5786a2-414c-4272-52e1-ea6a95be1755",
+                    "rel": "subtask"
+                },
+                {
+                    "ext_id": "ZXJnb24=:431af0df-3a29-411f-6e21-da52cabcecca",
+                    "href": "https://10.98.145.91:9440/api/prism/v4.1/config/tasks/ZXJnb24=:431af0df-3a29-411f-6e21-da52cabcecca",
+                    "rel": "subtask"
+                },
+                {
+                    "ext_id": "ZXJnb24=:485bcb73-4370-472e-42d0-eecfd51e25f4",
+                    "href": "https://10.98.145.91:9440/api/prism/v4.1/config/tasks/ZXJnb24=:485bcb73-4370-472e-42d0-eecfd51e25f4",
+                    "rel": "subtask"
+                },
+                {
+                    "ext_id": "ZXJnb24=:5fda5caa-3356-41a0-446f-45f1a40fe959",
+                    "href": "https://10.98.145.91:9440/api/prism/v4.1/config/tasks/ZXJnb24=:5fda5caa-3356-41a0-446f-45f1a40fe959",
+                    "rel": "subtask"
+                },
+                {
+                    "ext_id": "ZXJnb24=:8df580b1-9010-4881-7500-f881781c195d",
+                    "href": "https://10.98.145.91:9440/api/prism/v4.1/config/tasks/ZXJnb24=:8df580b1-9010-4881-7500-f881781c195d",
+                    "rel": "subtask"
+                },
+                {
+                    "ext_id": "ZXJnb24=:ba3b4da5-1ea8-4f55-7489-bee373b35437",
+                    "href": "https://10.98.145.91:9440/api/prism/v4.1/config/tasks/ZXJnb24=:ba3b4da5-1ea8-4f55-7489-bee373b35437",
+                    "rel": "subtask"
+                },
+                {
+                    "ext_id": "ZXJnb24=:ba8d024a-7e75-49c0-6d7a-57472cf5973e",
+                    "href": "https://10.98.145.91:9440/api/prism/v4.1/config/tasks/ZXJnb24=:ba8d024a-7e75-49c0-6d7a-57472cf5973e",
+                    "rel": "subtask"
+                },
+                {
+                    "ext_id": "ZXJnb24=:c7f63002-950b-42b4-613f-8a261f4ca105",
+                    "href": "https://10.98.145.91:9440/api/prism/v4.1/config/tasks/ZXJnb24=:c7f63002-950b-42b4-613f-8a261f4ca105",
+                    "rel": "subtask"
+                }
+            ],
+            "warnings": null
+        }
 
 task_ext_id:
     description: The external identifier of the task.

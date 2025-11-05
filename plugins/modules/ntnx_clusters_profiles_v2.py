@@ -14,6 +14,7 @@ module: ntnx_clusters_profiles_v2
 short_description: Manage Nutanix cluster profiles in Prism Central
 description:
   - This module allows you to create, update, and delete Nutanix cluster profiles using Prism Central.
+  - A cluster profile is a collection of configuration settings that can be applied to a cluster.
   - This module uses PC v4 APIs based SDKs
 version_added: "2.4.0"
 options:
@@ -750,6 +751,142 @@ response:
     type: dict
     returned: always
     sample:
+    {
+      "allowed_overrides": [
+          "NTP_SERVER_CONFIG"
+      ],
+      "cluster_count": 0,
+      "clusters": null,
+      "create_time": "2025-11-05T13:20:58.452203+00:00",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "description": "Cluster profile description",
+      "drifted_cluster_count": 0,
+      "ext_id": "4664f67d-539b-4ada-5d38-4d6d9c19b32b",
+      "last_update_time": "2025-11-05T13:20:58.452203+00:00",
+      "last_updated_by": "00000000-0000-0000-0000-000000000000",
+      "links": null,
+      "name": "cluster_profile_1",
+      "name_server_ip_list": [
+          {
+              "ipv4": {
+                  "prefix_length": 32,
+                  "value": "240.29.254.180"
+              },
+              "ipv6": null
+          }
+      ],
+      "nfs_subnet_whitelist": null,
+      "ntp_server_ip_list": [
+          {
+              "fqdn": null,
+              "ipv4": {
+                  "prefix_length": 32,
+                  "value": "240.29.254.180"
+              },
+              "ipv6": null
+          }
+      ],
+      "pulse_status": {
+          "is_enabled": false,
+          "pii_scrubbing_level": "DEFAULT"
+      },
+      "rsyslog_server_list": [
+          {
+              "ext_id": null,
+              "ip_address": {
+                  "ipv4": {
+                      "prefix_length": 32,
+                      "value": "240.29.254.180"
+                  },
+                  "ipv6": null
+              },
+              "links": null,
+              "modules": [
+                  {
+                      "log_severity_level": "EMERGENCY",
+                      "name": "CASSANDRA",
+                      "should_log_monitor_files": true
+                  },
+                  {
+                      "log_severity_level": "ERROR",
+                      "name": "CURATOR",
+                      "should_log_monitor_files": false
+                  }
+              ],
+              "network_protocol": "UDP",
+              "port": 29,
+              "server_name": "testServer1",
+              "tenant_id": null
+          }
+      ],
+      "smtp_server": {
+          "email_address": "email@example.com",
+          "server": {
+              "ip_address": {
+                  "fqdn": null,
+                  "ipv4": {
+                      "prefix_length": 32,
+                      "value": "240.29.254.180"
+                  },
+                  "ipv6": null
+              },
+              "password": null,
+              "port": 465,
+              "username": "smtp-user"
+          },
+          "type": "SSL"
+      },
+      "snmp_config": {
+          "ext_id": null,
+          "is_enabled": false,
+          "links": null,
+          "tenant_id": null,
+          "transports": [
+              {
+                  "port": 21,
+                  "protocol": "UDP"
+              }
+          ],
+          "traps": [
+              {
+                  "address": {
+                      "ipv4": {
+                          "prefix_length": 32,
+                          "value": "240.29.254.180"
+                      },
+                      "ipv6": null
+                  },
+                  "community_string": "snmp-server community public RO 192.168.1.0 255.255.255.0",
+                  "engine_id": "0x1234567890abcdef12",
+                  "ext_id": null,
+                  "links": null,
+                  "port": 59,
+                  "protocol": "UDP",
+                  "reciever_name": "trap-receiver",
+                  "should_inform": false,
+                  "tenant_id": null,
+                  "username": "trapuser",
+                  "version": "V2"
+              }
+          ],
+          "users": [
+              {
+                  "auth_key": null,
+                  "auth_type": "MD5",
+                  "ext_id": null,
+                  "links": null,
+                  "priv_key": null,
+                  "priv_type": "DES",
+                  "tenant_id": null,
+                  "username": "snmpuser1"
+              }
+          ]
+      },
+      "tenant_id": null
+    }
+
+
+
 ext_id:
     description:
         - The external ID of the cluster profile.
@@ -917,10 +1054,11 @@ def update_cluster_profile(module, cluster_profiles, result):
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
-    result["current_spec"] = strip_internal_attributes(current_spec.to_dict())
-    result["update_spec"] = strip_internal_attributes(update_spec.to_dict())
 
-    if check_cluster_idempotency(current_spec.to_dict(), update_spec.to_dict()):
+    if check_cluster_idempotency(
+        strip_internal_attributes(current_spec.to_dict()),
+        strip_internal_attributes(update_spec.to_dict()),
+    ):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
     resp = None

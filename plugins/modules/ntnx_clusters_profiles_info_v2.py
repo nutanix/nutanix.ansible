@@ -16,7 +16,7 @@ version_added: 2.4.0
 description:
     - This module retrieves information about Nutanix cluster profiles from PC.
     - Fetch particular cluster profile info using external ID
-    - Fetch multiple clusters info with/without using filters, limit, etc.
+    - Fetch multiple cluster profiles info with/without using filters, limit, etc.
     - This module uses PC v4 APIs based SDKs
 options:
   ext_id:
@@ -65,6 +65,141 @@ response:
     type: dict
     returned: always
     sample:
+        {
+            "allowed_overrides": [
+                "NTP_SERVER_CONFIG"
+            ],
+            "cluster_count": 0,
+            "clusters": null,
+            "create_time": "2025-11-05T13:21:04.998917+00:00",
+            "created_by": "00000000-0000-0000-0000-000000000000",
+            "description": "Cluster profile description 2",
+            "drifted_cluster_count": 0,
+            "ext_id": "e5a0f246-0880-44f2-7b51-0aad170ac45e",
+            "last_update_time": "2025-11-05T13:21:04.998917+00:00",
+            "last_updated_by": "00000000-0000-0000-0000-000000000000",
+            "links": null,
+            "name": "cluster_profile_1_2",
+            "name_server_ip_list": [
+                {
+                    "ipv4": {
+                        "prefix_length": 32,
+                        "value": "240.29.254.180"
+                    },
+                    "ipv6": null
+                }
+            ],
+            "nfs_subnet_whitelist": [
+                "10.110.106.45/255.255.255.255"
+            ],
+            "ntp_server_ip_list": [
+                {
+                    "fqdn": null,
+                    "ipv4": {
+                        "prefix_length": 32,
+                        "value": "240.29.254.180"
+                    },
+                    "ipv6": null
+                }
+            ],
+            "pulse_status": {
+                "is_enabled": false,
+                "pii_scrubbing_level": "DEFAULT"
+            },
+            "rsyslog_server_list": [
+                {
+                    "ext_id": null,
+                    "ip_address": {
+                        "ipv4": {
+                            "prefix_length": 32,
+                            "value": "240.29.254.180"
+                        },
+                        "ipv6": null
+                    },
+                    "links": null,
+                    "modules": [
+                        {
+                            "log_severity_level": "EMERGENCY",
+                            "name": "CASSANDRA",
+                            "should_log_monitor_files": true
+                        },
+                        {
+                            "log_severity_level": "ERROR",
+                            "name": "CURATOR",
+                            "should_log_monitor_files": false
+                        }
+                    ],
+                    "network_protocol": "UDP",
+                    "port": 29,
+                    "server_name": "testServer1",
+                    "tenant_id": null
+                }
+            ],
+            "smtp_server": {
+                "email_address": "email@example.com",
+                "server": {
+                    "ip_address": {
+                        "fqdn": null,
+                        "ipv4": {
+                            "prefix_length": 32,
+                            "value": "240.29.254.180"
+                        },
+                        "ipv6": null
+                    },
+                    "password": null,
+                    "port": 465,
+                    "username": "smtp-user"
+                },
+                "type": "SSL"
+            },
+            "snmp_config": {
+                "ext_id": null,
+                "is_enabled": false,
+                "links": null,
+                "tenant_id": null,
+                "transports": [
+                    {
+                        "port": 21,
+                        "protocol": "UDP"
+                    }
+                ],
+                "traps": [
+                    {
+                        "address": {
+                            "ipv4": {
+                                "prefix_length": 32,
+                                "value": "240.29.254.180"
+                            },
+                            "ipv6": null
+                        },
+                        "community_string": "snmp-server community public RO 192.168.1.0 255.255.255.0",
+                        "engine_id": "0x1234567890abcdef12",
+                        "ext_id": null,
+                        "links": null,
+                        "port": 59,
+                        "protocol": "UDP",
+                        "reciever_name": "trap-receiver",
+                        "should_inform": false,
+                        "tenant_id": null,
+                        "username": "trapuser",
+                        "version": "V2"
+                    }
+                ],
+                "users": [
+                    {
+                        "auth_key": null,
+                        "auth_type": "MD5",
+                        "ext_id": null,
+                        "links": null,
+                        "priv_key": null,
+                        "priv_type": "DES",
+                        "tenant_id": null,
+                        "username": "snmpuser1"
+                    }
+                ]
+            },
+            "tenant_id": null
+        }
 changed:
     description:
         - Indicates if any changes were made during the operation.
