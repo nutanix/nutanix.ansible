@@ -1059,7 +1059,7 @@ def update_network_security_policy(module, result):
     result["response"] = strip_internal_attributes(resp.data.to_dict())
 
     if task_ext_id and module.params.get("wait"):
-        wait_for_completion(module, task_ext_id, True)
+        wait_for_completion(module, task_ext_id)
         resp = get_network_security_policy(module, network_security_policies, ext_id)
         result["response"] = strip_internal_attributes(resp.to_dict())
 
@@ -1105,7 +1105,7 @@ def delete_network_security_policy(module, result):
     result["response"] = strip_internal_attributes(resp.data.to_dict())
 
     if task_ext_id and module.params.get("wait"):
-        resp = wait_for_completion(module, task_ext_id, True)
+        resp = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(resp.to_dict())
     result["changed"] = True
 
