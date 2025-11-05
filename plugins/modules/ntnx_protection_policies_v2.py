@@ -700,7 +700,7 @@ def update_protection_policy(module, protection_policies, result):
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
-        task_status = wait_for_completion(module, task_ext_id, True)
+        task_status = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_status.to_dict())
         resp = get_protection_policy(module, protection_policies, ext_id)
         result["response"] = strip_internal_attributes(resp.to_dict())
@@ -729,7 +729,7 @@ def delete_protection_policy(module, protection_policies, result):
     task_ext_id = resp.data.ext_id
     result["task_ext_id"] = task_ext_id
     if task_ext_id and module.params.get("wait"):
-        task_status = wait_for_completion(module, task_ext_id, True)
+        task_status = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_status.to_dict())
     result["changed"] = True
 
