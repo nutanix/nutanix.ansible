@@ -1,0 +1,156 @@
+---
+- name: Start delete objects tests
+  ansible.builtin.debug:
+    msg: Start delete objects tests
+
+- name: List all object stores with filter
+  nutanix.ncp.ntnx_object_stores_info_v2:
+    filter: name eq '{{ object_1_name }}'
+  register: result
+  ignore_errors: true
+
+- name: List object stores with filter status
+  ansible.builtin.assert:
+    that:
+      - result.changed is false
+      - result.failed is false
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].name == "{{ object_1_name }}"
+    success_msg: "Object stores are listed successfully with filter"
+    fail_msg: "Object stores are not listed successfully with filter"
+
+- name: Set object store external ID
+  ansible.builtin.set_fact:
+    object_store_ext_id_1: "{{ result.response[0].ext_id }}"
+
+- name: List all object stores with filter
+  nutanix.ncp.ntnx_object_stores_info_v2:
+    filter: name eq '{{ object_2_name }}'
+  register: result
+  ignore_errors: true
+
+- name: List object stores with filter status
+  ansible.builtin.assert:
+    that:
+      - result.changed is false
+      - result.failed is false
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].name == "{{ object_2_name }}"
+    success_msg: "Object stores are listed successfully with filter"
+    fail_msg: "Object stores are not listed successfully with filter"
+
+- name: Set object store external ID
+  ansible.builtin.set_fact:
+    object_store_ext_id_2: "{{ result.response[0].ext_id }}"
+
+- name: Delete object store with check mode
+  nutanix.ncp.ntnx_object_stores_v2:
+    ext_id: "{{ object_store_ext_id_1 }}"
+    state: absent
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Delete object store with check mode status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed is false
+      - result.failed is false
+      - result.ext_id == "{{ object_store_ext_id_1 }}"
+      - result.msg == "Object store with ext_id:{{ object_store_ext_id_1 }} will be deleted."
+    success_msg: "Delete object store with check mode passed"
+    fail_msg: "Delete object store with check mode failed"
+
+- name: Set object store external ID
+  ansible.builtin.set_fact:
+    object_store_ext_id: "{{ object_store_ext_id_1 }}"
+
+# example of delete bucket API (delete_bucket_api):
+# https://{{ ip }}:{{ port }}/oss/api/nutanix/v3/objectstore_proxy/{{ object_store_ext_id }}/buckets/{{ objects.bucket_name }}?force_empty_bucket=true
+
+- name: Delete bucket in first object store
+  ansible.builtin.uri:
+    url: "{{ delete_bucket_api }}"
+    method: DELETE
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: false
+    headers:
+      Accept: "application/json"
+    status_code: [200, 202]
+  register: result
+  ignore_errors: true
+
+- name: Delete bucket status
+  ansible.builtin.assert:
+    that:
+      - result.failed is false
+      - result.status == 200 or result.status == 202
+    success_msg: "Bucket is deleted successfully"
+    fail_msg: "Bucket is not deleted successfully"
+
+- name: Delete first object store
+  nutanix.ncp.ntnx_object_stores_v2:
+    ext_id: "{{ object_store_ext_id }}"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Delete object store status
+  ansible.builtin.assert:
+    that:
+      - result.changed is true
+      - result.failed is false
+      - result.response is defined
+      - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    success_msg: "Object store is deleted successfully"
+    fail_msg: "Object store is not deleted successfully"
+
+- name: Set object store external ID
+  ansible.builtin.set_fact:
+    object_store_ext_id: "{{ object_store_ext_id_2 }}"
+
+- name: Delete bucket in second object store
+  ansible.builtin.uri:
+    url: "{{ delete_bucket_api }}"
+    method: DELETE
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: false
+    headers:
+      Accept: "application/json"
+    status_code: [200, 202]
+  register: result
+  ignore_errors: true
+
+- name: Delete bucket status
+  ansible.builtin.assert:
+    that:
+      - result.failed is false
+      - result.status == 200 or result.status == 202
+    success_msg: "Bucket is deleted successfully"
+    fail_msg: "Bucket is not deleted successfully"
+
+- name: Delete second object store
+  nutanix.ncp.ntnx_object_stores_v2:
+    ext_id: "{{ object_store_ext_id }}"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Delete second object store status
+  ansible.builtin.assert:
+    that:
+      - result.changed is true
+      - result.failed is false
+      - result.response is defined
+      - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    success_msg: "Second object store is deleted successfully"
+    fail_msg: "Second object store is not deleted successfully"

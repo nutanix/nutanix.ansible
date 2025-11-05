@@ -167,6 +167,8 @@
       - lcm_entities.changed == false
       - lcm_entities.failed == false
       - lcm_entities.response | length > 0
+      - lcm_entities.total_available_results is defined
+      - lcm_entities.total_available_results > 0
     fail_msg: "Failed to list all LCM entities details"
     success_msg: "All LCM entities details are listed successfully"
 
