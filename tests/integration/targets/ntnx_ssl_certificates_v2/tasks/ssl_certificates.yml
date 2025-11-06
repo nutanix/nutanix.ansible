@@ -7,17 +7,17 @@
   nutanix.ncp.ntnx_ssl_certificates_info_v2:
     ext_id: "{{ cluster.uuid }}"
   ignore_errors: true
-  register: ssl_certificates_info_before_update
+  register: result
 
 - name: Get SSL Certificates status
   ansible.builtin.assert:
     that:
-      - ssl_certificates_info_before_update.changed == false
-      - ssl_certificates_info_before_update.ext_id == "{{ cluster.uuid }}"
-      - ssl_certificates_info_before_update.failed == false
-      - ssl_certificates_info_before_update.response is defined
-      - ssl_certificates_info_before_update.response.private_key_algorithm is defined
-      - ssl_certificates_info_before_update.response.public_certificate is defined
+      - result.changed == false
+      - result.ext_id == "{{ cluster.uuid }}"
+      - result.failed == false
+      - result.response is defined
+      - result.response.private_key_algorithm is defined
+      - result.response.public_certificate is defined
     fail_msg: "Failed to Fetch cluster SSL Certificates"
     success_msg: "Cluster SSL Certificates fetched successfully"
 
