@@ -1483,6 +1483,9 @@
       - result.failed == false
       - result.response is defined
       - result.response | length > 0
+      - result.total_available_results is defined
+      - result.total_available_results > 0
+      - result.response | length == result.total_available_results
     fail_msg: "List all cluster profiles did not pass as expected"
     success_msg: "List all cluster profiles passed as expected"
 
@@ -1500,6 +1503,9 @@
       - result.response is defined
       - result.response | length == 1
       - result.response[0].name == "cluster_profile_updated_all"
+      - result.total_available_results is defined
+      - result.total_available_results > 0
+      - result.response | length == result.total_available_results
     fail_msg: "List all cluster profiles with filter did not pass as expected"
     success_msg: "List all cluster profiles with filter passed as expected"
 

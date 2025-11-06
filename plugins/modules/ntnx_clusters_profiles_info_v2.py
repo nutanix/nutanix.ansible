@@ -216,6 +216,12 @@ ext_id:
     type: str
     returned: always
     sample: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
+total_available_results:
+    description:
+        - The total number of available cluster profiles in PC.
+    type: int
+    returned: when all cluster profiles are fetched
+    sample: 100
 """
 
 import warnings  # noqa: E402
@@ -269,10 +275,14 @@ def get_cluster_profiles(module, cluster_profiles, result):
             msg="Api Exception raised while fetching cluster profiles info",
         )
 
-    if getattr(resp, "data", None):
-        result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
-    else:
-        result["response"] = []
+    resp = strip_internal_attributes(resp.to_dict())
+    total_available_results = resp.get("metadata").get("total_available_results")
+    result["total_available_results"] = total_available_results
+    resp = resp.get("data")
+
+    if not resp:
+        resp = []
+    result["response"] = resp
 
 
 def run_module():
