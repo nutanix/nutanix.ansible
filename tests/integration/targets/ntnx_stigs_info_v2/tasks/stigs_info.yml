@@ -15,6 +15,9 @@
       - result.failed == false
       - result.response is defined
       - result.response | length > 0
+      - result.total_available_results is defined
+      - result.total_available_results > 0
+      - result.response | length == result.total_available_results
     fail_msg: "Detailed STIG control information verification failed"
     success_msg: "Detailed STIG control information verification passed"
 
@@ -35,6 +38,7 @@
       - result_filter.failed == false
       - result_filter.response is defined
       - result_filter.response | length == {{ low_severity_count }}
+      - result_filter.response | length == result_filter.total_available_results
     fail_msg: "Detailed STIG control information with filter set to LOW verification failed"
     success_msg: "Detailed STIG control information with filter set to LOW verification passed"
 

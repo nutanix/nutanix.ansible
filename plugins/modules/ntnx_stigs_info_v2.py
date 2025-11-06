@@ -113,6 +113,12 @@ error:
   description: Error message if any.
   type: str
   returned: always
+total_available_results:
+    description:
+        - The total number of available STIGs in PC.
+    type: int
+    returned: when all STIGs are fetched
+    sample: 100
 """
 
 import warnings  # noqa: E402
@@ -156,6 +162,10 @@ def run_module():
             exception=e,
             msg="Api Exception raised while fetching Security Technical Implementation Guide control details",
         )
+
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
+
     resp = strip_internal_attributes(resp.to_dict()).get("data")
     if not resp:
         resp = []
