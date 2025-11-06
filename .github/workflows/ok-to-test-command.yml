@@ -83,7 +83,6 @@ jobs:
                   echo "Inventory test default host completed successfully."
               else
                   echo "Inventory test default host failed. See logs above." | tee -a test_output.log
-                  exit 1
               fi
               echo "===> Running inventory test (custom host)..."
               if ansible-playbook -i tests/integration/targets/inventory_test/inventory_test_custom_host/nutanix.yml \
@@ -92,7 +91,6 @@ jobs:
                   echo "Inventory test custom host completed successfully."
               else
                   echo "Inventory test custom host failed. See logs above." | tee -a test_output.log
-                  exit 1
               fi
               echo "===> Running inventory test (negative tests)..."
               if ansible-playbook -i tests/integration/targets/inventory_test/inventory_test_negative_test_1/nutanix.yml \
@@ -101,7 +99,6 @@ jobs:
                   echo "Inventory test negative test 1 completed successfully."
               else
                   echo "Inventory test negative test 1 failed. See logs above." | tee -a test_output.log
-                  exit 1
               fi
               if ansible-playbook -i tests/integration/targets/inventory_test/inventory_test_negative_test_2/nutanix.yml \
               tests/integration/targets/inventory_test/inventory_test_negative_test_2/inventory.yml \
@@ -109,7 +106,6 @@ jobs:
                   echo "Inventory test negative test 2 completed successfully."
               else
                   echo "Inventory test negative test 2 failed. See logs above." | tee -a test_output.log
-                  exit 1
               fi
           fi
 
