@@ -8,4 +8,4 @@ validate_certs: false
 data: { offset: 0, length: 20 }
 fetch_all_vms: true
 custom_ansible_host:
-  expr: "{vm_name}.nutanix1.{cluster}.nutanix2.{cluster_uuid}.nutanix3.{vm_uuid}.nutanix4.{vm_description}.com"
+  expr: "{vm_name}.nutanix1.{cluster}.nutanix2.{cluster_uuid}.nutanix3.{vm_uuid}.nutanix4.com"
