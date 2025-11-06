@@ -166,10 +166,11 @@ def get_storage_policies(module, storage_policies, result):
             msg="Api Exception raised while fetching storage policies info",
         )
 
-    total_available_results = resp.metadata.total_available_results
+    resp = strip_internal_attributes(resp.to_dict())
+    total_available_results = resp.get("metadata").get("total_available_results")
     result["total_available_results"] = total_available_results
+    resp = resp.get("data")
 
-    resp = strip_internal_attributes(resp.to_dict()).get("data")
     if not resp:
         resp = []
     result["response"] = resp

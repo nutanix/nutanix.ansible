@@ -498,6 +498,7 @@
       - result.response | length >= 2
       - result.total_available_results is defined
       - result.total_available_results >= 2
+      - result.response | length == result.total_available_results
     success_msg: "List all storage policies passed"
     fail_msg: "List all storage policies failed"
 
@@ -524,6 +525,7 @@
       - result.response[0].fault_tolerance_spec.replication_factor == "THREE"
       - result.total_available_results is defined
       - result.total_available_results == 1
+      - result.response | length == result.total_available_results
     success_msg: "List all storage policies with filter passed"
     fail_msg: "List all storage policies with filter failed"
 
