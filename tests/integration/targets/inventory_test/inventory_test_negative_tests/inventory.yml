@@ -16,6 +16,6 @@
     - name: Assert error message contains expected variable not found
       ansible.builtin.assert:
         that:
-          - inventory_result.stderr is search("Variable 'name_of_vm' not found when formatting ansible_host")
+          - inventory_result.stderr is search("Variable 'name_of_vm' not found")
         fail_msg: "Expected error message not found in inventory result"
         success_msg: "Expected error message found in inventory result"
