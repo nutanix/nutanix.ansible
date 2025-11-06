@@ -50,6 +50,7 @@ jobs:
           export NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}
           export NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}
           export NUTANIX_DR_SITE=${{ secrets.NUTANIX_DR_SITE }}
+          export VALIDATE_CERTS=${{ secrets.VALIDATE_CERTS }}
           export NDB_HOST=${{ secrets.NDB_HOST }}
           export NDB_PASSWORD=${{ secrets.NDB_PASSWORD }}
           export NDB_USERNAME=${{ secrets.NDB_USERNAME }}
