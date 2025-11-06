@@ -74,6 +74,37 @@ jobs:
           ansible-playbook tests/integration/targets/prepare_fc_env/playbooks/prepare_fc_env.yml
           ansible-playbook tests/integration/targets/prepare_foundation_env/playbooks/prepare_foundation_env.yml
 
+          if [ -n "$regex_pattern" ] && [[ "$regex_pattern" =~ inventory_tests ]]; then
+              echo "regex_pattern contains 'inventory_tests'. Running all inventory tests..."
+              echo "===> Running inventory test (default host)..."
+              if ansible-playbook -i tests/integration/targets/inventory_test/inventory_test_default_host/nutanix.yml \
+              tests/integration/targets/inventory_test/inventory_test_default_host/inventory.yml \
+              2>&1 | tee -a test_output.log; then
+                  echo "Inventory test default host completed successfully."
+              else
+                  echo "Inventory test default host failed. See logs above." | tee -a test_output.log
+                  exit 1
+              fi
+              echo "===> Running inventory test (custom host)..."
+              if ansible-playbook -i tests/integration/targets/inventory_test/inventory_test_custom_host/nutanix.yml \
+              tests/integration/targets/inventory_test/inventory_test_custom_host/inventory.yml \
+              2>&1 | tee -a test_output.log; then
+                  echo "Inventory test custom host completed successfully."
+              else
+                  echo "Inventory test custom host failed. See logs above." | tee -a test_output.log
+                  exit 1
+              fi
+              echo "===> Running inventory test (negative tests)..."
+              if ansible-playbook -i tests/integration/targets/inventory_test/inventory_test_negative_tests/nutanix.yml \
+              tests/integration/targets/inventory_test/inventory_test_negative_tests/inventory.yml \
+              2>&1 | tee -a test_output.log; then
+                  echo "Inventory test negative tests completed successfully."
+              else
+                  echo "Inventory test negative tests failed. See logs above." | tee -a test_output.log
+                  exit 1
+              fi
+          fi
+
           echo "===> Running integration tests..."
           set +e
           if [ -n "$regex_pattern" ]; then
