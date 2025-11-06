@@ -45,6 +45,18 @@ response:
   type: dict
   returned: always
   sample:
+    {
+      "ca_chain": null,
+      "passphrase": null,
+      "private_key": null,
+      "private_key_algorithm": "RSA_2048",
+      "public_certificate": "-----BEGIN CERTIFICATE-----\n
+        Sm9zZTEUMBIGA1UEChMLTnV0YW5peCBJbmMxLzAtBgNVBAsTJlNlY3VyaXR5IEVu\nZ2luZWVyaW5nIGFuZCBSZXNlYXJjaCBUZWFtMRYwFAYDVQQDEw0xMC45OC4xNDUu\n
+        MTE3MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtAupSmGGKIXOs9Ub\nmD7pwjmk1iJ+Mq4F8aqVwsfESKboc5xtQ9FX8z9vSgdkyd67ZhrWSgEeG8ZOg80h\n
+        bboTDC5j83CoH8mcyUmO5Rrk1DpGDJpzHnDOBq4CxkFvC5lxB9LXu2LnFhZ6myTC\nR+lmrJsXT6tYsnUIXhC11iHqcv/VGYA2c90cfMJLNXghe4it9sY6dvzrBy5ws/ly\n
+        MwqtwwIDAQABo4GUMIGRMAkGA1UdEwQCMAAwHQYDVR0OBBYEFG6GTzPSc4pDX87B\nvbS11faBPjudMAsGA1UdDwQEAwIF4DAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYB\n
+        Udlp55wEPI7s28oycJgT39Q7x95F2BJkIfyC70n6KgxWXyQtuJ6cxd1c0NcYZsEx\nnpVZBA==\n-----END CERTIFICATE-----"
+    }
 
 changed:
   description: This indicates whether the task resulted in any changes

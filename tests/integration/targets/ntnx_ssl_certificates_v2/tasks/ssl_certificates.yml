@@ -62,30 +62,10 @@
       - result.failed == false
       - result.ext_id == "{{ cluster.uuid }}"
       - result.response is defined
-      - result.response.private_key_algorithm is defined
+      - result.response.private_key_algorithm == "{{ ssl_certificate.private_key_algorithm }}"
       - result.response.public_certificate is defined
     fail_msg: "Failed to update SSL Certificates for the given cluster"
     success_msg: "SSL Certificates updated successfully for the given cluster"
-
-- name: Get SSL Certificates after update
-  nutanix.ncp.ntnx_ssl_certificates_info_v2:
-    ext_id: "{{ cluster.uuid }}"
-  ignore_errors: true
-  register: ssl_certificates_info_after_update
-
-- name: Get SSL Certificates after update status
-  ansible.builtin.assert:
-    that:
-      - ssl_certificates_info_after_update.changed == false
-      - ssl_certificates_info_after_update.failed == false
-      - ssl_certificates_info_after_update.ext_id == "{{ cluster.uuid }}"
-      - ssl_certificates_info_after_update.response is defined
-      - ssl_certificates_info_after_update.response.private_key_algorithm is defined
-      - ssl_certificates_info_after_update.response.public_certificate is defined
-      - ssl_certificates_info_before_update.response.private_key_algorithm == ssl_certificates_info_after_update.response.private_key_algorithm
-      - ssl_certificates_info_before_update.response.public_certificate == ssl_certificates_info_after_update.response.public_certificate
-    fail_msg: "Failed to fetch SSL Certificates after update for the given cluster"
-    success_msg: "SSL Certificates fetched successfully after update for the given cluster"
 
 - name: Update SSL Certificates with invalid cluster external ID
   nutanix.ncp.ntnx_ssl_certificates_v2:

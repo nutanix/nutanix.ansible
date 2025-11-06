@@ -88,6 +88,18 @@ response:
   type: dict
   returned: always
   sample:
+    {
+      "ca_chain": null,
+      "passphrase": null,
+      "private_key": null,
+      "private_key_algorithm": "RSA_2048",
+      "public_certificate": "-----BEGIN CERTIFICATE-----\n
+      MRMwEQYDVQQIEwpDYWxpZm9ybmlhMREwDwYDVQQHEwhTYW4gSm9zZTEWMBQGA1UE\nChMNTnV0YW5peCwgSW5jLjEvMC0GA1UECxMmU2VjdXJpdHkgRW5naW5lZXJpbmcg\n
+      QG51dGFuaXguY29tMB4XDTI1MTEwNjA2NDMwOVoXDTI2MTEwNjA2NDMwOVowgZQx\nCzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpDYWxpZm9ybmlhMREwDwYDVQQHEwhTYW4g\n
+      hjSvZ6IV6e/CgRHX+VRRPMjQe42VZRmWxwp9rBtMOFGxhOiaJHzIEJVdHZhvNpga\ndCJb+dAcahj7PPbYtyqUwq219Qv006JxLohOI52H6ATktzj5/9zxFdIMfjz2W5nX\n
+      InFLjKaFTIaIN4p8mAIv6dHTcyLtmxesZ1ZOfiTMjzXQSu8dS5BrGXERNmzATN7A\nOdtj7e/oUjwRVBNUrhzNgOE2naFvV0AOXcqKnoKBDTHOq2PPuGqELSgtNQ6TQrMx\n
+      pg01b/9d1XLPXFxiXmzpOnesuSY6VSaxOCsBMT5LenIT/WE9ES7DND5xsfpY4EJt\ns0H5bA==\n-----END CERTIFICATE-----"
+    }
 
 task_ext_id:
   description:
