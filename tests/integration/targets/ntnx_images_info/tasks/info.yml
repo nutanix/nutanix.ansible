@@ -28,7 +28,7 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.response.entities[0].status.name == '{{ disk_image.centos }}'
+      - result.response.entities[1].status.name == '{{ disk_image.centos }}'
     fail_msg: "Unable to get particular image"
     success_msg: "Image info obtained successfully"
 
