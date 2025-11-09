@@ -55,6 +55,14 @@ EXAMPLES = r"""
     nutanix_password: <pass>
     filter: "name eq 'cluster_profile_1'"
   register: result
+
+- name: Fetch all cluster profiles info with limit
+  nutanix.ncp.ntnx_clusters_profiles_info_v2:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    limit: 1
+  register: result
 """
 
 RETURN = r"""

@@ -745,9 +745,8 @@ RETURN = r"""
 response:
     description:
         - Response for the cluster profile operation.
-        - For update, it will be cluster profile details if C(wait) is True.
-        - For update, it will be task details if C(wait) is False.
-        - For create and delete, it will be always task details.
+        - For create and update, it will be cluster profile details if C(wait) is True and task details if C(wait) is False.
+        - For delete, it will be always task details.
     type: dict
     returned: always
     sample:
@@ -906,7 +905,7 @@ msg:
     description:
         - The message from module operation if any.
     type: str
-    returned: always
+    returned: When value is present.
     sample: "Cluster Profile with external ID '00061de6-4a87-6b06-185b-ac1f6b6f97e2' will be deleted."
 error:
     description:

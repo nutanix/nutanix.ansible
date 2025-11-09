@@ -1,66 +1,120 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create a cluster with minimum spec
-# 2. Run PE PC registration
-# 3. Create cluster profile
-# 4. Update cluster profile
-# 5. Fetch cluster profile using external ID
-# 6. List all cluster profiles
-# 7. List all cluster profiles with filter
-# 8. List all cluster profiles with limit
-# 9. Apply cluster profile to cluster with dry run
-# 10. Apply cluster profile to cluster
-# 11. Disassociate cluster profile from Cluster
-# 12. Delete cluster profile
-# 13. Destroy cluster
+# 1. Create cluster profile
+# 2. Update cluster profile
+# 3. List all cluster profiles
+# 4. List all cluster profiles with filter
+# 5. List all cluster profiles with limit
+# 6. Apply cluster profile to cluster with dry run
+# 7. Apply cluster profile to cluster
+# 8. Disassociate cluster profile from Cluster
+# 9. Delete cluster profile
 
-- name: Cluster expanding playbook
+# Variables:
+# cluster_ext_id: Cluster external ID
+# cluster_profiles: List of cluster profiles variables for creating and updating cluster profiles
+# cluster_profiles[0] is for creating cluster profile
+# cluster_profiles[1] is for updating cluster profile
+
+- name: Cluster profiles playbook
   hosts: localhost
   gather_facts: false
   module_defaults:
     group/nutanix.ncp.ntnx:
-      nutanix_host: <pc_ip>
-      nutanix_username: <user>
-      nutanix_password: <pass>
+      # nutanix_host: <pc_ip>
+      # nutanix_username: <user>
+      # nutanix_password: <pass>
       validate_certs: false
   tasks:
     - name: Setting Variables
       ansible.builtin.set_fact:
-        cluster_name: "cluster1"
-        username: "username"
-        password: "password"
-        clusters:
-          pe_username: "pe_username"
-          pe_password: "pe_password"
-          nodes:
-            - cvm_ip: "10.0.0.1"
-          name: "cluster1"
-          config:
-            cluster_functions: ["AOS"]
-            auth_public_keys:
-              - name: public_key_name
-                key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAABgQDC"
-            redundancy_factor_cluster_crud: 1
-            cluster_arch: "X86_64"
-            fault_tolerance_state:
-              domain_awareness_level_cluster_crud: "DISK"
-          network:
-            virtual_ip: "10.0.0.2"
-            iscsi_ip: "10.0.0.3"
-            iscsi_ip1: "10.0.0.4"
-            dns_servers: ["10.0.0.5", "10.0.0.6"]
-            ntp_servers:
-              ["ntp_server_1", "ntp_server_2", "ntp_server_3", "ntp_server_4"]
-            smtp_server:
-              ip: "10.0.0.7"
-              port: 25
-              username: "username"
-              password: "password"
-              type: "STARTTLS"
-              email_address: "email@example.com"
+        cluster_ext_id: "0006425d-b9cd-17d9-6711-52540062663a"
         cluster_profiles:
-          - name: "cluster_profile_1"
+          - name: "cluster_profile_1_create"
+            allowed_overrides: ["NTP_SERVER_CONFIG", "SNMP_SERVER_CONFIG"]
+            name_server_ip_list:
+              - ipv4:
+                  value: "10.0.0.8"
+                  prefix_length: 32
+              - ipv6:
+                  value: "2001:0db8:85a3:0000:0000:8a2e:0370:7334"
+                  prefix_length: 128
+            ntp_server_ip_list:
+              - ipv4:
+                  value: "10.0.0.9"
+                  prefix_length: 32
+              - ipv6:
+                  value: "2002:0db8:85a3:0000:0000:8a2e:0370:7334"
+                  prefix_length: 128
+              - fqdn:
+                  value: "ntp.example.com"
+            smtp_server:
+              email_address: "email@example.com"
+              server:
+                ip_address:
+                  ipv4:
+                    value: "10.0.0.10"
+                    prefix_length: 32
+                  ipv6:
+                    value: "2003:0db8:85a3:0000:0000:8a2e:0370:7334"
+                    prefix_length: 128
+                  fqdn:
+                    value: "smtp.example.com"
+                port: 465
+                username: "smtp-user"
+                password: "smtp-password"
+              type: "SSL"
+            nfs_subnet_whitelist: ["10.0.0.11/255.255.255.255"]
+            snmp_config:
+              is_enabled: false
+              users:
+                - username: "snmpuser1"
+                  auth_type: "MD5"
+                  auth_key: "Test_SNMP_user_authentication_key"
+                  priv_type: "DES"
+                  priv_key: "Test_SNMP_user_encryption_key"
+              transports:
+                - protocol: "UDP"
+                  port: 21
+              traps:
+                - address:
+                    ipv4:
+                      value: "10.0.0.12"
+                      prefix_length: 32
+                    ipv6:
+                      value: "2004:0db8:85a3:0000:0000:8a2e:0370:7334"
+                      prefix_length: 128
+                  username: "trapuser"
+                  protocol: "UDP"
+                  port: 59
+                  should_inform: false
+                  engine_id: "0x1234567890abcdef12"
+                  version: "V2"
+                  reciever_name: "trap-receiver"
+                  community_string: "snmp-server community public RO 192.168.1.0 255.255.255.0"
+            rsyslog_server_list:
+              - server_name: "testServer1"
+                ip_address:
+                  ipv4:
+                    value: "10.0.0.13"
+                    prefix_length: 32
+                  ipv6:
+                    value: "2005:0db8:85a3:0000:0000:8a2e:0370:7334"
+                    prefix_length: 128
+                port: 29
+                network_protocol: "UDP"
+                modules:
+                  - name: "CASSANDRA"
+                    log_severity_level: "EMERGENCY"
+                    should_log_monitor_files: true
+                  - name: "CURATOR"
+                    log_severity_level: "ERROR"
+                    should_log_monitor_files: false
+            pulse_status:
+              is_enabled: false
+              pii_scrubbing_level: "DEFAULT"
+          - name: "cluster_profile_1_update"
             allowed_overrides: ["NTP_SERVER_CONFIG", "SNMP_SERVER_CONFIG"]
             name_server_ip_list:
               - ipv4:
@@ -144,139 +198,6 @@
               is_enabled: false
               pii_scrubbing_level: "DEFAULT"
 
-    - name: Set command split for resetting cluster username and password
-      ansible.builtin.set_fact:
-        pe_ssh_cmd:
-          sshpass -p '{{ clusters.pe_password }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
-          {{ clusters.pe_username }}@{{ clusters.nodes[0].cvm_ip }}
-        reset_username_password: /home/nutanix/prism/cli/ncli user reset-password user-name={{ username }} password={{ password }}
-        cluster_status: /usr/local/nutanix/cluster/bin/cluster status
-
-    - name: Set command for resetting cluster username and password
-      ansible.builtin.set_fact:
-        reset_command: '{{ pe_ssh_cmd }} "{{ reset_username_password }}"'
-        cluster_status_command: '{{ pe_ssh_cmd }} "{{ cluster_status }}"'
-
-    - name: List all clusters to get prism central external ID
-      nutanix.ncp.ntnx_clusters_info_v2:
-        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
-      register: result
-
-    - name: Get prism central external ID
-      ansible.builtin.set_fact:
-        prism_central_external_id: "{{ result.response[0].ext_id }}"
-
-    - name: Discover unconfigured node
-      nutanix.ncp.ntnx_discover_unconfigured_nodes_v2:
-        address_type: "IPV4"
-        ip_filter_list:
-          - ipv4:
-              value: "{{ clusters.nodes[0].cvm_ip }}"
-      register: result
-
-    - name: Run cluster create prechecks
-      nutanix.ncp.ntnx_clusters_v2:
-        name: "{{ clusters.name }}"
-        nodes:
-          node_list:
-            - controller_vm_ip:
-                ipv4:
-                  value: "{{ clusters.nodes[0].cvm_ip }}"
-        config:
-          cluster_function: "{{ clusters.config.cluster_functions }}"
-          authorized_public_key_list:
-            - name: "{{ clusters.config.auth_public_keys[0].name }}"
-              key: "{{ clusters.config.auth_public_keys[0].key }}"
-          redundancy_factor: "{{ clusters.config.redundancy_factor_cluster_crud }}"
-          cluster_arch: "{{ clusters.config.cluster_arch }}"
-          fault_tolerance_state:
-            domain_awareness_level: "{{ clusters.config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
-        network:
-          external_address:
-            ipv4:
-              value: "{{ clusters.network.virtual_ip }}"
-          external_data_service_ip:
-            ipv4:
-              value: "{{ clusters.network.iscsi_ip }}"
-          ntp_server_ip_list:
-            - fqdn:
-                value: "{{ clusters.network.ntp_servers[0] }}"
-            - fqdn:
-                value: "{{ clusters.network.ntp_servers[1] }}"
-            - fqdn:
-                value: "{{ clusters.network.ntp_servers[2] }}"
-            - fqdn:
-                value: "{{ clusters.network.ntp_servers[3] }}"
-          name_server_ip_list:
-            - ipv4:
-                value: "{{ clusters.network.dns_servers[0] }}"
-            - ipv4:
-                value: "{{ clusters.network.dns_servers[1] }}"
-          smtp_server:
-            email_address: "{{ clusters.network.smtp_server.email_address }}"
-            server:
-              ip_address:
-                ipv4:
-                  value: "{{ clusters.network.smtp_server.ip }}"
-              port: "{{ clusters.network.smtp_server.port }}"
-              username: "{{ clusters.network.smtp_server.username }}"
-              password: "{{ clusters.network.smtp_server.password }}"
-            type: "{{ clusters.network.smtp_server.type }}"
-        dryrun: true
-        timeout: 1800
-      register: result
-
-    - name: Create cluster with minimum spec
-      nutanix.ncp.ntnx_clusters_v2:
-        name: "{{cluster_name}}"
-        nodes:
-          node_list:
-            - controller_vm_ip:
-                ipv4:
-                  value: "{{ clusters.nodes[0].cvm_ip }}"
-        config:
-          cluster_function: "{{ clusters.config.cluster_functions }}"
-          redundancy_factor: "{{ clusters.config.redundancy_factor_cluster_crud }}"
-          cluster_arch: "{{ clusters.config.cluster_arch }}"
-          fault_tolerance_state:
-            domain_awareness_level: "{{ clusters.config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
-        timeout: 1800
-      register: result
-
-    - name: Reset username and password
-      ansible.builtin.command: "{{ reset_command }}"
-      register: result
-
-      changed_when: result.rc != 0
-
-    - name: Run PE PC registration
-      nutanix.ncp.ntnx_pc_registration_v2:
-        ext_id: "{{ prism_central_external_id }}"
-        remote_cluster:
-          aos_remote_cluster:
-            remote_cluster:
-              address:
-                ipv4:
-                  value: "{{ clusters.nodes[0].cvm_ip }}"
-              credentials:
-                authentication:
-                  username: "{{ username }}"
-                  password: "{{ password }}"
-      register: result
-
-    - name: Sleep for 1 minute
-      ansible.builtin.pause:
-        seconds: 60
-
-    - name: Fetch cluster using name
-      nutanix.ncp.ntnx_clusters_info_v2:
-        filter: name eq '{{ cluster_name }}'
-      register: result
-
-    - name: Set cluster external ID
-      ansible.builtin.set_fact:
-        cluster_ext_id: "{{ result.response[0].ext_id }}"
-
     - name: Create cluster profile
       nutanix.ncp.ntnx_clusters_profiles_v2:
         name: "{{ cluster_profiles[0].name }}"
@@ -353,72 +274,72 @@
     - name: Update cluster profile with all attributes
       nutanix.ncp.ntnx_clusters_profiles_v2:
         ext_id: "{{ cluster_profile_ext_id }}"
-        name: "cluster_profile_updated_all"
+        name: "{{ cluster_profiles[1].name }}"
         description: "Updated cluster profile description all attributes"
         allowed_overrides:
-          - "{{ cluster_profiles[0].allowed_overrides[0] }}"
+          - "{{ cluster_profiles[1].allowed_overrides[0] }}"
         name_server_ip_list:
           - ipv4:
-              value: "{{ cluster_profiles[0].name_server_ip_list[0].ipv4.value }}"
-              prefix_length: "{{ cluster_profiles[0].name_server_ip_list[0].ipv4.prefix_length | int }}"
+              value: "{{ cluster_profiles[1].name_server_ip_list[0].ipv4.value }}"
+              prefix_length: "{{ cluster_profiles[1].name_server_ip_list[0].ipv4.prefix_length | int }}"
         ntp_server_ip_list:
           - ipv4:
-              value: "{{ cluster_profiles[0].ntp_server_ip_list[0].ipv4.value }}"
-              prefix_length: "{{ cluster_profiles[0].ntp_server_ip_list[0].ipv4.prefix_length | int }}"
+              value: "{{ cluster_profiles[1].ntp_server_ip_list[0].ipv4.value }}"
+              prefix_length: "{{ cluster_profiles[1].ntp_server_ip_list[0].ipv4.prefix_length | int }}"
         smtp_server:
-          email_address: "{{ cluster_profiles[0].smtp_server.email_address }}"
+          email_address: "{{ cluster_profiles[1].smtp_server.email_address }}"
           server:
             ip_address:
               ipv4:
-                value: "{{ cluster_profiles[0].smtp_server.server.ip_address.ipv4.value }}"
-                prefix_length: "{{ cluster_profiles[0].smtp_server.server.ip_address.ipv4.prefix_length | int }}"
-            port: "{{ cluster_profiles[0].smtp_server.server.port | int }}"
-            username: "{{ cluster_profiles[0].smtp_server.server.username }}"
-            password: "{{ cluster_profiles[0].smtp_server.server.password }}"
-          type: "{{ cluster_profiles[0].smtp_server.type }}"
-        nfs_subnet_whitelist: "{{ cluster_profiles[0].nfs_subnet_whitelist }}"
+                value: "{{ cluster_profiles[1].smtp_server.server.ip_address.ipv4.value }}"
+                prefix_length: "{{ cluster_profiles[1].smtp_server.server.ip_address.ipv4.prefix_length | int }}"
+            port: "{{ cluster_profiles[1].smtp_server.server.port | int }}"
+            username: "{{ cluster_profiles[1].smtp_server.server.username }}"
+            password: "{{ cluster_profiles[1].smtp_server.server.password }}"
+          type: "{{ cluster_profiles[1].smtp_server.type }}"
+        nfs_subnet_whitelist: "{{ cluster_profiles[1].nfs_subnet_whitelist }}"
         snmp_config:
-          is_enabled: "{{ cluster_profiles[0].snmp_config.is_enabled }}"
+          is_enabled: "{{ cluster_profiles[1].snmp_config.is_enabled }}"
           users:
-            - username: "{{ cluster_profiles[0].snmp_config.users[0].username }}"
-              auth_type: "{{ cluster_profiles[0].snmp_config.users[0].auth_type }}"
-              auth_key: "{{ cluster_profiles[0].snmp_config.users[0].auth_key }}"
-              priv_type: "{{ cluster_profiles[0].snmp_config.users[0].priv_type }}"
-              priv_key: "{{ cluster_profiles[0].snmp_config.users[0].priv_key }}"
+            - username: "{{ cluster_profiles[1].snmp_config.users[0].username }}"
+              auth_type: "{{ cluster_profiles[1].snmp_config.users[0].auth_type }}"
+              auth_key: "{{ cluster_profiles[1].snmp_config.users[0].auth_key }}"
+              priv_type: "{{ cluster_profiles[1].snmp_config.users[0].priv_type }}"
+              priv_key: "{{ cluster_profiles[1].snmp_config.users[0].priv_key }}"
           transports:
-            - protocol: "{{ cluster_profiles[0].snmp_config.transports[0].protocol }}"
-              port: "{{ cluster_profiles[0].snmp_config.transports[0].port }}"
+            - protocol: "{{ cluster_profiles[1].snmp_config.transports[0].protocol }}"
+              port: "{{ cluster_profiles[1].snmp_config.transports[0].port }}"
           traps:
             - address:
                 ipv4:
-                  value: "{{ cluster_profiles[0].snmp_config.traps[0].address.ipv4.value }}"
-                  prefix_length: "{{ cluster_profiles[0].snmp_config.traps[0].address.ipv4.prefix_length | int }}"
-              username: "{{ cluster_profiles[0].snmp_config.traps[0].username }}"
-              protocol: "{{ cluster_profiles[0].snmp_config.traps[0].protocol }}"
-              port: "{{ cluster_profiles[0].snmp_config.traps[0].port | int }}"
-              should_inform: "{{ cluster_profiles[0].snmp_config.traps[0].should_inform }}"
-              engine_id: "{{ cluster_profiles[0].snmp_config.traps[0].engine_id }}"
-              version: "{{ cluster_profiles[0].snmp_config.traps[0].version }}"
-              reciever_name: "{{ cluster_profiles[0].snmp_config.traps[0].reciever_name }}"
-              community_string: "{{ cluster_profiles[0].snmp_config.traps[0].community_string }}"
+                  value: "{{ cluster_profiles[1].snmp_config.traps[0].address.ipv4.value }}"
+                  prefix_length: "{{ cluster_profiles[1].snmp_config.traps[0].address.ipv4.prefix_length | int }}"
+              username: "{{ cluster_profiles[1].snmp_config.traps[0].username }}"
+              protocol: "{{ cluster_profiles[1].snmp_config.traps[0].protocol }}"
+              port: "{{ cluster_profiles[1].snmp_config.traps[0].port | int }}"
+              should_inform: "{{ cluster_profiles[1].snmp_config.traps[0].should_inform }}"
+              engine_id: "{{ cluster_profiles[1].snmp_config.traps[0].engine_id }}"
+              version: "{{ cluster_profiles[1].snmp_config.traps[0].version }}"
+              reciever_name: "{{ cluster_profiles[1].snmp_config.traps[0].reciever_name }}"
+              community_string: "{{ cluster_profiles[1].snmp_config.traps[0].community_string }}"
         rsyslog_server_list:
-          - server_name: "{{ cluster_profiles[0].rsyslog_server_list[0].server_name }}"
+          - server_name: "{{ cluster_profiles[1].rsyslog_server_list[0].server_name }}"
             ip_address:
               ipv4:
-                value: "{{ cluster_profiles[0].rsyslog_server_list[0].ip_address.ipv4.value }}"
-                prefix_length: "{{ cluster_profiles[0].rsyslog_server_list[0].ip_address.ipv4.prefix_length | int }}"
-            port: "{{ cluster_profiles[0].rsyslog_server_list[0].port | int }}"
-            network_protocol: "{{ cluster_profiles[0].rsyslog_server_list[0].network_protocol }}"
+                value: "{{ cluster_profiles[1].rsyslog_server_list[0].ip_address.ipv4.value }}"
+                prefix_length: "{{ cluster_profiles[1].rsyslog_server_list[0].ip_address.ipv4.prefix_length | int }}"
+            port: "{{ cluster_profiles[1].rsyslog_server_list[0].port | int }}"
+            network_protocol: "{{ cluster_profiles[1].rsyslog_server_list[0].network_protocol }}"
             modules:
-              - name: "{{ cluster_profiles[0].rsyslog_server_list[0].modules[0].name }}"
-                log_severity_level: "{{ cluster_profiles[0].rsyslog_server_list[0].modules[0].log_severity_level }}"
-                should_log_monitor_files: "{{ cluster_profiles[0].rsyslog_server_list[0].modules[0].should_log_monitor_files }}"
-              - name: "{{ cluster_profiles[0].rsyslog_server_list[0].modules[1].name }}"
-                log_severity_level: "{{ cluster_profiles[0].rsyslog_server_list[0].modules[1].log_severity_level }}"
-                should_log_monitor_files: "{{ cluster_profiles[0].rsyslog_server_list[0].modules[1].should_log_monitor_files }}"
+              - name: "{{ cluster_profiles[1].rsyslog_server_list[0].modules[0].name }}"
+                log_severity_level: "{{ cluster_profiles[1].rsyslog_server_list[0].modules[0].log_severity_level }}"
+                should_log_monitor_files: "{{ cluster_profiles[1].rsyslog_server_list[0].modules[0].should_log_monitor_files }}"
+              - name: "{{ cluster_profiles[1].rsyslog_server_list[0].modules[1].name }}"
+                log_severity_level: "{{ cluster_profiles[1].rsyslog_server_list[0].modules[1].log_severity_level }}"
+                should_log_monitor_files: "{{ cluster_profiles[1].rsyslog_server_list[0].modules[1].should_log_monitor_files }}"
         pulse_status:
-          is_enabled: "{{ cluster_profiles[0].pulse_status.is_enabled }}"
-          pii_scrubbing_level: "{{ cluster_profiles[0].pulse_status.pii_scrubbing_level }}"
+          is_enabled: "{{ cluster_profiles[1].pulse_status.is_enabled }}"
+          pii_scrubbing_level: "{{ cluster_profiles[1].pulse_status.pii_scrubbing_level }}"
       register: result
 
     - name: Fetch cluster profile using external ID
@@ -432,7 +353,7 @@
 
     - name: List all cluster profiles with filter
       nutanix.ncp.ntnx_clusters_profiles_info_v2:
-        filter: name eq 'cluster_profile_updated_all'
+        filter: name eq '{{ cluster_profiles[1].name }}'
       register: result
 
     - name: List all cluster profiles with limit
@@ -465,14 +386,8 @@
         state: absent
       register: result
 
-    - name: Delete the first cluster profile
+    - name: Delete cluster profile
       nutanix.ncp.ntnx_clusters_profiles_v2:
         state: absent
         ext_id: "{{ cluster_profile_ext_id }}"
-      register: result
-
-    - name: Destroy the cluster for cleanup
-      nutanix.ncp.ntnx_clusters_v2:
-        state: absent
-        ext_id: "{{ cluster_ext_id }}"
       register: result
