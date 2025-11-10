@@ -4,6 +4,7 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+import re
 
 __metaclass__ = type
 
@@ -139,6 +140,12 @@ from ansible.plugins.inventory import BaseInventoryPlugin, Constructable  # noqa
 from ..module_utils.v4.utils import strip_internal_attributes  # noqa: E402
 from ..module_utils.v4.vmm.api_client import get_vm_api_instance  # noqa: E402
 
+from ..module_utils.v4.clusters_mgmt.api_client import (
+    get_clusters_api_instance,
+)  # noqa: E402
+
+from ..module_utils.v4.clusters_mgmt.helpers import get_cluster  # noqa: E402
+
 
 class Mock_Module:
     """Mock module to interface with V4 SDK helper functions"""
@@ -229,7 +236,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
 
         return vms
 
-    def _build_host_vars(self, vm):
+    def _build_host_vars(self, vm, cluster, strict=False):
         """
         Build a dictionary of host variables from the V4 VM response.
         Returns all VM attributes, excluding null/empty values.
@@ -272,11 +279,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         # Add ansible_host for SSH connectivity
         host_vars["ansible_host"] = vm_ip
 
-        # Add convenience fields
-        cluster = vm.get("cluster")
-        if cluster and isinstance(cluster, dict):
-            host_vars["cluster_ext_id"] = cluster.get("ext_id")
-
         # Convert categories to list of extId if present
         if vm.get("categories"):
             category_ext_ids = []
@@ -287,6 +289,63 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                         category_ext_ids.append(category_ext_id)
             if category_ext_ids:
                 host_vars["categories"] = category_ext_ids
+
+        if getattr(self, "custom_ansible_host", None) and self.custom_ansible_host.get(
+            "expr"
+        ):
+            lookup = {
+                "cluster_name": cluster.to_dict().get("name"),
+                "cluster_ext_id": cluster.to_dict().get("ext_id"),
+                "vm_name": vm.get("name"),
+                "vm_description": vm.get("description"),
+                "vm_ext_id": vm.get("ext_id"),
+            }
+
+            try:
+                vm_ip = re.sub(
+                    r"\{([^}]+)\}",
+                    self.get_replacement_function(lookup),
+                    self.custom_ansible_host.get("expr"),
+                )
+            except Exception as e:
+                if strict:
+                    raise AnsibleError(
+                        "Error formatting ansible_host expression for VM {vm_name}. with ext_id {vm_ext_id}: {error}".format(
+                            vm_name=lookup.get("vm_name"),
+                            vm_ext_id=lookup.get("vm_ext_id"),
+                            error=str(e),
+                        )
+                    )
+
+        # Remove unwanted keys.
+        for key in [
+            "boot_config",
+            "cd_roms",
+            "cluster",
+            "create_time",
+            "disks",
+            "host",
+            "nics",
+            "ownership_info",
+            "project",
+            "update_time",
+            "tenant_id",
+            "links",
+            "source",
+            "availability_zone",
+            "guest_customization",
+            "guest_tools",
+            "apc_config",
+            "storage_config",
+            "gpus",
+            "serial_port",
+            "protection_type",
+            "pcie_devices",
+            "name",
+            "description",
+            "ext_id",
+        ]:
+            host_vars.pop(key, None)
 
         return host_vars
 
@@ -365,6 +424,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
 
         # Get VM API instance
         vmm = get_vm_api_instance(module)
+        clusters = get_clusters_api_instance(module)
 
         # Fetch VMs
         vms = self._fetch_vms(
@@ -380,8 +440,12 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             if not vm:
                 continue
 
+            # Get cluster information for this VM
+            cluster_ext_id = vm.get("cluster", {}).get("ext_id")
+            cluster = get_cluster(module, clusters, cluster_ext_id)
+
             try:
-                host_vars = self._build_host_vars(vm)
+                host_vars = self._build_host_vars(vm, cluster)
             except Exception as e:
                 raise AnsibleError(
                     "Failed to build host vars for VM: {0}. VM data: {1}".format(
@@ -392,9 +456,32 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             if not self._should_add_host(host_vars, host_filters, strict):
                 continue
 
-            # Add host to inventory
-            vm_name = host_vars.get("name")
-            cluster_ext_id = host_vars.get("cluster_ext_id")
+            # Add variables to host variables
+            vm_name = vm.get("name")
+            vm_ext_id = vm.get("ext_id")
+
+            cluster_name = cluster.to_dict().get("name")
+            if not cluster_name:
+                raise AnsibleError(
+                    "Failed to get cluster name for cluster ext_id: {0}".format(
+                        cluster_ext_id
+                    )
+                )
+            owner_ext_id = vm.get("ownership_info", {}).get("owner", {}).get("ext_id")
+            project_ext_id = vm.get("project", {}).get("ext_id")
+            vm_description = vm.get("description")
+
+            # Add additional info to host_vars
+            host_vars["vm_name"] = vm_name
+            host_vars["vm_ext_id"] = vm_ext_id
+            host_vars["cluster_name"] = cluster_name
+            host_vars["cluster_ext_id"] = cluster_ext_id
+            if owner_ext_id is not None:
+                host_vars["owner_ext_id"] = owner_ext_id
+            if project_ext_id is not None:
+                host_vars["project_ext_id"] = project_ext_id
+            if vm_description is not None:
+                host_vars["vm_description"] = vm_description
 
             # Create group based on cluster if available
             if cluster_ext_id:
@@ -429,3 +516,28 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 vm_name,
                 strict=strict,
             )
+
+    def get_replacement_function(self, lookup):
+
+        def repl(match):
+            val_key = match.group(1).strip()
+            val = lookup.get(val_key, "")
+            if val_key not in lookup:
+                allowed_vars = ", ".join(f"'{k}'" for k in lookup.keys())
+                raise Exception(
+                    "Variable '{val_key}' not found when formatting ansible_host expression. ".format(
+                        val_key=val_key
+                    )
+                    + "Please use one of the following allowed variables: {allowed_vars}.".format(
+                        allowed_vars=allowed_vars
+                    )
+                )
+            elif val is None or val == "":
+                raise Exception(
+                    "Variable '{val_key}' is not defined or empty".format(
+                        val_key=val_key
+                    )
+                )
+            return val
+
+        return repl
