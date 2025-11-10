@@ -50,12 +50,6 @@
     todelete_categories: "{{ todelete_categories + [ item.response.ext_id ] }}"
   with_items: "{{ result.results }}"
 
-- name: Set categories for storage policies external ids
-  ansible.builtin.set_fact:
-    category_ext_id_1: "{{ todelete_categories[0] }}"
-    category_ext_id_2: "{{ todelete_categories[1] }}"
-    category_ext_id_3: "{{ todelete_categories[2] }}"
-
 - name: Generate spec for creating storage policy using check mode
   nutanix.ncp.ntnx_storage_policies_v2:
     name: "storage_policy_name"
@@ -119,8 +113,8 @@
   nutanix.ncp.ntnx_storage_policies_v2:
     name: "storage_policy_{{ random_name }}_all"
     category_ext_ids:
-      - "{{ category_ext_id_1 }}"
-      - "{{ category_ext_id_2 }}"
+      - "{{ todelete_categories[0] }}"
+      - "{{ todelete_categories[1] }}"
     compression_spec:
       compression_state: "INLINE"
     encryption_spec:
@@ -142,8 +136,8 @@
       - result.task_ext_id is defined
       - result.response is defined
       - result.response.name == "storage_policy_{{ random_name }}_all"
-      - "'{{ category_ext_id_1 }}' in result.response.category_ext_ids"
-      - "'{{ category_ext_id_2 }}' in result.response.category_ext_ids"
+      - "'{{ todelete_categories[0] }}' in result.response.category_ext_ids"
+      - "'{{ todelete_categories[1] }}' in result.response.category_ext_ids"
       - result.response.category_ext_ids | length == 2
       - result.response.compression_spec.compression_state == "INLINE"
       - result.response.encryption_spec.encryption_state == "ENABLED"
@@ -159,7 +153,7 @@
 - name: Create storage policy with missing name
   nutanix.ncp.ntnx_storage_policies_v2:
     category_ext_ids:
-      - "{{ category_ext_id_1 }}"
+      - "{{ todelete_categories[0] }}"
     compression_spec:
       compression_state: "INLINE"
     encryption_spec:
@@ -187,7 +181,7 @@
   nutanix.ncp.ntnx_storage_policies_v2:
     name: "storage_policy_{{ random_name }}"
     category_ext_ids:
-      - "{{ category_ext_id_1 }}"
+      - "{{ todelete_categories[0] }}"
     compression_spec:
       compression_state: "POSTPROCESS"
     encryption_spec:
@@ -215,7 +209,7 @@
   nutanix.ncp.ntnx_storage_policies_v2:
     name: "storage_policy_{{ random_name }}_1"
     category_ext_ids:
-      - "{{ category_ext_id_1 }}"
+      - "{{ todelete_categories[0] }}"
     compression_spec:
       compression_state: "POSTPROCESS"
     encryption_spec:
@@ -239,13 +233,14 @@
     success_msg: "Create storage policy with same category failed as expected"
     fail_msg: "Create storage policy with same category did not fail as expected"
 
-- name: Create storage policy with keeping all storage attributes as default values
+# Check the validation of this error message: Atleast one storage attribute must be set to non default value
+- name: Create storage policy without providing storage attributes
   nutanix.ncp.ntnx_storage_policies_v2:
     name: "storage_policy_{{ random_name }}_default"
   register: result
   ignore_errors: true
 
-- name: Create storage policy with keeping all storage attributes as default values status
+- name: Create storage policy without providing storage attributes status
   ansible.builtin.assert:
     that:
       - result is defined
@@ -254,8 +249,8 @@
       - result.msg == "Api Exception raised while creating storage policy"
       - result.response is defined
       - result.response.data.error is defined
-    success_msg: "Create storage policy with keeping all storage attributes as default values failed as expected"
-    fail_msg: "Create storage policy with keeping all storage attributes as default values did not fail as expected"
+    success_msg: "Create storage policy without providing storage attributes failed as expected"
+    fail_msg: "Create storage policy without providing storage attributes did not fail as expected"
 
 - name: Generate spec for updating storage policy using check mode
   nutanix.ncp.ntnx_storage_policies_v2:
@@ -298,7 +293,7 @@
     ext_id: "{{ todelete[0] }}"
     name: "storage_policy_{{ random_name }}_updated"
     category_ext_ids:
-      - "{{ category_ext_id_3 }}"
+      - "{{ todelete_categories[2] }}"
     compression_spec:
       compression_state: "POSTPROCESS"
     encryption_spec:
@@ -319,7 +314,7 @@
       - result.task_ext_id is defined
       - result.response is defined
       - result.response.name == "storage_policy_{{ random_name }}_updated"
-      - result.response.category_ext_ids[0] == "{{ category_ext_id_3 }}"
+      - result.response.category_ext_ids[0] == "{{ todelete_categories[2] }}"
       - result.response.category_ext_ids | length == 1
       - result.response.compression_spec.compression_state == "POSTPROCESS"
       - result.response.encryption_spec.encryption_state == "ENABLED"
@@ -333,7 +328,7 @@
     ext_id: "{{ todelete[0] }}"
     name: "storage_policy_{{ random_name }}_updated"
     category_ext_ids:
-      - "{{ category_ext_id_3 }}"
+      - "{{ todelete_categories[2] }}"
     compression_spec:
       compression_state: "POSTPROCESS"
     encryption_spec:
@@ -360,7 +355,7 @@
     ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
     name: "storage_policy_{{ random_name }}_updated"
     category_ext_ids:
-      - "{{ category_ext_id_3 }}"
+      - "{{ todelete_categories[2] }}"
     compression_spec:
       compression_state: "POSTPROCESS"
     encryption_spec:
@@ -389,7 +384,7 @@
 #   nutanix.ncp.ntnx_storage_policies_v2:
 #     ext_id: "{{ todelete[0] }}"
 #     category_ext_ids:
-#       - "{{ category_ext_id_3 }}"
+#       - "{{ todelete_categories[2] }}"
 #     compression_spec:
 #       compression_state: "POSTPROCESS"
 #     encryption_spec:
@@ -421,7 +416,7 @@
     ext_id: "{{ todelete[1] }}"
     name: "storage_policy_{{ random_name }}_updated"
     category_ext_ids:
-      - "{{ category_ext_id_3 }}"
+      - "{{ todelete_categories[2] }}"
     encryption_spec:
       encryption_state: "SYSTEM_DERIVED"
     qos_spec:
@@ -456,7 +451,7 @@
       - result.failed == false
       - result.response is defined
       - result.response.name == "storage_policy_{{ random_name }}_updated"
-      - result.response.category_ext_ids[0] == "{{ category_ext_id_3 }}"
+      - result.response.category_ext_ids[0] == "{{ todelete_categories[2] }}"
       - result.response.category_ext_ids | length == 1
       - result.response.compression_spec.compression_state == "POSTPROCESS"
       - result.response.encryption_spec.encryption_state == "ENABLED"
@@ -517,7 +512,7 @@
       - result.response is defined
       - result.response | length == 1
       - result.response[0].name == "storage_policy_{{ random_name }}_updated"
-      - result.response[0].category_ext_ids[0] == "{{ category_ext_id_3 }}"
+      - result.response[0].category_ext_ids[0] == "{{ todelete_categories[2] }}"
       - result.response[0].category_ext_ids | length == 1
       - result.response[0].compression_spec.compression_state == "POSTPROCESS"
       - result.response[0].encryption_spec.encryption_state == "ENABLED"
