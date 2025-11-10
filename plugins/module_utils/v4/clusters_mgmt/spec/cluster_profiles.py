@@ -76,7 +76,7 @@ class ClusterProfileSpecs:
     )
 
     users_spec = dict(
-        username=dict(type="str"),
+        username=dict(type="str", required=True),
         auth_type=dict(
             type="str",
             choices=["MD5", "SHA"],
@@ -94,6 +94,7 @@ class ClusterProfileSpecs:
 
     protocol_spec = dict(
         type="str",
+        required=True,
         choices=["UDP", "TCP", "UDP6", "TCP6"],
         obj=clusters_sdk.SnmpProtocol,
     )
@@ -208,7 +209,9 @@ class ClusterProfileSpecs:
 
     pulse_status_spec = dict(
         is_enabled=dict(type="bool"),
-        pii_scrubbing_level=dict(type="str", choices=["ALL", "DEFAULT"]),
+        pii_scrubbing_level=dict(
+            type="str", choices=["ALL", "DEFAULT"], obj=clusters_sdk.PIIScrubbingLevel
+        ),
     )
 
     smtp_server_spec = dict(

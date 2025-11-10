@@ -267,7 +267,7 @@
           pii_scrubbing_level: "{{ cluster_profiles[0].pulse_status.pii_scrubbing_level }}"
       register: result
 
-    - name: Set first cluster profile external ID
+    - name: Set cluster profile external ID
       ansible.builtin.set_fact:
         cluster_profile_ext_id: "{{ result.ext_id }}"
 
@@ -368,8 +368,6 @@
           - uuid: "{{ cluster_ext_id }}"
         dryrun: true
       register: result
-
-      check_mode: true
 
     - name: Apply cluster profile to cluster
       nutanix.ncp.ntnx_clusters_profile_association_v2:
