@@ -4,6 +4,7 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 import re
 
 __metaclass__ = type
@@ -137,14 +138,12 @@ import os  # noqa: E402
 from ansible.errors import AnsibleError  # noqa: E402
 from ansible.plugins.inventory import BaseInventoryPlugin, Constructable  # noqa: E402
 
+from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
+    get_clusters_api_instance,
+)
+from ..module_utils.v4.clusters_mgmt.helpers import get_cluster  # noqa: E402
 from ..module_utils.v4.utils import strip_internal_attributes  # noqa: E402
 from ..module_utils.v4.vmm.api_client import get_vm_api_instance  # noqa: E402
-
-from ..module_utils.v4.clusters_mgmt.api_client import (
-    get_clusters_api_instance,
-)  # noqa: E402
-
-from ..module_utils.v4.clusters_mgmt.helpers import get_cluster  # noqa: E402
 
 
 class Mock_Module:
