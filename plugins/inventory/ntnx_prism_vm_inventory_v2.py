@@ -5,8 +5,6 @@
 
 from __future__ import absolute_import, division, print_function
 
-import re
-
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -134,6 +132,7 @@ filter: "startswith(name, 'test_vm')"
 """
 
 import os  # noqa: E402
+import re  # noqa: E402
 
 from ansible.errors import AnsibleError  # noqa: E402
 from ansible.plugins.inventory import BaseInventoryPlugin, Constructable  # noqa: E402
