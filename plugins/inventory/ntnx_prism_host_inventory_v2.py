@@ -5,6 +5,8 @@
 
 from __future__ import absolute_import, division, print_function
 
+from ansible.module_utils.basic import env_fallback
+
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -130,8 +132,6 @@ validate_certs: false
 filter: "startswith(hostName, 'prod')"
 
 """
-
-import os  # noqa: E402
 
 from ansible.errors import AnsibleError  # noqa: E402
 from ansible.plugins.inventory import BaseInventoryPlugin, Constructable  # noqa: E402
@@ -315,16 +315,18 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         self._read_config_data(path)
 
         # Get configuration options from inventory file or environment variables
-        self.nutanix_host = self.get_option("nutanix_host") or os.environ.get(
-            "NUTANIX_HOST"
+        self.nutanix_hostname = (
+            self.get_option("nutanix_hostname")
+            or env_fallback("NUTANIX_HOSTNAME")
+            or env_fallback("NUTANIX_HOST")
         )
-        self.nutanix_username = self.get_option("nutanix_username") or os.environ.get(
+        self.nutanix_username = self.get_option("nutanix_username") or env_fallback(
             "NUTANIX_USERNAME"
         )
-        self.nutanix_password = self.get_option("nutanix_password") or os.environ.get(
+        self.nutanix_password = self.get_option("nutanix_password") or env_fallback(
             "NUTANIX_PASSWORD"
         )
-        self.nutanix_port = self.get_option("nutanix_port") or os.environ.get(
+        self.nutanix_port = self.get_option("nutanix_port") or env_fallback(
             "NUTANIX_PORT", "9440"
         )
 
