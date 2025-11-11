@@ -167,7 +167,7 @@
         timeout: 1800
       register: result
       ignore_errors: true
-    
+
     - name: Reset username and password
       ansible.builtin.command: "{{ reset_command }}"
       register: result
