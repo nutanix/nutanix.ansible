@@ -5,8 +5,6 @@
 
 from __future__ import absolute_import, division, print_function
 
-import json
-import tempfile
 
 from ansible.module_utils.basic import env_fallback
 
@@ -175,7 +173,8 @@ filter: "startswith(name, 'test_vm')"
 """
 
 import re  # noqa: E402
-
+import json  # noqa: E402
+import tempfile  # noqa: E402
 from ansible.errors import AnsibleError  # noqa: E402
 from ansible.plugins.inventory import BaseInventoryPlugin, Constructable  # noqa: E402
 
