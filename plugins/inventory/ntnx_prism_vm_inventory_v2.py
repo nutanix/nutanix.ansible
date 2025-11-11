@@ -90,6 +90,12 @@ DOCUMENTATION = r"""
                 - This is ignored if fetch_all_vms is set to True
             default: 50
             type: int
+        filter:
+            description:
+                - OData filter expression to filter VMs
+                - For example C(name eq 'my-vm') or C(startswith(name, 'prod'))
+                - Used in List VMs API call to filter VMs
+            type: str
         custom_ansible_host:
             description:
                 - Optional expression to construct the ansible_host for a VM instead of VM IP.
@@ -124,6 +130,7 @@ DOCUMENTATION = r"""
             description:
                 - A list of Jinja2 expressions used to filter the inventory
                 - All expressions are combined using an AND operation—each item must match every filter to be included.
+                - Used locally to filter VMs after they are fetched from the API.
             default: []
             elements: str
             type: list
