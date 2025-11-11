@@ -4,6 +4,10 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+import json
+import tempfile
+
+from ansible.module_utils.basic import env_fallback
 
 __metaclass__ = type
 
@@ -12,40 +16,55 @@ DOCUMENTATION = r"""
     short_description: Get a list of Nutanix VMs for ansible dynamic inventory using V4 APIs.
     description:
         - Get a list of Nutanix VMs for ansible dynamic inventory using V4 APIs and SDKs.
-        - This plugin uses the V4 API SDK (ntnx_vmm_py_client) instead of direct API calls.
+        - This plugin uses the V4 API SDK (ntnx_vmm_py_client) instead of direct API calls to get the list of VMs.
+        - This plugin also uses the V4 API SDK (ntnx_clustermgmt_py_client) instead of direct API calls to get the list of clusters to get cluster name.
     version_added: "2.4.0"
     notes:
         - User needs to have API View access for resources for this inventory module to work.
         - Requires ntnx_vmm_py_client SDK to be installed.
+        - Requires ntnx_clustermgmt_py_client SDK to be installed.
     author:
         - George Ghawali (@george-ghawali)
     requirements:
         - "ntnx_vmm_py_client"
+        - "ntnx_clustermgmt_py_client"
     options:
         plugin:
             description: Name of the plugin
             required: true
             choices: ['ntnx_prism_vm_inventory_v2', 'nutanix.ncp.ntnx_prism_vm_inventory_v2']
         nutanix_host:
-            description: Prism central hostname or IP address
+            description:
+                - Prism central hostname or IP address
+                - If not provided, values will be taken from environment variables NUTANIX_HOSTNAME or NUTANIX_HOST
+                - If both are set, NUTANIX_HOSTNAME is preferred over NUTANIX_HOST
             required: false
             type: str
             env:
+                - name: NUTANIX_HOSTNAME
                 - name: NUTANIX_HOST
         nutanix_username:
-            description: Prism central username
+            description:
+                - Prism central username
+                - If not provided, values will be taken from environment variable NUTANIX_USERNAME
             required: false
             type: str
             env:
                 - name: NUTANIX_USERNAME
         nutanix_password:
-            description: Prism central password
+            description:
+                - Prism central password
+                - If not provided, values will be taken from environment variable NUTANIX_PASSWORD
             required: false
             type: str
             env:
                 - name: NUTANIX_PASSWORD
         nutanix_port:
-            description: Prism central port
+            description:
+                - Prism central port
+                - If not provided, values will be taken from environment variable NUTANIX_PORT
+                - By default, this is set to 9440
+            required: false
             default: "9440"
             type: str
             env:
@@ -71,12 +90,28 @@ DOCUMENTATION = r"""
                 - This is ignored if fetch_all_vms is set to True
             default: 50
             type: int
-        filter:
+        custom_ansible_host:
             description:
-                - OData filter expression to filter VMs
-                - For example C(name eq 'my-vm') or C(startswith(name, 'prod'))
-                - Conforms to OData V4.01 URL conventions
-            type: str
+                - Optional expression to construct the ansible_host for a VM instead of VM IP.
+                - If provided, it will override ansible_host value with resolved value of the expression.
+                - If not provided, ansible_host value will be set to VM IP as default.
+            required: false
+            type: dict
+            suboptions:
+                expr:
+                    description:
+                        - "Expression to construct the ansible_host for a VM."
+                        - "The expression can use the following variables:"
+                        - "vm_name (VM Name)"
+                        - "cluster_name (Cluster Name)"
+                        - "cluster_ext_id (Cluster External ID)"
+                        - "vm_ext_id (VM External ID)"
+                        - "vm_description (VM Description)"
+                        - "Suppose we have a VM with name VM_123 and cluster name Cluster_456"
+                        - >
+                          "Then the expression {vm_name}.nutanix1.{cluster_name}.nutanix2.com will be resolved to
+                          VM_123.nutanix1.Cluster_456.nutanix2.com as ansible_host"
+                    type: str
         validate_certs:
             description:
                 - Set value to C(False) to skip validation for self signed certificates
@@ -131,7 +166,6 @@ filter: "startswith(name, 'test_vm')"
 
 """
 
-import os  # noqa: E402
 import re  # noqa: E402
 
 from ansible.errors import AnsibleError  # noqa: E402
@@ -146,26 +180,42 @@ from ..module_utils.v4.vmm.api_client import get_vm_api_instance  # noqa: E402
 
 
 class Mock_Module:
-    """Mock module to interface with V4 SDK helper functions"""
 
-    def __init__(self, host, port, username, password, validate_certs=False):
+    def __init__(
+        self,
+        hostname,
+        port,
+        username,
+        password,
+        validate_certs=False,
+        fetch_all_vms=False,
+        custom_ansible_host=None,
+    ):
+        self.tmpdir = tempfile.gettempdir()
         self.params = {
-            "nutanix_host": host,
+            "nutanix_host": hostname,
             "nutanix_port": port,
             "nutanix_username": username,
             "nutanix_password": password,
             "validate_certs": validate_certs,
+            "fetch_all_vms": fetch_all_vms,
+            "custom_ansible_host": custom_ansible_host,
+            "load_params_without_defaults": False,
         }
+
+    def jsonify(self, data):
+        return json.dumps(data)
 
     def fail_json(self, msg, **kwargs):
         """Fail with a message"""
         kwargs["failed"] = True
         kwargs["msg"] = msg
-        raise AnsibleError(msg)
+        print("\n%s" % self.jsonify(kwargs))
+        raise AnsibleError(self.jsonify(kwargs))
 
 
 class InventoryModule(BaseInventoryPlugin, Constructable):
-    """Nutanix VM dynamic inventory module using V4 APIs"""
+    """Nutanix VM dynamic inventory module for ansible using V4 APIs"""
 
     NAME = "nutanix.ncp.ntnx_prism_vm_inventory_v2"
 
@@ -234,15 +284,18 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
 
         return vms
 
-    def _extract_vm_ip(self, vm):
+    def _extract_vm_ip(self, vm, host_vars):
         """
         Extract IP address from VM NICs.
         Returns the first learned/DHCP IP address found.
         """
         nics = vm.get("nics", [])
+        host_vars["nics_testt"] = nics
         if nics:
             for nic in nics:
-                network_info = nic.get("network_info", {})
+                network_info = nic.get("nic_network_info", {})
+                if network_info.get("nic_type") != "NORMAL_NIC":
+                    continue
                 if not network_info:
                     continue
                 ipv4_info = network_info.get("ipv4_info")
@@ -252,14 +305,24 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                         first_ip = learned_ips[0]
                         if first_ip and first_ip.get("value"):
                             return first_ip.get("value")
+                else:
+                    ipv4_config = network_info.get("ipv4_config")
+                    if ipv4_config:
+                        ip_address = ipv4_config.get("ip_address")
+                        if ip_address:
+                            value = ip_address.get("value")
+                            if value:
+                                return value
         return None
 
-    def _resolve_custom_ansible_host(self, vm, cluster, expr, strict):
+    def _resolve_custom_ansible_host(self, vm, cluster_ext_id_name_map, expr, strict):
         """Resolve ansible_host expression with placeholders if defined."""
 
         lookup = {
-            "cluster_name": cluster.to_dict().get("name"),
-            "cluster_ext_id": cluster.to_dict().get("ext_id"),
+            "cluster_name": cluster_ext_id_name_map.get(
+                vm.get("cluster", {}).get("ext_id")
+            ),
+            "cluster_ext_id": vm.get("cluster", {}).get("ext_id"),
             "vm_name": vm.get("name"),
             "vm_description": vm.get("description"),
             "vm_ext_id": vm.get("ext_id"),
@@ -308,7 +371,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         for key in unwanted_keys:
             host_vars.pop(key, None)
 
-    def _build_host_vars(self, vm, cluster, strict=False):
+    def _build_host_vars(self, vm, cluster_ext_id_name_map, strict=False):
         """
         Build a dictionary of host variables from the V4 VM response.
         Returns all VM attributes, excluding null/empty values.
@@ -333,6 +396,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             host_vars[key] = value
 
         # Add ansible_host for SSH connectivity
+        vm_ip = self._extract_vm_ip(vm, host_vars)
         host_vars["ansible_host"] = vm_ip
 
         # Convert categories to list of extId if present
@@ -351,7 +415,9 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             "expr"
         ):
             expr = self.custom_ansible_host.get("expr")
-            vm_ip = self._resolve_custom_ansible_host(vm, cluster, expr, strict)
+            vm_ip = self._resolve_custom_ansible_host(
+                vm, cluster_ext_id_name_map, expr, strict
+            )
             host_vars["ansible_host"] = vm_ip
 
         # Remove unwanted keys
@@ -386,23 +452,25 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         self._read_config_data(path)
 
         # Get configuration options from inventory file or environment variables
-        self.nutanix_host = self.get_option("nutanix_host") or os.environ.get(
-            "NUTANIX_HOST"
+        self.nutanix_host = (
+            self.get_option("nutanix_host")
+            or env_fallback("NUTANIX_HOSTNAME")
+            or env_fallback("NUTANIX_HOST")
         )
-        self.nutanix_username = self.get_option("nutanix_username") or os.environ.get(
+        self.nutanix_username = self.get_option("nutanix_username") or env_fallback(
             "NUTANIX_USERNAME"
         )
-        self.nutanix_password = self.get_option("nutanix_password") or os.environ.get(
+        self.nutanix_password = self.get_option("nutanix_password") or env_fallback(
             "NUTANIX_PASSWORD"
         )
-        self.nutanix_port = self.get_option("nutanix_port") or os.environ.get(
+        self.nutanix_port = self.get_option("nutanix_port") or env_fallback(
             "NUTANIX_PORT", "9440"
         )
 
         # Validate required parameters
         if not self.nutanix_host:
             raise AnsibleError(
-                "nutanix_host must be provided either in inventory file or as NUTANIX_HOST environment variable"
+                "nutanix_host must be provided either in inventory file or as NUTANIX_HOSTNAME environment variable or NUTANIX_HOST environment variable"
             )
         if not self.nutanix_username:
             raise AnsibleError(
@@ -418,6 +486,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         self.page = self.get_option("page")
         self.limit = self.get_option("limit")
         self.filter = self.get_option("filter")
+        self.custom_ansible_host = self.get_option("custom_ansible_host")
 
         # Determines if composed variables or groups using nonexistent variables is an error
         strict = self.get_option("strict")
@@ -430,11 +499,20 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             self.nutanix_username,
             self.nutanix_password,
             self.validate_certs,
+            self.custom_ansible_host,
         )
 
         # Get VM API instance
         vmm = get_vm_api_instance(module)
         clusters = get_clusters_api_instance(module)
+        list_clusters = clusters.list_clusters()
+        cluster_ext_id_name_map = {}
+        for cluster in list_clusters.data:
+            if cluster:
+                cluster_dict = cluster.to_dict()
+                ext_id = cluster_dict.get("ext_id")
+                name = cluster_dict.get("name")
+                cluster_ext_id_name_map[ext_id] = name
 
         # Fetch VMs
         vms = self._fetch_vms(
@@ -452,15 +530,12 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
 
             # Get cluster information for this VM
             cluster_ext_id = vm.get("cluster", {}).get("ext_id")
-            cluster = get_cluster(module, clusters, cluster_ext_id)
-
+            cluster_name = cluster_ext_id_name_map.get(cluster_ext_id)
             try:
-                host_vars = self._build_host_vars(vm, cluster)
+                host_vars = self._build_host_vars(vm, cluster_ext_id_name_map, strict)
             except Exception as e:
                 raise AnsibleError(
-                    "Failed to build host vars for VM: {0}. VM data: {1}".format(
-                        str(e), vm
-                    )
+                    f"Failed to build host vars for VM {vm.get('name')} with ext_id {vm.get('ext_id')}: {str(e)}"
                 )
 
             if not self._should_add_host(host_vars, host_filters, strict):
@@ -469,14 +544,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             # Add variables to host variables
             vm_name = vm.get("name")
             vm_ext_id = vm.get("ext_id")
-
-            cluster_name = cluster.to_dict().get("name")
-            if not cluster_name:
-                raise AnsibleError(
-                    "Failed to get cluster name for cluster ext_id: {0}".format(
-                        cluster_ext_id
-                    )
-                )
             owner_ext_id = vm.get("ownership_info", {}).get("owner", {}).get("ext_id")
             project_ext_id = vm.get("project", {}).get("ext_id")
             vm_description = vm.get("description")
@@ -493,7 +560,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             if vm_description is not None:
                 host_vars["vm_description"] = vm_description
 
-            # Create group based on cluster if available
+            # Create group based on cluster
             if cluster_ext_id:
                 group_name = "cluster_{0}".format(cluster_ext_id.replace("-", "_"))
                 self.inventory.add_group(group_name)
