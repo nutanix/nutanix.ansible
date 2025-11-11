@@ -234,6 +234,80 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
 
         return vms
 
+    def _extract_vm_ip(self, vm):
+        """
+        Extract IP address from VM NICs.
+        Returns the first learned/DHCP IP address found.
+        """
+        nics = vm.get("nics", [])
+        if nics:
+            for nic in nics:
+                network_info = nic.get("network_info", {})
+                if not network_info:
+                    continue
+                ipv4_info = network_info.get("ipv4_info")
+                if ipv4_info:
+                    learned_ips = ipv4_info.get("learned_ip_addresses", [])
+                    if learned_ips and len(learned_ips) > 0:
+                        first_ip = learned_ips[0]
+                        if first_ip and first_ip.get("value"):
+                            return first_ip.get("value")
+        return None
+
+    def _resolve_custom_ansible_host(self, vm, cluster, expr, strict):
+        """Resolve ansible_host expression with placeholders if defined."""
+
+        lookup = {
+            "cluster_name": cluster.to_dict().get("name"),
+            "cluster_ext_id": cluster.to_dict().get("ext_id"),
+            "vm_name": vm.get("name"),
+            "vm_description": vm.get("description"),
+            "vm_ext_id": vm.get("ext_id"),
+        }
+
+        try:
+            vm_ip = re.sub(r"\{([^}]+)\}", self.get_replacement_function(lookup), expr)
+            return vm_ip
+        except Exception as e:
+            if strict:
+                raise AnsibleError(
+                    f"Error formatting ansible_host expression for VM {lookup.get('vm_name')} "
+                    f"with ext_id {lookup.get('vm_ext_id')}: {e}"
+                )
+        return None
+
+    def _remove_unwanted_keys(self, host_vars):
+        """Remove unnecessary keys from host_vars."""
+        unwanted_keys = {
+            "boot_config",
+            "cd_roms",
+            "cluster",
+            "create_time",
+            "disks",
+            "host",
+            "nics",
+            "ownership_info",
+            "project",
+            "update_time",
+            "tenant_id",
+            "links",
+            "source",
+            "availability_zone",
+            "guest_customization",
+            "guest_tools",
+            "apc_config",
+            "storage_config",
+            "gpus",
+            "serial_port",
+            "protection_type",
+            "pcie_devices",
+            "name",
+            "description",
+            "ext_id",
+        }
+        for key in unwanted_keys:
+            host_vars.pop(key, None)
+
     def _build_host_vars(self, vm, cluster, strict=False):
         """
         Build a dictionary of host variables from the V4 VM response.
@@ -245,22 +319,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
 
         # Extract IP address from NICs for ansible_host
         vm_ip = None
-        nics = vm.get("nics", [])
-        if nics:
-            for nic in nics:
-                network_info = nic.get("network_info", {})
-                if not network_info:
-                    continue
-
-                # Fallback to ipv4_info (learned/DHCP IP)
-                ipv4_info = network_info.get("ipv4_info")
-                if ipv4_info:
-                    learned_ips = ipv4_info.get("learned_ip_addresses", [])
-                    if learned_ips and len(learned_ips) > 0:
-                        first_ip = learned_ips[0]
-                        if first_ip and first_ip.get("value"):
-                            vm_ip = first_ip.get("value")
-                            break
 
         # Start with all VM attributes
         host_vars = {}
@@ -288,62 +346,16 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             if category_ext_ids:
                 host_vars["categories"] = category_ext_ids
 
+        # Handle custom ansible_host
         if getattr(self, "custom_ansible_host", None) and self.custom_ansible_host.get(
             "expr"
         ):
-            lookup = {
-                "cluster_name": cluster.to_dict().get("name"),
-                "cluster_ext_id": cluster.to_dict().get("ext_id"),
-                "vm_name": vm.get("name"),
-                "vm_description": vm.get("description"),
-                "vm_ext_id": vm.get("ext_id"),
-            }
+            expr = self.custom_ansible_host.get("expr")
+            vm_ip = self._resolve_custom_ansible_host(vm, cluster, expr, strict)
+            host_vars["ansible_host"] = vm_ip
 
-            try:
-                vm_ip = re.sub(
-                    r"\{([^}]+)\}",
-                    self.get_replacement_function(lookup),
-                    self.custom_ansible_host.get("expr"),
-                )
-            except Exception as e:
-                if strict:
-                    raise AnsibleError(
-                        "Error formatting ansible_host expression for VM {vm_name}. with ext_id {vm_ext_id}: {error}".format(
-                            vm_name=lookup.get("vm_name"),
-                            vm_ext_id=lookup.get("vm_ext_id"),
-                            error=str(e),
-                        )
-                    )
-
-        # Remove unwanted keys.
-        for key in [
-            "boot_config",
-            "cd_roms",
-            "cluster",
-            "create_time",
-            "disks",
-            "host",
-            "nics",
-            "ownership_info",
-            "project",
-            "update_time",
-            "tenant_id",
-            "links",
-            "source",
-            "availability_zone",
-            "guest_customization",
-            "guest_tools",
-            "apc_config",
-            "storage_config",
-            "gpus",
-            "serial_port",
-            "protection_type",
-            "pcie_devices",
-            "name",
-            "description",
-            "ext_id",
-        ]:
-            host_vars.pop(key, None)
+        # Remove unwanted keys
+        self._remove_unwanted_keys(host_vars)
 
         return host_vars
 
