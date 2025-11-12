@@ -228,3 +228,4 @@ action_groups:
     - ntnx_pc_task_abort_v2
     - ntnx_vms_disks_migrate_v2
     - ntnx_clusters_categories_v2
+    - ntnx_stigs_info_v2
