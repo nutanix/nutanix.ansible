@@ -136,82 +136,81 @@ DOCUMENTATION = r"""
 
 EXAMPLES = r"""
 # Minimal inventory file (nutanix.yml)
-plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
-nutanix_host: 10.x.x.x
-nutanix_username: admin
-nutanix_password: password
-validate_certs: false
----
+- plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
+  nutanix_host: 10.x.x.x
+  nutanix_username: admin
+  nutanix_password: password
+  validate_certs: false
+
 # Fetch all VMs
-plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
-nutanix_host: 10.x.x.x
-nutanix_username: admin
-nutanix_password: password
-validate_certs: false
-fetch_all_vms: true
----
+- plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
+  nutanix_host: 10.x.x.x
+  nutanix_username: admin
+  nutanix_password: password
+  validate_certs: false
+  fetch_all_vms: true
+
 # Fetch VMs with pagination
-plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
-nutanix_host: 10.x.x.x
-nutanix_username: admin
-nutanix_password: password
-validate_certs: false
-page: 0
-limit: 80
----
+- plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
+  nutanix_host: 10.x.x.x
+  nutanix_username: admin
+  nutanix_password: password
+  validate_certs: false
+  page: 0
+  limit: 80
+
 # Use OData filter
-plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
-nutanix_host: 10.x.x.x
-nutanix_username: admin
-nutanix_password: password
-validate_certs: false
-filter: "startswith(name, 'test_vm')"
----
+- plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
+  nutanix_host: 10.x.x.x
+  nutanix_username: admin
+  nutanix_password: password
+  validate_certs: false
+  filter: "startswith(name, 'test_vm')"
+
 # using compose for defining new host variables
-plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
-nutanix_host: 10.x.x.x
-nutanix_username: admin
-nutanix_password: password
-validate_certs: false
-compose:
-  ansible_user: "'ansible_user'"
-  memory_gb: memory_size_bytes / 1073741824 if memory_size_bytes else 0
----
+- plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
+  nutanix_host: 10.x.x.x
+  nutanix_username: admin
+  nutanix_password: password
+  validate_certs: false
+  compose:
+    ansible_user: "'ansible_user'"
+    memory_gb: memory_size_bytes / 1073741824 if memory_size_bytes else 0
+
 # using groups for grouping the VMs
-plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
-nutanix_host: 10.x.x.x
-nutanix_username: admin
-nutanix_password: password
-validate_certs: false
-groups:
-  # Create a group for powered on VMs.
-  powered_on: power_state == 'ON'
-  # Create a group for powered off VMs.
-  powered_off: power_state == 'OFF'
----
+- plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
+  nutanix_host: 10.x.x.x
+  nutanix_username: admin
+  nutanix_password: password
+  validate_certs: false
+  groups:
+    # Create a group for powered on VMs.
+    powered_on: power_state == 'ON'
+    # Create a group for powered off VMs.
+    powered_off: power_state == 'OFF'
+
 # using keyed groups for grouping the VMs
-plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
-nutanix_host: 10.x.x.x
-nutanix_username: admin
-nutanix_password: password
-validate_certs: false
-keyed_groups:
-  - key: machine_type
-    prefix: machine
-    separator: "_"
-  - key: power_state
-    prefix: power
-    separator: "_"
----
+- plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
+  nutanix_host: 10.x.x.x
+  nutanix_username: admin
+  nutanix_password: password
+  validate_certs: false
+  keyed_groups:
+    - key: machine_type
+      prefix: machine
+      separator: "_"
+    - key: power_state
+      prefix: power
+      separator: "_"
+
 # using custom ansible host for defining the ansible_host for the VMs
-plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
-nutanix_host: 10.x.x.x
-nutanix_username: admin
-nutanix_password: password
-validate_certs: false
-custom_ansible_host:
-  expr: "{vm_name}.nutanix1.{vm_ext_id}.nutanix2.{cluster_name}.nutanix3.{cluster_ext_id}.nutanix4.{vm_description}.com"
----
+- plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
+  nutanix_host: 10.x.x.x
+  nutanix_username: admin
+  nutanix_password: password
+  validate_certs: false
+  custom_ansible_host:
+    expr: "{vm_name}.nutanix1.{vm_ext_id}.nutanix2.{cluster_name}.nutanix3.{cluster_ext_id}.nutanix4.{vm_description}.com"
 """
 
 import json  # noqa: E402
