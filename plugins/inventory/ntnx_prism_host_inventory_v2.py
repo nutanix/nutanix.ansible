@@ -315,8 +315,8 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         self._read_config_data(path)
 
         # Get configuration options from inventory file or environment variables
-        self.nutanix_hostname = (
-            self.get_option("nutanix_hostname")
+        self.nutanix_host = (
+            self.get_option("nutanix_host")
             or env_fallback("NUTANIX_HOSTNAME")
             or env_fallback("NUTANIX_HOST")
         )
