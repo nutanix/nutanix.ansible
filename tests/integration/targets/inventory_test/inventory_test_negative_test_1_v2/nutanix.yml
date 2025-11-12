@@ -1,0 +1,11 @@
+---
+plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
+# nutanix_host: hostname # Or set NUTANIX_HOST or NUTANIX_HOSTNAME environment variable
+# nutanix_username: username # Or set NUTANIX_USERNAME environment variable
+# nutanix_password: password # Or set NUTANIX_PASSWORD environment variable
+# nutanix_port: port # Or set NUTANIX_PORT environment variable
+# validate_certs: false # Or set NUTANIX_VALIDATE_CERTS environment variable
+fetch_all_vms: true
+strict: true
+custom_ansible_host:
+  expr: "{name_of_vm}.nutanix1.{vm_ext_id}.nutanix2.{cluster_name}.nutanix3.{cluster_ext_id}.nutanix4.com"

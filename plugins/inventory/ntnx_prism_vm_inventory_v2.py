@@ -296,7 +296,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         Returns the first learned/DHCP IP address found.
         """
         nics = vm.get("nics", [])
-        host_vars["nics_testt"] = nics
         if nics:
             for nic in nics:
                 network_info = nic.get("nic_network_info", {})
