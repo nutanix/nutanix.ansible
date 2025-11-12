@@ -348,20 +348,28 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 if not network_info:
                     continue
                 ipv4_info = network_info.get("ipv4_info")
+                ipv4_config = network_info.get("ipv4_config")
                 if ipv4_info:
                     learned_ips = ipv4_info.get("learned_ip_addresses", [])
                     if learned_ips and len(learned_ips) > 0:
                         first_ip = learned_ips[0]
                         if first_ip and first_ip.get("value"):
                             return first_ip.get("value")
+                elif ipv4_config:
+                    ip_address = ipv4_config.get("ip_address")
+                    if ip_address:
+                        value = ip_address.get("value")
+                        if value:
+                            return value
                 else:
-                    ipv4_config = network_info.get("ipv4_config")
-                    if ipv4_config:
-                        ip_address = ipv4_config.get("ip_address")
-                        if ip_address:
-                            value = ip_address.get("value")
-                            if value:
-                                return value
+                    ipv6_info = network_info.get("ipv6_info")
+                    if ipv6_info:
+                        learned_ips = ipv6_info.get("learned_ipv6_addresses", [])
+                        if learned_ips and len(learned_ips) > 0:
+                            first_ip = learned_ips[0]
+                            if first_ip and first_ip.get("value"):
+                                return first_ip.get("value")
+
         return None
 
     def _resolve_custom_ansible_host(self, vm, cluster_ext_id_name_map, expr, strict):
