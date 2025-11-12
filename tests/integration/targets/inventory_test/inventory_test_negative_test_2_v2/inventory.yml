@@ -1,0 +1,59 @@
+---
+- name: Assert inventory plugin fails with expected error when using invalid custom_ansible_host variable
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Create VM with minimum requirements
+      nutanix.ncp.ntnx_vms_v2:
+        name: "VM_for_inventory_test_without_description"
+      register: result
+      ignore_errors: true
+
+    - name: Create VM with minimum requirements status
+      ansible.builtin.assert:
+        that:
+          - result.changed == true
+          - result.failed == false
+          - result.response is defined
+          - result.response.name == "VM_for_inventory_test_without_description"
+        fail_msg: "Create VM with minimum requirements failed"
+        success_msg: "Create VM with minimum requirements succeeded"
+
+    - name: Set VM external ID
+      ansible.builtin.set_fact:
+        vm_external_id: "{{ result.response.ext_id }}"
+
+    - name: Run ansible-inventory expecting failure due to missing description
+      ansible.builtin.command:
+        cmd: >
+          ansible-inventory
+          --inventory nutanix.yml
+          --graph
+      register: inventory_result
+      ignore_errors: true
+      changed_when: false
+
+    - name: Assert error message Variable 'vm_description' is not defined
+      ansible.builtin.assert:
+        that:
+          - inventory_result.stderr | replace('\n', ' ') | regex_search("Variable 'vm_description' is not defined")
+        fail_msg: "Expected error message not found in inventory result"
+        success_msg: "Expected error message found in inventory result"
+
+    - name: Delete VM
+      nutanix.ncp.ntnx_vms_v2:
+        ext_id: "{{ vm_external_id }}"
+        state: absent
+      register: result
+      ignore_errors: true
+
+    - name: Delete VM status
+      ansible.builtin.assert:
+        that:
+          - result.changed == true
+          - result.failed == false
+          - result.ext_id == "{{ vm_external_id }}"
+          - result.response is defined
+          - result.response.status == "SUCCEEDED"
+        fail_msg: "Delete VM failed"
+        success_msg: "Delete VM succeeded"
