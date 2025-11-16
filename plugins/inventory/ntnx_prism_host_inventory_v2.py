@@ -5,134 +5,157 @@
 
 from __future__ import absolute_import, division, print_function
 
-from ansible.module_utils.basic import env_fallback
-
 __metaclass__ = type
 
 DOCUMENTATION = r"""
-name: ntnx_prism_host_inventory_v2
-short_description: Get a list of Nutanix hosts for ansible dynamic inventory using V4 APIs.
-description:
-    - Get a list of Nutanix hosts for ansible dynamic inventory using V4 APIs and SDKs.
-    - This plugin uses the V4 API SDK (ntnx_clustermgmt_py_client) instead of direct API calls.
-version_added: "2.4.0"
-notes:
-    - User needs to have API View access for resources for this inventory module to work.
-    - Requires ntnx_clustermgmt_py_client SDK to be installed.
-author:
-    - George Ghawali (@george-ghawali)
-requirements:
-    - "ntnx_clustermgmt_py_client"
-options:
-    plugin:
-        description: Name of the plugin
-        required: true
-        choices: ['ntnx_prism_host_inventory_v2', 'nutanix.ncp.ntnx_prism_host_inventory_v2']
-    nutanix_host:
-        description: Prism central hostname or IP address
-        required: false
-        type: str
-        env:
-            - name: NUTANIX_HOST
-    nutanix_username:
-        description: Prism central username
-        required: false
-        type: str
-        env:
-            - name: NUTANIX_USERNAME
-    nutanix_password:
-        description: Prism central password
-        required: false
-        type: str
-        env:
-            - name: NUTANIX_PASSWORD
-    nutanix_port:
-        description: Prism central port
-        default: "9440"
-        type: str
-        env:
-            - name: NUTANIX_PORT
-    fetch_all_hosts:
-        description:
-            - Set to C(True) to fetch all hosts
-            - Set to C(False) to fetch specified number of hosts based on page and limit
-            - If set to C(True), page and limit will be ignored
-            - By default, this is set to C(False)
-        default: false
-        type: bool
-    page:
-        description:
-            - Page number for pagination (starts from 0)
-            - This is ignored if fetch_all_hosts is set to True
-        default: 0
-        type: int
-    limit:
-        description:
-            - Number of records to retrieve per page
-            - Must be between 1 and 100
-            - This is ignored if fetch_all_hosts is set to True
-        default: 50
-        type: int
-    filter:
-        description:
-            - OData filter expression to filter hosts
-            - For example C(hostName eq 'my-host') or C(startswith(hostName, 'prod'))
-            - Conforms to OData V4.01 URL conventions
-        type: str
-    validate_certs:
-        description:
-            - Set value to C(False) to skip validation for self signed certificates
-            - This is not recommended for production setup
-        default: True
-        type: boolean
-        env:
-            - name: VALIDATE_CERTS
-    filters:
-        description:
-            - A list of Jinja2 expressions used to filter the inventory
-            - All expressions are combined using an AND operation—each item must match every filter to be included.
-        default: []
-        elements: str
-        type: list
-extends_documentation_fragment:
-    - constructed
+    name: ntnx_prism_host_inventory_v2
+    short_description: Get a list of Nutanix hosts for ansible dynamic inventory using V4 APIs.
+    description:
+        - Get a list of Nutanix hosts for ansible dynamic inventory using V4 APIs and SDKs.
+        - This plugin uses the V4 API SDK (ntnx_clustermgmt_py_client) instead of direct API calls to get the list of hosts.
+    version_added: "2.4.0"
+    notes:
+        - User needs to have API View access for resources for this inventory module to work.
+        - Requires ntnx_clustermgmt_py_client SDK to be installed.
+    author:
+        - George Ghawali (@george-ghawali)
+    requirements:
+        - "ntnx_clustermgmt_py_client"
+    options:
+        plugin:
+            description: Name of the plugin
+            required: true
+            choices: ['ntnx_prism_host_inventory_v2', 'nutanix.ncp.ntnx_prism_host_inventory_v2']
+        nutanix_host:
+            description:
+                - Prism central hostname or IP address
+                - If not provided, values will be taken from environment variables NUTANIX_HOSTNAME or NUTANIX_HOST
+                - If both are set, NUTANIX_HOSTNAME is preferred over NUTANIX_HOST
+            required: false
+            type: str
+            env:
+                - name: NUTANIX_HOSTNAME
+                - name: NUTANIX_HOST
+        nutanix_username:
+            description:
+                - Prism central username
+                - If not provided, values will be taken from environment variable NUTANIX_USERNAME
+            required: false
+            type: str
+            env:
+                - name: NUTANIX_USERNAME
+        nutanix_password:
+            description:
+                - Prism central password
+                - If not provided, values will be taken from environment variable NUTANIX_PASSWORD
+            required: false
+            type: str
+            env:
+                - name: NUTANIX_PASSWORD
+        nutanix_port:
+            description:
+                - Prism central port
+                - If not provided, values will be taken from environment variable NUTANIX_PORT
+                - By default, this is set to 9440
+            required: false
+            default: "9440"
+            type: str
+            env:
+                - name: NUTANIX_PORT
+        fetch_all_hosts:
+            description:
+                - Set to C(True) to fetch all hosts
+                - Set to C(False) to fetch specified number of hosts based on page and limit
+                - If set to C(True), page and limit will be ignored
+                - By default, this is set to C(False)
+            default: false
+            type: bool
+        page:
+            description:
+                - Page number for pagination (starts from 0)
+                - This is ignored if fetch_all_hosts is set to True
+            default: 0
+            type: int
+        limit:
+            description:
+                - Number of records to retrieve per page
+                - Must be between 1 and 100
+                - This is ignored if fetch_all_hosts is set to True
+            default: 50
+            type: int
+        filter:
+            description:
+                - OData filter expression to filter hosts
+                - For example C(hostName eq 'my-host') or C(startswith(hostName, 'prod'))
+                - Used in List Hosts API call to filter hosts
+            type: str
+        validate_certs:
+            description:
+                - Set value to C(False) to skip validation for self signed certificates
+                - This is not recommended for production setup
+            default: True
+            type: boolean
+            env:
+                - name: VALIDATE_CERTS
+        filters:
+            description:
+                - A list of Jinja2 expressions used to filter the inventory
+                - All expressions are combined using an AND operation—each item must match every filter to be included.
+                - Used locally to filter hosts after they are fetched from the API.
+            default: []
+            elements: str
+            type: list
+    extends_documentation_fragment:
+        - constructed
 """
 
 EXAMPLES = r"""
 # Minimal inventory file (nutanix.yml)
-plugin: nutanix.ncp.ntnx_prism_host_inventory_v2
-nutanix_host: 10.x.x.x
-nutanix_username: admin
-nutanix_password: password
-validate_certs: false
+- plugin: nutanix.ncp.ntnx_prism_host_inventory_v2
+  nutanix_host: 10.x.x.x
+  nutanix_username: admin
+  nutanix_password: password
+  validate_certs: false
 
 # Fetch all hosts
-plugin: nutanix.ncp.ntnx_prism_host_inventory_v2
-nutanix_host: 10.x.x.x
-nutanix_username: admin
-nutanix_password: password
-validate_certs: false
-fetch_all_hosts: true
+- plugin: nutanix.ncp.ntnx_prism_host_inventory_v2
+  nutanix_host: 10.x.x.x
+  nutanix_username: admin
+  nutanix_password: password
+  validate_certs: false
+  fetch_all_hosts: true
 
 # Fetch hosts with pagination
-plugin: nutanix.ncp.ntnx_prism_host_inventory_v2
-nutanix_host: 10.x.x.x
-nutanix_username: admin
-nutanix_password: password
-validate_certs: false
-page: 0
-limit: 100
+- plugin: nutanix.ncp.ntnx_prism_host_inventory_v2
+  nutanix_host: 10.x.x.x
+  nutanix_username: admin
+  nutanix_password: password
+  validate_certs: false
+  page: 0
+  limit: 80
 
 # Use OData filter
-plugin: nutanix.ncp.ntnx_prism_host_inventory_v2
-nutanix_host: 10.x.x.x
-nutanix_username: admin
-nutanix_password: password
-validate_certs: false
-filter: "startswith(hostName, 'prod')"
+- plugin: nutanix.ncp.ntnx_prism_host_inventory_v2
+  nutanix_host: 10.x.x.x
+  nutanix_username: admin
+  nutanix_password: password
+  validate_certs: false
+  filter: "startswith(hostName, 'prod')"
+
+# using compose for defining new host variables
+- plugin: nutanix.ncp.ntnx_prism_host_inventory_v2
+  nutanix_host: 10.x.x.x
+  nutanix_username: admin
+  nutanix_password: password
+  validate_certs: false
+  compose:
+    ansible_user: "'ansible_user'"
 
 """
 
+import json  # noqa: E402
+import tempfile  # noqa: E402
+from ansible.module_utils.basic import env_fallback  # noqa: E402
 from ansible.errors import AnsibleError  # noqa: E402
 from ansible.plugins.inventory import BaseInventoryPlugin, Constructable  # noqa: E402
 
@@ -143,22 +166,36 @@ from ..module_utils.v4.utils import strip_internal_attributes  # noqa: E402
 
 
 class Mock_Module:
-    """Mock module to interface with V4 SDK helper functions"""
 
-    def __init__(self, host, port, username, password, validate_certs=False):
+    def __init__(
+        self,
+        hostname,
+        port,
+        username,
+        password,
+        validate_certs=False,
+        fetch_all_hosts=False,
+    ):
+        self.tmpdir = tempfile.gettempdir()
         self.params = {
-            "nutanix_host": host,
+            "nutanix_host": hostname,
             "nutanix_port": port,
             "nutanix_username": username,
             "nutanix_password": password,
             "validate_certs": validate_certs,
+            "fetch_all_hosts": fetch_all_hosts,
+            "load_params_without_defaults": False,
         }
+
+    def jsonify(self, data):
+        return json.dumps(data)
 
     def fail_json(self, msg, **kwargs):
         """Fail with a message"""
         kwargs["failed"] = True
         kwargs["msg"] = msg
-        raise AnsibleError(msg)
+        print("\n%s" % self.jsonify(kwargs))
+        raise AnsibleError(self.jsonify(kwargs))
 
 
 class InventoryModule(BaseInventoryPlugin, Constructable):
@@ -233,6 +270,34 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
 
         return hosts
 
+    def _remove_unwanted_keys(self, host_vars):
+        """Remove unnecessary keys from host_vars."""
+        unwanted_keys = {
+            "boot_time_usecs",
+            "cluster",
+            "controller_vm",
+            "disk",
+            "ext_id",
+            "gpu_list",
+            "hypervisor",
+            "tenant_id",
+            "links",
+            "key_management_device_to_cert_status",
+        }
+        for key in unwanted_keys:
+            host_vars.pop(key, None)
+
+    def extract_ip_address_from_external(self, external_addr):
+        if not external_addr or not isinstance(external_addr, dict):
+            return None
+        ipv4 = external_addr.get("ipv4", {})
+        if ipv4 and isinstance(ipv4, dict) and ipv4.get("value"):
+            return ipv4.get("value")
+        ipv6 = external_addr.get("ipv6", {})
+        if ipv6 and isinstance(ipv6, dict) and ipv6.get("value"):
+            return ipv6.get("value")
+        return None
+
     def _build_host_vars(self, host):
         """
         Build a dictionary of host variables from the V4 host response.
@@ -245,29 +310,32 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             )
 
         # Extract IP address for ansible_host
-        host_ip = None
+        host_vars = {}
 
         # Try to get IP from hypervisor external address first
-        hypervisor = host.get("hypervisor")
-        if hypervisor and isinstance(hypervisor, dict):
-            external_addr = hypervisor.get("external_address")
-            if external_addr and isinstance(external_addr, dict):
-                ipv4 = external_addr.get("ipv4")
-                if ipv4 and isinstance(ipv4, dict):
-                    host_ip = ipv4.get("value")
+        hypervisor = host.get("hypervisor", {})
+        external_addr = hypervisor.get("external_address", {})
+        hypervisor_ip = self.extract_ip_address_from_external(external_addr)
+        if hypervisor_ip:
+            host_vars["hypervisor_ip"] = hypervisor_ip
 
-        # Fallback to controller VM addresses if hypervisor IP not found
-        if not host_ip:
-            controller_vm = host.get("controller_vm")
-            if controller_vm and isinstance(controller_vm, dict):
-                external_addr = controller_vm.get("external_address")
-                if external_addr and isinstance(external_addr, dict):
-                    ipv4 = external_addr.get("ipv4")
-                    if ipv4 and isinstance(ipv4, dict):
-                        host_ip = ipv4.get("value")
+        # Set controller VM IP address
+        controller_vm = host.get("controller_vm", {})
+        external_addr = controller_vm.get("external_address", {})
+        controller_vm_ip = self.extract_ip_address_from_external(external_addr)
+        if controller_vm_ip:
+            host_vars["controller_vm_ip"] = controller_vm_ip
+
+        # Set ipmi ip address
+        ipmi = host.get("ipmi")
+        if ipmi and isinstance(ipmi, dict):
+            ip_address = ipmi.get("ip")
+            if ip_address and isinstance(ip_address, dict):
+                ipv4 = ip_address.get("ipv4")
+                if ipv4 and isinstance(ipv4, dict):
+                    host_vars["ipmi_ip"] = ipv4.get("value")
 
         # Start with all host attributes
-        host_vars = {}
 
         # Add all attributes from host, excluding null/empty values
         for key, value in host.items():
@@ -277,14 +345,11 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 continue
             host_vars[key] = value
 
-        if "host_name" in host_vars:
-            host_vars["name"] = host_vars["host_name"]
+        # Add ansible_host for SSH connectivity
+        host_vars["ansible_host"] = host_vars.get("hypervisor_ip")
 
-        host_vars["ansible_host"] = host_ip
-
-        cluster = host.get("cluster")
-        if cluster and isinstance(cluster, dict):
-            host_vars["cluster_ext_id"] = cluster.get("uuid")
+        # Remove unwanted keys
+        self._remove_unwanted_keys(host_vars)
 
         return host_vars
 
@@ -333,7 +398,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         # Validate required parameters
         if not self.nutanix_host:
             raise AnsibleError(
-                "nutanix_host must be provided either in inventory file or as NUTANIX_HOST environment variable"
+                "nutanix_host must be provided either in inventory file or as NUTANIX_HOSTNAME environment variable or NUTANIX_HOST environment variable"
             )
         if not self.nutanix_username:
             raise AnsibleError(
@@ -350,6 +415,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         self.limit = self.get_option("limit")
         self.filter = self.get_option("filter")
 
+        # Determines if composed variables or groups using nonexistent variables is an error
         strict = self.get_option("strict")
         host_filters = self.get_option("filters")
 
@@ -364,7 +430,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
 
         # Get Host API instance
         host_client = get_clusters_api_instance(module)
-
         # Fetch Hosts
         hosts = self._fetch_hosts(
             host_client,
@@ -384,19 +449,25 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 host_vars = self._build_host_vars(host)
             except Exception as e:
                 raise AnsibleError(
-                    "Failed to build host vars for Host: {0}. Host data: {1}".format(
-                        str(e), host
-                    )
+                    f"Failed to build host vars for Host {host.get('host_name')} with ext_id {host.get('ext_id')}: {str(e)}"
                 )
 
             if not self._should_add_host(host_vars, host_filters, strict):
                 continue
 
-            # Add host to inventory
-            host_name = host_vars.get("name")
-            cluster_ext_id = host_vars.get("cluster_ext_id")
+            # Add variables to host variables
+            host_name = host.get("host_name")
+            host_ext_id = host.get("ext_id")
+            cluster_ext_id = host.get("cluster", {}).get("uuid")
+            cluster_name = host.get("cluster", {}).get("name")
 
-            # Create group based on cluster if available
+            # Add additional info to host_vars
+            host_vars["host_name"] = host_name
+            host_vars["host_ext_id"] = host_ext_id
+            host_vars["cluster_name"] = cluster_name
+            host_vars["cluster_ext_id"] = cluster_ext_id
+
+            # Create group based on cluster
             if cluster_ext_id:
                 group_name = "cluster_{0}".format(cluster_ext_id.replace("-", "_"))
                 self.inventory.add_group(group_name)
@@ -410,22 +481,22 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 for key, value in host_vars.items():
                     self.inventory.set_variable(host_name, key, value)
 
-                # Add variables created by the user's Jinja2 expressions to the host
-                self._set_composite_vars(
-                    self.get_option("compose"),
-                    host_vars,
-                    host_name,
-                    strict=strict,
-                )
-                self._add_host_to_composed_groups(
-                    self.get_option("groups"),
-                    host_vars,
-                    host_name,
-                    strict=strict,
-                )
-                self._add_host_to_keyed_groups(
-                    self.get_option("keyed_groups"),
-                    host_vars,
-                    host_name,
-                    strict=strict,
-                )
+            # Add variables created by the user's Jinja2 expressions to the host
+            self._set_composite_vars(
+                self.get_option("compose"),
+                host_vars,
+                host_name,
+                strict=strict,
+            )
+            self._add_host_to_composed_groups(
+                self.get_option("groups"),
+                host_vars,
+                host_name,
+                strict=strict,
+            )
+            self._add_host_to_keyed_groups(
+                self.get_option("keyed_groups"),
+                host_vars,
+                host_name,
+                strict=strict,
+            )
