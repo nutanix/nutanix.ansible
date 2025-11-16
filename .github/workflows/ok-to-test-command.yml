@@ -50,6 +50,7 @@ jobs:
           export NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}
           export NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}
           export NUTANIX_DR_SITE=${{ secrets.NUTANIX_DR_SITE }}
+          export VALIDATE_CERTS=${{ secrets.VALIDATE_CERTS }}
           export NDB_HOST=${{ secrets.NDB_HOST }}
           export NDB_PASSWORD=${{ secrets.NDB_PASSWORD }}
           export NDB_USERNAME=${{ secrets.NDB_USERNAME }}
@@ -73,6 +74,41 @@ jobs:
           ansible-playbook tests/integration/targets/prepare_ndb_env/playbooks/prepare_env.yml
           ansible-playbook tests/integration/targets/prepare_fc_env/playbooks/prepare_fc_env.yml
           ansible-playbook tests/integration/targets/prepare_foundation_env/playbooks/prepare_foundation_env.yml
+
+          if [ -n "$regex_pattern" ] && [[ "$regex_pattern" =~ inventory_tests ]]; then
+              echo "regex_pattern contains 'inventory_tests'. Running all inventory tests..."
+              echo "===> Running inventory test (default host)..."
+              if ansible-playbook -i tests/integration/targets/inventory_test/inventory_test_default_host/nutanix.yml \
+              tests/integration/targets/inventory_test/inventory_test_default_host/inventory.yml \
+              2>&1 | tee -a test_output.log; then
+                  echo "Inventory test default host completed successfully."
+              else
+                  echo "Inventory test default host failed. See logs above." | tee -a test_output.log
+              fi
+              echo "===> Running inventory test (custom host)..."
+              if ansible-playbook -i tests/integration/targets/inventory_test/inventory_test_custom_host/nutanix.yml \
+              tests/integration/targets/inventory_test/inventory_test_custom_host/inventory.yml \
+              2>&1 | tee -a test_output.log; then
+                  echo "Inventory test custom host completed successfully."
+              else
+                  echo "Inventory test custom host failed. See logs above." | tee -a test_output.log
+              fi
+              echo "===> Running inventory test (negative tests)..."
+              if ansible-playbook -i tests/integration/targets/inventory_test/inventory_test_negative_test_1/nutanix.yml \
+              tests/integration/targets/inventory_test/inventory_test_negative_test_1/inventory.yml \
+              2>&1 | tee -a test_output.log; then
+                  echo "Inventory test negative test 1 completed successfully."
+              else
+                  echo "Inventory test negative test 1 failed. See logs above." | tee -a test_output.log
+              fi
+              if ansible-playbook -i tests/integration/targets/inventory_test/inventory_test_negative_test_2/nutanix.yml \
+              tests/integration/targets/inventory_test/inventory_test_negative_test_2/inventory.yml \
+              2>&1 | tee -a test_output.log; then
+                  echo "Inventory test negative test 2 completed successfully."
+              else
+                  echo "Inventory test negative test 2 failed. See logs above." | tee -a test_output.log
+              fi
+          fi
 
           echo "===> Running integration tests..."
           set +e
