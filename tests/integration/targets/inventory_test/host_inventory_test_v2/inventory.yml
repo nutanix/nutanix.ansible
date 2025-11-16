@@ -14,7 +14,7 @@
       run_once: true
       when: fetch_all_hosts
 
-    - name: Assert that host vars are defined like ansible_host, host name, cluster name, host ext id, cluster ext id, ansible user, memory gb, cpu frequency ghz
+    - name: Assert that host vars are defined like ansible_host, host name, cluster name, host ext_id, cluster ext_id, ansible user, memory gb, cpu freq ghz
       ansible.builtin.assert:
         that:
           - hostvars[inventory_hostname].ansible_host is defined
@@ -60,7 +60,3 @@
       when:
         - hostvars[inventory_hostname].cluster_name is defined
         - hostvars[inventory_hostname].cluster_ext_id is defined
-
-    - name: print all hostvars
-      ansible.builtin.debug:
-        var: hostvars[inventory_hostname]
