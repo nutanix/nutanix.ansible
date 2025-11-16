@@ -150,7 +150,18 @@ EXAMPLES = r"""
   validate_certs: false
   compose:
     ansible_user: "'ansible_user'"
+    memory_gb: memory_size_bytes / 1073741824 if memory_size_bytes else 0
+    cpu_frequency_ghz: cpu_frequency_hz / 1000000000 if cpu_frequency_hz else 0
 
+# using groups for defining new host groups
+- plugin: nutanix.ncp.ntnx_prism_host_inventory_v2
+  nutanix_host: 10.x.x.x
+  nutanix_username: admin
+  nutanix_password: password
+  validate_certs: false
+  groups:
+    high_memory: (memory_size_bytes / 1073741824) > 100 # > 100GB
+    low_memory: (memory_size_bytes / 1073741824) <= 100 # <= 100GB
 """
 
 import json  # noqa: E402
