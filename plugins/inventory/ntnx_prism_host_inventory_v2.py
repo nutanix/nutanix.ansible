@@ -155,8 +155,9 @@ EXAMPLES = r"""
 
 import json  # noqa: E402
 import tempfile  # noqa: E402
-from ansible.module_utils.basic import env_fallback  # noqa: E402
+
 from ansible.errors import AnsibleError  # noqa: E402
+from ansible.module_utils.basic import env_fallback  # noqa: E402
 from ansible.plugins.inventory import BaseInventoryPlugin, Constructable  # noqa: E402
 
 from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
