@@ -97,48 +97,75 @@ class APILogger:
         log_lines.append(f"METHOD: {method}")
         log_lines.append(f"URL: {url}")
 
-        # Query parameters
-        if query_params:
-            log_lines.append("QUERY PARAMETERS:")
-            if isinstance(query_params, dict):
-                for key, value in query_params.items():
-                    log_lines.append(f"  {key}: {value}")
-            elif isinstance(query_params, list):
-                # Defensive: display as list of 2-tuples or strings
-                for entry in query_params:
-                    if isinstance(entry, (list, tuple)) and len(entry) == 2:
-                        log_lines.append(f"  {entry[0]}: {entry[1]}")
-                    else:
-                        log_lines.append(f"  {entry}")
-            else:
-                log_lines.append(f"  {str(query_params)}")
+        # Add query parameters
+        self._log_query_params(log_lines, query_params)
 
-        # Headers (sanitize sensitive information)
-        if headers:
-            sanitized_headers = self._sanitize_headers(headers)
-            log_lines.append("HEADERS:")
-            if isinstance(sanitized_headers, dict):
-                for key, value in sanitized_headers.items():
-                    log_lines.append(f"  {key}: {value}")
-            elif isinstance(sanitized_headers, list):
-                for entry in sanitized_headers:
-                    if isinstance(entry, (list, tuple)) and len(entry) == 2:
-                        log_lines.append(f"  {entry[0]}: {entry[1]}")
-                    else:
-                        log_lines.append(f"  {entry}")
-            else:
-                log_lines.append(f"  {str(sanitized_headers)}")
+        # Add headers
+        self._log_headers(log_lines, headers)
 
-        # Request body
+        # Add request body
+        self._log_request_body(log_lines, body)
+
+        # Add response details
+        self._log_response(log_lines, response, status_code, elapsed_time)
+
+        # Add error details
+        self._log_error(log_lines, error)
+
+        log_lines.append("=" * 80)
+        log_lines.append("")  # Empty line for readability
+
+        # Write log message to all outputs
+        self._write_log("\n".join(log_lines))
+
+    def _log_query_params(self, log_lines, query_params):
+        """Add query parameters to log lines."""
+        if not query_params:
+            return
+
+        log_lines.append("QUERY PARAMETERS:")
+        if isinstance(query_params, dict):
+            for key, value in query_params.items():
+                log_lines.append(f"  {key}: {value}")
+        elif isinstance(query_params, list):
+            for entry in query_params:
+                if isinstance(entry, (list, tuple)) and len(entry) == 2:
+                    log_lines.append(f"  {entry[0]}: {entry[1]}")
+                else:
+                    log_lines.append(f"  {entry}")
+        else:
+            log_lines.append(f"  {str(query_params)}")
+
+    def _log_headers(self, log_lines, headers):
+        """Add headers to log lines."""
+        if not headers:
+            return
+
+        sanitized_headers = self._sanitize_headers(headers)
+        log_lines.append("HEADERS:")
+        if isinstance(sanitized_headers, dict):
+            for key, value in sanitized_headers.items():
+                log_lines.append(f"  {key}: {value}")
+        elif isinstance(sanitized_headers, list):
+            for entry in sanitized_headers:
+                if isinstance(entry, (list, tuple)) and len(entry) == 2:
+                    log_lines.append(f"  {entry[0]}: {entry[1]}")
+                else:
+                    log_lines.append(f"  {entry}")
+        else:
+            log_lines.append(f"  {str(sanitized_headers)}")
+
+    def _log_request_body(self, log_lines, body):
+        """Add request body to log lines."""
+        log_lines.append("REQUEST BODY:")
         if body is not None:
-            log_lines.append("REQUEST BODY:")
             formatted_body = self._format_body(body)
             log_lines.append(formatted_body)
         else:
-            log_lines.append("REQUEST BODY:")
             log_lines.append("  (empty)")
 
-        # Response details
+    def _log_response(self, log_lines, response, status_code, elapsed_time):
+        """Add response details to log lines."""
         if status_code is not None:
             log_lines.append(f"STATUS CODE: {status_code}")
 
@@ -160,26 +187,50 @@ class APILogger:
             log_lines.append("RESPONSE BODY:")
             log_lines.append("  (no response data)")
 
-        # Error details
-        if error:
-            log_lines.append("ERROR:")
-            log_lines.append(f"  Type: {type(error).__name__}")
+    def _log_error(self, log_lines, error):
+        """Add error details to log lines."""
+        if not error:
+            return
+
+        log_lines.append("")
+        log_lines.append("ERROR:")
+        log_lines.append(f"  Type: {type(error).__name__}")
+
+        # Extract error details from ApiException
+        if hasattr(error, "status"):
+            log_lines.append(f"  Status Code: {error.status}")
+        if hasattr(error, "reason"):
+            log_lines.append(f"  Reason: {error.reason}")
+
+        # Format error body if available
+        if hasattr(error, "body") and error.body:
+            log_lines.append("")
+            log_lines.append("  Error Response:")
+            try:
+                # Try to parse and format as JSON
+                if isinstance(error.body, str):
+                    error_json = json.loads(error.body)
+                    formatted_error = self._format_body(error_json)
+                else:
+                    formatted_error = self._format_body(error.body)
+                log_lines.append(formatted_error)
+            except Exception:
+                # If parsing fails, just show as string
+                log_lines.append(f"    {error.body}")
+
+        # Fallback to string representation if no specific attributes
+        elif not any(hasattr(error, attr) for attr in ["status", "reason", "body"]):
             log_lines.append(f"  Message: {str(error)}")
 
-        log_lines.append("=" * 80)
-        log_lines.append("")  # Empty line for readability
-
-        # Log to Ansible's logger and stderr for visibility
-        log_message = "\n".join(log_lines)
+    def _write_log(self, log_message):
+        """Write log message to all outputs."""
         self.module.log(log_message)
-
-        # Also write to a dedicated log file for easy viewing
         try:
             log_file = os.path.expanduser("~/nutanix_ansible_debug.log")
             with open(log_file, "a") as f:
                 f.write(log_message + "\n")
         except Exception:
-            pass  # Silently fail if we can't write to log file
+            pass
 
         # Write to stderr for remote execution visibility
         sys.stderr.write(log_message + "\n")
