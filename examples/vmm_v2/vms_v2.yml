@@ -11,49 +11,243 @@
   gather_facts: false
   module_defaults:
     group/nutanix.ncp.ntnx:
-      # nutanix_host: <pc_ip>
-      # nutanix_username: <user>
-      # nutanix_password: <pass>
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
       validate_certs: false
   tasks:
-    - name: Create VM
-      nutanix.ncp.ntnx_vms_v2:
-        enable_debug_logging: true
-        state: present
-        name: "test-vm"
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        vm_name: "VM name"
         cluster:
-          ext_id: "10064237-e79d-e7fc-5a41-5254000e6dd1"
+          uuid: "00062899-4a29-0cf9-0000-000000022f54"
+        vm_uuid: "a990cfaa-95a8-4861-bdf6-14060555442d"
+        disk_image:
+          image_ext_ids:
+            - "85478963-1232-4433-0000-000000022f54"
+        storage_container:
+          uuid: "52441414-2211-5567-0000-000000022f54"
+        network:
+          dhcp:
+            uuid: "11254788-3333-2321-0000-000000022f54"
+        category_ext_id_1: "00000000-0000-0000-0000-000000000001"
+        category_ext_id_2: "00000000-0000-0000-0000-000000000002"
+        xml_file_content: <xml_file_content>
+
+    - name: Create VM with minimum requirements
+      nutanix.ncp.ntnx_vms_v2:
+        name: "{{ vm_name }}"
+        description: ansible test
+        cluster:
+          ext_id: "{{ cluster.uuid }}"
       register: result
       ignore_errors: true
 
-    - name: Set VM UUID
-      set_fact:
-        vm_uuid: "{{ result.response.ext_id }}"
+    - name: Create VM with full requirements
+      nutanix.ncp.ntnx_vms_v2:
+        name: "{{ vm_name }}"
+        description: ansible test
+        cluster:
+          ext_id: "{{ cluster.uuid }}"
+        num_sockets: 1
+        num_cores_per_socket: 1
+        num_threads_per_core: 1
+        num_numa_nodes: 1
+        memory_size_bytes: 4294967296
+        is_vcpu_hard_pinning_enabled: false
+        is_cpu_passthrough_enabled: false
+        is_memory_overcommit_enabled: false
+        is_gpu_console_enabled: false
+        is_vga_console_enabled: false
+        machine_type: PC
+        hardware_clock_timezone: UTC
+        enabled_cpu_features:
+          - HARDWARE_VIRTUALIZATION
+        is_branding_enabled: false
+        is_agent_vm: false
+        apc_config:
+          is_apc_enabled: false
+        vtpm_config:
+          is_vtpm_enabled: false
+      register: result
+      ignore_errors: true
+
+    - name: Create vm with different disks, using ubuntu image , with cdrom
+      nutanix.ncp.ntnx_vms_v2:
+        name: "{{ vm_name }}"
+        description: ansible test
+        cluster:
+          ext_id: "{{ cluster.uuid }}"
+        cd_roms:
+          - disk_address:
+              bus_type: IDE
+            backing_info:
+              data_source:
+                reference:
+                  image_reference:
+                    image_ext_id: "{{ disk_image.image_ext_ids[0] }}"
+        disks:
+          - backing_info:
+              vm_disk:
+                disk_size_bytes: 26843545600
+                storage_container:
+                  ext_id: "{{ storage_container.uuid }}"
+            disk_address:
+              bus_type: SCSI
+              index: 2
+          - backing_info:
+              vm_disk:
+                disk_size_bytes: 26843545600
+                data_source:
+                  reference:
+                    image_reference:
+                      image_ext_id: "{{ disk_image.image_ext_ids[0] }}"
+            disk_address:
+              bus_type: SCSI
+              index: 3
+      register: result
+      ignore_errors: true
+
+    - name: Create vm with multiple serial port, and categories
+      nutanix.ncp.ntnx_vms_v2:
+        name: "{{ vm_name }}"
+        description: ansible test
+        cluster:
+          ext_id: "{{ cluster.uuid }}"
+        categories:
+          - ext_id: "{{ category_ext_id_1 }}"
+          - ext_id: "{{ category_ext_id_2 }}"
+        serial_ports:
+          - is_connected: true
+            index: 0
+          - is_connected: true
+            index: 3
+      register: result
+      ignore_errors: true
+
+    - name: Create vm with nics,cloud_init script
+      nutanix.ncp.ntnx_vms_v2:
+        name: "{{ vm_name }}"
+        description: ansible test
+        cluster:
+          ext_id: "{{ cluster.uuid }}"
+        nics:
+          - network_info:
+              subnet:
+                ext_id: "{{ network.dhcp.uuid }}"
+        disks:
+          - backing_info:
+              vm_disk:
+                disk_size_bytes: 26843545600
+                storage_container:
+                  ext_id: "{{ storage_container.uuid }}"
+            disk_address:
+              bus_type: SCSI
+              index: 2
+          - backing_info:
+              vm_disk:
+                disk_size_bytes: 26843545600
+                data_source:
+                  reference:
+                    image_reference:
+                      image_ext_id: "{{ disk_image.image_ext_ids[0] }}"
+            disk_address:
+              bus_type: SCSI
+              index: 3
+        guest_customization:
+          config:
+            cloudinit:
+              datasource_type: CONFIG_DRIVE_V2
+              cloud_init_script:
+                user_data:
+                  value: I2Nsb3VkLWNvbmZpZwpkaXNhYmxlX3Jvb3Q6IGZhbHNlCnNzaF9wd2F1dGg6ICAgdHJ1ZQ==
+      register: result
+      ignore_errors: true
+
+    - name: Create vm with windows unattend xml file
+      nutanix.ncp.ntnx_vms_v2:
+        name: "{{ vm_name }}"
+        description: ansible test
+        cluster:
+          ext_id: "{{ cluster.uuid }}"
+        guest_customization:
+          config:
+            sysprep:
+              install_type: "FRESH"
+              sysprep_script:
+                unattendxml:
+                  value: "{{ xml_file_content }}"
+      register: result
+      ignore_errors: true
+
+    - name: Create VM with vtpm enabled
+      nutanix.ncp.ntnx_vms_v2:
+        name: "{{ vm_name }}"
+        description: ansible test
+        cluster:
+          ext_id: "{{ cluster.uuid }}"
+        vtpm_config:
+          is_vtpm_enabled: true
+      register: result
+      ignore_errors: true
 
     - name: Update VM
       nutanix.ncp.ntnx_vms_v2:
-        enable_debug_logging: true
         state: present
         ext_id: "{{ vm_uuid }}"
-        name: "test-vm_updated"
+        name: "{{ vm_name }}"
+        description: "vm description"
         cluster:
-          ext_id: "00064237-e79d-e7fc-5a41-5254000e6dd1"
+          ext_id: "{{ cluster_uuid }}"
+        num_sockets: 1
+        num_cores_per_socket: 1
+        num_threads_per_core: 1
+        num_numa_nodes: 1
+        memory_size_bytes: 4294967296
+        is_vcpu_hard_pinning_enabled: false
+        is_cpu_passthrough_enabled: false
+        is_memory_overcommit_enabled: false
+        is_gpu_console_enabled: false
+        is_vga_console_enabled: false
+        machine_type: PC
+        hardware_clock_timezone: UTC
+        enabled_cpu_features:
+          - HARDWARE_VIRTUALIZATION
+        is_branding_enabled: false
+        is_agent_vm: false
+        apc_config:
+          is_apc_enabled: false
+        vtpm_config:
+          is_vtpm_enabled: false
+      register: result
+      ignore_errors: true
+
+    - name: List all VMs
+      nutanix.ncp.ntnx_vms_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List all VMs with limit
+      nutanix.ncp.ntnx_vms_info_v2:
+        limit: 2
+      register: result
+      ignore_errors: true
+
+    - name: Get vm using filter name
+      nutanix.ncp.ntnx_vms_info_v2:
+        filter: name eq '{{ vm_name }}'
+      register: result
+      ignore_errors: true
 
     - name: Fetch VM
       nutanix.ncp.ntnx_vms_info_v2:
-        # enable_debug_logging: true
-        filter: name eq 'test-vm_updated' and cluster/extId eq '00064237-e79d-e7fc-5a41-5254000e6dd1'
-        limit: 1
-      register: result_updated
+        ext_id: "{{ vm_uuid }}"
+      register: result
       ignore_errors: true
-
-    - name: Show VM result
-      debug:
-        var: result_updated
-      when: not result_updated.failed
 
     - name: Delete VM
       nutanix.ncp.ntnx_vms_v2:
-        enable_debug_logging: true
         state: absent
         ext_id: "{{ vm_uuid }}"
+      register: result
+      ignore_errors: true
