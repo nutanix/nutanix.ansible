@@ -273,7 +273,10 @@ from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
 )
-from ..module_utils.v4.vmm.api_client import get_api_client, get_etag  # noqa: E402
+from ..module_utils.v4.vmm.api_client import (
+    get_etag,
+    get_vm_api_instance,
+)  # noqa: E402
 from ..module_utils.v4.vmm.helpers import get_cd_rom, get_vm  # noqa: E402
 from ..module_utils.v4.vmm.spec.vms import VmSpecs as vm_specs  # noqa: E402
 
@@ -297,11 +300,6 @@ def get_module_spec():
     )
     module_args.update(vm_specs.get_cd_rom_spec())
     return module_args
-
-
-def get_vm_api_instance(module):
-    api_client = get_api_client(module)
-    return vmm_sdk.VmApi(api_client=api_client)
 
 
 def insert_iso(module, vms, result):
