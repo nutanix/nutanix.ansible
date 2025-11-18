@@ -119,7 +119,7 @@ options:
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
-    - nutanix.ncp.ntnx_logger_v2
+    - nutanix.ncp.ntnx_logger
 notes:
     - This module follows two steps update process. Configuration update and enforcement state update.
     - If enforcement state is changed, then task_ext_id will have the task id of enforcement state update.
