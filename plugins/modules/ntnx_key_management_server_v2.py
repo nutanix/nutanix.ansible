@@ -35,14 +35,12 @@ options:
     description:
       - Key Management Server name.
       - Required for creating or updating the key management server.
-      - Supported in the idempotency check.
     type: str
     required: false
   access_information:
     description:
       - Key Management Server access information.
       - Required for creating the key management server.
-      - Access information credentials are not supported in the idempotency check.
     type: dict
     required: false
     suboptions:
@@ -63,11 +61,15 @@ options:
             type: str
             required: true
           client_id:
-            description: Client identifier for the Azure Key Vault.
+            description:
+              - Client identifier for the Azure Key Vault.
+              - Not supported in the idempotency check.
             type: str
             required: true
           client_secret:
-            description: Client secret for the Azure Key Vault.
+            description:
+              - Client secret for the Azure Key Vault.
+              - Not supported in the idempotency check.
             type: str
             required: true
           credential_expiry_date:
