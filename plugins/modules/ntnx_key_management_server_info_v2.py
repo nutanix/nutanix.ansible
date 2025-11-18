@@ -16,7 +16,7 @@ version_added: 2.4.0
 description:
     - Get key management server info using key management server external ID or list all key management servers
     - If Key Management Server external ID is provided, fetches that particular key management server
-    - If no external ID is provided, list all key management servers with optional filter
+    - If no external ID is provided, list all key management servers
     - Key management server is used to secure encryption keys when data encryption is enabled.
     - This module uses PC v4 APIs based SDKs
 options:
@@ -27,7 +27,6 @@ options:
         required: false
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
-      - nutanix.ncp.ntnx_info_v2
 author:
  - George Ghawali (@george-ghawali)
 """
@@ -55,7 +54,7 @@ response:
     description:
         - Response for fetching key management server info.
         - Returns specific key management server info if ext_id is provided
-        - Returns list of all key management servers if no ext_id is provided
+        - Returns list of all key management servers if ext_id is not provided
     type: dict
     returned: always
     sample:
@@ -80,12 +79,6 @@ changed:
   returned: always
   type: bool
   sample: true
-
-error:
-  description: This field typically holds information about if the task have errors that occurred during the task execution
-  returned: always
-  type: bool
-  sample: false
 
 failed:
     description: This field typically holds information about if the task have failed
@@ -152,9 +145,10 @@ def run_module():
     module = BaseInfoModule(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
+        skip_info_args=True,
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "failed": False, "error": None, "response": None}
+    result = {"changed": False, "failed": False, "response": None}
     kms_api_instance = get_kms_api_instance(module)
     if module.params.get("ext_id"):
         get_kms_using_ext_id(module, kms_api_instance, result)

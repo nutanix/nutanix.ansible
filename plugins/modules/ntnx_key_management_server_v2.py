@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2024, Nutanix
+# Copyright: (c) 2025, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -22,7 +22,7 @@ options:
       - State of the key management server. Whether to create, update, or delete.
       - If C(state) is C(present) and C(ext_id) is not provided, create a new key management server.
       - If C(state) is C(present) and C(ext_id) is provided, update the key management server.
-      - If C(state) is C(absent), and ext_id is provided, it will delete the key management server with the given External ID.
+      - If C(state) is C(absent), and ext_id is provided, it will delete the key management server.
     type: str
     choices: ["present", "absent"]
   ext_id:
@@ -194,7 +194,7 @@ skipped:
 
 msg:
     description: Message indicating the behavior of the operation
-    returned: When there is a value for this field
+    returned: when msg is present
     type: str
     sample: "Key Management Server with ext_id:13a6657d-fa96-49e3-7307-87e93a1fec3d will be deleted."
 

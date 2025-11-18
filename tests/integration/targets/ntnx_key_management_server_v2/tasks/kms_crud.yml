@@ -46,12 +46,12 @@
     name: "{{ kms_name }}"
     access_information:
       azure_key_vault:
-        endpoint_url: "{{ azure_kms.endpointUrl }}"
-        key_id: "{{ azure_kms.keyId }}"
-        tenant_id: "{{ azure_kms.tenantId }}"
-        client_id: "{{ azure_kms.clientId }}"
-        client_secret: "{{ azure_kms.clientSecret }}"
-        credential_expiry_date: "{{ azure_kms.credentialExpiryDate }}"
+        endpoint_url: "{{ azure_kms.endpoint_url }}"
+        key_id: "{{ azure_kms.key_id }}"
+        tenant_id: "{{ azure_kms.tenant_id }}"
+        client_id: "{{ azure_kms.client_id }}"
+        client_secret: "{{ azure_kms.client_secret }}"
+        credential_expiry_date: "{{ azure_kms.credential_expiry_date }}"
   register: create_result
   ignore_errors: true
 
@@ -87,12 +87,12 @@
       - fetch_result.response is defined
       - fetch_result.response.ext_id == "{{ kms_ext_id }}"
       - fetch_result.response.access_information is defined
-      - fetch_result.response.access_information.client_id == "{{ azure_kms.clientId }}"
+      - fetch_result.response.access_information.client_id == "{{ azure_kms.client_id }}"
       - fetch_result.response.access_information.truncated_client_secret is defined
-      - fetch_result.response.access_information.tenant_id == "{{ azure_kms.tenantId }}"
-      - fetch_result.response.access_information.credential_expiry_date == "{{ azure_kms.credentialExpiryDate }}"
-      - fetch_result.response.access_information.endpoint_url == "{{ azure_kms.endpointUrl }}"
-      - '"{{ azure_kms.keyId }}" in "{{ fetch_result.response.access_information.key_id }}"'
+      - fetch_result.response.access_information.tenant_id == "{{ azure_kms.tenant_id }}"
+      - fetch_result.response.access_information.credential_expiry_date == "{{ azure_kms.credential_expiry_date }}"
+      - fetch_result.response.access_information.endpoint_url == "{{ azure_kms.endpoint_url }}"
+      - '"{{ azure_kms.key_id }}" in "{{ fetch_result.response.access_information.key_id }}"'
     fail_msg: "Failed to fetch key management server"
     success_msg: "Successfully fetched key management server"
 
@@ -155,12 +155,12 @@
     ext_id: "{{ kms_ext_id }}"
     access_information:
       azure_key_vault:
-        endpoint_url: "{{ azure_kms.endpointUrl }}"
-        key_id: "{{ azure_kms.keyId }}"
-        tenant_id: "{{ azure_kms.tenantId }}"
-        client_id: "{{ azure_kms.clientId }}"
-        client_secret: "{{ azure_kms.clientSecret }}"
-        credential_expiry_date: "{{ azure_kms.credentialExpiryDateUpdated }}"
+        endpoint_url: "{{ azure_kms.endpoint_url }}"
+        key_id: "{{ azure_kms.key_id }}"
+        tenant_id: "{{ azure_kms.tenant_id }}"
+        client_id: "{{ azure_kms.client_id }}"
+        client_secret: "{{ azure_kms.client_secret }}"
+        credential_expiry_date: "{{ azure_kms.credential_expiry_date_updated }}"
   register: update_result
   ignore_errors: true
 
@@ -192,12 +192,12 @@
       - fetch_result.response is defined
       - fetch_result.response.ext_id == "{{ kms_ext_id }}"
       - fetch_result.response.access_information is defined
-      - fetch_result.response.access_information.client_id == "{{ azure_kms.clientId }}"
+      - fetch_result.response.access_information.client_id == "{{ azure_kms.client_id }}"
       - fetch_result.response.access_information.truncated_client_secret is defined
-      - fetch_result.response.access_information.tenant_id == "{{ azure_kms.tenantId }}"
-      - fetch_result.response.access_information.credential_expiry_date == "{{ azure_kms.credentialExpiryDateUpdated }}"
-      - fetch_result.response.access_information.endpoint_url == "{{ azure_kms.endpointUrl }}"
-      - '"{{ azure_kms.keyId }}" in "{{ fetch_result.response.access_information.key_id }}"'
+      - fetch_result.response.access_information.tenant_id == "{{ azure_kms.tenant_id }}"
+      - fetch_result.response.access_information.credential_expiry_date == "{{ azure_kms.credential_expiry_date_updated }}"
+      - fetch_result.response.access_information.endpoint_url == "{{ azure_kms.endpoint_url }}"
+      - '"{{ azure_kms.key_id }}" in "{{ fetch_result.response.access_information.key_id }}"'
     fail_msg: "Failed to fetch key management server"
     success_msg: "Successfully fetched key management server"
 
@@ -207,12 +207,12 @@
     ext_id: "{{ kms_ext_id }}"
     access_information:
       azure_key_vault:
-        endpoint_url: "{{ azure_kms.endpointUrl }}"
-        key_id: "{{ azure_kms.keyId }}"
-        tenant_id: "{{ azure_kms.tenantId }}"
-        client_id: "{{ azure_kms.clientId }}"
-        client_secret: "{{ azure_kms.clientSecret }}"
-        credential_expiry_date: "{{ azure_kms.credentialExpiryDateUpdated }}"
+        endpoint_url: "{{ azure_kms.endpoint_url }}"
+        key_id: "{{ azure_kms.key_id }}"
+        tenant_id: "{{ azure_kms.tenant_id }}"
+        client_id: "{{ azure_kms.client_id }}"
+        client_secret: "{{ azure_kms.client_secret }}"
+        credential_expiry_date: "{{ azure_kms.credential_expiry_date_updated }}"
   register: idempotency_result
   ignore_errors: true
 
@@ -232,12 +232,12 @@
     name: "{{ kms_name }}_updated"
     access_information:
       azure_key_vault:
-        endpoint_url: "{{ azure_kms.endpointUrl }}"
-        key_id: "{{ azure_kms.keyId }}"
-        tenant_id: "{{ azure_kms.tenantId }}"
-        client_id: "{{ azure_kms.clientId }}"
-        client_secret: "{{ azure_kms.clientSecret }}"
-        credential_expiry_date: "{{ azure_kms.credentialExpiryDate }}"
+        endpoint_url: "{{ azure_kms.endpoint_url }}"
+        key_id: "{{ azure_kms.key_id }}"
+        tenant_id: "{{ azure_kms.tenant_id }}"
+        client_id: "{{ azure_kms.client_id }}"
+        client_secret: "{{ azure_kms.client_secret }}"
+        credential_expiry_date: "{{ azure_kms.credential_expiry_date }}"
   register: invalid_ext_id_result
   ignore_errors: true
 
@@ -291,12 +291,12 @@
       - fetch_result.response is defined
       - fetch_result.response.ext_id == "{{ kms_ext_id }}"
       - fetch_result.response.access_information is defined
-      - fetch_result.response.access_information.client_id == "{{ azure_kms.clientId }}"
+      - fetch_result.response.access_information.client_id == "{{ azure_kms.client_id }}"
       - fetch_result.response.access_information.truncated_client_secret is defined
-      - fetch_result.response.access_information.tenant_id == "{{ azure_kms.tenantId }}"
-      - fetch_result.response.access_information.credential_expiry_date == "{{ azure_kms.credentialExpiryDateUpdated }}"
-      - fetch_result.response.access_information.endpoint_url == "{{ azure_kms.endpointUrl }}"
-      - '"{{ azure_kms.keyId }}" in "{{ fetch_result.response.access_information.key_id }}"'
+      - fetch_result.response.access_information.tenant_id == "{{ azure_kms.tenant_id }}"
+      - fetch_result.response.access_information.credential_expiry_date == "{{ azure_kms.credential_expiry_date_updated }}"
+      - fetch_result.response.access_information.endpoint_url == "{{ azure_kms.endpoint_url }}"
+      - '"{{ azure_kms.key_id }}" in "{{ fetch_result.response.access_information.key_id }}"'
     fail_msg: "Failed to fetch key management server"
     success_msg: "Successfully fetched key management server"
 

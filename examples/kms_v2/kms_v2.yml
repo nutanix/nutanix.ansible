@@ -7,7 +7,7 @@
 # 4. List all key management servers
 # 5. Delete the key management server
 
-- name: KMS playbook
+- name: Key Management Server playbook
   hosts: localhost
   gather_facts: false
   module_defaults:
@@ -21,25 +21,25 @@
       ansible.builtin.set_fact:
         kms_name: "Key_Management_Server_1"
         azure_kms:
-          endpointUrl: "https://example.azure.net/"
-          tenantId: "example-tenant-id"
-          clientId: "example-client-id"
-          clientSecret: "example-client-secret"
-          keyId: "example-key-id"
-          credentialExpiryDate: "2026-11-01"
-          credentialExpiryDateUpdated: "2027-09-01"
+          endpoint_url: "https://example.azure.net/"
+          tenant_id: "example-tenant-id"
+          client_id: "example-client-id"
+          client_secret: "example-client-secret"
+          key_id: "example-key-id"
+          credential_expiry_date: "2026-11-01"
+          credential_expiry_date_updated: "2027-09-01"
 
     - name: Create key management server
       nutanix.ncp.ntnx_key_management_server_v2:
         name: "{{ kms_name }}"
         access_information:
           azure_key_vault:
-            endpoint_url: "{{ azure_kms.endpointUrl }}"
-            key_id: "{{ azure_kms.keyId }}"
-            tenant_id: "{{ azure_kms.tenantId }}"
-            client_id: "{{ azure_kms.clientId }}"
-            client_secret: "{{ azure_kms.clientSecret }}"
-            credential_expiry_date: "{{ azure_kms.credentialExpiryDate }}"
+            endpoint_url: "{{ azure_kms.endpoint_url }}"
+            key_id: "{{ azure_kms.key_id }}"
+            tenant_id: "{{ azure_kms.tenant_id }}"
+            client_id: "{{ azure_kms.client_id }}"
+            client_secret: "{{ azure_kms.client_secret }}"
+            credential_expiry_date: "{{ azure_kms.credential_expiry_date }}"
       register: create_result
       ignore_errors: true
 
@@ -53,12 +53,12 @@
         ext_id: "{{ kms_ext_id }}"
         access_information:
           azure_key_vault:
-            endpoint_url: "{{ azure_kms.endpointUrl }}"
-            key_id: "{{ azure_kms.keyId }}"
-            tenant_id: "{{ azure_kms.tenantId }}"
-            client_id: "{{ azure_kms.clientId }}"
-            client_secret: "{{ azure_kms.clientSecret }}"
-            credential_expiry_date: "{{ azure_kms.credentialExpiryDateUpdated }}"
+            endpoint_url: "{{ azure_kms.endpoint_url }}"
+            key_id: "{{ azure_kms.key_id }}"
+            tenant_id: "{{ azure_kms.tenant_id }}"
+            client_id: "{{ azure_kms.client_id }}"
+            client_secret: "{{ azure_kms.client_secret }}"
+            credential_expiry_date: "{{ azure_kms.credential_expiry_date_updated }}"
       register: update_result
       ignore_errors: true
 
