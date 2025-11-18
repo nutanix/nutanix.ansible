@@ -273,10 +273,7 @@ from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
 )
-from ..module_utils.v4.vmm.api_client import (
-    get_etag,
-    get_vm_api_instance,
-)  # noqa: E402
+from ..module_utils.v4.vmm.api_client import get_etag, get_vm_api_instance  # noqa: E402
 from ..module_utils.v4.vmm.helpers import get_cd_rom, get_vm  # noqa: E402
 from ..module_utils.v4.vmm.spec.vms import VmSpecs as vm_specs  # noqa: E402
 
