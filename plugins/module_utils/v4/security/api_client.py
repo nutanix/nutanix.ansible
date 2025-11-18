@@ -56,6 +56,18 @@ def get_etag(data):
     return ntnx_security_py_client.ApiClient.get_etag(data)
 
 
+def get_stigs_api_instance(module):
+    """
+    This method will return STIGsApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): STIGs api instance
+    """
+    client = get_api_client(module)
+    return ntnx_security_py_client.STIGsApi(client)
+
+
 def get_kms_api_instance(module):
     """
     This method will return Key Management Server Api instance.
