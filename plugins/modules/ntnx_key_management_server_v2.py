@@ -258,7 +258,7 @@ def get_module_spec():
         azure_key_vault=dict(
             type="dict",
             options=azure_key_vault_spec,
-            no_log=True,
+            no_log=False,
         )
     )
 
@@ -426,7 +426,7 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[
-            ("state", "present", ("name", "access_information")),
+            ("state", "present", ("name",)),
             ("state", "absent", ("ext_id",)),
         ],
     )
@@ -444,11 +444,15 @@ def run_module():
         "ext_id": None,
     }
     kms_api_instance = get_kms_api_instance(module)
-    state = module.params["state"]
+    state = module.params.get("state")
     if state == "present":
         if module.params.get("ext_id"):
             update_kms(module, kms_api_instance, result)
         else:
+            if not module.params.get("access_information"):
+                module.fail_json(
+                    msg="access_information is required when creating a key management server"
+                )
             create_kms(module, kms_api_instance, result)
     else:
         delete_kms(module, kms_api_instance, result)
