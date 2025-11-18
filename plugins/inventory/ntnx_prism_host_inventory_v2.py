@@ -174,7 +174,10 @@ from ansible.plugins.inventory import BaseInventoryPlugin, Constructable  # noqa
 from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
     get_clusters_api_instance,
 )
-from ..module_utils.v4.utils import strip_internal_attributes  # noqa: E402
+from ..module_utils.v4.utils import (  # noqa: E402
+    extract_ip_address_from_external,
+    strip_internal_attributes,
+)
 
 
 class Mock_Module:
@@ -299,17 +302,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         for key in unwanted_keys:
             host_vars.pop(key, None)
 
-    def extract_ip_address_from_external(self, external_addr):
-        if not external_addr or not isinstance(external_addr, dict):
-            return None
-        ipv4 = external_addr.get("ipv4", {})
-        if ipv4 and isinstance(ipv4, dict) and ipv4.get("value"):
-            return ipv4.get("value")
-        ipv6 = external_addr.get("ipv6", {})
-        if ipv6 and isinstance(ipv6, dict) and ipv6.get("value"):
-            return ipv6.get("value")
-        return None
-
     def _build_host_vars(self, host):
         """
         Build a dictionary of host variables from the V4 host response.
@@ -327,14 +319,14 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         # Try to get IP from hypervisor external address first
         hypervisor = host.get("hypervisor", {})
         external_addr = hypervisor.get("external_address", {})
-        hypervisor_ip = self.extract_ip_address_from_external(external_addr)
+        hypervisor_ip = extract_ip_address_from_external(external_addr)
         if hypervisor_ip:
             host_vars["hypervisor_ip"] = hypervisor_ip
 
         # Set controller VM IP address
         controller_vm = host.get("controller_vm", {})
         external_addr = controller_vm.get("external_address", {})
-        controller_vm_ip = self.extract_ip_address_from_external(external_addr)
+        controller_vm_ip = extract_ip_address_from_external(external_addr)
         if controller_vm_ip:
             host_vars["controller_vm_ip"] = controller_vm_ip
 
