@@ -379,38 +379,6 @@
     success_msg: "Update storage policy with wrong external ID failed as expected"
     fail_msg: "Update storage policy with wrong external ID did not fail as expected"
 
-# This is passing where it should fail since name is required as per API docs
-# - name: Update storage policy with missing name
-#   nutanix.ncp.ntnx_storage_policies_v2:
-#     ext_id: "{{ todelete[0] }}"
-#     category_ext_ids:
-#       - "{{ todelete_categories[2] }}"
-#     compression_spec:
-#       compression_state: "POSTPROCESS"
-#     encryption_spec:
-#       encryption_state: "ENABLED"
-#     qos_spec:
-#       throttled_iops: 100
-#     fault_tolerance_spec:
-#       replication_factor: "THREE"
-#   register: result
-#   ignore_errors: true
-
-# - ansible.builtin.debug:
-#     var: result
-
-# - name: Update storage policy with missing name status
-#   ansible.builtin.assert:
-#     that:
-#       - result is defined
-#       - result.changed == false
-#       - result.failed == true
-#       - result.msg == "Api Exception raised while updating storage policy"
-#       - result.response is defined
-#       - result.response.data.error is defined
-#     success_msg: "Update storage policy with missing name failed as expected"
-#     fail_msg: "Update storage policy with missing name did not fail as expected"
-
 - name: Update storage policy encryption when encryption is enabled
   nutanix.ncp.ntnx_storage_policies_v2:
     ext_id: "{{ todelete[1] }}"

@@ -461,6 +461,7 @@ def run_module():
         supports_check_mode=True,
         required_if=[
             ("state", "absent", ("ext_id",)),
+            ("state", "present", ("name", "ext_id"), True),
         ],
     )
     if SDK_IMP_ERROR:
