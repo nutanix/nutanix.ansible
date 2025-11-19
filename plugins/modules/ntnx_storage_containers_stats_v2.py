@@ -56,7 +56,6 @@ options:
         - LAST
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
-      - nutanix.ncp.ntnx_operations_v2
       - nutanix.ncp.ntnx_logger
 author:
  - Alaa Bishtawi (@alaabishtawi)
