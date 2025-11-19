@@ -27,35 +27,6 @@ class APILogger:
         """
         self.module = module
         self.enabled = module.params.get("enable_debug_logging", False)
-        self.call_count = self._get_last_call_count()
-
-    def _get_last_call_count(self):
-        """
-        Get the last API call count from the debug log file.
-        If the file doesn't exist or is empty, return 0.
-
-        Returns:
-            int: Last API call count from log file, or 0 if not found
-        """
-        try:
-            log_file = os.path.expanduser("~/nutanix_ansible_debug.log")
-
-            # If file doesn't exist, start from 0
-            if not os.path.exists(log_file):
-                return 0
-
-            # Read the file and get the highest API CALL number using regex over the full content
-            last_count = 0
-            with open(log_file, "r") as f:
-                content = f.read()
-                matches = re.findall(r"API CALL #(\d+)", content)
-                if matches:
-                    last_count = max(int(m) for m in matches)
-            return last_count
-
-        except Exception:
-            # If any error occurs, start from 0
-            return 0
 
     def log_api_call(
         self,
@@ -85,12 +56,10 @@ class APILogger:
         if not self.enabled:
             return
 
-        self.call_count += 1
-
         # Build the log message
         log_lines = []
         log_lines.append("=" * 80)
-        log_lines.append(f"API CALL #{self.call_count} - {datetime.now().isoformat()}")
+        log_lines.append(f"{datetime.now().isoformat()}")
         log_lines.append("=" * 80)
 
         # Request details
@@ -226,7 +195,9 @@ class APILogger:
         """Write log message to all outputs."""
         self.module.log(log_message)
         try:
-            log_file = os.path.expanduser("~/nutanix_ansible_debug.log")
+            log_file = os.environ.get("NUTANIX_LOG_PATH") or os.path.expanduser(
+                "~/nutanix_ansible_debug.log"
+            )
             with open(log_file, "a") as f:
                 f.write(log_message + "\n")
         except Exception:
