@@ -6,8 +6,8 @@
 - name: Get SSL Certificates
   nutanix.ncp.ntnx_ssl_certificates_info_v2:
     ext_id: "{{ cluster.uuid }}"
-  ignore_errors: true
   register: result
+  ignore_errors: true
 
 - name: Get SSL Certificates status
   ansible.builtin.assert:
@@ -24,23 +24,25 @@
 - name: Generate spec for updating SSL Certificates using check mode
   nutanix.ncp.ntnx_ssl_certificates_v2:
     ext_id: "{{ cluster.uuid }}"
-    private_key_algorithm: "{{ ssl_certificate.private_key_algorithm }}"
-    passphrase: "{{ ssl_certificate.passphrase }}"
-    private_key: "{{ ssl_certificate.private_key }}"
-    public_certificate: "{{ ssl_certificate.public_certificate }}"
-    ca_chain: "{{ ssl_certificate.ca_chain }}"
+    private_key_algorithm: "RSA_2048"
+    passphrase: "passphrase"
+    private_key: "WYfQkZtuB/Ea/nyVRR0Nkyyzb1gcZf6laxHlqCARdxzw"
+    public_certificate: "QWOzOy87lqKccCMC4RhDBY6zA+OMHXCPQBzM+phKAQo"
+    ca_chain: "DNWGrGgF/5MTlnhS44itn1nvdLG8yfne"
   check_mode: true
-  ignore_errors: true
   register: result
+  ignore_errors: true
 
 - name: Generate spec for updating SSL Certificates using check mode status
   ansible.builtin.assert:
     that:
       - result.changed == false
+      - result.ext_id == "{{ cluster.uuid }}"
       - result.failed == false
       - result.response is defined
-      - result.response.ca_chain is defined
-      - result.response.public_certificate is defined
+      - result.response.private_key_algorithm == "RSA_2048"
+      - result.response.public_certificate == "QWOzOy87lqKccCMC4RhDBY6zA+OMHXCPQBzM+phKAQo"
+      - result.response.ca_chain == "DNWGrGgF/5MTlnhS44itn1nvdLG8yfne"
     fail_msg: "Failed to generate spec for updating SSL Certificates using check mode"
     success_msg: "Spec for updating SSL Certificates generated successfully using check mode"
 
@@ -52,8 +54,8 @@
     private_key: "{{ ssl_certificate.private_key }}"
     public_certificate: "{{ ssl_certificate.public_certificate }}"
     ca_chain: "{{ ssl_certificate.ca_chain }}"
-  ignore_errors: true
   register: result
+  ignore_errors: true
 
 - name: Update SSL Certificates status
   ansible.builtin.assert:
@@ -75,8 +77,8 @@
     private_key: "{{ ssl_certificate.private_key }}"
     public_certificate: "{{ ssl_certificate.public_certificate }}"
     ca_chain: "{{ ssl_certificate.ca_chain }}"
-  ignore_errors: true
   register: result
+  ignore_errors: true
 
 - name: Update SSL Certificates with invalid cluster external ID status
   ansible.builtin.assert:
@@ -97,8 +99,8 @@
     private_key: "cHJpdmF0ZV9rZXk="
     public_certificate: "cHVibGljX2NlcnRpZmljYXRl"
     ca_chain: "Y2FfY2hhaW4="
-  ignore_errors: true
   register: result
+  ignore_errors: true
 
 - name: Update SSL Certificates with invalid private key algorithm status
   ansible.builtin.assert:
@@ -115,8 +117,8 @@
 - name: Fetch SSL Certificates with invalid cluster external ID
   nutanix.ncp.ntnx_ssl_certificates_info_v2:
     ext_id: "12345678-0000-6524-9856-123456789854" # invalid cluster external ID
-  ignore_errors: true
   register: result
+  ignore_errors: true
 
 - name: Fetch SSL Certificates with invalid cluster external ID status
   ansible.builtin.assert:

@@ -51,11 +51,9 @@ response:
       "private_key": null,
       "private_key_algorithm": "RSA_2048",
       "public_certificate": "-----BEGIN CERTIFICATE-----\n
-        Sm9zZTEUMBIGA1UEChMLTnV0YW5peCBJbmMxLzAtBgNVBAsTJlNlY3VyaXR5IEVu\nZ2luZWVyaW5nIGFuZCBSZXNlYXJjaCBUZWFtMRYwFAYDVQQDEw0xMC45OC4xNDUu\n
-        MTE3MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtAupSmGGKIXOs9Ub\nmD7pwjmk1iJ+Mq4F8aqVwsfESKboc5xtQ9FX8z9vSgdkyd67ZhrWSgEeG8ZOg80h\n
-        bboTDC5j83CoH8mcyUmO5Rrk1DpGDJpzHnDOBq4CxkFvC5lxB9LXu2LnFhZ6myTC\nR+lmrJsXT6tYsnUIXhC11iHqcv/VGYA2c90cfMJLNXghe4it9sY6dvzrBy5ws/ly\n
-        MwqtwwIDAQABo4GUMIGRMAkGA1UdEwQCMAAwHQYDVR0OBBYEFG6GTzPSc4pDX87B\nvbS11faBPjudMAsGA1UdDwQEAwIF4DAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYB\n
-        Udlp55wEPI7s28oycJgT39Q7x95F2BJkIfyC70n6KgxWXyQtuJ6cxd1c0NcYZsEx\nnpVZBA==\n-----END CERTIFICATE-----"
+        Sm9zZTEUMBIGA1UEChMLTnV0YW5peCBJbmMxLzAtBgNVBAsTJlNlY3VyaXR5IEVu\n
+        Udlp55wEPI7s28oycJgT39Q7x95F2BJkIfyC70n6KgxWXyQtuJ6cxd1c0NcYZsEx\nnpVZBA==\n
+        -----END CERTIFICATE-----"
     }
 
 changed:
@@ -63,11 +61,6 @@ changed:
   returned: always
   type: bool
   sample: true
-
-error:
-  description: This field typically holds information about if the task have errors that occurred during the task execution
-  returned: When an error occurs
-  type: str
 
 failed:
   description: This field typically holds information about if the task have failed
@@ -121,7 +114,7 @@ def run_module():
     )
 
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None}
+    result = {"changed": False, "response": None}
     get_ssl_certificates_info(module, result)
     module.exit_json(**result)
 

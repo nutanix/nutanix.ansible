@@ -94,16 +94,14 @@ response:
       "private_key": null,
       "private_key_algorithm": "RSA_2048",
       "public_certificate": "-----BEGIN CERTIFICATE-----\n
-      MRMwEQYDVQQIEwpDYWxpZm9ybmlhMREwDwYDVQQHEwhTYW4gSm9zZTEWMBQGA1UE\nChMNTnV0YW5peCwgSW5jLjEvMC0GA1UECxMmU2VjdXJpdHkgRW5naW5lZXJpbmcg\n
-      QG51dGFuaXguY29tMB4XDTI1MTEwNjA2NDMwOVoXDTI2MTEwNjA2NDMwOVowgZQx\nCzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpDYWxpZm9ybmlhMREwDwYDVQQHEwhTYW4g\n
-      hjSvZ6IV6e/CgRHX+VRRPMjQe42VZRmWxwp9rBtMOFGxhOiaJHzIEJVdHZhvNpga\ndCJb+dAcahj7PPbYtyqUwq219Qv006JxLohOI52H6ATktzj5/9zxFdIMfjz2W5nX\n
-      InFLjKaFTIaIN4p8mAIv6dHTcyLtmxesZ1ZOfiTMjzXQSu8dS5BrGXERNmzATN7A\nOdtj7e/oUjwRVBNUrhzNgOE2naFvV0AOXcqKnoKBDTHOq2PPuGqELSgtNQ6TQrMx\n
-      pg01b/9d1XLPXFxiXmzpOnesuSY6VSaxOCsBMT5LenIT/WE9ES7DND5xsfpY4EJt\ns0H5bA==\n-----END CERTIFICATE-----"
+      hjSvZ6IV6e/CgRHX+VRRPMjQe42VZRmWxwp9rBtMOFGxhOiaJHzIEJVdHZhvNpga\n
+      pg01b/9d1XLPXFxiXmzpOnesuSY6VSaxOCsBMT5LenIT/WE9ES7DND5xsfpY4EJt\ns0H5bA==\n
+      -----END CERTIFICATE-----"
     }
 
 task_ext_id:
   description:
-    - Task external ID.
+    - The external ID of the task.
   type: str
   returned: always
   sample: ZXJnb24=:d0fe946a-83b7-464d-bafb-4826282a75b1
@@ -183,12 +181,13 @@ def get_module_spec():
 def update_ssl_certificates(module, result):
     ssl_certificates_api = get_ssl_certificates_api_instance(module)
     cluster_ext_id = module.params.get("ext_id")
+    result["ext_id"] = cluster_ext_id
     sg = SpecGenerator(module)
     default_spec = clustermgmt_sdk.SSLCertificate()
     spec, err = sg.generate_spec(obj=default_spec)
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating create ssl certificates spec", **result)
+        module.fail_json(msg="Failed generating update ssl certificates spec", **result)
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
@@ -221,7 +220,6 @@ def update_ssl_certificates(module, result):
     if task_ext_id and module.params.get("wait"):
         wait_for_completion(module, task_ext_id)
         resp = get_ssl_certificates(module, ssl_certificates_api, cluster_ext_id)
-        result["ext_id"] = cluster_ext_id
         result["response"] = strip_internal_attributes(resp.to_dict())
 
     result["changed"] = True
