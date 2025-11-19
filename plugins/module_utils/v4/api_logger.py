@@ -58,7 +58,7 @@ class APILogger:
         # Build the log message
         log_lines = []
         log_lines.append("=" * 80)
-        log_lines.append(f"{datetime.now().isoformat()}")
+        log_lines.append("{}".format(datetime.now().isoformat()))
         log_lines.append("=" * 80)
 
         # Request details
