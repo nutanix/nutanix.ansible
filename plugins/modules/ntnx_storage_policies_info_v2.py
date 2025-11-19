@@ -15,6 +15,8 @@ short_description: Fetch storage policies info in Nutanix Prism Central
 version_added: 2.4.0
 description:
   - This module allows you to fetch storage policies info or specific storage policy in Nutanix Prism Central.
+  - If ext_id is provided, fetch particular storage policy info using external ID
+  - If ext_id is not provided, fetch multiple storage policies info with/without using filters, limit, etc.
   - This module uses PC v4 APIs based SDKs
 options:
   ext_id:
@@ -185,7 +187,7 @@ def run_module():
         ],
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "response": None}
+    result = {"changed": False, "response": None, "error": None}
     storage_policies = get_storage_policies_api_instance(module)
     if module.params.get("ext_id"):
         get_storage_policy_using_ext_id(module, storage_policies, result)

@@ -203,7 +203,7 @@ task_ext_id:
   type: str
   sample: "ZXJnb24=:90458bc7-a12b-4616-ac66-562fdb00c209"
 
-storage_policy_ext_id:
+ext_id:
   description:
     - The external id of the storage policy.
   returned: always
@@ -355,12 +355,12 @@ def create_storage_policy(module, storage_policies, result):
     if task_ext_id and module.params.get("wait"):
         resp = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(resp.to_dict())
-        storage_policy_ext_id = get_entity_ext_id_from_task(
+        ext_id = get_entity_ext_id_from_task(
             resp, rel=TASK_CONSTANTS.RelEntityType.STORAGE_POLICY
         )
-        if storage_policy_ext_id:
-            result["storage_policy_ext_id"] = storage_policy_ext_id
-            resp = get_storage_policy(module, storage_policies, storage_policy_ext_id)
+        if ext_id:
+            result["ext_id"] = ext_id
+            resp = get_storage_policy(module, storage_policies, ext_id)
             result["response"] = strip_internal_attributes(resp.to_dict())
     result["changed"] = True
 
@@ -396,10 +396,6 @@ def update_storage_policy(module, storage_policies, result):
 
     kwargs = {"if_match": etag}
     resp = None
-    # INSERT_YOUR_CODE
-    # Remove 'policy_type' from update_spec if present
-    # Remove 'policy_type' attribute from update_spec if it exists (update_spec is not a dict)
-    # Remove 'policy_type' from update_spec if present and set to None instead of deleting
     if hasattr(update_spec, "policy_type"):
         setattr(update_spec, "policy_type", None)
     try:
@@ -416,7 +412,7 @@ def update_storage_policy(module, storage_policies, result):
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
-        task_status = wait_for_completion(module, task_ext_id, True)
+        task_status = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_status.to_dict())
         resp = get_storage_policy(module, storage_policies, ext_id)
         result["response"] = strip_internal_attributes(resp.to_dict())
@@ -473,6 +469,7 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
+        "error": None,
         "response": None,
         "ext_id": None,
     }
