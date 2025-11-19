@@ -159,24 +159,3 @@ def remove_fields_from_spec(obj, fields_to_remove, deep=False):
         if deep:
             for item in obj:
                 remove_fields_from_spec(item, fields_to_remove, deep=True)
-
-
-def extract_ip_address_from_external(external_addr):
-    """
-    Extract IP address from external address dictionary.
-
-    Args:
-        external_addr (dict): External address dictionary containing ipv4 or ipv6
-
-    Returns:
-        str: IP address (IPv4 or IPv6) or None if not found
-    """
-    if not external_addr or not isinstance(external_addr, dict):
-        return None
-    ipv4 = external_addr.get("ipv4", {})
-    if ipv4 and isinstance(ipv4, dict) and ipv4.get("value"):
-        return ipv4.get("value")
-    ipv6 = external_addr.get("ipv6", {})
-    if ipv6 and isinstance(ipv6, dict) and ipv6.get("value"):
-        return ipv6.get("value")
-    return None
