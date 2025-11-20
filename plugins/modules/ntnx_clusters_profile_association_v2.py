@@ -283,7 +283,7 @@ def associate_cluster_profile(module, cluster_profiles, result):
         result["error"] = err
         module.fail_json(
             msg="Failed generating cluster profile spec for associating cluster profile with a cluster.",
-            **result,  # fmt: skip
+            **result,
         )
 
     if module.check_mode:
@@ -325,7 +325,7 @@ def disassociate_cluster_profile(module, cluster_profiles, result):
         result["error"] = err
         module.fail_json(
             msg="Failed generating cluster profile spec for disassociating cluster profile from a cluster.",
-            **result,  # fmt: skip
+            **result,
         )
 
     if module.check_mode:
