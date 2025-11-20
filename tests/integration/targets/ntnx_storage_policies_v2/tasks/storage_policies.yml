@@ -97,7 +97,7 @@
       - result is defined
       - result.changed == true
       - result.failed == false
-      - result.storage_policy_ext_id is defined
+      - result.ext_id is defined
       - result.task_ext_id is defined
       - result.response is defined
       - result.response.name == "storage_policy_{{ random_name }}_min"
@@ -107,7 +107,7 @@
 
 - name: Add storage policy to todelete list
   ansible.builtin.set_fact:
-    todelete: "{{ todelete + [ result.storage_policy_ext_id ] }}"
+    todelete: "{{ todelete + [ result.ext_id ] }}"
 
 - name: Create storage policy with all attributes
   nutanix.ncp.ntnx_storage_policies_v2:
@@ -126,13 +126,16 @@
   register: result
   ignore_errors: true
 
+- ansible.builtin.debug:
+    var: result
+
 - name: Create storage policy with all attributes status
   ansible.builtin.assert:
     that:
       - result is defined
       - result.changed == true
       - result.failed == false
-      - result.storage_policy_ext_id is defined
+      - result.ext_id is defined
       - result.task_ext_id is defined
       - result.response is defined
       - result.response.name == "storage_policy_{{ random_name }}_all"
@@ -148,7 +151,7 @@
 
 - name: Add storage policy to todelete list
   ansible.builtin.set_fact:
-    todelete: "{{ todelete + [ result.storage_policy_ext_id ] }}"
+    todelete: "{{ todelete + [ result.ext_id ] }}"
 
 - name: Create storage policy with missing name
   nutanix.ncp.ntnx_storage_policies_v2:

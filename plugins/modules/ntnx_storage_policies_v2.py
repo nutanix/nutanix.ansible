@@ -15,6 +15,7 @@ short_description: Create, Update, Delete storage policies in Nutanix Prism Cent
 version_added: 2.4.0
 description:
   - This module allows you to create, update, and delete storage policies in Nutanix Prism Central.
+  - For Create operation, at least one storage attribute (compression_spec, encryption_spec, qos_spec, fault_tolerance_spec) must be set to non default value.
   - This module uses PC v4 APIs based SDKs
 options:
   state:
