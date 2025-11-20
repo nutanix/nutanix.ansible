@@ -1091,8 +1091,8 @@ def delete_cluster_profile(module, cluster_profiles, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
     if module.check_mode:
-        result["msg"] = (
-            "Cluster Profile with ext_id:'{0}' will be deleted.".format(ext_id)
+        result["msg"] = "Cluster Profile with ext_id:'{0}' will be deleted.".format(
+            ext_id
         )
         return
 
