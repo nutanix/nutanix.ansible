@@ -171,7 +171,7 @@
       - result is defined
       - result.changed == false
       - result.failed == true
-      - result.msg == "Api Exception raised while creating storage policy"
+      - "'state is present but any of the following are missing: name, ext_id' in result.msg"
       - result.response is defined
       - result.response.data.error is defined
     success_msg: "Create storage policy with missing name failed as expected"
