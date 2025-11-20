@@ -25,7 +25,9 @@ class APILogger:
             module: Ansible module instance
         """
         self.module = module
-        self.enabled = module.params.get("enable_debug_logging", False)
+        self.enabled = module.params.get(
+            "enable_debug_logging", False
+        ) or os.environ.get("NUTANIX_DEBUG", "false").lower() == "true"
 
     def log_api_call(
         self,
