@@ -193,7 +193,7 @@ class APILogger:
         """Write log message to all outputs."""
         self.module.log(log_message)
         try:
-            log_file = os.environ.get("NUTANIX_LOG_PATH") or os.path.expanduser(
+            log_file = os.environ.get("NUTANIX_LOG_PATH") or os.environ.get(
                 "/var/tmp/nutanix_ansible_debug.log"
             )
             with open(log_file, "a") as f:
