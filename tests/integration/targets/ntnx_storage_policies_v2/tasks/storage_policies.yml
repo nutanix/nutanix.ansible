@@ -165,9 +165,6 @@
   register: result
   ignore_errors: true
 
-- ansible.builtin.debug:
-    var: result
-
 - name: Create storage policy with missing name status
   ansible.builtin.assert:
     that:
