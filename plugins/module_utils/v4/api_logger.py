@@ -195,16 +195,12 @@ class APILogger:
         self.module.log(log_message)
         try:
             log_file = os.environ.get("NUTANIX_LOG_PATH") or os.path.expanduser(
-                "~/nutanix_ansible_debug.log"
+                "/var/tmp/nutanix_ansible_debug.log"
             )
             with open(log_file, "a") as f:
                 f.write(log_message + "\n")
         except Exception:
             pass
-
-        # Write to stderr for remote execution visibility
-        sys.stderr.write(log_message + "\n")
-        sys.stderr.flush()
 
     def _sanitize_headers(self, headers):
         """
