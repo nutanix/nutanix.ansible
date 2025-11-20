@@ -42,6 +42,7 @@ class Tasks:
         ROUTE = "networking:config:route"
         OBJECTS = "objects:config:object-store"
         OVA = "vmm:content:ova"
+        STORAGE_POLICY = "datapolicies:config:storage-policy"
         KMS = "security:encryption:key-management-server"
 
     class CompletetionDetailsName:

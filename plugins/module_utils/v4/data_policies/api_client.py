@@ -67,3 +67,15 @@ def get_protection_policies_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_datapolicies_py_client.ProtectionPoliciesApi(client)
+
+
+def get_storage_policies_api_instance(module):
+    """
+    This method will return storage policies api instance.
+    Args:
+        module (object): Ansible module object
+    Returns:
+        api_instance (object): storage policies api instance
+    """
+    client = get_api_client(module)
+    return ntnx_datapolicies_py_client.StoragePoliciesApi(client)
