@@ -30,37 +30,34 @@ class ClusterProfileSpecs:
         prefix_length=dict(type="int", required=False, default=128),
     )
 
-    fqdn = dict(value=dict(type="str", required=False))
-
-    ip_address_or_fqdn = dict(
-        ipv4=dict(
+    ipv4_spec = (
+        dict(
             type="dict",
             options=ipv4_address,
             obj=clusters_sdk.IPv4Address,
             required=False,
         ),
-        ipv6=dict(
+    )
+    ipv6_spec = (
+        dict(
             type="dict",
             options=ipv6_address,
             obj=clusters_sdk.IPv6Address,
             required=False,
         ),
+    )
+
+    fqdn = dict(value=dict(type="str", required=False))
+
+    ip_address_or_fqdn = dict(
+        ipv4=ipv4_spec,
+        ipv6=ipv6_spec,
         fqdn=dict(type="dict", options=fqdn, obj=clusters_sdk.FQDN, required=False),
     )
 
     ip_address = dict(
-        ipv4=dict(
-            type="dict",
-            options=ipv4_address,
-            obj=clusters_sdk.IPv4Address,
-            required=False,
-        ),
-        ipv6=dict(
-            type="dict",
-            options=ipv6_address,
-            obj=clusters_sdk.IPv6Address,
-            required=False,
-        ),
+        ipv4=ipv4_spec,
+        ipv6=ipv6_spec,
     )
 
     smtp_network = dict(

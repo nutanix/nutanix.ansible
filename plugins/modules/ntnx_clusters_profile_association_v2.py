@@ -16,8 +16,9 @@ version_added: 2.4.0
 description:
   - This module can be used to associate or disassociate cluster profile with a cluster in Nutanix Prism Central.
   - Associate cluster profile with a cluster will apply the cluster profile configuration to the cluster.
-  - Disassociate cluster profile from a cluster will remove the cluster profile external ID from the cluster.
-  - This module will not remove the cluster profile configuration from the cluster. It will only remove the cluster profile external ID from the cluster.
+  - Disassociate cluster profile from a cluster will remove the cluster profile external ID from the cluster, which means that cluster is no longer
+    associated with the cluster profile and any changes made to the cluster profile configuration will not be applied to the cluster.
+  - This module will not remove the cluster profile configuration from the cluster.
   - This module uses PC v4 APIs based SDKs
 options:
     state:
@@ -51,7 +52,9 @@ options:
                 required: true
     dryrun:
         description:
-          - Whether to run prechecks only.
+          - If set to true, the module will only run prechecks and will not apply the cluster profile configuration to the cluster.
+          - If set to false which is the default value, the module will apply the cluster profile configuration to the cluster.
+          - This parameter is only applicable when the state is present (associate cluster profile with a cluster).
         type: bool
         default: false
 extends_documentation_fragment:
@@ -279,7 +282,7 @@ def associate_cluster_profile(module, cluster_profiles, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating cluster profile spec for association", **result
+            msg="Failed generating cluster profile spec for associating cluster profile with a cluster.", **result
         )
 
     if module.check_mode:
@@ -320,7 +323,7 @@ def disassociate_cluster_profile(module, cluster_profiles, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating cluster profile spec for disassociation", **result
+            msg="Failed generating cluster profile spec for disassociating cluster profile from a cluster.", **result
         )
 
     if module.check_mode:
@@ -362,6 +365,7 @@ def run_module():
     result = {
         "changed": False,
         "response": None,
+        "error": None,
         "ext_id": None,
         "task_ext_id": None,
     }

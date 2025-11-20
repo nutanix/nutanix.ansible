@@ -32,7 +32,7 @@ options:
   ext_id:
     description:
       - The external ID of the cluster profile
-      - Mandatory to trigger update or destroy operation.
+      - Required to trigger update or delete operation.
     type: str
   name:
     description:
@@ -331,33 +331,33 @@ options:
             suboptions:
               ipv4:
                 description:
-                  - The IPv4 address of the SMTP server.
+                  - The IPv4 address of the SNMP trap server.
                 type: dict
                 suboptions:
                   value:
                     description:
-                      - The value of the SMTP server IP address.
+                      - The value of the SNMP trap server IP address.
                     type: str
                     required: true
                   prefix_length:
                     description:
-                      - The prefix for the SMTP server IP address.
+                      - The prefix for the SNMP trap server IP address.
                     type: int
                     required: false
                     default: 32
               ipv6:
                 description:
-                  - The IPv6 address of the SMTP server.
+                  - The IPv6 address of the SNMP trap server.
                 type: dict
                 suboptions:
                   value:
                     description:
-                      - The value of the SMTP server IPv6 address.
+                      - The value of the SNMP trap server IPv6 address.
                     type: str
                     required: true
                   prefix_length:
                     description:
-                      - The prefix for the SMTP server IPv6 address.
+                      - The prefix for the SNMP trap server IPv6 address.
                     type: int
                     required: false
                     default: 128
@@ -429,33 +429,33 @@ options:
         suboptions:
           ipv4:
             description:
-              - The IPv4 address of the SMTP server.
+              - The IPv4 address of the RSYSLOG server.
             type: dict
             suboptions:
               value:
                 description:
-                  - The value of the SMTP server IP address.
+                  - The value of the RSYSLOG server IP address.
                 type: str
                 required: true
               prefix_length:
                 description:
-                  - The prefix for the SMTP server IP address.
+                  - The prefix for the RSYSLOG server IP address.
                 type: int
                 required: false
                 default: 32
           ipv6:
             description:
-              - The IPv6 address of the SMTP server.
+              - The IPv6 address of the RSYSLOG server.
             type: dict
             suboptions:
               value:
                 description:
-                  - The value of the SMTP server IPv6 address.
+                  - The value of the RSYSLOG server IPv6 address.
                 type: str
                 required: true
               prefix_length:
                 description:
-                  - The prefix for the SMTP server IPv6 address.
+                  - The prefix for the RSYSLOG server IPv6 address.
                 type: int
                 required: false
                 default: 128
@@ -554,7 +554,10 @@ author:
 
 EXAMPLES = r"""
 - name: Create cluster profile
-  ntnx_clusters_profiles_v2:
+  nutanix.ncp.ntnx_clusters_profiles_v2:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
     name: "cluster_profile_1"
     description: "Cluster profile description"
     allowed_overrides:
@@ -644,7 +647,10 @@ EXAMPLES = r"""
   register: result
 
 - name: Update cluster profile
-  ntnx_clusters_profiles_v2:
+  nutanix.ncp.ntnx_clusters_profiles_v2:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
     name: "cluster_profile_1_updated"
     ext_id: "1146f181-188b-49e2-5995-356bf1b74aeb"
     description: "Cluster profile description"
@@ -735,7 +741,10 @@ EXAMPLES = r"""
   register: result
 
 - name: Delete cluster profile
-  ntnx_clusters_profiles_v2:
+  nutanix.ncp.ntnx_clusters_profiles_v2:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
     ext_id: "1146f181-188b-49e2-5995-356bf1b74aeb"
     state: "absent"
   register: result
@@ -902,11 +911,10 @@ changed:
     returned: always
     sample: true
 msg:
-    description:
-        - The message from module operation if any.
+    description: This indicates the message if any message occurred
+    returned: When there is an error, module is idempotent or check mode (in delete operation)
     type: str
-    returned: When value is present.
-    sample: "Cluster Profile with external ID '00061de6-4a87-6b06-185b-ac1f6b6f97e2' will be deleted."
+    sample: "Failed generating cluster profile create spec"
 error:
     description:
         - The error message if an error occurs.
@@ -999,17 +1007,17 @@ def create_cluster_profile(module, cluster_profiles, result):
         )
         if ext_id:
             result["ext_id"] = ext_id
-            route = get_cluster_profile(module, cluster_profiles, ext_id)
-            result["response"] = strip_internal_attributes(route.to_dict())
+            cluster_profile = get_cluster_profile(module, cluster_profiles, ext_id)
+            result["response"] = strip_internal_attributes(cluster_profile.to_dict())
     result["changed"] = True
 
 
 def check_cluster_idempotency(current_spec, update_spec):
 
-    users1 = current_spec.get("snmp_config", {}).get("users", [])
-    users2 = update_spec.get("snmp_config", {}).get("users", [])
+    users_current = current_spec.get("snmp_config", {}).get("users", [])
+    users_update = update_spec.get("snmp_config", {}).get("users", [])
 
-    if len(users1) != len(users2):
+    if len(users_current) != len(users_update):
         return False
 
     if current_spec.get("smtp_server", {}).get("server") is not None:
@@ -1017,13 +1025,13 @@ def check_cluster_idempotency(current_spec, update_spec):
     if update_spec.get("smtp_server", {}).get("server") is not None:
         update_spec["smtp_server"]["server"]["password"] = None
 
-    for user1, user2 in zip(users1, users2):
-        if isinstance(user1, dict):
-            user1["auth_key"] = None
-            user1["priv_key"] = None
-        if isinstance(user2, dict):
-            user2["auth_key"] = None
-            user2["priv_key"] = None
+    for user_current, user_update in zip(users_current, users_update):
+        if isinstance(user_current, dict):
+            user_current["auth_key"] = None
+            user_current["priv_key"] = None
+        if isinstance(user_update, dict):
+            user_update["auth_key"] = None
+            user_update["priv_key"] = None
 
     if current_spec != update_spec:
         return False
@@ -1084,7 +1092,7 @@ def delete_cluster_profile(module, cluster_profiles, result):
     result["ext_id"] = ext_id
     if module.check_mode:
         result["msg"] = (
-            "Cluster Profile with external ID '{0}' will be deleted.".format(ext_id)
+            "Cluster Profile with ext_id:'{0}' will be deleted.".format(ext_id)
         )
         return
 
@@ -1093,7 +1101,7 @@ def delete_cluster_profile(module, cluster_profiles, result):
     etag = get_etag(current_spec)
     if not etag:
         return module.fail_json(
-            "unable to fetch etag for destroying cluster profile", **result
+            "Unable to fetch etag for deleting cluster profile", **result
         )
 
     kwargs = {"if_match": etag}

@@ -69,7 +69,8 @@ RETURN = r"""
 response:
     description:
         - Response for fetching cluster profile info.
-        - Returns cluster profile info if ext_id is provided or list of multiple cluster profiles.
+        - Returns specific cluster profile info if ext_id is provided
+        - Returns list of multiple cluster profiles info if ext_id is not provided
     type: dict
     returned: always
     sample:
@@ -214,10 +215,6 @@ changed:
     type: bool
     returned: always
     sample: true
-error:
-    description: The error message if an error occurs.
-    type: str
-    returned: when an error occurs
 ext_id:
     description:
         - The external ID of the cluster profile if given in input.
@@ -302,7 +299,7 @@ def run_module():
     )
 
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None}
+    result = {"changed": False, "response": None}
     cluster_profiles = get_cluster_profiles_api_instance(module)
     if module.params.get("ext_id"):
         get_cluster_profile_by_ext_id(module, cluster_profiles, result)

@@ -1,4 +1,8 @@
 ---
+# Variables required before running this playbook:
+# - clusters
+# - cluster_profiles
+
 - name: Start clusters profiles tests
   ansible.builtin.debug:
     msg: start clusters profiles tests
@@ -23,188 +27,6 @@
   ansible.builtin.set_fact:
     reset_command: '{{ pe_ssh_cmd }} "{{ reset_username_password }}"'
     cluster_status_command: '{{ pe_ssh_cmd }} "{{ cluster_status }}"'
-
-############################################## Create cluster test 1 ##############################################
-
-- name: Create spec for cluster create with dummy values using check mode
-  nutanix.ncp.ntnx_clusters_v2:
-    name: cluster1
-    nodes:
-      node_list:
-        - controller_vm_ip:
-            ipv4:
-              value: 10.0.0.1
-          host_ip:
-            ipv4:
-              value: 10.0.0.2
-    config:
-      cluster_function:
-        - AOS
-      authorized_public_key_list:
-        - name: key1
-          key: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDQ6
-      redundancy_factor: 1
-      cluster_arch: X86_64
-      fault_tolerance_state:
-        domain_awareness_level: DISK
-        desired_cluster_fault_tolerance: CFT_2N_OR_2D
-      operation_mode: NORMAL
-      encryption_in_transit_status: ENABLED
-    network:
-      external_address:
-        ipv4:
-          value: 10.0.0.3
-      external_data_service_ip:
-        ipv4:
-          value: 10.0.0.4
-      nfs_subnet_whitelist:
-        - vlan.123
-      ntp_server_ip_list:
-        - ipv4:
-            value: 10.0.0.5
-        - ipv6:
-            value: 2001:db8::1
-        - fqdn:
-            value: ntp.example.com
-      name_server_ip_list:
-        - ipv4:
-            value: 10.0.0.6
-        - ipv6:
-            value: 2001:db8::2
-        - fqdn:
-            value: dns.example.com
-      smtp_server:
-        email_address: testemail@test.com
-        server:
-          ip_address:
-            ipv4:
-              value: 10.0.0.7
-          port: 25
-          username: test
-          password: test1
-        type: PLAIN
-      masquerading_ip:
-        ipv4:
-          value: 10.0.0.8
-      management_server:
-        ip:
-          ipv4:
-            value: 10.0.0.9
-        is_registered: true
-        is_drs_enabled: true
-      fqdn: test.example.com
-      key_management_server_type: PRISM_CENTRAL
-      backplane:
-        vlan_tag: 123
-        subnet:
-          value: 10.0.0.0
-          prefix_length: 24
-        netmask:
-          value: 255.255.255.225
-      http_proxy_list:
-        - ip_address:
-            ipv4:
-              value: 10.0.0.1
-          port: 8080
-          username: username_test
-          password: test1
-          name: name_test
-          proxy_types:
-            - HTTP
-            - HTTPS
-      http_proxy_white_list:
-        - target_type: IPV4_NETWORK_MASK
-          target: test
-    container_name: test-container
-    dryrun: true
-  register: result
-  check_mode: true
-  ignore_errors: true
-
-- name: Verify generated spec
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == false
-      - result.response.name == "cluster1"
-      - result.response.nodes.node_list[0].controller_vm_ip.ipv4.value == "10.0.0.1"
-      - result.response.nodes.node_list[0].host_ip.ipv4.value == "10.0.0.2"
-      - result.response.config.cluster_function[0] == "AOS"
-      - result.response.config.authorized_public_key_list[0].name == "key1"
-      - result.response.config.authorized_public_key_list[0].key == "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDQ6"
-      - result.response.config.redundancy_factor == 1
-      - result.response.config.cluster_arch == "X86_64"
-      - result.response.config.fault_tolerance_state.domain_awareness_level == "DISK"
-      - result.response.config.operation_mode == "NORMAL"
-      - result.response.config.encryption_in_transit_status == "ENABLED"
-      - result.response.config.fault_tolerance_state.desired_cluster_fault_tolerance == "CFT_2N_OR_2D"
-      - result.response.network.external_address.ipv4.value == "10.0.0.3"
-      - result.response.network.external_data_service_ip.ipv4.value == "10.0.0.4"
-      - result.response.network.nfs_subnet_whitelist[0] == "vlan.123"
-      - result.response.network.ntp_server_ip_list[0].ipv4.value == "10.0.0.5"
-      - result.response.network.ntp_server_ip_list[1].ipv6.value == "2001:db8::1"
-      - result.response.network.ntp_server_ip_list[2].fqdn.value == "ntp.example.com"
-      - result.response.network.name_server_ip_list[0].ipv4.value == "10.0.0.6"
-      - result.response.network.name_server_ip_list[1].ipv6.value == "2001:db8::2"
-      - result.response.network.name_server_ip_list[2].fqdn.value == "dns.example.com"
-      - result.response.network.smtp_server.email_address == "testemail@test.com"
-      - result.response.network.smtp_server.server.ip_address.ipv4.value == "10.0.0.7"
-      - result.response.network.smtp_server.server.port == 25
-      - result.response.network.smtp_server.server.username == "test"
-      - result.response.network.smtp_server.type == "PLAIN"
-      - result.response.network.masquerading_ip.ipv4.value == "10.0.0.8"
-      - result.response.network.management_server.ip.ipv4.value == "10.0.0.9"
-      - result.response.network.management_server.is_registered == true
-      - result.response.network.management_server.is_drs_enabled == true
-      - result.response.network.fqdn == "test.example.com"
-      - result.response.network.key_management_server_type == "PRISM_CENTRAL"
-      - result.response.network.backplane.vlan_tag == 123
-      - result.response.network.backplane.subnet.value == "10.0.0.0"
-      - result.response.network.backplane.subnet.prefix_length == 24
-      - result.response.network.backplane.netmask.value == "255.255.255.225"
-      - result.response.network.http_proxy_list[0].ip_address.ipv4.value == "10.0.0.1"
-      - result.response.network.http_proxy_list[0].port == 8080
-      - result.response.network.http_proxy_list[0].username == "username_test"
-      - result.response.network.http_proxy_list[0].name == "name_test"
-      - result.response.network.http_proxy_list[0].proxy_types[0] == "HTTP"
-      - result.response.network.http_proxy_list[0].proxy_types[1] == "HTTPS"
-      - result.response.network.http_proxy_white_list[0].target_type == "IPV4_NETWORK_MASK"
-      - result.response.network.http_proxy_white_list[0].target == "test"
-      - result.response.container_name == "test-container"
-    fail_msg: Cluster create spec is not generated as expected
-    success_msg: Cluster create spec is generated as expected
-
-- name: Generate spec for discovering unconfigured nodes using check mode
-  nutanix.ncp.ntnx_discover_unconfigured_nodes_v2:
-    is_manual_discovery: true
-    address_type: "IPV4"
-    ip_filter_list:
-      - ipv4:
-          value: 192.168.1.30
-          prefix_length: 24
-    uuid_filter_list:
-      - "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
-    interface_filter_list:
-      - 10061de6-4a87-6b06-185b-ac1f6b6f97e2
-    timeout: 50
-  register: result
-  ignore_errors: true
-  check_mode: true
-
-- name: Generate spec for discovering unconfigured nodes using check mode status
-  ansible.builtin.assert:
-    that:
-      - result.changed == false
-      - result.failed == false
-      - result.response.is_manual_discovery == true
-      - result.response.address_type == "IPV4"
-      - result.response.ip_filter_list[0].ipv4.value == "192.168.1.30"
-      - result.response.ip_filter_list[0].ipv4.prefix_length == 24
-      - result.response.uuid_filter_list[0] == "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
-      - result.response.interface_filter_list[0] == "10061de6-4a87-6b06-185b-ac1f6b6f97e2"
-      - result.response.timeout == 50
-    fail_msg: Generate spec for discovering unconfigured nodes using check mode failed
-    success_msg: Generate spec for discovering unconfigured nodes using check mode passed
 
 - name: List all clusters to get prism central external ID
   nutanix.ncp.ntnx_clusters_info_v2:
@@ -300,7 +122,7 @@
     fail_msg: Cluster create prechecks failed
     success_msg: Cluster create prechecks passed
 
-- name: Create cluster name
+- name: Set cluster name
   ansible.builtin.set_fact:
     cluster_name: "{{ random_name }}_{{ prefix_name }}_{{ clusters[0].name }}"
 
@@ -351,81 +173,6 @@
   register: result
   ignore_errors: true
   changed_when: result.rc != 0
-
-- name: Generate spec for aos remote cluster PE PC registration using check mode
-  nutanix.ncp.ntnx_pc_registration_v2:
-    ext_id: d2f9994f-44fb-4d4c-ad3c-92055316444f
-    remote_cluster:
-      aos_remote_cluster:
-        remote_cluster:
-          address:
-            ipv4:
-              value: 10.87.153.200
-          credentials:
-            authentication:
-              username: admin
-              password: password
-  check_mode: true
-  register: result
-  ignore_errors: true
-
-- name: Generate spec for aos remote cluster PE PC registration using check mode status
-  ansible.builtin.assert:
-    that:
-      - result.changed == false
-      - result.ext_id == "d2f9994f-44fb-4d4c-ad3c-92055316444f"
-      - result.response.remote_cluster.remote_cluster.address.ipv4.value == "10.87.153.200"
-      - result.response.remote_cluster.remote_cluster.credentials.authentication.username == "admin"
-    fail_msg: "Generate spec for aos remote cluster PE PC registration using check mode failed"
-    success_msg: "Generate spec for aos remote cluster PE PC registration using check mode passed"
-
-- name: Generate spec for PC and domain manager(PC) remote cluster registration using check mode
-  nutanix.ncp.ntnx_pc_registration_v2:
-    ext_id: d2f9994f-44fb-4d4c-ad3c-92055316444f
-    remote_cluster:
-      domain_manager_remote_cluster:
-        remote_cluster:
-          address:
-            ipv4:
-              value: 10.87.142.101
-          credentials:
-            authentication:
-              username: admin
-              password: password
-        cloud_type: ONPREM_CLOUD
-  check_mode: true
-  register: result
-  ignore_errors: true
-
-- name: Generate spec for PC and domain manager(PC) remote cluster registration using check mode status
-  ansible.builtin.assert:
-    that:
-      - result.changed == false
-      - result.ext_id == "d2f9994f-44fb-4d4c-ad3c-92055316444f"
-      - result.response.remote_cluster.remote_cluster.address.ipv4.value == "10.87.142.101"
-      - result.response.remote_cluster.remote_cluster.credentials.authentication.username == "admin"
-      - result.response.remote_cluster.cloud_type == "ONPREM_CLOUD"
-    fail_msg: "Generate spec for PC and domain manager(PC) remote cluster registration using check mode failed"
-    success_msg: "Generate spec for PC and domain manager(PC) remote cluster registration using check mode passed"
-
-- name: Generate spec for PC registration using cluster reference
-  nutanix.ncp.ntnx_pc_registration_v2:
-    ext_id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-    remote_cluster:
-      cluster_reference:
-        ext_id: d2f9994f-44fb-4d4c-ad3c-92055316444f
-  check_mode: true
-  register: result
-  ignore_errors: true
-
-- name: Generate spec for PC registration using cluster reference status
-  ansible.builtin.assert:
-    that:
-      - result.changed == false
-      - result.ext_id == "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-      - result.response.remote_cluster.ext_id == "d2f9994f-44fb-4d4c-ad3c-92055316444f"
-    fail_msg: "Generate spec for PC registration using cluster reference failed"
-    success_msg: "Generate spec for PC registration using cluster reference passed"
 
 - name: Run PE PC registration
   nutanix.ncp.ntnx_pc_registration_v2:
@@ -587,6 +334,7 @@
       is_enabled: true
       pii_scrubbing_level: "DEFAULT"
   register: result
+  ignore_errors: true
   check_mode: true
 
 - name: Generate spec for creating cluster profile using check mode status
@@ -767,7 +515,7 @@
 
 - name: Set first cluster profile external ID
   ansible.builtin.set_fact:
-    cluster_profile_ext_id: "{{ result.ext_id }}"
+    cluster_profile_ext_id_1: "{{ result.ext_id }}"
 
 - name: Create second cluster profile
   nutanix.ncp.ntnx_clusters_profiles_v2:
@@ -935,7 +683,7 @@
 
 - name: Generate spec for updating cluster profile using check mode
   nutanix.ncp.ntnx_clusters_profiles_v2:
-    ext_id: "{{ cluster_profile_ext_id }}"
+    ext_id: "{{ cluster_profile_ext_id_1 }}"
     name: "cluster_profile_updated"
     description: "Updated cluster profile description"
     allowed_overrides:
@@ -1087,13 +835,13 @@
       - result.response.rsyslog_server_list[0].modules[1].should_log_monitor_files == true
       - result.response.pulse_status.is_enabled == false
       - result.response.pulse_status.pii_scrubbing_level == "ALL"
-    fail_msg: "Generate spec for updating cluster profile using check mode did not pass as expected"
-    success_msg: "Generate spec for updating cluster profile using check mode passed as expected"
+    fail_msg: "Generate spec for updating cluster profile using check mode failed"
+    success_msg: "Generate spec for updating cluster profile using check mode passed successfully"
 
 - name: Update some attributes in cluster profile
   nutanix.ncp.ntnx_clusters_profiles_v2:
     state: present
-    ext_id: "{{ cluster_profile_ext_id }}"
+    ext_id: "{{ cluster_profile_ext_id_1 }}"
     name: "cluster_profile_updated"
     description: "Updated cluster profile description"
     allowed_overrides:
@@ -1146,7 +894,7 @@
 
 - name: Update cluster profile with all attributes
   nutanix.ncp.ntnx_clusters_profiles_v2:
-    ext_id: "{{ cluster_profile_ext_id }}"
+    ext_id: "{{ cluster_profile_ext_id_1 }}"
     name: "cluster_profile_updated_all"
     description: "Updated cluster profile description all attributes"
     allowed_overrides:
@@ -1273,7 +1021,7 @@
 
 - name: Check idempotency by updating cluster profile with same attributes
   nutanix.ncp.ntnx_clusters_profiles_v2:
-    ext_id: "{{ cluster_profile_ext_id }}"
+    ext_id: "{{ cluster_profile_ext_id_1 }}"
     name: "cluster_profile_updated_all"
     description: "Updated cluster profile description all attributes"
     allowed_overrides:
@@ -1351,7 +1099,7 @@
       - result.failed == false
       - result.msg == "Nothing to change."
       - result.skipped == true
-    fail_msg: "Check idempotency by updating cluster profile with same attributes did not pass as expected"
+    fail_msg: "Check idempotency by updating cluster profile with same attributes failed"
     success_msg: "Check idempotency by updating cluster profile with same attributes passed successfully"
 
 - name: Update cluster profile with wrong external ID
@@ -1434,8 +1182,8 @@
       - result.msg == "Api Exception raised while fetching cluster profile info using ext_id"
       - result.response is defined
       - result.response.data.error | length > 0
-    fail_msg: "Update cluster profile with wrong external ID did not pass as expected"
-    success_msg: "Update cluster profile with wrong external ID passed as expected"
+    fail_msg: "Update cluster profile with wrong external ID did not fail as expected"
+    success_msg: "Update cluster profile with wrong external ID failed as expected"
 
 - name: Fetch cluster profile using external ID
   nutanix.ncp.ntnx_clusters_profiles_info_v2:
@@ -1451,8 +1199,8 @@
       - result.ext_id == "{{ cluster_profile_ext_id_2 }}"
       - result.response is defined
       - result.response.ext_id == "{{ cluster_profile_ext_id_2 }}"
-    fail_msg: "Fetch cluster profile using external ID did not pass as expected"
-    success_msg: "Fetch cluster profile using external ID passed as expected"
+    fail_msg: "Fetch cluster profile using external ID failed"
+    success_msg: "Fetch cluster profile using external ID passed successfully"
 
 - name: Fetch cluster profile using wrong external ID
   nutanix.ncp.ntnx_clusters_profiles_info_v2:
@@ -1468,8 +1216,8 @@
       - result.msg == "Api Exception raised while fetching cluster profile info using ext_id"
       - result.response is defined
       - result.response.data.error | length > 0
-    fail_msg: "Fetch cluster profile using wrong external ID did not pass as expected"
-    success_msg: "Fetch cluster profile using wrong external ID passed as expected"
+    fail_msg: "Fetch cluster profile using wrong external ID did not fail as expected"
+    success_msg: "Fetch cluster profile using wrong external ID failed as expected"
 
 - name: List all cluster profiles
   nutanix.ncp.ntnx_clusters_profiles_info_v2:
@@ -1486,8 +1234,8 @@
       - result.total_available_results is defined
       - result.total_available_results > 0
       - result.response | length == result.total_available_results
-    fail_msg: "List all cluster profiles did not pass as expected"
-    success_msg: "List all cluster profiles passed as expected"
+    fail_msg: "List all cluster profiles failed"
+    success_msg: "List all cluster profiles passed successfully"
 
 - name: List all cluster profiles with filter
   nutanix.ncp.ntnx_clusters_profiles_info_v2:
@@ -1506,8 +1254,8 @@
       - result.total_available_results is defined
       - result.total_available_results > 0
       - result.response | length == result.total_available_results
-    fail_msg: "List all cluster profiles with filter did not pass as expected"
-    success_msg: "List all cluster profiles with filter passed as expected"
+    fail_msg: "List all cluster profiles with filter failed"
+    success_msg: "List all cluster profiles with filter passed successfully"
 
 - name: List all cluster profiles with limit
   nutanix.ncp.ntnx_clusters_profiles_info_v2:
@@ -1522,8 +1270,8 @@
       - result.failed == false
       - result.response is defined
       - result.response | length == 1
-    fail_msg: "List all cluster profiles with limit did not pass as expected"
-    success_msg: "List all cluster profiles with limit passed as expected"
+    fail_msg: "List all cluster profiles with limit failed"
+    success_msg: "List all cluster profiles with limit passed successfully"
 
 - name: Generate spec for applying cluster profile to cluster using check mode
   nutanix.ncp.ntnx_clusters_profile_association_v2:
@@ -1542,8 +1290,8 @@
       - result.response is defined
       - result.ext_id == "3ed0cfa0-15df-4e7f-5bce-0bda7cf09a04"
       - result.response.clusters[0].uuid == "00052d2c-8c49-95df-09d8-f891723588b9"
-    fail_msg: "Generate spec for applying cluster profile to cluster using check mode status did not pass as expected"
-    success_msg: "Generate spec for applying cluster profile to cluster using check mode status passed as expected"
+    fail_msg: "Generate spec for applying cluster profile to cluster using check mode failed"
+    success_msg: "Generate spec for applying cluster profile to cluster using check mode passed successfully"
 
 - name: Apply cluster profile to cluster with dry run
   nutanix.ncp.ntnx_clusters_profile_association_v2:
@@ -1563,8 +1311,8 @@
       - result.response is defined
       - result.ext_id == "{{ cluster_profile_ext_id_2 }}"
       - result.response.clusters[0].uuid == "{{ cluster_ext_id }}"
-    fail_msg: "Assert cluster profile applied to cluster with dry run did not pass as expected"
-    success_msg: "Assert cluster profile applied to cluster with dry run passed as expected"
+    fail_msg: "Assert cluster profile applied to cluster with dry run failed"
+    success_msg: "Assert cluster profile applied to cluster with dry run passed successfully"
 
 - name: Apply cluster profile to cluster
   nutanix.ncp.ntnx_clusters_profile_association_v2:
@@ -1582,8 +1330,8 @@
       - result.response is defined
       - result.response.status == "SUCCEEDED"
       - result.task_ext_id is defined
-    fail_msg: "Apply cluster profile to cluster did not pass as expected"
-    success_msg: "Apply cluster profile to cluster passed as expected"
+    fail_msg: "Apply cluster profile to cluster failed"
+    success_msg: "Apply cluster profile to cluster passed successfully"
 
 - name: Apply cluster profile to cluster with wrong cluster profile external ID
   nutanix.ncp.ntnx_clusters_profile_association_v2:
@@ -1601,8 +1349,8 @@
       - result.msg == "Api Exception raised while associating cluster profile"
       - result.response is defined
       - result.response.data.error | length > 0
-    fail_msg: "Apply cluster profile to cluster with wrong cluster profile external ID did not pass as expected"
-    success_msg: "Apply cluster profile to cluster with wrong cluster profile external ID passed as expected"
+    fail_msg: "Apply cluster profile to cluster with wrong cluster profile external ID did not fail as expected"
+    success_msg: "Apply cluster profile to cluster with wrong cluster profile external ID failed as expected"
 
 - name: Apply cluster profile to cluster with wrong cluster external ID
   nutanix.ncp.ntnx_clusters_profile_association_v2:
@@ -1620,8 +1368,8 @@
       - result.msg == "Api Exception raised while associating cluster profile"
       - result.response is defined
       - result.response.data.error | length > 0
-    fail_msg: "Apply cluster profile to cluster with wrong cluster external ID did not pass as expected"
-    success_msg: "Apply cluster profile to cluster with wrong cluster external ID passed as expected"
+    fail_msg: "Apply cluster profile to cluster with wrong cluster external ID did not fail as expected"
+    success_msg: "Apply cluster profile to cluster with wrong cluster external ID failed as expected"
 
 - name: Generate spec for Disassociate cluster profile from Cluster using check mode
   nutanix.ncp.ntnx_clusters_profile_association_v2:
@@ -1641,8 +1389,8 @@
       - result.response is defined
       - result.ext_id == "3ed0cfa0-15df-4e7f-5bce-0bda7cf09a04"
       - result.response.clusters[0].uuid == "00052d2c-8c49-95df-09d8-f891723588b9"
-    fail_msg: "Generate spec for Disassociate cluster profile from Cluster using check mode status did not pass as expected"
-    success_msg: "Generate spec for Disassociate cluster profile from Cluster using check mode status passed as expected"
+    fail_msg: "Generate spec for Disassociate cluster profile from Cluster using check mode failed"
+    success_msg: "Generate spec for Disassociate cluster profile from Cluster using check mode passed successfully"
 
 - name: Disassociate cluster profile from Cluster
   nutanix.ncp.ntnx_clusters_profile_association_v2:
@@ -1662,8 +1410,8 @@
       - result.response is defined
       - result.response.status == "SUCCEEDED"
       - result.task_ext_id is defined
-    fail_msg: "Disassociate cluster profile from cluster did not pass as expected"
-    success_msg: "Disassociate cluster profile from cluster passed as expected"
+    fail_msg: "Disassociate cluster profile from cluster failed"
+    success_msg: "Disassociate cluster profile from cluster passed successfully"
 
 - name: Disassociate cluster profile from cluster with wrong cluster profile external ID
   nutanix.ncp.ntnx_clusters_profile_association_v2:
@@ -1682,8 +1430,8 @@
       - result.msg == "Api Exception raised while disassociating cluster profile"
       - result.response is defined
       - result.response.data.error | length > 0
-    fail_msg: "Disassociate cluster profile from Cluster with wrong cluster profile external ID status did not pass as expected"
-    success_msg: "Disassociate cluster profile from Cluster with wrong cluster profile external ID status passed as expected"
+    fail_msg: "Disassociate cluster profile from Cluster with wrong cluster profile external ID status did not fail as expected"
+    success_msg: "Disassociate cluster profile from Cluster with wrong cluster profile external ID status failed as expected"
 
 - name: Disassociate cluster profile from cluster with wrong cluster external ID
   nutanix.ncp.ntnx_clusters_profile_association_v2:
@@ -1702,13 +1450,13 @@
       - result.msg == "Api Exception raised while disassociating cluster profile"
       - result.response is defined
       - result.response.data.error | length > 0
-    fail_msg: "Disassociate cluster profile from cluster with wrong cluster external ID status did not pass as expected"
-    success_msg: "Disassociate cluster profile from cluster with wrong cluster external ID status passed as expected"
+    fail_msg: "Disassociate cluster profile from cluster with wrong cluster external ID status did not fail as expected"
+    success_msg: "Disassociate cluster profile from cluster with wrong cluster external ID status failed as expected"
 
 - name: Delete cluster profile with check mode
   nutanix.ncp.ntnx_clusters_profiles_v2:
     state: absent
-    ext_id: "{{ cluster_profile_ext_id }}"
+    ext_id: "{{ cluster_profile_ext_id_1 }}"
   register: result
   ignore_errors: true
   check_mode: true
@@ -1718,15 +1466,15 @@
     that:
       - result.changed == false
       - result.failed == false
-      - result.msg == "Cluster Profile with external ID '{{ cluster_profile_ext_id }}' will be deleted."
-      - result.ext_id == "{{ cluster_profile_ext_id }}"
-    fail_msg: "Delete cluster profile with check mode did not pass as expected"
-    success_msg: "Delete cluster profile with check mode passed as expected"
+      - result.msg == "Cluster Profile with ext_id:'{{ cluster_profile_ext_id_1 }}' will be deleted."
+      - result.ext_id == "{{ cluster_profile_ext_id_1 }}"
+    fail_msg: "Delete cluster profile with check mode failed"
+    success_msg: "Delete cluster profile with check mode passed successfully"
 
 - name: Delete the first cluster profile
   nutanix.ncp.ntnx_clusters_profiles_v2:
     state: absent
-    ext_id: "{{ cluster_profile_ext_id }}"
+    ext_id: "{{ cluster_profile_ext_id_1 }}"
   register: result
   ignore_errors: true
 
@@ -1735,12 +1483,12 @@
     that:
       - result.changed == true
       - result.failed == false
-      - result.ext_id == "{{ cluster_profile_ext_id }}"
+      - result.ext_id == "{{ cluster_profile_ext_id_1 }}"
       - result.response is defined
       - result.response.status == "SUCCEEDED"
       - result.task_ext_id is defined
-    fail_msg: "Delete the first cluster profile status did not pass as expected"
-    success_msg: "Delete the first cluster profile status passed as expected"
+    fail_msg: "Delete the first cluster profile failed"
+    success_msg: "Delete the first cluster profile passed successfully"
 
 - name: Delete the second cluster profile
   nutanix.ncp.ntnx_clusters_profiles_v2:
@@ -1758,8 +1506,8 @@
       - result.response is defined
       - result.response.status == "SUCCEEDED"
       - result.task_ext_id is defined
-    fail_msg: "Delete the second cluster profile status did not pass as expected"
-    success_msg: "Delete the second cluster profile status passed as expected"
+    fail_msg: "Delete the second cluster profile failed"
+    success_msg: "Delete the second cluster profile passed successfully"
 
 - name: Delete cluster profile with wrong external ID
   nutanix.ncp.ntnx_clusters_profiles_v2:
@@ -1776,8 +1524,8 @@
       - result.msg == "Api Exception raised while fetching cluster profile info using ext_id"
       - result.response is defined
       - result.response.data.error | length > 0
-    fail_msg: "Delete cluster profile with wrong external ID status did not pass as expected"
-    success_msg: "Delete cluster profile with wrong external ID status passed as expected"
+    fail_msg: "Delete cluster profile with wrong external ID status did not fail as expected"
+    success_msg: "Delete cluster profile with wrong external ID status failed as expected"
 
 - name: Destroy the cluster for cleanup
   nutanix.ncp.ntnx_clusters_v2:
