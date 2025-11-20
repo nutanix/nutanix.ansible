@@ -62,8 +62,8 @@ class APILogger:
         log_lines.append("=" * 80)
 
         # Request details
-        log_lines.append(f"METHOD: {method}")
-        log_lines.append(f"URL: {url}")
+        log_lines.append("METHOD: {}".format(method))
+        log_lines.append("URL: {}".format(url))
 
         # Add query parameters
         self._log_query_params(log_lines, query_params)
@@ -94,15 +94,15 @@ class APILogger:
         log_lines.append("QUERY PARAMETERS:")
         if isinstance(query_params, dict):
             for key, value in query_params.items():
-                log_lines.append(f"  {key}: {value}")
+                log_lines.append("  {}: {}".format(key, value))
         elif isinstance(query_params, list):
             for entry in query_params:
                 if isinstance(entry, (list, tuple)) and len(entry) == 2:
-                    log_lines.append(f"  {entry[0]}: {entry[1]}")
+                    log_lines.append("  {}: {}".format(entry[0], entry[1]))
                 else:
-                    log_lines.append(f"  {entry}")
+                    log_lines.append("  {}".format(entry))
         else:
-            log_lines.append(f"  {str(query_params)}")
+            log_lines.append("  {}".format(str(query_params)))
 
     def _log_headers(self, log_lines, headers):
         """Add headers to log lines."""
@@ -113,15 +113,15 @@ class APILogger:
         log_lines.append("HEADERS:")
         if isinstance(sanitized_headers, dict):
             for key, value in sanitized_headers.items():
-                log_lines.append(f"  {key}: {value}")
+                log_lines.append("  {}: {}".format(key, value))
         elif isinstance(sanitized_headers, list):
             for entry in sanitized_headers:
                 if isinstance(entry, (list, tuple)) and len(entry) == 2:
-                    log_lines.append(f"  {entry[0]}: {entry[1]}")
+                    log_lines.append("  {}: {}".format(entry[0], entry[1]))
                 else:
-                    log_lines.append(f"  {entry}")
+                    log_lines.append("  {}".format(entry))
         else:
-            log_lines.append(f"  {str(sanitized_headers)}")
+            log_lines.append("  {}".format(str(sanitized_headers)))
 
     def _log_request_body(self, log_lines, body):
         """Add request body to log lines."""
@@ -135,10 +135,10 @@ class APILogger:
     def _log_response(self, log_lines, response, status_code, elapsed_time):
         """Add response details to log lines."""
         if status_code is not None:
-            log_lines.append(f"STATUS CODE: {status_code}")
+            log_lines.append("STATUS CODE: {}".format(status_code))
 
         if elapsed_time is not None:
-            log_lines.append(f"ELAPSED TIME: {elapsed_time:.1f} seconds")
+            log_lines.append("ELAPSED TIME: {:.1f} seconds".format(elapsed_time))
 
         if response is not None:
             # Check if this is a task status response
@@ -162,13 +162,13 @@ class APILogger:
 
         log_lines.append("")
         log_lines.append("ERROR:")
-        log_lines.append(f"  Type: {type(error).__name__}")
+        log_lines.append("  Type: {}".format(type(error).__name__))
 
         # Extract error details from ApiException
         if hasattr(error, "status"):
-            log_lines.append(f"  Status Code: {error.status}")
+            log_lines.append("  Status Code: {}".format(error.status))
         if hasattr(error, "reason"):
-            log_lines.append(f"  Reason: {error.reason}")
+            log_lines.append("  Reason: {}".format(error.reason))
 
         # Format error body if available
         if hasattr(error, "body") and error.body:
@@ -184,11 +184,11 @@ class APILogger:
                 log_lines.append(formatted_error)
             except Exception:
                 # If parsing fails, just show as string
-                log_lines.append(f"    {error.body}")
+                log_lines.append("    {}".format(error.body))
 
         # Fallback to string representation if no specific attributes
         elif not any(hasattr(error, attr) for attr in ["status", "reason", "body"]):
-            log_lines.append(f"  Message: {str(error)}")
+            log_lines.append("  Message: {}".format(str(error)))
 
     def _write_log(self, log_message):
         """Write log message to all outputs."""
@@ -256,14 +256,14 @@ class APILogger:
             try:
                 return self._indent_json(json.dumps(body, indent=2, default=str))
             except Exception:
-                return f"  {str(body)}"
+                return "  {}".format(str(body))
 
         # Handle list
         elif isinstance(body, list):
             try:
                 return self._indent_json(json.dumps(body, indent=2, default=str))
             except Exception:
-                return f"  {str(body)}"
+                return "  {}".format(str(body))
 
         # Handle string - try to parse as JSON first
         elif isinstance(body, str):
@@ -273,11 +273,11 @@ class APILogger:
                 return self._indent_json(json.dumps(parsed, indent=2, default=str))
             except (json.JSONDecodeError, ValueError):
                 # Not JSON, return as plain text
-                return f"  {body}"
+                return "  {}".format(body)
 
         # Handle other types
         else:
-            return f"  {str(body)}"
+            return "  {}".format(str(body))
 
     def _indent_json(self, json_str):
         """Add indentation to each line of JSON string."""
@@ -319,10 +319,10 @@ class APILogger:
         # Build summary line - Operation first, then Status
         summary_parts = []
         if operation:
-            summary_parts.append(f"Operation: {operation}")
-        summary_parts.append(f"Task Status: {status}")
+            summary_parts.append("Operation: {}".format(operation))
+        summary_parts.append("Task Status: {}".format(status))
         if task_id:
-            summary_parts.append(f"ID: {task_id}")
+            summary_parts.append("ID: {}".format(task_id))
 
         return " | ".join(summary_parts)
 
@@ -441,7 +441,7 @@ class LoggedRequestHandler:
             )
 
             # Re-raise the exception
-            raise Exception(f"Error logging API call: {e}")
+            raise Exception("Error logging API call: {}".format(e))
 
 
 def setup_api_logging(module, api_client):
