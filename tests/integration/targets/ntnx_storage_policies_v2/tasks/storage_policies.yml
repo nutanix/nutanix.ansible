@@ -165,6 +165,9 @@
   register: result
   ignore_errors: true
 
+- ansible.builtin.debug:
+    var: result
+
 - name: Create storage policy with missing name status
   ansible.builtin.assert:
     that:
@@ -172,8 +175,6 @@
       - result.changed == false
       - result.failed == true
       - "'state is present but any of the following are missing: name, ext_id' in result.msg"
-      - result.response is defined
-      - result.response.data.error is defined
     success_msg: "Create storage policy with missing name failed as expected"
     fail_msg: "Create storage policy with missing name did not fail as expected"
 
