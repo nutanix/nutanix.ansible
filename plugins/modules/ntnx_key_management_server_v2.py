@@ -195,10 +195,10 @@ skipped:
   sample: false
 
 msg:
-    description: Message indicating the behavior of the operation
-    returned: when msg is present
-    type: str
-    sample: "Key Management Server with ext_id:13a6657d-fa96-49e3-7307-87e93a1fec3d will be deleted."
+  description: This indicates the message if any message occurred
+  returned: When there is an error, module is idempotent or check mode (in delete operation)
+  type: str
+  sample: "Failed generating create Key Management Server Spec."
 
 """
 
@@ -451,7 +451,7 @@ def run_module():
         else:
             if not module.params.get("access_information"):
                 module.fail_json(
-                    msg="access_information is required when creating a key management server"
+                    msg="access_information is required when creating a key management server."
                 )
             create_kms(module, kms_api_instance, result)
     else:

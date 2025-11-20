@@ -16,7 +16,7 @@ version_added: 2.4.0
 description:
     - Get key management server info using key management server external ID or list all key management servers
     - If Key Management Server external ID is provided, fetches that particular key management server
-    - If no external ID is provided, list all key management servers
+    - If external ID is not provided, list all key management servers
     - Key management server is used to secure encryption keys when data encryption is enabled.
     - This module uses PC v4 APIs based SDKs
 options:
