@@ -227,6 +227,12 @@ error:
   description: This indicates the error message if any error occurred
   returned: When an error occurs
   type: str
+
+msg:
+  description: This indicates the message if any message occurred
+  returned: When there is an error, module is idempotent or check mode (in delete operation)
+  type: str
+  sample: "state is present but all of the following are missing: name, ext_id"
 """
 
 import traceback  # noqa: E402
