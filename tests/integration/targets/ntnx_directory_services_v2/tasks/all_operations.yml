@@ -1,4 +1,8 @@
 ---
+# Variables required before running this playbook:
+# - active_directory
+# - white_listed_groups
+
 - name: Start ntnx_directory_services_v2 tests
   ansible.builtin.debug:
     msg: start ntnx_directory_services_v2 tests
@@ -13,7 +17,7 @@
     todelete: ""
 
 - name: Create ACTIVE_DIRECTORY service with check_mode
-  ntnx_directory_services_v2:
+  nutanix.ncp.ntnx_directory_services_v2:
     state: present
     name: "{{ directory_service }}"
     url: "{{ active_directory.url }}"
@@ -44,7 +48,7 @@
 ########################################################################
 
 - name: Create OpenLDAP service with check_mode
-  ntnx_directory_services_v2:
+  nutanix.ncp.ntnx_directory_services_v2:
     state: present
     name: "{{ directory_service }}_name"
     url: "{{ directory_service }}_url"
@@ -92,7 +96,7 @@
 ########################################################################
 
 - name: Create ACTIVE_DIRECTORY service
-  ntnx_directory_services_v2:
+  nutanix.ncp.ntnx_directory_services_v2:
     state: present
     name: "{{ directory_service }}"
     url: "{{ active_directory.url }}"
@@ -131,7 +135,7 @@
 ########################################################################
 
 - name: Create directory service that already exists
-  ntnx_directory_services_v2:
+  nutanix.ncp.ntnx_directory_services_v2:
     state: present
     name: "{{ directory_service }}"
     url: "{{ active_directory.url }}"
@@ -159,7 +163,7 @@
 ########################################################################
 
 - name: Update directory service with all attributes
-  ntnx_directory_services_v2:
+  nutanix.ncp.ntnx_directory_services_v2:
     state: present
     ext_id: "{{ todelete }}"
     name: "{{ directory_service }}"
@@ -195,7 +199,7 @@
 ########################################################################
 
 - name: Update group search type and white listed groups in directory service
-  ntnx_directory_services_v2:
+  nutanix.ncp.ntnx_directory_services_v2:
     state: present
     ext_id: "{{ todelete }}"
     service_account:
@@ -222,7 +226,7 @@
 ########################################################################
 
 - name: Verify if idempotency checks are skipped if password is provided
-  ntnx_directory_services_v2:
+  nutanix.ncp.ntnx_directory_services_v2:
     state: present
     ext_id: "{{ todelete }}"
     name: "{{ directory_service }}"
@@ -257,7 +261,7 @@
 ########################################################################
 
 - name: Verify if module is idempotent if same config is provided
-  ntnx_directory_services_v2:
+  nutanix.ncp.ntnx_directory_services_v2:
     state: present
     ext_id: "{{ todelete }}"
     name: "{{ directory_service }}"
@@ -286,7 +290,7 @@
 ########################################################################
 
 - name: Fetch directory service info using ext id
-  ntnx_directory_services_info_v2:
+  nutanix.ncp.ntnx_directory_services_info_v2:
     ext_id: "{{ todelete }}"
   register: result
   ignore_errors: true
@@ -312,7 +316,7 @@
 ########################################################################
 
 - name: List all directory services
-  ntnx_directory_services_info_v2:
+  nutanix.ncp.ntnx_directory_services_info_v2:
   register: result
   ignore_errors: true
 
@@ -323,13 +327,15 @@
       - result.changed == False
       - result.failed == False
       - result.response | length > 0
+      - result.total_available_results is defined
+      - result.total_available_results > 0
     fail_msg: Unable to list all directory services
     success_msg: All directory services listed successfully
 
 ########################################################################
 
 - name: List all directory services with filter
-  ntnx_directory_services_info_v2:
+  nutanix.ncp.ntnx_directory_services_info_v2:
     filter: name eq '{{ directory_service }}'
   register: result
   ignore_errors: true
@@ -348,7 +354,7 @@
 ########################################################################
 
 - name: List all directory services with limit
-  ntnx_directory_services_info_v2:
+  nutanix.ncp.ntnx_directory_services_info_v2:
     limit: 1
   register: result
   ignore_errors: true
@@ -366,7 +372,7 @@
 ########################################################################
 
 - name: Delete directory service with check mode enabled
-  ntnx_directory_services_v2:
+  nutanix.ncp.ntnx_directory_services_v2:
     state: absent
     ext_id: "{{ todelete }}"
   register: result
@@ -387,7 +393,7 @@
 ########################################################################
 
 - name: Delete directory service
-  ntnx_directory_services_v2:
+  nutanix.ncp.ntnx_directory_services_v2:
     state: absent
     ext_id: "{{ todelete }}"
   register: result

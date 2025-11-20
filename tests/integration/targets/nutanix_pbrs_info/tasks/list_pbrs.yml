@@ -1,5 +1,6 @@
+---
 - name: List pbrs using virtual_network_uuid filter criteria
-  ntnx_pbrs_info:
+  nutanix.ncp.ntnx_pbrs_info:
     filter:
       priority: "10"
   check_mode: true
@@ -14,7 +15,7 @@
     success_msg: " PBRs listed successfully "
 #################################################
 - name: List pbrs using length and offset
-  ntnx_pbrs_info:
+  nutanix.ncp.ntnx_pbrs_info:
     length: 1
     offset: 0
   register: result
@@ -28,7 +29,7 @@
     success_msg: " PBRs listed successfully "
 #################################################
 - name: List pbrs using ascending priority sorting
-  ntnx_pbrs_info:
+  nutanix.ncp.ntnx_pbrs_info:
     sort_order: "ASCENDING"
     sort_attribute: "priority"
   register: result

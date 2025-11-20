@@ -1,10 +1,17 @@
 ---
+# Variables required before running this playbook:
+# - principal_name
+# - directory_service_uuid
+# - project
+# - identity_provider_uuid
+# - todelete
+
 - name: Start ntnx_users tests
   ansible.builtin.debug:
     msg: "Start ntnx_users tests"
 ##################################################
 - name: Create local user with check mode
-  ntnx_users:
+  nutanix.ncp.ntnx_users:
     principal_name: "{{principal_name}}"
     directory_service_uuid: "{{directory_service_uuid}}"
     project:
@@ -26,7 +33,7 @@
 
 #################################################
 - name: Create local user
-  ntnx_users:
+  nutanix.ncp.ntnx_users:
     principal_name: "{{principal_name}}"
     directory_service_uuid: "{{directory_service_uuid}}"
   register: result
@@ -50,7 +57,7 @@
     todelete: "{{ todelete + [  result.user_uuid ] }}"
 #################################################
 - name: Delete user with check mode
-  ntnx_users:
+  nutanix.ncp.ntnx_users:
     state: absent
     user_uuid: "{{  result.user_uuid  }}"
   register: output
@@ -68,7 +75,7 @@
     success_msg: "Delete user with check mode passed"
 #################################################
 - name: Delete created users
-  ntnx_users:
+  nutanix.ncp.ntnx_users:
     state: absent
     user_uuid: "{{ item }}"
   loop: "{{ todelete }}"
@@ -86,7 +93,7 @@
     todelete: []
 #################################################
 - name: Create local user  with project and categories
-  ntnx_users:
+  nutanix.ncp.ntnx_users:
     principal_name: "{{principal_name}}"
     directory_service_uuid: "{{directory_service_uuid}}"
     project:
@@ -117,7 +124,7 @@
     todelete: "{{ todelete + [  result.user_uuid ] }}"
 #################################################
 - name: Create local user not in the directory_service
-  ntnx_users:
+  nutanix.ncp.ntnx_users:
     principal_name: wrong_name
     directory_service_uuid: "{{directory_service_uuid}}"
     project:
@@ -162,7 +169,7 @@
 #      todelete: "{{ todelete + [  result.user_uuid ] }}"
 #################################################
 - name: Delete created users
-  ntnx_users:
+  nutanix.ncp.ntnx_users:
     state: absent
     user_uuid: "{{ item }}"
   loop: "{{ todelete }}"
@@ -182,7 +189,7 @@
 ############# DELETE TEST ##############################
 
 - name: Create local user
-  ntnx_users:
+  nutanix.ncp.ntnx_users:
     principal_name: "{{principal_name}}"
     directory_service_uuid: "{{directory_service_uuid}}"
     project:
@@ -191,7 +198,7 @@
   ignore_errors: true
 
 - name: Delete created user
-  ntnx_users:
+  nutanix.ncp.ntnx_users:
     state: absent
     user_uuid: "{{ result.user_uuid }}"
   register: output

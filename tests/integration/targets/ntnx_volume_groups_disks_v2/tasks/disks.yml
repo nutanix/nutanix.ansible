@@ -1,3 +1,8 @@
+---
+# Variables required before running this playbook:
+# - cluster
+# - storage_container
+
 - name: "Start Volume groups disks tests"
   ansible.builtin.debug:
     msg: "Start Volume groups disks tests"
@@ -16,7 +21,7 @@
     vg2_name: "{{suffix_name}}-{{random_name}}2"
 
 - name: Create Volume group for tests
-  ntnx_volume_groups_v2:
+  nutanix.ncp.ntnx_volume_groups_v2:
     name: "{{vg1_name}}"
     description: "Volume group for disk tests"
     should_load_balance_vm_attachments: true
@@ -48,7 +53,7 @@
 ######################################### Create disk tests #########################################
 
 - name: Create disk with check mode
-  ntnx_volume_groups_disks_v2:
+  nutanix.ncp.ntnx_volume_groups_disks_v2:
     state: "present"
     volume_group_ext_id: "{{ vg1_uuid }}"
     index: 0
@@ -82,7 +87,7 @@
     success_msg: "Spec generated successfully for disk create"
 
 - name: Create disk with min spec
-  ntnx_volume_groups_disks_v2:
+  nutanix.ncp.ntnx_volume_groups_disks_v2:
     state: "present"
     volume_group_ext_id: "{{ vg1_uuid }}"
     disk_size_bytes: 21474836480
@@ -109,7 +114,7 @@
     success_msg: "Disk created successfully"
 
 - name: Create disk with all attributes
-  ntnx_volume_groups_disks_v2:
+  nutanix.ncp.ntnx_volume_groups_disks_v2:
     state: "present"
     volume_group_ext_id: "{{ vg1_uuid }}"
     index: 1
@@ -146,7 +151,7 @@
     disk1_uuid: "{{ result.ext_id }}"
 
 - name: Create disk with vdisk ref in check mode
-  ntnx_volume_groups_disks_v2:
+  nutanix.ncp.ntnx_volume_groups_disks_v2:
     state: "present"
     volume_group_ext_id: "{{ vg1_uuid }}"
     index: 1
@@ -178,7 +183,7 @@
     success_msg: "Spec generated successfully for disk create"
 
 - name: Create disk from recovery point in check mode
-  ntnx_volume_groups_disks_v2:
+  nutanix.ncp.ntnx_volume_groups_disks_v2:
     state: "present"
     volume_group_ext_id: "{{ vg1_uuid }}"
     index: 1
@@ -210,7 +215,7 @@
     success_msg: "Spec generated successfully for disk create"
 
 - name: Create disk from previously created vdisk
-  ntnx_volume_groups_disks_v2:
+  nutanix.ncp.ntnx_volume_groups_disks_v2:
     state: "present"
     volume_group_ext_id: "{{ vg1_uuid }}"
     index: 2
@@ -255,6 +260,8 @@
       - result.response is defined
       - result.changed == false
       - result.response | length == 3
+      - result.total_available_results is defined
+      - result.total_available_results == 3
       - result.volume_group_ext_id == "{{vg1_uuid}}"
 
     fail_msg: "Unable to fetch disks"
@@ -363,7 +370,7 @@
 
 ######################################### Cleanup #########################################
 - name: Delete Volume group
-  ntnx_volume_groups_v2:
+  nutanix.ncp.ntnx_volume_groups_v2:
     state: absent
     ext_id: "{{ vg1_uuid }}"
   register: result

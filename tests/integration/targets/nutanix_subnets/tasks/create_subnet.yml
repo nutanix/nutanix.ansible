@@ -1,5 +1,22 @@
+---
+# Variables required before running this playbook:
+# - vlan_subnets_ids
+# - virtual_switch
+# - cluster
+# - ip_address_management
+# - ip_address_pools
+# - dhcp_settings
+# - dhcp_server_address
+# - external_nonat_subnet
+# - external_nat_subnet
+# - vpc
+
+- name: Start nutanix_subnets create_subnet tests
+  ansible.builtin.debug:
+    msg: Start nutanix_subnets create_subnet tests
+
 - name: VLAN subnet without IPAM
-  ntnx_subnets:
+  nutanix.ncp.ntnx_subnets:
     state: present
     wait: true
     name: VLAN subnet without IPAM
@@ -25,7 +42,7 @@
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
 #################################################################
 - name: VLAN subnet with IPAM
-  ntnx_subnets:
+  nutanix.ncp.ntnx_subnets:
     state: present
     wait: true
     name: VLAN subnet with IPAM
@@ -55,7 +72,7 @@
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
 #################################################################
 - name: VLAN subnet with IPAM and IP pools
-  ntnx_subnets:
+  nutanix.ncp.ntnx_subnets:
     state: present
     name: VLAN subnet with IPAM and IP pools
     vlan_subnet:
@@ -87,7 +104,7 @@
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
 
 - name: Delete all Created Subnets
-  ntnx_subnets:
+  nutanix.ncp.ntnx_subnets:
     state: absent
     subnet_uuid: "{{ item }}"
   register: result
@@ -99,7 +116,7 @@
     todelete: []
 #################################################################
 - name: VLAN subnet with IPAM and IP pools and cluster uuid
-  ntnx_subnets:
+  nutanix.ncp.ntnx_subnets:
     state: present
     name: VLAN subnet with IPAM and IP pools
     vlan_subnet:
@@ -131,7 +148,7 @@
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
 
 - name: Delete all Created Subnets
-  ntnx_subnets:
+  nutanix.ncp.ntnx_subnets:
     state: absent
     subnet_uuid: "{{ item }}"
   register: result
@@ -143,7 +160,7 @@
     todelete: []
 #################################################################
 - name: VLAN subnet with IPAM IP pools and DHCP
-  ntnx_subnets:
+  nutanix.ncp.ntnx_subnets:
     state: present
     name: VLAN subnet with IPAM IP pools and DHCP
     vlan_subnet:
@@ -182,7 +199,7 @@
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
 #################################################################
 - name: VLAN subnet with IPAM multiple IP pools and DHCP
-  ntnx_subnets:
+  nutanix.ncp.ntnx_subnets:
     state: present
     name: VLAN subnet with IPAM multiple IP pools and DHCP
     vlan_subnet:
@@ -223,7 +240,7 @@
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
 #################################################################
 - name: External subnet without NAT
-  ntnx_subnets:
+  nutanix.ncp.ntnx_subnets:
     state: present
     name: " External subnet without NAT "
     external_subnet:
@@ -256,7 +273,7 @@
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
 #################################################################
 - name: External subnet with NAT
-  ntnx_subnets:
+  nutanix.ncp.ntnx_subnets:
     state: present
     name: " External subnet with NAT "
     external_subnet:
@@ -289,7 +306,7 @@
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
 #################################################################
 - name: Overlay Subnet with minimum requirements
-  ntnx_subnets:
+  nutanix.ncp.ntnx_subnets:
     state: present
     name: Overlay Subnet with minimum requirements
     overlay_subnet:
@@ -315,7 +332,7 @@
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
 #################################################################
 - name: Delete all Created Subnets
-  ntnx_subnets:
+  nutanix.ncp.ntnx_subnets:
     state: absent
     subnet_uuid: "{{ item }}"
   register: result
@@ -327,7 +344,7 @@
     todelete: []
 #################################################################
 - name: Overlay Subnet with IP_pools and DHCP
-  ntnx_subnets:
+  nutanix.ncp.ntnx_subnets:
     state: present
     name: Overlay Subnet with IP_pools and DHCP
     overlay_subnet:
@@ -361,7 +378,7 @@
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
 #################################################################
 - name: Delete all Created Subnets
-  ntnx_subnets:
+  nutanix.ncp.ntnx_subnets:
     state: absent
     subnet_uuid: "{{ item }}"
   register: result
@@ -373,7 +390,7 @@
     todelete: []
 #################################################################
 - name: Overlay Subnet with IP_pools and DHCP with vpc uuid
-  ntnx_subnets:
+  nutanix.ncp.ntnx_subnets:
     state: present
     name: Overlay Subnet with IP_pools and DHCP
     overlay_subnet:
@@ -406,7 +423,7 @@
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
 
 - name: Delete all Created Subnets
-  ntnx_subnets:
+  nutanix.ncp.ntnx_subnets:
     state: absent
     subnet_uuid: "{{ item }}"
   register: result

@@ -1,9 +1,14 @@
+---
+# Variables required before running this playbook:
+# - vm
+# - cluster
+
 - name: Initialize todelete list
   ansible.builtin.set_fact:
     todelete: []
 
 - name: Create another VM with same name
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     name: "{{ vm.name }}"
     cluster:
       name: "{{ cluster.name }}"
@@ -25,7 +30,7 @@
   when: output.response.status.state == 'COMPLETE'
 ##################################################
 - name: List vms using filter_string
-  ntnx_vms_info:
+  nutanix.ncp.ntnx_vms_info:
     filter_string: vm_name=={{vm.name}};power_state==off
   register: result
   ignore_errors: true
@@ -41,7 +46,7 @@
     success_msg: " VMs listed successfully using filter_string "
 ##################################################
 - name: List vms using name filter criteria
-  ntnx_vms_info:
+  nutanix.ncp.ntnx_vms_info:
     filter:
       vm_name: "{{ vm.name }}"
       power_state: "on"
@@ -56,7 +61,7 @@
     success_msg: " VMs listed successfully "
 ##################################################
 - name: List vms using length and offset
-  ntnx_vms_info:
+  nutanix.ncp.ntnx_vms_info:
     length: 10
     offset: 1
   register: result
@@ -71,7 +76,7 @@
     success_msg: " VMs listed successfully "
 ##################################################
 - name: List vms using ascending name sorting
-  ntnx_vms_info:
+  nutanix.ncp.ntnx_vms_info:
     sort_order: "ASCENDING"
     sort_attribute: "vm_name"
     kind: vm
@@ -86,7 +91,7 @@
     success_msg: " VMs listed successfully "
 ####################################################
 - name: Delete all Created VMs
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: absent
     vm_uuid: "{{ item }}"
   register: result

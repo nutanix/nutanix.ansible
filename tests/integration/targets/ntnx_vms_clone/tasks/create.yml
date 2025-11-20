@@ -1,3 +1,11 @@
+---
+# Variables required before running this playbook:
+# - cluster
+# - ubuntu
+# - static
+# - network
+# - password
+
 - name: Start testing VM clone
   ansible.builtin.debug:
     msg: Start testing VM clone
@@ -15,7 +23,7 @@
       fqdn: myNutanixVM
 
 - name: VM with minimum requirements to clone
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     name: integration_test_clone_vm
     cluster:
@@ -39,7 +47,7 @@
 ##############################
 
 - name: Clone vm  and change vcpus,memory_gb,cores_per_vcpu,timezone,desc,name with force_power_off
-  ntnx_vms_clone:
+  nutanix.ncp.ntnx_vms_clone:
     src_vm_uuid: "{{ vm.vm_uuid }}"
     vcpus: 2
     cores_per_vcpu: 2
@@ -63,7 +71,7 @@
     todelete: "{{ todelete + [  result.vm_uuid ] }}"
 ##############################
 - name: Clone vm and add network
-  ntnx_vms_clone:
+  nutanix.ncp.ntnx_vms_clone:
     src_vm_uuid: "{{ vm.vm_uuid }}"
     networks:
       - is_connected: true
@@ -85,7 +93,7 @@
     todelete: "{{ todelete + [  result.vm_uuid ] }}"
 ###########################################
 - name: Clone vm  with check mode
-  ntnx_vms_clone:
+  nutanix.ncp.ntnx_vms_clone:
     src_vm_uuid: "{{ vm.vm_uuid }}"
     networks:
       - is_connected: false
@@ -106,7 +114,7 @@
     fail_msg: " Fail: clone vm with check_mode  "
 ###########################################
 - name: Clone vm  with script
-  ntnx_vms_clone:
+  nutanix.ncp.ntnx_vms_clone:
     src_vm_uuid: "{{ vm.vm_uuid }}"
     guest_customization:
       type: "cloud_init"
@@ -128,12 +136,12 @@
     todelete: "{{ todelete + [  result.vm_uuid ] }}"
 ###########################################
 - name: Delete all Created VMs
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: absent
     vm_uuid: "{{ item }}"
   loop: "{{ todelete }}"
 
 - name: Delete all Created VMs
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: absent
     vm_uuid: "{{ vm.vm_uuid }}"

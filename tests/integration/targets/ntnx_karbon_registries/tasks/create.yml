@@ -1,4 +1,7 @@
 ---
+# Variables required before running this playbook:
+# - url
+
 - name: Start ntnx_karbon_registries tests
   ansible.builtin.debug:
     msg: start ntnx_karbon_registries tests
@@ -12,7 +15,7 @@
     registry_name: "{{ random_name[0] }}"
 
 - name: Create registry with check_mode
-  ntnx_karbon_registries:
+  nutanix.ncp.ntnx_karbon_registries:
     name: "{{ registry_name }}"
     url: "{{ url }}"
   register: result
@@ -31,7 +34,7 @@
     fail_msg: " Fail: create registry with check_mode  "
     ################################################################
 - name: Create registry
-  ntnx_karbon_registries:
+  nutanix.ncp.ntnx_karbon_registries:
     name: "{{ registry_name }}"
     url: "{{ url }}"
     port: 5000
@@ -50,7 +53,7 @@
     success_msg: "Pass: create registry finished successfully"
     ################################################################
 - name: Delete registry
-  ntnx_karbon_registries:
+  nutanix.ncp.ntnx_karbon_registries:
     name: "{{ registry_name }}"
     state: absent
   register: result
@@ -69,7 +72,7 @@
 ################################################################
 
 - name: Create registry with username and password
-  ntnx_karbon_registries:
+  nutanix.ncp.ntnx_karbon_registries:
     name: "{{ registry_name }}"
     url: "{{ url }}"
     username: test
@@ -88,7 +91,7 @@
     success_msg: "Pass: create registry with username and password finished successfully"
     ###############################################################
 - name: Delete registry with check mode
-  ntnx_karbon_registries:
+  nutanix.ncp.ntnx_karbon_registries:
     state: absent
     name: "{{ registry_name }}"
   register: output
@@ -106,7 +109,7 @@
     success_msg: "Delete registry with check mode passed"
 
 - name: Delete registry
-  ntnx_karbon_registries:
+  nutanix.ncp.ntnx_karbon_registries:
     name: "{{ registry_name }}"
     state: absent
   register: result

@@ -26,28 +26,28 @@
       nutanix.ncp.ntnx_vpcs_v2:
         state: present
         wait: true
-        name: "{{vpc_name}}"
+        name: "{{ vpc_name }}"
         external_subnets:
-          - subnet_reference: "{{external_nat_subnet_uuid}}"
+          - subnet_reference: "{{ external_nat_subnet_uuid }}"
       register: result
 
     - name: Update vpc name
       nutanix.ncp.ntnx_vpcs_v2:
         state: present
-        ext_id: "{{vpc_uuid}}"
-        name: "{{vpc_name}}_updated"
+        ext_id: "{{ vpc_uuid }}"
+        name: "{{ vpc_name }}_updated"
       register: result
       ignore_errors: true
 
     - name: Fetch VPC info
       nutanix.ncp.ntnx_vpcs_info_v2:
-        ext_id: "{{vpc_uuid}}"
+        ext_id: "{{ vpc_uuid }}"
       register: result
       ignore_errors: true
 
     - name: Delete VPC
       nutanix.ncp.ntnx_vpcs_v2:
         state: absent
-        ext_id: "{{vpc_uuid}}"
+        ext_id: "{{ vpc_uuid }}"
       register: result
       ignore_errors: true

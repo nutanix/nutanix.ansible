@@ -1,10 +1,13 @@
 ---
+# Variables required before running this playbook:
+# - url
+
 - name: Negative test cases for ntnx_karbon_registries
   ansible.builtin.debug:
     msg: Start negative test cases for ntnx_karbon_registries
 
 - name: Create registry with wrong port number
-  ntnx_karbon_registries:
+  nutanix.ncp.ntnx_karbon_registries:
     name: test_registry
     url: "{{ url }}"
     port: 501

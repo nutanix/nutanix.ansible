@@ -1,4 +1,12 @@
 ---
+# Variables required before running this playbook:
+# - acp
+# - project
+
+- name: Start ntnx_acps delete_acps tests
+  ansible.builtin.debug:
+    msg: Start ntnx_acps delete_acps tests
+
 - name: Generate random name
   ansible.builtin.set_fact:
     random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12) }}"
@@ -8,7 +16,7 @@
     acp1_name: "{{ random_name[0] }}1"
 
 - name: Create ACP with all specifications
-  ntnx_acps:
+  nutanix.ncp.ntnx_acps:
     state: present
     name: "{{ acp1_name }}"
     role:
@@ -50,7 +58,7 @@
     success_msg: " ACP with all specifications created successfully "
 
 - name: Delete acp with check mode
-  ntnx_acps:
+  nutanix.ncp.ntnx_acps:
     state: absent
     acp_uuid: "{{ result.response.metadata.uuid }}"
   register: output
@@ -68,7 +76,7 @@
     success_msg: "Delete acp with check mode passed"
 
 - name: Delete acp
-  ntnx_acps:
+  nutanix.ncp.ntnx_acps:
     state: absent
     acp_uuid: "{{ result.acp_uuid }}"
   register: output

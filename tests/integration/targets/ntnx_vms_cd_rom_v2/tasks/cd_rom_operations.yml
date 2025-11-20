@@ -1,4 +1,9 @@
 ---
+# Variables required before running this playbook:
+# - cluster
+# - disk_image
+# - iso_image
+
 - name: Start testing ntnx_vms_cd_rom_v2
   ansible.builtin.debug:
     msg: Start testing ntnx_vms_cd_rom_v2
@@ -16,7 +21,7 @@
     todelete: []
 
 - name: Create VM to test CD ROM
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     state: present
     name: "{{ vm_name }}"
     cluster:
@@ -41,7 +46,7 @@
 #################################################################################
 
 - name: Create CD ROM with minimum requirements
-  ntnx_vms_cd_rom_v2:
+  nutanix.ncp.ntnx_vms_cd_rom_v2:
     state: present
     vm_ext_id: "{{ vm_uuid }}"
   register: result
@@ -66,7 +71,7 @@
 #################################################################################
 
 - name: Create CD ROM with all attributes - check mode is enabled
-  ntnx_vms_cd_rom_v2:
+  nutanix.ncp.ntnx_vms_cd_rom_v2:
     state: present
     vm_ext_id: "{{ vm_uuid }}"
     disk_address:
@@ -97,7 +102,7 @@
 #################################################################################
 
 - name: Create CD ROM with all attributes
-  ntnx_vms_cd_rom_v2:
+  nutanix.ncp.ntnx_vms_cd_rom_v2:
     state: present
     vm_ext_id: "{{ vm_uuid }}"
     disk_address:
@@ -130,7 +135,7 @@
 #################################################################################
 
 - name: Get CD ROM IDs from VM
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -159,7 +164,7 @@
 ################################################################################
 
 - name: Inject ISO in CD ROM of a VM - check mode is enabled
-  ntnx_vms_cd_rom_iso_v2:
+  nutanix.ncp.ntnx_vms_cd_rom_iso_v2:
     state: present
     vm_ext_id: "{{ vm_uuid }}"
     ext_id: "{{ todelete[0] }}"
@@ -187,7 +192,7 @@
 #################################################################################
 
 - name: Inject ISO in CD ROM of a VM
-  ntnx_vms_cd_rom_iso_v2:
+  nutanix.ncp.ntnx_vms_cd_rom_iso_v2:
     state: present
     vm_ext_id: "{{ vm_uuid }}"
     ext_id: "{{ todelete[0] }}"
@@ -214,7 +219,7 @@
 #################################################################################
 
 - name: Get CD ROM details
-  ntnx_vms_cd_rom_info_v2:
+  nutanix.ncp.ntnx_vms_cd_rom_info_v2:
     vm_ext_id: "{{ vm_uuid }}"
     ext_id: "{{ todelete[0] }}"
   register: result
@@ -235,7 +240,7 @@
 ################################################################################
 
 - name: Eject ISO from CD ROM of a VM - check mode is enabled
-  ntnx_vms_cd_rom_iso_v2:
+  nutanix.ncp.ntnx_vms_cd_rom_iso_v2:
     state: absent
     vm_ext_id: "{{ vm_uuid }}"
     ext_id: "{{ todelete[0] }}"
@@ -258,7 +263,7 @@
 #################################################################################
 
 - name: Eject ISO from CD ROM of a VM
-  ntnx_vms_cd_rom_iso_v2:
+  nutanix.ncp.ntnx_vms_cd_rom_iso_v2:
     state: absent
     vm_ext_id: "{{ vm_uuid }}"
     ext_id: "{{ todelete[0] }}"
@@ -287,7 +292,7 @@
 #################################################################################
 
 - name: Get CD ROM details
-  ntnx_vms_cd_rom_info_v2:
+  nutanix.ncp.ntnx_vms_cd_rom_info_v2:
     vm_ext_id: "{{ vm_uuid }}"
     ext_id: "{{ todelete[0] }}"
   register: result
@@ -308,7 +313,7 @@
 ################################################################################
 
 - name: Get all CD ROMs details
-  ntnx_vms_cd_rom_info_v2:
+  nutanix.ncp.ntnx_vms_cd_rom_info_v2:
     vm_ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -323,6 +328,9 @@
       - result.response is defined
       - result.changed == false
       - result.failed == false
+      - result.response | length == 2
+      - result.total_available_results is defined
+      - result.total_available_results == 2
       - cd_rom_list | length == 2
       - cd_rom_list[0] == todelete[0]
       - cd_rom_list[1] == todelete[1]
@@ -332,7 +340,7 @@
 ################################################################################
 
 - name: Get all CD ROMs details with limit 1
-  ntnx_vms_cd_rom_info_v2:
+  nutanix.ncp.ntnx_vms_cd_rom_info_v2:
     vm_ext_id: "{{ vm_uuid }}"
     limit: 1
   register: result
@@ -356,7 +364,7 @@
 ################################################################################
 
 - name: Get all CD ROMs details with limit 2
-  ntnx_vms_cd_rom_info_v2:
+  nutanix.ncp.ntnx_vms_cd_rom_info_v2:
     vm_ext_id: "{{ vm_uuid }}"
     limit: 2
   register: result
@@ -381,7 +389,7 @@
 ###############################################################################
 
 - name: Delete CD ROM with check mode enabled
-  ntnx_vms_cd_rom_v2:
+  nutanix.ncp.ntnx_vms_cd_rom_v2:
     state: absent
     vm_ext_id: "{{ vm_uuid }}"
     ext_id: "{{ todelete[0] }}"
@@ -402,7 +410,7 @@
 #################################################################################
 
 - name: Delete All CD ROMs
-  ntnx_vms_cd_rom_v2:
+  nutanix.ncp.ntnx_vms_cd_rom_v2:
     state: absent
     vm_ext_id: "{{ vm_uuid }}"
     ext_id: "{{ item }}"
@@ -426,7 +434,7 @@
 #################################################################################
 
 - name: Verify CD ROMs are deleted
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
@@ -444,7 +452,7 @@
 #################################################################################
 
 - name: Delete the VM
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: absent
     vm_uuid: "{{ vm_uuid }}"
   register: result

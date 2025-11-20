@@ -1,7 +1,10 @@
 ---
-- name: Start ntnx_saml_identity_providers_v2   and ntnx_saml_identity_providers_info_v2 tests
+# Variables required before running this playbook:
+# - xml_content
+
+- name: Start ntnx_saml_identity_providers_v2 and ntnx_saml_identity_providers_info_v2 tests
   ansible.builtin.debug:
-    msg: start ntnx_saml_identity_providers_v2   and ntnx_saml_identity_providers_info_v2 tests
+    msg: start ntnx_saml_identity_providers_v2 and ntnx_saml_identity_providers_info_v2 tests
 
 - name: Generate random category  key & value
   ansible.builtin.set_fact:
@@ -18,7 +21,7 @@
     full_name: "{{ random_name }}{{ suffix_name }}saml"
 
 - name: Verify spec generation for identity providers with check_mode
-  ntnx_saml_identity_providers_v2:
+  nutanix.ncp.ntnx_saml_identity_providers_v2:
     name: "{{ full_name }}1"
     username_attribute: "{{ user_name }}1"
     email_attribute: email
@@ -61,7 +64,7 @@
     xml_file_content: "{{ lookup('file', xml_content.dest + '/content.txt') }}"
 
 - name: Create saml
-  ntnx_saml_identity_providers_v2:
+  nutanix.ncp.ntnx_saml_identity_providers_v2:
     name: "{{ full_name }}1"
     username_attribute: "{{ user_name }}1"
     email_attribute: email
@@ -91,7 +94,7 @@
     todelete: '{{ todelete + [result["ext_id"]] }}'
 
 - name: Get saml using filter name
-  ntnx_saml_identity_providers_info_v2:
+  nutanix.ncp.ntnx_saml_identity_providers_info_v2:
     filter: name eq '{{ full_name }}1'
   register: result
   ignore_errors: true
@@ -113,7 +116,7 @@
     success_msg: " saml fetched using filter name successfully "
 
 - name: Verify spec generation for update identity providers with check_mode
-  ntnx_saml_identity_providers_v2:
+  nutanix.ncp.ntnx_saml_identity_providers_v2:
     state: present
     ext_id: "{{ todelete[-1] }}"
     name: "{{ full_name }}2"
@@ -143,7 +146,7 @@
     success_msg: " Verify spec generation for update identity providers with check_mode  finished successfully"
 
 - name: Update saml
-  ntnx_saml_identity_providers_v2:
+  nutanix.ncp.ntnx_saml_identity_providers_v2:
     state: present
     ext_id: "{{ todelete[-1] }}"
     name: "{{ full_name }}2"
@@ -172,7 +175,7 @@
     success_msg: " saml updated successfully "
 
 - name: Check idempotency
-  ntnx_saml_identity_providers_v2:
+  nutanix.ncp.ntnx_saml_identity_providers_v2:
     state: present
     ext_id: "{{ todelete[-1] }}"
     name: "{{ full_name }}2"
@@ -191,7 +194,7 @@
     success_msg: " Idempotency check successfully "
 
 - name: Get saml using ext_id
-  ntnx_saml_identity_providers_info_v2:
+  nutanix.ncp.ntnx_saml_identity_providers_info_v2:
     ext_id: "{{ todelete[-1] }}"
   register: result
   ignore_errors: true
@@ -213,7 +216,7 @@
     success_msg: " saml fetched using ext_id successfully "
 
 - name: List all identity providers
-  ntnx_saml_identity_providers_info_v2:
+  nutanix.ncp.ntnx_saml_identity_providers_info_v2:
   register: result
   ignore_errors: true
 
@@ -224,11 +227,13 @@
       - result.changed == False
       - result.failed == False
       - result.response | length > 0
+      - result.total_available_results is defined
+      - result.total_available_results > 0
     fail_msg: " Unable to list all identity providers "
     success_msg: " list all identity providers successfully "
 
 - name: Delete SAML identity provider with check mode enabled
-  ntnx_saml_identity_providers_v2:
+  nutanix.ncp.ntnx_saml_identity_providers_v2:
     state: absent
     ext_id: "{{ todelete[0] }}"
   register: result
@@ -247,7 +252,7 @@
     success_msg: " Delete SAML identity provider with check mode enabled successfully "
 
 - name: Delete the created SAML identity providers
-  ntnx_saml_identity_providers_v2:
+  nutanix.ncp.ntnx_saml_identity_providers_v2:
     state: absent
     ext_id: "{{ item }}"
   register: result

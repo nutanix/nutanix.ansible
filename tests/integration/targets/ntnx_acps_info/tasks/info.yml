@@ -1,4 +1,7 @@
 ---
+# Variables required before running this playbook:
+# - acp
+
 - name: Start ntnx_acps_info tests
   ansible.builtin.debug:
     msg: "Start ntnx_acps_info tests"
@@ -8,7 +11,7 @@
     acp_name: "{{ query('community.general.random_string', upper=false, numbers=false, special=false)[0] }}"
 
 - name: Create min ACP for update
-  ntnx_acps:
+  nutanix.ncp.ntnx_acps:
     state: present
     wait: true
     name: "{{acp_name}}"
@@ -21,7 +24,7 @@
     todelete: '{{ todelete + [  acps["response"]["metadata"]["uuid"] ] }}'
 
 - name: Test getting all acp's
-  ntnx_acps_info:
+  nutanix.ncp.ntnx_acps_info:
     kind: access_control_policy
     length: 1
     offset: 1
@@ -40,7 +43,7 @@
 ################################################################
 
 - name: Test getting particular acp using filter
-  ntnx_acps_info:
+  nutanix.ncp.ntnx_acps_info:
     filter:
       name: "{{ acp_name }}"
   register: result
@@ -58,7 +61,7 @@
 #################################################################
 
 - name: Test getting particular acp using uuid
-  ntnx_acps_info:
+  nutanix.ncp.ntnx_acps_info:
     acp_uuid: "{{ acps.response.metadata.uuid }}"
   register: result
 
@@ -73,7 +76,7 @@
     success_msg: "acp info obtained successfully using uuid"
 
 - name: Cleanup created entities
-  ntnx_acps:
+  nutanix.ncp.ntnx_acps:
     state: absent
     acp_uuid: "{{ item }}"
   register: result

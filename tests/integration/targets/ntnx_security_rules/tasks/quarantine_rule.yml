@@ -1,5 +1,13 @@
+---
+# Variables required before running this playbook:
+# - quarantine_rule_uuid
+
+- name: Start ntnx_security_rules quarantine_rule tests
+  ansible.builtin.debug:
+    msg: Start ntnx_security_rules quarantine_rule tests
+
 - name: Update quarantine_rule by adding inbound and outbound list
-  ntnx_security_rules:
+  nutanix.ncp.ntnx_security_rules:
     security_rule_uuid: "{{quarantine_rule_uuid}}"
     quarantine_rule:
       target_group:

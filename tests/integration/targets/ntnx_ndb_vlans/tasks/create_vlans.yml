@@ -1,10 +1,14 @@
 ---
+# Variables required before running this playbook:
+# - ndb_vlan
+# - cluster
+
 - name: Start testing ntnx_ndb_vlans
   ansible.builtin.debug:
     msg: Start testing ntnx_ndb_vlans
 
 - name: Create Dhcp ndb vlan
-  ntnx_ndb_vlans:
+  nutanix.ncp.ntnx_ndb_vlans:
     name: "{{ ndb_vlan.name }}"
     vlan_type: DHCP
     cluster:
@@ -30,7 +34,7 @@
 ################################################################
 
 - name: Update ndb vlan type for static
-  ntnx_ndb_vlans:
+  nutanix.ncp.ntnx_ndb_vlans:
     vlan_uuid: "{{ result.vlan_uuid }}"
     vlan_type: Static
     gateway: "{{ ndb_vlan.gateway }}"
@@ -78,7 +82,7 @@
     todelete: "{{ todelete + [result.vlan_uuid] }}"
 ################################################################
 - name: List all NDB vlans
-  ntnx_ndb_vlans_info:
+  nutanix.ncp.ntnx_ndb_vlans_info:
   register: vlans
   no_log: true
   ignore_errors: true
@@ -96,7 +100,7 @@
 ################################################################
 
 - name: Get NDB vlans using it's name
-  ntnx_ndb_vlans_info:
+  nutanix.ncp.ntnx_ndb_vlans_info:
     name: "{{ vlans.response[0].name }}"
   register: result
   no_log: true
@@ -115,7 +119,7 @@
 ################################################################
 
 - name: List vlans use id
-  ntnx_ndb_vlans_info:
+  nutanix.ncp.ntnx_ndb_vlans_info:
     uuid: "{{ vlans.response[0].id }}"
   register: result
   no_log: true
@@ -134,7 +138,7 @@
 ################################################################
 
 - name: Get NDB vlans with incorrect name
-  ntnx_ndb_vlans_info:
+  nutanix.ncp.ntnx_ndb_vlans_info:
     name: abcd
   register: result
   no_log: true
@@ -151,7 +155,7 @@
 ################################################################
 
 - name: Delete  created vlan's
-  ntnx_ndb_vlans:
+  nutanix.ncp.ntnx_ndb_vlans:
     state: absent
     vlan_uuid: "{{  todelete[0] }}"
   register: result
@@ -165,7 +169,7 @@
 ################################################################
 
 - name: Create static ndb vlan
-  ntnx_ndb_vlans:
+  nutanix.ncp.ntnx_ndb_vlans:
     name: "{{ ndb_vlan.name }}"
     vlan_type: Static
     cluster:
@@ -212,7 +216,7 @@
 ################################################################
 
 - name: Update ndb vlan by removing ip pool
-  ntnx_ndb_vlans:
+  nutanix.ncp.ntnx_ndb_vlans:
     vlan_uuid: "{{ result.vlan_uuid }}"
     remove_ip_pools:
       - "{{ result.response.ipPools[0].id }}"
@@ -243,7 +247,7 @@
 ################################################################
 
 - name: Update ndb vlan by adding a pool
-  ntnx_ndb_vlans:
+  nutanix.ncp.ntnx_ndb_vlans:
     vlan_uuid: "{{ result.vlan_uuid }}"
     ip_pools:
       - start_ip: "{{ndb_vlan.ip_pools.0.start_ip}}"
@@ -276,7 +280,7 @@
 ################################################################
 
 - name: Update ndb vLAN Configuration
-  ntnx_ndb_vlans:
+  nutanix.ncp.ntnx_ndb_vlans:
     vlan_uuid: "{{ result.vlan_uuid }}"
     gateway: "{{ ndb_vlan.updated_gateway }}"
     subnet_mask: "{{ ndb_vlan.updated_subnet_mask }}"
@@ -306,7 +310,7 @@
 ################################################################
 
 - name: Update ndb vlan type
-  ntnx_ndb_vlans:
+  nutanix.ncp.ntnx_ndb_vlans:
     vlan_uuid: "{{ result.vlan_uuid }}"
     vlan_type: DHCP
   register: result
@@ -409,7 +413,7 @@
 #    success_msg: "pass:  update ndb_stretched subnet_mask, gateway finished successfully"
 
 - name: Delete ndb_stretched vlan with check mode
-  ntnx_ndb_stretched_vlans:
+  nutanix.ncp.ntnx_ndb_stretched_vlans:
     state: absent
     stretched_vlan_uuid: "1f549eb2-94f2-544f-9db3-eb0571d0d86e"
   register: output
@@ -428,7 +432,7 @@
 
 ################################################################
 - name: Delete vlan with check mode
-  ntnx_ndb_vlans:
+  nutanix.ncp.ntnx_ndb_vlans:
     state: absent
     vlan_uuid: "{{ result.vlan_uuid }}"
   register: output
@@ -446,7 +450,7 @@
     success_msg: "Delete vlan with check mode passed"
 
 - name: Delete all created vlan's
-  ntnx_ndb_vlans:
+  nutanix.ncp.ntnx_ndb_vlans:
     state: absent
     vlan_uuid: "{{ item }}"
   register: result

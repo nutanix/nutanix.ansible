@@ -1,5 +1,15 @@
+---
+# Variables required before running this playbook:
+# - external_nat_subnet
+# - routable_ips
+# - dns_servers
+
+- name: Start nutanix_vpcs create_vpcs tests
+  ansible.builtin.debug:
+    msg: Start nutanix_vpcs create_vpcs tests
+
 - name: Create min VPC with subnet name
-  ntnx_vpcs:
+  nutanix.ncp.ntnx_vpcs:
     state: present
     wait: true
     name: MinVPC
@@ -10,7 +20,7 @@
   ignore_errors: true
 ##########################################################
 - name: Create min VPC with external_nat_subnet uuid
-  ntnx_vpcs:
+  nutanix.ncp.ntnx_vpcs:
     state: present
     wait: true
     name: MinVPC
@@ -33,7 +43,7 @@
     todelete: "{{ todelete + [  result.vpc_uuid ] }}"
 ##########################################################
 - name: Delete all created vpcs
-  ntnx_vpcs:
+  nutanix.ncp.ntnx_vpcs:
     state: absent
     vpc_uuid: "{{ item }}"
   register: result
@@ -45,7 +55,7 @@
     todelete: []
 ##########################################################
 - name: Create VPC with routable_ips
-  ntnx_vpcs:
+  nutanix.ncp.ntnx_vpcs:
     state: present
     name: vpc_with_routable_ips
     routable_ips:
@@ -67,7 +77,7 @@
     todelete: "{{ todelete + [  result.vpc_uuid ] }}"
 ##########################################################
 - name: Create VPC with routable_ips and external subnet
-  ntnx_vpcs:
+  nutanix.ncp.ntnx_vpcs:
     state: present
     name: vpc_with_routable_ips and external subnet
     external_subnets:
@@ -91,7 +101,7 @@
     todelete: "{{ todelete + [  result.vpc_uuid ] }}"
 ##########################################################
 - name: Create VPC with dns_servers
-  ntnx_vpcs:
+  nutanix.ncp.ntnx_vpcs:
     state: present
     name: vpc_with_dns_servers
     dns_servers: "{{ dns_servers }}"
@@ -104,7 +114,7 @@
     todelete: "{{ todelete + [  result.vpc_uuid ] }}"
 ##########################################################
 - name: Delete all created vpcs
-  ntnx_vpcs:
+  nutanix.ncp.ntnx_vpcs:
     state: absent
     vpc_uuid: "{{ item }}"
   register: result
@@ -116,7 +126,7 @@
     todelete: []
 ##########################################################
 - name: Create VPC with all specifications
-  ntnx_vpcs:
+  nutanix.ncp.ntnx_vpcs:
     state: present
     name: vpc_with_add_specifications
     external_subnets:
@@ -141,7 +151,7 @@
     todelete: "{{ todelete + [  result.vpc_uuid ] }}"
 ##########################################################
 - name: Delete all created vpcs
-  ntnx_vpcs:
+  nutanix.ncp.ntnx_vpcs:
     state: absent
     vpc_uuid: "{{ item }}"
   register: result

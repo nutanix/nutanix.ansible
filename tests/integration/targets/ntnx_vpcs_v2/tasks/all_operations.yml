@@ -1,4 +1,9 @@
 ---
+# Variables required before running this playbook:
+# - external_nat_subnet
+# - routable_ips
+# - dns_servers
+
 - name: Start testing ntnx_vpcs_v2, ntnx_vpcs_info_v2
   ansible.builtin.debug:
     msg: Start testing ntnx_vpcs_v2, ntnx_vpcs_info_v2
@@ -21,7 +26,7 @@
 
 ###########################################################
 - name: Create min VPC with check mode
-  ntnx_vpcs_v2:
+  nutanix.ncp.ntnx_vpcs_v2:
     state: present
     wait: true
     name: "{{ vpc_name }}1"
@@ -40,7 +45,7 @@
     success_msg: "Create min VPC with check mode finished as expected"
 ###########################################################
 - name: Create min VPC with external_nat_subnet uuid
-  ntnx_vpcs_v2:
+  nutanix.ncp.ntnx_vpcs_v2:
     state: present
     wait: true
     name: "{{vpc_name}}2"
@@ -64,7 +69,7 @@
     todelete: "{{ todelete + [  result.ext_id ] }}"
 ###########################################################
 - name: Update vpc name
-  ntnx_vpcs_v2:
+  nutanix.ncp.ntnx_vpcs_v2:
     state: present
     ext_id: "{{ result.ext_id }}"
     name: "{{vpc_name}}2_updated"
@@ -81,7 +86,7 @@
 ###########################################################
 
 - name: Delete VPC with check mode is enabled
-  ntnx_vpcs_v2:
+  nutanix.ncp.ntnx_vpcs_v2:
     state: absent
     ext_id: "{{ todelete[0] }}"
   register: result
@@ -100,7 +105,7 @@
     success_msg: "Delete VPC with check mode is enabled passed"
 
 - name: Delete all created vpcs
-  ntnx_vpcs_v2:
+  nutanix.ncp.ntnx_vpcs_v2:
     state: absent
     ext_id: "{{ item }}"
   register: result
@@ -112,7 +117,7 @@
     todelete: []
 ###########################################################
 - name: Create VPC with routable_ips
-  ntnx_vpcs_v2:
+  nutanix.ncp.ntnx_vpcs_v2:
     state: present
     name: "{{vpc_name}}3"
     description: "VPC with routable_ips"
@@ -142,7 +147,7 @@
     todelete: "{{ todelete + [  result.ext_id ] }}"
 ##########################################################
 - name: Update vpc with external_nat_subnet
-  ntnx_vpcs_v2:
+  nutanix.ncp.ntnx_vpcs_v2:
     state: present
     ext_id: "{{ result.ext_id }}"
     external_subnets:
@@ -163,7 +168,7 @@
     success_msg: " VPC updated with external_nat_subnet successfully "
 ##########################################################
 - name: Check idempotency
-  ntnx_vpcs_v2:
+  nutanix.ncp.ntnx_vpcs_v2:
     state: present
     ext_id: "{{ result.ext_id }}"
     name: "{{vpc_name}}3"
@@ -186,7 +191,7 @@
     success_msg: " Idempotency check finished successfully "
 ###########################################################
 - name: Create VPC with routable_ips and external subnet
-  ntnx_vpcs_v2:
+  nutanix.ncp.ntnx_vpcs_v2:
     state: present
     name: "{{vpc_name}}4"
     externally_routable_prefixes:
@@ -217,7 +222,7 @@
     todelete: "{{ todelete + [  result.ext_id ] }}"
 ##########################################################
 - name: Create VPC with dns_servers
-  ntnx_vpcs_v2:
+  nutanix.ncp.ntnx_vpcs_v2:
     state: present
     name: "{{vpc_name}}5"
     common_dhcp_options:
@@ -247,7 +252,7 @@
     todelete: "{{ todelete + [  result.ext_id ] }}"
 ##########################################################
 - name: List VPCs
-  ntnx_vpcs_info_v2:
+  nutanix.ncp.ntnx_vpcs_info_v2:
   register: vpcs
   ignore_errors: true
 
@@ -256,11 +261,13 @@
     that:
       - vpcs.response is defined
       - vpcs.response | length > 3
+      - vpcs.total_available_results is defined
+      - vpcs.total_available_results > 3
     fail_msg: " Unable to list vpcs "
     success_msg: " VPCs listed successfully "
 ##########################################################
 - name: List VPC using name filter criteria
-  ntnx_vpcs_info_v2:
+  nutanix.ncp.ntnx_vpcs_info_v2:
     filter: "name eq '{{ vpcs.response.0.name }}'"
   register: result
   ignore_errors: true
@@ -274,7 +281,7 @@
     success_msg: " VPCs listed successfully "
 ########################################################
 - name: List VPC using limit
-  ntnx_vpcs_info_v2:
+  nutanix.ncp.ntnx_vpcs_info_v2:
     limit: 1
   check_mode: true
   register: result
@@ -289,7 +296,7 @@
     success_msg: " VPCs listed successfully "
 ##########################################################
 - name: List VPC using ext_id
-  ntnx_vpcs_info_v2:
+  nutanix.ncp.ntnx_vpcs_info_v2:
     ext_id: "{{ vpcs.response.0.ext_id }}"
   register: result
   ignore_errors: true
@@ -303,7 +310,7 @@
     success_msg: " VPCs listed successfully "
 ##########################################################
 - name: Delete all created vpcs
-  ntnx_vpcs_v2:
+  nutanix.ncp.ntnx_vpcs_v2:
     state: absent
     ext_id: "{{ item }}"
   register: result
@@ -315,7 +322,7 @@
     todelete: []
 ###########################################################
 - name: Create VPC with all specifications
-  ntnx_vpcs_v2:
+  nutanix.ncp.ntnx_vpcs_v2:
     state: present
     name: "{{vpc_name}}6"
     common_dhcp_options:
@@ -355,7 +362,7 @@
     todelete: "{{ todelete + [  result.ext_id ] }}"
 ###########################################################
 - name: Delete all created vpcs
-  ntnx_vpcs_v2:
+  nutanix.ncp.ntnx_vpcs_v2:
     state: absent
     ext_id: "{{ item }}"
   register: result

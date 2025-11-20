@@ -1,3 +1,8 @@
+---
+# Variables required before running this playbook:
+# - cluster
+# - network
+
 - name: "Start Volume groups disks tests"
   ansible.builtin.debug:
     msg: "Start Volume groups disks tests"
@@ -16,7 +21,7 @@
 
 ############################################ Test Setup ############################################
 - name: Create Volume group for tests
-  ntnx_volume_groups_v2:
+  nutanix.ncp.ntnx_volume_groups_v2:
     name: "{{vg1_name}}"
     description: "Volume group for disk tests"
     should_load_balance_vm_attachments: true
@@ -45,7 +50,7 @@
     vg1_uuid: "{{ result.ext_id }}"
 
 - name: Create VM1 for VG
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     name: "ansible-created-for-vg"
     num_sockets: 2
     num_cores_per_socket: 2
@@ -67,7 +72,7 @@
     vm1_uuid: "{{ result.ext_id }}"
 
 - name: Create VM2 for VG
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     name: "ansible-created-for-vg"
     num_sockets: 2
     num_cores_per_socket: 2
@@ -101,7 +106,7 @@
 
 ############################################ Attach VM tests ############################################
 - name: Create spec for attaching VM to VG
-  ntnx_volume_groups_vms_v2:
+  nutanix.ncp.ntnx_volume_groups_vms_v2:
     volume_group_ext_id: "{{ vg1_uuid }}"
     ext_id: "{{ vm1_uuid }}"
     index: 0
@@ -121,7 +126,7 @@
     success_msg: "Spec created successfully for VM to VG"
 
 - name: Attach VM1 to VG
-  ntnx_volume_groups_vms_v2:
+  nutanix.ncp.ntnx_volume_groups_vms_v2:
     state: present
     volume_group_ext_id: "{{ vg1_uuid }}"
     ext_id: "{{ vm1_uuid }}"
@@ -140,7 +145,7 @@
     success_msg: "VM attached to VG successfully"
 
 - name: Fetch VM1 info to verify attachment
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm1_uuid }}"
   register: result
 
@@ -156,7 +161,7 @@
     success_msg: "VG attachment verified from VM side"
 
 - name: Attach VM2 to VG
-  ntnx_volume_groups_vms_v2:
+  nutanix.ncp.ntnx_volume_groups_vms_v2:
     state: present
     volume_group_ext_id: "{{ vg1_uuid }}"
     ext_id: "{{ vm2_uuid }}"
@@ -174,7 +179,7 @@
     success_msg: "VM attached to VG successfully"
 
 - name: Fetch VM2 info to verify attachment
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm2_uuid }}"
   register: result
 
@@ -192,7 +197,7 @@
 ############################################ Detach VM tests ############################################
 
 - name: Detach VM1 from VG
-  ntnx_volume_groups_vms_v2:
+  nutanix.ncp.ntnx_volume_groups_vms_v2:
     state: absent
     volume_group_ext_id: "{{ vg1_uuid }}"
     ext_id: "{{ vm1_uuid }}"
@@ -210,7 +215,7 @@
     success_msg: "VM detached from VG successfully"
 
 - name: Detach VM2 from VG
-  ntnx_volume_groups_vms_v2:
+  nutanix.ncp.ntnx_volume_groups_vms_v2:
     state: absent
     volume_group_ext_id: "{{ vg1_uuid }}"
     ext_id: "{{ vm2_uuid }}"
@@ -230,7 +235,7 @@
 ############################################ Cleanup tests ############################################
 
 - name: Delete VM1
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     state: absent
     ext_id: "{{ vm1_uuid }}"
   register: result
@@ -246,7 +251,7 @@
     success_msg: "VM1 deleted successfully"
 
 - name: Delete VM2
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     state: absent
     ext_id: "{{ vm2_uuid }}"
   register: result
@@ -262,7 +267,7 @@
     success_msg: "VM1 deleted successfully"
 
 - name: Delete Volume group
-  ntnx_volume_groups_v2:
+  nutanix.ncp.ntnx_volume_groups_v2:
     state: absent
     ext_id: "{{ vg1_uuid }}"
   register: result

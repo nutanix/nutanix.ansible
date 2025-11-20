@@ -1,4 +1,13 @@
 ---
+# Variables required before running this playbook:
+# - priority
+# - network
+# - protocol
+# - tcp
+# - udp
+# - reroute
+# - icmp
+
 - name: Start testing ntnx_pbrs_v2, ntnx_pbrs_info_v2
   ansible.builtin.debug:
     msg: Start testing ntnx_pbrs_v2, ntnx_pbrs_info_v2
@@ -20,7 +29,7 @@
     todelete: []
 
 - name: Create min VPC
-  ntnx_vpcs_v2:
+  nutanix.ncp.ntnx_vpcs_v2:
     state: present
     name: "{{random_name}}vpc"
   register: result
@@ -41,9 +50,48 @@
     pbr:
       vpc:
         uuid: "{{ result.ext_id }}"
+
+#################################################################################################################################
+
+- name: Overlay Subnet with minimum requirements
+  ntnx_subnets_v2:
+    state: present
+    name: "{{ random_name }}_subnet_pbrs"
+    subnet_type: OVERLAY
+    vpc_reference: "{{ pbr.vpc.uuid }}"
+    ip_config:
+      - ipv4:
+          ip_subnet:
+            ip:
+              value: "{{ overlay_subnet.network_ip }}"
+            prefix_length: "{{ overlay_subnet.network_prefix }}"
+          default_gateway_ip:
+            value: "{{ overlay_subnet.gateway_ip }}"
+  register: result
+  ignore_errors: true
+
+- name: Check creating subnet status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.response.name == "{{ random_name }}_subnet_pbrs"
+      - result.response.subnet_type == "OVERLAY"
+      - result.response.vpc_reference == "{{ pbr.vpc.uuid }}"
+      - result.response.ip_config.0.ipv4.default_gateway_ip.value == "{{ overlay_subnet.gateway_ip }}"
+      - result.response.ip_config.0.ipv4.ip_subnet.prefix_length == {{ overlay_subnet.network_prefix }}
+      - result.response.ip_config.0.ipv4.ip_subnet.ip.value == "{{ overlay_subnet.network_ip }}"
+    fail_msg: " Unable to create Overlay Subnet with minimum requirements "
+    success_msg: " Overlay Subnet with minimum requirements created successfully "
+
+- name: Set overlay subnet uuid
+  ansible.builtin.set_fact:
+    overlay_subnet_ext_id: "{{ result.ext_id }}"
+
 ###############################################################################################################################
+
 - name: Create PBR with vpc, source network, external destination, with PERMIT action and icmp with check_mode
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     state: present
     name: "{{pbr_name}}1"
     priority: "{{ priority.0 }}"
@@ -89,7 +137,7 @@
     success_msg: " Create PBR with vpc, source network, external destination, with PERMIT action and icmp with check_mode passed"
 ###############################################################################################################################
 - name: Create PBR with vpc , source network, external destination, with PERMIT action and icmp
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     state: present
     name: "{{pbr_name}}1"
     priority: "{{ priority.0 }}"
@@ -141,7 +189,7 @@
     todelete: "{{ todelete + [  result.ext_id ] }}"
 ###############################################################################################################################
 - name: Check idempotency
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     state: present
     name: "{{pbr_name}}1"
     ext_id: "{{ result.ext_id }}"
@@ -160,7 +208,7 @@
     success_msg: " idempotency check finished successfully"
 ###############################################################################################################################
 - name: List pbr using priority and vpcExtId filter criteria
-  ntnx_pbrs_info_v2:
+  nutanix.ncp.ntnx_pbrs_info_v2:
     filter: "priority eq {{priority.0}} and vpcExtId eq '{{pbr.vpc.uuid}}' "
   register: result
   ignore_errors: true
@@ -185,7 +233,7 @@
     success_msg: " pbrs listed successfully using priority and vpcExtId filter criteria"
 ###############################################################################################################################
 - name: List pbrs using ext_id
-  ntnx_pbrs_info_v2:
+  nutanix.ncp.ntnx_pbrs_info_v2:
     ext_id: "{{todelete[-1]}}"
   register: result
   ignore_errors: true
@@ -209,7 +257,7 @@
     success_msg: " pbrs listed successfully using ext_id"
 ###############################################################################################################################
 - name: Create PBR with vpc, any source, any destination, any protocol and permit action
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
     state: present
     priority: "{{ priority.1 }}"
@@ -247,7 +295,7 @@
     todelete: "{{ todelete + [  result.ext_id ] }}"
 ##############################################################################################
 - name: Check idempotency
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
     state: present
     priority: "{{ priority.1 }}"
@@ -275,7 +323,7 @@
     success_msg: " Idempotency check finished successfully"
 ###############################################################################################################################
 - name: List pbrs using limit
-  ntnx_pbrs_info_v2:
+  nutanix.ncp.ntnx_pbrs_info_v2:
     limit: 1
   register: pbrs
   ignore_errors: true
@@ -289,7 +337,7 @@
     success_msg: " PBRs listed successfully using limit"
 ###############################################################################################################################
 - name: Create PBR with vpc, any source, external destination and deny action with protocol number
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
     state: present
     priority: "{{ priority.2 }}"
@@ -333,7 +381,7 @@
     todelete: "{{ todelete + [  result.ext_id ] }}"
 ######################################################################################################
 - name: Update PBR name ,description, priority
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     state: present
     ext_id: "{{ result.ext_id }}"
     priority: "{{ priority.8 }}"
@@ -357,7 +405,7 @@
     success_msg: " PBR name ,description, priority updated successfully "
 ######################################################################################################
 - name: Update PBR policy_action, policy_match, protocol_parameters
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     state: present
     ext_id: "{{ result.ext_id }}"
     policies:
@@ -389,7 +437,7 @@
     success_msg: " PBR name ,description, priority updated successfully "
 ######################################################################################################
 - name: Create PBR with vpc with source external and destination network with reroute action and with tcp protocol
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
     state: present
     priority: "{{ priority.3 }}"
@@ -401,7 +449,7 @@
             - reroute_fallback_action: NO_ACTION
               service_ip:
                 ipv4:
-                  value: 10.0.0.15
+                  value: "{{ overlay_subnet.private_ip1 }}"
                   prefix_length: 32
         policy_match:
           source:
@@ -443,7 +491,7 @@
       - result.response.priority == {{ priority.3}}
       - result.response.policies.0.policy_action.reroute_params.0.reroute_fallback_action == "NO_ACTION"
       - result.response.policies.0.policy_action.reroute_params.0.service_ip.ipv4.prefix_length == 32
-      - result.response.policies.0.policy_action.reroute_params.0.service_ip.ipv4.value == "10.0.0.15"
+      - result.response.policies.0.policy_action.reroute_params.0.service_ip.ipv4.value == "{{ overlay_subnet.private_ip1 }}"
       - result.response.policies.0.policy_match.protocol_parameters.destination_port_ranges.0.end_port == {{ tcp.port_rangelist.1 }}
       - result.response.policies.0.policy_match.protocol_parameters.destination_port_ranges.0.start_port == {{ tcp.port_rangelist.0 }}
       - result.response.policies.0.policy_match.protocol_parameters.source_port_ranges.0.end_port == {{ tcp.port }}
@@ -457,7 +505,7 @@
 
 ##########################################################################################################
 - name: Create PBR with vpc with source external and destination network with reroute action and any tcp port rangelist
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
     state: present
     priority: "{{ priority.4 }}"
@@ -508,7 +556,7 @@
     todelete: "{{ todelete + [  result.ext_id ] }}"
 ###########################################################################################################
 - name: Create PBR with vpc, custom source network, external destination, reroute action and udp port rangelist
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
     state: present
     priority: "{{ priority.5 }}"
@@ -520,7 +568,7 @@
             - reroute_fallback_action: NO_ACTION
               service_ip:
                 ipv4:
-                  value: 10.0.0.16
+                  value: "{{ overlay_subnet.private_ip2 }}"
                   prefix_length: 32
         policy_match:
           source:
@@ -564,7 +612,7 @@
       - result.response.priority == {{ priority.5}}
       - result.response.policies.0.policy_action.reroute_params.0.reroute_fallback_action == "NO_ACTION"
       - result.response.policies.0.policy_action.reroute_params.0.service_ip.ipv4.prefix_length == 32
-      - result.response.policies.0.policy_action.reroute_params.0.service_ip.ipv4.value == "10.0.0.16"
+      - result.response.policies.0.policy_action.reroute_params.0.service_ip.ipv4.value == "{{ overlay_subnet.private_ip2 }}"
       - result.response.policies.0.policy_match.protocol_parameters.destination_port_ranges.0.end_port == {{ udp.port_rangelist.1 }}
       - result.response.policies.0.policy_match.protocol_parameters.destination_port_ranges.0.start_port == {{ udp.port_rangelist.0 }}
       - result.response.policies.0.policy_match.protocol_parameters.source_port_ranges.0.end_port == {{ udp.port }}
@@ -577,7 +625,7 @@
     todelete: "{{ todelete + [  result.ext_id ] }}"
 ##############################################################################################################
 - name: Create PBR with vpc name, custom source network, external destination, reroute action and any udp ports
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
     state: present
     priority: "{{ priority.6 }}"
@@ -589,7 +637,7 @@
             - reroute_fallback_action: NO_ACTION
               service_ip:
                 ipv4:
-                  value: 10.0.0.17
+                  value: "{{ overlay_subnet.private_ip3 }}"
                   prefix_length: 32
         policy_match:
           source:
@@ -627,7 +675,7 @@
       - result.response.priority == {{ priority.6}}
       - result.response.policies.0.policy_action.reroute_params.0.reroute_fallback_action == "NO_ACTION"
       - result.response.policies.0.policy_action.reroute_params.0.service_ip.ipv4.prefix_length == 32
-      - result.response.policies.0.policy_action.reroute_params.0.service_ip.ipv4.value == "10.0.0.17"
+      - result.response.policies.0.policy_action.reroute_params.0.service_ip.ipv4.value == "{{ overlay_subnet.private_ip3 }}"
     fail_msg: " Unable to create PBR with vpc with source network and destination external with reroute action and and udp port "
     success_msg: " PBR with vpc with source network and destination external with reroute action and any udp ports created successfully "
 
@@ -636,7 +684,7 @@
     todelete: "{{ todelete + [  result.ext_id ] }}"
 ##################################################################################################################
 - name: Create PBR with vpc, source network, external destination, with reroute action and icmp
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
     state: present
     priority: "{{ priority.7 }}"
@@ -691,7 +739,7 @@
     todelete: "{{ todelete + [  result.ext_id ] }}"
 ##################################################################################################################
 - name: Create PBR with vpc, source network, external destination, with forward action and icmp
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
     state: present
     priority: "{{ priority.9 }}"
@@ -747,7 +795,7 @@
     todelete: "{{ todelete + [  result.ext_id ] }}"
 ##################################################################################################################
 - name: List pbrs using name filter criteria
-  ntnx_pbrs_info_v2:
+  nutanix.ncp.ntnx_pbrs_info_v2:
     filter: "name eq '{{pbr_name}}9'"
   register: result
   ignore_errors: true
@@ -757,6 +805,8 @@
     that:
       - result.response is defined
       - result.response | length == 1
+      - result.total_available_results is defined
+      - result.total_available_results > 0
       - result.response[0].ext_id == "{{ todelete[-1] }}"
       - result.response[0].name == "{{pbr_name}}9"
       - result.response[0].vpc_ext_id == "{{pbr.vpc.uuid}}"
@@ -773,7 +823,7 @@
 ###############################################################################################################################
 
 - name: Delete pbr with check mode enabled
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     state: absent
     ext_id: "{{ todelete[0] }}"
   register: result
@@ -793,7 +843,7 @@
 ###############################################################################################################################
 
 - name: Delete all created pbrs
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     state: absent
     ext_id: "{{ item }}"
   register: result
@@ -808,9 +858,29 @@
       - result.msg == "All items completed",
     fail_msg: "Unable to delete all pbrs"
     success_msg: "All pbrs have been deleted successfully"
+
 ###############################################################################################################################
+
+- name: Delete overlay subnet
+  nutanix.ncp.ntnx_subnets_v2:
+    state: absent
+    ext_id: "{{ overlay_subnet_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+    fail_msg: "Unable to delete overlay subnet"
+    success_msg: "Overlay subnet has been deleted successfully"
+
+#################################################################################################################################
+
 - name: Delete vpc
-  ntnx_vpcs_v2:
+  nutanix.ncp.ntnx_vpcs_v2:
     state: absent
     ext_id: "{{ pbr.vpc.uuid }}"
   register: result

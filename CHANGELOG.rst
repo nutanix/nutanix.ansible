@@ -4,6 +4,97 @@ Nutanix.Ncp Release Notes
 
 .. contents:: Topics
 
+v2.3.0
+======
+
+Release Summary
+---------------
+
+This release introduces new modules for OVA and Password Management in Nutanix Prism Central, along with major improvements and bug fixes across multiple modules. Built on v4.1 APIs/SDKs.
+
+New Modules
+-----------
+
+- ntnx_ova_v2 - Create, Update and Delete OVA in Nutanix Prism Central.
+- ntnx_ova_info_v2 - Fetch information about OVA in Nutanix Prism Central.
+- ntnx_ova_deploy_vm_v2 - Deploy a VM from an OVA in Nutanix Prism Central.
+- ntnx_ova_download_v2 - Download an OVA from Nutanix Prism Central.
+- ntnx_password_managers_info_v2 - Fetch information about Password Managers in Nutanix Prism Central.
+- ntnx_password_managers_v2 - Update Password of System Users in Nutanix Prism Central.
+- ntnx_pc_tasks_info_v2 - Fetch information about PC Tasks in Nutanix Prism Central.
+- ntnx_pc_task_abort_v2 - Abort a PC Task in Nutanix Prism Central.
+- ntnx_vms_disks_migrate_v2 - Migrate disks of a VM in Nutanix Prism Central.
+
+Bugfixes
+--------
+
+- ntnx_vms_ngt_v2 - [Bug] Documentation is incorrect in module ntnx_vms_ngt_v2 [https://github.com/nutanix/nutanix.ansible/issues/693]
+- ntnx_vms_ngt_insert_iso_v2 - [Bug] How to unmount NGT ISO after install? [https://github.com/nutanix/nutanix.ansible/issues/739]
+- ntnx_clusters_v2 - [Bug] Data type mismatch for categories attribute in module ntnx_clusters_v2 [https://github.com/nutanix/nutanix.ansible/issues/759]
+
+Minor Changes
+-------------
+
+- ntnx_security_rules_v2 - [Imprv] add support for additional fields in ntnx_security_rules_v2 [https://github.com/nutanix/nutanix.ansible/issues/719]
+- ntnx_vms_power_actions_v2 - [Imprv] add examples for module ntnx_vms_power_actions_v2 [https://github.com/nutanix/nutanix.ansible/issues/727]
+- ntnx_volume_groups_v2 - [Feat] Add update support to ntnx_volume_groups_v2 Ansible module [https://github.com/nutanix/nutanix.ansible/issues/705]
+- ntnx_vms_v2 - [Imprv] add automatic cluster selection verification to ntnx_vms_v2 tests [https://github.com/nutanix/nutanix.ansible/issues/715]
+- ntnx_vms_v2 - [Imprv] add functionality to specify project to module ntnx_vms_v2 [https://github.com/nutanix/nutanix.ansible/issues/690]
+- ntnx_vms_v2 - [Imprv] add support for additional fields in nics in ntnx_vms_v2 [https://github.com/nutanix/nutanix.ansible/issues/724]
+- ntnx_images_v2 - [Imprv] add tests for creating images and OVAs using Objects Lite Source [https://github.com/nutanix/nutanix.ansible/issues/717]
+- ntnx_images_v2 - [Imprv] add complete example playbook for module ntnx_images_v2 covering multiple image sources and operations [https://github.com/nutanix/nutanix.ansible/issues/718]
+- All info modules - [Imprv] Enhance Info Modules to Return Total Entities Count for Improved Data Retrieval [https://github.com/nutanix/nutanix.ansible/issues/614]
+- All modules - [Imprv] add functionality to disable the state which are not applicable for all the modules [https://github.com/nutanix/nutanix.ansible/issues/746]
+- ntnx_prism_vm_inventory - [Imprv] add functionality to be able to set a variable when using module ntnx_prism_vm_inventory [https://github.com/nutanix/nutanix.ansible/issues/644]
+- requirements.txt - [Imprv] Remove extra python packages from the requirements.txt file [https://github.com/nutanix/nutanix.ansible/issues/785]
+
+v2.2.0
+======
+
+Release Summary
+---------------
+
+Releasing new modules for Object Stores, Service Accounts and Several Bugs using PC GA v4.1 sdks
+
+New Modules
+-----------
+
+- ntnx_users_v2 - Create Service account in Nutanix Prism Central using ntnx_users_v2 module.
+- ntnx_users_api_key_v2 - Generate or Delete API key for a Service account user in Nutanix Prism Central.
+- ntnx_users_api_key_info_v2 - Fetch API key information for a Service account user in Nutanix Prism Central.
+- ntnx_users_revoke_api_key_v2 - Revoke API key for a Service account user in Nutanix Prism Central.
+- ntnx_object_stores_v2 - Create, Update and Delete object stores in Nutanix Prism Central.
+- ntnx_object_stores_info_v2 - Fetch information about object stores in Nutanix Prism Central.
+- ntnx_object_stores_certificate_v2 - Create, Update and Delete object stores certificates in Nutanix Prism Central.
+- ntnx_object_stores_certificate_info_v2 - Fetch information about object stores certificates in Nutanix Prism Central.
+
+Bugfixes
+--------
+
+- ntnx_acps - [Bug] Fix comparison of old_context_list and update_context_list in module ntnx_acps [https://github.com/nutanix/nutanix.ansible/issues/475]
+- ntnx_prism_vm_inventory - [Bug] API failure is not in shown while creating dynamic inventory [https://github.com/nutanix/nutanix.ansible/issues/421]
+- ntnx_prism_vm_inventory - [Bug] Results of VMs is not more then 500 by default in module inventory [https://github.com/nutanix/nutanix.ansible/issues/354]
+- ntnx_prism_vm_inventory - [Bug] galaxy.ansible doc for ntnx_prism_vm_inventory is having Documentation Syntax Error. [https://github.com/nutanix/nutanix.ansible/issues/453]
+- ntnx_protection_rules - [Bug] Fix invalid OU check in user_groups module [https://github.com/nutanix/nutanix.ansible/issues/481]
+- ntnx_security_rules - [Bug] Purpose field mandatory to update the security policy from Ansible in module ntnx_security_rules [https://github.com/nutanix/nutanix.ansible/issues/485]
+- ntnx_vmm - [Bug] "not enough positional arguments" in module plugins/modules/ntnx_vmy.py, line 881 [https://github.com/nutanix/nutanix.ansible/issues/465]
+- ntnx_vms - [Bug] Attaching image to existing disk in module ntnx_vms [https://github.com/nutanix/nutanix.ansible/issues/454]
+- ntnx_vms - [Bug] Cannot assign IP address on an unmanaged network in module ntnx_vms [https://github.com/nutanix/nutanix.ansible/issues/593]
+- ntnx_vms_info_v2 - [Bug] Can't fetch all VMs [https://github.com/nutanix/nutanix.ansible/issues/662]
+- ntnx_vms_v2 - [Bug] No disk resizing in module ntnx_vms_v2 [https://github.com/nutanix/nutanix.ansible/issues/578]
+- ntnx_vms_v2 - [Bug] state absent does not respect --check mode in module nutanix_vms [https://github.com/nutanix/nutanix.ansible/issues/534]
+- recovery_plans - [Bug] recovery_plan fails to create in module plugin_modules/prism/recovery_plans.py [https://github.com/nutanix/nutanix.ansible/issues/515]
+- v3 modules - [Bug] "Failed to convert API response into JSON" in all modules of Nutanix.ncp ansible collection [https://github.com/nutanix/nutanix.ansible/issues/490]
+
+Minor Changes
+-------------
+
+- Check mode for delete - [Imprv] add functionality check_mode to module ntnx_vms [https://github.com/nutanix/nutanix.ansible/issues/334]
+- Documentation changes - [Imprv] Add detailed doc for using uuid in modules [https://github.com/nutanix/nutanix.ansible/issues/433]
+- ntnx_prism_vm_inventory - [Imprv] Add support for retrieving all VMs without specifying length in inventory plugin [https://github.com/nutanix/nutanix.ansible/issues/651]
+- ntnx_prism_vm_inventory - [Imprv] Make changes to include project_reference in dynamic inventory for groupping [https://github.com/nutanix/nutanix.ansible/issues/500]
+- ntnx_vms_v2 - [Imprv] add functionality uefi boot_order to module ntnx_vms_v2 [https://github.com/nutanix/nutanix.ansible/issues/579]
+
 v2.1.1
 ======
 
@@ -15,7 +106,7 @@ Releasing this to make it inline with guidelines of Redhat by removing version c
 Bugfixes
 --------
 
-- requirements file - [Bug] The entries in the requirements file MUST NOT have a version cap or be fixed [[\#631](https://github.com/nutanix/nutanix.ansible/issues/631)]
+- requirements file - [Bug] The entries in the requirements file MUST NOT have a version cap or be fixed [https://github.com/nutanix/nutanix.ansible/issues/631]
 
 v2.1.0
 ======
@@ -165,7 +256,7 @@ Deprecating support for ansible-core less than v2.15.0
 Breaking Changes / Porting Guide
 --------------------------------
 
-- nutanix.ncp collection - Due to all versions of ansible-core version less than v2.15.0 are EOL, we are also deprecating support for same and minimum version to use this collection is ansible-core==2.15.0. [[\#479](https://github.com/nutanix/nutanix.ansible/issues/479)]
+- nutanix.ncp collection - Due to all versions of ansible-core version less than v2.15.0 are EOL, we are also deprecating support for same and minimum version to use this collection is ansible-core==2.15.0. [https://github.com/nutanix/nutanix.ansible/issues/479]
 
 v1.9.1
 ======
@@ -178,26 +269,26 @@ This release included bug fixes and improvement.
 Minor Changes
 -------------
 
-- docs - [Imprv] add doc regarding running integration tests locally [[\#435](https://github.com/nutanix/nutanix.ansible/issues/435)]
-- info modules - [Imprv] add examples for custom_filter  [[\#416](https://github.com/nutanix/nutanix.ansible/issues/416)]
-- ndb clones - [Imprv] Enable database clones and clone refresh using latest snapshot flag [[\#391](https://github.com/nutanix/nutanix.ansible/issues/391)]
-- ndb clones - [Imprv] add examples for NDB database clone under examples folder [[\#386](https://github.com/nutanix/nutanix.ansible/issues/386)]
-- ntnx_prism_vm_inventory - Add support for PC Categories [[\#405](https://github.com/nutanix/nutanix.ansible/issues/405)]
-- ntnx_prism_vm_inventory - [Imprv] add examples for dynamic inventory using ntnx_prism_vm_inventory  [[\#401](https://github.com/nutanix/nutanix.ansible/issues/401)]
-- ntnx_vms - [Imprv] add possibility to specify / modify vm user ownership and project [[\#378](https://github.com/nutanix/nutanix.ansible/issues/378)]
-- ntnx_vms - owner association upon vm creation module [[\#359](https://github.com/nutanix/nutanix.ansible/issues/359)]
-- ntnx_vms_info - [Imprv] add examples with guest customization for module ntnx_vms [[\#395](https://github.com/nutanix/nutanix.ansible/issues/395)]
+- docs - [Imprv] add doc regarding running integration tests locally [https://github.com/nutanix/nutanix.ansible/issues/435]
+- info modules - [Imprv] add examples for custom_filter  [https://github.com/nutanix/nutanix.ansible/issues/416]
+- ndb clones - [Imprv] Enable database clones and clone refresh using latest snapshot flag [https://github.com/nutanix/nutanix.ansible/issues/391]
+- ndb clones - [Imprv] add examples for NDB database clone under examples folder [https://github.com/nutanix/nutanix.ansible/issues/386]
+- ntnx_prism_vm_inventory - Add support for PC Categories [https://github.com/nutanix/nutanix.ansible/issues/405]
+- ntnx_prism_vm_inventory - [Imprv] add examples for dynamic inventory using ntnx_prism_vm_inventory  [https://github.com/nutanix/nutanix.ansible/issues/401]
+- ntnx_vms - [Imprv] add possibility to specify / modify vm user ownership and project [https://github.com/nutanix/nutanix.ansible/issues/378]
+- ntnx_vms - owner association upon vm creation module [https://github.com/nutanix/nutanix.ansible/issues/359]
+- ntnx_vms_info - [Imprv] add examples with guest customization for module ntnx_vms [https://github.com/nutanix/nutanix.ansible/issues/395]
 
 Bugfixes
 --------
 
-- ntnx_foundation - [Bug] Error when Clusters Block is missing in module ntnx_foundation [[\#397](https://github.com/nutanix/nutanix.ansible/issues/397)]
-- ntnx_ndb_time_machines_info - [Bug] ntnx_ndb_time_machines_info not fetching all attributes when name is used for fetching [[\#418](https://github.com/nutanix/nutanix.ansible/issues/418)]
-- ntnx_security_rules - Fix Syntax Errors in Create App Security Rule Example [[\#394](https://github.com/nutanix/nutanix.ansible/pull/394/files)]
-- ntnx_vms - [Bug] Error when updating size_gb using the int filter in module ntnx_vms [[\#400](https://github.com/nutanix/nutanix.ansible/issues/400)]
-- ntnx_vms - [Bug] hard_poweroff has been moved to state from operation [[\#415](https://github.com/nutanix/nutanix.ansible/issues/415)]
-- ntnx_vms_clone - [Bug] cannot change boot_config when cloning in module ntnx_vms_clone [[\#360](https://github.com/nutanix/nutanix.ansible/issues/359)]
-- website - [Bug] Github page deployment action is failing. [[\#483](https://github.com/nutanix/nutanix.ansible/issues/483)]
+- ntnx_foundation - [Bug] Error when Clusters Block is missing in module ntnx_foundation [https://github.com/nutanix/nutanix.ansible/issues/397]
+- ntnx_ndb_time_machines_info - [Bug] ntnx_ndb_time_machines_info not fetching all attributes when name is used for fetching [https://github.com/nutanix/nutanix.ansible/issues/418]
+- ntnx_security_rules - Fix Syntax Errors in Create App Security Rule Example [https://github.com/nutanix/nutanix.ansible/pull/394/files]
+- ntnx_vms - [Bug] Error when updating size_gb using the int filter in module ntnx_vms [https://github.com/nutanix/nutanix.ansible/issues/400]
+- ntnx_vms - [Bug] hard_poweroff has been moved to state from operation [https://github.com/nutanix/nutanix.ansible/issues/415]
+- ntnx_vms_clone - [Bug] cannot change boot_config when cloning in module ntnx_vms_clone [https://github.com/nutanix/nutanix.ansible/issues/359]
+- website - [Bug] Github page deployment action is failing. [https://github.com/nutanix/nutanix.ansible/issues/483]
 
 v1.9.0
 ======
@@ -205,8 +296,8 @@ v1.9.0
 Minor Changes
 -------------
 
-- ntnx_profiles_info - [Impr] Develop ansible module for getting available IPs for given network profiles in NDB [\#345](https://github.com/nutanix/nutanix.ansible/issues/345)
-- ntnx_security_rules - [Imprv] Flow Network Security Multi-Tier support in Security Policy definition [\#319](https://github.com/nutanix/nutanix.ansible/issues/319)
+- ntnx_profiles_info - [Impr] Develop ansible module for getting available IPs for given network profiles in NDB [https://github.com/nutanix/nutanix.ansible/issues/345]
+- ntnx_security_rules - [Imprv] Flow Network Security Multi-Tier support in Security Policy definition [https://github.com/nutanix/nutanix.ansible/issues/319]
 
 Deprecated Features
 -------------------
@@ -216,11 +307,11 @@ Deprecated Features
 Bugfixes
 --------
 
-- info modules - [Bug] Multiple filters params are not considered for fetching entities in PC based info modules [[\#352](https://github.com/nutanix/nutanix.ansible/issues/352)]
-- ntnx_foundation - [Bug] clusters parameters not being passed to Foundation Server in module nutanix.ncp.ntnx_foundation [[\#307](https://github.com/nutanix/nutanix.ansible/issues/307)]
-- ntnx_karbon_clusters - [Bug] error in sample karbon/create_k8s_cluster.yml [[\#349](https://github.com/nutanix/nutanix.ansible/issues/349)]
-- ntnx_karbon_clusters - [Bug] impossible to deploy NKE cluster with etcd using disk smaller than 120GB [[\#350](https://github.com/nutanix/nutanix.ansible/issues/350)]
-- ntnx_subnets - [Bug] wrong virtual_switch selected in module ntnx_subnets [\#328](https://github.com/nutanix/nutanix.ansible/issues/328)
+- info modules - [Bug] Multiple filters params are not considered for fetching entities in PC based info modules [https://github.com/nutanix/nutanix.ansible/issues/352]
+- ntnx_foundation - [Bug] clusters parameters not being passed to Foundation Server in module nutanix.ncp.ntnx_foundation [https://github.com/nutanix/nutanix.ansible/issues/307]
+- ntnx_karbon_clusters - [Bug] error in sample karbon/create_k8s_cluster.yml [https://github.com/nutanix/nutanix.ansible/issues/349]
+- ntnx_karbon_clusters - [Bug] impossible to deploy NKE cluster with etcd using disk smaller than 120GB [https://github.com/nutanix/nutanix.ansible/issues/350]
+- ntnx_subnets - [Bug] wrong virtual_switch selected in module ntnx_subnets [https://github.com/nutanix/nutanix.ansible/issues/328]
 
 New Modules
 -----------
@@ -273,20 +364,20 @@ v1.7.0
 Minor Changes
 -------------
 
-- examples - [Imprv] Add version related notes to examples [\#279](https://github.com/nutanix/nutanix.ansible/issues/279)
-- examples - [Imprv] Fix IaaS example [\#250](https://github.com/nutanix/nutanix.ansible/issues/250)
-- examples - [Imprv] add examples of Images and Static Routes Module [\#256](https://github.com/nutanix/nutanix.ansible/issues/256)
-- ntnx_projects - [Feat] Add capability to configure role mappings with collaboration on/off in ntnx_projects [\#252](https://github.com/nutanix/nutanix.ansible/issues/252)
-- ntnx_projects - [Imprv] add vpcs and overlay subnets configure capability to module ntnx_projects [\#289](https://github.com/nutanix/nutanix.ansible/issues/289)
-- ntnx_vms - [Imprv] add functionality to set network mac_address to module ntnx_vms [\#201](https://github.com/nutanix/nutanix.ansible/issues/201)
-- nutanix.ncp.ntnx_prism_vm_inventory - [Imprv] add functionality constructed to module inventory [\#235](https://github.com/nutanix/nutanix.ansible/issues/235)
+- examples - [Imprv] Add version related notes to examples [https://github.com/nutanix/nutanix.ansible/issues/279]
+- examples - [Imprv] Fix IaaS example [https://github.com/nutanix/nutanix.ansible/issues/250]
+- examples - [Imprv] add examples of Images and Static Routes Module [https://github.com/nutanix/nutanix.ansible/issues/256]
+- ntnx_projects - [Feat] Add capability to configure role mappings with collaboration on/off in ntnx_projects [https://github.com/nutanix/nutanix.ansible/issues/252]
+- ntnx_projects - [Imprv] add vpcs and overlay subnets configure capability to module ntnx_projects [https://github.com/nutanix/nutanix.ansible/issues/289]
+- ntnx_vms - [Imprv] add functionality to set network mac_address to module ntnx_vms [https://github.com/nutanix/nutanix.ansible/issues/201]
+- nutanix.ncp.ntnx_prism_vm_inventory - [Imprv] add functionality constructed to module inventory [https://github.com/nutanix/nutanix.ansible/issues/235]
 
 Bugfixes
 --------
 
-- ntnx_projects - [Bug] Clusters and subnets configured in project are not visible in new projects UI [\#283](https://github.com/nutanix/nutanix.ansible/issues/283)
-- ntnx_vms - Subnet Name --> UUID Lookup should be PE Cluster Aware [\#260](https://github.com/nutanix/nutanix.ansible/issues/260)
-- nutanix.ncp.ntnx_prism_vm_inventory - [Bug] Inventory does not fetch more than 500 Entities [[\#228](https://github.com/nutanix/nutanix.ansible/issues/228)]
+- ntnx_projects - [Bug] Clusters and subnets configured in project are not visible in new projects UI [https://github.com/nutanix/nutanix.ansible/issues/283]
+- ntnx_vms - Subnet Name --> UUID Lookup should be PE Cluster Aware [https://github.com/nutanix/nutanix.ansible/issues/260]
+- nutanix.ncp.ntnx_prism_vm_inventory - [Bug] Inventory does not fetch more than 500 Entities [https://github.com/nutanix/nutanix.ansible/issues/228]
 
 v1.6.0
 ======
@@ -318,7 +409,7 @@ v1.4.0
 Bugfixes
 --------
 
-- Fix examples of info modules [\#226](https://github.com/nutanix/nutanix.ansible/issues/226)
+- Fix examples of info modules [https://github.com/nutanix/nutanix.ansible/issues/226]
 
 New Modules
 -----------
@@ -414,32 +505,32 @@ Minor Changes
 - Add meta file for collection
 - Allow environment variables for nutanix connection parameters
 - Codegen - Ansible code generator
-- Imprv cluster uuid [\#75](https://github.com/nutanix/nutanix.ansible/pull/75)
-- Imprv/code coverage [\#97](https://github.com/nutanix/nutanix.ansible/pull/97)
-- Imprv/vpcs network prefix [\#81](https://github.com/nutanix/nutanix.ansible/pull/81)
+- Imprv cluster uuid [https://github.com/nutanix/nutanix.ansible/pull/75]
+- Imprv/code coverage [https://github.com/nutanix/nutanix.ansible/pull/97]
+- Imprv/vpcs network prefix [https://github.com/nutanix/nutanix.ansible/pull/81]
 
 Bugfixes
 --------
 
-- Bug/cluster UUID issue68 [\#72](https://github.com/nutanix/nutanix.ansible/pull/72)
-- Client SDK with inventory [\#45](https://github.com/nutanix/nutanix.ansible/pull/45)
+- Bug/cluster UUID issue68 [https://github.com/nutanix/nutanix.ansible/pull/72]
+- Client SDK with inventory [https://github.com/nutanix/nutanix.ansible/pull/45]
 - Creating a VM based on a disk_image without specifying the size_gb
-- Fix error messages for get_uuid() reponse [\#47](https://github.com/nutanix/nutanix.ansible/pull/47)
-- Fix/integ [\#96](https://github.com/nutanix/nutanix.ansible/pull/96)
-- Sanity and python fix [\#46](https://github.com/nutanix/nutanix.ansible/pull/46)
-- Task/fix failing sanity [\#117](https://github.com/nutanix/nutanix.ansible/pull/117)
-- black fixes [\#30](https://github.com/nutanix/nutanix.ansible/pull/30)
-- black fixes [\#32](https://github.com/nutanix/nutanix.ansible/pull/32)
-- clean up pbrs.py [\#113](https://github.com/nutanix/nutanix.ansible/pull/113)
-- clear unused files and argument [\#29](https://github.com/nutanix/nutanix.ansible/pull/29)
-- code cleanup - fix github issue#59 [\#60](https://github.com/nutanix/nutanix.ansible/pull/60)
-- device index calculation fixes, updates for get by name functionality[\#254](https://github.com/nutanix/nutanix.ansible/pull/42)
-- fix project name [\#107](https://github.com/nutanix/nutanix.ansible/pull/107)
-- fixed variables names issue74 [\#77](https://github.com/nutanix/nutanix.ansible/pull/77)
-- fixes to get spec from collection [\#17](https://github.com/nutanix/nutanix.ansible/pull/17)
+- Fix error messages for get_uuid() reponse [https://github.com/nutanix/nutanix.ansible/pull/47]
+- Fix/integ [https://github.com/nutanix/nutanix.ansible/pull/96]
+- Sanity and python fix [https://github.com/nutanix/nutanix.ansible/pull/46]
+- Task/fix failing sanity [https://github.com/nutanix/nutanix.ansible/pull/117]
+- black fixes [https://github.com/nutanix/nutanix.ansible/pull/30]
+- black fixes [https://github.com/nutanix/nutanix.ansible/pull/32]
+- clean up pbrs.py [https://github.com/nutanix/nutanix.ansible/pull/113]
+- clear unused files and argument [https://github.com/nutanix/nutanix.ansible/pull/29]
+- code cleanup - fix github issue#59 [https://github.com/nutanix/nutanix.ansible/pull/60]
+- device index calculation fixes, updates for get by name functionality[https://github.com/nutanix/nutanix.ansible/pull/42]
+- fix project name [https://github.com/nutanix/nutanix.ansible/pull/107]
+- fixed variables names issue74 [https://github.com/nutanix/nutanix.ansible/pull/77]
+- fixes to get spec from collection [https://github.com/nutanix/nutanix.ansible/pull/17]
 - icmp "any" code value in module PBR
-- solve python 2.7 issues [\#41](https://github.com/nutanix/nutanix.ansible/pull/41)
-- updates for guest customization spec [\#20](https://github.com/nutanix/nutanix.ansible/pull/20)
+- solve python 2.7 issues [https://github.com/nutanix/nutanix.ansible/pull/41]
+- updates for guest customization spec [https://github.com/nutanix/nutanix.ansible/pull/20]
 
 New Modules
 -----------

@@ -1,0 +1,244 @@
+---
+# This playbook is used to test the update operation of object stores in Nutanix.
+# Update operation is used to redeploy an object store in case of deployment failure.
+# To test the update operation, we do the following:
+# 1. Create an object store with one worker node.
+# 2. We take backup of the original buckets_tools_template.yaml file.
+# 3. Modify the image tag in buckets_tools_template.yaml file to an invalid version.
+# 4. Deploy the object store with one worker node using invalid image tag, which should fail.
+# 5. List all object stores with filter to check the status of the object store, which should be in failed state.
+# 6. Restore the original buckets_tools_template.yaml file.
+# 7. Deploy the object store with one worker node using update operation, which should succeed.
+
+- name: Start update objects tests
+  ansible.builtin.debug:
+    msg: Start update objects tests
+
+- name: Backup the original buckets_tools_template.yaml file
+  ansible.builtin.shell: |
+    sshpass -p '{{ domain_manager_ssh_password }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+    {{ domain_manager_ssh_username }}@{{ ip }} << EOF
+    docker exec aoss_service_manager sh -c "
+      cd /home/nutanix/config/poseidon_master &&
+      cp buckets_tools_template.yaml buckets_tools_template_backup.yml
+    "
+    EOF
+  register: result
+  ignore_errors: true
+  changed_when: false
+
+- name: Modify the image tag in buckets_tools_template.yaml
+  ansible.builtin.shell: |
+    sshpass -p '{{ domain_manager_ssh_password }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+    {{ domain_manager_ssh_username }}@{{ ip }} << EOF
+    docker exec aoss_service_manager sh -c "
+      cd /home/nutanix/config/poseidon_master &&
+      sed -i -E 's|(image: .+/[^:]+:)[^ ]+|\1invalid-version|' buckets_tools_template.yaml
+    "
+    EOF
+  register: result
+  ignore_errors: true
+  changed_when: false
+
+- name: Deploy object store with one worker node with invalid image tag
+  nutanix.ncp.ntnx_object_stores_v2:
+    name: "{{ object_1_name }}"
+    cluster_ext_id: "{{ cluster.uuid }}"
+    description: "object store test"
+    domain: "{{ objects.domain }}"
+    num_worker_nodes: "{{ objects.num_worker_nodes }}"
+    storage_network_reference: "{{ objects.storage_network_reference.uuid }}"
+    storage_network_vip:
+      ipv4:
+        value: "{{ objects.storage_network_reference.IPs[0] }}"
+    storage_network_dns_ip:
+      ipv4:
+        value: "{{ objects.storage_network_reference.IPs[1] }}"
+    public_network_reference: "{{ objects.public_network_reference.uuid }}"
+    public_network_ips:
+      - ipv4:
+          value: "{{ objects.public_network_reference.IPs[0] }}"
+    total_capacity_gi_b: "{{ objects.total_capacity_gi_b }}"
+  register: result
+  ignore_errors: true
+
+# Deployment should fail due to invalid image tag
+- name: Deploy object store with one worker node with invalid image tag status
+  ansible.builtin.assert:
+    that:
+      - result.failed is true
+      - result.response is defined
+      - result.response.status == "FAILED"
+    success_msg: "Object store deployment failed as expected"
+    fail_msg: "Object store deployment did not fail as expected"
+
+- name: List all object stores with filter
+  nutanix.ncp.ntnx_object_stores_info_v2:
+    filter: name eq '{{ object_1_name }}'
+  register: result
+
+- name: Assert that object store has failed
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response[0].name == "{{ object_1_name }}"
+      - result.response[0].state == "OBJECT_STORE_DEPLOYMENT_FAILED"
+    success_msg: "Object store is in failed state"
+    fail_msg: "Object store is not in failed state"
+
+- name: Set object store external ID
+  ansible.builtin.set_fact:
+    object_store_ext_id: "{{ result.response[0].ext_id }}"
+
+- name: Restore the original buckets_tools_template.yaml file
+  ansible.builtin.shell: |
+    sshpass -p '{{ domain_manager_ssh_password }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+    {{ domain_manager_ssh_username }}@{{ ip }} << EOF
+    docker exec aoss_service_manager sh -c "
+      cd /home/nutanix/config/poseidon_master &&
+      mv buckets_tools_template_backup.yml buckets_tools_template.yaml
+    "
+    EOF
+  register: result
+  ignore_errors: true
+  changed_when: false
+
+- name: Generate spec for updating object store with check mode
+  nutanix.ncp.ntnx_object_stores_v2:
+    name: "ansible-object"
+    ext_id: "{{ object_store_ext_id }}"
+    description: "object store test"
+    deployment_version: "5.1.1"
+    domain: "test.domain.nutanix.com"
+    region: "us-west-1"
+    num_worker_nodes: 3
+    cluster_ext_id: "00063125-0d92-06e0-185b-ac1f6b6f97e2"
+    storage_network_reference: "13870980-c370-4aa3-846b-f6cb864f61e5"
+    storage_network_vip:
+      ipv4:
+        value: "10.30.30.10"
+    storage_network_dns_ip:
+      ipv4:
+        value: "10.30.30.11"
+    public_network_reference: "7f4a6e2b-91c2-4d9e-9f3e-2d8c1c9983a4"
+    public_network_ips:
+      - ipv4:
+          value: "10.30.30.12"
+      - ipv4:
+          value: "10.30.30.13"
+    total_capacity_gi_b: 21474836480
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Generate spec for updating object store with check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed is false
+      - result.failed is false
+      - result.response is defined
+      - result.response.cluster_ext_id == "00063125-0d92-06e0-185b-ac1f6b6f97e2"
+      - result.response.name == "ansible-object"
+      - result.response.ext_id == "{{ object_store_ext_id }}"
+      - result.response.description == "object store test"
+      - result.response.deployment_version == "5.1.1"
+      - result.response.domain == "test.domain.nutanix.com"
+      - result.response.region == "us-west-1"
+      - result.response.num_worker_nodes == 3
+      - result.response.storage_network_reference == "13870980-c370-4aa3-846b-f6cb864f61e5"
+      - result.response.storage_network_vip.ipv4.value == "10.30.30.10"
+      - result.response.storage_network_dns_ip.ipv4.value == "10.30.30.11"
+      - result.response.public_network_reference == "7f4a6e2b-91c2-4d9e-9f3e-2d8c1c9983a4"
+      - result.response.public_network_ips[0].ipv4.value == "10.30.30.12"
+      - result.response.public_network_ips[1].ipv4.value == "10.30.30.13"
+      - result.response.total_capacity_gi_b == 21474836480
+    success_msg: "Spec for updating object store is generated successfully with check mode"
+    fail_msg: "Spec for updating object store is not generated successfully with check mode"
+
+- name: Deploy object store with one worker node using update operation
+  nutanix.ncp.ntnx_object_stores_v2:
+    name: "{{ object_1_name }}"
+    ext_id: "{{ object_store_ext_id }}"
+    cluster_ext_id: "{{ cluster.uuid }}"
+    description: "object store test"
+    domain: "{{ objects.domain }}"
+    num_worker_nodes: "{{ objects.num_worker_nodes }}"
+    storage_network_reference: "{{ objects.storage_network_reference.uuid }}"
+    storage_network_vip:
+      ipv4:
+        value: "{{ objects.storage_network_reference.IPs[0] }}"
+    storage_network_dns_ip:
+      ipv4:
+        value: "{{ objects.storage_network_reference.IPs[1] }}"
+    public_network_reference: "{{ objects.public_network_reference.uuid }}"
+    public_network_ips:
+      - ipv4:
+          value: "{{ objects.public_network_reference.IPs[0] }}"
+    total_capacity_gi_b: "{{ objects.total_capacity_gi_b }}"
+  register: result
+  ignore_errors: true
+
+- name: Deploy object store with one worker node using update operation status
+  ansible.builtin.assert:
+    that:
+      - result.changed is true
+      - result.failed is false
+      - result.response is defined
+      - result.task_ext_id is defined
+      - result.response.cluster_ext_id == "{{ cluster.uuid }}"
+      - result.response.name == "{{ object_1_name }}"
+      - result.response.ext_id == "{{ object_store_ext_id }}"
+      - result.response.description == "object store test"
+      - result.response.domain == "{{ objects.domain }}"
+      - result.response.num_worker_nodes == {{ objects.num_worker_nodes }}
+      - result.response.storage_network_reference == "{{ objects.storage_network_reference.uuid }}"
+      - result.response.storage_network_vip.ipv4.value == "{{ objects.storage_network_reference.IPs[0] }}"
+      - result.response.storage_network_dns_ip.ipv4.value == "{{ objects.storage_network_reference.IPs[1] }}"
+      - result.response.public_network_reference == "{{ objects.public_network_reference.uuid }}"
+      - result.response.public_network_ips[0].ipv4.value == "{{ objects.public_network_reference.IPs[0] }}"
+      - result.response.total_capacity_gi_b == {{ objects.total_capacity_gi_b }}
+      - result.response.state == "OBJECT_STORE_AVAILABLE"
+    success_msg: "Object store is deployed successfully using update operation"
+    fail_msg: "Object store is not deployed successfully using update operation"
+
+# example of delete bucket API (delete_bucket_api):
+# https://{{ ip }}:{{ port }}/oss/api/nutanix/v3/objectstore_proxy/{{ object_store_ext_id }}/buckets/{{ objects.bucket_name }}?force_empty_bucket=true
+
+- name: Delete bucket in object store
+  ansible.builtin.uri:
+    url: "{{ delete_bucket_api }}"
+    method: DELETE
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: false
+    headers:
+      Accept: "application/json"
+    status_code: [200, 202]
+  register: result
+
+- name: Delete bucket status
+  ansible.builtin.assert:
+    that:
+      - result.failed is false
+      - result.status == 200 or result.status == 202
+    success_msg: "Bucket is deleted successfully"
+    fail_msg: "Bucket is not deleted successfully"
+
+- name: Delete object store
+  nutanix.ncp.ntnx_object_stores_v2:
+    ext_id: "{{ object_store_ext_id }}"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Delete object store status
+  ansible.builtin.assert:
+    that:
+      - result.changed is true
+      - result.failed is false
+      - result.response is defined
+      - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    success_msg: "Object store is deleted successfully"
+    fail_msg: "Object store is not deleted successfully"
