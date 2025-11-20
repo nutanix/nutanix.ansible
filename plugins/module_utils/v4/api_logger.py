@@ -7,6 +7,7 @@ __metaclass__ = type
 
 import json
 import os
+import sys
 import time
 from datetime import datetime
 
@@ -192,12 +193,19 @@ class APILogger:
     def _write_log(self, log_message):
         """Write log message to all outputs."""
         self.module.log(log_message)
+
+        log_file = os.environ.get("NUTANIX_LOG_PATH", "/var/tmp/nutanix_ansible_debug.log")
+        if log_file:
+            try:
+                with open(log_file, "a") as f:
+                    f.write(log_message + "\n")
+            except Exception:
+                pass
+
+        # Write to stderr for visibility during execution
         try:
-            log_file = os.environ.get("NUTANIX_LOG_PATH") or os.environ.get(
-                "/var/tmp/nutanix_ansible_debug.log"
-            )
-            with open(log_file, "a") as f:
-                f.write(log_message + "\n")
+            sys.stderr.write(log_message + "\n")
+            sys.stderr.flush()
         except Exception:
             pass
 
@@ -435,8 +443,8 @@ class LoggedRequestHandler:
                 error=e,
             )
 
-            # Re-raise the exception
-            raise Exception("Error logging API call: {}".format(e))
+            # Re-raise the original exception to preserve error details
+            raise
 
 
 def setup_api_logging(module, api_client):
