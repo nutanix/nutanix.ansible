@@ -121,6 +121,11 @@ error:
   returned: always
   type: bool
   sample: false
+msg:
+  description: This indicates the message if any message occurred
+  returned: When there is an error
+  type: str
+  sample: "Failed generating update ssl certificates spec"
 """
 
 import traceback  # noqa: E402
