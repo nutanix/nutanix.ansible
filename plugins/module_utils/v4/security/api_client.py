@@ -12,7 +12,7 @@ from ansible.module_utils.basic import missing_required_lib
 
 SDK_IMP_ERROR = None
 try:
-    import ntnx_datapolicies_py_client
+    import ntnx_security_py_client
 except ImportError:
     SDK_IMP_ERROR = traceback.format_exc()
 
@@ -24,17 +24,16 @@ def get_api_client(module):
     """
     if SDK_IMP_ERROR:
         module.fail_json(
-            msg=missing_required_lib("ntnx_datapolicies_py_client"),
-            exception=SDK_IMP_ERROR,
+            msg=missing_required_lib("ntnx_security_py_client"), exception=SDK_IMP_ERROR
         )
 
-    config = ntnx_datapolicies_py_client.Configuration()
+    config = ntnx_security_py_client.Configuration()
     config.host = module.params.get("nutanix_host")
     config.port = module.params.get("nutanix_port")
     config.username = module.params.get("nutanix_username")
     config.password = module.params.get("nutanix_password")
     config.verify_ssl = module.params.get("validate_certs")
-    client = ntnx_datapolicies_py_client.ApiClient(configuration=config)
+    client = ntnx_security_py_client.ApiClient(configuration=config)
 
     cred = "{0}:{1}".format(config.username, config.password)
     try:
@@ -54,28 +53,16 @@ def get_etag(data):
     Returns:
         str: etag value
     """
-    return ntnx_datapolicies_py_client.ApiClient.get_etag(data)
+    return ntnx_security_py_client.ApiClient.get_etag(data)
 
 
-def get_protection_policies_api_instance(module):
+def get_stigs_api_instance(module):
     """
-    This method will return data policies api instance.
+    This method will return STIGsApi instance.
     Args:
         module (object): Ansible module object
-    Returns:
-        api_instance (object): data policies api instance
+    return:
+        api_instance (object): STIGs api instance
     """
     client = get_api_client(module)
-    return ntnx_datapolicies_py_client.ProtectionPoliciesApi(client)
-
-
-def get_storage_policies_api_instance(module):
-    """
-    This method will return storage policies api instance.
-    Args:
-        module (object): Ansible module object
-    Returns:
-        api_instance (object): storage policies api instance
-    """
-    client = get_api_client(module)
-    return ntnx_datapolicies_py_client.StoragePoliciesApi(client)
+    return ntnx_security_py_client.STIGsApi(client)
