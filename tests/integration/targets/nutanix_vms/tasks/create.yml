@@ -153,6 +153,48 @@
 - name: VM with CentOS-7-cloud-init image with disk image size
   nutanix.ncp.ntnx_vms:
     state: present
+    name: VM with guest customization script
+    timezone: "UTC"
+    cluster:
+      name: "{{ cluster.name }}"
+    disks:
+      - type: "DISK"
+        size_gb: 10
+        clone_image:
+          name: "{{ ubuntu }}"
+        bus: "SCSI"
+    guest_customization:
+      type: "cloud_init"
+      script: |
+        #cloud-config
+        chpasswd:
+          list: |
+            root: "{{ password }}"
+            expire: False
+        fqdn: myNutanixVM
+      is_overridable: true
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+      - result.response.status.name == 'VM with guest customization script'
+      - result.response.status.resources.guest_customization.is_overridable == true
+      - result.response.status.resources.guest_customization.cloud_init is defined
+
+- name: Adding VM uuid to todelete list
+  ansible.builtin.set_fact:
+    todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+  when: result.response.status.state == 'COMPLETE'
+
+#################################################################################
+
+- name: VM with CentOS-7-cloud-init image with disk image size
+  nutanix.ncp.ntnx_vms:
+    state: present
     name: VM with CentOS-7-cloud-init image
     memory_gb: 1
     timezone: "UTC"

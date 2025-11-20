@@ -48,8 +48,7 @@
             ~ (hostvars[inventory_hostname].cluster_uuid | default(''))
             ~ '.nutanix3.'
             ~ hostvars[inventory_hostname].uuid
-            ~ '.nutanix4.'
-            ~ hostvars[inventory_hostname].description
+            ~ '.nutanix4'
             ~ '.com'
           }}
 
