@@ -126,9 +126,6 @@
   register: result
   ignore_errors: true
 
-- ansible.builtin.debug:
-    var: result
-
 - name: Create storage policy with all attributes status
   ansible.builtin.assert:
     that:
