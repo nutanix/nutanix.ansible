@@ -426,7 +426,6 @@ def get_module_spec():
     )
 
     module_args = dict(
-        name=dict(type="str"),
         ext_id=dict(type="str"),
         checksum=dict(
             type="dict",
