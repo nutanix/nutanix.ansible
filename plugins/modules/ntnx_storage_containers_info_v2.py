@@ -106,6 +106,11 @@ response:
                 "storage_pool_ext_id": "487c142e-6c41-4b10-9585-4feac6bd3c68",
                 "tenant_id": null
             }
+msg:
+  description: This indicates the message if any message occurred
+  returned: When there is an error
+  type: str
+  sample: "Api Exception raised while fetching storage containers info"
 error:
     description: The error message if an error occurs.
     type: str

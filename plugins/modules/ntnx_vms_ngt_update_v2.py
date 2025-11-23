@@ -91,6 +91,11 @@ changed:
     type: bool
     returned: always
     sample: false
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error, module is idempotent
+    type: str
+    sample: "Api Exception raised while updating NGT"
 error:
     description: The error message, if any.
     type: str
