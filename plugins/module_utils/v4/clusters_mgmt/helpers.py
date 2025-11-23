@@ -69,3 +69,43 @@ def get_storage_container(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching storage container info using ext_id",
         )
+
+
+def get_ssl_certificates(module, api_instance, ext_id):
+    """
+    This method will return SSL certificate info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: SSLCertificateApi instance from sdk
+        ext_id (str): cluster external ID
+    return:
+        SSL certificate info (object): SSL certificate info
+    """
+    try:
+        return api_instance.get_ssl_certificate(clusterExtId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching SSL certificate info using cluster ext_id",
+        )
+
+
+def get_cluster_profile(module, api_instance, ext_id):
+    """
+    This method will return cluster profile info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: ClusterProfilesApi instance from sdk
+        ext_id (str): cluster profile external ID
+    return:
+        cluster profile info (object): cluster profile info
+    """
+    try:
+        return api_instance.get_cluster_profile_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching cluster profile info using ext_id",
+        )

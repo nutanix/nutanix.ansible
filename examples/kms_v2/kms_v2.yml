@@ -1,0 +1,81 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create a key management server
+# 2. Update the key management server
+# 3. Fetch the key management server details
+# 4. List all key management servers
+# 5. Delete the key management server
+
+- name: Key Management Server playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        kms_name: "Key_Management_Server_1"
+        azure_kms:
+          endpoint_url: "https://example.azure.net/"
+          tenant_id: "example-tenant-id"
+          client_id: "example-client-id"
+          client_secret: "example-client-secret"
+          key_id: "example-key-id"
+          credential_expiry_date: "2026-11-01"
+          credential_expiry_date_updated: "2027-09-01"
+
+    - name: Create key management server
+      nutanix.ncp.ntnx_key_management_server_v2:
+        name: "{{ kms_name }}"
+        access_information:
+          azure_key_vault:
+            endpoint_url: "{{ azure_kms.endpoint_url }}"
+            key_id: "{{ azure_kms.key_id }}"
+            tenant_id: "{{ azure_kms.tenant_id }}"
+            client_id: "{{ azure_kms.client_id }}"
+            client_secret: "{{ azure_kms.client_secret }}"
+            credential_expiry_date: "{{ azure_kms.credential_expiry_date }}"
+      register: create_result
+      ignore_errors: true
+
+    - name: Set key management server external ID
+      ansible.builtin.set_fact:
+        kms_ext_id: "{{ create_result.ext_id }}"
+
+    - name: Update key management server
+      nutanix.ncp.ntnx_key_management_server_v2:
+        name: "{{ kms_name }}_updated"
+        ext_id: "{{ kms_ext_id }}"
+        access_information:
+          azure_key_vault:
+            endpoint_url: "{{ azure_kms.endpoint_url }}"
+            key_id: "{{ azure_kms.key_id }}"
+            tenant_id: "{{ azure_kms.tenant_id }}"
+            client_id: "{{ azure_kms.client_id }}"
+            client_secret: "{{ azure_kms.client_secret }}"
+            credential_expiry_date: "{{ azure_kms.credential_expiry_date_updated }}"
+      register: update_result
+      ignore_errors: true
+
+    - name: Fetch key management server using external ID
+      nutanix.ncp.ntnx_key_management_server_info_v2:
+        ext_id: "{{ kms_ext_id }}"
+      register: fetch_result
+      ignore_errors: true
+
+    - name: List all key management servers
+      nutanix.ncp.ntnx_key_management_server_info_v2:
+      register: list_result
+      ignore_errors: true
+
+    - name: Delete key management server
+      nutanix.ncp.ntnx_key_management_server_v2:
+        ext_id: "{{ kms_ext_id }}"
+        state: absent
+      register: delete_result
+      ignore_errors: true

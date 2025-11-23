@@ -1,0 +1,375 @@
+---
+- name: Start Key Management Server Tests
+  ansible.builtin.debug:
+    msg: start key management server tests
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set prefix name for key management servers
+  ansible.builtin.set_fact:
+    prefix_name: ansible_test
+
+- name: Set KMS name
+  ansible.builtin.set_fact:
+    kms_name: "{{ prefix_name }}_{{ random_name }}"
+
+- name: Generate spec for creating key management server using check mode
+  nutanix.ncp.ntnx_key_management_server_v2:
+    name: "Key_Management_Server_1"
+    access_information:
+      azure_key_vault:
+        endpoint_url: "https://demo-keyvault-001.vault.azure.net/"
+        key_id: "key_id"
+        tenant_id: "d4c8a8e5-91b3-4f7e-8c2e-77d6f4a22f11"
+        client_id: "e29f9c62-3e56-41d0-b123-7f8a22c0cdef"
+        client_secret: "7Z3uQ~vO4trhXk8B5M9qjwgT1pR2uC9yD1zF0wX3"
+        credential_expiry_date: "2026-09-01"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert spec generated for creating key management server using check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "Key_Management_Server_1"
+      - result.response.access_information is defined
+      - result.response.access_information.client_id == "e29f9c62-3e56-41d0-b123-7f8a22c0cdef"
+      - result.response.access_information.credential_expiry_date == "2026-09-01"
+      - result.response.access_information.endpoint_url == "https://demo-keyvault-001.vault.azure.net/"
+      - result.response.access_information.tenant_id == "d4c8a8e5-91b3-4f7e-8c2e-77d6f4a22f11"
+      - result.response.access_information.key_id == "key_id"
+    fail_msg: "Failed to generate spec for creating key management server using check mode"
+    success_msg: "Successfully generated spec for creating key management server using check mode"
+
+- name: Create key management server
+  nutanix.ncp.ntnx_key_management_server_v2:
+    name: "{{ kms_name }}"
+    access_information:
+      azure_key_vault:
+        endpoint_url: "{{ azure_kms.endpoint_url }}"
+        key_id: "{{ azure_kms.key_id }}"
+        tenant_id: "{{ azure_kms.tenant_id }}"
+        client_id: "{{ azure_kms.client_id }}"
+        client_secret: "{{ azure_kms.client_secret }}"
+        credential_expiry_date: "{{ azure_kms.credential_expiry_date }}"
+  register: create_result
+  ignore_errors: true
+
+- name: Assert key management server created successfully
+  ansible.builtin.assert:
+    that:
+      - create_result.changed == true
+      - create_result.failed == false
+      - create_result.ext_id is defined
+      - create_result.response is defined
+      - create_result.response.name == "{{ kms_name }}"
+      - create_result.response.ext_id is defined
+      - create_result.response.access_information is defined
+      - create_result.response.access_information.client_id == "{{ azure_kms.client_id }}"
+      - create_result.response.access_information.credential_expiry_date == "{{ azure_kms.credential_expiry_date }}"
+      - create_result.response.access_information.endpoint_url == "{{ azure_kms.endpoint_url }}"
+      - create_result.response.access_information.tenant_id == "{{ azure_kms.tenant_id }}"
+      - '"{{ azure_kms.key_id }}" in "{{ create_result.response.access_information.key_id }}"'
+      - create_result.task_ext_id is defined
+    fail_msg: "Failed to create key management server"
+    success_msg: "Successfully created key management server"
+
+- name: Set key management server external ID
+  ansible.builtin.set_fact:
+    kms_ext_id: "{{ create_result.ext_id }}"
+
+- name: Create key management server with invalid access information
+  nutanix.ncp.ntnx_key_management_server_v2:
+    name: "{{ kms_name }}_invalid"
+    access_information:
+      azure_key_vault:
+        endpoint_url: "https://invalid-keyvault-001.vault.azure.net/"
+        key_id: "invalid_key_id"
+        tenant_id: "ab414ed6-7d97-4f7a-b98f-fcba7cac3b8c"
+        client_id: "ae1a2b3c-5d6e-7f80-9a1b-2c3d4e5f6789"
+        client_secret: "98765432-10fe-dcba-9876-543210fedcba"
+        credential_expiry_date: "3000-09-01"
+  register: invalid_result
+  ignore_errors: true
+
+- name: Assert invalid key management server creation
+  ansible.builtin.assert:
+    that:
+      - invalid_result.changed == false
+      - invalid_result.failed == true
+      - invalid_result.error is defined
+      - invalid_result.msg == "Api Exception raised while creating Key Management Server"
+      - invalid_result.response.data.error | length > 0
+    fail_msg: "Create key management server with invalid access information did not fail as expected"
+    success_msg: "Create key management server with invalid access information failed as expected"
+
+- name: Create key management server without access information
+  nutanix.ncp.ntnx_key_management_server_v2:
+    name: "{{ kms_name }}_without_access_information"
+  register: result
+  ignore_errors: true
+
+- name: Assert key management server creation without access information
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "access_information is required when creating a key management server."
+    fail_msg: "Create key management server without access information did not fail as expected"
+    success_msg: "Create key management server without access information failed as expected"
+
+- name: Generate spec for updating key management server using check mode
+  nutanix.ncp.ntnx_key_management_server_v2:
+    name: "{{ kms_name }}_updated"
+    ext_id: "{{ kms_ext_id }}"
+    access_information:
+      azure_key_vault:
+        endpoint_url: "https://updated-keyvault-001.vault.azure.net/"
+        key_id: "updated_key_id"
+        tenant_id: "d4c8a8e5-1234-4f7e-8c2e-77d6f4a22f11"
+        client_id: "e29f9c62-1112-41d0-b123-7f8a22c0cdef"
+        client_secret: "9x2uQ~vO4trhXk8B5M9qjwgT1pR2uC9yD1zF0wX3"
+        credential_expiry_date: "2026-07-08"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert spec generated for updating key management server using check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == "{{ kms_ext_id }}"
+      - result.response.name == "{{ kms_name }}_updated"
+      - result.response.access_information is defined
+      - result.response.access_information.client_id == "e29f9c62-1112-41d0-b123-7f8a22c0cdef"
+      - result.response.access_information.credential_expiry_date == "2026-07-08"
+      - result.response.access_information.endpoint_url == "https://updated-keyvault-001.vault.azure.net/"
+      - result.response.access_information.tenant_id == "d4c8a8e5-1234-4f7e-8c2e-77d6f4a22f11"
+      - result.response.access_information.key_id == "updated_key_id"
+    fail_msg: "Failed to generate spec for updating key management server using check mode"
+    success_msg: "Successfully generated spec for updating key management server using check mode"
+
+- name: Update key management server
+  nutanix.ncp.ntnx_key_management_server_v2:
+    name: "{{ kms_name }}_updated"
+    ext_id: "{{ kms_ext_id }}"
+    access_information:
+      azure_key_vault:
+        endpoint_url: "{{ azure_kms.endpoint_url }}"
+        key_id: "{{ azure_kms.key_id }}"
+        tenant_id: "{{ azure_kms.tenant_id }}"
+        client_id: "{{ azure_kms.client_id }}"
+        client_secret: "{{ azure_kms.client_secret }}"
+        credential_expiry_date: "{{ azure_kms.credential_expiry_date_updated }}"
+  register: update_result
+  ignore_errors: true
+
+- name: Assert key management server updated successfully
+  ansible.builtin.assert:
+    that:
+      - update_result.changed == true
+      - update_result.failed == false
+      - update_result.ext_id == "{{ kms_ext_id }}"
+      - update_result.response is defined
+      - update_result.response.name == "{{ kms_name }}_updated"
+      - update_result.response.ext_id == "{{ kms_ext_id }}"
+      - update_result.response.access_information is defined
+      - update_result.response.access_information.client_id == "{{ azure_kms.client_id }}"
+      - update_result.response.access_information.tenant_id == "{{ azure_kms.tenant_id }}"
+      - update_result.response.access_information.credential_expiry_date == "{{ azure_kms.credential_expiry_date_updated }}"
+      - update_result.response.access_information.endpoint_url == "{{ azure_kms.endpoint_url }}"
+      - '"{{ azure_kms.key_id }}" in "{{ update_result.response.access_information.key_id }}"'
+      - update_result.task_ext_id is defined
+    fail_msg: "Failed to update key management server"
+    success_msg: "Successfully updated key management server"
+
+- name: Check Idempotency by updating key management server with same values
+  nutanix.ncp.ntnx_key_management_server_v2:
+    name: "{{ kms_name }}_updated"
+    ext_id: "{{ kms_ext_id }}"
+    access_information:
+      azure_key_vault:
+        endpoint_url: "{{ azure_kms.endpoint_url }}"
+        key_id: "{{ azure_kms.key_id }}"
+        tenant_id: "{{ azure_kms.tenant_id }}"
+        client_id: "{{ azure_kms.client_id }}"
+        client_secret: "{{ azure_kms.client_secret }}"
+        credential_expiry_date: "{{ azure_kms.credential_expiry_date_updated }}"
+  register: idempotency_result
+  ignore_errors: true
+
+- name: Assert idempotency
+  ansible.builtin.assert:
+    that:
+      - idempotency_result.msg == "Nothing to change."
+      - idempotency_result.failed == false
+      - idempotency_result.changed == false
+      - idempotency_result.skipped == true
+    fail_msg: "Idempotency check failed"
+    success_msg: "Idempotency check passed"
+
+- name: Update key management with invalid external ID
+  nutanix.ncp.ntnx_key_management_server_v2:
+    ext_id: "b1b2c3d4-e5f6-7890-abcd-ef0123456789"
+    name: "{{ kms_name }}_updated"
+    access_information:
+      azure_key_vault:
+        endpoint_url: "{{ azure_kms.endpoint_url }}"
+        key_id: "{{ azure_kms.key_id }}"
+        tenant_id: "{{ azure_kms.tenant_id }}"
+        client_id: "{{ azure_kms.client_id }}"
+        client_secret: "{{ azure_kms.client_secret }}"
+        credential_expiry_date: "{{ azure_kms.credential_expiry_date }}"
+  register: invalid_ext_id_result
+  ignore_errors: true
+
+- name: Assert updating key management server with invalid external ID
+  ansible.builtin.assert:
+    that:
+      - invalid_ext_id_result.changed == false
+      - invalid_ext_id_result.failed == true
+      - invalid_ext_id_result.error is defined
+      - invalid_ext_id_result.msg == "Api Exception raised while fetching Key Management Server info using external ID"
+      - invalid_ext_id_result.response.data.error | length > 0
+    fail_msg: "Update key management server with invalid external ID did not fail as expected"
+    success_msg: "Update key management server with invalid external ID failed as expected"
+
+- name: Update key management server with invalid access information
+  nutanix.ncp.ntnx_key_management_server_v2:
+    ext_id: "{{ kms_ext_id }}"
+    name: "{{ kms_name }}_updated"
+    access_information:
+      azure_key_vault:
+        endpoint_url: "https://invalid-url.vault.azure.net/"
+        key_id: "invalid_key_id"
+        tenant_id: "a1b2c3d4-e5f6-7890-abcd-ef0123456789"
+        client_id: "b0a1c2d3-e4f5-6789-0abc-def987654321"
+        client_secret: "c1d2e3f4-5678-90ab-cdef-1234567890ab"
+        credential_expiry_date: "2026-07-08"
+  register: invalid_result
+  ignore_errors: true
+
+- name: Assert invalid key management server update
+  ansible.builtin.assert:
+    that:
+      - invalid_result.changed == false
+      - invalid_result.failed == true
+      - invalid_result.response.error_messages | length > 0
+      - invalid_result.response.status == "FAILED"
+    fail_msg: "Update key management server with invalid access information did not fail as expected"
+    success_msg: "Update key management server with invalid access information failed as expected"
+
+- name: Fetch key management server using external ID
+  nutanix.ncp.ntnx_key_management_server_info_v2:
+    ext_id: "{{ kms_ext_id }}"
+  register: fetch_result
+  ignore_errors: true
+
+- name: Assert fetch result
+  ansible.builtin.assert:
+    that:
+      - fetch_result.changed == false
+      - fetch_result.failed == false
+      - fetch_result.response is defined
+      - fetch_result.response.ext_id == "{{ kms_ext_id }}"
+      - fetch_result.response.access_information is defined
+      - fetch_result.response.access_information.client_id == "{{ azure_kms.client_id }}"
+      - fetch_result.response.access_information.tenant_id == "{{ azure_kms.tenant_id }}"
+      - fetch_result.response.access_information.credential_expiry_date == "{{ azure_kms.credential_expiry_date_updated }}"
+      - fetch_result.response.access_information.endpoint_url == "{{ azure_kms.endpoint_url }}"
+      - '"{{ azure_kms.key_id }}" in "{{ fetch_result.response.access_information.key_id }}"'
+    fail_msg: "Failed to fetch key management server"
+    success_msg: "Successfully fetched key management server"
+
+- name: Fetch key management server using invalid external ID
+  nutanix.ncp.ntnx_key_management_server_info_v2:
+    ext_id: "d4e5f6a7-b8c9-0123-4567-89abcdef0123"
+  register: invalid_fetch_result
+  ignore_errors: true
+
+- name: Assert invalid fetch result
+  ansible.builtin.assert:
+    that:
+      - invalid_fetch_result.changed == false
+      - invalid_fetch_result.failed == true
+      - invalid_fetch_result.error is defined
+      - invalid_fetch_result.msg == "Api Exception raised while fetching Key Management Server info using external ID"
+      - invalid_fetch_result.response.data.error | length > 0
+    fail_msg: "Fetch key management server using invalid external ID did not fail as expected"
+    success_msg: "Fetch key management server using invalid external ID failed as expected"
+
+- name: List all key management servers
+  nutanix.ncp.ntnx_key_management_server_info_v2:
+  register: list_result
+  ignore_errors: true
+
+- name: Assert list result
+  ansible.builtin.assert:
+    that:
+      - list_result.changed == false
+      - list_result.failed == false
+      - list_result.response is defined
+      - list_result.response | length > 0
+      - list_result.total_available_results > 0
+    fail_msg: "Failed to list key management servers"
+    success_msg: "Successfully listed key management servers"
+
+- name: Delete key management server with check mode
+  nutanix.ncp.ntnx_key_management_server_v2:
+    ext_id: "{{ kms_ext_id }}"
+    state: absent
+  register: result
+  check_mode: true
+
+- name: Assert delete key management server with check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.msg == "Key Management Server with ext_id:{{ kms_ext_id }} will be deleted."
+    fail_msg: "Delete key management server with check mode failed"
+    success_msg: "Delete key management server with check mode succeeded"
+
+- name: Delete key management server using invalid external ID
+  nutanix.ncp.ntnx_key_management_server_v2:
+    ext_id: "b1b2c3d4-e5f6-7890-abcd-ef0123456789"
+    state: absent
+  register: invalid_delete_result
+  ignore_errors: true
+
+- name: Assert invalid delete result
+  ansible.builtin.assert:
+    that:
+      - invalid_delete_result.changed == false
+      - invalid_delete_result.failed == true
+      - invalid_delete_result.error is defined
+      - invalid_delete_result.msg == "Api Exception raised while deleting Key Management Server"
+      - invalid_delete_result.response.data.error | length > 0
+    fail_msg: "Delete key management server using invalid external ID did not fail as expected"
+    success_msg: "Delete key management server using invalid external ID failed as expected"
+
+- name: Delete key management server
+  nutanix.ncp.ntnx_key_management_server_v2:
+    ext_id: "{{ kms_ext_id }}"
+    state: absent
+  register: delete_result
+  ignore_errors: true
+
+- name: Assert key management server deleted successfully
+  ansible.builtin.assert:
+    that:
+      - delete_result.changed == true
+      - delete_result.failed == false
+      - delete_result.ext_id == "{{ kms_ext_id }}"
+      - delete_result.response is defined
+      - delete_result.task_ext_id is defined
+      - delete_result.response.status == "SUCCEEDED"
+    fail_msg: "Failed to delete key management server"
+    success_msg: "Successfully deleted key management server"
