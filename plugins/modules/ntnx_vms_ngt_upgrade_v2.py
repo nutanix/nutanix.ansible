@@ -111,6 +111,11 @@ task_ext_id:
     description: The external ID of the task associated with the NGT upgrade.
     type: str
     returned: when the task_ext_id is available
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error or module is idempotent
+    type: str
+    sample: "ext_id is required to upgrade NGT"
 error:
     description: The error message, if any.
     type: str

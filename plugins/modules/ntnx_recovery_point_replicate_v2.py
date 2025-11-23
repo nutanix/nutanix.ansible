@@ -114,6 +114,11 @@ changed:
     returned: always
     type: bool
     sample: true
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while replicating recovery point"
 error:
     description: Error message if any
     returned: when an error occurs

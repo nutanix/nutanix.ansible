@@ -72,6 +72,12 @@ changed:
     returned: always
     sample: false
 
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while fetching user api keys info"
+
 error:
     description:
         - Error message if any error occurs.
