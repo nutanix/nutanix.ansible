@@ -67,6 +67,18 @@ def get_clusters_api_instance(module):
     return ntnx_clustermgmt_py_client.ClustersApi(client)
 
 
+def get_cluster_profiles_api_instance(module):
+    """
+    This method will return cluster profiles api instance from sdk
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        ClusterProfilesApi: ClusterProfilesApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.ClusterProfilesApi(client)
+
+
 def get_storage_containers_api_instance(module):
     """
     This method will return storage containers api instance from sdk
