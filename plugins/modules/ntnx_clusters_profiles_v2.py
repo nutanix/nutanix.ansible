@@ -37,6 +37,7 @@ options:
   name:
     description:
       - The name of the cluster profile.
+      - Mandatory for create operation.
     type: str
     required: false
   description:
@@ -152,7 +153,7 @@ options:
             type: str
   smtp_server:
     description:
-      - SMTP servers on a cluster. This is part of payload for cluster update operation only.
+      - SMTP servers on a cluster.
     type: dict
     required: false
     suboptions:
@@ -241,7 +242,8 @@ options:
           - "SSL"
   nfs_subnet_whitelist:
     description:
-      - NFS subnet allowlist addresses. This is part of the payload for cluster update operation only.
+      - NFS subnet allowlist addresses.
+      - This is a part of payload for both clusters create and update operations.
     type: list
     elements: str
     required: false
