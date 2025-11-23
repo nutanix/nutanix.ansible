@@ -329,6 +329,8 @@ def check_kms_idempotency(old_spec, update_spec):
         update_spec["access_information"].pop("client_secret", None)
         update_spec["access_information"].pop("key_id", None)
         update_spec["access_information"].pop("truncated_client_secret", None)
+    old_spec.pop("creation_timestamp", None)
+    update_spec.pop("creation_timestamp", None)
     # converting credential expiry date to string
     old_spec["access_information"]["credential_expiry_date"] = str(
         old_spec["access_information"]["credential_expiry_date"]
