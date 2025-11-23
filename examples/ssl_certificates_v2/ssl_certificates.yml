@@ -1,0 +1,41 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Update SSL Certificates
+# 2. Get SSL Certificates
+
+- name: SSL Certificates playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        cluster:
+          uuid: "25147856-1234-3245-9658-415847582369"
+        ssl_certificate:
+          private_key_algorithm: "RSA_2048"
+          passphrase: "nutanix"
+          private_key: "private_key"
+          public_certificate: "public_certificate"
+          ca_chain: "ca_chain"
+
+    - name: Update SSL Certificates
+      nutanix.ncp.ntnx_ssl_certificates_v2:
+        ext_id: "{{ cluster.uuid }}"
+        private_key_algorithm: "{{ ssl_certificate.private_key_algorithm }}"
+        passphrase: "{{ ssl_certificate.passphrase }}"
+        private_key: "{{ ssl_certificate.private_key }}"
+        public_certificate: "{{ ssl_certificate.public_certificate }}"
+        ca_chain: "{{ ssl_certificate.ca_chain }}"
+      register: result
+
+    - name: Get SSL Certificates
+      nutanix.ncp.ntnx_ssl_certificates_info_v2:
+        ext_id: "{{ cluster.uuid }}"
+      register: result
