@@ -965,6 +965,16 @@
   register: result
   ignore_errors: true
 
+- name: Set ntp_server_ip_list
+  ansible.builtin.set_fact:
+    ntp_server_ip_list:
+      - ipv4:
+          value: "{{ cluster_profiles[0].ntp_server_ip_list[0].ipv4.value }}"
+          prefix_length: "{{ cluster_profiles[0].ntp_server_ip_list[0].ipv4.prefix_length | int }}"
+      - ipv4:
+          value: "{{ cluster_profiles[0].ntp_server_ip_list[1].ipv4.value }}"
+          prefix_length: "{{ cluster_profiles[0].ntp_server_ip_list[1].ipv4.prefix_length | int }}"
+
 - name: Verify cluster profile update all attributes
   ansible.builtin.assert:
     that:
@@ -976,10 +986,12 @@
       - result.response.allowed_overrides | length == 1
       - result.response.name_server_ip_list[0].ipv4.value == "{{ cluster_profiles[0].name_server_ip_list[0].ipv4.value }}"
       - result.response.name_server_ip_list[0].ipv4.prefix_length == {{ cluster_profiles[0].name_server_ip_list[0].ipv4.prefix_length | int }}
-      - result.response.ntp_server_ip_list[0].ipv4.value == "{{ cluster_profiles[0].ntp_server_ip_list[0].ipv4.value }}"
-      - result.response.ntp_server_ip_list[0].ipv4.prefix_length == {{ cluster_profiles[0].ntp_server_ip_list[0].ipv4.prefix_length | int }}
-      - result.response.ntp_server_ip_list[1].ipv4.value == "{{ cluster_profiles[0].ntp_server_ip_list[1].ipv4.value }}"
-      - result.response.ntp_server_ip_list[1].ipv4.prefix_length == {{ cluster_profiles[0].ntp_server_ip_list[1].ipv4.prefix_length | int }}
+      - result.response.ntp_server_ip_list[0].ipv4.value in ntp_server_ip_list | map(attribute='ipv4.value') | list
+      - result.response.ntp_server_ip_list[1].ipv4.value in ntp_server_ip_list | map(attribute='ipv4.value') | list
+      - (result.response.ntp_server_ip_list[0].ipv4.prefix_length | int) in (ntp_server_ip_list | map(attribute='ipv4.prefix_length') | map('int') | list)
+      - (result.response.ntp_server_ip_list[1].ipv4.prefix_length | int) in (ntp_server_ip_list | map(attribute='ipv4.prefix_length') | map('int') | list)
+      - result.response.ntp_server_ip_list | length == 2
+      - result.response.ntp_server_ip_list[0].ipv4.value != result.response.ntp_server_ip_list[1].ipv4.value
       - result.response.smtp_server.email_address == "{{ cluster_profiles[0].smtp_server.email_address }}"
       - result.response.smtp_server.type == "{{ cluster_profiles[0].smtp_server.type }}"
       - result.response.smtp_server.server.port == {{ cluster_profiles[0].smtp_server.server.port | int }}
