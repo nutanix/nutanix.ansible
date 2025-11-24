@@ -580,6 +580,7 @@ def get_module_spec():
         ),
         start_time=dict(type="str"),
         sync_replication_auto_suspend_timeout_seconds=dict(type="int"),
+        is_replication_paused=dict(type="bool"),
     )
     replication_configurations_spec = dict(
         source_location_label=dict(type="str", required=True),
@@ -654,6 +655,18 @@ def create_protection_policy(module, protection_policies, result):
 
 
 def check_for_idempotency(old_spec, update_spec):
+
+    if len(old_spec.get("replication_configurations", [])) != len(
+        update_spec.get("replication_configurations", [])
+    ):
+        return False
+    for i in range(len(old_spec.get("replication_configurations", []))):
+        old_spec.get("replication_configurations", [])[i].get("schedule", {}).pop(
+            "schedule_ext_id", None
+        )
+        update_spec.get("replication_configurations", [])[i].get("schedule", {}).pop(
+            "schedule_ext_id", None
+        )
     if old_spec != update_spec:
         return False
     return True
@@ -679,8 +692,9 @@ def update_protection_policy(module, protection_policies, result):
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
-
-    if check_for_idempotency(old_spec, update_spec):
+    old_spec_dict = strip_internal_attributes(old_spec.to_dict())
+    update_spec_dict = strip_internal_attributes(update_spec.to_dict())
+    if check_for_idempotency(old_spec_dict, update_spec_dict):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.")
 

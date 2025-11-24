@@ -1343,6 +1343,7 @@
         schedule:
           recovery_point_type: "CRASH_CONSISTENT"
           recovery_point_objective_time_seconds: 7200
+          is_replication_paused: false
           retention:
             linear_retention:
               local: 2
@@ -1353,6 +1354,7 @@
         schedule:
           recovery_point_type: "CRASH_CONSISTENT"
           recovery_point_objective_time_seconds: 7200
+          is_replication_paused: false
           retention:
             linear_retention:
               local: 2
@@ -1392,21 +1394,25 @@
         and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label2}}_updated"
         and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
         and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 7200
+        and result.response.replication_configurations[0].schedule.is_replication_paused == false
         and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
         or (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label2}}_updated"
         and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label1}}_updated"
         and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
         and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 7200
+        and result.response.replication_configurations[0].schedule.is_replication_paused == false
         and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
       - (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label1}}_updated"
         and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label2}}_updated"
         and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
         and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 7200
+        and result.response.replication_configurations[1].schedule.is_replication_paused == false
         and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
         or (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label2}}_updated"
         and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label1}}_updated"
         and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
         and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 7200
+        and result.response.replication_configurations[1].schedule.is_replication_paused == false
         and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
       - result.response.replication_configurations[0] != result.response.replication_configurations[1]
       - result.response.category_ids[0] == "{{category_ext_id_1}}"
@@ -1441,6 +1447,7 @@
         schedule:
           recovery_point_type: "CRASH_CONSISTENT"
           recovery_point_objective_time_seconds: 7200
+          is_replication_paused: false
           retention:
             linear_retention:
               local: 2
@@ -1451,6 +1458,7 @@
         schedule:
           recovery_point_type: "CRASH_CONSISTENT"
           recovery_point_objective_time_seconds: 7200
+          is_replication_paused: false
           retention:
             linear_retention:
               local: 2
