@@ -847,7 +847,6 @@
     allowed_overrides:
       - "{{ cluster_profiles[1].allowed_overrides[0] }}"
     name_server_ip_list: []
-    ntp_server_ip_list: []
     smtp_server:
       email_address: "{{ cluster_profiles[1].smtp_server.email_address }}"
       server:
@@ -881,7 +880,6 @@
       - result.response.allowed_overrides[0] == "{{ cluster_profiles[1].allowed_overrides[0] }}"
       - result.response.allowed_overrides | length == 1
       - result.response.name_server_ip_list == None
-      - result.response.ntp_server_ip_list == None
       - result.response.smtp_server.email_address == "{{ cluster_profiles[1].smtp_server.email_address }}"
       - result.response.nfs_subnet_whitelist == None
       - result.response.snmp_config.users[0].username == "{{ cluster_profiles[1].snmp_config.users[0].username }}"
@@ -907,6 +905,9 @@
       - ipv4:
           value: "{{ cluster_profiles[0].ntp_server_ip_list[0].ipv4.value }}"
           prefix_length: "{{ cluster_profiles[0].ntp_server_ip_list[0].ipv4.prefix_length | int }}"
+      - ipv4:
+          value: "{{ cluster_profiles[0].ntp_server_ip_list[1].ipv4.value }}"
+          prefix_length: "{{ cluster_profiles[0].ntp_server_ip_list[1].ipv4.prefix_length | int }}"
     smtp_server:
       email_address: "{{ cluster_profiles[0].smtp_server.email_address }}"
       server:
@@ -977,6 +978,8 @@
       - result.response.name_server_ip_list[0].ipv4.prefix_length == {{ cluster_profiles[0].name_server_ip_list[0].ipv4.prefix_length | int }}
       - result.response.ntp_server_ip_list[0].ipv4.value == "{{ cluster_profiles[0].ntp_server_ip_list[0].ipv4.value }}"
       - result.response.ntp_server_ip_list[0].ipv4.prefix_length == {{ cluster_profiles[0].ntp_server_ip_list[0].ipv4.prefix_length | int }}
+      - result.response.ntp_server_ip_list[1].ipv4.value == "{{ cluster_profiles[0].ntp_server_ip_list[1].ipv4.value }}"
+      - result.response.ntp_server_ip_list[1].ipv4.prefix_length == {{ cluster_profiles[0].ntp_server_ip_list[1].ipv4.prefix_length | int }}
       - result.response.smtp_server.email_address == "{{ cluster_profiles[0].smtp_server.email_address }}"
       - result.response.smtp_server.type == "{{ cluster_profiles[0].smtp_server.type }}"
       - result.response.smtp_server.server.port == {{ cluster_profiles[0].smtp_server.server.port | int }}
@@ -1034,6 +1037,9 @@
       - ipv4:
           value: "{{ cluster_profiles[0].ntp_server_ip_list[0].ipv4.value }}"
           prefix_length: "{{ cluster_profiles[0].ntp_server_ip_list[0].ipv4.prefix_length | int }}"
+      - ipv4:
+          value: "{{ cluster_profiles[0].ntp_server_ip_list[1].ipv4.value }}"
+          prefix_length: "{{ cluster_profiles[0].ntp_server_ip_list[1].ipv4.prefix_length | int }}"
     smtp_server:
       email_address: "{{ cluster_profiles[0].smtp_server.email_address }}"
       server:
