@@ -631,24 +631,6 @@
     fail_msg: "Generated spec for restoring PC using check mode failed"
     success_msg: "Generated spec for restoring PC using check mode passed"
 
-- name: Remove ip_addresses field from external networks since it is a readonly field
-  ansible.builtin.set_fact:
-    restore_point_details: >-
-      {{
-        restore_point_details
-        | combine({
-            'domain_manager': restore_point_details.domain_manager | combine({
-              'network': restore_point_details.domain_manager.network | combine({
-                'external_networks': (
-                  restore_point_details.domain_manager.network.external_networks
-                  | map('combine', {'ip_addresses': omit})
-                  | list
-                )
-              })
-            })
-        }, recursive=True)
-      }}
-
 - name: Restore PC
   nutanix.ncp.ntnx_pc_restore_v2:
     nutanix_host: "{{ ip_pe }}"
@@ -667,7 +649,11 @@
         external_address: "{{ restore_point_details.response.domain_manager.network.external_address }}"
         name_servers: "{{ restore_point_details.response.domain_manager.network.name_servers }}"
         ntp_servers: "{{ restore_point_details.response.domain_manager.network.ntp_servers }}"
-        external_networks: "{{ restore_point_details.response.domain_manager.network.external_networks }}"
+        external_networks:
+          - default_gateway: "{{ restore_point_details.response.domain_manager.network.external_networks[0].default_gateway }}"
+            subnet_mask: "{{ restore_point_details.response.domain_manager.network.external_networks[0].subnet_mask }}"
+            ip_ranges: "{{ restore_point_details.response.domain_manager.network.external_networks[0].ip_ranges }}"
+            network_ext_id: "{{ restore_point_details.response.domain_manager.network.external_networks[0].network_ext_id }}"
   register: result
   ignore_errors: true
 
