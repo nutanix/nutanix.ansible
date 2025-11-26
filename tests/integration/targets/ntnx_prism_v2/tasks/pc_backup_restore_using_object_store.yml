@@ -792,7 +792,7 @@
     success_msg: "Generated spec for restoring PC using check mode passed"
 
 - name: Remove ip_addresses field from external networks since it is a readonly field
-  set_fact:
+  ansible.builtin.set_fact:
     restore_point_details: >-
       {{
         restore_point_details
