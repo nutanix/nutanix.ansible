@@ -631,6 +631,24 @@
     fail_msg: "Generated spec for restoring PC using check mode failed"
     success_msg: "Generated spec for restoring PC using check mode passed"
 
+- name: Remove ip_addresses field from external networks since it is a readonly field
+  set_fact:
+    restore_point_details: >-
+      {{
+        restore_point_details
+        | combine({
+            'domain_manager': restore_point_details.domain_manager | combine({
+              'network': restore_point_details.domain_manager.network | combine({
+                'external_networks': (
+                  restore_point_details.domain_manager.network.external_networks
+                  | map('combine', {'ip_addresses': omit})
+                  | list
+                )
+              })
+            })
+        }, recursive=True)
+      }}
+
 - name: Restore PC
   nutanix.ncp.ntnx_pc_restore_v2:
     nutanix_host: "{{ ip_pe }}"
