@@ -68,6 +68,7 @@ options:
   encryption_spec:
     description:
       - Encryption parameters for the entities governed by the Storage Policy.
+      - Supported on NCI Ultimate license or via the security add-on.
     type: dict
     suboptions:
       encryption_state:
@@ -83,6 +84,7 @@ options:
   qos_spec:
     description:
       - Storage QOS parameters for the entities.
+      - Supported on NCI Pro license and above.
     type: dict
     suboptions:
       throttled_iops:
@@ -99,6 +101,7 @@ options:
       replication_factor:
         description:
           - Number of data copies for entities governed by the Storage Policy.
+          - Supported on clusters with AOS 6.6 or above.
         type: str
         choices:
           - TWO
