@@ -217,6 +217,13 @@ options:
               - Auto suspend timeout if there is a connection failure between locations for synchronous replication.
             type: int
             required: false
+          is_replication_paused:
+            description:
+              - Indicates whether replication is paused for all VMs and volume groups associated with the remote replication location.
+              - This field is ignored in create requests (treated as a no-op) and can only be used in update requests to pause or resume scheduled replication.
+              - Only 0 RPO schedules support this field.
+            type: bool
+            required: false
   category_ids:
     description:
       - Specifies the list of external identifiers of categories that must be added to the protection policy.
