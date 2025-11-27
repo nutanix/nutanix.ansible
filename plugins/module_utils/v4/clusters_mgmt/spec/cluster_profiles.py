@@ -232,7 +232,7 @@ class ClusterProfileSpecs:
             choices=["SHA256", "SHA384", "SHA512"],
             obj=clusters_sdk.EncryptionAlgorithm,
         ),
-        encryption_key=dict(type="str"),
+        encryption_key=dict(type="str", no_log=True),
         encryption_key_id=dict(type="int"),
     )
 

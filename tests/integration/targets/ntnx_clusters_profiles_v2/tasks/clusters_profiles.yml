@@ -1033,7 +1033,7 @@
       - result.response.name_server_ip_list[0].ipv4.value == "{{ cluster_profiles[0].name_server_ip_list[0].ipv4.value }}"
       - result.response.name_server_ip_list[0].ipv4.prefix_length == {{ cluster_profiles[0].name_server_ip_list[0].ipv4.prefix_length | int }}
       - result.response.ntp_server_ip_list[0].ipv4.value == "{{ cluster_profiles[0].ntp_server_ip_list[0].ipv4.value }}"
-      - result.response.ntp_server_ip_list[0].ipv4.prefix_length ==
+      - result.response.ntp_server_ip_list[0].ipv4.prefix_length == {{ cluster_profiles[0].ntp_server_ip_list[0].ipv4.prefix_length | int }}
       - result.response.ntp_server_config_list[0].ntp_server_address.ipv4.value == "{{ cluster_profiles[0].ntp_server_config_list[0].ntp_server_address.ipv4.value }}"
       - result.response.ntp_server_config_list[0].ntp_server_address.ipv4.prefix_length == {{ cluster_profiles[0].ntp_server_config_list[0].ntp_server_address.ipv4.prefix_length | int }}
       - result.response.ntp_server_config_list[0].encryption_algorithm == "{{ cluster_profiles[0].ntp_server_config_list[0].encryption_algorithm }}"

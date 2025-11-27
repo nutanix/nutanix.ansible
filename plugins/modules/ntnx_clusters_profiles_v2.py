@@ -151,6 +151,83 @@ options:
             description:
               - The value of the NTP server FQDN.
             type: str
+  ntp_server_config_list:
+    description:
+      - NTP server configuration list.
+    type: list
+    elements: dict
+    required: false
+    suboptions:
+      ntp_server_address:
+        description:
+          - NTP server address.
+        type: dict
+        required: true
+        suboptions:
+          ipv4:
+            description:
+              - The IPv4 address of the NTP server.
+            type: dict
+            required: false
+            suboptions:
+              value:
+                description:
+                  - The value of the NTP server IP address.
+                type: str
+                required: true
+              prefix_length:
+                description:
+                  - The prefix for the NTP server IP address.
+                type: int
+                required: false
+                default: 32
+          ipv6:
+            description:
+              - The IPv6 address of the NTP server.
+            type: dict
+            required: false
+            suboptions:
+              value:
+                description:
+                  - The value of the NTP server IPv6 address.
+                type: str
+                required: true
+              prefix_length:
+                description:
+                  - The prefix for the NTP server IPv6 address.
+                type: int
+                required: false
+                default: 128
+          fqdn:
+            description:
+              - The Fully Qualified Domain Name (FQDN) of the NTP server.
+            type: dict
+            required: false
+            suboptions:
+              value:
+                description:
+                  - The value of the NTP server FQDN.
+                type: str
+                required: false
+      encryption_algorithm:
+        description:
+          - Encryption algorithm used for NTP server authentication.
+        type: str
+        required: false
+        choices:
+          - "SHA256"
+          - "SHA384"
+          - "SHA512"
+      encryption_key:
+        description:
+          - Encryption key in hexadecimal format used for NTP server authentication.
+        type: str
+        required: false
+      encryption_key_id:
+        description:
+          - Encryption key Id used for NTP server authentication.
+        type: int
+        required: false
   smtp_server:
     description:
       - SMTP servers on a cluster.
