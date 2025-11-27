@@ -484,15 +484,32 @@ def run_module():
         "response": None,
         "ext_id": None,
     }
-    state = module.params["state"]
+    state = module.params.get("state")
     storage_policies = get_storage_policies_api_instance(module)
-    if state == "present":
-        if module.params.get("ext_id"):
-            update_storage_policy(module, storage_policies, result)
-        else:
-            create_storage_policy(module, storage_policies, result)
-    else:
+
+    if state == "absent":
         delete_storage_policy(module, storage_policies, result)
+        module.exit_json(**result)
+
+    if module.params.get("ext_id"):
+        update_storage_policy(module, storage_policies, result)
+        module.exit_json(**result)
+
+    has_storage_specs = any(
+        [
+            module.params.get("compression_spec"),
+            module.params.get("encryption_spec"),
+            module.params.get("fault_tolerance_spec"),
+        ]
+    )
+
+    if not has_storage_specs and not module.params.get("qos_spec"):
+        module.fail_json(
+            msg="If compression_state, encryption_state, or replication_factor are "
+            "intended to be system-derived, ensure that the qos_spec block is included."
+        )
+
+    create_storage_policy(module, storage_policies, result)
     module.exit_json(**result)
 
 
