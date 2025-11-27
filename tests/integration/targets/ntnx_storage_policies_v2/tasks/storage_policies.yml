@@ -243,7 +243,8 @@
       - result is defined
       - result.changed == false
       - result.failed == true
-      - result.msg == "If compression_state, encryption_state, or replication_factor are intended to be system-derived, ensure that the qos_spec block is included."
+      - result.msg ==
+        "If compression_state, encryption_state, or replication_factor are intended to be system-derived, ensure that the qos_spec block is included."
     success_msg: "Create storage policy without providing storage attributes failed as expected"
     fail_msg: "Create storage policy without providing storage attributes did not fail as expected"
 
