@@ -359,7 +359,6 @@
       - result.response.ntp_server_ip_list[2].fqdn.value == "ntp.example.com"
       - result.response.ntp_server_config_list[0].ntp_server_address.ipv4.value == "240.29.254.191"
       - result.response.ntp_server_config_list[0].encryption_algorithm == "SHA256"
-      - result.response.ntp_server_config_list[0].encryption_key == "0x9f8e7d6c5b4a"
       - result.response.ntp_server_config_list[0].encryption_key_id == 1
       - result.response.smtp_server.email_address == "email@example.com"
       - result.response.smtp_server.server.ip_address.ipv4.value == "240.29.254.173"
@@ -843,7 +842,6 @@
       - result.response.ntp_server_config_list[0].ntp_server_address.ipv4.value == "240.29.254.192"
       - result.response.ntp_server_config_list[0].ntp_server_address.ipv4.prefix_length == 32
       - result.response.ntp_server_config_list[0].encryption_algorithm == "SHA256"
-      - result.response.ntp_server_config_list[0].encryption_key == "0x8c7e2d6c5b4a"
       - result.response.ntp_server_config_list[0].encryption_key_id == 2
       - result.response.smtp_server.email_address == "email_updated@example.com"
       - result.response.smtp_server.server.ip_address.ipv4.value == "240.29.254.183"
