@@ -54,8 +54,6 @@ jobs:
           export NDB_HOST=${{ secrets.NDB_HOST }}
           export NDB_PASSWORD=${{ secrets.NDB_PASSWORD }}
           export NDB_USERNAME=${{ secrets.NDB_USERNAME }}
-          export NUTANIX_DEBUG=${{ secrets.NUTANIX_DEBUG }}
-          export NUTANIX_LOG_PATH=${{ secrets.NUTANIX_LOG_PATH }}
           args="${{ github.event.client_payload.slash_command.args.all }}"
           flag=""
           if [ "$args" = "allow-disabled" ]; then
