@@ -72,3 +72,15 @@ def get_stigs_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_security_py_client.STIGsApi(client)
+
+
+def get_kms_api_instance(module):
+    """
+    This method will return Key Management Server Api instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Key Management Server api instance
+    """
+    client = get_api_client(module)
+    return ntnx_security_py_client.KeyManagementServersApi(client)
