@@ -220,6 +220,22 @@ class ClusterProfileSpecs:
         ),
     )
 
+    ntp_server_config_spec = dict(
+        ntp_server_address=dict(
+            type="dict",
+            options=ip_address_or_fqdn,
+            obj=clusters_sdk.IPAddressOrFQDN,
+            required=True,
+        ),
+        encryption_algorithm=dict(
+            type="str",
+            choices=["SHA256", "SHA384", "SHA512"],
+            obj=clusters_sdk.EncryptionAlgorithm,
+        ),
+        encryption_key=dict(type="str"),
+        encryption_key_id=dict(type="int"),
+    )
+
     cluster_profile = dict(
         ext_id=dict(type="str"),
         name=dict(type="str"),
@@ -265,6 +281,12 @@ class ClusterProfileSpecs:
         ),
         pulse_status=dict(
             type="dict", options=pulse_status_spec, obj=clusters_sdk.PulseStatus
+        ),
+        ntp_server_config_list=dict(
+            type="list",
+            elements="dict",
+            options=ntp_server_config_spec,
+            obj=clusters_sdk.NtpServerConfig,
         ),
     )
 

@@ -267,6 +267,14 @@
           prefix_length: 128
       - fqdn:
           value: "ntp.example.com"
+    ntp_server_config_list:
+      - ntp_server_address:
+          ipv4:
+            value: "240.29.254.191"
+            prefix_length: 32
+        encryption_algorithm: "SHA256"
+        encryption_key: "0x9f8e7d6c5b4a"
+        encryption_key_id: 1
     smtp_server:
       email_address: "email@example.com"
       server:
@@ -349,6 +357,10 @@
       - result.response.ntp_server_ip_list[0].ipv4.value == "240.29.254.171"
       - result.response.ntp_server_ip_list[1].ipv6.value == "1a7d:9b64:df8d:dfd8:39c6:c4ea:e35c:0ba4"
       - result.response.ntp_server_ip_list[2].fqdn.value == "ntp.example.com"
+      - result.response.ntp_server_config_list[0].ntp_server_address.ipv4.value == "240.29.254.191"
+      - result.response.ntp_server_config_list[0].encryption_algorithm == "SHA256"
+      - result.response.ntp_server_config_list[0].encryption_key == "0x9f8e7d6c5b4a"
+      - result.response.ntp_server_config_list[0].encryption_key_id == 1
       - result.response.smtp_server.email_address == "email@example.com"
       - result.response.smtp_server.server.ip_address.ipv4.value == "240.29.254.173"
       - result.response.smtp_server.server.ip_address.ipv6.value == "1a7d:9a64:c18d:dfd8:39c6:c4ea:e35c:0ba4"
@@ -403,6 +415,14 @@
       - ipv4:
           value: "{{ cluster_profiles[0].ntp_server_ip_list[0].ipv4.value }}"
           prefix_length: "{{ cluster_profiles[0].ntp_server_ip_list[0].ipv4.prefix_length | int }}"
+    ntp_server_config_list:
+      - ntp_server_address:
+          ipv4:
+            value: "{{ cluster_profiles[0].ntp_server_config_list[0].ntp_server_address.ipv4.value }}"
+            prefix_length: "{{ cluster_profiles[0].ntp_server_config_list[0].ntp_server_address.ipv4.prefix_length | int }}"
+        encryption_algorithm: "{{ cluster_profiles[0].ntp_server_config_list[0].encryption_algorithm }}"
+        encryption_key: "{{ cluster_profiles[0].ntp_server_config_list[0].encryption_key }}"
+        encryption_key_id: "{{ cluster_profiles[0].ntp_server_config_list[0].encryption_key_id }}"
     smtp_server:
       email_address: "{{ cluster_profiles[0].smtp_server.email_address }}"
       server:
@@ -471,6 +491,10 @@
       - result.response.name_server_ip_list[0].ipv4.prefix_length == {{ cluster_profiles[0].name_server_ip_list[0].ipv4.prefix_length | int }}
       - result.response.ntp_server_ip_list[0].ipv4.value == "{{ cluster_profiles[0].ntp_server_ip_list[0].ipv4.value }}"
       - result.response.ntp_server_ip_list[0].ipv4.prefix_length == {{ cluster_profiles[0].ntp_server_ip_list[0].ipv4.prefix_length | int }}
+      - result.response.ntp_server_config_list[0].ntp_server_address.ipv4.value == "{{ cluster_profiles[0].ntp_server_config_list[0].ntp_server_address.ipv4.value }}"
+      - result.response.ntp_server_config_list[0].ntp_server_address.ipv4.prefix_length == {{ cluster_profiles[0].ntp_server_config_list[0].ntp_server_address.ipv4.prefix_length | int }}
+      - result.response.ntp_server_config_list[0].encryption_algorithm == "{{ cluster_profiles[0].ntp_server_config_list[0].encryption_algorithm }}"
+      - result.response.ntp_server_config_list[0].encryption_key_id == {{ cluster_profiles[0].ntp_server_config_list[0].encryption_key_id }}
       - result.response.smtp_server.email_address == "{{ cluster_profiles[0].smtp_server.email_address }}"
       - result.response.smtp_server.type == "{{ cluster_profiles[0].smtp_server.type }}"
       - result.response.smtp_server.server.port == {{ cluster_profiles[0].smtp_server.server.port | int }}
@@ -531,6 +555,14 @@
       - ipv4:
           value: "{{ cluster_profiles[0].ntp_server_ip_list[0].ipv4.value }}"
           prefix_length: "{{ cluster_profiles[0].ntp_server_ip_list[0].ipv4.prefix_length | int }}"
+    ntp_server_config_list:
+      - ntp_server_address:
+          ipv4:
+            value: "{{ cluster_profiles[0].ntp_server_config_list[0].ntp_server_address.ipv4.value }}"
+            prefix_length: "{{ cluster_profiles[0].ntp_server_config_list[0].ntp_server_address.ipv4.prefix_length | int }}"
+        encryption_algorithm: "{{ cluster_profiles[0].ntp_server_config_list[0].encryption_algorithm }}"
+        encryption_key: "{{ cluster_profiles[0].ntp_server_config_list[0].encryption_key }}"
+        encryption_key_id: "{{ cluster_profiles[0].ntp_server_config_list[0].encryption_key_id }}"
     smtp_server:
       email_address: "{{ cluster_profiles[0].smtp_server.email_address }}"
       server:
@@ -600,6 +632,10 @@
       - result.response.name_server_ip_list[0].ipv4.prefix_length == {{ cluster_profiles[0].name_server_ip_list[0].ipv4.prefix_length | int }}
       - result.response.ntp_server_ip_list[0].ipv4.value == "{{ cluster_profiles[0].ntp_server_ip_list[0].ipv4.value }}"
       - result.response.ntp_server_ip_list[0].ipv4.prefix_length == {{ cluster_profiles[0].ntp_server_ip_list[0].ipv4.prefix_length | int }}
+      - result.response.ntp_server_config_list[0].ntp_server_address.ipv4.value == "{{ cluster_profiles[0].ntp_server_config_list[0].ntp_server_address.ipv4.value }}"
+      - result.response.ntp_server_config_list[0].ntp_server_address.ipv4.prefix_length == {{ cluster_profiles[0].ntp_server_config_list[0].ntp_server_address.ipv4.prefix_length | int }}
+      - result.response.ntp_server_config_list[0].encryption_algorithm == "{{ cluster_profiles[0].ntp_server_config_list[0].encryption_algorithm }}"
+      - result.response.ntp_server_config_list[0].encryption_key_id == {{ cluster_profiles[0].ntp_server_config_list[0].encryption_key_id }}
       - result.response.smtp_server.email_address == "{{ cluster_profiles[0].smtp_server.email_address }}"
       - result.response.smtp_server.type == "{{ cluster_profiles[0].smtp_server.type }}"
       - result.response.smtp_server.server.port == {{ cluster_profiles[0].smtp_server.server.port | int }}
@@ -705,6 +741,14 @@
           prefix_length: 128
       - fqdn:
           value: "ntpupdated.example.com"
+    ntp_server_config_list:
+      - ntp_server_address:
+          ipv4:
+            value: "240.29.254.192"
+            prefix_length: 32
+        encryption_algorithm: "SHA256"
+        encryption_key: "0x8c7e2d6c5b4a"
+        encryption_key_id: 2
     smtp_server:
       email_address: "email_updated@example.com"
       server:
@@ -792,6 +836,11 @@
       - result.response.ntp_server_ip_list[1].ipv6.value == "1c7d:9a64:df8d:dfd8:39c6:c4ea:e35c:0ba4"
       - result.response.ntp_server_ip_list[1].ipv6.prefix_length == 128
       - result.response.ntp_server_ip_list[2].fqdn.value == "ntpupdated.example.com"
+      - result.response.ntp_server_config_list[0].ntp_server_address.ipv4.value == "240.29.254.192"
+      - result.response.ntp_server_config_list[0].ntp_server_address.ipv4.prefix_length == 32
+      - result.response.ntp_server_config_list[0].encryption_algorithm == "SHA256"
+      - result.response.ntp_server_config_list[0].encryption_key == "0x8c7e2d6c5b4a"
+      - result.response.ntp_server_config_list[0].encryption_key_id == 2
       - result.response.smtp_server.email_address == "email_updated@example.com"
       - result.response.smtp_server.server.ip_address.ipv4.value == "240.29.254.183"
       - result.response.smtp_server.server.ip_address.ipv4.prefix_length == 32
@@ -846,6 +895,8 @@
     description: "Updated cluster profile description"
     allowed_overrides:
       - "{{ cluster_profiles[1].allowed_overrides[0] }}"
+    ntp_server_ip_list: []
+    ntp_server_config_list: []
     name_server_ip_list: []
     smtp_server:
       email_address: "{{ cluster_profiles[1].smtp_server.email_address }}"
@@ -905,9 +956,14 @@
       - ipv4:
           value: "{{ cluster_profiles[0].ntp_server_ip_list[0].ipv4.value }}"
           prefix_length: "{{ cluster_profiles[0].ntp_server_ip_list[0].ipv4.prefix_length | int }}"
-      - ipv4:
-          value: "{{ cluster_profiles[0].ntp_server_ip_list[1].ipv4.value }}"
-          prefix_length: "{{ cluster_profiles[0].ntp_server_ip_list[1].ipv4.prefix_length | int }}"
+    ntp_server_config_list:
+      - ntp_server_address:
+          ipv4:
+            value: "{{ cluster_profiles[0].ntp_server_config_list[0].ntp_server_address.ipv4.value }}"
+            prefix_length: "{{ cluster_profiles[0].ntp_server_config_list[0].ntp_server_address.ipv4.prefix_length | int }}"
+        encryption_algorithm: "{{ cluster_profiles[0].ntp_server_config_list[0].encryption_algorithm }}"
+        encryption_key: "{{ cluster_profiles[0].ntp_server_config_list[0].encryption_key }}"
+        encryption_key_id: "{{ cluster_profiles[0].ntp_server_config_list[0].encryption_key_id }}"
     smtp_server:
       email_address: "{{ cluster_profiles[0].smtp_server.email_address }}"
       server:
@@ -965,16 +1021,6 @@
   register: result
   ignore_errors: true
 
-- name: Set ntp_server_ip_list
-  ansible.builtin.set_fact:
-    ntp_server_ip_list:
-      - ipv4:
-          value: "{{ cluster_profiles[0].ntp_server_ip_list[0].ipv4.value }}"
-          prefix_length: "{{ cluster_profiles[0].ntp_server_ip_list[0].ipv4.prefix_length | int }}"
-      - ipv4:
-          value: "{{ cluster_profiles[0].ntp_server_ip_list[1].ipv4.value }}"
-          prefix_length: "{{ cluster_profiles[0].ntp_server_ip_list[1].ipv4.prefix_length | int }}"
-
 - name: Verify cluster profile update all attributes
   ansible.builtin.assert:
     that:
@@ -986,12 +1032,12 @@
       - result.response.allowed_overrides | length == 1
       - result.response.name_server_ip_list[0].ipv4.value == "{{ cluster_profiles[0].name_server_ip_list[0].ipv4.value }}"
       - result.response.name_server_ip_list[0].ipv4.prefix_length == {{ cluster_profiles[0].name_server_ip_list[0].ipv4.prefix_length | int }}
-      - result.response.ntp_server_ip_list[0].ipv4.value in ntp_server_ip_list | map(attribute='ipv4.value') | list
-      - result.response.ntp_server_ip_list[1].ipv4.value in ntp_server_ip_list | map(attribute='ipv4.value') | list
-      - (result.response.ntp_server_ip_list[0].ipv4.prefix_length | int) in (ntp_server_ip_list | map(attribute='ipv4.prefix_length') | map('int') | list)
-      - (result.response.ntp_server_ip_list[1].ipv4.prefix_length | int) in (ntp_server_ip_list | map(attribute='ipv4.prefix_length') | map('int') | list)
-      - result.response.ntp_server_ip_list | length == 2
-      - result.response.ntp_server_ip_list[0].ipv4.value != result.response.ntp_server_ip_list[1].ipv4.value
+      - result.response.ntp_server_ip_list[0].ipv4.value == "{{ cluster_profiles[0].ntp_server_ip_list[0].ipv4.value }}"
+      - result.response.ntp_server_ip_list[0].ipv4.prefix_length ==
+      - result.response.ntp_server_config_list[0].ntp_server_address.ipv4.value == "{{ cluster_profiles[0].ntp_server_config_list[0].ntp_server_address.ipv4.value }}"
+      - result.response.ntp_server_config_list[0].ntp_server_address.ipv4.prefix_length == {{ cluster_profiles[0].ntp_server_config_list[0].ntp_server_address.ipv4.prefix_length | int }}
+      - result.response.ntp_server_config_list[0].encryption_algorithm == "{{ cluster_profiles[0].ntp_server_config_list[0].encryption_algorithm }}"
+      - result.response.ntp_server_config_list[0].encryption_key_id == {{ cluster_profiles[0].ntp_server_config_list[0].encryption_key_id }}
       - result.response.smtp_server.email_address == "{{ cluster_profiles[0].smtp_server.email_address }}"
       - result.response.smtp_server.type == "{{ cluster_profiles[0].smtp_server.type }}"
       - result.response.smtp_server.server.port == {{ cluster_profiles[0].smtp_server.server.port | int }}
@@ -1049,9 +1095,14 @@
       - ipv4:
           value: "{{ cluster_profiles[0].ntp_server_ip_list[0].ipv4.value }}"
           prefix_length: "{{ cluster_profiles[0].ntp_server_ip_list[0].ipv4.prefix_length | int }}"
-      - ipv4:
-          value: "{{ cluster_profiles[0].ntp_server_ip_list[1].ipv4.value }}"
-          prefix_length: "{{ cluster_profiles[0].ntp_server_ip_list[1].ipv4.prefix_length | int }}"
+    ntp_server_config_list:
+      - ntp_server_address:
+          ipv4:
+            value: "{{ cluster_profiles[0].ntp_server_config_list[0].ntp_server_address.ipv4.value }}"
+            prefix_length: "{{ cluster_profiles[0].ntp_server_config_list[0].ntp_server_address.ipv4.prefix_length | int }}"
+        encryption_algorithm: "{{ cluster_profiles[0].ntp_server_config_list[0].encryption_algorithm }}"
+        encryption_key: "{{ cluster_profiles[0].ntp_server_config_list[0].encryption_key }}"
+        encryption_key_id: "{{ cluster_profiles[0].ntp_server_config_list[0].encryption_key_id }}"
     smtp_server:
       email_address: "{{ cluster_profiles[0].smtp_server.email_address }}"
       server:
@@ -1135,6 +1186,14 @@
       - ipv4:
           value: "{{ cluster_profiles[0].ntp_server_ip_list[0].ipv4.value }}"
           prefix_length: "{{ cluster_profiles[0].ntp_server_ip_list[0].ipv4.prefix_length | int }}"
+    ntp_server_config_list:
+      - ntp_server_address:
+          ipv4:
+            value: "{{ cluster_profiles[0].ntp_server_config_list[0].ntp_server_address.ipv4.value }}"
+            prefix_length: "{{ cluster_profiles[0].ntp_server_config_list[0].ntp_server_address.ipv4.prefix_length | int }}"
+        encryption_algorithm: "{{ cluster_profiles[0].ntp_server_config_list[0].encryption_algorithm }}"
+        encryption_key: "{{ cluster_profiles[0].ntp_server_config_list[0].encryption_key }}"
+        encryption_key_id: "{{ cluster_profiles[0].ntp_server_config_list[0].encryption_key_id }}"
     smtp_server:
       email_address: "{{ cluster_profiles[0].smtp_server.email_address }}"
       server:
