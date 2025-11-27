@@ -3,6 +3,7 @@
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: "{{ foundation_host }}"
+      enable_debug_logging: "{{ enable_debug_logging }}"
   block:
     - name: Import Tasks
       ansible.builtin.import_tasks: get_info.yml

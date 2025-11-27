@@ -6,6 +6,7 @@
       nutanix_username: "{{ ndb_username }}"
       nutanix_password: "{{ ndb_password }}"
       validate_certs: false
+      enable_debug_logging: "{{ enable_debug_logging }}"
   block:
     - name: Import tasks
       ansible.builtin.import_tasks: data_access_management_and_snapshots.yml

@@ -3,6 +3,7 @@
   module_defaults:
     nutanix.ncp.ntnx_foundation_aos_packages_info:
       nutanix_host: "{{ foundation_host }}"
+      enable_debug_logging: "{{ enable_debug_logging }}"
   block:
     - name: Import Tasks
       ansible.builtin.import_tasks: get_aos.yml
