@@ -1,0 +1,67 @@
+---
+plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
+# nutanix_host: hostname # Or set NUTANIX_HOST or NUTANIX_HOSTNAME environment variable
+# nutanix_username: username # Or set NUTANIX_USERNAME environment variable
+# nutanix_password: password # Or set NUTANIX_PASSWORD environment variable
+# nutanix_port: port # Or set NUTANIX_PORT environment variable
+# validate_certs: false # Or set NUTANIX_VALIDATE_CERTS environment variable
+# If fetch_all_vms is true, page and limit are ignored and all VMs will be fetched from the cluster.
+fetch_all_vms: false
+page: 0 # Page number to fetch VMs from, applicable only if fetch_all_vms is false.
+limit: 20 # Number of VMs to fetch per page, applicable only if fetch_all_vms is false.
+
+# Compose is used to define the host variables.
+compose:
+  # Set ansible_user to 'ansible_user' for all VMs.
+  ansible_user: "'ansible_user'"
+  # Convert memory_size_bytes to memory_gb and store in memory_gb variable.
+  memory_gb: memory_size_bytes / 1073741824 if memory_size_bytes else 0
+
+# Strict is used to enable strict mode.
+strict: true
+
+# Groups are used to group the VMs by power state, memory size, and machine type or whatever you want to group by.
+groups:
+  # Create a group for agent VMs.
+  agent_vm: is_agent_vm == true
+  # Create a group for non-agent VMs.
+  non_agent_vm: is_agent_vm == false
+  # Create a group for live migrate capable VMs.
+  live_migrate_capable: is_live_migrate_capable == true
+  # Create a group for non-live migrate capable VMs.
+  non_live_migrate_capable: is_live_migrate_capable == false
+  # Create a group for PC VMs.
+  PC_VM: machine_type == 'PC'
+  # Create a group for PSERIES VMs.
+  PSERIES_VM: machine_type == 'PSERIES'
+  # Create a group for Q35 VMs.
+  Q35_VM: machine_type == 'Q35'
+
+# Keyed groups are used to group the VMs by power state.
+# We can group the VMs by power state by adding the following keyed groups:
+# - key: power_state
+#   prefix: power
+#   separator: "_"
+# This will create the following groups:
+# - power_ON
+# - power_OFF
+# and if we have only power_ON, then we will have only power_ON group.
+keyed_groups:
+  - key: power_state
+    prefix: power
+    separator: "_"
+
+# Custom ansible host is used to define the custom ansible host for the VMs.
+# We can define the custom ansible host for the VMs by adding the following custom ansible host expression:
+# - expr: "{vm_name}.nutanix1.{vm_ext_id}.nutanix2.{cluster_name}.nutanix3.{cluster_ext_id}.nutanix4.com"
+# suppose we have a VM with the following properties:
+# - vm_name: "test_vm"
+# - vm_ext_id: "1234567890-1234-5678-9012-345678901234" # This is the external ID of the VM.
+# - cluster_name: "test_cluster"
+# - cluster_ext_id: "41587489-5147-2111-5642-985245874569" # This is the external ID of the cluster.
+# This will create the following ansible host for that VM:
+# - test_vm.nutanix1.1234567890-1234-5678-9012-345678901234.nutanix2.test_cluster.nutanix3.41587489-5147-2111-5642-985245874569.nutanix4.com
+# Allowed variables in the expression are: vm_name, vm_ext_id, cluster_name, cluster_ext_id, vm_description.
+# If you are adding vm_description in the expression, vm_description variable must be defined in all the VMs.
+custom_ansible_host:
+  expr: "{vm_name}.nutanix1.{vm_ext_id}.nutanix2.{cluster_name}.nutanix3.{cluster_ext_id}.nutanix4.{vm_description}.com"
