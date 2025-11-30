@@ -27,6 +27,7 @@ options:
         required: false
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
+      - nutanix.ncp.ntnx_logger
 author:
  - George Ghawali (@george-ghawali)
 """

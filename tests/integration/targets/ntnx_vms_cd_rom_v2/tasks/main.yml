@@ -6,6 +6,7 @@
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: "{{ validate_certs }}"
+      enable_debug_logging: "{{ enable_debug_logging }}"
   block:
     - name: Import cd_rom_operations.yml
       ansible.builtin.import_tasks: "cd_rom_operations.yml"
