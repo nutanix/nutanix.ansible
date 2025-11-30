@@ -371,14 +371,6 @@ class Entity(object):
 
         start_time = time.time()
 
-        # Parse request data for logging
-        request_data = None
-        if data is not None:
-            try:
-                request_data = json.loads(data) if isinstance(data, str) else data
-            except (ValueError, TypeError):
-                request_data = data
-
         # only jsonify if content-type supports, added to avoid incase of form-url-encodeded type data
         if self.headers["Content-Type"] == "application/json" and data is not None:
             data = self.module.jsonify(data)
@@ -438,7 +430,7 @@ class Entity(object):
                 url=url,
                 query_params=kwargs.get("query"),
                 headers=headers,
-                body=request_data,
+                body=data,
                 response=resp_json,
                 status_code=status_code,
                 elapsed_time=elapsed_time,
@@ -449,7 +441,7 @@ class Entity(object):
                 url=url,
                 query_params=kwargs.get("query"),
                 headers=headers,
-                body=request_data,
+                body=data,
                 response=None,
                 status_code=resp.status if hasattr(resp, "status") else None,
                 elapsed_time=elapsed_time,
