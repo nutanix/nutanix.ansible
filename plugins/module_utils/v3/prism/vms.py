@@ -398,9 +398,9 @@ class VM(Prism):
             return None, error
         if fpath and os.path.exists(fpath):
             with open(fpath, "rb") as f:
-                content = base64.b64encode(f.read())
+                content = base64.b64encode(f.read()).decode("ascii")
         elif script:
-            content = base64.b64encode(script.encode("ascii"))
+            content = base64.b64encode(script.encode("ascii")).decode("ascii")
         gc_spec = {"guest_customization": {}}
 
         if "sysprep" in param["type"]:
