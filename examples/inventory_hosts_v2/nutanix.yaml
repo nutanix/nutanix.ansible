@@ -26,4 +26,3 @@ groups:
   high_memory: memory_size_bytes > 8589934592 # > 8GB
   # Create a group for hosts with memory size less than or equal to 8GB.
   low_memory: memory_size_bytes <= 8589934592 # <= 8GB
-
