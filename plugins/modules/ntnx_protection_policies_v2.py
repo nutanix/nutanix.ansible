@@ -461,6 +461,12 @@ skipped:
   type: bool
   sample: false
 
+msg:
+  description: This indicates the message if any message occurred
+  returned: When there is an error, module is idempotent or check mode (in delete operation)
+  type: str
+  sample: "Api Exception raised while creating protection policy"
+
 error:
   description: This indicates the error message if any error occurred
   returned: When an error occurs
