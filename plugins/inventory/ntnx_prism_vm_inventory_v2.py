@@ -12,8 +12,6 @@ DOCUMENTATION = r"""
     short_description: Get a list of Nutanix VMs for ansible dynamic inventory using V4 APIs.
     description:
         - Get a list of Nutanix VMs for ansible dynamic inventory using V4 APIs and SDKs.
-        - This plugin uses the V4 API SDK (ntnx_vmm_py_client) instead of direct API calls to get the list of VMs.
-        - This plugin also uses the V4 API SDK (ntnx_clustermgmt_py_client) instead of direct API calls to get the list of clusters to get cluster name.
     version_added: "2.4.0"
     notes:
         - User needs to have API View access for resources for this inventory module to work.
@@ -307,8 +305,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                     # Convert response objects to dictionaries
                     for item in resp.data:
                         vms.append(strip_internal_attributes(item.to_dict()))
-                else:
-                    break
 
                 # Check if all VMs have been fetched successfully
                 total_available = getattr(resp.metadata, "total_available_results", 0)
@@ -339,35 +335,34 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         Returns the first learned/DHCP IP address found.
         """
         nics = vm.get("nics", [])
-        if nics:
-            for nic in nics:
-                network_info = nic.get("nic_network_info", {})
-                if network_info.get("nic_type") != "NORMAL_NIC":
-                    continue
-                if not network_info:
-                    continue
-                ipv4_info = network_info.get("ipv4_info")
-                ipv4_config = network_info.get("ipv4_config")
-                if ipv4_info:
-                    learned_ips = ipv4_info.get("learned_ip_addresses", [])
+        for nic in nics:
+            network_info = nic.get("nic_network_info", {})
+            if network_info.get("nic_type") != "NORMAL_NIC":
+                continue
+            if not network_info:
+                continue
+            ipv4_info = network_info.get("ipv4_info")
+            ipv4_config = network_info.get("ipv4_config")
+            if ipv4_info:
+                learned_ips = ipv4_info.get("learned_ip_addresses", [])
+                if learned_ips and len(learned_ips) > 0:
+                    first_ip = learned_ips[0]
+                    if first_ip and first_ip.get("value"):
+                        return first_ip.get("value")
+            elif ipv4_config:
+                ip_address = ipv4_config.get("ip_address")
+                if ip_address:
+                    value = ip_address.get("value")
+                    if value:
+                        return value
+            else:
+                ipv6_info = network_info.get("ipv6_info")
+                if ipv6_info:
+                    learned_ips = ipv6_info.get("learned_ipv6_addresses", [])
                     if learned_ips and len(learned_ips) > 0:
                         first_ip = learned_ips[0]
                         if first_ip and first_ip.get("value"):
                             return first_ip.get("value")
-                elif ipv4_config:
-                    ip_address = ipv4_config.get("ip_address")
-                    if ip_address:
-                        value = ip_address.get("value")
-                        if value:
-                            return value
-                else:
-                    ipv6_info = network_info.get("ipv6_info")
-                    if ipv6_info:
-                        learned_ips = ipv6_info.get("learned_ipv6_addresses", [])
-                        if learned_ips and len(learned_ips) > 0:
-                            first_ip = learned_ips[0]
-                            if first_ip and first_ip.get("value"):
-                                return first_ip.get("value")
 
         return None
 
