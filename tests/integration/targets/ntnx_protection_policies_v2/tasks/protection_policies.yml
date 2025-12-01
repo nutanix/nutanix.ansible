@@ -1611,9 +1611,6 @@
   register: result
   ignore_errors: true
 
-- ansible.builtin.debug:
-    var: result
-
 - name: Status for updating Synchronous replication protection policy for VM using is_replication_paused true
   ansible.builtin.assert:
     that:
