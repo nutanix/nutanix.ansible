@@ -1625,9 +1625,10 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
     description:
-    - Response for creating, updating, or deleting template
-    - It will return the template details if the operation is create or update
-    - It will return the task details if the operation is delete
+    - Response for creating, updating, or deleting template.
+    - If C(wait) is True, and the operation is create or update, it will return the template details.
+    - If C(wait) is True, and the operation is delete, it will return the task details.
+    - If C(wait) is False, it will return the task details.
     type: dict
     returned: always
     sample:
