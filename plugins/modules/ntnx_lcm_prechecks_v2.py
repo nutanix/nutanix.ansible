@@ -161,7 +161,7 @@ changed:
   sample: true
 msg:
   description: This indicates the message if any message occurred
-  returned: When there is an error or in delete operation
+  returned: When there is an error
   type: str
   sample: "Api Exception raised while performing LCM prechecks"
 error:
