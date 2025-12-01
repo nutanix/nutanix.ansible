@@ -12,7 +12,6 @@ DOCUMENTATION = r"""
     short_description: Get a list of Nutanix hosts for ansible dynamic inventory using V4 APIs.
     description:
         - Get a list of Nutanix hosts for ansible dynamic inventory using V4 APIs and SDKs.
-        - This plugin uses the V4 API SDK (ntnx_clustermgmt_py_client) instead of direct API calls to get the list of hosts.
     version_added: "2.4.0"
     notes:
         - User needs to have API View access for resources for this inventory module to work.
@@ -256,8 +255,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                     # Convert response objects to dictionaries
                     for item in resp.data:
                         hosts.append(strip_internal_attributes(item.to_dict()))
-                else:
-                    break
 
                 # Check if all hosts have been fetched successfully
                 total_available = getattr(resp.metadata, "total_available_results", 0)
