@@ -6,7 +6,7 @@
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: "{{ validate_certs }}"
-      enable_debug_logging: "{{ enable_debug_logging }}"
+      nutanix_debug: "{{ nutanix_debug }}"
   block:
     - name: Import get_clusters_info.yml
       ansible.builtin.import_tasks: "get_clusters_info.yml"

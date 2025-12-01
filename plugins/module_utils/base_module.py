@@ -34,7 +34,7 @@ class BaseModule(AnsibleModule):
         ),
         state=dict(type="str", choices=["present", "absent"], default="present"),
         wait=dict(type="bool", default=True),
-        enable_debug_logging=dict(
+        nutanix_debug=dict(
             type="bool", default=False, fallback=(env_fallback, ["NUTANIX_DEBUG"])
         ),
     )

@@ -13,7 +13,7 @@ class ModuleDocFragment(object):
     # Plugin options for ntnx files CRUD operations
     DOCUMENTATION = r"""
 options:
-  enable_debug_logging:
+  nutanix_debug:
         description:
             - Enable detailed debug logging for all API calls made by this module.
             - When enabled, logs will include HTTP method, URL, headers, request body, response body, status code, and elapsed time.

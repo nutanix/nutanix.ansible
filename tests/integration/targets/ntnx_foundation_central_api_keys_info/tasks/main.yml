@@ -6,14 +6,14 @@
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: false
-      enable_debug_logging: "{{ enable_debug_logging }}"
+      nutanix_debug: "{{ nutanix_debug }}"
 
     nutanix.ncp.ntnx_foundation_central_api_keys_info:
       nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: false
-      enable_debug_logging: "{{ enable_debug_logging }}"
+      nutanix_debug: "{{ nutanix_debug }}"
   block:
     - name: Import Tasks
       ansible.builtin.import_tasks: key_info.yml

@@ -9,6 +9,7 @@ import json
 import os
 import sys
 import time
+import warnings
 from datetime import datetime
 
 
@@ -26,7 +27,7 @@ class APILogger:
         """
         self.module = module
         self.enabled = (
-            module.params.get("enable_debug_logging", False)
+            module.params.get("nutanix_debug", False)
             or os.environ.get("NUTANIX_DEBUG", "false").lower() == "true"
         )
 
@@ -202,8 +203,11 @@ class APILogger:
             try:
                 with open(log_file, "a") as f:
                     f.write(log_message + "\n")
-            except Exception:
-                pass
+            except Exception as e:
+                warnings.warn(
+                    "Failed to write to API log file '{}': {}".format(log_file, str(e)),
+                    RuntimeWarning,
+                )
 
         # Write to stderr for visibility during execution
         try:
@@ -220,7 +224,14 @@ class APILogger:
         Returns:
             dict or list: Sanitized headers
         """
-        sensitive_keys = ["authorization", "password", "token", "api-key", "api_key"]
+        sensitive_keys = [
+            "authorization",
+            "password",
+            "token",
+            "api-key",
+            "api_key",
+            "secret",
+        ]
         # Defensive: handle dict or list header formats
         if isinstance(headers, dict):
             sanitized = {}
