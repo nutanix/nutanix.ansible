@@ -360,7 +360,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             vm_uuid = host_vars.get("uuid")
 
             if cluster:
-                self.inventory.add_group(cluster)
+                cluster = self.inventory.add_group(cluster)
                 self.inventory.add_child("all", cluster)
             if vm_name:
                 self.inventory.add_host(vm_name, group=cluster)
