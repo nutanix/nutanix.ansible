@@ -13,9 +13,6 @@ DOCUMENTATION = r"""
     description:
         - Get a list of Nutanix hosts for ansible dynamic inventory using V4 APIs and SDKs.
     version_added: "2.4.0"
-    notes:
-        - User needs to have API View access for resources for this inventory module to work.
-        - Requires ntnx_clustermgmt_py_client SDK to be installed.
     author:
         - George Ghawali (@george-ghawali)
     requirements:
