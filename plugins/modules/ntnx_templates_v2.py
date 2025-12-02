@@ -1624,175 +1624,179 @@ EXAMPLES = r"""
 
 RETURN = r"""
 response:
-    description: The response from the Nutanix API.
+    description:
+    - Response for creating, updating, or deleting template.
+    - If C(wait) is True, and the operation is create or update, it will return the template details.
+    - If C(wait) is False, it will return the task details.
+    - If the operation is delete, it will return the task details.
     type: dict
     returned: always
     sample:
         {
-                    "create_time": "2024-05-20T08:02:06.806063+00:00",
-                    "created_by": {
-                        "additional_attributes": null,
-                        "buckets_access_keys": null,
-                        "created_by": null,
-                        "created_time": null,
-                        "display_name": null,
-                        "email_id": null,
-                        "ext_id": "00000000-0000-0000-0000-000000000000",
-                        "first_name": null,
-                        "idp_id": null,
-                        "is_force_reset_password_enabled": null,
-                        "last_login_time": null,
-                        "last_name": null,
-                        "last_updated_time": null,
-                        "links": null,
-                        "locale": null,
-                        "middle_initial": null,
-                        "password": null,
-                        "region": null,
-                        "status": null,
-                        "tenant_id": null,
-                        "user_type": null,
-                        "username": "admin"
-                    },
-                    "ext_id": "5448bd78-5343-4e1c-8f30-9246d88c1147",
-                    "guest_update_status": null,
+            "create_time": "2024-05-20T08:02:06.806063+00:00",
+            "created_by": {
+                "additional_attributes": null,
+                "buckets_access_keys": null,
+                "created_by": null,
+                "created_time": null,
+                "display_name": null,
+                "email_id": null,
+                "ext_id": "00000000-0000-0000-0000-000000000000",
+                "first_name": null,
+                "idp_id": null,
+                "is_force_reset_password_enabled": null,
+                "last_login_time": null,
+                "last_name": null,
+                "last_updated_time": null,
+                "links": null,
+                "locale": null,
+                "middle_initial": null,
+                "password": null,
+                "region": null,
+                "status": null,
+                "tenant_id": null,
+                "user_type": null,
+                "username": "admin"
+            },
+            "ext_id": "5448bd78-5343-4e1c-8f30-9246d88c1147",
+            "guest_update_status": null,
+            "links": null,
+            "template_description": "ansible test",
+            "template_name": "rDkjscJgMJBoansible-agtemplate",
+            "template_version_spec": {
+                "create_time": "2024-05-20T08:02:06.776259+00:00",
+                "created_by": {
+                    "additional_attributes": null,
+                    "buckets_access_keys": null,
+                    "created_by": null,
+                    "created_time": null,
+                    "display_name": null,
+                    "email_id": null,
+                    "ext_id": "00000000-0000-0000-0000-000000000000",
+                    "first_name": null,
+                    "idp_id": null,
+                    "is_force_reset_password_enabled": null,
+                    "last_login_time": null,
+                    "last_name": null,
+                    "last_updated_time": null,
                     "links": null,
-                    "template_description": "ansible test",
-                    "template_name": "rDkjscJgMJBoansible-agtemplate",
-                    "template_version_spec": {
-                        "create_time": "2024-05-20T08:02:06.776259+00:00",
-                        "created_by": {
-                            "additional_attributes": null,
-                            "buckets_access_keys": null,
-                            "created_by": null,
-                            "created_time": null,
-                            "display_name": null,
-                            "email_id": null,
-                            "ext_id": "00000000-0000-0000-0000-000000000000",
-                            "first_name": null,
-                            "idp_id": null,
-                            "is_force_reset_password_enabled": null,
-                            "last_login_time": null,
-                            "last_name": null,
-                            "last_updated_time": null,
-                            "links": null,
-                            "locale": null,
-                            "middle_initial": null,
-                            "password": null,
-                            "region": null,
-                            "status": null,
-                            "tenant_id": null,
-                            "user_type": null,
-                            "username": "admin"
-                        },
-                        "ext_id": "148038b3-6e68-48d9-ba29-4c8f36798be5",
-                        "is_active_version": true,
-                        "is_gc_override_enabled": true,
-                        "links": null,
-                        "tenant_id": null,
-                        "version_description": "Created from VM: MinReqVMalaa2",
-                        "version_name": "Initial Version",
-                        "version_source": null,
-                        "version_source_discriminator": null,
-                        "vm_spec": {
-                            "apc_config": null,
-                            "availability_zone": null,
-                            "bios_uuid": null,
-                            "boot_config": {
-                                "boot_device": null,
-                                "boot_order": [
-                                    "CDROM",
-                                    "DISK",
-                                    "NETWORK"
-                                ]
-                            },
-                            "categories": [
-                                {
-                                    "ext_id": "eb8b4155-b3d1-5772-8d2f-d566d43d8e46"
-                                }
-                            ],
-                            "cd_roms": null,
-                            "cluster": {
-                                "ext_id": "00061663-9fa0-28ca-185b-ac1f6b6f97e2"
-                            },
-                            "create_time": null,
-                            "description": null,
-                            "disks": null,
-                            "enabled_cpu_features": null,
-                            "ext_id": null,
-                            "generation_uuid": null,
-                            "gpus": null,
-                            "guest_customization": null,
-                            "guest_tools": null,
-                            "hardware_clock_timezone": "UTC",
-                            "host": null,
-                            "is_agent_vm": false,
-                            "is_branding_enabled": true,
-                            "is_cpu_passthrough_enabled": false,
-                            "is_cross_cluster_migration_in_progress": null,
-                            "is_gpu_console_enabled": false,
-                            "is_live_migrate_capable": null,
-                            "is_memory_overcommit_enabled": false,
-                            "is_vcpu_hard_pinning_enabled": false,
-                            "is_vga_console_enabled": true,
-                            "links": null,
-                            "machine_type": "PC",
-                            "memory_size_bytes": 4294967296,
-                            "name": "MinReqVMalaa2",
-                            "nics": null,
-                            "num_cores_per_socket": 1,
-                            "num_numa_nodes": 0,
-                            "num_sockets": 1,
-                            "num_threads_per_core": 1,
-                            "ownership_info": null,
-                            "power_state": "ON",
-                            "protection_policy_state": null,
-                            "protection_type": null,
-                            "serial_ports": null,
-                            "source": null,
-                            "storage_config": null,
-                            "tenant_id": null,
-                            "update_time": null,
-                            "vtpm_config": {
-                                "is_vtpm_enabled": false,
-                                "version": null
-                            }
-                        }
-                    },
+                    "locale": null,
+                    "middle_initial": null,
+                    "password": null,
+                    "region": null,
+                    "status": null,
                     "tenant_id": null,
-                    "update_time": "2024-05-20T08:02:06.806063+00:00",
-                    "updated_by": {
-                        "additional_attributes": null,
-                        "buckets_access_keys": null,
-                        "created_by": null,
-                        "created_time": null,
-                        "display_name": null,
-                        "email_id": null,
-                        "ext_id": "00000000-0000-0000-0000-000000000000",
-                        "first_name": null,
-                        "idp_id": null,
-                        "is_force_reset_password_enabled": null,
-                        "last_login_time": null,
-                        "last_name": null,
-                        "last_updated_time": null,
-                        "links": null,
-                        "locale": null,
-                        "middle_initial": null,
-                        "password": null,
-                        "region": null,
-                        "status": null,
-                        "tenant_id": null,
-                        "user_type": null,
-                        "username": "admin"
+                    "user_type": null,
+                    "username": "admin"
+                },
+                "ext_id": "148038b3-6e68-48d9-ba29-4c8f36798be5",
+                "is_active_version": true,
+                "is_gc_override_enabled": true,
+                "links": null,
+                "tenant_id": null,
+                "version_description": "Created from VM: MinReqVMalaa2",
+                "version_name": "Initial Version",
+                "version_source": null,
+                "version_source_discriminator": null,
+                "vm_spec": {
+                    "apc_config": null,
+                    "availability_zone": null,
+                    "bios_uuid": null,
+                    "boot_config": {
+                        "boot_device": null,
+                        "boot_order": [
+                            "CDROM",
+                            "DISK",
+                            "NETWORK"
+                        ]
+                    },
+                    "categories": [
+                        {
+                            "ext_id": "eb8b4155-b3d1-5772-8d2f-d566d43d8e46"
+                        }
+                    ],
+                    "cd_roms": null,
+                    "cluster": {
+                        "ext_id": "00061663-9fa0-28ca-185b-ac1f6b6f97e2"
+                    },
+                    "create_time": null,
+                    "description": null,
+                    "disks": null,
+                    "enabled_cpu_features": null,
+                    "ext_id": null,
+                    "generation_uuid": null,
+                    "gpus": null,
+                    "guest_customization": null,
+                    "guest_tools": null,
+                    "hardware_clock_timezone": "UTC",
+                    "host": null,
+                    "is_agent_vm": false,
+                    "is_branding_enabled": true,
+                    "is_cpu_passthrough_enabled": false,
+                    "is_cross_cluster_migration_in_progress": null,
+                    "is_gpu_console_enabled": false,
+                    "is_live_migrate_capable": null,
+                    "is_memory_overcommit_enabled": false,
+                    "is_vcpu_hard_pinning_enabled": false,
+                    "is_vga_console_enabled": true,
+                    "links": null,
+                    "machine_type": "PC",
+                    "memory_size_bytes": 4294967296,
+                    "name": "MinReqVMalaa2",
+                    "nics": null,
+                    "num_cores_per_socket": 1,
+                    "num_numa_nodes": 0,
+                    "num_sockets": 1,
+                    "num_threads_per_core": 1,
+                    "ownership_info": null,
+                    "power_state": "ON",
+                    "protection_policy_state": null,
+                    "protection_type": null,
+                    "serial_ports": null,
+                    "source": null,
+                    "storage_config": null,
+                    "tenant_id": null,
+                    "update_time": null,
+                    "vtpm_config": {
+                        "is_vtpm_enabled": false,
+                        "version": null
                     }
                 }
+            },
+            "tenant_id": null,
+            "update_time": "2024-05-20T08:02:06.806063+00:00",
+            "updated_by": {
+                "additional_attributes": null,
+                "buckets_access_keys": null,
+                "created_by": null,
+                "created_time": null,
+                "display_name": null,
+                "email_id": null,
+                "ext_id": "00000000-0000-0000-0000-000000000000",
+                "first_name": null,
+                "idp_id": null,
+                "is_force_reset_password_enabled": null,
+                "last_login_time": null,
+                "last_name": null,
+                "last_updated_time": null,
+                "links": null,
+                "locale": null,
+                "middle_initial": null,
+                "password": null,
+                "region": null,
+                "status": null,
+                "tenant_id": null,
+                "user_type": null,
+                "username": "admin"
+            }
+        }
 task_ext_id:
     description: The unique identifier of the task.
     type: str
     returned: always
-    sample: "0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b3b"
+    sample: "ZXJnb24=:0e040d14-5dcf-5302-8b48-d3c6cf115cd1"
 changed:
-    description: Indicates whether the state of the template has changed.
+    description: This indicates whether the task resulted in any changes
     type: bool
     returned: always
     sample: true
