@@ -325,7 +325,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
 
         return vms
 
-    def _extract_vm_ip(self, vm, host_vars):
+    def _extract_vm_ip(self, vm):
         """
         Extract IP address from VM NICs.
         Returns the first learned/DHCP IP address found.
@@ -443,7 +443,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             host_vars[key] = value
 
         # Add ansible_host for SSH connectivity
-        vm_ip = self._extract_vm_ip(vm, host_vars)
+        vm_ip = self._extract_vm_ip(vm)
         host_vars["ansible_host"] = vm_ip
 
         # Convert categories to list of extId if present
