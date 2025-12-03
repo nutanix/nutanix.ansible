@@ -23,7 +23,7 @@ class Tasks:
         IMAGE_PLACEMENT_POLICY = "vmm:images:config:placement-policy"
         TEMPLATES = "vmm:content:template"
         VOLUME_GROUP = "volumes:config:volume-group"
-        VOLUME_GROUP_DISK = "volumes:config:volume-groups:disk"
+        VOLUME_GROUP_DISK = "volumes:config:volume-group:disk"
         ISCSI_CLIENT = "volumes:config:iscsi-client"
         VPC = "networking:config:vpc"
         SUBNET = "networking:config:subnet"
