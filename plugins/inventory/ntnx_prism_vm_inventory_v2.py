@@ -330,7 +330,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         Extract IP address from VM NICs.
         Returns the first learned/DHCP IP address found.
         """
-        nics = vm.get("nics", [])
+        nics = vm.get("nics") or []
         for nic in nics:
             network_info = nic.get("nic_network_info", {})
             if network_info.get("nic_type") != "NORMAL_NIC":
@@ -449,7 +449,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         # Convert categories to list of extId if present
         if vm.get("categories"):
             category_ext_ids = []
-            for category in vm.get("categories", []):
+            for category in vm.get("categories") or []:
                 if isinstance(category, dict):
                     category_ext_id = category.get("ext_id")
                     if category_ext_id:
