@@ -52,13 +52,13 @@
 - name: Generate spec for Accept End of User License Agreement status
   ansible.builtin.assert:
     that:
+      - result.changed == false
+      - result.failed == false
       - result.response is defined
       - result.response.user_name == "user_name"
       - result.response.login_id == "login_id"
       - result.response.job_title == "job_title"
       - result.response.company_name == "company_name"
-      - result.changed == false
-      - result.failed == false
     fail_msg: "Generate spec for Accept End of User License Agreement failed"
     success_msg: "Generate spec for Accept End of User License Agreement passed"
 

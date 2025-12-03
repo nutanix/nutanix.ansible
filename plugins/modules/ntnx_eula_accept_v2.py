@@ -88,14 +88,19 @@ changed:
 error:
   description: This field typically holds information about if the task have errors that occurred during the task execution
   returned: always
-  type: bool
-  sample: false
+  type: str
 
 failed:
   description: This indicates whether the task failed
   returned: always
   type: bool
   sample: false
+
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while accepting End User License Agreement"
 """
 
 import traceback  # noqa: E402
