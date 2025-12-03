@@ -76,6 +76,11 @@ ext_id:
     type: str
     returned: always
     sample: "0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b3b"
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while fetching given ISCSI client"
 error:
     description: The error message if any.
     type: str
@@ -86,6 +91,12 @@ changed:
     type: bool
     returned: always
     sample: true
+total_available_results:
+    description:
+        - The total number of available ISCSI clients in PC.
+    type: int
+    returned: when all iscsi clients are fetched
+    sample: 125
 """
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
@@ -142,6 +153,9 @@ def get_iscsi_clients(module, result):
             exception=e,
             msg="Api Exception raised while fetching all available ISCSI clients",
         )
+
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
 
     resp = strip_internal_attributes(resp.to_dict()).get("data")
     if not resp:

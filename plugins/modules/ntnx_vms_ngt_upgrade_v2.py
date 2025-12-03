@@ -18,6 +18,15 @@ description:
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)
 options:
+    state:
+        description:
+            - State of the module.
+            - If state is present, the module will upgrade the NGT on a VM.
+            - If state is not present, the module will fail.
+        type: str
+        choices:
+            - present
+        default: present
     ext_id:
         description:
             - The external ID of the VM.
@@ -102,6 +111,11 @@ task_ext_id:
     description: The external ID of the task associated with the NGT upgrade.
     type: str
     returned: when the task_ext_id is available
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error or module is idempotent
+    type: str
+    sample: "ext_id is required to upgrade NGT"
 error:
     description: The error message, if any.
     type: str
@@ -151,6 +165,7 @@ def get_module_spec():
         ),
     )
     module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
         ext_id=dict(type="str", required=True),
         reboot_preference=dict(
             type="dict", options=reboot_preference, obj=vmm_sdk.RebootPreference

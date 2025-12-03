@@ -17,6 +17,15 @@ version_added: 2.1.0
 author:
     - Abhinav Bansal (@abhinavbansal29)
 options:
+    state:
+        description:
+            - State of the module.
+            - If state is present, the module will update the LCM configuration.
+            - If state is not present, the module will fail.
+        type: str
+        choices:
+            - present
+        default: present
     cluster_ext_id:
         description:
             - The external ID of the cluster.
@@ -113,6 +122,11 @@ changed:
     type: bool
     returned: always
     sample: false
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while updating lcm config"
 error:
     description: This field typically holds information about if the task have errors that occurred during the task execution
     type: str
@@ -150,6 +164,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def get_module_spec():
 
     module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
         cluster_ext_id=dict(type="str"),
         url=dict(type="str"),
         is_auto_inventory_enabled=dict(type="bool"),

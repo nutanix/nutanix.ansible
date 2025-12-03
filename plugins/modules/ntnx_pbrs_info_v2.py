@@ -101,11 +101,24 @@ changed:
   type: bool
   sample: true
 
+msg:
+  description: This indicates the message if any message occurred
+  returned: When there is an error
+  type: str
+  sample: "Api Exception raised while fetching routing policies info"
+
 error:
   description: This field typically holds information about if the task have errors that occurred during the task execution
   returned: always
   type: bool
   sample: false
+
+total_available_results:
+    description:
+        - The total number of available routing policies in PC.
+    type: int
+    returned: when all routing policies are fetched
+    sample: 125
 """
 
 import warnings  # noqa: E402
@@ -168,6 +181,9 @@ def get_pbrs(module, result):
             exception=e,
             msg="Api Exception raised while fetching pbrs info",
         )
+
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
 
     resp = strip_internal_attributes(resp.to_dict()).get("data")
     if not resp:

@@ -61,6 +61,11 @@ changed:
     description: Indicates whether the NGT information has changed.
     type: bool
     returned: always
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while fetching NGT info for given vm"
 error:
     description: The error message, if any.
     type: str

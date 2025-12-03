@@ -17,6 +17,15 @@ description:
     - Revert VM from recovery point using VM external ID
     - This module uses PC v4 APIs based SDKs
 options:
+    state:
+        description:
+            - State of the module.
+            - If state is present, the module will revert a VM from a recovery point.
+            - If state is not present, the module will fail.
+        type: str
+        choices:
+            - present
+        default: present
     ext_id:
         description:
             - External ID of the VM
@@ -114,6 +123,12 @@ changed:
     type: bool
     sample: true
 
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while reverting vm"
+
 error:
     description: This field typically holds information about if the task have errors that occurred during the task execution
     returned: when an error occurs
@@ -170,6 +185,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
     module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
         ext_id=dict(type="str"),  # external id of the VM
         vm_recovery_point_ext_id=dict(type="str", required=True),
     )

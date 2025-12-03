@@ -86,6 +86,12 @@ response:
     }
 }
 
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while fetching floating_ips info"
+
 error:
   description: This field typically holds information about if the task have errors that occurred during the task execution
   returned: always
@@ -98,7 +104,12 @@ ext_id:
     type: str
     returned: always
     sample: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
-
+total_available_results:
+    description:
+        - The total number of available floating IPs in PC.
+    type: int
+    returned: when all floating IPs are fetched
+    sample: 125
 """
 
 import warnings  # noqa: E402
@@ -146,6 +157,9 @@ def get_floating_ips(module, result):
             exception=e,
             msg="Api Exception raised while fetching floating_ips info",
         )
+
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
 
     if not resp or not getattr(resp, "data", []):
         result["response"] = []

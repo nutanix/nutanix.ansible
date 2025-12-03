@@ -18,6 +18,15 @@ description:
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)
 options:
+    state:
+        description:
+            - State of the module.
+            - If state is present, the module will update the NGT configuration for a VM.
+            - If state is not present, the module will fail.
+        type: str
+        choices:
+            - present
+        default: present
     ext_id:
         description:
             - The external ID of the VM.
@@ -82,6 +91,11 @@ changed:
     type: bool
     returned: always
     sample: false
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error, module is idempotent
+    type: str
+    sample: "Api Exception raised while updating NGT"
 error:
     description: The error message, if any.
     type: str
@@ -117,6 +131,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
     module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
         ext_id=dict(type="str", required=True),
         is_enabled=dict(type="bool"),
         capabilities=dict(

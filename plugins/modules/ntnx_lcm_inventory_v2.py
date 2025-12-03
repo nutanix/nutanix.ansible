@@ -18,6 +18,15 @@ version_added: 2.1.0
 author:
     - Abhinav Bansal (@abhinavbansal29)
 options:
+    state:
+        description:
+            - State of the module.
+            - If state is present, the module will perform LCM inventory.
+            - If state is not present, the module will fail.
+        type: str
+        choices:
+            - present
+        default: present
     cluster_ext_id:
         description:
             - The external ID of the cluster.
@@ -89,6 +98,11 @@ task_ext_id:
     type: str
     returned: always
     sample: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while performing inventory"
 changed:
     description: Whether the module made any changes
     type: bool
@@ -113,6 +127,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
     module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
         cluster_ext_id=dict(type="str"),
     )
     return module_args

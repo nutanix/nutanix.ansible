@@ -96,11 +96,22 @@ ext_id:
     type: str
     returned: When c(wait) if true
     sample: "0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b3b"
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while fetching volume group disk info"
 error:
     description: The error message if any.
     type: str
     returned: when error occurs
     sample: "Api Exception raised while fetching volume group disk info"
+total_available_results:
+    description:
+        - The total number of available Volume Group disks when all Volume Group disks are fetched.
+    type: int
+    returned: when all volume group disks are fetched
+    sample: 125
 """
 
 
@@ -164,6 +175,9 @@ def get_vg_disks(module, result):
             exception=e,
             msg="Api Exception raised while fetching volume group disks info",
         )
+
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
 
     result["volume_group_ext_id"] = volume_group_ext_id
     result["response"] = strip_internal_attributes(resp.to_dict()).get("data")

@@ -70,6 +70,11 @@ changed:
     description: Indicates whether the state of the system has changed.
     returned: always
     type: bool
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error or module is idempotent
+    type: str
+    sample: "Api Exception raised while inserting NGT iso in vm"
 error:
     description: Error message if an error occurred during the module execution.
     returned: on error

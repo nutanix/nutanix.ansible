@@ -27,25 +27,36 @@ DOCUMENTATION = r"""
             required: true
             choices: ['ntnx_prism_vm_inventory', 'nutanix.ncp.ntnx_prism_vm_inventory']
         nutanix_hostname:
-            description: Prism central hostname or IP address
-            required: true
+            description:
+                - Prism central hostname or IP address
+                - If not provided, values will be taken from environment variables NUTANIX_HOSTNAME or NUTANIX_HOST
+                - If both are set, NUTANIX_HOSTNAME is preferred over NUTANIX_HOST
+            required: false
             type: str
             env:
                 - name: NUTANIX_HOSTNAME
+                - name: NUTANIX_HOST
         nutanix_username:
-            description: Prism central username
-            required: true
+            description:
+                - Prism central username
+                - If not provided, values will be taken from environment variable NUTANIX_USERNAME
+            required: false
             type: str
             env:
                 - name: NUTANIX_USERNAME
         nutanix_password:
-            description: Prism central password
-            required: true
+            description:
+                - Prism central password
+                - If not provided, values will be taken from environment variable NUTANIX_PASSWORD
+            required: false
             type: str
             env:
                 - name: NUTANIX_PASSWORD
         nutanix_port:
-            description: Prism central port
+            description:
+                - Prism central port
+                - If not provided, values will be taken from environment variable NUTANIX_PORT
+            required: false
             default: "9440"
             type: str
             env:
@@ -56,6 +67,28 @@ DOCUMENTATION = r"""
                 - Set to C(False) to fetch specified number of VMs based on offset and length
                 - If set to C(True), offset and length will be ignored
                 - By default, this is set to C(False)
+        custom_ansible_host:
+            description:
+                - Optional expression to construct the ansible_host for a VM instead of VM IP.
+                - If provided, it will override ansible_host value with resolved value of the expression.
+                - If not provided, ansible_host value will be set to VM IP as default.
+            required: false
+            type: dict
+            suboptions:
+                expr:
+                    description:
+                        - "Expression to construct the ansible_host for a VM."
+                        - "The expression can use the following variables:"
+                        - "vm_name (VM Name)"
+                        - "cluster (Cluster Name)"
+                        - "cluster_uuid (Cluster UUID)"
+                        - "vm_uuid (VM UUID)"
+                        - "vm_description (VM Description)"
+                        - "Suppose we have a VM with name VM_123 and cluster name Cluster_456"
+                        - >
+                          "Then the expression {vm_name}.nutanix1.{cluster}.nutanix2.com will be resolved to
+                          VM_123.nutanix1.Cluster_456.nutanix2.com as ansible_host"
+                    type: str
         data:
             description:
                 - Pagination support for listing VMs
@@ -80,8 +113,44 @@ DOCUMENTATION = r"""
     extends_documentation_fragment:
         - constructed
 """
+Examples = r"""
+Example 1: sample inventory file without using custom_ansible_host
+if nutanix_hostname, nutanix_username, nutanix_password are not set, values will be taken from environment variables
+inventory file starts from here
+plugin: nutanix.ncp.ntnx_prism_vm_inventory
+validate_certs: false
+data: { offset: 0, length: 20 }
+fetch_all_vms: false
+groups:
+  group_1: "'integration' in name"
+  group_2: "'auto' in name"
+  group_3: "'integration' not in name and 'auto' not in name"
+keyed_groups:
+  - prefix: host
+    separator: "_"
+    key: ansible_host
+
+Example 2: sample inventory file with using custom_ansible_host
+if nutanix_hostname, nutanix_username, nutanix_password are not set, values will be taken from environment variables
+inventory file starts from here
+plugin: nutanix.ncp.ntnx_prism_vm_inventory
+validate_certs: false
+data: { offset: 0, length: 20 }
+fetch_all_vms: false
+groups:
+  group_1: "'integration' in name"
+  group_2: "'auto' in name"
+  group_3: "'integration' not in name and 'auto' not in name"
+keyed_groups:
+  - prefix: host
+    separator: "_"
+    key: ansible_host
+custom_ansible_host:
+  expr: "{vm_name}.nutanix1.{cluster}.nutanix2.{cluster_uuid}.nutanix3.{vm_uuid}.nutanix4.com"
+"""
 
 import json  # noqa: E402
+import re  # noqa: E402
 import tempfile  # noqa: E402
 
 from ansible.errors import AnsibleError  # noqa: E402
@@ -93,7 +162,14 @@ from ..module_utils.v3.prism import vms  # noqa: E402
 
 class Mock_Module:
     def __init__(
-        self, host, port, username, password, validate_certs=False, fetch_all_vms=False
+        self,
+        host,
+        port,
+        username,
+        password,
+        validate_certs=False,
+        fetch_all_vms=False,
+        custom_ansible_host=None,
     ):
         self.tmpdir = tempfile.gettempdir()
         self.params = {
@@ -103,6 +179,7 @@ class Mock_Module:
             "nutanix_password": password,
             "validate_certs": validate_certs,
             "fetch_all_vms": fetch_all_vms,
+            "custom_ansible_host": custom_ansible_host,
             "load_params_without_defaults": False,
         }
 
@@ -135,12 +212,14 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         )
         return path.endswith(inventory_file_fmts)
 
-    def _build_host_vars(self, entity):
+    def _build_host_vars(self, entity, strict=False):
         """
         Build a dictionary of host variables from the raw entity.
         """
         cluster = entity.get("status", {}).get("cluster_reference", {}).get("name")
+        cluster_uuid = entity.get("status", {}).get("cluster_reference", {}).get("uuid")
         vm_name = entity.get("status", {}).get("name")
+        vm_description = entity.get("status", {}).get("description")
         vm_uuid = entity.get("metadata", {}).get("uuid")
         vm_ip = None
 
@@ -153,6 +232,31 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                         break
                 if vm_ip:
                     break
+
+        if getattr(self, "custom_ansible_host", None) and self.custom_ansible_host.get(
+            "expr"
+        ):
+            lookup = {
+                "cluster": cluster,
+                "cluster_uuid": cluster_uuid,
+                "vm_name": vm_name,
+                "vm_description": vm_description,
+                "vm_uuid": vm_uuid,
+            }
+
+            try:
+                vm_ip = re.sub(
+                    r"\{([^}]+)\}",
+                    self.get_replacement_function(lookup),
+                    self.custom_ansible_host.get("expr"),
+                )
+            except Exception as e:
+                if strict:
+                    raise AnsibleError(
+                        "Error formatting ansible_host expression for VM {vm_name}. with uuid {vm_uuid}: {e}".format(
+                            vm_name=vm_name, vm_uuid=vm_uuid, e=str(e)
+                        )
+                    )
 
         # Remove unwanted keys.
         for key in [
@@ -174,6 +278,8 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             "uuid": vm_uuid,
             "name": vm_name,
             "cluster": cluster,
+            "cluster_uuid": cluster_uuid,
+            "description": vm_description,
         }
         host_vars.update(vm_resources)
 
@@ -207,8 +313,10 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         super().parse(inventory, loader, path, cache=cache)
         self._read_config_data(path)
 
-        self.nutanix_hostname = self.get_option("nutanix_hostname") or env_fallback(
-            "NUTANIX_HOSTNAME"
+        self.nutanix_hostname = (
+            self.get_option("nutanix_hostname")
+            or env_fallback("NUTANIX_HOSTNAME")
+            or env_fallback("NUTANIX_HOST")
         )
         self.nutanix_username = self.get_option("nutanix_username") or env_fallback(
             "NUTANIX_USERNAME"
@@ -222,6 +330,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         self.data = self.get_option("data")
         self.validate_certs = self.get_option("validate_certs")
         self.fetch_all_vms = self.get_option("fetch_all_vms")
+        self.custom_ansible_host = self.get_option("custom_ansible_host")
         # Determines if composed variables or groups using nonexistent variables is an error
         strict = self.get_option("strict")
         host_filters = self.get_option("filters")
@@ -233,12 +342,13 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             self.nutanix_password,
             self.validate_certs,
             self.fetch_all_vms,
+            self.custom_ansible_host,
         )
         vm = vms.VM(module)
         self.data["offset"] = self.data.get("offset", 0)
         resp = vm.list(data=self.data, fetch_all_vms=self.fetch_all_vms)
         for entity in resp.get("entities", []):
-            host_vars = self._build_host_vars(entity)
+            host_vars = self._build_host_vars(entity, strict=strict)
 
             if not self._should_add_host(host_vars, host_filters, strict):
                 continue
@@ -286,3 +396,28 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 vm_name,
                 strict=strict,
             )
+
+    def get_replacement_function(self, lookup):
+
+        def repl(match):
+            val_key = match.group(1).strip()
+            val = lookup.get(val_key, "")
+            if val_key not in lookup:
+                allowed_vars = ", ".join(f"'{k}'" for k in lookup.keys())
+                raise Exception(
+                    "Variable '{val_key}' not found when formatting ansible_host expression. ".format(
+                        val_key=val_key
+                    )
+                    + "Please use one of the following allowed variables: {allowed_vars}.".format(
+                        allowed_vars=allowed_vars
+                    )
+                )
+            elif val is None or val == "":
+                raise Exception(
+                    "Variable '{val_key}' is not defined or empty".format(
+                        val_key=val_key
+                    )
+                )
+            return val
+
+        return repl

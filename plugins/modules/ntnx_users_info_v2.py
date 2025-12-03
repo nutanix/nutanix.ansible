@@ -97,6 +97,12 @@ changed:
   type: bool
   sample: true
 
+msg:
+  description: This indicates the message if any message occurred
+  returned: When there is an error
+  type: str
+  sample: "Api Exception raised while fetching users info"
+
 error:
   description: This field typically holds information about if the task have errors that occurred during the task execution
   returned: always
@@ -114,6 +120,13 @@ ext_id:
     returned: always
     type: str
     sample: 04e7b47e-a861-5b57-a494-10ca57e6ec4a
+
+total_available_results:
+    description:
+        - The total number of available users in PC.
+    type: int
+    returned: when all users are fetched
+    sample: 125
 
 """
 
@@ -162,6 +175,9 @@ def get_users(module, users, result):
             exception=e,
             msg="Api Exception raised while fetching users info",
         )
+
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
 
     resp = strip_internal_attributes(resp.to_dict()).get("data")
     if not resp:

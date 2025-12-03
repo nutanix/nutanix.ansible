@@ -10,9 +10,9 @@
 #   - password: "password" # Prism Central UI password
 #   - ip: "10.0.0.6" # IP address of the Prism Central
 
-- name: Start testing PC backup restore with cluster as backup store.
+- name: Start ntnx_prism_v2 for PC backup restore with cluster as backup store tests.
   ansible.builtin.debug:
-    msg: Start testing PC backup restore with cluster as backup store.
+    msg: Start ntnx_prism_v2 for PC backup restore with cluster as backup store tests.
 
 #############################################################
 # List all clusters to get prism central external ID
@@ -236,6 +236,8 @@
       - result.failed == false
       - result.response is defined
       - result.response | length > 0
+      - result.total_available_results is defined
+      - result.total_available_results > 0
     fail_msg: "List all PCs failed"
     success_msg: "List all PCs passed"
 
@@ -472,6 +474,8 @@
     that:
       - result.response is defined
       - result.response | length > 0
+      - result.total_available_results is defined
+      - result.total_available_results > 0
     fail_msg: "List all restore points failed"
     success_msg: "List all restore points passed"
 
@@ -645,7 +649,11 @@
         external_address: "{{ restore_point_details.response.domain_manager.network.external_address }}"
         name_servers: "{{ restore_point_details.response.domain_manager.network.name_servers }}"
         ntp_servers: "{{ restore_point_details.response.domain_manager.network.ntp_servers }}"
-        external_networks: "{{ restore_point_details.response.domain_manager.network.external_networks }}"
+        external_networks:
+          - default_gateway: "{{ restore_point_details.response.domain_manager.network.external_networks[0].default_gateway }}"
+            subnet_mask: "{{ restore_point_details.response.domain_manager.network.external_networks[0].subnet_mask }}"
+            ip_ranges: "{{ restore_point_details.response.domain_manager.network.external_networks[0].ip_ranges }}"
+            network_ext_id: "{{ restore_point_details.response.domain_manager.network.external_networks[0].network_ext_id }}"
   register: result
   ignore_errors: true
 

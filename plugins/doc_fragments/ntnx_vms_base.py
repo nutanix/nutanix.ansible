@@ -42,11 +42,17 @@ options:
         choices:
           - cloud_init
           - sysprep
+      script:
+          description:
+            - Guest customization script.
+            - Mutually exclusive with C(script_path)
+          type: str
       script_path:
         description:
           - Absolute file path to the script.
+          - Mutually exclusive with C(script)
         type: path
-        required: true
+        required: false
       is_overridable:
         description:
           - Flag to allow override of customization during deployment.

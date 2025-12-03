@@ -1,6 +1,6 @@
 namespace: "nutanix"
 name: "ncp"
-version: "2.2.0"
+version: "2.4.0"
 readme: "README.md"
 authors:
   - "Abhishek Chaudhary (@abhimutant)"
@@ -14,7 +14,12 @@ description: Nutanix Ansible Collection
 license_file: "LICENSE"
 tags: [nutanix, prism, ahv, cloud, infrastructure]
 repository: https://github.com/nutanix/nutanix.ansible
-documentation: https://galaxy.ansible.com/ui/repo/published/nutanix/ncp/
-homepage: https://nutanix.github.io/nutanix.ansible/
+documentation: https://github.com/nutanix/nutanix.ansible/blob/main/README.md
+homepage: https://github.com/nutanix/nutanix.ansible/
 issues: https://github.com/nutanix/nutanix.ansible/issues
-build_ignore: []
+build_ignore:
+  # https://docs.ansible.com/ansible/devel/dev_guide/developing_collections_distributing.html#ignoring-files-and-folders
+  - .gitignore
+  - changelogs/.plugin-cache.yaml
+  - .github
+  - .vscode

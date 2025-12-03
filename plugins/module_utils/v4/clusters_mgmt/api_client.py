@@ -67,6 +67,18 @@ def get_clusters_api_instance(module):
     return ntnx_clustermgmt_py_client.ClustersApi(client)
 
 
+def get_cluster_profiles_api_instance(module):
+    """
+    This method will return cluster profiles api instance from sdk
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        ClusterProfilesApi: ClusterProfilesApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.ClusterProfilesApi(client)
+
+
 def get_storage_containers_api_instance(module):
     """
     This method will return storage containers api instance from sdk
@@ -77,3 +89,27 @@ def get_storage_containers_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_clustermgmt_py_client.StorageContainersApi(client)
+
+
+def get_password_manager_api_instance(module):
+    """
+    This method will return password manager api instance from sdk
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        PasswordManagerApi: PasswordManagerApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.PasswordManagerApi(client)
+
+
+def get_ssl_certificates_api_instance(module):
+    """
+    This method will return SSL certificates api instance from sdk
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        SSLCertificateApi: SSLCertificateApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.SSLCertificateApi(client)

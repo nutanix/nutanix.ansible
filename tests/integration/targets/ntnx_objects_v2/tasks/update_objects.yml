@@ -42,7 +42,7 @@
 
 - name: Deploy object store with one worker node with invalid image tag
   nutanix.ncp.ntnx_object_stores_v2:
-    name: "ansible-object"
+    name: "{{ object_1_name }}"
     cluster_ext_id: "{{ cluster.uuid }}"
     description: "object store test"
     domain: "{{ objects.domain }}"
@@ -74,14 +74,14 @@
 
 - name: List all object stores with filter
   nutanix.ncp.ntnx_object_stores_info_v2:
-    filter: name eq 'ansible-object'
+    filter: name eq '{{ object_1_name }}'
   register: result
 
 - name: Assert that object store has failed
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.response[0].name == "ansible-object"
+      - result.response[0].name == "{{ object_1_name }}"
       - result.response[0].state == "OBJECT_STORE_DEPLOYMENT_FAILED"
     success_msg: "Object store is in failed state"
     fail_msg: "Object store is not in failed state"
@@ -157,7 +157,7 @@
 
 - name: Deploy object store with one worker node using update operation
   nutanix.ncp.ntnx_object_stores_v2:
-    name: "ansible-object"
+    name: "{{ object_1_name }}"
     ext_id: "{{ object_store_ext_id }}"
     cluster_ext_id: "{{ cluster.uuid }}"
     description: "object store test"
@@ -186,7 +186,7 @@
       - result.response is defined
       - result.task_ext_id is defined
       - result.response.cluster_ext_id == "{{ cluster.uuid }}"
-      - result.response.name == "ansible-object"
+      - result.response.name == "{{ object_1_name }}"
       - result.response.ext_id == "{{ object_store_ext_id }}"
       - result.response.description == "object store test"
       - result.response.domain == "{{ objects.domain }}"
@@ -203,6 +203,10 @@
 
 # example of delete bucket API (delete_bucket_api):
 # https://{{ ip }}:{{ port }}/oss/api/nutanix/v3/objectstore_proxy/{{ object_store_ext_id }}/buckets/{{ objects.bucket_name }}?force_empty_bucket=true
+
+- name: Sleep for 5 minutes before deleting bucket
+  ansible.builtin.pause:
+    minutes: 5
 
 - name: Delete bucket in object store
   ansible.builtin.uri:

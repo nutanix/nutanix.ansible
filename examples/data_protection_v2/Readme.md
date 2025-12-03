@@ -4,23 +4,26 @@ Recovery points are critical in ensuring data protection and disaster recovery f
 
 This blog provides an overview of recovery points, operations like Create, Update, Read, and Delete, and other functionalities such as restoring, replicating, and reverting recovery points. A flow diagram will be included to illustrate these concepts (to be added).
 
-![Recovery Points workflow](Recovery_Points.png)
----
+## ![Recovery Points workflow](Recovery_Points.png)
 
 ## Operations on Recovery Points
 
 ### 1. Create, Update, and Delete Recovery Points
+
 The `ntnx_recovery_points_v2` module is used to manage recovery points. It supports creating, updating, and deleting recovery points for:
+
 - A single VM
 - A single VG
 - Multiple VMs or VGs
 - A combination of VMs and VGs
 
 #### Example Code
+
 `Create Recovery Point for Multiple VMs and VGs`
+
 ```
 - name: Create recovery point with multiple VMs and VGs
-  ntnx_recovery_points_v2:
+  nutanix.ncp.ntnx_recovery_points_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -37,10 +40,12 @@ The `ntnx_recovery_points_v2` module is used to manage recovery points. It suppo
   register: result
   ignore_errors: true
 ```
+
 `Update Expiration Time of Recovery Points`
+
 ```
 - name: Update recovery point expiration time
-  ntnx_recovery_points_v2:
+  nutanix.ncp.ntnx_recovery_points_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -50,10 +55,12 @@ The `ntnx_recovery_points_v2` module is used to manage recovery points. It suppo
   register: result
   ignore_errors: true
 ```
+
 `Delete a Recovery Point`
+
 ```
 - name: Delete a recovery point
-  ntnx_recovery_points_v2:
+  nutanix.ncp.ntnx_recovery_points_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -63,16 +70,20 @@ The `ntnx_recovery_points_v2` module is used to manage recovery points. It suppo
   register: result
   ignore_errors: true
 ```
+
 ---
 
 ### 2. Retrieve Recovery Point Information
+
 The `ntnx_recovery_points_info_v2` module fetches details of recovery points. This is essential for monitoring and managing existing recovery points effectively.
 
 #### Example Code
+
 `List all recovery points with filter`
+
 ```
 - name: List all recovery points with filter
-  ntnx_recovery_points_info_v2:
+  nutanix.ncp.ntnx_recovery_points_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -81,10 +92,12 @@ The `ntnx_recovery_points_info_v2` module fetches details of recovery points. Th
   register: result
   ignore_errors: true
 ```
+
 `Get details of a Recovery Point`
+
 ```
 - name: Get recovery point details
-  ntnx_recovery_points_info_v2:
+  nutanix.ncp.ntnx_recovery_points_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -93,17 +106,20 @@ The `ntnx_recovery_points_info_v2` module fetches details of recovery points. Th
   register: result
   ignore_errors: true
 ```
+
 ---
 
 ## Additional Operations
 
 ### 3. Restore Recovery Points
+
 The `ntnx_recovery_point_restore_v2` module is used to restore a recovery point. This operation creates a clone of the VMs or VGs specified in the recovery point spec. If no specific entity is provided, clones for all entities under the top-level recovery point are created.
 
 #### Example Code
+
 ```
 - name: Restore recovery point for multiple VMs and VGs
-  ntnx_recovery_point_restore_v2:
+  nutanix.ncp.ntnx_recovery_point_restore_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -119,15 +135,18 @@ The `ntnx_recovery_point_restore_v2` module is used to restore a recovery point.
   register: result
   ignore_errors: true
 ```
+
 ---
 
 ### 4. VM Revert
+
 The `ntnx_vm_revert_v2` module reverts a VM back to the state at which the recovery point was created. This is particularly useful for undoing changes or recovering from system failures.
 
 #### Example Code
+
 ```
 - name: Revert a VM recovery point
-  ntnx_vm_revert_v2:
+  nutanix.ncp.ntnx_vm_revert_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -141,14 +160,17 @@ The `ntnx_vm_revert_v2` module reverts a VM back to the state at which the recov
 ---
 
 ### 5. Replicate Recovery Points
+
 Replication creates a replica of a recovery point on another cluster. The `ntnx_recovery_point_replicate_v2` module requires the following setup:
+
 1. Create an availability zone from your Prism Central to the target PC.
 2. Obtain the external ID of the target PC and its cluster external ID.
 
 #### Example Code
+
 ```
 - name: Replicate Recovery point
-  ntnx_recovery_point_replicate_v2:
+  nutanix.ncp.ntnx_recovery_point_replicate_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -163,12 +185,14 @@ Replication creates a replica of a recovery point on another cluster. The `ntnx_
 ---
 
 ### 6. Retrieve VM Recovery Point Information
+
 The `ntnx_vm_recovery_point_info_v2` module fetches detailed information about VM recovery points. This helps in auditing and verifying recovery point states.
 
 #### Example Code
+
 ```
 - name: Get a VM recovery point details
-  ntnx_vm_recovery_point_info_v2:
+  nutanix.ncp.ntnx_vm_recovery_point_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

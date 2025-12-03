@@ -17,6 +17,15 @@ description:
     - If wait is set to true, the module will wait for the task to complete
     - Please provide Prism Element IP address here in C(nutanix_host)
 options:
+    state:
+        description:
+            - State of the module.
+            - If state is present, the module will deploy a Prism Central.
+            - If state is not present, the module will fail.
+        type: str
+        choices:
+            - present
+        default: present
     wait:
         description: Wait for the operation to complete.
         type: bool
@@ -675,6 +684,12 @@ changed:
     type: bool
     sample: true
 
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while deploying prism central"
+
 error:
     description: This field typically holds information about if the task have errors that occurred during the task execution
     returned: When an error occurs
@@ -719,7 +734,10 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 
 def get_module_spec():
-    module_args = prism_specs.get_prism_spec()
+    module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
+    )
+    module_args.update(prism_specs.get_prism_spec())
     return module_args
 
 

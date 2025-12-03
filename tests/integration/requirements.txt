@@ -10,6 +10,7 @@ coverage==7.3.2
 shyaml==0.6.2
 markupsafe==2
 jmespath==0.10.0
+awscli==1.42.25
 ntnx-clustermgmt-py-client==4.1.1
 ntnx-iam-py-client==4.0.1
 ntnx-microseg-py-client==4.1.1
@@ -21,3 +22,4 @@ ntnx-dataprotection-py-client==4.1.1
 ntnx-datapolicies-py-client==4.1.1
 ntnx-lifecycle-py-client==4.1.1
 ntnx-objects-py-client==4.0.1
+ntnx-security-py-client==4.0.1

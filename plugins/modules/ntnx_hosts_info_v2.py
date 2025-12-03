@@ -142,10 +142,21 @@ ext_id:
     type: str
     returned: always
     sample: af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while fetching hosts info"
 error:
     description: Error message if any.
     type: str
     returned: always
+total_available_results:
+    description:
+        - The total number of available hosts in PC.
+    type: int
+    returned: when all hosts are fetched
+    sample: 125
 """
 
 import warnings  # noqa: E402
@@ -206,6 +217,9 @@ def get_hosts(module, result):
             exception=e,
             msg="Api Exception raised while fetching hosts info",
         )
+
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
 
     if getattr(resp, "data", None):
         result["response"] = strip_internal_attributes(resp.to_dict()).get("data")

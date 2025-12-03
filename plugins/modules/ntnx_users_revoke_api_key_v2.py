@@ -16,6 +16,15 @@ description:
     - This module can be used to revoke the requested API key for a user in Nutanix Prism Central.
     - This module uses PC v4 APIs based SDKs
 options:
+    state:
+        description:
+            - State of the module.
+            - If state is present, the module will revoke an API key for a user.
+            - If state is not present, the module will fail.
+        type: str
+        choices:
+            - present
+        default: present
     user_ext_id:
         description:
             - The external identifier of the user.
@@ -64,6 +73,12 @@ changed:
     type: bool
     returned: always
     sample: true
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error or in check mode operation
+    type: str
+    sample: "Api Exception raised while revoking user api key"
+
 error:
     description:
         - Error message if any occurred during the operation.
@@ -99,6 +114,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
     module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
         user_ext_id=dict(type="str", required=True),
         ext_id=dict(type="str", required=True),
     )

@@ -84,6 +84,11 @@ response:
             },
             "tenant_id": null
         }
+msg:
+  description: This indicates the message if any message occurred
+  returned: When there is an error
+  type: str
+  sample: "Api Exception raised while fetching vm nic info"
 error:
   description: The error message if an error occurs.
   type: str
@@ -99,6 +104,12 @@ ext_id:
     type: str
     returned: always
     sample: "530567f3-abda-4913-b5d0-0ab6758ec168"
+total_available_results:
+    description:
+        - The total number of available NICs when all NICs are fetched.
+    type: int
+    returned: when all nics are fetched
+    sample: 125
 """
 
 import warnings  # noqa: E402
@@ -163,6 +174,9 @@ def get_nics(module, result):
             exception=e,
             msg="Api Exception raised while fetching vm nics info",
         )
+
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
 
     result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
 

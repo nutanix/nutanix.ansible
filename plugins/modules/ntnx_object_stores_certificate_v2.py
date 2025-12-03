@@ -24,6 +24,15 @@ description:
     - These 'alternateFqdns' and 'alternateIps' must be included in the CA certificate if a CA is provided.
     - This module uses PC v4 APIs based GA SDKs.
 options:
+    state:
+        description:
+            - State of the module.
+            - If state is present, the module will create a new default certificate and keys.
+            - If state is not present, the module will fail.
+        type: str
+        choices:
+            - present
+        default: present
     object_store_ext_id:
         description:
             - External ID of the object store to which the SSL certificate will be added.
@@ -149,6 +158,12 @@ changed:
     type: bool
     sample: true
 
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error or in check mode (in create operation)
+    type: str
+    sample: "Api Exception raised while creating SSL certificate"
+
 error:
     description: This field typically holds information about if the task have errors that occurred during the task execution
     returned: When an error occurs
@@ -194,6 +209,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
     module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
         object_store_ext_id=dict(type="str", required=True),
         path=dict(
             type="str",

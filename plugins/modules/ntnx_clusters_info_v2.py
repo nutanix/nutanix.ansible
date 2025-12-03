@@ -199,6 +199,11 @@ response:
   "upgrade_status": "SUCCEEDED",
   "vm_count": 1,
 }
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while fetching clusters info"
 error:
     description: The error message if an error occurs.
     type: str
@@ -209,6 +214,12 @@ ext_id:
     type: str
     returned: always
     sample: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
+total_available_results:
+    description:
+        - The total number of available clusters in PC.
+    type: int
+    returned: when all clusters are fetched
+    sample: 125
 """
 
 import warnings  # noqa: E402
@@ -261,6 +272,9 @@ def get_clusters(module, result):
             exception=e,
             msg="Api Exception raised while fetching clusters info",
         )
+
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
 
     if getattr(resp, "data", None):
         result["response"] = strip_internal_attributes(resp.to_dict()).get("data")

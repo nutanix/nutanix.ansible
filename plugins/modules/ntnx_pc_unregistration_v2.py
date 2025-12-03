@@ -16,6 +16,15 @@ description:
     - This module cannot be used to unregister PC-PE.
     - This module uses PC v4 APIs based SDKs
 options:
+    state:
+        description:
+            - State of the module.
+            - If state is present, the module will unregister a Prism Central.
+            - If state is not present, the module will fail.
+        type: str
+        choices:
+            - present
+        default: present
     wait:
         description:
             - Wait for the task to complete.
@@ -132,6 +141,12 @@ changed:
     returned: always
     sample: true
 
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "API Exception raised while unregistering cluster"
+
 error:
     description: Error message if any.
     type: str
@@ -172,6 +187,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
     module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
         pc_ext_id=dict(type="str", required=True),
         ext_id=dict(type="str", required=True),
     )

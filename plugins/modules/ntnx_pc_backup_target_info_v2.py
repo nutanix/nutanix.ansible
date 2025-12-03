@@ -88,6 +88,12 @@ changed:
     type: bool
     sample: true
 
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while fetching backup targets info"
+
 error:
     description: This field typically holds information about if the task have errors that occurred during the task execution
     returned: When an error occurs
@@ -98,7 +104,6 @@ failed:
     returned: always
     type: bool
     sample: false
-
 """
 
 import warnings  # noqa: E402

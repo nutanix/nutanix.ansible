@@ -325,6 +325,12 @@ failed:
   type: bool
   returned: always
 
+msg:
+  description: This indicates the message if any message occurred
+  returned: When there is an error, module is idempotent or check mode (in delete operation)
+  type: str
+  sample: "Failed generating create route spec"
+
 error:
   description: Error message if any
   type: str

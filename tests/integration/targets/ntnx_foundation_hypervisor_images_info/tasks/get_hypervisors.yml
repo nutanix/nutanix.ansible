@@ -4,7 +4,7 @@
     msg: start testing ntnx_foundation_hypervisor_images_info
 
 - name: Get hypervisor_images_info from foundation
-  ntnx_foundation_hypervisor_images_info:
+  nutanix.ncp.ntnx_foundation_hypervisor_images_info:
   register: result
 
 - name: Creation Status
