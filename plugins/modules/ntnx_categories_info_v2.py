@@ -24,6 +24,7 @@ options:
     expand:
         description:
             - Additional query param to expand the response with more details
+            - detailedAssociations is supported only when ext_id is provided
         type: str
         choices: ['associations', 'detailedAssociations']
 extends_documentation_fragment:
