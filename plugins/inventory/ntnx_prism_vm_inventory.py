@@ -284,8 +284,16 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         host_vars.update(vm_resources)
 
         # Incorporate ntnx_categories if available.
-        if "metadata" in entity and "categories" in entity["metadata"]:
+        host_vars["ntnx_categories"] = {}
+        host_vars["ntnx_categories_mapping"] = {}
+
+        # Only supports showing one value for a key
+        if entity.get("metadata", {}).get("categories"):
             host_vars["ntnx_categories"] = entity["metadata"]["categories"]
+        
+        # for category keys having multiple values
+        if entity.get("metadata", {}).get("categories"):
+            host_vars["ntnx_categories_mapping"] = entity["metadata"]["categories_mapping"]
 
         return host_vars
 
