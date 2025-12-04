@@ -84,7 +84,8 @@ jobs:
                   for test_folder in "$test_dir"/*/; do
                       test_name=$(basename "$test_folder")
                       if [ -f "${test_folder}nutanix.yml" ] && [ -f "${test_folder}inventory.yml" ]; then
-                          echo "===> Running inventory test: $test_name..."
+                          # Log the test name to both stdout and test_output.log for summary parsing
+                          echo "===> Running inventory test: $test_name..." | tee -a test_output.log
                           if ansible-playbook -i "${test_folder}nutanix.yml" \
                           "${test_folder}inventory.yml" \
                           2>&1 | tee -a test_output.log; then
