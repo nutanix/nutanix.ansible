@@ -106,6 +106,11 @@ response:
                 "vm_config": null
             }
         ]
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while fetching ovas info"
 error:
     description: Error message if something goes wrong.
     type: str

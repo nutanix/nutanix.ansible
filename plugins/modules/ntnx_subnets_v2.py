@@ -559,6 +559,11 @@ skipped:
         - Will be returned if operation is skipped.
     type: bool
     returned: always
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error, module is idempotent or check mode (in delete operation)
+    type: str
+    sample: "Api Exception raised while creating subnet"
 error:
     description:
         - Error message if an error occurs.

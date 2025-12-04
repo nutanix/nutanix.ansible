@@ -1343,6 +1343,7 @@
         schedule:
           recovery_point_type: "CRASH_CONSISTENT"
           recovery_point_objective_time_seconds: 7200
+          is_replication_paused: false
           retention:
             linear_retention:
               local: 2
@@ -1353,6 +1354,7 @@
         schedule:
           recovery_point_type: "CRASH_CONSISTENT"
           recovery_point_objective_time_seconds: 7200
+          is_replication_paused: false
           retention:
             linear_retention:
               local: 2
@@ -1392,21 +1394,25 @@
         and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label2}}_updated"
         and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
         and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 7200
+        and result.response.replication_configurations[0].schedule.is_replication_paused == false
         and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
         or (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label2}}_updated"
         and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label1}}_updated"
         and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
         and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 7200
+        and result.response.replication_configurations[0].schedule.is_replication_paused == false
         and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
       - (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label1}}_updated"
         and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label2}}_updated"
         and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
         and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 7200
+        and result.response.replication_configurations[1].schedule.is_replication_paused == false
         and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
         or (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label2}}_updated"
         and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label1}}_updated"
         and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
         and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 7200
+        and result.response.replication_configurations[1].schedule.is_replication_paused == false
         and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
       - result.response.replication_configurations[0] != result.response.replication_configurations[1]
       - result.response.category_ids[0] == "{{category_ext_id_1}}"
@@ -1441,6 +1447,7 @@
         schedule:
           recovery_point_type: "CRASH_CONSISTENT"
           recovery_point_objective_time_seconds: 7200
+          is_replication_paused: false
           retention:
             linear_retention:
               local: 2
@@ -1451,6 +1458,7 @@
         schedule:
           recovery_point_type: "CRASH_CONSISTENT"
           recovery_point_objective_time_seconds: 7200
+          is_replication_paused: false
           retention:
             linear_retention:
               local: 2
@@ -1575,6 +1583,47 @@
       - result.response.category_ids[0] == "{{category_ext_id_2}}"
     success_msg: "Protection policy updated successfully"
     fail_msg: "Protection policy update failed"
+
+########################################################################################
+
+- name: Update Synchronous replication protection policy for VM using is_replication_paused true
+  nutanix.ncp.ntnx_protection_policies_v2:
+    ext_id: "{{ todelete[2] }}"
+    name: "ansible-name-sync-vm-{{random_name}}_updated"
+    description: "ansible-description-sync-vm-{{random_name}}_updated"
+    replication_configurations:
+      - source_location_label: "ansible-label-{{label1}}"
+        remote_location_label: "ansible-label-{{label2}}"
+        schedule:
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 0
+          sync_replication_auto_suspend_timeout_seconds: 10
+          is_replication_paused: true
+      - source_location_label: "ansible-label-{{label2}}"
+        remote_location_label: "ansible-label-{{label1}}"
+        schedule:
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 0
+          sync_replication_auto_suspend_timeout_seconds: 10
+          is_replication_paused: true
+    category_ids:
+      - "{{category_ext_id_3}}"
+  register: result
+  ignore_errors: true
+
+- name: Status for updating Synchronous replication protection policy for VM using is_replication_paused true
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.ext_id == "{{ todelete[2] }}"
+      - result.response.name == "ansible-name-sync-vm-{{random_name}}_updated"
+      - result.response.description == "ansible-description-sync-vm-{{random_name}}_updated"
+      - result.response.replication_configurations[0].schedule.is_replication_paused == true
+      - result.response.replication_configurations[1].schedule.is_replication_paused == true
+    fail_msg: "Synchronous replication protection policy for VM using is_replication_paused true update failed"
+    success_msg: "Synchronous replication protection policy for VM using is_replication_paused true updated successfully"
 
 ########################################################################################
 

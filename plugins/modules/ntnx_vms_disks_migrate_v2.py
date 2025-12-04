@@ -316,6 +316,11 @@ changed:
     description: Indicates whether the module made any changes.
     type: bool
     sample: true
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error or in delete operation
+    type: str
+    sample: "Api Exception raised while migrating disk of VM"
 error:
     description: The error message, if any, encountered.
     type: str

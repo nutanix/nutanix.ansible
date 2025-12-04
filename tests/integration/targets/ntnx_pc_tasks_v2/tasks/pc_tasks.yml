@@ -155,33 +155,33 @@
 
 ################################################################################
 
-- name: Create ISO_IMAGE using valid source url
+- name: Create DISK_IMAGE using valid source url
   nutanix.ncp.ntnx_images_v2:
     state: present
-    type: ISO_IMAGE
+    type: DISK_IMAGE
     name: "{{ image_name }}_1"
     description: image created for testing pc tasks
     checksum:
       sha1:
-        hex_digest: "{{ iso_image.checksum }}"
+        hex_digest: "{{ disk_image.checksum }}"
     source:
       url_source:
-        url: "{{ iso_image.url }}"
+        url: "{{ disk_image.url }}"
         should_allow_insecure_url: true
     cluster_location_ext_ids: "{{ cluster.uuid }}"
     wait: false
   register: result
   ignore_errors: true
 
-- name: Create ISO_IMAGE using valid source url status
+- name: Create DISK_IMAGE using valid source url status
   ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
       - result.failed == false
       - result.task_ext_id is defined
-    fail_msg: "Failed to create task for ISO_IMAGE"
-    success_msg: "ISO_IMAGE task created successfully"
+    fail_msg: "Failed to create task for DISK_IMAGE"
+    success_msg: "DISK_IMAGE task created successfully"
 
 - name: Store task ext id
   ansible.builtin.set_fact:

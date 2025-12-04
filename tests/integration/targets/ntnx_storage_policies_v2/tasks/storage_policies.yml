@@ -1,0 +1,570 @@
+---
+- name: Start Storage policies tests
+  ansible.builtin.debug:
+    msg: Start Storage policies tests
+
+- name: Generate random names
+  ansible.builtin.set_fact:
+    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+    suffix_name: "ansible-storage-policy"
+    todelete_categories: []
+    todelete: []
+
+- name: Set ansible keys and values
+  ansible.builtin.set_fact:
+    keys:
+      - "{{random_name}}{{suffix_name}}key1"
+      - "{{random_name}}{{suffix_name}}key2"
+      - "{{random_name}}{{suffix_name}}key3"
+
+    values:
+      - "{{random_name}}{{suffix_name}}value1"
+      - "{{random_name}}{{suffix_name}}value2"
+      - "{{random_name}}{{suffix_name}}value3"
+
+########################################################################################
+
+- name: Create categories for storage policies
+  nutanix.ncp.ntnx_categories_v2:
+    key: "{{ keys[item] }}"
+    value: "{{ values[item] }}"
+    description: "ansible-storage-policy"
+  register: result
+  ignore_errors: true
+  loop: "{{ range(0, 3) | list }}"
+  loop_control:
+    label: "{{ item }}"
+
+- name: Create categories for storage policies status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.results | length == 3
+      - result.msg == "All items completed"
+    success_msg: "Categories for storage policies created successfully"
+    fail_msg: "Categories for storage policies creation failed"
+
+- name: Save external IDs to the list
+  ansible.builtin.set_fact:
+    todelete_categories: "{{ todelete_categories + [ item.response.ext_id ] }}"
+  with_items: "{{ result.results }}"
+
+- name: Generate spec for creating storage policy using check mode
+  nutanix.ncp.ntnx_storage_policies_v2:
+    name: "storage_policy_name"
+    category_ext_ids:
+      - "c9234148-9009-45df-47bb-30821771da08"
+    compression_spec:
+      compression_state: "POSTPROCESS"
+    encryption_spec:
+      encryption_state: "SYSTEM_DERIVED"
+    qos_spec:
+      throttled_iops: 1000
+    fault_tolerance_spec:
+      replication_factor: "THREE"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for creating storage policy using check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "storage_policy_name"
+      - result.response.category_ext_ids[0] == "c9234148-9009-45df-47bb-30821771da08"
+      - result.response.category_ext_ids | length == 1
+      - result.response.compression_spec.compression_state == "POSTPROCESS"
+      - result.response.encryption_spec.encryption_state == "SYSTEM_DERIVED"
+      - result.response.qos_spec.throttled_iops == 1000
+      - result.response.fault_tolerance_spec.replication_factor == "THREE"
+    success_msg: "Spec for creating storage policy using check mode is generated successfully"
+    fail_msg: "Spec for creating storage policy using check mode is not generated successfully"
+
+- name: Create storage policy with minimum attributes
+  nutanix.ncp.ntnx_storage_policies_v2:
+    name: "storage_policy_{{ random_name }}_min"
+    fault_tolerance_spec:
+      replication_factor: "TWO"
+  register: result
+  ignore_errors: true
+
+- name: Create storage policy with minimum attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.name == "storage_policy_{{ random_name }}_min"
+      - result.response.fault_tolerance_spec.replication_factor == "TWO"
+    success_msg: "Storage policy with minimum attributes created successfully"
+    fail_msg: "Storage policy with minimum attributes creation failed"
+
+- name: Add storage policy to todelete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [ result.ext_id ] }}"
+
+- name: Create storage policy with all attributes
+  nutanix.ncp.ntnx_storage_policies_v2:
+    name: "storage_policy_{{ random_name }}_all"
+    category_ext_ids:
+      - "{{ todelete_categories[0] }}"
+      - "{{ todelete_categories[1] }}"
+    compression_spec:
+      compression_state: "INLINE"
+    encryption_spec:
+      encryption_state: "ENABLED"
+    qos_spec:
+      throttled_iops: 100
+    fault_tolerance_spec:
+      replication_factor: "TWO"
+  register: result
+  ignore_errors: true
+
+- name: Create storage policy with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.name == "storage_policy_{{ random_name }}_all"
+      - "'{{ todelete_categories[0] }}' in result.response.category_ext_ids"
+      - "'{{ todelete_categories[1] }}' in result.response.category_ext_ids"
+      - result.response.category_ext_ids | length == 2
+      - result.response.compression_spec.compression_state == "INLINE"
+      - result.response.encryption_spec.encryption_state == "ENABLED"
+      - result.response.qos_spec.throttled_iops == 100
+      - result.response.fault_tolerance_spec.replication_factor == "TWO"
+    success_msg: "Storage policy with all attributes created successfully"
+    fail_msg: "Storage policy with all attributes creation failed"
+
+- name: Add storage policy to todelete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [ result.ext_id ] }}"
+
+- name: Create storage policy with missing name
+  nutanix.ncp.ntnx_storage_policies_v2:
+    category_ext_ids:
+      - "{{ todelete_categories[0] }}"
+    compression_spec:
+      compression_state: "INLINE"
+    encryption_spec:
+      encryption_state: "ENABLED"
+    qos_spec:
+      throttled_iops: 100
+    fault_tolerance_spec:
+      replication_factor: "TWO"
+  register: result
+  ignore_errors: true
+
+- name: Create storage policy with missing name status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is present but any of the following are missing: name, ext_id' in result.msg"
+    success_msg: "Create storage policy with missing name failed as expected"
+    fail_msg: "Create storage policy with missing name did not fail as expected"
+
+- name: Create storage policy with same name
+  nutanix.ncp.ntnx_storage_policies_v2:
+    name: "storage_policy_{{ random_name }}"
+    category_ext_ids:
+      - "{{ todelete_categories[0] }}"
+    compression_spec:
+      compression_state: "POSTPROCESS"
+    encryption_spec:
+      encryption_state: "SYSTEM_DERIVED"
+    qos_spec:
+      throttled_iops: 1000
+    fault_tolerance_spec:
+      replication_factor: "THREE"
+  register: result
+  ignore_errors: true
+
+- name: Create storage policy with same name status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Task Failed"
+      - result.response is defined
+      - result.response.status == "FAILED"
+    success_msg: "Create storage policy with same name failed as expected"
+    fail_msg: "Create storage policy with same name did not fail as expected"
+
+- name: Create storage policy with same category
+  nutanix.ncp.ntnx_storage_policies_v2:
+    name: "storage_policy_{{ random_name }}_1"
+    category_ext_ids:
+      - "{{ todelete_categories[0] }}"
+    compression_spec:
+      compression_state: "POSTPROCESS"
+    encryption_spec:
+      encryption_state: "SYSTEM_DERIVED"
+    qos_spec:
+      throttled_iops: 1000
+    fault_tolerance_spec:
+      replication_factor: "THREE"
+  register: result
+  ignore_errors: true
+
+- name: Create storage policy with same category status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Task Failed"
+      - result.response is defined
+      - result.response.status == "FAILED"
+    success_msg: "Create storage policy with same category failed as expected"
+    fail_msg: "Create storage policy with same category did not fail as expected"
+
+- name: Create storage policy without providing storage attributes
+  nutanix.ncp.ntnx_storage_policies_v2:
+    name: "storage_policy_{{ random_name }}_default"
+  register: result
+  ignore_errors: true
+
+- name: Create storage policy without providing storage attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg ==
+        "If compression_state, encryption_state, or replication_factor are intended to be system-derived, ensure that the qos_spec block is included."
+    success_msg: "Create storage policy without providing storage attributes failed as expected"
+    fail_msg: "Create storage policy without providing storage attributes did not fail as expected"
+
+- name: Generate spec for updating storage policy using check mode
+  nutanix.ncp.ntnx_storage_policies_v2:
+    ext_id: "{{ todelete[0] }}"
+    name: "storage_policy_name_1"
+    category_ext_ids:
+      - "c9234148-9009-45df-3254-87fcbb478142"
+      - "547825dc-1234-1111-47bb-30821771da09"
+    compression_spec:
+      compression_state: "POSTPROCESS"
+    encryption_spec:
+      encryption_state: "SYSTEM_DERIVED"
+    qos_spec:
+      throttled_iops: 1000
+    fault_tolerance_spec:
+      replication_factor: "THREE"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for updating storage policy using check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "storage_policy_name_1"
+      - "'c9234148-9009-45df-3254-87fcbb478142' in result.response.category_ext_ids"
+      - "'547825dc-1234-1111-47bb-30821771da09' in result.response.category_ext_ids"
+      - result.response.category_ext_ids | length == 2
+      - result.response.compression_spec.compression_state == "POSTPROCESS"
+      - result.response.encryption_spec.encryption_state == "SYSTEM_DERIVED"
+      - result.response.qos_spec.throttled_iops == 1000
+      - result.response.fault_tolerance_spec.replication_factor == "THREE"
+    success_msg: "Spec for updating storage policy using check mode is generated successfully"
+    fail_msg: "Spec for updating storage policy using check mode is not generated successfully"
+
+- name: Update storage policy with all attributes
+  nutanix.ncp.ntnx_storage_policies_v2:
+    ext_id: "{{ todelete[0] }}"
+    name: "storage_policy_{{ random_name }}_updated"
+    category_ext_ids:
+      - "{{ todelete_categories[2] }}"
+    compression_spec:
+      compression_state: "POSTPROCESS"
+    encryption_spec:
+      encryption_state: "ENABLED"
+    qos_spec:
+      throttled_iops: 1000
+    fault_tolerance_spec:
+      replication_factor: "THREE"
+  register: result
+  ignore_errors: true
+
+- name: Update storage policy with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.name == "storage_policy_{{ random_name }}_updated"
+      - result.response.category_ext_ids[0] == "{{ todelete_categories[2] }}"
+      - result.response.category_ext_ids | length == 1
+      - result.response.compression_spec.compression_state == "POSTPROCESS"
+      - result.response.encryption_spec.encryption_state == "ENABLED"
+      - result.response.qos_spec.throttled_iops == 1000
+      - result.response.fault_tolerance_spec.replication_factor == "THREE"
+    success_msg: "Storage policy with all attributes updated successfully"
+    fail_msg: "Storage policy with all attributes update failed"
+
+- name: Update storage policy with same values to test idempotency
+  nutanix.ncp.ntnx_storage_policies_v2:
+    ext_id: "{{ todelete[0] }}"
+    name: "storage_policy_{{ random_name }}_updated"
+    category_ext_ids:
+      - "{{ todelete_categories[2] }}"
+    compression_spec:
+      compression_state: "POSTPROCESS"
+    encryption_spec:
+      encryption_state: "ENABLED"
+    qos_spec:
+      throttled_iops: 1000
+    fault_tolerance_spec:
+      replication_factor: "THREE"
+  register: result
+  ignore_errors: true
+
+- name: Update storage policy with same values to test idempotency status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.msg == "Nothing to change."
+    success_msg: "Update storage policy with same values to test idempotency passed"
+    fail_msg: "Update storage policy with same values to test idempotency failed"
+
+- name: Update storage policy with wrong external ID
+  nutanix.ncp.ntnx_storage_policies_v2:
+    ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+    name: "storage_policy_{{ random_name }}_updated"
+    category_ext_ids:
+      - "{{ todelete_categories[2] }}"
+    compression_spec:
+      compression_state: "POSTPROCESS"
+    encryption_spec:
+      encryption_state: "ENABLED"
+    qos_spec:
+      throttled_iops: 1000
+    fault_tolerance_spec:
+      replication_factor: "THREE"
+  register: result
+  ignore_errors: true
+
+- name: Update storage policy with wrong external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching storage policy info using ext_id"
+      - result.response is defined
+      - result.response.data.error is defined
+    success_msg: "Update storage policy with wrong external ID failed as expected"
+    fail_msg: "Update storage policy with wrong external ID did not fail as expected"
+
+- name: Update storage policy encryption when encryption is enabled
+  nutanix.ncp.ntnx_storage_policies_v2:
+    ext_id: "{{ todelete[1] }}"
+    name: "storage_policy_{{ random_name }}_updated"
+    category_ext_ids:
+      - "{{ todelete_categories[2] }}"
+    encryption_spec:
+      encryption_state: "SYSTEM_DERIVED"
+    qos_spec:
+      throttled_iops: 1000
+    fault_tolerance_spec:
+      replication_factor: "THREE"
+  register: result
+  ignore_errors: true
+
+- name: Update storage policy encryption when encryption is enabled status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Task Failed"
+      - result.response is defined
+      - result.response.status == "FAILED"
+    success_msg: "Update storage policy encryption when encryption is enabled failed as expected"
+    fail_msg: "Update storage policy encryption when encryption is enabled did not fail as expected"
+
+- name: Fetch storage policy using external ID
+  nutanix.ncp.ntnx_storage_policies_info_v2:
+    ext_id: "{{ todelete[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch storage policy using external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "storage_policy_{{ random_name }}_updated"
+      - result.response.category_ext_ids[0] == "{{ todelete_categories[2] }}"
+      - result.response.category_ext_ids | length == 1
+      - result.response.compression_spec.compression_state == "POSTPROCESS"
+      - result.response.encryption_spec.encryption_state == "ENABLED"
+      - result.response.qos_spec.throttled_iops == 1000
+      - result.response.fault_tolerance_spec.replication_factor == "THREE"
+    success_msg: "Fetch storage policy using external ID passed"
+    fail_msg: "Fetch storage policy using external ID failed"
+
+- name: Fetch storage policy using wrong external ID
+  nutanix.ncp.ntnx_storage_policies_info_v2:
+    ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+  register: result
+  ignore_errors: true
+
+- name: Fetch storage policy using wrong external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching storage policy info using ext_id"
+      - result.response is defined
+      - result.response.data.error is defined
+    success_msg: "Fetch storage policy using wrong external ID failed as expected"
+    fail_msg: "Fetch storage policy using wrong external ID did not fail as expected"
+
+- name: List all storage policies
+  nutanix.ncp.ntnx_storage_policies_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: List all storage policies status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length >= 2
+      - result.total_available_results is defined
+      - result.total_available_results >= 2
+      - result.response | length == result.total_available_results
+    success_msg: "List all storage policies passed"
+    fail_msg: "List all storage policies failed"
+
+- name: List storage policies with filter
+  nutanix.ncp.ntnx_storage_policies_info_v2:
+    filter: name eq 'storage_policy_{{ random_name }}_updated'
+  register: result
+  ignore_errors: true
+
+- name: List storage policies with filter status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].name == "storage_policy_{{ random_name }}_updated"
+      - result.response[0].category_ext_ids[0] == "{{ todelete_categories[2] }}"
+      - result.response[0].category_ext_ids | length == 1
+      - result.response[0].compression_spec.compression_state == "POSTPROCESS"
+      - result.response[0].encryption_spec.encryption_state == "ENABLED"
+      - result.response[0].qos_spec.throttled_iops == 1000
+      - result.response[0].fault_tolerance_spec.replication_factor == "THREE"
+      - result.total_available_results is defined
+      - result.total_available_results == 1
+      - result.response | length == result.total_available_results
+    success_msg: "List all storage policies with filter passed"
+    fail_msg: "List all storage policies with filter failed"
+
+- name: List storage policies with limit
+  nutanix.ncp.ntnx_storage_policies_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List storage policies with limit status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+      - result.total_available_results is defined
+      - result.total_available_results >= 2
+    success_msg: "List all storage policies with limit passed"
+    fail_msg: "List all storage policies with limit failed"
+
+- name: Delete storage policy with check mode
+  nutanix.ncp.ntnx_storage_policies_v2:
+    ext_id: "{{ todelete[0] }}"
+    state: absent
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Delete storage policy with check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.msg == "Storage policy with ext_id:{0} will be deleted.".format(todelete[0])
+    success_msg: "Delete storage policy with check mode passed"
+    fail_msg: "Delete storage policy with check mode failed"
+
+- name: Delete all created storage policies
+  nutanix.ncp.ntnx_storage_policies_v2:
+    ext_id: "{{item}}"
+    state: absent
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: true
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == True
+      - result.results | length == todelete | length
+      - result.msg == "All items completed"
+      - item.changed == true
+      - item.failed == false
+      - item.response.status == 'SUCCEEDED'
+      - item.response is defined
+      - item.ext_id == "{{ todelete[storage_policy_index] }}"
+    fail_msg: "Unable to delete all storage policies"
+    success_msg: "All storage policies are deleted successfully"
+  loop: "{{ result.results }}"
+  loop_control:
+    index_var: storage_policy_index
+
+- name: Delete Created categories
+  nutanix.ncp.ntnx_categories_v2:
+    ext_id: "{{item}}"
+    state: absent
+  register: result
+  loop: "{{ todelete_categories }}"
+  ignore_errors: true
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == True
+      - result.results | length == todelete_categories | length
+      - result.msg == "All items completed"
+    fail_msg: "Unable to delete all created categories"
+    success_msg: "All created categories are deleted successfully"
