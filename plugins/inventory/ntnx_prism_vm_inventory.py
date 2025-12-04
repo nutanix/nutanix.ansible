@@ -290,10 +290,12 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         # Only supports showing one value for a key
         if entity.get("metadata", {}).get("categories"):
             host_vars["ntnx_categories"] = entity["metadata"]["categories"]
-        
+
         # for category keys having multiple values
         if entity.get("metadata", {}).get("categories_mapping"):
-            host_vars["ntnx_categories_mapping"] = entity["metadata"]["categories_mapping"]
+            host_vars["ntnx_categories_mapping"] = entity["metadata"][
+                "categories_mapping"
+            ]
 
         return host_vars
 
