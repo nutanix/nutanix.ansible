@@ -75,24 +75,43 @@ jobs:
           ansible-playbook tests/integration/targets/prepare_fc_env/playbooks/prepare_fc_env.yml
           ansible-playbook tests/integration/targets/prepare_foundation_env/playbooks/prepare_foundation_env.yml
 
-          if [ -n "$regex_pattern" ] && [[ "$regex_pattern" =~ inventory_tests ]]; then
-              echo "regex_pattern contains 'inventory_tests'. Running all inventory tests..."
-              INVENTORY_TEST_DIR="tests/integration/targets/inventory_test"
-              for test_folder in "$INVENTORY_TEST_DIR"/*/; do
-                  test_name=$(basename "$test_folder")
-                  if [ -f "${test_folder}nutanix.yml" ] && [ -f "${test_folder}inventory.yml" ]; then
-                      echo "===> Running inventory test: $test_name..."
-                      if ansible-playbook -i "${test_folder}nutanix.yml" \
-                      "${test_folder}inventory.yml" \
-                      2>&1 | tee -a test_output.log; then
-                          echo "Inventory test '$test_name' completed successfully."
+          # Function to run inventory tests from a given directory
+          run_inventory_tests() {
+              local test_dir="$1"
+              local test_type="$2"
+              if [ -d "$test_dir" ]; then
+                  echo "===> Running $test_type inventory tests from: $test_dir"
+                  for test_folder in "$test_dir"/*/; do
+                      test_name=$(basename "$test_folder")
+                      if [ -f "${test_folder}nutanix.yml" ] && [ -f "${test_folder}inventory.yml" ]; then
+                          echo "===> Running inventory test: $test_name..."
+                          if ansible-playbook -i "${test_folder}nutanix.yml" \
+                          "${test_folder}inventory.yml" \
+                          2>&1 | tee -a test_output.log; then
+                              echo "Inventory test '$test_name' completed successfully."
+                          else
+                              echo "Inventory test '$test_name' failed. See logs above." | tee -a test_output.log
+                          fi
                       else
-                          echo "Inventory test '$test_name' failed. See logs above." | tee -a test_output.log
+                          echo "⚠️ Skipping '$test_name': missing nutanix.yml or inventory.yml"
                       fi
-                  else
-                      echo "⚠️ Skipping '$test_name': missing nutanix.yml or inventory.yml"
-                  fi
-              done
+                  done
+              else
+                  echo "⚠️ Directory not found: $test_dir"
+              fi
+          }
+
+          # Check for inventory test patterns and run appropriate tests
+          if [ -n "$regex_pattern" ]; then
+              # Check for v2 inventory tests (inventory_tests_v2)
+              if [[ "$regex_pattern" =~ inventory_tests_v2 ]]; then
+                  echo "regex_pattern contains 'inventory_tests_v2'. Running v2 inventory tests..."
+                  run_inventory_tests "tests/integration/targets/inventory_test_v2" "v2"
+              # Check for v1 inventory tests (inventory_tests but not v2)
+              elif [[ "$regex_pattern" =~ inventory_tests ]] && [[ ! "$regex_pattern" =~ inventory_tests_v2 ]]; then
+                  echo "regex_pattern contains 'inventory_tests'. Running v1 inventory tests..."
+                  run_inventory_tests "tests/integration/targets/inventory_test" "v1"
+              fi
           fi
 
           echo "===> Running integration tests..."
