@@ -13,6 +13,8 @@ compose:
   ansible_user: "'ansible_user'"
   # Convert memory_size_bytes to memory_gb and store in memory_gb variable.
   memory_gb: memory_size_bytes / 1073741824 if memory_size_bytes else 0
+  # Convert cpu_frequency_hz to cpu_frequency_ghz and store in cpu_frequency_ghz variable.
+  cpu_frequency_ghz: cpu_frequency_hz / 1000000000 if cpu_frequency_hz else 0
 
 # Fetch all hosts (set to true to ignore pagination)
 fetch_all_hosts: true
