@@ -101,34 +101,47 @@ jobs:
               fi
           }
 
-          # Check for inventory test patterns and run appropriate tests
-          if [ -n "$regex_pattern" ]; then
-              # Check for v2 inventory tests (inventory_tests_v2)
-              if [[ "$regex_pattern" =~ inventory_tests_v2 ]]; then
-                  echo "regex_pattern contains 'inventory_tests_v2'. Running v2 inventory tests..."
-                  run_inventory_tests "tests/integration/targets/inventory_test_v2" "v2"
-              # Check for v1 inventory tests (inventory_tests but not v2)
-              elif [[ "$regex_pattern" =~ inventory_tests ]] && [[ ! "$regex_pattern" =~ inventory_tests_v2 ]]; then
-                  echo "regex_pattern contains 'inventory_tests'. Running v1 inventory tests..."
-                  run_inventory_tests "tests/integration/targets/inventory_test" "v1"
-              fi
-          fi
-
-          echo "===> Running integration tests..."
+          echo "===> Running tests..."
           set +e
+          TEST_EXIT_CODE=0
+
           if [ -n "$regex_pattern" ]; then
-              echo "Filtering integration tests by regex: $regex_pattern"
-              mapfile -t matched_dirs < <(find tests/integration/targets -maxdepth 1 -mindepth 1 -type d -printf "%f\n" | grep -E "$regex_pattern" || true)
-              if [ ${#matched_dirs[@]} -eq 0 ]; then
-                  echo "❌ No integration test targets matched regex: '$regex_pattern'."
+              echo "Filtering tests by regex: $regex_pattern"
+
+              # Find all matching directories
+              mapfile -t all_matched_dirs < <(find tests/integration/targets -maxdepth 1 -mindepth 1 -type d -printf "%f\n" | grep -E "$regex_pattern" || true)
+
+              if [ ${#all_matched_dirs[@]} -eq 0 ]; then
+                  echo "❌ No test targets matched regex: '$regex_pattern'."
                   echo "No test execution performed." | tee test_output.log
                   echo "NO_REGEX_MATCH=true" >> $GITHUB_ENV
                   echo "RESULTS=No tests matched regex pattern '$regex_pattern'. Skipping test run." >> $GITHUB_ENV
-                  TEST_EXIT_CODE=0
               else
-                  ansible-test integration --continue-on-error \
-                    --python ${{ matrix.python-version }} --coverage "${matched_dirs[@]}" --allow-disabled 2>&1 | tee test_output.log
-                  TEST_EXIT_CODE=${PIPESTATUS[0]}
+                  echo "Matched directories: ${all_matched_dirs[*]}"
+
+                  # Separate inventory tests from regular integration tests
+                  integration_dirs=()
+                  for dir in "${all_matched_dirs[@]}"; do
+                      if [ "$dir" = "inventory_test" ]; then
+                          echo "===> Found inventory_test - will run with ansible-playbook"
+                          run_inventory_tests "tests/integration/targets/inventory_test" "v1"
+                      elif [ "$dir" = "inventory_test_v2" ]; then
+                          echo "===> Found inventory_test_v2 - will run with ansible-playbook"
+                          run_inventory_tests "tests/integration/targets/inventory_test_v2" "v2"
+                      else
+                          integration_dirs+=("$dir")
+                      fi
+                  done
+
+                  # Run ansible-test integration for non-inventory tests
+                  if [ ${#integration_dirs[@]} -gt 0 ]; then
+                      echo "===> Running ansible-test integration for: ${integration_dirs[*]}"
+                      ansible-test integration --continue-on-error \
+                        --python ${{ matrix.python-version }} --coverage "${integration_dirs[@]}" --allow-disabled 2>&1 | tee -a test_output.log
+                      TEST_EXIT_CODE=${PIPESTATUS[0]}
+                  else
+                      echo "===> No ansible-test integration targets to run"
+                  fi
               fi
           else
               ansible-test integration --continue-on-error \
@@ -137,8 +150,14 @@ jobs:
           fi
           set -e
 
-          echo "===> Generating coverage report..."
-          ansible-test coverage report > coverage.txt
+          # Generate coverage report if integration tests were run
+          if [ -n "$regex_pattern" ] && [ ${#integration_dirs[@]} -eq 0 ]; then
+              echo "===> Skipping coverage report (no ansible-test integration tests)..."
+              echo "SKIP_COVERAGE=true" >> $GITHUB_ENV
+          else
+              echo "===> Generating coverage report..."
+              ansible-test coverage report > coverage.txt || true
+          fi
 
           if [ "$TEST_EXIT_CODE" -ne 0 ]; then
               echo "❌ One or more integration tests failed."
@@ -268,7 +287,7 @@ jobs:
           fi
 
       - name: Code Coverage Check
-        if: ${{ always() }}
+        if: ${{ always() && env.SKIP_COVERAGE != 'true' }}
         run: |
           cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
           ansible-test coverage html
