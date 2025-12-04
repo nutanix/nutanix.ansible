@@ -199,7 +199,7 @@ jobs:
                 fi
                 if [[ $line =~ ^PLAY\ RECAP ]]; then
                     read -r recap_line
-                    if [[ $recap_line =~ failed=([0-9]+) ]]; then
+                    if [[ -n "$current_test" ]] && [[ $recap_line =~ failed=([0-9]+) ]]; then
                         failed_count="${BASH_REMATCH[1]}"
                         if [[ "$failed_count" -eq 0 ]]; then
                             test_results["$current_test"]="PASSED"
