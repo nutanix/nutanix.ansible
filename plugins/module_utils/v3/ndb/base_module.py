@@ -30,6 +30,9 @@ class NdbBaseModule(AnsibleModule):
         nutanix_debug=dict(
             type="bool", default=False, fallback=(env_fallback, ["NUTANIX_DEBUG"])
         ),
+        nutanix_log_file=dict(
+            type="str", required=False, fallback=(env_fallback, ["NUTANIX_LOG_FILE"])
+        ),
     )
 
     def __init__(self, **kwargs):
