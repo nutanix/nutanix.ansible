@@ -30,6 +30,28 @@ author:
 """
 
 EXAMPLES = r"""
+- name: List all entity groups
+    nutanix.ncp.ntnx_entity_groups_info_v2:
+    register: result
+    ignore_errors: true
+
+- name: List entity group using filter
+    nutanix.ncp.ntnx_entity_groups_info_v2:
+    filter: "name eq '{{ entity_group_name }}_updated_name'"
+    register: result
+    ignore_errors: true
+
+- name: List entity group using limit
+    nutanix.ncp.ntnx_entity_groups_info_v2:
+    limit: 1
+    register: result
+    ignore_errors: true
+
+- name: Get entity group using ext_id
+    nutanix.ncp.ntnx_entity_groups_info_v2:
+    ext_id: "{{ entity_group_ext_id }}"
+    register: result
+    ignore_errors: true
 """
 
 RETURN = r"""

@@ -14,6 +14,8 @@ module: ntnx_entity_groups_v2
 short_description: Create, Update, Delete entity groups
 version_added: 2.5.0
 description:
+    - An Entity Group is a logical group of entities supported by flow network security policies.
+    - Once created, an Entity Group can be referenced in the network security policies.
     - Create, Update, Delete entity groups
     - This module uses PC v4 APIs based SDKs
 options:
@@ -73,6 +75,48 @@ author:
 """
 
 EXAMPLES = r"""
+- name: Create entity group
+  nutanix.ncp.ntnx_entity_groups_v2:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    validate_certs: false
+    state: present
+    name: "ansible-entity-group"
+    description: "ansible-entity-group-desc"
+    allowed_config:
+      entities:
+        - select_by: CATEGORY_EXT_ID
+          type: VM
+          reference_ext_ids:
+            - "00062ffc-95ad-19e9-185b-ac1f6b6f97a3"
+            - "00062ffc-95ad-19e9-185b-ac1f6b6f97a4"
+  register: result
+  ignore_errors: true
+
+- name: Update entity group
+  nutanix.ncp.ntnx_entity_groups_v2:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    validate_certs: false
+    state: present
+    ext_id: "b215708c-252f-400c-bc90-2f36242d3d3c"
+    name: "ansible-entity-group-updated-name"
+    description: "ansible-entity-group-updated-desc"
+  register: result
+  ignore_errors: true
+
+- name: Delete entity group
+  nutanix.ncp.ntnx_entity_groups_v2:
+    ext_id: "b215708c-252f-400c-bc90-2f36242d3d3c"
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    validate_certs: false
+    state: absent
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
