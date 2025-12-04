@@ -35,7 +35,7 @@
 
 - name: Set todelete_categories list
   ansible.builtin.set_fact:
-    todelete_categories: [] 
+    todelete_categories: []
 
 - name: Create entity group with check mode enabled
   nutanix.ncp.ntnx_entity_groups_v2:

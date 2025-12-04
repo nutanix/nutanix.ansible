@@ -31,27 +31,43 @@ author:
 
 EXAMPLES = r"""
 - name: List all entity groups
-    nutanix.ncp.ntnx_entity_groups_info_v2:
+  nutanix.ncp.ntnx_entity_groups_info_v2:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    validate_certs: false
     register: result
     ignore_errors: true
 
 - name: List entity group using filter
-    nutanix.ncp.ntnx_entity_groups_info_v2:
+  nutanix.ncp.ntnx_entity_groups_info_v2:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    validate_certs: false
     filter: "name eq '{{ entity_group_name }}_updated_name'"
-    register: result
-    ignore_errors: true
+  register: result
+  ignore_errors: true
 
 - name: List entity group using limit
-    nutanix.ncp.ntnx_entity_groups_info_v2:
+  nutanix.ncp.ntnx_entity_groups_info_v2:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    validate_certs: false
     limit: 1
-    register: result
-    ignore_errors: true
+  register: result
+  ignore_errors: true
 
 - name: Get entity group using ext_id
-    nutanix.ncp.ntnx_entity_groups_info_v2:
+  nutanix.ncp.ntnx_entity_groups_info_v2:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    validate_certs: false
     ext_id: "{{ entity_group_ext_id }}"
-    register: result
-    ignore_errors: true
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
