@@ -132,10 +132,6 @@
     fail_msg: Create entity group failed
     success_msg: Create entity group passed
 
-- name: Debug result create entity group
-  ansible.builtin.debug:
-    var: result
-
 - name: Save entity group ext_id to the list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [ result.ext_id ] }}"
@@ -407,10 +403,6 @@
     ext_id: "{{ todelete[1] }}"
   register: result
   ignore_errors: true
-
-- name: Debug result get entity group using ext_id
-  ansible.builtin.debug:
-    var: result
 
 - name: Get entity group using ext_id Status
   ansible.builtin.assert:
