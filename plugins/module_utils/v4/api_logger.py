@@ -199,7 +199,7 @@ class APILogger:
         self.module.log(log_message)
 
         log_file = self.module.params.get("nutanix_log_file") or os.environ.get(
-            "NUTANIX_LOG_FILE", "/tmp/nutanix_ansible_debug.log"
+            "NUTANIX_LOG_FILE"
         )
         if log_file:
             try:

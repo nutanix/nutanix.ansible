@@ -20,7 +20,7 @@ class FoundationBaseModule(AnsibleModule):
             type="bool", default=False, fallback=(env_fallback, ["NUTANIX_DEBUG"])
         ),
         nutanix_log_file=dict(
-            type="str", required=False, fallback=(env_fallback, ["NUTANIX_LOG_FILE"])
+            type="str", default="/tmp/nutanix_ansible_debug.log", fallback=(env_fallback, ["NUTANIX_LOG_FILE"])
         ),
     )
 
