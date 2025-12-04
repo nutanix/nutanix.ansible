@@ -77,37 +77,22 @@ jobs:
 
           if [ -n "$regex_pattern" ] && [[ "$regex_pattern" =~ inventory_tests ]]; then
               echo "regex_pattern contains 'inventory_tests'. Running all inventory tests..."
-              echo "===> Running inventory test (default host)..."
-              if ansible-playbook -i tests/integration/targets/inventory_test/inventory_test_default_host/nutanix.yml \
-              tests/integration/targets/inventory_test/inventory_test_default_host/inventory.yml \
-              2>&1 | tee -a test_output.log; then
-                  echo "Inventory test default host completed successfully."
-              else
-                  echo "Inventory test default host failed. See logs above." | tee -a test_output.log
-              fi
-              echo "===> Running inventory test (custom host)..."
-              if ansible-playbook -i tests/integration/targets/inventory_test/inventory_test_custom_host/nutanix.yml \
-              tests/integration/targets/inventory_test/inventory_test_custom_host/inventory.yml \
-              2>&1 | tee -a test_output.log; then
-                  echo "Inventory test custom host completed successfully."
-              else
-                  echo "Inventory test custom host failed. See logs above." | tee -a test_output.log
-              fi
-              echo "===> Running inventory test (negative tests)..."
-              if ansible-playbook -i tests/integration/targets/inventory_test/inventory_test_negative_test_1/nutanix.yml \
-              tests/integration/targets/inventory_test/inventory_test_negative_test_1/inventory.yml \
-              2>&1 | tee -a test_output.log; then
-                  echo "Inventory test negative test 1 completed successfully."
-              else
-                  echo "Inventory test negative test 1 failed. See logs above." | tee -a test_output.log
-              fi
-              if ansible-playbook -i tests/integration/targets/inventory_test/inventory_test_negative_test_2/nutanix.yml \
-              tests/integration/targets/inventory_test/inventory_test_negative_test_2/inventory.yml \
-              2>&1 | tee -a test_output.log; then
-                  echo "Inventory test negative test 2 completed successfully."
-              else
-                  echo "Inventory test negative test 2 failed. See logs above." | tee -a test_output.log
-              fi
+              INVENTORY_TEST_DIR="tests/integration/targets/inventory_test"
+              for test_folder in "$INVENTORY_TEST_DIR"/*/; do
+                  test_name=$(basename "$test_folder")
+                  if [ -f "${test_folder}nutanix.yml" ] && [ -f "${test_folder}inventory.yml" ]; then
+                      echo "===> Running inventory test: $test_name..."
+                      if ansible-playbook -i "${test_folder}nutanix.yml" \
+                      "${test_folder}inventory.yml" \
+                      2>&1 | tee -a test_output.log; then
+                          echo "Inventory test '$test_name' completed successfully."
+                      else
+                          echo "Inventory test '$test_name' failed. See logs above." | tee -a test_output.log
+                      fi
+                  else
+                      echo "⚠️ Skipping '$test_name': missing nutanix.yml or inventory.yml"
+                  fi
+              done
           fi
 
           echo "===> Running integration tests..."
@@ -166,7 +151,12 @@ jobs:
           if [ -f "$LOG_FILE" ]; then
             # Parse test_output.log and populate test_results[current_test]="PASSED"|"FAILED"
             while IFS= read -r line; do
+                # Match integration tests: "Running <name> integration test role"
                 if [[ $line =~ ^Running\ ([^[:space:]]+)\ integration\ test\ role ]]; then
+                    current_test="${BASH_REMATCH[1]}"
+                fi
+                # Match inventory tests: "===> Running inventory test: <name>..."
+                if [[ $line =~ ^===\>\ Running\ inventory\ test:\ (.+)\.\.\. ]]; then
                     current_test="${BASH_REMATCH[1]}"
                 fi
                 if [[ $line =~ ^PLAY\ RECAP ]]; then
