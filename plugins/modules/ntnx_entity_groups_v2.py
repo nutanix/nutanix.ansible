@@ -26,7 +26,6 @@ options:
         description:
             - A short identifier / name of an Entity Group.
         type: str
-        required: true
     description:
         description:
             - A user defined description for an Entity Group.
@@ -85,6 +84,28 @@ response:
   returned: always
   type: dict
   sample:
+    {
+        "allowed_config": {
+            "entities": [
+                {
+                    "kube_entities": null,
+                    "reference_ext_ids": [
+                        "83c8be14-a656-4a53-6e2c-84d0e6b84182",
+                        "6742b519-b958-4638-679c-c7b2d151c44a"
+                    ],
+                    "select_by": "CATEGORY_EXT_ID",
+                    "type": "VM"
+                }
+            ]
+        },
+        "description": "mkWyftswwhuhansible-eg1_entity_group_desc",
+        "ext_id": "b215708c-252f-400c-bc90-2f36242d3d3c",
+        "links": null,
+        "name": "mkWyftswwhuhansible-eg1_entity_group",
+        "owner_ext_id": "00000000-0000-0000-0000-000000000000",
+        "policy_ext_ids": null,
+        "tenant_id": null
+    }
 
 changed:
   description: This indicates whether the task resulted in any changes
@@ -184,7 +205,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
-        name=dict(type="str", required=True),
+        name=dict(type="str"),
         description=dict(type="str"),
         allowed_config=dict(
             type="dict",
@@ -333,6 +354,7 @@ def run_module():
         supports_check_mode=True,
         required_if=[
             ("state", "present", ("name", "ext_id"), True),
+            ("state", "absent", ("ext_id",)),
         ],
     )
     if SDK_IMP_ERROR:

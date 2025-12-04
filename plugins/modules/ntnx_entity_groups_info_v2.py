@@ -41,6 +41,28 @@ response:
   returned: always
   type: dict
   sample:
+    {
+        "allowed_config": {
+            "entities": [
+                {
+                    "kube_entities": null,
+                    "reference_ext_ids": [
+                        "83c8be14-a656-4a53-6e2c-84d0e6b84182",
+                        "6742b519-b958-4638-679c-c7b2d151c44a"
+                    ],
+                    "select_by": "CATEGORY_EXT_ID",
+                    "type": "SUBNET"
+                }
+            ]
+        },
+        "description": "mkWyftswwhuhansible-eg2_entity_group_desc",
+        "ext_id": "f56fb070-c59e-47bf-bb43-657854189abd",
+        "links": null,
+        "name": "mkWyftswwhuhansible-eg2_entity_group",
+        "owner_ext_id": "00000000-0000-0000-0000-000000000000",
+        "policy_ext_ids": null,
+        "tenant_id": null
+    }
 
 changed:
   description: This indicates whether the task resulted in any changes
