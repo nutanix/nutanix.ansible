@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_entities_info_v2
 short_description: Get entities info
-version_added: 2.0.0
+version_added: 2.5.0
 description:
     - Get entities info using entity external ID or list multiple entities
     - Configure and manage entities representing the resources over which permissions are defined.
