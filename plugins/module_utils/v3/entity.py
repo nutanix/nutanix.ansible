@@ -7,12 +7,14 @@ __metaclass__ = type
 import copy
 import json
 import os
+import time
 from base64 import b64encode
 
 from ansible.module_utils._text import to_text
 from ansible.module_utils.urls import fetch_url
 
 from .. import utils
+from ..v4.api_logger import APILogger
 
 try:
     from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
@@ -36,6 +38,7 @@ class Entity(object):
         self.base_url = self._build_url(module, scheme, resource_type)
         self.headers = self._build_headers(module, additional_headers)
         self.cookies = cookies
+        self.logger = APILogger(module)
 
     def create(
         self,
@@ -365,6 +368,9 @@ class Entity(object):
         timeout=30,
         **kwargs  # fmt: skip
     ):
+
+        start_time = time.time()
+
         # only jsonify if content-type supports, added to avoid incase of form-url-encodeded type data
         if self.headers["Content-Type"] == "application/json" and data is not None:
             data = self.module.jsonify(data)
@@ -384,6 +390,7 @@ class Entity(object):
         )
 
         status_code = info.get("status")
+        elapsed_time = time.time() - start_time
 
         body = None
 
@@ -414,6 +421,33 @@ class Entity(object):
             resp_json = json.loads(to_text(body)) if body else None
         except ValueError:
             resp_json = None
+
+        # Log the API call
+
+        try:
+            self.logger.log_api_call(
+                method=method,
+                url=url,
+                query_params=kwargs.get("query"),
+                headers=headers,
+                body=data,
+                response=resp_json,
+                status_code=status_code,
+                elapsed_time=elapsed_time,
+            )
+        except Exception as e:
+            self.logger.log_api_call(
+                method=method,
+                url=url,
+                query_params=kwargs.get("query"),
+                headers=headers,
+                body=data,
+                response=None,
+                status_code=resp.status if hasattr(resp, "status") else None,
+                elapsed_time=elapsed_time,
+                error=e,
+            )
+            raise e
 
         if not raise_error:
             return resp_json

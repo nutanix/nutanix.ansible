@@ -16,6 +16,14 @@ class FoundationBaseModule(AnsibleModule):
         state=dict(type="str", choices=["present", "absent"], default="present"),
         timeout=dict(type="int", required=False, default=60),
         wait=dict(type="bool", default=True),
+        nutanix_debug=dict(
+            type="bool", default=False, fallback=(env_fallback, ["NUTANIX_DEBUG"])
+        ),
+        nutanix_log_file=dict(
+            type="str",
+            default="/tmp/nutanix_ansible_debug.log",
+            fallback=(env_fallback, ["NUTANIX_LOG_FILE"]),
+        ),
     )
 
     def __init__(self, **kwargs):
