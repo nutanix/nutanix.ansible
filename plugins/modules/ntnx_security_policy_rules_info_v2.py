@@ -20,6 +20,7 @@ options:
         description:
             - External id to fetch specific network security policy rules info.
         type: str
+        required: true
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_info_v2

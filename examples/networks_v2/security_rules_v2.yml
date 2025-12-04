@@ -73,7 +73,7 @@
                   - "{{ category2_uuid }}"
                 is_all_protocol_allowed: true
       register: result
-    
+
     - name: List all security policy rules
       nutanix.ncp.ntnx_security_policy_rules_info_v2:
         policy_ext_id: "{{ security_rule_uuid }}"
