@@ -28,14 +28,17 @@ extends_documentation_fragment:
 author:
  - Abhinav Bansal (@abhinavbansal29)
 """
+
 EXAMPLES = r"""
 """
+
 RETURN = r"""
 response:
   description:
       - Response for fetching entity groups info
       - One entity group info if External ID is provided
       - List of multiple entity groups info if External ID is not provided
+  returned: always
   type: dict
   sample:
 

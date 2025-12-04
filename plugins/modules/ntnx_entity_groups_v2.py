@@ -35,14 +35,14 @@ options:
         description:
             - Configuration of the allowed entities in the Entity Group.
         type: dict
-        options:
+        suboptions:
             entities:
                 description:
                     - List of allowed entities in the Entity Group.
                     - An allowed entity is a collection of acceptable entites.
                 type: list
                 elements: dict
-                options:
+                suboptions:
                     select_by:
                         description:
                             - Select by field for the allowed entity.
@@ -65,7 +65,6 @@ options:
                             - If the selection type is kube fields, then it is necessary to specify the kube_entities.
                         type: list
                         elements: str
-        required: true
 
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
@@ -127,8 +126,8 @@ from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
 from ..module_utils.v4.flow.api_client import (  # noqa: E402
-    get_etag,
     get_entity_groups_api_instance,
+    get_etag,
 )
 from ..module_utils.v4.flow.helpers import get_entity_group  # noqa: E402
 from ..module_utils.v4.prism.tasks import (  # noqa: E402
@@ -185,7 +184,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
-        name=dict(type="str"),
+        name=dict(type="str", required=True),
         description=dict(type="str"),
         allowed_config=dict(
             type="dict",
