@@ -76,27 +76,44 @@ jobs:
           ansible-playbook tests/integration/targets/prepare_foundation_env/playbooks/prepare_foundation_env.yml
 
           # Function to run inventory tests from a given directory
+          # Handles both: directories with subdirectories (inventory_test, inventory_test_v2)
+          # and directories with files directly in them (inventory_test_hosts_v2)
           run_inventory_tests() {
               local test_dir="$1"
               local test_type="$2"
               if [ -d "$test_dir" ]; then
                   echo "===> Running $test_type inventory tests from: $test_dir"
-                  for test_folder in "$test_dir"/*/; do
-                      test_name=$(basename "$test_folder")
-                      if [ -f "${test_folder}nutanix.yml" ] && [ -f "${test_folder}inventory.yml" ]; then
-                          # Log the test name to both stdout and test_output.log for summary parsing
-                          echo "===> Running inventory test: $test_name..." | tee -a test_output.log
-                          if ansible-playbook -i "${test_folder}nutanix.yml" \
-                          "${test_folder}inventory.yml" \
-                          2>&1 | tee -a test_output.log; then
-                              echo "Inventory test '$test_name' completed successfully."
-                          else
-                              echo "Inventory test '$test_name' failed. See logs above." | tee -a test_output.log
-                          fi
+
+                  # Check if nutanix.yml and inventory.yml exist directly in test_dir
+                  if [ -f "${test_dir}/nutanix.yml" ] && [ -f "${test_dir}/inventory.yml" ]; then
+                      # Single test case - files are directly in the directory
+                      test_name=$(basename "$test_dir")
+                      echo "===> Running inventory test: $test_name..." | tee -a test_output.log
+                      if ansible-playbook -i "${test_dir}/nutanix.yml" \
+                      "${test_dir}/inventory.yml" \
+                      2>&1 | tee -a test_output.log; then
+                          echo "Inventory test '$test_name' completed successfully."
                       else
-                          echo "⚠️ Skipping '$test_name': missing nutanix.yml or inventory.yml"
+                          echo "Inventory test '$test_name' failed. See logs above." | tee -a test_output.log
                       fi
-                  done
+                  else
+                      # Multiple test cases - files are in subdirectories
+                      for test_folder in "$test_dir"/*/; do
+                          test_name=$(basename "$test_folder")
+                          if [ -f "${test_folder}nutanix.yml" ] && [ -f "${test_folder}inventory.yml" ]; then
+                              echo "===> Running inventory test: $test_name..." | tee -a test_output.log
+                              if ansible-playbook -i "${test_folder}nutanix.yml" \
+                              "${test_folder}inventory.yml" \
+                              2>&1 | tee -a test_output.log; then
+                                  echo "Inventory test '$test_name' completed successfully."
+                              else
+                                  echo "Inventory test '$test_name' failed. See logs above." | tee -a test_output.log
+                              fi
+                          else
+                              echo "⚠️ Skipping '$test_name': missing nutanix.yml or inventory.yml"
+                          fi
+                      done
+                  fi
               else
                   echo "⚠️ Directory not found: $test_dir"
               fi
@@ -125,10 +142,13 @@ jobs:
                   for dir in "${all_matched_dirs[@]}"; do
                       if [ "$dir" = "inventory_test" ]; then
                           echo "===> Found inventory_test - will run with ansible-playbook"
-                          run_inventory_tests "tests/integration/targets/inventory_test" "v1"
+                          run_inventory_tests "tests/integration/targets/inventory_test" "vm_v1"
                       elif [ "$dir" = "inventory_test_v2" ]; then
                           echo "===> Found inventory_test_v2 - will run with ansible-playbook"
-                          run_inventory_tests "tests/integration/targets/inventory_test_v2" "v2"
+                          run_inventory_tests "tests/integration/targets/inventory_test_v2" "vm_v2"
+                      elif [ "$dir" = "inventory_test_hosts_v2" ]; then
+                          echo "===> Found inventory_test_hosts_v2 - will run with ansible-playbook"
+                          run_inventory_tests "tests/integration/targets/inventory_test_hosts_v2" "hosts_v2"
                       else
                           integration_dirs+=("$dir")
                       fi
