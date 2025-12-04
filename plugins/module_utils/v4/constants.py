@@ -42,6 +42,7 @@ class Tasks:
         ROUTE = "networking:config:route"
         OBJECTS = "objects:config:object-store"
         OVA = "vmm:content:ova"
+        ENTITY_GROUP = "microseg:config:entity-group"
 
     class CompletetionDetailsName:
         """Completion details name for the task entities affected"""
