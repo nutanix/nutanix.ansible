@@ -410,6 +410,72 @@
   ansible.builtin.set_fact:
     todelete: "{{ result.ext_id }}"
 
+- name: List all security policy rules
+  nutanix.ncp.ntnx_security_policy_rules_info_v2:
+    policy_ext_id: "{{ todelete }}"
+  register: result
+  ignore_errors: true
+
+- name: List all security policy rules status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.response | length == 3
+      - result.policy_ext_id == "{{ todelete }}"
+    fail_msg: Failed to list all security policy rules
+    success_msg: Successfully listed all security policy rules
+
+- name: List security policy rules using intra group filter
+  nutanix.ncp.ntnx_security_policy_rules_info_v2:
+    policy_ext_id: "{{ todelete }}"
+    filter: "type eq Microseg.Config.RuleType'INTRA_GROUP'"
+  register: result
+  ignore_errors: true
+
+- name: List security policy rules using intra group filter status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.policy_ext_id == "{{ todelete }}"
+      - result.response | length == 1
+      - result.response[0].type == "INTRA_GROUP"
+    fail_msg: Failed to list security policy rules using intra group filter
+    success_msg: Successfully listed security policy rules using intra group filter
+
+- name: List security policy rules using limit
+  nutanix.ncp.ntnx_security_policy_rules_info_v2:
+    policy_ext_id: "{{ todelete }}"
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List security policy rules using limit status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.policy_ext_id == "{{ todelete }}"
+      - result.response | length == 1
+    fail_msg: Failed to list security policy rules using limit
+    success_msg: Successfully listed security policy rules using limit
+
+- name: List security policy rules using wrong policy external ID
+  nutanix.ncp.ntnx_security_policy_rules_info_v2:
+    policy_ext_id: "00062ffc-95ad-19e9-185b-ac1f6b6f97a3"
+  register: result
+  ignore_errors: true
+
+- name: List security policy rules using wrong policy external ID status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching network security policy rules info"
+    fail_msg: list security policy rules using wrong policy external ID did not fail as expected
+    success_msg: list security policy rules using wrong policy external ID failed as expected
+
 - name: Delete security rule with check mode enabled
   nutanix.ncp.ntnx_security_rules_v2:
     state: absent
