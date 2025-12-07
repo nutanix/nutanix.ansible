@@ -202,6 +202,10 @@ class APILogger:
             "NUTANIX_LOG_FILE"
         )
         if log_file:
+            # Add date suffix to create a new log file each day
+            date_suffix = datetime.now().strftime("%d-%m-%Y")
+            base, ext = os.path.splitext(log_file)
+            log_file = "{}_{}{}".format(base, date_suffix, ext)
             try:
                 with open(log_file, "a") as f:
                     f.write(log_message + "\n")
