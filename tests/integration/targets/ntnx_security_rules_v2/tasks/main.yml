@@ -7,6 +7,7 @@
       nutanix_password: "{{ password }}"
       validate_certs: "{{ validate_certs }}"
       nutanix_debug: "{{ nutanix_debug }}"
+      nutanix_log_file: "{{ nutanix_log_file }}"
   block:
     - name: Import tests for application rule CRUD and security rules info tests
       ansible.builtin.import_tasks: application_rules_and_info_tests.yml

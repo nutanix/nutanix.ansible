@@ -4,6 +4,7 @@
     group/nutanix.ncp.ntnx:
       nutanix_host: "{{ foundation_host }}"
       nutanix_debug: "{{ nutanix_debug }}"
+      nutanix_log_file: "{{ nutanix_log_file }}"
   block:
     - name: Import Tasks
       ansible.builtin.import_tasks: image_nodes.yml

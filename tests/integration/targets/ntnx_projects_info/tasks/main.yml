@@ -7,6 +7,7 @@
       nutanix_password: "{{ password }}"
       validate_certs: "{{ validate_certs }}"
       nutanix_debug: "{{ nutanix_debug }}"
+      nutanix_log_file: "{{ nutanix_log_file }}"
   block:
     - name: Import projects_info.yml
       ansible.builtin.import_tasks: "projects_info.yml"
