@@ -6,6 +6,8 @@ from copy import deepcopy
 
 from ansible.module_utils.basic import AnsibleModule, env_fallback
 
+from .constants import DEFAULT_LOG_FILE
+
 __metaclass__ = type
 
 
@@ -39,7 +41,7 @@ class BaseModule(AnsibleModule):
         ),
         nutanix_log_file=dict(
             type="str",
-            default="/tmp/nutanix_ansible_debug.log",
+            default=DEFAULT_LOG_FILE,
             fallback=(env_fallback, ["NUTANIX_LOG_FILE"]),
         ),
     )

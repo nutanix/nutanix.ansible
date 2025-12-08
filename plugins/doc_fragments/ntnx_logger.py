@@ -7,6 +7,10 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
+# Note: The default value for nutanix_log_file is defined in:
+# plugins/module_utils/constants.py as DEFAULT_LOG_FILE
+# If you update the default here, also update it there.
+
 
 class ModuleDocFragment(object):
 

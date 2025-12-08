@@ -12,6 +12,8 @@ import time
 import warnings
 from datetime import datetime
 
+from ..constants import DEFAULT_LOG_FILE
+
 
 class APILogger:
     """
@@ -202,10 +204,11 @@ class APILogger:
             "NUTANIX_LOG_FILE"
         )
         if log_file:
-            # Add date suffix to create a new log file each day
-            date_suffix = datetime.now().strftime("%d-%m-%Y")
-            base, ext = os.path.splitext(log_file)
-            log_file = "{}_{}{}".format(base, date_suffix, ext)
+            # Add date suffix only when using the default log file
+            if log_file == DEFAULT_LOG_FILE:
+                date_suffix = datetime.now().strftime("%d-%m-%Y")
+                base, ext = os.path.splitext(log_file)
+                log_file = "{}_{}{}".format(base, date_suffix, ext)
             try:
                 with open(log_file, "a") as f:
                     f.write(log_message + "\n")
