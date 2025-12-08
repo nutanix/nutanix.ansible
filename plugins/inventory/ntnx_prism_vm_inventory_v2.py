@@ -255,10 +255,6 @@ class Mock_Module:
     def jsonify(self, data):
         return json.dumps(data)
 
-    def log(self, msg):
-        """Log a message (used by api_logger)"""
-        pass
-
     def fail_json(self, msg, **kwargs):
         """Fail with a message"""
         kwargs["failed"] = True
