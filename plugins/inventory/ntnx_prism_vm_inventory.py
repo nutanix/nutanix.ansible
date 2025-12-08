@@ -159,7 +159,6 @@ from ansible.errors import AnsibleError  # noqa: E402
 from ansible.module_utils.basic import env_fallback  # noqa: E402
 from ansible.plugins.inventory import BaseInventoryPlugin, Constructable  # noqa: E402
 
-from ..module_utils.constants import DEFAULT_LOG_FILE  # noqa: E402
 from ..module_utils.v3.prism import vms  # noqa: E402
 
 
