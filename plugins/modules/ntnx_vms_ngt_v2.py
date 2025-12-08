@@ -154,6 +154,11 @@ changed:
     description: Indicates whether the NGT installation or uninstallation changed the state of the VM.
     type: bool
     returned: always
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error or module is idempotent
+    type: str
+    sample: "Api Exception raised while installing NGT"
 error:
     description: The error message, if any, encountered during the NGT operation.
     type: str

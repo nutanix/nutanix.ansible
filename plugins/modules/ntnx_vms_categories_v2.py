@@ -98,6 +98,11 @@ response:
             "46f433d5-016d-5b11-a75f-5d0f44da7fd5",
             "cee7a9cc-3032-54bb-9eaf-a8205af52b7c"
         ],
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error or module is idempotent
+    type: str
+    sample: "Api Exception raised while associating vm disk"
 error:
     description: The error message if an error occurred.
     type: str

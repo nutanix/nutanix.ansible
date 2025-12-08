@@ -74,6 +74,12 @@ changed:
     type: bool
     returned: always
     sample: true
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error or in check mode operation
+    type: str
+    sample: "Api Exception raised while revoking user api key"
+
 error:
     description:
         - Error message if any occurred during the operation.

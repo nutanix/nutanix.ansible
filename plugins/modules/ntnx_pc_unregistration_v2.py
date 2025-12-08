@@ -142,6 +142,12 @@ changed:
     returned: always
     sample: true
 
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "API Exception raised while unregistering cluster"
+
 error:
     description: Error message if any.
     type: str

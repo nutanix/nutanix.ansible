@@ -231,7 +231,6 @@
     success_msg: "Create storage policy with same category failed as expected"
     fail_msg: "Create storage policy with same category did not fail as expected"
 
-# Check the validation of this error message: Atleast one storage attribute must be set to non default value
 - name: Create storage policy without providing storage attributes
   nutanix.ncp.ntnx_storage_policies_v2:
     name: "storage_policy_{{ random_name }}_default"
@@ -244,9 +243,8 @@
       - result is defined
       - result.changed == false
       - result.failed == true
-      - result.msg == "Api Exception raised while creating storage policy"
-      - result.response is defined
-      - result.response.data.error is defined
+      - result.msg ==
+        "If compression_state, encryption_state, or replication_factor are intended to be system-derived, ensure that the qos_spec block is included."
     success_msg: "Create storage policy without providing storage attributes failed as expected"
     fail_msg: "Create storage policy without providing storage attributes did not fail as expected"
 

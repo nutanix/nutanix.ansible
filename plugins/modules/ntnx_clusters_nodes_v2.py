@@ -597,6 +597,11 @@ changed:
   description: Whether the state of the cluster nodes has changed.
   type: bool
   returned: always
+msg:
+  description: This indicates the message if any message occurred
+  returned: When there is an error
+  type: str
+  sample: "Failed generating spec for adding cluster node"
 error:
   description: The error message, if any.
   type: str

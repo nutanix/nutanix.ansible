@@ -143,6 +143,11 @@ ext_id:
     type: str
     returned: always
     sample: af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while fetching hosts info"
 error:
     description: Error message if any.
     type: str

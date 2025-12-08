@@ -84,6 +84,11 @@ ext_id:
     type: str
     sample: "98b9dc89-be08-3c56-b554-692b8b676fd2"
     returned: always
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while fetching image placement policy info"
 error:
   description: The error message if an error occurs.
   type: str

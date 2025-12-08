@@ -87,6 +87,11 @@ changed:
     type: bool
     returned: always
     sample: true
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error or in check mode (in delete operation)
+    type: str
+    sample: "Api Exception raised while publishing template version"
 error:
     description: The error message, if any.
     type: str

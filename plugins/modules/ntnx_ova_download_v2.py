@@ -50,6 +50,11 @@ ext_id:
     type: str
     returned: always
     sample: "12345678-1234-1234-1234-123456789012"
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error or in check mode operation
+    type: str
+    sample: "Api Exception raised while downloading ova"
 failed:
     description: Indicates if the module execution failed.
     type: bool

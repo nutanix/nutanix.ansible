@@ -110,6 +110,11 @@ failed:
   type: bool
   returned: always
   sample: false
+msg:
+  description: This indicates the message if any message occurred
+  returned: When there is an error
+  type: str
+  sample: "Api Exception raised while fetching Security Technical Implementation Guide control details"
 error:
   description: Error message if any.
   type: str

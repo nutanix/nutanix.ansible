@@ -267,6 +267,11 @@ response:
         "task_response_type": "NETWORKING_DETAILS",
         "tenant_id": null
       }
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "API Exception while getting network information for cluster nodes"
 error:
     description: The error message if an error occurs.
     type: str

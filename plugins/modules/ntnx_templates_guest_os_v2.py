@@ -91,6 +91,94 @@ EXAMPLES = r"""
 """
 
 RETURN = r"""
+response:
+    description: Task status details for the guest OS update operation.
+    type: dict
+    returned: always
+    sample:
+        {
+            "app_name": null,
+            "batch_summary": null,
+            "cluster_ext_ids": null,
+            "completed_time": "2025-11-24T13:33:47.575229+00:00",
+            "completion_details": null,
+            "created_time": "2025-11-24T13:33:41.930110+00:00",
+            "entities_affected": [
+                {
+                    "ext_id": "a189abcb-e5e6-4392-b5ed-07807dad9525",
+                    "name": "NrCQvMfvacvRansible-agtemplate",
+                    "rel": "vmm:content:template"
+                },
+                {
+                    "ext_id": "a8de76f8-2f86-41e2-52de-8b8c16d666cf",
+                    "name": "Template-update-os_NrCQvMfvacvRansibl_Initial Version",
+                    "rel": "vmm:ahv:config:vm"
+                }
+            ],
+            "error_messages": null,
+            "ext_id": "ZXJnb24=:58f65d7e-c841-4c4b-9c7a-198e351003aa",
+            "is_background_task": false,
+            "is_cancelable": false,
+            "last_updated_time": "2025-11-24T13:33:47.575228+00:00",
+            "legacy_error_message": null,
+            "number_of_entities_affected": 2,
+            "number_of_subtasks": 2,
+            "operation": "kVmTemplateInitiateGuestChanges",
+            "operation_description": "Initiate Guest OS Update",
+            "owned_by": {
+                "ext_id": "00000000-0000-0000-0000-000000000000",
+                "name": "admin"
+            },
+            "parent_task": null,
+            "progress_percentage": 100,
+            "resource_links": null,
+            "root_task": null,
+            "started_time": "2025-11-24T13:33:41.940967+00:00",
+            "status": "SUCCEEDED",
+            "sub_steps": null,
+            "sub_tasks": [
+                {
+                    "ext_id": "ZXJnb24=:0b3fa79e-bbae-409a-87bd-360860f7f7ba",
+                    "href": "https://10.99.83.66:9440/api/prism/v4.2/config/tasks/ZXJnb24=:0b3fa79e-bbae-409a-87bd-360860f7f7ba",
+                    "rel": "subtask"
+                },
+                {
+                    "ext_id": "ZXJnb24=:070ce320-235f-4359-9575-0b2cae8af6d6",
+                    "href": "https://10.99.83.66:9440/api/prism/v4.2/config/tasks/ZXJnb24=:070ce320-235f-4359-9575-0b2cae8af6d6",
+                    "rel": "subtask"
+                }
+            ],
+            "warnings": null
+        }
+task_ext_id:
+    description: The unique identifier of the task for the guest OS update operation.
+    type: str
+    returned: always
+    sample: "ZXJnb24=:0e040d14-5dcf-5302-8b48-d3c6cf115cd1"
+changed:
+    description: This indicates whether the task resulted in any changes
+    type: bool
+    returned: always
+    sample: true
+failed:
+    description: This field typically holds information about if the task have failed
+    returned: always
+    type: bool
+    sample: false
+template_ext_id:
+    description: Template external ID of the template.
+    type: str
+    returned: always
+    sample: "0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b3b"
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error or check mode operation
+    type: str
+    sample: "Failed generating initiate guest os update spec"
+error:
+    description: The error message if any.
+    type: str
+    returned: when error occurs
 """
 
 import traceback  # noqa: E402
@@ -287,7 +375,6 @@ def run_module():
         "changed": False,
         "error": None,
         "response": None,
-        "ext_id": None,
     }
     state = module.params["state"]
     if state == "start":

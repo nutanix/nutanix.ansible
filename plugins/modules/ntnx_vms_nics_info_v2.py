@@ -85,6 +85,11 @@ response:
             },
             "tenant_id": null
         }
+msg:
+  description: This indicates the message if any message occurred
+  returned: When there is an error
+  type: str
+  sample: "Api Exception raised while fetching vm nic info"
 error:
   description: The error message if an error occurs.
   type: str

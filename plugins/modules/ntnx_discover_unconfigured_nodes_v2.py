@@ -166,6 +166,12 @@ task_ext_id:
     returned: always
     sample: "ZXJnb24=:5235a162-25c2-41b7-50ba-71b2e545fdba"
 
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Failed generating spec for discovering cluster nodes"
+
 error:
     description: Error message if an error occurs.
     type: str

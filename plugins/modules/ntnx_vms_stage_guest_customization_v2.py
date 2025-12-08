@@ -217,6 +217,11 @@ changed:
     type: bool
     returned: always
     sample: true
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while staging guest customization configuration"
 error:
     description:
         - The error message.
