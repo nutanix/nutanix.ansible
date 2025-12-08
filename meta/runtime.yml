@@ -227,3 +227,4 @@ action_groups:
     - ntnx_pc_tasks_info_v2
     - ntnx_pc_task_abort_v2
     - ntnx_vms_disks_migrate_v2
+    - ntnx_entities_info_v2
