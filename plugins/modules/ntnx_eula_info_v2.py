@@ -18,6 +18,7 @@ description:
     - This module uses PC v4 APIs based SDKs
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
+      - nutanix.ncp.ntnx_logger
 author:
  - Abhinav Bansal (@abhinavbansal29)
 """
