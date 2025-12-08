@@ -201,7 +201,7 @@ class APILogger:
         self.module.log(log_message)
 
         log_file = self.module.params.get("nutanix_log_file") or os.environ.get(
-            "NUTANIX_LOG_FILE"
+            "NUTANIX_LOG_FILE", DEFAULT_LOG_FILE
         )
         if log_file:
             # Add date suffix only when using the default log file
