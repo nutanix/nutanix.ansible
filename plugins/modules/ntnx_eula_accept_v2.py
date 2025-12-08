@@ -97,10 +97,10 @@ failed:
   sample: false
 
 msg:
-    description: This indicates the message if any message occurred
-    returned: When there is an error
-    type: str
-    sample: "Api Exception raised while accepting End User License Agreement"
+  description: This indicates the message if any message occurred
+  returned: When there is an error
+  type: str
+  sample: "Api Exception raised while accepting End User License Agreement"
 """
 
 import traceback  # noqa: E402

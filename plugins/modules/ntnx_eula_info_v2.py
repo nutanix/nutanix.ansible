@@ -79,10 +79,10 @@ changed:
   sample: false
 
 msg:
-    description: This indicates the message if any message occurred
-    returned: When there is an error
-    type: str
-    sample: "Api Exception raised while fetching end user license agreement info"
+  description: This indicates the message if any message occurred
+  returned: When there is an error
+  type: str
+  sample: "Api Exception raised while fetching end user license agreement info"
 """
 
 import warnings  # noqa: E402
