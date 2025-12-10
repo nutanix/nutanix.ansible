@@ -75,56 +75,94 @@ jobs:
           ansible-playbook tests/integration/targets/prepare_fc_env/playbooks/prepare_fc_env.yml
           ansible-playbook tests/integration/targets/prepare_foundation_env/playbooks/prepare_foundation_env.yml
 
-          if [ -n "$regex_pattern" ] && [[ "$regex_pattern" =~ inventory_tests ]]; then
-              echo "regex_pattern contains 'inventory_tests'. Running all inventory tests..."
-              echo "===> Running inventory test (default host)..."
-              if ansible-playbook -i tests/integration/targets/inventory_test/inventory_test_default_host/nutanix.yml \
-              tests/integration/targets/inventory_test/inventory_test_default_host/inventory.yml \
-              2>&1 | tee -a test_output.log; then
-                  echo "Inventory test default host completed successfully."
-              else
-                  echo "Inventory test default host failed. See logs above." | tee -a test_output.log
-              fi
-              echo "===> Running inventory test (custom host)..."
-              if ansible-playbook -i tests/integration/targets/inventory_test/inventory_test_custom_host/nutanix.yml \
-              tests/integration/targets/inventory_test/inventory_test_custom_host/inventory.yml \
-              2>&1 | tee -a test_output.log; then
-                  echo "Inventory test custom host completed successfully."
-              else
-                  echo "Inventory test custom host failed. See logs above." | tee -a test_output.log
-              fi
-              echo "===> Running inventory test (negative tests)..."
-              if ansible-playbook -i tests/integration/targets/inventory_test/inventory_test_negative_test_1/nutanix.yml \
-              tests/integration/targets/inventory_test/inventory_test_negative_test_1/inventory.yml \
-              2>&1 | tee -a test_output.log; then
-                  echo "Inventory test negative test 1 completed successfully."
-              else
-                  echo "Inventory test negative test 1 failed. See logs above." | tee -a test_output.log
-              fi
-              if ansible-playbook -i tests/integration/targets/inventory_test/inventory_test_negative_test_2/nutanix.yml \
-              tests/integration/targets/inventory_test/inventory_test_negative_test_2/inventory.yml \
-              2>&1 | tee -a test_output.log; then
-                  echo "Inventory test negative test 2 completed successfully."
-              else
-                  echo "Inventory test negative test 2 failed. See logs above." | tee -a test_output.log
-              fi
-          fi
+          # Function to run inventory tests from a given directory
+          # Handles both: directories with subdirectories (inventory_test, inventory_test_v2)
+          # and directories with files directly in them (inventory_test_hosts_v2)
+          run_inventory_tests() {
+              local test_dir="$1"
+              local test_type="$2"
+              if [ -d "$test_dir" ]; then
+                  echo "===> Running $test_type inventory tests from: $test_dir"
 
-          echo "===> Running integration tests..."
+                  # Check if nutanix.yml and inventory.yml exist directly in test_dir
+                  if [ -f "${test_dir}/nutanix.yml" ] && [ -f "${test_dir}/inventory.yml" ]; then
+                      # Single test case - files are directly in the directory
+                      test_name=$(basename "$test_dir")
+                      echo "===> Running inventory test: $test_name..." | tee -a test_output.log
+                      if ansible-playbook -i "${test_dir}/nutanix.yml" \
+                      "${test_dir}/inventory.yml" \
+                      2>&1 | tee -a test_output.log; then
+                          echo "Inventory test '$test_name' completed successfully."
+                      else
+                          echo "Inventory test '$test_name' failed. See logs above." | tee -a test_output.log
+                      fi
+                  else
+                      # Multiple test cases - files are in subdirectories
+                      for test_folder in "$test_dir"/*/; do
+                          test_name=$(basename "$test_folder")
+                          if [ -f "${test_folder}nutanix.yml" ] && [ -f "${test_folder}inventory.yml" ]; then
+                              echo "===> Running inventory test: $test_name..." | tee -a test_output.log
+                              if ansible-playbook -i "${test_folder}nutanix.yml" \
+                              "${test_folder}inventory.yml" \
+                              2>&1 | tee -a test_output.log; then
+                                  echo "Inventory test '$test_name' completed successfully."
+                              else
+                                  echo "Inventory test '$test_name' failed. See logs above." | tee -a test_output.log
+                              fi
+                          else
+                              echo "⚠️ Skipping '$test_name': missing nutanix.yml or inventory.yml"
+                          fi
+                      done
+                  fi
+              else
+                  echo "⚠️ Directory not found: $test_dir"
+              fi
+          }
+
+          echo "===> Running tests..."
           set +e
+          TEST_EXIT_CODE=0
+
           if [ -n "$regex_pattern" ]; then
-              echo "Filtering integration tests by regex: $regex_pattern"
-              mapfile -t matched_dirs < <(find tests/integration/targets -maxdepth 1 -mindepth 1 -type d -printf "%f\n" | grep -E "$regex_pattern" || true)
-              if [ ${#matched_dirs[@]} -eq 0 ]; then
-                  echo "❌ No integration test targets matched regex: '$regex_pattern'."
+              echo "Filtering tests by regex: $regex_pattern"
+
+              # Find all matching directories
+              mapfile -t all_matched_dirs < <(find tests/integration/targets -maxdepth 1 -mindepth 1 -type d -printf "%f\n" | grep -E "$regex_pattern" || true)
+
+              if [ ${#all_matched_dirs[@]} -eq 0 ]; then
+                  echo "❌ No test targets matched regex: '$regex_pattern'."
                   echo "No test execution performed." | tee test_output.log
                   echo "NO_REGEX_MATCH=true" >> $GITHUB_ENV
                   echo "RESULTS=No tests matched regex pattern '$regex_pattern'. Skipping test run." >> $GITHUB_ENV
-                  TEST_EXIT_CODE=0
               else
-                  ansible-test integration --continue-on-error \
-                    --python ${{ matrix.python-version }} --coverage "${matched_dirs[@]}" --allow-disabled 2>&1 | tee test_output.log
-                  TEST_EXIT_CODE=${PIPESTATUS[0]}
+                  echo "Matched directories: ${all_matched_dirs[*]}"
+
+                  # Separate inventory tests from regular integration tests
+                  integration_dirs=()
+                  for dir in "${all_matched_dirs[@]}"; do
+                      if [ "$dir" = "inventory_test" ]; then
+                          echo "===> Found inventory_test - will run with ansible-playbook"
+                          run_inventory_tests "tests/integration/targets/inventory_test" "vm_v1"
+                      elif [ "$dir" = "inventory_test_v2" ]; then
+                          echo "===> Found inventory_test_v2 - will run with ansible-playbook"
+                          run_inventory_tests "tests/integration/targets/inventory_test_v2" "vm_v2"
+                      elif [ "$dir" = "inventory_test_hosts_v2" ]; then
+                          echo "===> Found inventory_test_hosts_v2 - will run with ansible-playbook"
+                          run_inventory_tests "tests/integration/targets/inventory_test_hosts_v2" "hosts_v2"
+                      else
+                          integration_dirs+=("$dir")
+                      fi
+                  done
+
+                  # Run ansible-test integration for non-inventory tests
+                  if [ ${#integration_dirs[@]} -gt 0 ]; then
+                      echo "===> Running ansible-test integration for: ${integration_dirs[*]}"
+                      ansible-test integration --continue-on-error \
+                        --python ${{ matrix.python-version }} --coverage "${integration_dirs[@]}" --allow-disabled 2>&1 | tee -a test_output.log
+                      TEST_EXIT_CODE=${PIPESTATUS[0]}
+                  else
+                      echo "===> No ansible-test integration targets to run"
+                  fi
               fi
           else
               ansible-test integration --continue-on-error \
@@ -133,8 +171,14 @@ jobs:
           fi
           set -e
 
-          echo "===> Generating coverage report..."
-          ansible-test coverage report > coverage.txt
+          # Generate coverage report if integration tests were run
+          if [ -n "$regex_pattern" ] && [ ${#integration_dirs[@]} -eq 0 ]; then
+              echo "===> Skipping coverage report (no ansible-test integration tests)..."
+              echo "SKIP_COVERAGE=true" >> $GITHUB_ENV
+          else
+              echo "===> Generating coverage report..."
+              ansible-test coverage report > coverage.txt || true
+          fi
 
           if [ "$TEST_EXIT_CODE" -ne 0 ]; then
               echo "❌ One or more integration tests failed."
@@ -166,12 +210,17 @@ jobs:
           if [ -f "$LOG_FILE" ]; then
             # Parse test_output.log and populate test_results[current_test]="PASSED"|"FAILED"
             while IFS= read -r line; do
+                # Match integration tests: "Running <name> integration test role"
                 if [[ $line =~ ^Running\ ([^[:space:]]+)\ integration\ test\ role ]]; then
+                    current_test="${BASH_REMATCH[1]}"
+                fi
+                # Match inventory tests: "===> Running inventory test: <name>..."
+                if [[ $line =~ ^===\>\ Running\ inventory\ test:\ (.+)\.\.\. ]]; then
                     current_test="${BASH_REMATCH[1]}"
                 fi
                 if [[ $line =~ ^PLAY\ RECAP ]]; then
                     read -r recap_line
-                    if [[ $recap_line =~ failed=([0-9]+) ]]; then
+                    if [[ -n "$current_test" ]] && [[ $recap_line =~ failed=([0-9]+) ]]; then
                         failed_count="${BASH_REMATCH[1]}"
                         if [[ "$failed_count" -eq 0 ]]; then
                             test_results["$current_test"]="PASSED"
@@ -259,7 +308,7 @@ jobs:
           fi
 
       - name: Code Coverage Check
-        if: ${{ always() }}
+        if: ${{ always() && env.SKIP_COVERAGE != 'true' }}
         run: |
           cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
           ansible-test coverage html
