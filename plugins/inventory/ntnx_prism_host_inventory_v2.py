@@ -169,12 +169,11 @@ from ansible.errors import AnsibleError  # noqa: E402
 from ansible.module_utils.basic import env_fallback  # noqa: E402
 from ansible.plugins.inventory import BaseInventoryPlugin, Constructable  # noqa: E402
 
+from ..module_utils.constants import DEFAULT_LOG_FILE  # noqa: E402
 from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
     get_clusters_api_instance,
 )
 from ..module_utils.v4.utils import strip_internal_attributes  # noqa: E402
-
-from ..module_utils.constants import DEFAULT_LOG_FILE  # noqa: E402
 
 
 class Mock_Module:
