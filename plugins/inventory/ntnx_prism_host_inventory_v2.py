@@ -103,6 +103,7 @@ DOCUMENTATION = r"""
             type: list
     extends_documentation_fragment:
         - constructed
+        - nutanix.ncp.ntnx_logger
 """
 
 EXAMPLES = r"""
@@ -161,6 +162,7 @@ EXAMPLES = r"""
 """
 
 import json  # noqa: E402
+import os  # noqa: E402
 import tempfile  # noqa: E402
 
 from ansible.errors import AnsibleError  # noqa: E402
@@ -171,6 +173,8 @@ from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
     get_clusters_api_instance,
 )
 from ..module_utils.v4.utils import strip_internal_attributes  # noqa: E402
+
+from ..module_utils.constants import DEFAULT_LOG_FILE  # noqa: E402
 
 
 class Mock_Module:
@@ -183,6 +187,8 @@ class Mock_Module:
         password,
         validate_certs=False,
         fetch_all_hosts=False,
+        nutanix_debug=False,
+        nutanix_log_file=None,
     ):
         self.tmpdir = tempfile.gettempdir()
         self.params = {
@@ -193,6 +199,8 @@ class Mock_Module:
             "validate_certs": validate_certs,
             "fetch_all_hosts": fetch_all_hosts,
             "load_params_without_defaults": False,
+            "nutanix_debug": nutanix_debug,
+            "nutanix_log_file": nutanix_log_file,
         }
 
     def jsonify(self, data):
@@ -420,7 +428,13 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         self.page = self.get_option("page")
         self.limit = self.get_option("limit")
         self.filter = self.get_option("filter")
-
+        self.nutanix_debug = (
+            self.get_option("nutanix_debug")
+            or os.environ.get("NUTANIX_DEBUG", "false").lower() == "true"
+        )
+        self.nutanix_log_file = self.get_option("nutanix_log_file") or os.environ.get(
+            "NUTANIX_LOG_FILE"
+        )
         # Determines if composed variables or groups using nonexistent variables is an error
         strict = self.get_option("strict")
         host_filters = self.get_option("filters")
@@ -432,6 +446,8 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             self.nutanix_username,
             self.nutanix_password,
             self.validate_certs,
+            self.nutanix_debug,
+            self.nutanix_log_file,
         )
 
         # Get Host API instance
