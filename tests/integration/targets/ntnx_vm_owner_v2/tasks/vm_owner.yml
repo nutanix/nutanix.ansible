@@ -46,7 +46,7 @@
 
 - name: Add project uuid to delete list
   ansible.builtin.set_fact:
-    project_uuid: "{{ result.response.ext_id }}"
+    project_uuid: "{{ result.project_uuid }}"
 
 - name: Create VM
   nutanix.ncp.ntnx_vms_v2:
