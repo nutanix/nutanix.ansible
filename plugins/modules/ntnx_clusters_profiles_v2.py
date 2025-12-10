@@ -151,6 +151,7 @@ options:
             description:
               - The value of the NTP server FQDN.
             type: str
+            required: true
   ntp_server_config_list:
     description:
       - NTP server configuration list.
@@ -208,7 +209,7 @@ options:
                 description:
                   - The value of the NTP server FQDN.
                 type: str
-                required: false
+                required: true
       encryption_algorithm:
         description:
           - Encryption algorithm used for NTP server authentication.
@@ -293,6 +294,7 @@ options:
                     description:
                       - The value of the SMTP server FQDN.
                     type: str
+                    required: true
           port:
             description:
               - The port number of the SMTP server.
@@ -1092,15 +1094,16 @@ def create_cluster_profile(module, cluster_profiles, result):
 
 
 def check_cluster_idempotency(current_spec, update_spec):
-
+    current_spec = strip_internal_attributes(current_spec.to_dict())
+    update_spec = strip_internal_attributes(update_spec.to_dict())
     users_current_snmp_config = current_spec.get("snmp_config", {}).get("users") or []
     users_update_snmp_config = update_spec.get("snmp_config", {}).get("users") or []
-    users_current_ntp_server_config = current_spec.get("ntp_server_config_list") or []
-    users_update_ntp_server_config = update_spec.get("ntp_server_config_list") or []
+    current_ntp_server_config = current_spec.get("ntp_server_config_list") or []
+    update_ntp_server_config = update_spec.get("ntp_server_config_list") or []
 
     if len(users_current_snmp_config) != len(users_update_snmp_config) or len(
-        users_current_ntp_server_config
-    ) != len(users_update_ntp_server_config):
+        current_ntp_server_config
+    ) != len(update_ntp_server_config):
         return False
 
     if current_spec.get("smtp_server", {}).get("server") is not None:
@@ -1118,13 +1121,13 @@ def check_cluster_idempotency(current_spec, update_spec):
             user_update["auth_key"] = None
             user_update["priv_key"] = None
 
-    for user_current, user_update in zip(
-        users_current_ntp_server_config, users_update_ntp_server_config
+    for current_ntp, update_ntp in zip(
+        current_ntp_server_config, update_ntp_server_config
     ):
-        if isinstance(user_current, dict):
-            user_current["encryption_key"] = None
-        if isinstance(user_update, dict):
-            user_update["encryption_key"] = None
+        if isinstance(current_ntp, dict):
+            current_ntp["encryption_key"] = None
+        if isinstance(update_ntp, dict):
+            update_ntp["encryption_key"] = None
 
     if current_spec != update_spec:
         return False
@@ -1153,8 +1156,8 @@ def update_cluster_profile(module, cluster_profiles, result):
         return
 
     if check_cluster_idempotency(
-        strip_internal_attributes(current_spec.to_dict()),
-        strip_internal_attributes(update_spec.to_dict()),
+        current_spec,
+        update_spec,
     ):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)

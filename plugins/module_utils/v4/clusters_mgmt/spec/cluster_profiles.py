@@ -43,7 +43,7 @@ class ClusterProfileSpecs:
         required=False,
     )
 
-    fqdn = dict(value=dict(type="str", required=False))
+    fqdn = dict(value=dict(type="str", required=True))
 
     ip_address_or_fqdn = dict(
         ipv4=ipv4_spec,
