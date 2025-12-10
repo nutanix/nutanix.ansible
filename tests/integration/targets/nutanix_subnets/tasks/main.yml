@@ -6,6 +6,8 @@
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: "{{ validate_certs }}"
+      nutanix_debug: "{{ nutanix_debug }}"
+      nutanix_log_file: "{{ nutanix_log_file }}"
   block:
     - name: Import create_subnet.yml
       ansible.builtin.import_tasks: "create_subnet.yml"

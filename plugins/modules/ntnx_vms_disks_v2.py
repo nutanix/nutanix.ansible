@@ -176,6 +176,7 @@ author:
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
+    - nutanix.ncp.ntnx_logger
 """
 
 EXAMPLES = r"""
@@ -253,6 +254,11 @@ response:
             "links": null,
             "tenant_id": null
         }
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error, module is idempotent or check mode (in delete operation)
+    type: str
+    sample: "Api Exception raised while creating vm disk"
 error:
     description: The error message if an error occurred.
     type: str

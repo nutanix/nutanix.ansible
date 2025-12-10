@@ -16,6 +16,7 @@ version_added: 2.4.0
 description:
   - This module allows you to create, update, and delete storage policies in Nutanix Prism Central.
   - For Create operation, at least one storage attribute (compression_spec, encryption_spec, qos_spec, fault_tolerance_spec) must be set to non default value.
+  - If compression_state, encryption_state, or replication_factor are intended to be system-derived, ensure that the qos_spec block is included.
   - This module uses PC v4 APIs based SDKs
 options:
   state:
@@ -68,6 +69,7 @@ options:
   encryption_spec:
     description:
       - Encryption parameters for the entities governed by the Storage Policy.
+      - Supported on NCI Ultimate license or via the security add-on.
     type: dict
     suboptions:
       encryption_state:
@@ -83,6 +85,7 @@ options:
   qos_spec:
     description:
       - Storage QOS parameters for the entities.
+      - Supported on NCI Pro license and above.
     type: dict
     suboptions:
       throttled_iops:
@@ -99,6 +102,7 @@ options:
       replication_factor:
         description:
           - Number of data copies for entities governed by the Storage Policy.
+          - Supported on clusters with AOS 6.6 or above.
         type: str
         choices:
           - TWO
@@ -115,6 +119,7 @@ options:
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
+  - nutanix.ncp.ntnx_logger
 author:
   - George Ghawali (@george-ghawali)
 """
@@ -480,15 +485,32 @@ def run_module():
         "response": None,
         "ext_id": None,
     }
-    state = module.params["state"]
+    state = module.params.get("state")
     storage_policies = get_storage_policies_api_instance(module)
-    if state == "present":
-        if module.params.get("ext_id"):
-            update_storage_policy(module, storage_policies, result)
-        else:
-            create_storage_policy(module, storage_policies, result)
-    else:
+
+    if state == "absent":
         delete_storage_policy(module, storage_policies, result)
+        module.exit_json(**result)
+
+    if module.params.get("ext_id"):
+        update_storage_policy(module, storage_policies, result)
+        module.exit_json(**result)
+
+    has_storage_specs = any(
+        [
+            module.params.get("compression_spec"),
+            module.params.get("encryption_spec"),
+            module.params.get("fault_tolerance_spec"),
+        ]
+    )
+
+    if not has_storage_specs and not module.params.get("qos_spec"):
+        module.fail_json(
+            msg="If compression_state, encryption_state, or replication_factor are "
+            "intended to be system-derived, ensure that the qos_spec block is included."
+        )
+
+    create_storage_policy(module, storage_policies, result)
     module.exit_json(**result)
 
 

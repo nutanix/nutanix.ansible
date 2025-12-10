@@ -55,6 +55,7 @@ options:
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
+  - nutanix.ncp.ntnx_logger
 author:
   - George Ghawali (@george-ghawali)
 """
@@ -122,6 +123,12 @@ changed:
   returned: always
   type: bool
   sample: true
+
+msg:
+  description: This indicates the message if any message occurred
+  returned: When there is an error
+  type: str
+  sample: "Api Exception raised while restoring protected resource"
 
 error:
   description: This field typically holds information about if the task have errors that occurred during the task execution

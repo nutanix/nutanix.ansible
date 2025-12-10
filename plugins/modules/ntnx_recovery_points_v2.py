@@ -112,6 +112,7 @@ options:
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
+    - nutanix.ncp.ntnx_logger
 author:
     - Abhinav Bansal (@abhinavbansal29)
     - Pradeepsingh Bhati (@bhati-pradeep)
@@ -210,6 +211,11 @@ ext_id:
     returned: always
     type: str
     sample: "d492e754-1792-41a5-8960-e2e87c8fea7d"
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error, module is idempotent or check mode (in delete operation)
+    type: str
+    sample: "Api Exception raised while creating recovery point"
 error:
     description: The error message if an error occurs.
     type: str
