@@ -1,0 +1,30 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Fetch detailed STIG control information for each cluster.
+# 2. Fetch detailed STIG control information for each cluster with filter set to HIGH
+# 3. Fetch detailed STIG control information for each cluster with limit
+
+- name: STIGs info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Fetch detailed STIG control information for each cluster.
+      nutanix.ncp.ntnx_stigs_info_v2:
+      register: result
+
+    - name: Fetch detailed STIG control information for each cluster with filter set to HIGH
+      nutanix.ncp.ntnx_stigs_info_v2:
+        filter: "severity eq Security.Report.Severity'HIGH'"
+      register: result_filter
+
+    - name: Fetch detailed STIG control information for each cluster with limit
+      nutanix.ncp.ntnx_stigs_info_v2:
+        limit: 1
+      register: result_limit

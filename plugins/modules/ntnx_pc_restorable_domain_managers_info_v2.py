@@ -106,6 +106,12 @@ changed:
     type: bool
     sample: true
 
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while fetching restorable domain managers info"
+
 error:
     description: This field typically holds information about if the task have errors that occurred during the task execution
     returned: When an error occurs
