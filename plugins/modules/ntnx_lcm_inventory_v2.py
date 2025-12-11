@@ -38,6 +38,7 @@ options:
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
+    - nutanix.ncp.ntnx_logger
 """
 
 EXAMPLES = r"""
@@ -98,6 +99,11 @@ task_ext_id:
     type: str
     returned: always
     sample: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while performing inventory"
 changed:
     description: Whether the module made any changes
     type: bool

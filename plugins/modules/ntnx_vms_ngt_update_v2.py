@@ -49,6 +49,7 @@ options:
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
+    - nutanix.ncp.ntnx_logger
 """
 
 
@@ -91,6 +92,11 @@ changed:
     type: bool
     returned: always
     sample: false
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error, module is idempotent
+    type: str
+    sample: "Api Exception raised while updating NGT"
 error:
     description: The error message, if any.
     type: str

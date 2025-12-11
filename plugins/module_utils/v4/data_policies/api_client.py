@@ -10,6 +10,8 @@ from base64 import b64encode
 
 from ansible.module_utils.basic import missing_required_lib
 
+from ..api_logger import setup_api_logging
+
 SDK_IMP_ERROR = None
 try:
     import ntnx_datapolicies_py_client
@@ -43,6 +45,10 @@ def get_api_client(module):
         encoded_cred = b64encode(bytes(cred).encode("ascii")).decode("ascii")
     auth_header = "Basic " + encoded_cred
     client.add_default_header(header_name="Authorization", header_value=auth_header)
+
+    # Setup API logging if debug is enabled
+    setup_api_logging(module, client)
+
     return client
 
 
@@ -67,3 +73,15 @@ def get_protection_policies_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_datapolicies_py_client.ProtectionPoliciesApi(client)
+
+
+def get_storage_policies_api_instance(module):
+    """
+    This method will return storage policies api instance.
+    Args:
+        module (object): Ansible module object
+    Returns:
+        api_instance (object): storage policies api instance
+    """
+    client = get_api_client(module)
+    return ntnx_datapolicies_py_client.StoragePoliciesApi(client)

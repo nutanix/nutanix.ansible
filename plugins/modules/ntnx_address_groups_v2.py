@@ -72,6 +72,7 @@ options:
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
+      - nutanix.ncp.ntnx_logger
 author:
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
@@ -137,6 +138,12 @@ changed:
   returned: always
   type: bool
   sample: true
+
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error, module is idempotent or check mode (in delete operation)
+    type: str
+    sample: "Api Exception raised while creating address group"
 
 error:
   description: This field typically holds information about if the task have errors that occurred during the task execution
@@ -252,7 +259,7 @@ def create_address_group(module, result):
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
-        task_status = wait_for_completion(module, task_ext_id, True)
+        task_status = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_status.to_dict())
         ext_id = get_entity_ext_id_from_task(
             task_status, rel=TASK_CONSTANTS.RelEntityType.ADDRESS_GROUP
@@ -311,7 +318,7 @@ def update_address_group(module, result):
     result["response"] = strip_internal_attributes(resp.data.to_dict())
 
     if task_ext_id and module.params.get("wait"):
-        wait_for_completion(module, task_ext_id, True)
+        wait_for_completion(module, task_ext_id)
         resp = get_address_group(module, address_groups, ext_id)
         result["response"] = strip_internal_attributes(resp.to_dict())
 
@@ -351,7 +358,7 @@ def delete_address_group(module, result):
     result["response"] = strip_internal_attributes(resp.data.to_dict())
 
     if task_ext_id and module.params.get("wait"):
-        resp = wait_for_completion(module, task_ext_id, True)
+        resp = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(resp.to_dict())
 
     result["changed"] = True

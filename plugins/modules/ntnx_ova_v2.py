@@ -143,6 +143,7 @@ options:
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
+    - nutanix.ncp.ntnx_logger
 author:
  - Abhinav Bansal (@abhinavbansal29)
 """
@@ -316,6 +317,11 @@ ext_id:
     returned: always
     type: str
     sample: "aab776d5-d83f-4e32-a9de-63e91f9f5e47"
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error, module is idempotent or check mode (in delete operation)
+    type: str
+    sample: "Api Exception raised while creating ova"
 error:
     description: Error message if any
     returned: always

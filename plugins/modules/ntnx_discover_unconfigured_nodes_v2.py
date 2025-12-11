@@ -94,6 +94,7 @@ options:
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
+      - nutanix.ncp.ntnx_logger
 author:
  - Alaa Bishtawi (@alaabishtawi)
  - George Ghawali (@george-ghawali)
@@ -164,6 +165,12 @@ task_ext_id:
     type: str
     returned: always
     sample: "ZXJnb24=:5235a162-25c2-41b7-50ba-71b2e545fdba"
+
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Failed generating spec for discovering cluster nodes"
 
 error:
     description: Error message if an error occurs.

@@ -10,6 +10,8 @@ from base64 import b64encode
 
 from ansible.module_utils.basic import missing_required_lib
 
+from ..api_logger import setup_api_logging
+
 SDK_IMP_ERROR = None
 try:
     import ntnx_clustermgmt_py_client
@@ -43,6 +45,10 @@ def get_api_client(module):
         encoded_cred = b64encode(bytes(cred).encode("ascii")).decode("ascii")
     auth_header = "Basic " + encoded_cred
     client.add_default_header(header_name="Authorization", header_value=auth_header)
+
+    # Setup API logging if debug is enabled
+    setup_api_logging(module, client)
+
     return client
 
 
@@ -67,6 +73,18 @@ def get_clusters_api_instance(module):
     return ntnx_clustermgmt_py_client.ClustersApi(client)
 
 
+def get_cluster_profiles_api_instance(module):
+    """
+    This method will return cluster profiles api instance from sdk
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        ClusterProfilesApi: ClusterProfilesApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.ClusterProfilesApi(client)
+
+
 def get_storage_containers_api_instance(module):
     """
     This method will return storage containers api instance from sdk
@@ -89,3 +107,15 @@ def get_password_manager_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_clustermgmt_py_client.PasswordManagerApi(client)
+
+
+def get_ssl_certificates_api_instance(module):
+    """
+    This method will return SSL certificates api instance from sdk
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        SSLCertificateApi: SSLCertificateApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.SSLCertificateApi(client)

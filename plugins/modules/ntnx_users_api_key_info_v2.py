@@ -29,6 +29,7 @@ options:
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_info_v2
+    - nutanix.ncp.ntnx_logger
 author:
     - Abhinav Bansal (@abhinavbansal29)
 """
@@ -71,6 +72,12 @@ changed:
     type: bool
     returned: always
     sample: false
+
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while fetching user api keys info"
 
 error:
     description:

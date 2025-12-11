@@ -171,6 +171,7 @@ options:
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
+    - nutanix.ncp.ntnx_logger
 """
 
 EXAMPLES = r"""
@@ -271,6 +272,11 @@ skipped:
     description: Indicates whether the image was skipped due to idempotency.
     type: bool
     returned: always
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error, module is idempotent or check mode (in delete operation)
+    type: str
+    sample: "Failed generating create Image Spec"
 error:
     description: The error message, if any.
     type: str
@@ -466,7 +472,7 @@ def update_image(module, result):
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     result["ext_id"] = ext_id
     if task_ext_id and module.params.get("wait"):
-        resp = wait_for_completion(module, task_ext_id, True)
+        resp = wait_for_completion(module, task_ext_id)
         resp = get_image(module, images, ext_id)
         result["response"] = strip_internal_attributes(resp.to_dict())
     result["changed"] = True
@@ -502,7 +508,7 @@ def delete_image(module, result):
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
-        resp = wait_for_completion(module, task_ext_id, True)
+        resp = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(resp.to_dict())
     result["changed"] = True
 

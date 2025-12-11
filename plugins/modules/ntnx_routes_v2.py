@@ -199,6 +199,7 @@ options:
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
+  - nutanix.ncp.ntnx_logger
 author:
   - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
   - Alaa Bishtawi (@alaa-bish)
@@ -324,6 +325,12 @@ failed:
   description: Indicates if the operation failed
   type: bool
   returned: always
+
+msg:
+  description: This indicates the message if any message occurred
+  returned: When there is an error, module is idempotent or check mode (in delete operation)
+  type: str
+  sample: "Failed generating create route spec"
 
 error:
   description: Error message if any

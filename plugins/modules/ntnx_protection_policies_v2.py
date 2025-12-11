@@ -217,6 +217,13 @@ options:
               - Auto suspend timeout if there is a connection failure between locations for synchronous replication.
             type: int
             required: false
+          is_replication_paused:
+            description:
+              - Indicates whether replication is paused for all VMs and volume groups associated with the remote replication location.
+              - This field is ignored in create requests (treated as a no-op) and can only be used in update requests to pause or resume scheduled replication.
+              - Only 0 RPO schedules support this field.
+            type: bool
+            required: false
   category_ids:
     description:
       - Specifies the list of external identifiers of categories that must be added to the protection policy.
@@ -226,6 +233,7 @@ options:
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
+  - nutanix.ncp.ntnx_logger
 author:
   - George Ghawali (@george-ghawali)
 """
@@ -461,6 +469,12 @@ skipped:
   type: bool
   sample: false
 
+msg:
+  description: This indicates the message if any message occurred
+  returned: When there is an error, module is idempotent or check mode (in delete operation)
+  type: str
+  sample: "Api Exception raised while creating protection policy"
+
 error:
   description: This indicates the error message if any error occurred
   returned: When an error occurs
@@ -580,6 +594,7 @@ def get_module_spec():
         ),
         start_time=dict(type="str"),
         sync_replication_auto_suspend_timeout_seconds=dict(type="int"),
+        is_replication_paused=dict(type="bool"),
     )
     replication_configurations_spec = dict(
         source_location_label=dict(type="str", required=True),
@@ -654,6 +669,18 @@ def create_protection_policy(module, protection_policies, result):
 
 
 def check_for_idempotency(old_spec, update_spec):
+
+    if len(old_spec.get("replication_configurations", [])) != len(
+        update_spec.get("replication_configurations", [])
+    ):
+        return False
+    for i in range(len(old_spec.get("replication_configurations", []))):
+        old_spec.get("replication_configurations", [])[i].get("schedule", {}).pop(
+            "schedule_ext_id", None
+        )
+        update_spec.get("replication_configurations", [])[i].get("schedule", {}).pop(
+            "schedule_ext_id", None
+        )
     if old_spec != update_spec:
         return False
     return True
@@ -679,8 +706,9 @@ def update_protection_policy(module, protection_policies, result):
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
-
-    if check_for_idempotency(old_spec, update_spec):
+    old_spec_dict = strip_internal_attributes(old_spec.to_dict())
+    update_spec_dict = strip_internal_attributes(update_spec.to_dict())
+    if check_for_idempotency(old_spec_dict, update_spec_dict):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.")
 
@@ -700,7 +728,7 @@ def update_protection_policy(module, protection_policies, result):
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
-        task_status = wait_for_completion(module, task_ext_id, True)
+        task_status = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_status.to_dict())
         resp = get_protection_policy(module, protection_policies, ext_id)
         result["response"] = strip_internal_attributes(resp.to_dict())
@@ -729,7 +757,7 @@ def delete_protection_policy(module, protection_policies, result):
     task_ext_id = resp.data.ext_id
     result["task_ext_id"] = task_ext_id
     if task_ext_id and module.params.get("wait"):
-        task_status = wait_for_completion(module, task_ext_id, True)
+        task_status = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_status.to_dict())
     result["changed"] = True
 

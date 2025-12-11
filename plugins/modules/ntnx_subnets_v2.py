@@ -372,6 +372,7 @@ options:
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
+      - nutanix.ncp.ntnx_logger
 author:
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
@@ -559,6 +560,11 @@ skipped:
         - Will be returned if operation is skipped.
     type: bool
     returned: always
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error, module is idempotent or check mode (in delete operation)
+    type: str
+    sample: "Api Exception raised while creating subnet"
 error:
     description:
         - Error message if an error occurs.

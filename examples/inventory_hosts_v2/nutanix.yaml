@@ -1,0 +1,30 @@
+---
+plugin: nutanix.ncp.ntnx_prism_host_inventory_v2
+# nutanix_host: hostname # Or set NUTANIX_HOST or NUTANIX_HOSTNAME environment variable
+# nutanix_username: username # Or set NUTANIX_USERNAME environment variable
+# nutanix_password: password # Or set NUTANIX_PASSWORD environment variable
+# nutanix_port: port # Or set NUTANIX_PORT environment variable
+# validate_certs: false # Or set NUTANIX_VALIDATE_CERTS environment variable
+# If fetch_all_hosts is true, page and limit are ignored and all hosts will be fetched from the cluster.
+
+# Compose is used to define the host variables.
+compose:
+  # Set ansible_user to 'ansible_user' for all hosts.
+  ansible_user: "'ansible_user'"
+  # Convert memory_size_bytes to memory_gb and store in memory_gb variable.
+  memory_gb: memory_size_bytes / 1073741824 if memory_size_bytes else 0
+  # Convert cpu_frequency_hz to cpu_frequency_ghz and store in cpu_frequency_ghz variable.
+  cpu_frequency_ghz: cpu_frequency_hz / 1000000000 if cpu_frequency_hz else 0
+
+# Fetch all hosts (set to true to ignore pagination)
+fetch_all_hosts: true
+strict: true
+# Optional: Pagination settings (ignored if fetch_all_hosts is true)
+page: 0
+limit: 2
+# Groups are used to group the hosts by power state, memory size, and machine type or whatever you want to group by.
+groups:
+  # Create a group for hosts with memory size greater than 8GB.
+  high_memory: memory_size_bytes > 8589934592 # > 8GB
+  # Create a group for hosts with memory size less than or equal to 8GB.
+  low_memory: memory_size_bytes <= 8589934592 # <= 8GB

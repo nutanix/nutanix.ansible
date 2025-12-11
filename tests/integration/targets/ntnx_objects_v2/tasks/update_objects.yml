@@ -204,6 +204,10 @@
 # example of delete bucket API (delete_bucket_api):
 # https://{{ ip }}:{{ port }}/oss/api/nutanix/v3/objectstore_proxy/{{ object_store_ext_id }}/buckets/{{ objects.bucket_name }}?force_empty_bucket=true
 
+- name: Sleep for 5 minutes before deleting bucket
+  ansible.builtin.pause:
+    minutes: 5
+
 - name: Delete bucket in object store
   ansible.builtin.uri:
     url: "{{ delete_bucket_api }}"
