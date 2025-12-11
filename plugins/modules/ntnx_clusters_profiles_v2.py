@@ -151,6 +151,84 @@ options:
             description:
               - The value of the NTP server FQDN.
             type: str
+            required: true
+  ntp_server_config_list:
+    description:
+      - NTP server configuration list.
+    type: list
+    elements: dict
+    required: false
+    suboptions:
+      ntp_server_address:
+        description:
+          - NTP server address.
+        type: dict
+        required: true
+        suboptions:
+          ipv4:
+            description:
+              - The IPv4 address of the NTP server.
+            type: dict
+            required: false
+            suboptions:
+              value:
+                description:
+                  - The value of the NTP server IP address.
+                type: str
+                required: true
+              prefix_length:
+                description:
+                  - The prefix for the NTP server IP address.
+                type: int
+                required: false
+                default: 32
+          ipv6:
+            description:
+              - The IPv6 address of the NTP server.
+            type: dict
+            required: false
+            suboptions:
+              value:
+                description:
+                  - The value of the NTP server IPv6 address.
+                type: str
+                required: true
+              prefix_length:
+                description:
+                  - The prefix for the NTP server IPv6 address.
+                type: int
+                required: false
+                default: 128
+          fqdn:
+            description:
+              - The Fully Qualified Domain Name (FQDN) of the NTP server.
+            type: dict
+            required: false
+            suboptions:
+              value:
+                description:
+                  - The value of the NTP server FQDN.
+                type: str
+                required: true
+      encryption_algorithm:
+        description:
+          - Encryption algorithm used for NTP server authentication.
+        type: str
+        required: false
+        choices:
+          - "SHA256"
+          - "SHA384"
+          - "SHA512"
+      encryption_key:
+        description:
+          - Encryption key in hexadecimal format used for NTP server authentication.
+        type: str
+        required: false
+      encryption_key_id:
+        description:
+          - Encryption key Id used for NTP server authentication.
+        type: int
+        required: false
   smtp_server:
     description:
       - SMTP servers on a cluster.
@@ -216,6 +294,7 @@ options:
                     description:
                       - The value of the SMTP server FQDN.
                     type: str
+                    required: true
           port:
             description:
               - The port number of the SMTP server.
@@ -1016,11 +1095,16 @@ def create_cluster_profile(module, cluster_profiles, result):
 
 
 def check_cluster_idempotency(current_spec, update_spec):
+    current_spec = strip_internal_attributes(current_spec.to_dict())
+    update_spec = strip_internal_attributes(update_spec.to_dict())
+    users_current_snmp_config = current_spec.get("snmp_config", {}).get("users") or []
+    users_update_snmp_config = update_spec.get("snmp_config", {}).get("users") or []
+    current_ntp_server_config = current_spec.get("ntp_server_config_list") or []
+    update_ntp_server_config = update_spec.get("ntp_server_config_list") or []
 
-    users_current = current_spec.get("snmp_config", {}).get("users", [])
-    users_update = update_spec.get("snmp_config", {}).get("users", [])
-
-    if len(users_current) != len(users_update):
+    if len(users_current_snmp_config) != len(users_update_snmp_config) or len(
+        current_ntp_server_config
+    ) != len(update_ntp_server_config):
         return False
 
     if current_spec.get("smtp_server", {}).get("server") is not None:
@@ -1028,13 +1112,23 @@ def check_cluster_idempotency(current_spec, update_spec):
     if update_spec.get("smtp_server", {}).get("server") is not None:
         update_spec["smtp_server"]["server"]["password"] = None
 
-    for user_current, user_update in zip(users_current, users_update):
+    for user_current, user_update in zip(
+        users_current_snmp_config, users_update_snmp_config
+    ):
         if isinstance(user_current, dict):
             user_current["auth_key"] = None
             user_current["priv_key"] = None
         if isinstance(user_update, dict):
             user_update["auth_key"] = None
             user_update["priv_key"] = None
+
+    for current_ntp, update_ntp in zip(
+        current_ntp_server_config, update_ntp_server_config
+    ):
+        if isinstance(current_ntp, dict):
+            current_ntp["encryption_key"] = None
+        if isinstance(update_ntp, dict):
+            update_ntp["encryption_key"] = None
 
     if current_spec != update_spec:
         return False
@@ -1063,8 +1157,8 @@ def update_cluster_profile(module, cluster_profiles, result):
         return
 
     if check_cluster_idempotency(
-        strip_internal_attributes(current_spec.to_dict()),
-        strip_internal_attributes(update_spec.to_dict()),
+        current_spec,
+        update_spec,
     ):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
