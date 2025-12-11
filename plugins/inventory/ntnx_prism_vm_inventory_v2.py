@@ -478,17 +478,23 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
 
         return host_vars
 
-    def _should_add_host(self, host_vars, host_filters, strict):
+    def _should_add_host(self, host_vars, vm, host_filters, strict):
         """
-        Evaluate filter expressions against host_vars.
+        Evaluate filter expressions against host_vars and raw VM data.
         Returns True if the host should be added, False otherwise.
         """
         if not host_filters:
             return True
 
+        # Merge raw VM data with host_vars so filters can access any field
+        # host_vars takes precedence over raw VM fields
+        filter_vars = {}
+        filter_vars.update(vm)
+        filter_vars.update(host_vars)
+
         for host_filter in host_filters:
             try:
-                if not self._compose(host_filter, host_vars):
+                if not self._compose(host_filter, filter_vars):
                     return False
             except Exception as e:
                 if strict:
@@ -601,7 +607,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                     f"Failed to build host vars for VM {vm.get('name')} with ext_id {vm.get('ext_id')}: {str(e)}"
                 )
 
-            if not self._should_add_host(host_vars, host_filters, strict):
+            if not self._should_add_host(host_vars, vm, host_filters, strict):
                 continue
 
             # Add variables to host variables
