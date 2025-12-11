@@ -305,17 +305,25 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
 
         return host_vars
 
-    def _should_add_host(self, host_vars, host_filters, strict):
+    def _should_add_host(self, host_vars, entity, host_filters, strict):
         """
-        Evaluate filter expressions against host_vars.
+        Evaluate filter expressions against host_vars and raw entity data.
         Returns True if the host should be added, False otherwise.
         """
         if not host_filters:
             return True
 
+        # Merge entity data with host_vars so filters can access any field
+        # host_vars takes precedence over entity fields
+        filter_vars = {}
+        filter_vars.update(entity.get("status", {}))
+        filter_vars.update(entity.get("metadata", {}))
+        filter_vars.update(entity.get("spec", {}))
+        filter_vars.update(host_vars)
+
         for host_filter in host_filters:
             try:
-                if not self._compose(host_filter, host_vars):
+                if not self._compose(host_filter, filter_vars):
                     return False
             except Exception as e:
                 if strict:
@@ -375,7 +383,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         for entity in resp.get("entities", []):
             host_vars = self._build_host_vars(entity, strict=strict)
 
-            if not self._should_add_host(host_vars, host_filters, strict):
+            if not self._should_add_host(host_vars, entity, host_filters, strict):
                 continue
 
             # Add host to inventory.
