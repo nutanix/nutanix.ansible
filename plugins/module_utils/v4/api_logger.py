@@ -7,7 +7,6 @@ __metaclass__ = type
 
 import json
 import os
-import sys
 import time
 import warnings
 from datetime import datetime
@@ -197,9 +196,7 @@ class APILogger:
             log_lines.append("  Message: {}".format(str(error)))
 
     def _write_log(self, log_message):
-        """Write log message to all outputs."""
-        self.module.log(log_message)
-
+        """Write log message to log file."""
         log_file = self.module.params.get("nutanix_log_file") or os.environ.get(
             "NUTANIX_LOG_FILE", DEFAULT_LOG_FILE
         )
@@ -217,13 +214,6 @@ class APILogger:
                     "Failed to write to API log file '{}': {}".format(log_file, str(e)),
                     RuntimeWarning,
                 )
-
-        # Write to stderr for visibility during execution
-        try:
-            sys.stderr.write(log_message + "\n")
-            sys.stderr.flush()
-        except Exception:
-            pass
 
     def _sanitize_headers(self, headers):
         """
