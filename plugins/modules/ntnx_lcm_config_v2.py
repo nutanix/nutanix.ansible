@@ -143,7 +143,6 @@ skipped:
 
 import traceback  # noqa: E402
 import warnings  # noqa: E402
-from copy import deepcopy  # noqa: E402
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
