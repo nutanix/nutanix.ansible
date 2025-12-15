@@ -141,6 +141,7 @@ skipped:
 """
 
 
+import traceback  # noqa: E402
 import warnings  # noqa: E402
 from copy import deepcopy  # noqa: E402
 
@@ -158,6 +159,14 @@ from ..module_utils.v4.utils import (  # noqa: E402
     strip_users_empty_attributes,
 )
 
+SDK_IMP_ERROR = None
+try:
+    import ntnx_lifecycle_py_client as lifecycle_sdk  # noqa: E402
+except ImportError:
+
+    from ..module_utils.v4.sdk_mock import mock_sdk as lifecycle_sdk  # noqa: E402
+
+    SDK_IMP_ERROR = traceback.format_exc()
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
@@ -194,7 +203,8 @@ def update_lcm_config(module, api_instance, result):
     strip_users_empty_attributes(current_spec)
 
     sg = SpecGenerator(module)
-    update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
+    default_spec = lifecycle_sdk.ResourcesConfig()
+    update_spec, err = sg.generate_spec(obj=default_spec)
     if err:
         result["error"] = err
         module.fail_json(
