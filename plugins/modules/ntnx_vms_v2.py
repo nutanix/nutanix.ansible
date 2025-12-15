@@ -447,7 +447,8 @@ options:
         type: bool
     machine_type:
         description:
-            - The machine type for the VM.
+            - Machine type for the VM.
+            - Machine type Q35 is required for secure boot and does not support IDE disks.
         required: false
         type: str
         choices: ["PC", "PSERIES", "Q35"]
