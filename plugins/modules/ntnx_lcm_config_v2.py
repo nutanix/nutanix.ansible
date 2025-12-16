@@ -62,13 +62,11 @@ options:
             - Indicates if the LCM URL has HTTPS enabled.
         type: bool
         required: false
-        default: false
     has_module_auto_upgrade_enabled:
         description:
             - Indicates if LCM is enabled to auto-upgrade products.
         type: bool
         required: false
-        default: false
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
@@ -182,8 +180,8 @@ def get_module_spec():
             type="str",
             choices=["CONNECTED_SITE", "DARKSITE_DIRECT_UPLOAD", "DARKSITE_WEB_SERVER"],
         ),
-        is_https_enabled=dict(type="bool", default=False),
-        has_module_auto_upgrade_enabled=dict(type="bool", default=False),
+        is_https_enabled=dict(type="bool"),
+        has_module_auto_upgrade_enabled=dict(type="bool"),
     )
     return module_args
 
