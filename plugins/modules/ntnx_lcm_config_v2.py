@@ -65,7 +65,7 @@ options:
     has_module_auto_upgrade_enabled:
         description:
             - Indicates if LCM is enabled to auto-upgrade products.
-            - Used when auto_inventory_enabled is set to True.
+            - Can only be set to True when auto_inventory_enabled is set to True.
         type: bool
         required: false
 extends_documentation_fragment:
