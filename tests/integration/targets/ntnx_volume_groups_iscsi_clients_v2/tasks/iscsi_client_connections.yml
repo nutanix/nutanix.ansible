@@ -163,7 +163,7 @@
     success_msg: "ISCSI clients listed successfully"
 
 - name: Set iscsi client uuid by initiator
-  set_fact:
+  ansible.builtin.set_fact:
     iscsi_client_uuid: >-
       {{
         (result.response
