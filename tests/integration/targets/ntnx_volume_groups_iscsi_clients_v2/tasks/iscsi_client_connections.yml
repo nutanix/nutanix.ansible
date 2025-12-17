@@ -162,9 +162,16 @@
     fail_msg: "Unable to list iscsi clients"
     success_msg: "ISCSI clients listed successfully"
 
-- name: Set iscsi client name and uuid
-  ansible.builtin.set_fact:
-    iscsi_client_uuid: "{{ result.response[0].ext_id }}"
+- name: Set iscsi client uuid by initiator
+  set_fact:
+    iscsi_client_uuid: >-
+      {{
+        (result.response
+         | selectattr('iscsi_initiator_name', 'equalto', iscsi_client_name)
+         | map(attribute='ext_id')
+         | first)
+        | default('', true)
+      }}
 
 ############################################ Fetch specific ISCSI client ############################################
 
