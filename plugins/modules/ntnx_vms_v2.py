@@ -1421,6 +1421,18 @@ def update_vm(module, result):
         result["error"] = err
         module.fail_json(msg="Failed generating vm update spec", **result)
 
+    # If is_apc_enabled is False in playbook params, don't send cpu_model in update_spec
+    apc_config_params = module.params.get("apc_config")
+    if (
+        apc_config_params is not None
+        and isinstance(apc_config_params, dict)
+        and apc_config_params.get("is_apc_enabled") is False
+        and hasattr(update_spec, "apc_config")
+        and update_spec.apc_config is not None
+        and hasattr(update_spec.apc_config, "cpu_model")
+    ):
+        update_spec.apc_config.cpu_model = None
+
     # check for idempotency
     if check_idempotency(current_spec, update_spec):
         result["skipped"] = True
