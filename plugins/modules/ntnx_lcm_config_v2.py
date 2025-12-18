@@ -62,13 +62,12 @@ options:
             - Indicates if the LCM URL has HTTPS enabled.
         type: bool
         required: false
-        default: false
     has_module_auto_upgrade_enabled:
         description:
             - Indicates if LCM is enabled to auto-upgrade products.
+            - Can only be set to True when auto_inventory_enabled is set to True.
         type: bool
         required: false
-        default: false
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
@@ -141,8 +140,8 @@ skipped:
 """
 
 
+import traceback  # noqa: E402
 import warnings  # noqa: E402
-from copy import deepcopy  # noqa: E402
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
@@ -158,6 +157,14 @@ from ..module_utils.v4.utils import (  # noqa: E402
     strip_users_empty_attributes,
 )
 
+SDK_IMP_ERROR = None
+try:
+    import ntnx_lifecycle_py_client as lifecycle_sdk  # noqa: E402
+except ImportError:
+
+    from ..module_utils.v4.sdk_mock import mock_sdk as lifecycle_sdk  # noqa: E402
+
+    SDK_IMP_ERROR = traceback.format_exc()
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
@@ -174,8 +181,8 @@ def get_module_spec():
             type="str",
             choices=["CONNECTED_SITE", "DARKSITE_DIRECT_UPLOAD", "DARKSITE_WEB_SERVER"],
         ),
-        is_https_enabled=dict(type="bool", default=False),
-        has_module_auto_upgrade_enabled=dict(type="bool", default=False),
+        is_https_enabled=dict(type="bool"),
+        has_module_auto_upgrade_enabled=dict(type="bool"),
     )
     return module_args
 
@@ -194,7 +201,8 @@ def update_lcm_config(module, api_instance, result):
     strip_users_empty_attributes(current_spec)
 
     sg = SpecGenerator(module)
-    update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
+    default_spec = lifecycle_sdk.ResourcesConfig()
+    update_spec, err = sg.generate_spec(obj=default_spec)
     if err:
         result["error"] = err
         module.fail_json(
