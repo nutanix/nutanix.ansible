@@ -113,7 +113,7 @@
     cluster_ext_id: "{{ cluster.uuid }}"
     description: "object store test 2"
     domain: "{{ objects.domain }}"
-    num_worker_nodes: 2
+    num_worker_nodes: 1
     storage_network_reference: "{{ objects.storage_network_reference.uuid }}"
     storage_network_vip:
       ipv4:
