@@ -365,7 +365,7 @@ options:
       ntp_server_config_list:
         description:
           - NTP server configuration list.
-          - Only supported in update cluster operation.
+          - Supported only in update cluster operation.
         type: list
         elements: dict
         required: false
