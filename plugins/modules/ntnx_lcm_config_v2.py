@@ -150,6 +150,7 @@ from ..module_utils.v4.lcm.api_client import (  # noqa: E402
     get_etag,
 )
 from ..module_utils.v4.lcm.helpers import get_lcm_config  # noqa: E402
+from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
@@ -227,6 +228,12 @@ def update_lcm_config(module, api_instance, result):
             exception=e,
             msg="Api Exception raised while updating lcm config",
         )
+
+    task_ext_id = resp.data.ext_id
+    result["task_ext_id"] = task_ext_id
+    if task_ext_id and module.params.get("wait"):
+        wait_for_completion(module, task_ext_id)
+
     resp = get_lcm_config(module, api_instance, cluster_ext_id)
     result["response"] = strip_internal_attributes(resp.to_dict())
     result["changed"] = True
@@ -242,6 +249,7 @@ def run_module():
     result = {
         "changed": False,
         "response": None,
+        "task_ext_id": None,
     }
     api_instance = get_config_api_instance(module)
     update_lcm_config(module, api_instance, result)
