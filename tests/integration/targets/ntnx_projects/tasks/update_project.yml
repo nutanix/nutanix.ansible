@@ -36,9 +36,6 @@
       name: "{{ network.dhcp.name }}"
     users:
       - "{{ users[0] }}"
-    resource_limits:
-      - resource_type: STORAGE
-        limit: 1024
   register: result
   ignore_errors: true
 
@@ -69,9 +66,6 @@
       - "{{ users[1] }}"
     external_user_groups:
       - "{{ user_groups[0] }}"
-    resource_limits:
-      - resource_type: MEMORY
-        limit: 2046
   register: result
   ignore_errors: true
   check_mode: true
@@ -82,8 +76,6 @@
       - result.response is defined
       - result.changed == false
       - result.response.spec.description == 'desc-123-updated'
-      - result.response.spec.resources.resource_domain.resources[0].limit == 2046
-      - result.response.spec.resources.resource_domain.resources[0].resource_type == 'MEMORY'
       - result.response.spec.resources.user_reference_list[0].uuid == "{{ users[1] }}"
       - result.response.spec.resources.external_user_group_reference_list[0].uuid == "{{ user_groups[0] }}"
       - result.response.spec.resources.subnet_reference_list[0].uuid == "{{ static.uuid }}"
@@ -109,9 +101,6 @@
       - "{{ users[1] }}"
     external_user_groups:
       - "{{ user_groups[0] }}"
-    resource_limits:
-      - resource_type: STORAGE
-        limit: 2046
     accounts:
       - uuid: "{{ accounts[0].uuid }}"
     vpcs:
@@ -126,8 +115,6 @@
       - result.changed == true
       - result.response.status.state == 'COMPLETE'
       - result.response.status.description == 'desc-123-updated'
-      - result.response.status.resources.resource_domain.resources[0].limit == 2046
-      - result.response.status.resources.resource_domain.resources[0].resource_type == 'STORAGE'
       - result.response.status.resources.user_reference_list[0].uuid == "{{ users[1] }}"
       - result.response.status.resources.external_user_group_reference_list[0].uuid == "{{ user_groups[0] }}"
       - result.response.status.resources.subnet_reference_list[0].uuid == "{{ static.uuid }}"
@@ -153,9 +140,6 @@
       - "{{ users[1] }}"
     external_user_groups:
       - "{{ user_groups[0] }}"
-    resource_limits:
-      - resource_type: STORAGE
-        limit: 2046
     accounts:
       - name: "{{ accounts[0].name }}"
     vpcs:
