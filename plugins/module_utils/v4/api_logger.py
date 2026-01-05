@@ -403,7 +403,22 @@ class LoggedRequestHandler:
 
             # Try to get response data (handle different response types)
             response_data = None
-            if hasattr(response, "data"):
+
+            # Skip reading response body for file downloads to avoid consuming the stream
+            # The SDK needs to stream file downloads, so we must not read the body here
+            content_type = None
+            if hasattr(response, "getheader"):
+                content_type = response.getheader("Content-Type")
+            file_download_types = [
+                "application/octet-stream",
+                "application/pdf",
+                "application/zip",
+            ]
+            is_file_download = content_type in file_download_types
+
+            if is_file_download:
+                response_data = "(binary file download - body not logged)"
+            elif hasattr(response, "data"):
                 response_data = response.data
                 # If data is bytes, try to decode it
                 if isinstance(response_data, bytes):
