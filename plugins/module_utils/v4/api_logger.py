@@ -417,7 +417,19 @@ class LoggedRequestHandler:
             is_file_download = content_type in file_download_types
 
             if is_file_download:
-                response_data = "(binary file download - body not logged)"
+                content_length = (
+                    response.getheader("Content-Length")
+                    if hasattr(response, "getheader")
+                    else None
+                )
+                if content_length:
+                    response_data = (
+                        "(binary file download - {} bytes - body not logged)".format(
+                            content_length
+                        )
+                    )
+                else:
+                    response_data = "(binary file download - body not logged)"
             elif hasattr(response, "data"):
                 response_data = response.data
                 # If data is bytes, try to decode it
