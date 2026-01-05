@@ -11,6 +11,7 @@ from base64 import b64encode
 from ansible.module_utils.basic import missing_required_lib
 
 from ..api_logger import setup_api_logging
+from ...constants import ALLOW_VERSION_NEGOTIATION
 
 SDK_IMP_ERROR = None
 try:
@@ -35,7 +36,9 @@ def get_api_client(module):
     config.username = module.params.get("nutanix_username")
     config.password = module.params.get("nutanix_password")
     config.verify_ssl = module.params.get("validate_certs")
-    client = ntnx_volumes_py_client.ApiClient(configuration=config)
+    client = ntnx_volumes_py_client.ApiClient(
+        configuration=config, allow_version_negotiation=ALLOW_VERSION_NEGOTIATION
+    )
 
     cred = "{0}:{1}".format(config.username, config.password)
     try:

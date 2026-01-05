@@ -10,3 +10,4 @@ __metaclass__ = type
 # plugins/doc_fragments/ntnx_logger.py
 
 DEFAULT_LOG_FILE = "/tmp/nutanix_ansible_debug.log"
+ALLOW_VERSION_NEGOTIATION = False
