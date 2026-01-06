@@ -436,7 +436,6 @@ Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on p
 | Name V1 | Name V2 | Description |
 | --- | --- | --- |
 | ntnx_prism_vm_inventory | ntnx_prism_vm_inventory_v2 | Nutanix VMs inventory source |
-| - | ntnx_prism_vm_inventory_v2 | Nutanix VMs inventory source |
 | - | ntnx_prism_host_inventory_v2 |  Get a list of Nutanix hosts for ansible dynamic inventory |
 
 
