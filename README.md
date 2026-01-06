@@ -40,7 +40,7 @@ We are excited to announce the release of **Nutanix Ansible Collection v2.4.0** 
 
 - **Major Improvements**
   - **Logger (All)**: Add logger based on flag to enable debug logs.
-  - **Interanl code enhancement (ntnx_vms_cd_rom_iso_v2)**: Add internal code enhancement for ntnx_vms_cd_rom_iso_v2 module
+  - **Internal code enhancement (ntnx_vms_cd_rom_iso_v2)**: Add internal code enhancement for ntnx_vms_cd_rom_iso_v2 module
   - **Provide sysprep or cloud-init (ntnx_vms)**: Add functionality to provide sysprep or cloud-init to module ntnx_vms via a variable instead of a file
   - **Remove resource limit (ntnx_projects)**: Remove resource limit functionality from ntnx_projects as not supported by API
 
