@@ -847,7 +847,7 @@ releases:
           in dynamic inventory for groupping [[\#500](https://github.com/nutanix/nutanix.ansible/issues/500)]
         - ntnx_vms_v2 - [Imprv] add functionality uefi boot_order to module ntnx_vms_v2
           [[\#579](https://github.com/nutanix/nutanix.ansible/issues/579)]
-    release_summary: Releasing new modules for Object Stores, Service Accounts and Several Bugs using PC GA v4.1 sdks
+      release_summary: Releasing new modules for Object Stores, Service Accounts and Several Bugs using PC GA v4.1 sdks
     modules:
       - description: Fetch information about object stores certificates in Nutanix Prism Central.
         name: ntnx_object_stores_certificate_info_v2
