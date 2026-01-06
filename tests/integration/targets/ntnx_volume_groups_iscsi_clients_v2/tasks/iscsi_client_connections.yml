@@ -1,6 +1,7 @@
 ---
 # Variables required before running this playbook:
 # - cluster
+# - iscsi_client_name
 
 - name: "Start Volume groups disks tests"
   ansible.builtin.debug:
@@ -19,28 +20,6 @@
     vg1_name: "{{suffix_name}}-{{random_name}}1"
 
 ############################################ Test Setup ############################################
-
-- name: List all available ISCSI connections already attached to the VGs
-  nutanix.ncp.ntnx_volume_groups_iscsi_clients_info_v2:
-  register: result
-
-- name: Verify iscsi client list
-  ansible.builtin.assert:
-    that:
-      - result.error == None
-      - result.response is defined
-      - result.changed == false
-      - result.response | length >= 0
-      - result.total_available_results is defined
-      - result.total_available_results >= 0
-
-    fail_msg: "Unable to list iscsi clients"
-    success_msg: "ISCSI clients listed successfully"
-
-- name: Set iscsi client name and uuid
-  ansible.builtin.set_fact:
-    iscsi_client_name: "{{ result.response[0].iscsi_initiator_name }}"
-    iscsi_client_uuid: "{{ result.response[0].ext_id }}"
 
 - name: Create Volume group for tests
   nutanix.ncp.ntnx_volume_groups_v2:
@@ -158,12 +137,43 @@
       - result.error == None
       - result.response is defined
       - result.changed == true
-      - result.ext_id == iscsi_client_uuid
       - result.volume_group_ext_id == vg1_uuid
       - result.task_ext_id is defined
       - result.response.status == "SUCCEEDED"
     fail_msg: "Unable to attach iscsi client using initiator name"
     success_msg: "ISCSI client attached successfully using initiator name"
+
+############################################ Verify list of ISCSI clients attached to the VG ############################################
+
+- name: List all available ISCSI connections already attached to the VGs
+  nutanix.ncp.ntnx_volume_groups_iscsi_clients_info_v2:
+  register: result
+
+- name: Verify iscsi client list
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.response is defined
+      - result.changed == false
+      - result.response | length >= 0
+      - result.total_available_results is defined
+      - result.total_available_results >= 0
+
+    fail_msg: "Unable to list iscsi clients"
+    success_msg: "ISCSI clients listed successfully"
+
+- name: Set iscsi client uuid by initiator
+  ansible.builtin.set_fact:
+    iscsi_client_uuid: >-
+      {{
+        (result.response
+         | selectattr('iscsi_initiator_name', 'equalto', iscsi_client_name)
+         | map(attribute='ext_id')
+         | first)
+        | default('', true)
+      }}
+
+############################################ Fetch specific ISCSI client ############################################
 
 - name: Fetch specific client
   nutanix.ncp.ntnx_volume_groups_iscsi_clients_info_v2:

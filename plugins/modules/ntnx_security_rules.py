@@ -875,6 +875,10 @@ options:
         description:
             - A category key and value.
             - Need to provide only one.
+extends_documentation_fragment:
+    - nutanix.ncp.ntnx_credentials
+    - nutanix.ncp.ntnx_operations
+    - nutanix.ncp.ntnx_logger
 author:
   - Prem Karat (@premkarat)
   - Gevorg Khachatryan (@Gevorg-Khachatryan-97)

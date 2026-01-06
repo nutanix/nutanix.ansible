@@ -334,6 +334,7 @@ options:
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
+    - nutanix.ncp.ntnx_logger
 """
 
 EXAMPLES = r"""
@@ -451,6 +452,11 @@ task_ext_id:
 changed:
     description: Indicates whether the module changed the state of the VM.
     type: bool
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error, module is idempotent or check mode (in delete operation)
+    type: str
+    sample: "Api Exception raised while creating vm nic"
 error:
     description: The error message, if any, encountered.
     type: str

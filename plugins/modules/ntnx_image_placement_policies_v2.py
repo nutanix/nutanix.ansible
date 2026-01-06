@@ -119,6 +119,7 @@ options:
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
+    - nutanix.ncp.ntnx_logger
 notes:
     - This module follows two steps update process. Configuration update and enforcement state update.
     - If enforcement state is changed, then task_ext_id will have the task id of enforcement state update.
@@ -209,6 +210,11 @@ changed:
     description: Indicates whether the image placement policy was changed.
     type: bool
     returned: always
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error, module is idempotent or check mode (in delete operation)
+    type: str
+    sample: "Failed generating create Image Placement Policy Spec"
 error:
     description: The error message if an error occurred during the image placement policy operation.
     type: str
@@ -503,7 +509,7 @@ def delete_policy(module, result):
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
-        resp = wait_for_completion(module, task_ext_id, True)
+        resp = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(resp.to_dict())
     result["changed"] = True
 

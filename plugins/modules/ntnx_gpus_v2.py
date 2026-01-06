@@ -62,6 +62,7 @@ options:
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
+  - nutanix.ncp.ntnx_logger
 author:
   - George Ghawali (@george-ghawali)
 """
@@ -129,6 +130,11 @@ changed:
   description: Indicates whether the state of the GPU has changed.
   type: bool
   returned: always
+msg:
+  description: This indicates the message if any message occurred
+  returned: When there is an error
+  type: str
+  sample: "Failed generating attach GPU Spec"
 error:
   description: The error message, if any.
   type: str
