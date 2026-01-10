@@ -22,24 +22,24 @@
         entity_external_id: 00000000-0000-0000-0000-000000000003 # Example external ID
 
     - name: List all entities
-      nutanix.ncp.ntnx_entities_info_v2:
+      nutanix.ncp.ntnx_iam_entities_info_v2:
       register: result
       ignore_errors: true
 
     - name: List entities using filter
-      nutanix.ncp.ntnx_entities_info_v2:
+      nutanix.ncp.ntnx_iam_entities_info_v2:
         filter: "name eq '{{ entity_name }}'"
       register: result
       ignore_errors: true
 
     - name: List entities using limit
-      nutanix.ncp.ntnx_entities_info_v2:
+      nutanix.ncp.ntnx_iam_entities_info_v2:
         limit: 1
       register: result
       ignore_errors: true
 
     - name: Fetch entity using external ID
-      nutanix.ncp.ntnx_entities_info_v2:
+      nutanix.ncp.ntnx_iam_entities_info_v2:
         ext_id: "{{ entity_external_id }}"
       register: result
       ignore_errors: true
