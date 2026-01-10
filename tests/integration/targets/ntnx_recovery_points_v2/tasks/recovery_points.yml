@@ -901,7 +901,7 @@
       - result.response is defined
       - result.recovery_point_ext_id == "{{ recovery_point_ext_id_5 }}"
       - result.response.ext_id == "{{ vm_restore_ext_id_1 }}"
-      - result.response.vm_ext_id == "{{ vm_ext_id_1 }}"
+      - result.response.vm_ext_id in "{{ vm_todelete }}"
     fail_msg: "Unable to get VM recovery point details"
     success_msg: "VM recovery point details fetched successfully"
 

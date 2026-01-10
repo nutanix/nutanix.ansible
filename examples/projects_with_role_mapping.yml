@@ -19,11 +19,6 @@
           - name: "overlay-s2"
         default_subnet:
           name: "s1"
-        resource_limits:
-          - resource_type: STORAGE
-            limit: 2046000
-          - resource_type: VCPUS
-            limit: 1
         vpcs:
           - name: <vpc-1>
         accounts:

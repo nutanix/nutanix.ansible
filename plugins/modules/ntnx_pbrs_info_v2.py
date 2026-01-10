@@ -26,6 +26,7 @@ options:
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_info_v2
+      - nutanix.ncp.ntnx_logger
 author:
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
@@ -101,11 +102,18 @@ changed:
   type: bool
   sample: true
 
+msg:
+  description: This indicates the message if any message occurred
+  returned: When there is an error
+  type: str
+  sample: "Api Exception raised while fetching routing policies info"
+
 error:
   description: This field typically holds information about if the task have errors that occurred during the task execution
   returned: always
   type: bool
   sample: false
+
 total_available_results:
     description:
         - The total number of available routing policies in PC.
