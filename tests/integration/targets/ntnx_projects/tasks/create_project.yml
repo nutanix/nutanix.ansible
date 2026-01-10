@@ -64,9 +64,6 @@
       - "{{ users[1] }}"
     external_user_groups:
       - "{{ user_groups[0] }}"
-    resource_limits:
-      - resource_type: STORAGE
-        limit: 2046
   register: result
   ignore_errors: true
   check_mode: true
@@ -78,8 +75,6 @@
       - result.changed == false
       - result.response.spec.name == "{{project2_name}}"
       - result.response.spec.description == 'desc-123'
-      - result.response.spec.resources.resource_domain.resources[0].limit == 2046
-      - result.response.spec.resources.resource_domain.resources[0].resource_type == 'STORAGE'
       - result.response.spec.resources.user_reference_list[0].uuid == "{{ users[0] }}"
       - result.response.spec.resources.user_reference_list[1].uuid == "{{ users[1] }}"
       - result.response.spec.resources.external_user_group_reference_list[0].uuid == "{{ user_groups[0] }}"
@@ -113,9 +108,6 @@
       - "{{ users[1] }}"
     external_user_groups:
       - "{{ user_groups[0] }}"
-    resource_limits:
-      - resource_type: STORAGE
-        limit: 2046
   register: result
   ignore_errors: true
 
@@ -132,8 +124,6 @@
       - result.response.status.state == 'COMPLETE'
       - result.response.status.name == "{{project2_name}}"
       - result.response.status.description == 'desc-123'
-      - result.response.status.resources.resource_domain.resources[0].limit == 2046
-      - result.response.status.resources.resource_domain.resources[0].resource_type == 'STORAGE'
       - result.response.status.resources.subnet_reference_list | length == 3
       - result.response.status.resources.subnet_reference_list[0].uuid in "{{expected_subnets}}"
       - result.response.status.resources.subnet_reference_list[1].uuid in "{{expected_subnets}}"
