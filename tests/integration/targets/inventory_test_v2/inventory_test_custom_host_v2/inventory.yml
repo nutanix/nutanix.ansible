@@ -1,0 +1,98 @@
+---
+- name: Test Inventory Plugin for FQDN
+  hosts: all
+  gather_facts: false
+  vars_files:
+    - nutanix.yml
+  tasks:
+    - name: Assert the number of VMs in case of fetch_all_vms is false # noqa run-once[task]
+      ansible.builtin.assert:
+        that:
+          - ansible_play_hosts | length <= limit
+        fail_msg: "No hosts found in inventory!"
+        success_msg: "Found {{ ansible_play_hosts | length }} hosts in inventory!"
+      run_once: true
+      when: not fetch_all_vms
+
+    - name: Assert that host vars are defined like ansible_host, vm name, cluster name, vm ext id, cluster ext id, ansible user, memory gb
+      ansible.builtin.assert:
+        that:
+          - hostvars[inventory_hostname].ansible_host is defined
+          - hostvars[inventory_hostname].vm_name is defined
+          - hostvars[inventory_hostname].cluster_name is defined
+          - hostvars[inventory_hostname].vm_ext_id is defined
+          - hostvars[inventory_hostname].cluster_ext_id is defined
+          - hostvars[inventory_hostname].ansible_user == 'ansible_user'
+          - hostvars[inventory_hostname].memory_gb is defined
+          - (hostvars[inventory_hostname].memory_gb | float) == (hostvars[inventory_hostname].memory_size_bytes | float / 1073741824)
+        fail_msg: "Host vars not found for {{ inventory_hostname }}"
+        success_msg: "Host vars found for {{ inventory_hostname }}"
+
+    - name: Set host FQDN from hostvars
+      ansible.builtin.set_fact:
+        host_fqdn: "{{ hostvars[inventory_hostname].ansible_host }}"
+
+    - name: Set expected FQDN
+      ansible.builtin.set_fact:
+        expected_fqdn: >-
+          {{
+            hostvars[inventory_hostname].vm_name
+            ~ '.nutanix1.'
+            ~ hostvars[inventory_hostname].vm_ext_id
+            ~ '.nutanix2.'
+            ~ hostvars[inventory_hostname].cluster_name
+            ~ '.nutanix3.'
+            ~ hostvars[inventory_hostname].cluster_ext_id
+            ~ '.nutanix4'
+            ~ '.com'
+          }}
+
+    - name: Assert that host_fqdn matches the expected FQDN expression
+      ansible.builtin.assert:
+        that:
+          - host_fqdn == expected_fqdn
+        fail_msg: "host_fqdn does not match the expected FQDN expression for {{ inventory_hostname }} (expected: {{ expected_fqdn }}, got: {{ host_fqdn }})"
+        success_msg: "host_fqdn matches the expected FQDN expression for {{ inventory_hostname }}"
+
+    - name: Assert host groups # noqa run-once[task]
+      ansible.builtin.assert:
+        that:
+          - hostvars[inventory_hostname].groups is defined
+          - hostvars[inventory_hostname].groups | length >= 6
+          - hostvars[inventory_hostname].groups.all is defined
+          - hostvars[inventory_hostname].groups.all | length >= 0
+          - hostvars[inventory_hostname].groups.agent_vm | length +
+            hostvars[inventory_hostname].groups.non_agent_vm | length ==
+            hostvars[inventory_hostname].groups.all | length
+          - hostvars[inventory_hostname].groups.live_migrate_capable | length +
+            hostvars[inventory_hostname].groups.non_live_migrate_capable | length ==
+            hostvars[inventory_hostname].groups.all | length
+          - hostvars[inventory_hostname].groups.PC_VM | length +
+            hostvars[inventory_hostname].groups.PSERIES_VM | length +
+            hostvars[inventory_hostname].groups.Q35_VM | length ==
+            hostvars[inventory_hostname].groups.all | length
+          - ('power_' ~ hostvars[inventory_hostname].power_state) in hostvars[inventory_hostname].groups.keys()
+        fail_msg: "Hosts are not in the expected groups"
+        success_msg: "Hosts are in the expected groups"
+      run_once: true
+      when:
+        - hostvars[inventory_hostname].groups.agent_vm is defined
+        - hostvars[inventory_hostname].groups.non_agent_vm is defined
+        - hostvars[inventory_hostname].groups.live_migrate_capable is defined
+        - hostvars[inventory_hostname].groups.non_live_migrate_capable is defined
+        - hostvars[inventory_hostname].groups.PC_VM is defined
+        - hostvars[inventory_hostname].groups.PSERIES_VM is defined
+        - hostvars[inventory_hostname].groups.Q35_VM is defined
+        - ('power_' ~ hostvars[inventory_hostname].power_state) in hostvars[inventory_hostname].groups.keys()
+
+    - name: Assert cluster group
+      ansible.builtin.assert:
+        that:
+          - hostvars[inventory_hostname].cluster_name is defined
+          - hostvars[inventory_hostname].cluster_ext_id is defined
+          - ('cluster_' ~ (hostvars[inventory_hostname].cluster_ext_id | replace("-", "_"))) in hostvars[inventory_hostname].groups.keys()
+        fail_msg: "Cluster group not found for {{ inventory_hostname }}"
+        success_msg: "Cluster group found for {{ inventory_hostname }}"
+      when:
+        - hostvars[inventory_hostname].cluster_name is defined
+        - hostvars[inventory_hostname].cluster_ext_id is defined

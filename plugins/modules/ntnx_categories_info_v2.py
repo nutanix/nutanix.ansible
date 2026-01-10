@@ -24,11 +24,13 @@ options:
     expand:
         description:
             - Additional query param to expand the response with more details
+            - detailedAssociations is supported only when ext_id is provided
         type: str
         choices: ['associations', 'detailedAssociations']
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_info_v2
+      - nutanix.ncp.ntnx_logger
 author:
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
@@ -80,7 +82,11 @@ response:
                 "type": "USER",
                 "value": "Linux"
             }
-
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while fetching categories info"
 error:
   description: The error message if an error occurs.
   type: str

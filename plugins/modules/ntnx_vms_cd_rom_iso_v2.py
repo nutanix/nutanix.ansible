@@ -152,6 +152,7 @@ author:
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
+  - nutanix.ncp.ntnx_logger
 """
 
 EXAMPLES = r"""
@@ -233,6 +234,11 @@ response:
             ],
             "warnings": null
         }
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Failed generating insert iso in cd rom spec"
 error:
     description: The error message if an error occurred.
     type: str
@@ -273,7 +279,7 @@ from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
 )
-from ..module_utils.v4.vmm.api_client import get_api_client, get_etag  # noqa: E402
+from ..module_utils.v4.vmm.api_client import get_etag, get_vm_api_instance  # noqa: E402
 from ..module_utils.v4.vmm.helpers import get_cd_rom, get_vm  # noqa: E402
 from ..module_utils.v4.vmm.spec.vms import VmSpecs as vm_specs  # noqa: E402
 
@@ -297,11 +303,6 @@ def get_module_spec():
     )
     module_args.update(vm_specs.get_cd_rom_spec())
     return module_args
-
-
-def get_vm_api_instance(module):
-    api_client = get_api_client(module)
-    return vmm_sdk.VmApi(api_client=api_client)
 
 
 def insert_iso(module, vms, result):

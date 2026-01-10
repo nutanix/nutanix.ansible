@@ -447,7 +447,8 @@ options:
         type: bool
     machine_type:
         description:
-            - The machine type for the VM.
+            - Machine type for the VM.
+            - Machine type Q35 is required for secure boot and does not support IDE disks.
         required: false
         type: str
         choices: ["PC", "PSERIES", "Q35"]
@@ -1133,6 +1134,7 @@ options:
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
+    - nutanix.ncp.ntnx_logger
 author:
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
@@ -1289,12 +1291,17 @@ changed:
   type: bool
   sample: true
 
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error, module is idempotent or check mode (in delete operation)
+    type: str
+    sample: "Api Exception raised while creating vm"
+
 error:
   description: This field typically holds information about if the task have errors that occurred during the task execution
   returned: always
   type: bool
   sample: false
-
 
 ext_id:
   description:
@@ -1413,6 +1420,18 @@ def update_vm(module, result):
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating vm update spec", **result)
+
+    # If is_apc_enabled is False in playbook params, don't send cpu_model in update_spec
+    apc_config_params = module.params.get("apc_config")
+    if (
+        apc_config_params is not None
+        and isinstance(apc_config_params, dict)
+        and apc_config_params.get("is_apc_enabled") is False
+        and hasattr(update_spec, "apc_config")
+        and update_spec.apc_config is not None
+        and hasattr(update_spec.apc_config, "cpu_model")
+    ):
+        update_spec.apc_config.cpu_model = None
 
     # check for idempotency
     if check_idempotency(current_spec, update_spec):

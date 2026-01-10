@@ -6,6 +6,8 @@
       nutanix_username: "{{ ndb_username }}"
       nutanix_password: "{{ ndb_password }}"
       validate_certs: false
+      nutanix_debug: "{{ nutanix_debug }}"
+      nutanix_log_file: "{{ nutanix_log_file }}"
   block:
     - name: Import tasks
       ansible.builtin.import_tasks: CRUD.yml

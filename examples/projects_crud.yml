@@ -20,9 +20,6 @@
           - "<user1-uuid>"
         external_user_groups:
           - "<usergroup1-uuid>"
-        resource_limits:
-          - resource_type: STORAGE
-            limit: 2046000
         vpcs:
           - name: <vpc1-name>
         accounts:
@@ -35,11 +32,6 @@
         project_uuid: "{{ project1.project_uuid }}"
         name: "test-ansible-project-1"
         desc: "test-ansible-project-1-updated"
-        resource_limits:
-          - resource_type: STORAGE
-            limit: 4096000
-          - resource_type: MEMORY
-            limit: 4096000
       register: updated_project
 
     - name: Read the updated project
