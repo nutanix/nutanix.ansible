@@ -1,0 +1,28 @@
+---
+plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
+# nutanix_host: hostname # Or set NUTANIX_HOST or NUTANIX_HOSTNAME environment variable
+# nutanix_username: username # Or set NUTANIX_USERNAME environment variable
+# nutanix_password: password # Or set NUTANIX_PASSWORD environment variable
+# nutanix_port: port # Or set NUTANIX_PORT environment variable
+# validate_certs: false # Or set NUTANIX_VALIDATE_CERTS environment variable
+fetch_all_vms: false
+page: 0
+limit: 20
+compose:
+  ansible_user: "'ansible_user'"
+  memory_gb: memory_size_bytes / 1073741824 if memory_size_bytes else 0
+strict: true
+groups:
+  agent_vm: is_agent_vm == true
+  non_agent_vm: is_agent_vm == false
+  live_migrate_capable: is_live_migrate_capable == true
+  non_live_migrate_capable: is_live_migrate_capable == false
+  PC_VM: machine_type == 'PC'
+  PSERIES_VM: machine_type == 'PSERIES'
+  Q35_VM: machine_type == 'Q35'
+keyed_groups:
+  - key: power_state
+    prefix: power
+    separator: "_"
+custom_ansible_host:
+  expr: "{vm_name}.nutanix1.{vm_ext_id}.nutanix2.{cluster_name}.nutanix3.{cluster_ext_id}.nutanix4.com"

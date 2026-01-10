@@ -34,7 +34,6 @@ class ProjectsInternal(Prism):
         self.build_spec_methods = {
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
-            "resource_limits": self._build_spec_resource_limits,
             "clusters": self._build_spec_cluster_reference_list,
             "default_subnet": self._build_spec_default_subnet,
             "subnets": self._build_spec_subnets,
@@ -110,13 +109,6 @@ class ProjectsInternal(Prism):
 
     def _build_spec_desc(self, payload, desc):
         payload["spec"]["project_detail"]["description"] = desc
-        return payload, None
-
-    def _build_spec_resource_limits(self, payload, resource_limits):
-        payload["spec"]["project_detail"]["resources"]["resource_domain"] = {}
-        payload["spec"]["project_detail"]["resources"]["resource_domain"][
-            "resources"
-        ] = resource_limits
         return payload, None
 
     def _build_spec_cluster_reference_list(self, payload, cluster_ref_list):

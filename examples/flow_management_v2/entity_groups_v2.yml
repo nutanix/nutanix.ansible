@@ -41,7 +41,7 @@
                 - "{{ category_ext_ids[1] }}"
       register: result
       ignore_errors: true
-    
+
     - name: Store entity group ext_id
       ansible.builtin.set_fact:
         entity_group_ext_id: "{{ result.ext_id }}"

@@ -20,6 +20,7 @@ description:
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_info_v2
+    - nutanix.ncp.ntnx_logger
 author:
     - Abhinav Bansal (@abhinavbansal29)
 """
@@ -125,6 +126,11 @@ response:
                 "username": "root"
             }
         ]
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while fetching password status of system users info"
 error:
     description: The error message if an error occurs.
     type: str
