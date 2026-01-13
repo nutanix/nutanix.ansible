@@ -436,6 +436,19 @@ def create_network_function(module, result, network_functions):
 
 
 def check_network_function_idempotency(old_spec, update_spec):
+    old_spec = strip_internal_attributes(old_spec.to_dict())
+    update_spec = strip_internal_attributes(update_spec.to_dict())
+    old_spec_nic_pairs = old_spec.get("nic_pairs") or []
+    update_spec_nic_pairs = update_spec.get("nic_pairs") or []
+    if len(old_spec_nic_pairs) != len(update_spec_nic_pairs):
+        return False
+    for old_nic_pair, update_nic_pair in zip(old_spec_nic_pairs, update_spec_nic_pairs):
+        old_nic_pair.pop("data_plane_health_status")
+        old_nic_pair.pop("high_availability_state")
+        update_nic_pair.pop("data_plane_health_status")
+        update_nic_pair.pop("high_availability_state")
+        if old_nic_pair != update_nic_pair:
+            return False
     if old_spec != update_spec:
         return False
     return True
@@ -465,9 +478,9 @@ def update_network_function(module, result, network_functions):
         return
 
     # check for idempotency
-    if check_network_function_idempotency(
-        current_spec.to_dict(), update_spec.to_dict()
-    ):
+    result["current_spec"] = strip_internal_attributes(current_spec.to_dict())
+    result["update_spec"] = strip_internal_attributes(update_spec.to_dict())
+    if check_network_function_idempotency(current_spec, update_spec):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
 

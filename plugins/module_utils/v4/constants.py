@@ -45,7 +45,7 @@ class Tasks:
         STORAGE_POLICY = "datapolicies:config:storage-policy"
         KMS = "security:encryption:key-management-server"
         CLUSTER_PROFILE = "clustermgmt:config:cluster-profile"
-        NETWORK_FUNCTION = "networking:config:network-function"
+        NETWORK_FUNCTION = "Networking:config:network-function"
 
     class CompletetionDetailsName:
         """Completion details name for the task entities affected"""
