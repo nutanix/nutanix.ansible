@@ -329,7 +329,7 @@
     ext_id: "{{ item }}"
   register: vm_details_loop
   ignore_errors: true
-  retries: 60
+  retries: 120
   delay: 5
   until: >
     vm_details_loop.response.nics | default([]) |

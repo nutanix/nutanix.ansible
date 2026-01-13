@@ -9,6 +9,5 @@
       nutanix_debug: "{{ nutanix_debug }}"
       nutanix_log_file: "{{ nutanix_log_file }}"
   block:
-    - name: Include network_function.yml
+    - name: Import network_function.yml
       ansible.builtin.import_tasks: network_function.yml
-      ignore_errors: true
