@@ -730,12 +730,13 @@
       - network_functions_result.failed == false
       - network_functions_result.response is defined
       - network_functions_result.response | length >= 2
+      - network_functions_result.total_available_results >= 2
     fail_msg: "Failed to list all network functions"
     success_msg: "All network functions listed successfully"
 
 - name: List all network functions with filter
   nutanix.ncp.ntnx_network_function_info_v2:
-    filter: "name eq {{ network_function_name }}_updated"
+    filter: "name eq '{{ network_function_name }}_updated'"
   register: network_functions_result
   ignore_errors: true
 
