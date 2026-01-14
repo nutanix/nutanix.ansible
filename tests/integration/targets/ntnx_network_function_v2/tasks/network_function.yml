@@ -724,7 +724,7 @@
       - network_function_result.failed == true
       - network_function_result.msg == "Api Exception raised while updating network function"
       - network_function_result.response is defined
-      - network_function_result.data.errors | length > 0
+      - network_function_result.response.data.errors | length > 0
     fail_msg: "Failed to validate wrong vm and nic external IDs error for update operation"
     success_msg: "Wrong vm and nic external IDs validation passed successfully for update operation"
 
