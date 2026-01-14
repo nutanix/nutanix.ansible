@@ -162,7 +162,6 @@
 
 - name: Create second VM for network function
   nutanix.ncp.ntnx_vms_v2:
-    state: present
     name: "{{ vm_name }}_2"
     description: "Second VM for testing the network function"
     cluster:
@@ -187,7 +186,7 @@
           datasource_type: CONFIG_DRIVE_V2
           cloud_init_script:
             user_data:
-              value: "I2Nsb3VkLWNvbmZpZwpjaHBhc3N3ZDoKICBsaXN0OiB8CiAgICB1YnVudHU6bnV0YW5peC80dQogIGV4cGlyZTogZmFsc2UKZGlzYWJsZV9yb290OiBmYWxzZQpzc2hfcHdhdXRoOiAgIHRydWUKcnVuY21kOgogIC0gbGFzdF9pZmFjZT0kKGxzIC9zeXMvY2xhc3MvbmV0LyB8IGdyZXAgLUUgJ15lJyB8IHNvcnQgfCB0YWlsIC0xKQogIC0gaXAgbGluayBzZXQgZGV2ICRsYXN0X2lmYWNlIHVwCiAgLSBkaGNsaWVudCAtdiAkbGFzdF9pZmFjZQogIC0gYXB0LWdldCB1cGRhdGUKICAtIGFwdC1nZXQgaW5zdGFsbCAteSBicmlkZ2UtdXRpbHMKICAtIGlmYWNlMT0kKGxzIC9zeXNsYXNzL25ldC8gfCBncmVwIC1FICd+ZScgfCBzb3J0IHwgaGVhZCAtMSkKICAtIGlmYWNlMj0kKGxzIC9zeXNsYXNzL25ldC8gfCBncmVwIC1FICd+ZScgfCBzb3J0IHwgaGVhZCAtMiB8IHRhaWwgLTEpCiAgLSBicmN0bCBhZGRibyBicjAgYnIwCiAgLSBicmN0bCBhZGRpZiBicjAgJGlmYWNlMQogIC0gYnJjdGwgYWRkaWYgYnIwICRpZmFjZTIKICAtIGlwIGxpbmsgc2V0IGRldiAkaWZhY2UxIHVwCiAgLSBpcCBsaW5rIHNldCBkZXYgJGlmYWNlMiB1cA=="
+              value: "I2Nsb3VkLWNvbmZpZwpjaHBhc3N3ZDoKICBsaXN0OiB8CiAgICB1YnVudHU6bnV0YW5peC80dQogIGV4cGlyZTogZmFsc2UKZGlzYWJsZV9yb290OiBmYWxzZQpzc2hfcHdhdXRoOiAgIHRydWUKcnVuY21kOgogIC0gbGFzdF9pZmFjZT0kKGxzIC9zeXMvY2xhc3MvbmV0LyB8IGdyZXAgLUUgJ15lJyB8IHNvcnQgfCB0YWlsIC0xKQogIC0gaXAgbGluayBzZXQgZGV2ICRsYXN0X2lmYWNlIHVwCiAgLSBkaGNsaWVudCAtdiAkbGFzdF9pZmFjZQogIC0gYXB0LWdldCB1cGRhdGUKICAtIGFwdC1nZXQgaW5zdGFsbCAteSBicmlkZ2UtdXRpbHMKICAtIGlmYWNlMT0kKGxzIC9zeXMvY2xhc3MvbmV0LyB8IGdyZXAgLUUgJ15lJyB8IHNvcnQgfCBoZWFkIC0xKQogIC0gaWZhY2UyPSQobHMgL3N5cy9jbGFzcy9uZXQvIHwgZ3JlcCAtRSAnXmUnIHwgc29ydCB8IGhlYWQgLTIgfCB0YWlsIC0xKQogIC0gYnJjdGwgYWRkYnIgYnIwCiAgLSBicmN0bCBhZGRpZiBicjAgJGlmYWNlMQogIC0gYnJjdGwgYWRkaWYgYnIwICRpZmFjZTIKICAtIGlwIGxpbmsgc2V0IGRldiAkaWZhY2UxIHVwCiAgLSBpcCBsaW5rIHNldCBkZXYgJGlmYWNlMiB1cAogIC0gaXAgbGluayBzZXQgZGV2IGJyMCB1cA=="
     nics:
       - nic_network_info:
           virtual_ethernet_nic_network_info:
@@ -203,6 +202,7 @@
             network_function_nic_type: "INGRESS"
       - nic_network_info:
           virtual_ethernet_nic_network_info:
+            nic_type: "NORMAL_NIC"
             subnet:
               ext_id: "{{ subnet_ext_id }}"
             ipv4_config:
@@ -398,10 +398,10 @@
         vm_reference: "{{ vm_ext_id_2 }}"
         is_enabled: true
     data_plane_health_check_config:
-      interval_secs: 15
-      timeout_secs: 5
-      success_threshold: 6
-      failure_threshold: 6
+      interval_secs: 4
+      timeout_secs: 2
+      success_threshold: 3
+      failure_threshold: 3
   register: network_function_result
   ignore_errors: true
 
@@ -444,10 +444,10 @@
       #   network_function_result.response.nic_pairs |
       #   selectattr('high_availability_state', 'equalto', 'PASSIVE') |
       #   list | length == 1
-      - network_function_result.response.data_plane_health_check_config.interval_secs == 15
-      - network_function_result.response.data_plane_health_check_config.timeout_secs == 5
-      - network_function_result.response.data_plane_health_check_config.success_threshold == 6
-      - network_function_result.response.data_plane_health_check_config.failure_threshold == 6
+      - network_function_result.response.data_plane_health_check_config.interval_secs == 4
+      - network_function_result.response.data_plane_health_check_config.timeout_secs == 2
+      - network_function_result.response.data_plane_health_check_config.success_threshold == 3
+      - network_function_result.response.data_plane_health_check_config.failure_threshold == 3
     fail_msg: "Failed to create first network function"
     success_msg: "First network function created successfully"
 
