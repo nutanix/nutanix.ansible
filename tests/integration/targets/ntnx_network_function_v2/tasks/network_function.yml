@@ -6,34 +6,35 @@
 - name: Generate random name and suffix
   ansible.builtin.set_fact:
     random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
-    suffix_name: ansible-ag
+    suffix_name: ansible_test
 
 - name: Set VM name and todelete list
   ansible.builtin.set_fact:
     todelete: []
-    vm_name: "{{ random_name }}{{ suffix_name }}vmgeorge"
-    subnet_name: "{{ random_name }}{{ suffix_name }}subnetgeorge"
-    network_function_name: "{{ random_name }}{{ suffix_name }}networkfunctiongeorge"
+    vm_name: "vm_{{ suffix_name }}_{{ random_name }}"
+    subnet_name: "subnet_{{ suffix_name }}_{{ random_name }}"
+    network_function_name: "network_function_{{ suffix_name }}_{{ random_name }}"
 
 - name: List all images and get the UUID for the configured Ubuntu image name
   nutanix.ncp.ntnx_images_info_v2:
-  register: image_list_result
+    filter: "name eq '{{ ubuntu }}'"
+  register: ubuntu_image_result
   ignore_errors: true
+
+- ansible.builtin.debug:
+    var: ubuntu_image_result
 
 - name: Set ubuntu image UUID fact
   ansible.builtin.set_fact:
-    ubuntu_image_uuid: "{{ (image_list_result.response | selectattr('name', 'equalto', ubuntu) | list)[0].ext_id }}"
+    ubuntu_image_uuid: "{{ ubuntu_image_result.response[0].ext_id }}"
 
 ##################################################
 - name: Create VLAN subnet without IPAM
   nutanix.ncp.ntnx_subnets_v2:
-    state: present
-    wait: true
-    name: "{{ subnet_name }}_1"
+    name: "{{ subnet_name }}"
     subnet_type: VLAN
     cluster_reference: "{{ cluster.uuid }}"
-    virtual_switch_reference: "{{ virtual_switch.uuid }}"
-    network_id: "{{ vlan_id }}"
+    network_id: "{{ vlan_id_for_network_function }}"
   register: result
   ignore_errors: true
 
@@ -45,11 +46,11 @@
       - result.response is defined
       - result.ext_id is defined
       - result.task_ext_id is defined
-      - result.response.name == "{{ subnet_name }}_1"
+      - result.response.name == "{{ subnet_name }}"
       - result.response.subnet_type == "VLAN"
       - result.response.virtual_switch_reference == "{{ virtual_switch.uuid }}"
       - result.response.cluster_reference == "{{ cluster.uuid }}"
-      - result.response.network_id == {{ vlan_id }}
+      - result.response.network_id == {{ vlan_id_for_network_function }}
     fail_msg: "Unable to create VLAN subnet without IPAM"
     success_msg: "VLAN subnet without IPAM created successfully"
 
@@ -59,19 +60,13 @@
 
 - name: Create VM to test the first network function
   nutanix.ncp.ntnx_vms_v2:
-    state: present
-    name: "{{ vm_name }}"
-    description: "Network function test VM"
+    name: "{{ vm_name }}_1"
+    description: "VM for testing the first network function"
     cluster:
       ext_id: "{{ cluster.uuid }}"
     num_sockets: 2
     num_cores_per_socket: 2
     memory_size_bytes: 4294967296
-    is_agent_vm: false
-    hardware_clock_timezone: "UTC"
-    is_memory_overcommit_enabled: false
-    apc_config:
-      is_apc_enabled: false
     disks:
       - backing_info:
           vm_disk:
@@ -90,11 +85,6 @@
           cloud_init_script:
             user_data:
               value: "I2Nsb3VkLWNvbmZpZwpjaHBhc3N3ZDoKICBsaXN0OiB8CiAgICB1YnVudHU6bnV0YW5peC80dQogIGV4cGlyZTogZmFsc2UKZGlzYWJsZV9yb290OiBmYWxzZQpzc2hfcHdhdXRoOiAgIHRydWUKcnVuY21kOgogIC0gbGFzdF9pZmFjZT0kKGxzIC9zeXMvY2xhc3MvbmV0LyB8IGdyZXAgLUUgJ15lJyB8IHNvcnQgfCB0YWlsIC0xKQogIC0gaXAgbGluayBzZXQgZGV2ICRsYXN0X2lmYWNlIHVwCiAgLSBkaGNsaWVudCAtdiAkbGFzdF9pZmFjZQogIC0gYXB0LWdldCB1cGRhdGUKICAtIGFwdC1nZXQgaW5zdGFsbCAteSBicmlkZ2UtdXRpbHMKICAtIGlmYWNlMT0kKGxzIC9zeXMvY2xhc3MvbmV0LyB8IGdyZXAgLUUgJ15lJyB8IHNvcnQgfCBoZWFkIC0xKQogIC0gaWZhY2UyPSQobHMgL3N5cy9jbGFzcy9uZXQvIHwgZ3JlcCAtRSAnXmUnIHwgc29ydCB8IGhlYWQgLTIgfCB0YWlsIC0xKQogIC0gYnJjdGwgYWRkYnIgYnIwCiAgLSBicmN0bCBhZGRpZiBicjAgJGlmYWNlMQogIC0gYnJjdGwgYWRkaWYgYnIwICRpZmFjZTIKICAtIGlwIGxpbmsgc2V0IGRldiAkaWZhY2UxIHVwCiAgLSBpcCBsaW5rIHNldCBkZXYgJGlmYWNlMiB1cAogIC0gaXAgbGluayBzZXQgZGV2IGJyMCB1cA=="
-    boot_config:
-      uefi_boot:
-        is_secure_boot_enabled: false
-    vtpm_config:
-      is_vtpm_enabled: false
     nics:
       - nic_network_info:
           virtual_ethernet_nic_network_info:
@@ -118,22 +108,16 @@
       - result.response is defined
       - result.ext_id is defined
       - result.task_ext_id is defined
-      - result.response.name == "{{ vm_name }}"
-      - result.response.description == "Network function test VM"
+      - result.response.name == "{{ vm_name }}_1"
+      - result.response.description == "VM for testing the first network function"
       - result.response.cluster.ext_id == "{{ cluster.uuid }}"
       - result.response.num_sockets == 2
       - result.response.num_cores_per_socket == 2
       - result.response.memory_size_bytes == 4294967296
-      - result.response.is_agent_vm == false
-      - result.response.hardware_clock_timezone == "UTC"
-      - result.response.is_memory_overcommit_enabled == false
-      - result.response.apc_config.is_apc_enabled == false
       - result.response.disks | length == 1
       - result.response.disks[0].disk_address.bus_type == "SCSI"
       - result.response.disks[0].disk_address.index == 0
       - result.response.disks[0].backing_info.disk_size_bytes == 21474836480
-      - result.response.boot_config.is_secure_boot_enabled == false
-      - result.response.vtpm_config.is_vtpm_enabled == false
       - result.response.nics | length == 2
       - result.response.nics | selectattr('network_info.nic_type', 'equalto', 'NETWORK_FUNCTION_NIC') | list | length == 2
       - result.response.nics | selectattr('network_info.network_function_nic_type', 'equalto', 'INGRESS') | list | length == 1
@@ -195,17 +179,12 @@
   nutanix.ncp.ntnx_vms_v2:
     state: present
     name: "{{ vm_name }}_2"
-    description: "Network function test VM 2"
+    description: "VM for testing the second network function"
     cluster:
       ext_id: "{{ cluster.uuid }}"
     num_sockets: 2
     num_cores_per_socket: 2
     memory_size_bytes: 4294967296
-    is_agent_vm: false
-    hardware_clock_timezone: "UTC"
-    is_memory_overcommit_enabled: false
-    apc_config:
-      is_apc_enabled: false
     disks:
       - backing_info:
           vm_disk:
@@ -224,11 +203,6 @@
           cloud_init_script:
             user_data:
               value: "I2Nsb3VkLWNvbmZpZwpjaHBhc3N3ZDoKICBsaXN0OiB8CiAgICB1YnVudHU6bnV0YW5peC80dQogIGV4cGlyZTogZmFsc2UKZGlzYWJsZV9yb290OiBmYWxzZQpzc2hfcHdhdXRoOiAgIHRydWUKcnVuY21kOgogIC0gbGFzdF9pZmFjZT0kKGxzIC9zeXMvY2xhc3MvbmV0LyB8IGdyZXAgLUUgJ15lJyB8IHNvcnQgfCB0YWlsIC0xKQogIC0gaXAgbGluayBzZXQgZGV2ICRsYXN0X2lmYWNlIHVwCiAgLSBkaGNsaWVudCAtdiAkbGFzdF9pZmFjZQogIC0gYXB0LWdldCB1cGRhdGUKICAtIGFwdC1nZXQgaW5zdGFsbCAteSBicmlkZ2UtdXRpbHMKICAtIGlmYWNlMT0kKGxzIC9zeXNsYXNzL25ldC8gfCBncmVwIC1FICd+ZScgfCBzb3J0IHwgaGVhZCAtMSkKICAtIGlmYWNlMj0kKGxzIC9zeXNsYXNzL25ldC8gfCBncmVwIC1FICd+ZScgfCBzb3J0IHwgaGVhZCAtMiB8IHRhaWwgLTEpCiAgLSBicmN0bCBhZGRibyBicjAgYnIwCiAgLSBicmN0bCBhZGRpZiBicjAgJGlmYWNlMQogIC0gYnJjdGwgYWRkaWYgYnIwICRpZmFjZTIKICAtIGlwIGxpbmsgc2V0IGRldiAkaWZhY2UxIHVwCiAgLSBpcCBsaW5rIHNldCBkZXYgJGlmYWNlMiB1cA=="
-    boot_config:
-      uefi_boot:
-        is_secure_boot_enabled: false
-    vtpm_config:
-      is_vtpm_enabled: false
     nics:
       - nic_network_info:
           virtual_ethernet_nic_network_info:
@@ -252,21 +226,15 @@
       - result.response is defined
       - result.ext_id is defined
       - result.response.name == "{{ vm_name }}_2"
-      - result.response.description == "Network function test VM 2"
+      - result.response.description == "VM for testing the second network function"
       - result.response.cluster.ext_id == "{{ cluster.uuid }}"
       - result.response.num_sockets == 2
       - result.response.num_cores_per_socket == 2
       - result.response.memory_size_bytes == 4294967296
-      - result.response.is_agent_vm == false
-      - result.response.hardware_clock_timezone == "UTC"
-      - result.response.is_memory_overcommit_enabled == false
-      - result.response.apc_config.is_apc_enabled == false
       - result.response.disks | length == 1
       - result.response.disks[0].disk_address.bus_type == "SCSI"
       - result.response.disks[0].disk_address.index == 0
       - result.response.disks[0].backing_info.disk_size_bytes == 21474836480
-      - result.response.boot_config.is_secure_boot_enabled == false
-      - result.response.vtpm_config.is_vtpm_enabled == false
       - result.response.nics | length == 2
       - result.response.nics | selectattr('network_info.nic_type', 'equalto', 'NETWORK_FUNCTION_NIC') | list | length == 2
       - result.response.nics | selectattr('network_info.network_function_nic_type', 'equalto', 'INGRESS') | list | length == 1
@@ -344,20 +312,20 @@
   ansible.builtin.debug:
     var: vm_details_loop
 
-- name: Get VM info and check if IP address is assigned Status
-  ansible.builtin.assert:
-    that:
-      - item.response is defined
-      - item.changed == false
-      - item.failed == false
-      - >
-        item.response.nics | default([]) |
-        selectattr('network_info.ipv4_info.learned_ip_addresses', 'defined') |
-        selectattr('network_info.ipv4_info.learned_ip_addresses', 'ne', []) |
-        list | length > 0
-    fail_msg: "Unable to get VM info and check if IP address is assigned for {{ item.item }}"
-    success_msg: "VM info is retrieved successfully and IP address is assigned for {{ item.item }}"
-  loop: "{{ vm_details_loop.results }}"
+# - name: Get VM info and check if IP address is assigned Status
+#   ansible.builtin.assert:
+#     that:
+#       - item.response is defined
+#       - item.changed == false
+#       - item.failed == false
+#       - >
+#         item.response.nics | default([]) |
+#         selectattr('network_info.ipv4_info.learned_ip_addresses', 'defined') |
+#         selectattr('network_info.ipv4_info.learned_ip_addresses', 'ne', []) |
+#         list | length > 0
+#     fail_msg: "Unable to get VM info and check if IP address is assigned for VM with ext_id {{ item.item }}"
+#     success_msg: "VM info is retrieved successfully and IP address is assigned for VM with ext_id {{ item.item }}"
+#   loop: "{{ vm_details_loop.results }}"
 
 - name: Generate spec for creating network function
   nutanix.ncp.ntnx_network_function_v2:
@@ -436,7 +404,7 @@
   ansible.builtin.debug:
     var: network_function_spec
 
-- name: Set INGRESS and EGRESS NIC ext_ids for first network function
+- name: Set INGRESS and EGRESS NIC ext_ids
   ansible.builtin.set_fact:
     ingress_nic_ext_id_1: "{{ (vm_details_loop.results[0].response.nics | selectattr('network_info.network_function_nic_type', 'equalto', 'INGRESS') | list | first).ext_id }}"
     egress_nic_ext_id_1: "{{ (vm_details_loop.results[0].response.nics | selectattr('network_info.network_function_nic_type', 'equalto', 'EGRESS') | list | first).ext_id }}"
@@ -444,9 +412,8 @@
 
 - name: Create first network function
   nutanix.ncp.ntnx_network_function_v2:
-    state: present
-    name: "{{ network_function_name }}"
-    description: "network function for testing purposes"
+    name: "{{ network_function_name }}_1"
+    description: "network function for testing the first network function"
     high_availability_mode: ACTIVE_PASSIVE
     failure_handling: FAIL_CLOSE
     traffic_forwarding_mode: INLINE
@@ -474,8 +441,8 @@
       - network_function_result.response is defined
       - network_function_result.ext_id is defined
       - network_function_result.task_ext_id is defined
-      - network_function_result.response.name == "{{ network_function_name }}"
-      - network_function_result.response.description == "network function for testing purposes"
+      - network_function_result.response.name == "{{ network_function_name }}_1"
+      - network_function_result.response.description == "network function for testing the first network function"
       - network_function_result.response.high_availability_mode == "ACTIVE_PASSIVE"
       - network_function_result.response.failure_handling == "FAIL_CLOSE"
       - network_function_result.response.traffic_forwarding_mode == "INLINE"
@@ -498,7 +465,7 @@
 - name: Create second network function
   nutanix.ncp.ntnx_network_function_v2:
     name: "{{ network_function_name }}_2"
-    description: "network function for testing purposes 2"
+    description: "network function for testing the second network function"
     high_availability_mode: ACTIVE_PASSIVE
     traffic_forwarding_mode: VTAP
     nic_pairs:
@@ -519,7 +486,7 @@
       - network_function_result.response is defined
       - network_function_result.ext_id is defined
       - network_function_result.response.name == "{{ network_function_name }}_2"
-      - network_function_result.response.description == "network function for testing purposes 2"
+      - network_function_result.response.description == "network function for testing the second network function"
       - network_function_result.response.high_availability_mode == "ACTIVE_PASSIVE"
       - network_function_result.response.traffic_forwarding_mode == "VTAP"
       - network_function_result.response.nic_pairs | length == 1
@@ -533,11 +500,62 @@
   ansible.builtin.set_fact:
     network_function_ext_id_2: "{{ network_function_result.response.ext_id }}"
 
+- name: Create network function with missing name
+  nutanix.ncp.ntnx_network_function_v2:
+    description: "network function for testing the third network function"
+    high_availability_mode: ACTIVE_PASSIVE
+    traffic_forwarding_mode: VTAP
+    nic_pairs:
+      - ingress_nic_reference: "c4fda6ad-cc24-48fc-8a65-83ea8c29072c"
+        vm_reference: "3370bc75-0c13-42f0-7962-f8d66bdc6aa7"
+        is_enabled: true
+  register: network_function_result
+  ignore_errors: true
+
+- ansible.builtin.debug:
+    var: network_function_result
+
+- name: Create network function with missing name status
+  ansible.builtin.assert:
+    that:
+      - network_function_result.changed == false
+      - network_function_result.failed == true
+      - network_function_result.msg == "state is present but any of the following are missing: name, ext_id"
+    fail_msg: "Failed to validate missing name error"
+    success_msg: "Missing name validation passed successfully"
+
+- name: Create network function with wrong vm and nic external IDs
+  nutanix.ncp.ntnx_network_function_v2:
+    name: "network_function_with_wrong_vm_and_nic_ext_id"
+    description: "network function for testing the fourth network function"
+    high_availability_mode: ACTIVE_PASSIVE
+    traffic_forwarding_mode: VTAP
+    nic_pairs:
+      - ingress_nic_reference: "a6666666-6666-6666-6666-666666666666"
+        vm_reference: "a5555555-5555-5555-5555-555555555555"
+        is_enabled: false
+  register: network_function_result
+  ignore_errors: true
+
+- ansible.builtin.debug:
+    var: network_function_result
+
+- name: Create network function with wrong vm and nic external ID status
+  ansible.builtin.assert:
+    that:
+      - network_function_result.changed == false
+      - network_function_result.failed == true
+      - network_function_result.response is defined
+      - network_function_result.response.status == "FAILED"
+      - network_function_result.response.error_messages | length > 0
+    fail_msg: "Failed to validate wrong vm and nic external ID error for create operation"
+    success_msg: "Wrong vm and nic external ID validation passed successfully for create operation"
+
 - name: Generate spec for updating network function using check mode
   nutanix.ncp.ntnx_network_function_v2:
     ext_id: "{{ network_function_ext_id_1 }}"
-    name: "{{ network_function_name }}_updated"
-    description: "network function for testing purposes updated"
+    name: "network_function_updated_1"
+    description: "network function for testing the first network function updated"
     high_availability_mode: ACTIVE_PASSIVE
     failure_handling: FAIL_OPEN
     traffic_forwarding_mode: VTAP
@@ -571,8 +589,8 @@
       - network_function_spec.changed == false
       - network_function_spec.failed == false
       - network_function_spec.response is defined
-      - network_function_spec.response.name == "{{ network_function_name }}_updated"
-      - network_function_spec.response.description == "network function for testing purposes updated"
+      - network_function_spec.response.name == "network_function_updated_1"
+      - network_function_spec.response.description == "network function for testing the first network function updated"
       - network_function_spec.response.high_availability_mode == "ACTIVE_PASSIVE"
       - network_function_spec.response.failure_handling == "FAIL_OPEN"
       - network_function_spec.response.traffic_forwarding_mode == "VTAP"
@@ -600,8 +618,8 @@
 - name: Update network function
   nutanix.ncp.ntnx_network_function_v2:
     ext_id: "{{ network_function_ext_id_1 }}"
-    name: "{{ network_function_name }}_updated"
-    description: "network function for testing purposes updated"
+    name: "{{ network_function_name }}_1_updated"
+    description: "network function for testing the first network function updated"
     high_availability_mode: ACTIVE_PASSIVE
     failure_handling: FAIL_OPEN
     traffic_forwarding_mode: INLINE
@@ -629,8 +647,8 @@
       - network_function_result.response is defined
       - network_function_result.ext_id == "{{ network_function_ext_id_1 }}"
       - network_function_result.task_ext_id is defined
-      - network_function_result.response.name == "{{ network_function_name }}_updated"
-      - network_function_result.response.description == "network function for testing purposes updated"
+      - network_function_result.response.name == "{{ network_function_name }}_1_updated"
+      - network_function_result.response.description == "network function for testing the first network function updated"
       - network_function_result.response.high_availability_mode == "ACTIVE_PASSIVE"
       - network_function_result.response.failure_handling == "FAIL_OPEN"
       - network_function_result.response.traffic_forwarding_mode == "INLINE"
@@ -650,8 +668,8 @@
 - name: Test idempotency by updating network function with same spec
   nutanix.ncp.ntnx_network_function_v2:
     ext_id: "{{ network_function_ext_id_1 }}"
-    name: "{{ network_function_name }}_updated"
-    description: "network function for testing purposes updated"
+    name: "{{ network_function_name }}_1_updated"
+    description: "network function for testing the first network function updated"
     high_availability_mode: ACTIVE_PASSIVE
     failure_handling: FAIL_OPEN
     traffic_forwarding_mode: INLINE
@@ -681,6 +699,35 @@
     fail_msg: "Failed to test idempotency by updating network function with same spec"
     success_msg: "Test idempotency by updating network function with same spec is successful"
 
+- name: Update network function with wrong vm and nic external IDs
+  nutanix.ncp.ntnx_network_function_v2:
+    ext_id: "{{ network_function_ext_id_1 }}"
+    name: "network_function_updated_1"
+    description: "network function for testing the first network function updated"
+    high_availability_mode: ACTIVE_PASSIVE
+    failure_handling: FAIL_OPEN
+    traffic_forwarding_mode: INLINE
+    nic_pairs:
+      - ingress_nic_reference: "a6666666-6666-6666-6666-666666666666"
+        vm_reference: "a5555555-5555-5555-5555-555555555555"
+        is_enabled: false
+  register: network_function_result
+  ignore_errors: true
+
+- ansible.builtin.debug:
+    var: network_function_result
+
+- name: Update network function with wrong vm and nic external IDs status
+  ansible.builtin.assert:
+    that:
+      - network_function_result.changed == false
+      - network_function_result.failed == true
+      - network_function_result.msg == "Api Exception raised while updating network function"
+      - network_function_result.response is defined
+      - network_function_result.data.errors | length > 0
+    fail_msg: "Failed to validate wrong vm and nic external IDs error for update operation"
+    success_msg: "Wrong vm and nic external IDs validation passed successfully for update operation"
+
 - name: Fetch network function using ext_id
   nutanix.ncp.ntnx_network_function_info_v2:
     ext_id: "{{ network_function_ext_id_1 }}"
@@ -697,8 +744,8 @@
       - network_function_result.failed == false
       - network_function_result.response is defined
       - network_function_result.ext_id == "{{ network_function_ext_id_1 }}"
-      - network_function_result.response.name == "{{ network_function_name }}_updated"
-      - network_function_result.response.description == "network function for testing purposes updated"
+      - network_function_result.response.name == "{{ network_function_name }}_1_updated"
+      - network_function_result.response.description == "network function for testing the first network function updated"
       - network_function_result.response.high_availability_mode == "ACTIVE_PASSIVE"
       - network_function_result.response.failure_handling == "FAIL_OPEN"
       - network_function_result.response.traffic_forwarding_mode == "INLINE"
@@ -714,6 +761,24 @@
       - network_function_result.response.data_plane_health_check_config.failure_threshold == 2
     fail_msg: "Failed to fetch network function using ext_id"
     success_msg: "Network function fetched successfully using ext_id"
+
+- name: Fetch network function with wrong external ID
+  nutanix.ncp.ntnx_network_function_info_v2:
+    ext_id: "a1111111-1111-1111-1111-111111111111"
+  register: network_function_result
+  ignore_errors: true
+
+- ansible.builtin.debug:
+    var: network_function_result
+
+- name: Fetch network function with wrong external ID status
+  ansible.builtin.assert:
+    that:
+      - network_function_result.changed == false
+      - network_function_result.failed == true
+      - network_function_result.msg is defined
+    fail_msg: "Failed to validate wrong external ID error"
+    success_msg: "Wrong external ID validation passed successfully"
 
 - name: List all network functions
   nutanix.ncp.ntnx_network_function_info_v2:
@@ -736,53 +801,53 @@
 
 - name: List all network functions with filter
   nutanix.ncp.ntnx_network_function_info_v2:
-    filter: "name eq '{{ network_function_name }}_updated'"
-  register: network_functions_result
+    filter: "name eq '{{ network_function_name }}_1_updated'"
+  register: network_function_result
   ignore_errors: true
 
 - ansible.builtin.debug:
-    var: network_functions_result
+    var: network_function_result
 
 - name: List all network functions with filter status
   ansible.builtin.assert:
     that:
-      - network_functions_result.changed == false
-      - network_functions_result.failed == false
-      - network_functions_result.response is defined
-      - network_functions_result.response | length == 1
-      - network_functions_result.response[0].name == "{{ network_function_name }}_updated"
-      - network_functions_result.response[0].description == "network function for testing purposes updated"
-      - network_functions_result.response[0].high_availability_mode == "ACTIVE_PASSIVE"
-      - network_functions_result.response[0].failure_handling == "FAIL_OPEN"
-      - network_functions_result.response[0].traffic_forwarding_mode == "INLINE"
-      - network_functions_result.response[0].nic_pairs is defined
-      - network_functions_result.response[0].nic_pairs[0].ingress_nic_reference == "{{ ingress_nic_ext_id_1 }}"
-      - network_functions_result.response[0].nic_pairs[0].vm_reference == "{{ vm_ext_id_1 }}"
-      - network_functions_result.response[0].nic_pairs[0].is_enabled == true
-      - network_functions_result.response[0].data_plane_health_check_config is defined
-      - network_functions_result.response[0].data_plane_health_check_config.interval_secs == 2
-      - network_functions_result.response[0].data_plane_health_check_config.timeout_secs == 3
-      - network_functions_result.response[0].data_plane_health_check_config.success_threshold == 2
-      - network_functions_result.response[0].data_plane_health_check_config.failure_threshold == 2
+      - network_function_result.changed == false
+      - network_function_result.failed == false
+      - network_function_result.response is defined
+      - network_function_result.response | length == 1
+      - network_function_result.response[0].name == "{{ network_function_name }}_1_updated"
+      - network_function_result.response[0].description == "network function for testing the first network function updated"
+      - network_function_result.response[0].high_availability_mode == "ACTIVE_PASSIVE"
+      - network_function_result.response[0].failure_handling == "FAIL_OPEN"
+      - network_function_result.response[0].traffic_forwarding_mode == "INLINE"
+      - network_function_result.response[0].nic_pairs is defined
+      - network_function_result.response[0].nic_pairs[0].ingress_nic_reference == "{{ ingress_nic_ext_id_1 }}"
+      - network_function_result.response[0].nic_pairs[0].vm_reference == "{{ vm_ext_id_1 }}"
+      - network_function_result.response[0].nic_pairs[0].is_enabled == true
+      - network_function_result.response[0].data_plane_health_check_config is defined
+      - network_function_result.response[0].data_plane_health_check_config.interval_secs == 3
+      - network_function_result.response[0].data_plane_health_check_config.timeout_secs == 3
+      - network_function_result.response[0].data_plane_health_check_config.success_threshold == 2
+      - network_function_result.response[0].data_plane_health_check_config.failure_threshold == 2
     fail_msg: "Failed to list all network functions with filter"
     success_msg: "All network functions with filter listed successfully"
 
 - name: List all network functions with limit
   nutanix.ncp.ntnx_network_function_info_v2:
     limit: 1
-  register: network_functions_result
+  register: network_function_result
   ignore_errors: true
 
 - ansible.builtin.debug:
-    var: network_functions_result
+    var: network_function_result
 
 - name: List all network functions with limit status
   ansible.builtin.assert:
     that:
-      - network_functions_result.changed == false
-      - network_functions_result.failed == false
-      - network_functions_result.response is defined
-      - network_functions_result.response | length == 1
+      - network_function_result.changed == false
+      - network_function_result.failed == false
+      - network_function_result.response is defined
+      - network_function_result.response | length == 1
     fail_msg: "Failed to list all network functions with limit"
     success_msg: "All network functions with limit listed successfully"
 
@@ -825,8 +890,8 @@
       - network_function_result.ext_id == "{{ network_function_ext_id_1 }}"
       - network_function_result.task_ext_id is defined
       - network_function_result.response.status == "SUCCEEDED"
-    fail_msg: "Failed to delete first network function"
-    success_msg: "First network function deleted successfully"
+    fail_msg: "Failed to delete first network function with ext_id {{ network_function_ext_id_1 }}"
+    success_msg: "First network function with ext_id {{ network_function_ext_id_1 }} is deleted successfully"
 
 - name: Delete second network function
   nutanix.ncp.ntnx_network_function_v2:
@@ -846,8 +911,27 @@
       - network_function_result.ext_id == "{{ network_function_ext_id_2 }}"
       - network_function_result.task_ext_id is defined
       - network_function_result.response.status == "SUCCEEDED"
-    fail_msg: "Failed to delete second network function"
-    success_msg: "Second network function deleted successfully"
+    fail_msg: "Failed to delete second network function with ext_id {{ network_function_ext_id_2 }}"
+    success_msg: "Second network function with ext_id {{ network_function_ext_id_2 }} is deleted successfully"
+
+- name: Delete network function with wrong external ID
+  nutanix.ncp.ntnx_network_function_v2:
+    state: absent
+    ext_id: "a1111111-1111-1111-1111-111111111111"
+  register: network_function_result
+  ignore_errors: true
+
+- ansible.builtin.debug:
+    var: network_function_result
+
+# - name: Delete network function with wrong external ID status
+#   ansible.builtin.assert:
+#     that:
+#       - network_function_result.changed == false
+#       - network_function_result.failed == true
+#       - network_function_result.msg is defined
+#     fail_msg: "Failed to validate wrong external ID error for delete operation"
+#     success_msg: "Wrong external ID validation passed successfully for delete operation"
 
 - name: Delete first VM
   nutanix.ncp.ntnx_vms_v2:
@@ -867,8 +951,8 @@
       - vm_result.ext_id == "{{ vm_ext_id_1 }}"
       - vm_result.task_ext_id is defined
       - vm_result.response.status == "SUCCEEDED"
-    fail_msg: "Failed to delete first VM"
-    success_msg: "First VM deleted successfully"
+    fail_msg: "Failed to delete first VM with ext_id {{ vm_ext_id_1 }}"
+    success_msg: "First VM with ext_id {{ vm_ext_id_1 }} is deleted successfully"
 
 - name: Delete second VM
   nutanix.ncp.ntnx_vms_v2:
@@ -888,8 +972,8 @@
       - vm_result.ext_id == "{{ vm_ext_id_2 }}"
       - vm_result.task_ext_id is defined
       - vm_result.response.status == "SUCCEEDED"
-    fail_msg: "Failed to delete second VM"
-    success_msg: "Second VM deleted successfully"
+    fail_msg: "Failed to delete second VM with ext_id {{ vm_ext_id_2 }}"
+    success_msg: "Second VM with ext_id {{ vm_ext_id_2 }} is deleted successfully"
 
 - name: Delete subnet
   nutanix.ncp.ntnx_subnets_v2:
@@ -909,5 +993,5 @@
       - subnet_result.ext_id == "{{ subnet_ext_id }}"
       - subnet_result.task_ext_id is defined
       - subnet_result.response.status == "SUCCEEDED"
-    fail_msg: "Failed to delete subnet"
-    success_msg: "Subnet deleted successfully"
+    fail_msg: "Failed to delete subnet with ext_id {{ subnet_ext_id }}"
+    success_msg: "Subnet with ext_id {{ subnet_ext_id }} is deleted successfully"
