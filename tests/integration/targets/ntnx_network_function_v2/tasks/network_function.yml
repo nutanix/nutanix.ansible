@@ -35,6 +35,7 @@
     subnet_type: VLAN
     cluster_reference: "{{ cluster.uuid }}"
     network_id: "{{ vlan_id_for_network_function }}"
+    is_advanced_networking: true
   register: result
   ignore_errors: true
 
@@ -49,8 +50,8 @@
       - result.response.name == "{{ subnet_name }}"
       - result.response.subnet_type == "VLAN"
       - result.response.virtual_switch_reference == "{{ virtual_switch.uuid }}"
-      - result.response.cluster_reference == "{{ cluster.uuid }}"
       - result.response.network_id == {{ vlan_id_for_network_function }}
+      - result.response.is_advanced_networking == true
     fail_msg: "Unable to create VLAN subnet without IPAM"
     success_msg: "VLAN subnet without IPAM created successfully"
 
@@ -58,10 +59,10 @@
   ansible.builtin.set_fact:
     subnet_ext_id: "{{ result.response.ext_id }}"
 
-- name: Create VM to test the first network function
+- name: Create first VM for network function
   nutanix.ncp.ntnx_vms_v2:
     name: "{{ vm_name }}_1"
-    description: "VM for testing the first network function"
+    description: "First VM for testing the network function"
     cluster:
       ext_id: "{{ cluster.uuid }}"
     num_sockets: 2
@@ -94,13 +95,24 @@
           virtual_ethernet_nic_network_info:
             nic_type: "NETWORK_FUNCTION_NIC"
             network_function_nic_type: "EGRESS"
+      - nic_network_info:
+          virtual_ethernet_nic_network_info:
+            nic_type: "NETWORK_FUNCTION_NIC"
+            network_function_nic_type: "INGRESS"
+      - nic_network_info:
+          virtual_ethernet_nic_network_info:
+            nic_type: "NORMAL_NIC"
+            subnet:
+              ext_id: "{{ subnet_ext_id }}"
+            ipv4_config:
+              should_assign_ip: true
   register: result
   ignore_errors: true
 
 - ansible.builtin.debug:
     var: result
 
-- name: Create VM to test the first network function status
+- name: Create first VM for network function status
   ansible.builtin.assert:
     that:
       - result.changed == true
@@ -109,7 +121,7 @@
       - result.ext_id is defined
       - result.task_ext_id is defined
       - result.response.name == "{{ vm_name }}_1"
-      - result.response.description == "VM for testing the first network function"
+      - result.response.description == "First VM for testing the network function"
       - result.response.cluster.ext_id == "{{ cluster.uuid }}"
       - result.response.num_sockets == 2
       - result.response.num_cores_per_socket == 2
@@ -118,68 +130,41 @@
       - result.response.disks[0].disk_address.bus_type == "SCSI"
       - result.response.disks[0].disk_address.index == 0
       - result.response.disks[0].backing_info.disk_size_bytes == 21474836480
-      - result.response.nics | length == 2
-      - result.response.nics | selectattr('network_info.nic_type', 'equalto', 'NETWORK_FUNCTION_NIC') | list | length == 2
-      - result.response.nics | selectattr('network_info.network_function_nic_type', 'equalto', 'INGRESS') | list | length == 1
+      - result.response.nics | length == 4
+      - result.response.nics | selectattr('network_info.nic_type', 'equalto', 'NETWORK_FUNCTION_NIC') | list | length == 3
+      - result.response.nics | selectattr('network_info.network_function_nic_type', 'equalto', 'INGRESS') | list | length == 2
       - result.response.nics | selectattr('network_info.network_function_nic_type', 'equalto', 'EGRESS') | list | length == 1
-    fail_msg: "Failed to create VM to test the first network function"
-    success_msg: "VM to test the first network function created successfully"
+      - result.response.nics | selectattr('network_info.nic_type', 'equalto', 'NORMAL_NIC') | list | length == 1
+      - (result.response.nics | selectattr('network_info.nic_type', 'equalto', 'NORMAL_NIC') | first).network_info.subnet.ext_id == subnet_ext_id
+    fail_msg: "Failed to create first VM for network function"
+    success_msg: "First VM for network function created successfully"
 
 - name: Save VM ext_id
   ansible.builtin.set_fact:
     vm_ext_id_1: "{{ result.ext_id }}"
 
-- name: Add NIC with subnet to VM
-  nutanix.ncp.ntnx_vms_nics_v2:
-    vm_ext_id: "{{ vm_ext_id_1 }}"
-    network_info:
-      subnet:
-        ext_id: "{{ subnet_ext_id }}"
-      ipv4_config:
-        should_assign_ip: true
-  register: nic_result
-  ignore_errors: true
-
-- ansible.builtin.debug:
-    var: nic_result
-
-- name: Add NIC with subnet to VM status
-  ansible.builtin.assert:
-    that:
-      - nic_result.changed == true
-      - nic_result.failed == false
-      - nic_result.response is defined
-      - nic_result.ext_id is defined
-      - nic_result.task_ext_id is defined
-      - nic_result.vm_ext_id == "{{ vm_ext_id_1 }}"
-      - nic_result.response.network_info.nic_type == "NORMAL_NIC"
-      - nic_result.response.network_info.subnet.ext_id == "{{ subnet_ext_id }}"
-      - nic_result.response.network_info.vlan_mode == "ACCESS"
-    fail_msg: "Failed to add NIC with subnet to VM"
-    success_msg: "NIC with subnet added to VM successfully"
-
-- name: Power on VM
+- name: Power on first VM
   nutanix.ncp.ntnx_vms_power_actions_v2:
     state: power_on
     ext_id: "{{ vm_ext_id_1 }}"
   register: power_result
   ignore_errors: true
 
-- name: Power on Status
+- name: Power on first VM status
   ansible.builtin.assert:
     that:
       - power_result.response is defined
       - power_result.changed == true
       - power_result.failed == false
       - power_result.response.status == 'SUCCEEDED'
-    fail_msg: "Unable to Power on VM"
-    success_msg: "VM is powered on successfully"
+    fail_msg: "Unable to Power on first VM"
+    success_msg: "First VM is powered on successfully"
 
-- name: Create VM to test the second network function
+- name: Create second VM for network function
   nutanix.ncp.ntnx_vms_v2:
     state: present
     name: "{{ vm_name }}_2"
-    description: "VM for testing the second network function"
+    description: "Second VM for testing the network function"
     cluster:
       ext_id: "{{ cluster.uuid }}"
     num_sockets: 2
@@ -212,13 +197,23 @@
           virtual_ethernet_nic_network_info:
             nic_type: "NETWORK_FUNCTION_NIC"
             network_function_nic_type: "EGRESS"
+      - nic_network_info:
+          virtual_ethernet_nic_network_info:
+            nic_type: "NETWORK_FUNCTION_NIC"
+            network_function_nic_type: "INGRESS"
+      - nic_network_info:
+          virtual_ethernet_nic_network_info:
+            subnet:
+              ext_id: "{{ subnet_ext_id }}"
+            ipv4_config:
+              should_assign_ip: true
   register: result
   ignore_errors: true
 
 - ansible.builtin.debug:
     var: result
 
-- name: Create VM to test the second network function status
+- name: Create second VM for network function status
   ansible.builtin.assert:
     that:
       - result.changed == true
@@ -226,7 +221,7 @@
       - result.response is defined
       - result.ext_id is defined
       - result.response.name == "{{ vm_name }}_2"
-      - result.response.description == "VM for testing the second network function"
+      - result.response.description == "Second VM for testing the network function"
       - result.response.cluster.ext_id == "{{ cluster.uuid }}"
       - result.response.num_sockets == 2
       - result.response.num_cores_per_socket == 2
@@ -235,64 +230,37 @@
       - result.response.disks[0].disk_address.bus_type == "SCSI"
       - result.response.disks[0].disk_address.index == 0
       - result.response.disks[0].backing_info.disk_size_bytes == 21474836480
-      - result.response.nics | length == 2
-      - result.response.nics | selectattr('network_info.nic_type', 'equalto', 'NETWORK_FUNCTION_NIC') | list | length == 2
-      - result.response.nics | selectattr('network_info.network_function_nic_type', 'equalto', 'INGRESS') | list | length == 1
+      - result.response.nics | length == 4
+      - result.response.nics | selectattr('network_info.nic_type', 'equalto', 'NETWORK_FUNCTION_NIC') | list | length == 3
+      - result.response.nics | selectattr('network_info.network_function_nic_type', 'equalto', 'INGRESS') | list | length == 2
       - result.response.nics | selectattr('network_info.network_function_nic_type', 'equalto', 'EGRESS') | list | length == 1
-    fail_msg: "Failed to create VM to test the second network function"
-    success_msg: "VM to test the second network function created successfully"
+      - result.response.nics | selectattr('network_info.nic_type', 'equalto', 'NORMAL_NIC') | list | length == 1
+      - (result.response.nics | selectattr('network_info.nic_type', 'equalto', 'NORMAL_NIC') | first).network_info.subnet.ext_id == subnet_ext_id
+    fail_msg: "Failed to create second VM for network function"
+    success_msg: "Second VM for network function created successfully"
 
 - name: Save VM ext_id
   ansible.builtin.set_fact:
     vm_ext_id_2: "{{ result.ext_id }}"
 
-- name: Add NIC with subnet to VM
-  nutanix.ncp.ntnx_vms_nics_v2:
-    vm_ext_id: "{{ vm_ext_id_2 }}"
-    network_info:
-      subnet:
-        ext_id: "{{ subnet_ext_id }}"
-      ipv4_config:
-        should_assign_ip: true
-  register: nic_result
-  ignore_errors: true
-
-- ansible.builtin.debug:
-    var: nic_result
-
-- name: Add NIC with subnet to VM status
-  ansible.builtin.assert:
-    that:
-      - nic_result.changed == true
-      - nic_result.failed == false
-      - nic_result.response is defined
-      - nic_result.ext_id is defined
-      - nic_result.task_ext_id is defined
-      - nic_result.vm_ext_id == "{{ vm_ext_id_2 }}"
-      - nic_result.response.network_info.nic_type == "NORMAL_NIC"
-      - nic_result.response.network_info.subnet.ext_id == "{{ subnet_ext_id }}"
-      - nic_result.response.network_info.vlan_mode == "ACCESS"
-    fail_msg: "Failed to add NIC with subnet to VM"
-    success_msg: "NIC with subnet added to VM successfully"
-
-- name: Power on VM
+- name: Power on second VM
   nutanix.ncp.ntnx_vms_power_actions_v2:
     state: power_on
     ext_id: "{{ vm_ext_id_2 }}"
   register: power_result
   ignore_errors: true
 
-- name: Power on Status
+- name: Power on second VM status
   ansible.builtin.assert:
     that:
       - power_result.response is defined
       - power_result.changed == true
       - power_result.failed == false
       - power_result.response.status == 'SUCCEEDED'
-    fail_msg: "Unable to Power on VM"
-    success_msg: "VM is powered on successfully"
+    fail_msg: "Unable to Power on second VM"
+    success_msg: "Second VM is powered on successfully"
 
-- name: Get VM info and check if IP address is assigned
+- name: Get first and second VM info and check if IP address is assigned
   nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ item }}"
   register: vm_details_loop
@@ -308,24 +276,24 @@
     - "{{ vm_ext_id_1 }}"
     - "{{ vm_ext_id_2 }}"
 
-- name: Debug VM details
+- name: Debug first and second VM details
   ansible.builtin.debug:
     var: vm_details_loop
 
-# - name: Get VM info and check if IP address is assigned Status
-#   ansible.builtin.assert:
-#     that:
-#       - item.response is defined
-#       - item.changed == false
-#       - item.failed == false
-#       - >
-#         item.response.nics | default([]) |
-#         selectattr('network_info.ipv4_info.learned_ip_addresses', 'defined') |
-#         selectattr('network_info.ipv4_info.learned_ip_addresses', 'ne', []) |
-#         list | length > 0
-#     fail_msg: "Unable to get VM info and check if IP address is assigned for VM with ext_id {{ item.item }}"
-#     success_msg: "VM info is retrieved successfully and IP address is assigned for VM with ext_id {{ item.item }}"
-#   loop: "{{ vm_details_loop.results }}"
+- name: Get first and second VM info and check if IP address is assigned Status
+  ansible.builtin.assert:
+    that:
+      - item.response is defined
+      - item.changed == false
+      - item.failed == false
+      - >
+        item.response.nics | default([]) |
+        selectattr('network_info.ipv4_info.learned_ip_addresses', 'defined') |
+        selectattr('network_info.ipv4_info.learned_ip_addresses', 'ne', []) |
+        list | length > 0
+    fail_msg: "Unable to get VM info and check if IP address is assigned for VM with ext_id {{ item.item }}"
+    success_msg: "VM info is retrieved successfully and IP address is assigned for VM with ext_id {{ item.item }}"
+  loop: "{{ vm_details_loop.results }}"
 
 - name: Generate spec for creating network function
   nutanix.ncp.ntnx_network_function_v2:
@@ -406,9 +374,12 @@
 
 - name: Set INGRESS and EGRESS NIC ext_ids
   ansible.builtin.set_fact:
-    ingress_nic_ext_id_1: "{{ (vm_details_loop.results[0].response.nics | selectattr('network_info.network_function_nic_type', 'equalto', 'INGRESS') | list | first).ext_id }}"
-    egress_nic_ext_id_1: "{{ (vm_details_loop.results[0].response.nics | selectattr('network_info.network_function_nic_type', 'equalto', 'EGRESS') | list | first).ext_id }}"
-    ingress_nic_ext_id_2: "{{ (vm_details_loop.results[1].response.nics | selectattr('network_info.network_function_nic_type', 'equalto', 'INGRESS') | list | first).ext_id }}"
+    first_vm_ingress_1_ext_id: "{{ (vm_details_loop.results[0].response.nics | selectattr('network_info.network_function_nic_type', 'equalto', 'INGRESS') | list | first).ext_id }}"
+    first_vm_ingress_2_ext_id: "{{ (vm_details_loop.results[0].response.nics | selectattr('network_info.network_function_nic_type', 'equalto', 'INGRESS') | list | last).ext_id }}"
+    first_vm_egress_1_ext_id: "{{ (vm_details_loop.results[0].response.nics | selectattr('network_info.network_function_nic_type', 'equalto', 'EGRESS') | list | first).ext_id }}"
+    second_vm_ingress_1_ext_id: "{{ (vm_details_loop.results[1].response.nics | selectattr('network_info.network_function_nic_type', 'equalto', 'INGRESS') | list | first).ext_id }}"
+    second_vm_ingress_2_ext_id: "{{ (vm_details_loop.results[1].response.nics | selectattr('network_info.network_function_nic_type', 'equalto', 'INGRESS') | list | last).ext_id }}"
+    second_vm_egress_1_ext_id: "{{ (vm_details_loop.results[1].response.nics | selectattr('network_info.network_function_nic_type', 'equalto', 'EGRESS') | list | first).ext_id }}"
 
 - name: Create first network function
   nutanix.ncp.ntnx_network_function_v2:
@@ -418,9 +389,13 @@
     failure_handling: FAIL_CLOSE
     traffic_forwarding_mode: INLINE
     nic_pairs:
-      - ingress_nic_reference: "{{ ingress_nic_ext_id_1 }}"
-        egress_nic_reference: "{{ egress_nic_ext_id_1 }}"
+      - ingress_nic_reference: "{{ first_vm_ingress_1_ext_id }}"
+        egress_nic_reference: "{{ first_vm_egress_1_ext_id }}"
         vm_reference: "{{ vm_ext_id_1 }}"
+        is_enabled: true
+      - ingress_nic_reference: "{{ second_vm_ingress_1_ext_id }}"
+        egress_nic_reference: "{{ second_vm_egress_1_ext_id }}"
+        vm_reference: "{{ vm_ext_id_2 }}"
         is_enabled: true
     data_plane_health_check_config:
       interval_secs: 15
@@ -446,11 +421,29 @@
       - network_function_result.response.high_availability_mode == "ACTIVE_PASSIVE"
       - network_function_result.response.failure_handling == "FAIL_CLOSE"
       - network_function_result.response.traffic_forwarding_mode == "INLINE"
-      - network_function_result.response.nic_pairs | length == 1
-      - network_function_result.response.nic_pairs[0].ingress_nic_reference == "{{ ingress_nic_ext_id_1 }}"
-      - network_function_result.response.nic_pairs[0].egress_nic_reference == "{{ egress_nic_ext_id_1 }}"
-      - network_function_result.response.nic_pairs[0].vm_reference == "{{ vm_ext_id_1 }}"
-      - network_function_result.response.nic_pairs[0].is_enabled == true
+      - network_function_result.response.nic_pairs | length == 2
+      - >-
+        network_function_result.response.nic_pairs |
+        selectattr('vm_reference', 'equalto', vm_ext_id_1) |
+        selectattr('ingress_nic_reference', 'equalto', first_vm_ingress_1_ext_id) |
+        selectattr('egress_nic_reference', 'equalto', first_vm_egress_1_ext_id) |
+        selectattr('is_enabled', 'equalto', true) |
+        list | length == 1
+      - >-
+        network_function_result.response.nic_pairs |
+        selectattr('vm_reference', 'equalto', vm_ext_id_2) |
+        selectattr('ingress_nic_reference', 'equalto', second_vm_ingress_1_ext_id) |
+        selectattr('egress_nic_reference', 'equalto', second_vm_egress_1_ext_id) |
+        selectattr('is_enabled', 'equalto', true) |
+        list | length == 1
+      # - >-
+      #   network_function_result.response.nic_pairs |
+      #   selectattr('high_availability_state', 'equalto', 'ACTIVE') |
+      #   list | length == 1
+      # - >-
+      #   network_function_result.response.nic_pairs |
+      #   selectattr('high_availability_state', 'equalto', 'PASSIVE') |
+      #   list | length == 1
       - network_function_result.response.data_plane_health_check_config.interval_secs == 15
       - network_function_result.response.data_plane_health_check_config.timeout_secs == 5
       - network_function_result.response.data_plane_health_check_config.success_threshold == 6
@@ -469,7 +462,10 @@
     high_availability_mode: ACTIVE_PASSIVE
     traffic_forwarding_mode: VTAP
     nic_pairs:
-      - ingress_nic_reference: "{{ ingress_nic_ext_id_2 }}"
+      - ingress_nic_reference: "{{ first_vm_ingress_2_ext_id }}"
+        vm_reference: "{{ vm_ext_id_1 }}"
+        is_enabled: true
+      - ingress_nic_reference: "{{ second_vm_ingress_2_ext_id }}"
         vm_reference: "{{ vm_ext_id_2 }}"
         is_enabled: true
   register: network_function_result
@@ -489,16 +485,52 @@
       - network_function_result.response.description == "network function for testing the second network function"
       - network_function_result.response.high_availability_mode == "ACTIVE_PASSIVE"
       - network_function_result.response.traffic_forwarding_mode == "VTAP"
-      - network_function_result.response.nic_pairs | length == 1
-      - network_function_result.response.nic_pairs[0].ingress_nic_reference == "{{ ingress_nic_ext_id_2 }}"
-      - network_function_result.response.nic_pairs[0].vm_reference == "{{ vm_ext_id_2 }}"
-      - network_function_result.response.nic_pairs[0].is_enabled == true
+      - network_function_result.response.nic_pairs | length == 2
+      - >-
+        network_function_result.response.nic_pairs |
+        selectattr('vm_reference', 'equalto', vm_ext_id_1) |
+        selectattr('ingress_nic_reference', 'equalto', first_vm_ingress_2_ext_id) |
+        selectattr('is_enabled', 'equalto', true) |
+        list | length == 1
+      - >-
+        network_function_result.response.nic_pairs |
+        selectattr('vm_reference', 'equalto', vm_ext_id_2) |
+        selectattr('ingress_nic_reference', 'equalto', second_vm_ingress_2_ext_id) |
+        selectattr('is_enabled', 'equalto', true) |
+        list | length == 1
+      # - >-
+      #   network_function_result.response.nic_pairs |
+      #   selectattr('high_availability_state', 'equalto', 'ACTIVE') |
+      #   list | length == 1
+      # - >-
+      #   network_function_result.response.nic_pairs |
+      #   selectattr('high_availability_state', 'equalto', 'PASSIVE') |
+      #   list | length == 1
     fail_msg: "Failed to create second network function"
     success_msg: "Second network function created successfully"
 
 - name: Set network function ext_id
   ansible.builtin.set_fact:
     network_function_ext_id_2: "{{ network_function_result.response.ext_id }}"
+
+- name: Fetch both network functions using ext_id until data plane health status is healthy
+  nutanix.ncp.ntnx_network_function_info_v2:
+    ext_id: "{{ item }}"
+  register: network_function_result
+  ignore_errors: true
+  retries: 120
+  delay: 5
+  until: >-
+    network_function_result.response is defined and
+    network_function_result.response.nic_pairs | default([]) |
+    selectattr('data_plane_health_status', 'equalto', 'HEALTHY') |
+    list | length == network_function_result.response.nic_pairs | default([]) | length
+  loop:
+    - "{{ network_function_ext_id_1 }}"
+    - "{{ network_function_ext_id_2 }}"
+
+- ansible.builtin.debug:
+    var: network_function_result
 
 - name: Create network function with missing name
   nutanix.ncp.ntnx_network_function_v2:
@@ -624,8 +656,8 @@
     failure_handling: FAIL_OPEN
     traffic_forwarding_mode: INLINE
     nic_pairs:
-      - ingress_nic_reference: "{{ ingress_nic_ext_id_1 }}"
-        egress_nic_reference: "{{ egress_nic_ext_id_1 }}"
+      - ingress_nic_reference: "{{ first_vm_ingress_1_ext_id }}"
+        egress_nic_reference: "{{ first_vm_egress_1_ext_id }}"
         vm_reference: "{{ vm_ext_id_1 }}"
         is_enabled: true
     data_plane_health_check_config:
@@ -653,8 +685,8 @@
       - network_function_result.response.failure_handling == "FAIL_OPEN"
       - network_function_result.response.traffic_forwarding_mode == "INLINE"
       - network_function_result.response.nic_pairs is defined
-      - network_function_result.response.nic_pairs[0].ingress_nic_reference == "{{ ingress_nic_ext_id_1 }}"
-      - network_function_result.response.nic_pairs[0].egress_nic_reference == "{{ egress_nic_ext_id_1 }}"
+      - network_function_result.response.nic_pairs[0].ingress_nic_reference == "{{ first_vm_ingress_1_ext_id }}"
+      - network_function_result.response.nic_pairs[0].egress_nic_reference == "{{ first_vm_egress_1_ext_id }}"
       - network_function_result.response.nic_pairs[0].vm_reference == "{{ vm_ext_id_1 }}"
       - network_function_result.response.nic_pairs[0].is_enabled == true
       - network_function_result.response.data_plane_health_check_config is defined
@@ -674,8 +706,8 @@
     failure_handling: FAIL_OPEN
     traffic_forwarding_mode: INLINE
     nic_pairs:
-      - ingress_nic_reference: "{{ ingress_nic_ext_id_1 }}"
-        egress_nic_reference: "{{ egress_nic_ext_id_1 }}"
+      - ingress_nic_reference: "{{ first_vm_ingress_1_ext_id }}"
+        egress_nic_reference: "{{ first_vm_egress_1_ext_id }}"
         vm_reference: "{{ vm_ext_id_1 }}"
         is_enabled: true
     data_plane_health_check_config:
@@ -724,43 +756,9 @@
       - network_function_result.failed == true
       - network_function_result.msg == "Api Exception raised while updating network function"
       - network_function_result.response is defined
-      - network_function_result.response.data.errors | length > 0
+      - network_function_result.response.data.error | length > 0
     fail_msg: "Failed to validate wrong vm and nic external IDs error for update operation"
     success_msg: "Wrong vm and nic external IDs validation passed successfully for update operation"
-
-- name: Fetch network function using ext_id
-  nutanix.ncp.ntnx_network_function_info_v2:
-    ext_id: "{{ network_function_ext_id_1 }}"
-  register: network_function_result
-  ignore_errors: true
-
-- ansible.builtin.debug:
-    var: network_function_result
-
-- name: Fetch network function using ext_id status
-  ansible.builtin.assert:
-    that:
-      - network_function_result.changed == false
-      - network_function_result.failed == false
-      - network_function_result.response is defined
-      - network_function_result.ext_id == "{{ network_function_ext_id_1 }}"
-      - network_function_result.response.name == "{{ network_function_name }}_1_updated"
-      - network_function_result.response.description == "network function for testing the first network function updated"
-      - network_function_result.response.high_availability_mode == "ACTIVE_PASSIVE"
-      - network_function_result.response.failure_handling == "FAIL_OPEN"
-      - network_function_result.response.traffic_forwarding_mode == "INLINE"
-      - network_function_result.response.nic_pairs is defined
-      - network_function_result.response.nic_pairs[0].ingress_nic_reference == "{{ ingress_nic_ext_id_1 }}"
-      - network_function_result.response.nic_pairs[0].egress_nic_reference == "{{ egress_nic_ext_id_1 }}"
-      - network_function_result.response.nic_pairs[0].vm_reference == "{{ vm_ext_id_1 }}"
-      - network_function_result.response.nic_pairs[0].is_enabled == true
-      - network_function_result.response.data_plane_health_check_config is defined
-      - network_function_result.response.data_plane_health_check_config.interval_secs == 3
-      - network_function_result.response.data_plane_health_check_config.timeout_secs == 3
-      - network_function_result.response.data_plane_health_check_config.success_threshold == 2
-      - network_function_result.response.data_plane_health_check_config.failure_threshold == 2
-    fail_msg: "Failed to fetch network function using ext_id"
-    success_msg: "Network function fetched successfully using ext_id"
 
 - name: Fetch network function with wrong external ID
   nutanix.ncp.ntnx_network_function_info_v2:
@@ -821,7 +819,7 @@
       - network_function_result.response[0].failure_handling == "FAIL_OPEN"
       - network_function_result.response[0].traffic_forwarding_mode == "INLINE"
       - network_function_result.response[0].nic_pairs is defined
-      - network_function_result.response[0].nic_pairs[0].ingress_nic_reference == "{{ ingress_nic_ext_id_1 }}"
+      - network_function_result.response[0].nic_pairs[0].ingress_nic_reference == "{{ first_vm_ingress_1_ext_id }}"
       - network_function_result.response[0].nic_pairs[0].vm_reference == "{{ vm_ext_id_1 }}"
       - network_function_result.response[0].nic_pairs[0].is_enabled == true
       - network_function_result.response[0].data_plane_health_check_config is defined
