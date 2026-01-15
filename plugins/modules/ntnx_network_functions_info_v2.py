@@ -9,7 +9,7 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
-module: ntnx_network_function_info_v2
+module: ntnx_network_functions_info_v2
 short_description: Fetch information about network function(s)
 description:
     - This module fetches information about Nutanix network function(s).
@@ -33,7 +33,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: List all network functions
-  nutanix.ncp.ntnx_network_function_info_v2:
+  nutanix.ncp.ntnx_network_functions_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -41,7 +41,7 @@ EXAMPLES = r"""
   register: result
 
 - name: List network functions with filter
-  nutanix.ncp.ntnx_network_function_info_v2:
+  nutanix.ncp.ntnx_network_functions_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -50,7 +50,7 @@ EXAMPLES = r"""
   register: result
 
 - name: List network functions with limit
-  nutanix.ncp.ntnx_network_function_info_v2:
+  nutanix.ncp.ntnx_network_functions_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -59,7 +59,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Get details of a specific network function
-  nutanix.ncp.ntnx_network_function_info_v2:
+  nutanix.ncp.ntnx_network_functions_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

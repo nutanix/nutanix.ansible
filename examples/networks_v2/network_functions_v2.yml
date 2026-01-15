@@ -1,0 +1,132 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create a network function with INLINE traffic forwarding mode and ACTIVE_PASSIVE HA
+# 2. Create a network function with VTAP traffic forwarding mode
+# 3. Update network function name, description, and data plane health check config
+# 4. Fetch network function using ext_id
+# 5. List all network functions with/without filter and limit
+# 6. Delete network function
+
+- name: Network Functions playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        network_function_name: "test-network-function"
+        vm_ext_id_1: "657ab599-4819-4d49-46e0-b726bb785422"
+        vm_ext_id_2: "2180291c-aeb0-47cc-466f-7f37a1b98086"
+        vm_1_ingress_nic_ext_id_1: "0c0068b3-6caf-415b-a055-0a727bc5f963"
+        vm_1_ingress_nic_ext_id_2: "f60a63c1-c79f-45da-bb47-dc8c3d1dc2f4"
+        vm_1_egress_nic_ext_id: "3f325e81-916c-45d4-ba3f-c1dbfb205399"
+        vm_2_ingress_nic_ext_id_1: "d813fcad-d32c-4469-98bc-028c9ac148e1"
+        vm_2_ingress_nic_ext_id_2: "a06ae4cd-5f54-4083-b6cc-d5cdf74d16db"
+        vm_2_egress_nic_ext_id: "5349fd3b-e71a-462c-a59f-63b62d45b4de"
+
+    - name: Create network function with INLINE traffic forwarding mode and ACTIVE_PASSIVE HA
+      nutanix.ncp.ntnx_network_functions_v2:
+        state: present
+        name: "{{ network_function_name }}_inline_active_passive"
+        description: "Network function for inline traffic inspection"
+        high_availability_mode: ACTIVE_PASSIVE
+        failure_handling: FAIL_CLOSE
+        traffic_forwarding_mode: INLINE
+        nic_pairs:
+          - ingress_nic_reference: "{{ vm_1_ingress_nic_ext_id_1 }}"
+            egress_nic_reference: "{{ vm_1_egress_nic_ext_id }}"
+            vm_reference: "{{ vm_ext_id_1 }}"
+            is_enabled: true
+          - ingress_nic_reference: "{{ vm_2_ingress_nic_ext_id_1 }}"
+            egress_nic_reference: "{{ vm_2_egress_nic_ext_id }}"
+            vm_reference: "{{ vm_ext_id_2 }}"
+            is_enabled: true
+        data_plane_health_check_config:
+          interval_secs: 5
+          timeout_secs: 2
+          success_threshold: 3
+          failure_threshold: 3
+      register: result
+      ignore_errors: true
+
+    - name: Set network function ext_id
+      ansible.builtin.set_fact:
+        network_function_ext_id: "{{ result.response.ext_id }}"
+
+    - name: Create network function with VTAP traffic forwarding mode
+      nutanix.ncp.ntnx_network_functions_v2:
+        state: present
+        name: "{{ network_function_name }}_vtap_active_passive"
+        description: "Network function for traffic mirroring"
+        high_availability_mode: ACTIVE_PASSIVE
+        traffic_forwarding_mode: VTAP
+        nic_pairs:
+          - ingress_nic_reference: "{{ vm_1_ingress_nic_ext_id_2 }}"
+            vm_reference: "{{ vm_ext_id_1 }}"
+            is_enabled: true
+          - ingress_nic_reference: "{{ vm_2_ingress_nic_ext_id_2 }}"
+            vm_reference: "{{ vm_ext_id_2 }}"
+            is_enabled: true
+      register: result
+      ignore_errors: true
+
+    - name: Update network function name, description, and data plane health check config
+      nutanix.ncp.ntnx_network_functions_v2:
+        ext_id: "{{ network_function_ext_id }}"
+        name: "{{ network_function_name }}_inline_active_passive_updated"
+        description: "Network function for inline traffic inspection updated"
+        high_availability_mode: ACTIVE_PASSIVE
+        failure_handling: FAIL_CLOSE
+        traffic_forwarding_mode: INLINE
+        nic_pairs:
+          - ingress_nic_reference: "{{ vm_1_ingress_nic_ext_id_1 }}"
+            egress_nic_reference: "{{ vm_1_egress_nic_ext_id }}"
+            vm_reference: "{{ vm_ext_id_1 }}"
+            is_enabled: true
+          - ingress_nic_reference: "{{ vm_2_ingress_nic_ext_id_1 }}"
+            egress_nic_reference: "{{ vm_2_egress_nic_ext_id }}"
+            vm_reference: "{{ vm_ext_id_2 }}"
+            is_enabled: true
+        data_plane_health_check_config:
+          interval_secs: 7
+          timeout_secs: 3
+          success_threshold: 2
+          failure_threshold: 2
+      register: result
+      ignore_errors: true
+
+    - name: Fetch network function using ext_id
+      nutanix.ncp.ntnx_network_functions_info_v2:
+        ext_id: "{{ network_function_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all network functions
+      nutanix.ncp.ntnx_network_functions_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List all network functions with filter
+      nutanix.ncp.ntnx_network_functions_info_v2:
+        filter: "name eq '{{ network_function_name }}_inline_active_passive_updated'"
+      register: result
+      ignore_errors: true
+
+    - name: List all network functions with limit
+      nutanix.ncp.ntnx_network_functions_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: Delete network function
+      nutanix.ncp.ntnx_network_functions_v2:
+        state: absent
+        ext_id: "{{ network_function_ext_id }}"
+      register: result
+      ignore_errors: true

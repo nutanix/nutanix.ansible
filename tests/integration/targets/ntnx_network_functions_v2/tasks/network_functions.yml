@@ -296,7 +296,7 @@
   loop: "{{ vm_details_loop.results }}"
 
 - name: Generate spec for creating network function
-  nutanix.ncp.ntnx_network_function_v2:
+  nutanix.ncp.ntnx_network_functions_v2:
     name: "test-network-function"
     description: "network function for testing purposes"
     high_availability_mode: ACTIVE_PASSIVE
@@ -382,7 +382,7 @@
     second_vm_egress_1_ext_id: "{{ (vm_details_loop.results[1].response.nics | selectattr('network_info.network_function_nic_type', 'equalto', 'EGRESS') | list | first).ext_id }}"
 
 - name: Create first network function
-  nutanix.ncp.ntnx_network_function_v2:
+  nutanix.ncp.ntnx_network_functions_v2:
     name: "{{ network_function_name }}_1"
     description: "network function for testing the first network function"
     high_availability_mode: ACTIVE_PASSIVE
@@ -448,7 +448,7 @@
     network_function_ext_id_1: "{{ network_function_result.response.ext_id }}"
 
 - name: Create second network function
-  nutanix.ncp.ntnx_network_function_v2:
+  nutanix.ncp.ntnx_network_functions_v2:
     name: "{{ network_function_name }}_2"
     description: "network function for testing the second network function"
     high_availability_mode: ACTIVE_PASSIVE
@@ -498,7 +498,7 @@
     network_function_ext_id_2: "{{ network_function_result.response.ext_id }}"
 
 - name: Fetch both network functions using ext_id and check data plane health and high availability state
-  nutanix.ncp.ntnx_network_function_info_v2:
+  nutanix.ncp.ntnx_network_functions_info_v2:
     ext_id: "{{ item }}"
   register: network_function_result
   ignore_errors: true
@@ -536,7 +536,7 @@
   loop: "{{ network_function_result.results }}"
 
 - name: Create network function with missing name
-  nutanix.ncp.ntnx_network_function_v2:
+  nutanix.ncp.ntnx_network_functions_v2:
     description: "network function for testing the third network function"
     high_availability_mode: ACTIVE_PASSIVE
     traffic_forwarding_mode: VTAP
@@ -560,7 +560,7 @@
     success_msg: "Missing name validation passed successfully"
 
 - name: Create network function with wrong vm and nic external IDs
-  nutanix.ncp.ntnx_network_function_v2:
+  nutanix.ncp.ntnx_network_functions_v2:
     name: "network_function_with_wrong_vm_and_nic_ext_id"
     description: "network function for testing the fourth network function"
     high_availability_mode: ACTIVE_PASSIVE
@@ -587,7 +587,7 @@
     success_msg: "Wrong vm and nic external ID validation passed successfully for create operation"
 
 - name: Generate spec for updating network function using check mode
-  nutanix.ncp.ntnx_network_function_v2:
+  nutanix.ncp.ntnx_network_functions_v2:
     ext_id: "{{ network_function_ext_id_1 }}"
     name: "network_function_updated_1"
     description: "network function for testing the first network function updated"
@@ -651,7 +651,7 @@
     success_msg: "Spec for updating network function using check mode status generated successfully"
 
 - name: Update network function
-  nutanix.ncp.ntnx_network_function_v2:
+  nutanix.ncp.ntnx_network_functions_v2:
     ext_id: "{{ network_function_ext_id_1 }}"
     name: "{{ network_function_name }}_1_updated"
     description: "network function for testing the first network function updated"
@@ -701,7 +701,7 @@
     success_msg: "Network function updated successfully"
 
 - name: Test idempotency by updating network function with same spec
-  nutanix.ncp.ntnx_network_function_v2:
+  nutanix.ncp.ntnx_network_functions_v2:
     ext_id: "{{ network_function_ext_id_1 }}"
     name: "{{ network_function_name }}_1_updated"
     description: "network function for testing the first network function updated"
@@ -735,7 +735,7 @@
     success_msg: "Test idempotency by updating network function with same spec is successful"
 
 - name: Update network function with wrong vm and nic external IDs
-  nutanix.ncp.ntnx_network_function_v2:
+  nutanix.ncp.ntnx_network_functions_v2:
     ext_id: "{{ network_function_ext_id_1 }}"
     name: "network_function_updated_1"
     description: "network function for testing the first network function updated"
@@ -764,7 +764,7 @@
     success_msg: "Wrong vm and nic external IDs validation passed successfully for update operation"
 
 - name: Fetch network function with wrong external ID
-  nutanix.ncp.ntnx_network_function_info_v2:
+  nutanix.ncp.ntnx_network_functions_info_v2:
     ext_id: "a1111111-1111-1111-1111-111111111111"
   register: network_function_result
   ignore_errors: true
@@ -782,7 +782,7 @@
     success_msg: "Wrong external ID validation passed successfully"
 
 - name: List all network functions
-  nutanix.ncp.ntnx_network_function_info_v2:
+  nutanix.ncp.ntnx_network_functions_info_v2:
   register: network_functions_result
   ignore_errors: true
 
@@ -801,7 +801,7 @@
     success_msg: "All network functions listed successfully"
 
 - name: List all network functions with filter
-  nutanix.ncp.ntnx_network_function_info_v2:
+  nutanix.ncp.ntnx_network_functions_info_v2:
     filter: "name eq '{{ network_function_name }}_1_updated'"
   register: network_function_result
   ignore_errors: true
@@ -834,7 +834,7 @@
     success_msg: "All network functions with filter listed successfully"
 
 - name: List all network functions with limit
-  nutanix.ncp.ntnx_network_function_info_v2:
+  nutanix.ncp.ntnx_network_functions_info_v2:
     limit: 1
   register: network_function_result
   ignore_errors: true
@@ -853,7 +853,7 @@
     success_msg: "All network functions with limit listed successfully"
 
 - name: Delete network function with check mode
-  nutanix.ncp.ntnx_network_function_v2:
+  nutanix.ncp.ntnx_network_functions_v2:
     state: absent
     ext_id: "{{ network_function_ext_id_1 }}"
   check_mode: true
@@ -874,7 +874,7 @@
     success_msg: "Network function with check mode deleted successfully"
 
 - name: Delete first network function
-  nutanix.ncp.ntnx_network_function_v2:
+  nutanix.ncp.ntnx_network_functions_v2:
     state: absent
     ext_id: "{{ network_function_ext_id_1 }}"
   register: network_function_result
@@ -895,7 +895,7 @@
     success_msg: "First network function with ext_id {{ network_function_ext_id_1 }} is deleted successfully"
 
 - name: Delete second network function
-  nutanix.ncp.ntnx_network_function_v2:
+  nutanix.ncp.ntnx_network_functions_v2:
     state: absent
     ext_id: "{{ network_function_ext_id_2 }}"
   register: network_function_result
@@ -917,7 +917,7 @@
 
 # This is failing: raised a bug https://jira.nutanix.com/browse/ENG-876170
 # - name: Delete network function with wrong external ID
-#   nutanix.ncp.ntnx_network_function_v2:
+#   nutanix.ncp.ntnx_network_functions_v2:
 #     state: absent
 #     ext_id: "a1111111-1111-1111-1111-111111111111"
 #   register: network_function_result

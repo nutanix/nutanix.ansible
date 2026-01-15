@@ -10,7 +10,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_network_function_v2
+module: ntnx_network_functions_v2
 short_description: Manage network functions in Nutanix Prism Central
 version_added: 2.5.0
 description:
@@ -189,7 +189,7 @@ author:
 
 EXAMPLES = r"""
 - name: Create network function with single NIC pair
-  nutanix.ncp.ntnx_network_function_v2:
+  nutanix.ncp.ntnx_network_functions_v2:
     state: present
     nutanix_host: "{{ ip }}"
     validate_certs: false
@@ -212,7 +212,7 @@ EXAMPLES = r"""
       failure_threshold: 3
 
 - name: Create network function with VTAP mode
-  nutanix.ncp.ntnx_network_function_v2:
+  nutanix.ncp.ntnx_network_functions_v2:
     state: present
     nutanix_host: "{{ ip }}"
     validate_certs: false
@@ -227,7 +227,7 @@ EXAMPLES = r"""
         is_enabled: true
 
 - name: Create network function with two NIC pairs for HA
-  nutanix.ncp.ntnx_network_function_v2:
+  nutanix.ncp.ntnx_network_functions_v2:
     state: present
     nutanix_host: "{{ ip }}"
     validate_certs: false
@@ -248,7 +248,7 @@ EXAMPLES = r"""
         is_enabled: true
 
 - name: Update network function
-  nutanix.ncp.ntnx_network_function_v2:
+  nutanix.ncp.ntnx_network_functions_v2:
     state: present
     nutanix_host: "{{ ip }}"
     validate_certs: false
@@ -260,7 +260,7 @@ EXAMPLES = r"""
     failure_handling: FAIL_CLOSE
 
 - name: Delete network function
-  nutanix.ncp.ntnx_network_function_v2:
+  nutanix.ncp.ntnx_network_functions_v2:
     state: absent
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
