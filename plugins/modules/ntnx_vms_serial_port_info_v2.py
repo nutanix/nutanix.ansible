@@ -32,6 +32,7 @@ options:
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_info_v2
+  - nutanix.ncp.ntnx_logger
 """
 
 EXAMPLES = r"""
@@ -69,6 +70,11 @@ response:
                 "links": null,
                 "tenant_id": null
             }
+msg:
+  description: This indicates the message if any message occurred
+  returned: When there is an error
+  type: str
+  sample: "Api Exception raised while fetching vm serial port info"
 error:
   description: The error message if an error occurs.
   type: str
@@ -84,6 +90,12 @@ ext_id:
     type: str
     returned: always
     sample: "00000-00000-000000-000000"
+total_available_results:
+    description:
+        - The total number of available serial ports when all serial ports are fetched.
+    type: int
+    returned: when all serial ports are fetched
+    sample: 125
 """
 
 import warnings  # noqa: E402
@@ -148,6 +160,9 @@ def get_serial_ports(module, result):
             exception=e,
             msg="Api Exception raised while fetching vm serial ports info",
         )
+
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
 
     result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
 

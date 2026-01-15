@@ -29,6 +29,7 @@ options:
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_info_v2
+      - nutanix.ncp.ntnx_logger
 author:
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
@@ -121,6 +122,12 @@ failed:
     type: bool
     returned: always
 
+msg:
+  description: This indicates the message if any message occurred
+  returned: When there is an error
+  type: str
+  sample: "Api Exception raised while fetching routes info"
+
 error:
   description: Error message
   type: str
@@ -131,6 +138,12 @@ changed:
   type: bool
   returned: always
   sample: False
+
+total_available_results:
+    description: The total number of available routes in the route table.
+    type: int
+    returned: when all routes are fetched
+    sample: 10
 """
 
 import warnings  # noqa: E402
@@ -196,6 +209,9 @@ def get_routes(module, route_api_instance, result):
             exception=e,
             msg="Api Exception raised while fetching routes info",
         )
+
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
 
     result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
 

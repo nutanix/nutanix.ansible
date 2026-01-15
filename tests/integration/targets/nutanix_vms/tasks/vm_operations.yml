@@ -2,15 +2,15 @@
 # Variables required before running this playbook:
 # - cluster
 # - ubuntu
-- name: Start testing VM with different operations
+- name: Start nutanix_vms vm operations tests
   ansible.builtin.debug:
-    msg: Start testing VM with different operations
+    msg: Start nutanix_vms vm operations tests
 
 - name: Reset todelete list
   ansible.builtin.set_fact:
     todelete: []
 - name: VM with minimum requirements
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     name: integration_test_operations_vm
     cluster:
@@ -34,7 +34,7 @@
 
 ############################################
 - name: VM with minimum requirements with check mode
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     name: integration_test_operations_vm
     cluster:
@@ -60,7 +60,7 @@
     fail_msg: " Fail "
 ###########################################
 - name: Hard power off the vm
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     state: hard_poweroff
   register: result
@@ -76,7 +76,7 @@
     success_msg: " VM powerd off successfully "
 # ###########################################
 - name: Power on the vm
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: power_on
     vm_uuid: "{{ vm.vm_uuid }}"
   register: result
@@ -92,7 +92,7 @@
     success_msg: " VM powerd on successfully "
 ##########################################
 - name: Power on the vm while it's on
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: power_on
     vm_uuid: "{{ vm.vm_uuid }}"
   register: result
@@ -152,7 +152,7 @@
 #       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
 
 - name: Create VM with minimum requirements with hard_poweroff operation
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: hard_poweroff
     name: integration_test_operations_vm
     cluster:
@@ -175,7 +175,7 @@
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
 
 - name: Create VM with minimum requirements with hard_poweroff operation without wait
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: hard_poweroff
     name: integration_test_operations_vm_111
     cluster:
@@ -200,13 +200,13 @@
   when: result.response.status.state == 'COMPLETE'
 
 - name: Delete all Created VMs
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: absent
     vm_uuid: "{{ item }}"
   loop: "{{ todelete }}"
 
 - name: Delete all Created VMs
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: absent
     vm_uuid: "{{ vm.vm_uuid }}"
 

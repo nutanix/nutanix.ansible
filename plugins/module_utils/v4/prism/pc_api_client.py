@@ -10,6 +10,9 @@ from base64 import b64encode
 
 from ansible.module_utils.basic import missing_required_lib
 
+from ...constants import ALLOW_VERSION_NEGOTIATION
+from ..api_logger import setup_api_logging
+
 PRISM_SDK_IMP_ERROR = None
 try:
     import ntnx_prism_py_client
@@ -33,7 +36,9 @@ def get_pc_api_client(module):
     config.username = module.params.get("nutanix_username")
     config.password = module.params.get("nutanix_password")
     config.verify_ssl = module.params.get("validate_certs")
-    client = ntnx_prism_py_client.ApiClient(configuration=config)
+    client = ntnx_prism_py_client.ApiClient(
+        configuration=config, allow_version_negotiation=ALLOW_VERSION_NEGOTIATION
+    )
 
     cred = "{0}:{1}".format(config.username, config.password)
     try:
@@ -42,6 +47,10 @@ def get_pc_api_client(module):
         encoded_cred = b64encode(bytes(cred).encode("ascii")).decode("ascii")
     auth_header = "Basic " + encoded_cred
     client.add_default_header(header_name="Authorization", header_value=auth_header)
+
+    # Setup API logging if debug is enabled
+    setup_api_logging(module, client)
+
     return client
 
 
@@ -76,3 +85,15 @@ def get_domain_manager_backup_api_instance(module):
     """
     api_client = get_pc_api_client(module)
     return ntnx_prism_py_client.DomainManagerBackupsApi(api_client=api_client)
+
+
+def get_tasks_api_instance(module):
+    """
+    This method will return tasks api instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): tasks api instance
+    """
+    api_client = get_pc_api_client(module)
+    return ntnx_prism_py_client.TasksApi(api_client=api_client)

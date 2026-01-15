@@ -20,6 +20,15 @@ description:
   - Promote VG will create new VG in the another local cluster registered under same PC for the given VG external ID.
   - Promote VM uses secondary site PC IP and its credentials in C(nutanix_host) where Promote VG uses primary site PC IP.
 options:
+  state:
+    description:
+      - State of the module.
+      - If state is present, the module will promote a protected resource.
+      - If state is not present, the module will fail.
+    type: str
+    choices:
+      - present
+    default: present
   ext_id:
     description:
       - The external identifier of a protected VM or volume group.
@@ -59,6 +68,7 @@ options:
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
+  - nutanix.ncp.ntnx_logger
 author:
   - George Ghawali (@george-ghawali)
 """
@@ -134,6 +144,12 @@ changed:
   type: bool
   sample: true
 
+msg:
+  description: This indicates the message if any message occurred
+  returned: When there is an error
+  type: str
+  sample: "Api Exception raised while promoting protected resource"
+
 error:
   description: This field typically holds information about if the task have errors that occurred during the task execution
   returned: When an error occurs
@@ -174,6 +190,7 @@ from ..module_utils.v4.utils import (  # noqa: E402
 def get_module_spec():
 
     module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
         ext_id=dict(type="str", required=True),
     )
     return module_args

@@ -26,6 +26,7 @@ options:
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_info_v2
+  - nutanix.ncp.ntnx_logger
 """
 
 EXAMPLES = r"""
@@ -83,10 +84,21 @@ ext_id:
     type: str
     sample: "98b9dc89-be08-3c56-b554-692b8b676fd2"
     returned: always
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while fetching image placement policy info"
 error:
   description: The error message if an error occurs.
   type: str
   returned: when an error occurs
+total_available_results:
+    description:
+        - The total number of available image placement policies in PC.
+    type: int
+    returned: when all image placement policies are fetched
+    sample: 125
 """
 import warnings  # noqa: E402
 
@@ -149,6 +161,9 @@ def get_policies(module, result):
             exception=e,
             msg="Api Exception raised while fetching image placement policies info",
         )
+
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
 
     result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
 

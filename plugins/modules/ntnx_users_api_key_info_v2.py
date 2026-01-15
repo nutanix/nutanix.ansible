@@ -29,6 +29,7 @@ options:
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_info_v2
+    - nutanix.ncp.ntnx_logger
 author:
     - Abhinav Bansal (@abhinavbansal29)
 """
@@ -71,6 +72,12 @@ changed:
     type: bool
     returned: always
     sample: false
+
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while fetching user api keys info"
 
 error:
     description:
@@ -126,6 +133,12 @@ response:
                 "tenant_id": "59d5de78-a964-5746-8c6e-677c4c7a79df"
             }
         ]
+total_available_results:
+    description:
+        - The total number of available user api keys in PC.
+    type: int
+    returned: when all user api keys are fetched
+    sample: 125
 """
 
 import warnings  # noqa: E402
@@ -178,6 +191,9 @@ def get_user_api_keys(module, users, result):
             exception=e,
             msg="Api Exception raised while fetching user api keys info",
         )
+
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
 
     resp = strip_internal_attributes(resp.to_dict()).get("data")
     if not resp:

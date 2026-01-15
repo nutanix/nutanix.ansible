@@ -17,6 +17,15 @@ description:
 author:
     - Pradeepsingh Bhati (@bhati-pradeep)
 options:
+    state:
+        description:
+            - State of the module.
+            - If state is present, the module will migrate a NIC.
+            - If state is not present, the module will fail.
+        type: str
+        choices:
+            - present
+        default: present
     wait:
         description: Wait for the operation to complete.
         type: bool
@@ -64,6 +73,7 @@ options:
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
+    - nutanix.ncp.ntnx_logger
 """
 
 EXAMPLES = r"""
@@ -127,6 +137,11 @@ task_ext_id:
 changed:
     description: Indicates whether the module changed the state of the VM NIC.
     type: bool
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while migrating nic of VM"
 error:
     description: The error message, if any, encountered.
     type: str
@@ -179,6 +194,7 @@ def get_module_spec():
         ext_id=dict(type="str", required=True),
     )
     module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
         ext_id=dict(type="str", required=True),
         vm_ext_id=dict(type="str", required=True),
         migrate_type=dict(

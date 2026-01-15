@@ -24,6 +24,7 @@ options:
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_info_v2
+    - nutanix.ncp.ntnx_logger
 author:
     - George Ghawali (@george-ghawali)
 """
@@ -124,6 +125,12 @@ changed:
     type: bool
     sample: false
 
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while fetching protection policies info"
+
 error:
     description: This field typically holds information about if the task have errors that occurred during the task execution
     type: str
@@ -141,6 +148,12 @@ ext_id:
     type: str
     returned: when external ID is provided
     sample: "1ca2963d-77b6-453a-ae23-2c19e7a954a3"
+
+total_available_results:
+    description: The total number of available protection policies in PC.
+    type: int
+    returned: when all protection policies are fetched
+    sample: 125
 """
 
 import warnings  # noqa: E402
@@ -196,6 +209,9 @@ def get_protection_policies(module, protection_policies, result):
             exception=e,
             msg="Api Exception raised while fetching protection policies info",
         )
+
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
 
     resp = strip_internal_attributes(resp.to_dict()).get("data")
     if not resp:

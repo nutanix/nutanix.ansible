@@ -4,7 +4,7 @@
     msg: Start testing ntnx_security_rules_info
 ###################################
 - name: Create isolation_rule for testing
-  ntnx_security_rules:
+  nutanix.ncp.ntnx_security_rules:
     name: isolation_test_rule
     isolation_rule:
       isolate_category:
@@ -28,7 +28,7 @@
     success_msg: "pass:  isolation_rule for testing  created successfully  "
 ###################################
 - name: Getting all security rules
-  ntnx_security_rules_info:
+  nutanix.ncp.ntnx_security_rules_info:
   register: result
   ignore_errors: true
 
@@ -44,7 +44,7 @@
     success_msg: "pass: get all security rules successfully "
 ###################################
 - name: Getting particular security rule using security_rule_uuid
-  ntnx_security_rules_info:
+  nutanix.ncp.ntnx_security_rules_info:
     security_rule_uuid: "{{ first_rule.response.metadata.uuid }}"
   register: result
   ignore_errors: true
@@ -61,7 +61,7 @@
     success_msg: "pass: getting  security rule using security_rule_uuid successfully"
 ###################################
 - name: Getting all security rules sorted
-  ntnx_security_rules_info:
+  nutanix.ncp.ntnx_security_rules_info:
     sort_order: ASCENDING
     sort_attribute: Name
   register: result
@@ -80,7 +80,7 @@
     success_msg: "pass: getting all security rules sorted successfully "
 ###################################
 - name: Delete security rule
-  ntnx_security_rules:
+  nutanix.ncp.ntnx_security_rules:
     state: absent
     security_rule_uuid: "{{ first_rule.response.metadata.uuid }}"
   register: result

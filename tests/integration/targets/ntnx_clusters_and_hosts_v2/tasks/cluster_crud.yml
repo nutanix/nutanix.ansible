@@ -5,13 +5,17 @@
 #   2. Run cluster create prechecks
 #   3. Create cluster with minimum spec and register PE PC for verifying cluster creation
 #   4. Create cluster with auth keys, configs, network details, etc. and register PE PC for verifying cluster creation
-#   5. Generate spec for cluster update using check mode
-#   6. Update config public auth keys
-#   7. Update ntp servers and dns servers and smtp server
-#   8. Verify idempotency of module
-#   9. Test info module for fetching cluster details
-#   10. Test info module for fetching host details
-#   11. Test cluster destroy
+#   5. Create categories for cluster
+#   6. Associate categories with cluster
+#   7. Disassociate categories from cluster
+#   8. Delete categories
+#   9. Generate spec for cluster update using check mode
+#   10. Update config public auth keys
+#   11. Update ntp servers and dns servers and smtp server
+#   12. Verify idempotency of module
+#   13. Test info module for fetching cluster details
+#   14. Test info module for fetching host details
+#   15. Test cluster destroy
 
 # Variables required before running this test:
 # - clusters: List of clusters with all required nested fields (nodes, config, network, etc.)
@@ -30,6 +34,10 @@
   ansible.builtin.set_fact:
     prefix_name: ansible_test
 
+- name: Set suffix name
+  ansible.builtin.set_fact:
+    suffix_name: "ansible-ag"
+
 - name: Set command split for resetting cluster username and password
   ansible.builtin.set_fact:
     pe_ssh_cmd:
@@ -43,10 +51,24 @@
     reset_command: '{{ pe_ssh_cmd }} "{{ reset_username_password }}"'
     cluster_status_command: '{{ pe_ssh_cmd }} "{{ cluster_status }}"'
 
+- name: Create cluster name
+  ansible.builtin.set_fact:
+    cluster_name: "{{ random_name }}_{{ prefix_name }}_{{ clusters[0].name }}"
+
 ############################################## Create cluster test 1 ##############################################
 
+- name: List all clusters to get prism central external ID
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
+  register: result
+  ignore_errors: true
+
+- name: Get prism central external ID
+  ansible.builtin.set_fact:
+    prism_central_external_id: "{{ result.response[0].ext_id }}"
+
 - name: Create spec for cluster create with dummy values using check mode
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     name: cluster1
     nodes:
       node_list:
@@ -85,6 +107,14 @@
             value: 2001:db8::1
         - fqdn:
             value: ntp.example.com
+      ntp_server_config_list:
+        - ntp_server_address:
+            ipv4:
+              value: "240.29.254.191"
+              prefix_length: 32
+          encryption_algorithm: "SHA256"
+          encryption_key: "0x9f8e7d6c5b4a"
+          encryption_key_id: 1
       name_server_ip_list:
         - ipv4:
             value: 10.0.0.6
@@ -134,6 +164,9 @@
       http_proxy_white_list:
         - target_type: IPV4_NETWORK_MASK
           target: test
+    categories:
+      - "cc16efb4-6591-4b89-a643-8c835f035393"
+      - "d1b5f4e2-2b3c-4e8e-9f4a-2c9f0e6f7a12"
     container_name: test-container
     dryrun: true
   register: result
@@ -163,6 +196,9 @@
       - result.response.network.ntp_server_ip_list[0].ipv4.value == "10.0.0.5"
       - result.response.network.ntp_server_ip_list[1].ipv6.value == "2001:db8::1"
       - result.response.network.ntp_server_ip_list[2].fqdn.value == "ntp.example.com"
+      - result.response.network.ntp_server_config_list[0].ntp_server_address.ipv4.value == "240.29.254.191"
+      - result.response.network.ntp_server_config_list[0].encryption_algorithm == "SHA256"
+      - result.response.network.ntp_server_config_list[0].encryption_key_id == 1
       - result.response.network.name_server_ip_list[0].ipv4.value == "10.0.0.6"
       - result.response.network.name_server_ip_list[1].ipv6.value == "2001:db8::2"
       - result.response.network.name_server_ip_list[2].fqdn.value == "dns.example.com"
@@ -189,12 +225,15 @@
       - result.response.network.http_proxy_list[0].proxy_types[1] == "HTTPS"
       - result.response.network.http_proxy_white_list[0].target_type == "IPV4_NETWORK_MASK"
       - result.response.network.http_proxy_white_list[0].target == "test"
+      - result.response.categories | length == 2
+      - result.response.categories[0] == "cc16efb4-6591-4b89-a643-8c835f035393"
+      - result.response.categories[1] == "d1b5f4e2-2b3c-4e8e-9f4a-2c9f0e6f7a12"
       - result.response.container_name == "test-container"
     fail_msg: Cluster create spec is not generated as expected
     success_msg: Cluster create spec is generated as expected
 
 - name: Generate spec for discovering unconfigured nodes using check mode
-  ntnx_discover_unconfigured_nodes_v2:
+  nutanix.ncp.ntnx_discover_unconfigured_nodes_v2:
     is_manual_discovery: true
     address_type: "IPV4"
     ip_filter_list:
@@ -225,18 +264,8 @@
     fail_msg: Generate spec for discovering unconfigured nodes using check mode failed
     success_msg: Generate spec for discovering unconfigured nodes using check mode passed
 
-- name: List all clusters to get prism central external ID
-  ntnx_clusters_info_v2:
-    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
-  register: result
-  ignore_errors: true
-
-- name: Get prism central external ID
-  ansible.builtin.set_fact:
-    prism_central_external_id: "{{ result.response[0].ext_id }}"
-
 - name: Discover unconfigured node
-  ntnx_discover_unconfigured_nodes_v2:
+  nutanix.ncp.ntnx_discover_unconfigured_nodes_v2:
     address_type: "IPV4"
     ip_filter_list:
       - ipv4:
@@ -257,7 +286,7 @@
     success_msg: Discover unconfigured node passed
 
 - name: Run cluster create prechecks
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     name: "{{ clusters[0].name }}"
     nodes:
       node_list:
@@ -289,6 +318,31 @@
             value: "{{ clusters[0].network.ntp_servers[2] }}"
         - fqdn:
             value: "{{ clusters[0].network.ntp_servers[3] }}"
+      # ntp_server_config_list:
+      #   - ntp_server_address:
+      #       fqdn:
+      #         value: "{{ clusters[0].network.ntp_servers[0] }}"
+      #     encryption_algorithm: "{{ clusters[0].network.ntp_servers_encryption_algorithm }}"
+      #     encryption_key: "{{ clusters[0].network.ntp_servers_encryption_key }}"
+      #     encryption_key_id: "{{ clusters[0].network.ntp_servers_encryption_key_id }}"
+      #   - ntp_server_address:
+      #       fqdn:
+      #         value: "{{ clusters[0].network.ntp_servers[1] }}"
+      #     encryption_algorithm: "{{ clusters[0].network.ntp_servers_encryption_algorithm }}"
+      #     encryption_key: "{{ clusters[0].network.ntp_servers_encryption_key }}"
+      #     encryption_key_id: "{{ clusters[0].network.ntp_servers_encryption_key_id }}"
+      #   - ntp_server_address:
+      #       fqdn:
+      #         value: "{{ clusters[0].network.ntp_servers[2] }}"
+      #     encryption_algorithm: "{{ clusters[0].network.ntp_servers_encryption_algorithm }}"
+      #     encryption_key: "{{ clusters[0].network.ntp_servers_encryption_key }}"
+      #     encryption_key_id: "{{ clusters[0].network.ntp_servers_encryption_key_id }}"
+      #   - ntp_server_address:
+      #       fqdn:
+      #         value: "{{ clusters[0].network.ntp_servers[3] }}"
+      #     encryption_algorithm: "{{ clusters[0].network.ntp_servers_encryption_algorithm }}"
+      #     encryption_key: "{{ clusters[0].network.ntp_servers_encryption_key }}"
+      #     encryption_key_id: "{{ clusters[0].network.ntp_servers_encryption_key_id }}"
       name_server_ip_list:
         - ipv4:
             value: "{{ clusters[0].network.dns_servers[0] }}"
@@ -319,10 +373,6 @@
     fail_msg: Cluster create prechecks failed
     success_msg: Cluster create prechecks passed
 
-- name: Create cluster name
-  ansible.builtin.set_fact:
-    cluster_name: "{{ random_name }}_{{ prefix_name }}_{{ clusters[0].name }}"
-
 - name: Check if cluster is unconfigured or not
   ansible.builtin.command: "{{ cluster_status_command }}"
   register: result
@@ -338,7 +388,7 @@
     success_msg: Cluster is unconfigured
 
 - name: Create cluster with minimum spec
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     name: "{{cluster_name}}"
     nodes:
       node_list:
@@ -372,7 +422,7 @@
   changed_when: result.rc != 0
 
 - name: Generate spec for aos remote cluster PE PC registration using check mode
-  ntnx_pc_registration_v2:
+  nutanix.ncp.ntnx_pc_registration_v2:
     ext_id: d2f9994f-44fb-4d4c-ad3c-92055316444f
     remote_cluster:
       aos_remote_cluster:
@@ -399,7 +449,7 @@
     success_msg: "Generate spec for aos remote cluster PE PC registration using check mode passed"
 
 - name: Generate spec for PC and domain manager(PC) remote cluster registration using check mode
-  ntnx_pc_registration_v2:
+  nutanix.ncp.ntnx_pc_registration_v2:
     ext_id: d2f9994f-44fb-4d4c-ad3c-92055316444f
     remote_cluster:
       domain_manager_remote_cluster:
@@ -428,7 +478,7 @@
     success_msg: "Generate spec for PC and domain manager(PC) remote cluster registration using check mode passed"
 
 - name: Generate spec for PC registration using cluster reference
-  ntnx_pc_registration_v2:
+  nutanix.ncp.ntnx_pc_registration_v2:
     ext_id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
     remote_cluster:
       cluster_reference:
@@ -447,7 +497,7 @@
     success_msg: "Generate spec for PC registration using cluster reference passed"
 
 - name: Run PE PC registration
-  ntnx_pc_registration_v2:
+  nutanix.ncp.ntnx_pc_registration_v2:
     ext_id: "{{ prism_central_external_id }}"
     remote_cluster:
       aos_remote_cluster:
@@ -478,7 +528,7 @@
     seconds: 60
 
 - name: Fetch cluster using name
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
     filter: name eq '{{ cluster_name }}'
   register: result
   ignore_errors: true
@@ -496,7 +546,7 @@
     cluster_ext_id: "{{ result.response[0].ext_id }}"
 
 - name: Fetch cluster info using external ID
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
     ext_id: "{{ cluster_ext_id }}"
   register: result
   ignore_errors: true
@@ -518,7 +568,7 @@
     success_msg: Cluster creation passed successfully
 
 - name: Destroy the cluster for cleanup
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     state: absent
     ext_id: "{{ cluster_ext_id }}"
   register: result
@@ -536,7 +586,7 @@
 
 ############################################# Create cluster test 2 ##############################################
 
-- name: Sleep for 2 minute for pending tasks in node to finish
+- name: Sleep for 2 minutes for pending tasks in node to finish
   ansible.builtin.pause:
     seconds: 120
 
@@ -555,7 +605,7 @@
     success_msg: Cluster is unconfigured
 
 - name: Create cluster with all configuration
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     name: "{{ cluster_name }}"
     nodes:
       node_list:
@@ -584,6 +634,31 @@
             value: "{{ clusters[0].network.ntp_servers[2] }}"
         - fqdn:
             value: "{{ clusters[0].network.ntp_servers[3] }}"
+      # ntp_server_config_list:
+      #   - ntp_server_address:
+      #       fqdn:
+      #         value: "{{ clusters[0].network.ntp_servers[0] }}"
+      #     encryption_algorithm: "{{ clusters[0].network.ntp_servers_encryption_algorithm }}"
+      #     encryption_key: "{{ clusters[0].network.ntp_servers_encryption_key }}"
+      #     encryption_key_id: "{{ clusters[0].network.ntp_servers_encryption_key_id }}"
+      #   - ntp_server_address:
+      #       fqdn:
+      #         value: "{{ clusters[0].network.ntp_servers[1] }}"
+      #     encryption_algorithm: "{{ clusters[0].network.ntp_servers_encryption_algorithm }}"
+      #     encryption_key: "{{ clusters[0].network.ntp_servers_encryption_key }}"
+      #     encryption_key_id: "{{ clusters[0].network.ntp_servers_encryption_key_id }}"
+      #   - ntp_server_address:
+      #       fqdn:
+      #         value: "{{ clusters[0].network.ntp_servers[2] }}"
+      #     encryption_algorithm: "{{ clusters[0].network.ntp_servers_encryption_algorithm }}"
+      #     encryption_key: "{{ clusters[0].network.ntp_servers_encryption_key }}"
+      #     encryption_key_id: "{{ clusters[0].network.ntp_servers_encryption_key_id }}"
+      #   - ntp_server_address:
+      #       fqdn:
+      #         value: "{{ clusters[0].network.ntp_servers[3] }}"
+      #     encryption_algorithm: "{{ clusters[0].network.ntp_servers_encryption_algorithm }}"
+      #     encryption_key: "{{ clusters[0].network.ntp_servers_encryption_key }}"
+      #     encryption_key_id: "{{ clusters[0].network.ntp_servers_encryption_key_id }}"
       name_server_ip_list:
         - ipv4:
             value: "{{ clusters[0].network.dns_servers[0] }}"
@@ -610,7 +685,7 @@
   changed_when: result.rc != 0
 
 - name: Run PE PC registration
-  ntnx_pc_registration_v2:
+  nutanix.ncp.ntnx_pc_registration_v2:
     ext_id: "{{ prism_central_external_id }}"
     remote_cluster:
       aos_remote_cluster:
@@ -641,7 +716,7 @@
     seconds: 60
 
 - name: Fetch cluster using name
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
     filter: name eq '{{ cluster_name }}'
   register: result
   ignore_errors: true
@@ -659,7 +734,7 @@
     cluster_ext_id: "{{ result.response[0].ext_id }}"
 
 - name: Fetch cluster info using external ID
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
     ext_id: "{{ cluster_ext_id }}"
   register: result
   ignore_errors: true
@@ -668,6 +743,7 @@
   ansible.builtin.set_fact:
     ntp_servers: "{{ result.response.network.ntp_server_ip_list | map(attribute='fqdn.value') | list }}"
     dns_servers: "{{ result.response.network.name_server_ip_list | map(attribute='ipv4.value') | list }}"
+    # ntp_server_config_list: "{{ result.response.network.ntp_server_config_list | map(attribute='ntp_server_address.fqdn.value') | list }}"
 
 - name: Keep only unique ntp servers
   ansible.builtin.set_fact:
@@ -702,19 +778,266 @@
     fail_msg: Failed verifying cluster creation
     success_msg: Cluster creation passed successfully
 
+############################################## Associate categories with cluster ##############################################
+
+- name: Set category key & value
+  ansible.builtin.set_fact:
+    todelete: []
+    key1: "{{random_name}}{{suffix_name}}key1"
+    value1: "{{random_name}}{{suffix_name}}value1"
+
+- name: Create category key & value
+  nutanix.ncp.ntnx_categories_v2:
+    key: "{{key1}}"
+    value: "{{value1}}"
+    description: "ansible test"
+  register: output
+  ignore_errors: true
+
+- name: Creation category key & value status
+  ansible.builtin.assert:
+    that:
+      - output.response is defined
+      - output.response.key == "{{key1}}"
+      - output.response.value == "{{value1}}"
+      - output.response.type == "USER"
+      - output.response.ext_id is defined
+      - output.changed == true
+      - output.failed == false
+      - output.response.description == "ansible test"
+    fail_msg: "Unable to create category key & value"
+    success_msg: "Category key & value created successfully"
+
+- name: Set category external ID
+  ansible.builtin.set_fact:
+    category_ext_id: "{{ output.response.ext_id }}"
+
+- name: Create spec for Associate categories with cluster using check mode
+  nutanix.ncp.ntnx_clusters_categories_v2:
+    cluster_ext_id: "0006361b-6855-3644-7458-2268f8ffb2bd"
+    categories:
+      - "12n8p-2779-4b30-9156-521b0b6b3293"
+      - "98j8p-5779-4b30-9156-521b0b6b3293"
+    state: present
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Verify generated spec for Associate categories with cluster using check mode
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.response.categories | length == 2
+      - result.cluster_ext_id == "0006361b-6855-3644-7458-2268f8ffb2bd"
+      - result.response.categories == ["12n8p-2779-4b30-9156-521b0b6b3293", "98j8p-5779-4b30-9156-521b0b6b3293"]
+    fail_msg: "Unable to generate spec for Associate categories with cluster using check mode"
+    success_msg: "Spec for Associate categories with cluster using check mode generated successfully"
+
+- name: Associate categories with cluster without passing cluster_ext_id and categories
+  nutanix.ncp.ntnx_clusters_categories_v2:
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Verify error without passing cluster_ext_id and categories
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.error.msg == "missing required arguments: categories, cluster_ext_id"
+      - result.changed == false
+    fail_msg: "Test failed, expected error not found"
+    success_msg: "Test passed, expected error found"
+
+- name: Associate categories with cluster passing wrong cluster_ext_id
+  nutanix.ncp.ntnx_clusters_categories_v2:
+    cluster_ext_id: "0006361b-6855-3644-7458-2268f8ffb2bd"
+    categories:
+      - "12n8p-2779-4b30-9156-521b0b6b3293"
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Verify error passing wrong cluster_ext_id
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.error is defined
+      - result.msg == "Api Exception raised while associating categories"
+      - result.changed == false
+    fail_msg: "Test failed, expected error not found"
+    success_msg: "Test passed, expected error found"
+
+- name: Associate categories with cluster passing wrong categories
+  nutanix.ncp.ntnx_clusters_categories_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    categories:
+      - "12n8p-2779-4b30-9156-521b0b6b3293"
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Verify error passing wrong categories
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.msg == "Api Exception raised while associating categories"
+      - result.changed == false
+    fail_msg: "Test failed, expected error not found"
+    success_msg: "Test passed, expected error found"
+
+- name: Associate categories with cluster
+  nutanix.ncp.ntnx_clusters_categories_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    categories:
+      - "{{ category_ext_id }}"
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Verify category association
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.cluster_ext_id == cluster_ext_id
+      - result.response.categories | length == 1
+      - result.response.categories[0] == category_ext_id
+      - result.task_ext_id is defined
+    fail_msg: "Unable to associate category with cluster"
+    success_msg: "Category associated with cluster successfully"
+
+############################################## Disassociate categories from cluster ##############################################
+
+- name: Create spec for Disassociate categories from cluster using check mode
+  nutanix.ncp.ntnx_clusters_categories_v2:
+    cluster_ext_id: "0006361b-6855-3644-7458-2268f8ffb2bd"
+    categories:
+      - "12n8p-2779-4b30-9156-521b0b6b3293"
+      - "98j8p-5779-4b30-9156-521b0b6b3293"
+    state: absent
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Verify generated spec for Disassociate categories from cluster using check mode
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.response.categories | length == 2
+      - result.cluster_ext_id == "0006361b-6855-3644-7458-2268f8ffb2bd"
+      - result.response.categories == ["12n8p-2779-4b30-9156-521b0b6b3293", "98j8p-5779-4b30-9156-521b0b6b3293"]
+    fail_msg: "Unable to generate spec for Disassociate categories from cluster using check mode"
+    success_msg: "Spec for Disassociate categories from cluster using check mode generated successfully"
+
+- name: Disassociate categories from cluster without passing cluster_ext_id and categories
+  nutanix.ncp.ntnx_clusters_categories_v2:
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Verify error without passing cluster_ext_id and categories
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.error.msg == "missing required arguments: categories, cluster_ext_id"
+      - result.changed == false
+    fail_msg: "Test failed, expected error not found"
+    success_msg: "Test passed, expected error found"
+
+- name: Disassociate categories from cluster passing wrong cluster_ext_id
+  nutanix.ncp.ntnx_clusters_categories_v2:
+    cluster_ext_id: "0006361b-6855-3644-7458-2268f8ffb2bd"
+    categories:
+      - "{{ category_ext_id }}"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Verify error passing wrong cluster_ext_id
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.msg == "Api Exception raised while disassociating categories"
+      - result.changed == false
+    fail_msg: "Test failed, expected error not found"
+    success_msg: "Test passed, expected error found"
+
+- name: Disassociate categories from cluster passing wrong categories
+  nutanix.ncp.ntnx_clusters_categories_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    categories:
+      - "12n8p-2779-4b30-9156-521b0b6b3293"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Verify error passing wrong categories
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.msg == "Api Exception raised while disassociating categories"
+      - result.changed == false
+    fail_msg: "Test failed, expected error not found"
+    success_msg: "Test passed, expected error found"
+
+- name: Disassociate categories from cluster
+  nutanix.ncp.ntnx_clusters_categories_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    categories:
+      - "{{ category_ext_id }}"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Verify category disassociation
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.cluster_ext_id == cluster_ext_id
+      - result.response.categories == none
+      - result.task_ext_id is defined
+    fail_msg: "Unable to disassociate category from cluster"
+    success_msg: "Category disassociated from cluster successfully"
+
+- name: Delete Created categories
+  nutanix.ncp.ntnx_categories_v2:
+    ext_id: "{{ category_ext_id }}"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == category_ext_id
+    fail_msg: "Unable to delete category key & value"
+    success_msg: "Category key & value deleted successfully"
+
 ############################################## Update cluster test ##############################################
 
 - name: Create update spec for cluster using dummy values
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     name: "{{ cluster_name }}_updated"
     ext_id: "{{ cluster_ext_id }}"
     network:
       ntp_server_ip_list:
         - fqdn:
-            value: "{{ clusters[0].network.ntp_servers[1] }}"
+            value: "ntp.example.com"
       name_server_ip_list:
         - ipv4:
-            value: "{{ clusters[0].network.dns_servers[1] }}"
+            value: "10.0.0.6"
+      ntp_server_config_list:
+        - ntp_server_address:
+            ipv4:
+              value: "10.0.0.6"
+          encryption_algorithm: "SHA256"
+          encryption_key: "0x9f8e7d6c5b4a"
+          encryption_key_id: 1
       smtp_server:
         email_address: test@test.com
         server:
@@ -757,8 +1080,10 @@
       - result.ext_id == cluster_ext_id
       - result.response.name == "{{ cluster_name }}_updated"
       - result.response.network.ntp_server_ip_list | length == 1
-      - result.response.network.ntp_server_ip_list[0].fqdn.value == "{{ clusters[0].network.ntp_servers[1] }}"
-      - result.response.network.name_server_ip_list[0].ipv4.value == "{{ clusters[0].network.dns_servers[1] }}"
+      - result.response.network.ntp_server_ip_list[0].fqdn.value == "ntp.example.com"
+      - result.response.network.ntp_server_config_list[0].encryption_algorithm == "SHA256"
+      - result.response.network.ntp_server_config_list[0].encryption_key_id == 1
+      - result.response.network.name_server_ip_list[0].ipv4.value == "10.0.0.6"
       - result.response.network.smtp_server.email_address == "test@test.com"
       - result.response.network.smtp_server.server.ip_address.ipv4.value == "10.0.0.1"
       - result.response.network.smtp_server.server.port == 25
@@ -782,7 +1107,7 @@
 ############################################## Update basic cluster config and auth public key ##############################################
 
 - name: Fetch cluster info using external ID
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
     ext_id: "{{ cluster_ext_id }}"
   register: cluster_info
   ignore_errors: true
@@ -810,7 +1135,7 @@
     updated_auth_public_keys: "{{ auth_public_keys + [new_auth_public_key] }}"
 
 - name: Update cluster basic configuration, add auth public keys, and enable pulse
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     name: "{{ cluster_name }}_updated"
     ext_id: "{{ cluster_ext_id }}"
     config:
@@ -837,7 +1162,7 @@
     seconds: 60
 
 - name: Fetch cluster info using external ID
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
     ext_id: "{{ cluster_ext_id }}"
   register: cluster_info
   ignore_errors: true
@@ -859,6 +1184,7 @@
       - cluster_info.response.config.authorized_public_key_list | length > auth_public_keys | length
       - cluster_info.response.config.authorized_public_key_list == updated_auth_public_keys
       - cluster_info.response.network.ntp_server_ip_list | length == 4
+      # - cluster_info.response.network.ntp_server_config_list | length == 4
       - cluster_info.response.network.name_server_ip_list | length == 2
       - cluster_info.response.config.pulse_status.is_enabled == true
       - cluster_info.response.config.pulse_status.pii_scrubbing_level == "ALL"
@@ -868,7 +1194,7 @@
 ############################################# Update cluster ntp servers, dns servers and smtp servers ##############################################
 
 - name: Update ntp servers, dns servers and smtp servers in cluster, and disable pulse
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     ext_id: "{{ cluster_ext_id }}"
     config:
       pulse_status:
@@ -880,6 +1206,13 @@
       ntp_server_ip_list:
         - fqdn:
             value: "{{ clusters[0].network.ntp_servers[0] }}"
+      ntp_server_config_list:
+        - ntp_server_address:
+            fqdn:
+              value: "{{ clusters[0].network.ntp_servers[0] }}"
+          encryption_algorithm: "{{ clusters[0].network.ntp_servers_encryption_algorithm }}"
+          encryption_key: "{{ clusters[0].network.ntp_servers_encryption_key }}"
+          encryption_key_id: "{{ clusters[0].network.ntp_servers_encryption_key_id }}"
       name_server_ip_list:
         - ipv4:
             value: "{{ clusters[0].network.dns_servers[0] }}"
@@ -912,7 +1245,7 @@
     seconds: 60
 
 - name: Fetch cluster info using external ID
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
     ext_id: "{{ cluster_ext_id }}"
   register: result
   ignore_errors: true
@@ -926,6 +1259,10 @@
       - result.response.network.external_data_service_ip.ipv4.value == "{{ clusters[0].network.iscsi_ip1 }}"
       - result.response.network.ntp_server_ip_list | length == 1
       - result.response.network.ntp_server_ip_list[0].fqdn.value == "{{ clusters[0].network.ntp_servers[0] }}"
+      - result.response.network.ntp_server_config_list | length == 1
+      - result.response.network.ntp_server_config_list[0].ntp_server_address.fqdn.value == "{{ clusters[0].network.ntp_servers[0] }}"
+      - result.response.network.ntp_server_config_list[0].encryption_algorithm == "{{ clusters[0].network.ntp_servers_encryption_algorithm }}"
+      - result.response.network.ntp_server_config_list[0].encryption_key_id == {{ clusters[0].network.ntp_servers_encryption_key_id }}
       - result.response.network.name_server_ip_list | length == 1
       - result.response.network.name_server_ip_list[0].ipv4.value == "{{ clusters[0].network.dns_servers[0] }}"
       - result.response.network.smtp_server.email_address == "{{ clusters[0].network.smtp_server.email_address }}"
@@ -940,7 +1277,7 @@
 
 ############################################## Check idempotency ##############################################
 - name: Verify idempotency
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     name: "{{ cluster_name }}_updated"
     ext_id: "{{ cluster_ext_id }}"
     config:
@@ -953,6 +1290,13 @@
       ntp_server_ip_list:
         - fqdn:
             value: "{{ clusters[0].network.ntp_servers[0] }}"
+      ntp_server_config_list:
+        - ntp_server_address:
+            fqdn:
+              value: "{{ clusters[0].network.ntp_servers[0] }}"
+          encryption_algorithm: "{{ clusters[0].network.ntp_servers_encryption_algorithm }}"
+          encryption_key: "{{ clusters[0].network.ntp_servers_encryption_key }}"
+          encryption_key_id: "{{ clusters[0].network.ntp_servers_encryption_key_id }}"
       name_server_ip_list:
         - ipv4:
             value: "{{ clusters[0].network.dns_servers[0] }}"
@@ -983,7 +1327,7 @@
     success_msg: Cluster update skipped as expected
 
 - name: Idempotency checks should get skipped if password is given
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     ext_id: "{{ cluster_ext_id }}"
     network:
       smtp_server:
@@ -1012,7 +1356,7 @@
 ############################################## Hosts & cluster info module tests ##############################################
 
 - name: Verify listing of clusters
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
   register: result
   ignore_errors: true
 
@@ -1022,11 +1366,13 @@
       - result.response is defined
       - result.changed == false
       - result.response | length >= 2
+      - result.total_available_results is defined
+      - result.total_available_results >= 2
     fail_msg: Failed listing clusters
     success_msg: Listed clusters successfully
 
 - name: Verify listing clusters using filters
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
     filter: name eq '{{ cluster_name }}_updated'
   register: result
   ignore_errors: true
@@ -1043,7 +1389,7 @@
     success_msg: Listed clusters using filters successfully
 
 - name: Verify listing clusters using wrong filters
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
     filter: name eq 'wrong_name'
   register: result
   ignore_errors: true
@@ -1058,7 +1404,7 @@
     success_msg: Module returned no data for invalid name
 
 - name: Verify listing clusters using limit
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
     limit: 1
   register: result
   ignore_errors: true
@@ -1073,7 +1419,7 @@
     success_msg: Listed clusters using limit successfully
 
 - name: List all hosts
-  ntnx_hosts_info_v2:
+  nutanix.ncp.ntnx_hosts_info_v2:
   register: result
   ignore_errors: true
 
@@ -1083,6 +1429,8 @@
       - result.response is defined
       - result.changed == false
       - result.response | length >= 2
+      - result.total_available_results is defined
+      - result.total_available_results >= 2
     fail_msg: Failed listing hosts
     success_msg: Listed hosts successfully
 
@@ -1093,7 +1441,7 @@
     cluster_uuid: "{{ result.response[0].cluster.uuid }}"
 
 - name: Verify listing of hosts using filters
-  ntnx_hosts_info_v2:
+  nutanix.ncp.ntnx_hosts_info_v2:
     filter: hostName eq '{{ host_name }}'
   register: result
   ignore_errors: true
@@ -1110,7 +1458,7 @@
     success_msg: Listed hosts using filters successfully
 
 - name: Verify listing of hosts using wrong filters
-  ntnx_hosts_info_v2:
+  nutanix.ncp.ntnx_hosts_info_v2:
     filter: hostName eq 'wrong_name'
   register: result
   ignore_errors: true
@@ -1125,7 +1473,7 @@
     success_msg: Module returned no data for invalid name
 
 - name: Verify listing of hosts using limit
-  ntnx_hosts_info_v2:
+  nutanix.ncp.ntnx_hosts_info_v2:
     limit: 1
   register: result
   ignore_errors: true
@@ -1140,7 +1488,7 @@
     success_msg: Listed hosts using limit successfully
 
 - name: Verify fetching host using external ID
-  ntnx_hosts_info_v2:
+  nutanix.ncp.ntnx_hosts_info_v2:
     ext_id: "{{ host_ext_id }}"
     cluster_ext_id: "{{ cluster_uuid }}"
   register: result
@@ -1158,7 +1506,7 @@
     success_msg: Fetched host using external ID successfully
 
 - name: Fetch hosts of particular cluster
-  ntnx_hosts_info_v2:
+  nutanix.ncp.ntnx_hosts_info_v2:
     cluster_ext_id: "{{ cluster_ext_id }}"
   register: result
   ignore_errors: true
@@ -1176,7 +1524,7 @@
 ############################################## Delete cluster test ##############################################
 
 - name: Destroy the cluster for cleanup
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     state: absent
     ext_id: "{{ cluster_ext_id }}"
   register: result

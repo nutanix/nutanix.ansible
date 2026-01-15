@@ -28,6 +28,7 @@ options:
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_info_v2
+      - nutanix.ncp.ntnx_logger
 author:
  - Alaa Bishtawi (@alaabishtawi)
  - George Ghawali (@george-ghawali)
@@ -106,6 +107,11 @@ response:
                 "storage_pool_ext_id": "487c142e-6c41-4b10-9585-4feac6bd3c68",
                 "tenant_id": null
             }
+msg:
+  description: This indicates the message if any message occurred
+  returned: When there is an error
+  type: str
+  sample: "Api Exception raised while fetching storage containers info"
 error:
     description: The error message if an error occurs.
     type: str
@@ -116,6 +122,12 @@ ext_id:
     type: str
     returned: always
     sample: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
+total_available_results:
+    description:
+        - The total number of available storage containers in PC.
+    type: int
+    returned: when all storage containers are fetched
+    sample: 125
 """
 
 import warnings  # noqa: E402
@@ -170,6 +182,9 @@ def get_storage_containers(module, result):
             exception=e,
             msg="Api Exception raised while fetching storage containers info",
         )
+
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
 
     if getattr(resp, "data", None):
         result["response"] = strip_internal_attributes(resp.to_dict()).get("data")

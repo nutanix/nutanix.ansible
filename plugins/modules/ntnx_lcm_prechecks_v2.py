@@ -18,6 +18,15 @@ author:
  - George Ghawali (@george-ghawali)
  - Abhinav Bansal (@abhinavbansal29)
 options:
+    state:
+        description:
+            - State of the module.
+            - If state is present, the module will perform LCM prechecks.
+            - If state is not present, the module will fail.
+        type: str
+        choices:
+            - present
+        default: present
     management_server:
         description:
             - Cluster management server configuration used while updating clusters with ESX or Hyper-V.
@@ -81,6 +90,7 @@ options:
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
+    - nutanix.ncp.ntnx_logger
 """
 
 EXAMPLES = r"""
@@ -150,6 +160,11 @@ changed:
   returned: always
   type: bool
   sample: true
+msg:
+  description: This indicates the message if any message occurred
+  returned: When there is an error
+  type: str
+  sample: "Api Exception raised while performing LCM prechecks"
 error:
   description: This field typically holds information about if the task have errors that occurred during the task execution
   returned: When an error occurs
@@ -206,6 +221,7 @@ def get_module_spec():
     )
 
     module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
         management_server=dict(
             type="dict",
             options=management_server_spec,

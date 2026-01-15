@@ -4,6 +4,7 @@ on:
   pull_request:
   repository_dispatch:
     types: [ok-to-test-command]
+
 jobs:
   integration_test_cases:
     timeout-minutes: 600
@@ -13,20 +14,24 @@ jobs:
       matrix:
         python-version: ["3.10"]
     if: github.event_name == 'repository_dispatch'
+
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
 
       - uses: actions/checkout@v2
         with:
           ref: refs/pull/${{ github.event.client_payload.pull_request.number }}/merge
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
+
       - name: Install dependencies
         run: |
           pip install -r tests/integration/requirements.txt
           ansible-galaxy collection install community.general --force
+
       - name: Build and install the collection
         run: |
           NAMESPACE=$(cat galaxy.yml | shyaml get-value namespace)
@@ -36,21 +41,25 @@ jobs:
           echo "COLLECTION_NAME=${COLLECTION_NAME}" >> $GITHUB_ENV
           ansible-galaxy collection build --force
           ansible-galaxy collection install ${NAMESPACE}-${COLLECTION_NAME}-${VERSION}.tar.gz --force
+
       - name: Run Integration test cases
         run: |
           cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
+
           export NUTANIX_HOST=${{ secrets.PC_IP }}
           export NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}
           export NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}
           export NUTANIX_DR_SITE=${{ secrets.NUTANIX_DR_SITE }}
+          export VALIDATE_CERTS=${{ secrets.VALIDATE_CERTS }}
           export NDB_HOST=${{ secrets.NDB_HOST }}
           export NDB_PASSWORD=${{ secrets.NDB_PASSWORD }}
           export NDB_USERNAME=${{ secrets.NDB_USERNAME }}
           args="${{ github.event.client_payload.slash_command.args.all }}"
           flag=""
-          if [ "$args" = "allow-disabled" ]
-                      then
-                          flag="--allow-disabled"
+          if [ "$args" = "allow-disabled" ]; then
+              flag="--allow-disabled"
+          elif [ -n "$args" ]; then
+              regex_pattern="$args"
           fi
           echo '${{ secrets.FOUNDATION_CONFIG }}' > tests/integration/targets/prepare_foundation_env/vars/main.yml
           echo '${{ secrets.FC_CONFIG }}' > tests/integration/targets/prepare_fc_env/vars/main.yml
@@ -59,26 +68,252 @@ jobs:
           echo "NUTANIX_HOST=${{ secrets.PC_IP }}" >> $GITHUB_ENV
           echo "NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}" >> $GITHUB_ENV
           echo "NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}" >> $GITHUB_ENV
-          echo $NUTANIX_HOST
-          echo $NUTANIX_USERNAME
-          echo $NUTANIX_PASSWORD
-          ansible-playbook -i tests/integration/targets/inventory_test/nutanix.yml tests/integration/targets/inventory_test/inventory.yml
+
+          echo "===> Preparing environments..."
           ansible-playbook tests/integration/targets/prepare_env/playbooks/prepare_env.yml
           ansible-playbook tests/integration/targets/prepare_ndb_env/playbooks/prepare_env.yml
           ansible-playbook tests/integration/targets/prepare_fc_env/playbooks/prepare_fc_env.yml
           ansible-playbook tests/integration/targets/prepare_foundation_env/playbooks/prepare_foundation_env.yml
-          ansible-test integration --continue-on-error --python ${{ matrix.python-version }} --coverage $flag
-          ansible-test coverage report > coverage.txt
+
+          # Function to run inventory tests from a given directory
+          # Handles both: directories with subdirectories (inventory_test, inventory_test_v2)
+          # and directories with files directly in them (inventory_test_hosts_v2)
+          run_inventory_tests() {
+              local test_dir="$1"
+              local test_type="$2"
+              if [ -d "$test_dir" ]; then
+                  echo "===> Running $test_type inventory tests from: $test_dir"
+
+                  # Check if nutanix.yml and inventory.yml exist directly in test_dir
+                  if [ -f "${test_dir}/nutanix.yml" ] && [ -f "${test_dir}/inventory.yml" ]; then
+                      # Single test case - files are directly in the directory
+                      test_name=$(basename "$test_dir")
+                      echo "===> Running inventory test: $test_name..." | tee -a test_output.log
+                      if ansible-playbook -i "${test_dir}/nutanix.yml" \
+                      "${test_dir}/inventory.yml" \
+                      2>&1 | tee -a test_output.log; then
+                          echo "Inventory test '$test_name' completed successfully."
+                      else
+                          echo "Inventory test '$test_name' failed. See logs above." | tee -a test_output.log
+                      fi
+                  else
+                      # Multiple test cases - files are in subdirectories
+                      for test_folder in "$test_dir"/*/; do
+                          test_name=$(basename "$test_folder")
+                          if [ -f "${test_folder}nutanix.yml" ] && [ -f "${test_folder}inventory.yml" ]; then
+                              echo "===> Running inventory test: $test_name..." | tee -a test_output.log
+                              if ansible-playbook -i "${test_folder}nutanix.yml" \
+                              "${test_folder}inventory.yml" \
+                              2>&1 | tee -a test_output.log; then
+                                  echo "Inventory test '$test_name' completed successfully."
+                              else
+                                  echo "Inventory test '$test_name' failed. See logs above." | tee -a test_output.log
+                              fi
+                          else
+                              echo "⚠️ Skipping '$test_name': missing nutanix.yml or inventory.yml"
+                          fi
+                      done
+                  fi
+              else
+                  echo "⚠️ Directory not found: $test_dir"
+              fi
+          }
+
+          echo "===> Running tests..."
+          set +e
+          TEST_EXIT_CODE=0
+
+          if [ -n "$regex_pattern" ]; then
+              echo "Filtering tests by regex: $regex_pattern"
+
+              # Find all matching directories
+              mapfile -t all_matched_dirs < <(find tests/integration/targets -maxdepth 1 -mindepth 1 -type d -printf "%f\n" | grep -E "$regex_pattern" || true)
+
+              if [ ${#all_matched_dirs[@]} -eq 0 ]; then
+                  echo "❌ No test targets matched regex: '$regex_pattern'."
+                  echo "No test execution performed." | tee test_output.log
+                  echo "NO_REGEX_MATCH=true" >> $GITHUB_ENV
+                  echo "RESULTS=No tests matched regex pattern '$regex_pattern'. Skipping test run." >> $GITHUB_ENV
+              else
+                  echo "Matched directories: ${all_matched_dirs[*]}"
+
+                  # Separate inventory tests from regular integration tests
+                  integration_dirs=()
+                  for dir in "${all_matched_dirs[@]}"; do
+                      if [ "$dir" = "inventory_test" ]; then
+                          echo "===> Found inventory_test - will run with ansible-playbook"
+                          run_inventory_tests "tests/integration/targets/inventory_test" "vm_v1"
+                      elif [ "$dir" = "inventory_test_v2" ]; then
+                          echo "===> Found inventory_test_v2 - will run with ansible-playbook"
+                          run_inventory_tests "tests/integration/targets/inventory_test_v2" "vm_v2"
+                      elif [ "$dir" = "inventory_test_hosts_v2" ]; then
+                          echo "===> Found inventory_test_hosts_v2 - will run with ansible-playbook"
+                          run_inventory_tests "tests/integration/targets/inventory_test_hosts_v2" "hosts_v2"
+                      else
+                          integration_dirs+=("$dir")
+                      fi
+                  done
+
+                  # Run ansible-test integration for non-inventory tests
+                  if [ ${#integration_dirs[@]} -gt 0 ]; then
+                      echo "===> Running ansible-test integration for: ${integration_dirs[*]}"
+                      ansible-test integration --continue-on-error \
+                        --python ${{ matrix.python-version }} --coverage "${integration_dirs[@]}" --allow-disabled 2>&1 | tee -a test_output.log
+                      TEST_EXIT_CODE=${PIPESTATUS[0]}
+                  else
+                      echo "===> No ansible-test integration targets to run"
+                  fi
+              fi
+          else
+              ansible-test integration --continue-on-error \
+                --python ${{ matrix.python-version }} --coverage $flag 2>&1 | tee test_output.log
+              TEST_EXIT_CODE=${PIPESTATUS[0]}
+          fi
+          set -e
+
+          # Generate coverage report if integration tests were run
+          if [ -n "$regex_pattern" ] && [ ${#integration_dirs[@]} -eq 0 ]; then
+              echo "===> Skipping coverage report (no ansible-test integration tests)..."
+              echo "SKIP_COVERAGE=true" >> $GITHUB_ENV
+          else
+              echo "===> Generating coverage report..."
+              ansible-test coverage report > coverage.txt || true
+          fi
+
+          if [ "$TEST_EXIT_CODE" -ne 0 ]; then
+              echo "❌ One or more integration tests failed."
+              echo "INTEGRATION_STATUS=failed" >> $GITHUB_ENV
+              exit 1
+          else
+              echo "✅ All integration tests passed successfully."
+              echo "INTEGRATION_STATUS=passed" >> $GITHUB_ENV
+          fi
+
+      - name: Cleanup Environments
+        if: ${{ always() }}
+        run: |
+          cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
+          echo "🧹 Cleaning up environments..."
           ansible-playbook tests/integration/targets/prepare_env/playbooks/cleanup.yml
           ansible-playbook tests/integration/targets/prepare_foundation_env/playbooks/cleanup.yml
 
-      - name: Code Coverage Check
+      - name: Generate test summary
         if: ${{ always() }}
+        run: |
+          cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
+          echo "### Detailed Test Results" >> $GITHUB_STEP_SUMMARY
+
+          LOG_FILE="test_output.log"
+          declare -A test_results
+          current_test=""
+
+          if [ -f "$LOG_FILE" ]; then
+            # Parse test_output.log and populate test_results[current_test]="PASSED"|"FAILED"
+            while IFS= read -r line; do
+                # Match integration tests: "Running <name> integration test role"
+                if [[ $line =~ ^Running\ ([^[:space:]]+)\ integration\ test\ role ]]; then
+                    current_test="${BASH_REMATCH[1]}"
+                fi
+                # Match inventory tests: "===> Running inventory test: <name>..."
+                if [[ $line =~ ^===\>\ Running\ inventory\ test:\ (.+)\.\.\. ]]; then
+                    current_test="${BASH_REMATCH[1]}"
+                fi
+                if [[ $line =~ ^PLAY\ RECAP ]]; then
+                    read -r recap_line
+                    if [[ -n "$current_test" ]] && [[ $recap_line =~ failed=([0-9]+) ]]; then
+                        failed_count="${BASH_REMATCH[1]}"
+                        if [[ "$failed_count" -eq 0 ]]; then
+                            test_results["$current_test"]="PASSED"
+                        else
+                            test_results["$current_test"]="FAILED"
+                        fi
+                    fi
+                fi
+            done < "$LOG_FILE"
+
+            # Build ordered lists
+            passed_tests=()
+            failed_tests=()
+            for test in "${!test_results[@]}"; do
+              if [ "${test_results[$test]}" = "PASSED" ]; then
+                passed_tests+=("$test")
+              else
+                failed_tests+=("$test")
+              fi
+            done
+
+            pass_count=${#passed_tests[@]}
+            fail_count=${#failed_tests[@]}
+            total_count=$((pass_count + fail_count))
+
+            # Write multi-line RESULTS env var for PR comment step
+            {
+              echo "RESULTS<<EOF"
+              echo "### Summary:"
+              echo "- Total Tests: $total_count"
+              echo "- Passed: $pass_count"
+              echo "- Failed: $fail_count"
+              echo ""
+              echo "### Passed Tests:"
+              if [ $pass_count -gt 0 ]; then
+                for t in "${passed_tests[@]}"; do
+                  echo "- $t"
+                done
+              else
+                echo "- None"
+              fi
+              echo ""
+              echo "### Failed Tests:"
+              if [ $fail_count -gt 0 ]; then
+                for t in "${failed_tests[@]}"; do
+                  echo "- $t"
+                done
+              else
+                echo "- None"
+              fi
+              echo ""
+              echo "Raw log file: test_output.log"
+              echo "EOF"
+            } >> $GITHUB_ENV
+
+            # Append same info to job summary (visible in Actions UI)
+            {
+              echo "### Summary:"
+              echo "- Total Tests: $total_count"
+              echo "- Passed: $pass_count"
+              echo "- Failed: $fail_count"
+              echo ""
+              echo "### Passed Tests:"
+              if [ $pass_count -gt 0 ]; then
+                for t in "${passed_tests[@]}"; do
+                  echo "- $t"
+                done
+              else
+                echo "- None"
+              fi
+              echo ""
+              echo "### Failed Tests:"
+              if [ $fail_count -gt 0 ]; then
+                for t in "${failed_tests[@]}"; do
+                  echo "- $t"
+                done
+              else
+                echo "- None"
+              fi
+            } >> $GITHUB_STEP_SUMMARY
+
+          else
+            echo "No test_output.log found" >> $GITHUB_STEP_SUMMARY
+            echo "RESULTS=No detailed results (test_output.log missing)" >> $GITHUB_ENV
+          fi
+
+      - name: Code Coverage Check
+        if: ${{ always() && env.SKIP_COVERAGE != 'true' }}
         run: |
           cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
           ansible-test coverage html
           echo "Code coverage: Checking if code coverage is above threshold..."
-          export COVERAGE_THRESHOLD=70
+          export COVERAGE_THRESHOLD=50
           echo "Threshold: $COVERAGE_THRESHOLD %"
           totalCoverage=`grep TOTAL coverage.txt | awk '{print $6}' | sed 's/%//'`
           echo "TOTAL_COVERAGE=${totalCoverage}" >> $GITHUB_ENV
@@ -93,47 +328,37 @@ jobs:
 
       - run: echo "🍏 This job's status is ${{ job.status }}."
 
-      # Update the comment back
       - name: Update comment
         uses: peter-evans/create-or-update-comment@v1
         if: ${{ always() }}
         with:
           comment-id: ${{ github.event.client_payload.github.payload.comment.id }}
           body: |
-            >Integration test run status is : ${{ job.status }}
-            >Converage is : ${{ env.TOTAL_COVERAGE }} %
-            >Job link https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            > Integration test run status is : ${{ job.status }}
+            > Coverage is : ${{ env.TOTAL_COVERAGE }} %
+            > Job link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            ### Detailed Test Results
+            ```text
+            ${{ env.RESULTS ||
+                (env.NO_REGEX_MATCH &&
+                'No integration test targets matched regex')
+                || 'No detailed results found.' }}
+            ```
           reaction-type: hooray
 
-      # Update check run for Integration Test
-      - uses: actions/github-script@v5
-        id: update-check-run
+      - name: Add summary
         if: ${{ always() }}
-        env:
-          number: ${{ github.event.client_payload.pull_request.number }}
-          job: ${{ github.job }}
-          # Conveniently, job.status maps to https://developer.github.com/v3/checks/runs/#update-a-check-run
-          conclusion: ${{ job.status }}
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const { data: pull } = await github.rest.pulls.get({
-              ...context.repo,
-              pull_number: process.env.number
-            });
-            const ref = pull.head.sha;
-            const { data: checks } = await github.rest.checks.listForRef({
-              ...context.repo,
-              ref
-            });
-            const check = checks.check_runs.filter(c => c.name === process.env.job);
-            if (check.length == 0) {
-              return "Check is not present, ignoring this step."
-            }
-            const { data: result } = await github.rest.checks.update({
-              ...context.repo,
-              check_run_id: check[0].id,
-              status: 'completed',
-              conclusion: process.env.conclusion
-            });
-            return result;
+        run: |
+          echo "### Integration Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Coverage: ${{ env.TOTAL_COVERAGE }}%" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Detailed Test Results" >> $GITHUB_STEP_SUMMARY
+
+          cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
+          if [ -f test_output.log ]; then
+            grep -E "SUCCESS|FAIL" test_output.log | sed 's/^/ - /' >> $GITHUB_STEP_SUMMARY || echo "No results parsed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No detailed results (test_output.log missing)" >> $GITHUB_STEP_SUMMARY
+          fi

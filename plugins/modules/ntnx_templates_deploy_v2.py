@@ -16,6 +16,15 @@ description:
     - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 options:
+    state:
+        description:
+            - State of the module.
+            - If state is present, the module will deploy a template.
+            - If state is not present, the module will fail.
+        type: str
+        choices:
+            - present
+        default: present
     ext_id:
         description:
             - The external ID of the template to deploy.
@@ -447,6 +456,7 @@ options:
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
+      - nutanix.ncp.ntnx_logger
 author:
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
@@ -547,6 +557,11 @@ changed:
     type: bool
     returned: always
     sample: true
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error or in check mode operation
+    type: str
+    sample: "Api Exception raised while deploying template"
 error:
     description: The error message if the template deployment failed.
     type: str
@@ -611,6 +626,7 @@ def get_override_vm_config_schema():
 
 def get_module_spec():
     module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
         ext_id=dict(type="str", required=True),
         version_id=dict(type="str"),
         number_of_vms=dict(type="int"),

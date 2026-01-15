@@ -25,6 +25,7 @@ options:
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_info_v2
+      - nutanix.ncp.ntnx_logger
 author:
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
@@ -166,6 +167,11 @@ changed:
   returned: always
   type: bool
   sample: true
+msg:
+  description: This indicates the message if any message occurred
+  returned: When there is an error
+  type: str
+  sample: "Api Exception raised while fetching network security policy info"
 error:
   description: This field typically holds information about if the task have errors that occurred during the task execution
   returned: always
@@ -176,6 +182,12 @@ ext_id:
     returned: always
     type: str
     sample: "e8347a03-28a0-4eaa-9f43-64fd74cdee9e"
+total_available_results:
+    description:
+        - The total number of available network security policies in PC.
+    type: int
+    returned: when all network security policies are fetched
+    sample: 125
 """
 
 import warnings  # noqa: E402
@@ -240,6 +252,9 @@ def get_network_security_policies(module, result):
             exception=e,
             msg="Api Exception raised while fetching network security policies info",
         )
+
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
 
     resp = strip_internal_attributes(resp.to_dict()).get("data")
     if not resp:

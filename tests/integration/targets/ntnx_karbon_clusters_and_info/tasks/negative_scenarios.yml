@@ -19,7 +19,7 @@
 
 #############################
 - name: Create cluster with cpu less than minimum
-  ntnx_karbon_clusters:
+  nutanix.ncp.ntnx_karbon_clusters:
     cluster:
       name: "{{ cluster.name }}"
     name: "{{ karbon_name }}"
@@ -62,7 +62,7 @@
     success_msg: " Pass:  Returned as expected"
 #############################
 - name: Create cluster with memory_gb  less than minimum
-  ntnx_karbon_clusters:
+  nutanix.ncp.ntnx_karbon_clusters:
     cluster:
       name: "{{ cluster.name }}"
     name: "{{ karbon_name }}"
@@ -105,7 +105,7 @@
     success_msg: " Pass:  Returned as expected"
 #############################
 - name: Create cluster with wrong num_instances for master nodes
-  ntnx_karbon_clusters:
+  nutanix.ncp.ntnx_karbon_clusters:
     cluster:
       name: "{{ cluster.name }}"
     name: "{{ karbon_name }}"
@@ -148,7 +148,7 @@
     success_msg: " Pass:  Returned as expected"
 #############################
 - name: Create cluster with wrong num_instances for etcd nodes
-  ntnx_karbon_clusters:
+  nutanix.ncp.ntnx_karbon_clusters:
     cluster:
       name: "{{ cluster.name }}"
     name: "{{ karbon_name }}"

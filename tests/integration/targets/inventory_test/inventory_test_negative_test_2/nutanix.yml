@@ -1,0 +1,12 @@
+---
+plugin: nutanix.ncp.ntnx_prism_vm_inventory
+# If these are not set, values will be taken from environment variables:
+# nutanix_hostname: "hostname"
+# nutanix_username: "username"
+# nutanix_password: "password"
+validate_certs: false
+data: { offset: 0, length: 20 }
+strict: true
+fetch_all_vms: true
+custom_ansible_host:
+  expr: "{vm_name}.nutanix1.{cluster}.nutanix2.{cluster_uuid}.nutanix3.{vm_uuid}.nutanix4.{vm_description}.com"

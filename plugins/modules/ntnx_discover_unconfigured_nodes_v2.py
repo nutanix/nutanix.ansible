@@ -16,6 +16,15 @@ description:
   - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 options:
+  state:
+    description:
+      - State of the module.
+      - If state is present, the module will discover unconfigured nodes.
+      - If state is not present, the module will fail.
+    type: str
+    choices:
+      - present
+    default: present
   address_type:
     description:
       - Specifies the type of address, either IPv4 or IPv6.
@@ -85,6 +94,7 @@ options:
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
+      - nutanix.ncp.ntnx_logger
 author:
  - Alaa Bishtawi (@alaabishtawi)
  - George Ghawali (@george-ghawali)
@@ -156,6 +166,12 @@ task_ext_id:
     returned: always
     sample: "ZXJnb24=:5235a162-25c2-41b7-50ba-71b2e545fdba"
 
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Failed generating spec for discovering cluster nodes"
+
 error:
     description: Error message if an error occurs.
     type: str
@@ -202,6 +218,7 @@ def get_module_spec():
         ipv6=dict(type="dict", options=ipv6_spec),
     )
     module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
         address_type=dict(type="str", choices=["IPV4", "IPV6"]),
         ip_filter_list=dict(type="list", elements="dict", options=ip_address_spec),
         uuid_filter_list=dict(type="list", elements="str"),

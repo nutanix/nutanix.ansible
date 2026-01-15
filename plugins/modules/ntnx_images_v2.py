@@ -137,6 +137,17 @@ options:
                             - The unique identifier of the VM disk.
                         type: str
                         required: true
+            objects_lite_source:
+                description:
+                    - The Objects Lite source of the image.
+                type: dict
+                suboptions:
+                    key:
+                        description:
+                            - Key that identifies the source object in the bucket.
+                            - The resource implies the bucket, 'vmm-images' for Image and 'vmm-ovas' for OVA.
+                        type: str
+                        required: true
         required: false
     category_ext_ids:
         description:
@@ -160,6 +171,7 @@ options:
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
+    - nutanix.ncp.ntnx_logger
 """
 
 EXAMPLES = r"""
@@ -260,6 +272,11 @@ skipped:
     description: Indicates whether the image was skipped due to idempotency.
     type: bool
     returned: always
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error, module is idempotent or check mode (in delete operation)
+    type: str
+    sample: "Failed generating create Image Spec"
 error:
     description: The error message, if any.
     type: str
@@ -311,6 +328,7 @@ def get_module_spec():
     source_allowed_objs = {
         "url_source": vmm_sdk.UrlSource,
         "vm_disk_source": vmm_sdk.VmDiskSource,
+        "objects_lite_source": vmm_sdk.ObjectsLiteSource,
     }
 
     # module specs
@@ -329,9 +347,11 @@ def get_module_spec():
         should_allow_insecure_url=dict(type="bool", default=False),
         basic_auth=dict(type="dict", options=basic_auth, obj=vmm_sdk.UrlBasicAuth),
     )
+    objects_lite_source = dict(key=dict(type="str", required=True, no_log=True))
     source = dict(
         url_source=dict(type="dict", options=url_source),
         vm_disk_source=dict(type="dict", options=vm_disk_source),
+        objects_lite_source=dict(type="dict", options=objects_lite_source),
     )
     module_args = dict(
         ext_id=dict(type="str"),
@@ -348,7 +368,9 @@ def get_module_spec():
             type="dict",
             options=source,
             obj=source_allowed_objs,
-            mutually_exclusive=[("url_source", "vm_disk_source")],
+            mutually_exclusive=[
+                ("url_source", "vm_disk_source", "objects_lite_source")
+            ],
         ),
         category_ext_ids=dict(type="list", elements="str"),
         cluster_location_ext_ids=dict(type="list", elements="str"),
@@ -450,7 +472,7 @@ def update_image(module, result):
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     result["ext_id"] = ext_id
     if task_ext_id and module.params.get("wait"):
-        resp = wait_for_completion(module, task_ext_id, True)
+        resp = wait_for_completion(module, task_ext_id)
         resp = get_image(module, images, ext_id)
         result["response"] = strip_internal_attributes(resp.to_dict())
     result["changed"] = True
@@ -486,7 +508,7 @@ def delete_image(module, result):
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
-        resp = wait_for_completion(module, task_ext_id, True)
+        resp = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(resp.to_dict())
     result["changed"] = True
 

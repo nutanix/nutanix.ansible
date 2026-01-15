@@ -17,6 +17,15 @@ description:
     - Replicate recovery points using external ID
     - This module uses PC v4 APIs based SDKs
 options:
+    state:
+        description:
+            - State of the module.
+            - If state is present, the module will replicate a recovery point.
+            - If state is not present, the module will fail.
+        type: str
+        choices:
+            - present
+        default: present
     ext_id:
         description:
             - Recovery point external ID
@@ -34,6 +43,7 @@ options:
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
+    - nutanix.ncp.ntnx_logger
 author:
     - Abhinav Bansal (@abhinavbansal29)
     - Pradeepsingh Bhati (@bhati-pradeep)
@@ -105,6 +115,11 @@ changed:
     returned: always
     type: bool
     sample: true
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while replicating recovery point"
 error:
     description: Error message if any
     returned: when an error occurs
@@ -160,6 +175,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
     module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
         ext_id=dict(type="str", required=True),
         pc_ext_id=dict(type="str"),
         cluster_ext_id=dict(type="str"),
