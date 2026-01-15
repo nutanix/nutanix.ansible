@@ -24,7 +24,7 @@ options:
       - If C(state) is set to C(present) and ext_id is provided, the operation will update the network function.
       - If C(state) is set to C(absent) and ext_id is provided, the operation will delete the network function.
     type: str
-    choices: ['present', 'absent']
+    choices: ["present", "absent"]
   ext_id:
     description:
       - Network function external ID.
@@ -78,7 +78,7 @@ options:
       - This enables high availability. The system will designate one NIC pair as ACTIVE and the other as PASSIVE.
       - If the active one fails its health check, the system automatically fails over to the passive one, ensuring service continuity.
     type: str
-    choices: ['ACTIVE_PASSIVE']
+    choices: ["ACTIVE_PASSIVE"]
   failure_handling:
     description:
       - Defines what happens to traffic if all NFVMs in the chain are unhealthy.
@@ -89,7 +89,7 @@ options:
       - C(NO_ACTION) when network function is unhealthy, no action is taken and traffic is black-holed.
         This value is deprecated and will automatically be converted to FAIL_CLOSE.
     type: str
-    choices: ['FAIL_OPEN', 'FAIL_CLOSE', 'NO_ACTION']
+    choices: ["FAIL_OPEN", "FAIL_CLOSE", "NO_ACTION"]
   traffic_forwarding_mode:
     description:
       - Specifies how traffic is delivered to the NFVM. This determines the fundamental behavior of your service insertion.
@@ -98,7 +98,7 @@ options:
       - C(VTAP) mirrors a copy of the traffic to the NFVM for passive monitoring (e.g., for an Intrusion Detection System).
         The original traffic flow is unaffected. egress_nic_reference is not used in this mode. Use for passive monitoring.
     type: str
-    choices: ['VTAP', 'INLINE']
+    choices: ["VTAP", "INLINE"]
   data_plane_health_check_config:
     description:
       - Data Plane Health check configuration applied for the network function.
@@ -180,15 +180,15 @@ options:
     type: bool
     default: true
 extends_documentation_fragment:
-      - nutanix.ncp.ntnx_credentials
-      - nutanix.ncp.ntnx_operations_v2
-      - nutanix.ncp.ntnx_logger
+  - nutanix.ncp.ntnx_credentials
+  - nutanix.ncp.ntnx_operations_v2
+  - nutanix.ncp.ntnx_logger
 author:
- - George Ghawali (@george-ghawali)
+  - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
-- name: Create network function with single NIC pair
+- name: Create network function with INLINE traffic forwarding mode and ACTIVE_PASSIVE HA
   nutanix.ncp.ntnx_network_functions_v2:
     state: present
     nutanix_host: "{{ ip }}"
@@ -205,13 +205,17 @@ EXAMPLES = r"""
         egress_nic_reference: "b4376782-ef64-52cf-bg0c-g17352ca6467"
         vm_reference: "c5487893-fg75-63dg-ch1d-h28463db7578"
         is_enabled: true
+      - ingress_nic_reference: "d6598904-gh86-74eh-di2e-i39574ec8689"
+        egress_nic_reference: "e7609015-hi97-85fi-ej3f-j40685fd979a"
+        vm_reference: "f8710126-ij08-96gj-fk4g-k51796ge080b"
+        is_enabled: true
     data_plane_health_check_config:
       interval_secs: 5
       timeout_secs: 1
       success_threshold: 3
       failure_threshold: 3
 
-- name: Create network function with VTAP mode
+- name: Create network function with VTAP traffic forwarding mode and ACTIVE_PASSIVE HA
   nutanix.ncp.ntnx_network_functions_v2:
     state: present
     nutanix_host: "{{ ip }}"
@@ -219,31 +223,14 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     name: "vtap-network-function"
-    description: "VTAP mode for passive monitoring"
+    description: "Network function for VTAP traffic forwarding mode and ACTIVE_PASSIVE HA"
     high_availability_mode: ACTIVE_PASSIVE
     traffic_forwarding_mode: VTAP
     nic_pairs:
       - ingress_nic_reference: "a3265671-de53-41be-af9b-f06241b95356"
         is_enabled: true
-
-- name: Create network function with two NIC pairs for HA
-  nutanix.ncp.ntnx_network_functions_v2:
-    state: present
-    nutanix_host: "{{ ip }}"
-    validate_certs: false
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    name: "ha-network-function"
-    high_availability_mode: ACTIVE_PASSIVE
-    failure_handling: FAIL_CLOSE
-    traffic_forwarding_mode: INLINE
-    nic_pairs:
-      - ingress_nic_reference: "a3265671-de53-41be-af9b-f06241b95356"
-        egress_nic_reference: "b4376782-ef64-52cf-bg0c-g17352ca6467"
         vm_reference: "c5487893-fg75-63dg-ch1d-h28463db7578"
-        is_enabled: true
       - ingress_nic_reference: "d6598904-gh86-74eh-di2e-i39574ec8689"
-        egress_nic_reference: "e7609015-hi97-85fi-ej3f-j40685fd979a"
         vm_reference: "f8710126-ij08-96gj-fk4g-k51796ge080b"
         is_enabled: true
 
@@ -258,6 +245,22 @@ EXAMPLES = r"""
     name: "updated-network-function"
     description: "Updated description"
     failure_handling: FAIL_CLOSE
+    high_availability_mode: ACTIVE_PASSIVE
+    traffic_forwarding_mode: INLINE
+    nic_pairs:
+      - ingress_nic_reference: "0c0068b3-6caf-415b-a055-0a727bc5f963"
+        egress_nic_reference: "3f325e81-916c-45d4-ba3f-c1dbfb205399"
+        vm_reference: "657ab599-4819-4d49-46e0-b726bb785422"
+        is_enabled: true
+      - ingress_nic_reference: "d813fcad-d32c-4469-98bc-028c9ac148e1"
+        egress_nic_reference: "5349fd3b-e71a-462c-a59f-63b62d45b4de"
+        vm_reference: "2180291c-aeb0-47cc-466f-7f37a1b98086"
+        is_enabled: true
+    data_plane_health_check_config:
+      interval_secs: 5
+      timeout_secs: 1
+      success_threshold: 3
+      failure_threshold: 3
 
 - name: Delete network function
   nutanix.ncp.ntnx_network_functions_v2:
@@ -271,42 +274,86 @@ EXAMPLES = r"""
 
 RETURN = r"""
 response:
-    description:
-      - Response for creating, updating, or deleting network functions.
-      - Network function details if C(wait) is true and the operation is create or update.
-      - Task details if C(wait) is false or the operation is delete.
-    type: dict
-    returned: always
-
+  description:
+    - Response for creating, updating, or deleting network functions.
+    - Network function details if C(wait) is true and the operation is create or update.
+    - Task details if C(wait) is false or the operation is delete.
+  type: dict
+  returned: always
+  sample:
+    {
+      "data_plane_health_check_config":
+        {
+          "failure_threshold": 3,
+          "interval_secs": 4,
+          "success_threshold": 3,
+          "timeout_secs": 2,
+        },
+      "description": "network function for testing the first network function",
+      "ext_id": "a0dea088-5cd2-4d18-8d20-addba20c937c",
+      "failure_handling": "FAIL_CLOSE",
+      "high_availability_mode": "ACTIVE_PASSIVE",
+      "links": null,
+      "metadata":
+        {
+          "category_ids": null,
+          "owner_reference_id": "00000000-0000-0000-0000-000000000000",
+          "owner_user_name": "admin",
+          "project_name": null,
+          "project_reference_id": null,
+        },
+      "name": "network_function_ansible_test_mcFntnPsLwEi_1",
+      "nic_pairs":
+        [
+          {
+            "data_plane_health_status": "UNHEALTHY",
+            "egress_nic_reference": "f0356c62-aafb-40e6-beb3-e24fe2462732",
+            "high_availability_state": "PASSIVE",
+            "ingress_nic_reference": "634157c9-aa7e-4e63-9a1b-bb9e03d4ca08",
+            "is_enabled": true,
+            "vm_reference": "70f6a710-2e3a-49d1-6ab3-176c58eacb31",
+          },
+          {
+            "data_plane_health_status": "UNHEALTHY",
+            "egress_nic_reference": "50972849-b9fc-4e6d-b41a-8d8150340fda",
+            "high_availability_state": "PASSIVE",
+            "ingress_nic_reference": "2136ae82-1d4e-42a4-bba6-8b85a791f260",
+            "is_enabled": true,
+            "vm_reference": "6b840ca9-7d3e-4e39-5c0d-726620017dd3",
+          },
+        ],
+      "tenant_id": null,
+      "traffic_forwarding_mode": "INLINE",
+    }
 ext_id:
-    description:
-        - External ID of the network function.
-    type: str
-    returned: always
+  description:
+    - External ID of the network function.
+  type: str
+  returned: always
 task_ext_id:
-    description: Task External ID
-    returned: always
-    type: str
-    sample: "ZXJnb24=:350f0fd5-097d-4ece-8f44-6e5bfbe2dc08"
+  description: Task External ID
+  returned: always
+  type: str
+  sample: "ZXJnb24=:350f0fd5-097d-4ece-8f44-6e5bfbe2dc08"
 msg:
-    description: This indicates the message if any message occurred
-    returned: When there is an error, module is idempotent or check mode (in delete operation)
-    type: str
-    sample: "Api Exception raised while creating network function"
+  description: This indicates the message if any message occurred
+  returned: When there is an error, module is idempotent or check mode (in delete operation)
+  type: str
+  sample: "Api Exception raised while creating network function"
 error:
-    description: Error message if any
-    returned: always
-    type: str
+  description: Error message if any
+  returned: always
+  type: str
 changed:
-    description: Indicates if the module made any changes
-    returned: always
-    type: bool
-    sample: true
+  description: Indicates if the module made any changes
+  returned: always
+  type: bool
+  sample: true
 failed:
-    description: Indicates if the module failed
-    returned: when failed
-    type: bool
-    sample: false
+  description: Indicates if the module failed
+  returned: when failed
+  type: bool
+  sample: false
 """
 
 import traceback  # noqa: E402
