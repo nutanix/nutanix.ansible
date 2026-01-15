@@ -436,14 +436,6 @@
         selectattr('egress_nic_reference', 'equalto', second_vm_egress_1_ext_id) |
         selectattr('is_enabled', 'equalto', true) |
         list | length == 1
-      # - >-
-      #   network_function_result.response.nic_pairs |
-      #   selectattr('high_availability_state', 'equalto', 'ACTIVE') |
-      #   list | length == 1
-      # - >-
-      #   network_function_result.response.nic_pairs |
-      #   selectattr('high_availability_state', 'equalto', 'PASSIVE') |
-      #   list | length == 1
       - network_function_result.response.data_plane_health_check_config.interval_secs == 4
       - network_function_result.response.data_plane_health_check_config.timeout_secs == 2
       - network_function_result.response.data_plane_health_check_config.success_threshold == 3
@@ -498,14 +490,6 @@
         selectattr('ingress_nic_reference', 'equalto', second_vm_ingress_2_ext_id) |
         selectattr('is_enabled', 'equalto', true) |
         list | length == 1
-      # - >-
-      #   network_function_result.response.nic_pairs |
-      #   selectattr('high_availability_state', 'equalto', 'ACTIVE') |
-      #   list | length == 1
-      # - >-
-      #   network_function_result.response.nic_pairs |
-      #   selectattr('high_availability_state', 'equalto', 'PASSIVE') |
-      #   list | length == 1
     fail_msg: "Failed to create second network function"
     success_msg: "Second network function created successfully"
 
@@ -513,7 +497,7 @@
   ansible.builtin.set_fact:
     network_function_ext_id_2: "{{ network_function_result.response.ext_id }}"
 
-- name: Fetch both network functions using ext_id until data plane health status is healthy
+- name: Fetch both network functions using ext_id and check data plane health and high availability state
   nutanix.ncp.ntnx_network_function_info_v2:
     ext_id: "{{ item }}"
   register: network_function_result
@@ -531,6 +515,25 @@
 
 - ansible.builtin.debug:
     var: network_function_result
+
+- name: Fetch both network functions using ext_id and check data plane health and high availability state status
+  ansible.builtin.assert:
+    that:
+      - item.response is defined
+      - item.response.nic_pairs | default([]) |
+        selectattr('data_plane_health_status', 'equalto', 'HEALTHY') |
+        list | length == item.response.nic_pairs | default([]) | length
+      - >-
+        item.response.nic_pairs |
+        selectattr('high_availability_state', 'equalto', 'ACTIVE') |
+        list | length == 1
+      - >-
+        item.response.nic_pairs |
+        selectattr('high_availability_state', 'equalto', 'PASSIVE') |
+        list | length == 1
+    fail_msg: "Failed to fetch network function and check data plane health and high availability state"
+    success_msg: "Network function data plane health and high availability state verified successfully"
+  loop: "{{ network_function_result.results }}"
 
 - name: Create network function with missing name
   nutanix.ncp.ntnx_network_function_v2:
@@ -912,15 +915,16 @@
     fail_msg: "Failed to delete second network function with ext_id {{ network_function_ext_id_2 }}"
     success_msg: "Second network function with ext_id {{ network_function_ext_id_2 }} is deleted successfully"
 
-- name: Delete network function with wrong external ID
-  nutanix.ncp.ntnx_network_function_v2:
-    state: absent
-    ext_id: "a1111111-1111-1111-1111-111111111111"
-  register: network_function_result
-  ignore_errors: true
+# This is failing: raised a bug https://jira.nutanix.com/browse/ENG-876170
+# - name: Delete network function with wrong external ID
+#   nutanix.ncp.ntnx_network_function_v2:
+#     state: absent
+#     ext_id: "a1111111-1111-1111-1111-111111111111"
+#   register: network_function_result
+#   ignore_errors: true
 
-- ansible.builtin.debug:
-    var: network_function_result
+# - ansible.builtin.debug:
+#     var: network_function_result
 
 # - name: Delete network function with wrong external ID status
 #   ansible.builtin.assert:
