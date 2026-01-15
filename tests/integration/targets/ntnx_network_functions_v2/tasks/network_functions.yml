@@ -82,7 +82,7 @@
           datasource_type: CONFIG_DRIVE_V2
           cloud_init_script:
             user_data:
-              value: "I2Nsb3VkLWNvbmZpZwpjaHBhc3N3ZDoKICBsaXN0OiB8CiAgICB1YnVudHU6bnV0YW5peC80dQogIGV4cGlyZTogZmFsc2UKZGlzYWJsZV9yb290OiBmYWxzZQpzc2hfcHdhdXRoOiAgIHRydWUKcnVuY21kOgogIC0gbGFzdF9pZmFjZT0kKGxzIC9zeXMvY2xhc3MvbmV0LyB8IGdyZXAgLUUgJ15lJyB8IHNvcnQgfCB0YWlsIC0xKQogIC0gaXAgbGluayBzZXQgZGV2ICRsYXN0X2lmYWNlIHVwCiAgLSBkaGNsaWVudCAtdiAkbGFzdF9pZmFjZQogIC0gYXB0LWdldCB1cGRhdGUKICAtIGFwdC1nZXQgaW5zdGFsbCAteSBicmlkZ2UtdXRpbHMKICAtIGlmYWNlMT0kKGxzIC9zeXMvY2xhc3MvbmV0LyB8IGdyZXAgLUUgJ15lJyB8IHNvcnQgfCBoZWFkIC0xKQogIC0gaWZhY2UyPSQobHMgL3N5cy9jbGFzcy9uZXQvIHwgZ3JlcCAtRSAnXmUnIHwgc29ydCB8IGhlYWQgLTIgfCB0YWlsIC0xKQogIC0gYnJjdGwgYWRkYnIgYnIwCiAgLSBicmN0bCBhZGRpZiBicjAgJGlmYWNlMQogIC0gYnJjdGwgYWRkaWYgYnIwICRpZmFjZTIKICAtIGlwIGxpbmsgc2V0IGRldiAkaWZhY2UxIHVwCiAgLSBpcCBsaW5rIHNldCBkZXYgJGlmYWNlMiB1cAogIC0gaXAgbGluayBzZXQgZGV2IGJyMCB1cA=="
+              value: "{{ cloud_init_user_data_for_network_function }}"
     nics:
       - nic_network_info:
           virtual_ethernet_nic_network_info:
@@ -180,7 +180,7 @@
           datasource_type: CONFIG_DRIVE_V2
           cloud_init_script:
             user_data:
-              value: "I2Nsb3VkLWNvbmZpZwpjaHBhc3N3ZDoKICBsaXN0OiB8CiAgICB1YnVudHU6bnV0YW5peC80dQogIGV4cGlyZTogZmFsc2UKZGlzYWJsZV9yb290OiBmYWxzZQpzc2hfcHdhdXRoOiAgIHRydWUKcnVuY21kOgogIC0gbGFzdF9pZmFjZT0kKGxzIC9zeXMvY2xhc3MvbmV0LyB8IGdyZXAgLUUgJ15lJyB8IHNvcnQgfCB0YWlsIC0xKQogIC0gaXAgbGluayBzZXQgZGV2ICRsYXN0X2lmYWNlIHVwCiAgLSBkaGNsaWVudCAtdiAkbGFzdF9pZmFjZQogIC0gYXB0LWdldCB1cGRhdGUKICAtIGFwdC1nZXQgaW5zdGFsbCAteSBicmlkZ2UtdXRpbHMKICAtIGlmYWNlMT0kKGxzIC9zeXMvY2xhc3MvbmV0LyB8IGdyZXAgLUUgJ15lJyB8IHNvcnQgfCBoZWFkIC0xKQogIC0gaWZhY2UyPSQobHMgL3N5cy9jbGFzcy9uZXQvIHwgZ3JlcCAtRSAnXmUnIHwgc29ydCB8IGhlYWQgLTIgfCB0YWlsIC0xKQogIC0gYnJjdGwgYWRkYnIgYnIwCiAgLSBicmN0bCBhZGRpZiBicjAgJGlmYWNlMQogIC0gYnJjdGwgYWRkaWYgYnIwICRpZmFjZTIKICAtIGlwIGxpbmsgc2V0IGRldiAkaWZhY2UxIHVwCiAgLSBpcCBsaW5rIHNldCBkZXYgJGlmYWNlMiB1cAogIC0gaXAgbGluayBzZXQgZGV2IGJyMCB1cA=="
+              value: "{{ cloud_init_user_data_for_network_function }}"
     nics:
       - nic_network_info:
           virtual_ethernet_nic_network_info:
@@ -354,12 +354,32 @@
 
 - name: Set INGRESS and EGRESS NIC ext_ids
   ansible.builtin.set_fact:
-    first_vm_ingress_1_ext_id: "{{ (vm_details_loop.results[0].response.nics | selectattr('network_info.network_function_nic_type', 'equalto', 'INGRESS') | list | first).ext_id }}"
-    first_vm_ingress_2_ext_id: "{{ (vm_details_loop.results[0].response.nics | selectattr('network_info.network_function_nic_type', 'equalto', 'INGRESS') | list | last).ext_id }}"
-    first_vm_egress_1_ext_id: "{{ (vm_details_loop.results[0].response.nics | selectattr('network_info.network_function_nic_type', 'equalto', 'EGRESS') | list | first).ext_id }}"
-    second_vm_ingress_1_ext_id: "{{ (vm_details_loop.results[1].response.nics | selectattr('network_info.network_function_nic_type', 'equalto', 'INGRESS') | list | first).ext_id }}"
-    second_vm_ingress_2_ext_id: "{{ (vm_details_loop.results[1].response.nics | selectattr('network_info.network_function_nic_type', 'equalto', 'INGRESS') | list | last).ext_id }}"
-    second_vm_egress_1_ext_id: "{{ (vm_details_loop.results[1].response.nics | selectattr('network_info.network_function_nic_type', 'equalto', 'EGRESS') | list | first).ext_id }}"
+    # yamllint disable rule:line-length
+    first_vm_ingress_1_ext_id: >-
+      {{ (vm_details_loop.results[0].response.nics |
+      selectattr('network_info.network_function_nic_type', 'equalto', 'INGRESS') |
+      list | first).ext_id }}
+    first_vm_ingress_2_ext_id: >-
+      {{ (vm_details_loop.results[0].response.nics |
+      selectattr('network_info.network_function_nic_type', 'equalto', 'INGRESS') |
+      list | last).ext_id }}
+    first_vm_egress_1_ext_id: >-
+      {{ (vm_details_loop.results[0].response.nics |
+      selectattr('network_info.network_function_nic_type', 'equalto', 'EGRESS') |
+      list | first).ext_id }}
+    second_vm_ingress_1_ext_id: >-
+      {{ (vm_details_loop.results[1].response.nics |
+      selectattr('network_info.network_function_nic_type', 'equalto', 'INGRESS') |
+      list | first).ext_id }}
+    second_vm_ingress_2_ext_id: >-
+      {{ (vm_details_loop.results[1].response.nics |
+      selectattr('network_info.network_function_nic_type', 'equalto', 'INGRESS') |
+      list | last).ext_id }}
+    second_vm_egress_1_ext_id: >-
+      {{ (vm_details_loop.results[1].response.nics |
+      selectattr('network_info.network_function_nic_type', 'equalto', 'EGRESS') |
+      list | first).ext_id }}
+    # yamllint enable rule:line-length
 
 - name: Create first network function
   nutanix.ncp.ntnx_network_functions_v2:
