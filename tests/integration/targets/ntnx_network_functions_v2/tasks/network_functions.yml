@@ -21,9 +21,6 @@
   register: ubuntu_image_result
   ignore_errors: true
 
-- ansible.builtin.debug:
-    var: ubuntu_image_result
-
 - name: Set ubuntu image UUID fact
   ansible.builtin.set_fact:
     ubuntu_image_uuid: "{{ ubuntu_image_result.response[0].ext_id }}"
@@ -108,9 +105,6 @@
               should_assign_ip: true
   register: result
   ignore_errors: true
-
-- ansible.builtin.debug:
-    var: result
 
 - name: Create first VM for network function status
   ansible.builtin.assert:
@@ -210,9 +204,6 @@
   register: result
   ignore_errors: true
 
-- ansible.builtin.debug:
-    var: result
-
 - name: Create second VM for network function status
   ansible.builtin.assert:
     that:
@@ -276,10 +267,6 @@
     - "{{ vm_ext_id_1 }}"
     - "{{ vm_ext_id_2 }}"
 
-- name: Debug first and second VM details
-  ansible.builtin.debug:
-    var: vm_details_loop
-
 - name: Get first and second VM info and check if IP address is assigned Status
   ansible.builtin.assert:
     that:
@@ -328,9 +315,6 @@
   register: network_function_spec
   ignore_errors: true
 
-- ansible.builtin.debug:
-    var: network_function_spec
-
 - name: Generate spec for creating network function NICs status
   ansible.builtin.assert:
     that:
@@ -368,10 +352,6 @@
     fail_msg: "Failed to generate spec for creating network function NICs status"
     success_msg: "Spec for creating network function NICs status generated successfully"
 
-- name: Debug network function spec
-  ansible.builtin.debug:
-    var: network_function_spec
-
 - name: Set INGRESS and EGRESS NIC ext_ids
   ansible.builtin.set_fact:
     first_vm_ingress_1_ext_id: "{{ (vm_details_loop.results[0].response.nics | selectattr('network_info.network_function_nic_type', 'equalto', 'INGRESS') | list | first).ext_id }}"
@@ -404,9 +384,6 @@
       failure_threshold: 3
   register: network_function_result
   ignore_errors: true
-
-- ansible.builtin.debug:
-    var: network_function_result
 
 - name: Create first network function status
   ansible.builtin.assert:
@@ -463,9 +440,6 @@
   register: network_function_result
   ignore_errors: true
 
-- ansible.builtin.debug:
-    var: network_function_result
-
 - name: Create second network function status
   ansible.builtin.assert:
     that:
@@ -513,9 +487,6 @@
     - "{{ network_function_ext_id_1 }}"
     - "{{ network_function_ext_id_2 }}"
 
-- ansible.builtin.debug:
-    var: network_function_result
-
 - name: Fetch both network functions using ext_id and check data plane health and high availability state status
   ansible.builtin.assert:
     that:
@@ -547,9 +518,6 @@
   register: network_function_result
   ignore_errors: true
 
-- ansible.builtin.debug:
-    var: network_function_result
-
 - name: Create network function with missing name status
   ansible.builtin.assert:
     that:
@@ -571,9 +539,6 @@
         is_enabled: false
   register: network_function_result
   ignore_errors: true
-
-- ansible.builtin.debug:
-    var: network_function_result
 
 - name: Create network function with wrong vm and nic external ID status
   ansible.builtin.assert:
@@ -614,9 +579,6 @@
   check_mode: true
   register: network_function_spec
   ignore_errors: true
-
-- ansible.builtin.debug:
-    var: network_function_spec
 
 - name: Generate spec for updating network function using check mode status
   ansible.builtin.assert:
@@ -671,9 +633,6 @@
   register: network_function_result
   ignore_errors: true
 
-- ansible.builtin.debug:
-    var: network_function_result
-
 - name: Update network function status
   ansible.builtin.assert:
     that:
@@ -721,9 +680,6 @@
   register: network_function_result
   ignore_errors: true
 
-- ansible.builtin.debug:
-    var: network_function_result
-
 - name: Test idempotency by updating network function with same spec status
   ansible.builtin.assert:
     that:
@@ -749,9 +705,6 @@
   register: network_function_result
   ignore_errors: true
 
-- ansible.builtin.debug:
-    var: network_function_result
-
 - name: Update network function with wrong vm and nic external IDs status
   ansible.builtin.assert:
     that:
@@ -769,9 +722,6 @@
   register: network_function_result
   ignore_errors: true
 
-- ansible.builtin.debug:
-    var: network_function_result
-
 - name: Fetch network function with wrong external ID status
   ansible.builtin.assert:
     that:
@@ -785,9 +735,6 @@
   nutanix.ncp.ntnx_network_functions_info_v2:
   register: network_functions_result
   ignore_errors: true
-
-- ansible.builtin.debug:
-    var: network_functions_result
 
 - name: List all network functions status
   ansible.builtin.assert:
@@ -805,9 +752,6 @@
     filter: "name eq '{{ network_function_name }}_1_updated'"
   register: network_function_result
   ignore_errors: true
-
-- ansible.builtin.debug:
-    var: network_function_result
 
 - name: List all network functions with filter status
   ansible.builtin.assert:
@@ -839,9 +783,6 @@
   register: network_function_result
   ignore_errors: true
 
-- ansible.builtin.debug:
-    var: network_function_result
-
 - name: List all network functions with limit status
   ansible.builtin.assert:
     that:
@@ -860,9 +801,6 @@
   register: network_function_result
   ignore_errors: true
 
-- ansible.builtin.debug:
-    var: network_function_result
-
 - name: Delete network function with check mode status
   ansible.builtin.assert:
     that:
@@ -879,9 +817,6 @@
     ext_id: "{{ network_function_ext_id_1 }}"
   register: network_function_result
   ignore_errors: true
-
-- ansible.builtin.debug:
-    var: network_function_result
 
 - name: Delete first network function status
   ansible.builtin.assert:
@@ -900,9 +835,6 @@
     ext_id: "{{ network_function_ext_id_2 }}"
   register: network_function_result
   ignore_errors: true
-
-- ansible.builtin.debug:
-    var: network_function_result
 
 - name: Delete second network function status
   ansible.builtin.assert:
@@ -942,9 +874,6 @@
   register: vm_result
   ignore_errors: true
 
-- ansible.builtin.debug:
-    var: vm_result
-
 - name: Delete first VM status
   ansible.builtin.assert:
     that:
@@ -963,9 +892,6 @@
   register: vm_result
   ignore_errors: true
 
-- ansible.builtin.debug:
-    var: vm_result
-
 - name: Delete second VM status
   ansible.builtin.assert:
     that:
@@ -983,9 +909,6 @@
     ext_id: "{{ subnet_ext_id }}"
   register: subnet_result
   ignore_errors: true
-
-- ansible.builtin.debug:
-    var: subnet_result
 
 - name: Delete subnet status
   ansible.builtin.assert:

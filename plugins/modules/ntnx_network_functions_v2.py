@@ -525,8 +525,6 @@ def update_network_function(module, result, network_functions):
         return
 
     # check for idempotency
-    result["current_spec"] = strip_internal_attributes(current_spec.to_dict())
-    result["update_spec"] = strip_internal_attributes(update_spec.to_dict())
     if check_network_function_idempotency(current_spec, update_spec):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
