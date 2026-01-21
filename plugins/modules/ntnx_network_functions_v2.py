@@ -426,11 +426,17 @@ def get_module_spec():
             options=nic_pair_spec,
             obj=net_sdk.NicPair,
         ),
-        high_availability_mode=dict(type="str", choices=["ACTIVE_PASSIVE"]),
-        failure_handling=dict(
-            type="str", choices=["FAIL_OPEN", "FAIL_CLOSE", "NO_ACTION"]
+        high_availability_mode=dict(
+            type="str", choices=["ACTIVE_PASSIVE"], obj=net_sdk.HighAvailabilityMode
         ),
-        traffic_forwarding_mode=dict(type="str", choices=["VTAP", "INLINE"]),
+        failure_handling=dict(
+            type="str",
+            choices=["FAIL_OPEN", "FAIL_CLOSE", "NO_ACTION"],
+            obj=net_sdk.FailureHandling,
+        ),
+        traffic_forwarding_mode=dict(
+            type="str", choices=["VTAP", "INLINE"], obj=net_sdk.TrafficForwardingMode
+        ),
         data_plane_health_check_config=dict(
             type="dict",
             options=data_plane_health_check_config_spec,
