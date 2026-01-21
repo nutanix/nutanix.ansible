@@ -393,6 +393,28 @@
     fail_msg: "Updating certificate auth provider with wrong directory service ext_id did not fail as expected"
     success_msg: "Updating certificate auth provider with wrong directory service ext_id failed as expected"
 
+- name: Update certificate auth provider with non-CAC name (should fail)
+  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+    ext_id: "{{ cert_auth_provider_ext_id }}"
+    name: "InvalidName"
+  register: result
+  ignore_errors: true
+
+- name: Debug updating certificate auth provider with non-CAC name result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify updating certificate auth provider with non-CAC name
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.response is defined
+      - result.msg == "Api Exception raised while updating certificate auth provider"
+      - result.response.data.error | length > 0
+    fail_msg: "Updating certificate auth provider with non-CAC name did not fail as expected"
+    success_msg: "Updating certificate auth provider with non-CAC name failed as expected"
+
 ##############################################################################
 # Fetch - Success
 ##############################################################################
