@@ -145,3 +145,17 @@ def get_identity_provider_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_iam_py_client.SAMLIdentityProvidersApi(api_client=api_client)
+
+
+def get_certificate_auth_provider_api_instance(module):
+    """
+    This method will return CertAuthProvidersApi instance.
+    Args:
+        module (object): Ansible module object
+    Returns:
+        api_instance (object): Certificate auth provider api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_iam_py_client.CertificateAuthenticationProvidersApi(
+        api_client=api_client
+    )
