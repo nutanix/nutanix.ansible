@@ -1,0 +1,581 @@
+---
+# Variables required before running this playbook:
+# - ca_cert_chain
+# - active_directory
+# - white_listed_groups
+
+- name: Start ntnx_certificate_auth_providers_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_certificate_auth_providers_v2 tests
+
+- name: Generate random category key & value
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set variables
+  ansible.builtin.set_fact:
+    directory_service: "{{ random_name }}ansible-ag"
+
+##############################################################################
+# Create ACTIVE_DIRECTORY service
+##############################################################################
+
+- name: Create ACTIVE_DIRECTORY service
+  nutanix.ncp.ntnx_directory_services_v2:
+    state: present
+    name: "{{ directory_service }}"
+    url: "{{ active_directory.url }}"
+    directory_type: ACTIVE_DIRECTORY
+    domain_name: "{{ active_directory.domain_name }}"
+    service_account:
+      username: "{{ active_directory.username }}"
+      password: "{{ active_directory.password }}"
+    white_listed_groups:
+      - "{{ white_listed_groups[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of ACTIVE_DIRECTORY service creation
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == False
+      - result.response.name == "{{ directory_service }}"
+      - result.response.directory_type == "ACTIVE_DIRECTORY"
+      - result.response.url == "{{ active_directory.url }}"
+      - result.response.domain_name == "{{ active_directory.domain_name }}"
+      - result.response.service_account.username == "{{ active_directory.username }}"
+      - result.response.service_account.password is defined
+      - result.response.ext_id is defined
+      - result.ext_id is defined
+      - result.response.ext_id == result.ext_id
+    fail_msg: "Unable to create ACTIVE_DIRECTORY service "
+    success_msg: "ACTIVE_DIRECTORY service created successfully  "
+
+- name: Set directory service external ID
+  ansible.builtin.set_fact:
+    directory_service_ext_id: "{{ result.response.ext_id }}"
+
+##############################################################################
+# Check Mode - Generate spec with all attributes
+##############################################################################
+
+- name: Generate spec for creating certificate auth provider using check mode with all attributes
+  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+    name: "CAC"
+    client_ca_chain: "{{ ca_cert_chain }}"
+    ca_cert_file_name: "test_ca_chain.pem"
+    is_cert_auth_enabled: true
+    is_cac_enabled: true
+    dir_svc_ext_id: "00000000-0000-0000-0000-000000000000"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Debug check mode spec generation result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify generating create spec with check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "CAC"
+      - result.response.is_cac_enabled == true
+      - result.response.is_cert_auth_enabled == true
+      - result.response.ca_cert_file_name == "test_ca_chain.pem"
+      - result.response.dir_svc_ext_id == "00000000-0000-0000-0000-000000000000"
+    fail_msg: "Creating spec with check mode failed"
+    success_msg: "Creating spec with check mode passed with expected values"
+
+##############################################################################
+# Create - Success
+##############################################################################
+
+- name: Create certificate authentication provider with CAC enabled
+  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+    name: "CAC"
+    client_ca_chain: "{{ ca_cert_chain }}"
+    ca_cert_file_name: "ca_cert_chain.pem"
+    is_cert_auth_enabled: true
+    is_cac_enabled: true
+    dir_svc_ext_id: "{{ directory_service_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug certificate auth provider creation result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify creating certificate auth provider with CAC enabled
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.response is defined
+      - result.response.name == "CAC"
+      - result.response.is_cac_enabled == true
+      - result.response.is_cert_auth_enabled == true
+      - result.response.ca_cert_file_name == "ca_cert_chain.pem"
+      - result.response.dir_svc_ext_id == "{{ directory_service_ext_id }}"
+    fail_msg: "Creating certificate auth provider with CAC enabled failed"
+    success_msg: "Creating certificate auth provider with CAC enabled passed"
+
+- name: Save certificate auth provider ext_id for update and delete
+  ansible.builtin.set_fact:
+    cert_auth_provider_ext_id: "{{ result.ext_id }}"
+
+##############################################################################
+# Negative Scenarios - Create
+##############################################################################
+
+- name: Create certificate auth provider with same name (should fail - max 1 allowed)
+  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+    name: "CAC"
+    client_ca_chain: "{{ ca_cert_chain }}"
+    ca_cert_file_name: "ca_cert_chain.pem"
+    is_cert_auth_enabled: true
+    is_cac_enabled: true
+    dir_svc_ext_id: "{{ directory_service_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug creating certificate auth provider with same name result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify creating certificate auth provider with same name failed
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while creating certificate auth provider"
+      - result.response is defined
+      - result.response.data.error | length > 0
+      - result.status == 409
+    fail_msg: "Creating certificate auth provider with same name did not fail as expected"
+    success_msg: "Creating certificate auth provider with same name failed as expected (max 1 entity allowed)"
+
+- name: Create certificate auth provider without name (should fail)
+  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+    client_ca_chain: "{{ ca_cert_chain }}"
+    ca_cert_file_name: "ca_cert_chain.pem"
+    is_cert_auth_enabled: true
+    is_cac_enabled: true
+    dir_svc_ext_id: "{{ directory_service_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug create without name result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify creating certificate auth provider without name failed
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - "'state is present but any of the following are missing: name, ext_id' in result.msg"
+    fail_msg: "Creating certificate auth provider without name did not fail as expected"
+    success_msg: "Creating certificate auth provider without name failed as expected"
+
+- name: Create certificate auth provider with non-CAC name (should fail)
+  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+    name: "InvalidName"
+    client_ca_chain: "{{ ca_cert_chain }}"
+    ca_cert_file_name: "ca_cert_chain.pem"
+    is_cert_auth_enabled: true
+    is_cac_enabled: true
+    dir_svc_ext_id: "{{ directory_service_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug creating certificate auth provider with non-CAC name result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify creating certificate auth provider with non-CAC name failed
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while creating certificate auth provider"
+      - result.response is defined
+      - result.response.data.error | length > 0
+      - result.status == 400
+    fail_msg: "Creating certificate auth provider with non-CAC name did not fail as expected"
+    success_msg: "Creating certificate auth provider with non-CAC name failed as expected"
+
+- name: Create certificate auth provider with invalid certificate (should fail - SDK validation)
+  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+    name: "CAC"
+    client_ca_chain: "invalid_certificate_data"
+    ca_cert_file_name: "ca_cert_chain.pem"
+    is_cert_auth_enabled: true
+    is_cac_enabled: true
+    dir_svc_ext_id: "{{ directory_service_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug creating certificate auth provider with invalid certificate result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify creating certificate auth provider with invalid certificate failed
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+    fail_msg: "Creating certificate auth provider with invalid certificate did not fail as expected"
+    success_msg: "Creating certificate auth provider with invalid certificate failed as expected (SDK validation)"
+
+##############################################################################
+# Update - Check Mode
+##############################################################################
+
+- name: Generate spec for updating certificate auth provider using check mode
+  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+    ext_id: "{{ cert_auth_provider_ext_id }}"
+    client_ca_chain: "{{ ca_cert_chain }}_updated"
+    ca_cert_file_name: "ca_cert_chain_updated.pem"
+    is_cert_auth_enabled: false
+    is_cac_enabled: false
+    dir_svc_ext_id: "11111111-1111-1111-1111-111111111111"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Debug generating update spec with check mode result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify generating update spec with check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.is_cert_auth_enabled == false
+      - result.response.is_cac_enabled == false
+      - result.response.ca_cert_file_name == "ca_cert_chain_updated.pem"
+      - result.response.dir_svc_ext_id == "11111111-1111-1111-1111-111111111111"
+    fail_msg: "Generating update spec with check mode failed"
+    success_msg: "Generating update spec with check mode passed with expected values"
+
+##############################################################################
+# Update - Success
+##############################################################################
+
+- name: Update certificate auth provider - disable CAC
+  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+    ext_id: "{{ cert_auth_provider_ext_id }}"
+    is_cac_enabled: false
+  register: result
+  ignore_errors: true
+
+- name: Debug update disable CAC result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify updating certificate auth provider - disable CAC
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.is_cac_enabled == false
+      - result.response.is_cert_auth_enabled == true
+      - result.response.ca_cert_file_name == "ca_cert_chain.pem"
+      - result.response.dir_svc_ext_id == "{{ directory_service_ext_id }}"
+    fail_msg: "Updating certificate auth provider - disable CAC failed"
+    success_msg: "Updating certificate auth provider - disable CAC passed with expected values"
+
+- name: Update certificate auth provider - enable CAC back
+  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+    ext_id: "{{ cert_auth_provider_ext_id }}"
+    is_cac_enabled: true
+  register: result
+  ignore_errors: true
+
+- name: Debug update enable CAC back result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify updating certificate auth provider - enable CAC back
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.is_cac_enabled == true
+      - result.response.is_cert_auth_enabled == true
+      - result.response.ca_cert_file_name == "ca_cert_chain.pem"
+      - result.response.dir_svc_ext_id == "{{ directory_service_ext_id }}"
+    fail_msg: "Updating certificate auth provider - enable CAC back failed"
+    success_msg: "Updating certificate auth provider - enable CAC back passed with expected values"
+
+##############################################################################
+# Idempotency Check
+##############################################################################
+
+- name: Update certificate auth provider with same values (idempotency check)
+  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+    ext_id: "{{ cert_auth_provider_ext_id }}"
+    is_cac_enabled: true
+  register: result
+  ignore_errors: true
+
+- name: Debug idempotency check result for updating certificate auth provider with same values
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify idempotency check for updating certificate auth provider with same values - no changes made
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.msg == "Nothing to change."
+      - result.ext_id == "{{ cert_auth_provider_ext_id }}"
+    fail_msg: "Idempotency check for updating certificate auth provider with same values failed"
+    success_msg: "Idempotency check for updating certificate auth provider with same values passed - no changes made"
+
+##############################################################################
+# Update - Negative Scenario
+##############################################################################
+
+- name: Update certificate auth provider with wrong ext_id (should fail)
+  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    is_cac_enabled: false
+  register: result
+  ignore_errors: true
+
+- name: Debug updating certificate auth provider with wrong ext_id result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify updating certificate auth provider with wrong ext_id failed as expected
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.response is defined
+      - result.msg == "Api Exception raised while fetching certificate auth provider info"
+      - result.response.data.error | length > 0
+      - result.status == 404
+    fail_msg: "Updating certificate auth provider with wrong ext_id did not fail as expected"
+    success_msg: "Updating certificate auth provider with wrong ext_id failed as expected"
+
+- name: Update certificate auth provider with wrong directory service ext_id (should fail)
+  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+    ext_id: "{{ cert_auth_provider_ext_id }}"
+    dir_svc_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Debug updating certificate auth provider with wrong directory service ext_id result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify updating certificate auth provider with wrong directory service ext_id failed as expected
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.response is defined
+      - result.msg == "Api Exception raised while updating certificate auth provider"
+      - result.response.data.error | length > 0
+    fail_msg: "Updating certificate auth provider with wrong directory service ext_id did not fail as expected"
+    success_msg: "Updating certificate auth provider with wrong directory service ext_id failed as expected"
+
+##############################################################################
+# Fetch - Success
+##############################################################################
+
+- name: Fetch certificate auth provider using ext_id
+  nutanix.ncp.ntnx_certificate_auth_providers_info_v2:
+    ext_id: "{{ cert_auth_provider_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug fetch certificate auth provider result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify certificate auth provider fetched successfully
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ cert_auth_provider_ext_id }}"
+      - result.response is defined
+      - result.response.ext_id == "{{ cert_auth_provider_ext_id }}"
+      - result.response.name == "CAC"
+      - result.response.is_cac_enabled == true
+      - result.response.is_cert_auth_enabled == true
+      - result.response.ca_cert_file_name == "ca_cert_chain.pem"
+      - result.response.dir_svc_ext_id == "{{ directory_service_ext_id }}"
+    fail_msg: "Fetch certificate auth provider using ext_id failed"
+    success_msg: "Fetch certificate auth provider using ext_id passed"
+
+##############################################################################
+# Fetch - Negative Scenario
+##############################################################################
+
+- name: Fetch certificate auth provider with wrong ext_id (should fail)
+  nutanix.ncp.ntnx_certificate_auth_providers_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Debug fetch with wrong ext_id result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify fetch certificate auth provider with wrong ext_id
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.response is defined
+      - result.msg == "Api Exception raised while fetching certificate auth provider info"
+      - result.response.data.error | length > 0
+      - result.status == 404
+    fail_msg: "Fetch certificate auth provider with wrong ext_id did not fail as expected"
+    success_msg: "Fetch certificate auth provider with wrong ext_id failed as expected"
+
+##############################################################################
+# List All
+##############################################################################
+
+- name: List all certificate auth providers
+  nutanix.ncp.ntnx_certificate_auth_providers_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Debug list all certificate auth providers result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify list all certificate auth providers
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length >= 1
+      - result.response[0].name == "CAC"
+      - result.response[0].is_cac_enabled == true
+      - result.response[0].is_cert_auth_enabled == true
+      - result.response[0].ca_cert_file_name == "ca_cert_chain.pem"
+      - result.response[0].dir_svc_ext_id == "{{ directory_service_ext_id }}"
+    fail_msg: "List all certificate auth providers failed"
+    success_msg: "List all certificate auth providers passed"
+
+##############################################################################
+# Delete - Check Mode
+##############################################################################
+
+- name: Delete certificate auth provider using check mode
+  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+    state: absent
+    ext_id: "{{ cert_auth_provider_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Debug delete certificate auth provider using check mode result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify delete certificate auth provider using check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ cert_auth_provider_ext_id }}"
+      - result.msg == "Certificate auth provider with ext_id:{{ cert_auth_provider_ext_id }} will be deleted."
+    fail_msg: "Delete certificate auth provider using check mode failed"
+    success_msg: "Delete certificate auth provider using check mode passed"
+
+##############################################################################
+# Delete - Success
+##############################################################################
+
+- name: Delete the certificate auth provider
+  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+    state: absent
+    ext_id: "{{ cert_auth_provider_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug delete certificate auth provider result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify certificate auth provider is deleted successfully
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == "{{ cert_auth_provider_ext_id }}"
+      - "'deleted successfully' in result.msg"
+    fail_msg: "Deleting certificate auth provider failed"
+    success_msg: "Deleting certificate auth provider passed with expected values"
+
+##############################################################################
+# Delete - Negative Scenario
+##############################################################################
+
+- name: Delete certificate auth provider with wrong ext_id (should fail)
+  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+    state: absent
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Debug deleting certificate auth provider with wrong ext_id result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify deleting certificate auth provider with wrong ext_id
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.response is defined
+      - result.msg == "Api Exception raised while fetching certificate auth provider info"
+      - result.response.data.error | length > 0
+      - result.status == 404
+    fail_msg: "Deleting certificate auth provider with wrong ext_id did not fail as expected"
+    success_msg: "Deleting certificate auth provider with wrong ext_id failed as expected"
+
+##############################################################################
+# Delete ACTIVE_DIRECTORY service
+##############################################################################
+
+- name: Delete directory service
+  nutanix.ncp.ntnx_directory_services_v2:
+    state: absent
+    ext_id: "{{ directory_service_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug delete directory service result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify directory service is deleted successfully
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == "{{ directory_service_ext_id }}"
+      - "'deleted successfully' in result.msg"
+    fail_msg: "Deleting directory service failed"
+    success_msg: "Deleting directory service passed with expected values"

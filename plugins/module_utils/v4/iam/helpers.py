@@ -8,6 +8,58 @@ __metaclass__ = type
 from ..utils import raise_api_exception  # noqa: E402
 
 
+def snake_to_camel(snake_str, special_cases=None):
+    """
+    Convert snake_case string to camelCase.
+
+    Args:
+        snake_str: The snake_case string to convert
+        special_cases: Optional dict mapping snake_case keys to their camelCase equivalents
+                      for cases where standard conversion doesn't apply
+                      (e.g., {'dir_svc_ext_id': 'dirSvcExtID'} for uppercase acronyms)
+
+    Returns:
+        str: The camelCase version of the input string
+    """
+    if special_cases and snake_str in special_cases:
+        return special_cases[snake_str]
+
+    # Standard snake_case to camelCase conversion
+    components = snake_str.split("_")
+    return components[0] + "".join(x.title() for x in components[1:])
+
+
+def get_api_params_from_spec(
+    spec, module_spec, exclude_params=None, special_cases=None
+):
+    """
+    Get parameters from a spec object converted to camelCase for API calls.
+    Dynamically extracts all parameters from the provided module_spec.
+    Only includes parameters that are not None.
+
+    Args:
+        spec: SDK spec object with snake_case attributes
+        module_spec: Dictionary of module argument spec (from get_module_spec())
+        exclude_params: List of parameter names to exclude (e.g., ['ext_id'])
+        special_cases: Dict mapping snake_case keys to camelCase for special conversions
+
+    Returns:
+        dict: Dictionary with camelCase keys and their values
+    """
+    if exclude_params is None:
+        exclude_params = []
+
+    api_params = {}
+    for param in module_spec.keys():
+        if param in exclude_params:
+            continue
+        value = getattr(spec, param, None)
+        if value is not None:
+            camel_key = snake_to_camel(param, special_cases)
+            api_params[camel_key] = value
+    return api_params
+
+
 def get_authorization_policy(module, api_instance, ext_id):
     """
     This method will return authorization policy info using ext_id.
@@ -166,4 +218,24 @@ def get_requested_key(module, api_instance, ext_id, user_ext_id):
             module=module,
             exception=e,
             msg="Api Exception raised while fetching requested key info",
+        )
+
+
+def get_certificate_auth_provider(module, api_instance, ext_id):
+    """
+    This method will return certificate auth provider info using ext_id.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): CertAuthProvidersApi instance from ntnx_iam_py_client sdk
+        ext_id (str): External id of certificate auth provider
+    Returns:
+        cert_auth_provider_info (obj): Certificate auth provider info object
+    """
+    try:
+        return api_instance.get_cert_auth_provider_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching certificate auth provider info",
         )
