@@ -31,7 +31,7 @@
     name: "{{ subnet_name }}"
     subnet_type: VLAN
     cluster_reference: "{{ cluster.uuid }}"
-    network_id: "{{ vlan_id_for_network_function }}"
+    network_id: "{{ network_function.vlan_id }}"
     is_advanced_networking: true
   register: result
   ignore_errors: true
@@ -47,7 +47,7 @@
       - result.response.name == "{{ subnet_name }}"
       - result.response.subnet_type == "VLAN"
       - result.response.virtual_switch_reference == "{{ virtual_switch.uuid }}"
-      - result.response.network_id == {{ vlan_id_for_network_function }}
+      - result.response.network_id == {{ network_function.vlan_id }}
       - result.response.is_advanced_networking == true
     fail_msg: "Unable to create VLAN subnet without IPAM"
     success_msg: "VLAN subnet without IPAM created successfully"
@@ -82,7 +82,7 @@
           datasource_type: CONFIG_DRIVE_V2
           cloud_init_script:
             user_data:
-              value: "{{ cloud_init_user_data_for_network_function }}"
+              value: "{{ network_function.cloud_init_user_data }}"
     nics:
       - nic_network_info:
           virtual_ethernet_nic_network_info:
@@ -180,7 +180,7 @@
           datasource_type: CONFIG_DRIVE_V2
           cloud_init_script:
             user_data:
-              value: "{{ cloud_init_user_data_for_network_function }}"
+              value: "{{ network_function.cloud_init_user_data }}"
     nics:
       - nic_network_info:
           virtual_ethernet_nic_network_info:
