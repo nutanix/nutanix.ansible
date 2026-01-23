@@ -39,6 +39,7 @@ options:
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
+  - nutanix.ncp.ntnx_logger
 author:
   - Abhinav Bansal (@abhinavbansal29)
 """
@@ -264,6 +265,11 @@ changed:
     type: bool
     returned: always
     sample: false
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while associating categories"
 error:
     description: This field typically holds information about if the task have errors that occurred during the task execution
     type: str

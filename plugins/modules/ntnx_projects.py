@@ -34,27 +34,6 @@ options:
         description: A description for project.
         required: false
         type: str
-    resource_limits:
-        description: resource limit quotas for project.
-        required: false
-        type: list
-        elements: dict
-        suboptions:
-            resource_type:
-                description: Type of resource limit
-                required: true
-                type: str
-                choices:
-                    - VCPUS
-                    - STORAGE
-                    - MEMORY
-            limit:
-                description:
-                    - limit value for given C(resource_type)
-                    - for C(resource_type) as VCPUS, unit is counts
-                    - for C(resource_type) as MEMORY or STORAGE, unit is bytes
-                required: true
-                type: int
     default_subnet:
         description: default subnet reference
         type: dict
@@ -226,6 +205,7 @@ options:
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations
+      - nutanix.ncp.ntnx_logger
 author:
  - Prem Karat (@premkarat)
  - Pradeepsingh Bhati (@bhati-pradeep)
@@ -250,9 +230,6 @@ EXAMPLES = r"""
       - "{{ users[1] }}"
     external_user_groups:
       - "{{ user_groups[0] }}"
-    resource_limits:
-      - resource_type: STORAGE
-        limit: 2046
   register: result
 
 - name: Delete created project
@@ -378,13 +355,6 @@ def get_module_spec():
         group_name=dict(type="str", required=True),
     )
 
-    resource_limit = dict(
-        resource_type=dict(
-            type="str", required=True, choices=["VCPUS", "MEMORY", "STORAGE"]
-        ),
-        limit=dict(type="int", required=True),
-    )
-
     user = dict(
         uuid=dict(type="str"),
         principal_name=dict(type="str"),
@@ -434,9 +404,6 @@ def get_module_spec():
         name=dict(type="str", required=False),
         project_uuid=dict(type="str", required=False),
         desc=dict(type="str", required=False),
-        resource_limits=dict(
-            type="list", elements="dict", options=resource_limit, required=False
-        ),
         default_subnet=dict(
             type="dict",
             options=entity_by_spec,
