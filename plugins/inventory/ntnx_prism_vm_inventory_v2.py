@@ -632,7 +632,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             # Create group based on cluster
             if cluster_ext_id:
                 group_name = "cluster_{0}".format(cluster_ext_id.replace("-", "_"))
-                self.inventory.add_group(group_name)
+                group_name = self.inventory.add_group(group_name)
                 self.inventory.add_child("all", group_name)
             else:
                 group_name = "all"
