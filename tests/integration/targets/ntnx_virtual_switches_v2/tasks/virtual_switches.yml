@@ -748,7 +748,7 @@
       - result is defined
       - result.changed == false
       - result.failed == true
-      - "'state is absent but the following keys must be present: ext_id' in result.msg"
+      - "'state is absent but all of the following are missing: ext_id' in result.msg"
     success_msg: "Delete virtual switch with missing external ID failed as expected"
     fail_msg: "Delete virtual switch with missing external ID did not fail as expected"
 

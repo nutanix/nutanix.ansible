@@ -321,9 +321,9 @@ from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
 from ..module_utils.v4.network.api_client import (  # noqa: E402
-    get_virtual_switches_api_instance,
     get_bridges_api_instance,
     get_etag,
+    get_virtual_switches_api_instance,
 )
 from ..module_utils.v4.network.helpers import get_virtual_switch  # noqa: E402
 from ..module_utils.v4.prism.tasks import (  # noqa: E402
