@@ -140,3 +140,27 @@ def get_routes_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_networking_py_client.RoutesApi(api_client=api_client)
+
+
+def get_virtual_switches_api_instance(module):
+    """
+    This method will return VirtualSwitchesApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): virtual switches api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.VirtualSwitchesApi(api_client=api_client)
+
+
+def get_bridges_api_instance(module):
+    """
+    This method will return BridgesApi instance for migrate operations.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): bridges api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.BridgesApi(api_client=api_client)

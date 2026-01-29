@@ -1,0 +1,757 @@
+---
+- name: Start Virtual Switches tests
+  ansible.builtin.debug:
+    msg: Start Virtual Switches tests
+
+- name: Generate random names
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    suffix_name: "ansible_vs"
+    todelete: []
+
+- name: Set virtual switch names
+  ansible.builtin.set_fact:
+    vs_name_min: "{{ random_name }}_{{ suffix_name }}_min"
+    vs_name_all: "{{ random_name }}_{{ suffix_name }}_all"
+    vs_name_updated: "{{ random_name }}_{{ suffix_name }}_updated"
+
+########################################################################################
+# Fetch cluster and host information for virtual switch creation
+########################################################################################
+
+- name: Fetch hosts in cluster
+  nutanix.ncp.ntnx_hosts_info_v2:
+    cluster_ext_id: "{{ cluster.uuid }}"
+  register: hosts_info
+  ignore_errors: true
+
+- name: Debug hosts_info
+  ansible.builtin.debug:
+    var: hosts_info
+
+- name: Fetch hosts in cluster status
+  ansible.builtin.assert:
+    that:
+      - hosts_info is defined
+      - hosts_info.failed == false
+      - hosts_info.response is defined
+      - hosts_info.response | length > 0
+    success_msg: "Hosts info fetched successfully"
+    fail_msg: "Hosts info fetch failed"
+
+- name: Set host ext_id
+  ansible.builtin.set_fact:
+    host_ext_id: "{{ hosts_info.response[0].ext_id }}"
+
+########################################################################################
+# Create Virtual Switch Tests
+########################################################################################
+
+- name: Generate spec for creating virtual switch using check mode with all attributes
+  nutanix.ncp.ntnx_virtual_switches_v2:
+    name: "check_mode_vs_full"
+    description: "Virtual switch created in check mode with all attributes"
+    bond_mode: "NONE"
+    mtu: 9000
+    is_default: false
+    is_quick_mode: false
+    clusters:
+      - ext_id: "{{ cluster.uuid }}"
+        hosts:
+          - ext_id: "{{ host_ext_id }}"
+            host_nics: ["eth0", "eth1"]
+            ip_address:
+              ip:
+                value: "192.168.1.100"
+                prefix_length: 24
+              prefix_length: 24
+            active_uplink: "eth0"
+        gateway_ip_address:
+          value: "192.168.1.1"
+          prefix_length: 24
+        vlan_identifier: 100
+    igmp_spec:
+      is_snooping_enabled: true
+      snooping_timeout: 600
+      querier_spec:
+        is_querier_enabled: true
+        vlan_id_list:
+          - 100
+          - 200
+    metadata:
+      owner_reference_id: "00000000-0000-0000-0000-000000000001"
+      owner_user_name: "admin"
+      project_reference_id: "00000000-0000-0000-0000-000000000002"
+      project_name: "test_project"
+      category_ids:
+        [
+          "00000000-0000-0000-0000-000000000003",
+          "00000000-0000-0000-0000-000000000004",
+        ]
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Debug check mode result
+  ansible.builtin.debug:
+    var: result
+
+- name: Generate spec for creating virtual switch using check mode with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "check_mode_vs_full"
+      - result.response.description == "Virtual switch created in check mode with all attributes"
+      - result.response.bond_mode == "NONE"
+      - result.response.mtu == 9000
+      - result.response.is_default == false
+      - result.response.clusters | length == 1
+      - result.response.clusters[0].ext_id == cluster.uuid
+      - result.response.clusters[0].hosts | length == 1
+      - result.response.clusters[0].hosts[0].ext_id == host_ext_id
+      - result.response.clusters[0].hosts[0].active_uplink == "eth0"
+      - result.response.clusters[0].hosts[0].host_nics | length == 2
+      - result.response.clusters[0].hosts[0].host_nics[0] == "eth0"
+      - result.response.clusters[0].hosts[0].host_nics[1] == "eth1"
+      - result.response.clusters[0].gateway_ip_address.value == "192.168.1.1"
+      - result.response.clusters[0].vlan_identifier == 100
+      - result.response.igmp_spec.is_snooping_enabled == true
+      - result.response.igmp_spec.snooping_timeout == 600
+      - result.response.igmp_spec.querier_spec.is_querier_enabled == true
+      - result.response.igmp_spec.querier_spec.vlan_id_list | length == 2
+      - result.response.metadata.category_ids | length == 2
+      - result.response.metadata.category_ids[0] == "00000000-0000-0000-0000-000000000003"
+      - result.response.metadata.category_ids[1] == "00000000-0000-0000-0000-000000000004"
+      - result.response.metadata.owner_reference_id == "00000000-0000-0000-0000-000000000001"
+      - result.response.metadata.owner_user_name == "admin"
+      - result.response.metadata.project_reference_id == "00000000-0000-0000-0000-000000000002"
+      - result.response.metadata.project_name == "test_project"
+    success_msg: "Spec for creating virtual switch using check mode with all attributes is generated successfully"
+    fail_msg: "Spec for creating virtual switch using check mode with all attributes is not generated successfully"
+
+- name: Create virtual switch with minimum attributes
+  nutanix.ncp.ntnx_virtual_switches_v2:
+    name: "{{ vs_name_min }}"
+    bond_mode: "NONE"
+    clusters:
+      - ext_id: "{{ cluster.uuid }}"
+        hosts:
+          - ext_id: "{{ host_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug create minimum result
+  ansible.builtin.debug:
+    var: result
+
+- name: Create virtual switch with minimum attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.name == "{{ vs_name_min }}"
+      - result.response.bond_mode == "NONE"
+    success_msg: "Virtual switch with minimum attributes created successfully"
+    fail_msg: "Virtual switch with minimum attributes creation failed"
+
+- name: Add virtual switch to todelete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+- name: Create virtual switch with all attributes
+  nutanix.ncp.ntnx_virtual_switches_v2:
+    name: "{{ vs_name_all }}"
+    description: "Virtual switch created by Ansible integration tests with all attributes"
+    bond_mode: "NONE"
+    mtu: 1500
+    is_default: false
+    clusters:
+      - ext_id: "{{ cluster.uuid }}"
+        hosts:
+          - ext_id: "{{ host_ext_id }}"
+            active_uplink: ""
+        vlan_identifier: 0
+    igmp_spec:
+      is_snooping_enabled: false
+      snooping_timeout: 300
+  register: result
+  ignore_errors: true
+
+- name: Debug create all attributes result
+  ansible.builtin.debug:
+    var: result
+
+- name: Create virtual switch with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.name == "{{ vs_name_all }}"
+      - result.response.description == "Virtual switch created by Ansible integration tests with all attributes"
+      - result.response.bond_mode == "NONE"
+      - result.response.mtu == 1500
+      - result.response.is_default == false
+      - result.response.clusters | length == 1
+      - result.response.clusters[0].ext_id == cluster.uuid
+      - result.response.clusters[0].hosts | length == 1
+      - result.response.clusters[0].hosts[0].ext_id == host_ext_id
+      - result.response.clusters[0].vlan_identifier == 0
+      - result.response.igmp_spec.is_snooping_enabled == false
+      - result.response.igmp_spec.snooping_timeout == 300
+    success_msg: "Virtual switch with all attributes created successfully"
+    fail_msg: "Virtual switch with all attributes creation failed"
+
+- name: Add virtual switch to todelete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+- name: Create virtual switch with missing name
+  nutanix.ncp.ntnx_virtual_switches_v2:
+    bond_mode: "NONE"
+    clusters:
+      - ext_id: "{{ cluster.uuid }}"
+        hosts:
+          - ext_id: "{{ host_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug missing name result
+  ansible.builtin.debug:
+    var: result
+
+- name: Create virtual switch with missing name status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is present but all of the following are missing: name' in result.msg"
+    success_msg: "Create virtual switch with missing name failed as expected"
+    fail_msg: "Create virtual switch with missing name did not fail as expected"
+
+- name: Create virtual switch with missing bond_mode
+  nutanix.ncp.ntnx_virtual_switches_v2:
+    name: "test_vs_missing_bond"
+    clusters:
+      - ext_id: "{{ cluster.uuid }}"
+        hosts:
+          - ext_id: "{{ host_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug missing bond_mode result
+  ansible.builtin.debug:
+    var: result
+
+- name: Create virtual switch with missing bond_mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'bond_mode is required for create and update operations' in result.msg"
+    success_msg: "Create virtual switch with missing bond_mode failed as expected"
+    fail_msg: "Create virtual switch with missing bond_mode did not fail as expected"
+
+- name: Create virtual switch with missing clusters
+  nutanix.ncp.ntnx_virtual_switches_v2:
+    name: "test_vs_missing_clusters"
+    bond_mode: "NONE"
+  register: result
+  ignore_errors: true
+
+- name: Debug missing clusters result
+  ansible.builtin.debug:
+    var: result
+
+- name: Create virtual switch with missing clusters status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'clusters is required for create and update operations' in result.msg"
+    success_msg: "Create virtual switch with missing clusters failed as expected"
+    fail_msg: "Create virtual switch with missing clusters did not fail as expected"
+
+########################################################################################
+# Update Virtual Switch Tests
+########################################################################################
+
+- name: Generate spec for updating virtual switch using check mode with all attributes
+  nutanix.ncp.ntnx_virtual_switches_v2:
+    ext_id: "{{ todelete[1] }}"
+    name: "{{ vs_name_updated }}"
+    description: "Updated description for virtual switch with all attributes"
+    bond_mode: "NONE"
+    mtu: 1500
+    is_default: false
+    is_quick_mode: false
+    clusters:
+      - ext_id: "{{ cluster.uuid }}"
+        hosts:
+          - ext_id: "{{ host_ext_id }}"
+            host_nics: ["eth0", "eth1"]
+            ip_address:
+              ip:
+                value: "10.0.0.100"
+                prefix_length: 24
+              prefix_length: 24
+            active_uplink: ""
+        gateway_ip_address:
+          value: "10.0.0.1"
+          prefix_length: 24
+        vlan_identifier: 200
+    igmp_spec:
+      is_snooping_enabled: true
+      snooping_timeout: 400
+      querier_spec:
+        is_querier_enabled: false
+        vlan_id_list: []
+    metadata:
+      owner_reference_id: "11111111-0000-0000-0000-000000000001"
+      owner_user_name: "admin"
+      project_reference_id: "22222222-0000-0000-0000-000000000002"
+      project_name: "test_project"
+      category_ids:
+        [
+          "33333333-0000-0000-0000-000000000003",
+          "44444444-0000-0000-0000-000000000004",
+        ]
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Debug update check mode result
+  ansible.builtin.debug:
+    var: result
+
+- name: Generate spec for updating virtual switch using check mode with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == vs_name_updated
+      - result.response.description == "Updated description for virtual switch with all attributes"
+      - result.response.bond_mode == "NONE"
+      - result.response.mtu == 1500
+      - result.response.is_default == false
+      - result.response.clusters | length == 1
+      - result.response.clusters[0].ext_id == cluster.uuid
+      - result.response.clusters[0].hosts | length == 1
+      - result.response.clusters[0].hosts[0].ext_id == host_ext_id
+      - result.response.clusters[0].hosts[0].host_nics | length == 2
+      - result.response.clusters[0].hosts[0].host_nics[0] == "eth0"
+      - result.response.clusters[0].hosts[0].host_nics[1] == "eth1"
+      - result.response.clusters[0].gateway_ip_address.value == "10.0.0.1"
+      - result.response.clusters[0].vlan_identifier == 200
+      - result.response.igmp_spec.is_snooping_enabled == true
+      - result.response.igmp_spec.snooping_timeout == 400
+      - result.response.metadata.owner_reference_id == "11111111-0000-0000-0000-000000000001"
+      - result.response.metadata.owner_user_name == "admin"
+      - result.response.metadata.project_reference_id == "22222222-0000-0000-0000-000000000002"
+      - result.response.metadata.project_name == "test_project"
+      - result.response.metadata.category_ids | length == 2
+      - result.response.metadata.category_ids[0] == "33333333-0000-0000-0000-000000000003"
+      - result.response.metadata.category_ids[1] == "44444444-0000-0000-0000-000000000004"
+    success_msg: "Spec for updating virtual switch using check mode with all attributes is generated successfully"
+    fail_msg: "Spec for updating virtual switch using check mode with all attributes is not generated successfully"
+
+- name: Update virtual switch with all attributes
+  nutanix.ncp.ntnx_virtual_switches_v2:
+    ext_id: "{{ todelete[1] }}"
+    name: "{{ vs_name_updated }}"
+    description: "Updated description for virtual switch with all attributes"
+    bond_mode: "NONE"
+    mtu: 1500
+    is_default: false
+    clusters:
+      - ext_id: "{{ cluster.uuid }}"
+        hosts:
+          - ext_id: "{{ host_ext_id }}"
+        vlan_identifier: 0
+    igmp_spec:
+      is_snooping_enabled: true
+      snooping_timeout: 300
+  register: result
+  ignore_errors: true
+
+- name: Debug update all attributes result
+  ansible.builtin.debug:
+    var: result
+
+- name: Update virtual switch with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "{{ vs_name_updated }}"
+      - result.response.description == "Updated description for virtual switch with all attributes"
+      - result.response.bond_mode == "NONE"
+      - result.response.mtu == 1500
+      - result.response.is_default == false
+      - result.response.clusters | length == 1
+      - result.response.clusters[0].ext_id == cluster.uuid
+      - result.response.clusters[0].hosts | length == 1
+      - result.response.clusters[0].vlan_identifier == 0
+      - result.response.igmp_spec.is_snooping_enabled == true
+      - result.response.igmp_spec.snooping_timeout == 300
+    success_msg: "Update virtual switch with all attributes passed"
+    fail_msg: "Update virtual switch with all attributes failed"
+  when: result.failed == false
+
+- name: Update virtual switch with same values (idempotency test)
+  nutanix.ncp.ntnx_virtual_switches_v2:
+    ext_id: "{{ todelete[1] }}"
+    name: "{{ vs_name_updated }}"
+    description: "Updated description for virtual switch with all attributes"
+    bond_mode: "NONE"
+    mtu: 1500
+    is_default: false
+    clusters:
+      - ext_id: "{{ cluster.uuid }}"
+        hosts:
+          - ext_id: "{{ host_ext_id }}"
+        vlan_identifier: 0
+    igmp_spec:
+      is_snooping_enabled: true
+      snooping_timeout: 300
+  register: result
+  ignore_errors: true
+
+- name: Debug idempotency result
+  ansible.builtin.debug:
+    var: result
+
+- name: Update virtual switch with same values to test idempotency status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.msg == "Nothing to change."
+    success_msg: "Update virtual switch with same values to test idempotency passed"
+    fail_msg: "Update virtual switch with same values to test idempotency failed"
+
+- name: Update virtual switch with wrong external ID
+  nutanix.ncp.ntnx_virtual_switches_v2:
+    ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+    name: "test_wrong_ext_id"
+    description: "test description"
+    clusters:
+      - ext_id: "{{ cluster.uuid }}"
+        hosts:
+          - ext_id: "{{ host_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug wrong ext_id update result
+  ansible.builtin.debug:
+    var: result
+
+- name: Update virtual switch with wrong external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Update virtual switch with wrong external ID failed as expected"
+    fail_msg: "Update virtual switch with wrong external ID did not fail as expected"
+
+- name: Update virtual switch with missing name
+  nutanix.ncp.ntnx_virtual_switches_v2:
+    ext_id: "{{ todelete[1] }}"
+    description: "test description"
+    clusters:
+      - ext_id: "{{ cluster.uuid }}"
+        hosts:
+          - ext_id: "{{ host_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug update missing name result
+  ansible.builtin.debug:
+    var: result
+
+- name: Update virtual switch with missing name status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is present but all of the following are missing: name' in result.msg"
+    success_msg: "Update virtual switch with missing name failed as expected"
+    fail_msg: "Update virtual switch with missing name did not fail as expected"
+
+- name: Update virtual switch with missing clusters
+  nutanix.ncp.ntnx_virtual_switches_v2:
+    ext_id: "{{ todelete[1] }}"
+    name: "test_missing_clusters"
+    description: "test description"
+    bond_mode: "NONE"
+  register: result
+  ignore_errors: true
+
+- name: Debug update missing clusters result
+  ansible.builtin.debug:
+    var: result
+
+- name: Update virtual switch with missing clusters status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'clusters is required for create and update operations' in result.msg"
+    success_msg: "Update virtual switch with missing clusters failed as expected"
+    fail_msg: "Update virtual switch with missing clusters did not fail as expected"
+
+- name: Update virtual switch with missing bond mode
+  nutanix.ncp.ntnx_virtual_switches_v2:
+    ext_id: "{{ todelete[1] }}"
+    name: "test_missing_bond_mode"
+    description: "test description"
+    clusters:
+      - ext_id: "{{ cluster.uuid }}"
+        hosts:
+          - ext_id: "{{ host_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug update missing bond mode result
+  ansible.builtin.debug:
+    var: result
+
+- name: Update virtual switch with missing bond mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'bond_mode is required for create and update operations' in result.msg"
+    success_msg: "Update virtual switch with missing bond mode failed as expected"
+    fail_msg: "Update virtual switch with missing bond mode did not fail as expected"
+
+########################################################################################
+# Info Module Tests - Get Single Virtual Switch
+########################################################################################
+
+- name: Fetch virtual switch using external ID
+  nutanix.ncp.ntnx_virtual_switches_info_v2:
+    ext_id: "{{ todelete[1] }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug fetch by ext_id result
+  ansible.builtin.debug:
+    var: result
+
+- name: Fetch virtual switch using external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "{{ vs_name_updated }}"
+      - result.response.description == "Updated description for virtual switch with all attributes"
+      - result.response.bond_mode == "NONE"
+      - result.response.mtu == 1500
+      - result.response.is_default == false
+      - result.response.clusters | length == 1
+      - result.response.clusters[0].ext_id == cluster.uuid
+      - result.response.clusters[0].hosts | length == 1
+      - result.response.clusters[0].vlan_identifier == 0
+      - result.response.igmp_spec.is_snooping_enabled == true
+      - result.response.igmp_spec.snooping_timeout == 300
+    success_msg: "Fetch virtual switch using external ID passed"
+    fail_msg: "Fetch virtual switch using external ID failed"
+
+- name: Fetch virtual switch using wrong external ID
+  nutanix.ncp.ntnx_virtual_switches_info_v2:
+    ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+  register: result
+  ignore_errors: true
+
+- name: Debug wrong ext_id fetch result
+  ansible.builtin.debug:
+    var: result
+
+- name: Fetch virtual switch using wrong external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Fetch virtual switch using wrong external ID failed as expected"
+    fail_msg: "Fetch virtual switch using wrong external ID did not fail as expected"
+
+########################################################################################
+# Info Module Tests - List Virtual Switches
+########################################################################################
+
+- name: List all virtual switches
+  nutanix.ncp.ntnx_virtual_switches_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Debug list all result
+  ansible.builtin.debug:
+    var: result
+
+- name: List all virtual switches status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length >= 2
+    success_msg: "List all virtual switches passed"
+    fail_msg: "List all virtual switches failed"
+
+- name: List virtual switches with filter
+  nutanix.ncp.ntnx_virtual_switches_info_v2:
+    filter: "name eq '{{ vs_name_updated }}'"
+  register: result
+  ignore_errors: true
+
+- name: Debug list with filter result
+  ansible.builtin.debug:
+    var: result
+
+- name: List virtual switches with filter status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].name == "{{ vs_name_updated }}"
+    success_msg: "List virtual switches with filter passed"
+    fail_msg: "List virtual switches with filter failed"
+
+- name: List virtual switches with limit
+  nutanix.ncp.ntnx_virtual_switches_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Debug list with limit result
+  ansible.builtin.debug:
+    var: result
+
+- name: List virtual switches with limit status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+    success_msg: "List virtual switches with limit passed"
+    fail_msg: "List virtual switches with limit failed"
+
+########################################################################################
+# Delete Virtual Switch Tests
+########################################################################################
+
+- name: Delete virtual switch with check mode
+  nutanix.ncp.ntnx_virtual_switches_v2:
+    ext_id: "{{ todelete[0] }}"
+    state: absent
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Debug delete check mode result
+  ansible.builtin.debug:
+    var: result
+
+- name: Delete virtual switch with check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - "'will be deleted' in result.msg"
+    success_msg: "Delete virtual switch with check mode passed"
+    fail_msg: "Delete virtual switch with check mode failed"
+
+- name: Delete all created virtual switches
+  nutanix.ncp.ntnx_virtual_switches_v2:
+    ext_id: "{{ item }}"
+    state: absent
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: true
+
+- name: Debug delete all result
+  ansible.builtin.debug:
+    var: result
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.results | length == todelete | length
+      - result.msg == "All items completed"
+    fail_msg: "Unable to delete all virtual switches"
+    success_msg: "All virtual switches are deleted successfully"
+
+- name: Delete virtual switch with wrong external ID
+  nutanix.ncp.ntnx_virtual_switches_v2:
+    ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Debug wrong ext_id delete result
+  ansible.builtin.debug:
+    var: result
+
+- name: Delete virtual switch with wrong external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Delete virtual switch with wrong external ID failed as expected"
+    fail_msg: "Delete virtual switch with wrong external ID did not fail as expected"
+
+- name: Delete virtual switch with missing external ID
+  nutanix.ncp.ntnx_virtual_switches_v2:
+    state: absent
+  register: result
+  ignore_errors: true
+- name: Debug missing ext_id delete result
+  ansible.builtin.debug:
+    var: result
+
+- name: Delete virtual switch with missing external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is absent but the following keys must be present: ext_id' in result.msg"
+    success_msg: "Delete virtual switch with missing external ID failed as expected"
+    fail_msg: "Delete virtual switch with missing external ID did not fail as expected"
+
+- name: End Virtual Switches tests
+  ansible.builtin.debug:
+    msg: End Virtual Switches tests
