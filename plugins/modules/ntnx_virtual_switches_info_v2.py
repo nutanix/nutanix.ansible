@@ -36,6 +36,32 @@ author:
   - George Ghawali (@george-ghawali)
 """
 EXAMPLES = r"""
+- name: Get virtual switch using ext_id
+  nutanix.ncp.ntnx_virtual_switches_info_v2:
+    cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
+    ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
+  register: result
+  ignore_errors: true
+
+- name: List all virtual switches
+  nutanix.ncp.ntnx_virtual_switches_info_v2:
+    cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
+  register: result
+  ignore_errors: true
+
+- name: List virtual switches with filter
+  nutanix.ncp.ntnx_virtual_switches_info_v2:
+    cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
+    filter: "name eq 'virtual_switch_name'"
+  register: result
+  ignore_errors: true
+
+- name: List virtual switches with limit
+  nutanix.ncp.ntnx_virtual_switches_info_v2:
+    cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
+    limit: 1
+  register: result
+  ignore_errors: true
 """
 RETURN = r"""
 response:
@@ -45,6 +71,48 @@ response:
     - List of multiple virtual switches info if External ID is not provided
   returned: always
   type: dict
+  sample:
+    {
+      "bond_mode": "NONE",
+      "clusters": [
+          {
+              "ext_id": "000647b8-ddb3-6bbb-0000-000000028f57",
+              "gateway_ip_address": null,
+              "hosts": [
+                  {
+                      "active_uplink": null,
+                      "ext_id": "f28e7475-f835-42ef-ac35-ecbc48d5421e",
+                      "host_nics": null,
+                      "internal_bridge_name": "br1",
+                      "ip_address": null,
+                      "route_table": 1001
+                  }
+              ],
+              "vlan_identifier": 0
+          }
+      ],
+      "description": "Updated virtual switch description",
+      "ext_id": "2e40ff57-20aa-4d2b-b179-298db969c20d",
+      "has_delete_in_progress": null,
+      "has_deployment_error": null,
+      "has_update_in_progress": null,
+      "igmp_spec": {
+          "is_snooping_enabled": true,
+          "querier_spec": {
+              "is_querier_enabled": true,
+              "vlan_id_list": null
+          },
+          "snooping_timeout": 600
+      },
+      "is_default": false,
+      "is_quick_mode": null,
+      "links": null,
+      "metadata": null,
+      "mtu": 1500,
+      "name": "virtual_switch_ansible_updated",
+      "owner_type": "PE",
+      "tenant_id": null
+    }
 
 changed:
   description: This indicates whether the task resulted in any changes

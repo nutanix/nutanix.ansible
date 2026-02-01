@@ -267,6 +267,55 @@ author:
 """
 
 EXAMPLES = r"""
+- name: Create virtual switch
+  nutanix.ncp.ntnx_virtual_switches_v2:
+    state: present
+    cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
+    name: "virtual_switch_ansible"
+    description: "Virtual switch created by Ansible"
+    bond_mode: "NONE"
+    mtu: 1500
+    is_default: false
+    clusters:
+      - ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
+        hosts:
+          - ext_id: "8300384a-56ee-4750-aeb8-3d1c42908bee"
+        vlan_identifier: 0
+    igmp_spec:
+      is_snooping_enabled: false
+  register: result
+  ignore_errors: true
+
+- name: Update virtual switch
+  nutanix.ncp.ntnx_virtual_switches_v2:
+    state: present
+    cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
+    ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
+    name: "virtual_switch_ansible_updated"
+    description: "Updated virtual switch description"
+    bond_mode: "NONE"
+    mtu: 1500
+    is_default: false
+    clusters:
+      - ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
+        hosts:
+          - ext_id: "8300384a-56ee-4750-aeb8-3d1c42908bee"
+        vlan_identifier: 0
+    igmp_spec:
+      is_snooping_enabled: true
+      snooping_timeout: 600
+      querier_spec:
+        is_querier_enabled: true
+  register: result
+  ignore_errors: true
+
+- name: Delete virtual switch
+  nutanix.ncp.ntnx_virtual_switches_v2:
+    state: absent
+    cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
+    ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
@@ -278,6 +327,45 @@ response:
     - If the operation is delete, it will return the task details
   returned: always
   type: dict
+  sample:
+    {
+      "bond_mode": "NONE",
+      "clusters": [
+          {
+              "ext_id": "000647b8-ddb3-6bbb-0000-000000028f57",
+              "gateway_ip_address": null,
+              "hosts": [
+                  {
+                      "active_uplink": null,
+                      "ext_id": "f28e7475-f835-42ef-ac35-ecbc48d5421e",
+                      "host_nics": null,
+                      "internal_bridge_name": "br1",
+                      "ip_address": null,
+                      "route_table": 1001
+                  }
+              ],
+              "vlan_identifier": 0
+          }
+      ],
+      "description": "Virtual switch created by Ansible",
+      "ext_id": "2e40ff57-20aa-4d2b-b179-298db969c20d",
+      "has_delete_in_progress": null,
+      "has_deployment_error": null,
+      "has_update_in_progress": null,
+      "igmp_spec": {
+          "is_snooping_enabled": false,
+          "querier_spec": null,
+          "snooping_timeout": 300
+      },
+      "is_default": false,
+      "is_quick_mode": null,
+      "links": null,
+      "metadata": null,
+      "mtu": 1500,
+      "name": "virtual_switch_ansible",
+      "owner_type": "PE",
+      "tenant_id": null
+    }
 
 task_ext_id:
   description:
