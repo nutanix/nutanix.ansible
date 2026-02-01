@@ -684,7 +684,7 @@ def update_virtual_switch(module, virtual_switches, result, **kwargs):
                     host.internal_bridge_name = None
                     host.route_table = None
 
-    kwargs = {"if_match": etag, **kwargs}
+    kwargs.update({"if_match": etag})
     resp = None
 
     try:
