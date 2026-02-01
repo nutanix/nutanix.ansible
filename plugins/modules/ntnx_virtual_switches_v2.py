@@ -61,6 +61,11 @@ options:
       - Used only when existing_bridge_name is provided.
     type: str
     required: false
+  cluster_ext_id:
+    description:
+      - Prism Element cluster UUID to be passed in X-Cluster-Id header.
+    type: str
+    required: false
   bond_mode:
     description:
       - Bond mode type for the virtual switch.
@@ -425,6 +430,7 @@ def get_module_spec():
         description=dict(type="str"),
         existing_bridge_name=dict(type="str"),
         cluster_reference=dict(type="str"),
+        cluster_ext_id=dict(type="str"),
         bond_mode=dict(
             type="str",
             choices=["NONE", "ACTIVE_BACKUP", "BALANCE_SLB", "BALANCE_TCP"],
@@ -453,7 +459,7 @@ def get_module_spec():
     return module_args
 
 
-def create_virtual_switch_from_bridge(module, bridges_api, result):
+def create_virtual_switch_from_bridge(module, bridges_api, result, **kwargs):
     sg = SpecGenerator(module)
     default_spec = networking_sdk.Bridge()
     spec, err = sg.generate_spec(obj=default_spec)
@@ -469,7 +475,7 @@ def create_virtual_switch_from_bridge(module, bridges_api, result):
 
     resp = None
     try:
-        resp = bridges_api.migrate_bridge(body=spec)
+        resp = bridges_api.migrate_bridge(body=spec, **kwargs)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -488,12 +494,12 @@ def create_virtual_switch_from_bridge(module, bridges_api, result):
         if ext_id:
             result["ext_id"] = ext_id
             virtual_switches_api = get_virtual_switches_api_instance(module)
-            resp = get_virtual_switch(module, virtual_switches_api, ext_id)
+            resp = get_virtual_switch(module, virtual_switches_api, ext_id, **kwargs)
             result["response"] = strip_internal_attributes(resp.to_dict())
     result["changed"] = True
 
 
-def create_virtual_switch(module, virtual_switches, result):
+def create_virtual_switch(module, virtual_switches, result, **kwargs):
     sg = SpecGenerator(module)
     default_spec = networking_sdk.VirtualSwitch()
     spec, err = sg.generate_spec(obj=default_spec)
@@ -507,7 +513,7 @@ def create_virtual_switch(module, virtual_switches, result):
 
     resp = None
     try:
-        resp = virtual_switches.create_virtual_switch(body=spec)
+        resp = virtual_switches.create_virtual_switch(body=spec, **kwargs)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -525,7 +531,7 @@ def create_virtual_switch(module, virtual_switches, result):
         )
         if ext_id:
             result["ext_id"] = ext_id
-            resp = get_virtual_switch(module, virtual_switches, ext_id)
+            resp = get_virtual_switch(module, virtual_switches, ext_id, **kwargs)
             result["response"] = strip_internal_attributes(resp.to_dict())
     result["changed"] = True
 
@@ -554,11 +560,11 @@ def check_for_idempotency(old_spec_dict, update_spec_dict):
     return old_spec_dict == update_spec_dict
 
 
-def update_virtual_switch(module, virtual_switches, result):
+def update_virtual_switch(module, virtual_switches, result, **kwargs):
     ext_id = module.params.get("ext_id")
 
     result["ext_id"] = ext_id
-    old_spec = get_virtual_switch(module, virtual_switches, ext_id)
+    old_spec = get_virtual_switch(module, virtual_switches, ext_id, **kwargs)
     etag = get_etag(data=old_spec)
     if not etag:
         return module.fail_json(
@@ -590,7 +596,7 @@ def update_virtual_switch(module, virtual_switches, result):
                     host.internal_bridge_name = None
                     host.route_table = None
 
-    kwargs = {"if_match": etag}
+    kwargs = {"if_match": etag, **kwargs}
     resp = None
 
     try:
@@ -608,12 +614,12 @@ def update_virtual_switch(module, virtual_switches, result):
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
         wait_for_completion(module, task_ext_id)
-        resp = get_virtual_switch(module, virtual_switches, ext_id)
+        resp = get_virtual_switch(module, virtual_switches, ext_id, **kwargs)
         result["response"] = strip_internal_attributes(resp.to_dict())
     result["changed"] = True
 
 
-def delete_virtual_switch(module, virtual_switches, result):
+def delete_virtual_switch(module, virtual_switches, result, **kwargs):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
@@ -623,7 +629,7 @@ def delete_virtual_switch(module, virtual_switches, result):
 
     resp = None
     try:
-        resp = virtual_switches.delete_virtual_switch_by_id(extId=ext_id)
+        resp = virtual_switches.delete_virtual_switch_by_id(extId=ext_id, **kwargs)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -663,14 +669,16 @@ def run_module():
     virtual_switches = get_virtual_switches_api_instance(module)
     bridges_api = get_bridges_api_instance(module)
     state = module.params.get("state")
-
+    kwargs = {}
+    if module.params.get("cluster_ext_id"):
+        kwargs["X_Cluster_Id"] = module.params.get("cluster_ext_id")
     # Handle delete operation
     if state == "absent":
-        delete_virtual_switch(module, virtual_switches, result)
+        delete_virtual_switch(module, virtual_switches, result, **kwargs)
         module.exit_json(**result)
 
     if module.params.get("existing_bridge_name"):
-        create_virtual_switch_from_bridge(module, bridges_api, result)
+        create_virtual_switch_from_bridge(module, bridges_api, result, **kwargs)
         module.exit_json(**result)
 
     if not module.params.get("bond_mode"):
@@ -679,10 +687,10 @@ def run_module():
         module.fail_json(msg="clusters is required for create and update operations")
 
     if module.params.get("ext_id"):
-        update_virtual_switch(module, virtual_switches, result)
+        update_virtual_switch(module, virtual_switches, result, **kwargs)
         module.exit_json(**result)
 
-    create_virtual_switch(module, virtual_switches, result)
+    create_virtual_switch(module, virtual_switches, result, **kwargs)
     module.exit_json(**result)
 
 

@@ -23,6 +23,11 @@ options:
     description:
       - The external identifier of the virtual switch.
     type: str
+  cluster_ext_id:
+    description:
+      - Prism Element cluster UUID to be passed in X-Cluster-Id header.
+    type: str
+    required: false
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_info_v2
@@ -100,6 +105,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        cluster_ext_id=dict(type="str"),
     )
 
     return module_args
@@ -107,7 +113,10 @@ def get_module_spec():
 
 def get_virtual_switch_using_ext_id(module, virtual_switches, result):
     ext_id = module.params.get("ext_id")
-    resp = get_virtual_switch(module, virtual_switches, ext_id)
+    kwargs = {}
+    if module.params.get("cluster_ext_id"):
+        kwargs["X_Cluster_Id"] = module.params.get("cluster_ext_id")
+    resp = get_virtual_switch(module, virtual_switches, ext_id, **kwargs)
     result["ext_id"] = ext_id
     result["response"] = strip_internal_attributes(resp.to_dict())
 
@@ -120,6 +129,9 @@ def get_virtual_switches(module, virtual_switches, result):
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating virtual switches info Spec", **result)
+
+    if module.params.get("cluster_ext_id"):
+        kwargs["X_Cluster_Id"] = module.params.get("cluster_ext_id")
 
     try:
         resp = virtual_switches.list_virtual_switches(**kwargs)

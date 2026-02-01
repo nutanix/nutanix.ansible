@@ -1,0 +1,107 @@
+---
+# Summary:
+# This playbook will do:
+# 2. Create virtual switch
+# 3. Update virtual switch
+# 4. Get virtual switch using ext_id
+# 5. List all virtual switches
+# 6. List virtual switches with filter
+# 7. List virtual switches with limit
+# 8. Delete virtual switch
+
+- name: Virtual Switches playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        cluster_uuid: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
+        host_uuid: "8300384a-56ee-4750-aeb8-3d1c42908bee"
+        virtual_switch_name: "virtual_switch_ansible"
+
+    - name: Create virtual switch
+      nutanix.ncp.ntnx_virtual_switches_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_uuid }}"
+        name: "{{ virtual_switch_name }}"
+        description: "Virtual switch created by Ansible"
+        bond_mode: "NONE"
+        mtu: 1500
+        is_default: false
+        clusters:
+          - ext_id: "{{ cluster_uuid }}"
+            hosts:
+              - ext_id: "{{ host_uuid }}"
+            vlan_identifier: 0
+        igmp_spec:
+          is_snooping_enabled: false
+      register: result
+      ignore_errors: true
+
+    - name: Set virtual switch ext_id
+      ansible.builtin.set_fact:
+        virtual_switch_ext_id: "{{ result.response.ext_id }}"
+
+    - name: Update virtual switch
+      nutanix.ncp.ntnx_virtual_switches_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_uuid }}"
+        ext_id: "{{ virtual_switch_ext_id }}"
+        name: "{{ virtual_switch_name }}_updated"
+        description: "Updated virtual switch description"
+        bond_mode: "NONE"
+        mtu: 1500
+        is_default: false
+        clusters:
+          - ext_id: "{{ cluster_uuid }}"
+            hosts:
+              - ext_id: "{{ host_uuid }}"
+            vlan_identifier: 0
+        igmp_spec:
+          is_snooping_enabled: true
+          snooping_timeout: 600
+          querier_spec:
+            is_querier_enabled: true
+      register: result
+      ignore_errors: true
+
+    - name: Get virtual switch using ext_id
+      nutanix.ncp.ntnx_virtual_switches_info_v2:
+        cluster_ext_id: "{{ cluster_uuid }}"
+        ext_id: "{{ virtual_switch_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all virtual switches
+      nutanix.ncp.ntnx_virtual_switches_info_v2:
+        cluster_ext_id: "{{ cluster_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: List virtual switches with filter
+      nutanix.ncp.ntnx_virtual_switches_info_v2:
+        cluster_ext_id: "{{ cluster_uuid }}"
+        filter: "name eq '{{ virtual_switch_name }}_updated'"
+      register: result
+      ignore_errors: true
+
+    - name: List virtual switches with limit
+      nutanix.ncp.ntnx_virtual_switches_info_v2:
+        cluster_ext_id: "{{ cluster_uuid }}"
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: Delete virtual switch
+      nutanix.ncp.ntnx_virtual_switches_v2:
+        state: absent
+        cluster_ext_id: "{{ cluster_uuid }}"
+        ext_id: "{{ virtual_switch_ext_id }}"
+      register: result
+      ignore_errors: true
