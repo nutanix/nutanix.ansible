@@ -431,7 +431,6 @@
       querier_spec:
         is_querier_enabled: true
         vlan_id_list: ["{{ virtual_switch.vlan_id }}"]
-
   register: result
   ignore_errors: true
 
@@ -462,7 +461,6 @@
       - result.response.igmp_spec.querier_spec.vlan_id_list[0] == {{ virtual_switch.vlan_id | int }}
     success_msg: "Update virtual switch with all attributes passed"
     fail_msg: "Update virtual switch with all attributes failed"
-  when: result.failed == false
 
 - name: Update virtual switch with same values (idempotency test)
   nutanix.ncp.ntnx_virtual_switches_v2:
