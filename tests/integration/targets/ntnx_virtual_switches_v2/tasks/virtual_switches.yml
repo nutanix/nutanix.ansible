@@ -63,6 +63,7 @@
     {{ pe_ssh_cmd }} "{{ get_bridges_cmd }}"
   register: bridges_output
   ignore_errors: true
+  changed_when: false
 
 - name: Debug bridges output
   ansible.builtin.debug:
@@ -96,7 +97,7 @@
   ansible.builtin.set_fact:
     create_bridge_cmd: "{{ manage_ovs_cmd }} --bridge_name {{ new_bridge_name }} create_single_bridge"
 
-- name: debug create bridge command
+- name: Debug create bridge command
   ansible.builtin.debug:
     var: create_bridge_cmd
 
@@ -104,6 +105,7 @@
   ansible.builtin.shell: |
     {{ pe_ssh_cmd }} 'bash -ic "{{ create_bridge_cmd }}"'
   register: create_bridge_output
+  changed_when: false
 
 - name: Debug create bridge output
   ansible.builtin.debug:
@@ -113,6 +115,7 @@
   ansible.builtin.shell: |
     {{ pe_ssh_cmd }} "{{ get_bridges_cmd }}"
   register: bridges_output_after
+  changed_when: false
 
 - name: Parse bridges after creation
   ansible.builtin.set_fact:
@@ -128,7 +131,6 @@
       - new_bridge_name in cluster_bridges_after
     success_msg: "Bridge {{ new_bridge_name }} was successfully created"
     fail_msg: "Bridge {{ new_bridge_name }} was not found in cluster bridges"
-
 
 ########################################################################################
 # Create Virtual Switch Tests
@@ -188,6 +190,7 @@
   ansible.builtin.assert:
     that:
       - result is defined
+      - result.changed == false
       - result.failed == false
       - result.response is defined
       - result.response.name == "check_mode_vs_full"
@@ -398,14 +401,14 @@
 - name: Generate spec for creating virtual switch from existing bridge status
   ansible.builtin.assert:
     that:
-    - result is defined
-    - result.changed == false
-    - result.failed == false
-    - result.response is defined
-    - result.response.name == "virtual_switch_from_bridge"
-    - result.response.description == "Virtual switch created from existing bridge"
-    - result.response.existing_bridge_name == "br2"
-    - result.response.cluster_reference == "d9da1f3b-3ddb-4585-9159-26d2318269e3"
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "virtual_switch_from_bridge"
+      - result.response.description == "Virtual switch created from existing bridge"
+      - result.response.existing_bridge_name == "br2"
+      - result.response.cluster_reference == "d9da1f3b-3ddb-4585-9159-26d2318269e3"
     success_msg: "Spec for creating virtual switch from existing bridge generated successfully"
     fail_msg: "Spec for creating virtual switch from existing bridge generation failed"
 
@@ -472,7 +475,7 @@
     success_msg: "Creation of virtual switch from existing bridge using bridge that is already in use failed as expected"
     fail_msg: "Creation of virtual switch from existing bridge using bridge that is already in use did not fail as expected"
 
-- name: next bridge name
+- name: Next bridge name
   ansible.builtin.set_fact:
     new_bridge_name: "br{{ (max_br_num | int) + 2 }}"
 
