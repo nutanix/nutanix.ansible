@@ -286,6 +286,16 @@ EXAMPLES = r"""
   register: result
   ignore_errors: true
 
+- name: Create a virtual switch from an existing bridge
+  nutanix.ncp.ntnx_virtual_switches_v2:
+    cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
+    name: "virtual_switch_ansible_existing"
+    description: "Virtual switch created from existing bridge"
+    existing_bridge_name: "br2"
+    cluster_reference: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
+  register: result
+  ignore_errors: true
+
 - name: Update virtual switch
   nutanix.ncp.ntnx_virtual_switches_v2:
     state: present

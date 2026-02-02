@@ -6,13 +6,25 @@
 - name: Generate random names
   ansible.builtin.set_fact:
     random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
-    suffix_name: "ansible_vs"
+    suffix_name: "ansible"
     todelete: []
 
 - name: Set names for virtual switch and subnet
   ansible.builtin.set_fact:
     vs_name: "vs_{{ suffix_name }}_{{ random_name }}"
     subnet_name: "subnet_{{ suffix_name }}_{{ random_name }}"
+
+- name: Set SSH command for PE
+  ansible.builtin.set_fact:
+    pe_ssh_cmd: >-
+      sshpass -p '{{ pe_ssh_password }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+      {{ pe_ssh_username }}@{{ ip_pe }}
+    hostssh_cmd: "/usr/local/nutanix/cluster/bin/hostssh"
+    manage_ovs_cmd: "/usr/local/nutanix/cluster/bin/manage_ovs"
+
+- name: Set bridge commands
+  ansible.builtin.set_fact:
+    get_bridges_cmd: "{{ hostssh_cmd }} 'ovs-vsctl list-br'"
 
 ########################################################################################
 # Fetch cluster and host information for virtual switch creation
@@ -41,6 +53,82 @@
 - name: Set host ext_id
   ansible.builtin.set_fact:
     host_ext_id: "{{ hosts_info.response[0].ext_id }}"
+
+########################################################################################
+# Get bridges from cluster
+########################################################################################
+
+- name: Get bridges from cluster
+  ansible.builtin.shell: |
+    {{ pe_ssh_cmd }} "{{ get_bridges_cmd }}"
+  register: bridges_output
+  ignore_errors: true
+
+- name: Debug bridges output
+  ansible.builtin.debug:
+    var: bridges_output
+
+- name: Parse bridges from output
+  ansible.builtin.set_fact:
+    cluster_bridges: "{{ bridges_output.stdout_lines | select('match', '^br') | list | unique }}"
+
+- name: Debug parsed bridges
+  ansible.builtin.debug:
+    var: cluster_bridges
+
+- name: Find bridges and get the highest number
+  ansible.builtin.set_fact:
+    br_int_bridges: "{{ cluster_bridges | select('match', '^br[0-9]+$') | list }}"
+
+- name: Calculate next bridge number
+  ansible.builtin.set_fact:
+    max_br_num: "{{ br_int_bridges | map('regex_replace', '^br', '') | map('int') | max | default(-1) }}"
+
+- name: Set new bridge name
+  ansible.builtin.set_fact:
+    new_bridge_name: "br{{ (max_br_num | int) + 1 }}"
+
+- name: Debug new bridge name
+  ansible.builtin.debug:
+    msg: "Will create new bridge: {{ new_bridge_name }}"
+
+- name: Set create bridge command
+  ansible.builtin.set_fact:
+    create_bridge_cmd: "{{ manage_ovs_cmd }} --bridge_name {{ new_bridge_name }} create_single_bridge"
+
+- name: debug create bridge command
+  ansible.builtin.debug:
+    var: create_bridge_cmd
+
+- name: Create new bridge on cluster
+  ansible.builtin.shell: |
+    {{ pe_ssh_cmd }} 'bash -ic "{{ create_bridge_cmd }}"'
+  register: create_bridge_output
+
+- name: Debug create bridge output
+  ansible.builtin.debug:
+    var: create_bridge_output
+
+- name: Get bridges from cluster after creation
+  ansible.builtin.shell: |
+    {{ pe_ssh_cmd }} "{{ get_bridges_cmd }}"
+  register: bridges_output_after
+
+- name: Parse bridges after creation
+  ansible.builtin.set_fact:
+    cluster_bridges_after: "{{ bridges_output_after.stdout_lines | select('match', '^br') | list | unique }}"
+
+- name: Debug bridges after creation
+  ansible.builtin.debug:
+    var: cluster_bridges_after
+
+- name: Assert new bridge was created
+  ansible.builtin.assert:
+    that:
+      - new_bridge_name in cluster_bridges_after
+    success_msg: "Bridge {{ new_bridge_name }} was successfully created"
+    fail_msg: "Bridge {{ new_bridge_name }} was not found in cluster bridges"
+
 
 ########################################################################################
 # Create Virtual Switch Tests
@@ -287,6 +375,132 @@
       - "'clusters is required for create and update operations' in result.msg"
     success_msg: "Create virtual switch with missing clusters failed as expected"
     fail_msg: "Create virtual switch with missing clusters did not fail as expected"
+
+########################################################################################
+# Create virtual switch from existing bridge
+########################################################################################
+
+- name: Generate spec for creating virtual switch from existing bridge
+  nutanix.ncp.ntnx_virtual_switches_v2:
+    cluster_ext_id: "d9da1f3b-3ddb-4585-9159-26d2318269e3"
+    name: "virtual_switch_from_bridge"
+    description: "Virtual switch created from existing bridge"
+    existing_bridge_name: "br2"
+    cluster_reference: "d9da1f3b-3ddb-4585-9159-26d2318269e3"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Generate spec for creating virtual switch from existing bridge status
+  ansible.builtin.assert:
+    that:
+    - result is defined
+    - result.changed == false
+    - result.failed == false
+    - result.response is defined
+    - result.response.name == "virtual_switch_from_bridge"
+    - result.response.description == "Virtual switch created from existing bridge"
+    - result.response.existing_bridge_name == "br2"
+    - result.response.cluster_reference == "d9da1f3b-3ddb-4585-9159-26d2318269e3"
+    success_msg: "Spec for creating virtual switch from existing bridge generated successfully"
+    fail_msg: "Spec for creating virtual switch from existing bridge generation failed"
+
+- name: Create a virtual switch from an existing bridge
+  nutanix.ncp.ntnx_virtual_switches_v2:
+    cluster_ext_id: "{{ cluster.uuid }}"
+    name: "{{ vs_name }}_existing"
+    description: "Virtual switch created from existing bridge"
+    existing_bridge_name: "{{ new_bridge_name }}"
+    cluster_reference: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Create a virtual switch from an existing bridge status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.name == "{{ vs_name }}_existing"
+      - result.response.description == "Virtual switch created from existing bridge"
+      - result.response.clusters is defined
+      - result.response.clusters[0].ext_id == "{{ cluster.uuid }}"
+      - result.response.clusters[0].hosts is defined
+      - result.response.clusters[0].hosts[0].ext_id == "{{ host_ext_id }}"
+      - result.response.clusters[0].hosts[0].internal_bridge_name == "{{ new_bridge_name }}"
+    success_msg: "Virtual switch from existing bridge created successfully"
+    fail_msg: "Virtual switch from existing bridge creation failed"
+
+- name: Add virtual switch to todelete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+- name: Create a virtual switch from an existing bridge using bridge that is already in use
+  nutanix.ncp.ntnx_virtual_switches_v2:
+    cluster_ext_id: "{{ cluster.uuid }}"
+    name: "{{ new_bridge_name }}"
+    description: "Virtual switch created from existing bridge using bridge that is already in use"
+    existing_bridge_name: "{{ new_bridge_name }}"
+    cluster_reference: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Create a virtual switch from an existing bridge using bridge that is already in use status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.response is defined
+      - result.response.error_messages | length > 0
+      - result.response.status == "FAILED"
+    success_msg: "Creation of virtual switch from existing bridge using bridge that is already in use failed as expected"
+    fail_msg: "Creation of virtual switch from existing bridge using bridge that is already in use did not fail as expected"
+
+- name: next bridge name
+  ansible.builtin.set_fact:
+    new_bridge_name: "br{{ (max_br_num | int) + 2 }}"
+
+- name: Create a virtual switch from an existing bridge with wrong cluster reference
+  nutanix.ncp.ntnx_virtual_switches_v2:
+    cluster_ext_id: "d9da1f3b-3ddb-4585-9159-26d2318269e3"
+    name: "{{ new_bridge_name }}"
+    description: "Virtual switch created from existing bridge with wrong cluster reference"
+    existing_bridge_name: "{{ new_bridge_name }}"
+    cluster_reference: "d9da1f3b-3ddb-4585-9159-26d2318269e3"
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Create a virtual switch from an existing bridge with wrong cluster reference status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.response is defined
+      - result.response.error_messages | length > 0
+      - result.response.status == "FAILED"
+    success_msg: "Creation of virtual switch from existing bridge with wrong cluster reference failed as expected"
+    fail_msg: "Creation of virtual switch from existing bridge with wrong cluster reference did not fail as expected"
 
 ########################################################################################
 # Create subnet for virtual switch

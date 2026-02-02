@@ -2,12 +2,14 @@
 # Summary:
 # This playbook will do:
 # 2. Create virtual switch
+# 3. Create virtual switch from an existing bridge
 # 3. Update virtual switch
-# 4. Get virtual switch using ext_id
-# 5. List all virtual switches
-# 6. List virtual switches with filter
-# 7. List virtual switches with limit
-# 8. Delete virtual switch
+# 5. Get virtual switch using ext_id
+# 6. List all virtual switches
+# 7. List virtual switches with filter
+# 8. List virtual switches with limit
+# 9. Delete virtual switch
+# 10. Delete virtual switch from bridge
 
 - name: Virtual Switches playbook
   hosts: localhost
@@ -24,6 +26,7 @@
         cluster_uuid: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
         host_uuid: "8300384a-56ee-4750-aeb8-3d1c42908bee"
         virtual_switch_name: "virtual_switch_ansible"
+        existing_bridge_name: "br2"
 
     - name: Create virtual switch
       nutanix.ncp.ntnx_virtual_switches_v2:
@@ -47,6 +50,21 @@
     - name: Set virtual switch ext_id
       ansible.builtin.set_fact:
         virtual_switch_ext_id: "{{ result.response.ext_id }}"
+
+    - name: Create a virtual switch from an existing bridge
+      nutanix.ncp.ntnx_virtual_switches_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_uuid }}"
+        name: "{{ virtual_switch_name }}_from_bridge"
+        description: "Virtual switch created from existing bridge"
+        existing_bridge_name: "{{ existing_bridge_name }}"
+        cluster_reference: "{{ cluster_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Set virtual switch from bridge ext_id
+      ansible.builtin.set_fact:
+        virtual_switch_from_bridge_ext_id: "{{ result.response.ext_id }}"
 
     - name: Update virtual switch
       nutanix.ncp.ntnx_virtual_switches_v2:
@@ -103,5 +121,13 @@
         state: absent
         cluster_ext_id: "{{ cluster_uuid }}"
         ext_id: "{{ virtual_switch_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Delete virtual switch from bridge
+      nutanix.ncp.ntnx_virtual_switches_v2:
+        state: absent
+        cluster_ext_id: "{{ cluster_uuid }}"
+        ext_id: "{{ virtual_switch_from_bridge_ext_id }}"
       register: result
       ignore_errors: true
