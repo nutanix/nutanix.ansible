@@ -845,12 +845,6 @@ def run_module():
         supports_check_mode=True,
         required_if=[
             ("state", "present", ("name", "ext_id"), True),
-            (
-                "state",
-                "present",
-                ("ext_id", "cluster_reference", "vpc_reference"),
-                True,
-            ),
             ("state", "absent", ("ext_id",)),
         ],
     )
