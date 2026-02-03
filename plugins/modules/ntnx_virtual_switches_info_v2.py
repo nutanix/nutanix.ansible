@@ -38,27 +38,23 @@ author:
 EXAMPLES = r"""
 - name: Get virtual switch using ext_id
   nutanix.ncp.ntnx_virtual_switches_info_v2:
-    cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
     ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
   register: result
   ignore_errors: true
 
 - name: List all virtual switches
   nutanix.ncp.ntnx_virtual_switches_info_v2:
-    cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
   register: result
   ignore_errors: true
 
 - name: List virtual switches with filter
   nutanix.ncp.ntnx_virtual_switches_info_v2:
-    cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
     filter: "name eq 'virtual_switch_name'"
   register: result
   ignore_errors: true
 
 - name: List virtual switches with limit
   nutanix.ncp.ntnx_virtual_switches_info_v2:
-    cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
     limit: 1
   register: result
   ignore_errors: true
@@ -181,10 +177,7 @@ def get_module_spec():
 
 def get_virtual_switch_using_ext_id(module, virtual_switches, result):
     ext_id = module.params.get("ext_id")
-    kwargs = {}
-    if module.params.get("cluster_ext_id"):
-        kwargs["X_Cluster_Id"] = module.params.get("cluster_ext_id")
-    resp = get_virtual_switch(module, virtual_switches, ext_id, **kwargs)
+    resp = get_virtual_switch(module, virtual_switches, ext_id)
     result["ext_id"] = ext_id
     result["response"] = strip_internal_attributes(resp.to_dict())
 

@@ -61,11 +61,6 @@ options:
       - Used only when existing_bridge_name is provided.
     type: str
     required: false
-  cluster_ext_id:
-    description:
-      - Prism Element cluster UUID to be passed in X-Cluster-Id header.
-    type: str
-    required: false
   bond_mode:
     description:
       - Bond mode type for the virtual switch.
@@ -270,7 +265,6 @@ EXAMPLES = r"""
 - name: Create virtual switch
   nutanix.ncp.ntnx_virtual_switches_v2:
     state: present
-    cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
     name: "virtual_switch_ansible"
     description: "Virtual switch created by Ansible"
     bond_mode: "NONE"
@@ -288,7 +282,6 @@ EXAMPLES = r"""
 
 - name: Create a virtual switch from an existing bridge
   nutanix.ncp.ntnx_virtual_switches_v2:
-    cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
     name: "virtual_switch_ansible_existing"
     description: "Virtual switch created from existing bridge"
     existing_bridge_name: "br2"
@@ -299,7 +292,6 @@ EXAMPLES = r"""
 - name: Update virtual switch
   nutanix.ncp.ntnx_virtual_switches_v2:
     state: present
-    cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
     ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
     name: "virtual_switch_ansible_updated"
     description: "Updated virtual switch description"
@@ -322,7 +314,6 @@ EXAMPLES = r"""
 - name: Delete virtual switch
   nutanix.ncp.ntnx_virtual_switches_v2:
     state: absent
-    cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
     ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
   register: result
   ignore_errors: true
@@ -528,7 +519,6 @@ def get_module_spec():
         description=dict(type="str"),
         existing_bridge_name=dict(type="str"),
         cluster_reference=dict(type="str"),
-        cluster_ext_id=dict(type="str"),
         bond_mode=dict(
             type="str",
             choices=["NONE", "ACTIVE_BACKUP", "BALANCE_SLB", "BALANCE_TCP"],
@@ -557,7 +547,7 @@ def get_module_spec():
     return module_args
 
 
-def create_virtual_switch_from_bridge(module, bridges_api, result, **kwargs):
+def create_virtual_switch_from_bridge(module, bridges_api, result):
     sg = SpecGenerator(module)
     default_spec = networking_sdk.Bridge()
     spec, err = sg.generate_spec(obj=default_spec)
@@ -573,7 +563,7 @@ def create_virtual_switch_from_bridge(module, bridges_api, result, **kwargs):
 
     resp = None
     try:
-        resp = bridges_api.migrate_bridge(body=spec, **kwargs)
+        resp = bridges_api.migrate_bridge(body=spec)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -592,12 +582,12 @@ def create_virtual_switch_from_bridge(module, bridges_api, result, **kwargs):
         if ext_id:
             result["ext_id"] = ext_id
             virtual_switches_api = get_virtual_switches_api_instance(module)
-            resp = get_virtual_switch(module, virtual_switches_api, ext_id, **kwargs)
+            resp = get_virtual_switch(module, virtual_switches_api, ext_id)
             result["response"] = strip_internal_attributes(resp.to_dict())
     result["changed"] = True
 
 
-def create_virtual_switch(module, virtual_switches, result, **kwargs):
+def create_virtual_switch(module, virtual_switches, result):
     sg = SpecGenerator(module)
     default_spec = networking_sdk.VirtualSwitch()
     spec, err = sg.generate_spec(obj=default_spec)
@@ -611,7 +601,7 @@ def create_virtual_switch(module, virtual_switches, result, **kwargs):
 
     resp = None
     try:
-        resp = virtual_switches.create_virtual_switch(body=spec, **kwargs)
+        resp = virtual_switches.create_virtual_switch(body=spec)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -629,7 +619,7 @@ def create_virtual_switch(module, virtual_switches, result, **kwargs):
         )
         if ext_id:
             result["ext_id"] = ext_id
-            resp = get_virtual_switch(module, virtual_switches, ext_id, **kwargs)
+            resp = get_virtual_switch(module, virtual_switches, ext_id)
             result["response"] = strip_internal_attributes(resp.to_dict())
     result["changed"] = True
 
@@ -658,16 +648,17 @@ def check_for_idempotency(old_spec_dict, update_spec_dict):
     return old_spec_dict == update_spec_dict
 
 
-def update_virtual_switch(module, virtual_switches, result, **kwargs):
+def update_virtual_switch(module, virtual_switches, result):
     ext_id = module.params.get("ext_id")
 
     result["ext_id"] = ext_id
-    old_spec = get_virtual_switch(module, virtual_switches, ext_id, **kwargs)
+    old_spec = get_virtual_switch(module, virtual_switches, ext_id)
     etag = get_etag(data=old_spec)
     if not etag:
         return module.fail_json(
             "Unable to fetch etag for updating virtual switch", **result
         )
+    kwargs = {"if_match": etag}
     sg = SpecGenerator(module)
     update_spec, err = sg.generate_spec(obj=deepcopy(old_spec))
     if err:
@@ -677,9 +668,6 @@ def update_virtual_switch(module, virtual_switches, result, **kwargs):
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
-
-    result["old_spec"] = strip_internal_attributes(old_spec.to_dict())
-    result["update_spec"] = strip_internal_attributes(update_spec.to_dict())
 
     if check_for_idempotency(old_spec.to_dict(), update_spec.to_dict()):
         result["skipped"] = True
@@ -694,7 +682,6 @@ def update_virtual_switch(module, virtual_switches, result, **kwargs):
                     host.internal_bridge_name = None
                     host.route_table = None
 
-    kwargs.update({"if_match": etag})
     resp = None
 
     try:
@@ -712,12 +699,12 @@ def update_virtual_switch(module, virtual_switches, result, **kwargs):
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
         wait_for_completion(module, task_ext_id)
-        resp = get_virtual_switch(module, virtual_switches, ext_id, **kwargs)
+        resp = get_virtual_switch(module, virtual_switches, ext_id)
         result["response"] = strip_internal_attributes(resp.to_dict())
     result["changed"] = True
 
 
-def delete_virtual_switch(module, virtual_switches, result, **kwargs):
+def delete_virtual_switch(module, virtual_switches, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
@@ -727,7 +714,7 @@ def delete_virtual_switch(module, virtual_switches, result, **kwargs):
 
     resp = None
     try:
-        resp = virtual_switches.delete_virtual_switch_by_id(extId=ext_id, **kwargs)
+        resp = virtual_switches.delete_virtual_switch_by_id(extId=ext_id)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -767,16 +754,13 @@ def run_module():
     virtual_switches = get_virtual_switches_api_instance(module)
     bridges_api = get_bridges_api_instance(module)
     state = module.params.get("state")
-    kwargs = {}
-    if module.params.get("cluster_ext_id"):
-        kwargs["X_Cluster_Id"] = module.params.get("cluster_ext_id")
-    # Handle delete operation
+
     if state == "absent":
-        delete_virtual_switch(module, virtual_switches, result, **kwargs)
+        delete_virtual_switch(module, virtual_switches, result)
         module.exit_json(**result)
 
     if module.params.get("existing_bridge_name"):
-        create_virtual_switch_from_bridge(module, bridges_api, result, **kwargs)
+        create_virtual_switch_from_bridge(module, bridges_api, result)
         module.exit_json(**result)
 
     if not module.params.get("bond_mode"):
@@ -785,10 +769,10 @@ def run_module():
         module.fail_json(msg="clusters is required for create and update operations")
 
     if module.params.get("ext_id"):
-        update_virtual_switch(module, virtual_switches, result, **kwargs)
+        update_virtual_switch(module, virtual_switches, result)
         module.exit_json(**result)
 
-    create_virtual_switch(module, virtual_switches, result, **kwargs)
+    create_virtual_switch(module, virtual_switches, result)
     module.exit_json(**result)
 
 
