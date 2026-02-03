@@ -883,28 +883,6 @@
     success_msg: "List all virtual switches passed"
     fail_msg: "List all virtual switches failed"
 
-- name: List virtual switches with providing cluster external ID
-  nutanix.ncp.ntnx_virtual_switches_info_v2:
-    cluster_ext_id: "{{ cluster.uuid }}"
-  register: result
-  ignore_errors: true
-
-- name: Debug list with cluster ext_id result
-  ansible.builtin.debug:
-    var: result
-
-# - name: List virtual switches with providing cluster external ID status
-#   ansible.builtin.assert:
-#     that:
-#       - result is defined
-#       - result.changed == false
-#       - result.failed == false
-#       - result.response is defined
-#       - result.response | length == 1
-#       - result.response[0].name == "{{ vs_name }}_updated"
-#     success_msg: "List virtual switches with providing cluster external ID passed"
-#     fail_msg: "List virtual switches with providing cluster external ID failed"
-
 - name: List virtual switches with filter
   nutanix.ncp.ntnx_virtual_switches_info_v2:
     filter: "name eq '{{ vs_name }}_updated'"
