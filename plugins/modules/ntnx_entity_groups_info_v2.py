@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_entity_groups_info_v2
 short_description: Get entity groups info
-version_added: 2.0.0
+version_added: 2.5.0
 description:
     - Fetch specific entity group info using external ID
     - Fetch list of multiple entity groups info if external ID is not provided with optional filters
@@ -40,17 +40,17 @@ EXAMPLES = r"""
     register: result
     ignore_errors: true
 
-- name: List entity group using filter
+- name: List entity groups using filter
   nutanix.ncp.ntnx_entity_groups_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
     validate_certs: false
-    filter: "name eq '{{ entity_group_name }}_updated_name'"
+    filter: "name eq 'ansible-entity-group'"
   register: result
   ignore_errors: true
 
-- name: List entity group using limit
+- name: List entity groups using limit
   nutanix.ncp.ntnx_entity_groups_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
@@ -66,7 +66,7 @@ EXAMPLES = r"""
     nutanix_username: <user>
     nutanix_password: <pass>
     validate_certs: false
-    ext_id: "{{ entity_group_ext_id }}"
+    ext_id: "51766795-1018-4234-b2b3-a715b6847154"
   register: result
   ignore_errors: true
 """
@@ -127,8 +127,7 @@ msg:
     sample: "Api Exception raised while fetching entity groups info"
 
 total_available_results:
-    description:
-        - The total number of available entity groups in PC.
+    description: The total number of available entity groups in PC.
     type: int
     returned: when all entity groups are fetched
     sample: 125

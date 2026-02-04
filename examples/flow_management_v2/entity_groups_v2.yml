@@ -4,8 +4,8 @@
 # 1. Create an entity group
 # 2. Update the entity group
 # 3. List all entity groups
-# 4. List entity group using filter
-# 5. List entity group using limit
+# 4. List entity groups using filter
+# 5. List entity groups using limit
 # 6. Get entity group using ext_id
 # 7. Delete the entity group
 
@@ -60,13 +60,13 @@
       register: result
       ignore_errors: true
 
-    - name: List entity group using filter
+    - name: List entity groups using filter
       nutanix.ncp.ntnx_entity_groups_info_v2:
         filter: "name eq '{{ entity_group_name }}_updated_name'"
       register: result
       ignore_errors: true
 
-    - name: List entity group using limit
+    - name: List entity groups using limit
       nutanix.ncp.ntnx_entity_groups_info_v2:
         limit: 1
       register: result

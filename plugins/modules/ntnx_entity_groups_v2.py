@@ -41,6 +41,8 @@ options:
                 description:
                     - List of allowed entities in the Entity Group.
                     - An allowed entity is a collection of acceptable entites.
+                    - The fields 'type' and 'selectBy' must be interpreted together 
+                        as ' BY ' to determine which attribute must be populated.
                 type: list
                 elements: dict
                 suboptions:
@@ -48,12 +50,12 @@ options:
                         description:
                             - Select by field for the allowed entity.
                         type: str
-                        choices: ["EXT_ID", "CATEGORY_EXT_ID", "LABELS", "NAME"]
+                        choices: ["IP_VALUES", "EXT_ID", "CATEGORY_EXT_ID", "LABELS", "NAME"]
                     type:
                         description:
                             - Type of allowed entity.
                         type: str
-                        choices: ["VM", "SUBNET", "VPC", "KUBE_SERVICE", "KUBE_CLUSTER", "KUBE_PODS"]
+                        choices: ["KUBE_NAMESPACE", "SUBNET", "VM", "VPC", "KUBE_SERVICE", "KUBE_CLUSTER", "KUBE_PODS", "ADDRESS_GROUP"]
                     reference_ext_ids:
                         description:
                             - List of reference external identifiers in an allowed entity.
@@ -66,6 +68,114 @@ options:
                             - If the selection type is kube fields, then it is necessary to specify the kube_entities.
                         type: list
                         elements: str
+                    addresses:
+                        description:
+                            - List of IP addresses in the Address Group.
+                        type: dict
+                        suboptions:
+                            ipv4_addresses:
+                                description:
+                                    - List of CIDR blocks in the Address Group.
+                                type: list
+                                elements: dict
+                                suboptions:
+                                    value:
+                                        description: The IPv4 address of the host.
+                                        type: str
+                                        required: true
+                                    prefix_length:
+                                        description: The prefix length of the network to which this host IPv4 address belongs.
+                                        type: int
+                                        default: 32
+                    ip_ranges:
+                        description:
+                            - IP range containing start and end IP.
+                        type: dict
+                        suboptions:
+                            ipv4_ranges:
+                                description:
+                                    - List of IP range containing start and end IP.
+                                type: list
+                                elements: dict
+                                suboptions:
+                                    start_ip:
+                                        description: Start address of the IP range.
+                                        type: str
+                                        required: true
+                                    end_ip:
+                                        description: End address of the IP range.
+                                        type: str
+                                        required: true
+    except_config:
+        description:
+            - Configuration of the except entities in the Entity Group.
+            - An except entity is a collection of entities that are excluded from the entity group.
+            - The fields 'type' and 'selectBy' must be interpreted together 
+                as ' BY ' to determine which attribute must be populated.
+        type: dict
+        suboptions:
+            entities:
+                description:
+                    - List of except entities in the Entity Group.
+                    - An except entity is a collection of except entites.
+                type: list
+                elements: dict
+                suboptions:
+                    select_by:
+                        description:
+                            - Select by field for the except entity.
+                        type: str
+                        choices: ["IP_VALUES", "EXT_ID"]
+                    type:
+                        description:
+                            - Type of except entity.
+                        type: str
+                        choices: ["ADDRESS_GROUP"]
+                    reference_ext_ids:
+                        description:
+                            - List of reference external identifiers in an except entity.
+                            - If the selection type is an external identifier, then it is necessary to specify the reference_ext_ids.
+                        type: list
+                        elements: str
+                    addresses:
+                        description:
+                            - List of IP addresses in the Address Group.
+                        type: dict
+                        suboptions:
+                            ipv4_addresses:
+                                description:
+                                    - List of CIDR blocks in the Address Group.
+                                type: list
+                                elements: dict
+                                suboptions:
+                                    value:
+                                        description: The IPv4 address of the host.
+                                        type: str
+                                        required: true
+                                    prefix_length:
+                                        description: The prefix length of the network to which this host IPv4 address belongs.
+                                        type: int
+                                        default: 32
+                    ip_ranges:
+                        description:
+                            - IP range containing start and end IP.
+                        type: dict
+                        suboptions:
+                            ipv4_ranges:
+                                description:
+                                    - List of IP range containing start and end IP.
+                                type: list
+                                elements: dict
+                                suboptions:
+                                    start_ip:
+                                        description: Start address of the IP range.
+                                        type: str
+                                        required: true
+                                    end_ip:
+                                        description: End address of the IP range.
+                                        type: str
+                                        required: true
+
 
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
@@ -110,12 +220,12 @@ EXAMPLES = r"""
 
 - name: Delete entity group
   nutanix.ncp.ntnx_entity_groups_v2:
-    ext_id: "b215708c-252f-400c-bc90-2f36242d3d3c"
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
     validate_certs: false
     state: absent
+    ext_id: "b215708c-252f-400c-bc90-2f36242d3d3c"
   register: result
   ignore_errors: true
 """
@@ -124,8 +234,8 @@ RETURN = r"""
 response:
   description:
       - Response for entity groups operations
-      - Entity group details if C(wait) is True
-      - Task details if C(wait) is False
+      - For Crate and Update operations, Entity group details if C(wait) is True and Task details if C(wait) is False.
+      - For Delete operation, Always Task details
   returned: always
   type: dict
   sample:
@@ -171,7 +281,7 @@ failed:
 
 msg:
     description: This indicates the message if any message occurred
-    returned: When there is an error or in check mode (in delete operation)
+    returned: When there is an error, module is idempotent or check mode (in delete operation)
     type: str
     sample: "Failed generating create entity groups Spec"
 
@@ -220,24 +330,45 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 
 def get_module_spec():
+    ip_address_sub_spec = dict(
+        value=dict(type="str", required=True),
+        prefix_length=dict(type="int", default=32),
+    )
+
+    ip_range_spec = dict(
+        start_ip=dict(type="str", required=True),
+        end_ip=dict(type="str", required=True),
+    )
+
+    addresses_sub_spec = dict(
+        ipv4_addresses=dict(type="list", elements="dict", options=ip_address_sub_spec, obj=mic_sdk.IPv4Address),
+    )
+
+    ip_ranges_sub_spec = dict(
+        ipv4_ranges=dict(type="list", elements="dict", options=ip_range_spec, obj=mic_sdk.IPv4Range),
+    )
 
     entities_sub_spec = dict(
         select_by=dict(
-            type="str", choices=["EXT_ID", "CATEGORY_EXT_ID", "LABELS", "NAME"]
+            type="str", choices=["IP_VALUES", "EXT_ID", "CATEGORY_EXT_ID", "LABELS", "NAME"]
         ),
         type=dict(
             type="str",
             choices=[
-                "VM",
+                "KUBE_NAMESPACE",
                 "SUBNET",
+                "VM",
                 "VPC",
                 "KUBE_SERVICE",
                 "KUBE_CLUSTER",
                 "KUBE_PODS",
+                "ADDRESS_GROUP",
             ],
         ),
         reference_ext_ids=dict(type="list", elements="str"),
         kube_entities=dict(type="list", elements="str"),
+        addresses=dict(type="dict", options=addresses_sub_spec, obj=mic_sdk.Addresses),
+        ip_ranges=dict(type="dict", options=ip_ranges_sub_spec, obj=mic_sdk.IpRange),
     )
     allowed_config_spec = dict(
         entities=dict(
@@ -248,6 +379,30 @@ def get_module_spec():
         )
     )
 
+    except_entities_sub_spec = dict(
+        select_by=dict(
+            type="str", choices=["IP_VALUES", "EXT_ID"]
+        ),
+        type=dict(
+            type="str",
+            choices=[
+                "ADDRESS_GROUP"
+            ],
+        ),
+        reference_ext_ids=dict(type="list", elements="str"),
+        addresses=dict(type="dict", options=addresses_sub_spec, obj=mic_sdk.Addresses),
+        ip_ranges=dict(type="dict", options=ip_ranges_sub_spec, obj=mic_sdk.IpRange),
+    )
+
+    except_config_spec = dict(
+        entities=dict(
+            type="list",
+            elements="dict",
+            options=except_entities_sub_spec,
+            obj=mic_sdk.ExceptEntity,
+        ),
+    )
+
     module_args = dict(
         ext_id=dict(type="str"),
         name=dict(type="str"),
@@ -256,6 +411,11 @@ def get_module_spec():
             type="dict",
             options=allowed_config_spec,
             obj=mic_sdk.AllowedConfig,
+        ),
+        except_config=dict(
+            type="dict",
+            options=except_config_spec,
+            obj=mic_sdk.ExceptConfig,
         ),
     )
 
@@ -290,7 +450,7 @@ def create_entity_group(module, entity_group, result):
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
-        task_status = wait_for_completion(module, task_ext_id, True)
+        task_status = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_status.to_dict())
         ext_id = get_entity_ext_id_from_task(
             task_status, rel=TASK_CONSTANTS.RelEntityType.ENTITY_GROUP
@@ -304,8 +464,8 @@ def create_entity_group(module, entity_group, result):
 
 
 def check_entity_groups_idempotency(old_spec, update_spec):
-    strip_internal_attributes(old_spec)
-    strip_internal_attributes(update_spec)
+    old_spec = strip_internal_attributes(old_spec)
+    update_spec = strip_internal_attributes(update_spec)
     if old_spec != update_spec:
         return False
 
@@ -322,7 +482,7 @@ def update_entity_group(module, entity_group, result):
 
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating entity_groups update spec", **result)
+        module.fail_json(msg="Failed generating entity group update spec", **result)
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
@@ -332,15 +492,16 @@ def update_entity_group(module, entity_group, result):
     if check_entity_groups_idempotency(current_spec.to_dict(), update_spec.to_dict()):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.")
-
+    etag = get_etag(current_spec)
+    kwargs = {"if_match": etag}
     resp = None
     try:
-        resp = entity_group.update_entity_group_by_id(extId=ext_id, body=update_spec)
+        resp = entity_group.update_entity_group_by_id(extId=ext_id, body=update_spec, **kwargs)
     except Exception as e:
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while updating entity_group",
+            msg="Api Exception raised while updating entity group",
         )
 
     task_ext_id = resp.data.ext_id
@@ -348,7 +509,7 @@ def update_entity_group(module, entity_group, result):
     result["response"] = strip_internal_attributes(resp.data.to_dict())
 
     if task_ext_id and module.params.get("wait"):
-        wait_for_completion(module, task_ext_id, True)
+        wait_for_completion(module, task_ext_id)
         resp = get_entity_group(module, entity_group, ext_id)
         result["response"] = strip_internal_attributes(resp.to_dict())
 
@@ -363,23 +524,13 @@ def delete_entity_group(module, entity_group, result):
         result["msg"] = "Entity group with ext_id:{0} will be deleted.".format(ext_id)
         return
 
-    current_spec = get_entity_group(module, entity_group, ext_id)
-
-    etag = get_etag(data=current_spec)
-    if not etag:
-        return module.fail_json(
-            "Unable to fetch etag for deleting entity group", **result
-        )
-
-    kwargs = {"if_match": etag}
-
     try:
-        resp = entity_group.delete_entity_group_by_id(extId=ext_id, **kwargs)
+        resp = entity_group.delete_entity_group_by_id(extId=ext_id)
     except Exception as e:
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while deleting entity_group",
+            msg="Api Exception raised while deleting entity group",
         )
 
     task_ext_id = resp.data.ext_id
@@ -387,7 +538,7 @@ def delete_entity_group(module, entity_group, result):
     result["response"] = strip_internal_attributes(resp.data.to_dict())
 
     if task_ext_id and module.params.get("wait"):
-        resp = wait_for_completion(module, task_ext_id, True)
+        resp = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(resp.to_dict())
 
     result["changed"] = True

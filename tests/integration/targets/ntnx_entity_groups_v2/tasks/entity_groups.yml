@@ -11,23 +11,19 @@
   ansible.builtin.set_fact:
     suffix_name: ansible-eg
 
-- name: Set variables
+- name: Set entity groups names
   ansible.builtin.set_fact:
     eg1: "{{ random_name }}{{ suffix_name }}1"
     eg2: "{{ random_name }}{{ suffix_name }}2"
 
-- name: Set ansible keys and values
+- name: Set categories keys and values
   ansible.builtin.set_fact:
     keys:
       - "{{random_name}}{{suffix_name}}key1"
       - "{{random_name}}{{suffix_name}}key2"
-      - "{{random_name}}{{suffix_name}}key3"
-      - "{{random_name}}{{suffix_name}}key4"
     values:
       - "{{random_name}}{{suffix_name}}value1"
       - "{{random_name}}{{suffix_name}}value2"
-      - "{{random_name}}{{suffix_name}}value3"
-      - "{{random_name}}{{suffix_name}}value4"
 
 - name: Set todelete list
   ansible.builtin.set_fact:
@@ -36,40 +32,6 @@
 - name: Set todelete_categories list
   ansible.builtin.set_fact:
     todelete_categories: []
-
-- name: Create entity group with check mode enabled
-  nutanix.ncp.ntnx_entity_groups_v2:
-    state: present
-    name: "test-ansible-entity-group-1"
-    description: test-ansible-entity-group-2-desc
-    allowed_config:
-      entities:
-        - select_by: EXT_ID
-          type: KUBE_CLUSTER
-          reference_ext_ids:
-            - "83cbf00d-782f-4efc-87c8-4129f5942aaa"
-            - "83cbf00d-782f-4efc-87c8-4129f5942bbb"
-          kube_entities:
-            - "kube-cluster-1"
-            - "kube-cluster-2"
-  register: result
-  ignore_errors: true
-  check_mode: true
-
-- name: Create entity group with check mode enabled status
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == False
-      - result.failed == False
-      - result.response.name == "test-ansible-entity-group-1"
-      - result.response.description == "test-ansible-entity-group-2-desc"
-      - result.response.allowed_config.entities[0].select_by == "EXT_ID"
-      - result.response.allowed_config.entities[0].type == "KUBE_CLUSTER"
-      - result.response.allowed_config.entities[0].reference_ext_ids == ["83cbf00d-782f-4efc-87c8-4129f5942aaa", "83cbf00d-782f-4efc-87c8-4129f5942bbb"]
-      - result.response.allowed_config.entities[0].kube_entities == ["kube-cluster-1", "kube-cluster-2"]
-    fail_msg: Create entity group with check mode enabled failed
-    success_msg: Create entity group with check mode enabled passed
 
 ###################################################################################################
 
@@ -87,8 +49,9 @@
 - name: Create categories for entity groups status
   ansible.builtin.assert:
     that:
-      - output is defined
       - output.changed == true
+      - output.failed == false
+      - output is defined
       - output.results | length == 2
       - output.msg == "All items completed"
     success_msg: "Categories created successfully"
@@ -98,6 +61,162 @@
   ansible.builtin.set_fact:
     todelete_categories: "{{ todelete_categories + [ item.response.ext_id ] }}"
   with_items: "{{ output.results }}"
+
+###################################################################################################
+
+- name: Create entity group with check mode enabled
+  nutanix.ncp.ntnx_entity_groups_v2:
+    state: present
+    name: "test-ansible-entity-group-1"
+    description: test-ansible-entity-group-2-desc
+    allowed_config:
+      entities:
+        - select_by: EXT_ID
+          type: KUBE_CLUSTER
+          reference_ext_ids:
+            - "83cbf00d-782f-4efc-87c8-4129f5942aaa"
+            - "83cbf00d-782f-4efc-87c8-4129f5942bbb"
+          kube_entities:
+            - "kube-cluster-1"
+            - "kube-cluster-2"
+          addresses:
+            ipv4_addresses:
+              - value: 10.1.1.0
+                prefix_length: 24
+              - value: 10.1.2.2
+                prefix_length: 32
+          ip_ranges:
+            ipv4_ranges:
+              - start_ip: 10.1.1.0
+                end_ip: 10.1.1.255
+              - start_ip: 10.1.2.0
+                end_ip: 10.1.2.255
+    except_config:
+      entities:
+        - select_by: EXT_ID
+          type: ADDRESS_GROUP
+          reference_ext_ids:
+            - "83cbf00d-782f-4efc-87c8-4129f5942aaa"
+            - "83cbf00d-782f-4efc-87c8-4129f5942bbb"
+          addresses:
+            ipv4_addresses:
+              - value: 10.1.1.0
+                prefix_length: 24
+              - value: 10.1.2.2
+                prefix_length: 32
+          ip_ranges:
+            ipv4_ranges:
+              - start_ip: 10.1.1.0
+                end_ip: 10.1.1.255
+              - start_ip: 10.1.2.0
+                end_ip: 10.1.2.255
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Create entity group with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "test-ansible-entity-group-1"
+      - result.response.description == "test-ansible-entity-group-2-desc"
+      - result.response.allowed_config.entities[0].select_by == "EXT_ID"
+      - result.response.allowed_config.entities[0].type == "KUBE_CLUSTER"
+      - result.response.allowed_config.entities[0].reference_ext_ids | length == 2
+      - result.response.allowed_config.entities[0].reference_ext_ids == ["83cbf00d-782f-4efc-87c8-4129f5942aaa", "83cbf00d-782f-4efc-87c8-4129f5942bbb"]
+      - result.response.allowed_config.entities[0].kube_entities | length == 2
+      - result.response.allowed_config.entities[0].kube_entities == ["kube-cluster-1", "kube-cluster-2"]
+      - result.response.allowed_config.entities[0].addresses.ipv4_addresses.value | length == 2
+      - result.response.allowed_config.entities[0].addresses.ipv4_addresses.value == ["10.1.1.0", "10.1.2.2"]
+      - result.response.allowed_config.entities[0].addresses.ipv4_addresses.prefix_length | length == 2
+      - result.response.allowed_config.entities[0].addresses.ipv4_addresses.prefix_length == [24, 32]
+      - result.response.allowed_config.entities[0].ip_ranges.ipv4_ranges.start_ip | length == 2
+      - result.response.allowed_config.entities[0].ip_ranges.ipv4_ranges.start_ip == ["10.1.1.0", "10.1.2.0"]
+      - result.response.allowed_config.entities[0].ip_ranges.ipv4_ranges.end_ip | length == 2
+      - result.response.allowed_config.entities[0].ip_ranges.ipv4_ranges.end_ip == ["10.1.1.255", "10.1.2.255"]
+      - result.response.except_config.entities[0].select_by == "EXT_ID"
+      - result.response.except_config.entities[0].type == "ADDRESS_GROUP"
+      - result.response.except_config.entities[0].reference_ext_ids | length == 2
+      - result.response.except_config.entities[0].reference_ext_ids == ["83cbf00d-782f-4efc-87c8-4129f5942aaa", "83cbf00d-782f-4efc-87c8-4129f5942bbb"]
+      - result.response.except_config.entities[0].addresses.ipv4_addresses.value | length == 2
+      - result.response.except_config.entities[0].addresses.ipv4_addresses.value == ["10.1.1.0", "10.1.2.2"]
+      - result.response.except_config.entities[0].addresses.ipv4_addresses.prefix_length | length == 2
+      - result.response.except_config.entities[0].addresses.ipv4_addresses.prefix_length == [24, 32]
+      - result.response.except_config.entities[0].ip_ranges.ipv4_ranges.start_ip | length == 2
+      - result.response.except_config.entities[0].ip_ranges.ipv4_ranges.start_ip == ["10.1.1.0", "10.1.2.0"]
+      - result.response.except_config.entities[0].ip_ranges.ipv4_ranges.end_ip | length == 2
+      - result.response.except_config.entities[0].ip_ranges.ipv4_ranges.end_ip == ["10.1.1.255", "10.1.2.255"]
+    fail_msg: Create entity group with check mode enabled failed
+    success_msg: Create entity group with check mode enabled passed
+
+###################################################################################################
+
+- name: Create entity group with check mode enabled with multiple allowed entities
+  nutanix.ncp.ntnx_entity_groups_v2:
+    state: present
+    name: "test-ansible-entity-group-1"
+    description: test-ansible-entity-group-2-desc
+    allowed_config:
+      entities:
+        - select_by: EXT_ID
+          type: KUBE_CLUSTER
+          reference_ext_ids:
+            - "83cbf00d-782f-4efc-87c8-4129f5942aaa"
+            - "83cbf00d-782f-4efc-87c8-4129f5942bbb"
+          kube_entities:
+            - "kube-cluster-1"
+            - "kube-cluster-2"
+          addresses:
+            ipv4_addresses:
+              - value: 10.1.1.0
+                prefix_length: 24
+              - value: 10.1.2.2
+                prefix_length: 32
+          ip_ranges:
+            ipv4_ranges:
+              - start_ip: 10.1.1.0
+                end_ip: 10.1.1.255
+              - start_ip: 10.1.2.0
+                end_ip: 10.1.2.255
+        - select_by: CATEGORY_EXT_ID
+          type: SUBNET
+          reference_ext_ids:
+            - "00062ffc-95ad-19e9-185b-ac1f6b6f97a3"
+            - "00062ffc-95ad-19e9-185b-ac1f6b6f97a4"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Create entity group with check mode enabled with multiple allowed entities Status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "test-ansible-entity-group-1"
+      - result.response.description == "test-ansible-entity-group-2-desc"
+      - result.response.allowed_config.entities[0].select_by == "EXT_ID"
+      - result.response.allowed_config.entities[0].type == "KUBE_CLUSTER"
+      - result.response.allowed_config.entities[0].reference_ext_ids | length == 2
+      - result.response.allowed_config.entities[0].reference_ext_ids == ["83cbf00d-782f-4efc-87c8-4129f5942aaa", "83cbf00d-782f-4efc-87c8-4129f5942bbb"]
+      - result.response.allowed_config.entities[0].kube_entities | length == 2
+      - result.response.allowed_config.entities[0].kube_entities == ["kube-cluster-1", "kube-cluster-2"]
+      - result.response.allowed_config.entities[0].addresses.ipv4_addresses.value | length == 2
+      - result.response.allowed_config.entities[0].addresses.ipv4_addresses.value == ["10.1.1.0", "10.1.2.2"]
+      - result.response.allowed_config.entities[0].addresses.ipv4_addresses.prefix_length | length == 2
+      - result.response.allowed_config.entities[0].addresses.ipv4_addresses.prefix_length == [24, 32]
+      - result.response.allowed_config.entities[0].ip_ranges.ipv4_ranges.start_ip | length == 2
+      - result.response.allowed_config.entities[0].ip_ranges.ipv4_ranges.start_ip == ["10.1.1.0", "10.1.2.0"]
+      - result.response.allowed_config.entities[0].ip_ranges.ipv4_ranges.end_ip | length == 2
+      - result.response.allowed_config.entities[0].ip_ranges.ipv4_ranges.end_ip == ["10.1.1.255", "10.1.2.255"]
+      - result.response.allowed_config.entities[1].select_by == "CATEGORY_EXT_ID"
+      - result.response.allowed_config.entities[1].type == "SUBNET"
+      - result.response.allowed_config.entities[1].reference_ext_ids | length == 2
+      - result.response.allowed_config.entities[1].reference_ext_ids == ["00062ffc-95ad-19e9-185b-ac1f6b6f97a3", "00062ffc-95ad-19e9-185b-ac1f6b6f97a4"]
+    fail_msg: Create entity group with check mode enabled with multiple allowed entities failed
+    success_msg: Create entity group with check mode enabled with multiple allowed entities passed
 
 ###################################################################################################
 
@@ -119,9 +238,9 @@
 - name: Create entity group Status
   ansible.builtin.assert:
     that:
+      - result.changed == true
+      - result.failed == false
       - result.response is defined
-      - result.changed == True
-      - result.failed == False
       - result.ext_id is defined
       - result.response.name == "{{ eg1 }}_entity_group"
       - result.response.description == "{{ eg1 }}_entity_group_desc"
@@ -156,9 +275,9 @@
 - name: Create entity group with different configs Status
   ansible.builtin.assert:
     that:
+      - result.changed == true
+      - result.failed == false
       - result.response is defined
-      - result.changed == True
-      - result.failed == False
       - result.ext_id is defined
       - result.response.name == "{{ eg2 }}_entity_group"
       - result.response.description == "{{ eg2 }}_entity_group_desc"
@@ -168,6 +287,56 @@
       - result.response.allowed_config.entities[0].reference_ext_ids | length == todelete_categories | length
     fail_msg: Create entity group with different configs failed
     success_msg: Create entity group with different configs passed
+
+- name: Save entity group ext_id to the list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [ result.ext_id ] }}"
+
+###################################################################################################
+
+- name: Create entity group with VM and Subnet allowed entities
+  nutanix.ncp.ntnx_entity_groups_v2:
+    state: present
+    name: "{{ eg1 }}_entity_group_vm_subnet"
+    description: "{{ eg1 }}_entity_group_vm_subnet_desc"
+    allowed_config:
+      entities:
+        - select_by: CATEGORY_EXT_ID
+          type: VM
+          reference_ext_ids:
+            - "{{ todelete_categories[0] }}"
+            - "{{ todelete_categories[1] }}"
+        - select_by: CATEGORY_EXT_ID
+          type: SUBNET
+          reference_ext_ids:
+            - "{{ todelete_categories[0] }}"
+            - "{{ todelete_categories[1] }}"
+  register: result
+  ignore_errors: true
+
+- name: Print result
+  ansible.builtin.debug:
+    msg: "{{ result }}"
+
+- name: Create entity group with VM and Subnet allowed entities Status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id is defined
+      - result.response.name == "{{ eg1 }}_entity_group_vm_subnet"
+      - result.response.description == "{{ eg1 }}_entity_group_vm_subnet_desc"
+      - result.response.allowed_config.entities[0].select_by == "CATEGORY_EXT_ID"
+      - result.response.allowed_config.entities[0].type == "VM"
+      - result.response.allowed_config.entities[0].reference_ext_ids == todelete_categories
+      - result.response.allowed_config.entities[0].reference_ext_ids | length == todelete_categories | length
+      - result.response.allowed_config.entities[1].select_by == "CATEGORY_EXT_ID"
+      - result.response.allowed_config.entities[1].type == "SUBNET"
+      - result.response.allowed_config.entities[1].reference_ext_ids == todelete_categories
+      - result.response.allowed_config.entities[1].reference_ext_ids | length == todelete_categories | length
+    fail_msg: Create entity group with VM and Subnet allowed entities failed
+    success_msg: Create entity group with VM and Subnet allowed entities passed
 
 - name: Save entity group ext_id to the list
   ansible.builtin.set_fact:
@@ -192,8 +361,8 @@
 - name: Create entity group without name Status
   ansible.builtin.assert:
     that:
-      - result.changed == False
-      - result.failed == True
+      - result.changed == false
+      - result.failed == true
       - result.msg == "state is present but any of the following are missing: name, ext_id"
     fail_msg: Create entity group without name did not fail as expected
     success_msg: Create entity group without name failed as expected
@@ -218,9 +387,9 @@
 - name: Create entity group with wrong reference_ext_ids Status
   ansible.builtin.assert:
     that:
+      - result.changed == false
+      - result.failed == true
       - result.response is defined
-      - result.changed == False
-      - result.failed == True
       - result.msg == "Task Failed"
     fail_msg: Create entity group with wrong reference_ext_ids did not fail as expected
     success_msg: Create entity group with wrong reference_ext_ids failed as expected
@@ -231,8 +400,8 @@
   nutanix.ncp.ntnx_entity_groups_v2:
     state: present
     ext_id: "{{ todelete[0] }}"
-    name: "{{ eg1 }}_entity_group_updated_name"
-    description: "{{ eg1 }}_entity_group_updated_desc"
+    name: "entity_group_updated_name"
+    description: "entity_group_updated_desc"
     allowed_config:
       entities:
         - select_by: CATEGORY_EXT_ID
@@ -247,11 +416,11 @@
 - name: Update entity group in check mode Status
   ansible.builtin.assert:
     that:
+      - result.changed == false
+      - result.failed == false
       - result.response is defined
-      - result.changed == False
-      - result.failed == False
-      - result.response.name == "{{ eg1 }}_entity_group_updated_name"
-      - result.response.description == "{{ eg1 }}_entity_group_updated_desc"
+      - result.response.name == "entity_group_updated_name"
+      - result.response.description == "entity_group_updated_desc"
       - result.response.allowed_config.entities[0].select_by == "CATEGORY_EXT_ID"
       - result.response.allowed_config.entities[0].type == "SUBNET"
       - result.response.allowed_config.entities[0].reference_ext_ids == ["00062ffc-95ad-19e9-185b-ac1f6b6f97e2", "00062ffc-95ad-19e9-185b-ac1f6b6f97a3"]
@@ -273,9 +442,9 @@
 - name: Update entity group Status
   ansible.builtin.assert:
     that:
+      - result.changed == true
+      - result.failed == false
       - result.response is defined
-      - result.changed == True
-      - result.failed == False
       - result.ext_id is defined
       - result.response.name == "{{ eg1 }}_entity_group_updated_name"
       - result.response.description == "{{ eg1 }}_entity_group_updated_desc"
@@ -296,8 +465,8 @@
 - name: Update entity group with same values Status
   ansible.builtin.assert:
     that:
-      - result.changed == False
-      - result.failed == False
+      - result.changed == false
+      - result.failed == false
       - result.msg == "Nothing to change."
     fail_msg: Update entity group with same values failed
     success_msg: Update entity group with same values passed
@@ -315,8 +484,8 @@
 - name: Update entity group without changing name Status
   ansible.builtin.assert:
     that:
-      - result.changed == True
-      - result.failed == False
+      - result.changed == true
+      - result.failed == false
       - result.response.description == "{{ eg1 }}_entity_group_updated_desc_without_name"
     fail_msg: Update entity group without changing name failed
     success_msg: Update entity group without changing name passed
@@ -335,11 +504,42 @@
 - name: Update entity group with wrong ext_id Status
   ansible.builtin.assert:
     that:
-      - result.changed == False
-      - result.failed == True
+      - result.changed == false
+      - result.failed == true
       - result.msg == "Api Exception raised while fetching entity group info using ext_id"
     fail_msg: Update entity group with wrong ext_id did not fail as expected
     success_msg: Update entity group with wrong ext_id failed as expected
+
+###################################################################################################
+
+- name: Update entity group with wromg category ext_ids
+  nutanix.ncp.ntnx_entity_groups_v2:
+    state: present
+    ext_id: "{{ todelete[0] }}"
+    name: "{{ eg1 }}_entity_group_updated_name"
+    description: "{{ eg1 }}_entity_group_updated_desc"
+    allowed_config:
+      entities:
+        - select_by: CATEGORY_EXT_ID
+          type: VM
+          reference_ext_ids:
+            - "83cbf00d-782f-4efc-87c8-4129f5942aaa"
+            - "83cbf00d-782f-4efc-87c8-4129f5942bbb"
+  register: result
+  ignore_errors: true
+
+- name: Print result
+  ansible.builtin.debug:
+    msg: "{{ result }}"
+
+- name: Update entity group with wromg category ext_ids Status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      # - result.msg == "Api Exception raised while fetching entity group info using ext_id"
+    fail_msg: Update entity group with wromg category ext_ids did not fail as expected
+    success_msg: Update entity group with wromg category ext_ids failed as expected
 
 ###################################################################################################
 
@@ -351,9 +551,9 @@
 - name: List all entity groups Status
   ansible.builtin.assert:
     that:
+      - result.changed == false
+      - result.failed == false
       - result.response is defined
-      - result.changed == False
-      - result.failed == False
       - result.response | length >= 2
       - result.total_available_results is defined
       - result.total_available_results >= 2
@@ -371,9 +571,9 @@
 - name: List entity group using filter Status
   ansible.builtin.assert:
     that:
+      - result.changed == false
+      - result.failed == false
       - result.response is defined
-      - result.changed == False
-      - result.failed == False
       - result.response | length == 1
     fail_msg: List entity group using filter failed
     success_msg: Entity group listed successfully using filter
@@ -389,9 +589,9 @@
 - name: List entity group using limit Status
   ansible.builtin.assert:
     that:
+      - result.changed == false
+      - result.failed == false
       - result.response is defined
-      - result.changed == False
-      - result.failed == False
       - result.response | length == 1
     fail_msg: List entity group using limit failed
     success_msg: Entity group listed successfully using limit
@@ -407,9 +607,9 @@
 - name: Get entity group using ext_id Status
   ansible.builtin.assert:
     that:
+      - result.changed == false
+      - result.failed == false
       - result.response is defined
-      - result.changed == False
-      - result.failed == False
       - result.response.name == "{{ eg2 }}_entity_group"
       - result.response.ext_id == "{{ todelete[1] }}"
       - result.response.description == "{{ eg2 }}_entity_group_desc"
@@ -418,7 +618,7 @@
       - result.response.allowed_config.entities[0].reference_ext_ids == todelete_categories
       - result.response.allowed_config.entities[0].reference_ext_ids | length == todelete_categories | length
     fail_msg: Get entity group using ext_id failed
-    success_msg: Entity group listed successfully using ext_id
+    success_msg: Get entity group using ext_id passed successfully
 
 ###################################################################################################
 
@@ -431,9 +631,9 @@
 - name: Get entity group using wrong ext_id Status
   ansible.builtin.assert:
     that:
+      - result.changed == false
+      - result.failed == true
       - result.response is defined
-      - result.changed == False
-      - result.failed == True
       - result.msg == "Api Exception raised while fetching entity group info using ext_id"
     fail_msg: Get entity group using wrong ext_id did not fail as expected
     success_msg: Get entity group using wrong ext_id failed as expected
@@ -451,9 +651,9 @@
 - name: Delete entity group in check mode Status
   ansible.builtin.assert:
     that:
+      - result.changed == false
+      - result.failed == false
       - result.response is defined
-      - result.changed == False
-      - result.failed == False
       - result.msg == "Entity group with ext_id:{{ todelete[0] }} will be deleted."
     fail_msg: Delete entity group in check mode failed
     success_msg: Delete entity group in check mode passed
@@ -470,9 +670,9 @@
 - name: Delete entity group with wrong ext_id Status
   ansible.builtin.assert:
     that:
+      - result.changed == false
+      - result.failed == true
       - result.response is defined
-      - result.changed == False
-      - result.failed == True
       - result.msg == "Api Exception raised while fetching entity group info using ext_id"
     fail_msg: Delete entity group with wrong ext_id did not fail as expected
     success_msg: Delete entity group with wrong ext_id failed as expected
@@ -490,12 +690,12 @@
 - name: Deletion Status
   ansible.builtin.assert:
     that:
-      - item.changed == True
-      - item.failed == False
+      - item.changed == true
+      - item.failed == false
       - item.response.status == 'SUCCEEDED'
       - item.ext_id == item.ext_id
-    fail_msg: "Unable to delete entity group"
-    success_msg: "Entity group deleted successfully"
+    fail_msg: "Unable to delete entity group with ext_id: {{ item.ext_id }}"
+    success_msg: "Entity group with ext_id: {{ item.ext_id }} deleted successfully"
   loop: "{{ result.results }}"
 
 ###################################################################################################
@@ -511,8 +711,8 @@
 - name: Deletion Status
   ansible.builtin.assert:
     that:
-      - result.changed == True
+      - result.changed == true
       - result.results | length == todelete_categories | length
       - result.msg == "All items completed"
-    fail_msg: "Unable to delete category key & value"
-    success_msg: "Category key & value deleted successfully"
+    fail_msg: "Unable to delete category key & value with ext_id: {{ item.ext_id }}"
+    success_msg: "Category key & value with ext_id: {{ item.ext_id }} deleted successfully"
