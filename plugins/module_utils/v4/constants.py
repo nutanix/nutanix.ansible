@@ -45,6 +45,7 @@ class Tasks:
         STORAGE_POLICY = "datapolicies:config:storage-policy"
         KMS = "security:encryption:key-management-server"
         CLUSTER_PROFILE = "clustermgmt:config:cluster-profile"
+        ENTITY_GROUP = "microseg:config:entity-group"
 
     class CompletetionDetailsName:
         """Completion details name for the task entities affected"""
