@@ -1,0 +1,506 @@
+---
+- name: Start NIC profiles tests
+  ansible.builtin.debug:
+    msg: Start NIC profiles tests
+
+- name: Generate random names
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    suffix_name: "ansible"
+    todelete: []
+
+- name: Set NIC profile name
+  ansible.builtin.set_fact:
+    nic_profile_name: "nic_profile_{{ suffix_name }}_{{ random_name }}"
+
+########################################################################################
+# Fetch host NIC information for NIC profile creation and association
+########################################################################################
+
+- name: Fetch hosts in cluster
+  nutanix.ncp.ntnx_hosts_info_v2:
+    cluster_ext_id: "{{ cluster.uuid }}"
+  register: hosts_info
+  ignore_errors: true
+
+- name: Fetch hosts in cluster status
+  ansible.builtin.assert:
+    that:
+      - hosts_info is defined
+      - hosts_info.failed == false
+      - hosts_info.response is defined
+      - hosts_info.response | length > 0
+    success_msg: "Hosts info fetched successfully"
+    fail_msg: "Hosts info fetch failed"
+
+- name: Set host ext_id
+  ansible.builtin.set_fact:
+    host_ext_id: "{{ hosts_info.response[0].ext_id }}"
+
+########################################################################################
+# Create NIC profile
+########################################################################################
+
+- name: Generate spec for creating NIC profile using check mode
+  nutanix.ncp.ntnx_nic_profiles_v2:
+    name: "nic_profile_check_mode"
+    description: "NIC profile created in check mode"
+    capability_config:
+      capability_type: "SRIOV"
+    nic_family: "15b3:101d"
+    metadata:
+      owner_reference_id: "11111111-1111-1111-1111-111111111111"
+      owner_user_name: "admin"
+      project_reference_id: "22222222-2222-2222-2222-222222222222"
+      project_name: "test_project"
+      category_ids:
+        - "33333333-3333-3333-3333-333333333333"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Generate spec for creating NIC profile using check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "nic_profile_check_mode"
+      - result.response.description == "NIC profile created in check mode"
+      - result.response.nic_family == "15b3:101d"
+      - result.response.capability_config.capability_type == "SRIOV"
+      - result.response.metadata.owner_reference_id == "11111111-1111-1111-1111-111111111111"
+      - result.response.metadata.owner_user_name == "admin"
+      - result.response.metadata.project_reference_id == "22222222-2222-2222-2222-222222222222"
+      - result.response.metadata.project_name == "test_project"
+      - result.response.metadata.category_ids == ["33333333-3333-3333-3333-333333333333"]
+    success_msg: "Spec for creating NIC profile using check mode is generated successfully"
+    fail_msg: "Failed to generate spec for creating NIC profile using check mode"
+
+- name: Create first NIC profile
+  nutanix.ncp.ntnx_nic_profiles_v2:
+    name: "{{ nic_profile_name }}_first"
+    description: "First NIC profile created by ansible"
+    capability_config:
+      capability_type: "SRIOV"
+    nic_family: "{{ nic_profile.first_nic_profile_family }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Create first NIC profile status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "{{ nic_profile_name }}_first"
+      - result.response.description == "First NIC profile created by ansible"
+      - result.response.nic_family == "{{ nic_profile.first_nic_profile_family }}"
+      - result.response.capability_config.capability_type == "SRIOV"
+    success_msg: "First NIC profile is created successfully"
+    fail_msg: "Failed to create first NIC profile"
+
+- name: Add NIC profile to todelete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.response.ext_id] }}"
+
+- name: Create second NIC profile
+  nutanix.ncp.ntnx_nic_profiles_v2:
+    name: "{{ nic_profile_name }}_second"
+    description: "Second NIC profile created by ansible"
+    capability_config:
+      capability_type: "DP_OFFLOAD"
+    nic_family: "{{ nic_profile.second_nic_profile_family }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Create second NIC profile status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "{{ nic_profile_name }}_second"
+      - result.response.description == "Second NIC profile created by ansible"
+      - result.response.nic_family == "{{ nic_profile.second_nic_profile_family }}"
+      - result.response.capability_config.capability_type == "DP_OFFLOAD"
+    success_msg: "Second NIC profile is created successfully"
+    fail_msg: "Failed to create second NIC profile"
+
+- name: Add NIC profile to todelete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.response.ext_id] }}"
+
+- name: Create NIC profile with missing name
+  nutanix.ncp.ntnx_nic_profiles_v2:
+    capability_config:
+      capability_type: "SRIOV"
+    nic_family: "{{ nic_profile.first_nic_profile_family }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Create NIC profile with missing name status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.response is not defined
+      - "'state is present but any of the following are missing: ext_id, name' in result.msg"
+    success_msg: "NIC profile with missing name is not created"
+    fail_msg: "Failed to create NIC profile with missing name"
+
+- name: Create NIC profile with missing capability_config
+  nutanix.ncp.ntnx_nic_profiles_v2:
+    name: "{{ nic_profile_name }}"
+    nic_family: "{{ nic_profile.first_nic_profile_family }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Create NIC profile with missing capability_config status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.response is not defined
+      - "'state is present but any of the following are missing: ext_id, capability_config' in result.msg"
+    success_msg: "NIC profile with missing capability_config is not created"
+    fail_msg: "Failed to create NIC profile with missing capability_config"
+
+- name: Create NIC profile with missing nic_family
+  nutanix.ncp.ntnx_nic_profiles_v2:
+    name: "{{ nic_profile_name }}"
+    capability_config:
+      capability_type: "SRIOV"
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Create NIC profile with missing nic_family status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.response is not defined
+      - "'state is present but any of the following are missing: ext_id, nic_family' in result.msg"
+    success_msg: "NIC profile with missing nic_family is not created"
+    fail_msg: "Failed to create NIC profile with missing nic_family"
+
+########################################################################################
+# Update NIC profile
+########################################################################################
+
+- name: Generate spec for updating NIC profile using check mode
+  nutanix.ncp.ntnx_nic_profiles_v2:
+    ext_id: "{{ todelete[0] }}"
+    name: "nic_profile_check_mode_updated"
+    description: "NIC profile updated in check mode"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Generate spec for updating NIC profile using check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "nic_profile_check_mode_updated"
+      - result.response.description == "NIC profile updated in check mode"
+    success_msg: "Spec for updating NIC profile using check mode is generated successfully"
+    fail_msg: "Failed to generate spec for updating NIC profile using check mode"
+
+- name: Update NIC profile
+  nutanix.ncp.ntnx_nic_profiles_v2:
+    ext_id: "{{ todelete[0] }}"
+    name: "{{ nic_profile_name }}_updated"
+    description: "NIC profile updated"
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Update NIC profile status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "{{ nic_profile_name }}_updated"
+      - result.response.description == "NIC profile updated"
+    success_msg: "NIC profile is updated successfully"
+    fail_msg: "Failed to update NIC profile"
+
+- name: Test idempotency by updating NIC profile with same values
+  nutanix.ncp.ntnx_nic_profiles_v2:
+    ext_id: "{{ todelete[0] }}"
+    name: "{{ nic_profile_name }}_updated"
+    description: "NIC profile updated"
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Test idempotency by updating NIC profile with same values status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.msg == "Nothing to change."
+    success_msg: "Test idempotency by updating NIC profile with same values passed"
+    fail_msg: "Test idempotency by updating NIC profile with same values failed"
+
+- name: Update NIC profile with wrong ext_id
+  nutanix.ncp.ntnx_nic_profiles_v2:
+    ext_id: "a8b187ac-d859-441b-b54e-344bf5b6812a"
+    name: "{{ nic_profile_name }}_updated"
+    description: "NIC profile updated"
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Update NIC profile with wrong ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching NIC profile info using ext_id"
+      - result.response is defined
+      - result.response.data.error | length > 0
+    success_msg: "Update NIC profile with wrong ext_id passed"
+    fail_msg: "Update NIC profile with wrong ext_id failed"
+
+########################################################################################
+# Fetch NIC profile
+########################################################################################
+
+- name: Fetch NIC profile
+  nutanix.ncp.ntnx_nic_profiles_info_v2:
+    ext_id: "{{ todelete[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Fetch NIC profile status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "{{ nic_profile_name }}_updated"
+      - result.response.description == "NIC profile updated"
+      - result.response.capability_config.capability_type == "SRIOV"
+      - result.response.nic_family == "{{ nic_profile.first_nic_profile_family }}"
+    success_msg: "NIC profile is fetched successfully"
+    fail_msg: "Failed to fetch NIC profile"
+
+- name: Fetch NIC profile with wrong ext_id
+  nutanix.ncp.ntnx_nic_profiles_info_v2:
+    ext_id: "47f1d017-20c3-4641-a7b1-619c9ace0068"
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Fetch NIC profile with wrong ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching NIC profile info using ext_id"
+      - result.response.data.error | length > 0
+    success_msg: "Fetch NIC profile with wrong ext_id passed"
+    fail_msg: "Fetch NIC profile with wrong ext_id failed"
+
+########################################################################################
+# List NIC profiles
+########################################################################################
+
+- name: List NIC profiles
+  nutanix.ncp.ntnx_nic_profiles_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: List NIC profiles status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length >= 2
+    success_msg: "NIC profiles are listed successfully"
+    fail_msg: "Failed to list NIC profiles"
+
+- name: List NIC profiles with filter
+  nutanix.ncp.ntnx_nic_profiles_info_v2:
+    filter: "name eq '{{ nic_profile_name }}_second'"
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: List NIC profiles with filter status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].name == "{{ nic_profile_name }}_second"
+      - result.response[0].description == "Second NIC profile created by ansible"
+      - result.response[0].capability_config.capability_type == "DP_OFFLOAD"
+      - result.response[0].nic_family == "{{ nic_profile.second_nic_profile_family }}"
+    success_msg: "NIC profiles with filter are listed successfully"
+    fail_msg: "Failed to list NIC profiles with filter"
+
+- name: List NIC profiles with limit
+  nutanix.ncp.ntnx_nic_profiles_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: List NIC profiles with limit status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+    success_msg: "NIC profiles with limit are listed successfully"
+    fail_msg: "Failed to list NIC profiles with limit"
+
+########################################################################################
+# Delete NIC profiles
+########################################################################################
+
+- name: Delete NIC profile with check mode
+  nutanix.ncp.ntnx_nic_profiles_v2:
+    ext_id: "{{ todelete[0] }}"
+    state: absent
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Delete NIC profile with check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.msg == "NIC profile with ext_id:{{ todelete[0] }} will be deleted."
+    success_msg: "Delete NIC profile with check mode passed"
+    fail_msg: "Delete NIC profile with check mode failed"
+
+- name: Delete NIC profiles
+  nutanix.ncp.ntnx_nic_profiles_v2:
+    ext_id: "{{ item }}"
+    state: absent
+  register: result
+  ignore_errors: true
+  loop: "{{ todelete }}"
+
+- name: Delete NIC profiles status
+  ansible.builtin.assert:
+    that:
+      - item.response is defined
+      - item.changed == true
+      - item.failed == false
+      - item.response.status == 'SUCCEEDED'
+      - item.item in todelete
+      - result.results | length == todelete | length
+      - result.msg == "All items completed"
+    fail_msg: "Delete NIC profiles failed"
+    success_msg: "Delete NIC profiles passed"
+  loop: "{{ result.results }}"
+
+
+# This is failing: raised a bug https://jira.nutanix.com/browse/ENG-876170 for network funtion (same issue)
+# - name: Delete NIC profiles with wrong ext_id
+#   nutanix.ncp.ntnx_nic_profiles_v2:
+#     ext_id: "4496f8c1-e58e-4f9f-9dbf-be6006eb8c9d"
+#     state: absent
+#   register: result
+#   ignore_errors: true
+
+# - name: Debug result
+#   ansible.builtin.debug:
+#     var: result
+
+# - name: Delete NIC profiles with wrong ext_id status
+#   ansible.builtin.assert:
+#     that:
+#       - result is defined
+#       - result.changed == false
+#       - result.failed == true
+#       - result.msg == "Api Exception raised while fetching NIC profile info using ext_id"
+#       - result.response.data.error | length > 0
+#     success_msg: "Delete NIC profiles with wrong ext_id passed"
+#     fail_msg: "Delete NIC profiles with wrong ext_id failed"
+
