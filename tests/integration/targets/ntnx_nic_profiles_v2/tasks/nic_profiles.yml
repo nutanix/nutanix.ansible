@@ -501,4 +501,3 @@
 #       - result.response.data.error | length > 0
 #     success_msg: "Delete NIC profiles with wrong ext_id passed"
 #     fail_msg: "Delete NIC profiles with wrong ext_id failed"
-
