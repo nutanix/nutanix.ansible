@@ -23,13 +23,16 @@ class BaseModule(AnsibleModule):
             default="9440", type="str", fallback=(env_fallback, ["NUTANIX_PORT"])
         ),
         nutanix_username=dict(
-            type="str", fallback=(env_fallback, ["NUTANIX_USERNAME"]), required=True
+            type="str", fallback=(env_fallback, ["NUTANIX_USERNAME"]), required=False
         ),
         nutanix_password=dict(
             type="str",
             no_log=True,
             fallback=(env_fallback, ["NUTANIX_PASSWORD"]),
-            required=True,
+            required=False,
+        ),
+        nutanix_api_key=dict(
+            type="str", no_log=True, fallback=(env_fallback, ["NUTANIX_API_KEY"]), required=False
         ),
         validate_certs=dict(
             type="bool", default=True, fallback=(env_fallback, ["VALIDATE_CERTS"])
@@ -58,6 +61,9 @@ class BaseModule(AnsibleModule):
             kwargs["supports_check_mode"] = True
 
         super(BaseModule, self).__init__(**kwargs)
+        
+        # Note: Authentication validation is handled by the API client
+        # The env_fallback in argument_spec will populate credentials from environment variables
 
     def strip_extra_attributes(self, argument_spec):
         """
