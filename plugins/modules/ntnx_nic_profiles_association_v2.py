@@ -180,7 +180,7 @@ def disassociate_host_nic(module, nic_profiles, result):
         result["error"] = err
         module.fail_json(
             msg="Failed generating host NIC spec for disassociating NIC profile.",
-            **result,
+            **result  # fmt: skip
         )
 
     if module.check_mode:
