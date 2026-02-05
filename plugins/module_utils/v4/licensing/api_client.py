@@ -69,7 +69,13 @@ def _detect_no_proxy(host):
 
 
 def _apply_proxy_from_env(config):
+    """
+    Apply proxy configuration from environment variables.
 
+    Supports credentials either embedded in URL or via separate environment variables:
+    - Embedded: http://username:password@proxy:port
+    - Separate: PROXY_USERNAME and PROXY_PASSWORD environment variables
+    """
     if not _detect_no_proxy(config.host):
         return
 
@@ -84,8 +90,21 @@ def _apply_proxy_from_env(config):
     config.proxy_scheme = parsed.scheme
     config.proxy_host = parsed.hostname
     config.proxy_port = parsed.port or 443
-    config.proxy_username = unquote(parsed.username) if parsed.username else None
-    config.proxy_password = unquote(parsed.password) if parsed.password else None
+
+    # Get credentials from URL first, then fall back to separate environment variables
+    if parsed.username:
+        config.proxy_username = unquote(parsed.username)
+    else:
+        config.proxy_username = os.environ.get("PROXY_USERNAME") or os.environ.get(
+            "proxy_username"
+        )
+
+    if parsed.password:
+        config.proxy_password = unquote(parsed.password)
+    else:
+        config.proxy_password = os.environ.get("PROXY_PASSWORD") or os.environ.get(
+            "proxy_password"
+        )
 
 
 def get_api_client(module):
