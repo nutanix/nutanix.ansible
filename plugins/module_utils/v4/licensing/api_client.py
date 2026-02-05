@@ -28,13 +28,13 @@ except ImportError:
     SDK_IMP_ERROR = traceback.format_exc()
 
 
-def _get_proxy_url():
+def _get_proxy_url(module):
     """
-    Get proxy URL from environment variables.
+    Get proxy URL from module params first, then fall back to environment variables.
 
-    Checks all common proxy environment variable names in order of preference.
+    Checks module params first, then common proxy environment variable names.
     """
-    proxy_env_vars = [
+    proxy_vars = [
         "https_proxy",
         "HTTPS_PROXY",
         "http_proxy",
@@ -42,23 +42,50 @@ def _get_proxy_url():
         "all_proxy",
         "ALL_PROXY",
     ]
-    for var in proxy_env_vars:
+
+    # First check module params
+    for var in proxy_vars:
+        proxy_url = module.params.get(var)
+        if proxy_url:
+            return proxy_url
+
+    # Fall back to environment variables
+    for var in proxy_vars:
         proxy_url = os.environ.get(var)
         if proxy_url:
             return proxy_url
+
     return None
 
 
-def _detect_no_proxy(host):
+def _detect_no_proxy(module, host):
     """
-    Detect if the 'no_proxy' environment variable is set and honor those locations.
+    Detect if proxy should be bypassed for the given host.
+
+    Checks module params first, then no_proxy environment variable.
     """
-    env_no_proxy = os.environ.get("no_proxy") or os.environ.get("NO_PROXY")
-    if env_no_proxy:
-        env_no_proxy = env_no_proxy.split(",")
+    no_proxy_vars = ["no_proxy", "NO_PROXY"]
+
+    # First check module params
+    no_proxy = None
+    for var in no_proxy_vars:
+        no_proxy = module.params.get(var)
+        if no_proxy:
+            break
+
+    # Fall back to environment variables
+    if not no_proxy:
+        for var in no_proxy_vars:
+            no_proxy = os.environ.get(var)
+            if no_proxy:
+                break
+
+    if no_proxy:
+        no_proxy_list = no_proxy.split(",")
         netloc = host or ""
 
-        for no_proxy_host in env_no_proxy:
+        for no_proxy_host in no_proxy_list:
+            no_proxy_host = no_proxy_host.strip()
             if netloc.endswith(no_proxy_host) or netloc.split(":")[0].endswith(
                 no_proxy_host
             ):
@@ -68,12 +95,14 @@ def _detect_no_proxy(host):
     return True
 
 
-def _apply_proxy_from_env(config):
-
-    if not _detect_no_proxy(config.host):
+def _apply_proxy_from_env(module, config):
+    """
+    Apply proxy configuration from module params or environment variables.
+    """
+    if not _detect_no_proxy(module, config.host):
         return
 
-    proxy_url = _get_proxy_url()
+    proxy_url = _get_proxy_url(module)
     if not proxy_url:
         return
 
@@ -109,7 +138,7 @@ def get_api_client(module):
     config.username = module.params.get("nutanix_username")
     config.password = module.params.get("nutanix_password")
     config.verify_ssl = module.params.get("validate_certs")
-    _apply_proxy_from_env(config)
+    _apply_proxy_from_env(module, config)
     client = ntnx_licensing_py_client.ApiClient(
         configuration=config, allow_version_negotiation=ALLOW_VERSION_NEGOTIATION
     )
