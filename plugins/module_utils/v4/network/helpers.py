@@ -130,3 +130,23 @@ def get_route(module, api_instance, ext_id, route_table_ext_id):
             exception=e,
             msg="Api Exception raised while fetching route info using ext_id and table ext_id",
         )
+
+
+def get_nic_profile(module, api_instance, ext_id):
+    """
+    This method will return NIC profile info using its ext_id.
+    Args:
+        module: Ansible module
+        api_instance: NicProfilesApi instance from ntnx_networking_py_client sdk
+        ext_id (str): NIC profile external ID
+    return:
+        info (object): NIC profile info
+    """
+    try:
+        return api_instance.get_nic_profile_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching NIC profile info using ext_id",
+        )
