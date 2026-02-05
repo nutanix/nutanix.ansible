@@ -479,8 +479,6 @@
     fail_msg: "Delete NIC profiles failed"
     success_msg: "Delete NIC profiles passed"
   loop: "{{ result.results }}"
-
-
 # This is failing: raised a bug https://jira.nutanix.com/browse/ENG-876170 for network funtion (same issue)
 # - name: Delete NIC profiles with wrong ext_id
 #   nutanix.ncp.ntnx_nic_profiles_v2:

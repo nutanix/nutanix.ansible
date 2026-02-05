@@ -168,7 +168,9 @@ def get_nic_profiles(module, nic_profiles, result):
     resp = strip_internal_attributes(resp.to_dict())
     total_available_results = None
     if resp.get("metadata"):
-        total_available_results = resp.get("metadata", {}).get("total_available_results")
+        total_available_results = resp.get("metadata", {}).get(
+            "total_available_results"
+        )
     result["total_available_results"] = total_available_results
     resp = resp.get("data")
 

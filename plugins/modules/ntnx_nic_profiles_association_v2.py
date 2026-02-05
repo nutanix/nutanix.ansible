@@ -142,8 +142,7 @@ def associate_host_nic(module, nic_profiles, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating host NIC spec for associating NIC profile.",
-            **result
+            msg="Failed generating host NIC spec for associating NIC profile.", **result
         )
 
     if module.check_mode:
@@ -152,9 +151,7 @@ def associate_host_nic(module, nic_profiles, result):
 
     resp = None
     try:
-        resp = nic_profiles.associate_host_nic_to_nic_profile(
-            extId=ext_id, body=spec
-        )
+        resp = nic_profiles.associate_host_nic_to_nic_profile(extId=ext_id, body=spec)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -183,7 +180,7 @@ def disassociate_host_nic(module, nic_profiles, result):
         result["error"] = err
         module.fail_json(
             msg="Failed generating host NIC spec for disassociating NIC profile.",
-            **result
+            **result,
         )
 
     if module.check_mode:
