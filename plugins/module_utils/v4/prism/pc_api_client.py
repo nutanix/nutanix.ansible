@@ -37,7 +37,9 @@ def get_pc_api_client(module):
     nutanix_username = module.params.get("nutanix_username")
     nutanix_password = module.params.get("nutanix_password")
     if (not nutanix_username or not nutanix_password) and not (api_key):
-        module.fail_json(msg="Either nutanix_username and nutanix_password or nutanix_api_key is required")
+        module.fail_json(
+            msg="Either nutanix_username and nutanix_password or nutanix_api_key is required"
+        )
     if api_key:
         config.set_api_key(api_key)
     else:
@@ -56,7 +58,7 @@ def get_pc_api_client(module):
             encoded_cred = b64encode(bytes(cred).encode("ascii")).decode("ascii")
         auth_header = "Basic " + encoded_cred
         client.add_default_header(header_name="Authorization", header_value=auth_header)
-    
+
     if api_key:
         client.add_default_header(header_name="X-ntnx-api-key", header_value=api_key)
 
