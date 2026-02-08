@@ -10,8 +10,10 @@ import traceback
 from base64 import b64encode
 
 try:
+    # Python 3
     from urllib.parse import unquote, urlparse
 except ImportError:
+    # Python 2.7
     from urlparse import urlparse
     from urllib import unquote
 
