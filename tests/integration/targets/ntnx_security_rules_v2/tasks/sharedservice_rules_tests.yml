@@ -874,8 +874,7 @@
       - result.results | length == 5
       - item.changed == true
       - item.failed == false
-      - item.response is defined
-      - item.response.status == "SUCCEEDED"
+      - item.item in [ss_category1, ss_category2, ss_category3, ss_category4, ss_category5]
     fail_msg: Failed to delete SharedService category
     success_msg: Successfully deleted SharedService category
   loop: "{{ result.results }}"
@@ -898,8 +897,7 @@
       - result.results | length == 3
       - item.changed == true
       - item.failed == false
-      - item.response is defined
-      - item.response.status == "SUCCEEDED"
+      - item.item in [src_category1, src_category2, dest_category1]
     fail_msg: Failed to delete regular category
     success_msg: Successfully deleted regular category
   loop: "{{ result.results }}"
