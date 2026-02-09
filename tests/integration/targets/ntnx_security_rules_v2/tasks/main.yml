@@ -15,3 +15,5 @@
       ansible.builtin.import_tasks: isolation_rules_tests.yml
     - name: Import tests for quarantine type security rules
       ansible.builtin.import_tasks: quarantine_rules_tests.yml
+    - name: Import tests for SHAREDSERVICE type security rules
+      ansible.builtin.import_tasks: sharedservice_rules_tests.yml
