@@ -122,7 +122,7 @@ options:
           - APPLICATION
           - INTRA_GROUP
           - MULTI_ENV_ISOLATION
-          - SHAREDSERVICE
+          - SHARED_SERVICE
       spec:
         description:
           - The specification of the rule.
@@ -908,7 +908,7 @@ def get_module_spec():
                 "APPLICATION",
                 "INTRA_GROUP",
                 "MULTI_ENV_ISOLATION",
-                "SHAREDSERVICE",
+                "SHARED_SERVICE",
             ],
         ),
         spec=dict(
