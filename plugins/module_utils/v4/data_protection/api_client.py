@@ -29,7 +29,7 @@ except ImportError:
     SDK_IMP_ERROR = traceback.format_exc()
 
 
-def _get_proxy_url():
+def _get_proxy_url(module=None):
     """
     Get proxy URL from environment variables.
 
@@ -44,17 +44,22 @@ def _get_proxy_url():
         "ALL_PROXY",
     ]
     for var in proxy_env_vars:
-        proxy_url = os.environ.get(var)
+        proxy_url = module.params.get(var) or os.environ.get(var)
         if proxy_url:
             return proxy_url
     return None
 
 
-def _detect_no_proxy(host):
+def _detect_no_proxy(host, module=None):
     """
     Detect if the 'no_proxy' environment variable is set and honor those locations.
     """
-    env_no_proxy = os.environ.get("no_proxy") or os.environ.get("NO_PROXY")
+    env_no_proxy = (
+        module.params.get("no_proxy")
+        or module.params.get("NO_PROXY")
+        or os.environ.get("no_proxy")
+        or os.environ.get("NO_PROXY")
+    )
     if env_no_proxy:
         env_no_proxy = env_no_proxy.split(",")
         netloc = host or ""
@@ -69,7 +74,7 @@ def _detect_no_proxy(host):
     return True
 
 
-def _apply_proxy_from_env(config):
+def _apply_proxy_from_env(config, module=None):
     """
     Apply proxy configuration from environment variables.
 
@@ -77,10 +82,10 @@ def _apply_proxy_from_env(config):
     - Embedded: http://username:password@proxy:port
     - Separate: PROXY_USERNAME and PROXY_PASSWORD environment variables
     """
-    if not _detect_no_proxy(config.host):
+    if not _detect_no_proxy(config.host, module):
         return
 
-    proxy_url = _get_proxy_url()
+    proxy_url = _get_proxy_url(module)
     if not proxy_url:
         return
 
@@ -96,15 +101,21 @@ def _apply_proxy_from_env(config):
     if parsed.username:
         config.proxy_username = unquote(parsed.username)
     else:
-        config.proxy_username = os.environ.get("PROXY_USERNAME") or os.environ.get(
-            "proxy_username"
+        config.proxy_username = (
+            module.params.get("proxy_username")
+            or module.params.get("PROXY_USERNAME")
+            or os.environ.get("PROXY_USERNAME")
+            or os.environ.get("proxy_username")
         )
 
     if parsed.password:
         config.proxy_password = unquote(parsed.password)
     else:
-        config.proxy_password = os.environ.get("PROXY_PASSWORD") or os.environ.get(
-            "proxy_password"
+        config.proxy_password = (
+            module.params.get("proxy_password")
+            or module.params.get("PROXY_PASSWORD")
+            or os.environ.get("PROXY_PASSWORD")
+            or os.environ.get("proxy_password")
         )
 
 
@@ -125,7 +136,7 @@ def get_api_client(module):
     config.username = module.params.get("nutanix_username")
     config.password = module.params.get("nutanix_password")
     config.verify_ssl = module.params.get("validate_certs")
-    _apply_proxy_from_env(config)
+    _apply_proxy_from_env(config, module)
     client = ntnx_dataprotection_py_client.ApiClient(
         configuration=config, allow_version_negotiation=ALLOW_VERSION_NEGOTIATION
     )
