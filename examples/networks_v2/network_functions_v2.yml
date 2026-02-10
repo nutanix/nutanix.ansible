@@ -7,6 +7,8 @@
 # 4. Fetch network function using ext_id
 # 5. List all network functions with/without filter and limit
 # 6. Delete network function
+# 7. Delete network function with INLINE traffic forwarding mode and ACTIVE_PASSIVE HA
+# 8. Delete network function with VTAP traffic forwarding mode and ACTIVE_PASSIVE HA
 
 - name: Network Functions playbook
   hosts: localhost

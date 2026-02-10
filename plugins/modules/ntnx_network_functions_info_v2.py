@@ -73,7 +73,7 @@ response:
   description:
     - The response for fetching network function(s).
     - Single network function if external ID is provided.
-    - List of multiple network functions if external ID is not provided with optional filter.
+    - List of network functions if external ID is not provided.
   type: dict
   returned: always
   sample:

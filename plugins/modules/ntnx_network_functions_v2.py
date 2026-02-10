@@ -15,6 +15,9 @@ short_description: Manage network functions in Nutanix Prism Central
 version_added: 2.5.0
 description:
   - Create, Update, Delete network functions
+  - A network function is a feature that allows for advanced traffic processing by inserting a virtual machine (VM),
+    known as a Network Function VM (NFVM), into the network path to inspect or manipulate traffic.
+    These are typically used for services like firewalls, intrusion detection systems (IDS), or packet inspection.
   - This module uses PC v4 APIs based SDKs
 options:
   state:
