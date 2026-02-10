@@ -131,6 +131,7 @@ def get_vm_recovery_point_using_vm_rp_ext_id(module, recovery_points, result):
 
 def run_module():
     module = BaseInfoModule(
+        support_proxy=True,
         argument_spec=get_module_spec(),
         supports_check_mode=False,
     )

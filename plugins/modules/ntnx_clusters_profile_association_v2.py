@@ -362,6 +362,7 @@ def disassociate_cluster_profile(module, cluster_profiles, result):
 
 def run_module():
     module = BaseModule(
+        support_proxy=True,
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )

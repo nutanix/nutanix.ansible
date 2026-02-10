@@ -581,6 +581,7 @@ def delete_ova(module, ova, result):
 
 def run_module():
     module = BaseModule(
+        support_proxy=True,
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[

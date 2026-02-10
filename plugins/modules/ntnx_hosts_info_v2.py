@@ -231,6 +231,7 @@ def get_hosts(module, result):
 
 def run_module():
     module = BaseInfoModule(
+        support_proxy=True,
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         skip_info_args=False,

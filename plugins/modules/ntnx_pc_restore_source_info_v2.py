@@ -122,6 +122,7 @@ def get_restore_source_with_ext_id(module, prism, result):
 
 def run_module():
     module = BaseInfoModule(
+        support_proxy=True,
         argument_spec=get_module_spec(),
         supports_check_mode=False,
     )

@@ -44,6 +44,9 @@ class BaseModule(AnsibleModule):
             default=DEFAULT_LOG_FILE,
             fallback=(env_fallback, ["NUTANIX_LOG_FILE"]),
         ),
+    )
+
+    proxy_argument_spec = dict(
         https_proxy=dict(type="str", fallback=(env_fallback, ["https_proxy"])),
         HTTPS_PROXY=dict(type="str", fallback=(env_fallback, ["HTTPS_PROXY"])),
         http_proxy=dict(type="str", fallback=(env_fallback, ["http_proxy"])),
@@ -63,7 +66,10 @@ class BaseModule(AnsibleModule):
     )
 
     def __init__(self, **kwargs):
+        support_proxy = kwargs.pop("support_proxy", False)
         argument_spec = deepcopy(self.argument_spec)
+        if support_proxy:
+            argument_spec.update(deepcopy(self.proxy_argument_spec))
         if kwargs.get("argument_spec"):
             argument_spec.update(deepcopy(kwargs["argument_spec"]))
         self.argument_spec_with_extra_keys = deepcopy(argument_spec)

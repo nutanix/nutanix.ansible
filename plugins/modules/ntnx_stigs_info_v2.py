@@ -145,6 +145,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def run_module():
     module = BaseInfoModule(
+        support_proxy=True,
         argument_spec=dict(),
         supports_check_mode=False,
     )
