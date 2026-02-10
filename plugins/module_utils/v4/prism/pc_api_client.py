@@ -31,9 +31,10 @@ except ImportError:
 
 def _get_proxy_url(module=None):
     """
-    Get proxy URL from environment variables.
+    Get proxy URL from module parameters (preferred) or environment variables.
 
-    Checks all common proxy environment variable names in order of preference.
+    If a proxy parameter is explicitly set to empty string in module params,
+    that means "no proxy"; do not fall back to env for that key.
     """
     proxy_env_vars = [
         "https_proxy",
@@ -44,7 +45,12 @@ def _get_proxy_url(module=None):
         "ALL_PROXY",
     ]
     for var in proxy_env_vars:
-        proxy_url = module.params.get(var) or os.environ.get(var)
+        if var in module.params:
+            proxy_url = module.params.get(var)
+            if not proxy_url:
+                continue
+        else:
+            proxy_url = os.environ.get(var)
         if proxy_url:
             return proxy_url
     return None
