@@ -29,7 +29,7 @@
         existing_bridge_name: "br2"
 
     - name: Create virtual switch
-      nutanix.ncp.ntnx_virtual_switches_v2:
+      nutanix.ncp.ntnx_virtual_switch_v2:
         state: present
         cluster_ext_id: "{{ cluster_uuid }}"
         name: "{{ virtual_switch_name }}"
@@ -52,7 +52,7 @@
         virtual_switch_ext_id: "{{ result.response.ext_id }}"
 
     - name: Create a virtual switch from an existing bridge
-      nutanix.ncp.ntnx_virtual_switches_v2:
+      nutanix.ncp.ntnx_virtual_switch_v2:
         state: present
         cluster_ext_id: "{{ cluster_uuid }}"
         name: "{{ virtual_switch_name }}_from_bridge"
@@ -67,7 +67,7 @@
         virtual_switch_from_bridge_ext_id: "{{ result.response.ext_id }}"
 
     - name: Update virtual switch
-      nutanix.ncp.ntnx_virtual_switches_v2:
+      nutanix.ncp.ntnx_virtual_switch_v2:
         state: present
         cluster_ext_id: "{{ cluster_uuid }}"
         ext_id: "{{ virtual_switch_ext_id }}"
@@ -117,7 +117,7 @@
       ignore_errors: true
 
     - name: Delete virtual switch
-      nutanix.ncp.ntnx_virtual_switches_v2:
+      nutanix.ncp.ntnx_virtual_switch_v2:
         state: absent
         cluster_ext_id: "{{ cluster_uuid }}"
         ext_id: "{{ virtual_switch_ext_id }}"
@@ -125,7 +125,7 @@
       ignore_errors: true
 
     - name: Delete virtual switch from bridge
-      nutanix.ncp.ntnx_virtual_switches_v2:
+      nutanix.ncp.ntnx_virtual_switch_v2:
         state: absent
         cluster_ext_id: "{{ cluster_uuid }}"
         ext_id: "{{ virtual_switch_from_bridge_ext_id }}"

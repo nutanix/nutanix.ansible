@@ -240,5 +240,5 @@ action_groups:
     - ntnx_clusters_profile_association_v2
     - ntnx_eula_accept_v2
     - ntnx_eula_info_v2
-    - ntnx_virtual_switches_v2
+    - ntnx_virtual_switch_v2
     - ntnx_virtual_switches_info_v2

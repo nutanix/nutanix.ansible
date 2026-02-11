@@ -137,7 +137,7 @@
 ########################################################################################
 
 - name: Generate spec for creating virtual switch using check mode with all attributes
-  nutanix.ncp.ntnx_virtual_switches_v2:
+  nutanix.ncp.ntnx_virtual_switch_v2:
     name: "check_mode_vs_full"
     description: "Virtual switch created in check mode with all attributes"
     bond_mode: "NONE"
@@ -222,7 +222,7 @@
     fail_msg: "Spec for creating virtual switch using check mode with all attributes is not generated successfully"
 
 - name: Create virtual switch with minimum attributes
-  nutanix.ncp.ntnx_virtual_switches_v2:
+  nutanix.ncp.ntnx_virtual_switch_v2:
     name: "{{ vs_name }}_min"
     bond_mode: "NONE"
     clusters:
@@ -255,7 +255,7 @@
     todelete: "{{ todelete + [result.ext_id] }}"
 
 - name: Create virtual switch with all attributes
-  nutanix.ncp.ntnx_virtual_switches_v2:
+  nutanix.ncp.ntnx_virtual_switch_v2:
     name: "{{ vs_name }}_all"
     description: "Virtual switch created by Ansible integration tests with all attributes"
     bond_mode: "NONE"
@@ -305,7 +305,7 @@
     todelete: "{{ todelete + [result.ext_id] }}"
 
 - name: Create virtual switch with missing name
-  nutanix.ncp.ntnx_virtual_switches_v2:
+  nutanix.ncp.ntnx_virtual_switch_v2:
     bond_mode: "NONE"
     clusters:
       - ext_id: "{{ cluster.uuid }}"
@@ -329,7 +329,7 @@
     fail_msg: "Create virtual switch with missing name did not fail as expected"
 
 - name: Create virtual switch with missing bond_mode
-  nutanix.ncp.ntnx_virtual_switches_v2:
+  nutanix.ncp.ntnx_virtual_switch_v2:
     name: "test_vs_missing_bond"
     clusters:
       - ext_id: "{{ cluster.uuid }}"
@@ -353,7 +353,7 @@
     fail_msg: "Create virtual switch with missing bond_mode did not fail as expected"
 
 - name: Create virtual switch with missing clusters
-  nutanix.ncp.ntnx_virtual_switches_v2:
+  nutanix.ncp.ntnx_virtual_switch_v2:
     name: "test_vs_missing_clusters"
     bond_mode: "NONE"
   register: result
@@ -378,7 +378,7 @@
 ########################################################################################
 
 - name: Generate spec for creating virtual switch from existing bridge
-  nutanix.ncp.ntnx_virtual_switches_v2:
+  nutanix.ncp.ntnx_virtual_switch_v2:
     name: "virtual_switch_from_bridge"
     description: "Virtual switch created from existing bridge"
     existing_bridge_name: "br2"
@@ -406,7 +406,7 @@
     fail_msg: "Spec for creating virtual switch from existing bridge generation failed"
 
 - name: Create a virtual switch from an existing bridge
-  nutanix.ncp.ntnx_virtual_switches_v2:
+  nutanix.ncp.ntnx_virtual_switch_v2:
     name: "{{ vs_name }}_existing"
     description: "Virtual switch created from existing bridge"
     existing_bridge_name: "{{ new_bridge_name }}"
@@ -442,7 +442,7 @@
     todelete: "{{ todelete + [result.ext_id] }}"
 
 - name: Create a virtual switch from an existing bridge using bridge that is already in use
-  nutanix.ncp.ntnx_virtual_switches_v2:
+  nutanix.ncp.ntnx_virtual_switch_v2:
     name: "{{ new_bridge_name }}"
     description: "Virtual switch created from existing bridge using bridge that is already in use"
     existing_bridge_name: "{{ new_bridge_name }}"
@@ -471,7 +471,7 @@
     new_bridge_name: "br{{ (max_br_num | int) + 2 }}"
 
 - name: Create a virtual switch from an existing bridge with wrong cluster reference
-  nutanix.ncp.ntnx_virtual_switches_v2:
+  nutanix.ncp.ntnx_virtual_switch_v2:
     name: "{{ new_bridge_name }}"
     description: "Virtual switch created from existing bridge with wrong cluster reference"
     existing_bridge_name: "{{ new_bridge_name }}"
@@ -539,7 +539,7 @@
 ########################################################################################
 
 - name: Generate spec for updating virtual switch using check mode with all attributes
-  nutanix.ncp.ntnx_virtual_switches_v2:
+  nutanix.ncp.ntnx_virtual_switch_v2:
     ext_id: "{{ todelete[1] }}"
     name: "{{ vs_name }}_updated"
     description: "Updated description for virtual switch with all attributes"
@@ -619,7 +619,7 @@
     fail_msg: "Spec for updating virtual switch using check mode with all attributes is not generated successfully"
 
 - name: Update virtual switch with all attributes
-  nutanix.ncp.ntnx_virtual_switches_v2:
+  nutanix.ncp.ntnx_virtual_switch_v2:
     ext_id: "{{ todelete[1] }}"
     name: "{{ vs_name }}_updated"
     description: "Updated description for virtual switch with all attributes"
@@ -669,7 +669,7 @@
     fail_msg: "Update virtual switch with all attributes failed"
 
 - name: Update virtual switch with same values (idempotency test)
-  nutanix.ncp.ntnx_virtual_switches_v2:
+  nutanix.ncp.ntnx_virtual_switch_v2:
     ext_id: "{{ todelete[1] }}"
     name: "{{ vs_name }}_updated"
     description: "Updated description for virtual switch with all attributes"
@@ -705,7 +705,7 @@
     fail_msg: "Update virtual switch with same values to test idempotency failed"
 
 - name: Update virtual switch with wrong external ID
-  nutanix.ncp.ntnx_virtual_switches_v2:
+  nutanix.ncp.ntnx_virtual_switch_v2:
     ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
     name: "test_wrong_ext_id"
     description: "test description"
@@ -730,7 +730,7 @@
     fail_msg: "Update virtual switch with wrong external ID did not fail as expected"
 
 - name: Update virtual switch with missing name
-  nutanix.ncp.ntnx_virtual_switches_v2:
+  nutanix.ncp.ntnx_virtual_switch_v2:
     ext_id: "{{ todelete[1] }}"
     description: "test description"
     clusters:
@@ -755,7 +755,7 @@
     fail_msg: "Update virtual switch with missing name did not fail as expected"
 
 - name: Update virtual switch with missing clusters
-  nutanix.ncp.ntnx_virtual_switches_v2:
+  nutanix.ncp.ntnx_virtual_switch_v2:
     ext_id: "{{ todelete[1] }}"
     name: "test_missing_clusters"
     description: "test description"
@@ -778,7 +778,7 @@
     fail_msg: "Update virtual switch with missing clusters did not fail as expected"
 
 - name: Update virtual switch with missing bond mode
-  nutanix.ncp.ntnx_virtual_switches_v2:
+  nutanix.ncp.ntnx_virtual_switch_v2:
     ext_id: "{{ todelete[1] }}"
     name: "test_missing_bond_mode"
     description: "test description"
@@ -957,7 +957,7 @@
 ########################################################################################
 
 - name: Delete virtual switch with check mode
-  nutanix.ncp.ntnx_virtual_switches_v2:
+  nutanix.ncp.ntnx_virtual_switch_v2:
     ext_id: "{{ todelete[0] }}"
     state: absent
   check_mode: true
@@ -979,7 +979,7 @@
     fail_msg: "Delete virtual switch with check mode failed"
 
 - name: Delete all created virtual switches
-  nutanix.ncp.ntnx_virtual_switches_v2:
+  nutanix.ncp.ntnx_virtual_switch_v2:
     ext_id: "{{ item }}"
     state: absent
   register: result
@@ -1001,7 +1001,7 @@
     success_msg: "All virtual switches are deleted successfully"
 
 - name: Delete virtual switch with wrong external ID
-  nutanix.ncp.ntnx_virtual_switches_v2:
+  nutanix.ncp.ntnx_virtual_switch_v2:
     ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
     state: absent
   register: result
@@ -1021,7 +1021,7 @@
     fail_msg: "Delete virtual switch with wrong external ID did not fail as expected"
 
 - name: Delete virtual switch with missing external ID
-  nutanix.ncp.ntnx_virtual_switches_v2:
+  nutanix.ncp.ntnx_virtual_switch_v2:
     state: absent
   register: result
   ignore_errors: true

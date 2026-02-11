@@ -10,7 +10,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_virtual_switches_v2
+module: ntnx_virtual_switch_v2
 short_description: Create, Update, Delete virtual switches in Nutanix Prism Central
 version_added: 2.5.0
 description:
@@ -263,7 +263,7 @@ author:
 
 EXAMPLES = r"""
 - name: Create virtual switch
-  nutanix.ncp.ntnx_virtual_switches_v2:
+  nutanix.ncp.ntnx_virtual_switch_v2:
     state: present
     name: "virtual_switch_ansible"
     description: "Virtual switch created by Ansible"
@@ -281,7 +281,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Create a virtual switch from an existing bridge
-  nutanix.ncp.ntnx_virtual_switches_v2:
+  nutanix.ncp.ntnx_virtual_switch_v2:
     name: "virtual_switch_ansible_existing"
     description: "Virtual switch created from existing bridge"
     existing_bridge_name: "br2"
@@ -290,7 +290,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Update virtual switch
-  nutanix.ncp.ntnx_virtual_switches_v2:
+  nutanix.ncp.ntnx_virtual_switch_v2:
     state: present
     ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
     name: "virtual_switch_ansible_updated"
@@ -312,7 +312,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Delete virtual switch
-  nutanix.ncp.ntnx_virtual_switches_v2:
+  nutanix.ncp.ntnx_virtual_switch_v2:
     state: absent
     ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
   register: result
