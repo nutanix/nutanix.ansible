@@ -204,9 +204,8 @@ from ..module_utils.v4.iam.api_client import (  # noqa: E402
     get_etag,
 )
 from ..module_utils.v4.iam.helpers import get_certificate_auth_provider  # noqa: E402
-from ..module_utils.v4.utils import get_api_params_from_spec  # noqa: E402
-
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
+from ..module_utils.v4.utils import get_api_params_from_spec  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
