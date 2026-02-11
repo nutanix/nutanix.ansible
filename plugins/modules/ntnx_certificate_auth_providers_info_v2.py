@@ -172,10 +172,8 @@ def get_certificate_auth_providers(module, api_instance, result):
 
     if err:
         result["error"] = err
-        result[
-            "msg"
-        ] = "Failed generating certificate authentication provider info Spec"
-        module.fail_json(**result)
+        msg = "Failed generating certificate authentication provider info Spec"
+        module.fail_json(msg, **result)
 
     try:
         resp = api_instance.list_cert_auth_providers(**kwargs)
