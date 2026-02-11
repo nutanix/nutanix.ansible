@@ -35,7 +35,8 @@ options:
     type: str
   name:
     description:
-      - A required, user-friendly name for the network function (up to 128 characters).
+      - Name of the network function (up to 128 characters).
+      - Required for creating the network function.
     type: str
   description:
     description:
@@ -50,14 +51,14 @@ options:
     suboptions:
       ingress_nic_reference:
         description:
-          - The required UUID of the virtual NIC on the NFVM where traffic enters.
+          - The UUID of the virtual NIC on the Network Function VM where traffic enters.
           - You must create a VM with a special "Network Function NIC" type and provide the UUID of that NIC here.
           - This tells the Nutanix platform which vNIC on your firewall VM to send the redirected traffic to.
         type: str
         required: true
       egress_nic_reference:
         description:
-          - The optional UUID of the virtual NIC from which traffic exits the NFVM.
+          - The UUID of the virtual NIC from which traffic exits the Network Function VM.
           - Specify the UUID of another Network Function NIC on the same VM.
           - In an inline model, traffic enters the ingressNic, is processed by the NFVM, and then sent out through the egressNic to its final destination.
           - This is not used in VTAP mode.
@@ -84,7 +85,7 @@ options:
     choices: ["ACTIVE_PASSIVE"]
   failure_handling:
     description:
-      - Defines what happens to traffic if all NFVMs in the chain are unhealthy.
+      - Defines what happens to traffic if all Network Function VMs in the chain are unhealthy.
       - This is a critical security and availability decision.
       - C(FAIL_CLOSE) blocks all traffic. This is the secure option, preventing uninspected traffic from passing.
       - C(FAIL_OPEN) allows traffic to bypass the NFVM and go directly to the destination.
@@ -105,7 +106,7 @@ options:
   data_plane_health_check_config:
     description:
       - Data Plane Health check configuration applied for the network function.
-      - These settings control how the system monitors the health of your NFVMs and determines when to trigger failover.
+      - These settings control how the system monitors the health of your Network Function VMs and determines when to trigger failover.
     type: dict
     suboptions:
       interval_secs:
@@ -149,39 +150,25 @@ options:
     suboptions:
       owner_reference_id:
         description:
-          - The unique identifier (UUID) of the user who owns this resource.
-          - Set this to the UUID of the user or service account responsible for this network function.
-          - It establishes clear ownership for accountability and resource management.
+          - A globally unique identifier that represents the owner of this resource.
         type: str
       owner_user_name:
         description:
-          - The username corresponding to the owner_reference_id.
-          - This offers a human-readable identifier for the owner, complementing the UUID.
+          - The userName of the owner of this resource.
         type: str
       project_reference_id:
         description:
-          - The unique identifier (UUID) for the project this network function belongs to.
-          - If you are using Nutanix Projects for resource segmentation, specify the project's UUID here.
-          - This associates the network function with a specific project, allowing for project-based resource tracking, billing, and access control.
+          - A globally unique identifier that represents the project this resource belongs to.
         type: str
       project_name:
         description:
-          - The name of the project corresponding to the project_reference_id.
-          - This makes it easy to identify the associated project in logs and UIs.
+          - The name of the project this resource belongs to.
         type: str
       category_ids:
         description:
-          - A list of UUIDs representing the categories associated with this resource.
-          - Assign one or more category UUIDs (e.g., categories for "Environment Production" or "Service Firewall").
-          - Categories are crucial for creating dynamic security policies.
-          - For instance, a policy can be defined to apply to all VMs in a certain category, and this network function can be part of that policy.
+          - A list of globally unique identifiers that represent all the categories the resource is associated with.
         type: list
         elements: str
-  wait:
-    description:
-      - Wait for the task to complete.
-    type: bool
-    default: true
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
@@ -191,7 +178,7 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Create network function with INLINE traffic forwarding mode and ACTIVE_PASSIVE HA
+- name: Create network function with INLINE traffic forwarding mode and ACTIVE_PASSIVE High Availability
   nutanix.ncp.ntnx_network_functions_v2:
     state: present
     nutanix_host: "{{ ip }}"

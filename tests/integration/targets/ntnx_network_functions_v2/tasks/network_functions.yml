@@ -1,4 +1,10 @@
 ---
+# Variables required before running this playbook:
+# - ubuntu
+# - cluster
+# - virtual_switch
+# - network_function
+
 - name: Running network function tests
   ansible.builtin.debug:
     msg: "Running network function tests"
@@ -124,6 +130,10 @@
       - result.response.disks[0].disk_address.bus_type == "SCSI"
       - result.response.disks[0].disk_address.index == 0
       - result.response.disks[0].backing_info.disk_size_bytes == 21474836480
+      - result.response.disks[0].backing_info.data_source.reference.image_ext_id == "{{ ubuntu_image_uuid }}"
+      - result.response.cd_roms is defined
+      - result.response.cd_roms[0].ext_id is defined
+      - result.response.cd_roms[0].iso_type == "GUEST_CUSTOMIZATION"
       - result.response.nics | length == 4
       - result.response.nics | selectattr('network_info.nic_type', 'equalto', 'NETWORK_FUNCTION_NIC') | list | length == 3
       - result.response.nics | selectattr('network_info.network_function_nic_type', 'equalto', 'INGRESS') | list | length == 2
@@ -282,7 +292,7 @@
     success_msg: "VM info is retrieved successfully and IP address is assigned for VM with ext_id {{ item.item }}"
   loop: "{{ vm_details_loop.results }}"
 
-- name: Generate spec for creating network function
+- name: Generate spec for creating network function with check mode
   nutanix.ncp.ntnx_network_functions_v2:
     name: "test-network-function"
     description: "network function for testing purposes"
@@ -315,7 +325,7 @@
   register: network_function_spec
   ignore_errors: true
 
-- name: Generate spec for creating network function NICs status
+- name: Generate spec for creating network function with check mode status
   ansible.builtin.assert:
     that:
       - network_function_spec.changed == false
@@ -349,8 +359,8 @@
       - network_function_spec.response.metadata.category_ids[0] == "c9999999-9999-9999-9999-999999999999"
       - network_function_spec.response.metadata.category_ids[1] == "d0000000-0000-0000-0000-000000000000"
       - network_function_spec.response.metadata.category_ids | length == 2
-    fail_msg: "Failed to generate spec for creating network function NICs status"
-    success_msg: "Spec for creating network function NICs status generated successfully"
+    fail_msg: "Failed to generate spec for creating network function with check mode"
+    success_msg: "Spec for creating network function with check mode generated successfully"
 
 - name: Set INGRESS and EGRESS NIC ext_ids
   ansible.builtin.set_fact:
