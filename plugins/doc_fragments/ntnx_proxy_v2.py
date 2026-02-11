@@ -16,71 +16,37 @@ options:
   https_proxy:
     description:
       - The URL of the HTTPS proxy to use.
-      - "Proxy URL precedence (highest to lowest): C(https_proxy) -> C(HTTPS_PROXY) -> C(http_proxy) -> C(HTTP_PROXY) -> C(all_proxy) -> C(ALL_PROXY)."
-      - Module parameters take precedence over environment variables.
-    type: str
-  HTTPS_PROXY:
-    description:
-      - The URL of the HTTPS proxy to use.
-      - "Proxy URL precedence (highest to lowest): C(https_proxy) -> C(HTTPS_PROXY) -> C(http_proxy) -> C(HTTP_PROXY) -> C(all_proxy) -> C(ALL_PROXY)."
-      - Module parameters take precedence over environment variables.
+      - "Proxy URL precedence (highest to lowest): C(https_proxy) -> C(http_proxy) -> C(all_proxy) module params, then C(HTTPS_PROXY) -> C(HTTP_PROXY) -> C(ALL_PROXY) env vars."
+      - All module parameters (lowercase) are checked first, then environment variables (uppercase) as fallback.
     type: str
   http_proxy:
     description:
       - The URL of the HTTP proxy to use.
-      - "Proxy URL precedence (highest to lowest): C(https_proxy) -> C(HTTPS_PROXY) -> C(http_proxy) -> C(HTTP_PROXY) -> C(all_proxy) -> C(ALL_PROXY)."
-      - Module parameters take precedence over environment variables.
-    type: str
-  HTTP_PROXY:
-    description:
-      - The URL of the HTTP proxy to use.
-      - "Proxy URL precedence (highest to lowest): C(https_proxy) -> C(HTTPS_PROXY) -> C(http_proxy) -> C(HTTP_PROXY) -> C(all_proxy) -> C(ALL_PROXY)."
-      - Module parameters take precedence over environment variables.
+      - "Proxy URL precedence (highest to lowest): C(https_proxy) -> C(http_proxy) -> C(all_proxy) module params, then C(HTTPS_PROXY) -> C(HTTP_PROXY) -> C(ALL_PROXY) env vars."
+      - All module parameters (lowercase) are checked first, then environment variables (uppercase) as fallback.
     type: str
   all_proxy:
     description:
       - The URL of the proxy to use for all protocols.
-      - "Proxy URL precedence (highest to lowest): C(https_proxy) -> C(HTTPS_PROXY) -> C(http_proxy) -> C(HTTP_PROXY) -> C(all_proxy) -> C(ALL_PROXY)."
-      - Module parameters take precedence over environment variables.
-    type: str
-  ALL_PROXY:
-    description:
-      - The URL of the proxy to use for all protocols.
-      - "Proxy URL precedence (highest to lowest): C(https_proxy) -> C(HTTPS_PROXY) -> C(http_proxy) -> C(HTTP_PROXY) -> C(all_proxy) -> C(ALL_PROXY)."
-      - Module parameters take precedence over environment variables.
+      - "Proxy URL precedence (highest to lowest): C(https_proxy) -> C(http_proxy) -> C(all_proxy) module params, then C(HTTPS_PROXY) -> C(HTTP_PROXY) -> C(ALL_PROXY) env vars."
+      - All module parameters (lowercase) are checked first, then environment variables (uppercase) as fallback.
     type: str
   no_proxy:
     description:
       - Comma-separated list of hosts or domains to bypass the proxy.
-      - "Precedence (highest to lowest): C(no_proxy) -> C(NO_PROXY) module param -> C(no_proxy) -> C(NO_PROXY) environment variable."
-    type: str
-  NO_PROXY:
-    description:
-      - Comma-separated list of hosts or domains to bypass the proxy.
-      - "Precedence (highest to lowest): C(no_proxy) -> C(NO_PROXY) module param -> C(no_proxy) -> C(NO_PROXY) environment variable."
+      - "Precedence (highest to lowest): C(no_proxy) module param -> C(NO_PROXY) environment variable."
     type: str
   proxy_username:
     description:
       - The username for proxy authentication (if not embedded in proxy URL).
-      - "Precedence (highest to lowest): C(proxy_username) -> C(PROXY_USERNAME) module param -> C(PROXY_USERNAME) -> C(proxy_username) environment variable."
-      - If credentials are embedded in the proxy URL (e.g., C(http://user:pass@proxy:port)), they take precedence.
-    type: str
-  PROXY_USERNAME:
-    description:
-      - The username for proxy authentication (if not embedded in proxy URL).
-      - "Precedence (highest to lowest): C(proxy_username) -> C(PROXY_USERNAME) module param -> C(PROXY_USERNAME) -> C(proxy_username) environment variable."
+      - "Precedence (highest to lowest): URL-embedded credentials -> C(proxy_username) module param -> C(PROXY_USERNAME) environment variable."
       - If credentials are embedded in the proxy URL (e.g., C(http://user:pass@proxy:port)), they take precedence.
     type: str
   proxy_password:
     description:
       - The password for proxy authentication (if not embedded in proxy URL).
-      - "Precedence (highest to lowest): C(proxy_password) -> C(PROXY_PASSWORD) module param -> C(PROXY_PASSWORD) -> C(proxy_password) environment variable."
+      - "Precedence (highest to lowest): URL-embedded credentials -> C(proxy_password) module param -> C(PROXY_PASSWORD) environment variable."
       - If credentials are embedded in the proxy URL (e.g., C(http://user:pass@proxy:port)), they take precedence.
     type: str
-  PROXY_PASSWORD:
-    description:
-      - The password for proxy authentication (if not embedded in proxy URL).
-      - "Precedence (highest to lowest): C(proxy_password) -> C(PROXY_PASSWORD) module param -> C(PROXY_PASSWORD) -> C(proxy_password) environment variable."
-      - If credentials are embedded in the proxy URL (e.g., C(http://user:pass@proxy:port)), they take precedence.
-    type: str
+    no_log: true
 """

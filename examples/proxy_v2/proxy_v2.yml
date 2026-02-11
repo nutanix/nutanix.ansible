@@ -2,16 +2,27 @@
 # Summary:
 # This playbook demonstrates how to use proxy configuration with Nutanix v4 API modules.
 # Proxy settings can be configured via:
-#   1. Module parameters (highest priority)
-#   2. Environment variables (fallback)
+#   1. Module parameters (highest priority, lowercase)
+#   2. Environment variables (fallback, uppercase)
 #
-# Supported proxy parameters:
-#   - https_proxy / HTTPS_PROXY - HTTPS proxy URL
-#   - http_proxy / HTTP_PROXY - HTTP proxy URL
-#   - all_proxy / ALL_PROXY - Fallback proxy URL
-#   - no_proxy / NO_PROXY - Comma-separated list of hosts to bypass proxy
-#   - proxy_username / PROXY_USERNAME - Proxy authentication username
-#   - proxy_password / PROXY_PASSWORD - Proxy authentication password
+# Proxy URL precedence (highest to lowest):
+#   https_proxy -> http_proxy -> all_proxy  (module params)
+#   HTTPS_PROXY -> HTTP_PROXY -> ALL_PROXY  (environment variables)
+#
+# All module params are checked first; env vars are only used if
+# no module param is set.
+#
+# Supported module parameters (lowercase):
+#   - https_proxy - HTTPS proxy URL
+#   - http_proxy - HTTP proxy URL
+#   - all_proxy - Fallback proxy URL
+#   - no_proxy - Comma-separated list of hosts to bypass proxy
+#   - proxy_username - Proxy authentication username
+#   - proxy_password - Proxy authentication password
+#
+# Supported environment variables (uppercase, used as fallback):
+#   - HTTPS_PROXY, HTTP_PROXY, ALL_PROXY, NO_PROXY
+#   - PROXY_USERNAME, PROXY_PASSWORD
 #
 # Proxy URL format:
 #   - Without auth: http://proxy.example.com:3128

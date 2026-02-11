@@ -32,24 +32,24 @@ def _get_proxy_url(module=None):
     """
     Get proxy URL from module parameters (preferred) or environment variables.
 
-    If a proxy parameter is explicitly set to empty string in module params,
-    that means "no proxy"; do not fall back to env for that key.
+    Precedence (highest to lowest):
+        https_proxy -> http_proxy -> all_proxy  (module params, lowercase)
+        HTTPS_PROXY -> HTTP_PROXY -> ALL_PROXY  (environment variables, uppercase)
     """
-    proxy_env_vars = [
+    proxy_names = [
         "https_proxy",
-        "HTTPS_PROXY",
         "http_proxy",
-        "HTTP_PROXY",
         "all_proxy",
-        "ALL_PROXY",
     ]
-    for var in proxy_env_vars:
-        if var in module.params:
-            proxy_url = module.params.get(var)
-            if not proxy_url:
-                continue
-        else:
-            proxy_url = os.environ.get(var)
+    # Check module params first (lowercase)
+    for name in proxy_names:
+        if name in module.params:
+            proxy_url = module.params.get(name)
+            if proxy_url:
+                return proxy_url
+    # Fall back to environment variables (uppercase)
+    for name in proxy_names:
+        proxy_url = os.environ.get(name.upper())
         if proxy_url:
             return proxy_url
     return None
@@ -61,8 +61,6 @@ def _detect_no_proxy(host, module=None):
     """
     env_no_proxy = (
         module.params.get("no_proxy")
-        or module.params.get("NO_PROXY")
-        or os.environ.get("no_proxy")
         or os.environ.get("NO_PROXY")
     )
     if env_no_proxy:
@@ -108,9 +106,7 @@ def _apply_proxy_from_env(config, module=None):
     else:
         config.proxy_username = (
             module.params.get("proxy_username")
-            or module.params.get("PROXY_USERNAME")
             or os.environ.get("PROXY_USERNAME")
-            or os.environ.get("proxy_username")
         )
 
     if parsed.password:
@@ -118,9 +114,7 @@ def _apply_proxy_from_env(config, module=None):
     else:
         config.proxy_password = (
             module.params.get("proxy_password")
-            or module.params.get("PROXY_PASSWORD")
             or os.environ.get("PROXY_PASSWORD")
-            or os.environ.get("proxy_password")
         )
 
 

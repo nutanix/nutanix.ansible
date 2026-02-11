@@ -47,22 +47,12 @@ class BaseModule(AnsibleModule):
     )
 
     proxy_argument_spec = dict(
-        https_proxy=dict(type="str", fallback=(env_fallback, ["https_proxy"])),
-        HTTPS_PROXY=dict(type="str", fallback=(env_fallback, ["HTTPS_PROXY"])),
-        http_proxy=dict(type="str", fallback=(env_fallback, ["http_proxy"])),
-        HTTP_PROXY=dict(type="str", fallback=(env_fallback, ["HTTP_PROXY"])),
-        all_proxy=dict(type="str", fallback=(env_fallback, ["all_proxy"])),
-        ALL_PROXY=dict(type="str", fallback=(env_fallback, ["ALL_PROXY"])),
-        no_proxy=dict(type="str", fallback=(env_fallback, ["no_proxy"])),
-        NO_PROXY=dict(type="str", fallback=(env_fallback, ["NO_PROXY"])),
-        proxy_username=dict(type="str", fallback=(env_fallback, ["PROXY_USERNAME"])),
-        proxy_password=dict(
-            type="str", fallback=(env_fallback, ["PROXY_PASSWORD"]), no_log=True
-        ),
-        PROXY_USERNAME=dict(type="str", fallback=(env_fallback, ["PROXY_USERNAME"])),
-        PROXY_PASSWORD=dict(
-            type="str", fallback=(env_fallback, ["PROXY_PASSWORD"]), no_log=True
-        ),
+        https_proxy=dict(type="str"),
+        http_proxy=dict(type="str"),
+        all_proxy=dict(type="str"),
+        no_proxy=dict(type="str"),
+        proxy_username=dict(type="str"),
+        proxy_password=dict(type="str", no_log=True),
     )
 
     def __init__(self, **kwargs):
