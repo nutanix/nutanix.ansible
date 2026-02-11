@@ -39,6 +39,7 @@ class APILogger:
         query_params=None,
         headers=None,
         body=None,
+        post_params=None,
         response=None,
         status_code=None,
         elapsed_time=None,
@@ -52,6 +53,7 @@ class APILogger:
             query_params (dict): Query parameters
             headers (dict): Request headers
             body: Request body (can be dict, string, or bytes)
+            post_params: POST form parameters (for multipart/form-data)
             response: Response body
             status_code (int): HTTP status code
             elapsed_time (float): Time taken for the request in seconds
@@ -77,7 +79,7 @@ class APILogger:
         self._log_headers(log_lines, headers)
 
         # Add request body
-        self._log_request_body(log_lines, body)
+        self._log_request_body(log_lines, body, post_params)
 
         # Add response details
         self._log_response(log_lines, response, status_code, elapsed_time)
@@ -128,12 +130,21 @@ class APILogger:
         else:
             log_lines.append("  {}".format(str(sanitized_headers)))
 
-    def _log_request_body(self, log_lines, body):
+    def _log_request_body(self, log_lines, body, post_params=None):
         """Add request body to log lines."""
         log_lines.append("REQUEST BODY:")
         if body is not None:
             formatted_body = self._format_body(body)
             log_lines.append(formatted_body)
+        elif post_params:
+            # Log post_params (form data) as key-value pairs
+            for param in post_params:
+                if isinstance(param, (list, tuple)) and len(param) >= 2:
+                    key = param[0]
+                    value = param[1]
+                    log_lines.append("  {}: {}".format(key, value))
+                else:
+                    log_lines.append("  {}".format(param))
         else:
             log_lines.append("  (empty)")
 
@@ -461,6 +472,7 @@ class LoggedRequestHandler:
                 query_params=query_params,
                 headers=headers,
                 body=body,
+                post_params=post_params,
                 response=response_data,
                 status_code=response.status if hasattr(response, "status") else None,
                 elapsed_time=elapsed,
@@ -478,6 +490,7 @@ class LoggedRequestHandler:
                 query_params=query_params,
                 headers=headers,
                 body=body,
+                post_params=post_params,
                 status_code=getattr(e, "status", None),
                 elapsed_time=elapsed,
                 error=e,

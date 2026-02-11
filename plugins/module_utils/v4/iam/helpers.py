@@ -167,3 +167,23 @@ def get_requested_key(module, api_instance, ext_id, user_ext_id):
             exception=e,
             msg="Api Exception raised while fetching requested key info",
         )
+
+
+def get_certificate_auth_provider(module, api_instance, ext_id):
+    """
+    This method will return certificate authentication provider info using ext_id.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): CertAuthProvidersApi instance from ntnx_iam_py_client sdk
+        ext_id (str): External id of certificate authentication provider
+    Returns:
+        cert_auth_provider_info (obj): Certificate authentication provider info object
+    """
+    try:
+        return api_instance.get_cert_auth_provider_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching certificate authentication provider info",
+        )
