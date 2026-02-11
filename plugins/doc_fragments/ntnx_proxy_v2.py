@@ -48,5 +48,4 @@ options:
       - "Precedence (highest to lowest): URL-embedded credentials -> C(proxy_password) module param -> C(PROXY_PASSWORD) environment variable."
       - If credentials are embedded in the proxy URL (e.g., C(http://user:pass@proxy:port)), they take precedence.
     type: str
-    no_log: true
 """
