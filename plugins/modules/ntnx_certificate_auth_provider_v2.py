@@ -256,7 +256,9 @@ def create_certificate_auth_provider(module, api_instance, result):
 
     if err:
         result["error"] = err
-        result["msg"] = "Failed generating create certificate authentication provider spec"
+        result[
+            "msg"
+        ] = "Failed generating create certificate authentication provider spec"
         module.fail_json(**result)
 
     if module.check_mode:
@@ -301,7 +303,9 @@ def update_certificate_auth_provider(module, api_instance, result):
 
     etag = get_etag(data=current_spec)
     if not etag:
-        result["msg"] = "Unable to fetch etag for updating certificate authentication provider"
+        result[
+            "msg"
+        ] = "Unable to fetch etag for updating certificate authentication provider"
         module.fail_json(**result)
 
     kwargs = {"if_match": etag}
@@ -311,7 +315,9 @@ def update_certificate_auth_provider(module, api_instance, result):
 
     if err:
         result["error"] = err
-        result["msg"] = "Failed generating certificate authentication provider update spec"
+        result[
+            "msg"
+        ] = "Failed generating certificate authentication provider update spec"
         module.fail_json(**result)
 
     if module.check_mode:
@@ -354,10 +360,10 @@ def delete_certificate_auth_provider(module, api_instance, result):
     result["ext_id"] = ext_id
 
     if module.check_mode:
-        result["msg"] = (
-            "Certificate authentication provider with ext_id:{0} will be deleted.".format(
-                ext_id
-            )
+        result[
+            "msg"
+        ] = "Certificate authentication provider with ext_id:{0} will be deleted.".format(
+            ext_id
         )
         return
 
@@ -365,7 +371,9 @@ def delete_certificate_auth_provider(module, api_instance, result):
 
     etag = get_etag(data=current_spec)
     if not etag:
-        result["msg"] = "Unable to fetch etag for deleting certificate authentication provider"
+        result[
+            "msg"
+        ] = "Unable to fetch etag for deleting certificate authentication provider"
         module.fail_json(**result)
 
     kwargs = {"if_match": etag}
@@ -382,10 +390,10 @@ def delete_certificate_auth_provider(module, api_instance, result):
     # Delete API may return None or empty response
     result["changed"] = True
     if resp is None:
-        result["msg"] = (
-            "Certificate authentication provider with ext_id: {} deleted successfully".format(
-                ext_id
-            )
+        result[
+            "msg"
+        ] = "Certificate authentication provider with ext_id: {} deleted successfully".format(
+            ext_id
         )
     else:
         result["response"] = strip_internal_attributes(resp.to_dict())
