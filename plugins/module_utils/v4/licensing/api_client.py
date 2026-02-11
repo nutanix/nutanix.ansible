@@ -59,10 +59,7 @@ def _detect_no_proxy(host, module=None):
     """
     Detect if the 'no_proxy' environment variable is set and honor those locations.
     """
-    env_no_proxy = (
-        module.params.get("no_proxy")
-        or os.environ.get("NO_PROXY")
-    )
+    env_no_proxy = module.params.get("no_proxy") or os.environ.get("NO_PROXY")
     if env_no_proxy:
         env_no_proxy = env_no_proxy.split(",")
         netloc = host or ""
@@ -104,17 +101,15 @@ def _apply_proxy_from_env(config, module=None):
     if parsed.username:
         config.proxy_username = unquote(parsed.username)
     else:
-        config.proxy_username = (
-            module.params.get("proxy_username")
-            or os.environ.get("PROXY_USERNAME")
+        config.proxy_username = module.params.get("proxy_username") or os.environ.get(
+            "PROXY_USERNAME"
         )
 
     if parsed.password:
         config.proxy_password = unquote(parsed.password)
     else:
-        config.proxy_password = (
-            module.params.get("proxy_password")
-            or os.environ.get("PROXY_PASSWORD")
+        config.proxy_password = module.params.get("proxy_password") or os.environ.get(
+            "PROXY_PASSWORD"
         )
 
 

@@ -52,7 +52,7 @@ class BaseModule(AnsibleModule):
         all_proxy=dict(type="str"),
         no_proxy=dict(type="str"),
         proxy_username=dict(type="str"),
-        proxy_password=dict(type="str", no_log=True),
+        proxy_password=dict(type="str"),
     )
 
     def __init__(self, **kwargs):
