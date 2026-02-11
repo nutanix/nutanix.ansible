@@ -15,15 +15,15 @@ short_description: Fetch information about certificate-based authentication prov
 version_added: "2.5.0"
 description:
   - This module fetches information about Nutanix certificate-based authentication provider(s).
-  - Fetch specific certificate auth provider using external ID.
-  - Fetch list containing only one certificate auth provider if external ID is not provided.
+  - Fetch specific certificate authentication provider using external ID.
+  - Fetch list containing only one certificate authentication provider if external ID is not provided.
   - This module uses PC v4 APIs based SDKs.
 options:
   ext_id:
     description:
       - The external ID of the certificate authentication provider.
-      - If provided, returns single certificate auth provider.
-      - If not provided, returns list containing only one certificate auth provider.
+      - If provided, returns single certificate authentication provider.
+      - If not provided, returns list containing only one certificate authentication provider.
     type: str
     required: false
 author:
@@ -35,7 +35,7 @@ extends_documentation_fragment:
 """
 
 EXAMPLES = r"""
-- name: Get details of a specific certificate auth provider
+- name: Get details of a specific certificate authentication provider
   nutanix.ncp.ntnx_certificate_auth_providers_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -57,8 +57,8 @@ RETURN = r"""
 response:
   description:
     - The response for fetching certificate authentication provider(s).
-    - Single certificate auth provider if external ID is provided.
-    - List containing only one certificate auth provider if external ID is provided.
+    - Single certificate authentication provider if external ID is provided.
+    - List containing only one certificate authentication provider if external ID is provided.
   type: dict
   returned: always
   sample:
@@ -98,20 +98,20 @@ msg:
   description: This indicates the message if any message occurred.
   returned: When there is an error
   type: str
-  sample: "Api Exception raised while fetching certificate auth providers info"
+  sample: "Api Exception raised while fetching certificate authentication providers info"
 error:
   description: Error message if something goes wrong.
   type: str
   returned: always
 ext_id:
-  description: The external ID of the certificate auth provider that was fetched.
+  description: The external ID of the certificate authentication provider that was fetched.
   type: str
-  returned: when fetching a specific certificate auth provider
+  returned: when fetching a specific certificate authentication provider
   sample: "a3265671-de53-41be-af9b-f06241b95356"
 total_available_results:
-  description: The total number of available certificate auth providers in PC.
+  description: The total number of available certificate authentication providers in PC.
   type: int
-  returned: when all certificate auth providers are fetched
+  returned: when all certificate authentication providers are fetched
   sample: 5
 """
 
@@ -154,7 +154,7 @@ def get_certificate_auth_providers(module, api_instance, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating certificate auth providers info Spec", **result
+            msg="Failed generating certificate authentication providers info Spec", **result
         )
 
     try:
@@ -163,7 +163,7 @@ def get_certificate_auth_providers(module, api_instance, result):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while fetching certificate auth providers info",
+            msg="Api Exception raised while fetching certificate authentication providers info",
         )
     total_available_results = resp.metadata.total_available_results
     result["total_available_results"] = total_available_results

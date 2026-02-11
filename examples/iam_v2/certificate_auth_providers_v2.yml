@@ -2,10 +2,10 @@
 # Summary:
 # This playbook will do:
 # 1. Create certificate authentication provider with CAC enabled
-# 3. Update certificate authentication provider
-# 4. List all certificate authentication providers
-# 5. Get specific certificate authentication provider
-# 7. Delete created certificate authentication providers
+# 2. Update certificate authentication provider
+# 3. List all certificate authentication providers
+# 4. Get specific certificate authentication provider
+# 5. Delete created certificate authentication providers
 
 - name: Certificate Authentication Providers playbook
   hosts: localhost
@@ -27,7 +27,7 @@
         ca_cert_file_name: "test_ca_chain.pem"
         directory_service_ext_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
 
-    - name: Create certificate auth provider with CAC enabled
+    - name: Create certificate authentication provider with CAC enabled
       nutanix.ncp.ntnx_certificate_auth_providers_v2:
         state: present
         name: "CAC"
@@ -39,11 +39,11 @@
       register: result_cac
       ignore_errors: true
 
-    - name: Set cert auth provider ext_id for CAC
+    - name: Set cert authentication provider ext_id for CAC
       ansible.builtin.set_fact:
         cert_auth_ext_id_cac: "{{ result_cac.ext_id }}"
 
-    - name: Update certificate auth provider
+    - name: Update certificate authentication provider
       nutanix.ncp.ntnx_certificate_auth_providers_v2:
         state: present
         ext_id: "{{ cert_auth_ext_id_cac }}"
@@ -51,18 +51,18 @@
       register: result
       ignore_errors: true
 
-    - name: List all certificate auth providers (returns list containing only one certificate auth provider)
+    - name: List all certificate authentication providers (returns list containing only one certificate authentication provider)
       nutanix.ncp.ntnx_certificate_auth_providers_info_v2:
       register: result
       ignore_errors: true
 
-    - name: Get specific certificate auth provider
+    - name: Get specific certificate authentication provider
       nutanix.ncp.ntnx_certificate_auth_providers_info_v2:
         ext_id: "{{ cert_auth_ext_id_cac }}"
       register: result
       ignore_errors: true
 
-    - name: Delete certificate auth provider
+    - name: Delete certificate authentication provider
       nutanix.ncp.ntnx_certificate_auth_providers_v2:
         state: absent
         ext_id: "{{ cert_auth_ext_id_cac }}"

@@ -16,21 +16,21 @@ version_added: "2.5.0"
 description:
   - Create, Update, Delete certificate-based authentication providers in Nutanix Prism Central.
   - Certificate Authentication Providers enable mutual TLS (mTLS) authentication.
-  - Allows users to log in using a client certificate (e.g., Smart Card, DoD CAC, PIV card) instead of username/password.
+  - Allows users to log in using a client certificate instead of username/password.
   - This module uses PC v4 APIs based SDKs.
 options:
   state:
     description:
       - Specify state of the certificate authentication provider.
-      - If C(state) is set to C(present) then module will create certificate auth provider.
-      - If C(state) is set to C(present) and C(ext_id) is given, then module will update certificate auth provider.
-      - If C(state) is set to C(absent) with C(ext_id), then module will delete certificate auth provider.
+      - If C(state) is set to C(present) then module will create certificate authentication provider.
+      - If C(state) is set to C(present) and C(ext_id) is given, then module will update certificate authentication provider.
+      - If C(state) is set to C(absent) with C(ext_id), then module will delete certificate authentication provider.
     type: str
     choices: ["present", "absent"]
   ext_id:
     description:
       - External ID of the certificate authentication provider.
-      - Required for updating or deleting the certificate auth provider.
+      - Required for updating or deleting the certificate authentication provider.
     type: str
   name:
     description:
@@ -43,11 +43,11 @@ options:
     type: str
   is_cert_auth_enabled:
     description:
-      - Flag to enable/disable certificate authentication for the current provider.
+      - Flag to enable/disable CAC for the current certificate-based authentication provider.
     type: bool
   is_cac_enabled:
     description:
-      - Flag to enable/disable Common Access Card (CAC).
+      - Flag to enable/disable certificate authentication for the current certificate-based authentication provider.
     type: bool
   dir_svc_ext_id:
     description:
@@ -133,8 +133,8 @@ RETURN = r"""
 response:
   description:
     - Response for the certificate authentication provider operations.
-    - For create and update operations, it returns the certificate auth provider details.
-    - For delete operation, it returns the message indicating the certificate auth provider is deleted successfully.
+    - For create and update operations, it returns the certificate authentication provider details.
+    - For delete operation, it returns the message indicating the certificate authentication provider is deleted successfully.
   returned: always
   type: dict
   sample:
@@ -168,7 +168,7 @@ msg:
   description: This indicates the message if any message occurred
   returned: When there is an error, module is idempotent or in delete operation
   type: str
-  sample: "Api Exception raised while creating certificate auth provider"
+  sample: "Api Exception raised while creating certificate authentication provider"
 error:
   description: This field typically holds information about if the task have errors that occurred during the task execution
   type: str
@@ -182,7 +182,7 @@ ext_id:
 skipped:
   description: Indicates if the operation was skipped
   type: bool
-  returned: always
+  returned: When the operation is skipped
   sample: false
 failed:
   description: Indicates if the operation failed
@@ -259,7 +259,7 @@ def create_certificate_auth_provider(module, api_instance, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating create certificate auth provider spec", **result
+            msg="Failed generating create certificate authentication provider spec", **result
         )
 
     if module.check_mode:
@@ -281,7 +281,7 @@ def create_certificate_auth_provider(module, api_instance, result):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while creating certificate auth provider",
+            msg="Api Exception raised while creating certificate authentication provider",
         )
 
     # API returns entity directly, not a task
@@ -305,7 +305,7 @@ def update_certificate_auth_provider(module, api_instance, result):
     etag = get_etag(data=current_spec)
     if not etag:
         return module.fail_json(
-            "Unable to fetch etag for updating certificate auth provider", **result
+            "Unable to fetch etag for updating certificate authentication provider", **result
         )
 
     kwargs = {"if_match": etag}
@@ -316,7 +316,7 @@ def update_certificate_auth_provider(module, api_instance, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating certificate auth provider update spec", **result
+            msg="Failed generating certificate authentication provider update spec", **result
         )
 
     if module.check_mode:
@@ -346,7 +346,7 @@ def update_certificate_auth_provider(module, api_instance, result):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while updating certificate auth provider",
+            msg="Api Exception raised while updating certificate authentication provider",
         )
 
     # API returns entity directly, not a task
@@ -360,7 +360,7 @@ def delete_certificate_auth_provider(module, api_instance, result):
 
     if module.check_mode:
         result["msg"] = (
-            "Certificate auth provider with ext_id:{0} will be deleted.".format(ext_id)
+            "Certificate authentication provider with ext_id:{0} will be deleted.".format(ext_id)
         )
         return
 
@@ -369,7 +369,7 @@ def delete_certificate_auth_provider(module, api_instance, result):
     etag = get_etag(data=current_spec)
     if not etag:
         return module.fail_json(
-            "Unable to fetch etag for deleting certificate auth provider", **result
+            "Unable to fetch etag for deleting certificate authentication provider", **result
         )
 
     kwargs = {"if_match": etag}
@@ -380,14 +380,14 @@ def delete_certificate_auth_provider(module, api_instance, result):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while deleting certificate auth provider",
+            msg="Api Exception raised while deleting certificate authentication provider",
         )
 
     # Delete API may return None or empty response
     result["changed"] = True
     if resp is None:
         result["msg"] = (
-            "Certificate auth provider with ext_id: {} deleted successfully".format(
+            "Certificate authentication provider with ext_id: {} deleted successfully".format(
                 ext_id
             )
         )
