@@ -240,5 +240,5 @@ action_groups:
     - ntnx_clusters_profile_association_v2
     - ntnx_eula_accept_v2
     - ntnx_eula_info_v2
-    - ntnx_certificate_auth_providers_v2
+    - ntnx_certificate_auth_provider_v2
     - ntnx_certificate_auth_providers_info_v2

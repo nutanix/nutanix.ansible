@@ -10,12 +10,12 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_certificate_auth_providers_v2
-short_description: Manage certificate-based authentication providers in Nutanix Prism Central
+module: ntnx_certificate_auth_provider_v2
+short_description: Manage certificate-based authentication provider in Nutanix Prism Central
 version_added: "2.5.0"
 description:
-  - Create, Update, Delete certificate-based authentication providers in Nutanix Prism Central.
-  - Certificate Authentication Providers enable mutual TLS (mTLS) authentication.
+  - Create, Update, Delete certificate-based authentication provider in Nutanix Prism Central.
+  - Certificate Authentication Provider enable mutual TLS (mTLS) authentication.
   - Allows users to log in using a client certificate instead of username/password.
   - This module uses PC v4 APIs based SDKs.
 options:
@@ -89,7 +89,7 @@ author:
 
 EXAMPLES = r"""
 - name: Create certificate authentication provider with CAC enabled
-  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+  nutanix.ncp.ntnx_certificate_auth_provider_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -105,7 +105,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Update certificate authentication provider
-  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+  nutanix.ncp.ntnx_certificate_auth_provider_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -118,7 +118,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Delete certificate authentication provider
-  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+  nutanix.ncp.ntnx_certificate_auth_provider_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -203,10 +203,9 @@ from ..module_utils.v4.iam.api_client import (  # noqa: E402
     get_certificate_auth_provider_api_instance,
     get_etag,
 )
-from ..module_utils.v4.iam.helpers import (  # noqa: E402
-    get_api_params_from_spec,
-    get_certificate_auth_provider,
-)
+from ..module_utils.v4.iam.helpers import get_certificate_auth_provider  # noqa: E402
+from ..module_utils.v4.utils import get_api_params_from_spec  # noqa: E402
+
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
@@ -259,7 +258,8 @@ def create_certificate_auth_provider(module, api_instance, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating create certificate authentication provider spec", **result
+            msg="Failed generating create certificate authentication provider spec",
+            **result,
         )
 
     if module.check_mode:
@@ -305,7 +305,8 @@ def update_certificate_auth_provider(module, api_instance, result):
     etag = get_etag(data=current_spec)
     if not etag:
         return module.fail_json(
-            "Unable to fetch etag for updating certificate authentication provider", **result
+            "Unable to fetch etag for updating certificate authentication provider",
+            **result,
         )
 
     kwargs = {"if_match": etag}
@@ -316,7 +317,8 @@ def update_certificate_auth_provider(module, api_instance, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating certificate authentication provider update spec", **result
+            msg="Failed generating certificate authentication provider update spec",
+            **result,
         )
 
     if module.check_mode:
@@ -360,7 +362,9 @@ def delete_certificate_auth_provider(module, api_instance, result):
 
     if module.check_mode:
         result["msg"] = (
-            "Certificate authentication provider with ext_id:{0} will be deleted.".format(ext_id)
+            "Certificate authentication provider with ext_id:{0} will be deleted.".format(
+                ext_id
+            )
         )
         return
 
@@ -369,7 +373,8 @@ def delete_certificate_auth_provider(module, api_instance, result):
     etag = get_etag(data=current_spec)
     if not etag:
         return module.fail_json(
-            "Unable to fetch etag for deleting certificate authentication provider", **result
+            "Unable to fetch etag for deleting certificate authentication provider",
+            **result,
         )
 
     kwargs = {"if_match": etag}

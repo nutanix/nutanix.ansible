@@ -26,11 +26,18 @@ options:
       - If not provided, returns list containing only one certificate authentication provider.
     type: str
     required: false
+  page:
+    description:
+      - The number of page
+    type: int
+  limit:
+    description:
+      - The number of records
+    type: int
 author:
   - George Ghawali (@george-ghawali)
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
-  - nutanix.ncp.ntnx_info_v2
   - nutanix.ncp.ntnx_logger
 """
 
@@ -50,6 +57,16 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
+  register: result
+
+- name: List all certificate authentication providers with page and limit
+  nutanix.ncp.ntnx_certificate_auth_providers_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    page: 0
+    limit: 1
   register: result
 """
 
@@ -98,7 +115,7 @@ msg:
   description: This indicates the message if any message occurred.
   returned: When there is an error
   type: str
-  sample: "Api Exception raised while fetching certificate authentication providers info"
+  sample: "Api Exception raised while fetching certificate authentication provider info"
 error:
   description: Error message if something goes wrong.
   type: str
@@ -131,6 +148,8 @@ from ..module_utils.v4.utils import (  # noqa: E402
 def get_module_spec():
     module_args = dict(
         ext_id=dict(type="str"),
+        limit=dict(type="int"),
+        page=dict(type="int"),
     )
     return module_args
 
@@ -154,7 +173,8 @@ def get_certificate_auth_providers(module, api_instance, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating certificate authentication providers info Spec", **result
+            msg="Failed generating certificate authentication provider info Spec",
+            **result,
         )
 
     try:
@@ -163,7 +183,7 @@ def get_certificate_auth_providers(module, api_instance, result):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while fetching certificate authentication providers info",
+            msg="Api Exception raised while fetching certificate authentication provider info",
         )
     total_available_results = resp.metadata.total_available_results
     result["total_available_results"] = total_available_results
@@ -175,6 +195,7 @@ def get_certificate_auth_providers(module, api_instance, result):
 
 def run_module():
     module = BaseInfoModule(
+        skip_info_args=True,
         argument_spec=get_module_spec(),
         supports_check_mode=False,
     )

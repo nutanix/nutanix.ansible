@@ -4,9 +4,9 @@
 # - active_directory
 # - white_listed_groups
 
-- name: Start ntnx_certificate_auth_providers_v2 tests
+- name: Start ntnx_certificate_auth_provider_v2 tests
   ansible.builtin.debug:
-    msg: start ntnx_certificate_auth_providers_v2 tests
+    msg: start ntnx_certificate_auth_provider_v2 tests
 
 - name: Generate random category key & value
   ansible.builtin.set_fact:
@@ -64,7 +64,7 @@
 ##############################################################################
 
 - name: Generate spec for creating certificate authentication provider using check mode with all attributes
-  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+  nutanix.ncp.ntnx_certificate_auth_provider_v2:
     name: "CAC"
     client_ca_chain: "{{ ca_cert_chain }}"
     ca_cert_file_name: "test_ca_chain.pem"
@@ -98,7 +98,7 @@
 ##############################################################################
 
 - name: Create certificate authentication provider with CAC enabled
-  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+  nutanix.ncp.ntnx_certificate_auth_provider_v2:
     name: "CAC"
     client_ca_chain: "{{ ca_cert_chain }}"
     ca_cert_file_name: "ca_cert_chain.pem"
@@ -136,7 +136,7 @@
 ##############################################################################
 
 - name: Create certificate authentication provider with same name (should fail - max 1 allowed)
-  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+  nutanix.ncp.ntnx_certificate_auth_provider_v2:
     name: "CAC"
     client_ca_chain: "{{ ca_cert_chain }}"
     ca_cert_file_name: "ca_cert_chain.pem"
@@ -163,7 +163,7 @@
     success_msg: "Creating certificate authentication provider with same name failed as expected (max 1 entity allowed)"
 
 - name: Create certificate authentication provider without name (should fail)
-  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+  nutanix.ncp.ntnx_certificate_auth_provider_v2:
     client_ca_chain: "{{ ca_cert_chain }}"
     ca_cert_file_name: "ca_cert_chain.pem"
     is_cert_auth_enabled: true
@@ -186,7 +186,7 @@
     success_msg: "Creating certificate authentication provider without name failed as expected"
 
 - name: Create certificate authentication provider with non-CAC name (should fail)
-  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+  nutanix.ncp.ntnx_certificate_auth_provider_v2:
     name: "InvalidName"
     client_ca_chain: "{{ ca_cert_chain }}"
     ca_cert_file_name: "ca_cert_chain.pem"
@@ -213,9 +213,9 @@
     success_msg: "Creating certificate authentication provider with non-CAC name failed as expected"
 
 - name: Create certificate authentication provider with invalid certificate (should fail - SDK validation)
-  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+  nutanix.ncp.ntnx_certificate_auth_provider_v2:
     name: "CAC"
-    client_ca_chain: "invalid_certificate_data"
+    client_ca_chain: "j5TF5Q3gStdsi81j5TF5Q3gStdsi81j5TF5Q3gStdsi81j5TF5Q3gStdsi81j5TF5Q3gStdsi81"
     ca_cert_file_name: "ca_cert_chain.pem"
     is_cert_auth_enabled: true
     is_cac_enabled: true
@@ -232,6 +232,8 @@
     that:
       - result.changed == false
       - result.failed == true
+      - result.msg == "Api Exception raised while creating certificate authentication provider"
+      - result.response.data.error | length > 0
     fail_msg: "Creating certificate authentication provider with invalid certificate did not fail as expected"
     success_msg: "Creating certificate authentication provider with invalid certificate failed as expected (SDK validation)"
 
@@ -240,10 +242,10 @@
 ##############################################################################
 
 - name: Generate spec for updating certificate authentication provider using check mode
-  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+  nutanix.ncp.ntnx_certificate_auth_provider_v2:
     ext_id: "{{ cert_auth_provider_ext_id }}"
-    client_ca_chain: "{{ ca_cert_chain }}_updated"
-    ca_cert_file_name: "ca_cert_chain_updated.pem"
+    client_ca_chain: "j5TF5Q3gStdsi81j5TF5Q3gStdsi81j5TF5Q3gStdsi81j5TF5Q3gStdsi81j5TF5Q3gStdsi81j5TF5Q3gStdsi81"
+    ca_cert_file_name: "ca_cert_chain_updated_updated.pem"
     is_cert_auth_enabled: false
     is_cac_enabled: false
     dir_svc_ext_id: "11111111-1111-1111-1111-111111111111"
@@ -260,10 +262,11 @@
     that:
       - result.changed == false
       - result.failed == false
+      - result.ext_id == "{{ cert_auth_provider_ext_id }}"
       - result.response is defined
       - result.response.is_cert_auth_enabled == false
       - result.response.is_cac_enabled == false
-      - result.response.ca_cert_file_name == "ca_cert_chain_updated.pem"
+      - result.response.ca_cert_file_name == "ca_cert_chain_updated_updated.pem"
       - result.response.dir_svc_ext_id == "11111111-1111-1111-1111-111111111111"
     fail_msg: "Generating update spec with check mode failed"
     success_msg: "Generating update spec with check mode passed with expected values"
@@ -273,7 +276,7 @@
 ##############################################################################
 
 - name: Update certificate authentication provider - disable CAC
-  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+  nutanix.ncp.ntnx_certificate_auth_provider_v2:
     ext_id: "{{ cert_auth_provider_ext_id }}"
     is_cac_enabled: false
   register: result
@@ -297,7 +300,7 @@
     success_msg: "Updating certificate authentication provider - disable CAC passed with expected values"
 
 - name: Update certificate authentication provider - enable CAC back
-  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+  nutanix.ncp.ntnx_certificate_auth_provider_v2:
     ext_id: "{{ cert_auth_provider_ext_id }}"
     is_cac_enabled: true
   register: result
@@ -325,7 +328,7 @@
 ##############################################################################
 
 - name: Update certificate authentication provider with same values (idempotency check)
-  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+  nutanix.ncp.ntnx_certificate_auth_provider_v2:
     ext_id: "{{ cert_auth_provider_ext_id }}"
     is_cac_enabled: true
   register: result
@@ -351,7 +354,7 @@
 ##############################################################################
 
 - name: Update certificate authentication provider with wrong ext_id (should fail)
-  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+  nutanix.ncp.ntnx_certificate_auth_provider_v2:
     ext_id: "00000000-0000-0000-0000-000000000000"
     is_cac_enabled: false
   register: result
@@ -374,7 +377,7 @@
     success_msg: "Updating certificate authentication provider with wrong ext_id failed as expected"
 
 - name: Update certificate authentication provider with wrong directory service ext_id (should fail)
-  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+  nutanix.ncp.ntnx_certificate_auth_provider_v2:
     ext_id: "{{ cert_auth_provider_ext_id }}"
     dir_svc_ext_id: "00000000-0000-0000-0000-000000000000"
   register: result
@@ -396,7 +399,7 @@
     success_msg: "Updating certificate authentication provider with wrong directory service ext_id failed as expected"
 
 - name: Update certificate authentication provider with non-CAC name (should fail)
-  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+  nutanix.ncp.ntnx_certificate_auth_provider_v2:
     ext_id: "{{ cert_auth_provider_ext_id }}"
     name: "InvalidName"
   register: result
@@ -501,12 +504,32 @@
     fail_msg: "List all certificate authentication providers failed"
     success_msg: "List all certificate authentication providers passed"
 
+- name: List all certificate authentication providers with limit
+  nutanix.ncp.ntnx_certificate_auth_providers_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Debug list all certificate authentication providers with limit result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify list all certificate authentication providers with limit
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+    fail_msg: "List all certificate authentication providers with limit failed"
+    success_msg: "List all certificate authentication providers with limit passed"
+
 ##############################################################################
 # Delete - Check Mode
 ##############################################################################
 
 - name: Delete certificate authentication provider using check mode
-  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+  nutanix.ncp.ntnx_certificate_auth_provider_v2:
     state: absent
     ext_id: "{{ cert_auth_provider_ext_id }}"
   check_mode: true
@@ -532,7 +555,7 @@
 ##############################################################################
 
 - name: Delete the certificate authentication provider
-  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+  nutanix.ncp.ntnx_certificate_auth_provider_v2:
     state: absent
     ext_id: "{{ cert_auth_provider_ext_id }}"
   register: result
@@ -557,7 +580,7 @@
 ##############################################################################
 
 - name: Delete certificate authentication provider with wrong ext_id (should fail)
-  nutanix.ncp.ntnx_certificate_auth_providers_v2:
+  nutanix.ncp.ntnx_certificate_auth_provider_v2:
     state: absent
     ext_id: "00000000-0000-0000-0000-000000000000"
   register: result
