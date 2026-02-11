@@ -33,7 +33,7 @@
         vm_2_egress_nic_ext_id: "5349fd3b-e71a-462c-a59f-63b62d45b4de"
 
     - name: Create network function with INLINE traffic forwarding mode and ACTIVE_PASSIVE HA
-      nutanix.ncp.ntnx_network_functions_v2:
+      nutanix.ncp.ntnx_network_function_v2:
         state: present
         name: "{{ network_function_name }}_inline_active_passive"
         description: "Network function for inline traffic inspection"
@@ -62,7 +62,7 @@
         network_function_ext_id_inline_active_passive: "{{ result.response.ext_id }}"
 
     - name: Create network function with VTAP traffic forwarding mode
-      nutanix.ncp.ntnx_network_functions_v2:
+      nutanix.ncp.ntnx_network_function_v2:
         state: present
         name: "{{ network_function_name }}_vtap_active_passive"
         description: "Network function for traffic mirroring"
@@ -83,7 +83,7 @@
         network_function_ext_id_vtap_active_passive: "{{ result.response.ext_id }}"
 
     - name: Update network function name, description, and data plane health check config
-      nutanix.ncp.ntnx_network_functions_v2:
+      nutanix.ncp.ntnx_network_function_v2:
         ext_id: "{{ network_function_ext_id_inline_active_passive }}"
         name: "{{ network_function_name }}_inline_active_passive_updated"
         description: "Network function for inline traffic inspection updated"
@@ -131,14 +131,14 @@
       ignore_errors: true
 
     - name: Delete network function with INLINE traffic forwarding mode and ACTIVE_PASSIVE HA
-      nutanix.ncp.ntnx_network_functions_v2:
+      nutanix.ncp.ntnx_network_function_v2:
         state: absent
         ext_id: "{{ network_function_ext_id_inline_active_passive }}"
       register: result_inline_active_passive
       ignore_errors: true
 
     - name: Delete network function with VTAP traffic forwarding mode and ACTIVE_PASSIVE HA
-      nutanix.ncp.ntnx_network_functions_v2:
+      nutanix.ncp.ntnx_network_function_v2:
         state: absent
         ext_id: "{{ network_function_ext_id_vtap_active_passive }}"
       register: result_vtap_active_passive
