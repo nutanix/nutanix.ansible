@@ -256,10 +256,8 @@ def create_certificate_auth_provider(module, api_instance, result):
 
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed generating create certificate authentication provider spec",
-            **result,
-        )
+        result["msg"] = "Failed generating create certificate authentication provider spec"
+        module.fail_json(**result)
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
@@ -303,10 +301,8 @@ def update_certificate_auth_provider(module, api_instance, result):
 
     etag = get_etag(data=current_spec)
     if not etag:
-        return module.fail_json(
-            "Unable to fetch etag for updating certificate authentication provider",
-            **result,
-        )
+        result["msg"] = "Unable to fetch etag for updating certificate authentication provider"
+        module.fail_json(**result)
 
     kwargs = {"if_match": etag}
 
@@ -315,10 +311,8 @@ def update_certificate_auth_provider(module, api_instance, result):
 
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed generating certificate authentication provider update spec",
-            **result,
-        )
+        result["msg"] = "Failed generating certificate authentication provider update spec"
+        module.fail_json(**result)
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
@@ -371,10 +365,8 @@ def delete_certificate_auth_provider(module, api_instance, result):
 
     etag = get_etag(data=current_spec)
     if not etag:
-        return module.fail_json(
-            "Unable to fetch etag for deleting certificate authentication provider",
-            **result,
-        )
+        result["msg"] = "Unable to fetch etag for deleting certificate authentication provider"
+        module.fail_json(**result)
 
     kwargs = {"if_match": etag}
 
