@@ -18,21 +18,21 @@ options:
       - The URL of the HTTPS proxy to use.
       - "Proxy URL precedence (highest to lowest): C(https_proxy) -> C(http_proxy) -> C(all_proxy) module params,
         then C(HTTPS_PROXY) -> C(HTTP_PROXY) -> C(ALL_PROXY) env vars."
-      - All module parameters (lowercase) are checked first, then environment variables (uppercase) as fallback.
+      - C(https_proxy). If not set then the value of the C(HTTPS_PROXY) environment variable is used.
     type: str
   http_proxy:
     description:
       - The URL of the HTTP proxy to use.
       - "Proxy URL precedence (highest to lowest): C(https_proxy) -> C(http_proxy) -> C(all_proxy) module params,
         then C(HTTPS_PROXY) -> C(HTTP_PROXY) -> C(ALL_PROXY) env vars."
-      - All module parameters (lowercase) are checked first, then environment variables (uppercase) as fallback.
+      - C(http_proxy). If not set then the value of the C(HTTP_PROXY) environment variable is used.
     type: str
   all_proxy:
     description:
       - The URL of the proxy to use for all protocols.
       - "Proxy URL precedence (highest to lowest): C(https_proxy) -> C(http_proxy) -> C(all_proxy) module params,
         then C(HTTPS_PROXY) -> C(HTTP_PROXY) -> C(ALL_PROXY) env vars."
-      - All module parameters (lowercase) are checked first, then environment variables (uppercase) as fallback.
+      - C(all_proxy). If not set then the value of the C(ALL_PROXY) environment variable is used.
     type: str
   no_proxy:
     description:

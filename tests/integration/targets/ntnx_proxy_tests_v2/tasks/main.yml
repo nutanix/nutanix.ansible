@@ -8,7 +8,7 @@
       validate_certs: "{{ validate_certs }}"
       nutanix_debug: "{{ nutanix_debug }}"
       nutanix_log_file: "{{ nutanix_log_file }}"
-      https_proxy: "{{ proxy.https_proxy }}"
+      https_proxy: "{{ proxy.https_proxy_with_credentials }}"
   block:
     - name: Import proxy tests for all SDKs
       ansible.builtin.import_tasks: proxy_list_entities.yml
