@@ -122,30 +122,3 @@ def create_filter_criteria_string(filters):
     filter_criteria = filter_criteria[:-1]
 
     return filter_criteria
-
-
-def validate_required_params(module, required_params):
-    """
-    This routine checks if all required parameters are present in module.params
-    and fails if any are missing.
-
-    Args:
-        module: AnsibleModule object
-        required_params: List of required parameter names
-                        Example: ['name', 'type', 'cluster_uuid']
-
-    Returns:
-        list: List of missing parameter names (empty if all present)
-    """
-    missing_params = []
-
-    for param in required_params:
-        if param not in module.params or module.params[param] is None:
-            missing_params.append(param)
-
-    if missing_params:
-        module.fail_json(
-            msg=f"Missing required parameter(s): {', '.join(missing_params)}"
-        )
-
-    return missing_params
