@@ -21,7 +21,6 @@ except ImportError:
     SDK_IMP_ERROR = traceback.format_exc()
 
 
-
 def get_api_client(module):
     """
     This method will return client to be used in api connection using

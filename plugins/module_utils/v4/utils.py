@@ -5,6 +5,7 @@ from __future__ import absolute_import, division, print_function
 
 import json
 import os
+
 try:
     # Python 3
     from urllib.parse import unquote, urlparse

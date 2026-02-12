@@ -127,7 +127,7 @@
       nutanix_username: <user>
       nutanix_password: <pass>
       validate_certs: false
-      # Note: https_proxy is NOT set here, so env vars will be used
+      # Note: https_proxy is NOT set here, so env vars will be used if set in environment variables
 
   tasks:
     - name: List VMs using proxy from environment variables
