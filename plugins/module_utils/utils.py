@@ -122,3 +122,44 @@ def create_filter_criteria_string(filters):
     filter_criteria = filter_criteria[:-1]
 
     return filter_criteria
+
+def validate_required_params(module, required_params):
+    """
+    This routine checks if all required parameters are present in module.params
+    and returns a list of missing fields (including nested fields).
+    
+    Args:
+        module: AnsibleModule object
+        required_params: List of required parameter names or dict with nested structure
+                        Example: ['name', 'type'] or {'config': ['name', 'type']}
+    
+    Returns:
+        list: List of missing parameter paths (e.g., ['name', 'config.type'])
+    """
+    missing_params = []
+    
+    def check_nested(params, required, path=""):
+        """Recursively check nested parameters"""
+        if isinstance(required, list):
+            # Simple list of required parameter names
+            for param in required:
+                if param not in params or params[param] is None:
+                    missing_params.append(f"{path}.{param}" if path else param)
+        elif isinstance(required, dict):
+            # Nested structure
+            for key, value in required.items():
+                current_path = f"{path}.{key}" if path else key
+                if key not in params or params[key] is None:
+                    missing_params.append(current_path)
+                elif isinstance(value, (list, dict)):
+                    # Recursively check nested requirements
+                    check_nested(params[key], value, current_path)
+    
+    check_nested(module.params, required_params)
+    
+    if missing_params:
+        module.fail_json(
+            msg=f"Missing required parameter(s): {', '.join(missing_params)}"
+        )
+    
+    return missing_params
