@@ -34,6 +34,7 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_info_v2
     - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
 author:
     - Abhinav Bansal (@abhinavbansal29)
     - George Ghawali (@george-ghawali)
@@ -121,6 +122,7 @@ def get_restore_source_with_ext_id(module, prism, result):
 
 def run_module():
     module = BaseInfoModule(
+        support_proxy=True,
         argument_spec=get_module_spec(),
         supports_check_mode=False,
     )

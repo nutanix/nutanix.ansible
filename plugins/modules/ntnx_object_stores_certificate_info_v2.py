@@ -26,6 +26,7 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_info_v2
     - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
 author:
     - George Ghawali (@george-ghawali)
 """
@@ -176,6 +177,7 @@ def get_object_store_certificates(module, object_stores_api, result):
 
 def run_module():
     module = BaseInfoModule(
+        support_proxy=True,
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         mutually_exclusive=[

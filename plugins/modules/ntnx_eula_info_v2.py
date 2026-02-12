@@ -19,6 +19,7 @@ description:
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_logger
+      - nutanix.ncp.ntnx_proxy_v2
 author:
  - Abhinav Bansal (@abhinavbansal29)
 """
@@ -117,6 +118,7 @@ def get_eula(module, result):
 
 def run_module():
     module = BaseInfoModule(
+        support_proxy=True,
         skip_info_args=True,
         argument_spec=dict(),
         supports_check_mode=False,
