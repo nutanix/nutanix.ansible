@@ -16,6 +16,7 @@
 
 - name: "[1/13 VMM SDK] List VMs"
   nutanix.ncp.ntnx_vms_info_v2:
+    https_proxy: "{{ proxy.https_proxy_with_credentials }}"
   register: vmm_result
   ignore_errors: true
 
@@ -56,6 +57,7 @@
 
 - name: "[2/13 Network SDK] List VPCs"
   nutanix.ncp.ntnx_vpcs_info_v2:
+    https_proxy: "{{ proxy.https_proxy_with_credentials }}"
   register: network_result
   ignore_errors: true
 
@@ -98,6 +100,7 @@
 
 - name: "[3/13 IAM SDK] List Users"
   nutanix.ncp.ntnx_users_info_v2:
+    https_proxy: "{{ proxy.https_proxy_with_credentials }}"
   register: iam_result
   ignore_errors: true
 
@@ -138,6 +141,7 @@
 
 - name: "[4/13 ClusterMgmt SDK] List Clusters"
   nutanix.ncp.ntnx_clusters_info_v2:
+    https_proxy: "{{ proxy.https_proxy_with_credentials }}"
   register: clustermgmt_result
   ignore_errors: true
 
@@ -180,6 +184,7 @@
 
 - name: "[5/13 Prism SDK] List Categories"
   nutanix.ncp.ntnx_categories_info_v2:
+    https_proxy: "{{ proxy.https_proxy_with_credentials }}"
   register: prism_result
   ignore_errors: true
 
@@ -222,6 +227,7 @@
 
 - name: "[6/13 Volumes SDK] List Volume Groups"
   nutanix.ncp.ntnx_volume_groups_info_v2:
+    https_proxy: "{{ proxy.https_proxy_with_credentials }}"
   register: volumes_result
   ignore_errors: true
 
@@ -264,6 +270,7 @@
 
 - name: "[7/13 DataProtection SDK] List Recovery Points"
   nutanix.ncp.ntnx_recovery_points_info_v2:
+    https_proxy: "{{ proxy.https_proxy_with_credentials }}"
   register: dataprotection_result
   ignore_errors: true
 
@@ -308,6 +315,7 @@
 
 - name: "[8/13 Flow/Microseg SDK] List Address Groups"
   nutanix.ncp.ntnx_address_groups_info_v2:
+    https_proxy: "{{ proxy.https_proxy_with_credentials }}"
   register: flow_result
   ignore_errors: true
 
@@ -350,6 +358,7 @@
 
 - name: "[9/13 LCM SDK] Get LCM Status"
   nutanix.ncp.ntnx_lcm_status_info_v2:
+    https_proxy: "{{ proxy.https_proxy_with_credentials }}"
   register: lcm_result
   ignore_errors: true
 
@@ -390,6 +399,7 @@
 
 - name: "[10/13 DataPolicies SDK] List Protection Policies"
   nutanix.ncp.ntnx_protection_policies_info_v2:
+    https_proxy: "{{ proxy.https_proxy_with_credentials }}"
   register: datapolicies_result
   ignore_errors: true
 
@@ -433,6 +443,7 @@
 
 - name: "[11/13 Objects SDK] List Object Stores"
   nutanix.ncp.ntnx_object_stores_info_v2:
+    https_proxy: "{{ proxy.https_proxy_with_credentials }}"
   register: objects_result
   ignore_errors: true
 
@@ -475,6 +486,7 @@
 
 - name: "[12/13 Licensing SDK] Get EULA Info"
   nutanix.ncp.ntnx_eula_info_v2:
+    https_proxy: "{{ proxy.https_proxy_with_credentials }}"
   register: licensing_result
   ignore_errors: true
 
@@ -515,6 +527,7 @@
 
 - name: "[13/13 Security SDK] List STIGs"
   nutanix.ncp.ntnx_stigs_info_v2:
+    https_proxy: "{{ proxy.https_proxy_with_credentials }}"
   register: security_result
   ignore_errors: true
 
