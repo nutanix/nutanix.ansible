@@ -642,12 +642,32 @@
     fail_msg: "Failed to generate spec for updating network function using check mode status"
     success_msg: "Spec for updating network function using check mode status generated successfully"
 
-- name: Update network function
+- name: Update network function name and description
   nutanix.ncp.ntnx_network_function_v2:
     ext_id: "{{ network_function_ext_id_1 }}"
     name: "{{ network_function_name }}_1_updated"
     description: "network function for testing the first network function updated"
-    high_availability_mode: ACTIVE_PASSIVE
+  register: network_function_result
+  ignore_errors: true
+
+- name: Update network function name and description status
+  ansible.builtin.assert:
+    that:
+      - network_function_result.changed == true
+      - network_function_result.failed == false
+      - network_function_result.response is defined
+      - network_function_result.ext_id == "{{ network_function_ext_id_1 }}"
+      - network_function_result.task_ext_id is defined
+      - network_function_result.response.name == "{{ network_function_name }}_1_updated"
+      - network_function_result.response.description == "network function for testing the first network function updated"
+    fail_msg: "Failed to update network function name and description"
+    success_msg: "Network function name and description updated successfully"
+
+- name: Update network function
+  nutanix.ncp.ntnx_network_function_v2:
+    ext_id: "{{ network_function_ext_id_1 }}"
+    name: "{{ network_function_name }}_1_updated_2"
+    description: "network function for testing the first network function updated 2"
     failure_handling: FAIL_OPEN
     traffic_forwarding_mode: INLINE
     nic_pairs:
@@ -671,8 +691,8 @@
       - network_function_result.response is defined
       - network_function_result.ext_id == "{{ network_function_ext_id_1 }}"
       - network_function_result.task_ext_id is defined
-      - network_function_result.response.name == "{{ network_function_name }}_1_updated"
-      - network_function_result.response.description == "network function for testing the first network function updated"
+      - network_function_result.response.name == "{{ network_function_name }}_1_updated_2"
+      - network_function_result.response.description == "network function for testing the first network function updated 2"
       - network_function_result.response.high_availability_mode == "ACTIVE_PASSIVE"
       - network_function_result.response.failure_handling == "FAIL_OPEN"
       - network_function_result.response.traffic_forwarding_mode == "INLINE"
@@ -692,9 +712,8 @@
 - name: Test idempotency by updating network function with same spec
   nutanix.ncp.ntnx_network_function_v2:
     ext_id: "{{ network_function_ext_id_1 }}"
-    name: "{{ network_function_name }}_1_updated"
-    description: "network function for testing the first network function updated"
-    high_availability_mode: ACTIVE_PASSIVE
+    name: "{{ network_function_name }}_1_updated_2"
+    description: "network function for testing the first network function updated 2"
     failure_handling: FAIL_OPEN
     traffic_forwarding_mode: INLINE
     nic_pairs:
@@ -724,7 +743,7 @@
   nutanix.ncp.ntnx_network_function_v2:
     ext_id: "{{ network_function_ext_id_1 }}"
     name: "network_function_updated_1"
-    description: "network function for testing the first network function updated"
+    description: "network function for testing the first network function updated 2"
     high_availability_mode: ACTIVE_PASSIVE
     failure_handling: FAIL_OPEN
     traffic_forwarding_mode: INLINE
@@ -779,7 +798,7 @@
 
 - name: List all network functions with filter
   nutanix.ncp.ntnx_network_functions_info_v2:
-    filter: "name eq '{{ network_function_name }}_1_updated'"
+    filter: "name eq '{{ network_function_name }}_1_updated_2'"
   register: network_function_result
   ignore_errors: true
 
@@ -790,8 +809,8 @@
       - network_function_result.failed == false
       - network_function_result.response is defined
       - network_function_result.response | length == 1
-      - network_function_result.response[0].name == "{{ network_function_name }}_1_updated"
-      - network_function_result.response[0].description == "network function for testing the first network function updated"
+      - network_function_result.response[0].name == "{{ network_function_name }}_1_updated_2"
+      - network_function_result.response[0].description == "network function for testing the first network function updated 2"
       - network_function_result.response[0].high_availability_mode == "ACTIVE_PASSIVE"
       - network_function_result.response[0].failure_handling == "FAIL_OPEN"
       - network_function_result.response[0].traffic_forwarding_mode == "INLINE"

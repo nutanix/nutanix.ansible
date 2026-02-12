@@ -368,6 +368,7 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
+    validate_required_params,
 )
 
 SDK_IMP_ERROR = None
@@ -439,6 +440,7 @@ def get_module_spec():
 
 
 def create_network_function(module, result, network_functions):
+    validate_required_params(module, ["nic_pairs", "high_availability_mode"])
     sg = SpecGenerator(module)
     default_spec = net_sdk.NetworkFunction()
     spec, err = sg.generate_spec(obj=default_spec)
