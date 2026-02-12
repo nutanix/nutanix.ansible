@@ -9,9 +9,9 @@ import traceback
 from base64 import b64encode
 
 from ansible.module_utils.basic import missing_required_lib
-from ..utils import _apply_proxy_from_env
 
 from ...constants import ALLOW_VERSION_NEGOTIATION
+from ..utils import _apply_proxy_from_env
 
 SDK_IMP_ERROR = None
 try:

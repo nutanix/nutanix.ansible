@@ -11,8 +11,9 @@ try:
     from urllib.parse import unquote, urlparse
 except ImportError:
     # Python 2.7
-    from urlparse import urlparse
     from urllib import unquote
+
+    from urlparse import urlparse
 
 __metaclass__ = type
 
