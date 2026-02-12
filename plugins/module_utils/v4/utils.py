@@ -182,7 +182,7 @@ def validate_required_params(module, required_params):
 
     if missing_params:
         module.fail_json(
-            msg="Missing required parameter(s): {0}".format(', '.join(missing_params))
+            msg="Missing required parameter(s): {0}".format(", ".join(missing_params))
         )
 
     return missing_params
