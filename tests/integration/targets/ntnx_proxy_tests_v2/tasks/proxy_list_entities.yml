@@ -85,7 +85,9 @@
       - network_result_without_credentials is not failed
       - network_result_without_credentials.response is defined
     fail_msg: "Network SDK test (Credentials defined in variables) failed: {{ network_result_without_credentials.msg | default('unknown error') }}"
-    success_msg: "Network SDK test (Credentials defined in variables) passed - retrieved {{ network_result_without_credentials.response | default([]) | length }} VPCs"
+    success_msg: >-
+      Network SDK test (Credentials defined in variables) passed -
+      retrieved {{ network_result_without_credentials.response | default([]) | length }} VPCs
 
 # =========================================================================
 # SDK 3: ntnx_iam_py_client (iam/api_client.py)
@@ -165,7 +167,9 @@
       - clustermgmt_result_without_credentials is not failed
       - clustermgmt_result_without_credentials.response is defined
     fail_msg: "ClusterMgmt SDK test (Credentials defined in variables) failed: {{ clustermgmt_result_without_credentials.msg | default('unknown error') }}"
-    success_msg: "ClusterMgmt SDK test (Credentials defined in variables) passed - retrieved {{ clustermgmt_result_without_credentials.response | default([]) | length }} clusters"
+    success_msg: >-
+      ClusterMgmt SDK test (Credentials defined in variables) passed -
+      retrieved {{ clustermgmt_result_without_credentials.response | default([]) | length }} clusters
 
 # =========================================================================
 # SDK 5: ntnx_prism_py_client (prism/pc_api_client.py)
@@ -205,7 +209,9 @@
       - prism_result_without_credentials is not failed
       - prism_result_without_credentials.response is defined
     fail_msg: "Prism SDK test (Credentials defined in variables) failed: {{ prism_result_without_credentials.msg | default('unknown error') }}"
-    success_msg: "Prism SDK test (Credentials defined in variables) passed - retrieved {{ prism_result_without_credentials.response | default([]) | length }} categories"
+    success_msg: >-
+      Prism SDK test (Credentials defined in variables) passed -
+      retrieved {{ prism_result_without_credentials.response | default([]) | length }} categories
 
 # =========================================================================
 # SDK 6: ntnx_volumes_py_client (volumes/api_client.py)
@@ -245,7 +251,9 @@
       - volumes_result_without_credentials is not failed
       - volumes_result_without_credentials.response is defined
     fail_msg: "Volumes SDK test (Credentials defined in variables) failed: {{ volumes_result_without_credentials.msg | default('unknown error') }}"
-    success_msg: "Volumes SDK test (Credentials defined in variables) passed - retrieved {{ volumes_result_without_credentials.response | default([]) | length }} volume groups"
+    success_msg: >-
+      Volumes SDK test (Credentials defined in variables) passed -
+      retrieved {{ volumes_result_without_credentials.response | default([]) | length }} volume groups
 
 # =========================================================================
 # SDK 7: ntnx_dataprotection_py_client (data_protection/api_client.py)
@@ -284,8 +292,12 @@
     that:
       - dataprotection_result_without_credentials is not failed
       - dataprotection_result_without_credentials.response is defined
-    fail_msg: "DataProtection SDK test (Credentials defined in variables) failed: {{ dataprotection_result_without_credentials.msg | default('unknown error') }}"
-    success_msg: "DataProtection SDK test (Credentials defined in variables) passed - retrieved {{ dataprotection_result_without_credentials.response | default([]) | length }} recovery points"
+    fail_msg: >-
+      DataProtection SDK test (Credentials defined in variables) failed:
+      {{ dataprotection_result_without_credentials.msg | default('unknown error') }}
+    success_msg: >-
+      DataProtection SDK test (Credentials defined in variables) passed -
+      retrieved {{ dataprotection_result_without_credentials.response | default([]) | length }} recovery points
 
 # =========================================================================
 # SDK 8: ntnx_microseg_py_client (flow/api_client.py)
@@ -325,7 +337,9 @@
       - flow_result_without_credentials is not failed
       - flow_result_without_credentials.response is defined
     fail_msg: "Flow/Microseg SDK test (Credentials defined in variables) failed: {{ flow_result_without_credentials.msg | default('unknown error') }}"
-    success_msg: "Flow/Microseg SDK test (Credentials defined in variables) passed - retrieved {{ flow_result_without_credentials.response | default([]) | length }} address groups"
+    success_msg: >-
+      Flow/Microseg SDK test (Credentials defined in variables) passed -
+      retrieved {{ flow_result_without_credentials.response | default([]) | length }} address groups
 
 # =========================================================================
 # SDK 9: ntnx_lifecycle_py_client (lcm/api_client.py)
@@ -405,7 +419,9 @@
       - datapolicies_result_without_credentials is not failed
       - datapolicies_result_without_credentials.response is defined
     fail_msg: "DataPolicies SDK test (Credentials defined in variables) failed: {{ datapolicies_result_without_credentials.msg | default('unknown error') }}"
-    success_msg: "DataPolicies SDK test (Credentials defined in variables) passed - retrieved {{ datapolicies_result_without_credentials.response | default([]) | length }} protection policies"
+    success_msg: >-
+      DataPolicies SDK test (Credentials defined in variables) passed -
+      retrieved {{ datapolicies_result_without_credentials.response | default([]) | length }} protection policies
 
 # =========================================================================
 # SDK 11: ntnx_objects_py_client (objects/api_client.py)
@@ -446,7 +462,9 @@
       - objects_result_without_credentials is not failed
       - objects_result_without_credentials.response is defined
     fail_msg: "Objects SDK test (Credentials defined in variables) failed: {{ objects_result_without_credentials.msg | default('unknown error') }}"
-    success_msg: "Objects SDK test (Credentials defined in variables) passed - retrieved {{ objects_result_without_credentials.response | default([]) | length }} object stores"
+    success_msg: >-
+      Objects SDK test (Credentials defined in variables) passed -
+      retrieved {{ objects_result_without_credentials.response | default([]) | length }} object stores
 
 # =========================================================================
 # SDK 12: ntnx_licensing_py_client (licensing/api_client.py)
@@ -526,7 +544,9 @@
       - security_result_without_credentials is not failed
       - security_result_without_credentials.response is defined
     fail_msg: "Security SDK test (Credentials defined in variables) failed: {{ security_result_without_credentials.msg | default('unknown error') }}"
-    success_msg: "Security SDK test (Credentials defined in variables) passed - retrieved {{ security_result_without_credentials.response | default([]) | length }} STIGs"
+    success_msg: >-
+      Security SDK test (Credentials defined in variables) passed -
+      retrieved {{ security_result_without_credentials.response | default([]) | length }} STIGs
 
 ########################################################
 # Negative Tests
