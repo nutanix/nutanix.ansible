@@ -130,3 +130,23 @@ def get_route(module, api_instance, ext_id, route_table_ext_id):
             exception=e,
             msg="Api Exception raised while fetching route info using ext_id and table ext_id",
         )
+
+
+def get_virtual_switch(module, api_instance, ext_id):
+    """
+    This method will return virtual switch info using its ext_id
+    Args:
+        module: Ansible module
+        api_instance: VirtualSwitchesApi instance from ntnx_networking_py_client sdk
+        ext_id (str): virtual switch external ID
+    return:
+        info (object): virtual switch info
+    """
+    try:
+        return api_instance.get_virtual_switch_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching virtual switch info using ext_id",
+        )
