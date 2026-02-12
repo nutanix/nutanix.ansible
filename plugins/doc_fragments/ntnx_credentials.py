@@ -30,13 +30,19 @@ options:
       - Prism central username
       - C(nutanix_username). If not set then the value of the C(NUTANIX_USERNAME), environment variable is used.
     type: str
-    required: true
+    required: false
   nutanix_password:
     description:
       - Prism central password
       - C(nutanix_password). If not set then the value of the C(NUTANIX_PASSWORD), environment variable is used.
-    required: true
+    required: false
     type: str
+  nutanix_api_key:
+    description:
+      - Prism central API key. Created using Service Account API Key in Prism Central.
+      - C(nutanix_api_key). If not set then the value of the C(NUTANIX_API_KEY), environment variable is used.
+    type: str
+    required: false
   validate_certs:
     description:
         - Set value to C(False) to skip validation for self signed certificates
