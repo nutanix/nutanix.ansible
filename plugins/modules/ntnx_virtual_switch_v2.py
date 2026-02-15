@@ -428,6 +428,7 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
+    validate_required_params,
 )
 
 SDK_IMP_ERROR = None
@@ -588,6 +589,7 @@ def create_virtual_switch_from_bridge(module, bridges_api, result):
 
 
 def create_virtual_switch(module, virtual_switches, result):
+    validate_required_params(module, ["bond_mode", "clusters"])
     sg = SpecGenerator(module)
     default_spec = networking_sdk.VirtualSwitch()
     spec, err = sg.generate_spec(obj=default_spec)
@@ -762,11 +764,6 @@ def run_module():
     if module.params.get("existing_bridge_name"):
         create_virtual_switch_from_bridge(module, bridges_api, result)
         module.exit_json(**result)
-
-    if not module.params.get("bond_mode"):
-        module.fail_json(msg="bond_mode is required for create and update operations")
-    if not module.params.get("clusters"):
-        module.fail_json(msg="clusters is required for create and update operations")
 
     if module.params.get("ext_id"):
         update_virtual_switch(module, virtual_switches, result)
