@@ -348,7 +348,7 @@
       - result is defined
       - result.changed == false
       - result.failed == true
-      - "'bond_mode is required for create and update operations' in result.msg"
+      - result.msg == "Missing required parameter(s): bond_mode"
     success_msg: "Create virtual switch with missing bond_mode failed as expected"
     fail_msg: "Create virtual switch with missing bond_mode did not fail as expected"
 
@@ -369,7 +369,7 @@
       - result is defined
       - result.changed == false
       - result.failed == true
-      - "'clusters is required for create and update operations' in result.msg"
+      - result.msg == "Missing required parameter(s): clusters"
     success_msg: "Create virtual switch with missing clusters failed as expected"
     fail_msg: "Create virtual switch with missing clusters did not fail as expected"
 
