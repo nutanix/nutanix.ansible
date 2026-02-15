@@ -211,3 +211,30 @@ def get_api_params_from_spec(
             camel_key = snake_to_camel(param, special_cases)
             api_params[camel_key] = value
     return api_params
+
+
+def validate_required_params(module, required_params):
+    """
+    This routine checks if all required parameters are present in module.params
+    and fails if any are missing.
+
+    Args:
+        module: AnsibleModule object
+        required_params: List of required parameter names
+                        Example: ['name', 'type', 'cluster_uuid']
+
+    Returns:
+        list: List of missing parameter names (empty if all present)
+    """
+    missing_params = []
+
+    for param in required_params:
+        if param not in module.params or module.params[param] is None:
+            missing_params.append(param)
+
+    if missing_params:
+        module.fail_json(
+            msg="Missing required parameter(s): {0}".format(", ".join(missing_params))
+        )
+
+    return missing_params
