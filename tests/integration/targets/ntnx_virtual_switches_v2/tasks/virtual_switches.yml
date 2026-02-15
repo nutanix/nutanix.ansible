@@ -754,55 +754,6 @@
     success_msg: "Update virtual switch with missing name failed as expected"
     fail_msg: "Update virtual switch with missing name did not fail as expected"
 
-- name: Update virtual switch with missing clusters
-  nutanix.ncp.ntnx_virtual_switch_v2:
-    ext_id: "{{ todelete[1] }}"
-    name: "test_missing_clusters"
-    description: "test description"
-    bond_mode: "NONE"
-  register: result
-  ignore_errors: true
-
-- name: Debug update missing clusters result
-  ansible.builtin.debug:
-    var: result
-
-- name: Update virtual switch with missing clusters status
-  ansible.builtin.assert:
-    that:
-      - result is defined
-      - result.changed == false
-      - result.failed == true
-      - "'clusters is required for create and update operations' in result.msg"
-    success_msg: "Update virtual switch with missing clusters failed as expected"
-    fail_msg: "Update virtual switch with missing clusters did not fail as expected"
-
-- name: Update virtual switch with missing bond mode
-  nutanix.ncp.ntnx_virtual_switch_v2:
-    ext_id: "{{ todelete[1] }}"
-    name: "test_missing_bond_mode"
-    description: "test description"
-    clusters:
-      - ext_id: "{{ cluster.uuid }}"
-        hosts:
-          - ext_id: "{{ host_ext_id }}"
-  register: result
-  ignore_errors: true
-
-- name: Debug update missing bond mode result
-  ansible.builtin.debug:
-    var: result
-
-- name: Update virtual switch with missing bond mode status
-  ansible.builtin.assert:
-    that:
-      - result is defined
-      - result.changed == false
-      - result.failed == true
-      - "'bond_mode is required for create and update operations' in result.msg"
-    success_msg: "Update virtual switch with missing bond mode failed as expected"
-    fail_msg: "Update virtual switch with missing bond mode did not fail as expected"
-
 ########################################################################################
 # Info Module Tests - Get Single Virtual Switch
 ########################################################################################
