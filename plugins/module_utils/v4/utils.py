@@ -161,6 +161,58 @@ def remove_fields_from_spec(obj, fields_to_remove, deep=False):
                 remove_fields_from_spec(item, fields_to_remove, deep=True)
 
 
+def snake_to_camel(snake_str, special_cases=None):
+    """
+    Convert snake_case string to camelCase.
+
+    Args:
+        snake_str: The snake_case string to convert
+        special_cases: Optional dict mapping snake_case keys to their camelCase equivalents
+                      for cases where standard conversion doesn't apply
+                      (e.g., {'dir_svc_ext_id': 'dirSvcExtID'} for uppercase acronyms)
+
+    Returns:
+        str: The camelCase version of the input string
+    """
+    if special_cases and snake_str in special_cases:
+        return special_cases[snake_str]
+
+    # Standard snake_case to camelCase conversion
+    components = snake_str.split("_")
+    return components[0] + "".join(x.title() for x in components[1:])
+
+
+def get_api_params_from_spec(
+    spec, module_spec, exclude_params=None, special_cases=None
+):
+    """
+    Get parameters from a spec object converted to camelCase for API calls.
+    Dynamically extracts all parameters from the provided module_spec.
+    Only includes parameters that are not None.
+
+    Args:
+        spec: SDK spec object with snake_case attributes
+        module_spec: Dictionary of module argument spec (from get_module_spec())
+        exclude_params: List of parameter names to exclude (e.g., ['ext_id'])
+        special_cases: Dict mapping snake_case keys to camelCase for special conversions
+
+    Returns:
+        dict: Dictionary with camelCase keys and their values
+    """
+    if exclude_params is None:
+        exclude_params = []
+
+    api_params = {}
+    for param in module_spec.keys():
+        if param in exclude_params:
+            continue
+        value = getattr(spec, param, None)
+        if value is not None:
+            camel_key = snake_to_camel(param, special_cases)
+            api_params[camel_key] = value
+    return api_params
+
+
 def validate_required_params(module, required_params):
     """
     This routine checks if all required parameters are present in module.params
