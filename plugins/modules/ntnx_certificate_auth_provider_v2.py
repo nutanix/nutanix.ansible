@@ -205,8 +205,9 @@ from ..module_utils.v4.iam.api_client import (  # noqa: E402
 )
 from ..module_utils.v4.iam.helpers import get_certificate_auth_provider  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
-from ..module_utils.v4.utils import get_api_params_from_spec  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    get_api_params_from_spec,
+    validate_required_params,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -250,6 +251,17 @@ CAMEL_CASE_SPECIAL_CASES = {
 
 
 def create_certificate_auth_provider(module, api_instance, result):
+    validate_required_params(
+        module,
+        [
+            "name",
+            "client_ca_chain",
+            "ca_cert_file_name",
+            "is_cert_auth_enabled",
+            "is_cac_enabled",
+            "dir_svc_ext_id",
+        ],
+    )
     sg = SpecGenerator(module)
     default_spec = iam_sdk.CertAuthProvider()
     spec, err = sg.generate_spec(obj=default_spec)

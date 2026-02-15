@@ -237,6 +237,26 @@
     fail_msg: "Creating certificate authentication provider with invalid certificate did not fail as expected"
     success_msg: "Creating certificate authentication provider with invalid certificate failed as expected (SDK validation)"
 
+- name: Create certificate authentication provider with missing required parameters (should fail)
+  nutanix.ncp.ntnx_certificate_auth_provider_v2:
+    client_ca_chain: "{{ ca_cert_chain }}"
+    name: CAC
+  register: result
+  ignore_errors: true
+
+- name: Debug creating certificate authentication provider with missing required parameters result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify creating certificate authentication provider with missing required parameters failed
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Missing required parameter(s): ca_cert_file_name, is_cert_auth_enabled, is_cac_enabled, dir_svc_ext_id"
+    fail_msg: "Creating certificate authentication provider with missing required parameters did not fail as expected"
+    success_msg: "Creating certificate authentication provider with missing required parameters failed as expected"
+
 ##############################################################################
 # Update - Check Mode
 ##############################################################################
@@ -244,6 +264,7 @@
 - name: Generate spec for updating certificate authentication provider using check mode
   nutanix.ncp.ntnx_certificate_auth_provider_v2:
     ext_id: "{{ cert_auth_provider_ext_id }}"
+    name: "CAC"
     client_ca_chain: "j5TF5Q3gStdsi81j5TF5Q3gStdsi81j5TF5Q3gStdsi81j5TF5Q3gStdsi81j5TF5Q3gStdsi81j5TF5Q3gStdsi81"
     ca_cert_file_name: "ca_cert_chain_updated_updated.pem"
     is_cert_auth_enabled: false
@@ -264,6 +285,7 @@
       - result.failed == false
       - result.ext_id == "{{ cert_auth_provider_ext_id }}"
       - result.response is defined
+      - result.response.name == "CAC"
       - result.response.is_cert_auth_enabled == false
       - result.response.is_cac_enabled == false
       - result.response.ca_cert_file_name == "ca_cert_chain_updated_updated.pem"
