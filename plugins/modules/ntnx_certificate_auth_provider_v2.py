@@ -207,9 +207,9 @@ from ..module_utils.v4.iam.helpers import get_certificate_auth_provider  # noqa:
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     get_api_params_from_spec,
-    validate_required_params,
     raise_api_exception,
     strip_internal_attributes,
+    validate_required_params,
 )
 
 SDK_IMP_ERROR = None
