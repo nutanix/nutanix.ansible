@@ -145,6 +145,18 @@ def get_routes_api_instance(module):
     return ntnx_networking_py_client.RoutesApi(api_client=api_client)
 
 
+def get_network_function_api_instance(module):
+    """
+    This method will return NetworkFunctionsApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): network functions api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.NetworkFunctionsApi(api_client=api_client)
+
+
 def get_virtual_switches_api_instance(module):
     """
     This method will return VirtualSwitchesApi instance.
