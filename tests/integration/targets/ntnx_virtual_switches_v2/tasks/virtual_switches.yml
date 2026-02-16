@@ -65,17 +65,9 @@
   ignore_errors: true
   changed_when: false
 
-- name: Debug bridges output
-  ansible.builtin.debug:
-    var: bridges_output
-
 - name: Parse bridges from output
   ansible.builtin.set_fact:
     cluster_bridges: "{{ bridges_output.stdout_lines | select('match', '^br') | list | unique }}"
-
-- name: Debug parsed bridges
-  ansible.builtin.debug:
-    var: cluster_bridges
 
 - name: Find bridges and get the highest number
   ansible.builtin.set_fact:
@@ -89,27 +81,15 @@
   ansible.builtin.set_fact:
     new_bridge_name: "br{{ (max_br_num | int) + 1 }}"
 
-- name: Debug new bridge name
-  ansible.builtin.debug:
-    msg: "Will create new bridge: {{ new_bridge_name }}"
-
 - name: Set create bridge command
   ansible.builtin.set_fact:
     create_bridge_cmd: "{{ manage_ovs_cmd }} --bridge_name {{ new_bridge_name }} create_single_bridge"
-
-- name: Debug create bridge command
-  ansible.builtin.debug:
-    var: create_bridge_cmd
 
 - name: Create new bridge on cluster
   ansible.builtin.shell: |
     {{ pe_ssh_cmd }} 'bash -ic "{{ create_bridge_cmd }}"'
   register: create_bridge_output
   changed_when: false
-
-- name: Debug create bridge output
-  ansible.builtin.debug:
-    var: create_bridge_output
 
 - name: Get bridges from cluster after creation
   ansible.builtin.shell: |
@@ -120,10 +100,6 @@
 - name: Parse bridges after creation
   ansible.builtin.set_fact:
     cluster_bridges_after: "{{ bridges_output_after.stdout_lines | select('match', '^br') | list | unique }}"
-
-- name: Debug bridges after creation
-  ansible.builtin.debug:
-    var: cluster_bridges_after
 
 - name: Assert new bridge was created
   ansible.builtin.assert:
@@ -181,10 +157,6 @@
   register: result
   ignore_errors: true
 
-- name: Debug check mode result
-  ansible.builtin.debug:
-    var: result
-
 - name: Generate spec for creating virtual switch using check mode with all attributes status
   ansible.builtin.assert:
     that:
@@ -232,10 +204,6 @@
   register: result
   ignore_errors: true
 
-- name: Debug create minimum result
-  ansible.builtin.debug:
-    var: result
-
 - name: Create virtual switch with minimum attributes status
   ansible.builtin.assert:
     that:
@@ -271,10 +239,6 @@
       snooping_timeout: 300
   register: result
   ignore_errors: true
-
-- name: Debug create all attributes result
-  ansible.builtin.debug:
-    var: result
 
 - name: Create virtual switch with all attributes status
   ansible.builtin.assert:
@@ -314,10 +278,6 @@
   register: result
   ignore_errors: true
 
-- name: Debug missing name result
-  ansible.builtin.debug:
-    var: result
-
 - name: Create virtual switch with missing name status
   ansible.builtin.assert:
     that:
@@ -338,10 +298,6 @@
   register: result
   ignore_errors: true
 
-- name: Debug missing bond_mode result
-  ansible.builtin.debug:
-    var: result
-
 - name: Create virtual switch with missing bond_mode status
   ansible.builtin.assert:
     that:
@@ -358,10 +314,6 @@
     bond_mode: "NONE"
   register: result
   ignore_errors: true
-
-- name: Debug missing clusters result
-  ansible.builtin.debug:
-    var: result
 
 - name: Create virtual switch with missing clusters status
   ansible.builtin.assert:
@@ -387,10 +339,6 @@
   ignore_errors: true
   check_mode: true
 
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
-
 - name: Generate spec for creating virtual switch from existing bridge status
   ansible.builtin.assert:
     that:
@@ -413,10 +361,6 @@
     cluster_reference: "{{ cluster.uuid }}"
   register: result
   ignore_errors: true
-
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
 
 - name: Create a virtual switch from an existing bridge status
   ansible.builtin.assert:
@@ -450,10 +394,6 @@
   register: result
   ignore_errors: true
 
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
-
 - name: Create a virtual switch from an existing bridge using bridge that is already in use status
   ansible.builtin.assert:
     that:
@@ -478,10 +418,6 @@
     cluster_reference: "d9da1f3b-3ddb-4585-9159-26d2318269e3"
   register: result
   ignore_errors: true
-
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
 
 - name: Create a virtual switch from an existing bridge with wrong cluster reference status
   ansible.builtin.assert:
@@ -509,10 +445,6 @@
     is_advanced_networking: true
   register: result
   ignore_errors: true
-
-- name: Debug create subnet result
-  ansible.builtin.debug:
-    var: result
 
 - name: Create subnet for virtual switch status
   ansible.builtin.assert:
@@ -582,10 +514,6 @@
   register: result
   ignore_errors: true
 
-- name: Debug update check mode result
-  ansible.builtin.debug:
-    var: result
-
 - name: Generate spec for updating virtual switch using check mode with all attributes status
   ansible.builtin.assert:
     that:
@@ -640,10 +568,6 @@
   register: result
   ignore_errors: true
 
-- name: Debug update all attributes result
-  ansible.builtin.debug:
-    var: result
-
 - name: Update virtual switch with all attributes status
   ansible.builtin.assert:
     that:
@@ -690,10 +614,6 @@
   register: result
   ignore_errors: true
 
-- name: Debug idempotency result
-  ansible.builtin.debug:
-    var: result
-
 - name: Update virtual switch with same values to test idempotency status
   ansible.builtin.assert:
     that:
@@ -716,10 +636,6 @@
   register: result
   ignore_errors: true
 
-- name: Debug wrong ext_id update result
-  ansible.builtin.debug:
-    var: result
-
 - name: Update virtual switch with wrong external ID status
   ansible.builtin.assert:
     that:
@@ -740,10 +656,6 @@
   register: result
   ignore_errors: true
 
-- name: Debug update missing name result
-  ansible.builtin.debug:
-    var: result
-
 - name: Update virtual switch with missing name status
   ansible.builtin.assert:
     that:
@@ -763,10 +675,6 @@
     ext_id: "{{ todelete[1] }}"
   register: result
   ignore_errors: true
-
-- name: Debug fetch by ext_id result
-  ansible.builtin.debug:
-    var: result
 
 - name: Fetch virtual switch using external ID status
   ansible.builtin.assert:
@@ -797,10 +705,6 @@
   register: result
   ignore_errors: true
 
-- name: Debug wrong ext_id fetch result
-  ansible.builtin.debug:
-    var: result
-
 - name: Fetch virtual switch using wrong external ID status
   ansible.builtin.assert:
     that:
@@ -819,10 +723,6 @@
   register: result
   ignore_errors: true
 
-- name: Debug list all result
-  ansible.builtin.debug:
-    var: result
-
 - name: List all virtual switches status
   ansible.builtin.assert:
     that:
@@ -839,10 +739,6 @@
     filter: "name eq '{{ vs_name }}_updated'"
   register: result
   ignore_errors: true
-
-- name: Debug list with filter result
-  ansible.builtin.debug:
-    var: result
 
 - name: List virtual switches with filter status
   ansible.builtin.assert:
@@ -861,10 +757,6 @@
     limit: 1
   register: result
   ignore_errors: true
-
-- name: Debug list with limit result
-  ansible.builtin.debug:
-    var: result
 
 - name: List virtual switches with limit status
   ansible.builtin.assert:
@@ -887,10 +779,6 @@
     state: absent
   register: result
   ignore_errors: true
-
-- name: Debug delete subnet result
-  ansible.builtin.debug:
-    var: result
 
 - name: Delete subnet status
   ansible.builtin.assert:
@@ -915,10 +803,6 @@
   register: result
   ignore_errors: true
 
-- name: Debug delete check mode result
-  ansible.builtin.debug:
-    var: result
-
 - name: Delete virtual switch with check mode status
   ansible.builtin.assert:
     that:
@@ -937,10 +821,6 @@
   ignore_errors: true
   loop: "{{ todelete }}"
 
-- name: Debug delete all result
-  ansible.builtin.debug:
-    var: result
-
 - name: Deletion Status
   ansible.builtin.assert:
     that:
@@ -958,10 +838,6 @@
   register: result
   ignore_errors: true
 
-- name: Debug wrong ext_id delete result
-  ansible.builtin.debug:
-    var: result
-
 - name: Delete virtual switch with wrong external ID status
   ansible.builtin.assert:
     that:
@@ -976,10 +852,6 @@
     state: absent
   register: result
   ignore_errors: true
-
-- name: Debug missing ext_id delete result
-  ansible.builtin.debug:
-    var: result
 
 - name: Delete virtual switch with missing external ID status
   ansible.builtin.assert:
