@@ -1,0 +1,139 @@
+---
+# Summary:
+# This playbook demonstrates how to use proxy configuration with Nutanix v4 API modules.
+# Proxy settings can be configured via:
+#   1. Module parameters (highest priority, lowercase)
+#   2. Environment variables (fallback, uppercase)
+#
+# Proxy URL precedence (highest to lowest):
+#   https_proxy -> http_proxy -> all_proxy  (module params)
+#   HTTPS_PROXY -> HTTP_PROXY -> ALL_PROXY  (environment variables)
+#
+# All module params are checked first; env vars are only used if
+# no module param is set.
+#
+# Supported module parameters (lowercase):
+#   - https_proxy - HTTPS proxy URL
+#   - http_proxy - HTTP proxy URL
+#   - all_proxy - Fallback proxy URL
+#   - no_proxy - Comma-separated list of hosts to bypass proxy
+#   - proxy_username - Proxy authentication username
+#   - proxy_password - Proxy authentication password
+#
+# Supported environment variables (uppercase, used as fallback):
+#   - HTTPS_PROXY, HTTP_PROXY, ALL_PROXY, NO_PROXY
+#   - PROXY_USERNAME, PROXY_PASSWORD
+#
+# Proxy URL format:
+#   - Without auth: http://proxy.example.com:3128
+#   - With embedded auth: http://username:password@proxy.example.com:3128
+
+- name: Proxy configuration examples
+  hosts: localhost
+  gather_facts: false
+
+  # Option 1: Configure proxy via module_defaults (applies to all modules)
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+      # Proxy URL with embedded credentials
+      https_proxy: "http://proxyuser:proxypass@proxy.example.com:3128"
+      # Or use separate credentials
+      # https_proxy: "http://proxy.example.com:3128"
+      # proxy_username: "proxyuser"
+      # proxy_password: "proxypass"
+
+  tasks:
+    # =========================================================================
+    # Example 1: List VMs through proxy (VMM SDK)
+    # =========================================================================
+    - name: List VMs using proxy configured in module_defaults
+      nutanix.ncp.ntnx_vms_info_v2:
+      register: vms_result
+
+    - name: Display VMs count
+      ansible.builtin.debug:
+        msg: "Retrieved {{ vms_result.response | length }} VMs through proxy"
+
+    # =========================================================================
+    # Example 2: Override proxy for specific module
+    # =========================================================================
+    - name: List clusters with different proxy
+      nutanix.ncp.ntnx_clusters_info_v2:
+        https_proxy: "http://altuser:altpass@alt-proxy.example.com:8080"
+      register: clusters_result
+
+    - name: Display clusters count
+      ansible.builtin.debug:
+        msg: "Retrieved {{ clusters_result.response | length }} clusters"
+
+    # =========================================================================
+    # Example 3: Bypass proxy for specific host using no_proxy
+    # =========================================================================
+    - name: List categories bypassing proxy for pc ip
+      nutanix.ncp.ntnx_categories_info_v2:
+        no_proxy: "{{ pc_ip }}"
+      register: categories_result
+
+    - name: Display categories count
+      ansible.builtin.debug:
+        msg: "Retrieved {{ categories_result.response | length }} categories"
+
+    # =========================================================================
+    # Example 4: Use separate proxy credentials
+    # =========================================================================
+    - name: List VPCs with separate proxy credentials
+      nutanix.ncp.ntnx_vpcs_info_v2:
+        https_proxy: "http://proxy.example.com:3128"
+        proxy_username: "myproxyuser"
+        proxy_password: "myproxypassword"
+      register: vpcs_result
+
+    - name: Display VPCs count
+      ansible.builtin.debug:
+        msg: "Retrieved {{ vpcs_result.response | length }} VPCs"
+
+    # =========================================================================
+    # Example 5: Disable proxy for specific module
+    # =========================================================================
+    - name: List users without proxy (direct connection)
+      nutanix.ncp.ntnx_users_info_v2:
+        https_proxy: ""
+      register: users_result
+
+    - name: Display users count
+      ansible.builtin.debug:
+        msg: "Retrieved {{ users_result.response | length }} users"
+
+- name: Proxy via environment variables example
+  hosts: localhost
+  gather_facts: false
+
+  # Option 2: Configure proxy via environment variables
+  # Environment variables are used as fallback when module params are not set
+  environment:
+    HTTPS_PROXY: "http://proxyuser:proxypass@proxy.example.com:3128"
+    HTTP_PROXY: "http://proxyuser:proxypass@proxy.example.com:3128"
+    # Or use separate credentials
+    # PROXY_USERNAME: "proxyuser"
+    # PROXY_PASSWORD: "proxypass"
+
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+      # Note: https_proxy is NOT set here, so env vars will be used if set in environment variables
+
+  tasks:
+    - name: List VMs using proxy from environment variables
+      nutanix.ncp.ntnx_vms_info_v2:
+      register: vms_result
+
+    - name: Display VMs count
+      ansible.builtin.debug:
+        msg: "Retrieved {{ vms_result.response | length }} VMs via env var proxy"
