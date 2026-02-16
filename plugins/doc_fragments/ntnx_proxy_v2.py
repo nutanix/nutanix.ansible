@@ -38,17 +38,20 @@ options:
     description:
       - Comma-separated list of hosts or domains to bypass the proxy.
       - "Precedence (highest to lowest): C(no_proxy) module param -> C(NO_PROXY) environment variable."
+      - If not set then the value of the C(NO_PROXY) environment variable is used.
     type: str
   proxy_username:
     description:
       - The username for proxy authentication (if not embedded in proxy URL).
       - "Precedence (highest to lowest): URL-embedded credentials -> C(proxy_username) module param -> C(PROXY_USERNAME) environment variable."
       - If credentials are embedded in the proxy URL (e.g., C(http://user:pass@proxy:port)), they take precedence.
+      - If not set then the value of the C(PROXY_USERNAME) environment variable is used.
     type: str
   proxy_password:
     description:
       - The password for proxy authentication (if not embedded in proxy URL).
       - "Precedence (highest to lowest): URL-embedded credentials -> C(proxy_password) module param -> C(PROXY_PASSWORD) environment variable."
       - If credentials are embedded in the proxy URL (e.g., C(http://user:pass@proxy:port)), they take precedence.
+      - If not set then the value of the C(PROXY_PASSWORD) environment variable is used.
     type: str
 """
