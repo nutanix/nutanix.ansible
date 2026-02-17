@@ -575,10 +575,8 @@ def create_virtual_switch_from_existing_bridge(module, bridges_api, result):
     spec, err = sg.generate_spec(obj=default_spec)
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed generating create virtual switch from an existing bridge Spec",
-            **result,
-        )
+        msg = "Failed generating create virtual switch from an existing bridge spec"
+        module.fail_json(msg=msg, **result)
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
