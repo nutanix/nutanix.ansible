@@ -25,7 +25,7 @@ options:
     type: str
   cluster_ext_id:
     description:
-      - Prism Element cluster UUID to be passed in X-Cluster-Id header.
+      - Prism Element cluster UUID
     type: str
     required: false
 extends_documentation_fragment:
@@ -189,7 +189,7 @@ def get_virtual_switches(module, virtual_switches, result):
 
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating virtual switches info Spec", **result)
+        module.fail_json(msg="Failed generating virtual switches info spec", **result)
 
     if module.params.get("cluster_ext_id"):
         kwargs["X_Cluster_Id"] = module.params.get("cluster_ext_id")

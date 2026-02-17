@@ -20,7 +20,6 @@ description:
 options:
   state:
     description:
-      - if C(state) is present, it will create or update the virtual switch.
       - If C(state) is set to C(present) and ext_id is not provided then the operation will be create virtual switch.
       - If C(state) is set to C(present) and ext_id is provided then the operation will be update virtual switch.
       - If C(state) is set to C(absent) and ext_id is provided then the operation will be delete virtual switch.
@@ -264,6 +263,10 @@ author:
 EXAMPLES = r"""
 - name: Create virtual switch
   nutanix.ncp.ntnx_virtual_switch_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     state: present
     name: "virtual_switch_ansible"
     description: "Virtual switch created by Ansible"
@@ -282,6 +285,10 @@ EXAMPLES = r"""
 
 - name: Create a virtual switch from an existing bridge
   nutanix.ncp.ntnx_virtual_switch_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     name: "virtual_switch_ansible_existing"
     description: "Virtual switch created from existing bridge"
     existing_bridge_name: "br2"
@@ -291,6 +298,10 @@ EXAMPLES = r"""
 
 - name: Update virtual switch
   nutanix.ncp.ntnx_virtual_switch_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     state: present
     ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
     name: "virtual_switch_ansible_updated"
@@ -313,6 +324,10 @@ EXAMPLES = r"""
 
 - name: Delete virtual switch
   nutanix.ncp.ntnx_virtual_switch_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     state: absent
     ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
   register: result
@@ -398,6 +413,12 @@ error:
   description: This indicates the error message if any error occurred
   returned: When an error occurs
   type: str
+
+failed:
+  description: This indicates whether the task failed
+  returned: always
+  type: bool
+  sample: false
 
 msg:
   description: This indicates the message if any message occurred
@@ -548,14 +569,15 @@ def get_module_spec():
     return module_args
 
 
-def create_virtual_switch_from_bridge(module, bridges_api, result):
+def create_virtual_switch_from_existing_bridge(module, bridges_api, result):
     sg = SpecGenerator(module)
     default_spec = networking_sdk.Bridge()
     spec, err = sg.generate_spec(obj=default_spec)
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating create virtual switch from bridge Spec", **result
+            msg="Failed generating create virtual switch from an existing bridge Spec",
+            **result,
         )
 
     if module.check_mode:
@@ -569,7 +591,7 @@ def create_virtual_switch_from_bridge(module, bridges_api, result):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while creating virtual switch from bridge",
+            msg="Api Exception raised while creating virtual switch from an existing bridge",
         )
     task_ext_id = resp.data.ext_id
     result["task_ext_id"] = task_ext_id
@@ -595,7 +617,7 @@ def create_virtual_switch(module, virtual_switches, result):
     spec, err = sg.generate_spec(obj=default_spec)
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating create virtual switch Spec", **result)
+        module.fail_json(msg="Failed generating create virtual switch spec", **result)
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
@@ -650,6 +672,17 @@ def check_for_idempotency(old_spec_dict, update_spec_dict):
     return old_spec_dict == update_spec_dict
 
 
+def _remove_read_only_attributes(spec):
+    """Remove read-only attributes before update API call."""
+    spec.owner_type = None
+    if spec.clusters:
+        for cluster in spec.clusters:
+            if cluster.hosts:
+                for host in cluster.hosts:
+                    host.internal_bridge_name = None
+                    host.route_table = None
+
+
 def update_virtual_switch(module, virtual_switches, result):
     ext_id = module.params.get("ext_id")
 
@@ -665,7 +698,7 @@ def update_virtual_switch(module, virtual_switches, result):
     update_spec, err = sg.generate_spec(obj=deepcopy(old_spec))
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating update virtual switch Spec", **result)
+        module.fail_json(msg="Failed generating update virtual switch spec", **result)
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
@@ -675,14 +708,7 @@ def update_virtual_switch(module, virtual_switches, result):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.")
 
-    # Remove read-only attributes before update API call
-    update_spec.owner_type = None
-    if update_spec.clusters:
-        for cluster in update_spec.clusters:
-            if cluster.hosts:
-                for host in cluster.hosts:
-                    host.internal_bridge_name = None
-                    host.route_table = None
+    _remove_read_only_attributes(update_spec)
 
     resp = None
 
@@ -737,7 +763,7 @@ def run_module():
         supports_check_mode=True,
         required_if=[
             ("state", "absent", ("ext_id",)),
-            ("state", "present", ("name",)),
+            ("state", "present", ("name", "ext_id"), True),
         ],
     )
     if SDK_IMP_ERROR:
@@ -751,6 +777,7 @@ def run_module():
         "changed": False,
         "error": None,
         "response": None,
+        "failed": False,
         "ext_id": None,
     }
     virtual_switches = get_virtual_switches_api_instance(module)
@@ -762,7 +789,7 @@ def run_module():
         module.exit_json(**result)
 
     if module.params.get("existing_bridge_name"):
-        create_virtual_switch_from_bridge(module, bridges_api, result)
+        create_virtual_switch_from_existing_bridge(module, bridges_api, result)
         module.exit_json(**result)
 
     if module.params.get("ext_id"):
