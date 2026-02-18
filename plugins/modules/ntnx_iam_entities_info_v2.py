@@ -11,11 +11,12 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_iam_entities_info_v2
-short_description: Get entities info
+short_description: Get IAM entities info
 version_added: 2.5.0
 description:
     - Get entities info using entity external ID or list multiple entities
-    - Configure and manage entities representing the resources over which permissions are defined.
+    - Fetch specific entity if external ID is provided
+    - List all entities if external ID is not provided with optional filter
     - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
@@ -47,7 +48,7 @@ EXAMPLES = r"""
     nutanix_username: <user>
     nutanix_password: <pass>
     validate_certs: false
-    filter: "name eq '{{ entity_name }}'"
+    filter: "name eq 'entity_name'"
   register: result
   ignore_errors: true
 
@@ -67,7 +68,7 @@ EXAMPLES = r"""
     nutanix_username: <user>
     nutanix_password: <pass>
     validate_certs: false
-    ext_id: "{{ entity_external_id }}"
+    ext_id: "dc774897-3bfa-437b-53bb-c97e192029c4"
   register: result
   ignore_errors: true
 """
@@ -76,6 +77,8 @@ response:
     description:
         - Response for fetching entities info
         - Returns entities info using entities external ID or list multiple entities
+        - Returns one entity info if external ID is provided
+        - Returns list of multiple entities if external ID is not provided
     type: dict
     returned: always
     sample:
@@ -150,8 +153,7 @@ ext_id:
     sample: 04e7b47e-a861-5b57-a494-10ca57e6ec4a
 
 total_available_results:
-    description:
-        - The total number of available entities in PC.
+    description: The total number of available IAM entities in PC.
     type: int
     returned: when all entities are fetched
     sample: 125
