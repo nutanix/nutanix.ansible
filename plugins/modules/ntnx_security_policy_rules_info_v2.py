@@ -11,14 +11,14 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_security_policy_rules_info_v2
-short_description: Fetch network security policy rulesinfo from Nutanix PC.
+short_description: List network security policy rulesinfo from Nutanix PC.
 version_added: 2.5.0
 description:
-    - Fetch specific network security policy rules info by policy_ext_id.
+    - List network security policy rules info by policy_ext_id with optional filter
 options:
     policy_ext_id:
         description:
-            - External id to fetch specific network security policy rules info.
+            - External ID to list network security policy rules info.
         type: str
         required: true
 extends_documentation_fragment:
@@ -120,14 +120,13 @@ error:
   sample: false
 
 policy_ext_id:
-    description: External id of the network security policy rule
+    description: External ID of the network security policy rule
     returned: always
     type: str
     sample: "e8347a03-28a0-4eaa-9f43-64fd74cdee9e"
 
 total_available_results:
-    description:
-        - The total number of available network security policy rules in PC.
+    description: The total number of available network security policy rules in PC.
     type: int
     returned: when all network security policy rules are fetched
     sample: 125

@@ -419,8 +419,9 @@
 - name: List all security policy rules status
   ansible.builtin.assert:
     that:
-      - result.response is defined
+      - result.changed == false
       - result.failed == false
+      - result.response is defined
       - result.response | length == 3
       - result.policy_ext_id == "{{ todelete }}"
     fail_msg: Failed to list all security policy rules
@@ -436,8 +437,9 @@
 - name: List security policy rules using intra group filter status
   ansible.builtin.assert:
     that:
-      - result.response is defined
+      - result.changed == false
       - result.failed == false
+      - result.response is defined
       - result.policy_ext_id == "{{ todelete }}"
       - result.response | length == 1
       - result.response[0].type == "INTRA_GROUP"
@@ -454,8 +456,9 @@
 - name: List security policy rules using limit status
   ansible.builtin.assert:
     that:
-      - result.response is defined
+      - result.changed == false
       - result.failed == false
+      - result.response is defined
       - result.policy_ext_id == "{{ todelete }}"
       - result.response | length == 1
     fail_msg: Failed to list security policy rules using limit
@@ -470,8 +473,9 @@
 - name: List security policy rules using wrong policy external ID status
   ansible.builtin.assert:
     that:
-      - result.response is defined
+      - result.changed == false
       - result.failed == true
+      - result.response is defined
       - result.msg == "Api Exception raised while fetching network security policy rules info"
     fail_msg: list security policy rules using wrong policy external ID did not fail as expected
     success_msg: list security policy rules using wrong policy external ID failed as expected
