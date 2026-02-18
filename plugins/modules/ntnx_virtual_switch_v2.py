@@ -763,6 +763,9 @@ def run_module():
             ("state", "absent", ("ext_id",)),
             ("state", "present", ("name", "ext_id"), True),
         ],
+        mutually_exclusive=[
+            ("ext_id", "existing_bridge_name"),
+        ],
     )
     if SDK_IMP_ERROR:
         module.fail_json(
@@ -771,6 +774,17 @@ def run_module():
         )
 
     remove_param_with_none_value(module.params)
+    if module.params.get("existing_bridge_name"):
+        allowed_with_bridge = {"existing_bridge_name", "name", "description"}
+        module_specific_params = set(get_module_spec().keys())
+        extra_params = (
+            set(module.params.keys()) & module_specific_params
+        ) - allowed_with_bridge
+        if extra_params:
+            module.fail_json(
+                msg="When 'existing_bridge_name' is provided, only 'name' and 'description' are allowed. "
+                "Invalid parameters: {0}".format(", ".join(sorted(extra_params)))
+            )
     result = {
         "changed": False,
         "error": None,
@@ -784,17 +798,12 @@ def run_module():
 
     if state == "absent":
         delete_virtual_switch(module, virtual_switches, result)
-        module.exit_json(**result)
-
-    if module.params.get("existing_bridge_name"):
+    elif module.params.get("existing_bridge_name"):
         create_virtual_switch_from_existing_bridge(module, bridges_api, result)
-        module.exit_json(**result)
-
-    if module.params.get("ext_id"):
+    elif module.params.get("ext_id"):
         update_virtual_switch(module, virtual_switches, result)
-        module.exit_json(**result)
-
-    create_virtual_switch(module, virtual_switches, result)
+    else:
+        create_virtual_switch(module, virtual_switches, result)
     module.exit_json(**result)
 
 
