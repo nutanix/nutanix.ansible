@@ -784,7 +784,12 @@ def run_module():
     remove_param_with_none_value(module.params)
     if module.params.get("existing_bridge_name"):
         pop_default_params(module.params, get_module_spec())
-        allowed_with_bridge = {"existing_bridge_name", "name", "description", "cluster_reference"}
+        allowed_with_bridge = {
+            "existing_bridge_name",
+            "name",
+            "description",
+            "cluster_reference",
+        }
         module_specific_params = set(get_module_spec().keys())
         extra_params = (
             set(module.params.keys()) & module_specific_params
