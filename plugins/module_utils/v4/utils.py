@@ -112,33 +112,34 @@ def remove_empty_ip_config(obj):
     Returns:
         object: object with stripped empty ip_config
     """
-    internal_attributes = [
-        "_object_type",
-        "_reserved",
-        "_unknown_fields",
-        "$dataItemDiscriminator",
-    ]
+    if obj.to_dict()['ip_config'] is not None:
+        internal_attributes = [
+            "_object_type",
+            "_reserved",
+            "_unknown_fields",
+            "$dataItemDiscriminator",
+        ]
 
-    ip_config = obj.to_dict().get("ip_config", [])
-    empty_ipv4 = False
-    empty_ipv6 = False
-    for item in ip_config.copy():
-        if not item.get("ipv4") or all(
-            value is None
-            for key, value in item["ipv4"].items()
-            if key not in internal_attributes
-        ):
-            empty_ipv4 = True
-        if not item.get("ipv6") or all(
-            value is None
-            for key, value in item["ipv6"].items()
-            if key not in internal_attributes
-        ):
-            empty_ipv6 = True
+        ip_config = obj.to_dict().get("ip_config", [])
+        empty_ipv4 = False
+        empty_ipv6 = False
+        for item in ip_config.copy():
+            if not item.get("ipv4") or all(
+                value is None
+                for key, value in item["ipv4"].items()
+                if key not in internal_attributes
+            ):
+                empty_ipv4 = True
+            if not item.get("ipv6") or all(
+                value is None
+                for key, value in item["ipv6"].items()
+                if key not in internal_attributes
+            ):
+                empty_ipv6 = True
 
-        if empty_ipv6 and empty_ipv4:
-            ip_config.remove(item)
-    setattr(obj, "ip_config", ip_config)
+            if empty_ipv6 and empty_ipv4:
+                ip_config.remove(item)
+        setattr(obj, "ip_config", ip_config)
 
 
 def remove_fields_from_spec(obj, fields_to_remove, deep=False):
