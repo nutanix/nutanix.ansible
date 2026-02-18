@@ -243,3 +243,4 @@ action_groups:
     - ntnx_network_function_v2
     - ntnx_network_functions_info_v2
     - ntnx_security_policy_rules_info_v2
+    - ntnx_iam_entities_info_v2
