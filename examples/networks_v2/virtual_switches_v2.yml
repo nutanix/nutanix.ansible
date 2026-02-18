@@ -1,15 +1,15 @@
 ---
 # Summary:
 # This playbook will do:
-# 2. Create virtual switch
-# 3. Create virtual switch from an existing bridge
+# 1. Create virtual switch
+# 2. Create virtual switch from an existing bridge
 # 3. Update virtual switch
-# 5. Get virtual switch using ext_id
-# 6. List all virtual switches
-# 7. List virtual switches with filter
-# 8. List virtual switches with limit
-# 9. Delete virtual switch
-# 10. Delete virtual switch from bridge
+# 4. Get virtual switch using ext_id
+# 5. List all virtual switches
+# 6. List virtual switches with filter
+# 7. List virtual switches with limit
+# 8. Delete virtual switch
+# 9. Delete virtual switch from bridge
 
 - name: Virtual Switches playbook
   hosts: localhost

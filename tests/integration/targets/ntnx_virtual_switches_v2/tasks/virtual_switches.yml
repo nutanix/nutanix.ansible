@@ -36,10 +36,6 @@
   register: hosts_info
   ignore_errors: true
 
-- name: Debug hosts_info
-  ansible.builtin.debug:
-    var: hosts_info
-
 - name: Fetch hosts in cluster status
   ansible.builtin.assert:
     that:
@@ -284,7 +280,7 @@
       - result is defined
       - result.changed == false
       - result.failed == true
-      - "'state is present but all of the following are missing: name' in result.msg"
+      - result.msg == "state is present but any of the following are missing: name, ext_id"
     success_msg: "Create virtual switch with missing name failed as expected"
     fail_msg: "Create virtual switch with missing name did not fail as expected"
 
@@ -410,26 +406,47 @@
   ansible.builtin.set_fact:
     new_bridge_name: "br{{ (max_br_num | int) + 2 }}"
 
-- name: Create a virtual switch from an existing bridge with wrong cluster reference
+- name: Create a virtual switch from an existing bridge with providing external ID (should fail)
   nutanix.ncp.ntnx_virtual_switch_v2:
+    ext_id: "{{ todelete[1] }}"
     name: "{{ new_bridge_name }}"
-    description: "Virtual switch created from existing bridge with wrong cluster reference"
+    description: "Virtual switch created from existing bridge with providing external ID"
     existing_bridge_name: "{{ new_bridge_name }}"
-    cluster_reference: "d9da1f3b-3ddb-4585-9159-26d2318269e3"
+    cluster_reference: "{{ cluster.uuid }}"
   register: result
   ignore_errors: true
 
-- name: Create a virtual switch from an existing bridge with wrong cluster reference status
+- name: Create a virtual switch from an existing bridge with providing external ID status
   ansible.builtin.assert:
     that:
       - result is defined
       - result.changed == false
       - result.failed == true
-      - result.response is defined
-      - result.response.error_messages | length > 0
-      - result.response.status == "FAILED"
-    success_msg: "Creation of virtual switch from existing bridge with wrong cluster reference failed as expected"
-    fail_msg: "Creation of virtual switch from existing bridge with wrong cluster reference did not fail as expected"
+      - result.msg == "parameters are mutually exclusive: ext_id|existing_bridge_name"
+    success_msg: "Creation of virtual switch from existing bridge with providing external ID failed as expected"
+    fail_msg: "Creation of virtual switch from existing bridge with providing external ID did not fail as expected"
+
+- name: Create a virtual switch from an existing bridge with wrong attributes (should fail)
+  nutanix.ncp.ntnx_virtual_switch_v2:
+    name: "{{ new_bridge_name }}"
+    description: "Virtual switch created from existing bridge with wrong cluster reference"
+    existing_bridge_name: "{{ new_bridge_name }}"
+    bond_mode: "NONE"
+    igmp_spec:
+      is_snooping_enabled: true
+      snooping_timeout: 300
+  register: result
+  ignore_errors: true
+
+- name: Create a virtual switch from an existing bridge with wrong attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "When 'existing_bridge_name' is provided, only 'name', 'description' and 'cluster_reference' are allowed. Invalid parameters: bond_mode, igmp_spec"
+    success_msg: "Creation of virtual switch from existing bridge with wrong attributes failed as expected"
+    fail_msg: "Creation of virtual switch from existing bridge with wrong attributes did not fail as expected"
 
 ########################################################################################
 # Create subnet for virtual switch
@@ -645,27 +662,6 @@
     success_msg: "Update virtual switch with wrong external ID failed as expected"
     fail_msg: "Update virtual switch with wrong external ID did not fail as expected"
 
-- name: Update virtual switch with missing name
-  nutanix.ncp.ntnx_virtual_switch_v2:
-    ext_id: "{{ todelete[1] }}"
-    description: "test description"
-    clusters:
-      - ext_id: "{{ cluster.uuid }}"
-        hosts:
-          - ext_id: "{{ host_ext_id }}"
-  register: result
-  ignore_errors: true
-
-- name: Update virtual switch with missing name status
-  ansible.builtin.assert:
-    that:
-      - result is defined
-      - result.changed == false
-      - result.failed == true
-      - "'state is present but all of the following are missing: name' in result.msg"
-    success_msg: "Update virtual switch with missing name failed as expected"
-    fail_msg: "Update virtual switch with missing name did not fail as expected"
-
 ########################################################################################
 # Info Module Tests - Get Single Virtual Switch
 ########################################################################################
@@ -683,7 +679,7 @@
       - result.failed == false
       - result.response is defined
       - result.response.name == "{{ vs_name }}_updated"
-      - result.response.description == "Updated description for virtual switch with all attributes"
+      - result.response.description == Updated description for virtual switch with all attributes
       - result.response.bond_mode == "NONE"
       - result.response.mtu == 1500
       - result.response.is_default == false

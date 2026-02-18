@@ -681,6 +681,14 @@ def _remove_read_only_attributes(spec):
                     host.route_table = None
 
 
+def pop_default_params(params, spec):
+    """Remove params from dict whose values match their spec defaults."""
+    for key, definition in spec.items():
+        default = definition.get("default")
+        if default is not None and params.get(key) == default:
+            params.pop(key, None)
+
+
 def update_virtual_switch(module, virtual_switches, result):
     ext_id = module.params.get("ext_id")
 
@@ -775,14 +783,15 @@ def run_module():
 
     remove_param_with_none_value(module.params)
     if module.params.get("existing_bridge_name"):
-        allowed_with_bridge = {"existing_bridge_name", "name", "description"}
+        pop_default_params(module.params, get_module_spec())
+        allowed_with_bridge = {"existing_bridge_name", "name", "description", "cluster_reference"}
         module_specific_params = set(get_module_spec().keys())
         extra_params = (
             set(module.params.keys()) & module_specific_params
         ) - allowed_with_bridge
         if extra_params:
             module.fail_json(
-                msg="When 'existing_bridge_name' is provided, only 'name' and 'description' are allowed. "
+                msg="When 'existing_bridge_name' is provided, only 'name', 'description' and 'cluster_reference' are allowed. "
                 "Invalid parameters: {0}".format(", ".join(sorted(extra_params)))
             )
     result = {
