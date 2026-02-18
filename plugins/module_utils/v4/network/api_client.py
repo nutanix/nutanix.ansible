@@ -41,9 +41,12 @@ def get_api_client(module):
     config.username = module.params.get("nutanix_username")
     config.password = module.params.get("nutanix_password")
     config.verify_ssl = module.params.get("validate_certs")
-    client = ntnx_networking_py_client.ApiClient(
-        configuration=config, allow_version_negotiation=ALLOW_VERSION_NEGOTIATION
-    )
+    try:
+        client = ntnx_networking_py_client.ApiClient(
+            configuration=config, allow_version_negotiation=ALLOW_VERSION_NEGOTIATION
+        )
+    except TypeError:
+        client = ntnx_networking_py_client.ApiClient(configuration=config)
 
     cred = "{0}:{1}".format(config.username, config.password)
     try:
@@ -140,3 +143,15 @@ def get_routes_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_networking_py_client.RoutesApi(api_client=api_client)
+
+
+def get_network_function_api_instance(module):
+    """
+    This method will return NetworkFunctionsApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): network functions api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.NetworkFunctionsApi(api_client=api_client)
