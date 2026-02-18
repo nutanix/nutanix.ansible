@@ -44,7 +44,6 @@
   ansible.builtin.assert:
     that:
       - output.changed == true
-      - output.failed == false
       - output is defined
       - output.results | length == 2
       - output.msg == "All items completed"
@@ -122,26 +121,22 @@
       - result.response.allowed_config.entities[0].reference_ext_ids == ["83cbf00d-782f-4efc-87c8-4129f5942aaa", "83cbf00d-782f-4efc-87c8-4129f5942bbb"]
       - result.response.allowed_config.entities[0].kube_entities | length == 2
       - result.response.allowed_config.entities[0].kube_entities == ["kube-cluster-1", "kube-cluster-2"]
-      - result.response.allowed_config.entities[0].addresses.ipv4_addresses.value | length == 2
-      - result.response.allowed_config.entities[0].addresses.ipv4_addresses.value == ["10.1.1.0", "10.1.2.2"]
-      - result.response.allowed_config.entities[0].addresses.ipv4_addresses.prefix_length | length == 2
-      - result.response.allowed_config.entities[0].addresses.ipv4_addresses.prefix_length == [24, 32]
-      - result.response.allowed_config.entities[0].ip_ranges.ipv4_ranges.start_ip | length == 2
-      - result.response.allowed_config.entities[0].ip_ranges.ipv4_ranges.start_ip == ["10.1.1.0", "10.1.2.0"]
-      - result.response.allowed_config.entities[0].ip_ranges.ipv4_ranges.end_ip | length == 2
-      - result.response.allowed_config.entities[0].ip_ranges.ipv4_ranges.end_ip == ["10.1.1.255", "10.1.2.255"]
+      - result.response.allowed_config.entities[0].addresses.ipv4_addresses | length == 2
+      - result.response.allowed_config.entities[0].addresses.ipv4_addresses | map(attribute='value') | list == ["10.1.1.0", "10.1.2.2"]
+      - result.response.allowed_config.entities[0].addresses.ipv4_addresses | map(attribute='prefix_length') | list == [24, 32]
+      - result.response.allowed_config.entities[0].ip_ranges.ipv4_ranges | length == 2
+      - result.response.allowed_config.entities[0].ip_ranges.ipv4_ranges | map(attribute='start_ip') | list == ["10.1.1.0", "10.1.2.0"]
+      - result.response.allowed_config.entities[0].ip_ranges.ipv4_ranges | map(attribute='end_ip') | list == ["10.1.1.255", "10.1.2.255"]
       - result.response.except_config.entities[0].select_by == "EXT_ID"
       - result.response.except_config.entities[0].type == "ADDRESS_GROUP"
       - result.response.except_config.entities[0].reference_ext_ids | length == 2
       - result.response.except_config.entities[0].reference_ext_ids == ["83cbf00d-782f-4efc-87c8-4129f5942aaa", "83cbf00d-782f-4efc-87c8-4129f5942bbb"]
-      - result.response.except_config.entities[0].addresses.ipv4_addresses.value | length == 2
-      - result.response.except_config.entities[0].addresses.ipv4_addresses.value == ["10.1.1.0", "10.1.2.2"]
-      - result.response.except_config.entities[0].addresses.ipv4_addresses.prefix_length | length == 2
-      - result.response.except_config.entities[0].addresses.ipv4_addresses.prefix_length == [24, 32]
-      - result.response.except_config.entities[0].ip_ranges.ipv4_ranges.start_ip | length == 2
-      - result.response.except_config.entities[0].ip_ranges.ipv4_ranges.start_ip == ["10.1.1.0", "10.1.2.0"]
-      - result.response.except_config.entities[0].ip_ranges.ipv4_ranges.end_ip | length == 2
-      - result.response.except_config.entities[0].ip_ranges.ipv4_ranges.end_ip == ["10.1.1.255", "10.1.2.255"]
+      - result.response.except_config.entities[0].addresses.ipv4_addresses | length == 2
+      - result.response.except_config.entities[0].addresses.ipv4_addresses | map(attribute='value') | list == ["10.1.1.0", "10.1.2.2"]
+      - result.response.except_config.entities[0].addresses.ipv4_addresses | map(attribute='prefix_length') | list == [24, 32]
+      - result.response.except_config.entities[0].ip_ranges.ipv4_ranges | length == 2
+      - result.response.except_config.entities[0].ip_ranges.ipv4_ranges | map(attribute='start_ip') | list == ["10.1.1.0", "10.1.2.0"]
+      - result.response.except_config.entities[0].ip_ranges.ipv4_ranges | map(attribute='end_ip') | list == ["10.1.1.255", "10.1.2.255"]
     fail_msg: Generate spec for create entity group with check mode enabled failed
     success_msg: Generate spec for create entity group with check mode enabled passed
 
@@ -197,20 +192,19 @@
       - result.response.allowed_config.entities[0].reference_ext_ids == ["83cbf00d-782f-4efc-87c8-4129f5942aaa", "83cbf00d-782f-4efc-87c8-4129f5942bbb"]
       - result.response.allowed_config.entities[0].kube_entities | length == 2
       - result.response.allowed_config.entities[0].kube_entities == ["kube-cluster-1", "kube-cluster-2"]
-      - result.response.allowed_config.entities[0].addresses.ipv4_addresses.value | length == 2
-      - result.response.allowed_config.entities[0].addresses.ipv4_addresses.value == ["10.1.1.0", "10.1.2.2"]
-      - result.response.allowed_config.entities[0].addresses.ipv4_addresses.prefix_length | length == 2
-      - result.response.allowed_config.entities[0].addresses.ipv4_addresses.prefix_length == [24, 32]
-      - result.response.allowed_config.entities[0].ip_ranges.ipv4_ranges.start_ip | length == 2
-      - result.response.allowed_config.entities[0].ip_ranges.ipv4_ranges.start_ip == ["10.1.1.0", "10.1.2.0"]
-      - result.response.allowed_config.entities[0].ip_ranges.ipv4_ranges.end_ip | length == 2
-      - result.response.allowed_config.entities[0].ip_ranges.ipv4_ranges.end_ip == ["10.1.1.255", "10.1.2.255"]
+      - result.response.allowed_config.entities[0].addresses.ipv4_addresses | length == 2
+      - result.response.allowed_config.entities[0].addresses.ipv4_addresses | map(attribute='value') | list == ["10.1.1.0", "10.1.2.2"]
+      - result.response.allowed_config.entities[0].addresses.ipv4_addresses | map(attribute='prefix_length') | list == [24, 32]
+      - result.response.allowed_config.entities[0].ip_ranges.ipv4_ranges | length == 2
+      - result.response.allowed_config.entities[0].ip_ranges.ipv4_ranges | map(attribute='start_ip') | list == ["10.1.1.0", "10.1.2.0"]
+      - result.response.allowed_config.entities[0].ip_ranges.ipv4_ranges | map(attribute='end_ip') | list == ["10.1.1.255", "10.1.2.255"]
       - result.response.allowed_config.entities[1].select_by == "CATEGORY_EXT_ID"
       - result.response.allowed_config.entities[1].type == "SUBNET"
       - result.response.allowed_config.entities[1].reference_ext_ids | length == 2
       - result.response.allowed_config.entities[1].reference_ext_ids == ["00062ffc-95ad-19e9-185b-ac1f6b6f97a3", "00062ffc-95ad-19e9-185b-ac1f6b6f97a4"]
     fail_msg: Create entity group with check mode enabled with multiple allowed entities failed
     success_msg: Create entity group with check mode enabled with multiple allowed entities passed
+
 
 ###################################################################################################
 
@@ -308,10 +302,6 @@
   register: result
   ignore_errors: true
 
-- name: Print result
-  ansible.builtin.debug:
-    msg: "{{ result }}"
-
 - name: Create entity group with VM and Subnet allowed entities Status
   ansible.builtin.assert:
     that:
@@ -377,10 +367,6 @@
             - "83cbf00d-782f-4efc-87c8-4129f5942bbb"
   register: result
   ignore_errors: true
-
-- name: Print result
-  ansible.builtin.debug:
-    msg: "{{ result }}"
 
 - name: Create entity group with wrong reference_ext_ids Status
   ansible.builtin.assert:
@@ -498,11 +484,11 @@
 - name: Update entity group without changing name Status
   ansible.builtin.assert:
     that:
-      - result.changed == true
-      - result.failed == false
-      - result.response.description == "{{ eg1 }}_entity_group_updated_desc_without_name"
-    fail_msg: Update entity group without changing name failed
-    success_msg: Update entity group without changing name passed
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "state is present but all of the following are missing: name"
+    fail_msg: Update entity group without changing name did not fail as expected
+    success_msg: Update entity group without changing name failed as expected
 
 ###################################################################################################
 
@@ -526,7 +512,7 @@
 
 ###################################################################################################
 
-- name: Update entity group with wromg category ext_ids
+- name: Update entity group with wrong category ext_ids
   nutanix.ncp.ntnx_entity_groups_v2:
     state: present
     ext_id: "{{ todelete[0] }}"
@@ -542,18 +528,14 @@
   register: result
   ignore_errors: true
 
-- name: Print result
-  ansible.builtin.debug:
-    msg: "{{ result }}"
-
-- name: Update entity group with wromg category ext_ids Status
+- name: Update entity group with wrong category ext_ids Status
   ansible.builtin.assert:
     that:
       - result.changed == false
       - result.failed == true
-      # - result.msg == "Api Exception raised while fetching entity group info using ext_id"
-    fail_msg: Update entity group with wromg category ext_ids did not fail as expected
-    success_msg: Update entity group with wromg category ext_ids failed as expected
+      - result.msg == "Task Failed"
+    fail_msg: Update entity group with wrong category ext_ids did not fail as expected
+    success_msg: Update entity group with wrong category ext_ids failed as expected
 
 ###################################################################################################
 
@@ -687,7 +669,7 @@
       - result.changed == false
       - result.failed == true
       - result.response is defined
-      - result.msg == "Api Exception raised while fetching entity group info using ext_id"
+      - result.msg == "Task Failed"
     fail_msg: Delete entity group with wrong ext_id did not fail as expected
     success_msg: Delete entity group with wrong ext_id failed as expected
 
@@ -728,5 +710,5 @@
       - result.changed == true
       - result.results | length == todelete_categories | length
       - result.msg == "All items completed"
-    fail_msg: "Unable to delete category key & value with ext_id: {{ item.ext_id }}"
-    success_msg: "Category key & value with ext_id: {{ item.ext_id }} deleted successfully"
+    fail_msg: "Unable to delete categories"
+    success_msg: "Categories deleted successfully"

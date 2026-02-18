@@ -477,11 +477,21 @@ def update_entity_group(module, entity_group, result):
     result["ext_id"] = ext_id
 
     current_spec = get_entity_group(module, entity_group, ext_id)
+    # for idempotency check
     sg = SpecGenerator(module)
-    update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
+    update_spec, err1 = sg.generate_spec(obj=deepcopy(current_spec))
 
-    if err:
-        result["error"] = err
+    if err1:
+        result["error"] = err1
+        module.fail_json(msg="Failed generating entity group update spec from current spec", **result)
+
+    # for update spec
+    sg2 = SpecGenerator(module)
+    default_spec = mic_sdk.EntityGroup()
+    spec, err2 = sg2.generate_spec(obj=default_spec)
+
+    if err2:
+        result["error"] = err2
         module.fail_json(msg="Failed generating entity group update spec", **result)
 
     if module.check_mode:
@@ -492,11 +502,13 @@ def update_entity_group(module, entity_group, result):
     if check_entity_groups_idempotency(current_spec.to_dict(), update_spec.to_dict()):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.")
+
     etag = get_etag(current_spec)
     kwargs = {"if_match": etag}
     resp = None
+
     try:
-        resp = entity_group.update_entity_group_by_id(extId=ext_id, body=update_spec, **kwargs)
+        resp = entity_group.update_entity_group_by_id(extId=ext_id, body=spec, **kwargs)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -549,7 +561,7 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[
-            ("state", "present", ("name", "ext_id"), True),
+            ("state", "present", ("name",)),
             ("state", "absent", ("ext_id",)),
         ],
     )
