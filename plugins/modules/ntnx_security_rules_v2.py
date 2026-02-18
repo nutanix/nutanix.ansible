@@ -1075,9 +1075,9 @@ def update_network_security_policy(module, result):
         update_spec.state = current_spec.state
 
     # check for idempotency
-    if check_network_security_policies_idempotency(
-        current_spec.to_dict(), update_spec.to_dict()
-    ):
+    current_spec_dict = strip_internal_attributes(current_spec.to_dict())
+    update_spec_dict = strip_internal_attributes(update_spec.to_dict())
+    if check_network_security_policies_idempotency(current_spec_dict, update_spec_dict):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
 
