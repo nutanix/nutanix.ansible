@@ -444,7 +444,9 @@
       - result is defined
       - result.changed == false
       - result.failed == true
-      - result.msg == "When 'existing_bridge_name' is provided, only 'name', 'description' and 'cluster_reference' are allowed. Invalid parameters: bond_mode, igmp_spec"
+      - >-
+        result.msg == "When 'existing_bridge_name' is provided, only 'name', 'description'
+        and 'cluster_reference' are allowed. Invalid parameters: bond_mode, igmp_spec"
     success_msg: "Creation of virtual switch from existing bridge with wrong attributes failed as expected"
     fail_msg: "Creation of virtual switch from existing bridge with wrong attributes did not fail as expected"
 
