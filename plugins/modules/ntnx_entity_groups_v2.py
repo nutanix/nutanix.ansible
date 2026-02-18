@@ -41,7 +41,7 @@ options:
                 description:
                     - List of allowed entities in the Entity Group.
                     - An allowed entity is a collection of acceptable entites.
-                    - The fields 'type' and 'selectBy' must be interpreted together 
+                    - The fields 'type' and 'selectBy' must be interpreted together
                         as ' BY ' to determine which attribute must be populated.
                 type: list
                 elements: dict
@@ -110,7 +110,7 @@ options:
         description:
             - Configuration of the except entities in the Entity Group.
             - An except entity is a collection of entities that are excluded from the entity group.
-            - The fields 'type' and 'selectBy' must be interpreted together 
+            - The fields 'type' and 'selectBy' must be interpreted together
                 as ' BY ' to determine which attribute must be populated.
         type: dict
         suboptions:
@@ -341,16 +341,24 @@ def get_module_spec():
     )
 
     addresses_sub_spec = dict(
-        ipv4_addresses=dict(type="list", elements="dict", options=ip_address_sub_spec, obj=mic_sdk.IPv4Address),
+        ipv4_addresses=dict(
+            type="list",
+            elements="dict",
+            options=ip_address_sub_spec,
+            obj=mic_sdk.IPv4Address,
+        ),
     )
 
     ip_ranges_sub_spec = dict(
-        ipv4_ranges=dict(type="list", elements="dict", options=ip_range_spec, obj=mic_sdk.IPv4Range),
+        ipv4_ranges=dict(
+            type="list", elements="dict", options=ip_range_spec, obj=mic_sdk.IPv4Range
+        ),
     )
 
     entities_sub_spec = dict(
         select_by=dict(
-            type="str", choices=["IP_VALUES", "EXT_ID", "CATEGORY_EXT_ID", "LABELS", "NAME"]
+            type="str",
+            choices=["IP_VALUES", "EXT_ID", "CATEGORY_EXT_ID", "LABELS", "NAME"],
         ),
         type=dict(
             type="str",
@@ -380,14 +388,10 @@ def get_module_spec():
     )
 
     except_entities_sub_spec = dict(
-        select_by=dict(
-            type="str", choices=["IP_VALUES", "EXT_ID"]
-        ),
+        select_by=dict(type="str", choices=["IP_VALUES", "EXT_ID"]),
         type=dict(
             type="str",
-            choices=[
-                "ADDRESS_GROUP"
-            ],
+            choices=["ADDRESS_GROUP"],
         ),
         reference_ext_ids=dict(type="list", elements="str"),
         addresses=dict(type="dict", options=addresses_sub_spec, obj=mic_sdk.Addresses),
@@ -483,7 +487,9 @@ def update_entity_group(module, entity_group, result):
 
     if err1:
         result["error"] = err1
-        module.fail_json(msg="Failed generating entity group update spec from current spec", **result)
+        module.fail_json(
+            msg="Failed generating entity group update spec from current spec", **result
+        )
 
     # for update spec
     sg2 = SpecGenerator(module)
