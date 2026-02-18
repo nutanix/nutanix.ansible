@@ -2,9 +2,14 @@
 # Summary:
 # This playbook will do:
 # 1. Create a security rule
-# 2. Update the security rule
-# 3. Fetch the security rule info
-# 4. Delete the security rule
+# 2. List all security policy rules
+# 3. List security policy rules using intra group filter
+# 4. List security policy rules using limit
+# 5. Create security rule with multienvisolation rule
+# 6. Create policy with all vlan scope and using certain sources and destinations
+# 7. Update policy rules and config
+# 8. Fetch security rule info
+# 9. Delete security rule
 
 - name: Security rules playbook
   hosts: localhost
@@ -68,6 +73,26 @@
                   - "{{ category2_uuid }}"
                 is_all_protocol_allowed: true
       register: result
+
+    - name: List all security policy rules
+      nutanix.ncp.ntnx_security_policy_rules_info_v2:
+        policy_ext_id: "{{ security_rule_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: List security policy rules using intra group filter
+      nutanix.ncp.ntnx_security_policy_rules_info_v2:
+        policy_ext_id: "{{ security_rule_uuid }}"
+        filter: "type eq Microseg.Config.RuleType'INTRA_GROUP'"
+      register: result
+      ignore_errors: true
+
+    - name: List security policy rules using limit
+      nutanix.ncp.ntnx_security_policy_rules_info_v2:
+        policy_ext_id: "{{ security_rule_uuid }}"
+        limit: 1
+      register: result
+      ignore_errors: true
 
     - name: Create security rule with multienvisolation rule
       nutanix.ncp.ntnx_security_rules_v2:

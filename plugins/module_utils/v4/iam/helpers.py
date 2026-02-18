@@ -167,3 +167,23 @@ def get_requested_key(module, api_instance, ext_id, user_ext_id):
             exception=e,
             msg="Api Exception raised while fetching requested key info",
         )
+
+
+def get_entity(module, api_instance, ext_id):
+    """
+    This method will return entity info using ext_id.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): Entity api instance
+        ext_id (str): External id of entity
+    Returns:
+        entity_info (dict): Entity info
+    """
+    try:
+        return api_instance.get_entity_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching entity info using ext_id",
+        )

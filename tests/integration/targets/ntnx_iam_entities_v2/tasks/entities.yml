@@ -1,0 +1,102 @@
+---
+- name: Start ntnx_iam_entities_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_iam_entities_v2 tests
+
+########################################################################################################
+
+- name: List all entities
+  nutanix.ncp.ntnx_iam_entities_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: List all entities status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length > 0
+      - result.total_available_results is defined
+      - result.total_available_results > 0
+    fail_msg: List all entities failed
+    success_msg: List all entities passed
+
+- name: Store entity external ID and name
+  ansible.builtin.set_fact:
+    entity_external_id: "{{ result.response[0].ext_id }}"
+    entity_name: "{{ result.response[0].name }}"
+
+########################################################################################################
+
+- name: List entities using filter
+  nutanix.ncp.ntnx_iam_entities_info_v2:
+    filter: "name eq '{{ entity_name }}'"
+  register: result
+  ignore_errors: true
+
+- name: List entities using filter status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].name == "{{ entity_name }}"
+    fail_msg: List entities using filter failed
+    success_msg: List entities using filter passed
+
+########################################################################################################
+
+- name: List entities using limit
+  nutanix.ncp.ntnx_iam_entities_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List entities using limit status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+    fail_msg: List entities using limit failed
+    success_msg: List entities using limit passed
+
+########################################################################################################
+
+- name: Fetch entity using external ID
+  nutanix.ncp.ntnx_iam_entities_info_v2:
+    ext_id: "{{ entity_external_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch entity using external ID status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.ext_id == "{{ entity_external_id }}"
+      - result.response.name == "{{ entity_name }}"
+    fail_msg: Fetch entity using external ID failed
+    success_msg: Fetch entity using external ID passed
+
+########################################################################################################
+
+- name: Fetch entity using wrong external ID
+  nutanix.ncp.ntnx_iam_entities_info_v2:
+    ext_id: "23a46c4d-fd8c-4c81-6a43-cf7ba0bd5411"
+  register: result
+  ignore_errors: true
+
+- name: Fetch entity using wrong external ID status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.response is defined
+      - result.msg == "Api Exception raised while fetching entity info using ext_id"
+    fail_msg: Fetch entity using wrong external ID did not fail as expected
+    success_msg: Fetch entity using wrong external ID failed as expected
