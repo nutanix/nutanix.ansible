@@ -11,13 +11,10 @@
   ansible.builtin.set_fact:
     suffix_name: ansible-eg
 
-- name: Set entity groups names
+- name: Set variables for the tests
   ansible.builtin.set_fact:
     eg1: "{{ random_name }}{{ suffix_name }}1"
     eg2: "{{ random_name }}{{ suffix_name }}2"
-
-- name: Set categories keys and values
-  ansible.builtin.set_fact:
     keys:
       - "{{random_name}}{{suffix_name}}key1"
       - "{{random_name}}{{suffix_name}}key2"
@@ -25,12 +22,9 @@
       - "{{random_name}}{{suffix_name}}value1"
       - "{{random_name}}{{suffix_name}}value2"
 
-- name: Set todelete list
+- name: Set todelete list and todelete_categories list
   ansible.builtin.set_fact:
     todelete: []
-
-- name: Set todelete_categories list
-  ansible.builtin.set_fact:
     todelete_categories: []
 
 ###################################################################################################
@@ -64,7 +58,7 @@
 
 ###################################################################################################
 
-- name: Create entity group with check mode enabled
+- name: Generate spec for create entity group with check mode enabled
   nutanix.ncp.ntnx_entity_groups_v2:
     state: present
     name: "test-ansible-entity-group-1"
@@ -114,7 +108,7 @@
   ignore_errors: true
   check_mode: true
 
-- name: Create entity group with check mode enabled status
+- name: Generate spec for create entity group with check mode enabled status
   ansible.builtin.assert:
     that:
       - result.changed == false
@@ -148,8 +142,8 @@
       - result.response.except_config.entities[0].ip_ranges.ipv4_ranges.start_ip == ["10.1.1.0", "10.1.2.0"]
       - result.response.except_config.entities[0].ip_ranges.ipv4_ranges.end_ip | length == 2
       - result.response.except_config.entities[0].ip_ranges.ipv4_ranges.end_ip == ["10.1.1.255", "10.1.2.255"]
-    fail_msg: Create entity group with check mode enabled failed
-    success_msg: Create entity group with check mode enabled passed
+    fail_msg: Generate spec for create entity group with check mode enabled failed
+    success_msg: Generate spec for create entity group with check mode enabled passed
 
 ###################################################################################################
 
@@ -384,6 +378,10 @@
   register: result
   ignore_errors: true
 
+- name: Print result
+  ansible.builtin.debug:
+    msg: "{{ result }}"
+
 - name: Create entity group with wrong reference_ext_ids Status
   ansible.builtin.assert:
     that:
@@ -396,7 +394,7 @@
 
 ###################################################################################################
 
-- name: Update entity group in check mode
+- name: Generate spec for update entity group in check mode
   nutanix.ncp.ntnx_entity_groups_v2:
     state: present
     ext_id: "{{ todelete[0] }}"
@@ -413,7 +411,7 @@
   ignore_errors: true
   check_mode: true
 
-- name: Update entity group in check mode Status
+- name: Generate spec for update entity group in check mode Status
   ansible.builtin.assert:
     that:
       - result.changed == false
@@ -425,8 +423,8 @@
       - result.response.allowed_config.entities[0].type == "SUBNET"
       - result.response.allowed_config.entities[0].reference_ext_ids == ["00062ffc-95ad-19e9-185b-ac1f6b6f97e2", "00062ffc-95ad-19e9-185b-ac1f6b6f97a3"]
       - result.response.allowed_config.entities[0].reference_ext_ids | length == 2
-    fail_msg: Update entity group in check mode failed
-    success_msg: Update entity group in check mode passed
+    fail_msg: Generate spec for update entity group in check mode failed
+    success_msg: Generate spec for update entity group in check mode passed
 
 ###################################################################################################
 
@@ -436,6 +434,12 @@
     ext_id: "{{ todelete[0] }}"
     name: "{{ eg1 }}_entity_group_updated_name"
     description: "{{ eg1 }}_entity_group_updated_desc"
+    allowed_config:
+      entities:
+        - select_by: CATEGORY_EXT_ID
+          type: VM
+          reference_ext_ids:
+            - "{{ todelete_categories[0] }}"
   register: result
   ignore_errors: true
 
@@ -448,28 +452,38 @@
       - result.ext_id is defined
       - result.response.name == "{{ eg1 }}_entity_group_updated_name"
       - result.response.description == "{{ eg1 }}_entity_group_updated_desc"
+      - result.response.allowed_config.entities[0].select_by == "CATEGORY_EXT_ID"
+      - result.response.allowed_config.entities[0].type == "VM"
+      - result.response.allowed_config.entities[0].reference_ext_ids[0] == "{{ todelete_categories[0] }}"
+      - result.response.allowed_config.entities[0].reference_ext_ids | length == 1
     fail_msg: Update entity group failed
     success_msg: Update entity group passed
 
 ###################################################################################################
 
-- name: Update entity group with same values
+- name: Test idempotency by updating entity group with same values
   nutanix.ncp.ntnx_entity_groups_v2:
     state: present
     ext_id: "{{ todelete[0] }}"
     name: "{{ eg1 }}_entity_group_updated_name"
     description: "{{ eg1 }}_entity_group_updated_desc"
+    allowed_config:
+      entities:
+        - select_by: CATEGORY_EXT_ID
+          type: VM
+          reference_ext_ids:
+            - "{{ todelete_categories[0] }}"
   register: result
   ignore_errors: true
 
-- name: Update entity group with same values Status
+- name: Test idempotency by updating entity group with same values Status
   ansible.builtin.assert:
     that:
       - result.changed == false
       - result.failed == false
       - result.msg == "Nothing to change."
-    fail_msg: Update entity group with same values failed
-    success_msg: Update entity group with same values passed
+    fail_msg: Test idempotency by updating entity group with same values failed
+    success_msg: Test idempotency by updating entity group with same values passed
 
 ###################################################################################################
 
