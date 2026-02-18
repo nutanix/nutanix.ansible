@@ -1,0 +1,86 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create an entity group
+# 2. Update the entity group
+# 3. List all entity groups
+# 4. List entity groups using filter
+# 5. List entity groups using limit
+# 6. Get entity group using ext_id
+# 7. Delete the entity group
+
+- name: Entity groups playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        entity_group_name: "ansible_entity_group"
+        entity_group_description: "ansible_entity_group_description"
+        category_ext_ids:
+          - "00062ffc-95ad-19e9-185b-ac1f6b6f97a3"
+          - "00062ffc-95ad-19e9-185b-ac1f6b6f97a4"
+
+    - name: Create entity group
+      nutanix.ncp.ntnx_entity_groups_v2:
+        state: present
+        name: "{{ entity_group_name }}"
+        description: "{{ entity_group_description }}"
+        allowed_config:
+          entities:
+            - select_by: CATEGORY_EXT_ID
+              type: VM
+              reference_ext_ids:
+                - "{{ category_ext_ids[0] }}"
+                - "{{ category_ext_ids[1] }}"
+      register: result
+      ignore_errors: true
+
+    - name: Store entity group ext_id
+      ansible.builtin.set_fact:
+        entity_group_ext_id: "{{ result.ext_id }}"
+
+    - name: Update entity group
+      nutanix.ncp.ntnx_entity_groups_v2:
+        state: present
+        ext_id: "{{ entity_group_ext_id }}"
+        name: "{{ entity_group_name }}_updated_name"
+        description: "{{ entity_group_description }}_updated_desc"
+      register: result
+      ignore_errors: true
+
+    - name: List all entity groups
+      nutanix.ncp.ntnx_entity_groups_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List entity groups using filter
+      nutanix.ncp.ntnx_entity_groups_info_v2:
+        filter: "name eq '{{ entity_group_name }}_updated_name'"
+      register: result
+      ignore_errors: true
+
+    - name: List entity groups using limit
+      nutanix.ncp.ntnx_entity_groups_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: Get entity group using ext_id
+      nutanix.ncp.ntnx_entity_groups_info_v2:
+        ext_id: "{{ entity_group_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Delete entity group
+      nutanix.ncp.ntnx_entity_groups_v2:
+        ext_id: "{{ entity_group_ext_id }}"
+        state: absent
+      register: result
+      ignore_errors: true
