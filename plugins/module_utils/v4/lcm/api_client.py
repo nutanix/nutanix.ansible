@@ -12,6 +12,7 @@ from ansible.module_utils.basic import missing_required_lib
 
 from ...constants import ALLOW_VERSION_NEGOTIATION
 from ..api_logger import setup_api_logging
+from ..utils import _apply_proxy_from_env
 
 SDK_IMP_ERROR = None
 try:
@@ -51,6 +52,7 @@ def get_api_client(module):
         config.username = nutanix_username
         config.password = nutanix_password
     config.verify_ssl = module.params.get("validate_certs")
+    _apply_proxy_from_env(config, module)
     client = ntnx_lifecycle_py_client.ApiClient(
         configuration=config, allow_version_negotiation=ALLOW_VERSION_NEGOTIATION
     )
