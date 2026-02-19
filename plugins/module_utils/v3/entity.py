@@ -340,6 +340,7 @@ class Entity(object):
             headers.update(additional_headers)
         usr = module.params.get("nutanix_username")
         pas = module.params.get("nutanix_password")
+        nutanix_api_key = module.params.get("nutanix_api_key")
         if usr and pas:
             cred = "{0}:{1}".format(usr, pas)
             try:
@@ -348,6 +349,15 @@ class Entity(object):
                 encoded_cred = b64encode(bytes(cred).encode("ascii")).decode("ascii")
             auth_header = "Basic " + encoded_cred
             headers.update({"Authorization": auth_header})
+        elif nutanix_api_key:
+            headers.update({"X-ntnx-api-key": nutanix_api_key})
+        else:
+            self.module.fail_json(
+                msg="Either nutanix_username and nutanix_password or nutanix_api_key is required",
+                status_code=400,
+                error="Either nutanix_username and nutanix_password or nutanix_api_key is required",
+                response=None,
+            )
         return headers
 
     def _build_url_with_query(self, url, query):
