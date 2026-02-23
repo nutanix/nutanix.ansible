@@ -104,13 +104,18 @@ options:
     nutanix_username:
         description:
             - The username to authenticate with the Nutanix Prism Element.
-        required: true
+        required: false
         type: str
     nutanix_password:
         description:
             - The password to authenticate with the Nutanix Prism Element.
-        required: true
+        required: false
         type: str
+    nutanix_api_key:
+        description: Not Supported as this module is for Prism Element. 
+            This field is only supported for Prism Central.
+        type: str
+        required: false
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
