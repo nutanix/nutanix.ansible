@@ -3,8 +3,9 @@
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: "{{ ndb_ip }}"
-      nutanix_username: "{{ ndb_username }}"
-      nutanix_password: "{{ ndb_password }}"
+      # nutanix_username: "{{ ndb_username }}"
+      # nutanix_password: "{{ ndb_password }}"
+      nutanix_api_key: "{{ nutanix_api_key }}"
       validate_certs: false
       nutanix_debug: "{{ nutanix_debug }}"
       nutanix_log_file: "{{ nutanix_log_file }}"
