@@ -41,6 +41,7 @@ options:
     description:
       - Prism central API key. Created using Service Account API Key in Prism Central.
       - C(nutanix_api_key). If not set then the value of the C(NUTANIX_API_KEY), environment variable is used.
+      - This field is only supported for Prism Central.
     type: str
     required: false
   validate_certs:

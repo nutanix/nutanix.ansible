@@ -23,20 +23,20 @@ options:
         type: str
         required: True
     nutanix_username:
-        description: 
+        description:
             - The username to authenticate with the Nutanix Prism Element
             - Required as nutanix_api_key is not supported for Prism Element.
         type: str
         required: False
     nutanix_password:
-        description: 
+        description:
             - The password to authenticate with the Nutanix Prism Element
             - Required as nutanix_api_key is not supported for Prism Element.
         type: str
         required: False
     nutanix_api_key:
-        description: 
-            - Not Supported as this module is for Prism Element. 
+        description:
+            - Not Supported as this module is for Prism Element.
             - This field is only supported for Prism Central.
         type: str
         required: False
