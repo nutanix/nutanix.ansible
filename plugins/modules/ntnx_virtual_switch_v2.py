@@ -532,7 +532,9 @@ def create_virtual_switch_from_existing_bridge(module, bridges_api, result):
 
     resp = None
     try:
-        resp = bridges_api.migrate_bridge(body=spec)
+        resp = bridges_api.migrate_bridge(
+            body=spec, X_Cluster_Id=module.params.get("cluster_reference")
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
