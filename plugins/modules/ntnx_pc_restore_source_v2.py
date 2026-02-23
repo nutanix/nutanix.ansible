@@ -114,7 +114,7 @@ options:
         required: false
         type: str
     nutanix_api_key:
-        description: 
+        description:
             - Not Supported as this module is for Prism Element.
             - This field is only supported for Prism Central.
         type: str
