@@ -101,8 +101,6 @@ jobs:
           echo '${{ secrets.FC_CONFIG }}' > tests/integration/targets/prepare_fc_env/vars/main.yml
           echo '${{ secrets.NDB_CONFIG }}' > tests/integration/targets/prepare_ndb_env/vars/main.yml
 
-          # Write PC_CONFIG and append API key if needed
-          echo '${{ secrets.PC_CONFIG }}' > tests/integration/targets/prepare_env/vars/main.yml
           if [ "$use_api_key" = true ]; then
               echo "" >> tests/integration/targets/prepare_env/vars/main.yml
               echo "# API Key Authentication (added by workflow)" >> tests/integration/targets/prepare_env/vars/main.yml
@@ -116,6 +114,9 @@ jobs:
           if [ "$use_api_key" = true ]; then
               echo "NUTANIX_API_KEY=${{ secrets.NUTANIX_API_KEY }}" >> $GITHUB_ENV
           fi
+
+          # Write PC_CONFIG so that main.yml takes precedence over secrets
+          echo '${{ secrets.PC_CONFIG }}' > tests/integration/targets/prepare_env/vars/main.yml
 
           echo "===> Preparing environments..."
           ansible-playbook tests/integration/targets/prepare_env/playbooks/prepare_env.yml
