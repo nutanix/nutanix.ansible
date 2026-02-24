@@ -62,6 +62,10 @@ def get_api_client(module):
         auth_header = "Basic " + encoded_cred
         client.add_default_header(header_name="Authorization", header_value=auth_header)
 
+    # Workaround as set_api_key not working as expected for clusters mgmt api
+    if api_key:
+        client.add_default_header(header_name="X-ntnx-api-key", header_value=api_key)
+
     # Setup API logging if debug is enabled
     setup_api_logging(module, client)
 

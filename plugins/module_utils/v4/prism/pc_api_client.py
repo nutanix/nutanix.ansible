@@ -61,6 +61,7 @@ def get_pc_api_client(module):
         auth_header = "Basic " + encoded_cred
         client.add_default_header(header_name="Authorization", header_value=auth_header)
 
+    # Workaround as set_api_key not working as expected for prism central api
     if api_key:
         client.add_default_header(header_name="X-ntnx-api-key", header_value=api_key)
 
