@@ -46,6 +46,7 @@ class Tasks:
         KMS = "security:encryption:key-management-server"
         CLUSTER_PROFILE = "clustermgmt:config:cluster-profile"
         NETWORK_FUNCTION = "Networking:config:network-function"
+        VIRTUAL_SWITCH = "networking:config:virtual-switch"
 
     class CompletetionDetailsName:
         """Completion details name for the task entities affected"""
