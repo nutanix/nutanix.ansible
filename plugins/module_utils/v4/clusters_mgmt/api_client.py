@@ -64,7 +64,11 @@ def get_api_client(module):
 
     # Workaround as set_api_key not working as expected for clusters mgmt api
     if api_key:
-        client.add_default_header(header_name="X-ntnx-api-key", header_value=api_key)
+        default_headers = getattr(client, "_ApiClient__default_headers", {})
+        if "X-ntnx-api-key" not in default_headers:
+            client.add_default_header(
+                header_name="X-ntnx-api-key", header_value=api_key
+            )
 
     # Setup API logging if debug is enabled
     setup_api_logging(module, client)
