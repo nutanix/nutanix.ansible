@@ -27,13 +27,13 @@ options:
             - The username to authenticate with the Nutanix Prism Element
             - Required as nutanix_api_key is not supported for Prism Element.
         type: str
-        required: False
+        required: True
     nutanix_password:
         description:
             - The password to authenticate with the Nutanix Prism Element
             - Required as nutanix_api_key is not supported for Prism Element.
         type: str
-        required: False
+        required: True
     nutanix_api_key:
         description:
             - Not Supported as this module is for Prism Element.
@@ -119,7 +119,10 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 
 def get_module_spec():
-    module_args = dict(ext_id=dict(type="str", required=True))
+    module_args = dict(
+        nutanix_username=dict(type="str", required=True),
+        nutanix_password=dict(type="str", required=True),
+        ext_id=dict(type="str", required=True))
     return module_args
 
 
