@@ -341,7 +341,10 @@ class Entity(object):
         usr = module.params.get("nutanix_username")
         pas = module.params.get("nutanix_password")
         nutanix_api_key = module.params.get("nutanix_api_key")
-        if usr and pas:
+        if nutanix_api_key:
+            # API key takes precedence (same as V4)
+            headers.update({"X-ntnx-api-key": nutanix_api_key})
+        elif usr and pas:
             cred = "{0}:{1}".format(usr, pas)
             try:
                 encoded_cred = b64encode(bytes(cred, encoding="ascii")).decode("ascii")
@@ -349,8 +352,6 @@ class Entity(object):
                 encoded_cred = b64encode(bytes(cred).encode("ascii")).decode("ascii")
             auth_header = "Basic " + encoded_cred
             headers.update({"Authorization": auth_header})
-        elif nutanix_api_key:
-            headers.update({"X-ntnx-api-key": nutanix_api_key})
         else:
             self.module.fail_json(
                 msg="Either nutanix_username and nutanix_password or nutanix_api_key is required",
