@@ -58,6 +58,14 @@ DOCUMENTATION = r"""
             type: str
             env:
                 - name: NUTANIX_PORT
+        nutanix_api_key:
+            description:
+                - Prism central API key
+                - If not provided, values will be taken from environment variable NUTANIX_API_KEY
+            required: false
+            type: str
+            env:
+                - name: NUTANIX_API_KEY
         fetch_all_hosts:
             description:
                 - Set to C(True) to fetch all hosts
@@ -159,6 +167,12 @@ EXAMPLES = r"""
   groups:
     high_memory: (memory_size_bytes / 1073741824) > 100 # > 100GB
     low_memory: (memory_size_bytes / 1073741824) <= 100 # <= 100GB
+
+# Minimal inventory file (nutanix.yml) using API key
+- plugin: nutanix.ncp.ntnx_prism_host_inventory_v2
+  nutanix_host: 10.x.x.x
+  nutanix_api_key: api_key
+  validate_certs: false
 """
 
 import json  # noqa: E402
@@ -187,6 +201,7 @@ class Mock_Module:
         fetch_all_hosts=False,
         nutanix_debug=False,
         nutanix_log_file=None,
+        nutanix_api_key=None,
     ):
         self.tmpdir = tempfile.gettempdir()
         self.params = {
@@ -199,6 +214,7 @@ class Mock_Module:
             "load_params_without_defaults": False,
             "nutanix_debug": nutanix_debug,
             "nutanix_log_file": nutanix_log_file,
+            "nutanix_api_key": nutanix_api_key,
         }
 
     def jsonify(self, data):
@@ -412,19 +428,18 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         self.nutanix_port = self.get_option("nutanix_port") or env_fallback(
             "NUTANIX_PORT", "9440"
         )
+        self.nutanix_api_key = self.get_option("nutanix_api_key") or env_fallback(
+            "NUTANIX_API_KEY"
+        )
 
         # Validate required parameters
         if not self.nutanix_host:
             raise AnsibleError(
                 "nutanix_host must be provided either in inventory file or as NUTANIX_HOSTNAME environment variable or NUTANIX_HOST environment variable"
             )
-        if not self.nutanix_username:
+        if (not self.nutanix_username or not self.nutanix_password) and not self.nutanix_api_key:
             raise AnsibleError(
-                "nutanix_username must be provided either in inventory file or as NUTANIX_USERNAME environment variable"
-            )
-        if not self.nutanix_password:
-            raise AnsibleError(
-                "nutanix_password must be provided either in inventory file or as NUTANIX_PASSWORD environment variable"
+                "Either nutanix_username and nutanix_password or nutanix_api_key is required"
             )
 
         self.validate_certs = self.get_option("validate_certs")
@@ -452,6 +467,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             self.validate_certs,
             self.nutanix_debug,
             self.nutanix_log_file,
+            self.nutanix_api_key,
         )
 
         # Get Host API instance

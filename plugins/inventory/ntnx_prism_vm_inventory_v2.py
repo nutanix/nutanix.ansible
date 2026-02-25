@@ -59,6 +59,14 @@ DOCUMENTATION = r"""
             type: str
             env:
                 - name: NUTANIX_PORT
+        nutanix_api_key:
+            description:
+                - Prism central API key
+                - If not provided, values will be taken from environment variable NUTANIX_API_KEY
+            required: false
+            type: str
+            env:
+                - name: NUTANIX_API_KEY
         fetch_all_vms:
             description:
                 - Set to C(True) to fetch all VMs
@@ -206,6 +214,12 @@ EXAMPLES = r"""
   validate_certs: false
   custom_ansible_host:
     expr: "{vm_name}.nutanix1.{vm_ext_id}.nutanix2.{cluster_name}.nutanix3.{cluster_ext_id}.nutanix4.{vm_description}.com"
+
+# Minimal inventory file (nutanix.yml) using API key
+- plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
+  nutanix_host: 10.x.x.x
+  nutanix_api_key: api_key
+  validate_certs: false
 """
 
 import json  # noqa: E402
@@ -237,6 +251,7 @@ class Mock_Module:
         custom_ansible_host=None,
         nutanix_debug=False,
         nutanix_log_file=None,
+        nutanix_api_key=None,
     ):
         self.tmpdir = tempfile.gettempdir()
         self.params = {
@@ -250,6 +265,7 @@ class Mock_Module:
             "load_params_without_defaults": False,
             "nutanix_debug": nutanix_debug,
             "nutanix_log_file": nutanix_log_file,
+            "nutanix_api_key": nutanix_api_key,
         }
 
     def jsonify(self, data):
@@ -526,19 +542,20 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             "NUTANIX_PORT", "9440"
         )
 
+        self.nutanix_api_key = self.get_option("nutanix_api_key") or env_fallback(
+            "NUTANIX_API_KEY"
+        )
+
         # Validate required parameters
         if not self.nutanix_host:
             raise AnsibleError(
                 "nutanix_host must be provided either in inventory file or as NUTANIX_HOSTNAME environment variable or NUTANIX_HOST environment variable"
             )
-        if not self.nutanix_username:
+        if (not self.nutanix_username or not self.nutanix_password) and not self.nutanix_api_key:
             raise AnsibleError(
-                "nutanix_username must be provided either in inventory file or as NUTANIX_USERNAME environment variable"
+                "Either nutanix_username and nutanix_password or nutanix_api_key is required"
             )
-        if not self.nutanix_password:
-            raise AnsibleError(
-                "nutanix_password must be provided either in inventory file or as NUTANIX_PASSWORD environment variable"
-            )
+            
 
         self.validate_certs = self.get_option("validate_certs")
         self.fetch_all_vms = self.get_option("fetch_all_vms")
@@ -569,6 +586,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             self.custom_ansible_host,
             self.nutanix_debug,
             self.nutanix_log_file,
+            self.nutanix_api_key,
         )
 
         # Get VM API instance

@@ -61,6 +61,14 @@ DOCUMENTATION = r"""
             type: str
             env:
                 - name: NUTANIX_PORT
+        nutanix_api_key:
+            description:
+                - Prism central API key
+                - If not provided, values will be taken from environment variable NUTANIX_API_KEY
+            required: false
+            type: str
+            env:
+                - name: NUTANIX_API_KEY
         fetch_all_vms:
             description:
                 - Set to C(True) to fetch all VMs
@@ -174,6 +182,7 @@ class Mock_Module:
         custom_ansible_host=None,
         nutanix_debug=False,
         nutanix_log_file=None,
+        nutanix_api_key=None,
     ):
         self.tmpdir = tempfile.gettempdir()
         self.params = {
@@ -187,6 +196,7 @@ class Mock_Module:
             "load_params_without_defaults": False,
             "nutanix_debug": nutanix_debug,
             "nutanix_log_file": nutanix_log_file,
+            "nutanix_api_key": nutanix_api_key,
         }
 
     def jsonify(self, data):
@@ -351,6 +361,9 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         self.nutanix_port = self.get_option("nutanix_port") or env_fallback(
             "NUTANIX_PORT"
         )
+        self.nutanix_api_key = self.get_option("nutanix_api_key") or env_fallback(
+            "NUTANIX_API_KEY"
+        )
         self.data = self.get_option("data")
         self.validate_certs = self.get_option("validate_certs")
         self.fetch_all_vms = self.get_option("fetch_all_vms")
@@ -376,6 +389,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             self.custom_ansible_host,
             self.nutanix_debug,
             self.nutanix_log_file,
+            self.nutanix_api_key,
         )
         vm = vms.VM(module)
         self.data["offset"] = self.data.get("offset", 0)
