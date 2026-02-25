@@ -22,7 +22,7 @@
       #cloud-config
       chpasswd:
         list: |
-          root: "{{ password }}"
+          root: "{{ password_v3_tests }}"
           expire: False
       fqdn: myNutanixVM
 ##########################################################################
