@@ -28,6 +28,7 @@ class BaseInfoModule(BaseModule):
 
     def __init__(self, skip_info_args=False, **kwargs):
         self.argument_spec = deepcopy(BaseModule.argument_spec)
+        self.argument_spec.pop("read_timeout")
         self.argument_spec.pop("state")
         self.argument_spec.pop("wait")
         if not skip_info_args:
