@@ -7,8 +7,8 @@
       nutanix_password: "{{ password | default(omit) }}"
       nutanix_api_key: "{{ nutanix_api_key | default(omit) }}"
       validate_certs: "{{ validate_certs }}"
-      nutanix_debug: "{{ nutanix_debug }}"
-      nutanix_log_file: "{{ nutanix_log_file }}"
+      nutanix_debug: "{{ nutanix_debug | default(omit) }}"
+      nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
   block:
     - name: Import create_floating_ips.yml
       ansible.builtin.import_tasks: "create_floating_ips.yml"
