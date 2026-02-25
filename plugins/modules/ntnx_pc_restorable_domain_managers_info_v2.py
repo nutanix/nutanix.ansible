@@ -148,6 +148,7 @@ from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
 )
+from ansible.module_utils.basic import env_fallback  # noqa: E402
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
@@ -155,8 +156,15 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
     module_args = dict(
-        nutanix_username=dict(type="str", required=True),
-        nutanix_password=dict(type="str", required=True),
+        nutanix_username=dict(
+            type="str", fallback=(env_fallback, ["NUTANIX_USERNAME"]), required=True
+        ),
+        nutanix_password=dict(
+            type="str",
+            no_log=True,
+            fallback=(env_fallback, ["NUTANIX_PASSWORD"]),
+            required=True,
+        ),
         restore_source_ext_id=dict(type="str", required=True),
     )
     return module_args
