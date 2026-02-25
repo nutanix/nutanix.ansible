@@ -110,7 +110,7 @@ DOCUMENTATION = r"""
             default: True
             type: boolean
             env:
-                - name: VALIDATE_CERTS
+                - name: NUTANIX_VALIDATE_CERTS
         filters:
             description:
                 - A list of Jinja2 expressions used to filter the inventory
@@ -164,7 +164,6 @@ import re  # noqa: E402
 import tempfile  # noqa: E402
 
 from ansible.errors import AnsibleError  # noqa: E402
-from ansible.module_utils.basic import env_fallback  # noqa: E402
 from ansible.plugins.inventory import BaseInventoryPlugin, Constructable  # noqa: E402
 
 from ..module_utils.v3.prism import vms  # noqa: E402
@@ -349,23 +348,37 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
 
         self.nutanix_hostname = (
             self.get_option("nutanix_hostname")
-            or env_fallback("NUTANIX_HOSTNAME")
-            or env_fallback("NUTANIX_HOST")
+            or os.environ.get("NUTANIX_HOSTNAME")
+            or os.environ.get("NUTANIX_HOST")
         )
-        self.nutanix_username = self.get_option("nutanix_username") or env_fallback(
+        self.nutanix_username = self.get_option("nutanix_username") or os.environ.get(
             "NUTANIX_USERNAME"
         )
-        self.nutanix_password = self.get_option("nutanix_password") or env_fallback(
+        self.nutanix_password = self.get_option("nutanix_password") or os.environ.get(
             "NUTANIX_PASSWORD"
         )
-        self.nutanix_port = self.get_option("nutanix_port") or env_fallback(
-            "NUTANIX_PORT"
+        self.nutanix_port = self.get_option("nutanix_port") or os.environ.get(
+            "NUTANIX_PORT", "9440"
         )
-        self.nutanix_api_key = self.get_option("nutanix_api_key") or env_fallback(
+        self.nutanix_api_key = self.get_option("nutanix_api_key") or os.environ.get(
             "NUTANIX_API_KEY"
         )
+        # Validate required parameters
+        if not self.nutanix_hostname:
+            raise AnsibleError(
+                "nutanix_host must be provided either in inventory file or as NUTANIX_HOSTNAME environment variable or NUTANIX_HOST environment variable"
+            )
+        if (
+            not self.nutanix_username or not self.nutanix_password
+        ) and not self.nutanix_api_key:
+            raise AnsibleError(
+                "Either nutanix_username and nutanix_password or nutanix_api_key is required"
+            )
         self.data = self.get_option("data")
-        self.validate_certs = self.get_option("validate_certs")
+        self.validate_certs = (
+            self.get_option("validate_certs")
+            or os.environ.get("NUTANIX_VALIDATE_CERTS", "false").lower() == "true"
+        )
         self.fetch_all_vms = self.get_option("fetch_all_vms")
         self.custom_ansible_host = self.get_option("custom_ansible_host")
         self.nutanix_debug = (
