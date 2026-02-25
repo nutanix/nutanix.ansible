@@ -794,10 +794,7 @@ failed:
 import traceback  # noqa: E402
 import warnings  # noqa: E402
 
-from ansible.module_utils.basic import (  # noqa: E402
-    missing_required_lib,
-    env_fallback,
-)
+from ansible.module_utils.basic import env_fallback, missing_required_lib  # noqa: E402
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402

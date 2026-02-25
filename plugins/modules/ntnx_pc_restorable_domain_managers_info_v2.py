@@ -138,6 +138,8 @@ failed:
 
 import warnings  # noqa: E402
 
+from ansible.module_utils.basic import env_fallback  # noqa: E402
+
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
@@ -148,7 +150,6 @@ from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
 )
-from ansible.module_utils.basic import env_fallback  # noqa: E402
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
