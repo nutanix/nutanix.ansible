@@ -110,6 +110,11 @@ jobs:
               echo "" >> tests/integration/targets/prepare_env/vars/main.yml
               echo "# API Key Authentication (added by workflow)" >> tests/integration/targets/prepare_env/vars/main.yml
               echo "nutanix_api_key: \"${{ secrets.NUTANIX_API_KEY }}\"" >> tests/integration/targets/prepare_env/vars/main.yml
+          else
+              echo "" >> tests/integration/targets/prepare_env/vars/main.yml
+              echo "# Credentials (added by workflow)" >> tests/integration/targets/prepare_env/vars/main.yml
+              echo "username: \"${{ secrets.PC_USERNAME }}\"" >> tests/integration/targets/prepare_env/vars/main.yml
+              echo "password: \"${{ secrets.PC_PASSWORD }}\"" >> tests/integration/targets/prepare_env/vars/main.yml
           fi
 
           # Append AWS credentials to the existing s3_bucket block
