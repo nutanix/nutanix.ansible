@@ -393,6 +393,40 @@
           reference_ext_ids:
             - "00062ffc-95ad-19e9-185b-ac1f6b6f97e2"
             - "00062ffc-95ad-19e9-185b-ac1f6b6f97a3"
+          kube_entities:
+            - "kube-cluster-1"
+            - "kube-cluster-2"
+          addresses:
+            ipv4_addresses:
+              - value: 10.1.1.0
+                prefix_length: 24
+              - value: 10.1.2.2
+                prefix_length: 32
+          ip_ranges:
+            ipv4_ranges:
+              - start_ip: 10.1.1.0
+                end_ip: 10.1.1.255
+              - start_ip: 10.1.2.0
+                end_ip: 10.1.2.255
+    except_config:
+      entities:
+        - select_by: EXT_ID
+          type: ADDRESS_GROUP
+          reference_ext_ids:
+            - "83cbf00d-782f-4efc-87c8-4129f5942aaa"
+            - "83cbf00d-782f-4efc-87c8-4129f5942bbb"
+          addresses:
+            ipv4_addresses:
+              - value: 10.1.1.0
+                prefix_length: 24
+              - value: 10.1.2.2
+                prefix_length: 32
+          ip_ranges:
+            ipv4_ranges:
+              - start_ip: 10.1.1.0
+                end_ip: 10.1.1.255
+              - start_ip: 10.1.2.0
+                end_ip: 10.1.2.255
   register: result
   ignore_errors: true
   check_mode: true
@@ -409,6 +443,24 @@
       - result.response.allowed_config.entities[0].type == "SUBNET"
       - result.response.allowed_config.entities[0].reference_ext_ids == ["00062ffc-95ad-19e9-185b-ac1f6b6f97e2", "00062ffc-95ad-19e9-185b-ac1f6b6f97a3"]
       - result.response.allowed_config.entities[0].reference_ext_ids | length == 2
+      - result.response.allowed_config.entities[0].kube_entities | length == 2
+      - result.response.allowed_config.entities[0].kube_entities == ["kube-cluster-1", "kube-cluster-2"]
+      - result.response.allowed_config.entities[0].addresses.ipv4_addresses | length == 2
+      - result.response.allowed_config.entities[0].addresses.ipv4_addresses | map(attribute='value') | list == ["10.1.1.0", "10.1.2.2"]
+      - result.response.allowed_config.entities[0].addresses.ipv4_addresses | map(attribute='prefix_length') | list == [24, 32]
+      - result.response.allowed_config.entities[0].ip_ranges.ipv4_ranges | length == 2
+      - result.response.allowed_config.entities[0].ip_ranges.ipv4_ranges | map(attribute='start_ip') | list == ["10.1.1.0", "10.1.2.0"]
+      - result.response.allowed_config.entities[0].ip_ranges.ipv4_ranges | map(attribute='end_ip') | list == ["10.1.1.255", "10.1.2.255"]
+      - result.response.except_config.entities[0].select_by == "EXT_ID"
+      - result.response.except_config.entities[0].type == "ADDRESS_GROUP"
+      - result.response.except_config.entities[0].reference_ext_ids | length == 2
+      - result.response.except_config.entities[0].reference_ext_ids == ["83cbf00d-782f-4efc-87c8-4129f5942aaa", "83cbf00d-782f-4efc-87c8-4129f5942bbb"]
+      - result.response.except_config.entities[0].addresses.ipv4_addresses | length == 2
+      - result.response.except_config.entities[0].addresses.ipv4_addresses | map(attribute='value') | list == ["10.1.1.0", "10.1.2.2"]
+      - result.response.except_config.entities[0].addresses.ipv4_addresses | map(attribute='prefix_length') | list == [24, 32]
+      - result.response.except_config.entities[0].ip_ranges.ipv4_ranges | length == 2
+      - result.response.except_config.entities[0].ip_ranges.ipv4_ranges | map(attribute='start_ip') | list == ["10.1.1.0", "10.1.2.0"]
+      - result.response.except_config.entities[0].ip_ranges.ipv4_ranges | map(attribute='end_ip') | list == ["10.1.1.255", "10.1.2.255"]
     fail_msg: Generate spec for update entity group in check mode failed
     success_msg: Generate spec for update entity group in check mode passed
 
