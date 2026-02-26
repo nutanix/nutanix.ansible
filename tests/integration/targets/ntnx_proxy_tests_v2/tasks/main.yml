@@ -5,6 +5,7 @@
       nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
+      nutanix_api_key: "{{ nutanix_api_key | default(omit) }}"
       validate_certs: "{{ validate_certs }}"
       nutanix_debug: "{{ nutanix_debug | default(omit) }}"
       nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
