@@ -854,14 +854,14 @@
   ansible.builtin.set_fact:
     pc_ssh_cmd: >-
       sshpass -p '{{ domain_manager_ssh_password }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {{ domain_manager_ssh_username }}@{{ ip }}
-    reset_username_password: /home/nutanix/prism/cli/ncli user reset-password user-name={{ username }} password={{ password }}
+    reset_username_password: /home/nutanix/prism/cli/ncli user reset-password user-name={{ username_for_tests }} password={{ password_for_tests }}
 
 - name: Set reset command
   ansible.builtin.set_fact:
     reset_command: '{{ pc_ssh_cmd }} "{{ reset_username_password }}"'
 
 - name: Change password five times randomly before resetting
-  ansible.builtin.command: "{{ pc_ssh_cmd }} /home/nutanix/prism/cli/ncli user reset-password user-name={{ username }} password='{{ item }}'"
+  ansible.builtin.command: "{{ pc_ssh_cmd }} /home/nutanix/prism/cli/ncli user reset-password user-name={{ username_for_tests }} password='{{ item }}'"
   register: result
   ignore_errors: true
   loop: "{{ passwords }}"

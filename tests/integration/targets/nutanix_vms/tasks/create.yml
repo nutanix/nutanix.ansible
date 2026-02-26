@@ -21,7 +21,7 @@
       #cloud-config
       chpasswd:
         list: |
-          root: "{{ password_v3_tests }}"
+          root: "{{ password_for_tests }}"
           expire: False
       fqdn: myNutanixVM
 ##########################################################################
@@ -168,7 +168,7 @@
         #cloud-config
         chpasswd:
           list: |
-            root: "{{ password_v3_tests }}"
+            root: "{{ password_for_tests }}"
             expire: False
         fqdn: myNutanixVM
       is_overridable: true
