@@ -117,11 +117,13 @@ jobs:
               echo "password: \"${{ secrets.PC_PASSWORD }}\"" >> tests/integration/targets/prepare_env/vars/main.yml
           fi
 
-          # Append AWS credentials to the existing s3_bucket block
-          VARS_FILE="tests/integration/targets/prepare_env/vars/main.yml"
-          sed -i '/s3_bucket:/,/^[^ ]/{
-            /region:/a\  access_key: "'"${{ secrets.AWS_ACCESS_KEY }}"'"\n  secret_key: "'"${{ secrets.AWS_SECRET_KEY }}"'"
-          }' "$VARS_FILE"
+          # Append S3 bucket config from secrets
+          echo "" >> tests/integration/targets/prepare_env/vars/main.yml
+          echo "s3_bucket:" >> tests/integration/targets/prepare_env/vars/main.yml
+          echo "  bucket: \"${{ secrets.AWS_BUCKET }}\"" >> tests/integration/targets/prepare_env/vars/main.yml
+          echo "  region: \"${{ secrets.AWS_REGION }}\"" >> tests/integration/targets/prepare_env/vars/main.yml
+          echo "  access_key: \"${{ secrets.AWS_ACCESS_KEY }}\"" >> tests/integration/targets/prepare_env/vars/main.yml
+          echo "  secret_key: \"${{ secrets.AWS_SECRET_KEY }}\"" >> tests/integration/targets/prepare_env/vars/main.yml
 
           # Set GitHub environment variables for later steps
           echo "NUTANIX_HOST=${{ secrets.PC_IP }}" >> $GITHUB_ENV
