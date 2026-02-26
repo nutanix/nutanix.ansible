@@ -87,6 +87,8 @@ jobs:
           export NDB_PASSWORD=${{ secrets.NDB_PASSWORD }}
           export NDB_USERNAME=${{ secrets.NDB_USERNAME }}
 
+          echo '${{ secrets.PC_CONFIG }}' > tests/integration/targets/prepare_env/vars/main.yml
+
           # Set authentication method
           if [ "$use_api_key" = true ]; then
               echo "🔑 Using API Key authentication"
@@ -110,6 +112,12 @@ jobs:
               echo "nutanix_api_key: \"${{ secrets.NUTANIX_API_KEY }}\"" >> tests/integration/targets/prepare_env/vars/main.yml
           fi
 
+          # Append AWS credentials to the existing s3_bucket block
+          VARS_FILE="tests/integration/targets/prepare_env/vars/main.yml"
+          sed -i '/s3_bucket:/,/^[^ ]/{
+            /region:/a\  access_key: "'"${{ secrets.AWS_ACCESS_KEY }}"'"\n  secret_key: "'"${{ secrets.AWS_SECRET_KEY }}"'"
+          }' "$VARS_FILE"
+
           # Set GitHub environment variables for later steps
           echo "NUTANIX_HOST=${{ secrets.PC_IP }}" >> $GITHUB_ENV
           if [ "$use_api_key" = true ]; then
@@ -119,8 +127,6 @@ jobs:
               echo "NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}" >> $GITHUB_ENV
           fi
 
-          # Write PC_CONFIG so that main.yml takes precedence over secrets
-          echo '${{ secrets.PC_CONFIG }}' > tests/integration/targets/prepare_env/vars/main.yml
 
           echo "===> Preparing environments..."
           ansible-playbook tests/integration/targets/prepare_env/playbooks/prepare_env.yml
