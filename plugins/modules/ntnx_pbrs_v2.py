@@ -888,6 +888,8 @@ def create_pbr(module, result):
 
 
 def check_pbrs_idempotency(old_spec, update_spec):
+    strip_internal_attributes(old_spec)
+    strip_internal_attributes(update_spec)
     if old_spec != update_spec:
         return False
     return True
