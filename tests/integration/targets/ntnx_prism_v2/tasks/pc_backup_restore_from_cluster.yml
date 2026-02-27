@@ -53,6 +53,9 @@
 
 - name: Generate spec for creating restore source cluster using check mode
   nutanix.ncp.ntnx_pc_restore_source_v2:
+    nutanix_host: "{{ ip_pe }}"
+    nutanix_username: "{{ username_for_tests }}"
+    nutanix_password: "{{ password_for_tests }}"
     location:
       cluster_location:
         config:
