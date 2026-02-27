@@ -140,6 +140,8 @@
 - name: Deploy PC
   nutanix.ncp.ntnx_pc_deploy_v2:
     nutanix_host: "{{ ip_pe_for_deploying_pc }}"
+    nutanix_username: "{{ username_for_tests }}"
+    nutanix_password: "{{ password_for_tests }}"
     config:
       name: "{{ random_string }}_pc"
       size: "{{ pc.size }}"
