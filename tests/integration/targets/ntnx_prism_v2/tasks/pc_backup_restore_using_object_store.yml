@@ -466,6 +466,7 @@
     nutanix_host: "{{ ip_pe }}"
     nutanix_username: "{{ username_for_tests }}"
     nutanix_password: "{{ password_for_tests }}"
+    nutanix_api_key: null
     location:
       object_store_location:
         provider_config:
@@ -494,6 +495,7 @@
     nutanix_host: "{{ ip_pe }}"
     nutanix_username: "{{ username_for_tests }}"
     nutanix_password: "{{ password_for_tests }}"
+    nutanix_api_key: null
     ext_id: "{{ result.response.ext_id }}"
   register: result
   ignore_errors: true
@@ -517,6 +519,7 @@
     nutanix_host: "{{ ip_pe }}"
     nutanix_username: "{{ username_for_tests }}"
     nutanix_password: "{{ password_for_tests }}"
+    nutanix_api_key: null
     ext_id: "{{ restore_source_object_store_ext_id }}"
     state: absent
   register: result
@@ -539,6 +542,7 @@
     nutanix_host: "{{ ip_pe }}"
     nutanix_username: "{{ username_for_tests }}"
     nutanix_password: "{{ password_for_tests }}"
+    nutanix_api_key: null
     ext_id: "{{ restore_source_object_store_ext_id }}"
     state: absent
   register: result
@@ -549,6 +553,7 @@
     nutanix_host: "{{ ip_pe }}"
     nutanix_username: "{{ username_for_tests }}"
     nutanix_password: "{{ password_for_tests }}"
+    nutanix_api_key: null
     ext_id: "{{ restore_source_object_store_ext_id }}"
   register: result
   ignore_errors: true
@@ -566,6 +571,7 @@
     nutanix_host: "{{ ip_pe }}"
     nutanix_username: "{{ username_for_tests }}"
     nutanix_password: "{{ password_for_tests }}"
+    nutanix_api_key: null
     location:
       object_store_location:
         provider_config:
@@ -594,6 +600,7 @@
     nutanix_host: "{{ ip_pe }}"
     nutanix_username: "{{ username_for_tests }}"
     nutanix_password: "{{ password_for_tests }}"
+    nutanix_api_key: null
     ext_id: "{{ result.response.ext_id }}"
   register: result
   ignore_errors: true
@@ -623,6 +630,7 @@
     nutanix_host: "{{ ip_pe }}"
     nutanix_username: "{{ username_for_tests }}"
     nutanix_password: "{{ password_for_tests }}"
+    nutanix_api_key: null
     restore_source_ext_id: "{{ restore_source_object_store_ext_id }}"
   register: result
   ignore_errors: true
@@ -640,16 +648,28 @@
     nutanix_host: "{{ ip_pe }}"
     nutanix_username: "{{ username_for_tests }}"
     nutanix_password: "{{ password_for_tests }}"
+    nutanix_api_key: null
     restore_source_ext_id: "{{ restore_source_object_store_ext_id }}"
     filter: extId eq {{ domain_manager_ext_id }}
   register: domain_manager_details
   ignore_errors: true
+
+- name: Get restorable domain manager using filter status
+  ansible.builtin.assert:
+    that:
+      - domain_manager_details.changed == false
+      - domain_manager_details.failed == false
+      - domain_manager_details.response is defined
+      - domain_manager_details.response | length > 0
+    fail_msg: "Get restorable domain manager using filter failed"
+    success_msg: "Get restorable domain manager using filter passed"
 
 - name: List all restore points
   nutanix.ncp.ntnx_pc_restore_points_info_v2:
     nutanix_host: "{{ ip_pe }}"
     nutanix_username: "{{ username_for_tests }}"
     nutanix_password: "{{ password_for_tests }}"
+    nutanix_api_key: null
     restore_source_ext_id: "{{ restore_source_object_store_ext_id }}"
     restorable_domain_manager_ext_id: "{{ domain_manager_details.response[0].ext_id }}"
     orderby: creationTime desc
@@ -675,6 +695,7 @@
     nutanix_host: "{{ ip_pe }}"
     nutanix_username: "{{ username_for_tests }}"
     nutanix_password: "{{ password_for_tests }}"
+    nutanix_api_key: null
     restore_source_ext_id: "{{ restore_source_object_store_ext_id }}"
     restorable_domain_manager_ext_id: "{{ domain_manager_details.response[0].ext_id }}"
     ext_id: "{{ restore_point_ext_id }}"
@@ -738,6 +759,7 @@
     nutanix_host: "{{ ip_pe }}"
     nutanix_username: "{{ username_for_tests }}"
     nutanix_password: "{{ password_for_tests }}"
+    nutanix_api_key: null
     ext_id: "35d22fcc-0084-3751-a579-0621ce59a786"
     restore_source_ext_id: "0a77819c-2e35-446b-87b1-89cbe62c15f5"
     restorable_domain_manager_ext_id: "18553f0f-7b41-4115-bf42-2f698fbe7117"
@@ -823,6 +845,7 @@
     nutanix_host: "{{ ip_pe }}"
     nutanix_username: "{{ username_for_tests }}"
     nutanix_password: "{{ password_for_tests }}"
+    nutanix_api_key: null
     ext_id: "{{ restore_point_ext_id }}"
     restore_source_ext_id: "{{ restore_source_object_store_ext_id }}"
     restorable_domain_manager_ext_id: "{{ domain_manager_details.response[0].ext_id }}"
