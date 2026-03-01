@@ -16,6 +16,10 @@
 
 - name: Generate spec for deploying a PC using check mode
   nutanix.ncp.ntnx_pc_deploy_v2:
+    nutanix_host: "{{ ip_pe_for_deploying_pc }}"
+    nutanix_username: "{{ username_for_tests }}"
+    nutanix_password: "{{ password_for_tests }}"
+    nutanix_api_key: null
     config:
       name: "test"
       size: "SMALL"
