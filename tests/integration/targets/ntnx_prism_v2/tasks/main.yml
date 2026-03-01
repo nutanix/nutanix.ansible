@@ -10,10 +10,10 @@
       nutanix_debug: "{{ nutanix_debug | default(omit) }}"
       nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
   block:
-    # - name: Import pc_backup_restore_from_cluster.yml
-    #   ansible.builtin.import_tasks: "pc_backup_restore_from_cluster.yml"
-    # - name: Import pc_backup_restore_using_object_store.yml
-    #   ansible.builtin.import_tasks: "pc_backup_restore_using_object_store.yml"
+    - name: Import pc_backup_restore_from_cluster.yml
+      ansible.builtin.import_tasks: "pc_backup_restore_from_cluster.yml"
+    - name: Import pc_backup_restore_using_object_store.yml
+      ansible.builtin.import_tasks: "pc_backup_restore_using_object_store.yml"
     - name: Import deploy_pc.yml
       ansible.builtin.import_tasks: "deploy_pc.yml"
     - name: Import unregister_pcs_connection.yml
