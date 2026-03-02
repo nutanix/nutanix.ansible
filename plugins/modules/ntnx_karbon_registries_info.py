@@ -12,6 +12,10 @@ DOCUMENTATION = r"""
 module: ntnx_karbon_registries_info
 short_description: registry  info module
 version_added: 1.6.0
+deprecated:
+  removed_in: "2.3.0"
+  why: The Karbon service is no longer supported.
+  alternative: Use Nutanix Kubernetes Platform (NKP).
 description: 'Get registry info'
 options:
       registry_name:
