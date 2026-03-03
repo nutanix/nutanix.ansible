@@ -33,10 +33,10 @@
         return module_args
     ```
 
-    b. [Bootstrap code](https://github.com/nutanix/nutanix.ansible/blob/main/plugins/modules/ntnx_subnets_v2.py#L705) for creating and deleting entity.
+    b. [Bootstrap code](https://github.com/nutanix/nutanix.ansible/blob/main/plugins/modules/ntnx_subnets_v2.py#L705) for creating, updating and deleting entity.
     Use v4 sdks which are available on [v4-documentation](https://developers.nutanix.com/api-reference?namespace=networking&version=v4.0) in creation, updation or deletion.
 
-    c. [Ansible module](https://github.com/nutanix/nutanix.ansible/blob/main/plugins/modules/ntnx_subnets_v2.py) plugin with [`run_module()`](https://github.com/nutanix/nutanix.ansible/blob/main/plugins/modules/ntnx_subnets_v2.py#L832) implementation.
+    c. [Ansible module](https://github.com/nutanix/nutanix.ansible/blob/main/plugins/modules/ntnx_subnets_v2.py) plugin with [`run_module()`](https://github.com/nutanix/nutanix.ansible/blob/main/plugins/modules/ntnx_subnets_v2.py#L843) implementation.
 
     Example:
     ```
@@ -128,7 +128,7 @@ update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
 ## Workflow
 
 1. Create a github issue with following details
- * **Title** should contain <font color="red">one of</font> the follwoing
+ * **Title** should contain <font color="red">one of</font> the following
     - [Feat] Develop ansible module for \<api_name>
     - [Imprv] Modify ansible module to support \<new_functionality>
     - [Bug] Fix \<summary of issue> bug in \<ansible_module_name>
@@ -141,7 +141,6 @@ update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
  * **Project** should be selected
  * **Assignees** - assign yourself
  * **Task list** for list of tasks that needs to be developed as part of the fix
-    - unit tests
     - integration tests
     - sanity tests
     - documentation
@@ -151,13 +150,10 @@ update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
  * `imprv/issue#<id>`
  * `bug/issue#<id>`
 
-3. Develop `sanity`, `unit` and `integrtaion` tests.
+3. Develop `sanity` and `integrtaion` tests.
 
 4. Create a [pull request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request)
 
-5. Ensure <font color="royalblue">85% code coverage</font> on the pull request. Pull request with less than 85% coverage will be <font color="red">rejected</font>.
+5. Link the pull request in `issue#<id>`
 
-6. Link the pull request in `issue#<id>`
-
-7. After the pull request is merged, close the `issue#<id>`
-
+6. After the pull request is merged, close the `issue#<id>`
