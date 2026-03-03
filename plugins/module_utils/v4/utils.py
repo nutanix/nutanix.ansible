@@ -4,6 +4,16 @@
 from __future__ import absolute_import, division, print_function
 
 import json
+import os
+
+try:
+    # Python 3
+    from urllib.parse import unquote, urlparse
+except ImportError:
+    # Python 2.7
+    from urllib import unquote
+
+    from urlparse import urlparse
 
 __metaclass__ = type
 
@@ -159,3 +169,88 @@ def remove_fields_from_spec(obj, fields_to_remove, deep=False):
         if deep:
             for item in obj:
                 remove_fields_from_spec(item, fields_to_remove, deep=True)
+
+
+def _get_proxy_url(module=None):
+    """
+    Get proxy URL from module parameters (preferred) or environment variables.
+
+    Precedence (highest to lowest):
+        https_proxy -> http_proxy -> all_proxy  (module params, lowercase)
+        HTTPS_PROXY -> HTTP_PROXY -> ALL_PROXY  (environment variables, uppercase)
+    """
+    proxy_names = [
+        "https_proxy",
+        "http_proxy",
+        "all_proxy",
+    ]
+    # Check module params first (lowercase)
+    for name in proxy_names:
+        if name in module.params:
+            proxy_url = module.params.get(name)
+            if proxy_url:
+                return proxy_url
+    # Fall back to environment variables (uppercase)
+    for name in proxy_names:
+        proxy_url = os.environ.get(name.upper())
+        if proxy_url:
+            return proxy_url
+    return None
+
+
+def _detect_no_proxy(host, module=None):
+    """
+    Detect if the 'no_proxy' environment variable is set and honor those locations.
+    """
+    env_no_proxy = module.params.get("no_proxy") or os.environ.get("NO_PROXY")
+    if env_no_proxy:
+        env_no_proxy = env_no_proxy.split(",")
+        netloc = host or ""
+
+        for no_proxy_host in env_no_proxy:
+            if netloc.endswith(no_proxy_host) or netloc.split(":")[0].endswith(
+                no_proxy_host
+            ):
+                # Our requested host matches something in no_proxy, so don't
+                # use the proxy for this
+                return False
+    return True
+
+
+def _apply_proxy_from_env(config, module=None):
+    """
+    Apply proxy configuration from environment variables.
+
+    Supports credentials either embedded in URL or via separate environment variables:
+    - Embedded: http://username:password@proxy:port
+    - Separate: PROXY_USERNAME and PROXY_PASSWORD environment variables
+    """
+    if not _detect_no_proxy(config.host, module):
+        return
+
+    proxy_url = _get_proxy_url(module)
+    if not proxy_url:
+        return
+
+    parsed = urlparse(proxy_url)
+    if not parsed.hostname or parsed.scheme == "":
+        return
+
+    config.proxy_scheme = parsed.scheme
+    config.proxy_host = parsed.hostname
+    config.proxy_port = parsed.port or 443
+
+    # Get credentials from URL first, then fall back to separate environment variables
+    if parsed.username:
+        config.proxy_username = unquote(parsed.username)
+    else:
+        config.proxy_username = module.params.get("proxy_username") or os.environ.get(
+            "PROXY_USERNAME"
+        )
+
+    if parsed.password:
+        config.proxy_password = unquote(parsed.password)
+    else:
+        config.proxy_password = module.params.get("proxy_password") or os.environ.get(
+            "PROXY_PASSWORD"
+        )

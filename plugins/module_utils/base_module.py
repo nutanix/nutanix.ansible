@@ -46,8 +46,20 @@ class BaseModule(AnsibleModule):
         ),
     )
 
+    proxy_argument_spec = dict(
+        https_proxy=dict(type="str"),
+        http_proxy=dict(type="str"),
+        all_proxy=dict(type="str"),
+        no_proxy=dict(type="str"),
+        proxy_username=dict(type="str"),
+        proxy_password=dict(type="str", no_log=True),
+    )
+
     def __init__(self, **kwargs):
+        support_proxy = kwargs.pop("support_proxy", False)
         argument_spec = deepcopy(self.argument_spec)
+        if support_proxy:
+            argument_spec.update(deepcopy(self.proxy_argument_spec))
         if kwargs.get("argument_spec"):
             argument_spec.update(deepcopy(kwargs["argument_spec"]))
         self.argument_spec_with_extra_keys = deepcopy(argument_spec)

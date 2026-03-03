@@ -57,6 +57,7 @@ options:
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_logger
+      - nutanix.ncp.ntnx_proxy_v2
 author:
  - Alaa Bishtawi (@alaabishtawi)
  - George Ghawali (@george-ghawali)
@@ -388,6 +389,7 @@ def get_storage_container_stats(module, result):
 
 def run_module():
     module = BaseInfoModule(
+        support_proxy=True,
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         skip_info_args=True,

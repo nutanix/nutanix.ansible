@@ -39,6 +39,7 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
     - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
 author:
     - Abhinav Bansal (@abhinavbansal29)
     - Pradeepsingh Bhati (@bhati-pradeep)
@@ -235,6 +236,7 @@ def revert_vm_from_recovery_point(module, result):
 
 def run_module():
     module = BaseModule(
+        support_proxy=True,
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )

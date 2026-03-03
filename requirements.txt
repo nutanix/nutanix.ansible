@@ -1,7 +1,6 @@
 pip>=21.3.1
 ipaddress>=1.0.23
 setuptools>=44.1.1
-ansible-core>=2.16.0
 requests>=2.31.0
 ntnx-clustermgmt-py-client==4.2.1
 ntnx-iam-py-client==4.1.1b2
