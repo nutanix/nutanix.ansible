@@ -14,6 +14,7 @@ class BaseModuleV4(BaseModule):
     """
     Base module class for Nutanix PC v4 based modules
     """
+
     proxy_argument_spec = dict(
         https_proxy=dict(type="str"),
         http_proxy=dict(type="str"),

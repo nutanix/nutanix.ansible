@@ -318,8 +318,8 @@ skipped:
 import traceback  # noqa: E402
 from copy import deepcopy  # noqa: E402
 
-from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
     get_etag,
     get_storage_containers_api_instance,

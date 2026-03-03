@@ -288,8 +288,8 @@ import traceback  # noqa: E402
 import warnings  # noqa: E402
 from copy import deepcopy  # noqa: E402
 
-from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.iam.api_client import get_user_api_instance  # noqa: E402
 from ..module_utils.v4.iam.helpers import get_user  # noqa: E402
 from ..module_utils.v4.iam.spec.iam import UserSpecs as user_specs  # noqa: E402
