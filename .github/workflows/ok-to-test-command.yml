@@ -46,28 +46,94 @@ jobs:
         run: |
           cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
 
+          # Parse arguments: /ok-to-test <regex> [api]
+          args="${{ github.event.client_payload.slash_command.args.all }}"
+          flag=""
+          use_api_key=false
+
+          # Parse arguments to extract regex and api flag
+          if [ "$args" = "allow-disabled" ]; then
+              flag="--allow-disabled"
+          elif [ -n "$args" ]; then
+              # Split args into array
+              read -ra arg_array <<< "$args"
+
+              # Check if last argument is "api"
+              if [ "${arg_array[-1]}" = "api" ]; then
+                  use_api_key=true
+                  # Remove "api" from args to get regex pattern
+                  unset 'arg_array[-1]'
+                  regex_pattern="${arg_array[*]}"
+
+                  # Special case: if regex is empty and only "api" was passed, treat as allow-disabled
+                  if [ -z "$regex_pattern" ] && [ "${arg_array[0]}" = "allow-disabled" ]; then
+                      flag="--allow-disabled"
+                  fi
+              else
+                  regex_pattern="$args"
+              fi
+          fi
+
+          # Clean up any existing authentication environment variables
+          unset NUTANIX_USERNAME
+          unset NUTANIX_PASSWORD
+          unset NUTANIX_API_KEY
+
+          # Export common environment variables
           export NUTANIX_HOST=${{ secrets.PC_IP }}
-          export NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}
-          export NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}
           export NUTANIX_DR_SITE=${{ secrets.NUTANIX_DR_SITE }}
           export VALIDATE_CERTS=${{ secrets.VALIDATE_CERTS }}
           export NDB_HOST=${{ secrets.NDB_HOST }}
           export NDB_PASSWORD=${{ secrets.NDB_PASSWORD }}
           export NDB_USERNAME=${{ secrets.NDB_USERNAME }}
-          args="${{ github.event.client_payload.slash_command.args.all }}"
-          flag=""
-          if [ "$args" = "allow-disabled" ]; then
-              flag="--allow-disabled"
-          elif [ -n "$args" ]; then
-              regex_pattern="$args"
+
+          echo '${{ secrets.PC_CONFIG }}' > tests/integration/targets/prepare_env/vars/main.yml
+
+          # Set authentication method
+          if [ "$use_api_key" = true ]; then
+              echo "🔑 Using API Key authentication"
+              export NUTANIX_API_KEY=${{ secrets.NUTANIX_API_KEY }}
+              echo "AUTH_METHOD=api_key" >> $GITHUB_ENV
+          else
+              echo "🔐 Using Username/Password authentication"
+              export NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}
+              export NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}
+              echo "AUTH_METHOD=username_password" >> $GITHUB_ENV
           fi
+
+          # Write config files
           echo '${{ secrets.FOUNDATION_CONFIG }}' > tests/integration/targets/prepare_foundation_env/vars/main.yml
           echo '${{ secrets.FC_CONFIG }}' > tests/integration/targets/prepare_fc_env/vars/main.yml
-          echo '${{ secrets.PC_CONFIG }}' > tests/integration/targets/prepare_env/vars/main.yml
           echo '${{ secrets.NDB_CONFIG }}' > tests/integration/targets/prepare_ndb_env/vars/main.yml
+
+          if [ "$use_api_key" = true ]; then
+              echo "" >> tests/integration/targets/prepare_env/vars/main.yml
+              echo "# API Key Authentication (added by workflow)" >> tests/integration/targets/prepare_env/vars/main.yml
+              echo "nutanix_api_key: \"${{ secrets.NUTANIX_API_KEY }}\"" >> tests/integration/targets/prepare_env/vars/main.yml
+          else
+              echo "" >> tests/integration/targets/prepare_env/vars/main.yml
+              echo "# Credentials (added by workflow)" >> tests/integration/targets/prepare_env/vars/main.yml
+              echo "username: \"${{ secrets.PC_USERNAME }}\"" >> tests/integration/targets/prepare_env/vars/main.yml
+              echo "password: \"${{ secrets.PC_PASSWORD }}\"" >> tests/integration/targets/prepare_env/vars/main.yml
+          fi
+
+          # Append S3 bucket config from secrets
+          echo "" >> tests/integration/targets/prepare_env/vars/main.yml
+          echo "s3_bucket:" >> tests/integration/targets/prepare_env/vars/main.yml
+          echo "  bucket: \"${{ secrets.AWS_BUCKET }}\"" >> tests/integration/targets/prepare_env/vars/main.yml
+          echo "  region: \"${{ secrets.AWS_REGION }}\"" >> tests/integration/targets/prepare_env/vars/main.yml
+          echo "  access_key: \"${{ secrets.AWS_ACCESS_KEY }}\"" >> tests/integration/targets/prepare_env/vars/main.yml
+          echo "  secret_key: \"${{ secrets.AWS_SECRET_KEY }}\"" >> tests/integration/targets/prepare_env/vars/main.yml
+
+          # Set GitHub environment variables for later steps
           echo "NUTANIX_HOST=${{ secrets.PC_IP }}" >> $GITHUB_ENV
-          echo "NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}" >> $GITHUB_ENV
-          echo "NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}" >> $GITHUB_ENV
+          if [ "$use_api_key" = true ]; then
+              echo "NUTANIX_API_KEY=${{ secrets.NUTANIX_API_KEY }}" >> $GITHUB_ENV
+          else
+              echo "NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}" >> $GITHUB_ENV
+              echo "NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}" >> $GITHUB_ENV
+          fi
+
 
           echo "===> Preparing environments..."
           ansible-playbook tests/integration/targets/prepare_env/playbooks/prepare_env.yml
@@ -335,6 +401,7 @@ jobs:
           comment-id: ${{ github.event.client_payload.github.payload.comment.id }}
           body: |
             > Integration test run status is : ${{ job.status }}
+            > Authentication method: ${{ env.AUTH_METHOD == 'api_key' && '🔑 API Key' || '🔐 Username/Password' }}
             > Coverage is : ${{ env.TOTAL_COVERAGE }} %
             > Job link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
@@ -352,6 +419,7 @@ jobs:
         run: |
           echo "### Integration Test Summary" >> $GITHUB_STEP_SUMMARY
           echo "- Status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Authentication: ${{ env.AUTH_METHOD == 'api_key' && '🔑 API Key' || '🔐 Username/Password' }}" >> $GITHUB_STEP_SUMMARY
           echo "- Coverage: ${{ env.TOTAL_COVERAGE }}%" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Detailed Test Results" >> $GITHUB_STEP_SUMMARY
