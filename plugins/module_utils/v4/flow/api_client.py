@@ -102,3 +102,15 @@ def get_network_security_policy_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_microseg_py_client.NetworkSecurityPoliciesApi(client)
+
+
+def get_entity_groups_api_instance(module):
+    """
+    This method will return EntityGroupsApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): entity group api instance
+    """
+    client = get_api_client(module)
+    return ntnx_microseg_py_client.EntityGroupsApi(client)
