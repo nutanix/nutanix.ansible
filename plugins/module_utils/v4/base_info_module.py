@@ -25,8 +25,8 @@ class BaseInfoModule(BaseModuleV4):
 
     def __init__(self, skip_info_args=False, **kwargs):
         self.argument_spec = deepcopy(BaseModuleV4.argument_spec)
-        self.argument_spec.pop("state")
-        self.argument_spec.pop("wait")
+        self.argument_spec.pop("state", None)
+        self.argument_spec.pop("wait", None)
         if not skip_info_args:
             self.argument_spec.update(self.info_argument_spec)
         super(BaseInfoModule, self).__init__(**kwargs)

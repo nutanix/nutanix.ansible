@@ -25,6 +25,7 @@ class BaseModuleV4(BaseModule):
     )
 
     def __init__(self, **kwargs):
-        self.argument_spec = deepcopy(BaseModule.argument_spec)
+        if "argument_spec" not in self.__dict__:
+            self.argument_spec = deepcopy(BaseModule.argument_spec)
         self.argument_spec.update(deepcopy(self.proxy_argument_spec))
         super(BaseModuleV4, self).__init__(**kwargs)
