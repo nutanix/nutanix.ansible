@@ -11,6 +11,7 @@ from base64 import b64encode
 from ansible.module_utils.basic import missing_required_lib
 
 from ...constants import ALLOW_VERSION_NEGOTIATION
+from ..utils import _apply_proxy_from_env
 
 SDK_IMP_ERROR = None
 try:
@@ -46,6 +47,10 @@ def get_api_client(module):
         )
     except TypeError:
         client = ntnx_licensing_py_client.ApiClient(configuration=config)
+    _apply_proxy_from_env(config, module)
+    client = ntnx_licensing_py_client.ApiClient(
+        configuration=config, allow_version_negotiation=ALLOW_VERSION_NEGOTIATION
+    )
 
     cred = "{0}:{1}".format(config.username, config.password)
     try:

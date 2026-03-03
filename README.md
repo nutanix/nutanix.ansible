@@ -5,9 +5,10 @@ Official Nutanix Ansible Collection
 
 To run any Nutanix Ansible module, the host must have the Python dependencies listed in [requirements.txt](https://github.com/nutanix/nutanix.ansible/blob/v2.4.0/requirements.txt)
 Once the collection is installed, install these dependencies into your Python environment using pip: `pip install -r ~/.ansible/collections/ansible_collections/nutanix/ncp/requirements.txt`
+This collection requires ansible-core>=2.16.0. This should be installed explicitly if ansible-core version is not installed previously or is below the specified version.
 
 # About
-Nutanix ansible collection <font color=rolyalblue>nutanix.ncp</font> is the official Nutanix ansible collection to automate Nutanix Cloud Platform (ncp).
+Nutanix ansible collection nutanix.ncp is the official Nutanix ansible collection to automate Nutanix Cloud Platform (ncp).
 
 It is designed keeping simplicity as the core value. Hence it is
 1. Easy to use
@@ -69,10 +70,12 @@ Version Suffix: To easily distinguish resources and data sources specific to ver
 
 ## Support
 
+As Red Hat Ansible Certified Content, this collection is entitled to support through the Ansible Automation Platform (AAP) using the **Create issue** button on the top right corner. If a support case cannot be opened with Red Hat and the collection has been obtained either from Galaxy or GitHub, there may community help available on the [Ansible Forum](https://forum.ansible.com/).
+
 Update!!
 We now have a brand new developer-centric Support Program designed for organizations that require a deeper level of developer support to manage their Nutanix environment and build applications quickly and efficiently. As part of this new Advanced API/SDK Support Program, you will get access to trusted technical advisors who specialize in developer tools including Nutanix Ansible Collections and receive support for your unique development needs and custom integration queries.
 [Visit our Support Portal - Premium Add-On Support Programs](https://www.nutanix.com/support-services/product-support/premium-support-programs)  to learn more about this program.<br /><br />
-Customers not taking advantage of the [Advanced API/SDK Support Program](https://www.nutanix.com/support-services/product-support/premium-support-programs) will continue to receive the support through our standard, community-supported model. This community model also provides support for contributions to the open-source Nutanix Ansible Collections repository.Visit https://portal.nutanix.com/kb/13424   for more details.
+Customers not taking advantage of the [Advanced API/SDK Support Program](https://www.nutanix.com/support-services/product-support/premium-support-programs) will continue to receive the support through our standard, community-supported model. This community model also provides support for contributions to the open-source Nutanix Ansible Collections repository.Visit [Nutanix Portal KB](https://portal.nutanix.com/kb/13424) for more details.
 
 
 # Version compatibility
@@ -125,15 +128,15 @@ This collection requires Python 3.10 or greater
 5. Currently NDB based modules are supported and tested against postgres based databases.
 
 ### Examples:
-1. Prism Central: https://github.com/nutanix/nutanix.ansible/tree/main/examples/
+1. [Prism Central](https://github.com/nutanix/nutanix.ansible/tree/main/examples/)
 
-2. Foundation: https://github.com/nutanix/nutanix.ansible/tree/main/examples/foundation
+2. [Foundation](https://github.com/nutanix/nutanix.ansible/tree/main/examples/foundation)
 
-3. Foundation Central: https://github.com/nutanix/nutanix.ansible/tree/main/examples/fc
+3. [Foundation Central](https://github.com/nutanix/nutanix.ansible/tree/main/examples/fc)
 
-4. Karbon: https://github.com/nutanix/nutanix.ansible/tree/main/examples/karbon
+4. [Karbon](https://github.com/nutanix/nutanix.ansible/tree/main/examples/karbon)
 
-5. NDB: https://github.com/nutanix/nutanix.ansible/tree/main/examples/ndb
+5. [NDB](https://github.com/nutanix/nutanix.ansible/tree/main/examples/ndb)
 
 # Installing the collection
 **Prerequisite**
@@ -144,20 +147,22 @@ Installation can be done as per usage using below methods:
 
 ## **1. Install from Ansible Galaxy Portal:**
 
-Published at : https://galaxy.ansible.com/ui/repo/published/nutanix/ncp/
+Published at : [Ansible Galaxy](https://galaxy.ansible.com/ui/repo/published/nutanix/ncp/)
 
 Installation:
 
 ```ansible-galaxy collection install nutanix.ncp```
 
-Install [requirements](https://github.com/nutanix/nutanix.ansible/blob/v2.4.0/requirements.txt) from repository if dependencies are missing in environment (Ref: https://github.com/nutanix/nutanix.ansible/issues/600):
+Install [requirements](https://github.com/nutanix/nutanix.ansible/blob/v2.4.0/requirements.txt) from repository if dependencies are missing in environment (Ref: [GitHub Issue](https://github.com/nutanix/nutanix.ansible/issues/600)):
 
 ```pip install -r requirements.txt```
+
+This collection requires ansible-core>=2.16.0. This should be installed explicitly if ansible-core version is not installed previously or is below the specified version.
 
 
 ## **2. Build and install from code:**
 
-For <font color=royalblue>Developers</font>, please follow [this install guide](https://docs.ansible.com/ansible/latest/dev_guide/developing_modules_general.html) for setting up dev environment.
+For Developers, please follow [this install guide](https://docs.ansible.com/ansible/latest/dev_guide/developing_modules_general.html) for setting up dev environment.
 
 **1. Clone the GitHub repository to a local directory**
 
@@ -179,10 +184,10 @@ For <font color=royalblue>Developers</font>, please follow [this install guide](
 
 ```ansible-galaxy collection install nutanix-ncp-<version>.tar.gz```
 
-**Note** Add <font color=red>`--force`</font> option for rebuilding or reinstalling to overwrite existing data
+**Note** Add `--force` option for rebuilding or reinstalling to overwrite existing data
 
 # Using this collection
-You can either call modules by their Fully Qualified Collection Namespace (FQCN), such as<font color=royalblue> nutanix.ncp.ntnx_vms</font>, or you can call modules by their short name if you list the <font color=royalblue>nutanix.ncp </font>collection in the playbook's ```collections:``` keyword
+You can either call modules by their Fully Qualified Collection Namespace (FQCN), such as nutanix.ncp.ntnx_vms, or you can call modules by their short name if you list the nutanix.ncp collection in the playbook's ```collections:``` keyword
 
 For example, the playbook for iaas.yml is as follows:
 ```yaml
@@ -210,7 +215,7 @@ For example, the playbook for iaas.yml is as follows:
     - include_role:
         name: fip
 ```
-To run this playbook, use <font color=royalblue>ansible-playbook</font> command as follows:
+To run this playbook, use ansible-playbook command as follows:
 ```
 ansible-playbook <playbook_name>
 ansible-playbook examples/iaas/iaas.yml
@@ -448,8 +453,8 @@ ansible-doc nutanix.ncp.<module_name>
 
 We glady welcome contributions from the community. From updating the documentation to adding more functions for Ansible, all ideas are welcome. Thank you in advance for all of your issues, pull requests, and comments!
 
-* [Contributing Guide](CONTRIBUTING.md)
-* [Code of Conduct](CODE_OF_CONDUCT.md)
+* [Contributing Guide](https://github.com/nutanix/nutanix.ansible/blob/main/CONTRIBUTING.md)
+* [Code of Conduct](https://github.com/nutanix/nutanix.ansible/blob/main/CODE_OF_CONDUCT.md)
 
 # Testing
 
@@ -562,4 +567,4 @@ By following these steps, you can perform comprehensive integration testing for 
 
 GNU General Public License v3.0 or later
 
-See [LICENSE](LICENSE) to see the full text.
+See [LICENSE](https://github.com/nutanix/nutanix.ansible/blob/main/LICENSE) to see the full text.
