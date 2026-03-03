@@ -1027,3 +1027,16 @@ releases:
           name: ntnx_prism_vm_inventory_v2
           namespace: null
     release_date: '2026-01-06'
+  2.5.0:
+    changes:
+      deprecated_features:
+        - ntnx_karbon_clusters - This module has been deprecated since version 2.3.0.
+          The Karbon service is no longer supported.
+        - ntnx_karbon_clusters_info - This module has been deprecated since version
+          2.3.0. The Karbon service is no longer supported.
+        - ntnx_karbon_clusters_node_pools - This module has been deprecated since version
+          2.3.0. The Karbon service is no longer supported.
+        - ntnx_karbon_registries - This module has been deprecated since version 2.3.0.
+          The Karbon service is no longer supported.
+        - ntnx_karbon_registries_info - This module has been deprecated since version
+          2.3.0. The Karbon service is no longer supported.

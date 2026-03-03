@@ -12,6 +12,10 @@ DOCUMENTATION = r"""
 module: ntnx_karbon_clusters_node_pools
 short_description: Create,Update and Delete a worker node pools with the provided configuration.
 version_added: 1.9.0
+deprecated:
+  removed_in: "2.3.0"
+  why: The Karbon service is no longer supported.
+  alternative: Use Nutanix Kubernetes Platform (NKP).
 description: "Create, update and and Delete worker node pools"
 options:
     cluster_name:

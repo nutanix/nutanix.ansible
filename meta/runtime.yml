@@ -1,5 +1,37 @@
 ---
 requires_ansible: ">=2.16.0"
+plugin_routing:
+  modules:
+    ntnx_karbon_clusters:
+      deprecation:
+        removal_version: "2.3.0"
+        warning_text: >-
+          ntnx_karbon_clusters has been deprecated since version 2.3.0.
+          The Karbon service is no longer supported.
+    ntnx_karbon_clusters_info:
+      deprecation:
+        removal_version: "2.3.0"
+        warning_text: >-
+          ntnx_karbon_clusters_info has been deprecated since version 2.3.0.
+          The Karbon service is no longer supported.
+    ntnx_karbon_clusters_node_pools:
+      deprecation:
+        removal_version: "2.3.0"
+        warning_text: >-
+          ntnx_karbon_clusters_node_pools has been deprecated since version 2.3.0.
+          The Karbon service is no longer supported.
+    ntnx_karbon_registries:
+      deprecation:
+        removal_version: "2.3.0"
+        warning_text: >-
+          ntnx_karbon_registries has been deprecated since version 2.3.0.
+          The Karbon service is no longer supported.
+    ntnx_karbon_registries_info:
+      deprecation:
+        removal_version: "2.3.0"
+        warning_text: >-
+          ntnx_karbon_registries_info has been deprecated since version 2.3.0.
+          The Karbon service is no longer supported.
 action_groups:
   ntnx:
     - ntnx_acps

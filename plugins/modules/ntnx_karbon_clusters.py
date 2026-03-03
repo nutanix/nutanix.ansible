@@ -12,6 +12,10 @@ DOCUMENTATION = r"""
 module: ntnx_karbon_clusters
 short_description: Create, Delete a k8s cluster with the provided configuration.
 version_added: 1.6.0
+deprecated:
+  removed_in: "2.3.0"
+  why: The Karbon service is no longer supported.
+  alternative: Use Nutanix Kubernetes Platform (NKP).
 description: "Create, Delete clusters"
 options:
     name:
