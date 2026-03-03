@@ -181,7 +181,7 @@ error:
 
 import traceback  # noqa: E402
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
     get_clusters_api_instance,
@@ -297,8 +297,7 @@ def discover_unconfigured_cluster_node(module, cluster_node_api, result):
 
 
 def run_module():
-    module = BaseModule(
-        support_proxy=True,
+    module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )

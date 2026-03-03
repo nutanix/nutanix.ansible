@@ -177,7 +177,6 @@ def get_object_store_certificates(module, object_stores_api, result):
 
 def run_module():
     module = BaseInfoModule(
-        support_proxy=True,
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         mutually_exclusive=[
