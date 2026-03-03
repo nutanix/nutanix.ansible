@@ -742,6 +742,8 @@
       - item.failed == false
       - item.response.status == 'SUCCEEDED'
       - item.ext_id == item.ext_id
+      - result.results | length == todelete | length
+      - result.msg == "All items completed"
     fail_msg: "Unable to delete entity group with ext_id: {{ item.ext_id }}"
     success_msg: "Entity group with ext_id: {{ item.ext_id }} deleted successfully"
   loop: "{{ result.results }}"
@@ -760,7 +762,10 @@
   ansible.builtin.assert:
     that:
       - result.changed == true
+      - item.failed == false
+      - item.ext_id == item.ext_id
       - result.results | length == todelete_categories | length
       - result.msg == "All items completed"
     fail_msg: "Unable to delete categories"
     success_msg: "Categories deleted successfully"
+  loop: "{{ result.results }}"

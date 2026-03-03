@@ -234,8 +234,8 @@ RETURN = r"""
 response:
   description:
     - Response when we create, update or delete an Entity Group.
-    - Response will contain Entity Group details if C(wait) is true, if creating or updating Entity Group.
-    - Response will contain Task details if C(wait) is true, if deleting Entity Group.
+    - Response will contain Entity Group details if C(wait) is true and the operation is create or update Entity Group.
+    - Response will contain Task details if C(wait) is true and the operation is delete Entity Group.
     - Response will contain Task details if C(wait) is false.
   returned: always
   type: dict
