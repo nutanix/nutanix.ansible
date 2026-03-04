@@ -55,6 +55,7 @@ options:
         type: bool
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_ndb_info_base_module
+    - nutanix.ncp.ntnx_logger
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)

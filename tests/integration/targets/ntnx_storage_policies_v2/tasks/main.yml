@@ -1,0 +1,13 @@
+---
+- name: Set module defaults
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: "{{ validate_certs }}"
+      nutanix_debug: "{{ nutanix_debug }}"
+      nutanix_log_file: "{{ nutanix_log_file }}"
+  block:
+    - name: Import storage_policies.yml
+      ansible.builtin.import_tasks: storage_policies.yml

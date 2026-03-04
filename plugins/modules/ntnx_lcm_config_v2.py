@@ -62,16 +62,17 @@ options:
             - Indicates if the LCM URL has HTTPS enabled.
         type: bool
         required: false
-        default: false
     has_module_auto_upgrade_enabled:
         description:
             - Indicates if LCM is enabled to auto-upgrade products.
+            - Can only be set to True when auto_inventory_enabled is set to True.
         type: bool
         required: false
-        default: false
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
+    - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
 """
 
 EXAMPLES = r"""
@@ -122,6 +123,11 @@ changed:
     type: bool
     returned: always
     sample: false
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while updating lcm config"
 error:
     description: This field typically holds information about if the task have errors that occurred during the task execution
     type: str
@@ -135,8 +141,8 @@ skipped:
 """
 
 
+import traceback  # noqa: E402
 import warnings  # noqa: E402
-from copy import deepcopy  # noqa: E402
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
@@ -145,6 +151,7 @@ from ..module_utils.v4.lcm.api_client import (  # noqa: E402
     get_etag,
 )
 from ..module_utils.v4.lcm.helpers import get_lcm_config  # noqa: E402
+from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
@@ -152,6 +159,14 @@ from ..module_utils.v4.utils import (  # noqa: E402
     strip_users_empty_attributes,
 )
 
+SDK_IMP_ERROR = None
+try:
+    import ntnx_lifecycle_py_client as lifecycle_sdk  # noqa: E402
+except ImportError:
+
+    from ..module_utils.v4.sdk_mock import mock_sdk as lifecycle_sdk  # noqa: E402
+
+    SDK_IMP_ERROR = traceback.format_exc()
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
@@ -168,8 +183,8 @@ def get_module_spec():
             type="str",
             choices=["CONNECTED_SITE", "DARKSITE_DIRECT_UPLOAD", "DARKSITE_WEB_SERVER"],
         ),
-        is_https_enabled=dict(type="bool", default=False),
-        has_module_auto_upgrade_enabled=dict(type="bool", default=False),
+        is_https_enabled=dict(type="bool"),
+        has_module_auto_upgrade_enabled=dict(type="bool"),
     )
     return module_args
 
@@ -188,7 +203,8 @@ def update_lcm_config(module, api_instance, result):
     strip_users_empty_attributes(current_spec)
 
     sg = SpecGenerator(module)
-    update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
+    default_spec = lifecycle_sdk.ResourcesConfig()
+    update_spec, err = sg.generate_spec(obj=default_spec)
     if err:
         result["error"] = err
         module.fail_json(
@@ -213,6 +229,12 @@ def update_lcm_config(module, api_instance, result):
             exception=e,
             msg="Api Exception raised while updating lcm config",
         )
+
+    task_ext_id = resp.data.ext_id
+    result["task_ext_id"] = task_ext_id
+    if task_ext_id and module.params.get("wait"):
+        wait_for_completion(module, task_ext_id)
+
     resp = get_lcm_config(module, api_instance, cluster_ext_id)
     result["response"] = strip_internal_attributes(resp.to_dict())
     result["changed"] = True
@@ -220,6 +242,7 @@ def update_lcm_config(module, api_instance, result):
 
 def run_module():
     module = BaseModule(
+        support_proxy=True,
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )
@@ -228,6 +251,7 @@ def run_module():
     result = {
         "changed": False,
         "response": None,
+        "task_ext_id": None,
     }
     api_instance = get_config_api_instance(module)
     update_lcm_config(module, api_instance, result)

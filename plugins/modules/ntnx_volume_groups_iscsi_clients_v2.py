@@ -129,6 +129,8 @@ options:
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
+    - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
 """
 
 EXAMPLES = r"""
@@ -227,6 +229,11 @@ task_ext_id:
     type: str
     returned: always
     sample: "0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b3b"
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Failed generating attach ISCSI client to volume group spec"
 error:
     description: The error message if any.
     type: str
@@ -403,6 +410,7 @@ def detach_iscsi_client(module, result):
 
 def run_module():
     module = BaseModule(
+        support_proxy=True,
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )

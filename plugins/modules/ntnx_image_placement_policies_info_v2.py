@@ -26,6 +26,8 @@ options:
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_info_v2
+  - nutanix.ncp.ntnx_logger
+  - nutanix.ncp.ntnx_proxy_v2
 """
 
 EXAMPLES = r"""
@@ -83,6 +85,11 @@ ext_id:
     type: str
     sample: "98b9dc89-be08-3c56-b554-692b8b676fd2"
     returned: always
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while fetching image placement policy info"
 error:
   description: The error message if an error occurs.
   type: str
@@ -164,6 +171,7 @@ def get_policies(module, result):
 
 def run_module():
     module = BaseInfoModule(
+        support_proxy=True,
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         mutually_exclusive=[

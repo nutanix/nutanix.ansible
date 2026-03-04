@@ -12,7 +12,7 @@ jobs:
     strategy:
       max-parallel: 1
       matrix:
-        python-version: ["3.10"]
+        python-version: ["3.12"]
     if: github.event_name == 'repository_dispatch'
 
     steps:
@@ -46,28 +46,94 @@ jobs:
         run: |
           cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
 
+          # Parse arguments: /ok-to-test <regex> [api]
+          args="${{ github.event.client_payload.slash_command.args.all }}"
+          flag=""
+          use_api_key=false
+
+          # Parse arguments to extract regex and api flag
+          if [ "$args" = "allow-disabled" ]; then
+              flag="--allow-disabled"
+          elif [ -n "$args" ]; then
+              # Split args into array
+              read -ra arg_array <<< "$args"
+
+              # Check if last argument is "api"
+              if [ "${arg_array[-1]}" = "api" ]; then
+                  use_api_key=true
+                  # Remove "api" from args to get regex pattern
+                  unset 'arg_array[-1]'
+                  regex_pattern="${arg_array[*]}"
+
+                  # Special case: if regex is empty and only "api" was passed, treat as allow-disabled
+                  if [ -z "$regex_pattern" ] && [ "${arg_array[0]}" = "allow-disabled" ]; then
+                      flag="--allow-disabled"
+                  fi
+              else
+                  regex_pattern="$args"
+              fi
+          fi
+
+          # Clean up any existing authentication environment variables
+          unset NUTANIX_USERNAME
+          unset NUTANIX_PASSWORD
+          unset NUTANIX_API_KEY
+
+          # Export common environment variables
           export NUTANIX_HOST=${{ secrets.PC_IP }}
-          export NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}
-          export NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}
           export NUTANIX_DR_SITE=${{ secrets.NUTANIX_DR_SITE }}
           export VALIDATE_CERTS=${{ secrets.VALIDATE_CERTS }}
           export NDB_HOST=${{ secrets.NDB_HOST }}
           export NDB_PASSWORD=${{ secrets.NDB_PASSWORD }}
           export NDB_USERNAME=${{ secrets.NDB_USERNAME }}
-          args="${{ github.event.client_payload.slash_command.args.all }}"
-          flag=""
-          if [ "$args" = "allow-disabled" ]; then
-              flag="--allow-disabled"
-          elif [ -n "$args" ]; then
-              regex_pattern="$args"
+
+          echo '${{ secrets.PC_CONFIG }}' > tests/integration/targets/prepare_env/vars/main.yml
+
+          # Set authentication method
+          if [ "$use_api_key" = true ]; then
+              echo "🔑 Using API Key authentication"
+              export NUTANIX_API_KEY=${{ secrets.NUTANIX_API_KEY }}
+              echo "AUTH_METHOD=api_key" >> $GITHUB_ENV
+          else
+              echo "🔐 Using Username/Password authentication"
+              export NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}
+              export NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}
+              echo "AUTH_METHOD=username_password" >> $GITHUB_ENV
           fi
+
+          # Write config files
           echo '${{ secrets.FOUNDATION_CONFIG }}' > tests/integration/targets/prepare_foundation_env/vars/main.yml
           echo '${{ secrets.FC_CONFIG }}' > tests/integration/targets/prepare_fc_env/vars/main.yml
-          echo '${{ secrets.PC_CONFIG }}' > tests/integration/targets/prepare_env/vars/main.yml
           echo '${{ secrets.NDB_CONFIG }}' > tests/integration/targets/prepare_ndb_env/vars/main.yml
+
+          if [ "$use_api_key" = true ]; then
+              echo "" >> tests/integration/targets/prepare_env/vars/main.yml
+              echo "# API Key Authentication (added by workflow)" >> tests/integration/targets/prepare_env/vars/main.yml
+              echo "nutanix_api_key: \"${{ secrets.NUTANIX_API_KEY }}\"" >> tests/integration/targets/prepare_env/vars/main.yml
+          else
+              echo "" >> tests/integration/targets/prepare_env/vars/main.yml
+              echo "# Credentials (added by workflow)" >> tests/integration/targets/prepare_env/vars/main.yml
+              echo "username: \"${{ secrets.PC_USERNAME }}\"" >> tests/integration/targets/prepare_env/vars/main.yml
+              echo "password: \"${{ secrets.PC_PASSWORD }}\"" >> tests/integration/targets/prepare_env/vars/main.yml
+          fi
+
+          # Append S3 bucket config from secrets
+          echo "" >> tests/integration/targets/prepare_env/vars/main.yml
+          echo "s3_bucket:" >> tests/integration/targets/prepare_env/vars/main.yml
+          echo "  bucket: \"${{ secrets.AWS_BUCKET }}\"" >> tests/integration/targets/prepare_env/vars/main.yml
+          echo "  region: \"${{ secrets.AWS_REGION }}\"" >> tests/integration/targets/prepare_env/vars/main.yml
+          echo "  access_key: \"${{ secrets.AWS_ACCESS_KEY }}\"" >> tests/integration/targets/prepare_env/vars/main.yml
+          echo "  secret_key: \"${{ secrets.AWS_SECRET_KEY }}\"" >> tests/integration/targets/prepare_env/vars/main.yml
+
+          # Set GitHub environment variables for later steps
           echo "NUTANIX_HOST=${{ secrets.PC_IP }}" >> $GITHUB_ENV
-          echo "NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}" >> $GITHUB_ENV
-          echo "NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}" >> $GITHUB_ENV
+          if [ "$use_api_key" = true ]; then
+              echo "NUTANIX_API_KEY=${{ secrets.NUTANIX_API_KEY }}" >> $GITHUB_ENV
+          else
+              echo "NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}" >> $GITHUB_ENV
+              echo "NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}" >> $GITHUB_ENV
+          fi
+
 
           echo "===> Preparing environments..."
           ansible-playbook tests/integration/targets/prepare_env/playbooks/prepare_env.yml
@@ -75,56 +141,94 @@ jobs:
           ansible-playbook tests/integration/targets/prepare_fc_env/playbooks/prepare_fc_env.yml
           ansible-playbook tests/integration/targets/prepare_foundation_env/playbooks/prepare_foundation_env.yml
 
-          if [ -n "$regex_pattern" ] && [[ "$regex_pattern" =~ inventory_tests ]]; then
-              echo "regex_pattern contains 'inventory_tests'. Running all inventory tests..."
-              echo "===> Running inventory test (default host)..."
-              if ansible-playbook -i tests/integration/targets/inventory_test/inventory_test_default_host/nutanix.yml \
-              tests/integration/targets/inventory_test/inventory_test_default_host/inventory.yml \
-              2>&1 | tee -a test_output.log; then
-                  echo "Inventory test default host completed successfully."
-              else
-                  echo "Inventory test default host failed. See logs above." | tee -a test_output.log
-              fi
-              echo "===> Running inventory test (custom host)..."
-              if ansible-playbook -i tests/integration/targets/inventory_test/inventory_test_custom_host/nutanix.yml \
-              tests/integration/targets/inventory_test/inventory_test_custom_host/inventory.yml \
-              2>&1 | tee -a test_output.log; then
-                  echo "Inventory test custom host completed successfully."
-              else
-                  echo "Inventory test custom host failed. See logs above." | tee -a test_output.log
-              fi
-              echo "===> Running inventory test (negative tests)..."
-              if ansible-playbook -i tests/integration/targets/inventory_test/inventory_test_negative_test_1/nutanix.yml \
-              tests/integration/targets/inventory_test/inventory_test_negative_test_1/inventory.yml \
-              2>&1 | tee -a test_output.log; then
-                  echo "Inventory test negative test 1 completed successfully."
-              else
-                  echo "Inventory test negative test 1 failed. See logs above." | tee -a test_output.log
-              fi
-              if ansible-playbook -i tests/integration/targets/inventory_test/inventory_test_negative_test_2/nutanix.yml \
-              tests/integration/targets/inventory_test/inventory_test_negative_test_2/inventory.yml \
-              2>&1 | tee -a test_output.log; then
-                  echo "Inventory test negative test 2 completed successfully."
-              else
-                  echo "Inventory test negative test 2 failed. See logs above." | tee -a test_output.log
-              fi
-          fi
+          # Function to run inventory tests from a given directory
+          # Handles both: directories with subdirectories (inventory_test, inventory_test_v2)
+          # and directories with files directly in them (inventory_test_hosts_v2)
+          run_inventory_tests() {
+              local test_dir="$1"
+              local test_type="$2"
+              if [ -d "$test_dir" ]; then
+                  echo "===> Running $test_type inventory tests from: $test_dir"
 
-          echo "===> Running integration tests..."
+                  # Check if nutanix.yml and inventory.yml exist directly in test_dir
+                  if [ -f "${test_dir}/nutanix.yml" ] && [ -f "${test_dir}/inventory.yml" ]; then
+                      # Single test case - files are directly in the directory
+                      test_name=$(basename "$test_dir")
+                      echo "===> Running inventory test: $test_name..." | tee -a test_output.log
+                      if ansible-playbook -i "${test_dir}/nutanix.yml" \
+                      "${test_dir}/inventory.yml" \
+                      2>&1 | tee -a test_output.log; then
+                          echo "Inventory test '$test_name' completed successfully."
+                      else
+                          echo "Inventory test '$test_name' failed. See logs above." | tee -a test_output.log
+                      fi
+                  else
+                      # Multiple test cases - files are in subdirectories
+                      for test_folder in "$test_dir"/*/; do
+                          test_name=$(basename "$test_folder")
+                          if [ -f "${test_folder}nutanix.yml" ] && [ -f "${test_folder}inventory.yml" ]; then
+                              echo "===> Running inventory test: $test_name..." | tee -a test_output.log
+                              if ansible-playbook -i "${test_folder}nutanix.yml" \
+                              "${test_folder}inventory.yml" \
+                              2>&1 | tee -a test_output.log; then
+                                  echo "Inventory test '$test_name' completed successfully."
+                              else
+                                  echo "Inventory test '$test_name' failed. See logs above." | tee -a test_output.log
+                              fi
+                          else
+                              echo "⚠️ Skipping '$test_name': missing nutanix.yml or inventory.yml"
+                          fi
+                      done
+                  fi
+              else
+                  echo "⚠️ Directory not found: $test_dir"
+              fi
+          }
+
+          echo "===> Running tests..."
           set +e
+          TEST_EXIT_CODE=0
+
           if [ -n "$regex_pattern" ]; then
-              echo "Filtering integration tests by regex: $regex_pattern"
-              mapfile -t matched_dirs < <(find tests/integration/targets -maxdepth 1 -mindepth 1 -type d -printf "%f\n" | grep -E "$regex_pattern" || true)
-              if [ ${#matched_dirs[@]} -eq 0 ]; then
-                  echo "❌ No integration test targets matched regex: '$regex_pattern'."
+              echo "Filtering tests by regex: $regex_pattern"
+
+              # Find all matching directories
+              mapfile -t all_matched_dirs < <(find tests/integration/targets -maxdepth 1 -mindepth 1 -type d -printf "%f\n" | grep -E "$regex_pattern" || true)
+
+              if [ ${#all_matched_dirs[@]} -eq 0 ]; then
+                  echo "❌ No test targets matched regex: '$regex_pattern'."
                   echo "No test execution performed." | tee test_output.log
                   echo "NO_REGEX_MATCH=true" >> $GITHUB_ENV
                   echo "RESULTS=No tests matched regex pattern '$regex_pattern'. Skipping test run." >> $GITHUB_ENV
-                  TEST_EXIT_CODE=0
               else
-                  ansible-test integration --continue-on-error \
-                    --python ${{ matrix.python-version }} --coverage "${matched_dirs[@]}" --allow-disabled 2>&1 | tee test_output.log
-                  TEST_EXIT_CODE=${PIPESTATUS[0]}
+                  echo "Matched directories: ${all_matched_dirs[*]}"
+
+                  # Separate inventory tests from regular integration tests
+                  integration_dirs=()
+                  for dir in "${all_matched_dirs[@]}"; do
+                      if [ "$dir" = "inventory_test" ]; then
+                          echo "===> Found inventory_test - will run with ansible-playbook"
+                          run_inventory_tests "tests/integration/targets/inventory_test" "vm_v1"
+                      elif [ "$dir" = "inventory_test_v2" ]; then
+                          echo "===> Found inventory_test_v2 - will run with ansible-playbook"
+                          run_inventory_tests "tests/integration/targets/inventory_test_v2" "vm_v2"
+                      elif [ "$dir" = "inventory_test_hosts_v2" ]; then
+                          echo "===> Found inventory_test_hosts_v2 - will run with ansible-playbook"
+                          run_inventory_tests "tests/integration/targets/inventory_test_hosts_v2" "hosts_v2"
+                      else
+                          integration_dirs+=("$dir")
+                      fi
+                  done
+
+                  # Run ansible-test integration for non-inventory tests
+                  if [ ${#integration_dirs[@]} -gt 0 ]; then
+                      echo "===> Running ansible-test integration for: ${integration_dirs[*]}"
+                      ansible-test integration --continue-on-error \
+                        --python ${{ matrix.python-version }} --coverage "${integration_dirs[@]}" --allow-disabled 2>&1 | tee -a test_output.log
+                      TEST_EXIT_CODE=${PIPESTATUS[0]}
+                  else
+                      echo "===> No ansible-test integration targets to run"
+                  fi
               fi
           else
               ansible-test integration --continue-on-error \
@@ -133,8 +237,14 @@ jobs:
           fi
           set -e
 
-          echo "===> Generating coverage report..."
-          ansible-test coverage report > coverage.txt
+          # Generate coverage report if integration tests were run
+          if [ -n "$regex_pattern" ] && [ ${#integration_dirs[@]} -eq 0 ]; then
+              echo "===> Skipping coverage report (no ansible-test integration tests)..."
+              echo "SKIP_COVERAGE=true" >> $GITHUB_ENV
+          else
+              echo "===> Generating coverage report..."
+              ansible-test coverage report > coverage.txt || true
+          fi
 
           if [ "$TEST_EXIT_CODE" -ne 0 ]; then
               echo "❌ One or more integration tests failed."
@@ -166,12 +276,17 @@ jobs:
           if [ -f "$LOG_FILE" ]; then
             # Parse test_output.log and populate test_results[current_test]="PASSED"|"FAILED"
             while IFS= read -r line; do
+                # Match integration tests: "Running <name> integration test role"
                 if [[ $line =~ ^Running\ ([^[:space:]]+)\ integration\ test\ role ]]; then
+                    current_test="${BASH_REMATCH[1]}"
+                fi
+                # Match inventory tests: "===> Running inventory test: <name>..."
+                if [[ $line =~ ^===\>\ Running\ inventory\ test:\ (.+)\.\.\. ]]; then
                     current_test="${BASH_REMATCH[1]}"
                 fi
                 if [[ $line =~ ^PLAY\ RECAP ]]; then
                     read -r recap_line
-                    if [[ $recap_line =~ failed=([0-9]+) ]]; then
+                    if [[ -n "$current_test" ]] && [[ $recap_line =~ failed=([0-9]+) ]]; then
                         failed_count="${BASH_REMATCH[1]}"
                         if [[ "$failed_count" -eq 0 ]]; then
                             test_results["$current_test"]="PASSED"
@@ -259,7 +374,7 @@ jobs:
           fi
 
       - name: Code Coverage Check
-        if: ${{ always() }}
+        if: ${{ always() && env.SKIP_COVERAGE != 'true' }}
         run: |
           cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
           ansible-test coverage html
@@ -286,6 +401,7 @@ jobs:
           comment-id: ${{ github.event.client_payload.github.payload.comment.id }}
           body: |
             > Integration test run status is : ${{ job.status }}
+            > Authentication method: ${{ env.AUTH_METHOD == 'api_key' && '🔑 API Key' || '🔐 Username/Password' }}
             > Coverage is : ${{ env.TOTAL_COVERAGE }} %
             > Job link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
@@ -303,6 +419,7 @@ jobs:
         run: |
           echo "### Integration Test Summary" >> $GITHUB_STEP_SUMMARY
           echo "- Status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Authentication: ${{ env.AUTH_METHOD == 'api_key' && '🔑 API Key' || '🔐 Username/Password' }}" >> $GITHUB_STEP_SUMMARY
           echo "- Coverage: ${{ env.TOTAL_COVERAGE }}%" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Detailed Test Results" >> $GITHUB_STEP_SUMMARY

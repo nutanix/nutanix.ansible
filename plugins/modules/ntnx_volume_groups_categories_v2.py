@@ -95,6 +95,8 @@ options:
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
+    - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
 author:
  - George Ghawali (@george-ghawali)
  - Abhinav Bansal (@abhinavbansal29)
@@ -179,6 +181,12 @@ changed:
   returned: always
   type: bool
   sample: true
+
+msg:
+  description: This indicates the message if any message occurred
+  returned: When there is an error
+  type: str
+  sample: "Api Exception raised while associating categories"
 
 error:
   description: This field typically holds information about if the task have errors that occurred during the task execution
@@ -342,6 +350,7 @@ def disassociate_categories(module, vgs, result):
 
 def run_module():
     module = BaseModule(
+        support_proxy=True,
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )

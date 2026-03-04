@@ -66,7 +66,6 @@
   nutanix.ncp.ntnx_lcm_config_v2:
     is_auto_inventory_enabled: "{{ not lcm_config_info.response.is_auto_inventory_enabled }}"
     is_https_enabled: "{{ not lcm_config_info.response.is_https_enabled }}"
-    has_module_auto_upgrade_enabled: "{{ not lcm_config_info.response.has_module_auto_upgrade_enabled }}"
   register: lcm_config_update
   ignore_errors: true
 
@@ -76,9 +75,9 @@
       - lcm_config_update.response is defined
       - lcm_config_update.changed == true
       - lcm_config_update.failed == false
+      - lcm_config_update.task_ext_id is defined
       - lcm_config_update.response.is_auto_inventory_enabled == {{ not lcm_config_info.response.is_auto_inventory_enabled }}
       - lcm_config_update.response.is_https_enabled == {{ not lcm_config_info.response.is_https_enabled }}
-      - lcm_config_update.response.has_module_auto_upgrade_enabled == {{ not lcm_config_info.response.has_module_auto_upgrade_enabled }}
     fail_msg: "Failed to update LCM config"
     success_msg: "LCM config is updated successfully"
 
@@ -96,7 +95,6 @@
       - lcm_config_info_after_update.failed == false
       - lcm_config_info_after_update.response.is_auto_inventory_enabled == {{ not lcm_config_info.response.is_auto_inventory_enabled }}
       - lcm_config_info_after_update.response.is_https_enabled == {{ not lcm_config_info.response.is_https_enabled }}
-      - lcm_config_info_after_update.response.has_module_auto_upgrade_enabled == {{ not lcm_config_info.response.has_module_auto_upgrade_enabled }}
     fail_msg: "Failed to get LCM config"
     success_msg: "LCM config is fetched successfully"
 
@@ -105,7 +103,6 @@
     cluster_ext_id: "{{ prism_central_external_id }}"
     is_auto_inventory_enabled: "{{ lcm_config_info.response.is_auto_inventory_enabled }}"
     is_https_enabled: "{{ lcm_config_info.response.is_https_enabled }}"
-    has_module_auto_upgrade_enabled: "{{ lcm_config_info.response.has_module_auto_upgrade_enabled }}"
   register: lcm_config_update
   ignore_errors: true
 
@@ -115,9 +112,9 @@
       - lcm_config_update.response is defined
       - lcm_config_update.changed == true
       - lcm_config_update.failed == false
+      - lcm_config_update.task_ext_id is defined
       - lcm_config_update.response.is_auto_inventory_enabled == {{ lcm_config_info.response.is_auto_inventory_enabled }}
       - lcm_config_update.response.is_https_enabled == {{ lcm_config_info.response.is_https_enabled }}
-      - lcm_config_update.response.has_module_auto_upgrade_enabled == {{ lcm_config_info.response.has_module_auto_upgrade_enabled }}
     fail_msg: "Failed to update LCM config"
     success_msg: "LCM config is updated successfully"
 

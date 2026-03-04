@@ -112,6 +112,7 @@ DOCUMENTATION = r"""
             type: list
     extends_documentation_fragment:
         - constructed
+        - nutanix.ncp.ntnx_logger
 """
 Examples = r"""
 Example 1: sample inventory file without using custom_ansible_host
@@ -150,6 +151,7 @@ custom_ansible_host:
 """
 
 import json  # noqa: E402
+import os  # noqa: E402
 import re  # noqa: E402
 import tempfile  # noqa: E402
 
@@ -170,6 +172,8 @@ class Mock_Module:
         validate_certs=False,
         fetch_all_vms=False,
         custom_ansible_host=None,
+        nutanix_debug=False,
+        nutanix_log_file=None,
     ):
         self.tmpdir = tempfile.gettempdir()
         self.params = {
@@ -181,6 +185,8 @@ class Mock_Module:
             "fetch_all_vms": fetch_all_vms,
             "custom_ansible_host": custom_ansible_host,
             "load_params_without_defaults": False,
+            "nutanix_debug": nutanix_debug,
+            "nutanix_log_file": nutanix_log_file,
         }
 
     def jsonify(self, data):
@@ -284,22 +290,40 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         host_vars.update(vm_resources)
 
         # Incorporate ntnx_categories if available.
-        if "metadata" in entity and "categories" in entity["metadata"]:
+        host_vars["ntnx_categories"] = {}
+        host_vars["ntnx_categories_mapping"] = {}
+
+        # Only supports showing one value for a key
+        if entity.get("metadata", {}).get("categories"):
             host_vars["ntnx_categories"] = entity["metadata"]["categories"]
+
+        # for category keys having multiple values
+        if entity.get("metadata", {}).get("categories_mapping"):
+            host_vars["ntnx_categories_mapping"] = entity["metadata"][
+                "categories_mapping"
+            ]
 
         return host_vars
 
-    def _should_add_host(self, host_vars, host_filters, strict):
+    def _should_add_host(self, host_vars, entity, host_filters, strict):
         """
-        Evaluate filter expressions against host_vars.
+        Evaluate filter expressions against host_vars and raw entity data.
         Returns True if the host should be added, False otherwise.
         """
         if not host_filters:
             return True
 
+        # Merge entity data with host_vars so filters can access any field
+        # host_vars takes precedence over entity fields
+        filter_vars = {}
+        filter_vars.update(entity.get("status", {}))
+        filter_vars.update(entity.get("metadata", {}))
+        filter_vars.update(entity.get("spec", {}))
+        filter_vars.update(host_vars)
+
         for host_filter in host_filters:
             try:
-                if not self._compose(host_filter, host_vars):
+                if not self._compose(host_filter, filter_vars):
                     return False
             except Exception as e:
                 if strict:
@@ -331,6 +355,13 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         self.validate_certs = self.get_option("validate_certs")
         self.fetch_all_vms = self.get_option("fetch_all_vms")
         self.custom_ansible_host = self.get_option("custom_ansible_host")
+        self.nutanix_debug = (
+            self.get_option("nutanix_debug")
+            or os.environ.get("NUTANIX_DEBUG", "false").lower() == "true"
+        )
+        self.nutanix_log_file = self.get_option("nutanix_log_file") or os.environ.get(
+            "NUTANIX_LOG_FILE"
+        )
         # Determines if composed variables or groups using nonexistent variables is an error
         strict = self.get_option("strict")
         host_filters = self.get_option("filters")
@@ -343,6 +374,8 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             self.validate_certs,
             self.fetch_all_vms,
             self.custom_ansible_host,
+            self.nutanix_debug,
+            self.nutanix_log_file,
         )
         vm = vms.VM(module)
         self.data["offset"] = self.data.get("offset", 0)
@@ -350,7 +383,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         for entity in resp.get("entities", []):
             host_vars = self._build_host_vars(entity, strict=strict)
 
-            if not self._should_add_host(host_vars, host_filters, strict):
+            if not self._should_add_host(host_vars, entity, host_filters, strict):
                 continue
 
             # Add host to inventory.

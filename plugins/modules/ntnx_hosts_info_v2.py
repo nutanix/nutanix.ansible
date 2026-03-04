@@ -32,6 +32,8 @@ options:
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_info_v2
+  - nutanix.ncp.ntnx_logger
+  - nutanix.ncp.ntnx_proxy_v2
 author:
   - Pradeepsingh Bhati (@bhati-pradeep)
 """
@@ -142,6 +144,11 @@ ext_id:
     type: str
     returned: always
     sample: af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while fetching hosts info"
 error:
     description: Error message if any.
     type: str
@@ -224,6 +231,7 @@ def get_hosts(module, result):
 
 def run_module():
     module = BaseInfoModule(
+        support_proxy=True,
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         skip_info_args=False,

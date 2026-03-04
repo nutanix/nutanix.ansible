@@ -64,6 +64,8 @@ options:
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
+    - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
 author:
     - Abhinav Bansal (@abhinavbansal29)
 """
@@ -113,6 +115,11 @@ changed:
     type: bool
     returned: always
     sample: true
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error or in check mode (in delete operation)
+    type: str
+    sample: "Api Exception raised while creating user api key"
 error:
     description:
         - Error message if any occurred during the operation.
@@ -255,6 +262,7 @@ def delete_user_api_key(module, users_api, result):
 
 def run_module():
     module = BaseModule(
+        support_proxy=True,
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[

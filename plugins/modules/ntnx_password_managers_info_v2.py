@@ -20,6 +20,8 @@ description:
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_info_v2
+    - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
 author:
     - Abhinav Bansal (@abhinavbansal29)
 """
@@ -125,6 +127,11 @@ response:
                 "username": "root"
             }
         ]
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while fetching password status of system users info"
 error:
     description: The error message if an error occurs.
     type: str
@@ -172,6 +179,9 @@ def get_password_status_system_users(module, result):
             msg="Api Exception raised while fetching password status of system users info",
         )
 
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
+
     if getattr(resp, "data", None):
         result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
     else:
@@ -180,6 +190,7 @@ def get_password_status_system_users(module, result):
 
 def run_module():
     module = BaseInfoModule(
+        support_proxy=True,
         argument_spec=dict(),
         supports_check_mode=False,
     )

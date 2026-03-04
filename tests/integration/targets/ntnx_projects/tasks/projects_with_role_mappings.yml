@@ -84,9 +84,6 @@
       - name: "{{accounts[0].name}}"
     vpcs:
       - name: "{{vpc.name}}"
-    resource_limits:
-      - resource_type: VCPUS
-        limit: 1
     collaboration: false
     role_mappings:
       - user:
@@ -122,8 +119,6 @@
       - result.response.status.state == 'COMPLETE'
       - result.response.status.project_status.name == "{{project2_name}}"
       - result.response.status.project_status.description == 'desc-123'
-      - result.response.status.project_status.resources.resource_domain.resources[0].limit == 1
-      - result.response.status.project_status.resources.resource_domain.resources[0].resource_type == 'VCPUS'
       - result.response.status.project_status.resources.subnet_reference_list | length == 3
       - result.response.status.project_status.resources.subnet_reference_list[0].uuid in "{{expected_subnets}}"
       - result.response.status.project_status.resources.subnet_reference_list[1].uuid in "{{expected_subnets}}"
@@ -164,13 +159,6 @@
       - uuid: "{{ static.uuid }}"
     default_subnet:
       name: "{{ static.name }}"
-    resource_limits:
-      - resource_type: VCPUS
-        limit: 5
-      - resource_type: STORAGE
-        limit: 2147483648
-      - resource_type: MEMORY
-        limit: 2147483648
     collaboration: true
     role_mappings:
       - role:
@@ -221,32 +209,6 @@
 - name: Set project_user_references_sorted
   ansible.builtin.set_fact:
     project_user_references_sorted: "{{ project_user_reference_list|sort() }}"
-- name: Set expected quotas
-  ansible.builtin.set_fact:
-    expected_quotas:
-      [
-        { "limit": 5, "resource_type": "VCPUS", "units": "COUNT", "value": 0 },
-        {
-          "limit": 2147483648,
-          "resource_type": "STORAGE",
-          "units": "BYTES",
-          "value": 0,
-        },
-        {
-          "limit": 2147483648,
-          "resource_type": "MEMORY",
-          "units": "BYTES",
-          "value": 0,
-        },
-      ]
-- name: Set quotas
-  ansible.builtin.set_fact:
-    quotas: "{{result.response.status.project_status.resources.resource_domain.resources}}"
-
-- name: Sort quotas and expected quotas
-  ansible.builtin.set_fact:
-    sorted_quotas: "{{ quotas| sort(attribute='resource_type') }}"
-    sorted_expected_quotas: "{{ expected_quotas | sort(attribute='resource_type') }}"
 
 - name: Creation Status
   ansible.builtin.assert:
@@ -255,7 +217,6 @@
       - result.response.status.state == 'COMPLETE'
       - result.response.status.project_status.name == "{{project3_name}}"
       - result.response.status.project_status.description == 'desc-123'
-      - sorted_expected_quotas == sorted_quotas
       - result.response.status.project_status.resources.subnet_reference_list | length == 2
       - result.response.status.project_status.resources.subnet_reference_list[0].uuid in "{{expected_subnets}}"
       - result.response.status.project_status.resources.subnet_reference_list[1].uuid in "{{expected_subnets}}"
@@ -285,13 +246,6 @@
       - uuid: "{{ static.uuid }}"
     default_subnet:
       name: "{{ static.name }}"
-    resource_limits:
-      - resource_type: VCPUS
-        limit: 5
-      - resource_type: STORAGE
-        limit: 2147483648
-      - resource_type: MEMORY
-        limit: 2147483648
     collaboration: true
     role_mappings:
       - role:

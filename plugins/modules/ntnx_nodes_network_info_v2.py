@@ -179,6 +179,8 @@ options:
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
+      - nutanix.ncp.ntnx_logger
+      - nutanix.ncp.ntnx_proxy_v2
 author:
  - Alaa Bishtawi (@alaabishtawi)
  - George Ghawali (@george-ghawali)
@@ -266,6 +268,11 @@ response:
         "task_response_type": "NETWORKING_DETAILS",
         "tenant_id": null
       }
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "API Exception while getting network information for cluster nodes"
 error:
     description: The error message if an error occurs.
     type: str
@@ -415,6 +422,7 @@ def get_nodes_network_information(module, cluster_node_api, result):
 
 def run_module():
     module = BaseModule(
+        support_proxy=True,
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )

@@ -57,6 +57,8 @@ options:
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
+      - nutanix.ncp.ntnx_logger
+      - nutanix.ncp.ntnx_proxy_v2
 author:
   - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
   - Alaa Bishtawi (@alaa-bish)
@@ -121,6 +123,12 @@ changed:
   returned: always
   type: bool
   sample: true
+
+msg:
+  description: This indicates the message if any message occurred
+  returned: When there is an error or in delete operation
+  type: str
+  sample: "Api Exception raised while creating user group"
 
 error:
   description: This field typically holds information about if the task have errors that occurred during the task execution
@@ -248,6 +256,7 @@ def delete_user_group(module, user_groups, result):
 
 def run_module():
     module = BaseModule(
+        support_proxy=True,
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[

@@ -60,6 +60,8 @@ options:
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
+    - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
 """
 
 EXAMPLES = r"""
@@ -111,6 +113,11 @@ task_ext_id:
     description: The external ID of the task associated with the NGT upgrade.
     type: str
     returned: when the task_ext_id is available
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error or module is idempotent
+    type: str
+    sample: "ext_id is required to upgrade NGT"
 error:
     description: The error message, if any.
     type: str
@@ -215,6 +222,7 @@ def upgrade_ngt(module, result):
 
 def run_module():
     module = BaseModule(
+        support_proxy=True,
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )

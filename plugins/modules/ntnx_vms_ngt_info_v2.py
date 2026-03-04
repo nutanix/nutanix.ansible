@@ -25,6 +25,8 @@ options:
         required: true
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
+    - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
 """
 
 EXAMPLES = r"""
@@ -61,6 +63,11 @@ changed:
     description: Indicates whether the NGT information has changed.
     type: bool
     returned: always
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while fetching NGT info for given vm"
 error:
     description: The error message, if any.
     type: str
@@ -113,6 +120,7 @@ def get_ngt_config(module, result):
 
 def run_module():
     module = BaseInfoModule(
+        support_proxy=True,
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         skip_info_args=True,

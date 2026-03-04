@@ -24,6 +24,8 @@ options:
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
+    - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
 author:
  - Abhinav Bansal (@abhinavbansal29)
 """
@@ -49,6 +51,11 @@ ext_id:
     type: str
     returned: always
     sample: "12345678-1234-1234-1234-123456789012"
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error or in check mode operation
+    type: str
+    sample: "Api Exception raised while downloading ova"
 failed:
     description: Indicates if the module execution failed.
     type: bool
@@ -107,6 +114,7 @@ def download_ova(module, result):
 
 def run_module():
     module = BaseModule(
+        support_proxy=True,
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )

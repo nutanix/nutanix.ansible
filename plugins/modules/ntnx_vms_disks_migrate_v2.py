@@ -95,6 +95,8 @@ options:
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
+    - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
 """
 
 EXAMPLES = r"""
@@ -316,6 +318,11 @@ changed:
     description: Indicates whether the module made any changes.
     type: bool
     sample: true
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error or in delete operation
+    type: str
+    sample: "Api Exception raised while migrating disk of VM"
 error:
     description: The error message, if any, encountered.
     type: str
@@ -474,6 +481,7 @@ def migrate_disk(module, result):
 
 def run_module():
     module = BaseModule(
+        support_proxy=True,
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )

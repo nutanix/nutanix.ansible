@@ -62,6 +62,8 @@ options:
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
+  - nutanix.ncp.ntnx_logger
+  - nutanix.ncp.ntnx_proxy_v2
 author:
   - George Ghawali (@george-ghawali)
 """
@@ -129,6 +131,11 @@ changed:
   description: Indicates whether the state of the GPU has changed.
   type: bool
   returned: always
+msg:
+  description: This indicates the message if any message occurred
+  returned: When there is an error
+  type: str
+  sample: "Failed generating attach GPU Spec"
 error:
   description: The error message, if any.
   type: str
@@ -257,6 +264,7 @@ def detach_gpu(module, vms, result):
 
 def run_module():
     module = BaseModule(
+        support_proxy=True,
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[
