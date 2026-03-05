@@ -12,7 +12,10 @@ DOCUMENTATION = r"""
 module: ntnx_karbon_registries_info
 short_description: registry  info module
 version_added: 1.6.0
-description: 'Get registry info'
+description:
+    - Get registry info
+    - This module is deprecated and will be removed in a future release.
+    - Prism Central 7.3+ no longer supports Karbon, therefore this module will not work with PC 7.3 and later.
 options:
       registry_name:
         description:
@@ -113,6 +116,10 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         skip_info_args=True,
+    )
+    module.deprecate(
+        "This module is deprecated and will be removed in a future release. Prism Central 7.3+ no longer supports Karbon, therefore this module will not work with PC 7.3 and later.",
+        collection_name="nutanix.ncp",
     )
     result = {"changed": False, "error": None, "response": None}
     if module.params.get("registry_name"):

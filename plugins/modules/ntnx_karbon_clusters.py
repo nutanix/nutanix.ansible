@@ -12,7 +12,10 @@ DOCUMENTATION = r"""
 module: ntnx_karbon_clusters
 short_description: Create, Delete a k8s cluster with the provided configuration.
 version_added: 1.6.0
-description: "Create, Delete clusters"
+description:
+    - Create, Delete clusters
+    - This module is deprecated and will be removed in a future release.
+    - Prism Central 7.3+ no longer supports Karbon, therefore this module will not work with PC 7.3 and later.
 options:
     name:
         type: str
@@ -492,6 +495,10 @@ def run_module():
         required_together=[
             ("cluster", "k8s_version", "host_os", "node_subnet", "cni", "storage_class")
         ],
+    )
+    module.deprecate(
+        "This module is deprecated and will be removed in a future release. Prism Central 7.3+ no longer supports Karbon, therefore this module will not work with PC 7.3 and later.",
+        collection_name="nutanix.ncp",
     )
     utils.remove_param_with_none_value(module.params)
     result = {"response": {}, "error": None, "changed": False}
