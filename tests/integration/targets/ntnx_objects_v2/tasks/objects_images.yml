@@ -26,8 +26,8 @@
 
 - name: Generate AWS access key and secret key from username and password
   ansible.builtin.set_fact:
-    aws_access_key: "{{ (username + ':' + password) | b64encode }}"
-    aws_secret_key: "{{ (username + ':' + password) | b64encode }}"
+    aws_access_key: "{{ (username_for_tests + ':' + password_for_tests) | b64encode }}"
+    aws_secret_key: "{{ (username_for_tests + ':' + password_for_tests) | b64encode }}"
 
 - name: Configure AWS CLI access key
   ansible.builtin.shell: |

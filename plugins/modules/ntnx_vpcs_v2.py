@@ -548,6 +548,8 @@ def create_vpc(module, result):
 
 
 def check_vpcs_idempotency(old_spec, update_spec):
+    strip_internal_attributes(old_spec)
+    strip_internal_attributes(update_spec)
     if old_spec != update_spec:
         return False
     return True
