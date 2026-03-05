@@ -190,7 +190,6 @@ def get_password_status_system_users(module, result):
 
 def run_module():
     module = BaseInfoModule(
-        support_proxy=True,
         argument_spec=dict(),
         supports_check_mode=False,
     )
