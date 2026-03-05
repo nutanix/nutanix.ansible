@@ -205,9 +205,74 @@
     fail_msg: Module failed to skip the update
     success_msg: "Pass : return as expected"
 
+################################################ Test MULTI_ENV_ISOLATION with new attributes ################################################
+
+- name: Set second isolation rule name
+  ansible.builtin.set_fact:
+    rule_name_2: "{{ prefix }}{{ random_name }}2"
+
+- name: Create MULTI_ENV_ISOLATION rule with new attributes
+  nutanix.ncp.ntnx_security_rules_v2:
+    name: "{{ rule_name_2 }}"
+    description: Ansible MULTI_ENV_ISOLATION rule with new attributes
+    type: ISOLATION
+    policy_state: SAVE
+    scope: ALL_VLAN
+    is_hitlog_enabled: true
+    rules:
+      - description: Multi environment isolation with new attributes
+        type: MULTI_ENV_ISOLATION
+        spec:
+          multi_env_isolation_rule_spec:
+            spec:
+              all_to_all_isolation_group:
+                isolation_groups:
+                  - group_category_references:
+                      - "{{ category1 }}"
+                    group_category_associated_entity_type: VM
+                  - group_category_references:
+                      - "{{ category2 }}"
+                    group_category_associated_entity_type: VM
+                  - group_category_references:
+                      - "{{ category3 }}"
+                    group_category_associated_entity_type: VM
+  register: result
+
+- name: Set isolation groups category references
+  ansible.builtin.set_fact:
+    isolation_groups_category_references: >-
+      {{
+        result.response.rules[0].spec.spec.isolation_groups |
+        map(attribute='group_category_references') | map('first') | list
+      }}
+
+- name: Verify MULTI_ENV_ISOLATION rule creation
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id is defined
+      - result.response.name == rule_name_2
+      - result.response.type == "ISOLATION"
+      - result.response.rules[0].type == "MULTI_ENV_ISOLATION"
+      - result.response.rules[0].spec.spec.isolation_groups | length == 3
+      - result.response.rules[0].spec.spec.isolation_groups[0].group_category_associated_entity_type ==
+        result.response.rules[0].spec.spec.isolation_groups[1].group_category_associated_entity_type ==
+        result.response.rules[0].spec.spec.isolation_groups[2].group_category_associated_entity_type == "VM"
+      - result.response.rules[0].spec.spec.isolation_groups[0].group_category_references[0] in isolation_groups_category_references
+      - result.response.rules[0].spec.spec.isolation_groups[1].group_category_references[0] in isolation_groups_category_references
+      - result.response.rules[0].spec.spec.isolation_groups[2].group_category_references[0] in isolation_groups_category_references
+    fail_msg: Failed to create MULTI_ENV_ISOLATION rule with new attributes
+    success_msg: Successfully created MULTI_ENV_ISOLATION rule with new attributes
+
+- name: Set multi env policy ext id
+  ansible.builtin.set_fact:
+    policy_ext_id2: "{{ result.ext_id }}"
+
 ######################################### Delete tests #########################################
 
-- name: Delete security rule
+- name: Delete first security rule (TWO_ENV_ISOLATION)
   nutanix.ncp.ntnx_security_rules_v2:
     state: absent
     ext_id: "{{ policy_ext_id1 }}"
@@ -221,6 +286,21 @@
       - result.response.status == "SUCCEEDED"
     fail_msg: Failed to delete security rule
     success_msg: Successfully deleted security rule
+
+- name: Delete second security rule (MULTI_ENV_ISOLATION)
+  nutanix.ncp.ntnx_security_rules_v2:
+    state: absent
+    ext_id: "{{ policy_ext_id2 }}"
+  register: result
+
+- name: Verify deletion status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Failed to delete MULTI_ENV_ISOLATION security rule
+    success_msg: Successfully deleted MULTI_ENV_ISOLATION security rule
 
 ######################################### Delete test setup created entities #########################################
 

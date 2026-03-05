@@ -1,0 +1,903 @@
+---
+- name: Start ntnx_security_rules_v2 SHAREDSERVICE type security rules tests
+  ansible.builtin.debug:
+    msg: Start ntnx_security_rules_v2 SHAREDSERVICE type security rules tests
+
+- name: Generate random names for security rules creation
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set prefix name
+  ansible.builtin.set_fact:
+    prefix: ansible-nsr-ss-
+    todelete: []
+
+- name: Set security rules name
+  ansible.builtin.set_fact:
+    rule_name_1: "{{ prefix }}{{ random_name }}1"
+    rule_name_2: "{{ prefix }}{{ random_name }}2"
+    rule_name_3: "{{ prefix }}{{ random_name }}3"
+    rule_name_4: "{{ prefix }}{{ random_name }}4"
+
+################################################ Test Setup ################################################
+
+- name: Create SharedService categories for tests
+  nutanix.ncp.ntnx_categories_v2:
+    key: SharedService
+    value: AnsibleSSTest{{ random_name }}{{ item }}
+    description: ansible shared service test category
+  register: result
+  ignore_errors: true
+  loop: [0, 1, 2, 3, 4]
+
+- name: Verify SharedService category creation status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.msg == "All items completed"
+      - result.results | length == 5
+      - item.changed == true
+      - item.failed == false
+      - item.response.key == "SharedService"
+    fail_msg: Failed to create SharedService category
+    success_msg: Successfully created SharedService category
+  loop: "{{ result.results }}"
+
+- name: Set SharedService categories
+  ansible.builtin.set_fact:
+    ss_category1: "{{ result.results[0].response.ext_id }}"
+    ss_category2: "{{ result.results[1].response.ext_id }}"
+    ss_category3: "{{ result.results[2].response.ext_id }}"
+    ss_category4: "{{ result.results[3].response.ext_id }}"
+    ss_category5: "{{ result.results[4].response.ext_id }}"
+
+- name: Create regular categories for src/dest references
+  nutanix.ncp.ntnx_categories_v2:
+    key: AnsibleSSTest
+    value: AnsibleSSTest{{ random_name }}{{ item }}
+    description: ansible src/dest category for shared service tests
+  register: result
+  ignore_errors: true
+  loop: [0, 1, 2]
+
+- name: Verify regular category creation status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.msg == "All items completed"
+      - result.results | length == 3
+      - item.response.key == "AnsibleSSTest"
+      - item.changed == true
+      - item.failed == false
+    fail_msg: Failed to create regular category
+    success_msg: Successfully created regular category
+  loop: "{{ result.results }}"
+
+- name: Set regular categories for src/dest references
+  ansible.builtin.set_fact:
+    src_category1: "{{ result.results[0].response.ext_id }}"
+    src_category2: "{{ result.results[1].response.ext_id }}"
+    dest_category1: "{{ result.results[2].response.ext_id }}"
+
+- name: Create service group to be used in security rules
+  nutanix.ncp.ntnx_service_groups_v2:
+    name: ansible-ss-sg-{{ random_name }}
+    description: shared service test service group
+    tcp_services:
+      - start_port: 443
+        end_port: 443
+  register: service_group_result
+  ignore_errors: true
+
+- name: Verify service group creation status
+  ansible.builtin.assert:
+    that:
+      - service_group_result.changed == true
+      - service_group_result.failed == false
+      - service_group_result.ext_id is defined
+      - service_group_result.ext_id == service_group_result.response.ext_id
+      - service_group_result.response is defined
+      - service_group_result.response.name == "ansible-ss-sg-{{ random_name }}"
+      - service_group_result.response.description == "shared service test service group"
+      - service_group_result.response.tcp_services | length == 1
+      - service_group_result.response.tcp_services[0].start_port == 443
+      - service_group_result.response.tcp_services[0].end_port == 443
+    fail_msg: Failed to create service group
+    success_msg: Successfully created service group
+
+- name: Set service group id
+  ansible.builtin.set_fact:
+    resultservice_group_ext_id: "{{ service_group_result.ext_id }}"
+
+- name: Create address group to be used in security rules
+  nutanix.ncp.ntnx_address_groups_v2:
+    name: ansible-ss-ag-{{ random_name }}
+    description: shared service test address group
+    ipv4_addresses:
+      - value: 10.0.0.0
+        prefix_length: 32
+  register: address_group_result
+  ignore_errors: true
+
+- name: Verify address group creation
+  ansible.builtin.assert:
+    that:
+      - address_group_result.changed == true
+      - address_group_result.failed == false
+      - address_group_result.ext_id is defined
+      - address_group_result.ext_id == address_group_result.response.ext_id
+      - address_group_result.response is defined
+      - address_group_result.response.name == "ansible-ss-ag-{{ random_name }}"
+      - address_group_result.response.description == "shared service test address group"
+      - address_group_result.response.ipv4_addresses | length == 1
+      - address_group_result.response.ipv4_addresses[0].value == "10.0.0.0"
+      - address_group_result.response.ipv4_addresses[0].prefix_length == 32
+    fail_msg: Failed to create address group
+    success_msg: Successfully created address group
+
+- name: Set address group ext id
+  ansible.builtin.set_fact:
+    address_group_ext_id: "{{ address_group_result.ext_id }}"
+
+- name: Create SHAREDSERVICE security rule in check mode
+  nutanix.ncp.ntnx_security_rules_v2:
+    name: "sharedservice-rule-check-mode"
+    description: "Sharedservice rule with all applicable fields"
+    type: SHAREDSERVICE
+    policy_state: SAVE
+    scope: ALL_VLAN
+    is_hitlog_enabled: true
+    is_ipv6_traffic_allowed: true
+    rules:
+      - description: Rule with categories and TCP UDP services
+        type: SHARED_SERVICE
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "84a11b55-8fb9-4f1d-b7df-ab2be82f19a4"
+            src_category_references:
+              - "8a1762e3-7d6c-409d-b0b2-06729d86f2fa"
+              - "0b435483-0cbe-4742-9e2e-5b63352cd3eb"
+            dest_category_references:
+              - "0a6806f8-899f-4730-9780-ec02aae704fe"
+            tcp_services:
+              - start_port: 443
+                end_port: 443
+              - start_port: 8080
+                end_port: 8080
+            udp_services:
+              - start_port: 53
+                end_port: 53
+              - start_port: 123
+                end_port: 123
+      - description: Rule with subnets address groups service groups
+        type: SHARED_SERVICE
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "f621561a-e81b-43a0-a7b5-398b14fdad68"
+            src_subnet:
+              value: 192.168.1.0
+              prefix_length: 24
+            dest_subnet:
+              value: 10.0.0.0
+              prefix_length: 8
+            src_address_group_references:
+              - "c9eea69d-e709-4454-a119-8e24ff9e6349"
+            dest_address_group_references:
+              - "4aca0f98-9a6b-408d-a412-a41e0323cda8"
+            service_group_references:
+              - "1758a0db-5b56-4959-894e-45161d0f9383"
+            icmp_services:
+              - is_all_allowed: true
+      - description: Rule with allow specs and all protocols
+        type: SHARED_SERVICE
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "decba5b8-c03d-4cf8-96ab-88eabf1c4f5c"
+            src_allow_spec: ALL
+            dest_allow_spec: ALL
+            is_all_protocol_allowed: true
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Verify SHAREDSERVICE security rule in check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "sharedservice-rule-check-mode"
+      - result.response.description == "Sharedservice rule with all applicable fields"
+      - result.response.type == "SHAREDSERVICE"
+      - result.response.state == "SAVE"
+      - result.response.scope == "ALL_VLAN"
+      - result.response.is_hitlog_enabled == true
+      - result.response.is_ipv6_traffic_allowed == true
+      - result.response.rules | length == 3
+      - result.response.rules[0].type == "SHARED_SERVICE"
+      - result.response.rules[0].description == "Rule with categories and TCP UDP services"
+      - result.response.rules[0].spec.secured_group_category_references[0] == "84a11b55-8fb9-4f1d-b7df-ab2be82f19a4"
+      - result.response.rules[0].spec.src_category_references[0] == "8a1762e3-7d6c-409d-b0b2-06729d86f2fa"
+      - result.response.rules[0].spec.src_category_references[1] == "0b435483-0cbe-4742-9e2e-5b63352cd3eb"
+      - result.response.rules[0].spec.dest_category_references[0] == "0a6806f8-899f-4730-9780-ec02aae704fe"
+      - result.response.rules[0].spec.tcp_services[0].start_port == 443
+      - result.response.rules[0].spec.tcp_services[0].end_port == 443
+      - result.response.rules[0].spec.tcp_services[1].start_port == 8080
+      - result.response.rules[0].spec.tcp_services[1].end_port == 8080
+      - result.response.rules[0].spec.udp_services[0].start_port == 53
+      - result.response.rules[0].spec.udp_services[0].end_port == 53
+      - result.response.rules[0].spec.udp_services[1].start_port == 123
+      - result.response.rules[0].spec.udp_services[1].end_port == 123
+      - result.response.rules[1].type == "SHARED_SERVICE"
+      - result.response.rules[1].description == "Rule with subnets address groups service groups"
+      - result.response.rules[1].spec.secured_group_category_references[0] == "f621561a-e81b-43a0-a7b5-398b14fdad68"
+      - result.response.rules[1].spec.src_subnet.value == "192.168.1.0"
+      - result.response.rules[1].spec.src_subnet.prefix_length == 24
+      - result.response.rules[1].spec.dest_subnet.value == "10.0.0.0"
+      - result.response.rules[1].spec.dest_subnet.prefix_length == 8
+      - result.response.rules[1].spec.src_address_group_references[0] == "c9eea69d-e709-4454-a119-8e24ff9e6349"
+      - result.response.rules[1].spec.dest_address_group_references[0] == "4aca0f98-9a6b-408d-a412-a41e0323cda8"
+      - result.response.rules[1].spec.service_group_references[0] == "1758a0db-5b56-4959-894e-45161d0f9383"
+      - result.response.rules[1].spec.icmp_services[0].is_all_allowed == true
+      - result.response.rules[2].type == "SHARED_SERVICE"
+      - result.response.rules[2].description == "Rule with allow specs and all protocols"
+      - result.response.rules[2].spec.secured_group_category_references[0] == "decba5b8-c03d-4cf8-96ab-88eabf1c4f5c"
+      - result.response.rules[2].spec.src_allow_spec == "ALL"
+      - result.response.rules[2].spec.dest_allow_spec == "ALL"
+      - result.response.rules[2].spec.is_all_protocol_allowed == true
+    fail_msg: Failed to create comprehensive SHAREDSERVICE security rule in check mode
+    success_msg: Successfully created comprehensive SHAREDSERVICE security rule in check mode
+
+- name: Create basic SHAREDSERVICE security rule with ALL_VLAN scope
+  nutanix.ncp.ntnx_security_rules_v2:
+    name: "{{ rule_name_1 }}"
+    description: Ansible created SHAREDSERVICE rule
+    type: SHAREDSERVICE
+    policy_state: ENFORCE
+    scope: ALL_VLAN
+    is_hitlog_enabled: true
+    is_ipv6_traffic_allowed: false
+    rules:
+      - description: Allow shared service inbound traffic
+        type: SHARED_SERVICE
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ ss_category1 }}"
+            src_category_references:
+              - "{{ src_category1 }}"
+            tcp_services:
+              - start_port: 443
+                end_port: 443
+      - description: Allow shared service outbound traffic
+        type: SHARED_SERVICE
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ ss_category1 }}"
+            dest_category_references:
+              - "{{ dest_category1 }}"
+            is_all_protocol_allowed: true
+  register: result
+  ignore_errors: true
+
+- name: Find index of inbound rule
+  ansible.builtin.set_fact:
+    inbound_rule_index: "{{ item_index }}"
+  when: item.description == "Allow shared service inbound traffic"
+  with_items: "{{ result.response.rules }}"
+  loop_control:
+    index_var: item_index
+
+- name: Find index of outbound rule
+  ansible.builtin.set_fact:
+    outbound_rule_index: "{{ item_index }}"
+  when: item.description == "Allow shared service outbound traffic"
+  with_items: "{{ result.response.rules }}"
+  loop_control:
+    index_var: item_index
+
+- name: Verify SHAREDSERVICE rule creation status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id is defined
+      - result.ext_id == result.response.ext_id
+      - result.task_ext_id is defined
+      - result.response.name == "{{ rule_name_1 }}"
+      - result.response.description == "Ansible created SHAREDSERVICE rule"
+      - result.response.type == "SHAREDSERVICE"
+      - result.response.state == "ENFORCE"
+      - result.response.scope == "ALL_VLAN"
+      - result.response.is_hitlog_enabled == true
+      - result.response.rules[inbound_rule_index].type == "SHARED_SERVICE"
+      - result.response.rules[inbound_rule_index].description == "Allow shared service inbound traffic"
+      - result.response.rules[inbound_rule_index].spec.secured_group_category_references[0] == ss_category1
+      - result.response.rules[inbound_rule_index].spec.src_category_references[0] == src_category1
+      - result.response.rules[inbound_rule_index].spec.tcp_services[0].start_port == 443
+      - result.response.rules[inbound_rule_index].spec.tcp_services[0].end_port == 443
+      - result.response.rules[outbound_rule_index].type == "SHARED_SERVICE"
+      - result.response.rules[outbound_rule_index].description == "Allow shared service outbound traffic"
+      - result.response.rules[outbound_rule_index].spec.secured_group_category_references[0] == ss_category1
+      - result.response.rules[outbound_rule_index].spec.dest_category_references[0] == dest_category1
+      - result.response.rules[outbound_rule_index].spec.is_all_protocol_allowed == true
+    fail_msg: Failed to create SHAREDSERVICE security rule
+    success_msg: Successfully created SHAREDSERVICE security rule
+
+- name: Add rule ext id to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+- name: Create SHAREDSERVICE rule with GLOBAL scope
+  nutanix.ncp.ntnx_security_rules_v2:
+    name: "{{ rule_name_2 }}"
+    description: SHAREDSERVICE rule with GLOBAL scope
+    type: SHAREDSERVICE
+    policy_state: SAVE
+    scope: GLOBAL
+    is_hitlog_enabled: true
+    rules:
+      - description: Global shared service rule
+        type: SHARED_SERVICE
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ ss_category2 }}"
+            src_allow_spec: ALL
+            is_all_protocol_allowed: true
+  register: result
+  ignore_errors: true
+
+- name: Find index of GLOBAL rule
+  ansible.builtin.set_fact:
+    global_rule_index: "{{ item_index }}"
+  when: item.description == "Global shared service rule"
+  with_items: "{{ result.response.rules }}"
+  loop_control:
+    index_var: item_index
+
+- name: Verify SHAREDSERVICE rule with GLOBAL scope creation
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id is defined
+      - result.ext_id == result.response.ext_id
+      - result.response.name == "{{ rule_name_2 }}"
+      - result.response.description == "SHAREDSERVICE rule with GLOBAL scope"
+      - result.response.type == "SHAREDSERVICE"
+      - result.response.scope == "GLOBAL"
+      - result.response.rules[global_rule_index].type == "SHARED_SERVICE"
+      - result.response.rules[global_rule_index].description == "Global shared service rule"
+      - result.response.rules[global_rule_index].spec.secured_group_category_references[0] == "{{ ss_category2 }}"
+      - result.response.rules[global_rule_index].spec.src_allow_spec == "ALL"
+      - result.response.rules[global_rule_index].spec.is_all_protocol_allowed == true
+    fail_msg: Failed to create SHAREDSERVICE rule with GLOBAL scope
+    success_msg: Successfully created SHAREDSERVICE rule with GLOBAL scope
+
+- name: Add rule ext id to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+- name: Create SHAREDSERVICE rule with VPC_AS_CATEGORY scope
+  nutanix.ncp.ntnx_security_rules_v2:
+    name: "{{ rule_name_3 }}"
+    description: SHAREDSERVICE rule with VPC_AS_CATEGORY scope
+    type: SHAREDSERVICE
+    policy_state: SAVE
+    scope: VPC_AS_CATEGORY
+    scope_references:
+      - "{{ src_category1 }}"
+    is_hitlog_enabled: true
+    rules:
+      - description: VPC as category shared service rule
+        type: SHARED_SERVICE
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ ss_category5 }}"
+            src_allow_spec: ALL
+            is_all_protocol_allowed: true
+  register: result
+  ignore_errors: true
+
+- name: Find index of VPC_AS_CATEGORY rule
+  ansible.builtin.set_fact:
+    vpc_as_category_rule_index: "{{ item_index }}"
+  when: item.description == "VPC as category shared service rule"
+  with_items: "{{ result.response.rules }}"
+  loop_control:
+    index_var: item_index
+
+- name: Verify SHAREDSERVICE rule with VPC_AS_CATEGORY scope creation
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id is defined
+      - result.ext_id == result.response.ext_id
+      - result.response.name == "{{ rule_name_3 }}"
+      - result.response.description == "SHAREDSERVICE rule with VPC_AS_CATEGORY scope"
+      - result.response.type == "SHAREDSERVICE"
+      - result.response.scope == "VPC_AS_CATEGORY"
+      - result.response.scope_references[0] == "{{ src_category1 }}"
+      - result.response.rules[vpc_as_category_rule_index].type == "SHARED_SERVICE"
+      - result.response.rules[vpc_as_category_rule_index].description == "VPC as category shared service rule"
+      - result.response.rules[vpc_as_category_rule_index].spec.secured_group_category_references[0] == "{{ ss_category5 }}"
+      - result.response.rules[vpc_as_category_rule_index].spec.src_allow_spec == "ALL"
+      - result.response.rules[vpc_as_category_rule_index].spec.is_all_protocol_allowed == true
+    fail_msg: Failed to create SHAREDSERVICE rule with VPC_AS_CATEGORY scope
+    success_msg: Successfully created SHAREDSERVICE rule with VPC_AS_CATEGORY scope
+
+- name: Add rule ext id to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+- name: Create SHAREDSERVICE rule with subnet and ICMP services
+  nutanix.ncp.ntnx_security_rules_v2:
+    name: "{{ rule_name_4 }}"
+    description: SHAREDSERVICE rule with subnet and ICMP
+    type: SHAREDSERVICE
+    policy_state: SAVE
+    scope: ALL_VLAN
+    is_hitlog_enabled: true
+    is_ipv6_traffic_allowed: true
+    rules:
+      - description: Shared service with source subnet
+        type: SHARED_SERVICE
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ ss_category3 }}"
+            src_subnet:
+              value: 192.168.1.0
+              prefix_length: 24
+            tcp_services:
+              - start_port: 22
+                end_port: 22
+      - description: Shared service with dest subnet
+        type: SHARED_SERVICE
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ ss_category3 }}"
+            dest_subnet:
+              value: 10.0.0.0
+              prefix_length: 8
+            udp_services:
+              - start_port: 53
+                end_port: 53
+      - description: Shared service with ICMP allow all
+        type: SHARED_SERVICE
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ ss_category3 }}"
+            dest_allow_spec: ALL
+            icmp_services:
+              - is_all_allowed: true
+  register: result
+  ignore_errors: true
+
+- name: Find index of source subnet rule
+  ansible.builtin.set_fact:
+    source_subnet_rule_index: "{{ item_index }}"
+  when: item.description == "Shared service with source subnet"
+  with_items: "{{ result.response.rules }}"
+  loop_control:
+    index_var: item_index
+
+- name: Find index of dest subnet rule
+  ansible.builtin.set_fact:
+    dest_subnet_rule_index: "{{ item_index }}"
+  when: item.description == "Shared service with dest subnet"
+  with_items: "{{ result.response.rules }}"
+  loop_control:
+    index_var: item_index
+
+- name: Find index of ICMP rule
+  ansible.builtin.set_fact:
+    icmp_rule_index: "{{ item_index }}"
+  when: item.description == "Shared service with ICMP allow all"
+  with_items: "{{ result.response.rules }}"
+  loop_control:
+    index_var: item_index
+
+- name: Verify SHAREDSERVICE rule with subnet and ICMP
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id is defined
+      - result.response.name == rule_name_4
+      - result.response.type == "SHAREDSERVICE"
+      - result.response.is_ipv6_traffic_allowed == true
+      - result.response.rules | length == 3
+      - result.response.rules[source_subnet_rule_index].type == "SHARED_SERVICE"
+      - result.response.rules[source_subnet_rule_index].description == "Shared service with source subnet"
+      - result.response.rules[source_subnet_rule_index].spec.secured_group_category_references[0] == "{{ ss_category3 }}"
+      - result.response.rules[source_subnet_rule_index].spec.src_subnet.value == "192.168.1.0"
+      - result.response.rules[source_subnet_rule_index].spec.src_subnet.prefix_length == 24
+      - result.response.rules[source_subnet_rule_index].spec.tcp_services[0].start_port == 22
+      - result.response.rules[source_subnet_rule_index].spec.tcp_services[0].end_port == 22
+      - result.response.rules[dest_subnet_rule_index].type == "SHARED_SERVICE"
+      - result.response.rules[dest_subnet_rule_index].description == "Shared service with dest subnet"
+      - result.response.rules[dest_subnet_rule_index].spec.secured_group_category_references[0] == "{{ ss_category3 }}"
+      - result.response.rules[dest_subnet_rule_index].spec.dest_subnet.value == "10.0.0.0"
+      - result.response.rules[dest_subnet_rule_index].spec.dest_subnet.prefix_length == 8
+      - result.response.rules[dest_subnet_rule_index].spec.udp_services[0].start_port == 53
+      - result.response.rules[dest_subnet_rule_index].spec.udp_services[0].end_port == 53
+      - result.response.rules[icmp_rule_index].type == "SHARED_SERVICE"
+      - result.response.rules[icmp_rule_index].description == "Shared service with ICMP allow all"
+      - result.response.rules[icmp_rule_index].spec.secured_group_category_references[0] == "{{ ss_category3 }}"
+      - result.response.rules[icmp_rule_index].spec.dest_allow_spec == "ALL"
+      - result.response.rules[icmp_rule_index].spec.icmp_services[0].is_all_allowed == true
+    fail_msg: Failed to create SHAREDSERVICE rule with subnet and ICMP
+    success_msg: Successfully created SHAREDSERVICE rule with subnet and ICMP
+
+- name: Add rule ext id to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+################################################ Update tests ################################################
+
+- name: Update SHAREDSERVICE security rule - change rules and config
+  nutanix.ncp.ntnx_security_rules_v2:
+    state: present
+    ext_id: "{{ todelete[0] }}"
+    name: "{{ rule_name_1 }}-updated"
+    description: Ansible updated SHAREDSERVICE rule
+    policy_state: MONITOR
+    is_hitlog_enabled: false
+    rules:
+      - description: Updated shared service inbound rule
+        type: SHARED_SERVICE
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ ss_category4 }}"
+            src_category_references:
+              - "{{ src_category1 }}"
+              - "{{ src_category2 }}"
+            tcp_services:
+              - start_port: 80
+                end_port: 80
+              - start_port: 443
+                end_port: 443
+      - description: Updated shared service outbound rule
+        type: SHARED_SERVICE
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ ss_category4 }}"
+            dest_address_group_references:
+              - "{{ address_group_ext_id }}"
+            service_group_references:
+              - "{{ resultservice_group_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Find index of updated inbound rule
+  ansible.builtin.set_fact:
+    inbound_rule_index: "{{ item_index }}"
+  when: item.description == "Updated shared service inbound rule"
+  with_items: "{{ result.response.rules }}"
+  loop_control:
+    index_var: item_index
+
+- name: Find index of updated outbound rule
+  ansible.builtin.set_fact:
+    outbound_rule_index: "{{ item_index }}"
+  when: item.description == "Updated shared service outbound rule"
+  with_items: "{{ result.response.rules }}"
+  loop_control:
+    index_var: item_index
+
+- name: Verify SHAREDSERVICE rule update
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id is defined
+      - result.ext_id == result.response.ext_id
+      - result.response.name == "{{ rule_name_1 }}-updated"
+      - result.response.description == "Ansible updated SHAREDSERVICE rule"
+      - result.response.is_hitlog_enabled == false
+      - result.response.rules[inbound_rule_index].type == "SHARED_SERVICE"
+      - result.response.rules[inbound_rule_index].description == "Updated shared service inbound rule"
+      - result.response.rules[inbound_rule_index].spec.secured_group_category_references[0] == "{{ ss_category4 }}"
+      - result.response.rules[inbound_rule_index].spec.src_category_references[0] == "{{ src_category1 }}"
+      - result.response.rules[inbound_rule_index].spec.src_category_references[1] == "{{ src_category2 }}"
+      - result.response.rules[inbound_rule_index].spec.tcp_services[0].start_port == 80
+      - result.response.rules[inbound_rule_index].spec.tcp_services[0].end_port == 80
+      - result.response.rules[inbound_rule_index].spec.tcp_services[1].start_port == 443
+      - result.response.rules[inbound_rule_index].spec.tcp_services[1].end_port == 443
+      - result.response.rules[outbound_rule_index].type == "SHARED_SERVICE"
+      - result.response.rules[outbound_rule_index].description == "Updated shared service outbound rule"
+      - result.response.rules[outbound_rule_index].spec.secured_group_category_references[0] == "{{ ss_category4 }}"
+      - result.response.rules[outbound_rule_index].spec.dest_address_group_references[0] == "{{ address_group_ext_id }}"
+      - result.response.rules[outbound_rule_index].spec.service_group_references[0] == "{{ resultservice_group_ext_id }}"
+    fail_msg: Failed to update SHAREDSERVICE security rule
+    success_msg: Successfully updated SHAREDSERVICE security rule
+
+- name: Update SHAREDSERVICE rule with same values to check idempotency
+  nutanix.ncp.ntnx_security_rules_v2:
+    state: present
+    ext_id: "{{ todelete[0] }}"
+    name: "{{ rule_name_1 }}-updated"
+    description: Ansible updated SHAREDSERVICE rule
+    policy_state: MONITOR
+    is_hitlog_enabled: false
+    rules:
+      - description: Updated shared service inbound rule
+        type: SHARED_SERVICE
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ ss_category4 }}"
+            src_category_references:
+              - "{{ src_category1 }}"
+              - "{{ src_category2 }}"
+            tcp_services:
+              - start_port: 80
+                end_port: 80
+              - start_port: 443
+                end_port: 443
+      - description: Updated shared service outbound rule
+        type: SHARED_SERVICE
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ ss_category4 }}"
+            dest_address_group_references:
+              - "{{ address_group_ext_id }}"
+            service_group_references:
+              - "{{ resultservice_group_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify idempotency - no changes
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.msg == "Nothing to change."
+      - result.skipped == true
+    fail_msg: Module failed to skip update when no changes
+    success_msg: "Pass: Module correctly skipped update - idempotent"
+
+################################################ Info module tests ################################################
+
+- name: Get SHAREDSERVICE security rule info by ext_id
+  nutanix.ncp.ntnx_security_rules_info_v2:
+    ext_id: "{{ todelete[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: Find index of inbound rule in info result
+  ansible.builtin.set_fact:
+    inbound_rule_index: "{{ item_index }}"
+  when: item.description == "Updated shared service inbound rule"
+  with_items: "{{ result.response.rules }}"
+  loop_control:
+    index_var: item_index
+
+- name: Find index of outbound rule in info result
+  ansible.builtin.set_fact:
+    outbound_rule_index: "{{ item_index }}"
+  when: item.description == "Updated shared service outbound rule"
+  with_items: "{{ result.response.rules }}"
+  loop_control:
+    index_var: item_index
+
+- name: Verify info module result
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id is defined
+      - result.ext_id == result.response.ext_id
+      - result.response.name == "{{ rule_name_1 }}-updated"
+      - result.response.description == "Ansible updated SHAREDSERVICE rule"
+      - result.response.is_hitlog_enabled == false
+      - result.response.rules[inbound_rule_index].type == "SHARED_SERVICE"
+      - result.response.rules[inbound_rule_index].description == "Updated shared service inbound rule"
+      - result.response.rules[inbound_rule_index].spec.secured_group_category_references[0] == "{{ ss_category4 }}"
+      - result.response.rules[inbound_rule_index].spec.src_category_references[0] == "{{ src_category1 }}"
+      - result.response.rules[inbound_rule_index].spec.src_category_references[1] == "{{ src_category2 }}"
+      - result.response.rules[inbound_rule_index].spec.tcp_services[0].start_port == 80
+      - result.response.rules[inbound_rule_index].spec.tcp_services[0].end_port == 80
+      - result.response.rules[inbound_rule_index].spec.tcp_services[1].start_port == 443
+      - result.response.rules[inbound_rule_index].spec.tcp_services[1].end_port == 443
+      - result.response.rules[outbound_rule_index].type == "SHARED_SERVICE"
+      - result.response.rules[outbound_rule_index].description == "Updated shared service outbound rule"
+      - result.response.rules[outbound_rule_index].spec.secured_group_category_references[0] == "{{ ss_category4 }}"
+      - result.response.rules[outbound_rule_index].spec.dest_address_group_references[0] == "{{ address_group_ext_id }}"
+      - result.response.rules[outbound_rule_index].spec.service_group_references[0] == "{{ resultservice_group_ext_id }}"
+    fail_msg: Failed to get SHAREDSERVICE rule info
+    success_msg: Successfully retrieved SHAREDSERVICE rule info
+
+- name: List all security rules
+  nutanix.ncp.ntnx_security_rules_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Verify list result
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.response is defined
+      - result.response | length >= todelete | length
+    fail_msg: Failed to list security rules
+    success_msg: Successfully listed security rules
+
+- name: List all security rules and filter by name
+  nutanix.ncp.ntnx_security_rules_info_v2:
+    filter: "name eq '{{ rule_name_2 }}'"
+  register: result
+  ignore_errors: true
+
+- name: Verify list and filter result
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].name == "{{ rule_name_2 }}"
+      - result.response[0].description == "SHAREDSERVICE rule with GLOBAL scope"
+      - result.response[0].type == "SHAREDSERVICE"
+      - result.response[0].scope == "GLOBAL"
+      - result.response[0].is_hitlog_enabled == true
+    fail_msg: Failed to list security rules by name
+    success_msg: Successfully listed security rules by name
+
+- name: List security rules by limit
+  nutanix.ncp.ntnx_security_rules_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Verify list by limit result
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+    fail_msg: Failed to list security rules by limit
+    success_msg: Successfully listed security rules by limit
+
+################################################ Delete tests ################################################
+
+- name: Delete SHAREDSERVICE security rule using check mode
+  nutanix.ncp.ntnx_security_rules_v2:
+    state: absent
+    ext_id: "{{ todelete[0] }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Verify check mode delete
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.msg == "Network security policy with ext_id:{{ todelete[0] }} will be deleted."
+    fail_msg: Delete SHAREDSERVICE security rule failed in check mode
+    success_msg: Delete SHAREDSERVICE security rule passed in check mode
+
+- name: Delete all security rules
+  nutanix.ncp.ntnx_security_rules_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  ignore_errors: true
+  loop: "{{ todelete }}"
+
+- name: Verify delete result
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.results | length == todelete | length
+      - item.changed == true
+      - item.failed == false
+      - item.response is defined
+      - item.response.status == "SUCCEEDED"
+    fail_msg: Failed to delete SHAREDSERVICE security rule
+    success_msg: Successfully deleted SHAREDSERVICE security rule
+  loop: "{{ result.results }}"
+
+######################################### Delete test setup created entities #########################################
+
+- name: Delete service group
+  nutanix.ncp.ntnx_service_groups_v2:
+    state: absent
+    ext_id: "{{ resultservice_group_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify service group deletion
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Failed to delete service group
+    success_msg: Successfully deleted service group
+
+- name: Delete address group
+  nutanix.ncp.ntnx_address_groups_v2:
+    state: absent
+    ext_id: "{{ address_group_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify address group deletion
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Failed to delete address group
+    success_msg: Successfully deleted address group
+
+- name: Delete SharedService categories
+  nutanix.ncp.ntnx_categories_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  ignore_errors: true
+  loop:
+    - "{{ ss_category1 }}"
+    - "{{ ss_category2 }}"
+    - "{{ ss_category3 }}"
+    - "{{ ss_category4 }}"
+    - "{{ ss_category5 }}"
+
+- name: Verify SharedService category deletion status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.results | length == 5
+      - item.changed == true
+      - item.failed == false
+      - item.item in [ss_category1, ss_category2, ss_category3, ss_category4, ss_category5]
+    fail_msg: Failed to delete SharedService category
+    success_msg: Successfully deleted SharedService category
+  loop: "{{ result.results }}"
+
+- name: Delete regular categories
+  nutanix.ncp.ntnx_categories_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  ignore_errors: true
+  loop:
+    - "{{ src_category1 }}"
+    - "{{ src_category2 }}"
+    - "{{ dest_category1 }}"
+
+- name: Verify regular category deletion status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.results | length == 3
+      - item.changed == true
+      - item.failed == false
+      - item.item in [src_category1, src_category2, dest_category1]
+    fail_msg: Failed to delete regular category
+    success_msg: Successfully deleted regular category
+  loop: "{{ result.results }}"
