@@ -17,6 +17,23 @@ description:
   - This module allows you to create, update, and delete protection policy in Nutanix Prism Central.
   - This module uses PC v4 APIs based SDKs
 options:
+  nutanix_username:
+      description:
+          - The username to authenticate with the Nutanix Prism Central.
+          - Required as nutanix_api_key is not supported for Multi PC Protection Policy.
+      type: str
+      required: true
+  nutanix_password:
+      description:
+          - The password to authenticate with the Nutanix Prism Central.
+          - Required as nutanix_api_key is not supported for Multi PC Protection Policy.
+      type: str
+      required: true
+  nutanix_api_key:
+      description:
+          - Not Supported as this module is for Multi PC Protection Policy.
+      type: str
+      required: false
   state:
     description:
       - if C(state) is present, it will create or update the protection policy.
@@ -486,7 +503,7 @@ import traceback  # noqa: E402
 import warnings  # noqa: E402
 from copy import deepcopy  # noqa: E402
 
-from ansible.module_utils.basic import missing_required_lib  # noqa: E402
+from ansible.module_utils.basic import env_fallback, missing_required_lib  # noqa: E402
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
@@ -607,6 +624,15 @@ def get_module_spec():
         ),
     )
     module_args = dict(
+        nutanix_username=dict(
+            type="str", fallback=(env_fallback, ["NUTANIX_USERNAME"]), required=True
+        ),
+        nutanix_password=dict(
+            type="str",
+            no_log=True,
+            fallback=(env_fallback, ["NUTANIX_PASSWORD"]),
+            required=True,
+        ),
         ext_id=dict(type="str"),
         name=dict(type="str"),
         description=dict(type="str"),
