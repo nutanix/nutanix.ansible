@@ -53,6 +53,9 @@
 
 - name: Generate spec for creating restore source cluster using check mode
   nutanix.ncp.ntnx_pc_restore_source_v2:
+    nutanix_host: "{{ ip_pe }}"
+    nutanix_username: "{{ username_for_tests }}"
+    nutanix_password: "{{ password_for_tests }}"
     location:
       cluster_location:
         config:
@@ -312,6 +315,9 @@
 - name: Create restore source cluster
   nutanix.ncp.ntnx_pc_restore_source_v2:
     nutanix_host: "{{ ip_pe }}"
+    nutanix_username: "{{ username_for_tests }}"
+    nutanix_password: "{{ password_for_tests }}"
+    nutanix_api_key: null
     location:
       cluster_location:
         config:
@@ -332,6 +338,9 @@
 - name: Get restore source cluster
   nutanix.ncp.ntnx_pc_restore_source_info_v2:
     nutanix_host: "{{ ip_pe }}"
+    nutanix_username: "{{ username_for_tests }}"
+    nutanix_password: "{{ password_for_tests }}"
+    nutanix_api_key: null
     ext_id: "{{ result.response.ext_id }}"
   register: result
   ignore_errors: true
@@ -352,6 +361,9 @@
 - name: Delete restore source cluster with check mode enabled
   nutanix.ncp.ntnx_pc_restore_source_v2:
     nutanix_host: "{{ ip_pe }}"
+    nutanix_username: "{{ username_for_tests }}"
+    nutanix_password: "{{ password_for_tests }}"
+    nutanix_api_key: null
     ext_id: "{{ restore_source_ext_id }}"
     state: absent
   register: result
@@ -372,6 +384,9 @@
 - name: Delete restore source cluster
   nutanix.ncp.ntnx_pc_restore_source_v2:
     nutanix_host: "{{ ip_pe }}"
+    nutanix_username: "{{ username_for_tests }}"
+    nutanix_password: "{{ password_for_tests }}"
+    nutanix_api_key: null
     ext_id: "{{ restore_source_ext_id }}"
     state: absent
   register: result
@@ -380,6 +395,9 @@
 - name: Get restore source cluster
   nutanix.ncp.ntnx_pc_restore_source_info_v2:
     nutanix_host: "{{ ip_pe }}"
+    nutanix_username: "{{ username_for_tests }}"
+    nutanix_password: "{{ password_for_tests }}"
+    nutanix_api_key: null
     ext_id: "{{ restore_source_ext_id }}"
   register: result
   ignore_errors: true
@@ -395,6 +413,9 @@
 - name: Create restore source cluster
   nutanix.ncp.ntnx_pc_restore_source_v2:
     nutanix_host: "{{ ip_pe }}"
+    nutanix_username: "{{ username_for_tests }}"
+    nutanix_password: "{{ password_for_tests }}"
+    nutanix_api_key: null
     location:
       cluster_location:
         config:
@@ -415,6 +436,9 @@
 - name: Get restore source cluster
   nutanix.ncp.ntnx_pc_restore_source_info_v2:
     nutanix_host: "{{ ip_pe }}"
+    nutanix_username: "{{ username_for_tests }}"
+    nutanix_password: "{{ password_for_tests }}"
+    nutanix_api_key: null
     ext_id: "{{ result.response.ext_id }}"
   register: result
   ignore_errors: true
@@ -441,6 +465,9 @@
 - name: Get all restorable domain managers
   nutanix.ncp.ntnx_pc_restorable_domain_managers_info_v2:
     nutanix_host: "{{ ip_pe }}"
+    nutanix_username: "{{ username_for_tests }}"
+    nutanix_password: "{{ password_for_tests }}"
+    nutanix_api_key: null
     restore_source_ext_id: "{{ restore_source_ext_id }}"
   register: result
   ignore_errors: true
@@ -456,14 +483,30 @@
 - name: Get restorable domain manager using filter
   nutanix.ncp.ntnx_pc_restorable_domain_managers_info_v2:
     nutanix_host: "{{ ip_pe }}"
+    nutanix_username: "{{ username_for_tests }}"
+    nutanix_password: "{{ password_for_tests }}"
+    nutanix_api_key: null
     restore_source_ext_id: "{{ restore_source_ext_id }}"
     filter: extId eq {{ domain_manager_ext_id }}
   register: domain_manager_details
   ignore_errors: true
 
+- name: Get restorable domain manager using filter status
+  ansible.builtin.assert:
+    that:
+      - domain_manager_details.changed == false
+      - domain_manager_details.failed == false
+      - domain_manager_details.response is defined
+      - domain_manager_details.response | length > 0
+    fail_msg: "Get restorable domain manager using filter failed"
+    success_msg: "Get restorable domain manager using filter passed"
+
 - name: List all restore points
   nutanix.ncp.ntnx_pc_restore_points_info_v2:
     nutanix_host: "{{ ip_pe }}"
+    nutanix_username: "{{ username_for_tests }}"
+    nutanix_password: "{{ password_for_tests }}"
+    nutanix_api_key: null
     restore_source_ext_id: "{{ restore_source_ext_id }}"
     restorable_domain_manager_ext_id: "{{ domain_manager_details.response[0].ext_id }}"
   register: result
@@ -486,6 +529,9 @@
 - name: Get restore point details using external ID
   nutanix.ncp.ntnx_pc_restore_points_info_v2:
     nutanix_host: "{{ ip_pe }}"
+    nutanix_username: "{{ username_for_tests }}"
+    nutanix_password: "{{ password_for_tests }}"
+    nutanix_api_key: null
     restore_source_ext_id: "{{ restore_source_ext_id }}"
     restorable_domain_manager_ext_id: "{{ domain_manager_details.response[0].ext_id }}"
     ext_id: "{{ restore_point_ext_id }}"
@@ -551,6 +597,9 @@
 - name: Generate spec for restoring PC using check mode
   nutanix.ncp.ntnx_pc_restore_v2:
     nutanix_host: "{{ ip_pe }}"
+    nutanix_username: "{{ username_for_tests }}"
+    nutanix_password: "{{ password_for_tests }}"
+    nutanix_api_key: null
     ext_id: "35d22fcc-0084-3751-a579-0621ce59a786"
     restore_source_ext_id: "0a77819c-2e35-446b-87b1-89cbe62c15f5"
     restorable_domain_manager_ext_id: "18553f0f-7b41-4115-bf42-2f698fbe7117"
@@ -634,6 +683,9 @@
 - name: Restore PC
   nutanix.ncp.ntnx_pc_restore_v2:
     nutanix_host: "{{ ip_pe }}"
+    nutanix_username: "{{ username_for_tests }}"
+    nutanix_password: "{{ password_for_tests }}"
+    nutanix_api_key: null
     ext_id: "{{ restore_point_ext_id }}"
     restore_source_ext_id: "{{ restore_source_ext_id }}"
     restorable_domain_manager_ext_id: "{{ domain_manager_details.response[0].ext_id }}"
@@ -694,14 +746,14 @@
   ansible.builtin.set_fact:
     pc_ssh_cmd: >-
       sshpass -p '{{ domain_manager_ssh_password }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {{ domain_manager_ssh_username }}@{{ ip }}
-    reset_username_password: /home/nutanix/prism/cli/ncli user reset-password user-name={{ username }} password={{ password }}
+    reset_username_password: /home/nutanix/prism/cli/ncli user reset-password user-name={{ username_for_tests }} password={{ password_for_tests }}
 
 - name: Set reset command
   ansible.builtin.set_fact:
     reset_command: '{{ pc_ssh_cmd }} "{{ reset_username_password }}"'
 
 - name: Change password five times randomly before resetting
-  ansible.builtin.command: "{{ pc_ssh_cmd }} /home/nutanix/prism/cli/ncli user reset-password user-name={{ username }} password='{{ item }}'"
+  ansible.builtin.command: "{{ pc_ssh_cmd }} /home/nutanix/prism/cli/ncli user reset-password user-name={{ username_for_tests }} password='{{ item }}'"
   register: result
   ignore_errors: true
   loop: "{{ passwords }}"

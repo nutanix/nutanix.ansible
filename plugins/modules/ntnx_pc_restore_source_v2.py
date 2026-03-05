@@ -104,13 +104,21 @@ options:
     nutanix_username:
         description:
             - The username to authenticate with the Nutanix Prism Element.
+            - Required as nutanix_api_key is not supported for Prism Element.
         required: true
         type: str
     nutanix_password:
         description:
             - The password to authenticate with the Nutanix Prism Element.
+            - Required as nutanix_api_key is not supported for Prism Element.
         required: true
         type: str
+    nutanix_api_key:
+        description:
+            - Not Supported as this module is for Prism Element.
+            - This field is only supported for Prism Central.
+        type: str
+        required: false
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
@@ -212,7 +220,7 @@ failed:
 import traceback  # noqa: E402
 import warnings  # noqa: E402
 
-from ansible.module_utils.basic import missing_required_lib  # noqa: E402
+from ansible.module_utils.basic import env_fallback, missing_required_lib  # noqa: E402
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
@@ -243,6 +251,15 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
     module_args = dict(
+        nutanix_username=dict(
+            type="str", fallback=(env_fallback, ["NUTANIX_USERNAME"]), required=True
+        ),
+        nutanix_password=dict(
+            type="str",
+            no_log=True,
+            fallback=(env_fallback, ["NUTANIX_PASSWORD"]),
+            required=True,
+        ),
         ext_id=dict(type="str"),
     )
     module_args.update(prism_specs.get_location_backup_spec())

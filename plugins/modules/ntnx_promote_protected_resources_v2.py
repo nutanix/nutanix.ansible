@@ -58,13 +58,19 @@ options:
       - Remote Prism central username
       - C(nutanix_username). If not set then the value of the C(NUTANIX_USERNAME), environment variable is used.
     type: str
-    required: true
+    required: false
   nutanix_password:
     description:
       - Remote Prism central password
       - C(nutanix_password). If not set then the value of the C(NUTANIX_PASSWORD), environment variable is used.
-    required: true
     type: str
+    required: false
+  nutanix_api_key:
+    description:
+      - Remote Prism central API key. Created using Service Account API Key in Prism Central.
+      - C(nutanix_api_key). If not set then the value of the C(NUTANIX_API_KEY), environment variable is used.
+    type: str
+    required: false
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
