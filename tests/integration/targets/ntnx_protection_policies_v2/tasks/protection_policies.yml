@@ -57,7 +57,7 @@
     pe2_ssh_cmd:
       sshpass -p '{{ clusters[0].pe_password }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
       {{ clusters[0].pe_username }}@{{ clusters[0].nodes[0].cvm_ip }}
-    reset_username_password: /home/nutanix/prism/cli/ncli user reset-password user-name={{ username }} password={{ password }}
+    reset_username_password: /home/nutanix/prism/cli/ncli user reset-password user-name={{ username_for_tests }} password={{ password_for_tests }}
     cluster_status: /usr/local/nutanix/cluster/bin/cluster status
     modify_firewall_cmd_cluster1: >
       /usr/local/nutanix/cluster/bin/modify_firewall -f -r
@@ -223,8 +223,8 @@
               value: "{{ clusters[0].nodes[0].cvm_ip }}"
           credentials:
             authentication:
-              username: "{{ username }}"
-              password: "{{ password }}"
+              username: "{{ username_for_tests }}"
+              password: "{{ password_for_tests }}"
   register: result
   ignore_errors: true
 
