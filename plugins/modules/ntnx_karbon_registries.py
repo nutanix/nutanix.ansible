@@ -12,7 +12,8 @@ DOCUMENTATION = r"""
 module: ntnx_karbon_registries
 short_description: Create and delete the private registry entry in Karbon.
 version_added: 1.6.0
-description: "Create and delete the private registry entry in Karbon with the provided configuration."
+description: 
+    - Create and delete the private registry entry in Karbon with the provided configuration.
     - This module is deprecated and will be removed in a future release.
     - Prism Central 7.3+ no longer supports Karbon, therefore this module will not work with PC 7.3 and later.
 options:
