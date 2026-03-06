@@ -12,7 +12,10 @@ DOCUMENTATION = r"""
 module: ntnx_karbon_clusters_info
 short_description: cluster  info module
 version_added: 1.6.0
-description: 'Get cluster info'
+description:
+    - Get cluster info
+    - This module is deprecated and will be removed in a future release.
+    - Prism Central 7.3+ no longer supports Karbon, therefore this module will not work with PC 7.3 and later.
 options:
       cluster_name:
         description:
@@ -208,6 +211,13 @@ def run_module():
             ("fetch_ssh_credentials", True, ("cluster_name",)),
             ("fetch_kubeconfig", True, ("cluster_name",)),
         ],
+    )
+    module.deprecate(
+        "This module is deprecated and will be removed in a future release."
+        " Prism Central 7.3+ no longer supports Karbon,"
+        " therefore this module will not work with PC 7.3 and later.",
+        date="2027-06-01",
+        collection_name="nutanix.ncp",
     )
     result = {"changed": False, "error": None, "response": None}
     if module.params.get("cluster_name"):
