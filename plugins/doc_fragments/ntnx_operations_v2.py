@@ -30,4 +30,9 @@ options:
     type: bool
     required: false
     default: True
+  read_timeout:
+    description: Read timeout in milliseconds for API calls.
+    type: int
+    required: false
+    default: 30000
 """

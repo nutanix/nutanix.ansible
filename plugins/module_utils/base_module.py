@@ -40,6 +40,9 @@ class BaseModule(AnsibleModule):
         validate_certs=dict(
             type="bool", default=True, fallback=(env_fallback, ["VALIDATE_CERTS"])
         ),
+        read_timeout=dict(
+            type="int", default=30000, fallback=(env_fallback, ["READ_TIMEOUT"])
+        ),
         state=dict(type="str", choices=["present", "absent"], default="present"),
         wait=dict(type="bool", default=True),
         nutanix_debug=dict(
