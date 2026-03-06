@@ -213,7 +213,9 @@ def run_module():
         ],
     )
     module.deprecate(
-        "This module is deprecated and will be removed in a future release. Prism Central 7.3+ no longer supports Karbon, therefore this module will not work with PC 7.3 and later.",
+        "This module is deprecated and will be removed in a future release."
+        " Prism Central 7.3+ no longer supports Karbon,"
+        " therefore this module will not work with PC 7.3 and later.",
         date="2027-06-01",
         collection_name="nutanix.ncp",
     )
