@@ -66,6 +66,15 @@ DOCUMENTATION = r"""
             type: str
             env:
                 - name: NUTANIX_API_KEY
+        custom_headers:
+            description:
+                - Custom HTTP headers to add to all API requests. Useful for environments that
+                  require additional headers such as Cloudflare Access service tokens.
+                - Headers can also be supplied via environment variables using the NUTANIX_HEADER_
+                  prefix (e.g. NUTANIX_HEADER_CF_ACCESS_CLIENT_ID becomes Cf-Access-Client-Id).
+                  Config values take precedence over environment variables.
+            required: false
+            type: dict
         fetch_all_hosts:
             description:
                 - Set to C(True) to fetch all hosts
@@ -192,6 +201,7 @@ EXAMPLES = r"""
 import json  # noqa: E402
 import os  # noqa: E402
 import tempfile  # noqa: E402
+from urllib.parse import urlparse  # noqa: E402
 
 from ansible.errors import AnsibleError  # noqa: E402
 from ansible.plugins.inventory import BaseInventoryPlugin, Constructable  # noqa: E402
@@ -216,6 +226,7 @@ class Mock_Module:
         nutanix_debug=False,
         nutanix_log_file=None,
         nutanix_api_key=None,
+        custom_headers=None,
     ):
         self.tmpdir = tempfile.gettempdir()
         self.params = {
@@ -229,6 +240,7 @@ class Mock_Module:
             "nutanix_debug": nutanix_debug,
             "nutanix_log_file": nutanix_log_file,
             "nutanix_api_key": nutanix_api_key,
+            "custom_headers": custom_headers,
         }
 
     def jsonify(self, data):
@@ -433,23 +445,34 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             or os.environ.get("NUTANIX_HOSTNAME")
             or os.environ.get("NUTANIX_HOST")
         )
+        self.nutanix_port = self.get_option("nutanix_port") or os.environ.get(
+            "NUTANIX_PORT", "9440"
+        )
+
+        # Fall back to parsing NUTANIX_ENDPOINT (e.g. https://prism.example.com:9440)
+        if not self.nutanix_host:
+            endpoint = os.environ.get("NUTANIX_ENDPOINT")
+            if endpoint:
+                parsed = urlparse(endpoint)
+                self.nutanix_host = parsed.hostname
+                if parsed.port:
+                    self.nutanix_port = str(parsed.port)
+
         self.nutanix_username = self.get_option("nutanix_username") or os.environ.get(
             "NUTANIX_USERNAME"
         )
         self.nutanix_password = self.get_option("nutanix_password") or os.environ.get(
             "NUTANIX_PASSWORD"
         )
-        self.nutanix_port = self.get_option("nutanix_port") or os.environ.get(
-            "NUTANIX_PORT", "9440"
-        )
         self.nutanix_api_key = self.get_option("nutanix_api_key") or os.environ.get(
             "NUTANIX_API_KEY"
         )
+        self.custom_headers = self.get_option("custom_headers")
 
         # Validate required parameters
         if not self.nutanix_host:
             raise AnsibleError(
-                "nutanix_host must be provided either in inventory file or as NUTANIX_HOSTNAME environment variable or NUTANIX_HOST environment variable"
+                "nutanix_host must be provided either in inventory file or as NUTANIX_HOSTNAME, NUTANIX_HOST, or NUTANIX_ENDPOINT environment variable"
             )
         if (
             not self.nutanix_username or not self.nutanix_password
@@ -493,6 +516,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             self.nutanix_debug,
             self.nutanix_log_file,
             self.nutanix_api_key,
+            self.custom_headers,
         )
 
         # Get Host API instance

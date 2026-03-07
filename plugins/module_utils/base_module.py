@@ -37,6 +37,11 @@ class BaseModule(AnsibleModule):
             fallback=(env_fallback, ["NUTANIX_API_KEY"]),
             required=False,
         ),
+        custom_headers=dict(
+            type="dict",
+            no_log=True,
+            required=False,
+        ),
         validate_certs=dict(
             type="bool", default=True, fallback=(env_fallback, ["VALIDATE_CERTS"])
         ),

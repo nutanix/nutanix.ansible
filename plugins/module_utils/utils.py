@@ -3,7 +3,34 @@
 
 from __future__ import absolute_import, division, print_function
 
+import os
+
 __metaclass__ = type
+
+
+def get_custom_headers(module_params):
+    """
+    Build a dict of custom HTTP headers from environment variables and module parameters.
+
+    Environment variables with the NUTANIX_HEADER_ prefix are converted to headers by
+    stripping the prefix, replacing underscores with dashes, and title-casing each segment
+    (e.g. NUTANIX_HEADER_CF_ACCESS_CLIENT_ID becomes Cf-Access-Client-Id).
+
+    Config values (module_params['custom_headers']) take precedence over environment variables.
+    """
+    custom_headers = {}
+    header_prefix = "NUTANIX_HEADER_"
+    for key, value in os.environ.items():
+        if key.startswith(header_prefix):
+            header_name = key[len(header_prefix) :]
+            header_name = "-".join(
+                part[0].upper() + part[1:].lower() if part else part
+                for part in header_name.split("_")
+            )
+            custom_headers[header_name] = value
+    config_headers = module_params.get("custom_headers") or {}
+    custom_headers.update(config_headers)
+    return custom_headers
 
 
 def remove_param_with_none_value(d):
