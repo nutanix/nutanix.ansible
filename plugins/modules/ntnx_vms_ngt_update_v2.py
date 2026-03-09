@@ -117,8 +117,8 @@ skipped:
 import warnings  # noqa: E402
 from copy import deepcopy  # noqa: E402
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
@@ -206,8 +206,7 @@ def update_ngt_config(module, result):
 
 
 def run_module():
-    module = BaseModule(
-        support_proxy=True,
+    module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[("state", "present", ("capabilities", "is_enabled"), True)],
