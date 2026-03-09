@@ -176,7 +176,6 @@ def get_entities(module, api_instance, result):
 
 def run_module():
     module = BaseInfoModule(
-        support_proxy=True,
         argument_spec=get_module_spec(),
         supports_check_mode=False,
     )

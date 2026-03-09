@@ -170,7 +170,6 @@ def get_serial_ports(module, result):
 
 def run_module():
     module = BaseInfoModule(
-        support_proxy=True,
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         mutually_exclusive=[
