@@ -10,18 +10,18 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_entity_groups_v2
-short_description: Create, Update, Delete entity groups
+module: ntnx_entity_group_v2
+short_description: Create, Update, Delete entity group
 version_added: 2.5.0
 description:
     - An Entity Group is a logical group of entities supported by flow network security policies.
     - Once created, an Entity Group can be referenced in the network security policies.
-    - Create, Update, Delete entity groups
+    - Create, Update, Delete entity group
     - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
         description:
-            - External ID to update or delete specific entity group
+            - External ID to update or delete specific entity group.
         type: str
         required: false
     name:
@@ -188,7 +188,7 @@ author:
 
 EXAMPLES = r"""
 - name: Create entity group
-  nutanix.ncp.ntnx_entity_groups_v2:
+  nutanix.ncp.ntnx_entity_group_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -207,7 +207,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Update entity group
-  nutanix.ncp.ntnx_entity_groups_v2:
+  nutanix.ncp.ntnx_entity_group_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -220,7 +220,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Delete entity group
-  nutanix.ncp.ntnx_entity_groups_v2:
+  nutanix.ncp.ntnx_entity_group_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -285,7 +285,7 @@ msg:
     description: This indicates the message if any message occurred
     returned: When there is an error, module is idempotent or check mode (in delete operation)
     type: str
-    sample: "Failed generating create entity groups Spec"
+    sample: "Failed generating create entity group Spec"
 
 ext_id:
   description: The entity group ext_id
@@ -436,7 +436,7 @@ def create_entity_group(module, entity_group, result):
 
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating create entity groups Spec", **result)
+        module.fail_json(msg="Failed generating create entity group Spec", **result)
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
@@ -469,7 +469,7 @@ def create_entity_group(module, entity_group, result):
     result["changed"] = True
 
 
-def check_entity_groups_idempotency(old_spec, update_spec):
+def check_entity_group_idempotency(old_spec, update_spec):
     old_spec = strip_internal_attributes(old_spec)
     update_spec = strip_internal_attributes(update_spec)
     if old_spec != update_spec:
@@ -507,7 +507,7 @@ def update_entity_group(module, entity_group, result):
         return
 
     # check for idempotency
-    if check_entity_groups_idempotency(current_spec.to_dict(), update_spec.to_dict()):
+    if check_entity_group_idempotency(current_spec.to_dict(), update_spec.to_dict()):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.")
 
