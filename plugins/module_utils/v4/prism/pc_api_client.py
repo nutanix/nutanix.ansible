@@ -12,7 +12,7 @@ from ansible.module_utils.basic import missing_required_lib
 
 from ...constants import ALLOW_VERSION_NEGOTIATION
 from ..api_logger import setup_api_logging
-from ..utils import _apply_proxy_from_env
+from ..utils import _apply_custom_headers, _apply_proxy_from_env
 
 PRISM_SDK_IMP_ERROR = None
 try:
@@ -68,6 +68,8 @@ def get_pc_api_client(module):
             client.add_default_header(
                 header_name="X-ntnx-api-key", header_value=api_key
             )
+
+    _apply_custom_headers(client, module)
 
     # Setup API logging if debug is enabled
     setup_api_logging(module, client)

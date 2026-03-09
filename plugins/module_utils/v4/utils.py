@@ -171,6 +171,17 @@ def remove_fields_from_spec(obj, fields_to_remove, deep=False):
                 remove_fields_from_spec(item, fields_to_remove, deep=True)
 
 
+def _apply_custom_headers(client, module):
+    """
+    Apply custom headers from module params and NUTANIX_HEADER_ environment variables
+    to a v4 SDK ApiClient via add_default_header.
+    """
+    from ..utils import get_custom_headers
+
+    for key, value in get_custom_headers(module.params).items():
+        client.add_default_header(header_name=key, header_value=value)
+
+
 def _get_proxy_url(module=None):
     """
     Get proxy URL from module parameters (preferred) or environment variables.
