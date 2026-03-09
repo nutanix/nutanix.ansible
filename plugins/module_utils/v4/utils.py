@@ -196,6 +196,8 @@ def validate_required_params(module, required_params):
         )
 
     return missing_params
+
+
 def _get_proxy_url(module=None):
     """
     Get proxy URL from module parameters (preferred) or environment variables.
