@@ -5,7 +5,7 @@ requests>=2.31.0
 black>=22.8.0
 flake8>=7.0.0
 isort>=5.9.3
-coverage>=7.3.2
+coverage==7.3.2
 shyaml>=0.6.2
 markupsafe>=2
 jmespath>=0.10.0
