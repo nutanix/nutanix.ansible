@@ -1,7 +1,7 @@
 ---
-- name: Start ntnx_entity_groups_v2 tests
+- name: Start ntnx_entity_group_v2 tests
   ansible.builtin.debug:
-    msg: start ntnx_entity_groups_v2 tests
+    msg: start ntnx_entity_group_v2 tests
 
 - name: Generate random name
   ansible.builtin.set_fact:
@@ -58,7 +58,7 @@
 ###################################################################################################
 
 - name: Generate spec for create entity group with check mode enabled
-  nutanix.ncp.ntnx_entity_groups_v2:
+  nutanix.ncp.ntnx_entity_group_v2:
     state: present
     name: "test-ansible-entity-group-1"
     description: test-ansible-entity-group-2-desc
@@ -143,7 +143,7 @@
 ###################################################################################################
 
 - name: Create entity group with check mode enabled with multiple allowed entities
-  nutanix.ncp.ntnx_entity_groups_v2:
+  nutanix.ncp.ntnx_entity_group_v2:
     state: present
     name: "test-ansible-entity-group-1"
     description: test-ansible-entity-group-2-desc
@@ -209,7 +209,7 @@
 ###################################################################################################
 
 - name: Create entity group
-  nutanix.ncp.ntnx_entity_groups_v2:
+  nutanix.ncp.ntnx_entity_group_v2:
     state: present
     name: "{{ eg1 }}_entity_group"
     description: "{{ eg1 }}_entity_group_desc"
@@ -246,7 +246,7 @@
 ###################################################################################################
 
 - name: Create entity group with different configs
-  nutanix.ncp.ntnx_entity_groups_v2:
+  nutanix.ncp.ntnx_entity_group_v2:
     state: present
     name: "{{ eg2 }}_entity_group"
     description: "{{ eg2 }}_entity_group_desc"
@@ -283,7 +283,7 @@
 ###################################################################################################
 
 - name: Create entity group with VM and Subnet allowed entities
-  nutanix.ncp.ntnx_entity_groups_v2:
+  nutanix.ncp.ntnx_entity_group_v2:
     state: present
     name: "{{ eg1 }}_entity_group_vm_subnet"
     description: "{{ eg1 }}_entity_group_vm_subnet_desc"
@@ -329,7 +329,7 @@
 ###################################################################################################
 
 - name: Create entity group without name
-  nutanix.ncp.ntnx_entity_groups_v2:
+  nutanix.ncp.ntnx_entity_group_v2:
     state: present
     description: "{{ eg1 }}_entity_group_without_name_desc"
     allowed_config:
@@ -354,7 +354,7 @@
 ###################################################################################################
 
 - name: Create entity group with wrong reference_ext_ids
-  nutanix.ncp.ntnx_entity_groups_v2:
+  nutanix.ncp.ntnx_entity_group_v2:
     state: present
     name: "{{ eg1 }}_entity_group_wrong_ref_ext_ids"
     description: "{{ eg1 }}_entity_group_wrong_ref_ext_ids_desc"
@@ -381,7 +381,7 @@
 ###################################################################################################
 
 - name: Generate spec for update entity group in check mode
-  nutanix.ncp.ntnx_entity_groups_v2:
+  nutanix.ncp.ntnx_entity_group_v2:
     state: present
     ext_id: "{{ todelete[0] }}"
     name: "entity_group_updated_name"
@@ -467,7 +467,7 @@
 ###################################################################################################
 
 - name: Update entity group
-  nutanix.ncp.ntnx_entity_groups_v2:
+  nutanix.ncp.ntnx_entity_group_v2:
     state: present
     ext_id: "{{ todelete[0] }}"
     name: "{{ eg1 }}_entity_group_updated_name"
@@ -500,7 +500,7 @@
 ###################################################################################################
 
 - name: Test idempotency by updating entity group with same values
-  nutanix.ncp.ntnx_entity_groups_v2:
+  nutanix.ncp.ntnx_entity_group_v2:
     state: present
     ext_id: "{{ todelete[0] }}"
     name: "{{ eg1 }}_entity_group_updated_name"
@@ -526,7 +526,7 @@
 ###################################################################################################
 
 - name: Update entity group without changing name
-  nutanix.ncp.ntnx_entity_groups_v2:
+  nutanix.ncp.ntnx_entity_group_v2:
     state: present
     ext_id: "{{ todelete[0] }}"
     description: "{{ eg1 }}_entity_group_updated_desc_without_name"
@@ -545,7 +545,7 @@
 ###################################################################################################
 
 - name: Update entity group with wrong ext_id
-  nutanix.ncp.ntnx_entity_groups_v2:
+  nutanix.ncp.ntnx_entity_group_v2:
     state: present
     ext_id: "83cbf00d-782f-4efc-87c8-4129f5942aaa"
     name: "{{ eg1 }}_entity_group_updated_name"
@@ -565,7 +565,7 @@
 ###################################################################################################
 
 - name: Update entity group with wrong category ext_ids
-  nutanix.ncp.ntnx_entity_groups_v2:
+  nutanix.ncp.ntnx_entity_group_v2:
     state: present
     ext_id: "{{ todelete[0] }}"
     name: "{{ eg1 }}_entity_group_updated_name"
@@ -689,7 +689,7 @@
 ###################################################################################################
 
 - name: Delete entity group in check mode
-  nutanix.ncp.ntnx_entity_groups_v2:
+  nutanix.ncp.ntnx_entity_group_v2:
     ext_id: "{{ todelete[0] }}"
     state: absent
   register: result
@@ -709,7 +709,7 @@
 ###################################################################################################
 
 - name: Delete entity group with wrong ext_id
-  nutanix.ncp.ntnx_entity_groups_v2:
+  nutanix.ncp.ntnx_entity_group_v2:
     ext_id: "83cbf00d-782f-4efc-87c8-4129f5942aaa"
     state: absent
   register: result
@@ -728,7 +728,7 @@
 ###################################################################################################
 
 - name: Delete Created entity groups
-  nutanix.ncp.ntnx_entity_groups_v2:
+  nutanix.ncp.ntnx_entity_group_v2:
     ext_id: "{{ item }}"
     state: absent
   register: result

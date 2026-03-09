@@ -28,7 +28,7 @@
           - "00062ffc-95ad-19e9-185b-ac1f6b6f97a4"
 
     - name: Create entity group
-      nutanix.ncp.ntnx_entity_groups_v2:
+      nutanix.ncp.ntnx_entity_group_v2:
         state: present
         name: "{{ entity_group_name }}"
         description: "{{ entity_group_description }}"
@@ -47,7 +47,7 @@
         entity_group_ext_id: "{{ result.ext_id }}"
 
     - name: Update entity group
-      nutanix.ncp.ntnx_entity_groups_v2:
+      nutanix.ncp.ntnx_entity_group_v2:
         state: present
         ext_id: "{{ entity_group_ext_id }}"
         name: "{{ entity_group_name }}_updated_name"
@@ -79,7 +79,7 @@
       ignore_errors: true
 
     - name: Delete entity group
-      nutanix.ncp.ntnx_entity_groups_v2:
+      nutanix.ncp.ntnx_entity_group_v2:
         ext_id: "{{ entity_group_ext_id }}"
         state: absent
       register: result
