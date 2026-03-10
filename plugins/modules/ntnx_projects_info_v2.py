@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_projects_info_v2
 short_description: Fetch project information using Nutanix v4 APIs.
-version_added: "2.1.0"
+version_added: "2.6.0"
 description:
     - Fetch information about projects from Nutanix Prism Central.
     - Retrieve a single project by external ID or list all projects with optional filters.
