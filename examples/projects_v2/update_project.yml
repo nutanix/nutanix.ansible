@@ -1,0 +1,26 @@
+---
+- name: Update a Nutanix Project
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        project_ext_id: "<project_ext_id>"
+
+    - name: Update project name and description
+      nutanix.ncp.ntnx_projects_v2:
+        state: present
+        ext_id: "{{ project_ext_id }}"
+        name: "production-project-renamed"
+        description: "Updated description for production project"
+      register: result
+
+    - name: Display updated project
+      ansible.builtin.debug:
+        var: result.response

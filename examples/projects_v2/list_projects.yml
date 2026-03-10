@@ -1,0 +1,50 @@
+---
+- name: List Nutanix Projects
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: List all projects
+      nutanix.ncp.ntnx_projects_info_v2:
+      register: all_projects
+
+    - name: Display all projects
+      ansible.builtin.debug:
+        var: all_projects.response
+
+    - name: Display total projects count
+      ansible.builtin.debug:
+        msg: "Total projects: {{ all_projects.total_available_results }}"
+
+    - name: Get project by ext_id
+      nutanix.ncp.ntnx_projects_info_v2:
+        ext_id: "<project_ext_id>"
+      register: single_project
+
+    - name: Display single project
+      ansible.builtin.debug:
+        var: single_project.response
+
+    - name: List projects with filter
+      nutanix.ncp.ntnx_projects_info_v2:
+        filter: "name eq 'production-project'"
+      register: filtered_projects
+
+    - name: Display filtered projects
+      ansible.builtin.debug:
+        var: filtered_projects.response
+
+    - name: List projects with pagination
+      nutanix.ncp.ntnx_projects_info_v2:
+        limit: 5
+        page: 0
+      register: paginated_projects
+
+    - name: Display paginated results
+      ansible.builtin.debug:
+        msg: "Got {{ paginated_projects.response | length }} projects out of {{ paginated_projects.total_available_results }}"

@@ -1,0 +1,24 @@
+---
+- name: Delete a Nutanix Project
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        project_ext_id: "<project_ext_id>"
+
+    - name: Delete a project
+      nutanix.ncp.ntnx_projects_v2:
+        state: absent
+        ext_id: "{{ project_ext_id }}"
+      register: result
+
+    - name: Display deletion result
+      ansible.builtin.debug:
+        var: result
