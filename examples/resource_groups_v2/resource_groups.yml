@@ -1,0 +1,120 @@
+---
+- name: Resource Groups v2 - CRUD and Info examples
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        project_ext_id: "<project_ext_id>"
+        cluster_ext_id: "<cluster_ext_id>"
+
+    ############################################
+    # Create a resource group
+    ############################################
+
+    - name: Create a resource group with placement targets
+      nutanix.ncp.ntnx_resource_groups_v2:
+        state: present
+        wait: true
+        name: "production-resource-group"
+        project_ext_id: "{{ project_ext_id }}"
+        placement_targets:
+          - cluster_ext_id: "{{ cluster_ext_id }}"
+      register: create_result
+
+    - name: Display created resource group
+      ansible.builtin.debug:
+        var: create_result.response
+
+    - name: Save resource group ext_id
+      ansible.builtin.set_fact:
+        rg_ext_id: "{{ create_result.ext_id }}"
+
+    ############################################
+    # Update resource group
+    ############################################
+
+    - name: Update resource group name
+      nutanix.ncp.ntnx_resource_groups_v2:
+        state: present
+        wait: true
+        ext_id: "{{ rg_ext_id }}"
+        name: "production-resource-group-updated"
+      register: update_result
+
+    - name: Display updated resource group
+      ansible.builtin.debug:
+        var: update_result.response
+
+    ############################################
+    # Info - get single resource group
+    ############################################
+
+    - name: Get resource group by ext_id
+      nutanix.ncp.ntnx_resource_groups_info_v2:
+        ext_id: "{{ rg_ext_id }}"
+      register: get_result
+
+    - name: Display resource group details
+      ansible.builtin.debug:
+        var: get_result.response
+
+    ############################################
+    # Info - list all resource groups
+    ############################################
+
+    - name: List all resource groups
+      nutanix.ncp.ntnx_resource_groups_info_v2:
+      register: all_rgs
+
+    - name: Display total resource groups
+      ansible.builtin.debug:
+        msg: "Total resource groups: {{ all_rgs.total_available_results }}"
+
+    ############################################
+    # Info - list with filter
+    ############################################
+
+    - name: List resource groups with filter
+      nutanix.ncp.ntnx_resource_groups_info_v2:
+        filter: "name eq 'production-resource-group-updated'"
+      register: filtered_rgs
+
+    - name: Display filtered resource groups
+      ansible.builtin.debug:
+        var: filtered_rgs.response
+
+    ############################################
+    # Info - list with pagination
+    ############################################
+
+    - name: List resource groups with pagination
+      nutanix.ncp.ntnx_resource_groups_info_v2:
+        limit: 5
+        page: 0
+      register: paginated_rgs
+
+    - name: Display paginated results
+      ansible.builtin.debug:
+        msg: "Got {{ paginated_rgs.response | length }} resource groups"
+
+    ############################################
+    # Delete resource group
+    ############################################
+
+    - name: Delete resource group
+      nutanix.ncp.ntnx_resource_groups_v2:
+        state: absent
+        wait: true
+        ext_id: "{{ rg_ext_id }}"
+      register: delete_result
+
+    - name: Display deletion result
+      ansible.builtin.debug:
+        var: delete_result

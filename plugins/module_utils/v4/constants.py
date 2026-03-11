@@ -45,6 +45,8 @@ class Tasks:
         STORAGE_POLICY = "datapolicies:config:storage-policy"
         KMS = "security:encryption:key-management-server"
         CLUSTER_PROFILE = "clustermgmt:config:cluster-profile"
+        PROJECT = "multidomain:config:project"
+        RESOURCE_GROUP = "multidomain:config:resource-group"
 
     class CompletetionDetailsName:
         """Completion details name for the task entities affected"""
