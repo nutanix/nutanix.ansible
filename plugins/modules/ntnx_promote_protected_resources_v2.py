@@ -58,13 +58,19 @@ options:
       - Remote Prism central username
       - C(nutanix_username). If not set then the value of the C(NUTANIX_USERNAME), environment variable is used.
     type: str
-    required: true
+    required: false
   nutanix_password:
     description:
       - Remote Prism central password
       - C(nutanix_password). If not set then the value of the C(NUTANIX_PASSWORD), environment variable is used.
-    required: true
     type: str
+    required: false
+  nutanix_api_key:
+    description:
+      - Remote Prism central API key. Created using Service Account API Key in Prism Central.
+      - C(nutanix_api_key). If not set then the value of the C(NUTANIX_API_KEY), environment variable is used.
+    type: str
+    required: false
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
@@ -176,8 +182,8 @@ task_ext_id:
   sample: "ZXJnb24=:af298405-1d59-4c28-9b78-f8f94a5adf2d"
 """
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.data_protection.api_client import (  # noqa: E402
     get_protected_resource_api_instance,
 )
@@ -223,8 +229,7 @@ def promote_protected_resource(module, result):
 
 
 def run_module():
-    module = BaseModule(
-        support_proxy=True,
+    module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )

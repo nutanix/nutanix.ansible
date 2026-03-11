@@ -23,13 +23,19 @@ class BaseModule(AnsibleModule):
             default="9440", type="str", fallback=(env_fallback, ["NUTANIX_PORT"])
         ),
         nutanix_username=dict(
-            type="str", fallback=(env_fallback, ["NUTANIX_USERNAME"]), required=True
+            type="str", fallback=(env_fallback, ["NUTANIX_USERNAME"]), required=False
         ),
         nutanix_password=dict(
             type="str",
             no_log=True,
             fallback=(env_fallback, ["NUTANIX_PASSWORD"]),
-            required=True,
+            required=False,
+        ),
+        nutanix_api_key=dict(
+            type="str",
+            no_log=True,
+            fallback=(env_fallback, ["NUTANIX_API_KEY"]),
+            required=False,
         ),
         validate_certs=dict(
             type="bool", default=True, fallback=(env_fallback, ["VALIDATE_CERTS"])
@@ -49,20 +55,8 @@ class BaseModule(AnsibleModule):
         ),
     )
 
-    proxy_argument_spec = dict(
-        https_proxy=dict(type="str"),
-        http_proxy=dict(type="str"),
-        all_proxy=dict(type="str"),
-        no_proxy=dict(type="str"),
-        proxy_username=dict(type="str"),
-        proxy_password=dict(type="str", no_log=True),
-    )
-
     def __init__(self, **kwargs):
-        support_proxy = kwargs.pop("support_proxy", False)
         argument_spec = deepcopy(self.argument_spec)
-        if support_proxy:
-            argument_spec.update(deepcopy(self.proxy_argument_spec))
         if kwargs.get("argument_spec"):
             argument_spec.update(deepcopy(kwargs["argument_spec"]))
         self.argument_spec_with_extra_keys = deepcopy(argument_spec)
@@ -73,6 +67,9 @@ class BaseModule(AnsibleModule):
             kwargs["supports_check_mode"] = True
 
         super(BaseModule, self).__init__(**kwargs)
+
+        # Note: Authentication validation is handled by the API client
+        # The env_fallback in argument_spec will populate credentials from environment variables
 
     def strip_extra_attributes(self, argument_spec):
         """

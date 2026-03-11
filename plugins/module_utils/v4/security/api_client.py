@@ -34,22 +34,40 @@ def get_api_client(module):
     config = ntnx_security_py_client.Configuration()
     config.host = module.params.get("nutanix_host")
     config.port = module.params.get("nutanix_port")
-    config.username = module.params.get("nutanix_username")
-    config.password = module.params.get("nutanix_password")
+    api_key = module.params.get("nutanix_api_key")
+    nutanix_username = module.params.get("nutanix_username")
+    nutanix_password = module.params.get("nutanix_password")
+    if (not nutanix_username or not nutanix_password) and not (api_key):
+        module.fail_json(
+            msg="Either nutanix_username and nutanix_password or nutanix_api_key is required"
+        )
+    if api_key:
+        config.set_api_key(api_key)
+    else:
+        config.username = nutanix_username
+        config.password = nutanix_password
     config.verify_ssl = module.params.get("validate_certs")
     config.read_timeout = module.params.get("read_timeout")
     _apply_proxy_from_env(config, module)
     client = ntnx_security_py_client.ApiClient(
         configuration=config, allow_version_negotiation=ALLOW_VERSION_NEGOTIATION
     )
+    if not api_key:
+        cred = "{0}:{1}".format(config.username, config.password)
+        try:
+            encoded_cred = b64encode(bytes(cred, encoding="ascii")).decode("ascii")
+        except BaseException:
+            encoded_cred = b64encode(bytes(cred).encode("ascii")).decode("ascii")
+        auth_header = "Basic " + encoded_cred
+        client.add_default_header(header_name="Authorization", header_value=auth_header)
 
-    cred = "{0}:{1}".format(config.username, config.password)
-    try:
-        encoded_cred = b64encode(bytes(cred, encoding="ascii")).decode("ascii")
-    except BaseException:
-        encoded_cred = b64encode(bytes(cred).encode("ascii")).decode("ascii")
-    auth_header = "Basic " + encoded_cred
-    client.add_default_header(header_name="Authorization", header_value=auth_header)
+    # Workaround as set_api_key not working as expected for security api
+    if api_key:
+        default_headers = getattr(client, "_ApiClient__default_headers", {})
+        if "X-ntnx-api-key" not in default_headers:
+            client.add_default_header(
+                header_name="X-ntnx-api-key", header_value=api_key
+            )
 
     # Setup API logging if debug is enabled
     setup_api_logging(module, client)

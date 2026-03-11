@@ -12,8 +12,11 @@
         vm_uuid: "{{ vm.uuid }}"
         state: absent
         nutanix_host: "{{ ip }}"
-        nutanix_username: "{{ username }}"
-        nutanix_password: "{{ password }}"
+        nutanix_username: "{{ username | default(omit) }}"
+        nutanix_password: "{{ password | default(omit) }}"
+        nutanix_api_key: "{{ nutanix_api_key | default(omit) }}"
+        nutanix_debug: "{{ nutanix_debug | default(omit) }}"
+        nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
         validate_certs: false
     #   # - name: Delete DR VM
     #   #   ntnx_vms:
@@ -29,8 +32,11 @@
       nutanix.ncp.ntnx_subnets:
         state: absent
         nutanix_host: "{{ ip }}"
-        nutanix_username: "{{ username }}"
-        nutanix_password: "{{ password }}"
+        nutanix_username: "{{ username | default(omit) }}"
+        nutanix_password: "{{ password | default(omit) }}"
+        nutanix_api_key: "{{ nutanix_api_key | default(omit) }}"
+        nutanix_debug: "{{ nutanix_debug | default(omit) }}"
+        nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
         validate_certs: false
         subnet_uuid: "{{ item }}"
       loop:
@@ -41,8 +47,11 @@
       nutanix.ncp.ntnx_vpcs:
         state: absent
         nutanix_host: "{{ ip }}"
-        nutanix_username: "{{ username }}"
-        nutanix_password: "{{ password }}"
+        nutanix_username: "{{ username | default(omit) }}"
+        nutanix_password: "{{ password | default(omit) }}"
+        nutanix_api_key: "{{ nutanix_api_key | default(omit) }}"
+        nutanix_debug: "{{ nutanix_debug | default(omit) }}"
+        nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
         validate_certs: false
         vpc_uuid: "{{ vpc.uuid }}"
     - name: Delete subnets
@@ -51,8 +60,11 @@
       nutanix.ncp.ntnx_subnets:
         state: absent
         nutanix_host: "{{ ip }}"
-        nutanix_username: "{{ username }}"
-        nutanix_password: "{{ password }}"
+        nutanix_username: "{{ username | default(omit) }}"
+        nutanix_password: "{{ password | default(omit) }}"
+        nutanix_api_key: "{{ nutanix_api_key | default(omit) }}"
+        nutanix_debug: "{{ nutanix_debug | default(omit) }}"
+        nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
         validate_certs: false
         subnet_uuid: "{{ item }}"
       loop:

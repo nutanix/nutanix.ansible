@@ -64,8 +64,4 @@
 - name: Delete subnet
   nutanix.ncp.ntnx_subnets:
     state: absent
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     subnet_uuid: "{{ result.subnet_uuid }}"

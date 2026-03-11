@@ -102,8 +102,8 @@ response:
 """
 import warnings  # noqa: E402
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.iam.api_client import get_user_api_instance  # noqa: E402
 from ..module_utils.v4.utils import raise_api_exception  # noqa: E402
 
@@ -148,8 +148,7 @@ def revoke_user_api_key(module, users_api, result):
 
 
 def run_module():
-    module = BaseModule(
-        support_proxy=True,
+    module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
     )
