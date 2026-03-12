@@ -52,6 +52,12 @@ def get_api_client(module):
         config.username = nutanix_username
         config.password = nutanix_password
     config.verify_ssl = module.params.get("validate_certs")
+    try:
+        client = ntnx_networking_py_client.ApiClient(
+            configuration=config, allow_version_negotiation=ALLOW_VERSION_NEGOTIATION
+        )
+    except TypeError:
+        client = ntnx_networking_py_client.ApiClient(configuration=config)
     _apply_proxy_from_env(config, module)
     client = ntnx_networking_py_client.ApiClient(
         configuration=config, allow_version_negotiation=ALLOW_VERSION_NEGOTIATION
@@ -152,3 +158,39 @@ def get_routes_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_networking_py_client.RoutesApi(api_client=api_client)
+
+
+def get_network_function_api_instance(module):
+    """
+    This method will return NetworkFunctionsApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): network functions api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.NetworkFunctionsApi(api_client=api_client)
+
+
+def get_virtual_switches_api_instance(module):
+    """
+    This method will return VirtualSwitchesApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Virtual Switches Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.VirtualSwitchesApi(api_client=api_client)
+
+
+def get_bridges_api_instance(module):
+    """
+    This method will return BridgesApi instance for migrate operations.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Bridges Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.BridgesApi(api_client=api_client)
