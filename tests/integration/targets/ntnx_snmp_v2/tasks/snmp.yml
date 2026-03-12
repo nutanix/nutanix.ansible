@@ -1,0 +1,1370 @@
+---
+- name: Running SNMP integration tests
+  ansible.builtin.debug:
+    msg: "Running SNMP integration tests"
+
+##################################################
+# Setup
+##################################################
+
+- name: Generate random suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    suffix_name: ansible_test
+
+- name: List all clusters to get prism central external ID
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
+  register: result
+  ignore_errors: true
+
+- name: Get prism central external ID
+  ansible.builtin.set_fact:
+    prism_central_external_id: "{{ result.response[0].ext_id }}"
+
+- name: Set test variables
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ prism_central_external_id }}"
+    snmp_username_min: "snmp_user_min_{{ suffix_name }}_{{ random_name }}"
+    snmp_username_all: "snmp_user_all_{{ suffix_name }}_{{ random_name }}"
+    snmp_auth_key: "testAuthKey12345"
+    snmp_auth_key_updated: "updatedAuthKey789"
+    snmp_priv_key: "testPrivKey12345"
+    snmp_priv_key_updated: "updatedPrivKey789"
+    test_trap_protocol_v2: "UDP"
+    test_trap_protocol_v3: "TCP"
+    trap_v2_port: 162
+    trap_v2_port_updated: 163
+    trap_v3_port: 164
+    non_existing_port: 59999
+    to_delete_users: []
+    to_delete_traps: []
+
+- name: Debug test variables
+  ansible.builtin.debug:
+    msg:
+      cluster_ext_id: "{{ cluster_ext_id }}"
+      snmp_username_min: "{{ snmp_username_min }}"
+      snmp_username_all: "{{ snmp_username_all }}"
+
+##################################################
+# Fetch initial SNMP config (single call for all dynamic variables)
+##################################################
+
+- name: Fetch initial SNMP config
+  nutanix.ncp.ntnx_snmp_config_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: initial_snmp_config
+  ignore_errors: true
+
+- name: Debug initial SNMP config
+  ansible.builtin.debug:
+    var: initial_snmp_config
+
+- name: Verify initial SNMP config fetch
+  ansible.builtin.assert:
+    that:
+      - initial_snmp_config.changed == false
+      - initial_snmp_config.failed == false
+      - initial_snmp_config.response is defined
+      - initial_snmp_config.response.is_enabled is defined
+    fail_msg: "Failed to fetch initial SNMP config on cluster"
+    success_msg: "Initial SNMP config fetched successfully"
+
+- name: Set dynamic variables from initial SNMP config
+  ansible.builtin.set_fact:
+    current_snmp_status: "{{ initial_snmp_config.response.is_enabled | bool }}"
+    current_snmp_transports: "{{ initial_snmp_config.response.transports | default([]) }}"
+    existing_trap_ips: "{{ (initial_snmp_config.response.traps | default([])) | selectattr('address', 'defined') | selectattr('address.ipv4', 'defined') | selectattr('address.ipv4.value', 'defined') | map(attribute='address.ipv4.value') | list }}"
+
+- name: Set trap subnet prefix
+  ansible.builtin.set_fact:
+    trap_subnet_prefix: "{{ (existing_trap_ips | first | regex_replace('\\.[^.]*$', '')) if existing_trap_ips | length > 0 else '10.0.0' }}"
+
+- name: Find used octets in the same subnet
+  ansible.builtin.set_fact:
+    used_octets: "{{ existing_trap_ips | select('match', '^' ~ (trap_subnet_prefix | regex_escape) ~ '\\.') | map('regex_replace', '^.*\\.', '') | map('int') | list }}"
+
+- name: Find available last octets for trap IPs
+  ansible.builtin.set_fact:
+    available_octets: "{{ range(1, 255) | list | difference(used_octets) }}"
+
+- name: Set dynamic transport port and trap IPs
+  ansible.builtin.set_fact:
+    test_transport_protocol: "UDP"
+    test_transport_port: "{{ (current_snmp_transports | map(attribute='port') | list + [161]) | max + 1 }}"
+    trap_v2_ip: "{{ trap_subnet_prefix }}.{{ available_octets[0] }}"
+    trap_v3_ip: "{{ trap_subnet_prefix }}.{{ available_octets[1] }}"
+    wrong_trap_ip: "{{ trap_subnet_prefix }}.{{ available_octets[2] }}"
+
+- name: Debug dynamic variables
+  ansible.builtin.debug:
+    msg:
+      current_snmp_status: "{{ current_snmp_status }}"
+      current_snmp_transports: "{{ current_snmp_transports }}"
+      test_transport_port: "{{ test_transport_port }}"
+      existing_trap_ips: "{{ existing_trap_ips }}"
+      trap_subnet_prefix: "{{ trap_subnet_prefix }}"
+      trap_v2_ip: "{{ trap_v2_ip }}"
+      trap_v3_ip: "{{ trap_v3_ip }}"
+
+##################################################
+# SNMP Config - Toggle SNMP Status
+##################################################
+
+- name: Change SNMP status (toggle) with check mode
+  nutanix.ncp.ntnx_snmp_config_v2:
+    cluster_ext_id: "913fa076-d385-4dd8-b549-0e628e645569"
+    is_enabled: true
+  check_mode: true
+  register: check_mode_result
+  ignore_errors: true
+
+- name: Debug check mode change SNMP status result
+  ansible.builtin.debug:
+    var: check_mode_result
+
+- name: Verify check mode change SNMP status
+  ansible.builtin.assert:
+    that:
+      - check_mode_result.changed == false
+      - check_mode_result.failed == false
+      - check_mode_result.cluster_ext_id == "913fa076-d385-4dd8-b549-0e628e645569"
+      - check_mode_result.response is defined
+      - check_mode_result.response.is_enabled == true
+    fail_msg: "Check mode failed for changing SNMP status"
+    success_msg: "Check mode SNMP status change spec generated successfully"
+
+- name: Change SNMP status (toggle)
+  nutanix.ncp.ntnx_snmp_config_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    is_enabled: "{{ not (current_snmp_status | bool) }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug change SNMP status result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify change SNMP status task succeeded
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Failed to change SNMP status on cluster"
+    success_msg: "SNMP status change task succeeded"
+
+- name: Wait for SNMP status change to propagate
+  ansible.builtin.pause:
+    seconds: 5
+
+- name: Fetch SNMP config after toggle
+  nutanix.ncp.ntnx_snmp_config_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: verify_result
+  ignore_errors: true
+
+- name: Debug SNMP config after toggle
+  ansible.builtin.debug:
+    var: verify_result
+
+- name: Verify SNMP status was toggled
+  ansible.builtin.assert:
+    that:
+      - verify_result.changed == false
+      - verify_result.failed == false
+      - verify_result.cluster_ext_id == "{{ cluster_ext_id }}"
+      - verify_result.response is defined
+      - verify_result.response.is_enabled != (current_snmp_status | bool)
+    fail_msg: "SNMP status was not toggled on cluster"
+    success_msg: "SNMP status toggled successfully on cluster"
+
+- name: Set SNMP status to its original value
+  nutanix.ncp.ntnx_snmp_config_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    is_enabled: "{{ current_snmp_status | bool }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug set SNMP status to original value result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify restore SNMP status task succeeded
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Failed to set SNMP status to original value on cluster"
+    success_msg: "SNMP status restore task succeeded"
+
+- name: Wait for SNMP status restore to propagate
+  ansible.builtin.pause:
+    seconds: 5
+
+- name: Fetch SNMP config after restore
+  nutanix.ncp.ntnx_snmp_config_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: verify_result
+  ignore_errors: true
+
+- name: Debug SNMP config after restore
+  ansible.builtin.debug:
+    var: verify_result
+
+- name: Verify SNMP status was restored
+  ansible.builtin.assert:
+    that:
+      - verify_result.changed == false
+      - verify_result.failed == false
+      - verify_result.cluster_ext_id == "{{ cluster_ext_id }}"
+      - verify_result.response is defined
+      - verify_result.response.is_enabled == (current_snmp_status | bool)
+    fail_msg: "Failed to verify SNMP status was restored on cluster"
+    success_msg: "SNMP status restored and verified successfully"
+
+##################################################
+# SNMP Config - Add/Remove Transport
+# Variables already set from initial config fetch:
+#   current_snmp_transports, test_transport_protocol, test_transport_port
+##################################################
+
+- name: Add SNMP transport with check mode
+  nutanix.ncp.ntnx_snmp_config_v2:
+    state: present
+    cluster_ext_id: "913fa076-d385-4dd8-b549-0e628e645569"
+    protocol: UDP
+    port: 161
+  check_mode: true
+  register: check_mode_transport
+  ignore_errors: true
+
+- name: Debug check mode add transport result
+  ansible.builtin.debug:
+    var: check_mode_transport
+
+- name: Verify Adding SNMP transport with check mode
+  ansible.builtin.assert:
+    that:
+      - check_mode_transport.changed == false
+      - check_mode_transport.failed == false
+      - check_mode_transport.cluster_ext_id == "913fa076-d385-4dd8-b549-0e628e645569"
+      - check_mode_transport.response is defined
+      - check_mode_transport.response.protocol == "UDP"
+      - check_mode_transport.response.port == 161
+    fail_msg: "Verify Adding SNMP transport with check mode failed"
+    success_msg: "Verify Adding SNMP transport with check mode succeeded"
+
+- name: Add SNMP transport
+  nutanix.ncp.ntnx_snmp_config_v2:
+    state: present
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    protocol: "{{ test_transport_protocol }}"
+    port: "{{ test_transport_port }}"
+  register: add_transport_result
+  ignore_errors: true
+
+- name: Debug add transport result
+  ansible.builtin.debug:
+    var: add_transport_result
+
+- name: Verify add SNMP transport
+  ansible.builtin.assert:
+    that:
+      - add_transport_result.changed == true
+      - add_transport_result.failed == false
+      - add_transport_result.cluster_ext_id == "{{ cluster_ext_id }}"
+      - add_transport_result.response is defined
+      - add_transport_result.task_ext_id is defined
+      - add_transport_result.response.status == "SUCCEEDED"
+    fail_msg: "Failed to add SNMP transport"
+    success_msg: "SNMP transport added successfully"
+
+- name: Fetch SNMP config after adding transport
+  nutanix.ncp.ntnx_snmp_config_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: after_add_config
+  ignore_errors: true
+
+- name: Debug SNMP config after adding transport
+  ansible.builtin.debug:
+    var: after_add_config
+
+- name: Verify new transport exists in config
+  ansible.builtin.assert:
+    that:
+      - after_add_config.changed == false
+      - after_add_config.failed == false
+      - after_add_config.response is defined
+      - after_add_config.response.transports is not none
+      - after_add_config.response.transports | length == (current_snmp_transports | length) + 1
+      - after_add_config.response.transports | selectattr('protocol', 'equalto', test_transport_protocol) | selectattr('port', 'equalto', test_transport_port | int) | list | length > 0
+    fail_msg: "Added transport not found in SNMP config"
+    success_msg: "Added transport verified in SNMP config"
+
+- name: Remove SNMP transport with check mode
+  nutanix.ncp.ntnx_snmp_config_v2:
+    state: absent
+    cluster_ext_id: "913fa076-d385-4dd8-b549-0e628e645569"
+    protocol: UDP
+    port: 161
+  check_mode: true
+  register: check_mode_remove
+  ignore_errors: true
+
+- name: Debug check mode remove transport result
+  ansible.builtin.debug:
+    var: check_mode_remove
+
+- name: Verify Removing SNMP transport with check mode
+  ansible.builtin.assert:
+    that:
+      - check_mode_remove.changed == false
+      - check_mode_remove.failed == false
+      - check_mode_remove.cluster_ext_id == "913fa076-d385-4dd8-b549-0e628e645569"
+      - check_mode_remove.response is defined
+      - check_mode_remove.response.protocol == "UDP"
+      - check_mode_remove.response.port == 161
+    fail_msg: "Verify Removing SNMP transport with check mode failed"
+    success_msg: "Verify Removing SNMP transport with check mode succeeded"
+
+- name: Remove SNMP transport
+  nutanix.ncp.ntnx_snmp_config_v2:
+    state: absent
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    protocol: "{{ test_transport_protocol }}"
+    port: "{{ test_transport_port }}"
+  register: remove_transport_result
+  ignore_errors: true
+
+- name: Debug remove transport result
+  ansible.builtin.debug:
+    var: remove_transport_result
+
+- name: Verify remove SNMP transport
+  ansible.builtin.assert:
+    that:
+      - remove_transport_result.changed == true
+      - remove_transport_result.failed == false
+      - remove_transport_result.cluster_ext_id == "{{ cluster_ext_id }}"
+      - remove_transport_result.response is defined
+      - remove_transport_result.response.status == "SUCCEEDED"
+      - remove_transport_result.task_ext_id is defined
+    fail_msg: "Failed to remove SNMP transport"
+    success_msg: "SNMP transport removed successfully"
+
+- name: Fetch SNMP config after removing transport
+  nutanix.ncp.ntnx_snmp_config_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: after_remove_config
+  ignore_errors: true
+
+- name: Debug SNMP config after removing transport
+  ansible.builtin.debug:
+    var: after_remove_config
+
+- name: Verify transport was removed from config
+  ansible.builtin.assert:
+    that:
+      - after_remove_config.changed == false
+      - after_remove_config.failed == false
+      - after_remove_config.cluster_ext_id == "{{ cluster_ext_id }}"
+      - after_remove_config.response is defined
+      - after_remove_config.response.transports | length == (current_snmp_transports | length)
+      - after_remove_config.response.transports | selectattr('protocol', 'equalto', test_transport_protocol) | selectattr('port', 'equalto', test_transport_port | int) | list | length == 0
+    fail_msg: "Removed transport still found in SNMP config"
+    success_msg: "Transport removal verified in SNMP config"
+
+##################################################
+# SNMP User - Create
+##################################################
+
+- name: Create SNMP user with check mode
+  nutanix.ncp.ntnx_snmp_user_v2:
+    cluster_ext_id: "913fa076-d385-4dd8-b549-0e628e645569"
+    username: "test_user_all"
+    auth_type: SHA
+    auth_key: "test_auth_key"
+    priv_type: AES
+    priv_key: "test_priv_key"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Debug check mode create user result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify check mode create user
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.username == "test_user_all"
+      - result.response.auth_type == "SHA"
+      - result.response.priv_type == "AES"
+    fail_msg: "Failed to verify Creating SNMP user with check mode"
+    success_msg: "Verify Creating SNMP user with check mode succeeded"
+
+##################################################
+# SNMP User - Create (minimum attributes)
+##################################################
+
+- name: Create SNMP user with minimum attributes
+  nutanix.ncp.ntnx_snmp_user_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    username: "{{ snmp_username_min }}"
+    auth_type: MD5
+    auth_key: "{{ snmp_auth_key }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug create user min result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify create SNMP user with minimum attributes
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.users is defined
+      - result.response.users | selectattr('username', 'equalto', snmp_username_min) | list | length == 1
+      - (result.response.users | selectattr('username', 'equalto', snmp_username_min) | list | first).auth_type == "MD5"
+      - result.task_ext_id is defined
+    fail_msg: "Failed to create SNMP user with minimum attributes"
+    success_msg: "SNMP user with minimum attributes created successfully"
+
+- name: Add user ext_id to delete list
+  ansible.builtin.set_fact:
+    to_delete_users: "{{ to_delete_users + [(result.response.users | selectattr('username', 'equalto', snmp_username_min) | list | first).ext_id] }}"
+
+##################################################
+# SNMP User - Create (all attributes)
+##################################################
+
+- name: Create SNMP user with all attributes
+  nutanix.ncp.ntnx_snmp_user_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    username: "{{ snmp_username_all }}"
+    auth_type: SHA
+    auth_key: "{{ snmp_auth_key }}"
+    priv_type: AES
+    priv_key: "{{ snmp_priv_key }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug create user all result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify create SNMP user with all attributes
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.users | selectattr('username', 'equalto', snmp_username_all) | list | length == 1
+      - (result.response.users | selectattr('username', 'equalto', snmp_username_all) | list | first).auth_type == "SHA"
+      - (result.response.users | selectattr('username', 'equalto', snmp_username_all) | list | first).priv_type == "AES"
+      - result.task_ext_id is defined
+    fail_msg: "Failed to create SNMP user with all attributes"
+    success_msg: "SNMP user with all attributes created successfully"
+
+- name: Add all user ext_id to delete list
+  ansible.builtin.set_fact:
+    to_delete_users: "{{ to_delete_users + [(result.response.users | selectattr('username', 'equalto', snmp_username_all) | list | first).ext_id] }}"
+
+- name: Debug to_delete_users
+  ansible.builtin.debug:
+    var: to_delete_users
+
+##################################################
+# SNMP User - Fetch Info
+##################################################
+
+- name: Fetch SNMP user (all attrs) by ext_id
+  nutanix.ncp.ntnx_snmp_user_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ to_delete_users[1] }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug fetch user all result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify fetched SNMP user (all attrs)
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == to_delete_users[1]
+      - result.cluster_ext_id == "{{ cluster_ext_id }}"
+      - result.response.username == snmp_username_all
+      - result.response.auth_type == "SHA"
+      - result.response.priv_type == "AES"
+    fail_msg: "Failed to fetch SNMP user by ext_id"
+    success_msg: "SNMP user fetched successfully by ext_id"
+
+##################################################
+# SNMP User - Update (check mode)
+##################################################
+
+- name: Update SNMP user auth_type with check mode
+  nutanix.ncp.ntnx_snmp_user_v2:
+    cluster_ext_id: "913fa076-d385-4dd8-b549-0e628e645569"
+    ext_id: "{{ to_delete_users[1] }}"
+    username: "test_user_all_updated"
+    auth_type: MD5
+    auth_key: "test_auth_key_updated"
+    priv_type: AES
+    priv_key: "test_priv_key_updated"
+  check_mode: true
+  register: check_mode_result
+  ignore_errors: true
+
+- name: Debug check mode update user result
+  ansible.builtin.debug:
+    var: check_mode_result
+
+- name: Verify Updating SNMP user auth_type with check mode
+  ansible.builtin.assert:
+    that:
+      - check_mode_result.changed == false
+      - check_mode_result.failed == false
+      - check_mode_result.cluster_ext_id == "913fa076-d385-4dd8-b549-0e628e645569"
+      - check_mode_result.response is defined
+      - check_mode_result.response.auth_type == "MD5"
+      - check_mode_result.response.priv_type == "AES"
+    fail_msg: "Failed to verify Updating SNMP user auth_type with check mode"
+    success_msg: "Verify Updating SNMP user auth_type with check mode succeeded"
+
+##################################################
+# SNMP User - Update
+##################################################
+
+- name: Update SNMP user with all attributes
+  nutanix.ncp.ntnx_snmp_user_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ to_delete_users[1] }}"
+    username: "{{ snmp_username_all }}"
+    auth_type: MD5
+    auth_key: "{{ snmp_auth_key_updated }}"
+    priv_type: DES
+    priv_key: "{{ snmp_priv_key_updated }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug update user result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify update SNMP user with all attributes
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.cluster_ext_id == "{{ cluster_ext_id }}"
+      - result.ext_id == to_delete_users[1]
+      - result.response.username == snmp_username_all
+      - result.response.auth_type == "MD5"
+      - result.response.priv_type == "DES"
+      - result.task_ext_id is defined
+    fail_msg: "Failed to verify update SNMP user with all attributes"
+    success_msg: "Verify update SNMP user with all attributes succeeded"
+
+##################################################
+# SNMP User - Idempotency
+##################################################
+
+- name: Update SNMP user with same spec (idempotency)
+  nutanix.ncp.ntnx_snmp_user_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ to_delete_users[1] }}"
+    username: "{{ snmp_username_all }}"
+    auth_type: MD5
+    auth_key: "{{ snmp_auth_key_updated }}"
+    priv_type: DES
+    priv_key: "{{ snmp_priv_key_updated }}"
+  register: idempotency_result
+  ignore_errors: true
+
+- name: Debug idempotency update user result
+  ansible.builtin.debug:
+    var: idempotency_result
+
+- name: Verify SNMP user update idempotency
+  ansible.builtin.assert:
+    that:
+      - idempotency_result.changed == false
+      - idempotency_result.failed == false
+      - idempotency_result.skipped == true
+      - idempotency_result.msg == "Nothing to change."
+    fail_msg: "Failed to verify SNMP user update idempotency"
+    success_msg: "Verify SNMP user update idempotency succeeded"
+
+##################################################
+# SNMP Trap V2 - Check Mode Create
+##################################################
+
+- name: Create SNMP V2 trap with check mode
+  nutanix.ncp.ntnx_snmp_trap_v2:
+    state: present
+    cluster_ext_id: "913fa076-d385-4dd8-b549-0e628e645569"
+    address:
+      ipv4:
+        value: "10.0.0.1"
+    version: V2
+    community_string: "public"
+    port: 161
+    protocol: UDP
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Debug check mode create V2 trap result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify Creating SNMP V2 trap with check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.cluster_ext_id == "913fa076-d385-4dd8-b549-0e628e645569"
+      - result.response.address.ipv4.value == "10.0.0.1"
+      - result.response.version == "V2"
+      - result.response.community_string == "public"
+      - result.response.port == 161
+      - result.response.protocol == "UDP"
+    fail_msg: "Verify Creating SNMP V2 trap with check mode failed"
+    success_msg: "Verify Creating SNMP V2 trap with check mode succeeded"
+
+##################################################
+# SNMP Trap V2 - Create
+##################################################
+
+- name: Create SNMP V2 trap
+  nutanix.ncp.ntnx_snmp_trap_v2:
+    state: present
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    address:
+      ipv4:
+        value: "{{ trap_v2_ip }}"
+    version: V2
+    community_string: "public"
+    port: "{{ trap_v2_port }}"
+    protocol: "{{ test_trap_protocol_v2 }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug create V2 trap result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify create SNMP V2 trap
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.traps is defined
+      - result.response.traps | length >= 1
+      - result.response.traps | selectattr('version', 'equalto', 'V2') | selectattr('address.ipv4.value', 'equalto', trap_v2_ip) | list | length == 1
+      - (result.response.traps | selectattr('version', 'equalto', 'V2') | selectattr('address.ipv4.value', 'equalto', trap_v2_ip) | list | first).community_string == "public"
+      - (result.response.traps | selectattr('version', 'equalto', 'V2') | selectattr('address.ipv4.value', 'equalto', trap_v2_ip) | list | first).protocol == test_trap_protocol_v2
+      - (result.response.traps | selectattr('version', 'equalto', 'V2') | selectattr('address.ipv4.value', 'equalto', trap_v2_ip) | list | first).port == trap_v2_port
+      - result.task_ext_id is defined
+    fail_msg: "Failed to create SNMP V2 trap"
+    success_msg: "SNMP V2 trap created successfully"
+
+- name: Extract V2 trap ext_id
+  ansible.builtin.set_fact:
+    trap_v2_ext_id: "{{ item.ext_id }}"
+  loop: "{{ result.response.traps }}"
+  when: >
+    item.version is defined and item.version == "V2"
+    and item.address is defined
+    and item.address.ipv4 is defined
+    and item.address.ipv4.value == trap_v2_ip
+  loop_control:
+    label: "{{ item.ext_id | default('unknown') }}"
+
+- name: Verify V2 trap in config response
+  ansible.builtin.assert:
+    that:
+      - trap_v2_ext_id is defined
+      - trap_v2_ext_id | length > 0
+    fail_msg: "V2 trap not found in SNMP config response"
+    success_msg: "V2 trap found in SNMP config with ext_id {{ trap_v2_ext_id }}"
+
+- name: Add V2 trap ext_id to delete list
+  ansible.builtin.set_fact:
+    to_delete_traps: "{{ to_delete_traps + [trap_v2_ext_id] }}"
+
+##################################################
+# SNMP Trap V3 - Create (using SNMP user)
+##################################################
+
+- name: Create SNMP V3 trap using SNMP user
+  nutanix.ncp.ntnx_snmp_trap_v2:
+    state: present
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    address:
+      ipv4:
+        value: "{{ trap_v3_ip }}"
+    version: V3
+    username: "{{ snmp_username_all }}"
+    port: "{{ trap_v3_port }}"
+    protocol: "{{ test_trap_protocol_v3 }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug create V3 trap result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify create SNMP V3 trap
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.traps is defined
+      - result.response.traps | length >= 2
+      - result.response.traps | selectattr('version', 'equalto', 'V3') | selectattr('address.ipv4.value', 'equalto', trap_v3_ip) | list | length == 1
+      - (result.response.traps | selectattr('version', 'equalto', 'V3') | selectattr('address.ipv4.value', 'equalto', trap_v3_ip) | list | first).username == snmp_username_all
+      - (result.response.traps | selectattr('version', 'equalto', 'V3') | selectattr('address.ipv4.value', 'equalto', trap_v3_ip) | list | first).protocol == test_trap_protocol_v3
+      - (result.response.traps | selectattr('version', 'equalto', 'V3') | selectattr('address.ipv4.value', 'equalto', trap_v3_ip) | list | first).port == trap_v3_port
+      - result.task_ext_id is defined
+    fail_msg: "Failed to create SNMP V3 trap"
+    success_msg: "SNMP V3 trap created successfully"
+
+- name: Extract V3 trap ext_id
+  ansible.builtin.set_fact:
+    trap_v3_ext_id: "{{ item.ext_id }}"
+  loop: "{{ result.response.traps }}"
+  when: >
+    item.version is defined and item.version == "V3"
+    and item.address is defined
+    and item.address.ipv4 is defined
+    and item.address.ipv4.value == trap_v3_ip
+  loop_control:
+    label: "{{ item.ext_id | default('unknown') }}"
+
+- name: Verify V3 trap in config response
+  ansible.builtin.assert:
+    that:
+      - trap_v3_ext_id is defined
+      - trap_v3_ext_id | length > 0
+    fail_msg: "V3 trap not found in SNMP config response"
+    success_msg: "V3 trap found in SNMP config with ext_id {{ trap_v3_ext_id }}"
+
+- name: Add V3 trap ext_id to delete list
+  ansible.builtin.set_fact:
+    to_delete_traps: "{{ to_delete_traps + [trap_v3_ext_id] }}"
+
+##################################################
+# SNMP Trap - Fetch Info
+##################################################
+
+- name: Fetch SNMP V2 trap by ext_id
+  nutanix.ncp.ntnx_snmp_trap_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ trap_v2_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug fetch V2 trap result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify fetched SNMP V2 trap
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.cluster_ext_id == "{{ cluster_ext_id }}"
+      - result.ext_id == trap_v2_ext_id
+      - result.response.version == "V2"
+      - result.response.protocol == test_trap_protocol_v2
+      - result.response.port == trap_v2_port | int
+      - result.response.address.ipv4.value == trap_v2_ip
+    fail_msg: "Failed to verify fetched SNMP V2 trap by ext_id"
+    success_msg: "Verify fetched SNMP V2 trap by ext_id succeeded"
+
+##################################################
+# SNMP Trap - Update V2
+##################################################
+
+- name: Update SNMP V2 trap
+  nutanix.ncp.ntnx_snmp_trap_v2:
+    state: present
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ trap_v2_ext_id }}"
+    address:
+      ipv4:
+        value: "{{ trap_v2_ip }}"
+    version: V3
+    port: "{{ trap_v3_port | int }}"
+    protocol: "{{ test_trap_protocol_v3 }}"
+    username: "{{ snmp_username_min }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug update V2 trap result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify update SNMP V2 trap
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == trap_v2_ext_id
+      - result.task_ext_id is defined
+      - result.response.version == "V3"
+      - result.response.protocol == test_trap_protocol_v3
+      - result.response.port == trap_v3_port | int
+      - result.response.address.ipv4.value == trap_v2_ip
+      - result.response.username == snmp_username_min
+    fail_msg: "Failed to update SNMP V2 trap"
+    success_msg: "SNMP V2 trap updated successfully"
+
+##################################################
+# SNMP Trap - Idempotency
+##################################################
+
+- name: Update SNMP V2 trap with same spec (idempotency)
+  nutanix.ncp.ntnx_snmp_trap_v2:
+    state: present
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ trap_v2_ext_id }}"
+    address:
+      ipv4:
+        value: "{{ trap_v2_ip }}"
+    version: V3
+    port: "{{ trap_v3_port | int }}"
+    protocol: "{{ test_trap_protocol_v3 }}"
+    username: "{{ snmp_username_min }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug SNMP V2 trap idempotency result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify SNMP V2 trap idempotency
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.msg == "Nothing to change."
+    fail_msg: "Failed to verify SNMP V2 trap idempotency"
+    success_msg: "Verify SNMP V2 trap idempotency succeeded"
+
+##################################################
+# SNMP User - Delete Check Mode
+##################################################
+
+- name: Delete SNMP user with check mode
+  nutanix.ncp.ntnx_snmp_user_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    state: absent
+    ext_id: "{{ to_delete_users[0] }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Debug delete user check mode result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify delete SNMP user check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == to_delete_users[0]
+      - result.msg == "SnmpUser with ext_id:" ~ to_delete_users[0] ~ " will be deleted."
+    fail_msg: "Failed to verify SNMP user delete check mode"
+    success_msg: "Verify SNMP user delete check mode succeeded"
+
+##################################################
+# SNMP Trap - Delete Check Mode
+##################################################
+
+- name: Delete SNMP trap with check mode
+  nutanix.ncp.ntnx_snmp_trap_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    state: absent
+    ext_id: "{{ to_delete_traps[0] }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Debug delete trap check mode result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify delete SNMP trap check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == to_delete_traps[0]
+      - result.msg == "SnmpTrap with ext_id:" ~ to_delete_traps[0] ~ " will be deleted."
+    fail_msg: "Failed to verify SNMP trap delete check mode"
+    success_msg: "Verify SNMP trap delete check mode succeeded"
+
+##################################################
+# Negative Scenarios
+##################################################
+
+- name: "Negative: Create SNMP user without required params"
+  nutanix.ncp.ntnx_snmp_user_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Debug negative create user result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify create SNMP user without required params fails
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "state is present but all of the following are missing: username, auth_type, auth_key"
+    fail_msg: "Create SNMP user without required params did not fail as expected"
+    success_msg: "Create SNMP user without required params failed as expected"
+
+- name: "Negative: Create SNMP user with wrong auth_type"
+  nutanix.ncp.ntnx_snmp_user_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    state: present
+    username: "test"
+    auth_type: "WRONG"
+    auth_key: "test-auth-key123"
+    priv_type: DES
+    priv_key: "test-priv-key123"
+  register: result
+  ignore_errors: true
+
+- name: Debug negative create user result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify create SNMP user with wrong auth_type fails
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - "result.msg == 'value of auth_type must be one of: MD5, SHA, got: WRONG'"
+    fail_msg: "Create SNMP user with wrong auth_type did not fail as expected"
+    success_msg: "Create SNMP user with wrong auth_type failed as expected"
+
+- name: "Negative: Fetch SNMP user with wrong ext_id"
+  nutanix.ncp.ntnx_snmp_user_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "a1111111-1111-1111-1111-111111111111"
+  register: result
+  ignore_errors: true
+
+- name: Debug negative fetch user result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify fetch user with wrong ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching snmp user info using ext_id"
+    fail_msg: "Fetch SNMP user with wrong ext_id did not fail as expected"
+    success_msg: "Fetch SNMP user with wrong ext_id failed as expected"
+
+- name: "Negative: Update SNMP user with wrong ext_id"
+  nutanix.ncp.ntnx_snmp_user_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "a1111111-1111-1111-1111-111111111111"
+    username: "test"
+    auth_type: MD5
+    auth_key: "test-auth-key123"
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Debug negative update user result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify update user with wrong ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching snmp user info using ext_id"
+    fail_msg: "Update SNMP user with wrong ext_id did not fail as expected"
+    success_msg: "Update SNMP user with wrong ext_id failed as expected"
+
+- name: "Negative: Update SNMP user with non existing ext_id"
+  nutanix.ncp.ntnx_snmp_user_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    state: present
+    ext_id: "a2222222-2222-2222-2222-222222222222"
+    username: "non-existing-username"
+    auth_type: MD5
+    auth_key: "test-auth-key123"
+    priv_type: DES
+    priv_key: "test-priv-key123"
+  register: result
+  ignore_errors: true
+
+- name: Debug negative update user with non existing ext_id result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify update user with non existing ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching snmp user info using ext_id"
+    fail_msg: "Update SNMP user with non existing ext_id did not fail as expected"
+    success_msg: "Update SNMP user with non existing ext_id failed as expected"
+
+# This is failing because the API returns success for non-existent ext_ids
+# - name: "Negative: Delete SNMP user with wrong ext_id"
+#   nutanix.ncp.ntnx_snmp_user_v2:
+#     cluster_ext_id: "{{ cluster_ext_id }}"
+#     state: absent
+#     ext_id: "a1111111-1111-1111-1111-111111111111"
+#   register: result
+#   ignore_errors: true
+
+# - name: Debug negative delete user result
+#   ansible.builtin.debug:
+#     var: result
+
+# - name: Verify delete user with wrong ext_id fails
+#   ansible.builtin.assert:
+#     that:
+#       - result.changed == false
+#       - result.failed == true
+#       - result.msg == "Api Exception raised while deleting snmp user"
+#     fail_msg: "Delete SNMP user with wrong ext_id did not fail as expected"
+#     success_msg: "Delete SNMP user with wrong ext_id failed as expected"
+
+- name: "Negative: Create SNMP trap without address and version"
+  nutanix.ncp.ntnx_snmp_trap_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Debug negative create trap result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify create trap without required params fails
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "state is present but all of the following are missing: address, version"
+    fail_msg: "Create SNMP trap without address and version did not fail as expected"
+    success_msg: "Create SNMP trap without address and version failed as expected"
+
+- name: "Negative: Fetch SNMP trap with wrong ext_id"
+  nutanix.ncp.ntnx_snmp_trap_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "a1111111-1111-1111-1111-111111111111"
+  register: result
+  ignore_errors: true
+
+- name: Debug negative fetch trap result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify fetch trap with wrong ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching snmp trap info using ext_id"
+    fail_msg: "Fetch SNMP trap with wrong ext_id did not fail as expected"
+    success_msg: "Fetch SNMP trap with wrong ext_id failed as expected"
+
+- name: "Negative: Update SNMP trap with wrong ext_id"
+  nutanix.ncp.ntnx_snmp_trap_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "a1111111-1111-1111-1111-111111111111"
+    address:
+      ipv4:
+        value: "{{ trap_v2_ip }}"
+    version: V3
+    port: "{{ trap_v3_port | int }}"
+    protocol: "{{ test_trap_protocol_v3 }}"
+    username: "{{ snmp_username_min }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug negative update trap result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify update trap with wrong ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching snmp trap info using ext_id"
+    fail_msg: "Update SNMP trap with wrong ext_id did not fail as expected"
+    success_msg: "Update SNMP trap with wrong ext_id failed as expected"
+
+- name: "Negative: Update SNMP trap without required params"
+  nutanix.ncp.ntnx_snmp_trap_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Debug negative update trap result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify update trap without required params fails
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "state is present but all of the following are missing: address, version"
+    fail_msg: "Update SNMP trap without required params did not fail as expected"
+    success_msg: "Update SNMP trap without required params failed as expected"
+
+- name: "Negative: Update SNMP trap with wrong address and version"
+  nutanix.ncp.ntnx_snmp_trap_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ trap_v2_ext_id }}"
+    address:
+      ipv4:
+        value: "{{ wrong_trap_ip }}"
+    version: V3
+  register: result
+  ignore_errors: true
+
+- name: Debug negative update trap result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify update trap with wrong address and version fails
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Task Failed"
+    fail_msg: "Update SNMP trap with wrong address and version did not fail as expected"
+    success_msg: "Update SNMP trap with wrong address and version failed as expected"
+
+# This is failing because the API returns success for non-existent ext_ids
+# - name: "Negative: Delete SNMP trap with wrong ext_id"
+#   nutanix.ncp.ntnx_snmp_trap_v2:
+#     cluster_ext_id: "{{ cluster_ext_id }}"
+#     state: absent
+#     ext_id: "a1111111-1111-1111-1111-111111111111"
+#   register: result
+#   ignore_errors: true
+
+# - name: Debug negative delete trap result
+#   ansible.builtin.debug:
+#     var: result
+
+# - name: Verify delete trap with wrong ext_id fails
+#   ansible.builtin.assert:
+#     that:
+#       - result.changed == false
+#       - result.failed == true
+#       - result.msg == "Api Exception raised while deleting snmp trap"
+#     fail_msg: "Delete SNMP trap with wrong ext_id did not fail as expected"
+#     success_msg: "Delete SNMP trap with wrong ext_id failed as expected"
+
+- name: "Negative: Update SNMP config without is_enabled and without protocol/port"
+  nutanix.ncp.ntnx_snmp_config_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug negative config result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify Update SNMP config without is_enabled and without protocol/port fails
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "protocol and port are required when adding or removing SNMP transport"
+    fail_msg: "Update SNMP config without is_enabled and without protocol/port did not fail as expected"
+    success_msg: "Update SNMP config without is_enabled and without protocol/port failed as expected"
+
+- name: "Negative: Update SNMP config with protocol but no port"
+  nutanix.ncp.ntnx_snmp_config_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    protocol: UDP
+  register: result
+  ignore_errors: true
+
+- name: Debug negative update SNMP config protocol only result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify update SNMP config with protocol but no port fails
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "protocol and port are required when adding or removing SNMP transport"
+    fail_msg: "Update SNMP config with protocol but no port did not fail as expected"
+    success_msg: "Update SNMP config with protocol but no port failed as expected"
+
+- name: "Negative: Fetch SNMP config with wrong cluster_ext_id"
+  nutanix.ncp.ntnx_snmp_config_info_v2:
+    cluster_ext_id: "a1111111-1111-1111-1111-111111111111"
+  register: result
+  ignore_errors: true
+
+- name: Debug negative fetch SNMP config result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify fetch SNMP config with wrong cluster_ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching snmp config info using cluster ext_id"
+    fail_msg: "Fetch SNMP config with wrong cluster_ext_id did not fail as expected"
+    success_msg: "Fetch SNMP config with wrong cluster_ext_id failed as expected"
+
+- name: "Negative: Update SNMP status with wrong cluster_ext_id"
+  nutanix.ncp.ntnx_snmp_config_v2:
+    cluster_ext_id: "a1111111-1111-1111-1111-111111111111"
+    is_enabled: true
+  register: result
+  ignore_errors: true
+
+- name: Debug negative update SNMP status result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify update SNMP status with wrong cluster_ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while updating SNMP status"
+    fail_msg: "Update SNMP status with wrong cluster_ext_id did not fail as expected"
+    success_msg: "Update SNMP status with wrong cluster_ext_id failed as expected"
+
+# this is failing because the API returns success for non-existent transport
+# - name: "Negative: Remove non-existing SNMP transport"
+#   nutanix.ncp.ntnx_snmp_config_v2:
+#     cluster_ext_id: "{{ cluster_ext_id }}"
+#     state: absent
+#     protocol: "{{ test_transport_protocol }}"
+#     port: "{{ non_existing_port }}"
+#   register: result
+#   ignore_errors: true
+
+# - name: Debug negative remove transport result
+#   ansible.builtin.debug:
+#     var: result
+
+# - name: Verify removing non-existing SNMP transport fails
+#   ansible.builtin.assert:
+#     that:
+#       - result.changed == false
+#       - result.failed == true
+#       - result.msg == "Api Exception raised while removing SNMP transport"
+#     fail_msg: "Removing non-existing SNMP transport did not fail as expected"
+#     success_msg: "Removing non-existing SNMP transport failed as expected"
+
+##################################################
+# Cleanup
+##################################################
+
+- name: "Cleanup: Delete all created SNMP traps"
+  nutanix.ncp.ntnx_snmp_trap_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    state: absent
+    ext_id: "{{ item }}"
+  register: delete_traps_result
+  loop: "{{ to_delete_traps }}"
+  ignore_errors: true
+
+- name: Debug traps deletion results
+  ansible.builtin.debug:
+    var: delete_traps_result
+
+- name: Verify traps deletion status
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.response.status == 'SUCCEEDED'
+      - item.response is defined
+      - item.ext_id in to_delete_traps
+      - delete_traps_result.changed == true
+      - delete_traps_result.msg == "All items completed"
+      - delete_traps_result.results | length == to_delete_traps | length
+    fail_msg: "Failed to delete all SNMP traps"
+    success_msg: "All SNMP traps are deleted"
+  loop: "{{ delete_traps_result.results }}"
+  when: to_delete_traps | length > 0
+
+- name: "Cleanup: Delete all created SNMP users"
+  nutanix.ncp.ntnx_snmp_user_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    state: absent
+    ext_id: "{{ item }}"
+  register: delete_users_result
+  loop: "{{ to_delete_users }}"
+  ignore_errors: true
+
+- name: Debug users deletion results
+  ansible.builtin.debug:
+    var: delete_users_result
+
+- name: Verify users deletion status
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.response.status == 'SUCCEEDED'
+      - item.response is defined
+      - item.ext_id in to_delete_users
+      - delete_users_result.changed == true
+      - delete_users_result.msg == "All items completed"
+      - delete_users_result.results | length == to_delete_users | length
+    fail_msg: "Failed to delete all SNMP users"
+    success_msg: "All SNMP users are deleted"
+  loop: "{{ delete_users_result.results }}"
+  when: to_delete_users | length > 0
