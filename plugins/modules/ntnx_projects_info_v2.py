@@ -11,17 +11,17 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_projects_info_v2
-short_description: Fetch project information using Nutanix v4 APIs.
+short_description: Fetch projects info from Nutanix Prism Central using v4 APIs
 version_added: "2.6.0"
 description:
-    - Fetch information about projects from Nutanix Prism Central.
-    - Retrieve a single project by external ID or list all projects with optional filters.
-    - This module uses the v4 multidomain API.
+    - This module fetches information about Nutanix projects.
+    - The module can fetch information about all projects or a specific project.
+    - This module uses PC v4 APIs based SDKs.
 options:
     ext_id:
         description:
-            - The external ID of the project to retrieve.
-            - Mutually exclusive with C(filter).
+            - The external ID of the project.
+            - If provided, fetches a single project.
         type: str
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
@@ -33,7 +33,7 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Get all projects
+- name: List all projects
   nutanix.ncp.ntnx_projects_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -41,7 +41,7 @@ EXAMPLES = r"""
     validate_certs: false
   register: result
 
-- name: Get project by ext_id
+- name: Get project by external ID
   nutanix.ncp.ntnx_projects_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -59,54 +59,65 @@ EXAMPLES = r"""
     filter: "name eq 'my-project'"
   register: result
 
-- name: List projects with pagination
+- name: List projects with limit
   nutanix.ncp.ntnx_projects_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    limit: 10
-    page: 0
+    limit: 5
   register: result
 """
 
 RETURN = r"""
 response:
     description:
-        - The project response.
-        - For a single project, this contains the project details.
-        - For a list, this contains a list of project objects.
+        - The response from the Nutanix PC Projects info v4 API.
+        - It can be a single project if external ID is provided.
+        - List of multiple projects if external ID is not provided.
     returned: always
-    type: dict or list
-    sample: {
-        "name": "my-project",
-        "description": "A test project",
-        "id": "my-project-id",
-        "ext_id": "00000000-0000-0000-0000-000000000000",
-        "state": "ACTIVE",
-        "is_system_defined": false,
-        "is_default": false
-    }
+    type: dict
+    sample: "<Need to add sample>"
+
 changed:
-    description: Whether the state changed. Always false for info modules.
+    description: This indicates whether the task resulted in any changes.
     returned: always
     type: bool
     sample: false
+
 ext_id:
-    description: The external ID of the fetched project.
-    returned: when a single project is fetched
+    description:
+        - The external ID of the project when a specific project is fetched.
     type: str
+    returned: When a single entity is fetched
     sample: "00000000-0000-0000-0000-000000000000"
+
+msg:
+    description: Additional message about the operation.
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while fetching projects info"
+
+error:
+    description: This field holds information about errors that occurred during the task execution.
+    returned: When an error occurs
+    type: str
+
+failed:
+    description: This indicates whether the task failed.
+    returned: When something fails
+    type: bool
+    sample: true
+
 total_available_results:
-    description: Total number of available results when listing projects.
-    returned: when listing projects
+    description:
+        - The total number of available projects in PC.
     type: int
-    sample: 5
+    returned: When all projects are fetched
+    sample: 10
 """
 
-import traceback  # noqa: E402
-
-from ansible.module_utils.basic import missing_required_lib  # noqa: E402
+import warnings  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
@@ -120,11 +131,8 @@ from ..module_utils.v4.utils import (  # noqa: E402
     strip_internal_attributes,
 )
 
-SDK_IMP_ERROR = None
-try:
-    import ntnx_multidomain_py_client  # noqa: E402, F401
-except ImportError:
-    SDK_IMP_ERROR = traceback.format_exc()
+# Suppress the InsecureRequestWarning
+warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
 def get_module_spec():
@@ -134,21 +142,21 @@ def get_module_spec():
     return module_args
 
 
-def get_project_by_ext_id(module, result):
+def get_project_by_ext_id(module, projects, result):
     ext_id = module.params.get("ext_id")
-    projects = get_projects_api_instance(module)
+
     resp = get_project(module, projects, ext_id)
     result["ext_id"] = ext_id
     result["response"] = strip_internal_attributes(resp.to_dict())
 
 
-def get_projects(module, result):
-    projects = get_projects_api_instance(module)
+def get_projects(module, projects, result):
     sg = SpecGenerator(module)
     kwargs, err = sg.get_info_spec(attr=module.params)
+
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating list projects spec", **result)
+        module.fail_json(msg="Failed generating projects info spec", **result)
 
     try:
         resp = projects.list_projects(**kwargs)
@@ -156,17 +164,15 @@ def get_projects(module, result):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while listing projects",
+            msg="Api Exception raised while fetching projects info",
         )
 
-    resp = resp.to_dict()
-    if resp.get("metadata"):
-        result["total_available_results"] = resp["metadata"].get(
-            "total_available_results"
-        )
-    result["response"] = (
-        strip_internal_attributes(resp.get("data")) if resp.get("data") else []
-    )
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
+    resp = strip_internal_attributes(resp.to_dict()).get("data")
+    if not resp:
+        resp = []
+    result["response"] = resp
 
 
 def run_module():
@@ -177,17 +183,16 @@ def run_module():
             ("ext_id", "filter"),
         ],
     )
-    if SDK_IMP_ERROR:
-        module.fail_json(
-            msg=missing_required_lib("ntnx_multidomain_py_client"),
-            exception=SDK_IMP_ERROR,
-        )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "response": None}
+
+    projects = get_projects_api_instance(module)
+
     if module.params.get("ext_id"):
-        get_project_by_ext_id(module, result)
+        get_project_by_ext_id(module, projects, result)
     else:
-        get_projects(module, result)
+        get_projects(module, projects, result)
+
     module.exit_json(**result)
 
 

@@ -13,10 +13,10 @@ def get_project(module, api_instance, ext_id):
     Get project by ext_id.
     Args:
         module: Ansible module
-        api_instance: ProjectsApi instance
-        ext_id: External ID of the project
+        api_instance: ProjectsApi instance from ntnx_multidomain_py_client sdk
+        ext_id (str): External ID of the project
     Returns:
-        Project data object
+        project (object): Project data object
     """
     try:
         return api_instance.get_project_by_id(extId=ext_id).data

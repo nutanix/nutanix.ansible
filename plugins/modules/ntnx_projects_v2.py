@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -11,22 +11,40 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_projects_v2
-short_description: Create, update, and delete projects in Nutanix Prism Central using v4 APIs.
+short_description: Manage projects in Nutanix Prism Central using v4 APIs
 version_added: "2.6.0"
 description:
     - Create, update, and delete projects in Nutanix Prism Central.
     - Projects are logical grouping constructs that organize resources across the Nutanix platform.
-    - This module uses the v4 multidomain API.
+    - This module uses PC v4 APIs based SDKs.
 options:
+    state:
+        description:
+            - Specify state.
+            - If C(state) is set to C(present) then the module will create a project.
+            - If C(state) is set to C(present) and C(ext_id) is given, then the module will update the project.
+            - If C(state) is set to C(absent) with C(ext_id), then the module will delete the project.
+        choices:
+            - present
+            - absent
+        type: str
+        default: present
+    wait:
+        description: Wait for the operation to complete.
+        type: bool
+        required: false
+        default: True
     ext_id:
         description:
             - The external ID of the project.
-            - Required for update and delete operations.
+            - Required for C(state)=absent for delete.
+            - Required for C(state)=present to trigger update of project.
         type: str
     name:
         description:
             - Name of the project.
             - Required for create operations.
+            - This field is immutable and cannot be updated after creation.
             - Must be between 1 and 64 characters.
         type: str
     description:
@@ -50,7 +68,7 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Create a project
+- name: Create a project with minimum fields
   nutanix.ncp.ntnx_projects_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -60,10 +78,35 @@ EXAMPLES = r"""
     wait: true
     name: "my-project"
     project_id: "my-project-id"
-    description: "A test project"
   register: result
 
-- name: Update a project
+- name: Create a project with all fields
+  nutanix.ncp.ntnx_projects_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    state: present
+    wait: true
+    name: "my-project"
+    project_id: "my-project-id"
+    description: "A test project created via Ansible"
+  register: result
+
+- name: Create a project with check mode
+  nutanix.ncp.ntnx_projects_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    state: present
+    name: "my-project-check"
+    project_id: "my-project-check-id"
+    description: "Check mode project"
+  check_mode: true
+  register: result
+
+- name: Update a project description
   nutanix.ncp.ntnx_projects_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -72,7 +115,6 @@ EXAMPLES = r"""
     state: present
     wait: true
     ext_id: "{{ project_ext_id }}"
-    name: "my-project-updated"
     description: "Updated description"
   register: result
 
@@ -91,48 +133,57 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
     description:
-        - The project response object.
-        - Will contain the project details after create or update when C(wait) is true.
-        - Will contain task details when C(wait) is false.
+        - The response from the Nutanix PC Projects v4 API.
+        - It will contain the project details after create or update when C(wait) is true.
+        - It will contain task details when C(wait) is false.
     returned: always
     type: dict
-    sample: {
-        "name": "my-project",
-        "description": "A test project",
-        "id": "my-project-id",
-        "ext_id": "00000000-0000-0000-0000-000000000000",
-        "state": "ACTIVE",
-        "is_system_defined": false,
-        "is_default": false
-    }
+    sample: "<Need to add sample>"
+
 changed:
-    description: Whether the state of the project was changed.
+    description: This indicates whether the task resulted in any changes.
     returned: always
     type: bool
     sample: true
+
 ext_id:
     description: The external ID of the project.
-    returned: when available
+    returned: always
     type: str
     sample: "00000000-0000-0000-0000-000000000000"
+
 task_ext_id:
     description: The external ID of the task created for the operation.
-    returned: when a task is created
+    returned: always
     type: str
     sample: "00000000-0000-0000-0000-000000000000"
+
 skipped:
-    description: Whether the operation was skipped due to no changes.
-    returned: when idempotency check determines no update needed
+    description: Whether the operation was skipped due to no changes (idempotency).
+    returned: When module is idempotent
     type: bool
     sample: true
+
 msg:
     description: Additional message about the operation.
-    returned: when applicable
+    returned: When there is an error, module is idempotent or check mode (in delete operation)
     type: str
-    sample: "Project with ext_id:xxx will be deleted."
+    sample: "Nothing to change."
+
+error:
+    description: This field holds information about errors that occurred during the task execution.
+    returned: When an error occurs
+    type: str
+
+failed:
+    description: This indicates whether the task failed.
+    returned: When something fails
+    type: bool
+    sample: true
 """
 
 import traceback  # noqa: E402
+import warnings  # noqa: E402
 from copy import deepcopy  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
@@ -153,14 +204,18 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
+    validate_required_params,
 )
 
 SDK_IMP_ERROR = None
 try:
     import ntnx_multidomain_py_client as multidomain_sdk  # noqa: E402
 except ImportError:
-    multidomain_sdk = None
+    from ..module_utils.v4.sdk_mock import mock_sdk as multidomain_sdk  # noqa: E402
+
     SDK_IMP_ERROR = traceback.format_exc()
+
+warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
 def get_module_spec():
@@ -173,20 +228,25 @@ def get_module_spec():
     return module_args
 
 
-def create_project(module, result):
-    projects = get_projects_api_instance(module)
+def create_project(module, projects, result):
+    validate_required_params(module, ["name", "project_id"])
+
     sg = SpecGenerator(module)
     default_spec = multidomain_sdk.Project()
     spec, err = sg.generate_spec(obj=default_spec)
+
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed generating create project spec", **result
-        )
+        module.fail_json(msg="Failed generating create project spec", **result)
 
     project_id = module.params.get("project_id")
     if project_id:
         spec.id = project_id
+
+    # SpecGenerator picks up Ansible's 'state' param ("present"/"absent")
+    # and sets it on the SDK object; reset to None so the API does not
+    # receive an invalid enum value.
+    spec.state = None
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
@@ -219,24 +279,57 @@ def create_project(module, result):
     result["changed"] = True
 
 
-def update_project(module, result):
+def check_project_idempotency(old_spec, update_spec):
+    strip_internal_attributes(old_spec)
+    strip_internal_attributes(update_spec)
+    if old_spec != update_spec:
+        return False
+    return True
+
+
+def _clear_read_only_fields(spec):
+    """
+    Clear server-managed read-only fields on an SDK Project spec so they
+    are omitted from the serialized PUT body (the SDK excludes None attrs).
+    """
+    spec.created_timestamp = None
+    spec.modified_timestamp = None
+    spec.created_by = None
+    spec.updated_by = None
+    spec.is_system_defined = None
+    spec.is_default = None
+    spec.ext_id = None
+    spec.links = None
+    spec.tenant_id = None
+
+
+def update_project(module, projects, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
-    projects = get_projects_api_instance(module)
 
     current_spec = get_project(module, projects, ext_id)
 
+    etag = get_etag(data=current_spec)
+    if not etag:
+        return module.fail_json("Unable to fetch etag for updating project", **result)
+
+    # Preserve original state before SpecGenerator overwrites it
+    original_state = current_spec.state
+
     sg = SpecGenerator(module)
     update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
+
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed generating update project spec", **result
-        )
+        module.fail_json(msg="Failed generating update project spec", **result)
 
     project_id = module.params.get("project_id")
     if project_id:
         update_spec.id = project_id
+
+    # Restore original state so that Ansible's "present"/"absent"
+    # does not leak into the API payload.
+    update_spec.state = original_state
 
     if check_project_idempotency(current_spec.to_dict(), update_spec.to_dict()):
         result["skipped"] = True
@@ -246,9 +339,13 @@ def update_project(module, result):
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
 
+    # Clear server-managed read-only fields before sending to API
+    _clear_read_only_fields(update_spec)
+
     resp = None
+    kwargs = {"if_match": etag}
     try:
-        resp = projects.update_project_by_id(extId=ext_id, body=update_spec)
+        resp = projects.update_project_by_id(extId=ext_id, body=update_spec, **kwargs)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -263,28 +360,25 @@ def update_project(module, result):
     if task_ext_id and module.params.get("wait"):
         wait_for_completion(module, task_ext_id)
         resp = get_project(module, projects, ext_id)
+        result["ext_id"] = ext_id
         result["response"] = strip_internal_attributes(resp.to_dict())
 
     result["changed"] = True
 
 
-def delete_project(module, result):
+def delete_project(module, projects, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
-    projects = get_projects_api_instance(module)
 
     if module.check_mode:
-        result["msg"] = "Project with ext_id:{0} will be deleted.".format(
-            ext_id
-        )
+        result["msg"] = "Project with ext_id:{0} will be deleted.".format(ext_id)
         return
 
     current_spec = get_project(module, projects, ext_id)
+
     etag = get_etag(data=current_spec)
     if not etag:
-        return module.fail_json(
-            "Unable to fetch etag for deleting project", **result
-        )
+        return module.fail_json("Unable to fetch etag for deleting project", **result)
 
     kwargs = {"if_match": etag}
 
@@ -308,12 +402,6 @@ def delete_project(module, result):
     result["changed"] = True
 
 
-def check_project_idempotency(old_spec, update_spec):
-    strip_internal_attributes(old_spec)
-    strip_internal_attributes(update_spec)
-    return old_spec == update_spec
-
-
 def run_module():
     module = BaseModuleV4(
         argument_spec=get_module_spec(),
@@ -328,16 +416,24 @@ def run_module():
             msg=missing_required_lib("ntnx_multidomain_py_client"),
             exception=SDK_IMP_ERROR,
         )
+
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "response": None, "ext_id": None}
+    result = {
+        "changed": False,
+        "response": None,
+        "ext_id": None,
+    }
+
+    projects = get_projects_api_instance(module)
+
     state = module.params["state"]
     if state == "present":
         if module.params.get("ext_id"):
-            update_project(module, result)
+            update_project(module, projects, result)
         else:
-            create_project(module, result)
+            create_project(module, projects, result)
     else:
-        delete_project(module, result)
+        delete_project(module, projects, result)
     module.exit_json(**result)
 
 
