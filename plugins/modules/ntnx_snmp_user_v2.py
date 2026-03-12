@@ -183,8 +183,8 @@ from copy import deepcopy  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
-from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
     get_etag,
     get_snmp_api_instance,
@@ -329,7 +329,9 @@ def update_snmp_user(module, result, snmp_users, snmp_config_api):
 
     if task_ext_id and module.params.get("wait"):
         wait_for_completion(module, task_ext_id)
-        resp = get_snmp_user(module, snmp_users, ext_id=ext_id, cluster_ext_id=cluster_ext_id)
+        resp = get_snmp_user(
+            module, snmp_users, ext_id=ext_id, cluster_ext_id=cluster_ext_id
+        )
         result["response"] = strip_internal_attributes(resp.to_dict())
 
     result["changed"] = True

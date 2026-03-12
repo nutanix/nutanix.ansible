@@ -123,7 +123,9 @@ def get_snmp_user(module, api_instance, ext_id, cluster_ext_id=None):
         snmp_user_info (object): snmp user info
     """
     try:
-        return api_instance.get_snmp_user_by_id(extId=ext_id, clusterExtId=cluster_ext_id).data
+        return api_instance.get_snmp_user_by_id(
+            extId=ext_id, clusterExtId=cluster_ext_id
+        ).data
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -144,7 +146,9 @@ def get_snmp_trap(module, api_instance, ext_id, cluster_ext_id=None):
         snmp_trap_info (object): snmp trap info
     """
     try:
-        return api_instance.get_snmp_trap_by_id(extId=ext_id, clusterExtId=cluster_ext_id).data
+        return api_instance.get_snmp_trap_by_id(
+            extId=ext_id, clusterExtId=cluster_ext_id
+        ).data
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -164,7 +168,9 @@ def get_snmp_config(module, api_instance, cluster_ext_id):
         snmp_config_info (object): snmp config info
     """
     try:
-        return api_instance.get_snmp_config_by_cluster_id(clusterExtId=cluster_ext_id).data
+        return api_instance.get_snmp_config_by_cluster_id(
+            clusterExtId=cluster_ext_id
+        ).data
     except Exception as e:
         raise_api_exception(
             module=module,

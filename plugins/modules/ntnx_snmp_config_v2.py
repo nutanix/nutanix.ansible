@@ -178,12 +178,11 @@ import warnings  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
-from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
     get_snmp_api_instance,
 )
-from ..module_utils.v4.clusters_mgmt.helpers import get_snmp_config  # noqa: E402
 from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
@@ -207,7 +206,11 @@ def get_module_spec():
     module_args = dict(
         cluster_ext_id=dict(type="str", required=True),
         is_enabled=dict(type="bool"),
-        protocol=dict(type="str", choices=["UDP", "UDP6", "TCP", "TCP6"], obj=clusters_sdk.SnmpProtocol),
+        protocol=dict(
+            type="str",
+            choices=["UDP", "UDP6", "TCP", "TCP6"],
+            obj=clusters_sdk.SnmpProtocol,
+        ),
         port=dict(type="int"),
     )
 
@@ -263,9 +266,7 @@ def add_snmp_transport(module, result, api_instance):
 
     resp = None
     try:
-        resp = api_instance.add_snmp_transport(
-            clusterExtId=cluster_ext_id, body=spec
-        )
+        resp = api_instance.add_snmp_transport(clusterExtId=cluster_ext_id, body=spec)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -348,7 +349,7 @@ def run_module():
         if not module.params.get("protocol") or not module.params.get("port"):
             module.fail_json(
                 msg="protocol and port are required when adding or removing SNMP transport",
-                **result
+                **result,
             )
         state = module.params["state"]
         if state == "present":
