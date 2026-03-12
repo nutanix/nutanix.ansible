@@ -1,0 +1,185 @@
+---
+# Example playbook for Projects v2 module
+# This playbook demonstrates Create, Update, Get, List, Filter, and Delete operations
+# Usage:
+# ansible-playbook examples/projects_v2/projects.yml \
+#   -e ip=<PC_IP> -e username=admin -e password=<PASSWORD> \
+#   -e validate_certs=false
+
+- name: Projects v2 - Complete Operations Example
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+
+  tasks:
+    ###########################################################
+    # CREATE OPERATIONS
+    ###########################################################
+    - name: Create a project with minimum required fields
+      nutanix.ncp.ntnx_projects_v2:
+        state: present
+        wait: true
+        name: "example-project-min"
+        project_id: "example-project-min-id"
+      register: create_min_result
+
+    - name: Display create min result
+      ansible.builtin.debug:
+        var: create_min_result
+
+    ###########################################################
+    - name: Create a project with all fields
+      nutanix.ncp.ntnx_projects_v2:
+        state: present
+        wait: true
+        name: "example-project-full"
+        project_id: "example-project-full-id"
+        description: "A comprehensive example project created using Ansible"
+      register: create_full_result
+
+    - name: Display create full result
+      ansible.builtin.debug:
+        var: create_full_result
+
+    ###########################################################
+    # CHECK MODE - CREATE
+    ###########################################################
+    - name: Create a project with check mode (no actual creation)
+      nutanix.ncp.ntnx_projects_v2:
+        state: present
+        name: "example-project-check"
+        project_id: "example-project-check-id"
+        description: "This project will not be created due to check mode"
+      check_mode: true
+      register: check_create_result
+
+    - name: Display check mode create result
+      ansible.builtin.debug:
+        var: check_create_result
+
+    ###########################################################
+    # UPDATE OPERATIONS
+    ###########################################################
+    - name: Update project description
+      nutanix.ncp.ntnx_projects_v2:
+        state: present
+        wait: true
+        ext_id: "{{ create_full_result.ext_id }}"
+        description: "Updated description via Ansible automation"
+      register: update_desc_result
+
+    - name: Display update description result
+      ansible.builtin.debug:
+        var: update_desc_result
+
+    ###########################################################
+    # IDEMPOTENCY CHECK
+    ###########################################################
+    - name: Update project with same values (idempotency test)
+      nutanix.ncp.ntnx_projects_v2:
+        state: present
+        wait: true
+        ext_id: "{{ create_full_result.ext_id }}"
+        description: "Updated description via Ansible automation"
+      register: idempotent_result
+
+    - name: Display idempotency result (should show skipped/no change)
+      ansible.builtin.debug:
+        var: idempotent_result
+
+    ###########################################################
+    # INFO OPERATIONS - GET BY EXT_ID
+    ###########################################################
+    - name: Get project by external ID
+      nutanix.ncp.ntnx_projects_info_v2:
+        ext_id: "{{ create_full_result.ext_id }}"
+      register: get_result
+
+    - name: Display get project result
+      ansible.builtin.debug:
+        var: get_result
+
+    ###########################################################
+    # INFO OPERATIONS - LIST ALL
+    ###########################################################
+    - name: List all projects
+      nutanix.ncp.ntnx_projects_info_v2:
+      register: list_result
+
+    - name: Display list all projects result
+      ansible.builtin.debug:
+        msg: "Total projects: {{ list_result.total_available_results }}"
+
+    ###########################################################
+    # INFO OPERATIONS - LIST WITH FILTER
+    ###########################################################
+    - name: List projects with name filter
+      nutanix.ncp.ntnx_projects_info_v2:
+        filter: "name eq 'example-project-full'"
+      register: filter_result
+
+    - name: Display filtered projects result
+      ansible.builtin.debug:
+        var: filter_result
+
+    ###########################################################
+    # INFO OPERATIONS - LIST WITH LIMIT
+    ###########################################################
+    - name: List projects with limit
+      nutanix.ncp.ntnx_projects_info_v2:
+        limit: 2
+      register: limit_result
+
+    - name: Display limited list result
+      ansible.builtin.debug:
+        msg: "Projects returned: {{ limit_result.response | length }}"
+
+    ###########################################################
+    # CHECK MODE - DELETE
+    ###########################################################
+    - name: Delete project with check mode (no actual deletion)
+      nutanix.ncp.ntnx_projects_v2:
+        state: absent
+        ext_id: "{{ create_full_result.ext_id }}"
+      check_mode: true
+      register: check_delete_result
+
+    - name: Display check mode delete result
+      ansible.builtin.debug:
+        var: check_delete_result
+
+    ###########################################################
+    # DELETE OPERATIONS
+    ###########################################################
+    - name: Delete first created project
+      nutanix.ncp.ntnx_projects_v2:
+        state: absent
+        wait: true
+        ext_id: "{{ create_min_result.ext_id }}"
+      register: delete_min_result
+
+    - name: Display delete min project result
+      ansible.builtin.debug:
+        var: delete_min_result
+
+    ###########################################################
+    - name: Delete second created project
+      nutanix.ncp.ntnx_projects_v2:
+        state: absent
+        wait: true
+        ext_id: "{{ create_full_result.ext_id }}"
+      register: delete_full_result
+
+    - name: Display delete full project result
+      ansible.builtin.debug:
+        var: delete_full_result
+
+    ###########################################################
+    - name: Projects v2 example playbook completed successfully
+      ansible.builtin.debug:
+        msg: "All Projects v2 example operations completed successfully!"
