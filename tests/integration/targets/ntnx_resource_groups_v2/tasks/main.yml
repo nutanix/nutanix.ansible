@@ -10,5 +10,5 @@
       nutanix_debug: "{{ nutanix_debug | default(omit) }}"
       nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
   block:
-    - name: Import resource group tests
-      ansible.builtin.import_tasks: "resource_groups.yml"
+    - name: Import all operations
+      ansible.builtin.import_tasks: "all_operations.yml"

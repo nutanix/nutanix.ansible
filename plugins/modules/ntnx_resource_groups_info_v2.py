@@ -11,12 +11,12 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_resource_groups_info_v2
-short_description: Fetch resource group information using Nutanix v4 APIs.
-version_added: "2.1.0"
+short_description: Fetch resource group information using Nutanix v4 APIs
+version_added: "2.6.0"
 description:
     - Fetch information about resource groups from Nutanix Prism Central.
     - Retrieve a single resource group by external ID or list all resource groups with optional filters.
-    - This module uses the v4 multidomain API.
+    - This module uses PC v4 APIs based SDKs.
 options:
     ext_id:
         description:
@@ -29,7 +29,7 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_logger
     - nutanix.ncp.ntnx_proxy_v2
 author:
-    - Nutanix Ansible Team
+    - Abhinav Bansal (@abhinavbansal29)
 """
 
 EXAMPLES = r"""
@@ -58,44 +58,64 @@ EXAMPLES = r"""
     validate_certs: false
     filter: "name eq 'my-resource-group'"
   register: result
+
+- name: List resource groups with limit
+  nutanix.ncp.ntnx_resource_groups_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    limit: 5
+  register: result
 """
 
 RETURN = r"""
 response:
     description:
-        - The resource group response.
-        - For a single resource group, this contains the resource group details.
-        - For a list, this contains a list of resource group objects.
+        - The response from the Nutanix PC Resource Groups info v4 API.
+        - It can be a single resource group if external ID is provided.
+        - List of multiple resource groups if external ID is not provided.
     returned: always
-    type: dict or list
-    sample: {
-        "name": "my-resource-group",
-        "project_ext_id": "00000000-0000-0000-0000-000000000000",
-        "ext_id": "00000000-0000-0000-0000-000000000001",
-        "placement_targets": [
-            {
-                "cluster_ext_id": "00000000-0000-0000-0000-000000000002"
-            }
-        ]
-    }
+    type: dict
+    sample: "<Need to add sample>"
+
 changed:
-    description: Whether the state changed. Always false for info modules.
+    description: This indicates whether the task resulted in any changes.
     returned: always
     type: bool
     sample: false
+
 ext_id:
-    description: The external ID of the fetched resource group.
-    returned: when a single resource group is fetched
+    description: The external ID of the resource group.
+    returned: When single entity is fetched
     type: str
     sample: "00000000-0000-0000-0000-000000000000"
+
 total_available_results:
     description: Total number of available results when listing resource groups.
-    returned: when listing resource groups
+    returned: When listing resource groups
     type: int
     sample: 5
+
+msg:
+    description: Additional message about the operation.
+    returned: When there is an error
+    type: str
+
+error:
+    description: This field holds information about errors that occurred during the task execution.
+    returned: When an error occurs
+    type: str
+
+failed:
+    description: This indicates whether the task failed.
+    returned: When something fails
+    type: bool
+    sample: true
 """
 
 import traceback  # noqa: E402
+import warnings  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
@@ -104,9 +124,7 @@ from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.multidomain.api_client import (  # noqa: E402
     get_resource_groups_api_instance,
 )
-from ..module_utils.v4.multidomain.helpers import (  # noqa: E402
-    get_resource_group,
-)
+from ..module_utils.v4.multidomain.helpers import get_resource_group  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
@@ -117,7 +135,14 @@ SDK_IMP_ERROR = None
 try:
     import ntnx_multidomain_py_client  # noqa: E402, F401
 except ImportError:
+    from ..module_utils.v4.sdk_mock import (  # noqa: E402, F401
+        mock_sdk as multidomain_sdk,
+    )
+
     SDK_IMP_ERROR = traceback.format_exc()
+
+# Suppress the InsecureRequestWarning
+warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
 def get_module_spec():
@@ -127,26 +152,36 @@ def get_module_spec():
     return module_args
 
 
-def get_resource_group_by_ext_id(module, result):
+def get_resource_group_by_ext_id(module, resource_groups, result):
+    """
+    Fetch a single resource group by its external ID.
+    Args:
+        module: Ansible module object
+        resource_groups: ResourceGroupsApi instance
+        result: Result dict to populate
+    """
     ext_id = module.params.get("ext_id")
-    api_instance = get_resource_groups_api_instance(module)
-    resp = get_resource_group(module, api_instance, ext_id)
+    resp = get_resource_group(module, resource_groups, ext_id)
     result["ext_id"] = ext_id
     result["response"] = strip_internal_attributes(resp.to_dict())
 
 
-def get_resource_groups(module, result):
-    api_instance = get_resource_groups_api_instance(module)
+def get_resource_groups_list(module, resource_groups, result):
+    """
+    List resource groups with optional filters and pagination.
+    Args:
+        module: Ansible module object
+        resource_groups: ResourceGroupsApi instance
+        result: Result dict to populate
+    """
     sg = SpecGenerator(module)
     kwargs, err = sg.get_info_spec(attr=module.params)
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed generating list resource groups spec", **result
-        )
+        module.fail_json(msg="Failed generating list resource groups spec", **result)
 
     try:
-        resp = api_instance.list_resource_groups(**kwargs)
+        resp = resource_groups.list_resource_groups(**kwargs)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -154,16 +189,12 @@ def get_resource_groups(module, result):
             msg="Api Exception raised while listing resource groups",
         )
 
-    resp = resp.to_dict()
-    if resp.get("metadata"):
-        result["total_available_results"] = resp["metadata"].get(
-            "total_available_results"
-        )
-    result["response"] = (
-        strip_internal_attributes(resp.get("data"))
-        if resp.get("data")
-        else []
-    )
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
+    resp = strip_internal_attributes(resp.to_dict()).get("data")
+    if not resp:
+        resp = []
+    result["response"] = resp
 
 
 def run_module():
@@ -181,10 +212,13 @@ def run_module():
         )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "response": None}
+
+    resource_groups = get_resource_groups_api_instance(module)
+
     if module.params.get("ext_id"):
-        get_resource_group_by_ext_id(module, result)
+        get_resource_group_by_ext_id(module, resource_groups, result)
     else:
-        get_resource_groups(module, result)
+        get_resource_groups_list(module, resource_groups, result)
     module.exit_json(**result)
 
 
