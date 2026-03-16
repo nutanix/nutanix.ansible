@@ -131,7 +131,6 @@ from ..module_utils.v4.utils import (  # noqa: E402
     strip_internal_attributes,
 )
 
-
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
