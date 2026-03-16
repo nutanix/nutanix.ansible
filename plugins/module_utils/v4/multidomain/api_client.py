@@ -25,9 +25,9 @@ def get_api_client(module):
     """
     Return an API client configured with the module's connection details.
     Args:
-        module: Ansible module object
+        module (object): Ansible module object
     Returns:
-        ApiClient instance
+        client (object): ApiClient instance
     """
     if SDK_IMP_ERROR:
         module.fail_json(
@@ -54,7 +54,8 @@ def get_api_client(module):
     config.verify_ssl = module.params.get("validate_certs")
     _apply_proxy_from_env(config, module)
     client = ntnx_multidomain_py_client.ApiClient(
-        configuration=config, allow_version_negotiation=ALLOW_VERSION_NEGOTIATION
+        configuration=config,
+        allow_version_negotiation=ALLOW_VERSION_NEGOTIATION,
     )
     if not api_key:
         cred = "{0}:{1}".format(config.username, config.password)
@@ -70,17 +71,35 @@ def get_api_client(module):
 
 
 def get_etag(data):
-    """Fetch etag from a v4 API response."""
+    """
+    This method will fetch etag from a v4 api response.
+    Args:
+        data (object): v4 api response data object
+    Returns:
+        etag (str): etag value
+    """
     return ntnx_multidomain_py_client.ApiClient.get_etag(data)
 
 
 def get_projects_api_instance(module):
-    """Return a ProjectsApi instance."""
+    """
+    This method will return projects api instance.
+    Args:
+        module (object): Ansible module object
+    Returns:
+        api_instance (object): ProjectsApi instance
+    """
     api_client = get_api_client(module)
     return ntnx_multidomain_py_client.ProjectsApi(api_client=api_client)
 
 
 def get_resource_groups_api_instance(module):
-    """Return a ResourceGroupsApi instance."""
+    """
+    This method will return resource groups api instance.
+    Args:
+        module (object): Ansible module object
+    Returns:
+        api_instance (object): ResourceGroupsApi instance
+    """
     api_client = get_api_client(module)
     return ntnx_multidomain_py_client.ResourceGroupsApi(api_client=api_client)

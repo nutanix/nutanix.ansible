@@ -13,10 +13,10 @@ def get_project(module, api_instance, ext_id):
     Get project by ext_id.
     Args:
         module: Ansible module
-        api_instance: ProjectsApi instance
-        ext_id: External ID of the project
+        api_instance: ProjectsApi instance from ntnx_multidomain_py_client sdk
+        ext_id (str): External ID of the project
     Returns:
-        Project data object
+        project (object): Project data object
     """
     try:
         return api_instance.get_project_by_id(extId=ext_id).data
@@ -33,10 +33,10 @@ def get_resource_group(module, api_instance, ext_id):
     Get resource group by ext_id.
     Args:
         module: Ansible module
-        api_instance: ResourceGroupsApi instance
-        ext_id: External ID of the resource group
+        api_instance (object): ResourceGroupsApi instance
+        ext_id (str): External ID of the resource group
     Returns:
-        ResourceGroup data object
+        resource_group (object): ResourceGroup data object
     """
     try:
         return api_instance.get_resource_group_by_id(extId=ext_id).data

@@ -242,3 +242,5 @@ action_groups:
     - ntnx_eula_info_v2
     - ntnx_resource_groups_v2
     - ntnx_resource_groups_info_v2
+    - ntnx_projects_v2
+    - ntnx_projects_info_v2
