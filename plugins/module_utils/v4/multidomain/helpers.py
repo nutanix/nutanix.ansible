@@ -26,3 +26,23 @@ def get_project(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching project using ext_id",
         )
+
+
+def get_resource_group(module, api_instance, ext_id):
+    """
+    Get resource group by ext_id.
+    Args:
+        module: Ansible module
+        api_instance (object): ResourceGroupsApi instance
+        ext_id (str): External ID of the resource group
+    Returns:
+        resource_group (object): ResourceGroup data object
+    """
+    try:
+        return api_instance.get_resource_group_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching resource group using ext_id",
+        )

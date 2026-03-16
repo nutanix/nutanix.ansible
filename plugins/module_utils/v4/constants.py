@@ -46,6 +46,7 @@ class Tasks:
         KMS = "security:encryption:key-management-server"
         CLUSTER_PROFILE = "clustermgmt:config:cluster-profile"
         PROJECT = "multidomain:config:Project"
+        RESOURCE_GROUP = "multidomain:config:nutanix-resource-group"
 
     class CompletetionDetailsName:
         """Completion details name for the task entities affected"""
