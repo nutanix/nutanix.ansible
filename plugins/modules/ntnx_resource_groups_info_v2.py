@@ -131,15 +131,6 @@ from ..module_utils.v4.utils import (  # noqa: E402
     strip_internal_attributes,
 )
 
-SDK_IMP_ERROR = None
-try:
-    import ntnx_multidomain_py_client  # noqa: E402, F401
-except ImportError:
-    from ..module_utils.v4.sdk_mock import (  # noqa: E402, F401
-        mock_sdk as multidomain_sdk,
-    )
-
-    SDK_IMP_ERROR = traceback.format_exc()
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
@@ -205,11 +196,6 @@ def run_module():
             ("ext_id", "filter"),
         ],
     )
-    if SDK_IMP_ERROR:
-        module.fail_json(
-            msg=missing_required_lib("ntnx_multidomain_py_client"),
-            exception=SDK_IMP_ERROR,
-        )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "response": None}
 
