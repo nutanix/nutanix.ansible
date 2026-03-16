@@ -75,7 +75,13 @@
   ansible.builtin.set_fact:
     current_snmp_status: "{{ initial_snmp_config.response.is_enabled | bool }}"
     current_snmp_transports: "{{ initial_snmp_config.response.transports | default([]) }}"
-    existing_trap_ips: "{{ (initial_snmp_config.response.traps | default([])) | selectattr('address', 'defined') | selectattr('address.ipv4', 'defined') | selectattr('address.ipv4.value', 'defined') | map(attribute='address.ipv4.value') | list }}"
+    existing_trap_ips: >-
+      {{ (initial_snmp_config.response.traps | default([]))
+        | selectattr('address', 'defined')
+        | selectattr('address.ipv4', 'defined')
+        | selectattr('address.ipv4.value', 'defined')
+        | map(attribute='address.ipv4.value')
+        | list }}
 
 - name: Set trap subnet prefix
   ansible.builtin.set_fact:
@@ -83,7 +89,7 @@
 
 - name: Find used octets in the same subnet
   ansible.builtin.set_fact:
-    used_octets: "{{ existing_trap_ips | select('match', '^' ~ (trap_subnet_prefix | regex_escape) ~ '\\.') | map('regex_replace', '^.*\\.', '') | map('int') | list }}"
+    used_octets: "{{ existing_trap_ips | map('split', '.') | map('last') | map('int') | list }}"
 
 - name: Find available last octets for trap IPs
   ansible.builtin.set_fact:
@@ -96,6 +102,14 @@
     trap_v2_ip: "{{ trap_subnet_prefix }}.{{ available_octets[0] }}"
     trap_v3_ip: "{{ trap_subnet_prefix }}.{{ available_octets[1] }}"
     wrong_trap_ip: "{{ trap_subnet_prefix }}.{{ available_octets[2] }}"
+
+- name: Debug existing trap extraction
+  ansible.builtin.debug:
+    msg:
+      existing_trap_ips: "{{ existing_trap_ips }}"
+      used_octets: "{{ used_octets }}"
+      available_octets_first5: "{{ available_octets[0:5] }}"
+      trap_v2_ip: "{{ trap_v2_ip }}"
 
 - name: Debug dynamic variables
   ansible.builtin.debug:
@@ -304,7 +318,11 @@
       - after_add_config.response is defined
       - after_add_config.response.transports is not none
       - after_add_config.response.transports | length == (current_snmp_transports | length) + 1
-      - after_add_config.response.transports | selectattr('protocol', 'equalto', test_transport_protocol) | selectattr('port', 'equalto', test_transport_port | int) | list | length > 0
+      - >-
+        after_add_config.response.transports
+        | selectattr('protocol', 'equalto', test_transport_protocol)
+        | selectattr('port', 'equalto', test_transport_port | int)
+        | list | length > 0
     fail_msg: "Added transport not found in SNMP config"
     success_msg: "Added transport verified in SNMP config"
 
@@ -377,7 +395,11 @@
       - after_remove_config.cluster_ext_id == "{{ cluster_ext_id }}"
       - after_remove_config.response is defined
       - after_remove_config.response.transports | length == (current_snmp_transports | length)
-      - after_remove_config.response.transports | selectattr('protocol', 'equalto', test_transport_protocol) | selectattr('port', 'equalto', test_transport_port | int) | list | length == 0
+      - >-
+        after_remove_config.response.transports
+        | selectattr('protocol', 'equalto', test_transport_protocol)
+        | selectattr('port', 'equalto', test_transport_port | int)
+        | list | length == 0
     fail_msg: "Removed transport still found in SNMP config"
     success_msg: "Transport removal verified in SNMP config"
 
@@ -682,10 +704,26 @@
       - result.response is defined
       - result.response.traps is defined
       - result.response.traps | length >= 1
-      - result.response.traps | selectattr('version', 'equalto', 'V2') | selectattr('address.ipv4.value', 'equalto', trap_v2_ip) | list | length == 1
-      - (result.response.traps | selectattr('version', 'equalto', 'V2') | selectattr('address.ipv4.value', 'equalto', trap_v2_ip) | list | first).community_string == "public"
-      - (result.response.traps | selectattr('version', 'equalto', 'V2') | selectattr('address.ipv4.value', 'equalto', trap_v2_ip) | list | first).protocol == test_trap_protocol_v2
-      - (result.response.traps | selectattr('version', 'equalto', 'V2') | selectattr('address.ipv4.value', 'equalto', trap_v2_ip) | list | first).port == trap_v2_port
+      - >-
+        result.response.traps
+        | selectattr('version', 'equalto', 'V2')
+        | selectattr('address.ipv4.value', 'equalto', trap_v2_ip)
+        | list | length == 1
+      - >-
+        (result.response.traps
+        | selectattr('version', 'equalto', 'V2')
+        | selectattr('address.ipv4.value', 'equalto', trap_v2_ip)
+        | list | first).community_string == "public"
+      - >-
+        (result.response.traps
+        | selectattr('version', 'equalto', 'V2')
+        | selectattr('address.ipv4.value', 'equalto', trap_v2_ip)
+        | list | first).protocol == test_trap_protocol_v2
+      - >-
+        (result.response.traps
+        | selectattr('version', 'equalto', 'V2')
+        | selectattr('address.ipv4.value', 'equalto', trap_v2_ip)
+        | list | first).port == trap_v2_port
       - result.task_ext_id is defined
     fail_msg: "Failed to create SNMP V2 trap"
     success_msg: "SNMP V2 trap created successfully"
@@ -744,10 +782,26 @@
       - result.response is defined
       - result.response.traps is defined
       - result.response.traps | length >= 2
-      - result.response.traps | selectattr('version', 'equalto', 'V3') | selectattr('address.ipv4.value', 'equalto', trap_v3_ip) | list | length == 1
-      - (result.response.traps | selectattr('version', 'equalto', 'V3') | selectattr('address.ipv4.value', 'equalto', trap_v3_ip) | list | first).username == snmp_username_all
-      - (result.response.traps | selectattr('version', 'equalto', 'V3') | selectattr('address.ipv4.value', 'equalto', trap_v3_ip) | list | first).protocol == test_trap_protocol_v3
-      - (result.response.traps | selectattr('version', 'equalto', 'V3') | selectattr('address.ipv4.value', 'equalto', trap_v3_ip) | list | first).port == trap_v3_port
+      - >-
+        result.response.traps
+        | selectattr('version', 'equalto', 'V3')
+        | selectattr('address.ipv4.value', 'equalto', trap_v3_ip)
+        | list | length == 1
+      - >-
+        (result.response.traps
+        | selectattr('version', 'equalto', 'V3')
+        | selectattr('address.ipv4.value', 'equalto', trap_v3_ip)
+        | list | first).username == snmp_username_all
+      - >-
+        (result.response.traps
+        | selectattr('version', 'equalto', 'V3')
+        | selectattr('address.ipv4.value', 'equalto', trap_v3_ip)
+        | list | first).protocol == test_trap_protocol_v3
+      - >-
+        (result.response.traps
+        | selectattr('version', 'equalto', 'V3')
+        | selectattr('address.ipv4.value', 'equalto', trap_v3_ip)
+        | list | first).port == trap_v3_port
       - result.task_ext_id is defined
     fail_msg: "Failed to create SNMP V3 trap"
     success_msg: "SNMP V3 trap created successfully"
@@ -952,7 +1006,7 @@
     that:
       - result.changed == false
       - result.failed == true
-      - result.msg == "state is present but all of the following are missing: username, auth_type, auth_key"
+      - 'result.msg == "state is present but all of the following are missing: username, auth_type, auth_key"'
     fail_msg: "Create SNMP user without required params did not fail as expected"
     success_msg: "Create SNMP user without required params failed as expected"
 
@@ -1089,7 +1143,7 @@
     that:
       - result.changed == false
       - result.failed == true
-      - result.msg == "state is present but all of the following are missing: address, version"
+      - 'result.msg == "state is present but all of the following are missing: address, version"'
     fail_msg: "Create SNMP trap without address and version did not fail as expected"
     success_msg: "Create SNMP trap without address and version failed as expected"
 
@@ -1156,7 +1210,7 @@
     that:
       - result.changed == false
       - result.failed == true
-      - result.msg == "state is present but all of the following are missing: address, version"
+      - 'result.msg == "state is present but all of the following are missing: address, version"'
     fail_msg: "Update SNMP trap without required params did not fail as expected"
     success_msg: "Update SNMP trap without required params failed as expected"
 
