@@ -39,18 +39,15 @@ options:
     description:
       - SNMP username. For SNMP trap v3 version, SNMP username is required parameter.
     type: str
-    required: true
   auth_type:
     description:
       - Auth type.
     type: str
-    required: true
     choices: ['MD5', 'SHA']
   auth_key:
     description:
       - SNMP user authentication key.
     type: str
-    required: true
   priv_type:
     description:
       - Priv type.

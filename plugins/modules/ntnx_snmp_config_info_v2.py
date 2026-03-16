@@ -9,7 +9,7 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
-module: ntnx_snmp_configs_info_v2
+module: ntnx_snmp_config_info_v2
 short_description: Fetch SNMP configuration of a Nutanix cluster
 description:
   - This module fetches SNMP configuration of a Nutanix cluster.
@@ -34,7 +34,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Fetch SNMP config for a cluster
-  nutanix.ncp.ntnx_snmp_configs_info_v2:
+  nutanix.ncp.ntnx_snmp_config_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

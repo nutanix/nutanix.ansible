@@ -9,7 +9,7 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
-module: ntnx_snmp_traps_info_v2
+module: ntnx_snmp_trap_info_v2
 short_description: Fetch information about a specific SNMP trap
 description:
   - This module fetches information about a Nutanix SNMP trap.
@@ -38,7 +38,7 @@ author:
 
 EXAMPLES = r"""
 - name: Get details of a specific SNMP trap
-  nutanix.ncp.ntnx_snmp_traps_info_v2:
+  nutanix.ncp.ntnx_snmp_trap_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

@@ -9,7 +9,7 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
-module: ntnx_snmp_users_info_v2
+module: ntnx_snmp_user_info_v2
 short_description: Fetch information about snmp user
 description:
   - This module fetches information about a Nutanix snmp user.
@@ -38,7 +38,7 @@ author:
 
 EXAMPLES = r"""
 - name: Get details of a specific snmp user
-  nutanix.ncp.ntnx_snmp_users_info_v2:
+  nutanix.ncp.ntnx_snmp_user_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
