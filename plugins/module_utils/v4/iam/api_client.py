@@ -148,6 +148,18 @@ def get_user_api_instance(module):
     return ntnx_iam_py_client.UsersApi(api_client=api_client)
 
 
+def get_role_membership_api_instance(module):
+    """
+    This method will return role membership api instance.
+    Args:
+        module (object): Ansible module object
+    Returns:
+        api_instance (object): Role membership api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_iam_py_client.RoleMembershipApi(api_client=api_client)
+
+
 def get_identity_provider_api_instance(module):
     """
     This method will return SAMLIdentityProvidersApi instance.
