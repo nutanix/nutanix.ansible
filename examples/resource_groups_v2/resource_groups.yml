@@ -15,7 +15,7 @@
     # Setup - Create a project first
     ############################################
     - name: Create a project for resource group tests
-      nutanix.ncp.ntnx_projects_v2:
+      nutanix.ncp.ntnx_project_v2:
         state: present
         name: "example-rg-project"
         project_id: "example-rg-project-id"
@@ -141,7 +141,7 @@
     # Cleanup - delete project
     ############################################
     - name: Delete test project
-      nutanix.ncp.ntnx_projects_v2:
+      nutanix.ncp.ntnx_project_v2:
         state: absent
         ext_id: "{{ project_ext_id }}"
       register: cleanup_result
