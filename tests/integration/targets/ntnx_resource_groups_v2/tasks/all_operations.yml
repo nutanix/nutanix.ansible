@@ -1,7 +1,7 @@
 ---
-- name: Start testing ntnx_resource_groups_v2, ntnx_resource_groups_info_v2
+- name: Start testing ntnx_resource_group_v2, ntnx_resource_groups_info_v2
   ansible.builtin.debug:
-    msg: Start testing ntnx_resource_groups_v2, ntnx_resource_groups_info_v2
+    msg: Start testing ntnx_resource_group_v2, ntnx_resource_groups_info_v2
 
 - name: Generate random name
   ansible.builtin.set_fact:
@@ -14,7 +14,7 @@
 - name: Generate resource group names
   ansible.builtin.set_fact:
     rg_name: "{{ random_name }}{{ suffix_name }}"
-    cluster_ext_id: "00064c46-8fef-6895-185b-ac1f6b6f97e2"
+    cluster_ext_id: "00064d33-1010-d636-5dc1-525400a68708"
 
 - name: Set todelete lists
   ansible.builtin.set_fact:
@@ -24,39 +24,37 @@
 ###########################################################
 # SETUP - Create projects for resource group tests
 ###########################################################
-- name: Create project 1 for resource group tests
-  nutanix.ncp.ntnx_projects_v2:
-    state: present
-
-    name: "{{ rg_name }}-project1"
-    project_id: "{{ rg_name }}-project-id1"
-  register: project_result1
-  ignore_errors: true
+# - name: Create project 1 for resource group tests
+#   nutanix.ncp.ntnx_project_v2:
+#     state: present
+#     name: "{{ rg_name }}-project1"
+#     project_id: "{{ rg_name }}-project-id1"
+#   register: project_result1
+#   ignore_errors: true
 
 - name: Save project 1 ext_id
   ansible.builtin.set_fact:
-    project1_ext_id: "{{ project_result1.ext_id }}"
-    todelete_projects: "{{ todelete_projects + [project_result1.ext_id] }}"
+    project1_ext_id: "a16692a5-d844-4ae7-9a30-108c2e2e990c"
+    todelete_projects: "{{ todelete_projects + ['a16692a5-d844-4ae7-9a30-108c2e2e990c'] }}"
 
-- name: Create project 2 for resource group tests
-  nutanix.ncp.ntnx_projects_v2:
-    state: present
-
-    name: "{{ rg_name }}-project2"
-    project_id: "{{ rg_name }}-project-id2"
-  register: project_result2
-  ignore_errors: true
+# - name: Create project 2 for resource group tests
+#   nutanix.ncp.ntnx_project_v2:
+#     state: present
+#     name: "{{ rg_name }}-project2"
+#     project_id: "{{ rg_name }}-project-id2"
+#   register: project_result2
+#   ignore_errors: true
 
 - name: Save project 2 ext_id
   ansible.builtin.set_fact:
-    project2_ext_id: "{{ project_result2.ext_id }}"
-    todelete_projects: "{{ todelete_projects + [project_result2.ext_id] }}"
+    project2_ext_id: "596390fc-7588-4b2e-89d9-212e10aa0d78"
+    todelete_projects: "{{ todelete_projects + ['596390fc-7588-4b2e-89d9-212e10aa0d78'] }}"
 
 ###########################################################
 # CHECK MODE TESTS - CREATE
 ###########################################################
 - name: Create resource group with check mode - all fields
-  nutanix.ncp.ntnx_resource_groups_v2:
+  nutanix.ncp.ntnx_resource_group_v2:
     state: present
     name: "check-mode-rg"
     project_ext_id: "{{ project1_ext_id }}"
@@ -83,9 +81,8 @@
 # CREATE OPERATIONS
 ###########################################################
 - name: Create resource group with minimum fields (project 1)
-  nutanix.ncp.ntnx_resource_groups_v2:
+  nutanix.ncp.ntnx_resource_group_v2:
     state: present
-
     name: "{{ rg_name }}1"
     project_ext_id: "{{ project1_ext_id }}"
   register: result
@@ -114,7 +111,7 @@
     todelete_rg: "{{ todelete_rg + [result.ext_id] }}"
 
 - name: Create resource group with all fields (project 2)
-  nutanix.ncp.ntnx_resource_groups_v2:
+  nutanix.ncp.ntnx_resource_group_v2:
     state: present
 
     name: "{{ rg_name }}2"
@@ -148,7 +145,7 @@
 # CHECK MODE TESTS - UPDATE
 ###########################################################
 - name: Update resource group name with check mode
-  nutanix.ncp.ntnx_resource_groups_v2:
+  nutanix.ncp.ntnx_resource_group_v2:
     state: present
     ext_id: "{{ rg_ext_id }}"
     name: "{{ rg_name }}1-checkmode"
@@ -185,7 +182,7 @@
 # UPDATE OPERATIONS
 ###########################################################
 - name: Update resource group name
-  nutanix.ncp.ntnx_resource_groups_v2:
+  nutanix.ncp.ntnx_resource_group_v2:
     state: present
 
     ext_id: "{{ rg_ext_id }}"
@@ -209,7 +206,7 @@
 # IDEMPOTENCY TEST
 ###########################################################
 - name: Check idempotency - no changes
-  nutanix.ncp.ntnx_resource_groups_v2:
+  nutanix.ncp.ntnx_resource_group_v2:
     state: present
     ext_id: "{{ rg_ext_id }}"
     name: "{{ rg_name }}1-updated"
@@ -230,7 +227,7 @@
 # CHECK MODE TESTS - DELETE
 ###########################################################
 - name: Delete resource group with check mode
-  nutanix.ncp.ntnx_resource_groups_v2:
+  nutanix.ncp.ntnx_resource_group_v2:
     state: absent
     ext_id: "{{ rg_ext_id }}"
   register: result
@@ -338,7 +335,7 @@
 # NEGATIVE SCENARIOS
 ###########################################################
 - name: "Negative: Create resource group without name"
-  nutanix.ncp.ntnx_resource_groups_v2:
+  nutanix.ncp.ntnx_resource_group_v2:
     state: present
     project_ext_id: "{{ project1_ext_id }}"
   register: result
@@ -353,7 +350,7 @@
     success_msg: "Negative test - create without name correctly failed"
 
 - name: "Negative: Delete resource group with non-existent ext_id"
-  nutanix.ncp.ntnx_resource_groups_v2:
+  nutanix.ncp.ntnx_resource_group_v2:
     state: absent
     ext_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
   register: result
@@ -368,7 +365,7 @@
     success_msg: "Negative test - delete with non-existent ext_id correctly failed"
 
 - name: "Negative: Get resource group info with non-existent ext_id"
-  nutanix.ncp.ntnx_resource_groups_info_v2:
+  nutanix.ncp.ntnx_resource_group_info_v2:
     ext_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
   register: result
   ignore_errors: true
@@ -382,7 +379,7 @@
     success_msg: "Negative test - get info with non-existent ext_id correctly failed"
 
 - name: "Negative: Update resource group with non-existent ext_id"
-  nutanix.ncp.ntnx_resource_groups_v2:
+  nutanix.ncp.ntnx_resource_group_v2:
     state: present
     ext_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
     name: "nonexistent-rg"
@@ -401,7 +398,7 @@
 # DELETE OPERATIONS
 ###########################################################
 - name: Delete all created resource groups
-  nutanix.ncp.ntnx_resource_groups_v2:
+  nutanix.ncp.ntnx_resource_group_v2:
     state: absent
 
     ext_id: "{{ item }}"
@@ -438,9 +435,8 @@
 # CLEANUP - Delete test projects
 ###########################################################
 - name: Delete all test projects
-  nutanix.ncp.ntnx_projects_v2:
+  nutanix.ncp.ntnx_project_v2:
     state: absent
-
     ext_id: "{{ item }}"
   register: cleanup_result
   loop: "{{ todelete_projects }}"

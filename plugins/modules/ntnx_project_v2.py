@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -10,21 +10,20 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_resource_groups_v2
-short_description: Manage resource groups in Nutanix Prism Central using v4 APIs
+module: ntnx_project_v2
+short_description: Manage projects in Nutanix Prism Central using v4 APIs
 version_added: "2.6.0"
 description:
-    - Create, update, and delete resource groups in Nutanix Prism Central.
-    - Resource groups define placement targets (clusters and storage containers)
-      where resources within a project can be deployed.
+    - Create, update, and delete projects in Nutanix Prism Central.
+    - Projects are logical grouping constructs that organize resources across the Nutanix platform.
     - This module uses PC v4 APIs based SDKs.
 options:
     state:
         description:
             - Specify state.
-            - If C(state) is set to C(present) then the module will create a resource group.
-            - If C(state) is set to C(present) and C(ext_id) is given, then the module will update the resource group.
-            - If C(state) is set to C(absent) with C(ext_id), then the module will delete the resource group.
+            - If C(state) is set to C(present) then the module will create a project.
+            - If C(state) is set to C(present) and C(ext_id) is given, then the module will update the project.
+            - If C(state) is set to C(absent) with C(ext_id), then the module will delete the project.
         choices:
             - present
             - absent
@@ -37,85 +36,28 @@ options:
         default: True
     ext_id:
         description:
-            - The external ID of the resource group.
+            - The external ID of the project.
             - Required for C(state)=absent for delete.
-            - Required for C(state)=present to trigger update of resource group.
+            - Required for C(state)=present to trigger update of project.
         type: str
     name:
         description:
-            - Name of the resource group.
+            - Name of the project.
             - Required for create operations.
-            - Maximum 64 characters.
+            - This field is immutable and cannot be updated after creation.
+            - Must be between 1 and 64 characters.
         type: str
-    project_ext_id:
+    description:
         description:
-            - UUID of the project that owns this resource group.
+            - Description of the project.
+            - Maximum 1024 characters.
         type: str
-    placement_targets:
+    project_id:
         description:
-            - List of placement targets defining where resources can be deployed.
-        type: list
-        elements: dict
-        suboptions:
-            cluster_ext_id:
-                description:
-                    - UUID of the AOS cluster.
-                type: str
-            storage_containers:
-                description:
-                    - List of storage containers available for this cluster target.
-                type: list
-                elements: dict
-                suboptions:
-                    ext_id:
-                        description:
-                            - UUID of the storage container.
-                        type: str
-                    capabilities:
-                        description:
-                            - Capabilities and features of the storage container.
-                            - Each item is a key-value pair.
-                        type: list
-                        elements: dict
-                        suboptions:
-                            name:
-                                description:
-                                    - The key of the key-value pair.
-                                type: str
-                            value:
-                                description:
-                                    - The value associated with the key.
-                                type: raw
-            capabilities:
-                description:
-                    - Capabilities and features available at this placement target.
-                    - Each item is a key-value pair.
-                type: list
-                elements: dict
-                suboptions:
-                    name:
-                        description:
-                            - The key of the key-value pair.
-                        type: str
-                    value:
-                        description:
-                            - The value associated with the key.
-                        type: raw
-    capabilities:
-        description:
-            - Capabilities and features for this resource group.
-            - Each item is a key-value pair.
-        type: list
-        elements: dict
-        suboptions:
-            name:
-                description:
-                    - The key of the key-value pair.
-                type: str
-            value:
-                description:
-                    - The value associated with the key.
-                type: raw
+            - Unique human-readable ID for the project.
+            - Required for create operations.
+            - Must be between 1 and 64 characters.
+        type: str
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
@@ -126,46 +68,48 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Create a resource group with placement targets
-  nutanix.ncp.ntnx_resource_groups_v2:
+- name: Create a project with all fields
+  nutanix.ncp.ntnx_project_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
     state: present
-    name: "my-resource-group"
-    project_ext_id: "{{ project_ext_id }}"
-    placement_targets:
-      - cluster_ext_id: "{{ cluster_ext_id }}"
+    wait: true
+    name: "my-project"
+    project_id: "my-project-id"
+    description: "A test project created via Ansible"
   register: result
 
-- name: Update a resource group name
-  nutanix.ncp.ntnx_resource_groups_v2:
+- name: Update a project description
+  nutanix.ncp.ntnx_project_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
     state: present
-    ext_id: "{{ resource_group_ext_id }}"
-    name: "my-resource-group-updated"
+    wait: true
+    ext_id: "{{ project_ext_id }}"
+    description: "Updated description"
   register: result
 
-- name: Delete a resource group
-  nutanix.ncp.ntnx_resource_groups_v2:
+- name: Delete a project
+  nutanix.ncp.ntnx_project_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
     state: absent
-    ext_id: "{{ resource_group_ext_id }}"
+    wait: true
+    ext_id: "{{ project_ext_id }}"
   register: result
 """
 
 RETURN = r"""
 response:
     description:
-        - The response from the Nutanix PC Resource Groups v4 API.
-        - It will contain the resource group details after create or update when C(wait) is true.
+        - The response from the Nutanix PC Projects v4 API.
+        - It will contain the project details after create or update when C(wait) is true.
         - It will contain task details when C(wait) is false.
     returned: always
     type: dict
@@ -178,7 +122,7 @@ changed:
     sample: true
 
 ext_id:
-    description: The external ID of the resource group.
+    description: The external ID of the project.
     returned: always
     type: str
     sample: "00000000-0000-0000-0000-000000000000"
@@ -224,9 +168,9 @@ from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
 from ..module_utils.v4.multidomain.api_client import (  # noqa: E402
     get_etag,
-    get_resource_groups_api_instance,
+    get_projects_api_instance,
 )
-from ..module_utils.v4.multidomain.helpers import get_resource_group  # noqa: E402
+from ..module_utils.v4.multidomain.helpers import get_project  # noqa: E402
 from ..module_utils.v4.prism.tasks import (  # noqa: E402
     get_entity_ext_id_from_task,
     wait_for_completion,
@@ -246,72 +190,38 @@ except ImportError:
 
     SDK_IMP_ERROR = traceback.format_exc()
 
-# Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
 def get_module_spec():
-    kv_pair_spec = dict(
-        name=dict(type="str"),
-        value=dict(type="raw"),
-    )
-
-    storage_container_spec = dict(
-        ext_id=dict(type="str"),
-        capabilities=dict(
-            type="list",
-            elements="dict",
-            options=kv_pair_spec,
-            obj=multidomain_sdk.KVPair,
-        ),
-    )
-
-    placement_target_spec = dict(
-        cluster_ext_id=dict(type="str"),
-        storage_containers=dict(
-            type="list",
-            elements="dict",
-            options=storage_container_spec,
-            obj=multidomain_sdk.StorageContainerDetails,
-        ),
-        capabilities=dict(
-            type="list",
-            elements="dict",
-            options=kv_pair_spec,
-            obj=multidomain_sdk.KVPair,
-        ),
-    )
-
     module_args = dict(
         ext_id=dict(type="str"),
         name=dict(type="str"),
-        project_ext_id=dict(type="str"),
-        placement_targets=dict(
-            type="list",
-            elements="dict",
-            options=placement_target_spec,
-            obj=multidomain_sdk.TargetDetails,
-        ),
-        capabilities=dict(
-            type="list",
-            elements="dict",
-            options=kv_pair_spec,
-            obj=multidomain_sdk.KVPair,
-        ),
+        description=dict(type="str"),
+        project_id=dict(type="str"),
     )
     return module_args
 
 
-def create_resource_group(module, resource_groups, result):
-    validate_required_params(module, ["name"])
+def create_project(module, projects, result):
+    validate_required_params(module, ["name", "project_id"])
 
     sg = SpecGenerator(module)
-    default_spec = multidomain_sdk.ResourceGroup()
+    default_spec = multidomain_sdk.Project()
     spec, err = sg.generate_spec(obj=default_spec)
 
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating create resource group spec", **result)
+        module.fail_json(msg="Failed generating create project spec", **result)
+
+    project_id = module.params.get("project_id")
+    if project_id:
+        spec.id = project_id
+
+    # SpecGenerator picks up Ansible's 'state' param ("present"/"absent")
+    # and sets it on the SDK object; reset to None so the API does not
+    # receive an invalid enum value.
+    spec.state = None
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
@@ -319,12 +229,12 @@ def create_resource_group(module, resource_groups, result):
 
     resp = None
     try:
-        resp = resource_groups.create_resource_group(body=spec)
+        resp = projects.create_project(body=spec)
     except Exception as e:
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while creating resource group",
+            msg="Api Exception raised while creating project",
         )
 
     task_ext_id = resp.data.ext_id
@@ -334,17 +244,17 @@ def create_resource_group(module, resource_groups, result):
         task_status = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_status.to_dict())
         ext_id = get_entity_ext_id_from_task(
-            task_status, rel=TASK_CONSTANTS.RelEntityType.RESOURCE_GROUP
+            task_status, rel=TASK_CONSTANTS.RelEntityType.PROJECT
         )
         if ext_id:
-            resp = get_resource_group(module, resource_groups, ext_id)
+            resp = get_project(module, projects, ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
 
     result["changed"] = True
 
 
-def check_resource_group_idempotency(old_spec, update_spec):
+def check_project_idempotency(old_spec, update_spec):
     strip_internal_attributes(old_spec)
     strip_internal_attributes(update_spec)
     if old_spec != update_spec:
@@ -354,38 +264,49 @@ def check_resource_group_idempotency(old_spec, update_spec):
 
 def _clear_read_only_fields(spec):
     """
-    Clear server-managed read-only fields on an SDK ResourceGroup spec so they
+    Clear server-managed read-only fields on an SDK Project spec so they
     are omitted from the serialized PUT body (the SDK excludes None attrs).
     """
+    spec.created_timestamp = None
+    spec.modified_timestamp = None
     spec.created_by = None
-    spec.last_updated_by = None
-    spec.create_time = None
-    spec.last_update_time = None
+    spec.updated_by = None
+    spec.is_system_defined = None
+    spec.is_default = None
     spec.ext_id = None
     spec.links = None
     spec.tenant_id = None
 
 
-def update_resource_group(module, resource_groups, result):
+def update_project(module, projects, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
-    current_spec = get_resource_group(module, resource_groups, ext_id)
+    current_spec = get_project(module, projects, ext_id)
 
     etag = get_etag(data=current_spec)
     if not etag:
-        return module.fail_json(
-            "Unable to fetch etag for updating resource group", **result
-        )
+        return module.fail_json("Unable to fetch etag for updating project", **result)
+
+    # Preserve original state before SpecGenerator overwrites it
+    original_state = current_spec.state
 
     sg = SpecGenerator(module)
     update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
 
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating update resource group spec", **result)
+        module.fail_json(msg="Failed generating update project spec", **result)
 
-    if check_resource_group_idempotency(current_spec.to_dict(), update_spec.to_dict()):
+    project_id = module.params.get("project_id")
+    if project_id:
+        update_spec.id = project_id
+
+    # Restore original state so that Ansible's "present"/"absent"
+    # does not leak into the API payload.
+    update_spec.state = original_state
+
+    if check_project_idempotency(current_spec.to_dict(), update_spec.to_dict()):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
 
@@ -393,19 +314,18 @@ def update_resource_group(module, resource_groups, result):
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
 
+    # Clear server-managed read-only fields before sending to API
     _clear_read_only_fields(update_spec)
 
     resp = None
     kwargs = {"if_match": etag}
     try:
-        resp = resource_groups.update_resource_group_by_id(
-            extId=ext_id, body=update_spec, **kwargs
-        )
+        resp = projects.update_project_by_id(extId=ext_id, body=update_spec, **kwargs)
     except Exception as e:
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while updating resource group",
+            msg="Api Exception raised while updating project",
         )
 
     task_ext_id = resp.data.ext_id
@@ -414,38 +334,36 @@ def update_resource_group(module, resource_groups, result):
 
     if task_ext_id and module.params.get("wait"):
         wait_for_completion(module, task_ext_id)
-        resp = get_resource_group(module, resource_groups, ext_id)
+        resp = get_project(module, projects, ext_id)
         result["ext_id"] = ext_id
         result["response"] = strip_internal_attributes(resp.to_dict())
 
     result["changed"] = True
 
 
-def delete_resource_group(module, resource_groups, result):
+def delete_project(module, projects, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
     if module.check_mode:
-        result["msg"] = "Resource group with ext_id:{0} will be deleted.".format(ext_id)
+        result["msg"] = "Project with ext_id:{0} will be deleted.".format(ext_id)
         return
 
-    current_spec = get_resource_group(module, resource_groups, ext_id)
+    current_spec = get_project(module, projects, ext_id)
 
     etag = get_etag(data=current_spec)
     if not etag:
-        return module.fail_json(
-            "Unable to fetch etag for deleting resource group", **result
-        )
+        return module.fail_json("Unable to fetch etag for deleting project", **result)
 
     kwargs = {"if_match": etag}
 
     try:
-        resp = resource_groups.delete_resource_group_by_id(extId=ext_id, **kwargs)
+        resp = projects.delete_project_by_id(extId=ext_id, **kwargs)
     except Exception as e:
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while deleting resource group",
+            msg="Api Exception raised while deleting project",
         )
 
     task_ext_id = resp.data.ext_id
@@ -481,16 +399,16 @@ def run_module():
         "ext_id": None,
     }
 
-    resource_groups = get_resource_groups_api_instance(module)
+    projects = get_projects_api_instance(module)
 
     state = module.params["state"]
     if state == "present":
         if module.params.get("ext_id"):
-            update_resource_group(module, resource_groups, result)
+            update_project(module, projects, result)
         else:
-            create_resource_group(module, resource_groups, result)
+            create_project(module, projects, result)
     else:
-        delete_resource_group(module, resource_groups, result)
+        delete_project(module, projects, result)
     module.exit_json(**result)
 
 

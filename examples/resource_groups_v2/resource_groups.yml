@@ -15,7 +15,7 @@
     # Setup - Create a project first
     ############################################
     - name: Create a project for resource group tests
-      nutanix.ncp.ntnx_projects_v2:
+      nutanix.ncp.ntnx_project_v2:
         state: present
         name: "example-rg-project"
         project_id: "example-rg-project-id"
@@ -33,7 +33,7 @@
     # Create resource group with placement targets
     ############################################
     - name: Create a resource group with placement targets
-      nutanix.ncp.ntnx_resource_groups_v2:
+      nutanix.ncp.ntnx_resource_group_v2:
         state: present
         name: "example-resource-group"
         project_ext_id: "{{ project_ext_id }}"
@@ -53,7 +53,7 @@
     # Update resource group name
     ############################################
     - name: Update resource group name
-      nutanix.ncp.ntnx_resource_groups_v2:
+      nutanix.ncp.ntnx_resource_group_v2:
         state: present
         ext_id: "{{ rg_ext_id }}"
         name: "example-resource-group-updated"
@@ -67,7 +67,7 @@
     # Idempotency check
     ############################################
     - name: Update resource group with no changes (idempotency)
-      nutanix.ncp.ntnx_resource_groups_v2:
+      nutanix.ncp.ntnx_resource_group_v2:
         state: present
         ext_id: "{{ rg_ext_id }}"
         name: "example-resource-group-updated"
@@ -128,7 +128,7 @@
     # Delete resource group
     ############################################
     - name: Delete resource group
-      nutanix.ncp.ntnx_resource_groups_v2:
+      nutanix.ncp.ntnx_resource_group_v2:
         state: absent
         ext_id: "{{ rg_ext_id }}"
       register: delete_result
@@ -141,7 +141,7 @@
     # Cleanup - delete project
     ############################################
     - name: Delete test project
-      nutanix.ncp.ntnx_projects_v2:
+      nutanix.ncp.ntnx_project_v2:
         state: absent
         ext_id: "{{ project_ext_id }}"
       register: cleanup_result

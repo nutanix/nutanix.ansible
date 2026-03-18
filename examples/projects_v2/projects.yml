@@ -21,7 +21,7 @@
     # CREATE OPERATIONS
     ###########################################################
     - name: Create a project with minimum required fields
-      nutanix.ncp.ntnx_projects_v2:
+      nutanix.ncp.ntnx_project_v2:
         state: present
         wait: true
         name: "example-project-min"
@@ -34,7 +34,7 @@
 
     ###########################################################
     - name: Create a project with all fields
-      nutanix.ncp.ntnx_projects_v2:
+      nutanix.ncp.ntnx_project_v2:
         state: present
         wait: true
         name: "example-project-full"
@@ -50,7 +50,7 @@
     # CHECK MODE - CREATE
     ###########################################################
     - name: Create a project with check mode (no actual creation)
-      nutanix.ncp.ntnx_projects_v2:
+      nutanix.ncp.ntnx_project_v2:
         state: present
         name: "example-project-check"
         project_id: "example-project-check-id"
@@ -66,7 +66,7 @@
     # UPDATE OPERATIONS
     ###########################################################
     - name: Update project description
-      nutanix.ncp.ntnx_projects_v2:
+      nutanix.ncp.ntnx_project_v2:
         state: present
         wait: true
         ext_id: "{{ create_full_result.ext_id }}"
@@ -81,7 +81,7 @@
     # IDEMPOTENCY CHECK
     ###########################################################
     - name: Update project with same values (idempotency test)
-      nutanix.ncp.ntnx_projects_v2:
+      nutanix.ncp.ntnx_project_v2:
         state: present
         wait: true
         ext_id: "{{ create_full_result.ext_id }}"
@@ -143,7 +143,7 @@
     # CHECK MODE - DELETE
     ###########################################################
     - name: Delete project with check mode (no actual deletion)
-      nutanix.ncp.ntnx_projects_v2:
+      nutanix.ncp.ntnx_project_v2:
         state: absent
         ext_id: "{{ create_full_result.ext_id }}"
       check_mode: true
@@ -157,7 +157,7 @@
     # DELETE OPERATIONS
     ###########################################################
     - name: Delete first created project
-      nutanix.ncp.ntnx_projects_v2:
+      nutanix.ncp.ntnx_project_v2:
         state: absent
         wait: true
         ext_id: "{{ create_min_result.ext_id }}"
@@ -169,7 +169,7 @@
 
     ###########################################################
     - name: Delete second created project
-      nutanix.ncp.ntnx_projects_v2:
+      nutanix.ncp.ntnx_project_v2:
         state: absent
         wait: true
         ext_id: "{{ create_full_result.ext_id }}"
