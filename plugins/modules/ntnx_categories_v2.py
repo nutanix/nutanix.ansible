@@ -55,12 +55,6 @@ options:
       - The description of the category.
     required: false
     type: str
-  is_shared_with_all_projects:
-    description:
-      - Flag to share the category with all projects.
-      - If C(true), the category is shared with all projects.
-    required: false
-    type: bool
   shared_with_projects:
     description:
       - List of project external IDs to share the category with.
@@ -100,7 +94,6 @@ EXAMPLES = r"""
     key: "key1"
     value: "val2"
     description: "ansible test New value"
-    is_shared_with_all_projects: true
 
 - name: Delete created category key value pair
   nutanix.ncp.ntnx_categories_v2:
@@ -205,7 +198,6 @@ def get_module_spec():
         type=dict(type="str", choices=["USER"], default="USER"),
         owner_uuid=dict(type="str"),
         description=dict(type="str"),
-        is_shared_with_all_projects=dict(type="bool"),
         shared_with_projects=dict(type="list", elements="str"),
     )
 
@@ -445,9 +437,6 @@ def run_module():
     module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-        mutually_exclusive=[
-            ("is_shared_with_all_projects", "shared_with_projects"),
-        ],
         required_if=[
             ("state", "present", ("ext_id", "key", "value"), True),
             ("state", "absent", ("ext_id",)),
