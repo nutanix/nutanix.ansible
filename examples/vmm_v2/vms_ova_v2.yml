@@ -34,6 +34,7 @@
     - name: Create Ova from the VM
       nutanix.ncp.ntnx_ova_v2:
         name: "ova_name"
+        project_ext_id: "<project_uuid>"
         source:
           ova_vm_source:
             vm_ext_id: "{{ vm_uuid }}"

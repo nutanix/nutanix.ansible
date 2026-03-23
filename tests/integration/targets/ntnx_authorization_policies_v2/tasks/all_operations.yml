@@ -65,6 +65,8 @@
     description: ansible created acps
     role: "{{ role_ext_id }}"
     authorization_policy_type: USER_DEFINED
+    project_ext_id: "{{ project.uuid | default(omit) }}"
+    is_shared_with_all_projects: "{{ enable_shared_with_all_projects | default(omit) }}"
     entities:
       - images:
           "*":
@@ -123,6 +125,8 @@
     description: ansible created acps
     role: "{{ role_ext_id }}"
     authorization_policy_type: USER_DEFINED
+    project_ext_id: "{{ project.uuid | default(omit) }}"
+    is_shared_with_all_projects: "{{ enable_shared_with_all_projects | default(omit) }}"
     entities:
       - images:
           "*":

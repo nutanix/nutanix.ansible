@@ -27,6 +27,9 @@
         state: present
         wait: true
         name: "{{ vpc_name }}"
+        project_ext_id: "<project_uuid>"
+        shared_with_projects:
+          - "<project_uuid>"
         external_subnets:
           - subnet_reference: "{{ external_nat_subnet_uuid }}"
       register: result

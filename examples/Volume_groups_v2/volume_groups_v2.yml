@@ -26,6 +26,7 @@
       nutanix.ncp.ntnx_volume_groups_v2:
         name: "{{ vg_name }}"
         description: "Volume group description"
+        project_ext_id: "<project_uuid>"
         should_load_balance_vm_attachments: true
         sharing_status: "SHARED"
         target_prefix: "vg1"

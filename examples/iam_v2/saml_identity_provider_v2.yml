@@ -33,6 +33,8 @@
         groups_attribute: groups
         groups_delim: ","
         idp_metadata_xml: "{{ idp_metadata_xml }}"
+        project_ext_id: "<project_uuid>"
+        is_shared_with_all_projects: true
         state: present
       register: result
       ignore_errors: true

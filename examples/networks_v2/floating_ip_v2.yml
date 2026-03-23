@@ -32,6 +32,7 @@
       nutanix.ncp.ntnx_floating_ips_v2:
         state: present
         name: "{{ floating_ip_name }}"
+        project_ext_id: "{{ project_uuid }}"
         external_subnet_reference: "{{ external_nat_subnet_uuid }}"
         metadata:
           project_reference_id: "{{ project_uuid }}"

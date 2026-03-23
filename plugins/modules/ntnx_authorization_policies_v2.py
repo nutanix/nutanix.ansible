@@ -30,6 +30,11 @@ options:
             - Required for updating or deleting the auth policy.
         type: str
         required: false
+    project_ext_id:
+        description:
+            - UUID of the project that owns this authorization policy.
+        required: false
+        type: str
     display_name:
         description:
             - The display name for the Authorization Policy.
@@ -68,6 +73,12 @@ options:
         choices:
             - USER_DEFINED
         default: USER_DEFINED
+    is_shared_with_all_projects:
+        description:
+            - Flag to share the authorization policy with all projects.
+            - If C(true), the authorization policy is shared with all projects.
+        required: false
+        type: bool
     wait:
         description:
             - Wait for the task to complete.
@@ -95,6 +106,8 @@ EXAMPLES = r"""
     description: "ansible created acps"
     role: "ebbfbd38-122b-5529-adcc-dcb6b4177382"
     authorization_policy_type: "USER_DEFINED"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
+    is_shared_with_all_projects: true
     entities:
       - "images":
           "*":
@@ -266,6 +279,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def get_module_spec():
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         display_name=dict(type="str"),
         description=dict(type="str"),
         identities=dict(type="list", elements="dict"),
@@ -276,6 +290,7 @@ def get_module_spec():
             choices=["USER_DEFINED"],
             default="USER_DEFINED",
         ),
+        is_shared_with_all_projects=dict(type="bool"),
     )
     return module_args
 

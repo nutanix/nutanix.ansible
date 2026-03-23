@@ -30,6 +30,8 @@
     state: present
     wait: true
     name: "{{ vpc_name }}1"
+    project_ext_id: "{{ project.uuid | default(omit) }}"
+    shared_with_projects: "{{ [project.uuid] if project is defined and project.uuid is defined else omit }}"
   register: result
   check_mode: true
   ignore_errors: true
@@ -49,6 +51,8 @@
     state: present
     wait: true
     name: "{{vpc_name}}2"
+    project_ext_id: "{{ project.uuid | default(omit) }}"
+    shared_with_projects: "{{ [project.uuid] if project is defined and project.uuid is defined else omit }}"
     external_subnets:
       - subnet_reference: "{{ external_nat_subnet.uuid }}"
   register: result

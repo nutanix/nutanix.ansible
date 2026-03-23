@@ -23,6 +23,8 @@
     key: "{{key1}}"
     value: "{{value1}}"
     description: "ansible test"
+    project_ext_id: "{{ project.uuid | default(omit) }}"
+    shared_with_projects: "{{ [project.uuid] if project is defined and project.uuid is defined else omit }}"
   register: result
   ignore_errors: true
   check_mode: true
@@ -43,6 +45,8 @@
     key: "{{key1}}"
     value: "{{value1}}"
     description: "ansible test"
+    project_ext_id: "{{ project.uuid | default(omit) }}"
+    shared_with_projects: "{{ [project.uuid] if project is defined and project.uuid is defined else omit }}"
   register: output
   ignore_errors: true
 

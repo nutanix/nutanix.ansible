@@ -42,6 +42,11 @@ options:
             - Required for C(state)=absent for delete.
         type: str
         required: false
+    project_ext_id:
+        description:
+            - UUID of the project that owns this volume group.
+        type: str
+        required: false
     name:
         description:
             - Name of VG
@@ -171,6 +176,7 @@ EXAMPLES = r"""
     state: "present"
     name: "{{vg1_name}}"
     description: "Volume group 2"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     should_load_balance_vm_attachments: true
     sharing_status: "SHARED"
     target_prefix: "vg1"

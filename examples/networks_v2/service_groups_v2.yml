@@ -37,6 +37,7 @@
       nutanix.ncp.ntnx_service_groups_v2:
         name: "{{ service_group_name }}"
         description: "service group description"
+        project_ext_id: "<project_uuid>"
         tcp_services:
           - start_port: "{{ tcp_services[0].start_port }}"
             end_port: "{{ tcp_services[0].end_port }}"

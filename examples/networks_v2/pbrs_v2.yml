@@ -32,6 +32,7 @@
         name: "{{ pbr_name }}"
         priority: "{{ priority }}"
         vpc_ext_id: "{{ vpc_ext_id }}"
+        project_ext_id: "<project_uuid>"
         description: "test description"
         policies:
           - policy_action:

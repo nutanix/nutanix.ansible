@@ -154,6 +154,7 @@
 - name: Create VM recovery point with check mode enabled
   nutanix.ncp.ntnx_recovery_points_v2:
     name: "Recovery Point"
+    project_ext_id: "{{ project.uuid | default(omit) }}"
     expiration_time: "2024-09-30T14:15:22+00:00"
     recovery_point_type: "APPLICATION_CONSISTENT"
     vm_recovery_points:
@@ -196,6 +197,7 @@
 - name: Create VM recovery point
   nutanix.ncp.ntnx_recovery_points_v2:
     name: "{{ recovery_point_name }}_1"
+    project_ext_id: "{{ project.uuid | default(omit) }}"
     expiration_time: "{{ expiration_time }}"
     recovery_point_type: "CRASH_CONSISTENT"
     vm_recovery_points:

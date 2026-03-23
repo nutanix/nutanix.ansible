@@ -32,6 +32,10 @@ options:
       - Subnet external ID
       - Required only for updating or deleting the subnet.
     type: str
+  project_ext_id:
+    description:
+      - UUID of the project that owns this floating IP.
+    type: str
   association:
     description: Spec to associating Floating IP with either VM NIC or Private IP
     type: dict
@@ -155,6 +159,7 @@ EXAMPLES = r"""
     state: present
     vpc_reference: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
     name: "test"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     association:
       private_ip_association:
         private_ip:
@@ -334,6 +339,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         name=dict(type="str"),
         description=dict(type="str"),
         association=dict(

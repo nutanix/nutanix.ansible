@@ -121,6 +121,7 @@
   nutanix.ncp.ntnx_security_rules_v2:
     name: "{{ rule_name_1 }}"
     description: Ansible created rule
+    project_ext_id: "{{ project.uuid | default(omit) }}"
     type: APPLICATION
     policy_state: SAVE
     scope: ALL_VPC
@@ -297,6 +298,7 @@
   nutanix.ncp.ntnx_security_rules_v2:
     name: "{{ rule_name_1 }}"
     description: Ansible created rule
+    project_ext_id: "{{ project.uuid | default(omit) }}"
     type: APPLICATION
     policy_state: ENFORCE
     scope: VPC_LIST

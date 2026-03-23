@@ -163,6 +163,17 @@ options:
         type: list
         elements: str
         required: false
+    project_ext_id:
+        description:
+            - UUID of the project that owns this image.
+        type: str
+        required: false
+    is_shared_with_all_projects:
+        description:
+            - Flag to share the image with all projects.
+            - If C(true), the image is shared with all projects.
+        type: bool
+        required: false
     tenant_id:
         description:
             - The tenant ID to be associated with the image.
@@ -195,6 +206,8 @@ EXAMPLES = r"""
         basic_auth:
           username: myuser
           password: mypassword
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
+    is_shared_with_all_projects: true
     category_ext_ids:
       - category1
       - category2
@@ -356,6 +369,7 @@ def get_module_spec():
     )
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         name=dict(type="str"),
         description=dict(type="str"),
         type=dict(type="str", choices=["DISK_IMAGE", "ISO_IMAGE"]),
@@ -375,6 +389,7 @@ def get_module_spec():
         ),
         category_ext_ids=dict(type="list", elements="str"),
         cluster_location_ext_ids=dict(type="list", elements="str"),
+        is_shared_with_all_projects=dict(type="bool"),
         tenant_id=dict(type="str"),
     )
     return module_args

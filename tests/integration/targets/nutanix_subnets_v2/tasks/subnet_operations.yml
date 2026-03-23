@@ -30,6 +30,8 @@
   nutanix.ncp.ntnx_subnets_v2:
     state: present
     name: "{{ subnet_name }}_1"
+    project_ext_id: "{{ project.uuid | default(omit) }}"
+    shared_with_projects: "{{ [project.uuid] if project is defined and project.uuid is defined else omit }}"
     subnet_type: VLAN
     cluster_reference: "{{ cluster.uuid }}"
     virtual_switch_reference: "{{ virtual_switch.uuid }}"
@@ -108,6 +110,8 @@
     state: present
     wait: true
     name: "{{ subnet_name }}_1"
+    project_ext_id: "{{ project.uuid | default(omit) }}"
+    shared_with_projects: "{{ [project.uuid] if project is defined and project.uuid is defined else omit }}"
     subnet_type: VLAN
     cluster_reference: "{{ cluster.uuid }}"
     virtual_switch_reference: "{{ virtual_switch.uuid }}"

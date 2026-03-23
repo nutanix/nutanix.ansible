@@ -29,6 +29,9 @@
         key: "{{ key1 }}"
         value: "{{ value1 }}"
         description: "ansible test"
+        project_ext_id: "<project_uuid>"
+        shared_with_projects:
+          - "<project_uuid>"
       register: output
       ignore_errors: true
 

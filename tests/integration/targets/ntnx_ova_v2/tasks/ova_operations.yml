@@ -54,6 +54,7 @@
 - name: Create an Ova from a VM check mode
   nutanix.ncp.ntnx_ova_v2:
     name: "ova_name"
+    project_ext_id: "{{ project.uuid | default(omit) }}"
     checksum:
       ova_sha1_checksum:
         hex_digest: "1234567890abcdef1234567890abcdef12345678"
@@ -89,6 +90,7 @@
 - name: Create Ova from the VM
   nutanix.ncp.ntnx_ova_v2:
     name: "{{ ova_name }}"
+    project_ext_id: "{{ project.uuid | default(omit) }}"
     source:
       ova_vm_source:
         vm_ext_id: "{{ todelete_vm[0] }}"

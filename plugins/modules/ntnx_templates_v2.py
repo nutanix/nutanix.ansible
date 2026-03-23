@@ -25,6 +25,10 @@ options:
         description:
             - A globally unique identifier of an instance that is suitable for external consumption.
         type: str
+    project_ext_id:
+        description:
+            - UUID of the project that owns this template.
+        type: str
     template_name:
         description:
             - The user defined name of a Template.
@@ -1590,6 +1594,7 @@ EXAMPLES = r"""
     validate_certs: false
     template_name: "{{ template_name }}"
     template_description: "ansible test"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     template_version_spec:
       version_source:
         template_vm_reference:
@@ -1930,6 +1935,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         template_name=dict(type="str"),
         template_description=dict(type="str"),
         template_version_spec=dict(

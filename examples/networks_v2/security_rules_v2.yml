@@ -33,6 +33,7 @@
       nutanix.ncp.ntnx_security_rules_v2:
         name: "{{ security_rule_name }}"
         description: Ansible created rule
+        project_ext_id: "<project_uuid>"
         type: APPLICATION
         policy_state: ENFORCE
         scope: VPC_LIST

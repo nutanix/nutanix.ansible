@@ -38,6 +38,8 @@
         display_name: "{{ auth_policy_name }}"
         description: ansible created acps
         role: "{{ role_uuid }}"
+        project_ext_id: "{{ project.uuid }}"
+        is_shared_with_all_projects: true
         authorization_policy_type: USER_DEFINED
         entities:
           - images:

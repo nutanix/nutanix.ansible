@@ -36,6 +36,7 @@
     - name: Create recovery point with multiple VMs and VGs
       nutanix.ncp.ntnx_recovery_points_v2:
         name: "{{ recovery_point_name }}"
+        project_ext_id: "<project_uuid>"
         expiration_time: "2024-08-30T14:15:22+00:00"
         recovery_point_type: "CRASH_CONSISTENT"
         vm_recovery_points:

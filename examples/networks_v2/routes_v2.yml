@@ -33,6 +33,7 @@
         state: present
         name: "{{ route_name }}"
         description: "Route for testing"
+        project_ext_id: "{{ project_uuid }}"
         vpc_reference: "{{ vpc_uuid }}"
         route_table_ext_id: "{{ route_table_external_id }}"
         route_type: STATIC

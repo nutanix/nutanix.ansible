@@ -96,6 +96,7 @@
     name: "{{pbr_name}}1"
     priority: "{{ priority.0 }}"
     vpc_ext_id: "{{pbr.vpc.uuid}}"
+    project_ext_id: "{{ project.uuid | default(omit) }}"
     policies:
       - policy_action:
           action_type: PERMIT
@@ -142,6 +143,7 @@
     name: "{{pbr_name}}1"
     priority: "{{ priority.0 }}"
     vpc_ext_id: "{{pbr.vpc.uuid}}"
+    project_ext_id: "{{ project.uuid | default(omit) }}"
     description: "test description"
     policies:
       - policy_action:

@@ -30,6 +30,7 @@
         state: present
         display_name: "{{ role_name_test }}"
         description: test-ansible-role-1-desc
+        project_ext_id: "<project_uuid>"
         operations:
           - "{{ test_operation_1_uuid }}"
           - "{{ test_operation_2_uuid }}"

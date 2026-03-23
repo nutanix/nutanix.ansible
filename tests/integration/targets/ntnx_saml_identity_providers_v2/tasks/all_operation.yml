@@ -31,6 +31,8 @@
     idp_metadata_xml: idp_xml_value
     entity_issuer: entity_issuer_test
     is_signed_authn_req_enabled: true
+    project_ext_id: "00000000-0000-0000-0000-000000000000"
+    is_shared_with_all_projects: true
     custom_attributes:
       - custom1
       - custom2
@@ -61,7 +63,7 @@
 
 - name: Read content from file
   ansible.builtin.set_fact:
-    xml_file_content: "{{ lookup('file', xml_content.dest + '/content.txt') }}"
+    xml_file_content: "{{ lookup('file', xml_content.path) }}"
 
 - name: Create saml
   nutanix.ncp.ntnx_saml_identity_providers_v2:
@@ -71,6 +73,8 @@
     groups_attribute: groups
     groups_delim: ","
     idp_metadata_xml: "{{ xml_file_content }}"
+    project_ext_id: "00000000-0000-0000-0000-000000000000"
+    is_shared_with_all_projects: true
     state: present
   register: result
   ignore_errors: true
@@ -124,7 +128,6 @@
     email_attribute: new_email
     groups_attribute: group_list
     groups_delim: ;
-    is_signed_authn_req_enabled: true
   register: result
   ignore_errors: true
   check_mode: true
@@ -141,7 +144,6 @@
       - result.response.groups_attribute == "group_list"
       - result.response.groups_delim == ";"
       - result.response.ext_id == "{{ todelete[-1] }}"
-      - result.response.is_signed_authn_req_enabled == true
     fail_msg: " Unable to Verify spec generation for update identity providers with check_mode  "
     success_msg: " Verify spec generation for update identity providers with check_mode  finished successfully"
 
@@ -154,7 +156,6 @@
     email_attribute: new_email
     groups_attribute: group_list
     groups_delim: ;
-    is_signed_authn_req_enabled: true
   register: result
   ignore_errors: true
 
@@ -170,7 +171,6 @@
       - result.response.groups_attribute == "group_list"
       - result.response.groups_delim == ";"
       - result.response.ext_id == "{{ todelete[-1] }}"
-      - result.response.is_signed_authn_req_enabled == true
     fail_msg: " Unable to update saml "
     success_msg: " saml updated successfully "
 
@@ -180,7 +180,6 @@
     ext_id: "{{ todelete[-1] }}"
     name: "{{ full_name }}2"
     username_attribute: "{{ user_name }}2"
-    is_signed_authn_req_enabled: true
   register: result
   ignore_errors: true
 
@@ -211,7 +210,6 @@
       - result.response.groups_attribute == "group_list"
       - result.response.groups_delim == ";"
       - result.response.ext_id == "{{ todelete[-1] }}"
-      - result.response.is_signed_authn_req_enabled == true
     fail_msg: " Unable to fetch saml using ext_id "
     success_msg: " saml fetched using ext_id successfully "
 

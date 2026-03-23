@@ -352,6 +352,7 @@
   nutanix.ncp.ntnx_protection_policies_v2:
     name: "ansible-create-protection-policy-name"
     description: "ansible-create-protection-policy-description"
+    project_ext_id: "{{ project.uuid | default(omit) }}"
     replication_locations:
       - label: "ansible-label-{{label1}}"
         domain_manager_ext_id: "{{domain_manager_ext_id}}"
@@ -460,6 +461,7 @@
   nutanix.ncp.ntnx_protection_policies_v2:
     name: "ansible-name-linear-{{random_name}}"
     description: "ansible-description-linear-{{random_name}}"
+    project_ext_id: "{{ project.uuid | default(omit) }}"
     replication_locations:
       - label: "ansible-label-{{label1}}"
         domain_manager_ext_id: "{{domain_manager_ext_id}}"

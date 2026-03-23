@@ -25,6 +25,7 @@
     - name: Attach iscsi client to VG using initiator name
       nutanix.ncp.ntnx_volume_groups_iscsi_clients_v2:
         volume_group_ext_id: "{{ vg1_uuid }}"
+        project_ext_id: "<project_uuid>"
         iscsi_initiator_name: "{{ iscsi_client_name }}"
         num_virtual_targets: 32
       register: result

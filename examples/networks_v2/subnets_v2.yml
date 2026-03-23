@@ -51,6 +51,9 @@
         state: present
         wait: true
         name: "{{ subnet_name }}"
+        project_ext_id: "<project_uuid>"
+        shared_with_projects:
+          - "<project_uuid>"
         subnet_type: VLAN
         cluster_reference: "{{ cluster_uuid }}"
         virtual_switch_reference: "{{ virtual_switch_uuid }}"

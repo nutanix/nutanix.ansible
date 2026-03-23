@@ -19,6 +19,7 @@
   nutanix.ncp.ntnx_service_groups_v2:
     name: "{{ service_group_name }}_1"
     description: desc
+    project_ext_id: "{{ project.uuid | default(omit) }}"
     tcp_services:
       - start_port: 10
         end_port: 50
@@ -55,6 +56,7 @@
   nutanix.ncp.ntnx_service_groups_v2:
     name: "{{ service_group_name }}_1"
     description: desc
+    project_ext_id: "{{ project.uuid | default(omit) }}"
     tcp_services:
       - start_port: 10
         end_port: 50

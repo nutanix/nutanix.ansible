@@ -33,6 +33,10 @@ options:
     description:
       - External ID of the Flow Network Security Policy.
     type: str
+  project_ext_id:
+    description:
+      - UUID of the project that owns this network security policy.
+    type: str
   name:
     description:
       - Name of the Flow Network Security Policy.
@@ -450,6 +454,7 @@ EXAMPLES = r"""
     nutanix_password: "<pc_password>"
     name: "rule1"
     description: "Ansible created rule"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     type: "APPLICATION"
     policy_state: "ENFORCE"
     scope: "ALL_VLAN"
@@ -898,6 +903,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         name=dict(type="str"),
         description=dict(type="str"),
         type=dict(type="str", choices=["QUARANTINE", "ISOLATION", "APPLICATION"]),

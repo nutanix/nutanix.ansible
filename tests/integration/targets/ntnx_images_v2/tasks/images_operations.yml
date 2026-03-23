@@ -87,6 +87,8 @@
     type: ISO_IMAGE
     name: "{{ iso_image_name }}"
     description: image created from integration test
+    project_ext_id: "{{ project.uuid | default(omit) }}"
+    is_shared_with_all_projects: "{{ enable_shared_with_all_projects | default(omit) }}"
     checksum:
       sha1:
         hex_digest: "{{ iso_image.checksum }}"
@@ -156,6 +158,8 @@
     type: ISO_IMAGE
     name: "{{ iso_image_name }}"
     description: image created from integration test
+    project_ext_id: "{{ project.uuid | default(omit) }}"
+    is_shared_with_all_projects: "{{ enable_shared_with_all_projects | default(omit) }}"
     checksum:
       sha1:
         hex_digest: "{{ iso_image.checksum }}"

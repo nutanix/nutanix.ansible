@@ -36,6 +36,7 @@
     state: present
     display_name: "{{ role_2_name }}"
     description: test-ansible-role-1-desc
+    project_ext_id: "{{ project.uuid | default(omit) }}"
     operations:
       - "{{ test_operation_1_uuid }}"
       - "{{ test_operation_2_uuid }}"
@@ -64,6 +65,7 @@
     state: present
     display_name: "{{ role_1_name }}"
     description: test-ansible-role-1-desc
+    project_ext_id: "{{ project.uuid | default(omit) }}"
     operations:
       - "{{ test_operation_1_uuid }}"
       - "{{ test_operation_2_uuid }}"
