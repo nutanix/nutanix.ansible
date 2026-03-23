@@ -73,12 +73,6 @@ options:
         choices:
             - USER_DEFINED
         default: USER_DEFINED
-    is_shared_with_all_projects:
-        description:
-            - Flag to share the authorization policy with all projects.
-            - If C(true), the authorization policy is shared with all projects.
-        required: false
-        type: bool
     wait:
         description:
             - Wait for the task to complete.
@@ -107,7 +101,6 @@ EXAMPLES = r"""
     role: "ebbfbd38-122b-5529-adcc-dcb6b4177382"
     authorization_policy_type: "USER_DEFINED"
     project_ext_id: "12345678-1234-1234-1234-123456789012"
-    is_shared_with_all_projects: true
     entities:
       - "images":
           "*":
@@ -290,7 +283,6 @@ def get_module_spec():
             choices=["USER_DEFINED"],
             default="USER_DEFINED",
         ),
-        is_shared_with_all_projects=dict(type="bool"),
     )
     return module_args
 
