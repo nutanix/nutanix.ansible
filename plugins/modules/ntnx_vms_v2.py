@@ -105,6 +105,11 @@ options:
                     - The external ID of the category.
                 required: true
                 type: str
+    project_ext_id:
+        description:
+            - UUID of the project associated with this VM.
+        required: false
+        type: str
     project:
         description: Reference to a project.
         type: dict
@@ -1157,6 +1162,7 @@ EXAMPLES = r"""
     description: "ansible test"
     cluster:
       ext_id: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     num_sockets: 1
     num_cores_per_socket: 1
     num_threads_per_core: 1

@@ -667,6 +667,9 @@ options:
                             ext_id:
                                 description: The globally unique identifier of a project. It should be of type UUID.
                                 type: str
+                    project_ext_id:
+                        description: The globally unique identifier of a project. It should be of type UUID.
+                        type: str
                     host:
                         description: Reference to a host.
                         type: dict
