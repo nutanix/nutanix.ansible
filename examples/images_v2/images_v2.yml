@@ -87,7 +87,6 @@
         name: "{{ iso_image_name }}"
         description: Creating ISO Image using source url
         project_ext_id: "<project_uuid>"
-        is_shared_with_all_projects: true
         checksum:
           sha1:
             hex_digest: "{{ iso_image.checksum }}"
