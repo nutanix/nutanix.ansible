@@ -737,9 +737,7 @@ def _share_subnet_with_project(module, subnets, ext_id, project_ext_id):
     try:
         project_ref = net_sdk.ProjectReference()
         project_ref.project_ext_id = project_ext_id
-        subnets.share_subnet_by_id(
-            subnetExtId=ext_id, body=project_ref, if_match=etag
-        )
+        subnets.share_subnet_by_id(subnetExtId=ext_id, body=project_ref, if_match=etag)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -775,9 +773,7 @@ def _handle_sharing_after_create(module, subnets, ext_id, shared_with_projects):
             _share_subnet_with_project(module, subnets, ext_id, project_ext_id)
 
 
-def _handle_sharing_update(
-    module, subnets, ext_id, current_spec, shared_with_projects
-):
+def _handle_sharing_update(module, subnets, ext_id, current_spec, shared_with_projects):
     changed = False
     current_shared_projects = getattr(current_spec, "shared_with_projects", None) or []
     if shared_with_projects is None:

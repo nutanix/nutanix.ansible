@@ -671,8 +671,12 @@ def update_directory_service(module, directory_services, result):
             )
 
     sharing_changed = _handle_sharing_update(
-        module, directory_services, ext_id, current_spec,
-        is_shared_with_all, shared_with_projects,
+        module,
+        directory_services,
+        ext_id,
+        current_spec,
+        is_shared_with_all,
+        shared_with_projects,
     )
 
     if not spec_changed and not sharing_changed:

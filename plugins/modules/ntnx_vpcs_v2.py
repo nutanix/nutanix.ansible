@@ -124,12 +124,6 @@ options:
               prefix_length:
                 description: The prefix length of the IPv6 address.
                 type: int
-  shared_with_projects:
-    description:
-      - List of project external IDs to share the VPC with.
-      - Projects not in the list will be unshared during update.
-    type: list
-    elements: str
       gateway_nodes:
         description: List of gateway nodes that can be used for external connectivity.
         type: str
@@ -167,6 +161,13 @@ options:
       active_gateway_count:
         description: Number of active gateways.
         type: int
+
+  shared_with_projects:
+    description:
+      - List of project external IDs to share the VPC with.
+      - Projects not in the list will be unshared during update.
+    type: list
+    elements: str
 
   external_routing_domain_reference:
     description: External routing domain associated with this route table
@@ -626,9 +627,7 @@ def create_vpc(module, result):
         )
         if ext_id:
             if shared_with_projects:
-                _handle_sharing_after_create(
-                    module, vpcs, ext_id, shared_with_projects
-                )
+                _handle_sharing_after_create(module, vpcs, ext_id, shared_with_projects)
             resp = get_vpc(module, vpcs, ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
