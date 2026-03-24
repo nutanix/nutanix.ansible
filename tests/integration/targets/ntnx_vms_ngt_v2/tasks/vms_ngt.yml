@@ -831,7 +831,7 @@
 
 - name: Download NGT {{ ngt_config.version }} Installer to VM
   get_url:
-    url: "{{ ngt_config.url }}"
+    url: "{{ ngt_config.ngt_installed_url }}"
     dest: "/tmp/ngt_installer.tar.gz"
     validate_certs: false
   delegate_to: target_vm_for_ngt
