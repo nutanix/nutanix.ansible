@@ -39,6 +39,7 @@
         suffix_name: "ansible-category"
         todelete_categories: []
         todelete: []
+        project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
         cluster:
           uuid: "00062db4-a450-e685-0fda-cdf9ca935bfd"
         cluster_availability_zone:
@@ -87,7 +88,7 @@
       nutanix.ncp.ntnx_protection_policies_v2:
         name: "ansible-create-protection-policy-name"
         description: "ansible-create-protection-policy-description"
-        project_ext_id: "<project_uuid>"
+        project_ext_id: "{{ project_ext_id }}"
         replication_locations:
           - label: "ansible-label-{{ label1 }}"
             domain_manager_ext_id: "{{ domain_manager_ext_id }}"

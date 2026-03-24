@@ -270,6 +270,34 @@ EXAMPLES = r"""
       - "7974d71c-bf0e-6d43-c9d2-3e56c9cb454b"
   register: result
 
+- name: Update directory service to unshare from all projects
+  nutanix.ncp.ntnx_directory_services_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    state: present
+    ext_id: "6863c60b-ae9d-5c32-b8c1-2d45b9ba343a"
+    service_account:
+      username: admin
+      password: Nutanix@123456
+    is_shared_with_all_projects: false
+  register: result
+
+- name: Update directory service to unshare from specific projects
+  nutanix.ncp.ntnx_directory_services_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    state: present
+    ext_id: "6863c60b-ae9d-5c32-b8c1-2d45b9ba343a"
+    service_account:
+      username: admin
+      password: Nutanix@123456
+    shared_with_projects: []
+  register: result
+
 - name: Delete ACTIVE_DIRECTORY service
   nutanix.ncp.ntnx_directory_services_v2:
     nutanix_host: "{{ ip }}"

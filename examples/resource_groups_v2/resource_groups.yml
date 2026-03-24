@@ -10,6 +10,7 @@
       validate_certs: "{{ validate_certs }}"
   vars:
     cluster_ext_id: "00064c46-8fef-6895-185b-ac1f6b6f97e2"
+    project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
   tasks:
     ############################################
     # Setup - Create a project first

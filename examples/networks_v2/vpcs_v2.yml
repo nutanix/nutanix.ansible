@@ -1,10 +1,12 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create a VPC with external_nat_subnet uuid
-# 2. Update the VPC name
-# 3. Fetch VPC info
-# 4. Delete the VPC
+# 1. Create a VPC with external_nat_subnet uuid shared with projects
+# 2. Update VPC to share with specific projects
+# 3. Update VPC to unshare from specific projects
+# 4. Update the VPC name
+# 5. Fetch VPC info
+# 6. Delete the VPC
 
 - name: VPCs playbook
   hosts: localhost
@@ -21,18 +23,37 @@
         vpc_name: "integration_test_vpc"
         vpc_uuid: "2dff5b0a-99c5-46d6-9002-d42439a8b6e5"
         external_nat_subnet_uuid: "d7419d65-100e-4c99-a666-ec1431516bbe"
+        project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
+        shared_with_projects:
+          - "12345678-1234-1234-1234-123456789012"
+          - "98798798-1234-1111-2222-6788222f17b8"
 
-    - name: Create min VPC with external_nat_subnet uuid
+    - name: Create min VPC with external_nat_subnet uuid shared with projects
       nutanix.ncp.ntnx_vpcs_v2:
         state: present
         wait: true
         name: "{{ vpc_name }}"
-        project_ext_id: "<project_uuid>"
-        shared_with_projects:
-          - "<project_uuid>"
+        project_ext_id: "{{ project_ext_id }}"
+        shared_with_projects: "{{ shared_with_projects }}"
         external_subnets:
           - subnet_reference: "{{ external_nat_subnet_uuid }}"
       register: result
+
+    - name: Update VPC to share with specific projects
+      nutanix.ncp.ntnx_vpcs_v2:
+        state: present
+        ext_id: "{{ vpc_uuid }}"
+        shared_with_projects: "{{ shared_with_projects }}"
+      register: result
+      ignore_errors: true
+
+    - name: Update VPC to unshare from specific projects
+      nutanix.ncp.ntnx_vpcs_v2:
+        state: present
+        ext_id: "{{ vpc_uuid }}"
+        shared_with_projects: []
+      register: result
+      ignore_errors: true
 
     - name: Update vpc name
       nutanix.ncp.ntnx_vpcs_v2:

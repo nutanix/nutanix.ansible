@@ -31,12 +31,13 @@
         version_id: "00000000-0000-0000-0000-000000000000"
         vm2_name: "ansible_template_vm"
         cluster_uuid: "00062899-4a29-0cf9-0000-000000028f57"
+        project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
 
     - name: Create new template from a vm
       nutanix.ncp.ntnx_templates_v2:
         template_name: "{{ template_name }}"
         template_description: ansible test
-        project_ext_id: "<project_uuid>"
+        project_ext_id: "{{ project_ext_id }}"
         template_version_spec:
           version_source:
             template_vm_reference:

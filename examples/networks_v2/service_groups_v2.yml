@@ -19,6 +19,7 @@
     - name: Setting Variables
       ansible.builtin.set_fact:
         service_group_name: "service_group"
+        project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
         tcp_services:
           - start_port: 10
             end_port: 50
@@ -37,7 +38,7 @@
       nutanix.ncp.ntnx_service_groups_v2:
         name: "{{ service_group_name }}"
         description: "service group description"
-        project_ext_id: "<project_uuid>"
+        project_ext_id: "{{ project_ext_id }}"
         tcp_services:
           - start_port: "{{ tcp_services[0].start_port }}"
             end_port: "{{ tcp_services[0].end_port }}"

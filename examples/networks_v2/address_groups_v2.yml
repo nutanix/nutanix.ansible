@@ -20,6 +20,7 @@
       ansible.builtin.set_fact:
         address_group_name: "ansible_address_group"
         address_group_uuid: "f1b1b1b1-1b1b-1b1b-1b1b-1b1b1b1b1b1b"
+        project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
         ipv4_addresses:
           - value: 10.0.0.1
             prefix_length: 24
@@ -31,7 +32,7 @@
         state: present
         name: "{{ address_group_name }}"
         description: address group description
-        project_ext_id: "<project_uuid>"
+        project_ext_id: "{{ project_ext_id }}"
         ipv4_addresses:
           - value: "{{ ipv4_addresses[0].value }}"
             prefix_length: "{{ ipv4_addresses[0].prefix_length }}"

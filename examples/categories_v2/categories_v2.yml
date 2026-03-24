@@ -23,15 +23,18 @@
         value1: "ansible_category_value"
         value2: "ansible_category_value_updated"
         category_ext_id: "11223344-1234-1111-2222-6788222f17b8"
+        project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
+        shared_with_projects:
+          - "98798798-1234-1111-2222-6788222f17b8"
+          - "98798798-1234-1111-2222-6788222f17b8"
 
     - name: Create category key & value
       nutanix.ncp.ntnx_categories_v2:
         key: "{{ key1 }}"
         value: "{{ value1 }}"
         description: "ansible test"
-        project_ext_id: "<project_uuid>"
-        shared_with_projects:
-          - "<project_uuid>"
+        project_ext_id: "{{ project_ext_id }}"
+        shared_with_projects: "{{ shared_with_projects }}"
       register: output
       ignore_errors: true
 

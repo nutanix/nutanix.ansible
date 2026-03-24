@@ -30,11 +30,12 @@
         ova_url: "https://example.com/path/to/ova/file.ova"
         subnet_uuid: "123e4567-e89b-12d3-a456-426614174002"
         object_key_name: "object_name"
+        project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
 
     - name: Create Ova from the VM
       nutanix.ncp.ntnx_ova_v2:
         name: "ova_name"
-        project_ext_id: "<project_uuid>"
+        project_ext_id: "{{ project_ext_id }}"
         source:
           ova_vm_source:
             vm_ext_id: "{{ vm_uuid }}"

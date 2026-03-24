@@ -1,11 +1,13 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create VLAN subnet without IPAM
-# 2. Update VLAN subnet name and IP pools
-# 3. Get subnet using ext_id
-# 4. Create Overlay Subnet with minimum requirements
-# 5. Delete subnet
+# 1. Create VLAN subnet without IPAM shared with projects
+# 2. Update subnet to share with specific projects
+# 3. Update subnet to unshare from specific projects
+# 4. Update VLAN subnet name and IP pools
+# 5. Get subnet using ext_id
+# 6. Create Overlay Subnet with minimum requirements
+# 7. Delete subnet
 
 - name: Subnets playbook
   hosts: localhost
@@ -24,6 +26,10 @@
         cluster_uuid: "00061663-9fa0-28ca-185b-ac1f6b6f97e1"
         virtual_switch_uuid: "7c62834e-43f0-4c20-a5d4-cbf36b9a142b"
         vpc_uuid: "2dff5b0a-99c5-46d6-9002-d42439a8b6e5"
+        project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
+        shared_with_projects:
+          - "12345678-1234-1234-1234-123456789012"
+          - "98798798-1234-1111-2222-6788222f17b8"
         network_id: 222
         vlan_subnets_ids:
           - 223
@@ -46,18 +52,33 @@
           tftp_server_name: 10.1.1.1
           boot_file: pxelinux.0
 
-    - name: Create VLAN subnet without IPAM
+    - name: Create VLAN subnet without IPAM shared with projects
       nutanix.ncp.ntnx_subnets_v2:
         state: present
         wait: true
         name: "{{ subnet_name }}"
-        project_ext_id: "<project_uuid>"
-        shared_with_projects:
-          - "<project_uuid>"
+        project_ext_id: "{{ project_ext_id }}"
+        shared_with_projects: "{{ shared_with_projects }}"
         subnet_type: VLAN
         cluster_reference: "{{ cluster_uuid }}"
         virtual_switch_reference: "{{ virtual_switch_uuid }}"
         network_id: "{{ network_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Update subnet to share with specific projects
+      nutanix.ncp.ntnx_subnets_v2:
+        state: present
+        ext_id: "{{ subnet_uuid }}"
+        shared_with_projects: "{{ shared_with_projects }}"
+      register: result
+      ignore_errors: true
+
+    - name: Update subnet to unshare from specific projects
+      nutanix.ncp.ntnx_subnets_v2:
+        state: present
+        ext_id: "{{ subnet_uuid }}"
+        shared_with_projects: []
       register: result
       ignore_errors: true
 

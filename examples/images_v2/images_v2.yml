@@ -28,6 +28,7 @@
   tasks:
     - name: Setting Variables
       ansible.builtin.set_fact:
+        project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
         cluster:
           name: "cluster_name"
           uuid: "00063aa4-8cfe-3d59-185b-ac1f6b6f97e2"
@@ -86,7 +87,7 @@
         type: ISO_IMAGE
         name: "{{ iso_image_name }}"
         description: Creating ISO Image using source url
-        project_ext_id: "<project_uuid>"
+        project_ext_id: "{{ project_ext_id }}"
         checksum:
           sha1:
             hex_digest: "{{ iso_image.checksum }}"

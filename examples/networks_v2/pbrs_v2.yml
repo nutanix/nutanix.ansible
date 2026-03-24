@@ -22,6 +22,7 @@
         pbr_uuid: "e2dee03b-aa1a-54dc-81b4-6788222f17b8"
         priority: 2
         vpc_ext_id: "e2dee03b-aa1a-54dc-81b4-6788222f17b8"
+        project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
         network:
           ip: "10.0.0.15"
           prefix: 24
@@ -32,7 +33,7 @@
         name: "{{ pbr_name }}"
         priority: "{{ priority }}"
         vpc_ext_id: "{{ vpc_ext_id }}"
-        project_ext_id: "<project_uuid>"
+        project_ext_id: "{{ project_ext_id }}"
         description: "test description"
         policies:
           - policy_action:
