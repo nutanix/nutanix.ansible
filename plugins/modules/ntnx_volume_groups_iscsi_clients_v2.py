@@ -40,11 +40,6 @@ options:
             - Its required for delete.
         type: str
         required: false
-    project_ext_id:
-        description:
-            - UUID of the project that owns this iSCSI client.
-        type: str
-        required: false
     volume_group_ext_id:
         description:
             - The external ID of the volume group.
@@ -146,7 +141,6 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     state: "present"
     volume_group_ext_id: 0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b35
-    project_ext_id: "12345678-1234-1234-1234-123456789012"
     iscsi_initiator_name: iqn-1-05.com.microsoft:win-1234
     num_virtual_targets: 32
   register: result
@@ -299,7 +293,6 @@ def get_module_spec():
     module_args = dict(
         volume_group_ext_id=dict(type="str", required=True),
         ext_id=dict(type="str", required=False),
-        project_ext_id=dict(type="str"),
         iscsi_initiator_name=dict(type="str"),
         client_secret=dict(type="str", no_log=True),
         enabled_authentications=dict(
