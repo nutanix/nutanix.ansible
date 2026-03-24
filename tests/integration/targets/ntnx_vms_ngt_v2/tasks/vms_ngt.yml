@@ -780,7 +780,7 @@
   ignore_errors: true
 
 - name: Add VM to dynamic inventory for SSH
-  add_host:
+  ansible.builtin.add_host:
     name: "target_vm_for_ngt"
     ansible_host: "{{ vm_ip }}"
     ansible_user: "{{ ngt_config.username }}"
@@ -789,7 +789,7 @@
     ansible_ssh_common_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 
 - name: Wait for SSH to be available
-  wait_for:
+  ansible.builtin.wait_for:
     port: 22
     host: "{{ vm_ip }}"
     search_regex: OpenSSH
@@ -804,7 +804,7 @@
   failed_when: python_discover.rc != 0
 
 - name: Set discovered Python interpreter on dynamic inventory host
-  add_host:
+  ansible.builtin.add_host:
     name: "target_vm_for_ngt"
     ansible_python_interpreter: "{{ python_discover.stdout | trim }}"
 
@@ -829,34 +829,37 @@
     fail_msg: "Unable to insert ISO into CD ROM in VM "
     success_msg: "ISO is inserted into CD ROM in VM successfully "
 
-- name: Download NGT {{ ngt_config.version }} Installer to VM
-  get_url:
+- name: Download NGT installer {{ ngt_config.version }} to VM
+  ansible.builtin.get_url:
     url: "{{ ngt_config.ngt_installed_url }}"
     dest: "/tmp/ngt_installer.tar.gz"
+    mode: "0644"
     validate_certs: false
   delegate_to: target_vm_for_ngt
   become: true
 
-- name: Extract NGT Installer on VM
-  unarchive:
+- name: Extract NGT installer in VM
+  ansible.builtin.unarchive:
     src: "/tmp/ngt_installer.tar.gz"
     dest: "/tmp"
-    remote_src: yes
+    remote_src: true
   delegate_to: target_vm_for_ngt
   become: true
 
 - name: Install lvm2 dependency for NGT (nutanix-guest-agent requires lvm2)
-  yum:
+  ansible.builtin.yum:
     name: lvm2
     state: present
   delegate_to: target_vm_for_ngt
   become: true
 
 - name: Run NGT Install Script
-  command: "{{ vm_ngt_python }} /tmp/linux/install_ngt.py --operation install"
+  ansible.builtin.command:
+    cmd: "{{ vm_ngt_python }} /tmp/linux/install_ngt.py --operation install"
   delegate_to: target_vm_for_ngt
   become: true
   register: manual_install_out
+  changed_when: manual_install_out.rc == 0
 
 - name: Wait for 2 minutes for CVM to detect NGT version {{ ngt_config.version }}
   ansible.builtin.pause:
