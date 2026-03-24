@@ -22,6 +22,11 @@ options:
       - The external ID of the category.
     required: false
     type: str
+  project_ext_id:
+    description:
+      - UUID of the project that owns this category.
+    required: false
+    type: str
   key:
     description:
       - The key of the category.
@@ -50,6 +55,13 @@ options:
       - The description of the category.
     required: false
     type: str
+  shared_with_projects:
+    description:
+      - List of project external IDs to share the category with.
+      - Projects not in the list will be unshared during update.
+    required: false
+    type: list
+    elements: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
@@ -69,6 +81,9 @@ EXAMPLES = r"""
     key: "key1"
     value: "val1"
     description: "ansible test"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
+    shared_with_projects:
+      - "12345678-1234-1234-1234-123456789012"
 
 - name: Update category value and description
   nutanix.ncp.ntnx_categories_v2:
@@ -177,11 +192,13 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def get_module_spec():
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         key=dict(type="str", no_log=False),
         value=dict(type="str"),
         type=dict(type="str", choices=["USER"], default="USER"),
         owner_uuid=dict(type="str"),
         description=dict(type="str"),
+        shared_with_projects=dict(type="list", elements="str"),
     )
 
     return module_args
@@ -211,8 +228,82 @@ def get_category(module, ext_id):
         )
 
 
+def _get_etag_for_sharing(module, category):
+    etag = get_etag(data=category)
+    if not etag:
+        module.fail_json(msg="Unable to fetch etag for category sharing operation")
+    return etag
+
+
+def _share_with_project(module, categories, ext_id, project_ext_id):
+    category = get_category(module, ext_id)
+    etag = _get_etag_for_sharing(module, category)
+    try:
+        share_req = prism_sdk.ShareCategoryRequest()
+        share_req.project_ext_id = project_ext_id
+        categories.share_category(categoryExtId=ext_id, body=share_req, if_match=etag)
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while sharing category with project {0}".format(
+                project_ext_id
+            ),
+        )
+
+
+def _unshare_from_project(module, categories, ext_id, project_ext_id):
+    category = get_category(module, ext_id)
+    etag = _get_etag_for_sharing(module, category)
+    try:
+        unshare_req = prism_sdk.UnshareCategoryRequest()
+        unshare_req.project_ext_id = project_ext_id
+        categories.unshare_category(
+            categoryExtId=ext_id, body=unshare_req, if_match=etag
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while unsharing category from project {0}".format(
+                project_ext_id
+            ),
+        )
+
+
+def _handle_sharing_after_create(module, categories, ext_id, shared_with_projects):
+    if shared_with_projects:
+        for project_ext_id in shared_with_projects:
+            _share_with_project(module, categories, ext_id, project_ext_id)
+
+
+def _handle_sharing_update(
+    module, categories, ext_id, current_spec, shared_with_projects
+):
+    changed = False
+    current_shared_projects = getattr(current_spec, "shared_with_projects", None) or []
+    if shared_with_projects is None:
+        return changed
+
+    desired_set = set(shared_with_projects)
+    current_set = set(current_shared_projects)
+    to_share = desired_set - current_set
+    to_unshare = current_set - desired_set
+
+    for pid in to_share:
+        _share_with_project(module, categories, ext_id, pid)
+        changed = True
+
+    for pid in to_unshare:
+        _unshare_from_project(module, categories, ext_id, pid)
+        changed = True
+
+    return changed
+
+
 def create_category(module, result):
     categories = get_category_api_instance(module)
+    shared_with_projects = module.params.pop("shared_with_projects", None)
 
     sg = SpecGenerator(module)
     default_spec = prism_sdk.Category()
@@ -237,7 +328,14 @@ def create_category(module, result):
         )
 
     result["ext_id"] = resp.data.ext_id
-    result["response"] = strip_internal_attributes(resp.data.to_dict())
+    if shared_with_projects:
+        _handle_sharing_after_create(
+            module, categories, result["ext_id"], shared_with_projects
+        )
+        current = get_category(module, ext_id=result["ext_id"])
+        result["response"] = strip_internal_attributes(current.to_dict())
+    else:
+        result["response"] = strip_internal_attributes(resp.data.to_dict())
     result["changed"] = True
 
 
@@ -255,6 +353,8 @@ def check_categories_idempotency(old_spec, update_spec):
 def update_category(module, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
+    shared_with_projects = module.params.pop("shared_with_projects", None)
+    categories = get_category_api_instance(module)
 
     current_spec = get_category(module, ext_id=ext_id)
     sg = SpecGenerator(module)
@@ -264,26 +364,32 @@ def update_category(module, result):
         result["error"] = err
         module.fail_json(msg="Failed generating categories update spec", **result)
 
-    # check for idempotency
-    if check_categories_idempotency(current_spec.to_dict(), update_spec.to_dict()):
-        result["skipped"] = True
-        module.exit_json(msg="Nothing to change.", **result)
-
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
 
+    spec_changed = not check_categories_idempotency(
+        current_spec.to_dict(), update_spec.to_dict()
+    )
+    sharing_changed = _handle_sharing_update(
+        module, categories, ext_id, current_spec, shared_with_projects
+    )
+
+    if not spec_changed and not sharing_changed:
+        result["skipped"] = True
+        module.exit_json(msg="Nothing to change.", **result)
+
     resp = None
-    categories = get_category_api_instance(module)
-    try:
-        resp = categories.update_category_by_id(extId=ext_id, body=update_spec)
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while updating category",
-        )
-    result["response"] = strip_internal_attributes(resp.data[0].to_dict())
+    if spec_changed:
+        try:
+            resp = categories.update_category_by_id(extId=ext_id, body=update_spec)
+        except Exception as e:
+            raise_api_exception(
+                module=module,
+                exception=e,
+                msg="Api Exception raised while updating category",
+            )
+        result["response"] = strip_internal_attributes(resp.data[0].to_dict())
 
     try:
         resp = categories.get_category_by_id(ext_id)

@@ -151,6 +151,7 @@
     state: present
     name: "route_test"
     description: "Route for testing"
+    project_ext_id: "{{ project.uuid | default(omit) }}"
     vpc_reference: "54228821-52b9-4862-a623-05b28ce93a92"
     route_table_ext_id: "60448d4b-0532-44c3-8e10-9662cb138b37"
     route_type: STATIC
@@ -196,6 +197,7 @@
     state: present
     name: "{{ random_name }}_route_1"
     description: "Route for testing"
+    project_ext_id: "{{ project.uuid | default(omit) }}"
     vpc_reference: "{{ vpc_uuid_1 }}"
     route_table_ext_id: "{{ route_table_external_id_1 }}"
     route_type: STATIC

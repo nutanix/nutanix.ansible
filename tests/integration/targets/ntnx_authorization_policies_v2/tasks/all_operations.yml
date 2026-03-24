@@ -65,6 +65,7 @@
     description: ansible created acps
     role: "{{ role_ext_id }}"
     authorization_policy_type: USER_DEFINED
+    project_ext_id: "{{ project.uuid | default(omit) }}"
     entities:
       - images:
           "*":
@@ -102,6 +103,7 @@
       - result.response.description == "ansible created acps"
       - result.response.role == "{{ role_ext_id }}"
       - result.response.authorization_policy_type == "USER_DEFINED"
+      - result.response.project_ext_id == project.uuid
       - result.response.entities[0].entity_filter.images["*"]["eq"] == "*"
       - result.response.entities[1].entity_filter.directory_service.uuid.anyof | length == 2
       - result.response.entities[1].entity_filter.directory_service.uuid.anyof[0] == "ebbfbd38-794b-5529-adcc-dcb6b4177382"
@@ -123,6 +125,7 @@
     description: ansible created acps
     role: "{{ role_ext_id }}"
     authorization_policy_type: USER_DEFINED
+    project_ext_id: "{{ project.uuid | default(omit) }}"
     entities:
       - images:
           "*":
@@ -159,6 +162,7 @@
       - result.response.description == "ansible created acps"
       - result.response.role == "{{ role_ext_id }}"
       - result.response.authorization_policy_type == "USER_DEFINED"
+      - result.response.project_ext_id == project.uuid
       - result.response.entities[0].entity_filter.images["*"]["eq"] == "*"
       - result.response.entities[1].entity_filter.directory_service.uuid.anyof | length == 1
       - result.response.entities[1].entity_filter.directory_service.uuid.anyof[0] == "{{ directory_service_uuid }}"

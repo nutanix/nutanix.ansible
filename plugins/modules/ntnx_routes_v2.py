@@ -30,6 +30,10 @@ options:
     description:
       - External ID of the route.
     type: str
+  project_ext_id:
+    description:
+      - UUID of the project that owns this route.
+    type: str
   vpc_reference:
     description:
       - Reference to the VPC where the route table is located.
@@ -217,6 +221,7 @@ EXAMPLES = r"""
     state: present
     name: "route_test"
     description: "Route for testing"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     vpc_reference: "c9a4b37d-5f8d-4a2a-b639-2d8e1f5a0c67"
     route_table_ext_id: "7f9a76a3-922b-4aba-8d79-e7eb5cdaf201"
     route_type: STATIC
@@ -436,6 +441,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         vpc_reference=dict(type="str"),
         metadata=dict(type="dict", options=metadata_spec, obj=net_sdk.Metadata),
         name=dict(type="str"),

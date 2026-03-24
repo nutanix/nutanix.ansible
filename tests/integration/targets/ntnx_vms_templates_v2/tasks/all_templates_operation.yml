@@ -59,6 +59,7 @@
   nutanix.ncp.ntnx_templates_v2:
     template_name: "{{ template_name }}"
     template_description: ansible test
+    project_ext_id: "{{ project.uuid | default(omit) }}"
     template_version_spec:
       version_source:
         template_vm_reference:
@@ -83,6 +84,7 @@
   nutanix.ncp.ntnx_templates_v2:
     template_name: "{{ template_name }}"
     template_description: ansible test
+    project_ext_id: "{{ project.uuid | default(omit) }}"
     template_version_spec:
       version_source:
         template_vm_reference:

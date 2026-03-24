@@ -23,6 +23,7 @@
         service_group_id: "25412365-9999-9999-8888-1b1b1b1b1b1b"
         address_group_ext_id: "78963254-1111-0000-0000-1b1b1b1b1b1b"
         vpc_id: "f1b1b1b1-1b1b-1b1b-1b1b-1b1b1b1b1b1b"
+        project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
         category1_uuid: "12345678-1122-2233-4455-365478214587"
         category2_uuid: "87654321-2211-3322-6655-963258741258"
         category3_uuid: "11223355-9632-8520-4455-365478214587"
@@ -33,6 +34,7 @@
       nutanix.ncp.ntnx_security_rules_v2:
         name: "{{ security_rule_name }}"
         description: Ansible created rule
+        project_ext_id: "{{ project_ext_id }}"
         type: APPLICATION
         policy_state: ENFORCE
         scope: VPC_LIST

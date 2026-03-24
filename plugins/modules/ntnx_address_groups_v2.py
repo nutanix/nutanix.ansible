@@ -31,6 +31,11 @@ options:
         - Required for updating or deleting address group.
     type: str
 
+  project_ext_id:
+    description:
+        - UUID of the project that owns this address group.
+    type: str
+
   name:
     description:
        - Address group name.
@@ -89,6 +94,7 @@ EXAMPLES = r"""
     state: present
     name: "{{ag1}}"
     description: test-ansible-group-1-desc
+    project_ext_id: "{{ project.uuid }}"
     ipv4_addresses:
       - value: "10.1.1.0"
         prefix_length: 24
@@ -215,6 +221,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         name=dict(type="str"),
         description=dict(type="str"),
         ipv4_addresses=dict(

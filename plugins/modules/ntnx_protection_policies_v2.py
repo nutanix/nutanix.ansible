@@ -51,6 +51,11 @@ options:
       - The external id of the protection policy.
     type: str
     required: false
+  project_ext_id:
+    description:
+      - UUID of the project that owns this protection policy.
+    type: str
+    required: false
   name:
     description:
       - The name of the protection policy.
@@ -264,6 +269,7 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     name: "linear-protection-policy-name"
     description: "linear-protection-policy-description"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     replication_locations:
       - label: "ansible-label-linear-label1"
         domain_manager_ext_id: "00000000-0000-0000-0000-000000000000"
@@ -634,6 +640,7 @@ def get_module_spec():
             required=True,
         ),
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         name=dict(type="str"),
         description=dict(type="str"),
         replication_locations=dict(

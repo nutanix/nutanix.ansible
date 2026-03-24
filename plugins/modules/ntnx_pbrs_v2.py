@@ -38,6 +38,10 @@ options:
       - external ID of the routing policy.
       - Required for updating or deleting the routing policy.
     type: str
+  project_ext_id:
+    description:
+      - UUID of the project that owns this routing policy.
+    type: str
   metadata:
     description: Metadata associated with this resource.
     suboptions:
@@ -397,6 +401,7 @@ EXAMPLES = r"""
     state: present
     priority: 207
     name: "test_name"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     policies:
       -
         policy_action:
@@ -795,6 +800,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         name=dict(type="str"),
         description=dict(type="str"),
         priority=dict(type="int"),

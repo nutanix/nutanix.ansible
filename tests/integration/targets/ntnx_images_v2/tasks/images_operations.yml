@@ -87,6 +87,7 @@
     type: ISO_IMAGE
     name: "{{ iso_image_name }}"
     description: image created from integration test
+    project_ext_id: "{{ project.uuid | default(omit) }}"
     checksum:
       sha1:
         hex_digest: "{{ iso_image.checksum }}"
@@ -156,6 +157,7 @@
     type: ISO_IMAGE
     name: "{{ iso_image_name }}"
     description: image created from integration test
+    project_ext_id: "{{ project.uuid | default(omit) }}"
     checksum:
       sha1:
         hex_digest: "{{ iso_image.checksum }}"

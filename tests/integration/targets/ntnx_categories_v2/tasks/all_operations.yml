@@ -23,6 +23,8 @@
     key: "{{key1}}"
     value: "{{value1}}"
     description: "ansible test"
+    project_ext_id: "{{ project.uuid | default(omit) }}"
+    shared_with_projects: "{{ [project.uuid] if project is defined and project.uuid is defined else omit }}"
   register: result
   ignore_errors: true
   check_mode: true
@@ -35,6 +37,7 @@
       - result.response.key == "{{key1}}"
       - result.response.value == "{{value1}}"
       - result.response.description == "ansible test"
+      - result.response.project_ext_id == project.uuid
     fail_msg: "Check mode failed"
     success_msg: "Check mode passed"
 ########################################################################
@@ -43,6 +46,8 @@
     key: "{{key1}}"
     value: "{{value1}}"
     description: "ansible test"
+    project_ext_id: "{{ project.uuid | default(omit) }}"
+    shared_with_projects: "{{ [project.uuid] if project is defined and project.uuid is defined else omit }}"
   register: output
   ignore_errors: true
 
@@ -57,6 +62,7 @@
       - output.changed == True
       - output.failed == False
       - output.response.description == "ansible test"
+      - output.response.project_ext_id == project.uuid
     fail_msg: "Unable to create category key & value"
     success_msg: "Category key & value created successfully"
 
@@ -219,3 +225,94 @@
       - result.msg == "All items completed"
     fail_msg: "Unable to delete category key & value"
     success_msg: "Category key & value deleted successfully"
+
+- name: Reset todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+########################################################################
+# Tests for shared_with_projects
+########################################################################
+
+- name: Create category for sharing tests
+  nutanix.ncp.ntnx_categories_v2:
+    key: "{{ key1 }}_shared"
+    value: "{{ value1 }}_shared"
+    description: "ansible shared test"
+    project_ext_id: "{{ project.uuid | default(omit) }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of create for sharing tests
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.response.project_ext_id == project.uuid
+    fail_msg: "Create category for sharing tests failed"
+    success_msg: "Created category for sharing tests"
+
+- name: Set shared category ext_id
+  ansible.builtin.set_fact:
+    shared_category_ext_id: "{{ result.ext_id }}"
+
+########################################################################
+
+- name: Update category to share with specific projects
+  nutanix.ncp.ntnx_categories_v2:
+    state: present
+    ext_id: "{{ shared_category_ext_id }}"
+    shared_with_projects:
+      - "{{ project.uuid }}"
+  register: result
+  ignore_errors: true
+  when: project is defined and project.uuid is defined
+
+- name: Status of share with specific projects
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+    fail_msg: "Share with specific projects failed"
+    success_msg: "Shared with specific projects successfully"
+  when: project is defined and project.uuid is defined
+
+########################################################################
+
+- name: Update category to unshare from specific projects
+  nutanix.ncp.ntnx_categories_v2:
+    state: present
+    ext_id: "{{ shared_category_ext_id }}"
+    shared_with_projects: []
+  register: result
+  ignore_errors: true
+  when: project is defined and project.uuid is defined
+
+- name: Status of unshare from specific projects
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+    fail_msg: "Unshare from specific projects failed with error"
+    success_msg: "Unshare from specific projects completed"
+  when: project is defined and project.uuid is defined
+
+########################################################################
+
+- name: Delete shared category
+  nutanix.ncp.ntnx_categories_v2:
+    state: absent
+    ext_id: "{{ shared_category_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete shared category status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == "{{ shared_category_ext_id }}"
+    fail_msg: "Unable to delete shared category"
+    success_msg: "Shared category deleted successfully"

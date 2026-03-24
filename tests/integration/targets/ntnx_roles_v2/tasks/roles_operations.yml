@@ -36,6 +36,7 @@
     state: present
     display_name: "{{ role_2_name }}"
     description: test-ansible-role-1-desc
+    project_ext_id: "{{ project.uuid | default(omit) }}"
     operations:
       - "{{ test_operation_1_uuid }}"
       - "{{ test_operation_2_uuid }}"
@@ -53,6 +54,7 @@
       - result.response.description == "test-ansible-role-1-desc"
       - result.response.operations[0] == "{{ test_operation_1_uuid }}"
       - result.response.operations[1] == "{{ test_operation_2_uuid }}"
+      - result.response.project_ext_id == project.uuid
 
     fail_msg: Create roles with operations in check mode failed
     success_msg: Create roles with operations in check mode passed
@@ -64,6 +66,7 @@
     state: present
     display_name: "{{ role_1_name }}"
     description: test-ansible-role-1-desc
+    project_ext_id: "{{ project.uuid | default(omit) }}"
     operations:
       - "{{ test_operation_1_uuid }}"
       - "{{ test_operation_2_uuid }}"
@@ -88,6 +91,7 @@
       - result.response.operations | length == 2
       - p1 in result.response.operations
       - p2 in result.response.operations
+      - result.response.project_ext_id == project.uuid
 
     fail_msg: Unable to create roles with certain operations
     success_msg: Roles with given operations created successfully

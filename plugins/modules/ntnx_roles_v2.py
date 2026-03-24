@@ -30,6 +30,11 @@ options:
             - Required for updating or deleting the role.
         type: str
         required: false
+    project_ext_id:
+        description:
+            - UUID of the project that owns this role.
+        type: str
+        required: false
     display_name:
         description:
             - The display name for the Role.
@@ -79,6 +84,7 @@ EXAMPLES = r"""
     state: present
     display_name: "Display_Name_Test"
     description: test-ansible-role-1-desc
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     operations:
       - "251d4a4f-244f-4c84-70a9-8c8f68f9dff0"
       - "0194fbfd-a5d1-49f8-46f4-e4b01d0abe47"
@@ -207,6 +213,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def get_module_spec():
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         display_name=dict(type="str"),
         description=dict(type="str"),
         client_name=dict(type="str"),

@@ -31,6 +31,11 @@ options:
       - Required for updating or deleting service group.
     type: str
 
+  project_ext_id:
+    description:
+      - UUID of the project that owns this service group.
+    type: str
+
   name:
     description:
       - Service group name.
@@ -108,6 +113,7 @@ EXAMPLES = r"""
     validate_certs: false
     name: tcp_service_group
     description: desc
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     tcp_services:
       - start_port: 10
         end_port: 50
@@ -290,6 +296,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         name=dict(type="str"),
         description=dict(type="str"),
         tcp_services=dict(

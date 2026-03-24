@@ -31,6 +31,8 @@
     idp_metadata_xml: idp_xml_value
     entity_issuer: entity_issuer_test
     is_signed_authn_req_enabled: true
+    project_ext_id: "00000000-0000-0000-0000-000000000000"
+    is_shared_with_all_projects: true
     custom_attributes:
       - custom1
       - custom2
@@ -54,6 +56,7 @@
       - result.response.idp_metadata_xml == "idp_xml_value"
       - result.response.entity_issuer == "entity_issuer_test"
       - result.response.is_signed_authn_req_enabled == true
+      - result.response.project_ext_id == "00000000-0000-0000-0000-000000000000"
       - result.response.custom_attributes[0] == "custom1"
       - result.response.custom_attributes[1] == "custom2"
     fail_msg: " Unable to Verify spec generation for identity providers with check_mode "
@@ -71,6 +74,8 @@
     groups_attribute: groups
     groups_delim: ","
     idp_metadata_xml: "{{ xml_file_content }}"
+    project_ext_id: "00000000-0000-0000-0000-000000000000"
+    is_shared_with_all_projects: true
     state: present
   register: result
   ignore_errors: true
@@ -86,6 +91,8 @@
       - result.response.email_attribute == "email"
       - result.response.groups_attribute == "groups"
       - result.response.groups_delim == ","
+      - result.response.project_ext_id == "00000000-0000-0000-0000-000000000000"
+      - result.response.shared_with_all_projects == true
     fail_msg: " Unable to create saml "
     success_msg: " saml created successfully "
 
@@ -124,7 +131,6 @@
     email_attribute: new_email
     groups_attribute: group_list
     groups_delim: ;
-    is_signed_authn_req_enabled: true
   register: result
   ignore_errors: true
   check_mode: true
@@ -141,7 +147,6 @@
       - result.response.groups_attribute == "group_list"
       - result.response.groups_delim == ";"
       - result.response.ext_id == "{{ todelete[-1] }}"
-      - result.response.is_signed_authn_req_enabled == true
     fail_msg: " Unable to Verify spec generation for update identity providers with check_mode  "
     success_msg: " Verify spec generation for update identity providers with check_mode  finished successfully"
 
@@ -154,7 +159,6 @@
     email_attribute: new_email
     groups_attribute: group_list
     groups_delim: ;
-    is_signed_authn_req_enabled: true
   register: result
   ignore_errors: true
 
@@ -170,7 +174,6 @@
       - result.response.groups_attribute == "group_list"
       - result.response.groups_delim == ";"
       - result.response.ext_id == "{{ todelete[-1] }}"
-      - result.response.is_signed_authn_req_enabled == true
     fail_msg: " Unable to update saml "
     success_msg: " saml updated successfully "
 
@@ -180,7 +183,6 @@
     ext_id: "{{ todelete[-1] }}"
     name: "{{ full_name }}2"
     username_attribute: "{{ user_name }}2"
-    is_signed_authn_req_enabled: true
   register: result
   ignore_errors: true
 
@@ -211,7 +213,6 @@
       - result.response.groups_attribute == "group_list"
       - result.response.groups_delim == ";"
       - result.response.ext_id == "{{ todelete[-1] }}"
-      - result.response.is_signed_authn_req_enabled == true
     fail_msg: " Unable to fetch saml using ext_id "
     success_msg: " saml fetched using ext_id successfully "
 
@@ -267,3 +268,141 @@
       - result.skipped == False
     fail_msg: " Unable to delete saml "
     success_msg: " saml deleted successfully "
+
+- name: Reset todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+########################################################################
+# Tests for is_shared_with_all_projects and shared_with_projects
+########################################################################
+
+- name: Create SAML identity provider for sharing tests
+  nutanix.ncp.ntnx_saml_identity_providers_v2:
+    name: "{{ full_name }}_shared"
+    username_attribute: "{{ user_name }}_shared"
+    email_attribute: email
+    groups_attribute: groups
+    groups_delim: ","
+    idp_metadata_xml: "{{ xml_file_content }}"
+    project_ext_id: "00000000-0000-0000-0000-000000000000"
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Status of create SAML for sharing tests
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.response.project_ext_id == "00000000-0000-0000-0000-000000000000"
+      - result.response.shared_with_all_projects == false
+    fail_msg: "Create SAML for sharing tests failed"
+    success_msg: "Created SAML for sharing tests"
+
+- name: Set shared SAML ext_id
+  ansible.builtin.set_fact:
+    shared_saml_ext_id: "{{ result.ext_id }}"
+
+########################################################################
+
+- name: Update SAML to share with all projects
+  nutanix.ncp.ntnx_saml_identity_providers_v2:
+    state: present
+    ext_id: "{{ shared_saml_ext_id }}"
+    is_shared_with_all_projects: true
+  register: result
+  ignore_errors: true
+
+- name: Status of SAML share with all projects
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.shared_with_all_projects == true
+    fail_msg: "SAML share with all projects failed"
+    success_msg: "SAML shared with all projects successfully"
+
+########################################################################
+
+- name: Update SAML to unshare from all projects
+  nutanix.ncp.ntnx_saml_identity_providers_v2:
+    state: present
+    ext_id: "{{ shared_saml_ext_id }}"
+    is_shared_with_all_projects: false
+  register: result
+  ignore_errors: true
+
+- name: Status of SAML unshare from all projects
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.shared_with_all_projects == false
+    fail_msg: "SAML unshare from all projects failed"
+    success_msg: "SAML unshared from all projects successfully"
+
+########################################################################
+
+- name: Update SAML to share with specific projects
+  nutanix.ncp.ntnx_saml_identity_providers_v2:
+    state: present
+    ext_id: "{{ shared_saml_ext_id }}"
+    shared_with_projects:
+      - "{{ project.uuid }}"
+  register: result
+  ignore_errors: true
+  when: project is defined and project.uuid is defined
+
+- name: Status of SAML share with specific projects
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.shared_with_projects is defined
+      - project.uuid in result.response.shared_with_projects
+    fail_msg: "SAML share with specific projects failed"
+    success_msg: "SAML shared with specific projects successfully"
+  when: project is defined and project.uuid is defined
+
+########################################################################
+
+- name: Update SAML to unshare from specific projects
+  nutanix.ncp.ntnx_saml_identity_providers_v2:
+    state: present
+    ext_id: "{{ shared_saml_ext_id }}"
+    shared_with_projects: []
+  register: result
+  ignore_errors: true
+  when: project is defined and project.uuid is defined
+
+- name: Status of SAML unshare from specific projects
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+    fail_msg: "SAML unshare from specific projects failed with error"
+    success_msg: "SAML unshare from specific projects completed"
+  when: project is defined and project.uuid is defined
+
+########################################################################
+
+- name: Delete shared SAML identity provider
+  nutanix.ncp.ntnx_saml_identity_providers_v2:
+    state: absent
+    ext_id: "{{ shared_saml_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete shared SAML status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == "{{ shared_saml_ext_id }}"
+    fail_msg: "Unable to delete shared SAML identity provider"
+    success_msg: "Shared SAML identity provider deleted successfully"

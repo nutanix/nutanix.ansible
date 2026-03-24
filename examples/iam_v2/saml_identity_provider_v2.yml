@@ -1,12 +1,15 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create SAML identity provider
-# 2. Update SAML identity provider
-# 3. List all SAML identity providers
-# 4. Get specific SAML identity provider
-# 5. Fetch SAML identity providers using filters
-# 6. Delete created SAML identity provider
+# 1. Create SAML identity provider shared with all projects
+# 2. Update SAML identity provider to share with specific projects
+# 3. Update SAML identity provider to unshare from all projects
+# 4. Update SAML identity provider to unshare from specific projects
+# 5. Update SAML identity provider
+# 6. Get specific SAML identity provider
+# 7. Fetch SAML identity providers using filters
+# 8. List all SAML identity providers
+# 9. Delete created SAML identity provider
 
 - name: SAML identity provider playbook
   hosts: localhost
@@ -24,8 +27,12 @@
         username_attribute: "username"
         idp_metadata_xml: "<xml_file_content>"
         saml_ext_id: "33425890-8888-9999-5555-6788222f17b8"
+        project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
+        shared_with_projects:
+          - "12345678-1234-1234-1234-123456789012"
+          - "98798798-1234-1111-2222-6788222f17b8"
 
-    - name: Create saml identity provider
+    - name: Create saml identity provider shared with all projects
       nutanix.ncp.ntnx_saml_identity_providers_v2:
         name: "{{ saml_name }}"
         username_attribute: "{{ username_attribute }}1"
@@ -33,6 +40,8 @@
         groups_attribute: groups
         groups_delim: ","
         idp_metadata_xml: "{{ idp_metadata_xml }}"
+        project_ext_id: "{{ project_ext_id }}"
+        is_shared_with_all_projects: true
         state: present
       register: result
       ignore_errors: true
@@ -40,6 +49,30 @@
     - name: Get saml using filter name
       nutanix.ncp.ntnx_saml_identity_providers_info_v2:
         filter: name eq  '{{ saml_name }}'
+      register: result
+      ignore_errors: true
+
+    - name: Update saml to share with specific projects
+      nutanix.ncp.ntnx_saml_identity_providers_v2:
+        state: present
+        ext_id: "{{ saml_ext_id }}"
+        shared_with_projects: "{{ shared_with_projects }}"
+      register: result
+      ignore_errors: true
+
+    - name: Update saml to unshare from all projects
+      nutanix.ncp.ntnx_saml_identity_providers_v2:
+        state: present
+        ext_id: "{{ saml_ext_id }}"
+        is_shared_with_all_projects: false
+      register: result
+      ignore_errors: true
+
+    - name: Update saml to unshare from specific projects
+      nutanix.ncp.ntnx_saml_identity_providers_v2:
+        state: present
+        ext_id: "{{ saml_ext_id }}"
+        shared_with_projects: []
       register: result
       ignore_errors: true
 
@@ -53,6 +86,12 @@
         groups_attribute: group_list
         groups_delim: ;
         is_signed_authn_req_enabled: true
+      register: result
+      ignore_errors: true
+
+    - name: Get saml using ext id
+      nutanix.ncp.ntnx_saml_identity_providers_info_v2:
+        ext_id: "{{ saml_ext_id }}"
       register: result
       ignore_errors: true
 

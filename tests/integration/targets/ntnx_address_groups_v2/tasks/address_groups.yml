@@ -25,6 +25,7 @@
     state: present
     name: "{{ ag1 }}"
     description: test-ansible-address-group-2-desc
+    project_ext_id: "{{ project.uuid | default(omit) }}"
     ipv4_addresses:
       - value: 10.1.1.0
         prefix_length: 24
@@ -51,6 +52,7 @@
       - result.response.ipv4_addresses[1].prefix_length == 32
       - result.response.ip_ranges[0].start_ip == "10.2.1.0"
       - result.response.ip_ranges[0].end_ip == "10.2.2.0"
+      - result.response.project_ext_id == project.uuid
 
     fail_msg: Create address group with check mode enabled failed
     success_msg: Create address group with check mode enabled passed
@@ -62,6 +64,7 @@
     state: present
     name: "{{ ag2 }}"
     description: test-ansible-group-1-desc
+    project_ext_id: "{{ project.uuid | default(omit) }}"
     ipv4_addresses:
       - value: 10.1.1.0
         prefix_length: 24
@@ -85,6 +88,7 @@
       - result.response.ipv4_addresses[0].prefix_length == 24
       - result.response.ipv4_addresses[1].prefix_length == 32
       - result.task_ext_id is defined
+      - result.response.project_ext_id == project.uuid
 
     fail_msg: Unable to create address group
     success_msg: Address group created successfully
@@ -188,18 +192,25 @@
     ipv4_addresses:
       - value: 10.1.1.0
         prefix_length: 24
-  register: result
+  register: duplicate_result
   ignore_errors: true
 
-- name: Check if address group with existing name fails or not Status
+- name: Check if address group with existing name is allowed
   ansible.builtin.assert:
     that:
-      - result.msg == "Task Failed"
-      - result.changed == false
-      - result.failed == true
+      - duplicate_result.changed == true
+      - duplicate_result.failed == false
+      - duplicate_result.response.name == "{{ ag1 }}"
 
-    fail_msg: Was able to create address group with existing address group name
-    success_msg: Address group with existing address group name failed successfully
+    fail_msg: Unable to create address group with existing address group name
+    success_msg: Address group with existing address group name created successfully
+
+- name: Delete duplicate address group
+  nutanix.ncp.ntnx_address_groups_v2:
+    state: absent
+    ext_id: "{{ duplicate_result.ext_id }}"
+  register: duplicate_delete
+  ignore_errors: true
 
 ###################################################################################################
 

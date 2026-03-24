@@ -44,6 +44,7 @@
   nutanix.ncp.ntnx_floating_ips_v2:
     state: present
     name: "{{ fip1_name }}"
+    project_ext_id: "{{ project.uuid | default(omit) }}"
     external_subnet_reference: "{{ external_nat_subnet.uuid }}"
     floating_ip:
       ipv4:
@@ -68,6 +69,7 @@
   nutanix.ncp.ntnx_floating_ips_v2:
     state: present
     name: "{{ fip1_name }}"
+    project_ext_id: "{{ project.uuid | default(omit) }}"
     external_subnet_reference: "{{ external_nat_subnet.uuid }}"
     metadata:
       project_reference_id: "{{ project.uuid }}"

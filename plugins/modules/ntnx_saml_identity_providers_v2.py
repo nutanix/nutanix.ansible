@@ -21,6 +21,10 @@ options:
             - External ID of the Identity provider.
             - Required for updating or deleting the Identity provider.
     type: str
+  project_ext_id:
+    description:
+      - UUID of the project that owns this identity provider.
+    type: str
   name:
     description:
       - Unique name of the IDP.
@@ -109,6 +113,19 @@ options:
       - Flag indicating signing of SAML authnRequests.
     required: false
     type: bool
+  is_shared_with_all_projects:
+    description:
+      - Flag to share the identity provider with all projects.
+      - If C(true), the identity provider is shared with all projects.
+    required: false
+    type: bool
+  shared_with_projects:
+    description:
+      - List of project external IDs to share the identity provider with.
+      - Projects not in the list will be unshared during update.
+    required: false
+    type: list
+    elements: str
   state:
     description:
         - Specify state
@@ -143,6 +160,8 @@ EXAMPLES = r"""
     groups_delim: ","
     idp_metadata_xml: "https://samltest.id/saml/idp"
     is_signed_authn_req_enabled: true
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
+    is_shared_with_all_projects: true
     state: present
   register: result
   ignore_errors: true
@@ -296,6 +315,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         name=dict(type="str"),
         username_attribute=dict(type="str"),
         email_attribute=dict(type="str"),
@@ -309,11 +329,141 @@ def get_module_spec():
         custom_attributes=dict(type="list", elements="str"),
         entity_issuer=dict(type="str"),
         is_signed_authn_req_enabled=dict(type="bool"),
+        is_shared_with_all_projects=dict(type="bool"),
+        shared_with_projects=dict(type="list", elements="str"),
     )
     return module_args
 
 
+def _get_etag_for_sharing(module, identity_providers, ext_id):
+    current = get_identity_provider(module, identity_providers, ext_id=ext_id)
+    etag = get_etag(data=current)
+    if not etag:
+        module.fail_json(
+            msg="Unable to fetch etag for identity provider sharing operation"
+        )
+    return etag
+
+
+def _share_with_all_projects(module, identity_providers, ext_id):
+    etag = _get_etag_for_sharing(module, identity_providers, ext_id)
+    try:
+        identity_providers.share_all_saml_identity_provider(extId=ext_id, if_match=etag)
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while sharing identity provider with all projects",
+        )
+
+
+def _unshare_from_all_projects(module, identity_providers, ext_id):
+    etag = _get_etag_for_sharing(module, identity_providers, ext_id)
+    try:
+        identity_providers.unshare_all_saml_identity_provider(
+            extId=ext_id, if_match=etag
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while unsharing identity provider from all projects",
+        )
+
+
+def _share_with_project(module, identity_providers, ext_id, project_ext_id):
+    etag = _get_etag_for_sharing(module, identity_providers, ext_id)
+    try:
+        share_req = iam_sdk.SamlIdentityProviderShareRequest()
+        share_req.project_ext_id = project_ext_id
+        identity_providers.share_saml_identity_provider(
+            extId=ext_id, body=share_req, if_match=etag
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while sharing identity provider with project {0}".format(
+                project_ext_id
+            ),
+        )
+
+
+def _unshare_from_project(module, identity_providers, ext_id, project_ext_id):
+    etag = _get_etag_for_sharing(module, identity_providers, ext_id)
+    try:
+        unshare_req = iam_sdk.SamlIdentityProviderUnshareRequest()
+        unshare_req.project_ext_id = project_ext_id
+        identity_providers.unshare_saml_identity_provider(
+            extId=ext_id, body=unshare_req, if_match=etag
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while unsharing identity provider from project {0}".format(
+                project_ext_id
+            ),
+        )
+
+
+def _handle_sharing_after_create(
+    module, identity_providers, ext_id, is_shared_with_all, shared_with_projects
+):
+    if is_shared_with_all is True:
+        _share_with_all_projects(module, identity_providers, ext_id)
+
+    if shared_with_projects:
+        for project_ext_id in shared_with_projects:
+            _share_with_project(module, identity_providers, ext_id, project_ext_id)
+
+
+def _handle_sharing_update(
+    module,
+    identity_providers,
+    ext_id,
+    current_spec,
+    is_shared_with_all,
+    shared_with_projects,
+):
+    changed = False
+    current_shared_all = (
+        getattr(current_spec, "is_shared_with_all_projects", False)
+        or getattr(current_spec, "shared_with_all_projects", False)
+        or False
+    )
+
+    if is_shared_with_all is not None and current_shared_all != is_shared_with_all:
+        if is_shared_with_all:
+            _share_with_all_projects(module, identity_providers, ext_id)
+        else:
+            _unshare_from_all_projects(module, identity_providers, ext_id)
+        changed = True
+
+    if shared_with_projects is not None:
+        current_shared_projects = (
+            getattr(current_spec, "shared_with_projects", None) or []
+        )
+        desired_set = set(shared_with_projects)
+        current_set = set(current_shared_projects)
+        to_share = desired_set - current_set
+        to_unshare = current_set - desired_set
+
+        for pid in to_share:
+            _share_with_project(module, identity_providers, ext_id, pid)
+            changed = True
+
+        for pid in to_unshare:
+            _unshare_from_project(module, identity_providers, ext_id, pid)
+            changed = True
+
+    return changed
+
+
 def create_identity_provider(module, identity_providers, result):
+    is_shared_with_all = module.params.pop("is_shared_with_all_projects", None)
+    shared_with_projects = module.params.pop("shared_with_projects", None)
+
     sg = SpecGenerator(module)
     default_spec = iam_sdk.SamlIdentityProvider()
     spec, err = sg.generate_spec(obj=default_spec)
@@ -339,7 +489,20 @@ def create_identity_provider(module, identity_providers, result):
         )
 
     result["ext_id"] = resp.data.ext_id
-    result["response"] = strip_internal_attributes(resp.data.to_dict())
+    if is_shared_with_all is not None or shared_with_projects:
+        _handle_sharing_after_create(
+            module,
+            identity_providers,
+            result["ext_id"],
+            is_shared_with_all,
+            shared_with_projects,
+        )
+        current = get_identity_provider(
+            module, identity_providers, ext_id=result["ext_id"]
+        )
+        result["response"] = strip_internal_attributes(current.to_dict())
+    else:
+        result["response"] = strip_internal_attributes(resp.data.to_dict())
     result["changed"] = True
 
 
@@ -353,6 +516,8 @@ def check_identity_providers_idempotency(old_spec, update_spec):
 def update_identity_provider(module, identity_providers, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
+    is_shared_with_all = module.params.pop("is_shared_with_all_projects", None)
+    shared_with_projects = module.params.pop("shared_with_projects", None)
 
     current_spec = get_identity_provider(module, identity_providers, ext_id=ext_id)
 
@@ -368,26 +533,39 @@ def update_identity_provider(module, identity_providers, result):
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
 
-    # check for idempotency
-    if check_identity_providers_idempotency(
+    spec_changed = not check_identity_providers_idempotency(
         current_spec.to_dict(), update_spec.to_dict()
-    ):
+    )
+    sharing_changed = _handle_sharing_update(
+        module,
+        identity_providers,
+        ext_id,
+        current_spec,
+        is_shared_with_all,
+        shared_with_projects,
+    )
+
+    if not spec_changed and not sharing_changed:
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
 
-    resp = None
-    try:
-        resp = identity_providers.update_saml_identity_provider_by_id(
-            extId=ext_id, body=update_spec
-        )
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while updating identity provider",
-        )
+    if spec_changed:
+        resp = None
+        try:
+            resp = identity_providers.update_saml_identity_provider_by_id(
+                extId=ext_id, body=update_spec
+            )
+        except Exception as e:
+            raise_api_exception(
+                module=module,
+                exception=e,
+                msg="Api Exception raised while updating identity provider",
+            )
+        result["response"] = strip_internal_attributes(resp.data.to_dict())
 
-    result["response"] = strip_internal_attributes(resp.data.to_dict())
+    if spec_changed or sharing_changed:
+        current = get_identity_provider(module, identity_providers, ext_id=ext_id)
+        result["response"] = strip_internal_attributes(current.to_dict())
     result["changed"] = True
 
 
@@ -434,6 +612,9 @@ def run_module():
     module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
+        mutually_exclusive=[
+            ("is_shared_with_all_projects", "shared_with_projects"),
+        ],
     )
     if SDK_IMP_ERROR:
         module.fail_json(

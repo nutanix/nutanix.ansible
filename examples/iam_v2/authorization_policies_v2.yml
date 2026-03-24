@@ -31,6 +31,7 @@
           - "e2dee03b-1234-1111-2222-6788222f17b8"
         project:
           uuid: "12321232-0000-0909-0864-6788222f17b8"
+        project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
 
     - name: Create auth policy to give access to all images, certain directory service and self owned marketplace items
       nutanix.ncp.ntnx_authorization_policies_v2:
@@ -38,6 +39,7 @@
         display_name: "{{ auth_policy_name }}"
         description: ansible created acps
         role: "{{ role_uuid }}"
+        project_ext_id: "{{ project_ext_id }}"
         authorization_policy_type: USER_DEFINED
         entities:
           - images:

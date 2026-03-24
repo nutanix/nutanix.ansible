@@ -38,6 +38,10 @@ options:
       - Subnet external ID
       - Required only for updating or deleting the subnet.
     type: str
+  project_ext_id:
+    description:
+      - UUID of the project that owns this subnet.
+    type: str
   subnet_type:
     description:
       - Type of the subnet
@@ -363,6 +367,12 @@ options:
         description: A list of globally unique identifiers that represent all the categories the resource will be associated with.
         type: list
         elements: str
+  shared_with_projects:
+    description:
+      - List of project external IDs to share the subnet with.
+      - Projects not in the list will be unshared during update.
+    type: list
+    elements: str
   hypervisor_type:
       description: Hypervisor type
       type: str
@@ -389,6 +399,9 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     name: VLAN subnet with IPAM IP pools
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
+    shared_with_projects:
+      - "12345678-1234-1234-1234-123456789012"
     subnet_type: VLAN
     cluster_reference: 00061663-9fa0-28ca-185b-ac1f6b6f97e2
     virtual_switch_reference: 18dbfce0-f7e1-4b19-a9e6-43b0be8c2507
@@ -686,6 +699,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         name=dict(type="str"),
         description=dict(type="str"),
         subnet_type=dict(type="str", choices=["OVERLAY", "VLAN"]),
@@ -704,13 +718,86 @@ def get_module_spec():
         hypervisor_type=dict(type="str"),
         ip_prefix=dict(type="str"),
         metadata=dict(type="dict", options=metadata_spec, obj=net_sdk.Metadata),
+        shared_with_projects=dict(type="list", elements="str"),
     )
 
     return module_args
 
 
+def _get_etag_for_sharing(module, subnet):
+    etag = get_etag(data=subnet)
+    if not etag:
+        module.fail_json(msg="Unable to fetch etag for subnet sharing operation")
+    return etag
+
+
+def _share_subnet_with_project(module, subnets, ext_id, project_ext_id):
+    subnet = get_subnet(module, subnets, ext_id=ext_id)
+    etag = _get_etag_for_sharing(module, subnet)
+    try:
+        project_ref = net_sdk.ProjectReference()
+        project_ref.project_ext_id = project_ext_id
+        subnets.share_subnet_by_id(subnetExtId=ext_id, body=project_ref, if_match=etag)
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while sharing subnet with project {0}".format(
+                project_ext_id
+            ),
+        )
+
+
+def _unshare_subnet_from_project(module, subnets, ext_id, project_ext_id):
+    subnet = get_subnet(module, subnets, ext_id=ext_id)
+    etag = _get_etag_for_sharing(module, subnet)
+    try:
+        project_ref = net_sdk.ProjectReference()
+        project_ref.project_ext_id = project_ext_id
+        subnets.unshare_subnet_by_id(
+            subnetExtId=ext_id, body=project_ref, if_match=etag
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while unsharing subnet from project {0}".format(
+                project_ext_id
+            ),
+        )
+
+
+def _handle_sharing_after_create(module, subnets, ext_id, shared_with_projects):
+    if shared_with_projects:
+        for project_ext_id in shared_with_projects:
+            _share_subnet_with_project(module, subnets, ext_id, project_ext_id)
+
+
+def _handle_sharing_update(module, subnets, ext_id, current_spec, shared_with_projects):
+    changed = False
+    current_shared_projects = getattr(current_spec, "shared_with_projects", None) or []
+    if shared_with_projects is None:
+        return changed
+
+    desired_set = set(shared_with_projects)
+    current_set = set(current_shared_projects)
+    to_share = desired_set - current_set
+    to_unshare = current_set - desired_set
+
+    for pid in to_share:
+        _share_subnet_with_project(module, subnets, ext_id, pid)
+        changed = True
+
+    for pid in to_unshare:
+        _unshare_subnet_from_project(module, subnets, ext_id, pid)
+        changed = True
+
+    return changed
+
+
 def create_subnet(module, result):
     subnets = get_subnet_api_instance(module)
+    shared_with_projects = module.params.pop("shared_with_projects", None)
 
     sg = SpecGenerator(module)
     default_spec = net_sdk.Subnet()
@@ -744,6 +831,10 @@ def create_subnet(module, result):
             resp, rel=TASK_CONSTANTS.RelEntityType.SUBNET
         )
         if ext_id:
+            if shared_with_projects:
+                _handle_sharing_after_create(
+                    module, subnets, ext_id, shared_with_projects
+                )
             resp = get_subnet(module, subnets, ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
@@ -762,6 +853,7 @@ def check_subnets_idempotency(old_spec, update_spec):
 def update_subnet(module, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
+    shared_with_projects = module.params.pop("shared_with_projects", None)
     subnets = get_subnet_api_instance(module)
     current_spec = get_subnet(module, subnets, ext_id=ext_id)
     remove_empty_ip_config(current_spec)
@@ -777,28 +869,38 @@ def update_subnet(module, result):
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
 
-    # check for idempotency
-    if check_subnets_idempotency(current_spec.to_dict(), update_spec.to_dict()):
+    spec_changed = not check_subnets_idempotency(
+        current_spec.to_dict(), update_spec.to_dict()
+    )
+    sharing_changed = _handle_sharing_update(
+        module, subnets, ext_id, current_spec, shared_with_projects
+    )
+
+    if not spec_changed and not sharing_changed:
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
 
-    resp = None
-    subnets = get_subnet_api_instance(module)
-    try:
-        resp = subnets.update_subnet_by_id(extId=ext_id, body=update_spec)
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while updating subnet",
-        )
+    if spec_changed:
+        resp = None
+        subnets = get_subnet_api_instance(module)
+        try:
+            resp = subnets.update_subnet_by_id(extId=ext_id, body=update_spec)
+        except Exception as e:
+            raise_api_exception(
+                module=module,
+                exception=e,
+                msg="Api Exception raised while updating subnet",
+            )
 
-    task_ext_id = resp.data.ext_id
-    result["task_ext_id"] = task_ext_id
-    result["response"] = strip_internal_attributes(resp.data.to_dict())
+        task_ext_id = resp.data.ext_id
+        result["task_ext_id"] = task_ext_id
+        result["response"] = strip_internal_attributes(resp.data.to_dict())
 
-    if task_ext_id and module.params.get("wait"):
-        wait_for_completion(module, task_ext_id)
+        if task_ext_id and module.params.get("wait"):
+            wait_for_completion(module, task_ext_id)
+            resp = get_subnet(module, subnets, ext_id)
+            result["response"] = strip_internal_attributes(resp.to_dict())
+    elif sharing_changed:
         resp = get_subnet(module, subnets, ext_id)
         result["response"] = strip_internal_attributes(resp.to_dict())
 

@@ -40,6 +40,10 @@ options:
         description:
             - External ID of the Ova to be updated or deleted
         type: str
+    project_ext_id:
+        description:
+            - UUID of the project that owns this OVA.
+        type: str
     checksum:
         description:
             - Checksum of the Ova
@@ -153,6 +157,7 @@ EXAMPLES = r"""
 - name: Create Ova from the VM
   nutanix.ncp.ntnx_ova_v2:
     name: "name"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     source:
       ova_vm_source:
         vm_ext_id: "12345678-1234-1234-1234-123456789012"
@@ -435,6 +440,7 @@ def get_module_spec():
     module_args = dict(
         name=dict(type="str"),
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         checksum=dict(
             type="dict",
             options=checksum_spec,

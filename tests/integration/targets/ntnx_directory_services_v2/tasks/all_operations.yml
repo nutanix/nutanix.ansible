@@ -102,6 +102,7 @@
     url: "{{ active_directory.url }}"
     directory_type: ACTIVE_DIRECTORY
     domain_name: "{{ active_directory.domain_name }}"
+    project_ext_id: "00000000-0000-0000-0000-000000000000"
     service_account:
       username: "{{ active_directory.username }}"
       password: "{{ active_directory.password }}"
@@ -412,6 +413,120 @@
       - result.msg == "{{ msg }}"
     fail_msg: Unable to delete directory service
     success_msg: directory service is deleted successfully
+
+- name: Reset todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+########################################################################
+# Tests for is_shared_with_all_projects and shared_with_projects
+########################################################################
+
+- name: Create ACTIVE_DIRECTORY service with is_shared_with_all_projects
+  nutanix.ncp.ntnx_directory_services_v2:
+    state: present
+    name: "{{ directory_service }}_shared"
+    url: "{{ active_directory.url }}"
+    directory_type: ACTIVE_DIRECTORY
+    domain_name: "{{ active_directory.domain_name }}"
+    project_ext_id: "00000000-0000-0000-0000-000000000000"
+    service_account:
+      username: "{{ active_directory.username }}"
+      password: "{{ active_directory.password }}"
+    is_shared_with_all_projects: true
+  register: result
+  ignore_errors: true
+
+- name: Status of create with is_shared_with_all_projects
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.name == "{{ directory_service }}_shared"
+      - result.response.ext_id is defined
+      - result.ext_id is defined
+      - result.response.project_ext_id == "00000000-0000-0000-0000-000000000000"
+      - result.response.shared_with_all_projects == true
+    fail_msg: "Create directory service with is_shared_with_all_projects failed"
+    success_msg: "Created directory service with is_shared_with_all_projects"
+
+- name: Set shared directory service ext_id
+  ansible.builtin.set_fact:
+    todelete: "{{ result.ext_id }}"
+
+########################################################################
+
+- name: Update directory service to unshare from all projects
+  nutanix.ncp.ntnx_directory_services_v2:
+    state: present
+    ext_id: "{{ todelete }}"
+    service_account:
+      username: "{{ active_directory.username }}"
+      password: "{{ active_directory.password }}"
+    is_shared_with_all_projects: false
+  register: result
+  ignore_errors: true
+
+- name: Status of unshare from all projects
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.shared_with_all_projects == false
+    fail_msg: "Unshare from all projects failed"
+    success_msg: "Unshared from all projects successfully"
+
+########################################################################
+
+- name: Update directory service to share with specific projects
+  nutanix.ncp.ntnx_directory_services_v2:
+    state: present
+    ext_id: "{{ todelete }}"
+    service_account:
+      username: "{{ active_directory.username }}"
+      password: "{{ active_directory.password }}"
+    shared_with_projects:
+      - "{{ project.uuid }}"
+  register: result
+  ignore_errors: true
+  when: project is defined and project.uuid is defined
+
+- name: Status of share with specific projects
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.shared_with_projects is defined
+      - project.uuid in result.response.shared_with_projects
+    fail_msg: "Share with specific projects failed"
+    success_msg: "Shared with specific projects successfully"
+  when: project is defined and project.uuid is defined
+
+########################################################################
+
+- name: Delete shared directory service
+  nutanix.ncp.ntnx_directory_services_v2:
+    state: absent
+    ext_id: "{{ todelete }}"
+  register: result
+  ignore_errors: true
+
+- name: Output of delete shared directory service
+  ansible.builtin.set_fact:
+    msg: "Directory Service with ext_id: {{ todelete }} deleted successfully"
+
+- name: Delete shared directory service status
+  ansible.builtin.assert:
+    that:
+      - result.changed == True
+      - result.failed == False
+      - result.ext_id == "{{ todelete }}"
+      - result.msg == "{{ msg }}"
+    fail_msg: "Unable to delete shared directory service"
+    success_msg: "Shared directory service deleted successfully"
 
 - name: Reset todelete list
   ansible.builtin.set_fact:

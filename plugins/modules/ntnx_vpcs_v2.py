@@ -39,6 +39,10 @@ options:
             - Required for C(state)=absent for delete.
             - Required for C(state)=present to trigger update of vpc.
     type: str
+  project_ext_id:
+    description:
+            - UUID of the project that owns this VPC.
+    type: str
 
   name:
     description: Name of the VPC.
@@ -158,6 +162,13 @@ options:
         description: Number of active gateways.
         type: int
 
+  shared_with_projects:
+    description:
+      - List of project external IDs to share the VPC with.
+      - Projects not in the list will be unshared during update.
+    type: list
+    elements: str
+
   external_routing_domain_reference:
     description: External routing domain associated with this route table
     type: str
@@ -245,6 +256,9 @@ EXAMPLES = r"""
     state: present
     wait: true
     name: MinVPC
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
+    shared_with_projects:
+      - "12345678-1234-1234-1234-123456789012"
     external_subnets:
       - subnet_reference: "{{ external_nat_subnet.uuid }}"
   register: result
@@ -483,6 +497,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         name=dict(type="str"),
         description=dict(type="str"),
         vpc_type=dict(type="str", choices=["REGULAR", "TRANSIT"]),
@@ -500,13 +515,84 @@ def get_module_spec():
             type="list", elements="dict", options=ip_subnet_spec, obj=net_sdk.IPSubnet
         ),
         metadata=dict(type="dict", options=metadata_spec, obj=net_sdk.Metadata),
+        shared_with_projects=dict(type="list", elements="str"),
     )
 
     return module_args
 
 
+def _get_etag_for_sharing(module, vpc):
+    etag = get_etag(data=vpc)
+    if not etag:
+        module.fail_json(msg="Unable to fetch etag for VPC sharing operation")
+    return etag
+
+
+def _share_vpc_with_project(module, vpcs, ext_id, project_ext_id):
+    vpc = get_vpc(module, vpcs, ext_id)
+    etag = _get_etag_for_sharing(module, vpc)
+    try:
+        project_ref = net_sdk.ProjectReference()
+        project_ref.project_ext_id = project_ext_id
+        vpcs.share_vpc_by_id(extId=ext_id, body=project_ref, if_match=etag)
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while sharing VPC with project {0}".format(
+                project_ext_id
+            ),
+        )
+
+
+def _unshare_vpc_from_project(module, vpcs, ext_id, project_ext_id):
+    vpc = get_vpc(module, vpcs, ext_id)
+    etag = _get_etag_for_sharing(module, vpc)
+    try:
+        project_ref = net_sdk.ProjectReference()
+        project_ref.project_ext_id = project_ext_id
+        vpcs.unshare_vpc_by_id(extId=ext_id, body=project_ref, if_match=etag)
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while unsharing VPC from project {0}".format(
+                project_ext_id
+            ),
+        )
+
+
+def _handle_sharing_after_create(module, vpcs, ext_id, shared_with_projects):
+    if shared_with_projects:
+        for project_ext_id in shared_with_projects:
+            _share_vpc_with_project(module, vpcs, ext_id, project_ext_id)
+
+
+def _handle_sharing_update(module, vpcs, ext_id, current_spec, shared_with_projects):
+    changed = False
+    current_shared_projects = getattr(current_spec, "shared_with_projects", None) or []
+    if shared_with_projects is None:
+        return changed
+
+    desired_set = set(shared_with_projects)
+    current_set = set(current_shared_projects)
+    to_share = desired_set - current_set
+    to_unshare = current_set - desired_set
+
+    for pid in to_share:
+        _share_vpc_with_project(module, vpcs, ext_id, pid)
+        changed = True
+
+    for pid in to_unshare:
+        _unshare_vpc_from_project(module, vpcs, ext_id, pid)
+        changed = True
+
+    return changed
+
+
 def create_vpc(module, result):
     vpcs = get_vpc_api_instance(module)
+    shared_with_projects = module.params.pop("shared_with_projects", None)
 
     sg = SpecGenerator(module)
     default_spec = net_sdk.Vpc()
@@ -540,6 +626,8 @@ def create_vpc(module, result):
             task_status, rel=TASK_CONSTANTS.RelEntityType.VPC
         )
         if ext_id:
+            if shared_with_projects:
+                _handle_sharing_after_create(module, vpcs, ext_id, shared_with_projects)
             resp = get_vpc(module, vpcs, ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
@@ -558,6 +646,7 @@ def check_vpcs_idempotency(old_spec, update_spec):
 def update_vpc(module, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
+    shared_with_projects = module.params.pop("shared_with_projects", None)
     vpcs = get_vpc_api_instance(module)
 
     current_spec = get_vpc(module, vpcs, ext_id=ext_id)
@@ -569,32 +658,43 @@ def update_vpc(module, result):
         result["error"] = err
         module.fail_json(msg="Failed generating vpcs update spec", **result)
 
-    # check for idempotency
-    if check_vpcs_idempotency(current_spec.to_dict(), update_spec.to_dict()):
-        result["skipped"] = True
-        module.exit_json(msg="Nothing to change.", **result)
-
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
 
-    resp = None
-    vpcs = get_vpc_api_instance(module)
-    try:
-        resp = vpcs.update_vpc_by_id(extId=ext_id, body=update_spec)
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while updating vpc",
-        )
+    spec_changed = not check_vpcs_idempotency(
+        current_spec.to_dict(), update_spec.to_dict()
+    )
+    sharing_changed = _handle_sharing_update(
+        module, vpcs, ext_id, current_spec, shared_with_projects
+    )
 
-    task_ext_id = resp.data.ext_id
-    result["task_ext_id"] = task_ext_id
-    result["response"] = strip_internal_attributes(resp.data.to_dict())
+    if not spec_changed and not sharing_changed:
+        result["skipped"] = True
+        module.exit_json(msg="Nothing to change.", **result)
 
-    if task_ext_id and module.params.get("wait"):
-        wait_for_completion(module, task_ext_id)
+    if spec_changed:
+        resp = None
+        vpcs = get_vpc_api_instance(module)
+        try:
+            resp = vpcs.update_vpc_by_id(extId=ext_id, body=update_spec)
+        except Exception as e:
+            raise_api_exception(
+                module=module,
+                exception=e,
+                msg="Api Exception raised while updating vpc",
+            )
+
+        task_ext_id = resp.data.ext_id
+        result["task_ext_id"] = task_ext_id
+        result["response"] = strip_internal_attributes(resp.data.to_dict())
+
+        if task_ext_id and module.params.get("wait"):
+            wait_for_completion(module, task_ext_id)
+            resp = get_vpc(module, vpcs, ext_id)
+            result["ext_id"] = ext_id
+            result["response"] = strip_internal_attributes(resp.to_dict())
+    elif sharing_changed:
         resp = get_vpc(module, vpcs, ext_id)
         result["ext_id"] = ext_id
         result["response"] = strip_internal_attributes(resp.to_dict())

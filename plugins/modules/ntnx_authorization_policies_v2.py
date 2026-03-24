@@ -30,6 +30,11 @@ options:
             - Required for updating or deleting the auth policy.
         type: str
         required: false
+    project_ext_id:
+        description:
+            - UUID of the project that owns this authorization policy.
+        required: false
+        type: str
     display_name:
         description:
             - The display name for the Authorization Policy.
@@ -95,6 +100,7 @@ EXAMPLES = r"""
     description: "ansible created acps"
     role: "ebbfbd38-122b-5529-adcc-dcb6b4177382"
     authorization_policy_type: "USER_DEFINED"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     entities:
       - "images":
           "*":
@@ -266,6 +272,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def get_module_spec():
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         display_name=dict(type="str"),
         description=dict(type="str"),
         identities=dict(type="list", elements="dict"),

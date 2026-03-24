@@ -30,6 +30,8 @@
   nutanix.ncp.ntnx_subnets_v2:
     state: present
     name: "{{ subnet_name }}_1"
+    project_ext_id: "{{ project.uuid | default(omit) }}"
+    shared_with_projects: "{{ [project.uuid] if project is defined and project.uuid is defined else omit }}"
     subnet_type: VLAN
     cluster_reference: "{{ cluster.uuid }}"
     virtual_switch_reference: "{{ virtual_switch.uuid }}"
@@ -108,6 +110,8 @@
     state: present
     wait: true
     name: "{{ subnet_name }}_1"
+    project_ext_id: "{{ project.uuid | default(omit) }}"
+    shared_with_projects: "{{ [project.uuid] if project is defined and project.uuid is defined else omit }}"
     subnet_type: VLAN
     cluster_reference: "{{ cluster.uuid }}"
     virtual_switch_reference: "{{ virtual_switch.uuid }}"
@@ -961,6 +965,99 @@
 - name: Reset todelete list
   ansible.builtin.set_fact:
     todelete: []
+#################################################################
+
+#################################################################
+# Tests for shared_with_projects on subnets
+#################################################################
+
+- name: Create VLAN subnet for sharing tests
+  nutanix.ncp.ntnx_subnets_v2:
+    state: present
+    name: "{{ subnet_name }}_shared"
+    project_ext_id: "{{ project.uuid | default(omit) }}"
+    subnet_type: VLAN
+    cluster_reference: "{{ cluster.uuid }}"
+    virtual_switch_reference: "{{ virtual_switch.uuid }}"
+    network_id: 125
+    ip_config:
+      - ipv4:
+          ip_subnet:
+            ip:
+              value: "10.20.20.0"
+            prefix_length: 24
+          default_gateway_ip:
+            value: "10.20.20.1"
+  register: result
+  ignore_errors: true
+
+- name: Status of create subnet for sharing tests
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.response.project_ext_id == project.uuid
+    fail_msg: "Create subnet for sharing tests failed"
+    success_msg: "Created subnet for sharing tests"
+
+- name: Set shared subnet ext_id
+  ansible.builtin.set_fact:
+    shared_subnet_ext_id: "{{ result.ext_id }}"
+
+- name: Update subnet to share with specific projects
+  nutanix.ncp.ntnx_subnets_v2:
+    state: present
+    ext_id: "{{ shared_subnet_ext_id }}"
+    shared_with_projects:
+      - "{{ project.uuid }}"
+  register: result
+  ignore_errors: true
+  when: project is defined and project.uuid is defined
+
+- name: Status of subnet share with specific projects
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+    fail_msg: "Subnet share with specific projects failed"
+    success_msg: "Subnet shared with specific projects successfully"
+  when: project is defined and project.uuid is defined
+
+- name: Update subnet to unshare from specific projects
+  nutanix.ncp.ntnx_subnets_v2:
+    state: present
+    ext_id: "{{ shared_subnet_ext_id }}"
+    shared_with_projects: []
+  register: result
+  ignore_errors: true
+  when: project is defined and project.uuid is defined
+
+- name: Status of subnet unshare from specific projects
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+    fail_msg: "Subnet unshare from specific projects failed with error"
+    success_msg: "Subnet unshare from specific projects completed"
+  when: project is defined and project.uuid is defined
+
+- name: Delete shared subnet
+  nutanix.ncp.ntnx_subnets_v2:
+    state: absent
+    ext_id: "{{ shared_subnet_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete shared subnet status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+    fail_msg: "Unable to delete shared subnet"
+    success_msg: "Shared subnet deleted successfully"
+
 #################################################################
 
 - name: Delete vpc

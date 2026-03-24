@@ -31,6 +31,11 @@ options:
             - Required for updating or deleting the Directory Service.
         required: false
         type: str
+    project_ext_id:
+        description:
+            - UUID of the project that owns this directory service.
+        required: false
+        type: str
     name:
         description:
             - Name for the Directory Service.
@@ -128,6 +133,23 @@ options:
         required: false
         type: list
         elements: str
+    is_shared_with_all_projects:
+        description:
+            - Flag to share the directory service with all projects.
+            - If C(true), the directory service will be shared with all projects.
+            - If C(false) during update, the directory service will be unshared from all projects.
+            - Mutually exclusive with C(shared_with_projects).
+        required: false
+        type: bool
+    shared_with_projects:
+        description:
+            - List of project external IDs to share the directory service with.
+            - During update, the sharing will be reconciled to match this list.
+            - Projects not in the list will be unshared, and new projects will be shared.
+            - Mutually exclusive with C(is_shared_with_all_projects).
+        required: false
+        type: list
+        elements: str
     wait:
         description:
             - Wait for the operation to complete.
@@ -158,9 +180,46 @@ EXAMPLES = r"""
     url: ldap://10.0.0.0:389
     directory_type: "ACTIVE_DIRECTORY"
     domain_name: "nutanix"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     service_account:
       username: admin
       password: Nutanix@123456
+  register: result
+
+- name: Create ACTIVE_DIRECTORY service shared with all projects
+  nutanix.ncp.ntnx_directory_services_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    state: present
+    name: directory_service_shared_all
+    url: ldap://10.0.0.0:389
+    directory_type: "ACTIVE_DIRECTORY"
+    domain_name: "nutanix"
+    service_account:
+      username: admin
+      password: Nutanix@123456
+    is_shared_with_all_projects: true
+  register: result
+
+- name: Create ACTIVE_DIRECTORY service shared with specific projects
+  nutanix.ncp.ntnx_directory_services_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    state: present
+    name: directory_service_shared_projects
+    url: ldap://10.0.0.0:389
+    directory_type: "ACTIVE_DIRECTORY"
+    domain_name: "nutanix"
+    service_account:
+      username: admin
+      password: Nutanix@123456
+    shared_with_projects:
+      - "6863c60b-ae9d-5c32-b8c1-2d45b9ba343a"
+      - "7974d71c-bf0e-6d43-c9d2-3e56c9cb454b"
   register: result
 
 - name: Update ACTIVE_DIRECTORY service
@@ -180,6 +239,63 @@ EXAMPLES = r"""
       password: Nutanix@123456
     white_listed_groups:
       - test_group_updated
+  register: result
+
+- name: Update directory service to share with all projects
+  nutanix.ncp.ntnx_directory_services_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    state: present
+    ext_id: "6863c60b-ae9d-5c32-b8c1-2d45b9ba343a"
+    service_account:
+      username: admin
+      password: Nutanix@123456
+    is_shared_with_all_projects: true
+  register: result
+
+- name: Update directory service to share with specific projects
+  nutanix.ncp.ntnx_directory_services_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    state: present
+    ext_id: "6863c60b-ae9d-5c32-b8c1-2d45b9ba343a"
+    service_account:
+      username: admin
+      password: Nutanix@123456
+    shared_with_projects:
+      - "7974d71c-bf0e-6d43-c9d2-3e56c9cb454b"
+  register: result
+
+- name: Update directory service to unshare from all projects
+  nutanix.ncp.ntnx_directory_services_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    state: present
+    ext_id: "6863c60b-ae9d-5c32-b8c1-2d45b9ba343a"
+    service_account:
+      username: admin
+      password: Nutanix@123456
+    is_shared_with_all_projects: false
+  register: result
+
+- name: Update directory service to unshare from specific projects
+  nutanix.ncp.ntnx_directory_services_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    state: present
+    ext_id: "6863c60b-ae9d-5c32-b8c1-2d45b9ba343a"
+    service_account:
+      username: admin
+      password: Nutanix@123456
+    shared_with_projects: []
   register: result
 
 - name: Delete ACTIVE_DIRECTORY service
@@ -221,7 +337,9 @@ response:
             "url": "ldap://10.0.0.2:485",
             "white_listed_groups": [
                 "test_updated"
-            ]
+            ],
+            "is_shared_with_all_projects": false,
+            "shared_with_projects": []
         }
 
 changed:
@@ -320,6 +438,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         name=dict(type="str"),
         url=dict(type="str"),
         secondary_urls=dict(type="list", elements="str"),
@@ -333,11 +452,137 @@ def get_module_spec():
         ),
         group_search_type=dict(type="str", choices=["NON_RECURSIVE", "RECURSIVE"]),
         white_listed_groups=dict(type="list", elements="str"),
+        shared_with_projects=dict(type="list", elements="str"),
+        is_shared_with_all_projects=dict(type="bool"),
     )
     return module_args
 
 
+def _get_etag_for_sharing(module, directory_services, ext_id):
+    current = get_directory_service(module, directory_services, ext_id=ext_id)
+    etag = get_etag(data=current)
+    if not etag:
+        module.fail_json(
+            msg="Unable to fetch etag for directory service sharing operation"
+        )
+    return etag
+
+
+def _share_with_all_projects(module, directory_services, ext_id):
+    etag = _get_etag_for_sharing(module, directory_services, ext_id)
+    try:
+        directory_services.share_all_directory_service(extId=ext_id, if_match=etag)
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while sharing directory service with all projects",
+        )
+
+
+def _unshare_from_all_projects(module, directory_services, ext_id):
+    etag = _get_etag_for_sharing(module, directory_services, ext_id)
+    try:
+        directory_services.unshare_all_directory_service(extId=ext_id, if_match=etag)
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while unsharing directory service from all projects",
+        )
+
+
+def _share_with_project(module, directory_services, ext_id, project_ext_id):
+    etag = _get_etag_for_sharing(module, directory_services, ext_id)
+    try:
+        share_req = iam_sdk.DirectoryServiceShareRequest()
+        share_req.project_ext_id = project_ext_id
+        directory_services.share_directory_service(
+            extId=ext_id, body=share_req, if_match=etag
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while sharing directory service with project {0}".format(
+                project_ext_id
+            ),
+        )
+
+
+def _unshare_from_project(module, directory_services, ext_id, project_ext_id):
+    etag = _get_etag_for_sharing(module, directory_services, ext_id)
+    try:
+        unshare_req = iam_sdk.DirectoryServiceUnshareRequest()
+        unshare_req.project_ext_id = project_ext_id
+        directory_services.unshare_directory_service(
+            extId=ext_id, body=unshare_req, if_match=etag
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while unsharing directory service from project {0}".format(
+                project_ext_id
+            ),
+        )
+
+
+def _handle_sharing_after_create(
+    module, directory_services, ext_id, is_shared_with_all, shared_with_projects
+):
+    if is_shared_with_all:
+        _share_with_all_projects(module, directory_services, ext_id)
+    elif shared_with_projects:
+        for project_ext_id in shared_with_projects:
+            _share_with_project(module, directory_services, ext_id, project_ext_id)
+
+
+def _handle_sharing_update(
+    module,
+    directory_services,
+    ext_id,
+    current_spec,
+    is_shared_with_all,
+    shared_with_projects,
+):
+    changed = False
+    current_shared_all = (
+        getattr(current_spec, "is_shared_with_all_projects", False)
+        or getattr(current_spec, "shared_with_all_projects", False)
+        or False
+    )
+    current_shared_projects = getattr(current_spec, "shared_with_projects", None) or []
+
+    if is_shared_with_all is not None:
+        if is_shared_with_all and not current_shared_all:
+            _share_with_all_projects(module, directory_services, ext_id)
+            changed = True
+        elif not is_shared_with_all and current_shared_all:
+            _unshare_from_all_projects(module, directory_services, ext_id)
+            changed = True
+
+    if shared_with_projects is not None:
+        desired_set = set(shared_with_projects)
+        current_set = set(current_shared_projects)
+        to_share = desired_set - current_set
+        to_unshare = current_set - desired_set
+
+        for pid in to_share:
+            _share_with_project(module, directory_services, ext_id, pid)
+            changed = True
+
+        for pid in to_unshare:
+            _unshare_from_project(module, directory_services, ext_id, pid)
+            changed = True
+
+    return changed
+
+
 def create_directory_service(module, directory_services, result):
+    is_shared_with_all = module.params.pop("is_shared_with_all_projects", None)
+    shared_with_projects = module.params.pop("shared_with_projects", None)
+
     sg = SpecGenerator(module)
     default_spec = iam_sdk.DirectoryService()
     spec, err = sg.generate_spec(obj=default_spec)
@@ -362,8 +607,18 @@ def create_directory_service(module, directory_services, result):
             msg="Api Exception raised while creating directory service",
         )
 
-    result["ext_id"] = resp.data.ext_id
-    result["response"] = strip_internal_attributes(resp.data.to_dict())
+    ext_id = resp.data.ext_id
+    result["ext_id"] = ext_id
+
+    if is_shared_with_all or shared_with_projects:
+        _handle_sharing_after_create(
+            module, directory_services, ext_id, is_shared_with_all, shared_with_projects
+        )
+        current = get_directory_service(module, directory_services, ext_id=ext_id)
+        result["response"] = strip_internal_attributes(current.to_dict())
+    else:
+        result["response"] = strip_internal_attributes(resp.data.to_dict())
+
     result["changed"] = True
 
 
@@ -379,6 +634,9 @@ def update_directory_service(module, directory_services, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
+    is_shared_with_all = module.params.pop("is_shared_with_all_projects", None)
+    shared_with_projects = module.params.pop("shared_with_projects", None)
+
     current_spec = get_directory_service(module, directory_services, ext_id=ext_id)
 
     sg = SpecGenerator(module)
@@ -393,26 +651,40 @@ def update_directory_service(module, directory_services, result):
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
 
-    # check for idempotency
+    spec_changed = True
     if not module.params.get("service_account", {}).get("password"):
         if check_directory_services_idempotency(
             current_spec.to_dict(), update_spec.to_dict()
         ):
-            result["skipped"] = True
-            module.exit_json(msg="Nothing to change.", **result)
+            spec_changed = False
 
-    resp = None
-    try:
-        resp = directory_services.update_directory_service_by_id(
-            extId=ext_id, body=update_spec
-        )
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while updating directory service",
-        )
-    result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    if spec_changed:
+        try:
+            directory_services.update_directory_service_by_id(
+                extId=ext_id, body=update_spec
+            )
+        except Exception as e:
+            raise_api_exception(
+                module=module,
+                exception=e,
+                msg="Api Exception raised while updating directory service",
+            )
+
+    sharing_changed = _handle_sharing_update(
+        module,
+        directory_services,
+        ext_id,
+        current_spec,
+        is_shared_with_all,
+        shared_with_projects,
+    )
+
+    if not spec_changed and not sharing_changed:
+        result["skipped"] = True
+        module.exit_json(msg="Nothing to change.", **result)
+
+    updated = get_directory_service(module, directory_services, ext_id=ext_id)
+    result["response"] = strip_internal_attributes(updated.to_dict())
     result["changed"] = True
 
 
@@ -456,6 +728,9 @@ def run_module():
     module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
+        mutually_exclusive=[
+            ("is_shared_with_all_projects", "shared_with_projects"),
+        ],
     )
     if SDK_IMP_ERROR:
         module.fail_json(

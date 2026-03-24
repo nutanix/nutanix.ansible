@@ -30,6 +30,10 @@ options:
             - External ID of the top level recovery point.
             - Required for updating expiry date and deleting recovery point.
         type: str
+    project_ext_id:
+        description:
+            - UUID of the project that owns this recovery point.
+        type: str
 
     name:
         description:
@@ -130,6 +134,7 @@ EXAMPLES = r"""
     expiration_time: "2024-09-30T14:15:22Z"
     status: "COMPLETE"
     recovery_point_type: "CRASH_CONSISTENT"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     vm_recovery_points:
       - vm_ext_id: "ac5aff0c-6c68-4948-9088-b903e2be0ce7"
       - vm_ext_id: "3f50a1b2-4c3d-4e6a-9b8e-1a2b3c4d5e6f"
@@ -305,6 +310,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         state=dict(type="str", choices=["present", "absent"], default="present"),
         name=dict(type="str"),
         expiration_time=dict(type="str"),

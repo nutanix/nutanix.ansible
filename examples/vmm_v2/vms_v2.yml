@@ -30,6 +30,7 @@
         network:
           dhcp:
             uuid: "11254788-3333-2321-0000-000000022f54"
+        project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
         category_ext_id_1: "00000000-0000-0000-0000-000000000001"
         category_ext_id_2: "00000000-0000-0000-0000-000000000002"
         xml_file_content: <xml_file_content>
@@ -49,6 +50,7 @@
         description: ansible test
         cluster:
           ext_id: "{{ cluster.uuid }}"
+        project_ext_id: "{{ project_ext_id }}"
         num_sockets: 1
         num_cores_per_socket: 1
         num_threads_per_core: 1
