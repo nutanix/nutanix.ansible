@@ -111,7 +111,7 @@
     success_msg: "VM info is retrieved successfully and IP address is assigned "
 
 - name: Set VM IP Fact
-  set_fact:
+  ansible.builtin.set_fact:
     vm_ip: "{{ result.response.nics[0].network_info.ipv4_info.learned_ip_addresses[0].value }}"
 
 - name: Install NGT in VM with check mode enabled

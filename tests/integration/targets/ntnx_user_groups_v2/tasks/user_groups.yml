@@ -257,12 +257,13 @@
 ###############################################################################
 
 - name: Fetch only LDAP user groups
-  ntnx_user_groups_info_v2:
+  nutanix.ncp.ntnx_user_groups_info_v2:
     filter: "groupType eq Schema.Enums.GroupType'LDAP'"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
-- ansible.builtin.set_fact:
+- name: Set group type
+  ansible.builtin.set_fact:
     group_type: "{{ result.response | map(attribute='group_type') | list | unique }}"
 
 - name: Fetch only LDAP user groups Status
@@ -280,12 +281,13 @@
 ###############################################################################
 
 - name: Fetch only SAML user groups
-  ntnx_user_groups_info_v2:
+  nutanix.ncp.ntnx_user_groups_info_v2:
     filter: "groupType eq Schema.Enums.GroupType'SAML'"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
-- ansible.builtin.set_fact:
+- name: Set group type
+  ansible.builtin.set_fact:
     group_type: "{{ result.response | map(attribute='group_type') | list | unique }}"
 
 - name: Fetch only SAML user groups Status
@@ -294,7 +296,7 @@
       - result.response is defined
       - result.changed == false
       - result.failed == false
-      - result.response | length > 0 # response is null
+      - result.response | length > 0
       - group_type | length == 1
       - group_type[0] == "SAML"
     fail_msg: "Unable to fetch only SAML user groups"
