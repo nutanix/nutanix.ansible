@@ -829,7 +829,7 @@
     fail_msg: "Unable to insert ISO into CD ROM in VM "
     success_msg: "ISO is inserted into CD ROM in VM successfully "
 
-- name: Download NGT installer {{ ngt_config.version }} to VM
+- name: Download NGT installer to VM {{ ngt_config.version }}
   ansible.builtin.get_url:
     url: "{{ ngt_config.ngt_installed_url }}"
     dest: "/tmp/ngt_installer.tar.gz"
