@@ -65,6 +65,7 @@
       - result.ext_id is defined
       - result.response.external_subnets.0.subnet_reference == "{{ external_nat_subnet.uuid }}"
       - result.response.name == "{{vpc_name}}2"
+      - result.response.project_ext_id == project.uuid
     fail_msg: " Unable to create Min vpc with external subnet uuid "
     success_msg: " Min vpc with external subnet uuid created successfully "
 
@@ -380,3 +381,95 @@
       - result.msg == "All items completed"
     fail_msg: " Unable to Delete VPC"
     success_msg: "Vpc has been deleted successfully"
+
+- name: Reset todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+###########################################################
+# Tests for shared_with_projects
+###########################################################
+
+- name: Create VPC for sharing tests
+  nutanix.ncp.ntnx_vpcs_v2:
+    state: present
+    wait: true
+    name: "{{vpc_name}}_shared"
+    project_ext_id: "{{ project.uuid | default(omit) }}"
+    external_subnets:
+      - subnet_reference: "{{ external_nat_subnet.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of create VPC for sharing tests
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.response.project_ext_id == project.uuid
+    fail_msg: "Create VPC for sharing tests failed"
+    success_msg: "Created VPC for sharing tests"
+
+- name: Set shared VPC ext_id
+  ansible.builtin.set_fact:
+    shared_vpc_ext_id: "{{ result.ext_id }}"
+
+###########################################################
+
+- name: Update VPC to share with specific projects
+  nutanix.ncp.ntnx_vpcs_v2:
+    state: present
+    ext_id: "{{ shared_vpc_ext_id }}"
+    shared_with_projects:
+      - "{{ project.uuid }}"
+  register: result
+  ignore_errors: true
+  when: project is defined and project.uuid is defined
+
+- name: Status of VPC share with specific projects
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+    fail_msg: "VPC share with specific projects failed"
+    success_msg: "VPC shared with specific projects successfully"
+  when: project is defined and project.uuid is defined
+
+###########################################################
+
+- name: Update VPC to unshare from specific projects
+  nutanix.ncp.ntnx_vpcs_v2:
+    state: present
+    ext_id: "{{ shared_vpc_ext_id }}"
+    shared_with_projects: []
+  register: result
+  ignore_errors: true
+  when: project is defined and project.uuid is defined
+
+- name: Status of VPC unshare from specific projects
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+    fail_msg: "VPC unshare from specific projects failed with error"
+    success_msg: "VPC unshare from specific projects completed"
+  when: project is defined and project.uuid is defined
+
+###########################################################
+
+- name: Delete shared VPC
+  nutanix.ncp.ntnx_vpcs_v2:
+    state: absent
+    ext_id: "{{ shared_vpc_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete shared VPC status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+    fail_msg: "Unable to delete shared VPC"
+    success_msg: "Shared VPC deleted successfully"

@@ -52,6 +52,7 @@
       - result.response.ipv4_addresses[1].prefix_length == 32
       - result.response.ip_ranges[0].start_ip == "10.2.1.0"
       - result.response.ip_ranges[0].end_ip == "10.2.2.0"
+      - result.response.project_ext_id == project.uuid
 
     fail_msg: Create address group with check mode enabled failed
     success_msg: Create address group with check mode enabled passed
@@ -87,6 +88,7 @@
       - result.response.ipv4_addresses[0].prefix_length == 24
       - result.response.ipv4_addresses[1].prefix_length == 32
       - result.task_ext_id is defined
+      - result.response.project_ext_id == project.uuid
 
     fail_msg: Unable to create address group
     success_msg: Address group created successfully

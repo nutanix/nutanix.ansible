@@ -446,6 +446,8 @@
       - result.response.name == "{{ directory_service }}_shared"
       - result.response.ext_id is defined
       - result.ext_id is defined
+      - result.response.project_ext_id == "00000000-0000-0000-0000-000000000000"
+      - result.response.shared_with_all_projects == true
     fail_msg: "Create directory service with is_shared_with_all_projects failed"
     success_msg: "Created directory service with is_shared_with_all_projects"
 
@@ -472,6 +474,7 @@
       - result.response is defined
       - result.changed == true
       - result.failed == false
+      - result.response.shared_with_all_projects == false
     fail_msg: "Unshare from all projects failed"
     success_msg: "Unshared from all projects successfully"
 

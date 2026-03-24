@@ -29,6 +29,7 @@
     cluster_reference: "{{ cluster.uuid }}"
     usage_type: "USER"
     is_hidden: true
+    project_ext_id: "{{ project.uuid | default(omit) }}"
     storage_features:
       flash_mode:
         is_enabled: true
@@ -64,6 +65,7 @@
     name: "{{vg1_name}}"
     description: "Volume group 1"
     cluster_reference: "{{ cluster.uuid }}"
+    project_ext_id: "{{ project.uuid | default(omit) }}"
   register: result
   ignore_errors: true
 
@@ -97,6 +99,7 @@
     target_prefix: "vg1"
     cluster_reference: "{{ cluster.uuid }}"
     usage_type: "USER"
+    project_ext_id: "{{ project.uuid | default(omit) }}"
     storage_features:
       flash_mode:
         is_enabled: true

@@ -41,6 +41,7 @@
       - result.changed == false
       - result.response.name == "{{ service_group_name }}_1"
       - result.response.description == "desc"
+      - result.response.project_ext_id == project.uuid
       - result.response.tcp_services[0].start_port == 10
       - result.response.tcp_services[0].end_port == 50
       - result.response.tcp_services[1].start_port == 60
@@ -84,6 +85,7 @@
       - result.failed == false
       - result.response.name == "{{ service_group_name }}_1"
       - result.response.description == "desc"
+      - result.response.policy_references is defined
       - result.response.tcp_services[0].start_port == 10
       - result.response.tcp_services[0].end_port == 50
       - result.response.tcp_services[1].start_port == 60
