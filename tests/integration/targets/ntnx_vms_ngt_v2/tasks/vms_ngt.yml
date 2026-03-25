@@ -820,10 +820,6 @@
   become: true
   changed_when: false
 
-- name: Debug coverage config path
-  ansible.builtin.debug:
-    msg: "_ANSIBLE_COVERAGE_CONFIG={{ lookup('env', '_ANSIBLE_COVERAGE_CONFIG') }}"
-
 - name: Create coveragerc on target VM
   ansible.builtin.raw: >
     mkdir -p "{{ lookup('env', '_ANSIBLE_COVERAGE_CONFIG') | dirname }}" &&
