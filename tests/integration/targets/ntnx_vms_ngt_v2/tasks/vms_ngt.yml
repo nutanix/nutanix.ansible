@@ -114,6 +114,8 @@
   ansible.builtin.set_fact:
     vm_ip: "{{ result.response.nics[0].network_info.ipv4_info.learned_ip_addresses[0].value }}"
 
+################################################################################
+
 - name: Install NGT in VM with check mode enabled
   nutanix.ncp.ntnx_vms_ngt_v2:
     state: present
@@ -812,6 +814,11 @@
   ansible.builtin.set_fact:
     vm_ngt_python: "{{ python_discover.stdout | trim }}"
 
+- name: Install coverage on target VM (required by ansible-test)
+  ansible.builtin.raw: "{{ python_discover.stdout | trim }} -m pip install coverage || true"
+  delegate_to: target_vm_for_ngt
+  become: true
+
 - name: Insert ISO into CD ROM in VM
   nutanix.ncp.ntnx_vms_ngt_insert_iso_v2:
     state: present
@@ -847,7 +854,7 @@
   become: true
 
 - name: Install lvm2 dependency for NGT (nutanix-guest-agent requires lvm2)
-  ansible.builtin.yum:
+  ansible.builtin.package:
     name: lvm2
     state: present
   delegate_to: target_vm_for_ngt
