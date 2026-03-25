@@ -821,19 +821,20 @@
   changed_when: false
 
 - name: Find ansible-test temp directory on controller
-  ansible.builtin.shell: "ls -d /tmp/ansible-test-* 2>/dev/null | head -1"
+  ansible.builtin.find:
+    paths: /tmp
+    patterns: "ansible-test-*"
+    file_type: directory
   register: ansible_test_tmp
-  changed_when: false
-  failed_when: false
 
 - name: Create ansible-test coveragerc on target VM
   ansible.builtin.raw: >
-    mkdir -p "{{ ansible_test_tmp.stdout | trim }}" &&
-    echo '[run]' > "{{ ansible_test_tmp.stdout | trim }}/coveragerc"
+    mkdir -p "{{ ansible_test_tmp.files[0].path }}" &&
+    echo '[run]' > "{{ ansible_test_tmp.files[0].path }}/coveragerc"
   delegate_to: target_vm_for_ngt
   become: true
   changed_when: false
-  when: ansible_test_tmp.stdout | default('') | trim | length > 0
+  when: ansible_test_tmp.files | length > 0
 
 - name: Insert ISO into CD ROM in VM
   nutanix.ncp.ntnx_vms_ngt_insert_iso_v2:
