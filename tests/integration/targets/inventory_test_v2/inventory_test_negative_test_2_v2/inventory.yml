@@ -45,8 +45,8 @@
 
     - name: Delete VM
       nutanix.ncp.ntnx_vms_v2:
-        ext_id: "{{ vm_external_id }}"
         validate_certs: "{{ validate_certs }}"
+        ext_id: "{{ vm_external_id }}"
         state: absent
       register: result
       ignore_errors: true
