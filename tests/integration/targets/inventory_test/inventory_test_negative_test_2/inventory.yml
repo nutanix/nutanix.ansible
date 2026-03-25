@@ -2,11 +2,13 @@
 - name: Assert inventory plugin fails with expected error when using invalid custom_ansible_host variable
   hosts: localhost
   gather_facts: false
+  vars_files:
+    - ../../prepare_env/vars/main.yml
   tasks:
     - name: Create VM with minimum requirements
       nutanix.ncp.ntnx_vms_v2:
         name: "VM_for_inventory_test_without_description"
-        validate_certs: false
+        validate_certs: "{{ validate_certs }}"
       register: result
       ignore_errors: true
 
@@ -44,7 +46,7 @@
     - name: Delete VM
       nutanix.ncp.ntnx_vms_v2:
         ext_id: "{{ vm_external_id }}"
-        validate_certs: false
+        validate_certs: "{{ validate_certs }}"
         state: absent
       register: result
       ignore_errors: true
