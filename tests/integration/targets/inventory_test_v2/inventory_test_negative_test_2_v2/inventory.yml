@@ -5,6 +5,7 @@
   tasks:
     - name: Create VM with minimum requirements
       nutanix.ncp.ntnx_vms_v2:
+        validate_certs: false
         name: "VM_for_inventory_test_without_description"
       register: result
       ignore_errors: true
@@ -43,6 +44,7 @@
     - name: Delete VM
       nutanix.ncp.ntnx_vms_v2:
         ext_id: "{{ vm_external_id }}"
+        validate_certs: false
         state: absent
       register: result
       ignore_errors: true
