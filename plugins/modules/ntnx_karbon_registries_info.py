@@ -15,7 +15,7 @@ version_added: 1.6.0
 description:
     - Get registry info
     - This module is deprecated and will be removed in a future release.
-    - Prism Central 7.3+ no longer supports Karbon, therefore this module will not work with PC 7.3 and later.
+    - Prism Central versions later than 7.3 no longer support Karbon, therefore this module will not be supported on PC versions later than 7.3.
 options:
       registry_name:
         description:
@@ -119,8 +119,8 @@ def run_module():
     )
     module.deprecate(
         "This module is deprecated and will be removed in a future release."
-        " Prism Central 7.3+ no longer supports Karbon,"
-        " therefore this module will not work with PC 7.3 and later.",
+        " Prism Central versions later than 7.3 no longer support Karbon,"
+        " therefore this module will not be supported on PC versions later than 7.3.",
         collection_name="nutanix.ncp",
         date="2027-06-01",
     )
