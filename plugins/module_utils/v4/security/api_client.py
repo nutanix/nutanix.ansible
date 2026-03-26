@@ -47,6 +47,12 @@ def get_api_client(module):
         config.username = nutanix_username
         config.password = nutanix_password
     config.verify_ssl = module.params.get("validate_certs")
+    try:
+        client = ntnx_security_py_client.ApiClient(
+            configuration=config, allow_version_negotiation=ALLOW_VERSION_NEGOTIATION
+        )
+    except TypeError:
+        client = ntnx_security_py_client.ApiClient(configuration=config)
     _apply_proxy_from_env(config, module)
     client = ntnx_security_py_client.ApiClient(
         configuration=config, allow_version_negotiation=ALLOW_VERSION_NEGOTIATION
@@ -59,14 +65,6 @@ def get_api_client(module):
             encoded_cred = b64encode(bytes(cred).encode("ascii")).decode("ascii")
         auth_header = "Basic " + encoded_cred
         client.add_default_header(header_name="Authorization", header_value=auth_header)
-
-    # Workaround as set_api_key not working as expected for security api
-    if api_key:
-        default_headers = getattr(client, "_ApiClient__default_headers", {})
-        if "X-ntnx-api-key" not in default_headers:
-            client.add_default_header(
-                header_name="X-ntnx-api-key", header_value=api_key
-            )
 
     # Setup API logging if debug is enabled
     setup_api_logging(module, client)

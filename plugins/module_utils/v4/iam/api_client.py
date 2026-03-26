@@ -47,6 +47,12 @@ def get_api_client(module):
         config.username = nutanix_username
         config.password = nutanix_password
     config.verify_ssl = module.params.get("validate_certs")
+    try:
+        client = ntnx_iam_py_client.ApiClient(
+            configuration=config, allow_version_negotiation=ALLOW_VERSION_NEGOTIATION
+        )
+    except TypeError:
+        client = ntnx_iam_py_client.ApiClient(configuration=config)
     _apply_proxy_from_env(config, module)
     client = ntnx_iam_py_client.ApiClient(
         configuration=config, allow_version_negotiation=ALLOW_VERSION_NEGOTIATION
@@ -158,3 +164,15 @@ def get_identity_provider_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_iam_py_client.SAMLIdentityProvidersApi(api_client=api_client)
+
+
+def get_entity_api_instance(module):
+    """
+    This method will return entity api instance.
+    Args:
+        module (object): Ansible module object
+    Returns:
+        api_instance (object): Entity api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_iam_py_client.EntitiesApi(api_client=api_client)
