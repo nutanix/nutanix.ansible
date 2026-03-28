@@ -16,6 +16,12 @@ version_added: 2.4.0
 description:
     - Fetches active End User License Agreement.
     - This module uses PC v4 APIs based SDKs
+options:
+    read_timeout:
+        description: Read timeout in milliseconds for API calls.
+        type: int
+        required: false
+        default: 30000
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_logger
