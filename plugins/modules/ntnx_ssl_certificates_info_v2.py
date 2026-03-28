@@ -23,6 +23,11 @@ options:
       - Mandatory for fetching the SSL certificates for specific cluster.
     type: str
     required: true
+  read_timeout:
+    description: Read timeout in milliseconds for API calls.
+    type: int
+    required: false
+    default: 30000
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_logger
