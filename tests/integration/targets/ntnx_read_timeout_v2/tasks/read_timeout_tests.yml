@@ -623,8 +623,6 @@
 ###########################################################
 - name: "Objects SDK - List object stores with default read_timeout (30000ms)"
   nutanix.ncp.ntnx_object_stores_info_v2:
-    limit: 1
-    page: 0
   register: result
   ignore_errors: true
 
@@ -639,8 +637,6 @@
 
 - name: "Objects SDK - List object stores with custom read_timeout (60000ms)"
   nutanix.ncp.ntnx_object_stores_info_v2:
-    limit: 1
-    page: 0
     read_timeout: 60000
   register: result_custom
   ignore_errors: true
@@ -656,8 +652,6 @@
 
 - name: "Objects SDK - List object stores with very low read_timeout (1ms - negative test)"
   nutanix.ncp.ntnx_object_stores_info_v2:
-    limit: 1
-    page: 0
     read_timeout: 1
   register: result_timeout
   ignore_errors: true
