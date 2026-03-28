@@ -61,15 +61,19 @@
   register: result_timeout
   ignore_errors: true
 
+- name: "Prism SDK - Build combined error output"
+  ansible.builtin.set_fact:
+    _prism_err: "{{ result_timeout.msg | default('') }} {{ result_timeout.module_stderr | default('') }}"
+
 - name: "Prism SDK - Verify low read_timeout causes ReadTimeoutError"
   ansible.builtin.assert:
     that:
       - result_timeout.changed == false
       - result_timeout.failed == true
-      - "'Read timed out' in result_timeout.msg"
-      - "'ReadTimeoutError' in result_timeout.msg"
-      - "'read timeout=0.001' in result_timeout.msg"
-    fail_msg: "Prism SDK - low read_timeout did not cause expected timeout (msg={{ result_timeout.msg | default('N/A') }})"
+      - "'Read timed out' in _prism_err"
+      - "'ReadTimeoutError' in _prism_err"
+      - "'read timeout=0.001' in _prism_err"
+    fail_msg: "Prism SDK - low read_timeout did not cause expected timeout (err={{ _prism_err }})"
     success_msg: "Prism SDK - low read_timeout (1ms) correctly caused ReadTimeoutError"
 
 ###########################################################
@@ -130,15 +134,19 @@
   register: result_timeout
   ignore_errors: true
 
+- name: "IAM SDK - Build combined error output"
+  ansible.builtin.set_fact:
+    _iam_err: "{{ result_timeout.msg | default('') }} {{ result_timeout.module_stderr | default('') }}"
+
 - name: "IAM SDK - Verify low read_timeout causes ReadTimeoutError"
   ansible.builtin.assert:
     that:
       - result_timeout.changed == false
       - result_timeout.failed == true
-      - "'Read timed out' in result_timeout.msg"
-      - "'ReadTimeoutError' in result_timeout.msg"
-      - "'read timeout=0.001' in result_timeout.msg"
-    fail_msg: "IAM SDK - low read_timeout did not cause expected timeout (msg={{ result_timeout.msg | default('N/A') }})"
+      - "'Read timed out' in _iam_err"
+      - "'ReadTimeoutError' in _iam_err"
+      - "'read timeout=0.001' in _iam_err"
+    fail_msg: "IAM SDK - low read_timeout did not cause expected timeout (err={{ _iam_err }})"
     success_msg: "IAM SDK - low read_timeout (1ms) correctly caused ReadTimeoutError"
 
 ###########################################################
@@ -191,15 +199,19 @@
   register: result_timeout
   ignore_errors: true
 
+- name: "Network SDK - Build combined error output"
+  ansible.builtin.set_fact:
+    _net_err: "{{ result_timeout.msg | default('') }} {{ result_timeout.module_stderr | default('') }}"
+
 - name: "Network SDK - Verify low read_timeout causes ReadTimeoutError"
   ansible.builtin.assert:
     that:
       - result_timeout.changed == false
       - result_timeout.failed == true
-      - "'Read timed out' in result_timeout.msg"
-      - "'ReadTimeoutError' in result_timeout.msg"
-      - "'read timeout=0.001' in result_timeout.msg"
-    fail_msg: "Network SDK - low read_timeout did not cause expected timeout (msg={{ result_timeout.msg | default('N/A') }})"
+      - "'Read timed out' in _net_err"
+      - "'ReadTimeoutError' in _net_err"
+      - "'read timeout=0.001' in _net_err"
+    fail_msg: "Network SDK - low read_timeout did not cause expected timeout (err={{ _net_err }})"
     success_msg: "Network SDK - low read_timeout (1ms) correctly caused ReadTimeoutError"
 
 ###########################################################
@@ -252,15 +264,19 @@
   register: result_timeout
   ignore_errors: true
 
+- name: "Flow SDK - Build combined error output"
+  ansible.builtin.set_fact:
+    _flow_err: "{{ result_timeout.msg | default('') }} {{ result_timeout.module_stderr | default('') }}"
+
 - name: "Flow SDK - Verify low read_timeout causes ReadTimeoutError"
   ansible.builtin.assert:
     that:
       - result_timeout.changed == false
       - result_timeout.failed == true
-      - "'Read timed out' in result_timeout.msg"
-      - "'ReadTimeoutError' in result_timeout.msg"
-      - "'read timeout=0.001' in result_timeout.msg"
-    fail_msg: "Flow SDK - low read_timeout did not cause expected timeout (msg={{ result_timeout.msg | default('N/A') }})"
+      - "'Read timed out' in _flow_err"
+      - "'ReadTimeoutError' in _flow_err"
+      - "'read timeout=0.001' in _flow_err"
+    fail_msg: "Flow SDK - low read_timeout did not cause expected timeout (err={{ _flow_err }})"
     success_msg: "Flow SDK - low read_timeout (1ms) correctly caused ReadTimeoutError"
 
 ###########################################################
@@ -321,15 +337,19 @@
   register: result_timeout
   ignore_errors: true
 
+- name: "VMM SDK - Build combined error output"
+  ansible.builtin.set_fact:
+    _vmm_err: "{{ result_timeout.msg | default('') }} {{ result_timeout.module_stderr | default('') }}"
+
 - name: "VMM SDK - Verify low read_timeout causes ReadTimeoutError"
   ansible.builtin.assert:
     that:
       - result_timeout.changed == false
       - result_timeout.failed == true
-      - "'Read timed out' in result_timeout.msg"
-      - "'ReadTimeoutError' in result_timeout.msg"
-      - "'read timeout=0.001' in result_timeout.msg"
-    fail_msg: "VMM SDK - low read_timeout did not cause expected timeout (msg={{ result_timeout.msg | default('N/A') }})"
+      - "'Read timed out' in _vmm_err"
+      - "'ReadTimeoutError' in _vmm_err"
+      - "'read timeout=0.001' in _vmm_err"
+    fail_msg: "VMM SDK - low read_timeout did not cause expected timeout (err={{ _vmm_err }})"
     success_msg: "VMM SDK - low read_timeout (1ms) correctly caused ReadTimeoutError"
 
 ###########################################################
@@ -390,15 +410,19 @@
   register: result_timeout
   ignore_errors: true
 
+- name: "Volumes SDK - Build combined error output"
+  ansible.builtin.set_fact:
+    _vol_err: "{{ result_timeout.msg | default('') }} {{ result_timeout.module_stderr | default('') }}"
+
 - name: "Volumes SDK - Verify low read_timeout causes ReadTimeoutError"
   ansible.builtin.assert:
     that:
       - result_timeout.changed == false
       - result_timeout.failed == true
-      - "'Read timed out' in result_timeout.msg"
-      - "'ReadTimeoutError' in result_timeout.msg"
-      - "'read timeout=0.001' in result_timeout.msg"
-    fail_msg: "Volumes SDK - low read_timeout did not cause expected timeout (msg={{ result_timeout.msg | default('N/A') }})"
+      - "'Read timed out' in _vol_err"
+      - "'ReadTimeoutError' in _vol_err"
+      - "'read timeout=0.001' in _vol_err"
+    fail_msg: "Volumes SDK - low read_timeout did not cause expected timeout (err={{ _vol_err }})"
     success_msg: "Volumes SDK - low read_timeout (1ms) correctly caused ReadTimeoutError"
 
 ###########################################################
@@ -457,15 +481,19 @@
       register: result_timeout
       ignore_errors: true
 
+    - name: "Clusters Mgmt SDK - Build combined error output"
+      ansible.builtin.set_fact:
+        _clust_err: "{{ result_timeout.msg | default('') }} {{ result_timeout.module_stderr | default('') }}"
+
     - name: "Clusters Mgmt SDK - Verify low read_timeout causes ReadTimeoutError"
       ansible.builtin.assert:
         that:
           - result_timeout.changed == false
           - result_timeout.failed == true
-          - "'Read timed out' in result_timeout.msg"
-          - "'ReadTimeoutError' in result_timeout.msg"
-          - "'read timeout=0.001' in result_timeout.msg"
-        fail_msg: "Clusters Mgmt SDK - low read_timeout did not cause expected timeout (msg={{ result_timeout.msg | default('N/A') }})"
+          - "'Read timed out' in _clust_err"
+          - "'ReadTimeoutError' in _clust_err"
+          - "'read timeout=0.001' in _clust_err"
+        fail_msg: "Clusters Mgmt SDK - low read_timeout did not cause expected timeout (err={{ _clust_err }})"
         success_msg: "Clusters Mgmt SDK - low read_timeout (1ms) correctly caused ReadTimeoutError"
 
   rescue:
@@ -511,15 +539,19 @@
   register: result_timeout
   ignore_errors: true
 
+- name: "Security SDK - Build combined error output"
+  ansible.builtin.set_fact:
+    _sec_err: "{{ result_timeout.msg | default('') }} {{ result_timeout.module_stderr | default('') }}"
+
 - name: "Security SDK - Verify low read_timeout causes ReadTimeoutError"
   ansible.builtin.assert:
     that:
       - result_timeout.changed == false
       - result_timeout.failed == true
-      - "'Read timed out' in result_timeout.msg"
-      - "'ReadTimeoutError' in result_timeout.msg"
-      - "'read timeout=0.001' in result_timeout.msg"
-    fail_msg: "Security SDK - low read_timeout did not cause expected timeout (msg={{ result_timeout.msg | default('N/A') }})"
+      - "'Read timed out' in _sec_err"
+      - "'ReadTimeoutError' in _sec_err"
+      - "'read timeout=0.001' in _sec_err"
+    fail_msg: "Security SDK - low read_timeout did not cause expected timeout (err={{ _sec_err }})"
     success_msg: "Security SDK - low read_timeout (1ms) correctly caused ReadTimeoutError"
 
 ###########################################################
@@ -571,15 +603,19 @@
   register: result_timeout
   ignore_errors: true
 
+- name: "Licensing SDK - Build combined error output"
+  ansible.builtin.set_fact:
+    _lic_err: "{{ result_timeout.msg | default('') }} {{ result_timeout.module_stderr | default('') }}"
+
 - name: "Licensing SDK - Verify low read_timeout causes ReadTimeoutError"
   ansible.builtin.assert:
     that:
       - result_timeout.changed == false
       - result_timeout.failed == true
-      - "'Read timed out' in result_timeout.msg"
-      - "'ReadTimeoutError' in result_timeout.msg"
-      - "'read timeout=0.001' in result_timeout.msg"
-    fail_msg: "Licensing SDK - low read_timeout did not cause expected timeout (msg={{ result_timeout.msg | default('N/A') }})"
+      - "'Read timed out' in _lic_err"
+      - "'ReadTimeoutError' in _lic_err"
+      - "'read timeout=0.001' in _lic_err"
+    fail_msg: "Licensing SDK - low read_timeout did not cause expected timeout (err={{ _lic_err }})"
     success_msg: "Licensing SDK - low read_timeout (1ms) correctly caused ReadTimeoutError"
 
 ###########################################################
@@ -626,15 +662,19 @@
   register: result_timeout
   ignore_errors: true
 
+- name: "Objects SDK - Build combined error output"
+  ansible.builtin.set_fact:
+    _obj_err: "{{ result_timeout.msg | default('') }} {{ result_timeout.module_stderr | default('') }}"
+
 - name: "Objects SDK - Verify low read_timeout causes ReadTimeoutError"
   ansible.builtin.assert:
     that:
       - result_timeout.changed == false
       - result_timeout.failed == true
-      - "'Read timed out' in result_timeout.msg"
-      - "'ReadTimeoutError' in result_timeout.msg"
-      - "'read timeout=0.001' in result_timeout.msg"
-    fail_msg: "Objects SDK - low read_timeout did not cause expected timeout (msg={{ result_timeout.msg | default('N/A') }})"
+      - "'Read timed out' in _obj_err"
+      - "'ReadTimeoutError' in _obj_err"
+      - "'read timeout=0.001' in _obj_err"
+    fail_msg: "Objects SDK - low read_timeout did not cause expected timeout (err={{ _obj_err }})"
     success_msg: "Objects SDK - low read_timeout (1ms) correctly caused ReadTimeoutError"
 
 ###########################################################
@@ -675,15 +715,19 @@
   register: result_timeout
   ignore_errors: true
 
+- name: "LCM SDK - Build combined error output"
+  ansible.builtin.set_fact:
+    _lcm_err: "{{ result_timeout.msg | default('') }} {{ result_timeout.module_stderr | default('') }}"
+
 - name: "LCM SDK - Verify low read_timeout causes ReadTimeoutError"
   ansible.builtin.assert:
     that:
       - result_timeout.changed == false
       - result_timeout.failed == true
-      - "'Read timed out' in result_timeout.msg"
-      - "'ReadTimeoutError' in result_timeout.msg"
-      - "'read timeout=0.001' in result_timeout.msg"
-    fail_msg: "LCM SDK - low read_timeout did not cause expected timeout (msg={{ result_timeout.msg | default('N/A') }})"
+      - "'Read timed out' in _lcm_err"
+      - "'ReadTimeoutError' in _lcm_err"
+      - "'read timeout=0.001' in _lcm_err"
+    fail_msg: "LCM SDK - low read_timeout did not cause expected timeout (err={{ _lcm_err }})"
     success_msg: "LCM SDK - low read_timeout (1ms) correctly caused ReadTimeoutError"
 
 ###########################################################
@@ -736,15 +780,19 @@
   register: result_timeout
   ignore_errors: true
 
+- name: "Data Protection SDK - Build combined error output"
+  ansible.builtin.set_fact:
+    _dp_err: "{{ result_timeout.msg | default('') }} {{ result_timeout.module_stderr | default('') }}"
+
 - name: "Data Protection SDK - Verify low read_timeout causes ReadTimeoutError"
   ansible.builtin.assert:
     that:
       - result_timeout.changed == false
       - result_timeout.failed == true
-      - "'Read timed out' in result_timeout.msg"
-      - "'ReadTimeoutError' in result_timeout.msg"
-      - "'read timeout=0.001' in result_timeout.msg"
-    fail_msg: "Data Protection SDK - low read_timeout did not cause expected timeout (msg={{ result_timeout.msg | default('N/A') }})"
+      - "'Read timed out' in _dp_err"
+      - "'ReadTimeoutError' in _dp_err"
+      - "'read timeout=0.001' in _dp_err"
+    fail_msg: "Data Protection SDK - low read_timeout did not cause expected timeout (err={{ _dp_err }})"
     success_msg: "Data Protection SDK - low read_timeout (1ms) correctly caused ReadTimeoutError"
 
 ###########################################################
@@ -797,15 +845,19 @@
   register: result_timeout
   ignore_errors: true
 
+- name: "Data Policies SDK - Build combined error output"
+  ansible.builtin.set_fact:
+    _dpol_err: "{{ result_timeout.msg | default('') }} {{ result_timeout.module_stderr | default('') }}"
+
 - name: "Data Policies SDK - Verify low read_timeout causes ReadTimeoutError"
   ansible.builtin.assert:
     that:
       - result_timeout.changed == false
       - result_timeout.failed == true
-      - "'Read timed out' in result_timeout.msg"
-      - "'ReadTimeoutError' in result_timeout.msg"
-      - "'read timeout=0.001' in result_timeout.msg"
-    fail_msg: "Data Policies SDK - low read_timeout did not cause expected timeout (msg={{ result_timeout.msg | default('N/A') }})"
+      - "'Read timed out' in _dpol_err"
+      - "'ReadTimeoutError' in _dpol_err"
+      - "'read timeout=0.001' in _dpol_err"
+    fail_msg: "Data Policies SDK - low read_timeout did not cause expected timeout (err={{ _dpol_err }})"
     success_msg: "Data Policies SDK - low read_timeout (1ms) correctly caused ReadTimeoutError"
 
 ###########################################################
