@@ -58,6 +58,7 @@ def get_api_client(module):
         )
     except TypeError:
         client = ntnx_objects_py_client.ApiClient(configuration=config)
+    config.read_timeout = module.params.get("read_timeout")
     _apply_proxy_from_env(config, module)
     client = ntnx_objects_py_client.ApiClient(
         configuration=config, allow_version_negotiation=ALLOW_VERSION_NEGOTIATION
