@@ -46,6 +46,9 @@ jobs:
         run: |
           cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
 
+          VARS_FILE="tests/integration/targets/prepare_env/vars/main.yml"
+          echo "VARS_FILE=$VARS_FILE" >> $GITHUB_ENV
+
           # Parse arguments: /ok-to-test <regex> [api]
           args="${{ github.event.client_payload.slash_command.args.all }}"
           flag=""
@@ -87,7 +90,7 @@ jobs:
           export NDB_PASSWORD=${{ secrets.NDB_PASSWORD }}
           export NDB_USERNAME=${{ secrets.NDB_USERNAME }}
 
-          echo '${{ secrets.PC_CONFIG }}' > tests/integration/targets/prepare_env/vars/main.yml
+          echo '${{ secrets.PC_CONFIG }}' > "$VARS_FILE"
 
           # Set authentication method
           if [ "$use_api_key" = true ]; then
@@ -107,23 +110,23 @@ jobs:
           echo '${{ secrets.NDB_CONFIG }}' > tests/integration/targets/prepare_ndb_env/vars/main.yml
 
           if [ "$use_api_key" = true ]; then
-              echo "" >> tests/integration/targets/prepare_env/vars/main.yml
-              echo "# API Key Authentication (added by workflow)" >> tests/integration/targets/prepare_env/vars/main.yml
-              echo "nutanix_api_key: \"${{ secrets.NUTANIX_API_KEY }}\"" >> tests/integration/targets/prepare_env/vars/main.yml
+              echo "" >> "$VARS_FILE"
+              echo "# API Key Authentication (added by workflow)" >> "$VARS_FILE"
+              echo "nutanix_api_key: \"${{ secrets.NUTANIX_API_KEY }}\"" >> "$VARS_FILE"
           else
-              echo "" >> tests/integration/targets/prepare_env/vars/main.yml
-              echo "# Credentials (added by workflow)" >> tests/integration/targets/prepare_env/vars/main.yml
-              echo "username: \"${{ secrets.PC_USERNAME }}\"" >> tests/integration/targets/prepare_env/vars/main.yml
-              echo "password: \"${{ secrets.PC_PASSWORD }}\"" >> tests/integration/targets/prepare_env/vars/main.yml
+              echo "" >> "$VARS_FILE"
+              echo "# Credentials (added by workflow)" >> "$VARS_FILE"
+              echo "username: \"${{ secrets.PC_USERNAME }}\"" >> "$VARS_FILE"
+              echo "password: \"${{ secrets.PC_PASSWORD }}\"" >> "$VARS_FILE"
           fi
 
           # Append S3 bucket config from secrets
-          echo "" >> tests/integration/targets/prepare_env/vars/main.yml
-          echo "s3_bucket:" >> tests/integration/targets/prepare_env/vars/main.yml
-          echo "  bucket: \"${{ secrets.AWS_BUCKET }}\"" >> tests/integration/targets/prepare_env/vars/main.yml
-          echo "  region: \"${{ secrets.AWS_REGION }}\"" >> tests/integration/targets/prepare_env/vars/main.yml
-          echo "  access_key: \"${{ secrets.AWS_ACCESS_KEY }}\"" >> tests/integration/targets/prepare_env/vars/main.yml
-          echo "  secret_key: \"${{ secrets.AWS_SECRET_KEY }}\"" >> tests/integration/targets/prepare_env/vars/main.yml
+          echo "" >> "$VARS_FILE"
+          echo "s3_bucket:" >> "$VARS_FILE"
+          echo "  bucket: \"${{ secrets.AWS_BUCKET }}\"" >> "$VARS_FILE"
+          echo "  region: \"${{ secrets.AWS_REGION }}\"" >> "$VARS_FILE"
+          echo "  access_key: \"${{ secrets.AWS_ACCESS_KEY }}\"" >> "$VARS_FILE"
+          echo "  secret_key: \"${{ secrets.AWS_SECRET_KEY }}\"" >> "$VARS_FILE"
 
           # Set GitHub environment variables for later steps
           echo "NUTANIX_HOST=${{ secrets.PC_IP }}" >> $GITHUB_ENV
@@ -267,8 +270,6 @@ jobs:
         if: ${{ always() }}
         run: |
           cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
-
-          VARS_FILE="tests/integration/targets/prepare_env/vars/main.yml"
           PC_SSH_USER=$(cat "$VARS_FILE" | shyaml get-value domain_manager_ssh_username 2>/dev/null || echo "nutanix")
           PC_SSH_PASS=$(cat "$VARS_FILE" | shyaml get-value domain_manager_ssh_password 2>/dev/null || echo "")
           PE_SSH_USER=$(cat "$VARS_FILE" | shyaml get-value pe_ssh_username 2>/dev/null || echo "nutanix")
