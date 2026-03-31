@@ -281,7 +281,7 @@ jobs:
 
           if [ -n "$PE_IP" ]; then
             AOS_VERSION_INFO=$(sshpass -p "$PE_SSH_PASS" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-              "$PE_SSH_USER@$PE_IP" "/home/nutanix/prism/cli/ncli cluster info | grep -i Version" 2>/dev/null || echo "Failed to fetch AOS version")
+              "$PE_SSH_USER@$PE_IP" "/home/nutanix/prism/cli/ncli cluster info | grep -i Version | grep -vi NCC" 2>/dev/null || echo "Failed to fetch AOS version")
           else
             AOS_VERSION_INFO="PE IP not configured"
           fi
