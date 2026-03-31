@@ -317,10 +317,10 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
     def extract_ip_address_from_external(self, external_addr):
         if not external_addr or not isinstance(external_addr, dict):
             return None
-        ipv4 = external_addr.get("ipv4") or {}
+        ipv4 = external_addr.get("ipv4", {})
         if ipv4 and isinstance(ipv4, dict) and ipv4.get("value"):
             return ipv4.get("value")
-        ipv6 = external_addr.get("ipv6") or {}
+        ipv6 = external_addr.get("ipv6", {})
         if ipv6 and isinstance(ipv6, dict) and ipv6.get("value"):
             return ipv6.get("value")
         return None
@@ -341,14 +341,14 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
 
         # Try to get IP from hypervisor external address first
         hypervisor = host.get("hypervisor") or {}
-        external_addr = hypervisor.get("external_address") or {}
+        external_addr = hypervisor.get("external_address", {})
         hypervisor_ip = self.extract_ip_address_from_external(external_addr)
         if hypervisor_ip:
             host_vars["hypervisor_ip"] = hypervisor_ip
 
         # Set controller VM IP address
         controller_vm = host.get("controller_vm") or {}
-        external_addr = controller_vm.get("external_address") or {}
+        external_addr = controller_vm.get("external_address", {})
         controller_vm_ip = self.extract_ip_address_from_external(external_addr)
         if controller_vm_ip:
             host_vars["controller_vm_ip"] = controller_vm_ip
