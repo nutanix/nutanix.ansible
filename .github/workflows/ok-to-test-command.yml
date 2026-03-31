@@ -267,6 +267,24 @@ jobs:
         if: ${{ always() }}
         run: |
           cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
+
+          VARS_FILE="tests/integration/targets/prepare_env/vars/main.yml"
+          PC_SSH_USER=$(cat "$VARS_FILE" | shyaml get-value domain_manager_ssh_username 2>/dev/null || echo "nutanix")
+          PC_SSH_PASS=$(cat "$VARS_FILE" | shyaml get-value domain_manager_ssh_password 2>/dev/null || echo "")
+          PE_SSH_USER=$(cat "$VARS_FILE" | shyaml get-value pe_ssh_username 2>/dev/null || echo "nutanix")
+          PE_SSH_PASS=$(cat "$VARS_FILE" | shyaml get-value pe_ssh_password 2>/dev/null || echo "")
+          PE_IP=$(cat "$VARS_FILE" | shyaml get-value ip_pe 2>/dev/null || echo "")
+
+          PC_VERSION_INFO=$(sshpass -p "$PC_SSH_PASS" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            "$PC_SSH_USER@$NUTANIX_HOST" "/home/nutanix/prism/cli/ncli cluster info | grep -i Version" 2>/dev/null || echo "Failed to fetch PC version")
+
+          if [ -n "$PE_IP" ]; then
+            AOS_VERSION_INFO=$(sshpass -p "$PE_SSH_PASS" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+              "$PE_SSH_USER@$PE_IP" "/home/nutanix/prism/cli/ncli cluster info | grep -i Version" 2>/dev/null || echo "Failed to fetch AOS version")
+          else
+            AOS_VERSION_INFO="PE IP not configured"
+          fi
+
           echo "### Detailed Test Results" >> $GITHUB_STEP_SUMMARY
 
           LOG_FILE="test_output.log"
@@ -338,6 +356,12 @@ jobs:
                 echo "- None"
               fi
               echo ""
+              echo "PC Version:"
+              echo "$PC_VERSION_INFO"
+              echo ""
+              echo "AOS Version:"
+              echo "$AOS_VERSION_INFO"
+              echo ""
               echo "Raw log file: test_output.log"
               echo "EOF"
             } >> $GITHUB_ENV
@@ -366,6 +390,12 @@ jobs:
               else
                 echo "- None"
               fi
+              echo ""
+              echo "PC Version:"
+              echo "$PC_VERSION_INFO"
+              echo ""
+              echo "AOS Version:"
+              echo "$AOS_VERSION_INFO"
             } >> $GITHUB_STEP_SUMMARY
 
           else
