@@ -276,12 +276,18 @@ jobs:
           PE_SSH_PASS=$(cat "$VARS_FILE" | shyaml get-value pe_ssh_password 2>/dev/null || echo "")
           PE_IP=$(cat "$VARS_FILE" | shyaml get-value ip_pe 2>/dev/null || echo "")
 
-          PC_VERSION_INFO=$(sshpass -p "$PC_SSH_PASS" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-            "$PC_SSH_USER@$NUTANIX_HOST" "/home/nutanix/prism/cli/ncli cluster info | grep -i Version | grep -vi NCC" 2>/dev/null || echo "Failed to fetch PC version")
+          NCLI="/home/nutanix/prism/cli/ncli"
+          VERSION_CMD="$NCLI cluster info | grep -i Version | grep -vi NCC"
+          SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+
+          PC_VERSION_INFO=$(sshpass -p "$PC_SSH_PASS" \
+            ssh $SSH_OPTS "$PC_SSH_USER@$NUTANIX_HOST" \
+            "$VERSION_CMD" 2>/dev/null || echo "Failed to fetch PC version")
 
           if [ -n "$PE_IP" ]; then
-            AOS_VERSION_INFO=$(sshpass -p "$PE_SSH_PASS" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-              "$PE_SSH_USER@$PE_IP" "/home/nutanix/prism/cli/ncli cluster info | grep -i Version | grep -vi NCC" 2>/dev/null || echo "Failed to fetch AOS version")
+            AOS_VERSION_INFO=$(sshpass -p "$PE_SSH_PASS" \
+              ssh $SSH_OPTS "$PE_SSH_USER@$PE_IP" \
+              "$VERSION_CMD" 2>/dev/null || echo "Failed to fetch AOS version")
           else
             AOS_VERSION_INFO="PE IP not configured"
           fi
