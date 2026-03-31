@@ -633,7 +633,9 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             # Add variables to host variables
             vm_name = vm.get("name")
             vm_ext_id = vm.get("ext_id")
-            owner_ext_id = ((vm.get("ownership_info") or {}).get("owner") or {}).get("ext_id")
+            owner_ext_id = ((vm.get("ownership_info") or {}).get("owner") or {}).get(
+                "ext_id"
+            )
             project_ext_id = (vm.get("project") or {}).get("ext_id")
             vm_description = vm.get("description")
 
