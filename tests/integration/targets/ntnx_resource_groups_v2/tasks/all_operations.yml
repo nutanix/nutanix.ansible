@@ -1,0 +1,447 @@
+---
+- name: Start testing ntnx_resource_group_v2, ntnx_resource_groups_info_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_resource_group_v2, ntnx_resource_groups_info_v2
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name: "{{ lookup('pipe', 'cat /dev/urandom | tr -dc a-z | head -c 12') }}"
+
+- name: Set suffix name
+  ansible.builtin.set_fact:
+    suffix_name: "ansible-ag-rg"
+
+- name: Generate resource group names
+  ansible.builtin.set_fact:
+    rg_name: "{{ random_name }}{{ suffix_name }}"
+    cluster_ext_id: "00064d33-1010-d636-5dc1-525400a68708"
+
+- name: Set todelete lists
+  ansible.builtin.set_fact:
+    todelete_rg: []
+    todelete_projects: []
+
+###########################################################
+# SETUP - Create projects for resource group tests
+###########################################################
+# - name: Create project 1 for resource group tests
+#   nutanix.ncp.ntnx_project_v2:
+#     state: present
+#     name: "{{ rg_name }}-project1"
+#     project_id: "{{ rg_name }}-project-id1"
+#   register: project_result1
+#   ignore_errors: true
+
+- name: Save project 1 ext_id
+  ansible.builtin.set_fact:
+    project1_ext_id: "a16692a5-d844-4ae7-9a30-108c2e2e990c"
+    todelete_projects: "{{ todelete_projects + ['a16692a5-d844-4ae7-9a30-108c2e2e990c'] }}"
+
+# - name: Create project 2 for resource group tests
+#   nutanix.ncp.ntnx_project_v2:
+#     state: present
+#     name: "{{ rg_name }}-project2"
+#     project_id: "{{ rg_name }}-project-id2"
+#   register: project_result2
+#   ignore_errors: true
+
+- name: Save project 2 ext_id
+  ansible.builtin.set_fact:
+    project2_ext_id: "596390fc-7588-4b2e-89d9-212e10aa0d78"
+    todelete_projects: "{{ todelete_projects + ['596390fc-7588-4b2e-89d9-212e10aa0d78'] }}"
+
+###########################################################
+# CHECK MODE TESTS - CREATE
+###########################################################
+- name: Create resource group with check mode - all fields
+  nutanix.ncp.ntnx_resource_group_v2:
+    state: present
+    name: "check-mode-rg"
+    project_ext_id: "{{ project1_ext_id }}"
+    placement_targets:
+      - cluster_ext_id: "{{ cluster_ext_id }}"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Verify check mode create - all fields
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "check-mode-rg"
+      - result.response.project_ext_id == project1_ext_id
+      - result.response.placement_targets | length == 1
+      - result.response.placement_targets[0].cluster_ext_id == cluster_ext_id
+    fail_msg: "Check mode create with all fields failed"
+    success_msg: "Check mode create with all fields passed"
+
+###########################################################
+# CREATE OPERATIONS
+###########################################################
+- name: Create resource group with minimum fields (project 1)
+  nutanix.ncp.ntnx_resource_group_v2:
+    state: present
+    name: "{{ rg_name }}1"
+    project_ext_id: "{{ project1_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify create with minimum fields
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id is defined
+      - result.ext_id | length > 0
+      - result.task_ext_id is defined
+      - result.response.name == rg_name ~ "1"
+      - result.response.project_ext_id == project1_ext_id
+    fail_msg: "Create resource group with minimum fields failed"
+    success_msg: "Create resource group with minimum fields passed"
+
+- name: Save resource group ext_id for update tests
+  ansible.builtin.set_fact:
+    rg_ext_id: "{{ result.ext_id }}"
+
+- name: Adding resource group ext_id to delete list
+  ansible.builtin.set_fact:
+    todelete_rg: "{{ todelete_rg + [result.ext_id] }}"
+
+- name: Create resource group with all fields (project 2)
+  nutanix.ncp.ntnx_resource_group_v2:
+    state: present
+
+    name: "{{ rg_name }}2"
+    project_ext_id: "{{ project2_ext_id }}"
+    placement_targets:
+      - cluster_ext_id: "{{ cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify create with all fields
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id is defined
+      - result.ext_id | length > 0
+      - result.task_ext_id is defined
+      - result.response.name == rg_name ~ "2"
+      - result.response.project_ext_id == project2_ext_id
+      - result.response.placement_targets | length == 1
+      - result.response.placement_targets[0].cluster_ext_id == cluster_ext_id
+    fail_msg: "Create resource group with all fields failed"
+    success_msg: "Create resource group with all fields passed"
+
+- name: Adding resource group ext_id to delete list
+  ansible.builtin.set_fact:
+    todelete_rg: "{{ todelete_rg + [result.ext_id] }}"
+
+###########################################################
+# CHECK MODE TESTS - UPDATE
+###########################################################
+- name: Update resource group name with check mode
+  nutanix.ncp.ntnx_resource_group_v2:
+    state: present
+    ext_id: "{{ rg_ext_id }}"
+    name: "{{ rg_name }}1-checkmode"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Verify check mode update
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == rg_name ~ "1-checkmode"
+      - result.ext_id == rg_ext_id
+    fail_msg: "Check mode update failed"
+    success_msg: "Check mode update passed"
+
+- name: Verify resource group unchanged after check mode update
+  nutanix.ncp.ntnx_resource_groups_info_v2:
+    ext_id: "{{ rg_ext_id }}"
+  register: verify_result
+
+- name: Assert original name preserved after check mode
+  ansible.builtin.assert:
+    that:
+      - verify_result.changed == false
+      - verify_result.failed == false
+      - verify_result.response.name == rg_name ~ "1"
+    fail_msg: "Check mode incorrectly modified the resource group"
+    success_msg: "Check mode correctly did not modify the resource group"
+
+###########################################################
+# UPDATE OPERATIONS
+###########################################################
+- name: Update resource group name
+  nutanix.ncp.ntnx_resource_group_v2:
+    state: present
+
+    ext_id: "{{ rg_ext_id }}"
+    name: "{{ rg_name }}1-updated"
+  register: result
+  ignore_errors: true
+
+- name: Verify update name
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.task_ext_id is defined
+      - result.ext_id == rg_ext_id
+      - result.response.name == rg_name ~ "1-updated"
+    fail_msg: "Update resource group name failed"
+    success_msg: "Update resource group name passed"
+
+###########################################################
+# IDEMPOTENCY TEST
+###########################################################
+- name: Check idempotency - no changes
+  nutanix.ncp.ntnx_resource_group_v2:
+    state: present
+    ext_id: "{{ rg_ext_id }}"
+    name: "{{ rg_name }}1-updated"
+  register: result
+  ignore_errors: true
+
+- name: Verify idempotency
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.msg == "Nothing to change."
+    fail_msg: "Idempotency check failed"
+    success_msg: "Idempotency check passed"
+
+###########################################################
+# CHECK MODE TESTS - DELETE
+###########################################################
+- name: Delete resource group with check mode
+  nutanix.ncp.ntnx_resource_group_v2:
+    state: absent
+    ext_id: "{{ rg_ext_id }}"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Verify check mode delete
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.msg is defined
+      - result.ext_id == rg_ext_id
+    fail_msg: "Check mode delete failed"
+    success_msg: "Check mode delete passed"
+
+- name: Verify resource group still exists after check mode delete
+  nutanix.ncp.ntnx_resource_groups_info_v2:
+    ext_id: "{{ rg_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify resource group is not actually deleted
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.ext_id == rg_ext_id
+    fail_msg: "Resource group was unexpectedly deleted by check mode"
+    success_msg: "Resource group still exists after check mode delete"
+
+###########################################################
+# INFO OPERATIONS
+###########################################################
+- name: List all resource groups
+  nutanix.ncp.ntnx_resource_groups_info_v2:
+  register: list_result
+  ignore_errors: true
+
+- name: Verify list all resource groups
+  ansible.builtin.assert:
+    that:
+      - list_result.changed == false
+      - list_result.failed == false
+      - list_result.response is defined
+      - list_result.response | length >= 2
+      - list_result.total_available_results is defined
+      - list_result.total_available_results >= 2
+    fail_msg: "List all resource groups failed"
+    success_msg: "List all resource groups passed"
+
+- name: Get resource group by ext_id
+  nutanix.ncp.ntnx_resource_groups_info_v2:
+    ext_id: "{{ rg_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify get resource group by ext_id
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == rg_ext_id
+      - result.response.name == rg_name ~ "1-updated"
+      - result.response.project_ext_id == project1_ext_id
+    fail_msg: "Get resource group by ext_id failed"
+    success_msg: "Get resource group by ext_id passed"
+
+- name: List resource groups with filter
+  nutanix.ncp.ntnx_resource_groups_info_v2:
+    filter: "name eq '{{ rg_name }}1-updated'"
+  register: result
+  ignore_errors: true
+
+- name: Verify list with filter
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].name == rg_name ~ "1-updated"
+    fail_msg: "List resource groups with filter failed"
+    success_msg: "List resource groups with filter passed"
+
+- name: List resource groups with limit
+  nutanix.ncp.ntnx_resource_groups_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Verify list with limit
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+    fail_msg: "List resource groups with limit failed"
+    success_msg: "List resource groups with limit passed"
+
+###########################################################
+# NEGATIVE SCENARIOS
+###########################################################
+- name: "Negative: Create resource group without name"
+  nutanix.ncp.ntnx_resource_group_v2:
+    state: present
+    project_ext_id: "{{ project1_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify create without name fails
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+    fail_msg: "Negative test - create without name should fail"
+    success_msg: "Negative test - create without name correctly failed"
+
+- name: "Negative: Delete resource group with non-existent ext_id"
+  nutanix.ncp.ntnx_resource_group_v2:
+    state: absent
+    ext_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+  register: result
+  ignore_errors: true
+
+- name: Verify delete with non-existent ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+    fail_msg: "Negative test - delete with non-existent ext_id should fail"
+    success_msg: "Negative test - delete with non-existent ext_id correctly failed"
+
+- name: "Negative: Get resource group info with non-existent ext_id"
+  nutanix.ncp.ntnx_resource_group_info_v2:
+    ext_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+  register: result
+  ignore_errors: true
+
+- name: Verify get info with non-existent ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+    fail_msg: "Negative test - get info with non-existent ext_id should fail"
+    success_msg: "Negative test - get info with non-existent ext_id correctly failed"
+
+- name: "Negative: Update resource group with non-existent ext_id"
+  nutanix.ncp.ntnx_resource_group_v2:
+    state: present
+    ext_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+    name: "nonexistent-rg"
+  register: result
+  ignore_errors: true
+
+- name: Verify update with non-existent ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+    fail_msg: "Negative test - update with non-existent ext_id should fail"
+    success_msg: "Negative test - update with non-existent ext_id correctly failed"
+
+###########################################################
+# DELETE OPERATIONS
+###########################################################
+- name: Delete all created resource groups
+  nutanix.ncp.ntnx_resource_group_v2:
+    state: absent
+
+    ext_id: "{{ item }}"
+  register: result
+  loop: "{{ todelete_rg }}"
+  ignore_errors: true
+
+- name: Verify deletion for each resource group
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.task_ext_id is defined
+      - item.response is defined
+    fail_msg: "Delete resource group {{ item.ext_id | default('unknown') }} failed"
+    success_msg: "Delete resource group {{ item.ext_id | default('unknown') }} passed"
+  loop: "{{ result.results }}"
+
+- name: Verify resource group no longer exists
+  nutanix.ncp.ntnx_resource_groups_info_v2:
+    ext_id: "{{ rg_ext_id }}"
+  register: verify_delete
+  ignore_errors: true
+
+- name: Assert resource group not found after deletion
+  ansible.builtin.assert:
+    that:
+      - verify_delete.changed == false
+      - verify_delete.failed == true
+    fail_msg: "Resource group still exists after deletion"
+    success_msg: "Resource group confirmed deleted"
+
+###########################################################
+# CLEANUP - Delete test projects
+###########################################################
+- name: Delete all test projects
+  nutanix.ncp.ntnx_project_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: cleanup_result
+  loop: "{{ todelete_projects }}"
+  ignore_errors: true
+
+- name: End testing ntnx_resource_groups_v2, ntnx_resource_groups_info_v2
+  ansible.builtin.debug:
+    msg: End testing ntnx_resource_groups_v2, ntnx_resource_groups_info_v2

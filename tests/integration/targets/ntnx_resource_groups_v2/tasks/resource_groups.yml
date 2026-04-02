@@ -1,0 +1,255 @@
+---
+############################################
+# Setup - Create a project for resource group tests
+############################################
+
+- name: Generate random suffix
+  ansible.builtin.set_fact:
+    suffix: "{{ 999999 | random }}"
+
+- name: Create a project for resource group tests
+  nutanix.ncp.ntnx_projects_v2:
+    state: present
+    wait: true
+    name: "ansible-rg-test-project-{{ suffix }}"
+    project_id: "ansible-rg-test-project-{{ suffix }}"
+  register: project_result
+
+- name: Set project ext_id
+  ansible.builtin.set_fact:
+    test_project_ext_id: "{{ project_result.ext_id }}"
+
+############################################
+# Create resource group
+############################################
+
+- name: Create a resource group
+  nutanix.ncp.ntnx_resource_groups_v2:
+    state: present
+    wait: true
+    name: "ansible-rg-{{ suffix }}"
+    project_ext_id: "{{ test_project_ext_id }}"
+    placement_targets:
+      - cluster_ext_id: "{{ cluster.uuid }}"
+  register: create_result
+
+- name: Verify resource group creation
+  ansible.builtin.assert:
+    that:
+      - create_result is changed
+      - create_result.response is defined
+      - create_result.response.name == "ansible-rg-" + suffix
+      - create_result.ext_id is defined
+    fail_msg: "Resource group creation failed"
+    success_msg: "Resource group created successfully"
+
+- name: Set resource group ext_id
+  ansible.builtin.set_fact:
+    rg_ext_id: "{{ create_result.ext_id }}"
+
+############################################
+# Idempotency check
+############################################
+
+- name: Update resource group with no changes (idempotency)
+  nutanix.ncp.ntnx_resource_groups_v2:
+    state: present
+    wait: true
+    ext_id: "{{ rg_ext_id }}"
+    name: "ansible-rg-{{ suffix }}"
+  register: idempotent_result
+
+- name: Verify idempotency
+  ansible.builtin.assert:
+    that:
+      - idempotent_result is not changed
+      - idempotent_result.skipped is defined
+      - idempotent_result.skipped == true
+    fail_msg: "Idempotency check failed"
+    success_msg: "Idempotency check passed"
+
+############################################
+# Update resource group
+############################################
+
+- name: Update resource group name
+  nutanix.ncp.ntnx_resource_groups_v2:
+    state: present
+    wait: true
+    ext_id: "{{ rg_ext_id }}"
+    name: "ansible-rg-{{ suffix }}-updated"
+  register: update_result
+
+- name: Verify resource group update
+  ansible.builtin.assert:
+    that:
+      - update_result is changed
+      - update_result.response is defined
+      - update_result.response.name == "ansible-rg-" + suffix + "-updated"
+    fail_msg: "Resource group update failed"
+    success_msg: "Resource group updated successfully"
+
+############################################
+# Check mode - update
+############################################
+
+- name: Check mode - update resource group
+  nutanix.ncp.ntnx_resource_groups_v2:
+    state: present
+    ext_id: "{{ rg_ext_id }}"
+    name: "ansible-rg-{{ suffix }}-check-mode"
+  check_mode: true
+  register: check_mode_result
+
+- name: Verify check mode returns planned response
+  ansible.builtin.assert:
+    that:
+      - check_mode_result.response is defined
+      - check_mode_result.response.name == "ansible-rg-" + suffix + "-check-mode"
+    fail_msg: "Check mode update test failed"
+    success_msg: "Check mode update test passed"
+
+- name: Verify check mode did not actually update
+  nutanix.ncp.ntnx_resource_groups_info_v2:
+    ext_id: "{{ rg_ext_id }}"
+  register: verify_check_result
+
+- name: Assert original name is preserved after check mode
+  ansible.builtin.assert:
+    that:
+      - verify_check_result.response.name == "ansible-rg-" + suffix + "-updated"
+    fail_msg: "Check mode incorrectly modified the resource group"
+    success_msg: "Check mode correctly did not modify the resource group"
+
+############################################
+# Check mode - delete
+############################################
+
+- name: Check mode - delete resource group
+  nutanix.ncp.ntnx_resource_groups_v2:
+    state: absent
+    ext_id: "{{ rg_ext_id }}"
+  check_mode: true
+  register: check_delete_result
+
+- name: Verify check mode delete
+  ansible.builtin.assert:
+    that:
+      - check_delete_result.msg is defined
+    fail_msg: "Check mode delete test failed"
+    success_msg: "Check mode delete test passed"
+
+############################################
+# Info - get by ext_id
+############################################
+
+- name: Get resource group by ext_id
+  nutanix.ncp.ntnx_resource_groups_info_v2:
+    ext_id: "{{ rg_ext_id }}"
+  register: get_result
+
+- name: Verify get resource group by ext_id
+  ansible.builtin.assert:
+    that:
+      - get_result is not changed
+      - get_result.response is defined
+      - get_result.ext_id == rg_ext_id
+      - get_result.response.name == "ansible-rg-" + suffix + "-updated"
+    fail_msg: "Get resource group by ext_id failed"
+    success_msg: "Get resource group by ext_id succeeded"
+
+############################################
+# Info - list all
+############################################
+
+- name: List all resource groups
+  nutanix.ncp.ntnx_resource_groups_info_v2:
+  register: list_result
+
+- name: Verify list resource groups
+  ansible.builtin.assert:
+    that:
+      - list_result is not changed
+      - list_result.response is defined
+      - list_result.response | length > 0
+    fail_msg: "List resource groups failed"
+    success_msg: "List resource groups succeeded"
+
+############################################
+# Info - list with filter
+############################################
+
+- name: List resource groups with name filter
+  nutanix.ncp.ntnx_resource_groups_info_v2:
+    filter: "name eq 'ansible-rg-{{ suffix }}-updated'"
+  register: filter_result
+
+- name: Verify filtered list
+  ansible.builtin.assert:
+    that:
+      - filter_result is not changed
+      - filter_result.response is defined
+      - filter_result.response | length == 1
+      - filter_result.response[0].name == "ansible-rg-" + suffix + "-updated"
+    fail_msg: "Filtered list resource groups failed"
+    success_msg: "Filtered list resource groups succeeded"
+
+############################################
+# Info - list with pagination
+############################################
+
+- name: List resource groups with limit
+  nutanix.ncp.ntnx_resource_groups_info_v2:
+    limit: 1
+  register: paginated_result
+
+- name: Verify paginated list
+  ansible.builtin.assert:
+    that:
+      - paginated_result is not changed
+      - paginated_result.response is defined
+      - paginated_result.response | length <= 1
+    fail_msg: "Paginated list resource groups failed"
+    success_msg: "Paginated list resource groups succeeded"
+
+############################################
+# Cleanup - delete resource group
+############################################
+
+- name: Delete resource group
+  nutanix.ncp.ntnx_resource_groups_v2:
+    state: absent
+    wait: true
+    ext_id: "{{ rg_ext_id }}"
+  register: delete_result
+
+- name: Verify resource group deletion
+  ansible.builtin.assert:
+    that:
+      - delete_result is changed
+    fail_msg: "Resource group deletion failed"
+    success_msg: "Resource group deleted successfully"
+
+- name: Verify resource group no longer exists
+  nutanix.ncp.ntnx_resource_groups_info_v2:
+    ext_id: "{{ rg_ext_id }}"
+  register: verify_delete_result
+  ignore_errors: true
+
+- name: Assert resource group not found
+  ansible.builtin.assert:
+    that:
+      - verify_delete_result is failed
+    fail_msg: "Resource group still exists after deletion"
+    success_msg: "Resource group confirmed deleted"
+
+############################################
+# Cleanup - delete project
+############################################
+
+- name: Delete test project
+  nutanix.ncp.ntnx_projects_v2:
+    state: absent
+    wait: true
+    ext_id: "{{ test_project_ext_id }}"
+  register: project_cleanup
