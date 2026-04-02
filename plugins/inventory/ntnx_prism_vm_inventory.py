@@ -432,10 +432,12 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 for key, value in host_vars.items():
                     self.inventory.set_variable(vm_name, key, value)
 
+            metadata = entity.get("metadata") or {}
+            project_reference = metadata.get("project_reference") or {}
             self.inventory.set_variable(
                 vm_name,
                 "project_reference",
-                (entity.get("metadata") or {}).get("project_reference") or {},
+                project_reference,
             )
 
             # Add variables created by the user's Jinja2 expressions to the host
