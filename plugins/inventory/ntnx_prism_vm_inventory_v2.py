@@ -353,10 +353,10 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         """
         nics = vm.get("nics") or []
         for nic in nics:
-            network_info = nic.get("nic_network_info", {})
-            if network_info.get("nic_type") != "NORMAL_NIC":
-                continue
+            network_info = nic.get("nic_network_info") or {}
             if not network_info:
+                continue
+            if network_info.get("nic_type") != "NORMAL_NIC":
                 continue
             ipv4_info = network_info.get("ipv4_info")
             ipv4_config = network_info.get("ipv4_config")
@@ -388,9 +388,9 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
 
         lookup = {
             "cluster_name": cluster_ext_id_name_map.get(
-                vm.get("cluster", {}).get("ext_id")
+                (vm.get("cluster") or {}).get("ext_id")
             ),
-            "cluster_ext_id": vm.get("cluster", {}).get("ext_id"),
+            "cluster_ext_id": (vm.get("cluster") or {}).get("ext_id"),
             "vm_name": vm.get("name"),
             "vm_description": vm.get("description"),
             "vm_ext_id": vm.get("ext_id"),
@@ -596,7 +596,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         clusters = get_clusters_api_instance(module)
         list_clusters = clusters.list_clusters()
         cluster_ext_id_name_map = {}
-        for cluster in list_clusters.data:
+        for cluster in list_clusters.data or []:
             if cluster:
                 cluster_dict = cluster.to_dict()
                 ext_id = cluster_dict.get("ext_id")
@@ -618,7 +618,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 continue
 
             # Get cluster information for this VM
-            cluster_ext_id = vm.get("cluster", {}).get("ext_id")
+            cluster_ext_id = (vm.get("cluster") or {}).get("ext_id")
             cluster_name = cluster_ext_id_name_map.get(cluster_ext_id)
             try:
                 host_vars = self._build_host_vars(vm, cluster_ext_id_name_map, strict)
@@ -633,8 +633,11 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             # Add variables to host variables
             vm_name = vm.get("name")
             vm_ext_id = vm.get("ext_id")
-            owner_ext_id = vm.get("ownership_info", {}).get("owner", {}).get("ext_id")
-            project_ext_id = vm.get("project", {}).get("ext_id")
+            ownership_info = vm.get("ownership_info") or {}
+            owner = ownership_info.get("owner") or {}
+            owner_ext_id = owner.get("ext_id")
+            project = vm.get("project") or {}
+            project_ext_id = project.get("ext_id")
             vm_description = vm.get("description")
 
             # Add additional info to host_vars

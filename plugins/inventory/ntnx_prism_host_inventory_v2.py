@@ -340,14 +340,14 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         host_vars = {}
 
         # Try to get IP from hypervisor external address first
-        hypervisor = host.get("hypervisor", {})
+        hypervisor = host.get("hypervisor") or {}
         external_addr = hypervisor.get("external_address", {})
         hypervisor_ip = self.extract_ip_address_from_external(external_addr)
         if hypervisor_ip:
             host_vars["hypervisor_ip"] = hypervisor_ip
 
         # Set controller VM IP address
-        controller_vm = host.get("controller_vm", {})
+        controller_vm = host.get("controller_vm") or {}
         external_addr = controller_vm.get("external_address", {})
         controller_vm_ip = self.extract_ip_address_from_external(external_addr)
         if controller_vm_ip:
@@ -504,8 +504,8 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             # Add variables to host variables
             host_name = host.get("host_name")
             host_ext_id = host.get("ext_id")
-            cluster_ext_id = host.get("cluster", {}).get("uuid")
-            cluster_name = host.get("cluster", {}).get("name")
+            cluster_ext_id = (host.get("cluster") or {}).get("uuid")
+            cluster_name = (host.get("cluster") or {}).get("name")
 
             # Add additional info to host_vars
             host_vars["host_name"] = host_name

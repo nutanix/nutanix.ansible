@@ -231,14 +231,17 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         """
         Build a dictionary of host variables from the raw entity.
         """
-        cluster = entity.get("status", {}).get("cluster_reference", {}).get("name")
-        cluster_uuid = entity.get("status", {}).get("cluster_reference", {}).get("uuid")
-        vm_name = entity.get("status", {}).get("name")
-        vm_description = entity.get("status", {}).get("description")
-        vm_uuid = entity.get("metadata", {}).get("uuid")
+        status = entity.get("status") or {}
+        metadata = entity.get("metadata") or {}
+        cluster_ref = status.get("cluster_reference") or {}
+        cluster = cluster_ref.get("name")
+        cluster_uuid = cluster_ref.get("uuid")
+        vm_name = status.get("name")
+        vm_description = status.get("description")
+        vm_uuid = metadata.get("uuid")
         vm_ip = None
 
-        vm_resources = entity.get("status", {}).get("resources", {}).copy()
+        vm_resources = (status.get("resources") or {}).copy()
         for nics in vm_resources.get("nic_list", []):
             if nics.get("nic_type") == "NORMAL_NIC":
                 for endpoint in nics.get("ip_endpoint_list", []):
@@ -303,14 +306,12 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         host_vars["ntnx_categories_mapping"] = {}
 
         # Only supports showing one value for a key
-        if entity.get("metadata", {}).get("categories"):
-            host_vars["ntnx_categories"] = entity["metadata"]["categories"]
+        if metadata.get("categories"):
+            host_vars["ntnx_categories"] = metadata["categories"]
 
         # for category keys having multiple values
-        if entity.get("metadata", {}).get("categories_mapping"):
-            host_vars["ntnx_categories_mapping"] = entity["metadata"][
-                "categories_mapping"
-            ]
+        if metadata.get("categories_mapping"):
+            host_vars["ntnx_categories_mapping"] = metadata["categories_mapping"]
 
         return host_vars
 
@@ -325,9 +326,9 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         # Merge entity data with host_vars so filters can access any field
         # host_vars takes precedence over entity fields
         filter_vars = {}
-        filter_vars.update(entity.get("status", {}))
-        filter_vars.update(entity.get("metadata", {}))
-        filter_vars.update(entity.get("spec", {}))
+        filter_vars.update(entity.get("status") or {})
+        filter_vars.update(entity.get("metadata") or {})
+        filter_vars.update(entity.get("spec") or {})
         filter_vars.update(host_vars)
 
         for host_filter in host_filters:
@@ -431,10 +432,12 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 for key, value in host_vars.items():
                     self.inventory.set_variable(vm_name, key, value)
 
+            metadata = entity.get("metadata") or {}
+            project_reference = metadata.get("project_reference") or {}
             self.inventory.set_variable(
                 vm_name,
                 "project_reference",
-                entity.get("metadata", {}).get("project_reference", {}),
+                project_reference,
             )
 
             # Add variables created by the user's Jinja2 expressions to the host
