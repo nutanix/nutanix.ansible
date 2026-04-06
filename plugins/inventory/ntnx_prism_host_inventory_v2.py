@@ -469,6 +469,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             self.nutanix_username,
             self.nutanix_password,
             self.validate_certs,
+            self.fetch_all_hosts,
             self.nutanix_debug,
             self.nutanix_log_file,
             self.nutanix_api_key,
