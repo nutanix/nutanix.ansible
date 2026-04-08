@@ -1090,4 +1090,4 @@ releases:
       - description: Fetch information about virtual switches in Nutanix Prism Central.
         name: ntnx_virtual_switches_info_v2
         namespace: ''
-    release_date: '2026-04-08'
+    release_date: '2026-04-14'
