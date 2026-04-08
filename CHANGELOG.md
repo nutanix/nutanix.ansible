@@ -2,14 +2,19 @@
 
 **Topics**
 
-- <a href="#v2-4-0">v2\.4\.0</a>
+- <a href="#v2-5-0">v2\.5\.0</a>
     - <a href="#release-summary">Release Summary</a>
     - <a href="#minor-changes">Minor Changes</a>
-    - <a href="#breaking-changes--porting-guide">Breaking Changes / Porting Guide</a>
     - <a href="#bugfixes">Bugfixes</a>
+    - <a href="#new-modules">New Modules</a>
+- <a href="#v2-4-0">v2\.4\.0</a>
+    - <a href="#release-summary-1">Release Summary</a>
+    - <a href="#minor-changes-1">Minor Changes</a>
+    - <a href="#breaking-changes--porting-guide">Breaking Changes / Porting Guide</a>
+    - <a href="#bugfixes-1">Bugfixes</a>
     - <a href="#new-plugins">New Plugins</a>
         - <a href="#inventory">Inventory</a>
-    - <a href="#new-modules">New Modules</a>
+    - <a href="#new-modules-1">New Modules</a>
 - <a href="#v2-3-0">v2\.3\.0</a>
     - <a href="#release-summary-1">Release Summary</a>
     - <a href="#minor-changes-1">Minor Changes</a>
@@ -67,6 +72,49 @@
     - <a href="#minor-changes-8">Minor Changes</a>
     - <a href="#bugfixes-8">Bugfixes</a>
     - <a href="#new-modules-13">New Modules</a>
+
+<a id="v2-5-0"></a>
+## v2\.5\.0
+
+<a id="release-summary"></a>
+### Release Summary
+
+Built on v4 SDKs\. Adds Network Functions\, Entity Groups\, Security Policy Rules\, IAM Entities\, and Virtual Switches modules with proxy support\, Service Account API key authentication\, read timeout\, and several improvements and bug fixes\.
+
+<a id="minor-changes"></a>
+### Minor Changes
+
+* All v4 modules \- \[Imprv\] Add configurable read\_timeout functionality to all v4 modules \[\[\#882\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/882](https\://github\.com/nutanix/nutanix\.ansible/issues/882)\)\]
+* All v4 modules \- \[Imprv\] Add proxy support for v4 API client modules \[\[\#900\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/900](https\://github\.com/nutanix/nutanix\.ansible/issues/900)\)\]
+* All modules \- \[Imprv\] Add Service Account API key authentication support \[\[\#888\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/888](https\://github\.com/nutanix/nutanix\.ansible/issues/888)\)\]
+* All v4 modules \- \[Imprv\] Separate Base Module for v4 to avoid unnecessary flags \[\[\#918\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/918](https\://github\.com/nutanix/nutanix\.ansible/issues/918)\)\]
+* All modules \- \[Imprv\] Continued migration of modules from legacy v3 APIs to v4 APIs/SDKs \[\[\#884\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/884](https\://github\.com/nutanix/nutanix\.ansible/issues/884)\)\]
+* ntnx\_security\_rules\_v2 \- \[Imprv\] Add global scope\, intratier rules\, subnet/VPC references \[\[\#853\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/853](https\://github\.com/nutanix/nutanix\.ansible/issues/853)\)\]
+* ntnx\_prism\_vm\_inventory \- \[Imprv\] Handle invalid group name characters in inventory plugins \[\[\#917\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/917](https\://github\.com/nutanix/nutanix\.ansible/issues/917)\)\]
+* ntnx\_karbon\_clusters \- \[Imprv\] Add deprecation message for Karbon modules \[\[\#921\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/921](https\://github\.com/nutanix/nutanix\.ansible/issues/921)\)\]
+* CI/CD \- \[Imprv\] Update CI/CD Pipeline and Dependencies to Python 3\.12 \[\[\#915\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/915](https\://github\.com/nutanix/nutanix\.ansible/issues/915)\)\]
+
+<a id="bugfixes"></a>
+### Bugfixes
+
+* ntnx\_prism\_vm\_inventory\, ntnx\_prism\_vm\_inventory\_v2\, ntnx\_prism\_host\_inventory\_v2 \- \[Bug\] NoneType crash in inventory plugins when VM fields are explicitly None \[\[\#939\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/939](https\://github\.com/nutanix/nutanix\.ansible/issues/939)\)\]
+* ntnx\_subnets\_v2 \- \[Bug\] Unnecessary required fields for state\: present in module ntnx\_subnets\_v2 \[\[\#895\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/895](https\://github\.com/nutanix/nutanix\.ansible/issues/895)\)\]
+* ntnx\_password\_managers\_info\_v2 \- \[Bug\] Missing total\_available\_results in response in module ntnx\_password\_managers\_info\_v2 \[\[\#902\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/902](https\://github\.com/nutanix/nutanix\.ansible/issues/902)\)\]
+* ntnx\_projects\_info \- \[Bug\] Results of ntnx\_projects\_info only retrieve 20 results \[\[\#883\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/883](https\://github\.com/nutanix/nutanix\.ansible/issues/883)\)\]
+* ntnx\_categories\_info\_v2 \- \[Bug\] Api Exception raised while fetching categories info due to SDK\-PC version mismatch \[\[\#889\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/889](https\://github\.com/nutanix/nutanix\.ansible/issues/889)\)\]
+* ntnx\_vms\_v2 \- \[Bug\] Missing required arguments in guest\_customization in module ntnx\_vms\_v2 \[\[\#893\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/893](https\://github\.com/nutanix/nutanix\.ansible/issues/893)\)\]
+
+<a id="new-modules"></a>
+### New Modules
+
+* nutanix\.ncp\.ntnx\_network\_function\_v2 \- Manage network functions in Nutanix Prism Central using v4 SDKs\.
+* nutanix\.ncp\.ntnx\_network\_functions\_info\_v2 \- Fetch information about network functions in Nutanix Prism Central\.
+* nutanix\.ncp\.ntnx\_entity\_group\_v2 \- Create\, Update and Delete entity groups in Nutanix Prism Central\.
+* nutanix\.ncp\.ntnx\_entity\_groups\_info\_v2 \- Fetch information about entity groups in Nutanix Prism Central\.
+* nutanix\.ncp\.ntnx\_security\_policy\_rules\_info\_v2 \- List all network security policy rules by policy ExtID in Nutanix Prism Central\.
+* nutanix\.ncp\.ntnx\_iam\_entities\_info\_v2 \- Fetch information about IAM entities in Nutanix Prism Central\.
+* nutanix\.ncp\.ntnx\_virtual\_switch\_v2 \- Create\, Update and Delete virtual switches in Nutanix Prism Central\.
+* nutanix\.ncp\.ntnx\_virtual\_switches\_info\_v2 \- Fetch information about virtual switches in Nutanix Prism Central\.
 
 <a id="v2-4-0"></a>
 ## v2\.4\.0
