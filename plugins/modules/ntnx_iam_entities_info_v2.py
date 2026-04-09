@@ -18,6 +18,14 @@ description:
     - Fetch specific entity if external ID is provided
     - List all entities if external ID is not provided with optional filter
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(List entities) -
+      Operation Name: View Entity -
+      Required Roles: No specific roles documented
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.0)"
 options:
     ext_id:
         description:

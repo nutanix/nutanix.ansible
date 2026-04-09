@@ -15,6 +15,14 @@ short_description: List network security policy rulesinfo from Nutanix PC.
 version_added: 2.5.0
 description:
     - List network security policy rules info by policy_ext_id with optional filter
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(List all the Network Security Policy rules by policy ExtID) -
+      Operation Name: View Rules Flow Policy -
+      Required Roles: Super Admin, Prism Admin, Flow Admin, Prism Viewer, Flow Viewer
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg&version=v4.2)"
 options:
     policy_ext_id:
         description:

@@ -16,6 +16,27 @@ version_added: "2.0.0"
 description:
     - This module allows you to create, update, and delete categories in Nutanix Prism Central.
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create a category) -
+      Operation Name: Create Category -
+      Required Roles: Prism Admin, Self-Service Admin (deprecated), Project Manager, Super Admin, Storage Admin, Category Admin, CSI System, Kubernetes Data Services System, Kubernetes Infrastructure Provision, Kubernetes Admin, NCM Connector
+    - >-
+      B(Delete a category) -
+      Operation Name: Delete Category -
+      Required Roles: Prism Admin, Self-Service Admin (deprecated), Project Manager, Super Admin, Storage Admin, Category Admin, CSI System, Kubernetes Data Services System, Kubernetes Infrastructure Provision, Kubernetes Admin, NCM Connector
+    - >-
+      B(Fetch a category) -
+      Operation Name: View Category -
+      Required Roles: Prism Admin, Self-Service Admin (deprecated), Project Manager, Prism Viewer, Developer, Project Admin, Super Admin, Storage Admin, Flow Admin, Flow Viewer, Category Viewer, Category Admin, Disaster Recovery Admin, Disaster Recovery Viewer, CSI System, Kubernetes Data Services System, Kubernetes Infrastructure Provision, Kubernetes Admin, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, Cluster Admin, Cluster Viewer, Backup Admin, NCM Connector
+    - >-
+      B(Update a category) -
+      Operation Name: Update Category -
+      Required Roles: Prism Admin, Self-Service Admin (deprecated), Project Manager, Super Admin, Storage Admin, Category Admin, CSI System, Kubernetes Data Services System, Kubernetes Infrastructure Provision, Kubernetes Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism&version=v4.3)"
 options:
   ext_id:
     description:

@@ -15,6 +15,14 @@ description:
     - This module allows you to initiate, complete, or cancel guest OS updates for Nutanix AHV templates.
     - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Cancel guest OS update) -
+      Operation Name: Cancel Guest Update VM Templates -
+      Required Roles: Super Admin, Prism Admin, Virtual Machine Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
 options:
     state:
         description:

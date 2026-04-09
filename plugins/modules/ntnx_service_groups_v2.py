@@ -14,6 +14,23 @@ module: ntnx_service_groups_v2
 short_description: "Create, Update, Delete service groups"
 version_added: 2.0.0
 description: "Create, Update, Delete service groups"
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create a Service Group) -
+      Operation Name: Create Service Group -
+      Required Roles: Super Admin, Prism Admin, Flow Admin, Project Manager
+    - >-
+      B(Delete a Service Group by ExtID) -
+      Operation Name: Delete Service Group -
+      Required Roles: Super Admin, Prism Admin, Flow Admin, Project Manager
+    - >-
+      B(Update a Service Group by ExtID) -
+      Operation Name: Update Service Group -
+      Required Roles: Super Admin, Prism Admin, Flow Admin, Project Manager
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg&version=v4.2)"
 options:
   state:
     description:

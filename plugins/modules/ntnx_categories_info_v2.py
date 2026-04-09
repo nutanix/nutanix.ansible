@@ -16,6 +16,19 @@ version_added: 2.0.0
 description:
     - Get categories info
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Fetch a category) -
+      Operation Name: View Category -
+      Required Roles: Prism Admin, Self-Service Admin (deprecated), Project Manager, Prism Viewer, Developer, Project Admin, Super Admin, Storage Admin, Flow Admin, Flow Viewer, Category Viewer, Category Admin, Disaster Recovery Admin, Disaster Recovery Viewer, CSI System, Kubernetes Data Services System, Kubernetes Infrastructure Provision, Kubernetes Admin, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, Cluster Admin, Cluster Viewer, Backup Admin, NCM Connector
+    - >-
+      B(List categories) -
+      Operation Name: View Category -
+      Required Roles: Prism Admin, Self-Service Admin (deprecated), Project Manager, Prism Viewer, Developer, Project Admin, Super Admin, Storage Admin, Flow Admin, Flow Viewer, Category Viewer, Category Admin, Disaster Recovery Admin, Disaster Recovery Viewer, CSI System, Kubernetes Data Services System, Kubernetes Infrastructure Provision, Kubernetes Admin, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, Cluster Admin, Cluster Viewer, Backup admin, NCM Connector
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism&version=v4.3)"
 options:
     ext_id:
         description:

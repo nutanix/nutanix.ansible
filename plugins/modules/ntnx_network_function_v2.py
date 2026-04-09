@@ -19,6 +19,23 @@ description:
     known as a Network Function VM (NFVM), into the network path to inspect or manipulate traffic.
     These are typically used for services like firewalls, intrusion detection systems (IDS), or packet inspection.
   - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create a network function.) -
+      Operation Name: Create Network Function -
+      Required Roles: Super Admin, Account Owner, Administrator, Prism Admin, Network Infra Admin, Flow Admin
+    - >-
+      B(Delete the specified network function.) -
+      Operation Name: Delete Network Function -
+      Required Roles: Super Admin, Account Owner, Administrator, Prism Admin, Network Infra Admin, Flow Admin
+    - >-
+      B(Update the specified network function.) -
+      Operation Name: Update Network Function -
+      Required Roles: Super Admin, Account Owner, Administrator, Prism Admin, Network Infra Admin, Flow Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking&version=v4.3)"
 options:
   state:
     description:

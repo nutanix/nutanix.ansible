@@ -16,6 +16,23 @@ description:
   - This module allows you to create, update, and delete network security policies in Nutanix Prism Central.
   - During update, the rules provided under C(rules) will replace existing rules.
   - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create a Network Security Policy) -
+      Operation Name: Create Flow Policy -
+      Required Roles: Super Admin, Prism Admin, Flow Admin
+    - >-
+      B(Delete a Network Security Policy by ExtID) -
+      Operation Name: Delete Flow Policy -
+      Required Roles: Super Admin, Prism Admin, Flow Admin
+    - >-
+      B(Update a Network Security Policy by ExtID) -
+      Operation Name: Update Flow Policy -
+      Required Roles: Super Admin, Prism Admin, Flow Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg&version=v4.2)"
 options:
   wait:
     description:

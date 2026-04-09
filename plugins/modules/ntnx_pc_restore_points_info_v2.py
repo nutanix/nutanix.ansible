@@ -14,6 +14,14 @@ description:
     - Fetch specific restore point info for a given restore source.
     - Fetch list of multiple restore points for a given restore source.
     - Please provide Prism Element IP address here in C(nutanix_host)
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(List restore points) -
+      Operation Name: View Restorable Domain Manager Restore Point -
+      Required Roles: Super Admin, Prism Admin, Prism Viewer, Domain Manager Admin, Domain Manager Viewer
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism&version=v4.3)"
 options:
     restore_source_ext_id:
         description:

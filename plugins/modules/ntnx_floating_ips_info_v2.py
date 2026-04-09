@@ -16,6 +16,19 @@ version_added: 2.0.0
 description:
     - Get floating_ips info
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Get the floating IP for this extId) -
+      Operation Name: View Floating Ip -
+      Required Roles: Super Admin, Account Owner, Administrator, User, Prism Admin, Prism Viewer, VPC Admin
+    - >-
+      B(Get a list of floating IPs) -
+      Operation Name: View Floating Ip -
+      Required Roles: Super Admin, Account Owner, Administrator, User, Prism Admin, Prism Viewer, VPC Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking&version=v4.3)"
 options:
     ext_id:
         description:

@@ -15,6 +15,23 @@ description:
     - This module allows you to manage serial port for Nutanix AHV VMs.
     - This module uses PC v4 APIs based SDKs
 short_description: VM Serial Port module which supports VM serial port CRUD states
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create a serial port for a VM) -
+      Operation Name: Create Virtual Machine Serial Port -
+      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin
+    - >-
+      B(Remove a serial port from a VM) -
+      Operation Name: Delete Virtual Machine Serial Port -
+      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin
+    - >-
+      B(Update the configuration for the provided serial port) -
+      Operation Name: Update Virtual Machine Serial Port -
+      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
 options:
     state:
         description:

@@ -15,6 +15,14 @@ description:
     - Unregister a PC-PC setup connected using availability zone.
     - This module cannot be used to unregister PC-PE.
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Unregister a registered remote cluster from the local cluster) -
+      Operation Name: Unregister Domain Manager -
+      Required Roles: Super Admin, Internal Super Admin, Prism Admin, Cluster Admin, Domain Manager Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism&version=v4.3)"
 options:
     state:
         description:

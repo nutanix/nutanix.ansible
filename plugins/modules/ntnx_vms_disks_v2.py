@@ -16,6 +16,19 @@ version_added: "2.0.0"
 description:
     - This module allows you to manage disks for Nutanix AHV VMs.
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create a disk device for a VM) -
+      Operation Name: Create Virtual Machine Disk -
+      Required Roles: Account Owner, Administrator, User, Consumer, CSI System, Developer, Kubernetes Data Services System, Kubernetes Infrastructure Provision, Operator, Prism Admin, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin, Storage Admin, Backup Admin, NCM Connector
+    - >-
+      B(Update the configuration for the provided disk device) -
+      Operation Name: Update Virtual Machine Disk -
+      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin, NCM Connector
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
 options:
     state:
         description:

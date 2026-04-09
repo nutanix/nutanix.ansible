@@ -18,6 +18,19 @@ description:
   - Fetch particular host info using external ID.
   - Fetch multiple hosts info with/without using filters, limit, etc.
   - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Get the list of all host entities) -
+      Operation Name: View Host -
+      Required Roles: Prism Admin, Prism Viewer, Super Admin, Storage Admin, VPC Admin, Network Infra Admin, Cluster Admin, Cluster Viewer, Virtual Machine Admin, Virtual Machine Operator, NCM Connector
+    - >-
+      B(Get the list of hosts associated with a cluster) -
+      Operation Name: View Cluster Host -
+      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Self-Service Admin (deprecated), Super Admin, VPC Admin, Network Infra Admin, Project Manager, Backup Admin, NCM Connector, LocalAccountManager Admin, LocalAccountManager Viewer
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt&version=v4.2)"
 options:
   ext_id:
     description:

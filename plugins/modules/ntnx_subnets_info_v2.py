@@ -16,6 +16,19 @@ version_added: 2.0.0
 description:
     - Fetch list of subnets or subnet info using subnet external ID
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Get the subnet with the specified UUID) -
+      Operation Name: View Subnet -
+      Required Roles: Developer, Prism Viewer, Prism Admin, Super Admin, Consumer, Project Admin, Operator, Network Infra Admin, Objects Admin, Files Admin, CSI System, Kubernetes Data Services System, Kubernetes Infrastructure Provision, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin, Network Shared Resources Viewer, Project Manager, Account Owner, Administrator, NCM Connector
+    - >-
+      B(Get the list of existing subnets) -
+      Operation Name: View Subnet -
+      Required Roles: Developer, Prism Viewer, Prism Admin, Super Admin, Consumer, Project Admin, Operator, Network Infra Admin, Objects Admin, Files Admin, CSI System, Kubernetes Data Services System, Kubernetes Infrastructure Provision, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin, Network Shared Resources Viewer, Project Manager, Account Owner, Administrator, Backup Admin, NCM Connector
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking&version=v4.3)"
 options:
     ext_id:
         description:

@@ -20,6 +20,14 @@ description:
     - This module uses PC v4 APIs based SDKs
 author:
     - George Ghawali (@george-ghawali)
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(VmDisk migration between storage containers) -
+      Operation Name: Migrate Virtual Machine Disk -
+      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
 options:
     wait:
         description: Wait for the operation to complete.

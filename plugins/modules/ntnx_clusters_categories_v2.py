@@ -16,6 +16,19 @@ description:
   - This module allows you to associate or disassociate categories with a Nutanix cluster using Prism Central.
   - This module uses PC v4 APIs based SDKs
 version_added: "2.4.0"
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Associate categories to the cluster) -
+      Operation Name: Associate Cluster Categories -
+      Required Roles: Cluster Admin, Prism Admin, Super Admin
+    - >-
+      B(Disassociate categories from the cluster) -
+      Operation Name: Disassociate Cluster Categories -
+      Required Roles: Cluster Admin, Prism Admin, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt&version=v4.2)"
 options:
     state:
         description:

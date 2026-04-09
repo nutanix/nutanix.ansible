@@ -19,6 +19,23 @@ version_added: "2.0.0"
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)
  - Abhinav Bansal (@abhinavbansal29)
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Creates a new Volume Group) -
+      Operation Name: Create Volume Group -
+      Required Roles: CSI System, Kubernetes Data Services System, Prism Admin, Self-Service Admin (deprecated), Super Admin, Storage Admin, Project Manager, Backup Admin
+    - >-
+      B(Delete the Volume Group) -
+      Operation Name: Delete Volume Group -
+      Required Roles: CSI System, Kubernetes Data Services System, Prism Admin, Self-Service Admin (deprecated), Super Admin, Storage Admin, Project Manager, Backup Admin
+    - >-
+      B(Update details of a specified Volume Group) -
+      Operation Name: Update Volume Group Details -
+      Required Roles: Prism Admin, Self-Service Admin (deprecated), Super Admin, Storage Admin, Project Manager, Backup Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes&version=v4.2)"
 options:
     state:
         description:

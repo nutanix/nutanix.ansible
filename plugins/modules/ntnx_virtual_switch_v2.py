@@ -18,6 +18,27 @@ description:
   - It also supports creating a virtual switch from an existing bridge using the migrate operation.
   - Metadata is not supported in this module.
   - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create a Virtual Switch) -
+      Operation Name: Add Virtual Switch -
+      Required Roles: Prism Admin, Super Admin
+    - >-
+      B(Delete a Virtual Switch) -
+      Operation Name: Delete Virtual Switch -
+      Required Roles: Prism Admin, Super Admin
+    - >-
+      B(Create a Virtual Switch from an existing bridge) -
+      Operation Name: Migrate Bridge -
+      Required Roles: Prism Admin, Super Admin, Network Infra Admin
+    - >-
+      B(Update a Virtual Switch) -
+      Operation Name: Update Virtual Switch -
+      Required Roles: Prism Admin, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking&version=v4.3)"
 options:
   state:
     description:

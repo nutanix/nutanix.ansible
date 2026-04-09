@@ -18,6 +18,19 @@ description:
     - if ext_id is provided, it will return the routing policy info
     - if ext_id is not provided, it will return the list of all routing policies
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Get a single Routing Policy corresponding to the extId) -
+      Operation Name: View Routing Policy -
+      Required Roles: Super Admin, Account Owner, Administrator, User, Prism Admin, Prism Viewer, VPC Admin
+    - >-
+      B(Get a list of Routing Policies) -
+      Operation Name: View Routing Policy -
+      Required Roles: Super Admin, Account Owner, Administrator, User, Prism Admin, Prism Viewer, VPC Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking&version=v4.3)"
 options:
     ext_id:
         description:

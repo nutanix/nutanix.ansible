@@ -15,6 +15,14 @@ description:
     - This module allows you to publish or delete template versions in Nutanix.
     - This module uses PC v4 APIs based SDKs
 version_added: '2.0.0'
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Delete a template version) -
+      Operation Name: Delete VM Templates Versions -
+      Required Roles: Super Admin, Prism Admin, Virtual Machine Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
 options:
     template_ext_id:
         description:

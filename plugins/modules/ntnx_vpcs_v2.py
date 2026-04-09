@@ -16,6 +16,23 @@ version_added: 2.0.0
 description:
   - Create, Update, Delete vpcs
   - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create a VPC) -
+      Operation Name: Create VPC -
+      Required Roles: Super Admin, Account Owner, Administrator, Prism Admin, VPC Admin
+    - >-
+      B(Delete the specified VPC) -
+      Operation Name: Delete VPC -
+      Required Roles: Super Admin, Account Owner, Administrator, Prism Admin, VPC Admin
+    - >-
+      B(Update the specified VPC) -
+      Operation Name: Update VPC -
+      Required Roles: Super Admin, Account Owner, Administrator, Prism Admin, VPC Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking&version=v4.3)"
 options:
   state:
     description:

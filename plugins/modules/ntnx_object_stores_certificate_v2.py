@@ -23,6 +23,14 @@ description:
     - Optionally, a list of alternate FQDNs and IPs can be provided.
     - These 'alternateFqdns' and 'alternateIps' must be included in the CA certificate if a CA is provided.
     - This module uses PC v4 APIs based GA SDKs.
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Create a SSL certificate for an Object store) -
+      Operation Name: Create Object Store Certificate -
+      Required Roles: Objects Editor, Objects Admin, Prism Admin, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=objects&version=v4.0)"
 options:
     state:
         description:

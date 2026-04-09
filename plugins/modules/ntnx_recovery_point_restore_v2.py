@@ -16,6 +16,14 @@ version_added: 2.0.0
 description:
     - Restore recovery points using external ID
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Restore recovery point) -
+      Operation Name: Restore Recovery Point -
+      Required Roles: Prism Admin, Self-Service Admin (deprecated), Super Admin, Disaster Recovery Admin, CSI System, Kubernetes Data Services System, Backup Admin, Project Manager, NCM Connector
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=dataprotection&version=v4.3)"
 options:
     state:
         description:

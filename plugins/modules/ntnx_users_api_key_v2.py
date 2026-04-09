@@ -17,6 +17,19 @@ description:
     - If state is present, this module will create a key for the user.
     - If state is absent, this module will delete the key for the user.
     - This modules uses PC v4 APIs based SDKs.
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create a key of the requested key type for a user) -
+      Operation Name: Create User Key -
+      Required Roles: 
+    - >-
+      B(Delete the requested key) -
+      Operation Name: Delete User Key -
+      Required Roles: 
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.0)"
 options:
     user_ext_id:
         description:

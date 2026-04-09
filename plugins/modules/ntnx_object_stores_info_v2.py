@@ -14,6 +14,14 @@ description:
     - Fetch specific object store info if external ID is provided
     - Fetch list of multiple object stores info if external ID is not provided with optional filters
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Get a list of the Object stores) -
+      Operation Name: View Object Store -
+      Required Roles: Objects Viewer, Objects Editor, Objects Admin, Prism Admin, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=objects&version=v4.0)"
 options:
     ext_id:
         description: External ID to fetch specific object store info

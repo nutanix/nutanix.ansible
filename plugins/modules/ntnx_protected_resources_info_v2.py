@@ -15,6 +15,14 @@ short_description: Module to fetch protected resource in Nutanix Prism Central.
 version_added: 2.1.0
 description:
   - This module can be used to fetch protected resources in Nutanix Prism Central.
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Get a protected resource) -
+      Operation Name: View Protected Resource -
+      Required Roles: Prism Admin, Prism Viewer, Self-Service Admin (deprecated), Super Admin, Disaster Recovery Admin, Disaster Recovery Viewer, Project Manager
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=dataprotection&version=v4.3)"
 options:
   ext_id:
     description:

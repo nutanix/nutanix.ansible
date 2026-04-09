@@ -21,6 +21,14 @@ description:
   - Each STIG record represents a specific rule or control evaluated against one or more clusters, containing metadata such as rule ID, severity
     compliance status, and remediation guidance.
   - This module uses PC v4 APIs based SDKs.
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Get the STIG controls details) -
+      Operation Name: View Stig -
+      Required Roles: Security Dashboard Admin, Security Dashboard Viewer, Prism Admin, Super Admin, Prism Viewer
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=security&version=v4.1)"
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_info_v2

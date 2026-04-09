@@ -16,6 +16,14 @@ description:
     - If ext_id is provided, this module will fetch the specific user api key.
     - If ext_id is not provided, this module will fetch multiple user api keys with/without filters, limit, etc.
     - This modules uses PC v4 APIs based SDKs.
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(List keys for the user) -
+      Operation Name: View User Key -
+      Required Roles: 
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.0)"
 options:
     user_ext_id:
         description:

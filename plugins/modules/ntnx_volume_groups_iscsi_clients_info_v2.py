@@ -18,6 +18,19 @@ description:
 version_added: "2.0.0"
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Fetch an iSCSI client details) -
+      Operation Name: View External ISCSI Client -
+      Required Roles: CSI System, Kubernetes Data Services System, Prism Admin, Prism Viewer, Self-Service Admin (deprecated), Super Admin, Storage Admin, Storage Viewer, Project Manager, Backup Admin
+    - >-
+      B(List all the iSCSI clients) -
+      Operation Name: View External ISCSI Client -
+      Required Roles: CSI System, Kubernetes Data Services System, Prism Admin, Prism Viewer, Self-Service Admin (deprecated), Super Admin, Storage Admin, Storage Viewer, Project Manager, Backup Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes&version=v4.2)"
 options:
     ext_id:
         description:

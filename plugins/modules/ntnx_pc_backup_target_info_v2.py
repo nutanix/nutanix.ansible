@@ -13,6 +13,14 @@ version_added: 2.1.0
 description:
     - Fetch specific backup target info using external ID
     - Fetch list of multiple backup targets info if external ID is not provided with optional filters
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(List backup targets) -
+      Operation Name: View Domain Manager Backup Target -
+      Required Roles: Super Admin, Prism Admin, Prism Viewer, Domain Manager Admin, Domain Manager Viewer
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism&version=v4.3)"
 options:
     ext_id:
         description: External ID to fetch specific backup target info

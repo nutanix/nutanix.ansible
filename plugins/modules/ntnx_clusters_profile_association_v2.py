@@ -20,6 +20,14 @@ description:
     associated with the cluster profile and any changes made to the cluster profile configuration will not be applied to the cluster.
   - This module will not remove the cluster profile configuration from the cluster.
   - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Disassociate cluster from a cluster profile) -
+      Operation Name: Disassociate Cluster Profile Cluster -
+      Required Roles: Prism Admin, Super Admin, Cluster Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt&version=v4.2)"
 options:
     state:
         description:

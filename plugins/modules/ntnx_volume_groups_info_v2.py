@@ -18,6 +18,19 @@ description:
 version_added: "2.0.0"
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Get a Volume Group) -
+      Operation Name: View Volume Group Details -
+      Required Roles: CSI System, Kubernetes Data Services System, Prism Admin, Prism Viewer, Self-Service Admin (deprecated), Super Admin, Storage Admin, Storage Viewer, Disaster Recovery Admin, Disaster Recovery Viewer, Project Manager, Backup Admin
+    - >-
+      B(List all the Volume Groups) -
+      Operation Name: View Volume Group Details -
+      Required Roles: CSI System, Kubernetes Data Services System, Prism Admin, Prism Viewer, Self-Service Admin (deprecated), Super Admin, Storage Admin, Storage Viewer, Disaster Recovery Admin, Disaster Recovery Viewer, Project Manager, Backup Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes&version=v4.2)"
 options:
     ext_id:
         description:

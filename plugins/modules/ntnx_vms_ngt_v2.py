@@ -20,6 +20,13 @@ author:
  - Pradeepsingh Bhati (@bhati-pradeep)
 notes:
     - Module will skip if install/uninstall is not required checking the current installation status.
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Install NGT in a VM) -
+      Operation Name: Install Virtual Machine NGT -
+      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin, Backup Admin, NCM Connector
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
 options:
     state:
         description:

@@ -20,6 +20,18 @@ author:
 notes:
     - Module will will skip releasing IP from NIC, if no IP is assigned to NIC.
     - Module will skip if the install/uninstall is not required as per above check.
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Assign an IP address to the provided network device) -
+      Operation Name: Assign Virtual Machine NIC IP -
+      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin, Backup Admin
+    - >-
+      B(Release an assigned IP address from the provided network device) -
+      Operation Name: Release Virtual Machine NIC IP -
+      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin, Backup Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
 options:
     state:
         description:

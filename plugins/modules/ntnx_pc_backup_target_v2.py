@@ -14,6 +14,23 @@ version_added: 2.1.0
 description:
     - Create, Update and Delete a cluster or object store as the backup target.
     - For a given Prism Central, there can be up to 3 clusters as backup targets and 1 object store as backup target.
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create backup target) -
+      Operation Name: Create Domain Manager Backup Target -
+      Required Roles: Super Admin, Prism Admin, Domain Manager Admin
+    - >-
+      B(Delete backup target) -
+      Operation Name: Delete Domain Manager Backup Target -
+      Required Roles: Super Admin, Prism Admin, Domain Manager Admin
+    - >-
+      B(Update backup target) -
+      Operation Name: Update Domain Manager Backup Target -
+      Required Roles: Super Admin, Prism Admin, Domain Manager Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism&version=v4.3)"
 options:
     state:
         description:

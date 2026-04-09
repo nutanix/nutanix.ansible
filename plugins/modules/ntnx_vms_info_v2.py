@@ -16,6 +16,18 @@ description:
   - The module can fetch information about all VMs or a specific AHV based PC VMs
   - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Get VM / List VMs) -
+      Operation Name: View Existing Virtual Machine -
+      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin,
+      Prism Viewer, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, VPC Admin,
+      Storage Admin, Network Infra Admin, Virtual Machine Admin, Virtual Machine Operator,
+      Virtual Machine Viewer, Disaster Recovery Admin, Disaster Recovery Viewer, Backup Admin,
+      Flow Admin, Flow Viewer, Flow Policy Author, NCM Connector
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)
 options:

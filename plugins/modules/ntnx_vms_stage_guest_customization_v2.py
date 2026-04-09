@@ -17,6 +17,14 @@ description:
     - This module stages guest customization configuration for a Nutanix VM.
     - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Stage guest customization configuration details) -
+      Operation Name: Customise Virtual Machine Guest -
+      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
 options:
     state:
         description:

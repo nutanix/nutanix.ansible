@@ -18,6 +18,14 @@ description:
     - Fetch particular storage container info using external ID
     - Fetch multiple storage containers info with/without using filters, limit, etc.
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(List Storage Containers) -
+      Operation Name: View Storage Container -
+      Required Roles: Consumer, CSI System, Developer, Kubernetes Data Services System, Operator, Prism Admin, Prism Viewer, Project Admin, Self-Service Admin (deprecated), Storage Admin, Storage Viewer, Super Admin, Backup Admin, Project Manager, NCM Connector
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt&version=v4.2)"
 options:
   ext_id:
     description:

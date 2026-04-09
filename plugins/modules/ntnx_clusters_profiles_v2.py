@@ -17,6 +17,23 @@ description:
   - A cluster profile is a collection of configuration settings that can be applied to a cluster.
   - This module uses PC v4 APIs based SDKs
 version_added: "2.4.0"
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create a cluster profile) -
+      Operation Name: Create Cluster Profile -
+      Required Roles: Prism Admin, Super Admin, Cluster Admin
+    - >-
+      B(Delete cluster profile) -
+      Operation Name: Delete Cluster Profile -
+      Required Roles: Prism Admin, Super Admin, Cluster Admin
+    - >-
+      B(Update cluster profile) -
+      Operation Name: Update Cluster Profile -
+      Required Roles: Prism Admin, Super Admin, Cluster Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt&version=v4.2)"
 options:
   state:
     description:

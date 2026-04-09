@@ -15,6 +15,19 @@ short_description: Module to attach/detach GPUs to/from VMs in Nutanix prism cen
 description:
   - This module allows you to attach or detach GPUs to or from virtual machines in Nutanix Prism Central.
   - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Attach a GPU device to a VM) -
+      Operation Name: Create Virtual Machine GPU -
+      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin
+    - >-
+      B(Remove a GPU device from a VM) -
+      Operation Name: Delete Virtual Machine GPU -
+      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
 options:
   state:
     description:

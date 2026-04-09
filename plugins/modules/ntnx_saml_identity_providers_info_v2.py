@@ -18,6 +18,14 @@ description:
     - if external id is provided, it will return the identity provider info
     - if external id is not provided, it will return multiple identity providers
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(List SAML identity providers) -
+      Operation Name: View Saml Identity Provider -
+      Required Roles: 
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.0)"
 options:
   ext_id:
     description:

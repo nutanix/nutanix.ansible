@@ -17,6 +17,14 @@ description:
   - Certificate payload should be in Base64 format
   - This module uses PC v4 APIs based SDKs
 version_added: 2.4.0
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Update the SSL certificate for a specific cluster) -
+      Operation Name: Update Cluster SSL Certificate -
+      Required Roles: Cluster Admin, Prism Admin, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt&version=v4.2)"
 options:
   ext_id:
     description:

@@ -17,6 +17,14 @@ description:
     - This module retrieves the password status of system user accounts in Nutanix Clusters.
     - It uses the Nutanix Clusters Management API to fetch the password status of system users.
     - This module uses PC v4 APIs based SDKs.
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(List password status of system users) -
+      Operation Name: View System User Password -
+      Required Roles: Prism Admin, Super Admin, Prism Viewer, LocalAccountManager Admin, LocalAccountManager Viewer
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt&version=v4.2)"
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_info_v2

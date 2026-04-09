@@ -13,6 +13,14 @@ version_added: 2.1.0
 description:
     - Fetch specific PC Configuration info using external ID
     - Fetch list of PC Configuration info if external ID is not provided with optional filters. Length of list is 1.
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(List domain manager (Prism Central) configuration details) -
+      Operation Name: View Domain Manager -
+      Required Roles: Super Admin, Internal Super Admin, Prism Admin, Cluster Admin, Domain Manager Admin, Prism Viewer, Cluster Viewer, Domain Manager Viewer, NCM Connector
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism&version=v4.3)"
 options:
     ext_id:
         description:

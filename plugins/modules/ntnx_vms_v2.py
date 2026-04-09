@@ -25,6 +25,28 @@ notes:
     - Use subresources specific modules to update or create subresources.
     - Power state management is not supported in this module. use ntnx_vms_power_actions_v2 module to manage power state.
     - Avoid providing subresources spec during update operation.
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create VM) (C(state=present) without C(ext_id)) -
+      Operation Name: Create New Virtual Machine -
+      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin,
+      Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin,
+      Backup Admin, Disaster Recovery Admin, NCM Connector
+    - >-
+      B(Update VM) (C(state=present) with C(ext_id)) -
+      Operation Name: Update Virtual Machine Basic Config -
+      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin,
+      Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin,
+      Backup Admin, NCM Connector
+    - >-
+      B(Delete VM) (C(state=absent) with C(ext_id)) -
+      Operation Name: Delete Existing Virtual Machine -
+      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin,
+      Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin,
+      Backup Admin, NCM Connector
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
 options:
     ext_id:
         description:

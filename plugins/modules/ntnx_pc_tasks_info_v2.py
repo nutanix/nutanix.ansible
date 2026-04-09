@@ -14,6 +14,14 @@ description:
     - Fetch specific PC task info using external ID
     - Fetch list of PC task info if external ID is not provided with optional filters.
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(List tasks) -
+      Operation Name: View Task -
+      Required Roles: Prism Admin, Self-Service Admin (deprecated), Super Admin, Prism Viewer, CSI System, Kubernetes Data Services System, Administrator, Account Owner, Monitoring Admin, Backup Admin, NCM Connector, NCM Admin, Intelligent Ops Admin, NCM Viewer
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism&version=v4.3)"
 options:
     ext_id:
         description:

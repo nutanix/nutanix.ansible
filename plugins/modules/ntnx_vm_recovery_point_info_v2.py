@@ -16,6 +16,14 @@ version_added: 2.0.0
 description:
     - Fetch specific VM recovery point info which is part of top level recovery point
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Retrieve AHV VM recovery point details / List AHV VM recovery points) -
+      Operation Name: View AHV VM Recovery Point -
+      Required Roles: Account Owner, Administrator, Operator, Prism Admin, Prism Viewer, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, Backup Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
 options:
     recovery_point_ext_id:
         description:

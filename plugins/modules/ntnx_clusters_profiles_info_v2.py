@@ -18,6 +18,14 @@ description:
     - Fetch particular cluster profile info using external ID
     - Fetch multiple cluster profiles info with/without using filters, limit, etc.
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(List cluster profiles) -
+      Operation Name: View Cluster Profile -
+      Required Roles: Prism Admin, Prism Viewer, Self-Service Admin (deprecated), Super Admin, Cluster Admin, Cluster Viewer, Project Manager
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt&version=v4.2)"
 options:
   ext_id:
     description:

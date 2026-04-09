@@ -15,6 +15,43 @@ short_description: Perform power actions on Nutanix VMs
 description:
     - This module allows you to perform power actions on Nutanix VMs, such as powering on, powering off, resetting, and more.
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Force a power cycle for a VM) -
+      Operation Name: Power Cycle Virtual Machine -
+      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin, Virtual Machine Operator
+    - >-
+      B(Force power off a VM) -
+      Operation Name: Power Off Virtual Machine -
+      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin, Virtual Machine Operator, Backup Admin, NCM Connector
+    - >-
+      B(Turn on a VM) -
+      Operation Name: Power On Virtual Machine -
+      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin, Virtual Machine Operator, Backup Admin, NCM Connector
+    - >-
+      B(Restart the VM using NGT) -
+      Operation Name: Guest Reboot Virtual Machine -
+      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin, Virtual Machine Operator
+    - >-
+      B(Reboot a VM using ACPI) -
+      Operation Name: ACPI Reboot Virtual Machine -
+      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin, Virtual Machine Operator
+    - >-
+      B(Reset a VM immediately) -
+      Operation Name: Reset Virtual Machine -
+      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin, Virtual Machine Operator
+    - >-
+      B(Shutdown the VM using NGT) -
+      Operation Name: Guest Shutdown Virtual Machine -
+      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin, Virtual Machine Operator
+    - >-
+      B(Shutdown the VM using ACPI) -
+      Operation Name: ACPI Shutdown Virtual Machine -
+      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin, Virtual Machine Operator
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
 options:
     ext_id:
         description:

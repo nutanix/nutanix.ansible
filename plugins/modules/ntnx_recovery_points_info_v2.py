@@ -17,6 +17,14 @@ description:
     - Fetch specific recovery point info using external ID
     - Fetch list of multiple recovery points info if external ID is not provided with optional filters
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(List recovery points) -
+      Operation Name: View Recovery Point -
+      Required Roles: Prism Admin, Prism Viewer, Self-Service Admin (deprecated), Super Admin, Disaster Recovery Admin, Disaster Recovery Viewer, CSI System, Kubernetes Data Services System, Backup Admin, Project Manager, NCM Connector
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=dataprotection&version=v4.3)"
 options:
     ext_id:
         description:

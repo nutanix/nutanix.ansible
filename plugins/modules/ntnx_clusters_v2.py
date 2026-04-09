@@ -16,6 +16,23 @@ description:
   - This module allows you to create, update, and destroy Nutanix clusters using Prism Central.
   - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create a cluster) -
+      Operation Name: Create Cluster -
+      Required Roles: Cluster Admin, Prism Admin, Super Admin
+    - >-
+      B(Delete a cluster) -
+      Operation Name: Destroy Cluster -
+      Required Roles: Cluster Admin, Prism Admin, Super Admin
+    - >-
+      B(Update cluster) -
+      Operation Name: Update Cluster -
+      Required Roles: Cluster Admin, Prism Admin, Super Admin, Backup Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt&version=v4.2)"
 options:
   state:
     description:

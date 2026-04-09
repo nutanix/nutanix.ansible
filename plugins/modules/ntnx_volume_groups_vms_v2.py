@@ -18,6 +18,19 @@ description:
 version_added: "2.0.0"
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Attach an AHV VM to the given Volume Group) -
+      Operation Name: Attach Volume Group To AHV VM -
+      Required Roles: Prism Admin, Self-Service Admin (deprecated), Super Admin, Storage Admin, Virtual Machine Admin, Project Manager, Backup Admin
+    - >-
+      B(Detach an AHV VM from the given Volume Group) -
+      Operation Name: Detach Volume Group From AHV VM -
+      Required Roles: Prism Admin, Self-Service Admin (deprecated), Super Admin, Storage Admin, Virtual Machine Admin, Project Manager, Backup Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes&version=v4.2)"
 options:
     state:
         description:

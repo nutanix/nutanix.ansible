@@ -18,6 +18,14 @@ description:
 version_added: "2.0.0"
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(List CD-ROMs attached to a VM) -
+      Operation Name: View Virtual Machine CD ROM -
+      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin, Prism Viewer, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, VPC Admin, Storage Admin, Network Infra Admin, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
 options:
     ext_id:
         description:

@@ -16,6 +16,14 @@ version_added: 2.4.0
 description:
   - This module provides detailed information about the SSL certificate for specific cluster.
   - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Get SSL certificate details for a specified cluster) -
+      Operation Name: View Cluster SSL Certificate -
+      Required Roles: Cluster Admin, Prism Admin, Super Admin, Cluster Viewer, Prism Viewer
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt&version=v4.2)"
 options:
   ext_id:
     description:

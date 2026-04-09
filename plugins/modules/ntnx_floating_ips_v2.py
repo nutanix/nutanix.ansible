@@ -18,6 +18,23 @@ description:
   - For floating IP  create and delete, module will return tasks status in response after operation.
   - For floating IP update, module will return floating IP info if C(wait) is true, else task status.
   - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create a floating IP) -
+      Operation Name: Create Floating Ip -
+      Required Roles: Super Admin, Account Owner, Administrator, Prism Admin, VPC Admin
+    - >-
+      B(Delete the floating IP corresponding to the extId) -
+      Operation Name: Delete Floating Ip -
+      Required Roles: Super Admin, Account Owner, Administrator, Prism Admin, VPC Admin
+    - >-
+      B(Update the floating IP for this extId) -
+      Operation Name: Update Floating Ip -
+      Required Roles: Super Admin, Account Owner, Administrator, Prism Admin, VPC Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking&version=v4.3)"
 options:
   state:
     description:

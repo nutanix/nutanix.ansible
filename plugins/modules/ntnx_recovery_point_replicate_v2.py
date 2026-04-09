@@ -16,6 +16,14 @@ version_added: 2.0.0
 description:
     - Replicate recovery points using external ID
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Replicate a recovery point) -
+      Operation Name: Replicate Recovery Point -
+      Required Roles: Prism Admin, Self-Service Admin (deprecated), Super Admin, Disaster Recovery Admin, CSI System, Kubernetes Data Services System, Project Manager, Backup Admin, NCM Connector
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=dataprotection&version=v4.3)"
 options:
     nutanix_username:
         description:

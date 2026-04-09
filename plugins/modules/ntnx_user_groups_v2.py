@@ -16,6 +16,19 @@ description:
     - Create and Delete user groups in Nutanix PC
     - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create user group) -
+      Operation Name: Create User Group -
+      Required Roles: 
+    - >-
+      B(Delete user group) -
+      Operation Name: Delete User Group -
+      Required Roles: 
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.0)"
 options:
     state:
         description:

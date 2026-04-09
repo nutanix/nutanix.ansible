@@ -18,6 +18,14 @@ description:
     - Fetch particular cluster info using external ID
     - Fetch multiple clusters info with/without using filters, limit, etc.
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Get the list of clusters) -
+      Operation Name: View Cluster -
+      Required Roles: Developer, Prism Admin, Prism Viewer, Project Admin, Self-Service Admin (deprecated), Super Admin, Objects Admin, Network Infra Admin, VPC Admin, Consumer, Storage Admin, Storage Viewer, Files Admin, Cluster Admin, Cluster Viewer, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, Kubernetes Admin, Project Manager, Flow Admin, Flow Viewer, Flow Policy Author, NCM Connector, Security Dashboard Admin, Security Dashboard Viewer, LocalAccountManager Admin, LocalAccountManager Viewer
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt&version=v4.2)"
 options:
   ext_id:
     description:

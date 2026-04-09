@@ -17,6 +17,14 @@ description:
     - This module fetches information about Nutanix vpcs.
     - The module can fetch information about all vpcs or a specific vpc.
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Get the list of existing VPCs) -
+      Operation Name: View VPC -
+      Required Roles: Super Admin, Account Owner, Administrator, User, Prism Admin, Prism Viewer, VPC Admin, Consumer, Developer, Project Admin, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, Project Manager, Flow Admin, Flow Viewer, Flow Policy Author, Files Admin, Files Viewer, NCM Connector
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking&version=v4.3)"
 options:
     ext_id:
         description:

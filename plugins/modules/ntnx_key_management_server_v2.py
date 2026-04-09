@@ -16,6 +16,23 @@ description:
   - Key management server is used to secure encryption keys when data encryption is enabled.
   - This module uses PC v4 APIs based SDKs
 version_added: "2.4.0"
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create a key management server) -
+      Operation Name: Create Key Management Server -
+      Required Roles: Super Admin, Prism Admin, Security Admin
+    - >-
+      B(Delete a key management server) -
+      Operation Name: Delete Key Management Server -
+      Required Roles: Super Admin, Prism Admin, Security Admin
+    - >-
+      B(Update a key management server) -
+      Operation Name: Update Key Management Server -
+      Required Roles: Super Admin, Prism Admin, Security Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=security&version=v4.1)"
 options:
   state:
     description:

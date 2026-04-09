@@ -19,6 +19,14 @@ description:
   - Promote VM will create new VM in the secondary site (PC) for the given VM external ID.
   - Promote VG will create new VG in the another local cluster registered under same PC for the given VG external ID.
   - Promote VM uses secondary site PC IP and its credentials in C(nutanix_host) where Promote VG uses primary site PC IP.
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Promote protected resource) -
+      Operation Name: Promote Protected Resource -
+      Required Roles: Prism Admin, Self-Service Admin (deprecated), Super Admin, Disaster Recovery Admin, Project Manager
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=dataprotection&version=v4.3)"
 options:
   state:
     description:

@@ -17,6 +17,14 @@ description:
     - This module is used to get user_group information.
     - Fetch a specific user group using ext_id or multiple user groups
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(List user groups) -
+      Operation Name: View User Group -
+      Required Roles: 
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.0)"
 options:
     ext_id:
         description:

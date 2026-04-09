@@ -16,6 +16,23 @@ version_added: 2.0.0
 description:
     - Create, Update, Delete address groups
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create an Address Group) -
+      Operation Name: Create Address Group -
+      Required Roles: Super Admin, Prism Admin, Flow Admin, Project Manager
+    - >-
+      B(Delete an Address Group) -
+      Operation Name: Delete Address Group -
+      Required Roles: Super Admin, Prism Admin, Flow Admin, Project Manager
+    - >-
+      B(Update an Address Group) -
+      Operation Name: Update Address Group -
+      Required Roles: Super Admin, Prism Admin, Flow Admin, Project Manager
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg&version=v4.2)"
 options:
   state:
     description:

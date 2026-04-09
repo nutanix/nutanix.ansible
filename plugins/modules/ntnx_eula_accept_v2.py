@@ -16,6 +16,14 @@ version_added: 2.4.0
 description:
   - Allows users to accept End User License Agreement.
   - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Accept End User License Agreement) -
+      Operation Name: Add Eula User -
+      Required Roles: License Admin, Internal Super Admin, Prism Admin, Super Admin, Cluster Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=licensing&version=v4.3)"
 options:
     user_name:
         description:

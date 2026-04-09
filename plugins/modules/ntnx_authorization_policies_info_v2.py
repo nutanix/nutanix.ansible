@@ -19,6 +19,14 @@ description:
     - It will fetch multiple authorization policies if external ID is not provided
     - Use filters to fetch specific authorization policies
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Lists all the authorization policies) -
+      Operation Name: View Authorization Policy -
+      Required Roles: 
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.0)"
 options:
     ext_id:
         description:

@@ -15,6 +15,14 @@ description:
   - This module allows you to Get network information for unconfigured cluster nodes.
   - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Get network information of unconfigured nodes) -
+      Operation Name: Fetch Cluster Node Networking Details -
+      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Self-Service Admin (deprecated), Super Admin, Project Manager
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt&version=v4.2)"
 options:
   cluster_ext_id:
     description:

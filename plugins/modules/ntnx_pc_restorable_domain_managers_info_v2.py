@@ -14,6 +14,14 @@ description:
     - Fetch list of multiple restorable domain managers for a given restore source.
     - Please provide Prism Element IP address here in C(nutanix_host)
     - Lists all the domain managers backed up at the object store/cluster.
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(List restorable domain managers) -
+      Operation Name: View Restorable Domain Manager -
+      Required Roles: Super Admin, Prism Admin, Prism Viewer, Domain Manager Admin, Domain Manager Viewer
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism&version=v4.3)"
 options:
     restore_source_ext_id:
         description:

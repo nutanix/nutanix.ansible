@@ -14,6 +14,14 @@ version_added: 2.3.0
 description:
   - This module allows you to abort a task in Prism Central.
   - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Cancel an ongoing task) -
+      Operation Name: Cancel Task -
+      Required Roles: Prism Admin, Self-Service Admin (deprecated), Super Admin, NCM Admin, Intelligent Ops Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism&version=v4.3)"
 options:
   task_ext_id:
     description:

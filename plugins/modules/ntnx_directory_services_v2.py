@@ -16,6 +16,23 @@ version_added: "2.0.0"
 description:
     - This module is used to create, update and delete directory services in Nutanix PC.
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create directory service) -
+      Operation Name: Create Directory Service -
+      Required Roles: 
+    - >-
+      B(Delete directory service) -
+      Operation Name: Delete Directory Service -
+      Required Roles: 
+    - >-
+      B(Update directory service) -
+      Operation Name: Update Directory Service -
+      Required Roles: 
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.0)"
 options:
     state:
         description:

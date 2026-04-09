@@ -18,6 +18,14 @@ description:
   - If ext_id is provided, fetch particular storage policy info using external ID
   - If ext_id is not provided, fetch multiple storage policies info with/without using filters, limit, etc.
   - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Get a list of Storage Policies) -
+      Operation Name: View Storage Policy -
+      Required Roles: Prism Admin, Self-Service Admin (deprecated), Super Admin, Storage Admin, Prism Viewer, Storage Viewer, Consumer, CSI System, Developer, Kubernetes Admin, Kubernetes Data Services System, Operator, Project Admin, Project Manager
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=datapolicies&version=v4.2)"
 options:
   ext_id:
     description:
