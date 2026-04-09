@@ -139,7 +139,8 @@ notes:
     - >-
       B(Get an image placement policy) -
       Operation Name: View Image Placement Policy -
-      Required Roles: Consumer, Developer, Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
+      Required Roles: Consumer, Developer, Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin, Virtual Machine Admin,
+      Self-Service Admin (deprecated)
     - >-
       B(Resume an image placement policy) -
       Operation Name: Resume Image Placement Policy -

@@ -26,11 +26,13 @@ notes:
     - >-
       B(Assign an IP address to the provided network device) -
       Operation Name: Assign Virtual Machine NIC IP -
-      Required Roles: Account Owner, Administrator, Backup Admin, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Super Admin, User, Virtual Machine Admin, Self-Service Admin (deprecated)
+      Required Roles: Account Owner, Administrator, Backup Admin, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Super Admin, User,
+      Virtual Machine Admin, Self-Service Admin (deprecated)
     - >-
       B(Release an assigned IP address from the provided network device) -
       Operation Name: Release Virtual Machine NIC IP -
-      Required Roles: Account Owner, Administrator, Backup Admin, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Super Admin, User, Virtual Machine Admin, Self-Service Admin (deprecated)
+      Required Roles: Account Owner, Administrator, Backup Admin, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Super Admin, User,
+      Virtual Machine Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
 options:
     state:

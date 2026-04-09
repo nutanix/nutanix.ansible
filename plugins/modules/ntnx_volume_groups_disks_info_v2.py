@@ -25,11 +25,13 @@ notes:
     - >-
       B(Get the details of a Volume Disk) -
       Operation Name: View Volume Group Disks -
-      Required Roles: Backup Admin, CSI System, Disaster Recovery Admin, Disaster Recovery Viewer, Kubernetes Data Services System, Prism Admin, Prism Viewer, Project Manager, Storage Admin, Storage Viewer, Super Admin, Self-Service Admin (deprecated)
+      Required Roles: Backup Admin, CSI System, Disaster Recovery Admin, Disaster Recovery Viewer, Kubernetes Data Services System, Prism Admin, Prism Viewer,
+      Project Manager, Storage Admin, Storage Viewer, Super Admin, Self-Service Admin (deprecated)
     - >-
       B(List all the Volume Disks attached to the Volume Group) -
       Operation Name: View Volume Group Disks -
-      Required Roles: CSI System, Disaster Recovery Admin, Disaster Recovery Viewer, Kubernetes Data Services System, Prism Admin, Prism Viewer, Project Manager, Storage Admin, Storage Viewer, Super Admin, Self-Service Admin (deprecated)
+      Required Roles: CSI System, Disaster Recovery Admin, Disaster Recovery Viewer, Kubernetes Data Services System, Prism Admin, Prism Viewer,
+      Project Manager, Storage Admin, Storage Viewer, Super Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes&version=v4.2)"
 options:
     ext_id:

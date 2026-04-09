@@ -22,7 +22,8 @@ notes:
     - >-
       B(Migrate a network device to another subnet) -
       Operation Name: Migrate Virtual Machine NIC -
-      Required Roles: Account Owner, Administrator, Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Project Admin, Project Manager, Super Admin, User, Virtual Machine Admin, Self-Service Admin (deprecated)
+      Required Roles: Account Owner, Administrator, Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Project Admin, Project Manager,
+      Super Admin, User, Virtual Machine Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
 options:
     state:

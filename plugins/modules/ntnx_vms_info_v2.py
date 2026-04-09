@@ -22,7 +22,7 @@ notes:
     - >-
       B(Get VM / List VMs) -
       Operation Name: View Existing Virtual Machine -
-      Required Roles: Account Owner, Administrator, Consumer, Developer, Operator, Prism Admin, User
+      Required Roles: Account Owner, Administrator, Consumer, Developer, Operator, Prism Admin, User,
       Prism Viewer, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, VPC Admin,
       Storage Admin, Network Infra Admin, Virtual Machine Admin, Virtual Machine Operator,
       Virtual Machine Viewer, Disaster Recovery Admin, Disaster Recovery Viewer, Backup Admin,

@@ -25,15 +25,19 @@ notes:
     - >-
       B(Create an image) -
       Operation Name: Create Image -
-      Required Roles: Account Owner, Administrator, Consumer, CSI System, Developer, Kubernetes Data Services System, Kubernetes Infrastructure Provision, NCM Connector, Prism Admin, Project Manager, Super Admin, User, Virtual Machine Admin, Self-Service Admin (deprecated)
+      Required Roles: Account Owner, Administrator, Consumer, CSI System, Developer, Kubernetes Data Services System, Kubernetes Infrastructure Provision,
+      NCM Connector, Prism Admin, Project Manager, Super Admin, User, Virtual Machine Admin, Self-Service Admin (deprecated)
     - >-
       B(Delete an image) -
       Operation Name: Delete Image -
-      Required Roles: Account Owner, Administrator, CSI System, Kubernetes Data Services System, Kubernetes Infrastructure Provision, Prism Admin, Project Manager, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
+      Required Roles: Account Owner, Administrator, CSI System, Kubernetes Data Services System, Kubernetes Infrastructure Provision, Prism Admin,
+      Project Manager, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
     - >-
       B(Get an image) -
       Operation Name: View Image -
-      Required Roles: Account Owner, Administrator, Backup Admin, Consumer, CSI System, Developer, Kubernetes Data Services System, Kubernetes Infrastructure Provision, NCM Connector, Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin, User, Virtual Machine Admin, Self-Service Admin (deprecated)
+      Required Roles: Account Owner, Administrator, Backup Admin, Consumer, CSI System, Developer, Kubernetes Data Services System,
+      Kubernetes Infrastructure Provision, NCM Connector, Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin, User, Virtual Machine Admin,
+      Self-Service Admin (deprecated)
     - >-
       B(Update an image) -
       Operation Name: Update Image -

@@ -24,7 +24,9 @@ notes:
     - >-
       B(List disks attached to a VM) -
       Operation Name: View Virtual Machine Disk -
-      Required Roles: Account Owner, Administrator, Backup Admin, Consumer, Developer, NCM Connector, Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin, Project Manager, Storage Admin, Super Admin, User, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin, Self-Service Admin (deprecated)
+      Required Roles: Account Owner, Administrator, Backup Admin, Consumer, Developer, NCM Connector, Network Infra Admin, Operator, Prism Admin, Prism Viewer,
+      Project Admin, Project Manager, Storage Admin, Super Admin, User, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin,
+      Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
 options:
     ext_id:

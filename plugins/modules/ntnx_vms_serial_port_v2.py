@@ -22,15 +22,18 @@ notes:
     - >-
       B(Create a serial port for a VM) -
       Operation Name: Create Virtual Machine Serial Port -
-      Required Roles: Account Owner, Administrator, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Super Admin, User, Virtual Machine Admin, Self-Service Admin (deprecated)
+      Required Roles: Account Owner, Administrator, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Super Admin, User,
+      Virtual Machine Admin, Self-Service Admin (deprecated)
     - >-
       B(Remove a serial port from a VM) -
       Operation Name: Delete Virtual Machine Serial Port -
-      Required Roles: Account Owner, Administrator, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Super Admin, User, Virtual Machine Admin, Self-Service Admin (deprecated)
+      Required Roles: Account Owner, Administrator, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Super Admin, User,
+      Virtual Machine Admin, Self-Service Admin (deprecated)
     - >-
       B(Update the configuration for the provided serial port) -
       Operation Name: Update Virtual Machine Serial Port -
-      Required Roles: Account Owner, Administrator, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Super Admin, User, Virtual Machine Admin, Self-Service Admin (deprecated)
+      Required Roles: Account Owner, Administrator, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Super Admin, User,
+      Virtual Machine Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
 options:
     state:

@@ -21,7 +21,8 @@ notes:
     - >-
       B(Get a protected resource) -
       Operation Name: View Protected Resource -
-      Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, Prism Admin, Prism Viewer, Project Manager, Super Admin, Self-Service Admin (deprecated)
+      Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, Prism Admin, Prism Viewer, Project Manager, Super Admin,
+      Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=dataprotection&version=v4.3)"
 options:
   ext_id:

@@ -23,7 +23,9 @@ notes:
     - >-
       B(Get the list of existing VPCs) -
       Operation Name: View VPC -
-      Required Roles: Account Owner, Administrator, Consumer, Developer, Files Admin, Files Viewer, Flow Admin, Flow Policy Author, Flow Viewer, NCM Connector, Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin, User, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin
+      Required Roles: Account Owner, Administrator, Consumer, Developer, Files Admin, Files Viewer, Flow Admin, Flow Policy Author, Flow Viewer, NCM Connector,
+      Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin, User, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer,
+      VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking&version=v4.3)"
 options:
     ext_id:

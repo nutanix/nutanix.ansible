@@ -25,15 +25,18 @@ notes:
     - >-
       B(Creates a new Volume Disk) -
       Operation Name: Create Volume Group Disk -
-      Required Roles: Backup Admin, CSI System, Kubernetes Data Services System, Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
+      Required Roles: Backup Admin, CSI System, Kubernetes Data Services System, Prism Admin, Project Manager, Storage Admin, Super Admin,
+      Self-Service Admin (deprecated)
     - >-
       B(Delete a Volume Disk) -
       Operation Name: Delete Volume Group Disk -
-      Required Roles: Backup Admin, CSI System, Kubernetes Data Services System, Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
+      Required Roles: Backup Admin, CSI System, Kubernetes Data Services System, Prism Admin, Project Manager, Storage Admin, Super Admin,
+      Self-Service Admin (deprecated)
     - >-
       B(Get the details of a Volume Disk) -
       Operation Name: View Volume Group Disks -
-      Required Roles: Backup Admin, CSI System, Disaster Recovery Admin, Disaster Recovery Viewer, Kubernetes Data Services System, Prism Admin, Prism Viewer, Project Manager, Storage Admin, Storage Viewer, Super Admin, Self-Service Admin (deprecated)
+      Required Roles: Backup Admin, CSI System, Disaster Recovery Admin, Disaster Recovery Viewer, Kubernetes Data Services System, Prism Admin, Prism Viewer,
+      Project Manager, Storage Admin, Storage Viewer, Super Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes&version=v4.2)"
 options:
     state:
