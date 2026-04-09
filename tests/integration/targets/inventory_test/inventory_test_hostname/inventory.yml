@@ -49,7 +49,8 @@
       ansible.builtin.set_fact:
         vm_with_desc_ext_id: "{{ vm_with_desc_result.response.ext_id }}"
 
-    - block:
+    - name: Run hostname tests and cleanup
+      block:
         # =====================================================================
         # Test 1: Fallback from description to name (strict: false)
         #   nutanix.yml: hostnames: [description, name]
