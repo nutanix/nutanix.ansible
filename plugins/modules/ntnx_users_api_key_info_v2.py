@@ -22,7 +22,7 @@ notes:
     - >-
       B(List keys for the user) -
       Operation Name: View User Key -
-      Required Roles: 
+      Required Roles: Prism Admin, Prism Viewer, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.0)"
 options:
     user_ext_id:

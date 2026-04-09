@@ -23,15 +23,15 @@ notes:
     - >-
       B(Create directory service) -
       Operation Name: Create Directory Service -
-      Required Roles: 
+      Required Roles: Super Admin
     - >-
       B(Delete directory service) -
       Operation Name: Delete Directory Service -
-      Required Roles: 
+      Required Roles: Super Admin
     - >-
       B(Update directory service) -
       Operation Name: Update Directory Service -
-      Required Roles: 
+      Required Roles: Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.0)"
 options:
     state:

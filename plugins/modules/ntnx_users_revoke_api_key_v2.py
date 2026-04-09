@@ -21,7 +21,7 @@ notes:
     - >-
       B(Revoke the requested key) -
       Operation Name: Revoke User Key -
-      Required Roles: 
+      Required Roles: Super Admin, Prism Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.0)"
 options:
     state:

@@ -22,7 +22,7 @@ notes:
     - >-
       B(List role(s)) -
       Operation Name: View Role -
-      Required Roles: 
+      Required Roles: Prism Admin, Prism Viewer, Project Admin, Self-Service Admin, Super Admin, Account Owner, Administrator, User
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.0)"
 options:
     ext_id:

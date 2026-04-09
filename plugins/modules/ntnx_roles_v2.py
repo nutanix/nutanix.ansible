@@ -22,15 +22,15 @@ notes:
     - >-
       B(Create role) -
       Operation Name: Create Role -
-      Required Roles: 
+      Required Roles: Prism Admin, Self-Service Admin, Super Admin
     - >-
       B(Delete role) -
       Operation Name: Delete Role -
-      Required Roles: 
+      Required Roles: Prism Admin, Self-Service Admin, Super Admin
     - >-
       B(Update role) -
       Operation Name: Update Role -
-      Required Roles: 
+      Required Roles: Prism Admin, Self-Service Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.0)"
 options:
     state:
