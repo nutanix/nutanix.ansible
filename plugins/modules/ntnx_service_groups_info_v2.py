@@ -23,7 +23,7 @@ notes:
     - >-
       B(List all the Service Groups) -
       Operation Name: View Service Group -
-      Required Roles: Super Admin, Prism Admin, Flow Admin, Prism Viewer, Flow Viewer, Project Manager
+      Required Roles: Flow Admin, Flow Viewer, Prism Admin, Prism Viewer, Project Manager, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg&version=v4.2)"
 options:
     ext_id:

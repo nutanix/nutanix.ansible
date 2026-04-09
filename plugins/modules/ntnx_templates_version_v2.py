@@ -21,7 +21,7 @@ notes:
     - >-
       B(Delete a template version) -
       Operation Name: Delete VM Templates Versions -
-      Required Roles: Super Admin, Prism Admin, Virtual Machine Admin
+      Required Roles: Prism Admin, Super Admin, Virtual Machine Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
 options:
     template_ext_id:

@@ -22,7 +22,7 @@ notes:
     - >-
       B(Restore recovery point) -
       Operation Name: Restore Recovery Point -
-      Required Roles: Prism Admin, Self-Service Admin (deprecated), Super Admin, Disaster Recovery Admin, CSI System, Kubernetes Data Services System, Backup Admin, Project Manager, NCM Connector
+      Required Roles: Backup Admin, CSI System, Disaster Recovery Admin, Kubernetes Data Services System, NCM Connector, Prism Admin, Project Manager, Super Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=dataprotection&version=v4.3)"
 options:
     state:

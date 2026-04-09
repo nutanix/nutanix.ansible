@@ -23,15 +23,15 @@ notes:
     - >-
       B(Create a Storage Container) -
       Operation Name: Create Storage Container -
-      Required Roles: Prism Admin, Self-Service Admin (deprecated), Storage Admin, Super Admin, Project Manager
+      Required Roles: Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
     - >-
       B(Delete a Storage Container) -
       Operation Name: Delete Storage Container -
-      Required Roles: Prism Admin, Self-Service Admin (deprecated), Storage Admin, Super Admin, Project Manager
+      Required Roles: Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
     - >-
       B(Update a Storage Container) -
       Operation Name: Update Storage Container -
-      Required Roles: Prism Admin, Self-Service Admin (deprecated), Storage Admin, Super Admin, Project Manager, Backup Admin
+      Required Roles: Backup Admin, Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt&version=v4.2)"
 options:
   state:

@@ -22,7 +22,7 @@ notes:
     - >-
       B(Accept End User License Agreement) -
       Operation Name: Add Eula User -
-      Required Roles: License Admin, Internal Super Admin, Prism Admin, Super Admin, Cluster Admin
+      Required Roles: Cluster Admin, Internal Super Admin, License Admin, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=licensing&version=v4.3)"
 options:
     user_name:

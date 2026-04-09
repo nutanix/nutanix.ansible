@@ -25,7 +25,7 @@ notes:
     - >-
       B(Get details about all LCM entities.) -
       Operation Name: View LCM Entity -
-      Required Roles: Super Admin, Prism Admin, Cluster Admin, Prism Viewer, Cluster Viewer, Security Dashboard Admin, Security Dashboard Viewer
+      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Security Dashboard Admin, Security Dashboard Viewer, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle&version=v4.2)"
 options:
     ext_id:

@@ -25,15 +25,15 @@ notes:
     - >-
       B(Create a floating IP) -
       Operation Name: Create Floating Ip -
-      Required Roles: Super Admin, Account Owner, Administrator, Prism Admin, VPC Admin
+      Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
     - >-
       B(Delete the floating IP corresponding to the extId) -
       Operation Name: Delete Floating Ip -
-      Required Roles: Super Admin, Account Owner, Administrator, Prism Admin, VPC Admin
+      Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
     - >-
       B(Update the floating IP for this extId) -
       Operation Name: Update Floating Ip -
-      Required Roles: Super Admin, Account Owner, Administrator, Prism Admin, VPC Admin
+      Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking&version=v4.3)"
 options:
   state:

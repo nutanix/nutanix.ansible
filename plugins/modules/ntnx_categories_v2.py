@@ -23,19 +23,19 @@ notes:
     - >-
       B(Create a category) -
       Operation Name: Create Category -
-      Required Roles: Prism Admin, Self-Service Admin (deprecated), Project Manager, Super Admin, Storage Admin, Category Admin, CSI System, Kubernetes Data Services System, Kubernetes Infrastructure Provision, Kubernetes Admin, NCM Connector
+      Required Roles: Category Admin, CSI System, Kubernetes Admin, Kubernetes Data Services System, Kubernetes Infrastructure Provision, NCM Connector, Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
     - >-
       B(Delete a category) -
       Operation Name: Delete Category -
-      Required Roles: Prism Admin, Self-Service Admin (deprecated), Project Manager, Super Admin, Storage Admin, Category Admin, CSI System, Kubernetes Data Services System, Kubernetes Infrastructure Provision, Kubernetes Admin, NCM Connector
+      Required Roles: Category Admin, CSI System, Kubernetes Admin, Kubernetes Data Services System, Kubernetes Infrastructure Provision, NCM Connector, Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
     - >-
       B(Fetch a category) -
       Operation Name: View Category -
-      Required Roles: Prism Admin, Self-Service Admin (deprecated), Project Manager, Prism Viewer, Developer, Project Admin, Super Admin, Storage Admin, Flow Admin, Flow Viewer, Category Viewer, Category Admin, Disaster Recovery Admin, Disaster Recovery Viewer, CSI System, Kubernetes Data Services System, Kubernetes Infrastructure Provision, Kubernetes Admin, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, Cluster Admin, Cluster Viewer, Backup Admin, NCM Connector
+      Required Roles: Backup Admin, Category Admin, Category Viewer, Cluster Admin, Cluster Viewer, CSI System, Developer, Disaster Recovery Admin, Disaster Recovery Viewer, Flow Admin, Flow Viewer, Kubernetes Admin, Kubernetes Data Services System, Kubernetes Infrastructure Provision, NCM Connector, Prism Admin, Prism Viewer, Project Admin, Project Manager, Storage Admin, Super Admin, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, Self-Service Admin (deprecated)
     - >-
       B(Update a category) -
       Operation Name: Update Category -
-      Required Roles: Prism Admin, Self-Service Admin (deprecated), Project Manager, Super Admin, Storage Admin, Category Admin, CSI System, Kubernetes Data Services System, Kubernetes Infrastructure Provision, Kubernetes Admin
+      Required Roles: Category Admin, CSI System, Kubernetes Admin, Kubernetes Data Services System, Kubernetes Infrastructure Provision, Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism&version=v4.3)"
 options:
   ext_id:

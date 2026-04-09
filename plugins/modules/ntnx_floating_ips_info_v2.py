@@ -23,11 +23,11 @@ notes:
     - >-
       B(Get the floating IP for this extId) -
       Operation Name: View Floating Ip -
-      Required Roles: Super Admin, Account Owner, Administrator, User, Prism Admin, Prism Viewer, VPC Admin
+      Required Roles: Account Owner, Administrator, Prism Admin, Prism Viewer, Super Admin, User, VPC Admin
     - >-
       B(Get a list of floating IPs) -
       Operation Name: View Floating Ip -
-      Required Roles: Super Admin, Account Owner, Administrator, User, Prism Admin, Prism Viewer, VPC Admin
+      Required Roles: Account Owner, Administrator, Prism Admin, Prism Viewer, Super Admin, User, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking&version=v4.3)"
 options:
     ext_id:

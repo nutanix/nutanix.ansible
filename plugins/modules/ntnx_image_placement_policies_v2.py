@@ -131,27 +131,27 @@ notes:
     - >-
       B(Create an image placement policy) -
       Operation Name: Create Image Placement Policy -
-      Required Roles: Super Admin, Prism Admin, Consumer, Developer, Project Manager, Self-Service Admin (deprecated), Virtual Machine Admin
+      Required Roles: Consumer, Developer, Prism Admin, Project Manager, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
     - >-
       B(Delete an image placement policy) -
       Operation Name: Delete Image Placement Policy -
-      Required Roles: Super Admin, Prism Admin, Project Manager, Self-Service Admin (deprecated), Virtual Machine Admin
+      Required Roles: Prism Admin, Project Manager, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
     - >-
       B(Get an image placement policy) -
       Operation Name: View Image Placement Policy -
-      Required Roles: Super Admin, Prism Admin, Prism Viewer, Consumer, Developer, Project Manager, Project Admin, Self-Service Admin (deprecated), Virtual Machine Admin
+      Required Roles: Consumer, Developer, Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
     - >-
       B(Resume an image placement policy) -
       Operation Name: Resume Image Placement Policy -
-      Required Roles: Super Admin, Prism Admin, Project Manager, Self-Service Admin (deprecated)
+      Required Roles: Prism Admin, Project Manager, Super Admin, Self-Service Admin (deprecated)
     - >-
       B(Suspend an image placement policy) -
       Operation Name: Suspend Image Placement Policy -
-      Required Roles: Super Admin, Prism Admin, Project Manager, Self-Service Admin (deprecated)
+      Required Roles: Prism Admin, Project Manager, Super Admin, Self-Service Admin (deprecated)
     - >-
       B(Update an image placement policy) -
       Operation Name: Update Image Placement Policy -
-      Required Roles: Super Admin, Prism Admin, Project Manager, Self-Service Admin (deprecated), Virtual Machine Admin
+      Required Roles: Prism Admin, Project Manager, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
 """
 

@@ -21,15 +21,15 @@ notes:
     - >-
       B(Create backup target) -
       Operation Name: Create Domain Manager Backup Target -
-      Required Roles: Super Admin, Prism Admin, Domain Manager Admin
+      Required Roles: Domain Manager Admin, Prism Admin, Super Admin
     - >-
       B(Delete backup target) -
       Operation Name: Delete Domain Manager Backup Target -
-      Required Roles: Super Admin, Prism Admin, Domain Manager Admin
+      Required Roles: Domain Manager Admin, Prism Admin, Super Admin
     - >-
       B(Update backup target) -
       Operation Name: Update Domain Manager Backup Target -
-      Required Roles: Super Admin, Prism Admin, Domain Manager Admin
+      Required Roles: Domain Manager Admin, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism&version=v4.3)"
 options:
     state:

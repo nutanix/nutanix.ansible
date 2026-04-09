@@ -29,7 +29,7 @@ notes:
     - >-
       B(Create a SSL certificate for an Object store) -
       Operation Name: Create Object Store Certificate -
-      Required Roles: Objects Editor, Objects Admin, Prism Admin, Super Admin
+      Required Roles: Objects Admin, Objects Editor, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=objects&version=v4.0)"
 options:
     state:

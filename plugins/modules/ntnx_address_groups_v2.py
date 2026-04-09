@@ -23,15 +23,15 @@ notes:
     - >-
       B(Create an Address Group) -
       Operation Name: Create Address Group -
-      Required Roles: Super Admin, Prism Admin, Flow Admin, Project Manager
+      Required Roles: Flow Admin, Prism Admin, Project Manager, Super Admin
     - >-
       B(Delete an Address Group) -
       Operation Name: Delete Address Group -
-      Required Roles: Super Admin, Prism Admin, Flow Admin, Project Manager
+      Required Roles: Flow Admin, Prism Admin, Project Manager, Super Admin
     - >-
       B(Update an Address Group) -
       Operation Name: Update Address Group -
-      Required Roles: Super Admin, Prism Admin, Flow Admin, Project Manager
+      Required Roles: Flow Admin, Prism Admin, Project Manager, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg&version=v4.2)"
 options:
   state:

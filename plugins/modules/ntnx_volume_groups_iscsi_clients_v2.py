@@ -25,15 +25,15 @@ notes:
     - >-
       B(Attach an iSCSI client to the given Volume Group) -
       Operation Name: Attach Volume Group To External ISCSI Client -
-      Required Roles: CSI System, Kubernetes Data Services System, Prism Admin, Self-Service Admin (deprecated), Super Admin, Storage Admin, Project Manager, Backup Admin
+      Required Roles: Backup Admin, CSI System, Kubernetes Data Services System, Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
     - >-
       B(Detach an iSCSi client from the given Volume Group) -
       Operation Name: Detach Volume Group From External ISCSI Client -
-      Required Roles: CSI System, Kubernetes Data Services System, Prism Admin, Self-Service Admin (deprecated), Super Admin, Storage Admin, Project Manager, Backup Admin
+      Required Roles: Backup Admin, CSI System, Kubernetes Data Services System, Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
     - >-
       B(Fetch an iSCSI client details) -
       Operation Name: View External ISCSI Client -
-      Required Roles: CSI System, Kubernetes Data Services System, Prism Admin, Prism Viewer, Self-Service Admin (deprecated), Super Admin, Storage Admin, Storage Viewer, Project Manager, Backup Admin
+      Required Roles: Backup Admin, CSI System, Kubernetes Data Services System, Prism Admin, Prism Viewer, Project Manager, Storage Admin, Storage Viewer, Super Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes&version=v4.2)"
 options:
     state:

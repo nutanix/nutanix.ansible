@@ -19,7 +19,7 @@ notes:
     - >-
       B(Fetch restore source) -
       Operation Name: View Restore Source -
-      Required Roles: Super Admin, Prism Admin, Prism Viewer, Domain Manager Admin, Domain Manager Viewer
+      Required Roles: Domain Manager Admin, Domain Manager Viewer, Prism Admin, Prism Viewer, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism&version=v4.3)"
 options:
     ext_id:

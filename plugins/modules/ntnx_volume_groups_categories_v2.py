@@ -22,11 +22,11 @@ notes:
     - >-
       B(Associate category to a Volume Group) -
       Operation Name: Associate Volume Group Categories -
-      Required Roles: CSI System, Kubernetes Data Services System, Prism Admin, Self-Service Admin (deprecated), Super Admin, Storage Admin, Project Manager
+      Required Roles: CSI System, Kubernetes Data Services System, Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
     - >-
       B(Disassociate category from a Volume Group) -
       Operation Name: Disassociate Volume Group Categories -
-      Required Roles: CSI System, Kubernetes Data Services System, Prism Admin, Self-Service Admin (deprecated), Super Admin, Storage Admin, Project Manager
+      Required Roles: CSI System, Kubernetes Data Services System, Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes&version=v4.2)"
 options:
     state:

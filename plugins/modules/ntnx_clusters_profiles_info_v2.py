@@ -24,7 +24,7 @@ notes:
     - >-
       B(List cluster profiles) -
       Operation Name: View Cluster Profile -
-      Required Roles: Prism Admin, Prism Viewer, Self-Service Admin (deprecated), Super Admin, Cluster Admin, Cluster Viewer, Project Manager
+      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Project Manager, Super Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt&version=v4.2)"
 options:
   ext_id:

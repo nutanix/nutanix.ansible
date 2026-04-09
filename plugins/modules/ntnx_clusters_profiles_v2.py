@@ -24,15 +24,15 @@ notes:
     - >-
       B(Create a cluster profile) -
       Operation Name: Create Cluster Profile -
-      Required Roles: Prism Admin, Super Admin, Cluster Admin
+      Required Roles: Cluster Admin, Prism Admin, Super Admin
     - >-
       B(Delete cluster profile) -
       Operation Name: Delete Cluster Profile -
-      Required Roles: Prism Admin, Super Admin, Cluster Admin
+      Required Roles: Cluster Admin, Prism Admin, Super Admin
     - >-
       B(Update cluster profile) -
       Operation Name: Update Cluster Profile -
-      Required Roles: Prism Admin, Super Admin, Cluster Admin
+      Required Roles: Cluster Admin, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt&version=v4.2)"
 options:
   state:

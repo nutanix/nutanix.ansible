@@ -33,7 +33,7 @@ notes:
     - >-
       B(Create a Virtual Switch from an existing bridge) -
       Operation Name: Migrate Bridge -
-      Required Roles: Prism Admin, Super Admin, Network Infra Admin
+      Required Roles: Network Infra Admin, Prism Admin, Super Admin
     - >-
       B(Update a Virtual Switch) -
       Operation Name: Update Virtual Switch -

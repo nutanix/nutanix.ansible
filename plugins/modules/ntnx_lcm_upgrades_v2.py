@@ -23,7 +23,7 @@ notes:
     - >-
       B(Perform an LCM upgrade operation.) -
       Operation Name: Perform Upgrade Component -
-      Required Roles: Super Admin, Prism Admin, Cluster Admin
+      Required Roles: Cluster Admin, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle&version=v4.2)"
 options:
     state:

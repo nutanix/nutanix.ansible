@@ -18,7 +18,7 @@ notes:
     - >-
       B(Get the LCM framework status) -
       Operation Name: View Status Info -
-      Required Roles: Super Admin, Prism Admin, Cluster Admin, Prism Viewer, Cluster Viewer
+      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle&version=v4.2)"
 author:
   - George Ghawali (@george-ghawali)

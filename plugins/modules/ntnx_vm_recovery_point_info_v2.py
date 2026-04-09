@@ -22,7 +22,7 @@ notes:
     - >-
       B(Retrieve AHV VM recovery point details / List AHV VM recovery points) -
       Operation Name: View AHV VM Recovery Point -
-      Required Roles: Account Owner, Administrator, Operator, Prism Admin, Prism Viewer, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, Backup Admin
+      Required Roles: Account Owner, Administrator, Backup Admin, Operator, Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
 options:
     recovery_point_ext_id:

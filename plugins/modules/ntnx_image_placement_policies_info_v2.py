@@ -24,11 +24,11 @@ notes:
     - >-
       B(Get an image placement policy) -
       Operation Name: View Image Placement Policy -
-      Required Roles: Super Admin, Prism Admin, Prism Viewer, Consumer, Developer, Project Manager, Project Admin, Self-Service Admin (deprecated), Virtual Machine Admin
+      Required Roles: Consumer, Developer, Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
     - >-
       B(List image placement policies) -
       Operation Name: View Image Placement Policy -
-      Required Roles: Super Admin, Prism Admin, Prism Viewer, Consumer, Developer, Project Manager, Project Admin, Self-Service Admin (deprecated), Virtual Machine Admin
+      Required Roles: Consumer, Developer, Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
 options:
   ext_id:

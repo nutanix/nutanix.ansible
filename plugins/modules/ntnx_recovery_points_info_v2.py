@@ -23,7 +23,7 @@ notes:
     - >-
       B(List recovery points) -
       Operation Name: View Recovery Point -
-      Required Roles: Prism Admin, Prism Viewer, Self-Service Admin (deprecated), Super Admin, Disaster Recovery Admin, Disaster Recovery Viewer, CSI System, Kubernetes Data Services System, Backup Admin, Project Manager, NCM Connector
+      Required Roles: Backup Admin, CSI System, Disaster Recovery Admin, Disaster Recovery Viewer, Kubernetes Data Services System, NCM Connector, Prism Admin, Prism Viewer, Project Manager, Super Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=dataprotection&version=v4.3)"
 options:
     ext_id:

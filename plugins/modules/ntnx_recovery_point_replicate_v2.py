@@ -22,7 +22,7 @@ notes:
     - >-
       B(Replicate a recovery point) -
       Operation Name: Replicate Recovery Point -
-      Required Roles: Prism Admin, Self-Service Admin (deprecated), Super Admin, Disaster Recovery Admin, CSI System, Kubernetes Data Services System, Project Manager, Backup Admin, NCM Connector
+      Required Roles: Backup Admin, CSI System, Disaster Recovery Admin, Kubernetes Data Services System, NCM Connector, Prism Admin, Project Manager, Super Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=dataprotection&version=v4.3)"
 options:
     nutanix_username:

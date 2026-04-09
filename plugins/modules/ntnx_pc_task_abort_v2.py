@@ -20,7 +20,7 @@ notes:
     - >-
       B(Cancel an ongoing task) -
       Operation Name: Cancel Task -
-      Required Roles: Prism Admin, Self-Service Admin (deprecated), Super Admin, NCM Admin, Intelligent Ops Admin
+      Required Roles: Intelligent Ops Admin, NCM Admin, Prism Admin, Super Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism&version=v4.3)"
 options:
   task_ext_id:

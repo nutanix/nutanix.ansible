@@ -22,15 +22,15 @@ notes:
     - >-
       B(Create template from a VM) -
       Operation Name: Create VM Templates -
-      Required Roles: Super Admin, Prism Admin, Virtual Machine Admin
+      Required Roles: Prism Admin, Super Admin, Virtual Machine Admin
     - >-
       B(Delete a template and its associated versions) -
       Operation Name: Delete VM Templates -
-      Required Roles: Super Admin, Prism Admin, Virtual Machine Admin
+      Required Roles: Prism Admin, Super Admin, Virtual Machine Admin
     - >-
       B(Update a template) -
       Operation Name: Update VM Templates -
-      Required Roles: Super Admin, Prism Admin, Virtual Machine Admin
+      Required Roles: Prism Admin, Super Admin, Virtual Machine Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
 options:
     state:

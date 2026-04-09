@@ -24,7 +24,7 @@ notes:
     - >-
       B(Get the list of clusters) -
       Operation Name: View Cluster -
-      Required Roles: Developer, Prism Admin, Prism Viewer, Project Admin, Self-Service Admin (deprecated), Super Admin, Objects Admin, Network Infra Admin, VPC Admin, Consumer, Storage Admin, Storage Viewer, Files Admin, Cluster Admin, Cluster Viewer, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, Kubernetes Admin, Project Manager, Flow Admin, Flow Viewer, Flow Policy Author, NCM Connector, Security Dashboard Admin, Security Dashboard Viewer, LocalAccountManager Admin, LocalAccountManager Viewer
+      Required Roles: Cluster Admin, Cluster Viewer, Consumer, Developer, Files Admin, Flow Admin, Flow Policy Author, Flow Viewer, Kubernetes Admin, LocalAccountManager Admin, LocalAccountManager Viewer, NCM Connector, Network Infra Admin, Objects Admin, Prism Admin, Prism Viewer, Project Admin, Project Manager, Security Dashboard Admin, Security Dashboard Viewer, Storage Admin, Storage Viewer, Super Admin, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt&version=v4.2)"
 options:
   ext_id:

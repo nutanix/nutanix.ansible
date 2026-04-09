@@ -25,7 +25,7 @@ notes:
     - >-
       B(List key management servers) -
       Operation Name: View Key Management Server -
-      Required Roles: Super Admin, Security Admin, Security Viewer
+      Required Roles: Security Admin, Security Viewer, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=security&version=v4.1)"
 options:
     ext_id:

@@ -24,11 +24,11 @@ notes:
     - >-
       B(Get a Network Security Policy by ExtID) -
       Operation Name: View Flow Policy -
-      Required Roles: Super Admin, Prism Admin, Flow Admin, Prism Viewer, Flow Viewer
+      Required Roles: Flow Admin, Flow Viewer, Prism Admin, Prism Viewer, Super Admin
     - >-
       B(List all the Network Security Policies) -
       Operation Name: View Flow Policy -
-      Required Roles: Super Admin, Prism Admin, Flow Admin, Prism Viewer, Flow Viewer
+      Required Roles: Flow Admin, Flow Viewer, Prism Admin, Prism Viewer, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg&version=v4.2)"
 options:
     ext_id:

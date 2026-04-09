@@ -23,15 +23,15 @@ notes:
     - >-
       B(Create a protection policy) -
       Operation Name: Create Protection Policy -
-      Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, Disaster Recovery Admin, Project Manager, NCM Connector
+      Required Roles: Account Owner, Administrator, Disaster Recovery Admin, NCM Connector, Prism Admin, Project Manager, Super Admin
     - >-
       B(Delete a protection policy) -
       Operation Name: Delete Protection Policy -
-      Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, Disaster Recovery Admin, Project Manager, NCM Connector
+      Required Roles: Account Owner, Administrator, Disaster Recovery Admin, NCM Connector, Prism Admin, Project Manager, Super Admin
     - >-
       B(Update a protection policy) -
       Operation Name: Update Protection Policy -
-      Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, Disaster Recovery Admin, Project Manager, NCM Connector
+      Required Roles: Account Owner, Administrator, Disaster Recovery Admin, NCM Connector, Prism Admin, Project Manager, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=datapolicies&version=v4.2)"
 options:
   nutanix_username:

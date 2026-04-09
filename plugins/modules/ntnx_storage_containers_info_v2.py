@@ -24,7 +24,7 @@ notes:
     - >-
       B(List Storage Containers) -
       Operation Name: View Storage Container -
-      Required Roles: Consumer, CSI System, Developer, Kubernetes Data Services System, Operator, Prism Admin, Prism Viewer, Project Admin, Self-Service Admin (deprecated), Storage Admin, Storage Viewer, Super Admin, Backup Admin, Project Manager, NCM Connector
+      Required Roles: Backup Admin, Consumer, CSI System, Developer, Kubernetes Data Services System, NCM Connector, Operator, Prism Admin, Prism Viewer, Project Admin, Project Manager, Storage Admin, Storage Viewer, Super Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt&version=v4.2)"
 options:
   ext_id:

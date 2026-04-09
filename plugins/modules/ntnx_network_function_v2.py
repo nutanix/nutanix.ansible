@@ -26,15 +26,15 @@ notes:
     - >-
       B(Create a network function.) -
       Operation Name: Create Network Function -
-      Required Roles: Super Admin, Account Owner, Administrator, Prism Admin, Network Infra Admin, Flow Admin
+      Required Roles: Account Owner, Administrator, Flow Admin, Network Infra Admin, Prism Admin, Super Admin
     - >-
       B(Delete the specified network function.) -
       Operation Name: Delete Network Function -
-      Required Roles: Super Admin, Account Owner, Administrator, Prism Admin, Network Infra Admin, Flow Admin
+      Required Roles: Account Owner, Administrator, Flow Admin, Network Infra Admin, Prism Admin, Super Admin
     - >-
       B(Update the specified network function.) -
       Operation Name: Update Network Function -
-      Required Roles: Super Admin, Account Owner, Administrator, Prism Admin, Network Infra Admin, Flow Admin
+      Required Roles: Account Owner, Administrator, Flow Admin, Network Infra Admin, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking&version=v4.3)"
 options:
   state:

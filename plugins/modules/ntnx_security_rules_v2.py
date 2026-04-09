@@ -23,15 +23,15 @@ notes:
     - >-
       B(Create a Network Security Policy) -
       Operation Name: Create Flow Policy -
-      Required Roles: Super Admin, Prism Admin, Flow Admin
+      Required Roles: Flow Admin, Prism Admin, Super Admin
     - >-
       B(Delete a Network Security Policy by ExtID) -
       Operation Name: Delete Flow Policy -
-      Required Roles: Super Admin, Prism Admin, Flow Admin
+      Required Roles: Flow Admin, Prism Admin, Super Admin
     - >-
       B(Update a Network Security Policy by ExtID) -
       Operation Name: Update Flow Policy -
-      Required Roles: Super Admin, Prism Admin, Flow Admin
+      Required Roles: Flow Admin, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg&version=v4.2)"
 options:
   wait:

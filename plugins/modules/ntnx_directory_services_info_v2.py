@@ -23,7 +23,7 @@ notes:
     - >-
       B(List directory services) -
       Operation Name: View Directory Service -
-      Required Roles: Prism Admin, Prism Viewer, Project Admin, Self-Service Admin, Super Admin, Flow Admin, Flow Viewer
+      Required Roles: Flow Admin, Flow Viewer, Prism Admin, Prism Viewer, Project Admin, Self-Service Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.0)"
 options:
     ext_id:

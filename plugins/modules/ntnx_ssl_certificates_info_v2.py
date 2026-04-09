@@ -22,7 +22,7 @@ notes:
     - >-
       B(Get SSL certificate details for a specified cluster) -
       Operation Name: View Cluster SSL Certificate -
-      Required Roles: Cluster Admin, Prism Admin, Super Admin, Cluster Viewer, Prism Viewer
+      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt&version=v4.2)"
 options:
   ext_id:

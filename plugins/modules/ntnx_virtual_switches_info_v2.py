@@ -24,7 +24,7 @@ notes:
     - >-
       B(Get list of Virtual Switches) -
       Operation Name: View Virtual Switch -
-      Required Roles: Consumer, Developer, Operator, Prism Admin, Prism Viewer, Project Admin, Super Admin, Network Infra Admin, VPC Admin, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer
+      Required Roles: Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin, Super Admin, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking&version=v4.3)"
 options:
   ext_id:

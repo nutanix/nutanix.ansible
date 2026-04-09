@@ -23,7 +23,7 @@ notes:
     - >-
       B(Upgrade NGT inside a VM) -
       Operation Name: Upgrade Virtual Machine NGT -
-      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin, Backup Admin
+      Required Roles: Account Owner, Administrator, Backup Admin, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Super Admin, User, Virtual Machine Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
 options:
     state:

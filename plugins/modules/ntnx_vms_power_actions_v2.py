@@ -22,35 +22,35 @@ notes:
     - >-
       B(Force a power cycle for a VM) -
       Operation Name: Power Cycle Virtual Machine -
-      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin, Virtual Machine Operator
+      Required Roles: Account Owner, Administrator, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Super Admin, User, Virtual Machine Admin, Virtual Machine Operator, Self-Service Admin (deprecated)
     - >-
       B(Force power off a VM) -
       Operation Name: Power Off Virtual Machine -
-      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin, Virtual Machine Operator, Backup Admin, NCM Connector
+      Required Roles: Account Owner, Administrator, Backup Admin, Consumer, Developer, NCM Connector, Operator, Prism Admin, Project Admin, Project Manager, Super Admin, User, Virtual Machine Admin, Virtual Machine Operator, Self-Service Admin (deprecated)
     - >-
       B(Turn on a VM) -
       Operation Name: Power On Virtual Machine -
-      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin, Virtual Machine Operator, Backup Admin, NCM Connector
+      Required Roles: Account Owner, Administrator, Backup Admin, Consumer, Developer, NCM Connector, Operator, Prism Admin, Project Admin, Project Manager, Super Admin, User, Virtual Machine Admin, Virtual Machine Operator, Self-Service Admin (deprecated)
     - >-
       B(Restart the VM using NGT) -
       Operation Name: Guest Reboot Virtual Machine -
-      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin, Virtual Machine Operator
+      Required Roles: Account Owner, Administrator, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Super Admin, User, Virtual Machine Admin, Virtual Machine Operator, Self-Service Admin (deprecated)
     - >-
       B(Reboot a VM using ACPI) -
       Operation Name: ACPI Reboot Virtual Machine -
-      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin, Virtual Machine Operator
+      Required Roles: Account Owner, Administrator, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Super Admin, User, Virtual Machine Admin, Virtual Machine Operator, Self-Service Admin (deprecated)
     - >-
       B(Reset a VM immediately) -
       Operation Name: Reset Virtual Machine -
-      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin, Virtual Machine Operator
+      Required Roles: Account Owner, Administrator, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Super Admin, User, Virtual Machine Admin, Virtual Machine Operator, Self-Service Admin (deprecated)
     - >-
       B(Shutdown the VM using NGT) -
       Operation Name: Guest Shutdown Virtual Machine -
-      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin, Virtual Machine Operator
+      Required Roles: Account Owner, Administrator, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Super Admin, User, Virtual Machine Admin, Virtual Machine Operator, Self-Service Admin (deprecated)
     - >-
       B(Shutdown the VM using ACPI) -
       Operation Name: ACPI Shutdown Virtual Machine -
-      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin, Virtual Machine Operator
+      Required Roles: Account Owner, Administrator, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Super Admin, User, Virtual Machine Admin, Virtual Machine Operator, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
 options:
     ext_id:

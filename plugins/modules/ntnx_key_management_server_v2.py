@@ -23,15 +23,15 @@ notes:
     - >-
       B(Create a key management server) -
       Operation Name: Create Key Management Server -
-      Required Roles: Super Admin, Prism Admin, Security Admin
+      Required Roles: Prism Admin, Security Admin, Super Admin
     - >-
       B(Delete a key management server) -
       Operation Name: Delete Key Management Server -
-      Required Roles: Super Admin, Prism Admin, Security Admin
+      Required Roles: Prism Admin, Security Admin, Super Admin
     - >-
       B(Update a key management server) -
       Operation Name: Update Key Management Server -
-      Required Roles: Super Admin, Prism Admin, Security Admin
+      Required Roles: Prism Admin, Security Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=security&version=v4.1)"
 options:
   state:

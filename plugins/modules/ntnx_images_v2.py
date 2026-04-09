@@ -25,19 +25,19 @@ notes:
     - >-
       B(Create an image) -
       Operation Name: Create Image -
-      Required Roles: Super Admin, Prism Admin, Account Owner, Administrator, User, Consumer, Developer, Project Manager, Self-Service Admin (deprecated), CSI System, Kubernetes Data Services System, Kubernetes Infrastructure Provision, Virtual Machine Admin, NCM Connector
+      Required Roles: Account Owner, Administrator, Consumer, CSI System, Developer, Kubernetes Data Services System, Kubernetes Infrastructure Provision, NCM Connector, Prism Admin, Project Manager, Super Admin, User, Virtual Machine Admin, Self-Service Admin (deprecated)
     - >-
       B(Delete an image) -
       Operation Name: Delete Image -
-      Required Roles: Super Admin, Prism Admin, Account Owner, Administrator, Project Manager, Self-Service Admin (deprecated), CSI System, Kubernetes Data Services System, Kubernetes Infrastructure Provision, Virtual Machine Admin
+      Required Roles: Account Owner, Administrator, CSI System, Kubernetes Data Services System, Kubernetes Infrastructure Provision, Prism Admin, Project Manager, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
     - >-
       B(Get an image) -
       Operation Name: View Image -
-      Required Roles: Super Admin, Prism Admin, Prism Viewer, Backup Admin, Account Owner, Administrator, User, Consumer, Developer, Project Admin, Project Manager, Self-Service Admin (deprecated), CSI System, Kubernetes Data Services System, Kubernetes Infrastructure Provision, Virtual Machine Admin, NCM Connector
+      Required Roles: Account Owner, Administrator, Backup Admin, Consumer, CSI System, Developer, Kubernetes Data Services System, Kubernetes Infrastructure Provision, NCM Connector, Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin, User, Virtual Machine Admin, Self-Service Admin (deprecated)
     - >-
       B(Update an image) -
       Operation Name: Update Image -
-      Required Roles: Super Admin, Prism Admin, Account Owner, Administrator, Project Manager, Self-Service Admin (deprecated), Virtual Machine Admin
+      Required Roles: Account Owner, Administrator, Prism Admin, Project Manager, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
 options:
     state:
