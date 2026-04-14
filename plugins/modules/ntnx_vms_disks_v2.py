@@ -27,6 +27,12 @@ notes:
       Kubernetes Infrastructure Provision, NCM Connector, Operator, Prism Admin, Project Admin, Project Manager, Storage Admin, Super Admin, User,
       Virtual Machine Admin, Self-Service Admin (deprecated)
     - >-
+      B(Delete a disk device from a VM) -
+      Operation Name: Delete Virtual Machine Disk -
+      Required Roles: Account Owner, Administrator, Backup Admin, Consumer, CSI System, Developer, Kubernetes Data Services System,
+      Kubernetes Infrastructure Provision, NCM Connector, Operator, Prism Admin, Project Admin, Project Manager, Storage Admin, Super Admin, User,
+      Virtual Machine Admin, Self-Service Admin (deprecated)
+    - >-
       B(Update the configuration for the provided disk device) -
       Operation Name: Update Virtual Machine Disk -
       Required Roles: Account Owner, Administrator, Consumer, Developer, NCM Connector, Operator, Prism Admin, Project Admin, Project Manager, Super Admin,

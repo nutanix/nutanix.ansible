@@ -22,16 +22,16 @@ notes:
     - >-
       B(Create SAML identity provider) -
       Operation Name: Create Saml Identity Provider -
-      Required Roles: Prism Admin, Super Admin
+      Required Roles: Nutanix Central Admin, Prism Admin, Super Admin
     - >-
       B(Delete SAML identity provider) -
       Operation Name: Delete Saml Identity Provider -
-      Required Roles: Prism Admin, Super Admin
+      Required Roles: Nutanix Central Admin, Prism Admin, Super Admin
     - >-
       B(Update SAML identity provider) -
       Operation Name: Update Saml Identity Provider -
-      Required Roles: Prism Admin, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.0)"
+      Required Roles: Nutanix Central Admin, Prism Admin, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.1.b2)"
 options:
   ext_id:
     description:

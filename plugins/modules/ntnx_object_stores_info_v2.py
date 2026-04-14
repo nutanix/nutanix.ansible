@@ -21,6 +21,10 @@ notes:
       B(Get a list of the Object stores) -
       Operation Name: View Object Store -
       Required Roles: Objects Admin, Objects Editor, Objects Viewer, Prism Admin, Super Admin
+    - >-
+      B(Get object store by ext_id) -
+      Operation Name: View Object Store -
+      Required Roles: Objects Admin, Objects Editor, Objects Viewer, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=objects&version=v4.0)"
 options:
     ext_id:

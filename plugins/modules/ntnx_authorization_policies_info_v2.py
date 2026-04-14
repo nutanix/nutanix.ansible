@@ -25,8 +25,12 @@ notes:
     - >-
       B(Lists all the authorization policies) -
       Operation Name: View Authorization Policy -
-      Required Roles: Account Owner, Administrator, Prism Admin, Prism Viewer, Self-Service Admin, Super Admin, User
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.0)"
+      Required Roles: Account Owner, Administrator, Nutanix Central Admin, Prism Admin, Prism Viewer, Project Manager, Super Admin, User, Self-Service Admin (deprecated)
+    - >-
+      B(Get authorization policy by ext_id) -
+      Operation Name: View Authorization Policy -
+      Required Roles: Account Owner, Administrator, Nutanix Central Admin, Prism Admin, Prism Viewer, Project Manager, Super Admin, User, Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.1.b2)"
 options:
     ext_id:
         description:

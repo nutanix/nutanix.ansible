@@ -24,6 +24,10 @@ notes:
       B(List all the Service Groups) -
       Operation Name: View Service Group -
       Required Roles: Flow Admin, Flow Viewer, Prism Admin, Prism Viewer, Project Manager, Super Admin
+    - >-
+      B(Get service group by ext_id) -
+      Operation Name: View Service Group -
+      Required Roles: Flow Admin, Flow Viewer, Prism Admin, Prism Viewer, Project Manager, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg&version=v4.2)"
 options:
     ext_id:

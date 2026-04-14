@@ -29,10 +29,6 @@ notes:
       Operation Name: Delete Routing Policy -
       Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
     - >-
-      B(Get a list of Routing Policies) -
-      Operation Name: View Routing Policy -
-      Required Roles: Account Owner, Administrator, Prism Admin, Prism Viewer, Super Admin, User, VPC Admin
-    - >-
       B(Update the Routing Policy corresponding to the extId) -
       Operation Name: Update Routing Policy -
       Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin

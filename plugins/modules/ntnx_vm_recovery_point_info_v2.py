@@ -20,11 +20,11 @@ notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
-      B(Retrieve AHV VM recovery point details / List AHV VM recovery points) -
-      Operation Name: View AHV VM Recovery Point -
-      Required Roles: Account Owner, Administrator, Backup Admin, Operator, Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin,
-      Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, Self-Service Admin (deprecated)
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
+      B(Get VM recovery point by ext_id) -
+      Operation Name: View Virtual Machine Recovery Point -
+      Required Roles: Backup Admin, CSI System, Disaster Recovery Admin, Disaster Recovery Viewer, Kubernetes Data Services System, Prism Admin,
+      Prism Viewer, Project Manager, Super Admin, Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=dataprotection&version=v4.3)"
 options:
     recovery_point_ext_id:
         description:

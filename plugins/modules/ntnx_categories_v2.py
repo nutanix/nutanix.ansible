@@ -31,13 +31,6 @@ notes:
       Required Roles: Category Admin, CSI System, Kubernetes Admin, Kubernetes Data Services System, Kubernetes Infrastructure Provision, NCM Connector,
       Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
     - >-
-      B(Fetch a category) -
-      Operation Name: View Category -
-      Required Roles: Backup Admin, Category Admin, Category Viewer, Cluster Admin, Cluster Viewer, CSI System, Developer, Disaster Recovery Admin,
-      Disaster Recovery Viewer, Flow Admin, Flow Viewer, Kubernetes Admin, Kubernetes Data Services System, Kubernetes Infrastructure Provision, NCM Connector,
-      Prism Admin, Prism Viewer, Project Admin, Project Manager, Storage Admin, Super Admin, Virtual Machine Admin, Virtual Machine Operator,
-      Virtual Machine Viewer, Self-Service Admin (deprecated)
-    - >-
       B(Update a category) -
       Operation Name: Update Category -
       Required Roles: Category Admin, CSI System, Kubernetes Admin, Kubernetes Data Services System, Kubernetes Infrastructure Provision, Prism Admin,

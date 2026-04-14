@@ -24,12 +24,12 @@ notes:
     - >-
       B(Create a key of the requested key type for a user) -
       Operation Name: Create User Key -
-      Required Roles: Prism Admin, Super Admin
+      Required Roles: Nutanix Central Admin, Prism Admin, Super Admin
     - >-
       B(Delete the requested key) -
       Operation Name: Delete User Key -
-      Required Roles: Prism Admin, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.0)"
+      Required Roles: Nutanix Central Admin, Prism Admin, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.1.b2)"
 options:
     user_ext_id:
         description:

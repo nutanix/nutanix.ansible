@@ -21,16 +21,16 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
       The required roles depend on the operation being performed.
     - >-
-      B(Fetch a category) -
+      B(List categories) -
       Operation Name: View Category -
       Required Roles: Backup Admin, Category Admin, Category Viewer, Cluster Admin, Cluster Viewer, CSI System, Developer, Disaster Recovery Admin,
       Disaster Recovery Viewer, Flow Admin, Flow Viewer, Kubernetes Admin, Kubernetes Data Services System, Kubernetes Infrastructure Provision, NCM Connector,
       Prism Admin, Prism Viewer, Project Admin, Project Manager, Storage Admin, Super Admin, Virtual Machine Admin, Virtual Machine Operator,
       Virtual Machine Viewer, Self-Service Admin (deprecated)
     - >-
-      B(List categories) -
+      B(Fetch a category) -
       Operation Name: View Category -
-      Required Roles: Backup admin, Category Admin, Category Viewer, Cluster Admin, Cluster Viewer, CSI System, Developer, Disaster Recovery Admin,
+      Required Roles: Backup Admin, Category Admin, Category Viewer, Cluster Admin, Cluster Viewer, CSI System, Developer, Disaster Recovery Admin,
       Disaster Recovery Viewer, Flow Admin, Flow Viewer, Kubernetes Admin, Kubernetes Data Services System, Kubernetes Infrastructure Provision, NCM Connector,
       Prism Admin, Prism Viewer, Project Admin, Project Manager, Storage Admin, Super Admin, Virtual Machine Admin, Virtual Machine Operator,
       Virtual Machine Viewer, Self-Service Admin (deprecated)

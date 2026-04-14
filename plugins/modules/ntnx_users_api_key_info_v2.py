@@ -22,8 +22,12 @@ notes:
     - >-
       B(List keys for the user) -
       Operation Name: View User Key -
-      Required Roles: Prism Admin, Prism Viewer, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.0)"
+      Required Roles: Nutanix Central Admin, Prism Admin, Prism Viewer, Super Admin
+    - >-
+      B(Get user api key by ext_id) -
+      Operation Name: View User Key -
+      Required Roles: Nutanix Central Admin, Prism Admin, Prism Viewer, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.1.b2)"
 options:
     user_ext_id:
         description:

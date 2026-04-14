@@ -23,8 +23,12 @@ notes:
     - >-
       B(List user groups) -
       Operation Name: View User Group -
-      Required Roles: Prism Admin, Prism Viewer, Project Admin, Self-Service Admin, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.0)"
+      Required Roles: Backup Admin, Nutanix Central Admin, Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin, Self-Service Admin (deprecated)
+    - >-
+      B(Get user group by ext_id) -
+      Operation Name: View User Group -
+      Required Roles: Backup Admin, Nutanix Central Admin, Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin, Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.1.b2)"
 options:
     ext_id:
         description:

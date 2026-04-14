@@ -23,11 +23,11 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
       The required roles depend on the operation being performed.
     - >-
-      B(Get a single Routing Policy corresponding to the extId) -
+      B(Get a list of Routing Policies) -
       Operation Name: View Routing Policy -
       Required Roles: Account Owner, Administrator, Prism Admin, Prism Viewer, Super Admin, User, VPC Admin
     - >-
-      B(Get a list of Routing Policies) -
+      B(Get a single Routing Policy corresponding to the extId) -
       Operation Name: View Routing Policy -
       Required Roles: Account Owner, Administrator, Prism Admin, Prism Viewer, Super Admin, User, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking&version=v4.3)"

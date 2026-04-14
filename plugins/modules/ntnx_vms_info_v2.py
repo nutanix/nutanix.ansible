@@ -20,13 +20,19 @@ notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
-      B(Get VM / List VMs) -
+      B(List VMs) -
       Operation Name: View Existing Virtual Machine -
-      Required Roles: Account Owner, Administrator, Consumer, Developer, Operator, Prism Admin, User,
-      Prism Viewer, Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, VPC Admin,
-      Storage Admin, Network Infra Admin, Virtual Machine Admin, Virtual Machine Operator,
-      Virtual Machine Viewer, Disaster Recovery Admin, Disaster Recovery Viewer, Backup Admin,
-      Flow Admin, Flow Viewer, Flow Policy Author, NCM Connector
+      Required Roles: Account Owner, Administrator, Backup Admin, Consumer, Developer, Flow Admin, Flow Policy Author,
+      Flow Viewer, NCM Connector, Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin, Project Manager,
+      Storage Admin, Super Admin, User, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin,
+      Self-Service Admin (deprecated)
+    - >-
+      B(Get VM by ext_id) -
+      Operation Name: View Existing Virtual Machine -
+      Required Roles: Account Owner, Administrator, Backup Admin, Consumer, Developer, Disaster Recovery Admin, Disaster Recovery Viewer,
+      Flow Admin, Flow Policy Author, Flow Viewer, NCM Connector, Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin,
+      Project Manager, Storage Admin, Super Admin, User, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin,
+      Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)

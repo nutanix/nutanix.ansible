@@ -15,7 +15,7 @@ short_description: Registers a domain manager (Prism Central) instance to other 
 version_added: 2.0.0
 description:
     - Registers a domain manager (Prism Central) instance to other entities like PE and PC
-    - Unregistration of a domain manager (Prism Central) instance is not supported
+    - Unregistration of a domain manager (Prism Central) instance is not supported in this module, use ntnx_pc_unregistration_v2 module instead.
     - This module uses PC v4 APIs based SDKs
 notes:
     - >-

@@ -22,16 +22,16 @@ notes:
     - >-
       B(Create role) -
       Operation Name: Create Role -
-      Required Roles: Prism Admin, Self-Service Admin, Super Admin
+      Required Roles: Nutanix Central Admin, Prism Admin, Project Manager, Super Admin, Self-Service Admin (deprecated)
     - >-
       B(Delete role) -
       Operation Name: Delete Role -
-      Required Roles: Prism Admin, Self-Service Admin, Super Admin
+      Required Roles: Nutanix Central Admin, Prism Admin, Project Manager, Super Admin, Self-Service Admin (deprecated)
     - >-
       B(Update role) -
       Operation Name: Update Role -
-      Required Roles: Prism Admin, Self-Service Admin, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.0)"
+      Required Roles: Nutanix Central Admin, Prism Admin, Project Manager, Super Admin, Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.1.b2)"
 options:
     state:
         description:

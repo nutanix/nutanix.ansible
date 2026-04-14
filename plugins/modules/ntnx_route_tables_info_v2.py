@@ -21,11 +21,11 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
       The required roles depend on the operation being performed.
     - >-
-      B(Get route table) -
+      B(List route tables) -
       Operation Name: View VPC Route Table -
       Required Roles: Account Owner, Administrator, Prism Admin, Prism Viewer, Super Admin, User, VPC Admin
     - >-
-      B(List route tables) -
+      B(Get route table by ext_id) -
       Operation Name: View VPC Route Table -
       Required Roles: Account Owner, Administrator, Prism Admin, Prism Viewer, Super Admin, User, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking&version=v4.3)"

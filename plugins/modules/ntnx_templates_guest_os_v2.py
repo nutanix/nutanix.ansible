@@ -19,6 +19,14 @@ notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
+      B(Initiate guest OS update) -
+      Operation Name: Initiate Guest Update VM Templates -
+      Required Roles: Prism Admin, Super Admin, Virtual Machine Admin
+    - >-
+      B(Complete guest OS update) -
+      Operation Name: Complete Guest Update VM Templates -
+      Required Roles: Prism Admin, Super Admin, Virtual Machine Admin
+    - >-
       B(Cancel guest OS update) -
       Operation Name: Cancel Guest Update VM Templates -
       Required Roles: Prism Admin, Super Admin, Virtual Machine Admin

@@ -26,6 +26,11 @@ notes:
       Operation Name: View Storage Policy -
       Required Roles: Consumer, CSI System, Developer, Kubernetes Admin, Kubernetes Data Services System, Operator, Prism Admin, Prism Viewer, Project Admin,
       Project Manager, Storage Admin, Storage Viewer, Super Admin, Self-Service Admin (deprecated)
+    - >-
+      B(Get storage policy by ext_id) -
+      Operation Name: View Storage Policy -
+      Required Roles: Consumer, CSI System, Developer, Kubernetes Admin, Kubernetes Data Services System, Operator, Prism Admin, Prism Viewer, Project Admin,
+      Project Manager, Storage Admin, Storage Viewer, Super Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=datapolicies&version=v4.2)"
 options:
   ext_id:

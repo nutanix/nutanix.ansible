@@ -22,7 +22,7 @@ notes:
     - >-
       B(Update system user password) -
       Operation Name: Manage Cluster Configuration -
-      Required Roles: Cluster Admin, Prism Admin, Super Admin
+      Required Roles: LocalAccountManager Admin, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt&version=v4.2)"
 options:
     ext_id:

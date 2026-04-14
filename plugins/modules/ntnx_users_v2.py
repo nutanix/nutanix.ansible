@@ -22,12 +22,12 @@ notes:
     - >-
       B(Create user) -
       Operation Name: Create User -
-      Required Roles: Prism Admin, Project Admin, Self-Service Admin, Super Admin
+      Required Roles: Nutanix Central Admin, Prism Admin, Project Admin, Project Manager, Super Admin, Self-Service Admin (deprecated)
     - >-
       B(Update user) -
       Operation Name: Update User -
-      Required Roles: Prism Admin, Self-Service Admin, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.0)"
+      Required Roles: Nutanix Central Admin, Prism Admin, Project Manager, Super Admin, Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.1.b2)"
 options:
     state:
         description:
