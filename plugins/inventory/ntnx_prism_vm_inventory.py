@@ -107,14 +107,28 @@ DOCUMENTATION = r"""
             description:
                 - Set value to C(False) to skip validation for self signed certificates
                 - This is not recommended for production setup
+                - If not provided, values will be taken from environment variables VALIDATE_CERTS or NUTANIX_VALIDATE_CERTS
+                - If both are set, VALIDATE_CERTS is preferred over NUTANIX_VALIDATE_CERTS
             default: True
             type: boolean
             env:
+                - name: VALIDATE_CERTS
                 - name: NUTANIX_VALIDATE_CERTS
         filters:
             description:
                 - A list of Jinja2 expressions used to filter the inventory
                 - All expressions are combined using an AND operation—each item must match every filter to be included.
+            default: []
+            elements: str
+            type: list
+        hostnames:
+            description:
+                - A list of Jinja2 expressions used to determine the inventory hostname.
+                - Each expression is evaluated in order against the host variables
+                  (name, uuid, cluster, cluster_uuid, ansible_host, description, and any
+                  VM resource attributes).
+                - The first expression that produces a non-empty value is used as the hostname.
+                - If the list is empty or all expressions fail, the VM name is used as fallback.
             default: []
             elements: str
             type: list
@@ -167,6 +181,7 @@ from ansible.errors import AnsibleError  # noqa: E402
 from ansible.plugins.inventory import BaseInventoryPlugin, Constructable  # noqa: E402
 
 from ..module_utils.v3.prism import vms  # noqa: E402
+from ..plugin_utils.inventory_utils import get_hostname  # noqa: E402
 
 
 class Mock_Module:
@@ -378,7 +393,11 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         self.data = self.get_option("data")
         self.validate_certs = (
             self.get_option("validate_certs")
-            or os.environ.get("NUTANIX_VALIDATE_CERTS", "false").lower() == "true"
+            or os.environ.get(
+                "VALIDATE_CERTS",
+                os.environ.get("NUTANIX_VALIDATE_CERTS", "false"),
+            ).lower()
+            == "true"
         )
         self.fetch_all_vms = self.get_option("fetch_all_vms")
         self.custom_ansible_host = self.get_option("custom_ansible_host")
@@ -392,6 +411,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         # Determines if composed variables or groups using nonexistent variables is an error
         strict = self.get_option("strict")
         host_filters = self.get_option("filters")
+        hostnames = self.get_option("hostnames")
 
         module = Mock_Module(
             self.nutanix_hostname,
@@ -420,43 +440,45 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             vm_ip = host_vars.get("ansible_host")
             vm_uuid = host_vars.get("uuid")
 
+            hostname = get_hostname(
+                self._compose, host_vars, hostnames, vm_name, strict=strict
+            )
+
             if cluster:
                 cluster = self.inventory.add_group(cluster)
                 self.inventory.add_child("all", cluster)
-            if vm_name:
-                self.inventory.add_host(vm_name, group=cluster)
-                self.inventory.set_variable(vm_name, "ansible_host", vm_ip)
-                self.inventory.set_variable(vm_name, "uuid", vm_uuid)
-                self.inventory.set_variable(vm_name, "name", vm_name)
-                # Set all host_vars as variables.
+            if hostname:
+                self.inventory.add_host(hostname, group=cluster)
+                self.inventory.set_variable(hostname, "ansible_host", vm_ip)
+                self.inventory.set_variable(hostname, "uuid", vm_uuid)
+                self.inventory.set_variable(hostname, "name", vm_name)
                 for key, value in host_vars.items():
-                    self.inventory.set_variable(vm_name, key, value)
+                    self.inventory.set_variable(hostname, key, value)
 
             metadata = entity.get("metadata") or {}
             project_reference = metadata.get("project_reference") or {}
             self.inventory.set_variable(
-                vm_name,
+                hostname,
                 "project_reference",
                 project_reference,
             )
 
-            # Add variables created by the user's Jinja2 expressions to the host
             self._set_composite_vars(
                 self.get_option("compose"),
                 host_vars,
-                vm_name,
+                hostname,
                 strict=strict,
             )
             self._add_host_to_composed_groups(
                 self.get_option("groups"),
                 host_vars,
-                vm_name,
+                hostname,
                 strict=strict,
             )
             self._add_host_to_keyed_groups(
                 self.get_option("keyed_groups"),
                 host_vars,
-                vm_name,
+                hostname,
                 strict=strict,
             )
 
