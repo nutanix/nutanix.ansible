@@ -11,7 +11,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_network_function_v2
-short_description: Manage network functions in Nutanix Prism Central
+short_description: Create, Update and Delete network functions in Nutanix Prism Central
 version_added: 2.5.0
 description:
   - Create, Update, Delete network functions
