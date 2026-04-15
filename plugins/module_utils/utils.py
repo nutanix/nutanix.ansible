@@ -5,6 +5,9 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
+from ansible.errors import AnsibleError
+from ansible.module_utils._text import to_text
+
 
 def remove_param_with_none_value(d):
     for k, v in d.copy().items():
@@ -122,3 +125,23 @@ def create_filter_criteria_string(filters):
     filter_criteria = filter_criteria[:-1]
 
     return filter_criteria
+
+
+def get_hostname(compose_func, host_vars, hostnames, default_name, strict=False):
+    """
+    Evaluate Jinja2 hostname expressions against host_vars.
+    Returns the first non-empty result, or default_name as fallback.
+    """
+    for preference in hostnames:
+        try:
+            hostname = compose_func(preference, host_vars)
+        except Exception as e:
+            if strict:
+                raise AnsibleError(
+                    "Could not compose '%s' as hostname - %s"
+                    % (preference, to_text(e))
+                )
+            continue
+        if hostname:
+            return to_text(hostname)
+    return default_name

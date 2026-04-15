@@ -120,10 +120,13 @@ DOCUMENTATION = r"""
             description:
                 - Set value to C(False) to skip validation for self signed certificates
                 - This is not recommended for production setup
+                - If not provided, values will be taken from environment variables VALIDATE_CERTS or NUTANIX_VALIDATE_CERTS
+                - If both are set, VALIDATE_CERTS is preferred over NUTANIX_VALIDATE_CERTS
             default: True
             type: boolean
             env:
                 - name: VALIDATE_CERTS
+                - name: NUTANIX_VALIDATE_CERTS
         filters:
             description:
                 - A list of Jinja2 expressions used to filter the inventory
@@ -239,9 +242,9 @@ import re  # noqa: E402
 import tempfile  # noqa: E402
 
 from ansible.errors import AnsibleError  # noqa: E402
-from ansible.module_utils._text import to_text  # noqa: E402
 from ansible.plugins.inventory import BaseInventoryPlugin, Constructable  # noqa: E402
 
+from ..module_utils.utils import get_hostname  # noqa: E402
 from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
     get_clusters_api_instance,
 )
@@ -533,24 +536,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 return False
         return True
 
-    def _get_hostname(self, host_vars, hostnames, default_name, strict=False):
-        """
-        Evaluate Jinja2 hostname expressions against host_vars.
-        Returns the first non-empty result, or default_name as fallback.
-        """
-        for preference in hostnames:
-            try:
-                hostname = self._compose(preference, host_vars)
-            except Exception as e:
-                if strict:
-                    raise AnsibleError(
-                        "Could not compose '%s' as hostname - %s"
-                        % (preference, to_text(e))
-                    )
-                continue
-            if hostname:
-                return to_text(hostname)
-        return default_name
 
     def parse(self, inventory, loader, path, cache=True):
         super().parse(inventory, loader, path, cache=cache)
@@ -587,10 +572,10 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 "Either nutanix_username and nutanix_password or nutanix_api_key is required"
             )
 
-        self.validate_certs = (
-            self.get_option("validate_certs")
-            or os.environ.get("VALIDATE_CERTS", "false").lower() == "true"
-        )
+        self.validate_certs = self.get_option("validate_certs") or os.environ.get(
+            "VALIDATE_CERTS",
+            os.environ.get("NUTANIX_VALIDATE_CERTS", "false"),
+        ).lower() == "true"
         self.fetch_all_vms = self.get_option("fetch_all_vms")
         self.page = self.get_option("page")
         self.limit = self.get_option("limit")
@@ -684,7 +669,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             if vm_description is not None:
                 host_vars["vm_description"] = vm_description
 
-            hostname = self._get_hostname(host_vars, hostnames, vm_name, strict=strict)
+            hostname = get_hostname(self._compose, host_vars, hostnames, vm_name, strict=strict)
 
             # Create group based on cluster
             if cluster_ext_id:
