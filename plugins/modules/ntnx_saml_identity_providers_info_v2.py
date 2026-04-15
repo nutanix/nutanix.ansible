@@ -29,7 +29,7 @@ notes:
       B(List SAML identity providers) -
       Operation Name: View Saml Identity Provider -
       Required Roles: Nutanix Central Admin, Prism Admin, Prism Viewer, Project Admin, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.1.b2)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam)"
 options:
   ext_id:
     description:

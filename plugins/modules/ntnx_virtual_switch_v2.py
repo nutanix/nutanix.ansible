@@ -38,7 +38,7 @@ notes:
       B(Update a Virtual Switch) -
       Operation Name: Update Virtual Switch -
       Required Roles: Prism Admin, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking&version=v4.3)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   state:
     description:

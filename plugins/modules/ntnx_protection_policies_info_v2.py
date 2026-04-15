@@ -27,7 +27,7 @@ notes:
       B(List protection policies) -
       Operation Name: View Protection Policy -
       Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, NCM Connector, Prism Admin, Prism Viewer, Project Manager, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=datapolicies&version=v4.2)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=datapolicies)"
 options:
     ext_id:
         description:

@@ -33,7 +33,7 @@ notes:
       B(Update cluster profile) -
       Operation Name: Update Cluster Profile -
       Required Roles: Cluster Admin, Prism Admin, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt&version=v4.2)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   state:
     description:

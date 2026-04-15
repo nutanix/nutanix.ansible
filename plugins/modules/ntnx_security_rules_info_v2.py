@@ -29,7 +29,7 @@ notes:
       B(List all the Network Security Policies) -
       Operation Name: View Flow Policy -
       Required Roles: Flow Admin, Flow Viewer, Prism Admin, Prism Viewer, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg&version=v4.2)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg)"
 options:
     ext_id:
         description:

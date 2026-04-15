@@ -28,7 +28,7 @@ notes:
       B(Get a list of floating IPs) -
       Operation Name: View Floating Ip -
       Required Roles: Account Owner, Administrator, Prism Admin, Prism Viewer, Super Admin, User, VPC Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking&version=v4.3)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
     ext_id:
         description:

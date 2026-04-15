@@ -28,7 +28,7 @@ notes:
       B(List Entity Groups) -
       Operation Name: View Entity Group -
       Required Roles: Flow Admin, Flow Viewer, Prism Admin, Prism Viewer, Project Manager, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg&version=v4.2)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg)"
 options:
     ext_id:
         description:

@@ -30,7 +30,7 @@ notes:
       Operation Name: View Network Function -
       Required Roles: Account Owner, Administrator, Flow Admin, Flow Policy Author, Flow Viewer, Network Infra Admin, Prism Admin, Prism Viewer, Super Admin,
       User
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking&version=v4.3)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   ext_id:
     description:

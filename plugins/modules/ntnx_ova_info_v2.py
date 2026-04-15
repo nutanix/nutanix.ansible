@@ -28,7 +28,7 @@ notes:
       B(List OVAs) -
       Operation Name: View Ova -
       Required Roles: Prism Admin, Prism Viewer, Super Admin, Virtual Machine Admin, Virtual Machine Operator
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     ext_id:
         description:

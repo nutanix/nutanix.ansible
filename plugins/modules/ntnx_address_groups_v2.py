@@ -32,7 +32,7 @@ notes:
       B(Update an Address Group) -
       Operation Name: Update Address Group -
       Required Roles: Flow Admin, Prism Admin, Project Manager, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg&version=v4.2)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg)"
 options:
   state:
     description:

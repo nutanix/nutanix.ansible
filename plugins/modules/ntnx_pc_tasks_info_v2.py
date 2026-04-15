@@ -27,7 +27,7 @@ notes:
       Operation Name: View Task -
       Required Roles: Account Owner, Administrator, Backup Admin, CSI System, Intelligent Ops Admin, Kubernetes Data Services System, Monitoring Admin,
       NCM Admin, NCM Connector, NCM Viewer, Prism Admin, Prism Viewer, Super Admin, Self-Service Admin (deprecated)
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism&version=v4.3)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:
     ext_id:
         description:

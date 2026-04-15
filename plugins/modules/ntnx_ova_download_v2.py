@@ -22,7 +22,7 @@ notes:
       B(Download an OVA) -
       Operation Name: Download Ova -
       Required Roles: Prism Admin, Prism Viewer, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     ova_ext_id:
         description:

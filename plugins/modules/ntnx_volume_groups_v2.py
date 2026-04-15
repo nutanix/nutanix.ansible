@@ -37,7 +37,7 @@ notes:
       B(Update details of a specified Volume Group) -
       Operation Name: Update Volume Group Details -
       Required Roles: Backup Admin, Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes&version=v4.2)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes)"
 options:
     state:
         description:

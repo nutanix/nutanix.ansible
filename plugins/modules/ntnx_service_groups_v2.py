@@ -30,7 +30,7 @@ notes:
       B(Update a Service Group by ExtID) -
       Operation Name: Update Service Group -
       Required Roles: Flow Admin, Prism Admin, Project Manager, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg&version=v4.2)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg)"
 options:
   state:
     description:

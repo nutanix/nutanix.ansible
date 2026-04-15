@@ -31,7 +31,7 @@ notes:
       B(Update an Object store) -
       Operation Name: Update Object Store -
       Required Roles: Objects Admin, Objects Editor, Prism Admin, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=objects&version=v4.0)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=objects)"
 options:
     state:
         description:

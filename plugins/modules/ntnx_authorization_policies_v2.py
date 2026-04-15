@@ -32,7 +32,7 @@ notes:
       B(Update authorization policy) -
       Operation Name: Update Authorization Policy -
       Required Roles: Nutanix Central Admin, Prism Admin, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.1.b2)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam)"
 options:
     state:
         description:

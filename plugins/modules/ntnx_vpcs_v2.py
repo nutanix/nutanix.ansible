@@ -32,7 +32,7 @@ notes:
       B(Update the specified VPC) -
       Operation Name: Update VPC -
       Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking&version=v4.3)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   state:
     description:

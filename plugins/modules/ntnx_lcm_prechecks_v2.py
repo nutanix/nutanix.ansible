@@ -24,7 +24,7 @@ notes:
       B(Perform LCM prechecks operation.) -
       Operation Name: Perform Prechecks Component -
       Required Roles: Cluster Admin, Prism Admin, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle&version=v4.2)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle)"
 options:
     state:
         description:

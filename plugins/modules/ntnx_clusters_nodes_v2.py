@@ -22,7 +22,7 @@ notes:
       B(Remove nodes from the cluster) -
       Operation Name: Remove Cluster Node -
       Required Roles: Cluster Admin, Prism Admin, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt&version=v4.2)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   node_params:
     description:

@@ -28,7 +28,7 @@ notes:
       B(Lists routes of the specified route table) -
       Operation Name: View Route Table Route -
       Required Roles: Prism Admin, Prism Viewer, Super Admin, VPC Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking&version=v4.3)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
     ext_id:
         description:

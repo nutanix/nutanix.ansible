@@ -32,7 +32,7 @@ notes:
       B(Update cluster) -
       Operation Name: Update Cluster -
       Required Roles: Backup Admin, Cluster Admin, Prism Admin, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt&version=v4.2)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   state:
     description:

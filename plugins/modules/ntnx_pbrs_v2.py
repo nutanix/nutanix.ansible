@@ -32,7 +32,7 @@ notes:
       B(Update the Routing Policy corresponding to the extId) -
       Operation Name: Update Routing Policy -
       Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking&version=v4.3)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   state:
     description:

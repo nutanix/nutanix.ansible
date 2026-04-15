@@ -32,7 +32,7 @@ notes:
       Operation Name: View Cluster Host -
       Required Roles: Backup Admin, Cluster Admin, Cluster Viewer, LocalAccountManager Admin, LocalAccountManager Viewer, NCM Connector, Network Infra Admin,
       Prism Admin, Prism Viewer, Project Manager, Super Admin, VPC Admin, Self-Service Admin (deprecated)
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt&version=v4.2)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   ext_id:
     description:

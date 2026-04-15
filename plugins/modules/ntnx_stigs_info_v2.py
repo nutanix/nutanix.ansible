@@ -28,7 +28,7 @@ notes:
       B(Get the STIG controls details) -
       Operation Name: View Stig -
       Required Roles: Prism Admin, Prism Viewer, Security Dashboard Admin, Security Dashboard Viewer, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=security&version=v4.1)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=security)"
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_info_v2

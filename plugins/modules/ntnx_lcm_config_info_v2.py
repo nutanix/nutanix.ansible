@@ -22,7 +22,7 @@ notes:
       B(Get the present LCM configuration) -
       Operation Name: View Config -
       Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle&version=v4.2)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle)"
 author:
     - Abhinav Bansal (@abhinavbansal29)
 options:

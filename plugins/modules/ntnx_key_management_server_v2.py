@@ -32,7 +32,7 @@ notes:
       B(Update a key management server) -
       Operation Name: Update Key Management Server -
       Required Roles: Prism Admin, Security Admin, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=security&version=v4.1)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=security)"
 options:
   state:
     description:

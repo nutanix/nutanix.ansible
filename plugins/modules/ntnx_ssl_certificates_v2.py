@@ -24,7 +24,7 @@ notes:
       B(Update the SSL certificate for a specific cluster) -
       Operation Name: Update Cluster SSL Certificate -
       Required Roles: Cluster Admin, Prism Admin, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt&version=v4.2)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   ext_id:
     description:

@@ -28,7 +28,7 @@ notes:
       B(List route tables) -
       Operation Name: View VPC Route Table -
       Required Roles: Account Owner, Administrator, Prism Admin, Prism Viewer, Super Admin, User, VPC Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking&version=v4.3)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
     ext_id:
         description:

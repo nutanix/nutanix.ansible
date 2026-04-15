@@ -32,7 +32,7 @@ notes:
       B(Update a protection policy) -
       Operation Name: Update Protection Policy -
       Required Roles: Account Owner, Administrator, Disaster Recovery Admin, NCM Connector, Prism Admin, Project Manager, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=datapolicies&version=v4.2)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=datapolicies)"
 options:
   nutanix_username:
       description:

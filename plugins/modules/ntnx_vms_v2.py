@@ -46,7 +46,7 @@ notes:
       Required Roles: Account Owner, Administrator, Consumer, Developer, Operator, Prism Admin, User,
       Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin,
       Backup Admin, NCM Connector
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     ext_id:
         description:

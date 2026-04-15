@@ -24,7 +24,7 @@ notes:
       B(List password status of system users) -
       Operation Name: View System User Password -
       Required Roles: LocalAccountManager Admin, LocalAccountManager Viewer, Prism Admin, Prism Viewer, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt&version=v4.2)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_info_v2

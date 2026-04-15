@@ -33,7 +33,7 @@ notes:
       B(Update the specified route of the specified route table) -
       Operation Name: Update Route Table Route -
       Required Roles: Prism Admin, Super Admin, VPC Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking&version=v4.3)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   state:
     description:

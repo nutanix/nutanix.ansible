@@ -26,7 +26,7 @@ notes:
       B(Restore protected resource) -
       Operation Name: Restore Protected Resource -
       Required Roles: Disaster Recovery Admin, Prism Admin, Project Manager, Super Admin, Self-Service Admin (deprecated)
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=dataprotection&version=v4.3)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=dataprotection)"
 options:
   state:
     description:

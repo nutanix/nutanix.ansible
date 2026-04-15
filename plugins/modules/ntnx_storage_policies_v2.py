@@ -34,7 +34,7 @@ notes:
       B(Update an existing Storage Policy) -
       Operation Name: Update Storage Policy -
       Required Roles: Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=datapolicies&version=v4.2)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=datapolicies)"
 options:
   state:
     description:

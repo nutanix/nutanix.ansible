@@ -23,7 +23,7 @@ notes:
       B(Deploy a Prism Central) -
       Operation Name: Create Domain Manager -
       Required Roles: Cluster Admin, Domain Manager Admin, Internal Super Admin, Prism Admin, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism&version=v4.3)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:
     state:
         description:

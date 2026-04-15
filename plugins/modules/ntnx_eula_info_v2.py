@@ -23,7 +23,7 @@ notes:
       B(Get End User License Agreement) -
       Operation Name: View Eula -
       Required Roles: Cluster Admin, Cluster Viewer, Internal Super Admin, License Admin, License Viewer, Prism Admin, Prism Viewer, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=licensing&version=v4.3)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=licensing)"
 options:
     read_timeout:
         description: Read timeout in milliseconds for API calls.

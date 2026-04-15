@@ -30,7 +30,7 @@ notes:
       Operation Name: View Directory Service -
       Required Roles: Flow Admin, Flow Viewer, Nutanix Central Admin, Prism Admin, Prism Viewer, Project Admin, Project Manager,
       Super Admin, Self-Service Admin (deprecated)
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.1.b2)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam)"
 options:
     ext_id:
         description:

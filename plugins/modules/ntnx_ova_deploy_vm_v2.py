@@ -22,7 +22,7 @@ notes:
       B(Deploy VMs from an OVA) -
       Operation Name: Deploy Ova -
       Required Roles: Prism Admin, Super Admin, Virtual Machine Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     ext_id:
         description:

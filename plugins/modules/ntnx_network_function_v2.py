@@ -35,7 +35,7 @@ notes:
       B(Update the specified network function.) -
       Operation Name: Update Network Function -
       Required Roles: Account Owner, Administrator, Flow Admin, Network Infra Admin, Prism Admin, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking&version=v4.3)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   state:
     description:

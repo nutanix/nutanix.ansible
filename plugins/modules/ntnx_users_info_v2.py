@@ -29,7 +29,7 @@ notes:
       Operation Name: View User -
       Required Roles: Backup Admin, Nutanix Central Admin, Prism Admin, Prism Viewer, Project Admin, Project Manager,
       Secure Policy Admin, Secure Policy Editor, Secure Policy Viewer, Super Admin, Self-Service Admin (deprecated)
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.1.b2)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam)"
 options:
     ext_id:
         description:

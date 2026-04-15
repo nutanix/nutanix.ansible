@@ -25,7 +25,7 @@ notes:
       B(Get a list of the SSL certificates of an Object store) -
       Operation Name: View Object Store Certificate -
       Required Roles: Objects Admin, Objects Editor, Objects Viewer, Prism Admin, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=objects&version=v4.0)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=objects)"
 options:
     object_store_ext_id:
         description: object store external ID

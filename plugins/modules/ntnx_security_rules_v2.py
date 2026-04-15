@@ -32,7 +32,7 @@ notes:
       B(Update a Network Security Policy by ExtID) -
       Operation Name: Update Flow Policy -
       Required Roles: Flow Admin, Prism Admin, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg&version=v4.2)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg)"
 options:
   wait:
     description:

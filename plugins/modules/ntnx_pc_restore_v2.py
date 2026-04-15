@@ -22,7 +22,7 @@ notes:
       B(Restore domain manager) -
       Operation Name: Restore Domain Manager Restore Point -
       Required Roles: Domain Manager Admin, Prism Admin, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism&version=v4.3)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:
     state:
         description:

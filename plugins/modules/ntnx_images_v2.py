@@ -36,7 +36,7 @@ notes:
       B(Update an image) -
       Operation Name: Update Image -
       Required Roles: Account Owner, Administrator, Prism Admin, Project Manager, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     state:
         description:

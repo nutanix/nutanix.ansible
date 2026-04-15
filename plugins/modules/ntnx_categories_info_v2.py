@@ -34,7 +34,7 @@ notes:
       Disaster Recovery Viewer, Flow Admin, Flow Viewer, Kubernetes Admin, Kubernetes Data Services System, Kubernetes Infrastructure Provision, NCM Connector,
       Prism Admin, Prism Viewer, Project Admin, Project Manager, Storage Admin, Super Admin, Virtual Machine Admin, Virtual Machine Operator,
       Virtual Machine Viewer, Self-Service Admin (deprecated)
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism&version=v4.3)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:
     ext_id:
         description:

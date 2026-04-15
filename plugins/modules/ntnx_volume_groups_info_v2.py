@@ -32,7 +32,7 @@ notes:
       Operation Name: View Volume Group Details -
       Required Roles: Backup Admin, CSI System, Disaster Recovery Admin, Disaster Recovery Viewer, Kubernetes Data Services System, Prism Admin, Prism Viewer,
       Project Manager, Storage Admin, Storage Viewer, Super Admin, Self-Service Admin (deprecated)
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes&version=v4.2)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes)"
 options:
     ext_id:
         description:

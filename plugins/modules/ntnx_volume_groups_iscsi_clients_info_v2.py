@@ -32,7 +32,7 @@ notes:
       Operation Name: View External ISCSI Client -
       Required Roles: Backup Admin, CSI System, Kubernetes Data Services System, Prism Admin, Prism Viewer, Project Manager, Storage Admin, Storage Viewer,
       Super Admin, Self-Service Admin (deprecated)
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes&version=v4.2)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes)"
 options:
     ext_id:
         description:

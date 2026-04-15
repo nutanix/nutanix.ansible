@@ -25,7 +25,7 @@ notes:
       B(List restore points) -
       Operation Name: View Restorable Domain Manager Restore Point -
       Required Roles: Domain Manager Admin, Domain Manager Viewer, Prism Admin, Prism Viewer, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism&version=v4.3)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:
     restore_source_ext_id:
         description:

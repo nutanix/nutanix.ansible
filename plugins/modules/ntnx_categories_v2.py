@@ -35,7 +35,7 @@ notes:
       Operation Name: Update Category -
       Required Roles: Category Admin, CSI System, Kubernetes Admin, Kubernetes Data Services System, Kubernetes Infrastructure Provision, Prism Admin,
       Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism&version=v4.3)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:
   ext_id:
     description:

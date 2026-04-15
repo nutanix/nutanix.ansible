@@ -35,7 +35,7 @@ notes:
     B(Delete the specified subnet) -
     Operation Name: Delete Subnet -
     Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Super Admin, VPC Admin
-  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking&version=v4.3)"
+  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   state:
     description:

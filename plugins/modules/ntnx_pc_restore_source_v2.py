@@ -28,7 +28,7 @@ notes:
       B(Delete restore source) -
       Operation Name: Delete Restore Source -
       Required Roles: Prism Admin, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism&version=v4.3)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:
     ext_id:
         description:

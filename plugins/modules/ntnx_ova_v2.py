@@ -32,7 +32,7 @@ notes:
       B(Update an OVA) -
       Operation Name: Update Ova -
       Required Roles: Prism Admin, Super Admin, Virtual Machine Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm&version=v4.2)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     state:
         description:

@@ -22,7 +22,7 @@ notes:
       B(Unregister a registered remote cluster from the local cluster) -
       Operation Name: Unregister Domain Manager -
       Required Roles: Cluster Admin, Domain Manager Admin, Internal Super Admin, Prism Admin, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism&version=v4.3)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:
     state:
         description:

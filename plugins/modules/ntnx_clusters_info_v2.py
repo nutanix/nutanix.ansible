@@ -35,7 +35,7 @@ notes:
       LocalAccountManager Admin, LocalAccountManager Viewer, NCM Connector, Network Infra Admin, Objects Admin, Prism Admin, Prism Viewer, Project Admin,
       Project Manager, Security Dashboard Admin, Security Dashboard Viewer, Storage Admin, Storage Viewer, Super Admin, Virtual Machine Admin,
       Virtual Machine Operator, Virtual Machine Viewer, VPC Admin, Self-Service Admin (deprecated)
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt&version=v4.2)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   ext_id:
     description:

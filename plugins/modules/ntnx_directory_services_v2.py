@@ -32,7 +32,7 @@ notes:
       B(Update directory service) -
       Operation Name: Update Directory Service -
       Required Roles: Nutanix Central Admin, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam&version=v4.1.b2)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam)"
 options:
     state:
         description:
