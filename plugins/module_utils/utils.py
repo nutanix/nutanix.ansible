@@ -5,6 +5,7 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
+
 def remove_param_with_none_value(d):
     for k, v in d.copy().items():
         if v is None:
