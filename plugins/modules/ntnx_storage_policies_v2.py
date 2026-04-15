@@ -18,6 +18,23 @@ description:
   - For Create operation, at least one storage attribute (compression_spec, encryption_spec, qos_spec, fault_tolerance_spec) must be set to non default value.
   - If compression_state, encryption_state, or replication_factor are intended to be system-derived, ensure that the qos_spec block is included.
   - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create a Storage Policy) -
+      Operation Name: Create Storage Policy -
+      Required Roles: Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
+    - >-
+      B(Delete an existing Storage Policy) -
+      Operation Name: Delete Storage Policy -
+      Required Roles: Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
+    - >-
+      B(Update an existing Storage Policy) -
+      Operation Name: Update Storage Policy -
+      Required Roles: Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=datapolicies)"
 options:
   state:
     description:

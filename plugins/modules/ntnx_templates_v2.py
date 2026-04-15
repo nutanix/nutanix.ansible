@@ -15,6 +15,23 @@ description:
     - This module allows you to create, update, and delete Nutanix AHV templates.
     - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create template from a VM) -
+      Operation Name: Create VM Templates -
+      Required Roles: Prism Admin, Super Admin, Virtual Machine Admin
+    - >-
+      B(Delete a template and its associated versions) -
+      Operation Name: Delete VM Templates -
+      Required Roles: Prism Admin, Super Admin, Virtual Machine Admin
+    - >-
+      B(Update a template) -
+      Operation Name: Update VM Templates -
+      Required Roles: Prism Admin, Super Admin, Virtual Machine Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     state:
         description:

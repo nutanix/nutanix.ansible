@@ -16,6 +16,26 @@ version_added: 2.0.0
 description:
     - Create, Update Expiry Date, Delete recovery points
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create a recovery point) -
+      Operation Name: Create Recovery Point -
+      Required Roles: Backup Admin, CSI System, Disaster Recovery Admin, Kubernetes Data Services System, NCM Connector, Prism Admin, Project Manager,
+      Super Admin, Self-Service Admin (deprecated)
+    - >-
+      B(Delete a recovery point) -
+      Operation Name: Delete Recovery Point -
+      Required Roles: Backup Admin, CSI System, Disaster Recovery Admin, Kubernetes Data Services System, NCM Connector, Prism Admin, Project Manager,
+      Super Admin, Self-Service Admin (deprecated)
+    - >-
+      B(Set the expiration time of the recovery point) -
+      Operation Name: Set Expiration Time Recovery Point -
+      Required Roles: Backup Admin, CSI System, Disaster Recovery Admin, Kubernetes Data Services System, NCM Connector, Prism Admin, Project Manager,
+      Super Admin, Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=dataprotection)"
 options:
     state:
         description:

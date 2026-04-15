@@ -17,6 +17,20 @@ description:
   - Fetch list of multiple network functions if external ID is not provided with optional filter.
   - This module uses PC v4 APIs based SDKs.
 version_added: "2.5.0"
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Get the network function for this extId) -
+      Operation Name: View Network Function -
+      Required Roles: Account Owner, Administrator, Flow Admin, Flow Policy Author, Flow Viewer, Network Infra Admin, Prism Admin, Prism Viewer, Super Admin,
+      User
+    - >-
+      B(Get the list of existing network functions.) -
+      Operation Name: View Network Function -
+      Required Roles: Account Owner, Administrator, Flow Admin, Flow Policy Author, Flow Viewer, Network Infra Admin, Prism Admin, Prism Viewer, Super Admin,
+      User
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   ext_id:
     description:

@@ -16,6 +16,14 @@ version_added: 2.4.0
 description:
     - Fetches active End User License Agreement.
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Get End User License Agreement) -
+      Operation Name: View Eula -
+      Required Roles: Cluster Admin, Cluster Viewer, Internal Super Admin, License Admin, License Viewer, Prism Admin, Prism Viewer, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=licensing)"
 options:
     read_timeout:
         description: Read timeout in milliseconds for API calls.

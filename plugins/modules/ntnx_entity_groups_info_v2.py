@@ -17,6 +17,18 @@ description:
     - Fetch specific entity group info using external ID
     - Fetch list of multiple entity groups info if external ID is not provided with optional filters
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Get entity group by ext_id) -
+      Operation Name: View Entity Group -
+      Required Roles: Flow Admin, Flow Viewer, Prism Admin, Prism Viewer, Project Manager, Super Admin
+    - >-
+      B(List Entity Groups) -
+      Operation Name: View Entity Group -
+      Required Roles: Flow Admin, Flow Viewer, Prism Admin, Prism Viewer, Project Manager, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg)"
 options:
     ext_id:
         description:

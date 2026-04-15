@@ -18,6 +18,23 @@ description:
     - Once created, an Entity Group can be referenced in the network security policies.
     - Create, Update, Delete entity group
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create an Entity Group) -
+      Operation Name: Create Entity Group -
+      Required Roles: Flow Admin, Prism Admin, Project Manager, Super Admin
+    - >-
+      B(Delete an Entity Group) -
+      Operation Name: Delete Entity Group -
+      Required Roles: Flow Admin, Prism Admin, Project Manager, Super Admin
+    - >-
+      B(Update an Entity Group by external identifier) -
+      Operation Name: Update Entity Group -
+      Required Roles: Flow Admin, Prism Admin, Project Manager, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg)"
 options:
     ext_id:
         description:

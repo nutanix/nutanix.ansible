@@ -15,6 +15,14 @@ description:
   - This module allows you to manage Nutanix cluster nodes.
   - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Remove nodes from the cluster) -
+      Operation Name: Remove Cluster Node -
+      Required Roles: Cluster Admin, Prism Admin, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   node_params:
     description:

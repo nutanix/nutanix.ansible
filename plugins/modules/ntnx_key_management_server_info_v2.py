@@ -19,6 +19,18 @@ description:
     - If external ID is not provided, list all key management servers
     - Key management server is used to secure encryption keys when data encryption is enabled.
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Get key management server by ext_id) -
+      Operation Name: View Key Management Server -
+      Required Roles: Prism Admin, Security Admin, Security Viewer, Super Admin
+    - >-
+      B(List key management servers) -
+      Operation Name: View Key Management Server -
+      Required Roles: Security Admin, Security Viewer, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=security)"
 options:
     ext_id:
         description:
