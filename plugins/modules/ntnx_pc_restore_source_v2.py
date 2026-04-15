@@ -16,6 +16,19 @@ description:
     - The created restore source is intended to be deleted after use.
     - If the restore source is not deleted, then it is auto-deleted after sometime.
     - Please provide Prism Element IP address here in C(nutanix_host)
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create restore source) -
+      Operation Name: Create Restore Source -
+      Required Roles: Prism Admin, Super Admin
+    - >-
+      B(Delete restore source) -
+      Operation Name: Delete Restore Source -
+      Required Roles: Prism Admin, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:
     ext_id:
         description:

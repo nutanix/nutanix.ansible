@@ -16,6 +16,21 @@ version_added: "2.0.0"
 description:
     - This module allows you to create and remove CDROM for Nutanix AHV VMs.
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create a CD-ROM device for a VM) -
+      Operation Name: Create Virtual Machine CD ROM -
+      Required Roles: Account Owner, Administrator, Consumer, Developer, NCM Connector, Operator, Prism Admin, Project Admin, Project Manager, Super Admin,
+      User, Virtual Machine Admin, Self-Service Admin (deprecated)
+    - >-
+      B(Remove a CD-ROM device from a VM) -
+      Operation Name: Delete Virtual Machine CD ROM -
+      Required Roles: Account Owner, Administrator, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Super Admin, User,
+      Virtual Machine Admin, Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     state:
         description:

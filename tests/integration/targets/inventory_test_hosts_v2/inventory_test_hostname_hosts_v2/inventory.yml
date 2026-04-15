@@ -1,0 +1,166 @@
+---
+- name: Test hostnames feature in V2 host inventory plugin
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    # =========================================================================
+    # Test 1: Fallback from nonexistent_field to host_name (strict: false)
+    #   nutanix.yml: hostnames: [nonexistent_field, host_name]
+    #   nonexistent_field is undefined -> falls back to host_name
+    # =========================================================================
+
+    - name: "Test 1: Run inventory with hostnames fallback (nutanix.yml)"
+      ansible.builtin.command:
+        cmd: ansible-inventory --inventory nutanix.yml --list
+        chdir: "{{ playbook_dir }}"
+      register: test1_result
+      changed_when: false
+
+    - name: "Test 1: Parse inventory output"
+      ansible.builtin.set_fact:
+        test1_data: "{{ test1_result.stdout | from_json }}"
+
+    - name: "Test 1: Assert at least one host exists"
+      ansible.builtin.assert:
+        that:
+          - test1_data._meta.hostvars.keys() | list | length > 0
+        fail_msg: "No hosts found in inventory, cannot run hostname tests"
+        success_msg: "Found {{ test1_data._meta.hostvars.keys() | list | length }} host(s) in inventory"
+
+    - name: "Test 1: Store first host properties"
+      ansible.builtin.set_fact:
+        first_hostname: "{{ test1_data._meta.hostvars.keys() | list | first }}"
+        first_host_name: "{{ test1_data._meta.hostvars[(test1_data._meta.hostvars.keys() | list | first)].host_name }}"
+        first_host_ext_id: "{{ test1_data._meta.hostvars[(test1_data._meta.hostvars.keys() | list | first)].host_ext_id }}"
+
+    - name: "Test 1: Assert hostname fell back to host_name"
+      ansible.builtin.assert:
+        that:
+          - first_hostname == first_host_name
+        fail_msg: >-
+          Hostname should fall back to host_name when nonexistent_field is undefined.
+          Got hostname: {{ first_hostname }}, host_name: {{ first_host_name }}
+        success_msg: "Hostname correctly fell back to host_name: {{ first_host_name }}"
+
+    # =====================================================================
+    # Test 2: Jinja2 filter expression (host_name | upper)
+    #   jinja2/nutanix.yml: hostnames: ["host_name | upper"]
+    #   All hosts -> hostname = uppercase host_name
+    # =====================================================================
+
+    - name: "Test 2: Run inventory with Jinja2 filter expression (jinja2/nutanix.yml)"
+      ansible.builtin.command:
+        cmd: ansible-inventory --inventory jinja2/nutanix.yml --list
+        chdir: "{{ playbook_dir }}"
+      register: test2_result
+      changed_when: false
+
+    - name: "Test 2: Parse inventory output"
+      ansible.builtin.set_fact:
+        test2_data: "{{ test2_result.stdout | from_json }}"
+
+    - name: "Test 2: Assert hostname is uppercased host_name"
+      ansible.builtin.assert:
+        that:
+          - "(first_host_name | upper) in test2_data._meta.hostvars"
+        fail_msg: >-
+          Hostname should be uppercased host_name.
+          Expected: {{ first_host_name | upper }}.
+          Got hostvars keys: {{ test2_data._meta.hostvars.keys() | list }}
+        success_msg: "Jinja2 upper filter correctly applied to hostname"
+
+    - name: "Test 2: Assert host_name is preserved as host variable"
+      ansible.builtin.assert:
+        that:
+          - "test2_data._meta.hostvars[(first_host_name | upper)].host_name == first_host_name"
+        fail_msg: "host_name should still be set as a host variable even when hostname is overridden"
+        success_msg: "host_name correctly preserved as host variable"
+
+    # =====================================================================
+    # Test 3: Concatenation expression (host_name ~ '_' ~ host_ext_id[:8])
+    #   concat/nutanix.yml: hostnames: ["host_name ~ '_' ~ host_ext_id[:8]"]
+    #   All hosts -> hostname = host_name + '_' + first 8 chars of ext_id
+    # =====================================================================
+
+    - name: "Test 3: Run inventory with concatenation expression (concat/nutanix.yml)"
+      ansible.builtin.command:
+        cmd: ansible-inventory --inventory concat/nutanix.yml --list
+        chdir: "{{ playbook_dir }}"
+      register: test3_result
+      changed_when: false
+
+    - name: "Test 3: Parse inventory output"
+      ansible.builtin.set_fact:
+        test3_data: "{{ test3_result.stdout | from_json }}"
+
+    - name: "Test 3: Build expected hostname"
+      ansible.builtin.set_fact:
+        expected_concat_hostname: "{{ first_host_name }}_{{ first_host_ext_id[:8] }}"
+
+    - name: "Test 3: Assert hostname uses concatenation expression"
+      ansible.builtin.assert:
+        that:
+          - "expected_concat_hostname in test3_data._meta.hostvars"
+        fail_msg: >-
+          Hostname should be host_name + '_' + ext_id[:8].
+          Expected: {{ expected_concat_hostname }}.
+          Got hostvars keys: {{ test3_data._meta.hostvars.keys() | list }}
+        success_msg: "Concatenation expression correctly applied to hostname"
+
+    # =====================================================================
+    # Test 4: Empty hostnames list (default fallback to host_name)
+    #   empty/nutanix.yml: hostnames: []
+    #   All hosts -> hostname = host_name (default)
+    # =====================================================================
+
+    - name: "Test 4: Run inventory with empty hostnames list (empty/nutanix.yml)"
+      ansible.builtin.command:
+        cmd: ansible-inventory --inventory empty/nutanix.yml --list
+        chdir: "{{ playbook_dir }}"
+      register: test4_result
+      changed_when: false
+
+    - name: "Test 4: Parse inventory output"
+      ansible.builtin.set_fact:
+        test4_data: "{{ test4_result.stdout | from_json }}"
+
+    - name: "Test 4: Assert hostnames fall back to host_name"
+      ansible.builtin.assert:
+        that:
+          - "first_host_name in test4_data._meta.hostvars"
+        fail_msg: >-
+          Empty hostnames list should fall back to host_name.
+          Got hostvars keys: {{ test4_data._meta.hostvars.keys() | list }}
+        success_msg: "Empty hostnames correctly fell back to host_name"
+
+    # =====================================================================
+    # Test 5: strict: true with undefined variable (should fail)
+    #   strict/nutanix.yml: hostnames: [nonexistent_field], strict: true
+    #   Should fail with error about undefined variable
+    # =====================================================================
+
+    - name: "Test 5: Run inventory with strict mode expecting failure (strict/nutanix.yml)"
+      ansible.builtin.command:
+        cmd: ansible-inventory --inventory strict/nutanix.yml --list
+        chdir: "{{ playbook_dir }}"
+      register: test5_result
+      ignore_errors: true
+      changed_when: false
+
+    - name: "Test 5: Assert inventory failed due to strict mode with undefined variable"
+      ansible.builtin.assert:
+        that:
+          - test5_result.rc != 0 or (test5_result.stderr is defined and test5_result.stderr | length > 0)
+        fail_msg: "Inventory should fail when strict is set to true and hostname expression uses undefined variable"
+        success_msg: "Inventory correctly failed with strict mode on undefined variable"
+
+    - name: "Test 5: Assert error message references hostname composition failure"
+      ansible.builtin.assert:
+        that:
+          - >-
+            test5_result.stderr | replace('\n', ' ') |
+            regex_search("Could not compose.*nonexistent_field.*as hostname")
+        fail_msg: >-
+          Expected error about composing nonexistent_field as hostname.
+          Got stderr: {{ test5_result.stderr }}
+        success_msg: "Error message correctly references hostname composition failure"

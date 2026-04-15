@@ -15,8 +15,16 @@ short_description: Registers a domain manager (Prism Central) instance to other 
 version_added: 2.0.0
 description:
     - Registers a domain manager (Prism Central) instance to other entities like PE and PC
-    - Unregistration of a domain manager (Prism Central) instance is not supported
+    - Unregistration of a domain manager (Prism Central) instance is not supported in this module, use ntnx_pc_unregistration_v2 module instead.
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Register a domain manager to a cluster) -
+      Operation Name: Register Domain Manager -
+      Required Roles: Cluster Admin, Domain Manager Admin, Internal Super Admin, Prism Admin, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:
   state:
     description:

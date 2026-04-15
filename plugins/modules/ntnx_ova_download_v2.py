@@ -15,6 +15,14 @@ version_added: 2.3.0
 description:
     - Download an OVA file from Nutanix cluster using its external ID.
     - This module uses PC v4 APIs based SDKs.
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Download an OVA) -
+      Operation Name: Download Ova -
+      Required Roles: Prism Admin, Prism Viewer, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     ova_ext_id:
         description:

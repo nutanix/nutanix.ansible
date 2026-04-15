@@ -18,6 +18,21 @@ description:
 version_added: "2.0.0"
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Attach an iSCSI client to the given Volume Group) -
+      Operation Name: Attach Volume Group To External ISCSI Client -
+      Required Roles: Backup Admin, CSI System, Kubernetes Data Services System, Prism Admin, Project Manager, Storage Admin, Super Admin,
+      Self-Service Admin (deprecated)
+    - >-
+      B(Detach an iSCSi client from the given Volume Group) -
+      Operation Name: Detach Volume Group From External ISCSI Client -
+      Required Roles: Backup Admin, CSI System, Kubernetes Data Services System, Prism Admin, Project Manager, Storage Admin, Super Admin,
+      Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes)"
 options:
     state:
         description:
