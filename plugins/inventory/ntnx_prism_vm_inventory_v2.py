@@ -244,7 +244,7 @@ import tempfile  # noqa: E402
 from ansible.errors import AnsibleError  # noqa: E402
 from ansible.plugins.inventory import BaseInventoryPlugin, Constructable  # noqa: E402
 
-from ..module_utils.utils import get_hostname  # noqa: E402
+from .inventory_utils import get_hostname  # noqa: E402
 from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
     get_clusters_api_instance,
 )
