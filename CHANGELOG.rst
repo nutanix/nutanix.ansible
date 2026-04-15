@@ -19,10 +19,9 @@ Minor Changes
 - All v4 modules - [Imprv] Add proxy support for v4 API client modules [[\#900](https://github.com/nutanix/nutanix.ansible/issues/900)]
 - All modules - [Imprv] Add Service Account API key authentication support [[\#888](https://github.com/nutanix/nutanix.ansible/issues/888)]
 - All v4 modules - [Imprv] Separate Base Module for v4 to avoid unnecessary flags [[\#918](https://github.com/nutanix/nutanix.ansible/issues/918)]
-- All modules - [Imprv] Continued migration of modules from legacy v3 APIs to v4 APIs/SDKs [[\#884](https://github.com/nutanix/nutanix.ansible/issues/884)]
 - ntnx_security_rules_v2 - [Imprv] Add global scope, intratier rules, subnet/VPC references [[\#853](https://github.com/nutanix/nutanix.ansible/issues/853)]
 - ntnx_prism_vm_inventory - [Imprv] Handle invalid group name characters in inventory plugins [[\#917](https://github.com/nutanix/nutanix.ansible/issues/917)]
-- ntnx_karbon_clusters - [Imprv] Add deprecation message for Karbon modules [[\#921](https://github.com/nutanix/nutanix.ansible/issues/921)]
+- ntnx_karbon_clusters - [Imprv] Add deprecation message for Karbon modules as Karbon is not supported on PC versions later than 7.3 [[\#921](https://github.com/nutanix/nutanix.ansible/issues/921)]
 - CI/CD - [Imprv] Update CI/CD Pipeline and Dependencies to Python 3.12 [[\#915](https://github.com/nutanix/nutanix.ansible/issues/915)]
 
 Bugfixes
@@ -31,14 +30,13 @@ Bugfixes
 - ntnx_prism_vm_inventory, ntnx_prism_vm_inventory_v2, ntnx_prism_host_inventory_v2 - [Bug] NoneType crash in inventory plugins when VM fields are explicitly None [[\#939](https://github.com/nutanix/nutanix.ansible/issues/939)]
 - ntnx_subnets_v2 - [Bug] Unnecessary required fields for state: present in module ntnx_subnets_v2 [[\#895](https://github.com/nutanix/nutanix.ansible/issues/895)]
 - ntnx_password_managers_info_v2 - [Bug] Missing total_available_results in response in module ntnx_password_managers_info_v2 [[\#902](https://github.com/nutanix/nutanix.ansible/issues/902)]
-- ntnx_projects_info - [Bug] Results of ntnx_projects_info only retrieve 20 results [[\#883](https://github.com/nutanix/nutanix.ansible/issues/883)]
-- ntnx_categories_info_v2 - [Bug] Api Exception raised while fetching categories info due to SDK-PC version mismatch [[\#889](https://github.com/nutanix/nutanix.ansible/issues/889)]
-- ntnx_vms_v2 - [Bug] Missing required arguments in guest_customization in module ntnx_vms_v2 [[\#893](https://github.com/nutanix/nutanix.ansible/issues/893)]
+- ntnx_foundation - [Bug] vSwitches spec issue in module ntnx_foundation [[\#749](https://github.com/nutanix/nutanix.ansible/issues/749)]
+
 
 New Modules
 -----------
 
-- nutanix.ncp.ntnx_network_function_v2 - Manage network functions in Nutanix Prism Central using v4 SDKs.
+- nutanix.ncp.ntnx_network_function_v2 - Create, Update and Delete network functions in Nutanix Prism Central using v4 SDKs.
 - nutanix.ncp.ntnx_network_functions_info_v2 - Fetch information about network functions in Nutanix Prism Central.
 - nutanix.ncp.ntnx_entity_group_v2 - Create, Update and Delete entity groups in Nutanix Prism Central.
 - nutanix.ncp.ntnx_entity_groups_info_v2 - Fetch information about entity groups in Nutanix Prism Central.

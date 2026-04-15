@@ -1037,12 +1037,8 @@ releases:
           module ntnx_subnets_v2 [[\#895](https://github.com/nutanix/nutanix.ansible/issues/895)]
         - ntnx_password_managers_info_v2 - [Bug] Missing total_available_results in
           response in module ntnx_password_managers_info_v2 [[\#902](https://github.com/nutanix/nutanix.ansible/issues/902)]
-        - ntnx_projects_info - [Bug] Results of ntnx_projects_info only retrieve 20
-          results [[\#883](https://github.com/nutanix/nutanix.ansible/issues/883)]
-        - ntnx_categories_info_v2 - [Bug] Api Exception raised while fetching categories
-          info due to SDK-PC version mismatch [[\#889](https://github.com/nutanix/nutanix.ansible/issues/889)]
-        - ntnx_vms_v2 - [Bug] Missing required arguments in guest_customization in
-          module ntnx_vms_v2 [[\#893](https://github.com/nutanix/nutanix.ansible/issues/893)]
+        - ntnx_foundation - [Bug] vSwitches spec issue in module ntnx_foundation
+          [[\#749](https://github.com/nutanix/nutanix.ansible/issues/749)]
       minor_changes:
         - All v4 modules - [Imprv] Add configurable read_timeout functionality to all
           v4 modules [[\#882](https://github.com/nutanix/nutanix.ansible/issues/882)]
@@ -1051,13 +1047,12 @@ releases:
           [[\#888](https://github.com/nutanix/nutanix.ansible/issues/888)]
         - All v4 modules - [Imprv] Separate Base Module for v4 to avoid unnecessary
           flags [[\#918](https://github.com/nutanix/nutanix.ansible/issues/918)]
-        - All modules - [Imprv] Continued migration of modules from legacy v3 APIs
-          to v4 APIs/SDKs [[\#884](https://github.com/nutanix/nutanix.ansible/issues/884)]
         - ntnx_security_rules_v2 - [Imprv] Add global scope, intratier rules, subnet/VPC
           references [[\#853](https://github.com/nutanix/nutanix.ansible/issues/853)]
         - ntnx_prism_vm_inventory - [Imprv] Handle invalid group name characters in
           inventory plugins [[\#917](https://github.com/nutanix/nutanix.ansible/issues/917)]
         - ntnx_karbon_clusters - [Imprv] Add deprecation message for Karbon modules
+          as Karbon is not supported on PC versions later than 7.3
           [[\#921](https://github.com/nutanix/nutanix.ansible/issues/921)]
         - CI/CD - [Imprv] Update CI/CD Pipeline and Dependencies to Python 3.12 [[\#915](https://github.com/nutanix/nutanix.ansible/issues/915)]
       release_summary: Built on v4 SDKs. Adds Network Functions, Entity Groups, Security
@@ -1065,7 +1060,7 @@ releases:
         Service Account API key authentication, read timeout, and several improvements
         and bug fixes.
     modules:
-      - description: Manage network functions in Nutanix Prism Central using v4 SDKs.
+      - description: Create, Update and Delete network functions in Nutanix Prism Central using v4 SDKs.
         name: ntnx_network_function_v2
         namespace: ''
       - description: Fetch information about network functions in Nutanix Prism Central.
@@ -1090,4 +1085,4 @@ releases:
       - description: Fetch information about virtual switches in Nutanix Prism Central.
         name: ntnx_virtual_switches_info_v2
         namespace: ''
-    release_date: '2026-04-14'
+    release_date: '2026-04-15'
