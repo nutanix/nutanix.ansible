@@ -1029,6 +1029,11 @@ releases:
     release_date: '2026-01-06'
   2.5.0:
     changes:
+      breaking_changes:
+        - ntnx_karbon_clusters, ntnx_karbon_clusters_node_pools, ntnx_karbon_registries,
+          ntnx_karbon_clusters_info, ntnx_karbon_registries_info - [Breaking] Karbon
+          modules are deprecated and will be removed in a future release as Prism Central
+          versions later than 7.3 no longer support Karbon [[\#921](https://github.com/nutanix/nutanix.ansible/issues/921)]
       bugfixes:
         - ntnx_prism_vm_inventory, ntnx_prism_vm_inventory_v2, ntnx_prism_host_inventory_v2
           - [Bug] NoneType crash in inventory plugins when VM fields are explicitly

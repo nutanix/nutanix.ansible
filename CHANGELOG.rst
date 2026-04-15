@@ -12,6 +12,11 @@ Release Summary
 
 Built on v4 SDKs. Adds Network Functions, Entity Groups, Security Policy Rules, IAM Entities, and Virtual Switches modules with proxy support, Service Account API key authentication, read timeout, and several improvements and bug fixes.
 
+Breaking Changes / Porting Guide
+---------------------------------
+
+- ntnx_karbon_clusters, ntnx_karbon_clusters_node_pools, ntnx_karbon_registries, ntnx_karbon_clusters_info, ntnx_karbon_registries_info - [Breaking] Karbon modules are deprecated and will be removed in a future release as Prism Central versions later than 7.3 no longer support Karbon [[\#921](https://github.com/nutanix/nutanix.ansible/issues/921)]
+
 Minor Changes
 -------------
 
