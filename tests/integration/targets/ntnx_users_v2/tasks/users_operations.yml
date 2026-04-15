@@ -74,7 +74,7 @@
     success_msg: create local user with check mode passed
 
 ################################################
-# Commented as the delete API is not available using v1 instead
+
 - name: Fetch users to delete if already exist
   nutanix.ncp.ntnx_users_info_v2:
     filter: "{{ users_query }}"
@@ -94,24 +94,7 @@
   ansible.builtin.set_fact:
     todelete: "{{ result.response | map(attribute='ext_id') | list }}"
 
-# - name: Delete users if already exist
-#   ntnx_users_v2:
-#     state: absent
-#     ext_id: "{{ item }}"
-#   register: result
-#   ignore_errors: true
-#   loop: "{{ todelete }}"
-#   when: todelete | length > 0
-
-# - name: Delete users if already exist status
-#   ansible.builtin.assert:
-#     that:
-#       - result.changed == true
-#       - result.msg == "All items completed"
-#     fail_msg: Delete users if already exist failed
-#     success_msg: Delete users if already exist passed
-#   when: todelete | length > 0
-
+# Use the V3 delete API to remove users, as the V4 delete API is not available for user deletion.
 - name: Delete users if already exist
   nutanix.ncp.ntnx_users:
     state: absent
@@ -425,64 +408,6 @@
     fail_msg: Verify if idempotency checks are skipped if password is provided failed
     success_msg: Verify if idempotency checks are skipped if password is provided passed
 
-#################################################
-# these test were commented since they are using different APIs
-# - name: Deactivate local user
-#   ntnx_users_v2:
-#     ext_id: "{{todelete[0]}}"
-#     status: INACTIVE
-#   register: result
-#   ignore_errors: true
-
-# - name: Deactivate local user status
-#   ansible.builtin.assert:
-#     that:
-#       - result.response is defined
-#       - result.changed == true
-#       - result.failed == false
-#       - result.ext_id == "{{todelete[0]}}"
-#     fail_msg: "Deactivate local user failed"
-#     success_msg: "Deactivate local user passed"
-
-# #################################################
-
-# - name: Fetch user info using user ext_id criteria and check status
-#   ntnx_users_info_v2:
-#     ext_id: "{{todelete[0]}}"
-#   register: result
-#   ignore_errors: True
-
-# - name: Fetch user info using user ext_id criteria and check status result
-#   ansible.builtin.assert:
-#     that:
-#       - result.response is defined
-#       - result.changed == false
-#       - result.failed == false
-#       - result.response.ext_id == "{{todelete[0]}}"
-#       - result.response.status == "INACTIVE"
-#     fail_msg: "Fetch user info using user ext_id criteria and check status failed"
-#     success_msg: "Fetch user info using user ext_id criteria and check status passed"
-
-# ####################################################
-
-# - name: Activate local user
-#   ntnx_users_v2:
-#     ext_id: "{{todelete[0]}}"
-#     status: ACTIVE
-#   register: result
-#   ignore_errors: true
-
-# - name: Activate local user status
-#   ansible.builtin.assert:
-#     that:
-#       - result.response is defined
-#       - result.changed == true
-#       - result.failed == false
-#       - result.ext_id == "{{todelete[0]}}"
-#       - result.response.status == "ACTIVE"
-#     fail_msg: "Activate local user failed"
-#     success_msg: "Activate local user passed"
-
 ####################################################
 
 - name: List all users
@@ -590,31 +515,7 @@
     fail_msg: Unable to list users using limit
     success_msg: users listed successfully using limit
 ##################################################
-# Commented as the delete API is not available using v1 instead
-# - name: Delete created users
-#   ntnx_users_v2:
-#     state: absent
-#     ext_id: "{{ item }}"
-#   register: result
-#   ignore_errors: true
-#   loop: "{{ todelete }}"
-
-# - name: Delete created users status
-#   vars:
-#     msg: "User with ext_id: {{ item.ext_id }} deleted successfully"
-#   ansible.builtin.assert:
-#     that:
-#       - result.changed == true
-#       - result.msg == "All items completed"
-#       - result.results | length == todelete | length
-#       - item.failed == false
-#       - item.ext_id in todelete
-#       - item.msg == "{{ msg }}"
-#     fail_msg: Delete created users failed
-#     success_msg: Delete created users passed
-#   loop: "{{ result.results }}"
-#   when: todelete | length > 0 and result | length > 0
-
+# Use the V3 delete API to remove users, as the V4 delete API is not available for user deletion.
 - name: Delete created users
   nutanix.ncp.ntnx_users:
     state: absent

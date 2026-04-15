@@ -97,15 +97,29 @@ DOCUMENTATION = r"""
             description:
                 - Set value to C(False) to skip validation for self signed certificates
                 - This is not recommended for production setup
+                - If not provided, values will be taken from environment variables VALIDATE_CERTS or NUTANIX_VALIDATE_CERTS
+                - If both are set, VALIDATE_CERTS is preferred over NUTANIX_VALIDATE_CERTS
             default: True
             type: boolean
             env:
+                - name: VALIDATE_CERTS
                 - name: NUTANIX_VALIDATE_CERTS
         filters:
             description:
                 - A list of Jinja2 expressions used to filter the inventory
                 - All expressions are combined using an AND operation—each item must match every filter to be included.
                 - Used locally to filter hosts after they are fetched from the API.
+            default: []
+            elements: str
+            type: list
+        hostnames:
+            description:
+                - A list of Jinja2 expressions used to determine the inventory hostname.
+                - Each expression is evaluated in order against the host variables
+                  (host_name, host_ext_id, cluster_name, cluster_ext_id, hypervisor_ip,
+                  controller_vm_ip, and any other host attributes).
+                - The first expression that produces a non-empty value is used as the hostname.
+                - If the list is empty or all expressions fail, the host name is used as fallback.
             default: []
             elements: str
             type: list
@@ -186,6 +200,7 @@ from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
     get_clusters_api_instance,
 )
 from ..module_utils.v4.utils import strip_internal_attributes  # noqa: E402
+from ..plugin_utils.inventory_utils import get_hostname  # noqa: E402
 
 
 class Mock_Module:
@@ -340,14 +355,14 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         host_vars = {}
 
         # Try to get IP from hypervisor external address first
-        hypervisor = host.get("hypervisor", {})
+        hypervisor = host.get("hypervisor") or {}
         external_addr = hypervisor.get("external_address", {})
         hypervisor_ip = self.extract_ip_address_from_external(external_addr)
         if hypervisor_ip:
             host_vars["hypervisor_ip"] = hypervisor_ip
 
         # Set controller VM IP address
-        controller_vm = host.get("controller_vm", {})
+        controller_vm = host.get("controller_vm") or {}
         external_addr = controller_vm.get("external_address", {})
         controller_vm_ip = self.extract_ip_address_from_external(external_addr)
         if controller_vm_ip:
@@ -445,7 +460,11 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
 
         self.validate_certs = (
             self.get_option("validate_certs")
-            or os.environ.get("NUTANIX_VALIDATE_CERTS", "false").lower() == "true"
+            or os.environ.get(
+                "VALIDATE_CERTS",
+                os.environ.get("NUTANIX_VALIDATE_CERTS", "false"),
+            ).lower()
+            == "true"
         )
         self.fetch_all_hosts = self.get_option("fetch_all_hosts")
         self.page = self.get_option("page")
@@ -461,6 +480,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         # Determines if composed variables or groups using nonexistent variables is an error
         strict = self.get_option("strict")
         host_filters = self.get_option("filters")
+        hostnames = self.get_option("hostnames")
 
         # Create mock module for SDK
         module = Mock_Module(
@@ -469,6 +489,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             self.nutanix_username,
             self.nutanix_password,
             self.validate_certs,
+            self.fetch_all_hosts,
             self.nutanix_debug,
             self.nutanix_log_file,
             self.nutanix_api_key,
@@ -504,14 +525,18 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             # Add variables to host variables
             host_name = host.get("host_name")
             host_ext_id = host.get("ext_id")
-            cluster_ext_id = host.get("cluster", {}).get("uuid")
-            cluster_name = host.get("cluster", {}).get("name")
+            cluster_ext_id = (host.get("cluster") or {}).get("uuid")
+            cluster_name = (host.get("cluster") or {}).get("name")
 
             # Add additional info to host_vars
             host_vars["host_name"] = host_name
             host_vars["host_ext_id"] = host_ext_id
             host_vars["cluster_name"] = cluster_name
             host_vars["cluster_ext_id"] = cluster_ext_id
+
+            hostname = get_hostname(
+                self._compose, host_vars, hostnames, host_name, strict=strict
+            )
 
             # Create group based on cluster
             if cluster_ext_id:
@@ -521,28 +546,26 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             else:
                 group_name = "all"
 
-            if host_name:
-                self.inventory.add_host(host_name, group=group_name)
-                # Set all host_vars as variables
+            if hostname:
+                self.inventory.add_host(hostname, group=group_name)
                 for key, value in host_vars.items():
-                    self.inventory.set_variable(host_name, key, value)
+                    self.inventory.set_variable(hostname, key, value)
 
-            # Add variables created by the user's Jinja2 expressions to the host
             self._set_composite_vars(
                 self.get_option("compose"),
                 host_vars,
-                host_name,
+                hostname,
                 strict=strict,
             )
             self._add_host_to_composed_groups(
                 self.get_option("groups"),
                 host_vars,
-                host_name,
+                hostname,
                 strict=strict,
             )
             self._add_host_to_keyed_groups(
                 self.get_option("keyed_groups"),
                 host_vars,
-                host_name,
+                hostname,
                 strict=strict,
             )

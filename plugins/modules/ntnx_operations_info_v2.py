@@ -17,6 +17,20 @@ description:
     - This module is used to get operations info
     - It can be used to get all operations info or specific permission info using external id
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Get operation by ext_id) -
+      Operation Name: View Operation -
+      Required Roles: Account Owner, Administrator, Nutanix Central Admin, Prism Admin, Prism Viewer, Project Manager, Super Admin, User,
+      Self-Service Admin (deprecated)
+    - >-
+      B(List operation(s)) -
+      Operation Name: View Operation -
+      Required Roles: Account Owner, Administrator, Nutanix Central Admin, Prism Admin, Prism Viewer, Project Manager, Super Admin, User,
+      Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam)"
 options:
     ext_id:
         description:

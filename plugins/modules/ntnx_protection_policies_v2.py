@@ -16,6 +16,23 @@ version_added: 2.1.0
 description:
   - This module allows you to create, update, and delete protection policy in Nutanix Prism Central.
   - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create a protection policy) -
+      Operation Name: Create Protection Policy -
+      Required Roles: Account Owner, Administrator, Disaster Recovery Admin, NCM Connector, Prism Admin, Project Manager, Super Admin
+    - >-
+      B(Delete a protection policy) -
+      Operation Name: Delete Protection Policy -
+      Required Roles: Account Owner, Administrator, Disaster Recovery Admin, NCM Connector, Prism Admin, Project Manager, Super Admin
+    - >-
+      B(Update a protection policy) -
+      Operation Name: Update Protection Policy -
+      Required Roles: Account Owner, Administrator, Disaster Recovery Admin, NCM Connector, Prism Admin, Project Manager, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=datapolicies)"
 options:
   nutanix_username:
       description:

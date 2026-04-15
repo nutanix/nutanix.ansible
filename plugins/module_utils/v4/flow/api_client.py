@@ -47,6 +47,12 @@ def get_api_client(module):
         config.username = nutanix_username
         config.password = nutanix_password
     config.verify_ssl = module.params.get("validate_certs")
+    try:
+        client = ntnx_microseg_py_client.ApiClient(
+            configuration=config, allow_version_negotiation=ALLOW_VERSION_NEGOTIATION
+        )
+    except TypeError:
+        client = ntnx_microseg_py_client.ApiClient(configuration=config)
     config.read_timeout = module.params.get("read_timeout")
     _apply_proxy_from_env(config, module)
     client = ntnx_microseg_py_client.ApiClient(
@@ -113,3 +119,15 @@ def get_network_security_policy_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_microseg_py_client.NetworkSecurityPoliciesApi(client)
+
+
+def get_entity_groups_api_instance(module):
+    """
+    This method will return EntityGroupsApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): entity group api instance
+    """
+    client = get_api_client(module)
+    return ntnx_microseg_py_client.EntityGroupsApi(client)

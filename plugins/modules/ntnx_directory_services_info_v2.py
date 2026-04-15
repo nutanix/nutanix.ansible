@@ -17,6 +17,20 @@ description:
     - This module is used to fetch directory services.
     - Fetch a directory service using ext_id or multiple directory services.
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Get directory service by ext_id) -
+      Operation Name: View Directory Service -
+      Required Roles: Flow Admin, Flow Viewer, Nutanix Central Admin, Prism Admin, Prism Viewer, Project Admin, Project Manager,
+      Super Admin, Self-Service Admin (deprecated)
+    - >-
+      B(List directory services) -
+      Operation Name: View Directory Service -
+      Required Roles: Flow Admin, Flow Viewer, Nutanix Central Admin, Prism Admin, Prism Viewer, Project Admin, Project Manager,
+      Super Admin, Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam)"
 options:
     ext_id:
         description:

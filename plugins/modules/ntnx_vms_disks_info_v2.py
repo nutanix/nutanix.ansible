@@ -18,6 +18,22 @@ description:
 version_added: "2.0.0"
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Get disk by ext_id) -
+      Operation Name: View Virtual Machine Disk -
+      Required Roles: Account Owner, Administrator, Backup Admin, Consumer, Developer, NCM Connector, Network Infra Admin, Operator, Prism Admin, Prism Viewer,
+      Project Admin, Project Manager, Storage Admin, Super Admin, User, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin,
+      Self-Service Admin (deprecated)
+    - >-
+      B(List disks attached to a VM) -
+      Operation Name: View Virtual Machine Disk -
+      Required Roles: Account Owner, Administrator, Backup Admin, Consumer, Developer, NCM Connector, Network Infra Admin, Operator, Prism Admin, Prism Viewer,
+      Project Admin, Project Manager, Storage Admin, Super Admin, User, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin,
+      Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     ext_id:
         description:

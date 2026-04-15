@@ -145,8 +145,8 @@ jobs:
           ansible-playbook tests/integration/targets/prepare_foundation_env/playbooks/prepare_foundation_env.yml
 
           # Function to run inventory tests from a given directory
-          # Handles both: directories with subdirectories (inventory_test, inventory_test_v2)
-          # and directories with files directly in them (inventory_test_hosts_v2)
+          # Handles both: directories with subdirectories (inventory_test, inventory_test_v2, inventory_test_hosts_v2)
+          # and directories with files directly in them (single test case)
           run_inventory_tests() {
               local test_dir="$1"
               local test_type="$2"

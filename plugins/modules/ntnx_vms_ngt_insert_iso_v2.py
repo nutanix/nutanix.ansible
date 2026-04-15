@@ -17,6 +17,16 @@ description:
 version_added: "2.0.0"
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Insert NGT ISO into an available CD-ROM for a VM) -
+      Operation Name: Insert Virtual Machine NGT ISO -
+      Required Roles: Account Owner, Administrator, Backup Admin, Consumer, Developer, NCM Connector, Operator, Prism Admin, Project Admin, Project Manager,
+      Super Admin, User, Virtual Machine Admin, Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     ext_id:
         description:

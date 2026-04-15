@@ -16,6 +16,14 @@ description:
     - This module allows you to update the password of a system user in Nutanix Clusters.
     - It uses the Nutanix Clusters Management API to change the password of a specified system user.
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Update system user password) -
+      Operation Name: Manage Cluster Configuration -
+      Required Roles: LocalAccountManager Admin, Prism Admin, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
     ext_id:
         description:

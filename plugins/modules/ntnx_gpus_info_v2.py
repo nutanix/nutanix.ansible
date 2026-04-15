@@ -15,6 +15,22 @@ short_description: Fetches GPU(s) information attached to VM in a Nutanix prism 
 description:
   - This module fetches GPU(s) information attached to a virtual machine in a Nutanix Prism Central.
   - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Get GPU by ext_id) -
+      Operation Name: View Virtual Machine GPU -
+      Required Roles: Account Owner, Administrator, Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin,
+      Project Manager, Storage Admin, Super Admin, User, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin,
+      Self-Service Admin (deprecated)
+    - >-
+      B(List GPUs attached to a VM) -
+      Operation Name: View Virtual Machine GPU -
+      Required Roles: Account Owner, Administrator, Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin,
+      Project Manager, Storage Admin, Super Admin, User, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin,
+      Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
   ext_id:
     description:
