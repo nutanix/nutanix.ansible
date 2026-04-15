@@ -536,7 +536,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 return False
         return True
 
-
     def parse(self, inventory, loader, path, cache=True):
         super().parse(inventory, loader, path, cache=cache)
         self._read_config_data(path)
@@ -572,10 +571,14 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 "Either nutanix_username and nutanix_password or nutanix_api_key is required"
             )
 
-        self.validate_certs = self.get_option("validate_certs") or os.environ.get(
-            "VALIDATE_CERTS",
-            os.environ.get("NUTANIX_VALIDATE_CERTS", "false"),
-        ).lower() == "true"
+        self.validate_certs = (
+            self.get_option("validate_certs")
+            or os.environ.get(
+                "VALIDATE_CERTS",
+                os.environ.get("NUTANIX_VALIDATE_CERTS", "false"),
+            ).lower()
+            == "true"
+        )
         self.fetch_all_vms = self.get_option("fetch_all_vms")
         self.page = self.get_option("page")
         self.limit = self.get_option("limit")
@@ -669,7 +672,9 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             if vm_description is not None:
                 host_vars["vm_description"] = vm_description
 
-            hostname = get_hostname(self._compose, host_vars, hostnames, vm_name, strict=strict)
+            hostname = get_hostname(
+                self._compose, host_vars, hostnames, vm_name, strict=strict
+            )
 
             # Create group based on cluster
             if cluster_ext_id:

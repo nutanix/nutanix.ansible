@@ -138,8 +138,7 @@ def get_hostname(compose_func, host_vars, hostnames, default_name, strict=False)
         except Exception as e:
             if strict:
                 raise AnsibleError(
-                    "Could not compose '%s' as hostname - %s"
-                    % (preference, to_text(e))
+                    "Could not compose '%s' as hostname - %s" % (preference, to_text(e))
                 )
             continue
         if hostname:

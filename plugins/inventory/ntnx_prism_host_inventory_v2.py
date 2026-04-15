@@ -458,10 +458,14 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 "Either nutanix_username and nutanix_password or nutanix_api_key is required"
             )
 
-        self.validate_certs = self.get_option("validate_certs") or os.environ.get(
-            "VALIDATE_CERTS",
-            os.environ.get("NUTANIX_VALIDATE_CERTS", "false"),
-        ).lower() == "true"
+        self.validate_certs = (
+            self.get_option("validate_certs")
+            or os.environ.get(
+                "VALIDATE_CERTS",
+                os.environ.get("NUTANIX_VALIDATE_CERTS", "false"),
+            ).lower()
+            == "true"
+        )
         self.fetch_all_hosts = self.get_option("fetch_all_hosts")
         self.page = self.get_option("page")
         self.limit = self.get_option("limit")

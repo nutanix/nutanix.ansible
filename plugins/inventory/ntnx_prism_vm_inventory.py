@@ -358,7 +358,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 return False
         return True
 
-
     def parse(self, inventory, loader, path, cache=True):
         super().parse(inventory, loader, path, cache=cache)
         self._read_config_data(path)
@@ -392,10 +391,14 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 "Either nutanix_username and nutanix_password or nutanix_api_key is required"
             )
         self.data = self.get_option("data")
-        self.validate_certs = self.get_option("validate_certs") or os.environ.get(
-            "VALIDATE_CERTS",
-            os.environ.get("NUTANIX_VALIDATE_CERTS", "false"),
-        ).lower() == "true"
+        self.validate_certs = (
+            self.get_option("validate_certs")
+            or os.environ.get(
+                "VALIDATE_CERTS",
+                os.environ.get("NUTANIX_VALIDATE_CERTS", "false"),
+            ).lower()
+            == "true"
+        )
         self.fetch_all_vms = self.get_option("fetch_all_vms")
         self.custom_ansible_host = self.get_option("custom_ansible_host")
         self.nutanix_debug = (
@@ -437,7 +440,9 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             vm_ip = host_vars.get("ansible_host")
             vm_uuid = host_vars.get("uuid")
 
-            hostname = get_hostname(self._compose, host_vars, hostnames, vm_name, strict=strict)
+            hostname = get_hostname(
+                self._compose, host_vars, hostnames, vm_name, strict=strict
+            )
 
             if cluster:
                 cluster = self.inventory.add_group(cluster)
