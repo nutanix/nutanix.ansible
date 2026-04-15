@@ -19,13 +19,13 @@ notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
-      B(List GPUs attached to a VM) -
+      B(Get GPU by ext_id) -
       Operation Name: View Virtual Machine GPU -
       Required Roles: Account Owner, Administrator, Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin,
       Project Manager, Storage Admin, Super Admin, User, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin,
       Self-Service Admin (deprecated)
     - >-
-      B(Get GPU by ext_id) -
+      B(List GPUs attached to a VM) -
       Operation Name: View Virtual Machine GPU -
       Required Roles: Account Owner, Administrator, Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin,
       Project Manager, Storage Admin, Super Admin, User, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin,

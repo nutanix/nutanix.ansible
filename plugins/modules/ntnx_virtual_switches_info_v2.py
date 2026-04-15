@@ -22,12 +22,12 @@ notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
-      B(Get list of Virtual Switches) -
+      B(Get virtual switch by ext_id) -
       Operation Name: View Virtual Switch -
       Required Roles: Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin, Super Admin, Virtual Machine Admin,
       Virtual Machine Operator, Virtual Machine Viewer, VPC Admin
     - >-
-      B(Get virtual switch by ext_id) -
+      B(Get list of Virtual Switches) -
       Operation Name: View Virtual Switch -
       Required Roles: Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin, Super Admin, Virtual Machine Admin,
       Virtual Machine Operator, Virtual Machine Viewer, VPC Admin

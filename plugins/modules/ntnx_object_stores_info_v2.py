@@ -18,11 +18,11 @@ notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
-      B(Get a list of the Object stores) -
+      B(Get object store by ext_id) -
       Operation Name: View Object Store -
       Required Roles: Objects Admin, Objects Editor, Objects Viewer, Prism Admin, Super Admin
     - >-
-      B(Get object store by ext_id) -
+      B(Get a list of the Object stores) -
       Operation Name: View Object Store -
       Required Roles: Objects Admin, Objects Editor, Objects Viewer, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=objects&version=v4.0)"

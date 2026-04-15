@@ -22,12 +22,12 @@ notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
-      B(List Storage Containers) -
+      B(Get storage container by ext_id) -
       Operation Name: View Storage Container -
       Required Roles: Backup Admin, Consumer, CSI System, Developer, Kubernetes Data Services System, NCM Connector, Operator, Prism Admin, Prism Viewer,
       Project Admin, Project Manager, Storage Admin, Storage Viewer, Super Admin, Self-Service Admin (deprecated)
     - >-
-      B(Get storage container by ext_id) -
+      B(List Storage Containers) -
       Operation Name: View Storage Container -
       Required Roles: Backup Admin, Consumer, CSI System, Developer, Kubernetes Data Services System, NCM Connector, Operator, Prism Admin, Prism Viewer,
       Project Admin, Project Manager, Storage Admin, Storage Viewer, Super Admin, Self-Service Admin (deprecated)

@@ -21,11 +21,11 @@ notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
-      B(List Entity Groups) -
+      B(Get entity group by ext_id) -
       Operation Name: View Entity Group -
       Required Roles: Flow Admin, Flow Viewer, Prism Admin, Prism Viewer, Project Manager, Super Admin
     - >-
-      B(Get entity group by ext_id) -
+      B(List Entity Groups) -
       Operation Name: View Entity Group -
       Required Roles: Flow Admin, Flow Viewer, Prism Admin, Prism Viewer, Project Manager, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg&version=v4.2)"

@@ -21,12 +21,12 @@ notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
-      B(List recovery points) -
+      B(Get recovery point by ext_id) -
       Operation Name: View Recovery Point -
       Required Roles: Backup Admin, CSI System, Disaster Recovery Admin, Disaster Recovery Viewer, Kubernetes Data Services System, NCM Connector, Prism Admin,
       Prism Viewer, Project Manager, Super Admin, Self-Service Admin (deprecated)
     - >-
-      B(Get recovery point by ext_id) -
+      B(List recovery points) -
       Operation Name: View Recovery Point -
       Required Roles: Backup Admin, CSI System, Disaster Recovery Admin, Disaster Recovery Viewer, Kubernetes Data Services System, NCM Connector, Prism Admin,
       Prism Viewer, Project Manager, Super Admin, Self-Service Admin (deprecated)

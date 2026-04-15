@@ -17,11 +17,11 @@ notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
-      B(List backup targets) -
+      B(Get backup target by ext_id) -
       Operation Name: View Domain Manager Backup Target -
       Required Roles: Domain Manager Admin, Domain Manager Viewer, Prism Admin, Prism Viewer, Super Admin
     - >-
-      B(Get backup target by ext_id) -
+      B(List backup targets) -
       Operation Name: View Domain Manager Backup Target -
       Required Roles: Domain Manager Admin, Domain Manager Viewer, Prism Admin, Prism Viewer, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism&version=v4.3)"
