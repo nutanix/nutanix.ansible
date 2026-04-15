@@ -23,6 +23,7 @@ Minor Changes
 - ntnx_prism_vm_inventory - [Imprv] Handle invalid group name characters in inventory plugins [[\#917](https://github.com/nutanix/nutanix.ansible/issues/917)]
 - ntnx_karbon_clusters - [Imprv] Add deprecation message for Karbon modules as Karbon is not supported on PC versions later than 7.3 [[\#921](https://github.com/nutanix/nutanix.ansible/issues/921)]
 - CI/CD - [Imprv] Update CI/CD Pipeline and Dependencies to Python 3.12 [[\#915](https://github.com/nutanix/nutanix.ansible/issues/915)]
+- All modules - [Imprv] Document required permissions required for Ansible service account used [[\#769](https://github.com/nutanix/nutanix.ansible/issues/769)]
 
 Bugfixes
 --------

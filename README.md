@@ -43,6 +43,7 @@ We are excited to announce the release of **Nutanix Ansible Collection v2.5.0** 
   - **Invalid group name characters (ntnx_prism_vm_inventory)**: Handle invalid characters in cluster-based group names in inventory plugins. [#917](https://github.com/nutanix/nutanix.ansible/issues/917)
   - **Separate Base Module for v4 (Internal)**: Create a dedicated BaseModulev4 class to avoid unnecessary flags for v4-only parameters. [#918](https://github.com/nutanix/nutanix.ansible/issues/918)
   - **Karbon deprecation notice (Karbon)**: Add deprecation message for Karbon modules as Karbon is not supported on PC 7.3+. [#921](https://github.com/nutanix/nutanix.ansible/issues/921)
+  - **Required permissions documentation (All modules)**: Document required permissions for Ansible service account used across all modules. [#769](https://github.com/nutanix/nutanix.ansible/issues/769)
 - **Bug Fixes and Stability Improvements**
   - NoneType crash in inventory plugins when VM fields are explicitly None [#939](https://github.com/nutanix/nutanix.ansible/issues/939)
   - Unnecessary required fields for `state: present` in module ntnx_subnets_v2 [#895](https://github.com/nutanix/nutanix.ansible/issues/895)

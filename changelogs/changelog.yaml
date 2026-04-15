@@ -1055,6 +1055,8 @@ releases:
           as Karbon is not supported on PC versions later than 7.3
           [[\#921](https://github.com/nutanix/nutanix.ansible/issues/921)]
         - CI/CD - [Imprv] Update CI/CD Pipeline and Dependencies to Python 3.12 [[\#915](https://github.com/nutanix/nutanix.ansible/issues/915)]
+        - All modules - [Imprv] Document required permissions required for Ansible
+          service account used [[\#769](https://github.com/nutanix/nutanix.ansible/issues/769)]
       release_summary: Built on v4 SDKs. Adds Network Functions, Entity Groups, Security
         Policy Rules, IAM Entities, and Virtual Switches modules with proxy support,
         Service Account API key authentication, read timeout, and several improvements
