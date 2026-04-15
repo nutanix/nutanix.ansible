@@ -200,7 +200,7 @@ from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
     get_clusters_api_instance,
 )
 from ..module_utils.v4.utils import strip_internal_attributes  # noqa: E402
-from .inventory_utils import get_hostname  # noqa: E402
+from ..plugin_utils.inventory_utils import get_hostname  # noqa: E402
 
 
 class Mock_Module:
