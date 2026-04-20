@@ -1,0 +1,707 @@
+---
+- name: Start RSYSLOG server tests
+  ansible.builtin.debug:
+    msg: Start RSYSLOG server tests
+
+- name: Generate random name suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false,
+      special=false, length=12)[0] }}"
+    suffix_name: "ansible"
+    todelete: []
+
+- name: Set RSYSLOG server name prefix
+  ansible.builtin.set_fact:
+    rsyslog_name: "rsyslog_{{ suffix_name }}_{{ random_name }}"
+
+########################################################################################
+# Create RSYSLOG Server Tests
+########################################################################################
+
+- name: Generate spec for creating RSYSLOG server using check mode
+  nutanix.ncp.ntnx_rsyslog_servers_v2:
+    cluster_ext_id: "{{ cluster.uuid }}"
+    server_name: "check_mode_rsyslog_full"
+    ip_address:
+      ipv4:
+        value: "192.168.1.100"
+        prefix_length: 32
+    port: 514
+    network_protocol: "UDP"
+    modules:
+      - name: "PRISM"
+        log_severity_level: "INFO"
+        should_log_monitor_files: false
+      - name: "CASSANDRA"
+        log_severity_level: "WARNING"
+        should_log_monitor_files: true
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Debug result (create RSYSLOG check mode full spec)
+  ansible.builtin.debug:
+    var: result
+
+- name: Generate spec for creating RSYSLOG server using check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.cluster_ext_id == "{{ cluster.uuid }}"
+      - result.response is defined
+      - result.response.server_name == "check_mode_rsyslog_full"
+      - result.response.ip_address.ipv4.value == "192.168.1.100"
+      - result.response.ip_address.ipv4.prefix_length == 32
+      - result.response.port == 514
+      - result.response.network_protocol == "UDP"
+      - result.response.modules | length == 2
+      - result.response.modules[0].name == "PRISM"
+      - result.response.modules[0].log_severity_level == "INFO"
+      - result.response.modules[0].should_log_monitor_files == false
+      - result.response.modules[1].name == "CASSANDRA"
+      - result.response.modules[1].log_severity_level == "WARNING"
+      - result.response.modules[1].should_log_monitor_files == true
+    success_msg: "Spec for creating RSYSLOG server using check mode is generated
+      successfully"
+    fail_msg: "Spec for creating RSYSLOG server using check mode is not generated
+      successfully"
+
+- name: Create RSYSLOG server
+  nutanix.ncp.ntnx_rsyslog_servers_v2:
+    cluster_ext_id: "{{ cluster.uuid }}"
+    server_name: "{{ rsyslog_name }}"
+    ip_address:
+      ipv4:
+        value: "192.168.1.100"
+    port: 514
+    network_protocol: "UDP"
+  register: result
+  ignore_errors: true
+
+- name: Debug result (create RSYSLOG server)
+  ansible.builtin.debug:
+    var: result
+
+- name: Create RSYSLOG server status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.cluster_ext_id == "{{ cluster.uuid }}"
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    success_msg: "RSYSLOG server is created successfully"
+    fail_msg: "RSYSLOG server creation failed"
+
+- name: Create RSYSLOG server with all attributes
+  nutanix.ncp.ntnx_rsyslog_servers_v2:
+    cluster_ext_id: "{{ cluster.uuid }}"
+    server_name: "{{ rsyslog_name }}_all"
+    ip_address:
+      ipv4:
+        value: "192.168.1.101"
+        prefix_length: 32
+    port: 6514
+    network_protocol: "TCP"
+    modules:
+      - name: "PRISM"
+        log_severity_level: "INFO"
+        should_log_monitor_files: false
+      - name: "CASSANDRA"
+        log_severity_level: "EMERGENCY"
+        should_log_monitor_files: true
+      - name: "GENESIS"
+        log_severity_level: "DEBUG"
+  register: result
+  ignore_errors: true
+
+- name: Debug result (create RSYSLOG server with all attributes)
+  ansible.builtin.debug:
+    var: result
+
+- name: Create RSYSLOG server with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.cluster_ext_id == "{{ cluster.uuid }}"
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    success_msg: "RSYSLOG server with all attributes created successfully"
+    fail_msg: "RSYSLOG server with all attributes creation failed"
+
+- name: List all RSYSLOG servers and set external IDs
+  nutanix.ncp.ntnx_rsyslog_servers_info_v2:
+    cluster_ext_id: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug result (list RSYSLOG servers)
+  ansible.builtin.debug:
+    var: result
+
+- name: List all RSYSLOG servers for cluster status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.total_available_results >= 2
+    success_msg: "List all RSYSLOG servers passed"
+    fail_msg: "List all RSYSLOG servers failed"
+
+- name: Set RSYSLOG servers external IDs
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [(result.response | selectattr('server_name',
+      'equalto', item) | list | first).ext_id] }}"
+  loop:
+    - "{{ rsyslog_name }}"
+    - "{{ rsyslog_name }}_all"
+
+- name: Set rsyslog_ext_id for info module tests
+  ansible.builtin.set_fact:
+    rsyslog_ext_id: "{{ todelete[1] }}"
+
+- name: Debug todelete and rsyslog_ext_id
+  ansible.builtin.debug:
+    msg:
+      - "todelete: {{ todelete }}"
+      - "rsyslog_ext_id: {{ rsyslog_ext_id }}"
+
+- name: Fetch first RSYSLOG server by external ID
+  nutanix.ncp.ntnx_rsyslog_servers_info_v2:
+    cluster_ext_id: "{{ cluster.uuid }}"
+    ext_id: "{{ todelete[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug result (fetch first RSYSLOG server by external ID)
+  ansible.builtin.debug:
+    var: result
+
+- name: Fetch first RSYSLOG server by external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.response is defined
+      - result.response.server_name == "{{ rsyslog_name }}"
+      - result.response.ip_address.ipv4.value == "192.168.1.100"
+      - result.response.ip_address.ipv4.prefix_length == 32
+      - result.response.port == 514
+      - result.response.network_protocol == "UDP"
+    success_msg: "Fetch first RSYSLOG server by external ID passed"
+    fail_msg: "Fetch first RSYSLOG server by external ID failed"
+
+- name: Fetch second RSYSLOG server by external ID
+  nutanix.ncp.ntnx_rsyslog_servers_info_v2:
+    cluster_ext_id: "{{ cluster.uuid }}"
+    ext_id: "{{ todelete[1] }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug result (fetch second RSYSLOG server by external ID)
+  ansible.builtin.debug:
+    var: result
+
+- name: Fetch second RSYSLOG server by external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.response is defined
+      - result.response.server_name == "{{ rsyslog_name }}_all"
+      - result.response.ip_address.ipv4.value == "192.168.1.101"
+      - result.response.ip_address.ipv4.prefix_length == 32
+      - result.response.port == 6514
+      - result.response.network_protocol == "TCP"
+      - result.response.modules | length == 3
+      - result.response.modules[0].name == "PRISM"
+      - result.response.modules[0].log_severity_level == "INFO"
+      - result.response.modules[0].should_log_monitor_files == false
+      - result.response.modules[1].name == "CASSANDRA"
+      - result.response.modules[1].log_severity_level == "EMERGENCY"
+      - result.response.modules[1].should_log_monitor_files == true
+      - result.response.modules[2].name == "GENESIS"
+      - result.response.modules[2].log_severity_level == "DEBUG"
+      - result.response.modules[2].should_log_monitor_files == true
+    success_msg: "Fetch second RSYSLOG server by external ID passed"
+    fail_msg: "Fetch second RSYSLOG server by external ID failed"
+
+########################################################################################
+# Create RSYSLOG Server - Negative Tests
+########################################################################################
+
+- name: Create RSYSLOG server with missing server_name (should fail)
+  nutanix.ncp.ntnx_rsyslog_servers_v2:
+    cluster_ext_id: "{{ cluster.uuid }}"
+    ip_address:
+      ipv4:
+        value: "192.168.1.100"
+    port: 514
+    network_protocol: "UDP"
+  register: result
+  ignore_errors: true
+
+- name: Debug result (create missing server_name)
+  ansible.builtin.debug:
+    var: result
+
+- name: Create RSYSLOG server with missing server_name status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Missing required parameter(s): server_name"
+    success_msg: "Create RSYSLOG server with missing server_name failed as expected"
+    fail_msg: "Create RSYSLOG server with missing server_name did not fail as expected"
+
+- name: Create RSYSLOG server with missing ip_address (should fail)
+  nutanix.ncp.ntnx_rsyslog_servers_v2:
+    cluster_ext_id: "{{ cluster.uuid }}"
+    server_name: "test_missing_ip"
+    port: 514
+    network_protocol: "UDP"
+  register: result
+  ignore_errors: true
+
+- name: Debug result (create missing ip_address)
+  ansible.builtin.debug:
+    var: result
+
+- name: Create RSYSLOG server with missing ip_address status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Missing required parameter(s): ip_address"
+    success_msg: "Create RSYSLOG server with missing ip_address failed as expected"
+    fail_msg: "Create RSYSLOG server with missing ip_address did not fail as expected"
+
+- name: Create RSYSLOG server with missing port (should fail)
+  nutanix.ncp.ntnx_rsyslog_servers_v2:
+    cluster_ext_id: "{{ cluster.uuid }}"
+    server_name: "test_missing_port"
+    ip_address:
+      ipv4:
+        value: "192.168.1.100"
+    network_protocol: "UDP"
+  register: result
+  ignore_errors: true
+
+- name: Debug result (create missing port)
+  ansible.builtin.debug:
+    var: result
+
+- name: Create RSYSLOG server with missing port status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Missing required parameter(s): port"
+    success_msg: "Create RSYSLOG server with missing port failed as expected"
+    fail_msg: "Create RSYSLOG server with missing port did not fail as expected"
+
+- name: Create RSYSLOG server with missing network_protocol (should fail)
+  nutanix.ncp.ntnx_rsyslog_servers_v2:
+    state: present
+    cluster_ext_id: "{{ cluster.uuid }}"
+    server_name: "test_missing_protocol"
+    ip_address:
+      ipv4:
+        value: "192.168.1.100"
+    port: 514
+  register: result
+  ignore_errors: true
+
+- name: Debug result (create missing network_protocol)
+  ansible.builtin.debug:
+    var: result
+
+- name: Create RSYSLOG server with missing network_protocol status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Missing required parameter(s): network_protocol"
+    success_msg: "Create RSYSLOG server with missing network_protocol failed as expected"
+    fail_msg: "Create RSYSLOG server with missing network_protocol did not fail as
+      expected"
+
+- name: Create RSYSLOG server with name that already exists (should fail)
+  nutanix.ncp.ntnx_rsyslog_servers_v2:
+    cluster_ext_id: "{{ cluster.uuid }}"
+    server_name: "{{ rsyslog_name }}"
+    ip_address:
+      ipv4:
+        value: "192.168.1.100"
+    port: 514
+    network_protocol: "UDP"
+  register: result
+  ignore_errors: true
+
+- name: Debug result (create duplicate server name)
+  ansible.builtin.debug:
+    var: result
+
+- name: Create RSYSLOG server with name that already exists status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.response is defined
+      - result.response.status == "FAILED"
+      - result.response.error_messages | length > 0
+    success_msg: "Create RSYSLOG server with name that already exists failed as expected"
+    fail_msg: "Create RSYSLOG server with name that already exists did not fail as
+      expected"
+
+########################################################################################
+# Update RSYSLOG Server Tests
+########################################################################################
+
+- name: Generate spec for updating RSYSLOG server using check mode with all
+    attributes
+  nutanix.ncp.ntnx_rsyslog_servers_v2:
+    cluster_ext_id: "{{ cluster.uuid }}"
+    ext_id: "{{ todelete[1] }}"
+    server_name: "test_update_server_name"
+    ip_address:
+      ipv4:
+        value: "192.168.1.200"
+        prefix_length: 32
+    port: 515
+    network_protocol: "TCP"
+    modules:
+      - name: "ZOOKEEPER"
+        log_severity_level: "CRITICAL"
+        should_log_monitor_files: false
+      - name: "AUDIT"
+        log_severity_level: "ALERT"
+        should_log_monitor_files: true
+      - name: "CALM"
+        log_severity_level: "WARNING"
+        should_log_monitor_files: false
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Debug result (update RSYSLOG check mode full spec)
+  ansible.builtin.debug:
+    var: result
+
+- name: Generate spec for updating RSYSLOG server using check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.server_name == "test_update_server_name"
+      - result.response.ip_address.ipv4.value == "192.168.1.200"
+      - result.response.port == 515
+      - result.response.network_protocol == "TCP"
+      - result.response.modules | length == 3
+      - result.response.modules[0].name == "ZOOKEEPER"
+      - result.response.modules[0].log_severity_level == "CRITICAL"
+      - result.response.modules[0].should_log_monitor_files == false
+      - result.response.modules[1].name == "AUDIT"
+      - result.response.modules[1].log_severity_level == "ALERT"
+      - result.response.modules[1].should_log_monitor_files == true
+      - result.response.modules[2].name == "CALM"
+      - result.response.modules[2].log_severity_level == "WARNING"
+      - result.response.modules[2].should_log_monitor_files == false
+    success_msg: "Spec for updating RSYSLOG server using check mode with all
+      attributes is generated successfully"
+    fail_msg: "Spec for updating RSYSLOG server using check mode with all attributes
+      is not generated successfully"
+
+- name: Update RSYSLOG server
+  nutanix.ncp.ntnx_rsyslog_servers_v2:
+    cluster_ext_id: "{{ cluster.uuid }}"
+    ext_id: "{{ todelete[0] }}"
+    ip_address:
+      ipv4:
+        value: "192.168.1.211"
+        prefix_length: 32
+  register: result
+  ignore_errors: true
+
+- name: Debug result (update RSYSLOG)
+  ansible.builtin.debug:
+    var: result
+
+- name: Update RSYSLOG server status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.server_name == "{{ rsyslog_name }}"
+      - result.response.ip_address.ipv4.value == "192.168.1.211"
+      - result.response.port == 514
+      - result.response.network_protocol == "UDP"
+    success_msg: "Update RSYSLOG server is successful"
+    fail_msg: "Update RSYSLOG server failed"
+
+- name: Update RSYSLOG server with all attributes
+  nutanix.ncp.ntnx_rsyslog_servers_v2:
+    cluster_ext_id: "{{ cluster.uuid }}"
+    ext_id: "{{ todelete[1] }}"
+    server_name: "{{ rsyslog_name }}_all"
+    ip_address:
+      ipv4:
+        value: "192.168.1.201"
+        prefix_length: 32
+    port: 616
+    network_protocol: "TCP"
+    modules:
+      - name: "FLOW"
+        log_severity_level: "CRITICAL"
+        should_log_monitor_files: false
+      - name: "ACROPOLIS"
+        log_severity_level: "ALERT"
+        should_log_monitor_files: true
+      - name: "LCM"
+        log_severity_level: "WARNING"
+        should_log_monitor_files: false
+  register: result
+  ignore_errors: true
+
+- name: Debug result (update RSYSLOG with all attributes)
+  ansible.builtin.debug:
+    var: result
+
+- name: Update RSYSLOG server with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.server_name == "{{ rsyslog_name }}_all"
+      - result.response.ip_address.ipv4.value == "192.168.1.201"
+      - result.response.port == 616
+      - result.response.network_protocol == "TCP"
+      - result.response.modules | length == 3
+      - result.response.modules[0].name == "FLOW"
+      - result.response.modules[0].log_severity_level == "CRITICAL"
+      - result.response.modules[0].should_log_monitor_files == false
+      - result.response.modules[1].name == "ACROPOLIS"
+      - result.response.modules[1].log_severity_level == "ALERT"
+      - result.response.modules[1].should_log_monitor_files == true
+      - result.response.modules[2].name == "LCM"
+      - result.response.modules[2].log_severity_level == "WARNING"
+      - result.response.modules[2].should_log_monitor_files == false
+    success_msg: "Update RSYSLOG server with all attributes is successful"
+    fail_msg: "Update RSYSLOG server with all attributes failed"
+
+- name: Update RSYSLOG server with same values (idempotency test)
+  nutanix.ncp.ntnx_rsyslog_servers_v2:
+    cluster_ext_id: "{{ cluster.uuid }}"
+    ext_id: "{{ todelete[1] }}"
+    server_name: "{{ rsyslog_name }}_all"
+    ip_address:
+      ipv4:
+        value: "192.168.1.201"
+        prefix_length: 32
+    port: 616
+    network_protocol: "TCP"
+    modules:
+      - name: "FLOW"
+        log_severity_level: "CRITICAL"
+        should_log_monitor_files: false
+      - name: "ACROPOLIS"
+        log_severity_level: "ALERT"
+        should_log_monitor_files: true
+      - name: "LCM"
+        log_severity_level: "WARNING"
+        should_log_monitor_files: false
+  register: result
+  ignore_errors: true
+
+- name: Debug result (update RSYSLOG idempotency)
+  ansible.builtin.debug:
+    var: result
+
+- name: Update RSYSLOG server with same values to test idempotency status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.msg == "Nothing to change."
+    success_msg: "Update RSYSLOG server with same values to test idempotency passed"
+    fail_msg: "Update RSYSLOG server with same values to test idempotency failed"
+
+########################################################################################
+# Update RSYSLOG Server - Negative Tests
+########################################################################################
+
+- name: Update RSYSLOG server with wrong server_name (should fail)
+  nutanix.ncp.ntnx_rsyslog_servers_v2:
+    cluster_ext_id: "{{ cluster.uuid }}"
+    ext_id: "{{ todelete[1] }}"
+    server_name: "test_wrong_server_name"
+    ip_address:
+      ipv4:
+        value: "192.168.1.201"
+        prefix_length: 32
+  register: result
+  ignore_errors: true
+
+- name: Debug result (update wrong server_name)
+  ansible.builtin.debug:
+    var: result
+
+- name: Update RSYSLOG server with wrong server_name status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.response is defined
+      - result.response.status == "FAILED"
+      - result.response.error_messages | length > 0
+    success_msg: "Update RSYSLOG server with wrong server_name failed as expected"
+    fail_msg: "Update RSYSLOG server with wrong server_name did not fail as expected"
+
+- name: Update RSYSLOG server with wrong external ID (should fail)
+  nutanix.ncp.ntnx_rsyslog_servers_v2:
+    cluster_ext_id: "{{ cluster.uuid }}"
+    ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+    server_name: "{{ rsyslog_name }}"
+    ip_address:
+      ipv4:
+        value: "192.168.1.201"
+        prefix_length: 32
+  register: result
+  ignore_errors: true
+
+- name: Debug result (update wrong ext_id)
+  ansible.builtin.debug:
+    var: result
+
+- name: Update RSYSLOG server with wrong external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching rsyslog server info
+        using ext_id"
+      - result.response is defined
+      - result.response.data.error | length > 0
+    success_msg: "Update RSYSLOG server with wrong external ID failed as expected"
+    fail_msg: "Update RSYSLOG server with wrong external ID did not fail as expected"
+
+########################################################################################
+# Delete RSYSLOG Server Tests
+########################################################################################
+
+- name: Delete RSYSLOG server with check mode
+  nutanix.ncp.ntnx_rsyslog_servers_v2:
+    state: absent
+    cluster_ext_id: "{{ cluster.uuid }}"
+    ext_id: "{{ todelete[0] }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Debug result (delete RSYSLOG check mode)
+  ansible.builtin.debug:
+    var: result
+
+- name: Delete RSYSLOG server with check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - "'will be deleted' in result.msg"
+    success_msg: "Delete RSYSLOG server with check mode passed"
+    fail_msg: "Delete RSYSLOG server with check mode failed"
+
+- name: Delete all created RSYSLOG servers
+  nutanix.ncp.ntnx_rsyslog_servers_v2:
+    state: absent
+    cluster_ext_id: "{{ cluster.uuid }}"
+    ext_id: "{{ item }}"
+  register: result
+  ignore_errors: true
+  loop: "{{ todelete }}"
+
+- name: Debug result (delete all RSYSLOG servers loop)
+  ansible.builtin.debug:
+    var: result
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.results | length == todelete | length
+      - result.msg == "All items completed"
+      - result.results | length == todelete | length
+      - item.ext_id in todelete
+    fail_msg: "Unable to delete all RSYSLOG servers"
+    success_msg: "All RSYSLOG servers are deleted successfully"
+  loop: "{{ result.results }}"
+
+- name: Delete RSYSLOG server with wrong external ID (should fail)
+  nutanix.ncp.ntnx_rsyslog_servers_v2:
+    state: absent
+    cluster_ext_id: "{{ cluster.uuid }}"
+    ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+  register: result
+  ignore_errors: true
+
+- name: Debug result (delete wrong ext_id)
+  ansible.builtin.debug:
+    var: result
+
+- name: Delete RSYSLOG server with wrong external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Delete RSYSLOG server with wrong external ID failed as expected"
+    fail_msg: "Delete RSYSLOG server with wrong external ID did not fail as expected"
+
+- name: Delete RSYSLOG server with missing external ID (should fail)
+  nutanix.ncp.ntnx_rsyslog_servers_v2:
+    state: absent
+    cluster_ext_id: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug result (delete missing ext_id)
+  ansible.builtin.debug:
+    var: result
+
+- name: Delete RSYSLOG server with missing external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is absent but all of the following are missing: ext_id' in
+        result.msg"
+    success_msg: "Delete RSYSLOG server with missing external ID failed as expected"
+    fail_msg: "Delete RSYSLOG server with missing external ID did not fail as expected"
