@@ -1,0 +1,94 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create RSYSLOG server
+# 2. List all RSYSLOG servers for a cluster
+# 3. Fetch RSYSLOG server using ext_id
+# 4. Update RSYSLOG server
+# 5. Delete RSYSLOG server
+
+- name: RSYSLOG Servers playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      # nutanix_host: <pc_ip>
+      # nutanix_username: <user>
+      # nutanix_password: <pass>
+      # validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        cluster_ext_id: "00064f7c-ca6c-aafd-7ef9-52540005974d"
+        rsyslog_name: "test-rsyslog-ansible"
+        rsyslog_ext_id: "437de8a2-640d-4fd7-9b5f-1bd287a3aa4e"
+
+    - name: Create RSYSLOG server
+      nutanix.ncp.ntnx_rsyslog_servers_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        server_name: "{{ rsyslog_name }}"
+        ip_address:
+          ipv4:
+            value: "192.168.1.101"
+            prefix_length: 32
+        port: 6514
+        network_protocol: "TCP"
+        modules:
+          - name: "PRISM"
+            log_severity_level: "INFO"
+            should_log_monitor_files: false
+          - name: "CASSANDRA"
+            log_severity_level: "EMERGENCY"
+            should_log_monitor_files: true
+          - name: "GENESIS"
+            log_severity_level: "DEBUG"
+            should_log_monitor_files: true
+      register: result
+      ignore_errors: true
+
+    - name: Update RSYSLOG server
+      nutanix.ncp.ntnx_rsyslog_servers_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ rsyslog_ext_id }}"
+        server_name: "{{ rsyslog_name }}"
+        ip_address:
+          ipv4:
+            value: "192.168.1.201"
+            prefix_length: 32
+        port: 616
+        network_protocol: "TCP"
+        modules:
+          - name: "FLOW"
+            log_severity_level: "CRITICAL"
+            should_log_monitor_files: false
+          - name: "ACROPOLIS"
+            log_severity_level: "ALERT"
+            should_log_monitor_files: true
+          - name: "LCM"
+            log_severity_level: "WARNING"
+            should_log_monitor_files: false
+      register: result
+      ignore_errors: true
+
+    - name: List all RSYSLOG servers for the cluster
+      nutanix.ncp.ntnx_rsyslog_servers_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch RSYSLOG server using ext_id
+      nutanix.ncp.ntnx_rsyslog_servers_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ rsyslog_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Delete RSYSLOG server
+      nutanix.ncp.ntnx_rsyslog_servers_v2:
+        state: absent
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ rsyslog_ext_id }}"
+      register: result
+      ignore_errors: true
