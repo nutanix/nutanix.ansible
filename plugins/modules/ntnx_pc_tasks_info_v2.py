@@ -19,12 +19,10 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get task details by ext_id) -
-      Operation Name: View Task -
       Required Roles: Account Owner, Administrator, Backup Admin, CSI System, Intelligent Ops Admin, Kubernetes Data Services System, Monitoring Admin,
       NCM Admin, NCM Connector, NCM Viewer, Prism Admin, Prism Viewer, Super Admin, Self-Service Admin (deprecated)
     - >-
       B(List tasks) -
-      Operation Name: View Task -
       Required Roles: Account Owner, Administrator, Backup Admin, CSI System, Intelligent Ops Admin, Kubernetes Data Services System, Monitoring Admin,
       NCM Admin, NCM Connector, NCM Viewer, Prism Admin, Prism Viewer, Super Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"

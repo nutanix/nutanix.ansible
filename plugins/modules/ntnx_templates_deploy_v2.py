@@ -20,7 +20,6 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Deploy VMs from a template) -
-      Operation Name: Deploy VM Templates -
       Required Roles: Prism Admin, Super Admin, Virtual Machine Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:

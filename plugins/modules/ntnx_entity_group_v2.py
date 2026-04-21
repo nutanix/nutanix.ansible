@@ -24,15 +24,12 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create an Entity Group) -
-      Operation Name: Create Entity Group -
       Required Roles: Flow Admin, Prism Admin, Project Manager, Super Admin
     - >-
       B(Delete an Entity Group) -
-      Operation Name: Delete Entity Group -
       Required Roles: Flow Admin, Prism Admin, Project Manager, Super Admin
     - >-
       B(Update an Entity Group by external identifier) -
-      Operation Name: Update Entity Group -
       Required Roles: Flow Admin, Prism Admin, Project Manager, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg)"
 options:

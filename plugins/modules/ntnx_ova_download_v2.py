@@ -20,7 +20,6 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Download an OVA) -
-      Operation Name: Download Ova -
       Required Roles: Prism Admin, Prism Viewer, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:

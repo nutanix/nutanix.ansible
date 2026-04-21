@@ -20,7 +20,6 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(List all the Network Security Policy rules by policy ExtID) -
-      Operation Name: View Rules Flow Policy -
       Required Roles: Flow Admin, Flow Viewer, Prism Admin, Prism Viewer, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg)"
 options:

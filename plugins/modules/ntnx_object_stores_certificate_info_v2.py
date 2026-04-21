@@ -19,11 +19,9 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get object store certificate by ext_id) -
-      Operation Name: View Object Store Certificate -
       Required Roles: Objects Admin, Objects Editor, Objects Viewer, Prism Admin, Super Admin
     - >-
       B(Get a list of the SSL certificates of an Object store) -
-      Operation Name: View Object Store Certificate -
       Required Roles: Objects Admin, Objects Editor, Objects Viewer, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=objects)"
 options:

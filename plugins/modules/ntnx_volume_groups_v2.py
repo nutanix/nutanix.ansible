@@ -25,17 +25,14 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Creates a new Volume Group) -
-      Operation Name: Create Volume Group -
       Required Roles: Backup Admin, CSI System, Kubernetes Data Services System, Prism Admin, Project Manager, Storage Admin, Super Admin,
       Self-Service Admin (deprecated)
     - >-
       B(Delete the Volume Group) -
-      Operation Name: Delete Volume Group -
       Required Roles: Backup Admin, CSI System, Kubernetes Data Services System, Prism Admin, Project Manager, Storage Admin, Super Admin,
       Self-Service Admin (deprecated)
     - >-
       B(Update details of a specified Volume Group) -
-      Operation Name: Update Volume Group Details -
       Required Roles: Backup Admin, Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes)"
 options:

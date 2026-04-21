@@ -21,7 +21,6 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Accept End User License Agreement) -
-      Operation Name: Add Eula User -
       Required Roles: Cluster Admin, Internal Super Admin, License Admin, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=licensing)"
 options:

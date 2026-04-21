@@ -24,17 +24,14 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create an image) -
-      Operation Name: Create Image -
       Required Roles: Account Owner, Administrator, Consumer, CSI System, Developer, Kubernetes Data Services System, Kubernetes Infrastructure Provision,
       NCM Connector, Prism Admin, Project Manager, Super Admin, User, Virtual Machine Admin, Self-Service Admin (deprecated)
     - >-
       B(Delete an image) -
-      Operation Name: Delete Image -
       Required Roles: Account Owner, Administrator, CSI System, Kubernetes Data Services System, Kubernetes Infrastructure Provision, Prism Admin,
       Project Manager, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
     - >-
       B(Update an image) -
-      Operation Name: Update Image -
       Required Roles: Account Owner, Administrator, Prism Admin, Project Manager, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:

@@ -22,11 +22,9 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Get the specified route of the specified route table) -
-      Operation Name: View Route Table Route -
       Required Roles: Prism Admin, Prism Viewer, Super Admin, VPC Admin
     - >-
       B(Lists routes of the specified route table) -
-      Operation Name: View Route Table Route -
       Required Roles: Prism Admin, Prism Viewer, Super Admin, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:

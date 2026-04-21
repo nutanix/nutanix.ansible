@@ -24,12 +24,10 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Get the list of all host entities) -
-      Operation Name: View Host -
       Required Roles: Cluster Admin, Cluster Viewer, NCM Connector, Network Infra Admin, Prism Admin, Prism Viewer, Storage Admin, Super Admin,
       Virtual Machine Admin, Virtual Machine Operator, VPC Admin
     - >-
       B(Get the list of hosts associated with a cluster) -
-      Operation Name: View Cluster Host -
       Required Roles: Backup Admin, Cluster Admin, Cluster Viewer, LocalAccountManager Admin, LocalAccountManager Viewer, NCM Connector, Network Infra Admin,
       Prism Admin, Prism Viewer, Project Manager, Super Admin, VPC Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"

@@ -21,12 +21,10 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Associate categories to a VM) -
-      Operation Name: Associate Virtual Machine Categories -
       Required Roles: Account Owner, Administrator, Consumer, Developer, NCM Connector, Operator, Prism Admin, Project Admin, Project Manager, Super Admin,
       User, Virtual Machine Admin, Self-Service Admin (deprecated)
     - >-
       B(Disassociate categories from a VM) -
-      Operation Name: Disassociate Virtual Machine Categories -
       Required Roles: Account Owner, Administrator, Consumer, Developer, NCM Connector, Operator, Prism Admin, Project Admin, Project Manager, Super Admin,
       User, Virtual Machine Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
