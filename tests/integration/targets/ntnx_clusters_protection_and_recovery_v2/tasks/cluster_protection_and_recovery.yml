@@ -1,0 +1,654 @@
+---
+# Source cluster: cluster.uuid from prepare_env (vars/main.yml).
+# Protect payload uses fixed test literals (RPO minutes / local snapshot retention).
+# Requires clusters[], username_for_tests, password_for_tests for destination PE create.
+
+- name: Running cluster protection and recovery tests
+  ansible.builtin.debug:
+    msg: "Running cluster protection and recovery tests"
+
+- name: Generate random category key & value
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false,
+      special=false, length=12)[0] }}"
+
+- name: Set prefix name for clusters
+  ansible.builtin.set_fact:
+    prefix_name: ansible_test
+
+- name: Set command split for resetting cluster username and password
+  ansible.builtin.set_fact:
+    pe_ssh_cmd: sshpass -p '{{ clusters[0].pe_password }}' ssh -o
+      StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {{
+      clusters[0].pe_username }}@{{ clusters[0].nodes[0].cvm_ip }}
+    reset_username_password: /home/nutanix/prism/cli/ncli user reset-password
+      user-name={{ username_for_tests }} password={{ password_for_tests }}
+    cluster_status: /usr/local/nutanix/cluster/bin/cluster status
+
+- name: Set command for resetting cluster username and password
+  ansible.builtin.set_fact:
+    reset_command: "{{ pe_ssh_cmd }} \"{{ reset_username_password }}\""
+    cluster_status_command: "{{ pe_ssh_cmd }} \"{{ cluster_status }}\""
+
+- name: Create DR destination cluster name
+  ansible.builtin.set_fact:
+    dr_destination_cluster_name: "{{ random_name }}_{{ prefix_name }}_dr_dest_{{ clusters[0].name }}"
+
+- name: List all clusters to get prism central external ID
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq
+      Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
+  register: dr_pc_list
+  ignore_errors: true
+
+- name: Get prism central external ID
+  ansible.builtin.set_fact:
+    prism_central_external_id: "{{ dr_pc_list.response[0].ext_id }}"
+
+- name: Discover unconfigured node
+  nutanix.ncp.ntnx_discover_unconfigured_nodes_v2:
+    address_type: "IPV4"
+    ip_filter_list:
+      - ipv4:
+          value: "{{ clusters[0].nodes[0].cvm_ip }}"
+  register: dr_discover
+  ignore_errors: true
+
+- name: Discover unconfigured node status
+  ansible.builtin.assert:
+    that:
+      - dr_discover.changed == false
+      - dr_discover.failed == false
+      - dr_discover.cluster_ext_id is defined
+      - dr_discover.task_ext_id is defined
+      - dr_discover.response.ext_id is defined
+      - dr_discover.response.response.node_list[0].cvm_ip.ipv4.value == "{{
+        clusters[0].nodes[0].cvm_ip }}"
+    fail_msg: Discover unconfigured node failed for DR destination cluster
+    success_msg: Discover unconfigured node passed for DR destination cluster
+
+- name: Run cluster create prechecks
+  nutanix.ncp.ntnx_clusters_v2:
+    name: "{{ clusters[0].name }}"
+    nodes:
+      node_list:
+        - controller_vm_ip:
+            ipv4:
+              value: "{{ clusters[0].nodes[0].cvm_ip }}"
+    config:
+      cluster_function: "{{ clusters[0].config.cluster_functions }}"
+      authorized_public_key_list:
+        - name: "{{ clusters[0].config.auth_public_keys[0].name }}"
+          key: "{{ clusters[0].config.auth_public_keys[0].key }}"
+      redundancy_factor: "{{ clusters[0].config.redundancy_factor_cluster_crud }}"
+      cluster_arch: "{{ clusters[0].config.cluster_arch }}"
+      fault_tolerance_state:
+        domain_awareness_level: "{{
+          clusters[0].config.fault_tolerance_state.domain_awareness_level_clust\
+          er_crud }}"
+    network:
+      external_address:
+        ipv4:
+          value: "{{ clusters[0].network.virtual_ip }}"
+      external_data_service_ip:
+        ipv4:
+          value: "{{ clusters[0].network.iscsi_ip }}"
+      ntp_server_ip_list:
+        - fqdn:
+            value: "{{ clusters[0].network.ntp_servers[0] }}"
+        - fqdn:
+            value: "{{ clusters[0].network.ntp_servers[1] }}"
+        - fqdn:
+            value: "{{ clusters[0].network.ntp_servers[2] }}"
+        - fqdn:
+            value: "{{ clusters[0].network.ntp_servers[3] }}"
+      name_server_ip_list:
+        - ipv4:
+            value: "{{ clusters[0].network.dns_servers[0] }}"
+        - ipv4:
+            value: "{{ clusters[0].network.dns_servers[1] }}"
+      smtp_server:
+        email_address: "{{ clusters[0].network.smtp_server.email_address }}"
+        server:
+          ip_address:
+            ipv4:
+              value: "{{ clusters[0].network.smtp_server.ip }}"
+          port: "{{ clusters[0].network.smtp_server.port }}"
+          username: "{{ clusters[0].network.smtp_server.username }}"
+          password: "{{ clusters[0].network.smtp_server.password }}"
+        type: "{{ clusters[0].network.smtp_server.type }}"
+    dryrun: true
+    timeout: 1800
+  register: dr_prechecks
+  ignore_errors: true
+
+- name: Verify cluster create prechecks run
+  ansible.builtin.assert:
+    that:
+      - dr_prechecks.response is defined
+      - dr_prechecks.changed == false
+      - dr_prechecks.task_ext_id is defined
+      - dr_prechecks.response.status == "SUCCEEDED"
+    fail_msg: Cluster create prechecks failed for DR destination cluster
+    success_msg: Cluster create prechecks passed for DR destination cluster
+
+- name: Check if cluster is unconfigured or not
+  ansible.builtin.command: "{{ cluster_status_command }}"
+  register: dr_cluster_status
+  ignore_errors: true
+  changed_when: dr_cluster_status.rc != 0
+
+- name: Assert that cluster is unconfigured
+  ansible.builtin.assert:
+    that:
+      - dr_cluster_status.rc == 1
+      - dr_cluster_status.stderr.find('Cluster is currently unconfigured') != -1
+    fail_msg: Cannot create DR destination cluster, node is already configured
+    success_msg: Node is unconfigured for DR destination cluster create
+
+- name: Create DR destination cluster with minimum spec
+  nutanix.ncp.ntnx_clusters_v2:
+    name: "{{ dr_destination_cluster_name }}"
+    nodes:
+      node_list:
+        - controller_vm_ip:
+            ipv4:
+              value: "{{ clusters[0].nodes[0].cvm_ip }}"
+    config:
+      cluster_function: "{{ clusters[0].config.cluster_functions }}"
+      redundancy_factor: "{{ clusters[0].config.redundancy_factor_cluster_crud }}"
+      cluster_arch: "{{ clusters[0].config.cluster_arch }}"
+      fault_tolerance_state:
+        domain_awareness_level: "{{
+          clusters[0].config.fault_tolerance_state.domain_awareness_level_clust\
+          er_crud }}"
+    timeout: 1800
+  register: dr_create_cluster
+  ignore_errors: true
+
+- name: Verify DR destination cluster create task status
+  ansible.builtin.assert:
+    that:
+      - dr_create_cluster.response is defined
+      - dr_create_cluster.changed == true
+      - dr_create_cluster.task_ext_id is defined
+      - dr_create_cluster.response.status == "SUCCEEDED"
+    fail_msg: DR destination cluster create failed
+    success_msg: DR destination cluster create passed
+
+- name: Reset username and password on DR destination PE
+  ansible.builtin.command: "{{ reset_command }}"
+  register: dr_reset_creds
+  ignore_errors: true
+  changed_when: dr_reset_creds.rc != 0
+
+- name: Run PE PC registration for DR destination cluster
+  nutanix.ncp.ntnx_pc_registration_v2:
+    ext_id: "{{ prism_central_external_id }}"
+    remote_cluster:
+      aos_remote_cluster:
+        remote_cluster:
+          address:
+            ipv4:
+              value: "{{ clusters[0].nodes[0].cvm_ip }}"
+          credentials:
+            authentication:
+              username: "{{ username_for_tests }}"
+              password: "{{ password_for_tests }}"
+  register: dr_pc_registration
+  ignore_errors: true
+
+- name: Verify PE PC registration for DR destination cluster
+  ansible.builtin.assert:
+    that:
+      - dr_pc_registration.changed == true
+      - dr_pc_registration.ext_id is defined
+      - dr_pc_registration.ext_id == prism_central_external_id
+      - dr_pc_registration.response.status == 'SUCCEEDED'
+      - dr_pc_registration.task_ext_id is defined
+    fail_msg: PE PC registration failed for DR destination cluster
+    success_msg: PE PC registration passed for DR destination cluster
+
+- name: Sleep for 1 minute after DR destination registration
+  ansible.builtin.pause:
+    seconds: 60
+
+- name: Fetch DR destination cluster using name
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: name eq '{{ dr_destination_cluster_name }}'
+  register: dr_cluster_list
+  ignore_errors: true
+
+- name: Verify DR destination cluster listing
+  ansible.builtin.assert:
+    that:
+      - dr_cluster_list.response is defined
+      - dr_cluster_list.response | length > 0
+    fail_msg: Failed verifying DR destination cluster after PE PC registration
+    success_msg: DR destination cluster visible after PE PC registration
+
+- name: Set destination cluster external ID from created cluster
+  ansible.builtin.set_fact:
+    destination_cluster_ext_id: "00064ff7-037e-4183-5134-5254003c4871"
+
+########################################################
+# Protect source cluster
+########################################################
+
+- name: Generate spec for protecting source cluster with check mode
+  nutanix.ncp.ntnx_clusters_protection_v2:
+    ext_id: "00064ff7-037e-4183-5134-5254003c4871"
+    protection_rpo_minutes: 120
+    local_snapshot_retention_policy: 3
+    protection_target: LOCAL
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- ansible.builtin.debug:
+    var: result
+
+- name: Verify generated spec for protecting source with check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == "00064ff7-037e-4183-5134-5254003c4871"
+      - result.response.protection_rpo_minutes == 120
+      - result.response.local_snapshot_retention_policy == 3
+      - result.response.protection_target == "LOCAL"
+    fail_msg: Failed to generate protect source cluster spec with check mode
+    success_msg: Protect source cluster spec generated successfully with check mode
+
+- name: Protect source cluster
+  nutanix.ncp.ntnx_clusters_protection_v2:
+    ext_id: "{{ cluster.uuid }}"
+    protection_rpo_minutes: 60
+    local_snapshot_retention_policy: 2
+    protection_target: LOCAL
+  register: result
+  ignore_errors: true
+
+- ansible.builtin.debug:
+    var: result
+
+- name: Verify protect source cluster status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == "{{ cluster.uuid }}"
+      - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Failed to protect source cluster
+    success_msg: Source cluster protected successfully
+
+- name: Get protection status of source cluster
+  nutanix.ncp.ntnx_clusters_protection_info_v2:
+    ext_id: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+  retries: 60
+  delay: 5
+  until: result.response.protection_state == "PROTECTED"
+
+- ansible.builtin.debug:
+    var: result
+
+- name: Verify protection status of source cluster
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ cluster.uuid }}"
+      - result.response is defined
+      - result.response.protection_state == "PROTECTED"
+      - result.response.target_protection_state == "PROTECTED"
+      - result.response.protection_target == "LOCAL"
+      - result.response.protection_rpo_minutes == 60
+    fail_msg: Failed to get protection status of source cluster
+    success_msg: Protection status of source cluster retrieved successfully
+
+- name: Get cluster recovery information
+  nutanix.ncp.ntnx_clusters_recovery_info_v2:
+    ext_id: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- ansible.builtin.debug:
+    var: result
+
+- name: Verify cluster recovery information
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ cluster.uuid }}"
+      - result.response is defined
+      - result.response.recovery_status.source_cluster_ext_id == "{{
+        cluster.uuid }}"
+      - result.response.recovery_status.recovery_state == "PROTECTED"
+    fail_msg: Failed to get cluster recovery information
+    success_msg: Cluster recovery information retrieved successfully
+
+########################################################
+# Create a recovery plan for source cluster
+########################################################
+
+- name: Generate spec for creating a recovery plan for source cluster with check mode
+  nutanix.ncp.ntnx_clusters_recovery_v2:
+    operation: initialize
+    ext_id: "{{ cluster.uuid }}"
+    destination_cluster_ext_id: "{{ destination_cluster_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- ansible.builtin.debug:
+    var: result
+
+- name: Verify generated spec for creating a recovery plan for source cluster with
+    check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == "{{ cluster.uuid }}"
+      - result.response.destination_cluster_ext_id == "{{
+        destination_cluster_ext_id }}"
+    fail_msg: Failed to generate create recovery plan spec with check mode
+    success_msg: Create recovery plan spec generated successfully with check mode
+
+- name: Create a recovery plan for source cluster
+  nutanix.ncp.ntnx_clusters_recovery_v2:
+    operation: initialize
+    ext_id: "{{ cluster.uuid }}"
+    destination_cluster_ext_id: "{{ destination_cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- ansible.builtin.debug:
+    var: result
+
+- name: Verify create recovery plan for source cluster status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == "{{ cluster.uuid }}"
+      - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Failed to create recovery plan for source cluster
+    success_msg: Recovery plan created successfully for source cluster
+
+- name: Get Protection status of source cluster
+  nutanix.ncp.ntnx_clusters_protection_info_v2:
+    ext_id: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+  retries: 60
+  delay: 5
+  until: result.response.protection_state == "RECOVERY_PLAN_CREATED"
+
+- ansible.builtin.debug:
+    var: result
+
+- name: Verify protection status of source cluster
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ cluster.uuid }}"
+      - result.response is defined
+      - result.response.cluster_ext_id == "{{ cluster.uuid }}"
+      - result.response.protection_state == "RECOVERY_PLAN_CREATED"
+      - result.response.target_protection_state == "RECOVERY_PLAN_CREATED"
+      - result.response.protection_target == "LOCAL"
+      - result.response.protection_rpo_minutes == 60
+    fail_msg: Failed to get protection status of source cluster
+    success_msg: Protection status of source cluster retrieved successfully
+
+- name: Get cluster recovery information
+  nutanix.ncp.ntnx_clusters_recovery_info_v2:
+    ext_id: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- ansible.builtin.debug:
+    var: result
+
+- name: Verify cluster recovery information
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ cluster.uuid }}"
+      - result.response is defined
+      - result.response.recovery_status.source_cluster_ext_id == "{{
+        cluster.uuid }}"
+      - result.response.recovery_status.recovery_state == "RECOVERY_PLAN_CREATED"
+    fail_msg: Failed to get cluster recovery information
+    success_msg: Cluster recovery information retrieved successfully
+
+########################################################
+# Finalize recovery plan for source cluster
+########################################################
+
+- name: Finalize recovery plan for source cluster using check mode
+  nutanix.ncp.ntnx_clusters_recovery_v2:
+    operation: finalize
+    ext_id: "{{ cluster.uuid }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- ansible.builtin.debug:
+    var: result
+
+- name: Verify finalize recovery plan for source cluster using check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ cluster.uuid }}"
+      - result.msg is defined
+      - >
+        result.msg == "Cluster recovery for cluster with ext_id:{{ cluster.uuid
+        }} will be finalized."
+      - result.task_ext_id is undefined
+    fail_msg: Failed to finalize recovery plan for source cluster using check mode
+    success_msg: Recovery plan finalized successfully for source cluster using check mode
+
+- name: Finalize recovery plan for source cluster
+  nutanix.ncp.ntnx_clusters_recovery_v2:
+    operation: finalize
+    ext_id: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- ansible.builtin.debug:
+    var: result
+
+- name: Verify finalize recovery plan for source cluster status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == "{{ cluster.uuid }}"
+      - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Failed to finalize recovery plan for source cluster
+    success_msg: Recovery plan finalized successfully for source cluster
+
+- name: Get Protection status of source cluster
+  nutanix.ncp.ntnx_clusters_protection_info_v2:
+    ext_id: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+  retries: 60
+  delay: 5
+  until: result.response.protection_state == "UNPROTECTED"
+
+- ansible.builtin.debug:
+    var: result
+
+- name: Verify protection status of source cluster
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ cluster.uuid }}"
+      - result.response is defined
+      - result.response.cluster_ext_id == "{{ cluster.uuid }}"
+      - result.response.protection_state == "UNPROTECTED"
+      - result.response.target_protection_state == "UNPROTECTED"
+      - result.response.protection_target == "LOCAL"
+      - result.response.protection_rpo_minutes == 60
+    fail_msg: Failed to get protection status of source cluster
+    success_msg: Protection status of source cluster retrieved successfully
+
+- name: Get cluster recovery information
+  nutanix.ncp.ntnx_clusters_recovery_info_v2:
+    ext_id: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- ansible.builtin.debug:
+    var: result
+
+- name: Verify cluster recovery information
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == "{{ cluster.uuid }}"
+      - result.response.recovery_status.source_cluster_ext_id == "{{
+        cluster.uuid }}"
+      - result.response.recovery_status.recovery_state == "UNPROTECTED"
+    fail_msg: Failed to get cluster recovery information
+    success_msg: Cluster recovery information retrieved successfully
+
+########################################################
+# Unprotect source cluster
+########################################################
+
+- name: Protect source cluster
+  nutanix.ncp.ntnx_clusters_protection_v2:
+    ext_id: "{{ cluster.uuid }}"
+    protection_rpo_minutes: 180
+    local_snapshot_retention_policy: 3
+    protection_target: LOCAL
+  register: result
+  ignore_errors: true
+
+- ansible.builtin.debug:
+    var: result
+
+- name: Verify unprotect source cluster status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == "{{ cluster.uuid }}"
+      - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Failed to unprotect source cluster
+    success_msg: Source cluster unprotected successfully
+
+- name: Get Protection status of source cluster
+  nutanix.ncp.ntnx_clusters_protection_info_v2:
+    ext_id: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+  retries: 60
+  delay: 5
+  until: result.response.protection_state == "PROTECTED"
+
+- ansible.builtin.debug:
+    var: result
+
+- name: Verify protection status of source cluster
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ cluster.uuid }}"
+      - result.response is defined
+      - result.response.cluster_ext_id == "{{ cluster.uuid }}"
+      - result.response.protection_state == "PROTECTED"
+      - result.response.target_protection_state == "PROTECTED"
+      - result.response.protection_target == "LOCAL"
+      - result.response.protection_rpo_minutes == 180
+    fail_msg: Failed to get protection status of source cluster
+    success_msg: Protection status of source cluster retrieved successfully
+
+- name: Unprotect source cluster
+  nutanix.ncp.ntnx_clusters_protection_v2:
+    state: absent
+    ext_id: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- ansible.builtin.debug:
+    var: result
+
+- name: Verify unprotect source cluster status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == "{{ cluster.uuid }}"
+      - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Failed to unprotect source cluster
+    success_msg: Source cluster unprotected successfully
+
+- name: Get Protection status of source cluster
+  nutanix.ncp.ntnx_clusters_protection_info_v2:
+    ext_id: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+  retries: 60
+  delay: 5
+  until: result.response.protection_state == "UNPROTECTED"
+
+- ansible.builtin.debug:
+    var: result
+
+- name: Verify protection status of source cluster
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ cluster.uuid }}"
+      - result.response is defined
+      - result.response.cluster_ext_id == "{{ cluster.uuid }}"
+      - result.response.protection_state == "UNPROTECTED"
+      - result.response.target_protection_state == "UNPROTECTED"
+    fail_msg: Failed to get protection status of source cluster
+    success_msg: Protection status of source cluster retrieved successfully
+
+- name: Destroy DR destination cluster
+  nutanix.ncp.ntnx_clusters_v2:
+    state: absent
+    ext_id: "{{ destination_cluster_ext_id }}"
+  register: dr_destroy_cluster
+  ignore_errors: true
+
+- name: Verify DR destination cluster deletion
+  ansible.builtin.assert:
+    that:
+      - dr_destroy_cluster.response is defined
+      - dr_destroy_cluster.changed == true
+      - dr_destroy_cluster.response.status == "SUCCEEDED"
+      - dr_destroy_cluster.ext_id == destination_cluster_ext_id
+    fail_msg: Failed verifying DR destination cluster deletion
+    success_msg: DR destination cluster deleted successfully

@@ -142,3 +142,17 @@ def get_ssl_certificates_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_clustermgmt_py_client.SSLCertificateApi(client)
+
+
+def get_cluster_protection_api_instance(module):
+    """
+    This method will return cluster protection api instance from sdk.
+    Used for cluster protect/unprotect, initialize/finalize recovery,
+    and protection/recovery info operations.
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        ClusterProtectionApi: ClusterProtectionApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.ClusterProtectionApi(client)
