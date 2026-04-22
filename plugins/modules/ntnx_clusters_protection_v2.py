@@ -159,9 +159,6 @@ from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
     get_cluster_protection_api_instance,
 )
-from ..module_utils.v4.clusters_mgmt.helpers import (  # noqa: E402
-    get_cluster_protection_info,
-)
 from ..module_utils.v4.clusters_mgmt.spec.cluster_protection import (  # noqa: E402
     ClusterProtectionSpecs,
 )

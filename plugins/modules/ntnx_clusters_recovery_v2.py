@@ -136,9 +136,6 @@ from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
     get_cluster_protection_api_instance,
 )
-from ..module_utils.v4.clusters_mgmt.helpers import (  # noqa: E402
-    get_cluster_recovery_info,
-)
 from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402

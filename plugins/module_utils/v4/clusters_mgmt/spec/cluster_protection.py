@@ -21,8 +21,8 @@ class ClusterProtectionSpecs:
     """Module specs related to cluster protection and recovery operations."""
 
     protection_spec = dict(
-        protection_rpo_minutes=dict(type="int"),
-        local_snapshot_retention_policy=dict(type="int"),
+        protection_rpo_minutes=dict(type="int", default=60),
+        local_snapshot_retention_policy=dict(type="int", default=2),
         protection_target=dict(
             type="str",
             choices=["LOCAL", "LTSS"],

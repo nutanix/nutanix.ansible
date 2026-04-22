@@ -30,6 +30,11 @@ options:
       - External ID of the cluster whose protection info is requested.
     type: str
     required: true
+  read_timeout:
+    description: Read timeout in milliseconds for API calls.
+    type: int
+    required: false
+    default: 30000
 author:
   - George Ghawali (@george-ghawali)
 extends_documentation_fragment:
