@@ -88,7 +88,9 @@ from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
     get_cluster_protection_api_instance,
 )
-from ..module_utils.v4.clusters_mgmt.helpers import get_cluster_protection_info  # noqa: E402
+from ..module_utils.v4.clusters_mgmt.helpers import (  # noqa: E402
+    get_cluster_protection_info,
+)
 from ..module_utils.v4.utils import strip_internal_attributes  # noqa: E402
 
 
