@@ -62,30 +62,42 @@ response:
   returned: always
   sample:
     {
-      "cluster_ext_id": "0005a7b8-0b0b-4b3b-0000-000000000000",
-      "protection_state": "PROTECTED",
-      "target_protection_state": "PROTECTED",
-      "protection_target": "LTSS",
+      "cluster_ext_id": "00064ff3-8bf0-8ab9-2afa-525400a07915",
+      "failure_reason": null,
+      "protected_entities": [
+          {
+              "entity_type": "vm",
+              "protected_count": 1,
+              "unprotected_count": 0
+          },
+          {
+              "entity_type": "volume",
+              "protected_count": 0,
+              "unprotected_count": 0
+          }
+      ],
       "protection_rpo_minutes": 60,
-      "protected_entities": [],
-      "failure_reason": null
+      "protection_state": "PROTECTED",
+      "protection_target": "LOCAL",
+      "target_protection_state": "PROTECTED"
     }
-ext_id:
-  description: External ID of the cluster whose info was fetched.
-  type: str
-  returned: always
-msg:
-  description: Message if an error occurred while fetching the info.
-  type: str
-  returned: when an error occurs
-error:
-  description: Error message if any.
-  type: str
-  returned: when an error occurs
 changed:
-  description: Indicates if any change was made.
-  type: bool
-  returned: always
+    description:
+        - Indicates if any changes were made during the operation.
+    type: bool
+    returned: always
+    sample: true
+failed:
+    description: Indicates if the protection info operation failed.
+    type: bool
+    returned: always
+    sample: false
+ext_id:
+    description:
+        - The external ID of the cluster whose protection info is requested.
+    type: str
+    returned: always
+    sample: "00064ff3-8bf0-8ab9-2afa-525400a07915"
 """
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
@@ -124,7 +136,7 @@ def run_module():
         skip_info_args=True,
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None}
+    result = {"changed": False, "response": None}
     api_instance = get_cluster_protection_api_instance(module)
     fetch_cluster_protection_info(module, api_instance, result)
     module.exit_json(**result)

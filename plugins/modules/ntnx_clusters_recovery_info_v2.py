@@ -62,25 +62,110 @@ response:
   returned: always
   sample:
     {
-      "recovery_status": "RECOVERING",
-      "subnets": []
+      "recovery_status": {
+          "destination_cluster_ext_id": null,
+          "recovery_state": "PROTECTED",
+          "source_cluster_ext_id": "00064ff3-8bf0-8ab9-2afa-525400a07915"
+      },
+      "subnets": [
+          {
+              "annotation": null,
+              "availability_zone": null,
+              "cidr": null,
+              "cloud_type": "$UNKNOWN",
+              "ext_id": null,
+              "gateway_ip": null,
+              "ip_pool_ranges": null,
+              "links": null,
+              "name": "vlan.0",
+              "subnet_id": "6bcb0b32-ec8c-4643-ba98-13964b2a79ef",
+              "tenant_id": null,
+              "type": "VLAN",
+              "vpc_id": null
+          },
+          {
+              "annotation": null,
+              "availability_zone": null,
+              "cidr": "10.30.30.0/24",
+              "cloud_type": "$UNKNOWN",
+              "ext_id": null,
+              "gateway_ip": "10.30.30.254",
+              "ip_pool_ranges": [
+                  {
+                      "begin": {
+                          "ipv4": {
+                              "prefix_length": 0,
+                              "value": "10.30.30.10"
+                          },
+                          "ipv6": null
+                      },
+                      "end": {
+                          "ipv4": {
+                              "prefix_length": 0,
+                              "value": "10.30.30.90"
+                          },
+                          "ipv6": null
+                      }
+                  }
+              ],
+              "links": null,
+              "name": "integration_static_subnet",
+              "subnet_id": "7047ccf0-8d16-4f91-bc65-db3c8e2f9506",
+              "tenant_id": null,
+              "type": "VLAN",
+              "vpc_id": null
+          },
+          {
+              "annotation": null,
+              "availability_zone": null,
+              "cidr": "10.44.3.192/27",
+              "cloud_type": "$UNKNOWN",
+              "ext_id": null,
+              "gateway_ip": "10.44.3.193",
+              "ip_pool_ranges": [
+                  {
+                      "begin": {
+                          "ipv4": {
+                              "prefix_length": 0,
+                              "value": "10.44.3.198"
+                          },
+                          "ipv6": null
+                      },
+                      "end": {
+                          "ipv4": {
+                              "prefix_length": 0,
+                              "value": "10.44.3.207"
+                          },
+                          "ipv6": null
+                      }
+                  }
+              ],
+              "links": null,
+              "name": "integration_test_Ext-Nat1",
+              "subnet_id": "ec7a55c8-fada-474c-b2e3-765182762a1e",
+              "tenant_id": null,
+              "type": "VLAN",
+              "vpc_id": null
+          }
+      ]
     }
-ext_id:
-  description: External ID of the cluster whose info was fetched.
-  type: str
-  returned: always
-msg:
-  description: Message if an error occurred while fetching the info.
-  type: str
-  returned: when an error occurs
-error:
-  description: Error message if any.
-  type: str
-  returned: when an error occurs
 changed:
-  description: Indicates if any change was made.
-  type: bool
-  returned: always
+    description:
+        - Indicates if any changes were made during the recovery info operation.
+    type: bool
+    returned: always
+    sample: true
+failed:
+    description: Indicates if the recovery info operation failed.
+    type: bool
+    returned: always
+    sample: false
+ext_id:
+    description:
+        - The external ID of the cluster whose recovery info is requested.
+    type: str
+    returned: always
+    sample: "00064ff3-8bf0-8ab9-2afa-525400a07915"
 """
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402

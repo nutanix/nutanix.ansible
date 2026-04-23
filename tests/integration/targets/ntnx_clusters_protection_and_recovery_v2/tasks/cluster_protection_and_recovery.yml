@@ -652,6 +652,10 @@
     fail_msg: Failed to get protection status of source cluster
     success_msg: Protection status of source cluster retrieved successfully
 
+- name: Sleep 2 minutes before destroying DR destination cluster
+  ansible.builtin.pause:
+    seconds: 120
+
 - name: Destroy DR destination cluster
   nutanix.ncp.ntnx_clusters_v2:
     state: absent

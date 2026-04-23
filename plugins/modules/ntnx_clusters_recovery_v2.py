@@ -90,33 +90,70 @@ EXAMPLES = r"""
 
 RETURN = r"""
 response:
-  description: Task details for the initialize/finalize recovery operation.
+  description: Task details for the initialize/finalize cluster recovery operation.
   type: dict
   returned: always
+  sample:
+    {
+      "app_name": null,
+      "batch_summary": null,
+      "cluster_ext_ids": null,
+      "completed_time": "2026-04-23T05:11:22.133937+00:00",
+      "completion_details": null,
+      "created_time": "2026-04-23T05:11:16.320147+00:00",
+      "entities_affected": null,
+      "error_messages": null,
+      "ext_id": "ZXJnb24=:ccc9217a-c1ae-4263-a6b8-4014b2df977e",
+      "is_background_task": false,
+      "is_cancelable": false,
+      "last_updated_time": "2026-04-23T05:11:22.133936+00:00",
+      "legacy_error_message": null,
+      "number_of_entities_affected": 0,
+      "number_of_subtasks": 0,
+      "operation": "Create Recovery Plan for a Cluster",
+      "operation_description": "Create recovery plan for a cluster",
+      "owned_by": null,
+      "parent_task": null,
+      "progress_percentage": 100,
+      "project_ext_id": "00000000-0000-0000-0000-000000000000",
+      "resource_links": null,
+      "root_task": null,
+      "started_time": "2026-04-23T05:11:16.493241+00:00",
+      "status": "SUCCEEDED",
+      "sub_steps": null,
+      "sub_tasks": null,
+      "warnings": null
+    }
 ext_id:
-  description: External ID of the source cluster on which the operation was performed.
+  description:
+    - The external ID of the source cluster on which the operation was performed.
   type: str
   returned: always
+  sample: "00064ff3-8bf0-8ab9-2afa-525400a07915"
 task_ext_id:
-  description: External ID of the task created by the recovery action.
+  description: The external ID of the task created by the initialize/finalize cluster recovery action.
   type: str
   returned: when a task is created
+  sample: "ZXJnb24=:350f0fd5-097d-4ece-8f44-6e5bfbe2dc08"
 changed:
-  description: Indicates if any change was made.
-  type: bool
-  returned: always
-msg:
-  description: A human readable message about the result of the action.
-  type: str
-  returned: when a message is emitted
-error:
-  description: Error message if any.
-  type: str
-  returned: when an error occurs
+    description: Indicates if any changes were made during the initialize/finalize cluster recovery operation.
+    type: bool
+    returned: always
+    sample: true
 failed:
-  description: Indicates if the module failed.
-  type: bool
-  returned: always
+    description: Indicates if the initialize/finalize cluster recovery operation failed.
+    type: bool
+    returned: always
+    sample: false
+msg:
+    description: This indicates the message if any message occurred.
+    returned: When there is an error or check mode (in finalize operation)
+    type: str
+    sample: "Api Exception raised while initializing cluster recovery"
+error:
+    description: The error message if an error occurs.
+    type: str
+    returned: when an error occurs
 """
 
 import traceback  # noqa: E402

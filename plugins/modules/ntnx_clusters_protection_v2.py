@@ -117,36 +117,69 @@ RETURN = r"""
 response:
   description:
     - Task details for the protect/unprotect operation.
-    - Contains the task status, progress and entities affected.
   type: dict
   returned: always
+  sample:
+    {
+      "app_name": null,
+      "batch_summary": null,
+      "cluster_ext_ids": null,
+      "completed_time": "2026-04-23T05:11:03.915540+00:00",
+      "completion_details": null,
+      "created_time": "2026-04-23T05:10:44.713641+00:00",
+      "entities_affected": null,
+      "error_messages": null,
+      "ext_id": "ZXJnb24=:84dbccbb-ea24-462f-b3d3-11d2e50accd1",
+      "is_background_task": false,
+      "is_cancelable": false,
+      "last_updated_time": "2026-04-23T05:11:03.915539+00:00",
+      "legacy_error_message": null,
+      "number_of_entities_affected": 0,
+      "number_of_subtasks": 0,
+      "operation": "Protect Cluster",
+      "operation_description": "Protect cluster",
+      "owned_by": null,
+      "parent_task": null,
+      "progress_percentage": 100,
+      "project_ext_id": "00000000-0000-0000-0000-000000000000",
+      "resource_links": null,
+      "root_task": null,
+      "started_time": "2026-04-23T05:10:44.740003+00:00",
+      "status": "SUCCEEDED",
+      "sub_steps": null,
+      "sub_tasks": null,
+      "warnings": null
+    }
 ext_id:
   description:
-    - External ID of the cluster on which the operation was performed.
+    - The external ID of the cluster on which the operation was performed.
   type: str
   returned: always
-  sample: "0005a7b8-0b0b-4b3b-0000-000000000000"
+  sample: "00064ff3-8bf0-8ab9-2afa-525400a07915"
 task_ext_id:
-  description: External ID of the task created by the protect/unprotect action.
+  description: The external ID of the task created by the protect/unprotect action.
   type: str
   returned: when a task is created
   sample: "ZXJnb24=:350f0fd5-097d-4ece-8f44-6e5bfbe2dc08"
 changed:
-  description: Indicates if any change was made.
-  type: bool
-  returned: always
-msg:
-  description: A human readable message about the result of the action.
-  type: str
-  returned: when a message is emitted
-error:
-  description: Error message if any.
-  type: str
-  returned: when an error occurs
+    description: Indicates if any changes were made during the protect/unprotect operation.
+    type: bool
+    returned: always
+    sample: true
 failed:
-  description: Indicates if the module failed.
-  type: bool
-  returned: always
+    description: Indicates if the protect/unprotect operation failed.
+    type: bool
+    returned: always
+    sample: false
+msg:
+    description: This indicates the message if any message occurred.
+    returned: When there is an error or check mode (in unprotect operation)
+    type: str
+    sample: "Api Exception raised while protecting cluster"
+error:
+    description: The error message if an error occurs.
+    type: str
+    returned: when an error occurs
 """
 
 import traceback  # noqa: E402
