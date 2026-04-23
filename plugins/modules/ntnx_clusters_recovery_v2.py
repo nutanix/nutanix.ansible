@@ -34,13 +34,6 @@ notes:
     Required Roles: Cluster Admin, Disaster Recovery Admin, Prism Admin, Super Admin
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
-  state:
-    description:
-      - Only C(present) is supported for this module.
-      - The actual action is controlled by C(operation).
-    type: str
-    choices: ["present"]
-    default: present
   operation:
     description:
       - The recovery operation to perform on the faulted cluster.

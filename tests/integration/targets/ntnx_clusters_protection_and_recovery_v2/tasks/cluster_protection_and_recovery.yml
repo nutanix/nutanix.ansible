@@ -229,7 +229,7 @@
 
 - name: Set destination cluster external ID from created cluster
   ansible.builtin.set_fact:
-    destination_cluster_ext_id: "00064ff7-037e-4183-5134-5254003c4871"
+    destination_cluster_ext_id: "{{ dr_cluster_list.response[0].ext_id }}"
 
 ########################################################
 # Protect source cluster
@@ -245,7 +245,8 @@
   register: result
   ignore_errors: true
 
-- ansible.builtin.debug:
+- name: Print generated protect source cluster spec
+  ansible.builtin.debug:
     var: result
 
 - name: Verify generated spec for protecting source with check mode status
@@ -270,7 +271,8 @@
   register: result
   ignore_errors: true
 
-- ansible.builtin.debug:
+- name: Print protect source cluster result
+  ansible.builtin.debug:
     var: result
 
 - name: Verify protect source cluster status
@@ -294,7 +296,8 @@
   delay: 5
   until: result.response.protection_state == "PROTECTED"
 
-- ansible.builtin.debug:
+- name: Print protection status after protect
+  ansible.builtin.debug:
     var: result
 
 - name: Verify protection status of source cluster
@@ -317,7 +320,8 @@
   register: result
   ignore_errors: true
 
-- ansible.builtin.debug:
+- name: Print recovery info after protect
+  ansible.builtin.debug:
     var: result
 
 - name: Verify cluster recovery information
@@ -346,7 +350,8 @@
   register: result
   ignore_errors: true
 
-- ansible.builtin.debug:
+- name: Print generated recovery plan spec
+  ansible.builtin.debug:
     var: result
 
 - name: Verify generated spec for creating a recovery plan for source cluster with
@@ -370,7 +375,8 @@
   register: result
   ignore_errors: true
 
-- ansible.builtin.debug:
+- name: Print create recovery plan result
+  ansible.builtin.debug:
     var: result
 
 - name: Verify create recovery plan for source cluster status
@@ -394,7 +400,8 @@
   delay: 5
   until: result.response.protection_state == "RECOVERY_PLAN_CREATED"
 
-- ansible.builtin.debug:
+- name: Print protection status after recovery plan creation
+  ansible.builtin.debug:
     var: result
 
 - name: Verify protection status of source cluster
@@ -418,7 +425,8 @@
   register: result
   ignore_errors: true
 
-- ansible.builtin.debug:
+- name: Print recovery info after recovery plan creation
+  ansible.builtin.debug:
     var: result
 
 - name: Verify cluster recovery information
@@ -446,7 +454,8 @@
   register: result
   ignore_errors: true
 
-- ansible.builtin.debug:
+- name: Print finalize recovery plan check mode result
+  ansible.builtin.debug:
     var: result
 
 - name: Verify finalize recovery plan for source cluster using check mode status
@@ -470,7 +479,8 @@
   register: result
   ignore_errors: true
 
-- ansible.builtin.debug:
+- name: Print finalize recovery plan result
+  ansible.builtin.debug:
     var: result
 
 - name: Verify finalize recovery plan for source cluster status
@@ -494,7 +504,8 @@
   delay: 5
   until: result.response.protection_state == "UNPROTECTED"
 
-- ansible.builtin.debug:
+- name: Print protection status after finalize
+  ansible.builtin.debug:
     var: result
 
 - name: Verify protection status of source cluster
@@ -518,7 +529,8 @@
   register: result
   ignore_errors: true
 
-- ansible.builtin.debug:
+- name: Print recovery info after finalize
+  ansible.builtin.debug:
     var: result
 
 - name: Verify cluster recovery information
@@ -547,7 +559,8 @@
   register: result
   ignore_errors: true
 
-- ansible.builtin.debug:
+- name: Print re-protect source cluster result
+  ansible.builtin.debug:
     var: result
 
 - name: Verify unprotect source cluster status
@@ -571,7 +584,8 @@
   delay: 5
   until: result.response.protection_state == "PROTECTED"
 
-- ansible.builtin.debug:
+- name: Print protection status after re-protect
+  ansible.builtin.debug:
     var: result
 
 - name: Verify protection status of source cluster
@@ -596,7 +610,8 @@
   register: result
   ignore_errors: true
 
-- ansible.builtin.debug:
+- name: Print unprotect source cluster result
+  ansible.builtin.debug:
     var: result
 
 - name: Verify unprotect source cluster status
@@ -620,7 +635,8 @@
   delay: 5
   until: result.response.protection_state == "UNPROTECTED"
 
-- ansible.builtin.debug:
+- name: Print protection status after unprotect
+  ansible.builtin.debug:
     var: result
 
 - name: Verify protection status of source cluster
