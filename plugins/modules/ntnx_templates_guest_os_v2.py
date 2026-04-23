@@ -15,6 +15,22 @@ description:
     - This module allows you to initiate, complete, or cancel guest OS updates for Nutanix AHV templates.
     - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Initiate guest OS update) -
+      Operation Name: Initiate Guest Update VM Templates -
+      Required Roles: Prism Admin, Super Admin, Virtual Machine Admin
+    - >-
+      B(Complete guest OS update) -
+      Operation Name: Complete Guest Update VM Templates -
+      Required Roles: Prism Admin, Super Admin, Virtual Machine Admin
+    - >-
+      B(Cancel guest OS update) -
+      Operation Name: Cancel Guest Update VM Templates -
+      Required Roles: Prism Admin, Super Admin, Virtual Machine Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     state:
         description:
@@ -53,6 +69,7 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
       - nutanix.ncp.ntnx_logger
+      - nutanix.ncp.ntnx_proxy_v2
 author:
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
@@ -186,8 +203,8 @@ import warnings  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
@@ -361,7 +378,7 @@ def cancel_guest_os_update(module, result):
 
 
 def run_module():
-    module = BaseModule(
+    module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )

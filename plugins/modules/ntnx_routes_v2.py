@@ -17,6 +17,23 @@ version_added: 2.0.0
 description:
   - Create, Update, Delete routes in route table in VPC
   - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create a route for the specified route table) -
+      Operation Name: Create Route Table Route -
+      Required Roles: Prism Admin, Super Admin, VPC Admin
+    - >-
+      B(Delete the specified route of the specified route table) -
+      Operation Name: Delete Route Table Route -
+      Required Roles: Prism Admin, Super Admin, VPC Admin
+    - >-
+      B(Update the specified route of the specified route table) -
+      Operation Name: Update Route Table Route -
+      Required Roles: Prism Admin, Super Admin, VPC Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   state:
     description:
@@ -200,6 +217,7 @@ extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
   - nutanix.ncp.ntnx_logger
+  - nutanix.ncp.ntnx_proxy_v2
 author:
   - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
   - Alaa Bishtawi (@alaa-bish)
@@ -344,8 +362,8 @@ from copy import deepcopy  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
 from ..module_utils.v4.network.api_client import (  # noqa: E402
     get_etag,
@@ -566,7 +584,7 @@ def delete_route_table(module, route_api_instance, result):
 
 
 def run_module():
-    module = BaseModule(
+    module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[["state", "absent", ["ext_id"]]],

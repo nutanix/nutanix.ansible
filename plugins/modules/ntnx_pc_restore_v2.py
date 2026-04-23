@@ -15,6 +15,14 @@ description:
     - The restore domain manager is a task-driven operation to restore a domain manager
         from a cluster or object store backup location based on the selected restore point.
     - Please provide Prism Element IP address here in C(nutanix_host)
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Restore domain manager) -
+      Operation Name: Restore Domain Manager Restore Point -
+      Required Roles: Domain Manager Admin, Prism Admin, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:
     state:
         description:
@@ -589,17 +597,26 @@ options:
     nutanix_username:
         description:
             - The username to authenticate with the Nutanix Prism Element.
+            - Required as nutanix_api_key is not supported for Prism Element.
         required: true
         type: str
     nutanix_password:
         description:
             - The password to authenticate with the Nutanix Prism Element.
+            - Required as nutanix_api_key is not supported for Prism Element.
         required: true
         type: str
+    nutanix_api_key:
+        description:
+            - Not Supported as this module is for Prism Element.
+            - This field is only supported for Prism Central.
+        type: str
+        required: false
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
     - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
 author:
     - Abhinav Bansal (@abhinavbansal29)
     - George Ghawali (@george-ghawali)
@@ -785,10 +802,10 @@ failed:
 import traceback  # noqa: E402
 import warnings  # noqa: E402
 
-from ansible.module_utils.basic import missing_required_lib  # noqa: E402
+from ansible.module_utils.basic import env_fallback, missing_required_lib  # noqa: E402
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
     get_domain_manager_backup_api_instance,
 )
@@ -815,6 +832,15 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
     module_args = dict(
+        nutanix_username=dict(
+            type="str", fallback=(env_fallback, ["NUTANIX_USERNAME"]), required=True
+        ),
+        nutanix_password=dict(
+            type="str",
+            no_log=True,
+            fallback=(env_fallback, ["NUTANIX_PASSWORD"]),
+            required=True,
+        ),
         state=dict(type="str", default="present", choices=["present"]),
         ext_id=dict(type="str", required=True),
         restore_source_ext_id=dict(type="str", required=True),
@@ -874,7 +900,7 @@ def restore_domain_manager(module, result):
 
 
 def run_module():
-    module = BaseModule(
+    module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )

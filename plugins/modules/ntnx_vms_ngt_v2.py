@@ -20,6 +20,19 @@ author:
  - Pradeepsingh Bhati (@bhati-pradeep)
 notes:
     - Module will skip if install/uninstall is not required checking the current installation status.
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Install NGT in a VM) -
+      Operation Name: Install Virtual Machine NGT -
+      Required Roles: Account Owner, Administrator, Backup Admin, Consumer, Developer, NCM Connector, Operator, Prism Admin, Project Admin, Project Manager,
+      Super Admin, User, Virtual Machine Admin, Self-Service Admin (deprecated)
+    - >-
+      B(Uninstall NGT from a VM) -
+      Operation Name: Uninstall Virtual Machine NGT -
+      Required Roles: Account Owner, Administrator, Backup Admin, Consumer, Developer, NCM Connector, Operator, Prism Admin, Project Admin, Project Manager,
+      Super Admin, User, Virtual Machine Admin, Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     state:
         description:
@@ -94,6 +107,7 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
     - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
 """
 
 EXAMPLES = r"""
@@ -174,8 +188,8 @@ import warnings  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
@@ -314,7 +328,7 @@ def uninstall_ngt(module, result):
 
 
 def run_module():
-    module = BaseModule(
+    module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )

@@ -120,10 +120,35 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
     - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
 notes:
     - This module follows two steps update process. Configuration update and enforcement state update.
     - If enforcement state is changed, then task_ext_id will have the task id of enforcement state update.
     - Else it will be create, update config or delete task id as per C(state).
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create an image placement policy) -
+      Operation Name: Create Image Placement Policy -
+      Required Roles: Consumer, Developer, Prism Admin, Project Manager, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
+    - >-
+      B(Delete an image placement policy) -
+      Operation Name: Delete Image Placement Policy -
+      Required Roles: Prism Admin, Project Manager, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
+    - >-
+      B(Resume an image placement policy) -
+      Operation Name: Resume Image Placement Policy -
+      Required Roles: Prism Admin, Project Manager, Super Admin, Self-Service Admin (deprecated)
+    - >-
+      B(Suspend an image placement policy) -
+      Operation Name: Suspend Image Placement Policy -
+      Required Roles: Prism Admin, Project Manager, Super Admin, Self-Service Admin (deprecated)
+    - >-
+      B(Update an image placement policy) -
+      Operation Name: Update Image Placement Policy -
+      Required Roles: Prism Admin, Project Manager, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 """
 
 EXAMPLES = r"""
@@ -231,8 +256,8 @@ from copy import deepcopy  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.constants import Tasks  # noqa: E402
 from ..module_utils.v4.prism.tasks import (  # noqa: E402
     get_entity_ext_id_from_task,
@@ -515,7 +540,7 @@ def delete_policy(module, result):
 
 
 def run_module():
-    module = BaseModule(
+    module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[

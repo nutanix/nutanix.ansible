@@ -17,6 +17,19 @@ description:
     - Fetch list of multiple network security policies info.
     - Fetch specific network security policy info by ext_id.
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Get a Network Security Policy by ExtID) -
+      Operation Name: View Flow Policy -
+      Required Roles: Flow Admin, Flow Viewer, Prism Admin, Prism Viewer, Super Admin
+    - >-
+      B(List all the Network Security Policies) -
+      Operation Name: View Flow Policy -
+      Required Roles: Flow Admin, Flow Viewer, Prism Admin, Prism Viewer, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg)"
 options:
     ext_id:
         description:
@@ -26,6 +39,7 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_info_v2
       - nutanix.ncp.ntnx_logger
+      - nutanix.ncp.ntnx_proxy_v2
 author:
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)

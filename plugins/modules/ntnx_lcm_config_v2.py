@@ -16,6 +16,14 @@ description:
 version_added: 2.1.0
 author:
     - Abhinav Bansal (@abhinavbansal29)
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Change the LCM configuration.) -
+      Operation Name: Update Config -
+      Required Roles: Cluster Admin, Prism Admin, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle)"
 options:
     state:
         description:
@@ -72,6 +80,7 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
     - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
 """
 
 EXAMPLES = r"""
@@ -143,8 +152,8 @@ skipped:
 import traceback  # noqa: E402
 import warnings  # noqa: E402
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.lcm.api_client import (  # noqa: E402
     get_config_api_instance,
     get_etag,
@@ -240,7 +249,7 @@ def update_lcm_config(module, api_instance, result):
 
 
 def run_module():
-    module = BaseModule(
+    module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )

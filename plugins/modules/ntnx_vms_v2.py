@@ -25,6 +25,28 @@ notes:
     - Use subresources specific modules to update or create subresources.
     - Power state management is not supported in this module. use ntnx_vms_power_actions_v2 module to manage power state.
     - Avoid providing subresources spec during update operation.
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create VM) -
+      Operation Name: Create New Virtual Machine -
+      Required Roles: Account Owner, Administrator, Consumer, Developer, Operator, Prism Admin, User,
+      Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin,
+      Backup Admin, Disaster Recovery Admin, NCM Connector
+    - >-
+      B(Update VM using ext_id) -
+      Operation Name: Update Virtual Machine Basic Config -
+      Required Roles: Account Owner, Administrator, Consumer, Developer, Operator, Prism Admin, User,
+      Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin,
+      Backup Admin, NCM Connector
+    - >-
+      B(Delete VM using ext_id) -
+      Operation Name: Delete Existing Virtual Machine -
+      Required Roles: Account Owner, Administrator, Consumer, Developer, Operator, Prism Admin, User,
+      Project Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin,
+      Backup Admin, NCM Connector
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     ext_id:
         description:
@@ -1135,6 +1157,7 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
     - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
 author:
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
@@ -1325,8 +1348,8 @@ from copy import deepcopy  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
 from ..module_utils.v4.prism.tasks import (  # noqa: E402
     get_entity_ext_id_from_task,
@@ -1494,7 +1517,7 @@ def delete_vm(module, result):
 
 
 def run_module():
-    module = BaseModule(
+    module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )

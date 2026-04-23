@@ -19,6 +19,20 @@ description:
     - It will fetch multiple authorization policies if external ID is not provided
     - Use filters to fetch specific authorization policies
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Get authorization policy by ext_id) -
+      Operation Name: View Authorization Policy -
+      Required Roles: Account Owner, Administrator, Nutanix Central Admin, Prism Admin, Prism Viewer, Project Manager, Super Admin,
+      User, Self-Service Admin (deprecated)
+    - >-
+      B(Lists all the authorization policies) -
+      Operation Name: View Authorization Policy -
+      Required Roles: Account Owner, Administrator, Nutanix Central Admin, Prism Admin, Prism Viewer, Project Manager, Super Admin,
+      User, Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam)"
 options:
     ext_id:
         description:
@@ -29,6 +43,7 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_info_v2
       - nutanix.ncp.ntnx_logger
+      - nutanix.ncp.ntnx_proxy_v2
 author:
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)

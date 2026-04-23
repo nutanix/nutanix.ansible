@@ -17,6 +17,20 @@ description:
     - This module is used to get user_group information.
     - Fetch a specific user group using ext_id or multiple user groups
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Get user group by ext_id) -
+      Operation Name: View User Group -
+      Required Roles: Backup Admin, Nutanix Central Admin, Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin,
+      Self-Service Admin (deprecated)
+    - >-
+      B(List user groups) -
+      Operation Name: View User Group -
+      Required Roles: Backup Admin, Nutanix Central Admin, Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin,
+      Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam)"
 options:
     ext_id:
         description:
@@ -27,6 +41,7 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_info_v2
       - nutanix.ncp.ntnx_logger
+      - nutanix.ncp.ntnx_proxy_v2
 author:
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)

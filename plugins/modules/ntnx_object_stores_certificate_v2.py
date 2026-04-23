@@ -23,6 +23,14 @@ description:
     - Optionally, a list of alternate FQDNs and IPs can be provided.
     - These 'alternateFqdns' and 'alternateIps' must be included in the CA certificate if a CA is provided.
     - This module uses PC v4 APIs based GA SDKs.
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Create a SSL certificate for an Object store) -
+      Operation Name: Create Object Store Certificate -
+      Required Roles: Objects Admin, Objects Editor, Prism Admin, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=objects)"
 options:
     state:
         description:
@@ -66,6 +74,7 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
     - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
 author:
     - George Ghawali (@george-ghawali)
 """
@@ -191,8 +200,8 @@ except ImportError:
 
     PATHLIB_IMP_ERROR = traceback.format_exc()
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.objects.api_client import (  # noqa: E402
     get_etag,
     get_objects_api_instance,
@@ -274,7 +283,7 @@ def create_certificate(module, object_stores_api, result):
 
 
 def run_module():
-    module = BaseModule(
+    module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )

@@ -16,6 +16,23 @@ description:
     - This module allows you to create, update, and delete storage containers in Nutanix Prism Central.
     - This module uses PC v4 APIs based SDKs
 version_added: 2.0.0
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create a Storage Container) -
+      Operation Name: Create Storage Container -
+      Required Roles: Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
+    - >-
+      B(Delete a Storage Container) -
+      Operation Name: Delete Storage Container -
+      Required Roles: Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
+    - >-
+      B(Update a Storage Container) -
+      Operation Name: Update Storage Container -
+      Required Roles: Backup Admin, Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   state:
     description:
@@ -185,6 +202,7 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
       - nutanix.ncp.ntnx_logger
+      - nutanix.ncp.ntnx_proxy_v2
 author:
  - Alaa Bishtawi (@alaabishtawi)
  - George Ghawali (@george-ghawali)
@@ -317,8 +335,8 @@ skipped:
 import traceback  # noqa: E402
 from copy import deepcopy  # noqa: E402
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
     get_etag,
     get_storage_containers_api_instance,
@@ -538,7 +556,7 @@ def delete_storage_container(module, storage_container_api, result):
 
 
 def run_module():
-    module = BaseModule(
+    module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[

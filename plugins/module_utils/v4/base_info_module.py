@@ -5,12 +5,12 @@ from __future__ import absolute_import, division, print_function
 
 from copy import deepcopy
 
-from ..base_module import BaseModule
+from .base_module_v4 import BaseModuleV4
 
 __metaclass__ = type
 
 
-class BaseInfoModule(BaseModule):
+class BaseInfoModule(BaseModuleV4):
     """
     Base Info module class for Nutanix PC v4 list APIs based modules
     """
@@ -24,9 +24,9 @@ class BaseInfoModule(BaseModule):
     )
 
     def __init__(self, skip_info_args=False, **kwargs):
-        self.argument_spec = deepcopy(BaseModule.argument_spec)
-        self.argument_spec.pop("state")
-        self.argument_spec.pop("wait")
+        self.argument_spec = deepcopy(BaseModuleV4.argument_spec)
+        self.argument_spec.pop("state", None)
+        self.argument_spec.pop("wait", None)
         if not skip_info_args:
             self.argument_spec.update(self.info_argument_spec)
         super(BaseInfoModule, self).__init__(**kwargs)

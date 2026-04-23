@@ -16,6 +16,19 @@ description:
     - The created restore source is intended to be deleted after use.
     - If the restore source is not deleted, then it is auto-deleted after sometime.
     - Please provide Prism Element IP address here in C(nutanix_host)
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create restore source) -
+      Operation Name: Create Restore Source -
+      Required Roles: Prism Admin, Super Admin
+    - >-
+      B(Delete restore source) -
+      Operation Name: Delete Restore Source -
+      Required Roles: Prism Admin, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:
     ext_id:
         description:
@@ -104,17 +117,26 @@ options:
     nutanix_username:
         description:
             - The username to authenticate with the Nutanix Prism Element.
+            - Required as nutanix_api_key is not supported for Prism Element.
         required: true
         type: str
     nutanix_password:
         description:
             - The password to authenticate with the Nutanix Prism Element.
+            - Required as nutanix_api_key is not supported for Prism Element.
         required: true
         type: str
+    nutanix_api_key:
+        description:
+            - Not Supported as this module is for Prism Element.
+            - This field is only supported for Prism Central.
+        type: str
+        required: false
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
     - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
 author:
     - Abhinav Bansal (@abhinavbansal29)
     - George Ghawali (@george-ghawali)
@@ -211,10 +233,10 @@ failed:
 import traceback  # noqa: E402
 import warnings  # noqa: E402
 
-from ansible.module_utils.basic import missing_required_lib  # noqa: E402
+from ansible.module_utils.basic import env_fallback, missing_required_lib  # noqa: E402
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.prism.helpers import get_restore_source  # noqa: E402
 from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
     get_domain_manager_backup_api_instance,
@@ -242,6 +264,15 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
     module_args = dict(
+        nutanix_username=dict(
+            type="str", fallback=(env_fallback, ["NUTANIX_USERNAME"]), required=True
+        ),
+        nutanix_password=dict(
+            type="str",
+            no_log=True,
+            fallback=(env_fallback, ["NUTANIX_PASSWORD"]),
+            required=True,
+        ),
         ext_id=dict(type="str"),
     )
     module_args.update(prism_specs.get_location_backup_spec())
@@ -319,7 +350,7 @@ def delete_restore_source(module, domain_manager_backups_api, result):
 
 
 def run_module():
-    module = BaseModule(
+    module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[

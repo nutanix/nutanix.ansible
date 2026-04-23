@@ -16,6 +16,18 @@ description:
     - If ext_id is provided, this module will fetch the specific user api key.
     - If ext_id is not provided, this module will fetch multiple user api keys with/without filters, limit, etc.
     - This modules uses PC v4 APIs based SDKs.
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Get user api key by ext_id) -
+      Operation Name: View User Key -
+      Required Roles: Nutanix Central Admin, Prism Admin, Prism Viewer, Super Admin
+    - >-
+      B(List keys for the user) -
+      Operation Name: View User Key -
+      Required Roles: Nutanix Central Admin, Prism Admin, Prism Viewer, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam)"
 options:
     user_ext_id:
         description:
@@ -30,6 +42,7 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_info_v2
     - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
 author:
     - Abhinav Bansal (@abhinavbansal29)
 """

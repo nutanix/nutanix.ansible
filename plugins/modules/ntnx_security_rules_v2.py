@@ -16,6 +16,23 @@ description:
   - This module allows you to create, update, and delete network security policies in Nutanix Prism Central.
   - During update, the rules provided under C(rules) will replace existing rules.
   - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create a Network Security Policy) -
+      Operation Name: Create Flow Policy -
+      Required Roles: Flow Admin, Prism Admin, Super Admin
+    - >-
+      B(Delete a Network Security Policy by ExtID) -
+      Operation Name: Delete Flow Policy -
+      Required Roles: Flow Admin, Prism Admin, Super Admin
+    - >-
+      B(Update a Network Security Policy by ExtID) -
+      Operation Name: Update Flow Policy -
+      Required Roles: Flow Admin, Prism Admin, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg)"
 options:
   wait:
     description:
@@ -57,6 +74,12 @@ options:
     required: false
     type: list
     elements: str
+  scope_references:
+    description:
+      - A list of external ids for scope references, used only when the scope of policy is a list of scope references.
+    required: false
+    type: list
+    elements: str
   type:
     description:
       - Defines the type of rules that can be used in a policy.
@@ -66,6 +89,7 @@ options:
       - QUARANTINE
       - ISOLATION
       - APPLICATION
+      - SHAREDSERVICE
   policy_state:
     description:
       - Whether the policy is just to be saved, applied, monitored.
@@ -77,14 +101,16 @@ options:
       - ENFORCE
   scope:
     description:
-      - Defines the scope of the policy. Currently, only ALL_VLAN and VPC_LIST are supported.
-        If scope is not provided, the default is set based on whether vpcReferences field is provided or not.
+      - Defines the scope of the policy. Currently, ALL_VLAN, VPC_LIST, GLOBAL, and VPC_AS_CATEGORY are supported.
+        If a scope is not provided, the default value is determined by the presence or absence of the vpcReferences or scopeReferences fields.
     required: false
     type: str
     choices:
       - ALL_VLAN
       - ALL_VPC
       - VPC_LIST
+      - GLOBAL
+      - VPC_AS_CATEGORY
   rules:
     description:
       - A list of rules that form a policy. For isolation policies, use isolation rules
@@ -113,6 +139,7 @@ options:
           - APPLICATION
           - INTRA_GROUP
           - MULTI_ENV_ISOLATION
+          - SHARED_SERVICE
       spec:
         description:
           - The specification of the rule.
@@ -335,6 +362,7 @@ options:
                 choices:
                   - ALLOW
                   - DENY
+                required: true
               secured_group_category_associated_entity_type:
                 description:
                   - The type of entity associated with the secured group category.
@@ -424,16 +452,31 @@ options:
                           - The list of isolation groups.
                         type: list
                         elements: dict
+                        required: true
                         suboptions:
+                          group_category_associated_entity_type:
+                            description:
+                              - The type of entity associated with the group category.
+                            type: str
+                            choices:
+                              - VM
+                              - SUBNET
+                              - VPC
+                            default: VM
                           group_category_references:
                             description:
                               - The list of group category references.
                             type: list
                             elements: str
+                          group_entity_group_reference:
+                            description:
+                              - The reference to the group entity group.
+                            type: str
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
   - nutanix.ncp.ntnx_logger
+  - nutanix.ncp.ntnx_proxy_v2
 author:
   - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
   - Alaa Bishtawi (@alaa-bish)
@@ -690,8 +733,8 @@ from copy import deepcopy  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
 from ..module_utils.v4.flow.api_client import (  # noqa: E402
     get_etag,
@@ -803,7 +846,7 @@ def get_module_spec():
     )
     entity_group_rule_spec = dict(
         secured_group_category_references=dict(type="list", elements="str"),
-        secured_group_action=dict(type="str", choices=["ALLOW", "DENY"]),
+        secured_group_action=dict(type="str", choices=["ALLOW", "DENY"], required=True),
         secured_group_category_associated_entity_type=dict(
             type="str", choices=["VM", "SUBNET", "VPC"], default="VM"
         ),
@@ -830,7 +873,11 @@ def get_module_spec():
     )
 
     isolation_groups_spec = dict(
-        group_category_references=dict(type="list", elements="str")
+        group_category_references=dict(type="list", elements="str"),
+        group_category_associated_entity_type=dict(
+            type="str", choices=["VM", "SUBNET", "VPC"], default="VM"
+        ),
+        group_entity_group_reference=dict(type="str"),
     )
 
     all_to_all_spec = dict(
@@ -839,6 +886,7 @@ def get_module_spec():
             elements="dict",
             obj=mic_sdk.IsolationGroup,
             options=isolation_groups_spec,
+            required=True,
         )
     )
 
@@ -878,6 +926,7 @@ def get_module_spec():
                 "APPLICATION",
                 "INTRA_GROUP",
                 "MULTI_ENV_ISOLATION",
+                "SHARED_SERVICE",
             ],
         ),
         spec=dict(
@@ -899,7 +948,10 @@ def get_module_spec():
         ext_id=dict(type="str"),
         name=dict(type="str"),
         description=dict(type="str"),
-        type=dict(type="str", choices=["QUARANTINE", "ISOLATION", "APPLICATION"]),
+        type=dict(
+            type="str",
+            choices=["QUARANTINE", "ISOLATION", "APPLICATION", "SHAREDSERVICE"],
+        ),
         policy_state=dict(type="str", choices=["SAVE", "MONITOR", "ENFORCE"]),
         rules=dict(
             type="list",
@@ -907,8 +959,12 @@ def get_module_spec():
             options=policy_rule,
             obj=mic_sdk.NetworkSecurityPolicyRule,
         ),
-        scope=dict(type="str", choices=["ALL_VLAN", "ALL_VPC", "VPC_LIST"]),
+        scope=dict(
+            type="str",
+            choices=["ALL_VLAN", "ALL_VPC", "VPC_LIST", "GLOBAL", "VPC_AS_CATEGORY"],
+        ),
         vpc_references=dict(type="list", elements="str"),
+        scope_references=dict(type="list", elements="str"),
         is_ipv6_traffic_allowed=dict(type="bool"),
         is_hitlog_enabled=dict(type="bool"),
     )
@@ -1037,9 +1093,9 @@ def update_network_security_policy(module, result):
         update_spec.state = current_spec.state
 
     # check for idempotency
-    if check_network_security_policies_idempotency(
-        current_spec.to_dict(), update_spec.to_dict()
-    ):
+    current_spec_dict = strip_internal_attributes(current_spec.to_dict())
+    update_spec_dict = strip_internal_attributes(update_spec.to_dict())
+    if check_network_security_policies_idempotency(current_spec_dict, update_spec_dict):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
 
@@ -1117,7 +1173,7 @@ def delete_network_security_policy(module, result):
 
 
 def run_module():
-    module = BaseModule(
+    module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[

@@ -1,0 +1,262 @@
+---
+- name: Test hostnames feature in V2 inventory plugin
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    # =========================================================================
+    # Setup: Create test VMs
+    # =========================================================================
+
+    - name: Create VM without description
+      nutanix.ncp.ntnx_vms_v2:
+        name: "hostname_test_no_desc_v2"
+      register: vm_no_desc_result
+      ignore_errors: true
+
+    - name: Assert VM without description created
+      ansible.builtin.assert:
+        that:
+          - vm_no_desc_result.changed == true
+          - vm_no_desc_result.failed == false
+          - vm_no_desc_result.response is defined
+          - vm_no_desc_result.response.name == "hostname_test_no_desc_v2"
+        fail_msg: "Failed to create VM without description"
+        success_msg: "Created VM without description"
+
+    - name: Set no-desc VM ext_id
+      ansible.builtin.set_fact:
+        vm_no_desc_ext_id: "{{ vm_no_desc_result.response.ext_id }}"
+
+    - name: Create VM with description
+      nutanix.ncp.ntnx_vms_v2:
+        name: "hostname_test_with_desc_v2"
+        description: "custom-hostname-from-desc"
+      register: vm_with_desc_result
+      ignore_errors: true
+
+    - name: Assert VM with description created
+      ansible.builtin.assert:
+        that:
+          - vm_with_desc_result.changed == true
+          - vm_with_desc_result.failed == false
+          - vm_with_desc_result.response is defined
+          - vm_with_desc_result.response.name == "hostname_test_with_desc_v2"
+          - vm_with_desc_result.response.description == "custom-hostname-from-desc"
+        fail_msg: "Failed to create VM with description"
+        success_msg: "Created VM with description"
+
+    - name: Set with-desc VM ext_id
+      ansible.builtin.set_fact:
+        vm_with_desc_ext_id: "{{ vm_with_desc_result.response.ext_id }}"
+
+    - name: Run hostname tests and cleanup
+      block:
+        # =====================================================================
+        # Test 1: Fallback from vm_description to vm_name (strict: false)
+        #   nutanix.yml: hostnames: [vm_description, vm_name]
+        #   VM without description -> vm_description undefined -> falls back to vm_name
+        #   VM with description -> vm_description defined -> uses description as hostname
+        # =====================================================================
+
+        - name: "Test 1: Run inventory with hostnames fallback (nutanix.yml)"
+          ansible.builtin.command:
+            cmd: ansible-inventory --inventory nutanix.yml --list
+            chdir: "{{ playbook_dir }}"
+          register: test1_result
+          changed_when: false
+
+        - name: "Test 1: Parse inventory output"
+          ansible.builtin.set_fact:
+            test1_data: "{{ test1_result.stdout | from_json }}"
+
+        - name: "Test 1: Assert VM without description falls back to vm_name"
+          ansible.builtin.assert:
+            that:
+              - "'hostname_test_no_desc_v2' in test1_data._meta.hostvars"
+            fail_msg: >-
+              VM without description should use vm_name as hostname fallback.
+              Got hostvars keys: {{ test1_data._meta.hostvars.keys() | list }}
+            success_msg: "VM without description correctly fell back to vm_name as hostname"
+
+        - name: "Test 1: Assert VM with description uses vm_description as hostname"
+          ansible.builtin.assert:
+            that:
+              - "'custom-hostname-from-desc' in test1_data._meta.hostvars"
+              - "'hostname_test_with_desc_v2' not in test1_data._meta.hostvars"
+            fail_msg: >-
+              VM with description should use vm_description as hostname.
+              Got hostvars keys: {{ test1_data._meta.hostvars.keys() | list }}
+            success_msg: "VM with description correctly used vm_description as hostname"
+
+        - name: "Test 1: Assert vm_name is still available as a host variable"
+          ansible.builtin.assert:
+            that:
+              - "test1_data._meta.hostvars['custom-hostname-from-desc'].vm_name == 'hostname_test_with_desc_v2'"
+            fail_msg: "vm_name should still be set as a host variable even when hostname is overridden"
+            success_msg: "vm_name correctly preserved as host variable"
+
+        # =====================================================================
+        # Test 2: Jinja2 filter expression (vm_name | upper)
+        #   jinja2/nutanix.yml: hostnames: ["vm_name | upper"]
+        #   Both VMs -> hostname = uppercase vm_name
+        # =====================================================================
+
+        - name: "Test 2: Run inventory with Jinja2 filter expression (jinja2/nutanix.yml)"
+          ansible.builtin.command:
+            cmd: ansible-inventory --inventory jinja2/nutanix.yml --list
+            chdir: "{{ playbook_dir }}"
+          register: test2_result
+          changed_when: false
+
+        - name: "Test 2: Parse inventory output"
+          ansible.builtin.set_fact:
+            test2_data: "{{ test2_result.stdout | from_json }}"
+
+        - name: "Test 2: Assert hostnames are uppercased vm_name"
+          ansible.builtin.assert:
+            that:
+              - "'HOSTNAME_TEST_NO_DESC_V2' in test2_data._meta.hostvars"
+              - "'HOSTNAME_TEST_WITH_DESC_V2' in test2_data._meta.hostvars"
+              - "'hostname_test_no_desc_v2' not in test2_data._meta.hostvars"
+              - "'hostname_test_with_desc_v2' not in test2_data._meta.hostvars"
+            fail_msg: >-
+              Hostnames should be uppercased vm_name.
+              Got hostvars keys: {{ test2_data._meta.hostvars.keys() | list }}
+            success_msg: "Jinja2 upper filter correctly applied to hostnames"
+
+        # =====================================================================
+        # Test 3: Concatenation expression (vm_name ~ '_' ~ vm_ext_id[:8])
+        #   concat/nutanix.yml: hostnames: ["vm_name ~ '_' ~ vm_ext_id[:8]"]
+        #   Both VMs -> hostname = vm_name + '_' + first 8 chars of ext_id
+        # =====================================================================
+
+        - name: "Test 3: Run inventory with concatenation expression (concat/nutanix.yml)"
+          ansible.builtin.command:
+            cmd: ansible-inventory --inventory concat/nutanix.yml --list
+            chdir: "{{ playbook_dir }}"
+          register: test3_result
+          changed_when: false
+
+        - name: "Test 3: Parse inventory output"
+          ansible.builtin.set_fact:
+            test3_data: "{{ test3_result.stdout | from_json }}"
+
+        - name: "Test 3: Build expected hostnames"
+          ansible.builtin.set_fact:
+            expected_no_desc_hostname: "hostname_test_no_desc_v2_{{ vm_no_desc_ext_id[:8] }}"
+            expected_with_desc_hostname: "hostname_test_with_desc_v2_{{ vm_with_desc_ext_id[:8] }}"
+
+        - name: "Test 3: Assert hostnames use concatenation expression"
+          ansible.builtin.assert:
+            that:
+              - "expected_no_desc_hostname in test3_data._meta.hostvars"
+              - "expected_with_desc_hostname in test3_data._meta.hostvars"
+            fail_msg: >-
+              Hostnames should be vm_name + '_' + ext_id[:8].
+              Expected: {{ expected_no_desc_hostname }}, {{ expected_with_desc_hostname }}.
+              Got hostvars keys: {{ test3_data._meta.hostvars.keys() | list }}
+            success_msg: "Concatenation expression correctly applied to hostnames"
+
+        # =====================================================================
+        # Test 4: Empty hostnames list (default fallback to vm_name)
+        #   empty/nutanix.yml: hostnames: []
+        #   Both VMs -> hostname = vm_name (default)
+        # =====================================================================
+
+        - name: "Test 4: Run inventory with empty hostnames list (empty/nutanix.yml)"
+          ansible.builtin.command:
+            cmd: ansible-inventory --inventory empty/nutanix.yml --list
+            chdir: "{{ playbook_dir }}"
+          register: test4_result
+          changed_when: false
+
+        - name: "Test 4: Parse inventory output"
+          ansible.builtin.set_fact:
+            test4_data: "{{ test4_result.stdout | from_json }}"
+
+        - name: "Test 4: Assert hostnames fall back to vm_name"
+          ansible.builtin.assert:
+            that:
+              - "'hostname_test_no_desc_v2' in test4_data._meta.hostvars"
+              - "'hostname_test_with_desc_v2' in test4_data._meta.hostvars"
+            fail_msg: >-
+              Empty hostnames list should fall back to vm_name.
+              Got hostvars keys: {{ test4_data._meta.hostvars.keys() | list }}
+            success_msg: "Empty hostnames correctly fell back to vm_name"
+
+        # =====================================================================
+        # Test 5: strict: true with undefined vm_description (should fail)
+        #   strict/nutanix.yml: hostnames: [vm_description], strict: true
+        #   Filtered to only the VM without description
+        #   Should fail with error about undefined variable
+        # =====================================================================
+
+        - name: "Test 5: Run inventory with strict mode expecting failure (strict/nutanix.yml)"
+          ansible.builtin.command:
+            cmd: ansible-inventory --inventory strict/nutanix.yml --list
+            chdir: "{{ playbook_dir }}"
+          register: test5_result
+          ignore_errors: true
+          changed_when: false
+
+        - name: "Test 5: Assert inventory failed due to strict mode with undefined variable"
+          ansible.builtin.assert:
+            that:
+              - test5_result.rc != 0 or (test5_result.stderr is defined and test5_result.stderr | length > 0)
+            fail_msg: "Inventory should fail when strict is set to true and hostname expression uses undefined variable"
+            success_msg: "Inventory correctly failed with strict mode on undefined variable"
+
+        - name: "Test 5: Assert error message references hostname composition failure"
+          ansible.builtin.assert:
+            that:
+              - >-
+                test5_result.stderr | replace('\n', ' ') |
+                regex_search("Could not compose.*vm_description.*as hostname")
+            fail_msg: >-
+              Expected error about composing vm_description as hostname.
+              Got stderr: {{ test5_result.stderr }}
+            success_msg: "Error message correctly references hostname composition failure"
+
+      # =======================================================================
+      # Cleanup: Always delete test VMs
+      # =======================================================================
+      always:
+        - name: Delete VM without description
+          nutanix.ncp.ntnx_vms_v2:
+            ext_id: "{{ vm_no_desc_ext_id }}"
+            state: absent
+          register: delete_no_desc_result
+          ignore_errors: true
+          when: vm_no_desc_ext_id is defined
+
+        - name: Delete VM without description status
+          ansible.builtin.assert:
+            that:
+              - delete_no_desc_result.changed == true
+              - delete_no_desc_result.failed == false
+              - delete_no_desc_result.ext_id == vm_no_desc_ext_id
+              - delete_no_desc_result.response is defined
+              - delete_no_desc_result.response.status == "SUCCEEDED"
+            fail_msg: "Failed to delete VM without description"
+            success_msg: "Deleted VM without description"
+          when: vm_no_desc_ext_id is defined
+
+        - name: Delete VM with description
+          nutanix.ncp.ntnx_vms_v2:
+            ext_id: "{{ vm_with_desc_ext_id }}"
+            state: absent
+          register: delete_with_desc_result
+          ignore_errors: true
+          when: vm_with_desc_ext_id is defined
+
+        - name: Delete VM with description status
+          ansible.builtin.assert:
+            that:
+              - delete_with_desc_result.changed == true
+              - delete_with_desc_result.failed == false
+              - delete_with_desc_result.ext_id == vm_with_desc_ext_id
+              - delete_with_desc_result.response is defined
+              - delete_with_desc_result.response.status == "SUCCEEDED"
+            fail_msg: "Failed to delete VM with description"
+            success_msg: "Deleted VM with description"
+          when: vm_with_desc_ext_id is defined

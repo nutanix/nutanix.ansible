@@ -17,6 +17,23 @@ description:
   - A cluster profile is a collection of configuration settings that can be applied to a cluster.
   - This module uses PC v4 APIs based SDKs
 version_added: "2.4.0"
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create a cluster profile) -
+      Operation Name: Create Cluster Profile -
+      Required Roles: Cluster Admin, Prism Admin, Super Admin
+    - >-
+      B(Delete cluster profile) -
+      Operation Name: Delete Cluster Profile -
+      Required Roles: Cluster Admin, Prism Admin, Super Admin
+    - >-
+      B(Update cluster profile) -
+      Operation Name: Update Cluster Profile -
+      Required Roles: Cluster Admin, Prism Admin, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   state:
     description:
@@ -630,6 +647,7 @@ extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
   - nutanix.ncp.ntnx_logger
+  - nutanix.ncp.ntnx_proxy_v2
 author:
   - George Ghawali (@george-ghawali)
 """
@@ -1016,8 +1034,8 @@ from copy import deepcopy  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
     get_cluster_profiles_api_instance,
     get_etag,
@@ -1223,7 +1241,7 @@ def delete_cluster_profile(module, cluster_profiles, result):
 
 
 def run_module():
-    module = BaseModule(
+    module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[

@@ -16,6 +16,18 @@ version_added: 2.1.0
 description:
     - This module allows you to fetch protection policies info or specific protection policy in Nutanix Prism Central.
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Get protection policy by ext_id) -
+      Operation Name: View Protection Policy -
+      Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, NCM Connector, Prism Admin, Prism Viewer, Project Manager, Super Admin
+    - >-
+      B(List protection policies) -
+      Operation Name: View Protection Policy -
+      Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, NCM Connector, Prism Admin, Prism Viewer, Project Manager, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=datapolicies)"
 options:
     ext_id:
         description:
@@ -25,6 +37,7 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_info_v2
     - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
 author:
     - George Ghawali (@george-ghawali)
 """

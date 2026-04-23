@@ -17,6 +17,18 @@ description:
     - Fetch list of multiple OVAs if external ID is not provided with optional filter
     - This module uses PC v4 APIs based SDKs
 version_added: "2.3.0"
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Get OVA by ext_id) -
+      Operation Name: View Ova -
+      Required Roles: Prism Admin, Prism Viewer, Super Admin, Virtual Machine Admin, Virtual Machine Operator
+    - >-
+      B(List OVAs) -
+      Operation Name: View Ova -
+      Required Roles: Prism Admin, Prism Viewer, Super Admin, Virtual Machine Admin, Virtual Machine Operator
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     ext_id:
         description:
@@ -29,6 +41,7 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_info_v2
     - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
 """
 
 EXAMPLES = r"""

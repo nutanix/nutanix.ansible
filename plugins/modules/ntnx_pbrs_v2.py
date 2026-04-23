@@ -16,6 +16,23 @@ version_added: 2.0.0
 description:
   - Create, Update, Delete Routing Policies
   - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create a Routing Policy) -
+      Operation Name: Create Routing Policy -
+      Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
+    - >-
+      B(Delete the Routing Policy corresponding to the extId) -
+      Operation Name: Delete Routing Policy -
+      Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
+    - >-
+      B(Update the Routing Policy corresponding to the extId) -
+      Operation Name: Update Routing Policy -
+      Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   state:
     description:
@@ -380,6 +397,7 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
       - nutanix.ncp.ntnx_logger
+      - nutanix.ncp.ntnx_proxy_v2
 author:
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
@@ -640,8 +658,8 @@ from copy import deepcopy  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.network.api_client import (  # noqa: E402
     get_etag,
     get_routing_policies_api_instance,
@@ -887,6 +905,8 @@ def create_pbr(module, result):
 
 
 def check_pbrs_idempotency(old_spec, update_spec):
+    strip_internal_attributes(old_spec)
+    strip_internal_attributes(update_spec)
     if old_spec != update_spec:
         return False
     return True
@@ -974,7 +994,7 @@ def delete_pbr(module, result):
 
 
 def run_module():
-    module = BaseModule(
+    module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[

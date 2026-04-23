@@ -15,6 +15,14 @@ description:
     - This module fetches LCM configurations.
     - Fetch LCM configurations using cluster external ID.
 version_added: 2.1.0
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Get the present LCM configuration) -
+      Operation Name: View Config -
+      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle)"
 author:
     - Abhinav Bansal (@abhinavbansal29)
 options:
@@ -29,6 +37,7 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_info_v2
     - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
 """
 
 EXAMPLES = r"""

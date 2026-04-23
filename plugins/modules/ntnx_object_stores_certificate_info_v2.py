@@ -14,6 +14,18 @@ description:
     - Fetch specific object store certificate info if external ID is provided
     - Fetch list of multiple object store certificates info if external ID is not provided with optional filters
     - This module uses PC v4 APIs based GA SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Get object store certificate by ext_id) -
+      Operation Name: View Object Store Certificate -
+      Required Roles: Objects Admin, Objects Editor, Objects Viewer, Prism Admin, Super Admin
+    - >-
+      B(Get a list of the SSL certificates of an Object store) -
+      Operation Name: View Object Store Certificate -
+      Required Roles: Objects Admin, Objects Editor, Objects Viewer, Prism Admin, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=objects)"
 options:
     object_store_ext_id:
         description: object store external ID
@@ -26,6 +38,7 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_info_v2
     - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
 author:
     - George Ghawali (@george-ghawali)
 """

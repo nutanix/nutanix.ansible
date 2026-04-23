@@ -16,6 +16,19 @@ description:
     - This module fetches information about Nutanix template versions.
     - It can retrieve information about a specific template version or all template versions.
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Get the template version detail) -
+      Operation Name: View VM Templates Versions -
+      Required Roles: Prism Admin, Prism Viewer, Super Admin, Virtual Machine Admin, Virtual Machine Operator
+    - >-
+      B(List all versions in a template) -
+      Operation Name: View VM Templates Versions -
+      Required Roles: Prism Admin, Prism Viewer, Super Admin, Virtual Machine Admin, Virtual Machine Operator
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     template_ext_id:
         description:
@@ -31,6 +44,7 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_info_v2
       - nutanix.ncp.ntnx_logger
+      - nutanix.ncp.ntnx_proxy_v2
 author:
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)

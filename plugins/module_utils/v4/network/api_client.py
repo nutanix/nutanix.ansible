@@ -12,6 +12,7 @@ from ansible.module_utils.basic import missing_required_lib
 
 from ...constants import ALLOW_VERSION_NEGOTIATION
 from ..api_logger import setup_api_logging
+from ..utils import _apply_proxy_from_env
 
 SDK_IMP_ERROR = None
 try:
@@ -38,8 +39,18 @@ def get_api_client(module):
     config = ntnx_networking_py_client.Configuration()
     config.host = module.params.get("nutanix_host")
     config.port = module.params.get("nutanix_port")
-    config.username = module.params.get("nutanix_username")
-    config.password = module.params.get("nutanix_password")
+    api_key = module.params.get("nutanix_api_key")
+    nutanix_username = module.params.get("nutanix_username")
+    nutanix_password = module.params.get("nutanix_password")
+    if (not nutanix_username or not nutanix_password) and not (api_key):
+        module.fail_json(
+            msg="Either nutanix_username and nutanix_password or nutanix_api_key is required"
+        )
+    if api_key:
+        config.set_api_key(api_key)
+    else:
+        config.username = nutanix_username
+        config.password = nutanix_password
     config.verify_ssl = module.params.get("validate_certs")
     try:
         client = ntnx_networking_py_client.ApiClient(
@@ -47,14 +58,19 @@ def get_api_client(module):
         )
     except TypeError:
         client = ntnx_networking_py_client.ApiClient(configuration=config)
-
-    cred = "{0}:{1}".format(config.username, config.password)
-    try:
-        encoded_cred = b64encode(bytes(cred, encoding="ascii")).decode("ascii")
-    except BaseException:
-        encoded_cred = b64encode(bytes(cred).encode("ascii")).decode("ascii")
-    auth_header = "Basic " + encoded_cred
-    client.add_default_header(header_name="Authorization", header_value=auth_header)
+    config.read_timeout = module.params.get("read_timeout")
+    _apply_proxy_from_env(config, module)
+    client = ntnx_networking_py_client.ApiClient(
+        configuration=config, allow_version_negotiation=ALLOW_VERSION_NEGOTIATION
+    )
+    if not api_key:
+        cred = "{0}:{1}".format(config.username, config.password)
+        try:
+            encoded_cred = b64encode(bytes(cred, encoding="ascii")).decode("ascii")
+        except BaseException:
+            encoded_cred = b64encode(bytes(cred).encode("ascii")).decode("ascii")
+        auth_header = "Basic " + encoded_cred
+        client.add_default_header(header_name="Authorization", header_value=auth_header)
 
     # Setup API logging if debug is enabled
     setup_api_logging(module, client)
@@ -143,6 +159,42 @@ def get_routes_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_networking_py_client.RoutesApi(api_client=api_client)
+
+
+def get_network_function_api_instance(module):
+    """
+    This method will return NetworkFunctionsApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): network functions api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.NetworkFunctionsApi(api_client=api_client)
+
+
+def get_virtual_switches_api_instance(module):
+    """
+    This method will return VirtualSwitchesApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Virtual Switches Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.VirtualSwitchesApi(api_client=api_client)
+
+
+def get_bridges_api_instance(module):
+    """
+    This method will return BridgesApi instance for migrate operations.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Bridges Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.BridgesApi(api_client=api_client)
 
 
 def get_nic_profiles_api_instance(module):

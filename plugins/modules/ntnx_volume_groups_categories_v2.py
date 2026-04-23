@@ -15,6 +15,19 @@ short_description: Module to associate or disassociate categories with a volume 
 version_added: 2.1.0
 description:
   - This module can be used to associate or disassociate categories with a volume group in Nutanix Prism Central.
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Associate category to a Volume Group) -
+      Operation Name: Associate Volume Group Categories -
+      Required Roles: CSI System, Kubernetes Data Services System, Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
+    - >-
+      B(Disassociate category from a Volume Group) -
+      Operation Name: Disassociate Volume Group Categories -
+      Required Roles: CSI System, Kubernetes Data Services System, Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes)"
 options:
     state:
         description:
@@ -96,6 +109,7 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
     - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
 author:
  - George Ghawali (@george-ghawali)
  - Abhinav Bansal (@abhinavbansal29)
@@ -204,8 +218,8 @@ import warnings  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
@@ -348,7 +362,7 @@ def disassociate_categories(module, vgs, result):
 
 
 def run_module():
-    module = BaseModule(
+    module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )

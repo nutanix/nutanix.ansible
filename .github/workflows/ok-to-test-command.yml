@@ -12,7 +12,7 @@ jobs:
     strategy:
       max-parallel: 1
       matrix:
-        python-version: ["3.10"]
+        python-version: ["3.12"]
     if: github.event_name == 'repository_dispatch'
 
     steps:
@@ -46,28 +46,97 @@ jobs:
         run: |
           cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
 
+          VARS_FILE="tests/integration/targets/prepare_env/vars/main.yml"
+          echo "VARS_FILE=$VARS_FILE" >> $GITHUB_ENV
+
+          # Parse arguments: /ok-to-test <regex> [api]
+          args="${{ github.event.client_payload.slash_command.args.all }}"
+          flag=""
+          use_api_key=false
+
+          # Parse arguments to extract regex and api flag
+          if [ "$args" = "allow-disabled" ]; then
+              flag="--allow-disabled"
+          elif [ -n "$args" ]; then
+              # Split args into array
+              read -ra arg_array <<< "$args"
+
+              # Check if last argument is "api"
+              if [ "${arg_array[-1]}" = "api" ]; then
+                  use_api_key=true
+                  # Remove "api" from args to get regex pattern
+                  unset 'arg_array[-1]'
+                  regex_pattern="${arg_array[*]}"
+
+                  # Special case: if regex is empty and only "api" was passed, treat as allow-disabled
+                  if [ -z "$regex_pattern" ] && [ "${arg_array[0]}" = "allow-disabled" ]; then
+                      flag="--allow-disabled"
+                  fi
+              else
+                  regex_pattern="$args"
+              fi
+          fi
+
+          # Clean up any existing authentication environment variables
+          unset NUTANIX_USERNAME
+          unset NUTANIX_PASSWORD
+          unset NUTANIX_API_KEY
+
+          # Export common environment variables
           export NUTANIX_HOST=${{ secrets.PC_IP }}
-          export NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}
-          export NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}
           export NUTANIX_DR_SITE=${{ secrets.NUTANIX_DR_SITE }}
           export VALIDATE_CERTS=${{ secrets.VALIDATE_CERTS }}
           export NDB_HOST=${{ secrets.NDB_HOST }}
           export NDB_PASSWORD=${{ secrets.NDB_PASSWORD }}
           export NDB_USERNAME=${{ secrets.NDB_USERNAME }}
-          args="${{ github.event.client_payload.slash_command.args.all }}"
-          flag=""
-          if [ "$args" = "allow-disabled" ]; then
-              flag="--allow-disabled"
-          elif [ -n "$args" ]; then
-              regex_pattern="$args"
+
+          echo '${{ secrets.PC_CONFIG }}' > "$VARS_FILE"
+
+          # Set authentication method
+          if [ "$use_api_key" = true ]; then
+              echo "🔑 Using API Key authentication"
+              export NUTANIX_API_KEY=${{ secrets.NUTANIX_API_KEY }}
+              echo "AUTH_METHOD=api_key" >> $GITHUB_ENV
+          else
+              echo "🔐 Using Username/Password authentication"
+              export NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}
+              export NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}
+              echo "AUTH_METHOD=username_password" >> $GITHUB_ENV
           fi
+
+          # Write config files
           echo '${{ secrets.FOUNDATION_CONFIG }}' > tests/integration/targets/prepare_foundation_env/vars/main.yml
           echo '${{ secrets.FC_CONFIG }}' > tests/integration/targets/prepare_fc_env/vars/main.yml
-          echo '${{ secrets.PC_CONFIG }}' > tests/integration/targets/prepare_env/vars/main.yml
           echo '${{ secrets.NDB_CONFIG }}' > tests/integration/targets/prepare_ndb_env/vars/main.yml
+
+          if [ "$use_api_key" = true ]; then
+              echo "" >> "$VARS_FILE"
+              echo "# API Key Authentication (added by workflow)" >> "$VARS_FILE"
+              echo "nutanix_api_key: \"${{ secrets.NUTANIX_API_KEY }}\"" >> "$VARS_FILE"
+          else
+              echo "" >> "$VARS_FILE"
+              echo "# Credentials (added by workflow)" >> "$VARS_FILE"
+              echo "username: \"${{ secrets.PC_USERNAME }}\"" >> "$VARS_FILE"
+              echo "password: \"${{ secrets.PC_PASSWORD }}\"" >> "$VARS_FILE"
+          fi
+
+          # Append S3 bucket config from secrets
+          echo "" >> "$VARS_FILE"
+          echo "s3_bucket:" >> "$VARS_FILE"
+          echo "  bucket: \"${{ secrets.AWS_BUCKET }}\"" >> "$VARS_FILE"
+          echo "  region: \"${{ secrets.AWS_REGION }}\"" >> "$VARS_FILE"
+          echo "  access_key: \"${{ secrets.AWS_ACCESS_KEY }}\"" >> "$VARS_FILE"
+          echo "  secret_key: \"${{ secrets.AWS_SECRET_KEY }}\"" >> "$VARS_FILE"
+
+          # Set GitHub environment variables for later steps
           echo "NUTANIX_HOST=${{ secrets.PC_IP }}" >> $GITHUB_ENV
-          echo "NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}" >> $GITHUB_ENV
-          echo "NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}" >> $GITHUB_ENV
+          if [ "$use_api_key" = true ]; then
+              echo "NUTANIX_API_KEY=${{ secrets.NUTANIX_API_KEY }}" >> $GITHUB_ENV
+          else
+              echo "NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}" >> $GITHUB_ENV
+              echo "NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}" >> $GITHUB_ENV
+          fi
+
 
           echo "===> Preparing environments..."
           ansible-playbook tests/integration/targets/prepare_env/playbooks/prepare_env.yml
@@ -76,8 +145,8 @@ jobs:
           ansible-playbook tests/integration/targets/prepare_foundation_env/playbooks/prepare_foundation_env.yml
 
           # Function to run inventory tests from a given directory
-          # Handles both: directories with subdirectories (inventory_test, inventory_test_v2)
-          # and directories with files directly in them (inventory_test_hosts_v2)
+          # Handles both: directories with subdirectories (inventory_test, inventory_test_v2, inventory_test_hosts_v2)
+          # and directories with files directly in them (single test case)
           run_inventory_tests() {
               local test_dir="$1"
               local test_type="$2"
@@ -201,6 +270,28 @@ jobs:
         if: ${{ always() }}
         run: |
           cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
+          PC_SSH_USER=$(cat "$VARS_FILE" | shyaml get-value domain_manager_ssh_username 2>/dev/null || echo "nutanix")
+          PC_SSH_PASS=$(cat "$VARS_FILE" | shyaml get-value domain_manager_ssh_password 2>/dev/null || echo "")
+          PE_SSH_USER=$(cat "$VARS_FILE" | shyaml get-value pe_ssh_username 2>/dev/null || echo "nutanix")
+          PE_SSH_PASS=$(cat "$VARS_FILE" | shyaml get-value pe_ssh_password 2>/dev/null || echo "")
+          PE_IP=$(cat "$VARS_FILE" | shyaml get-value ip_pe 2>/dev/null || echo "")
+
+          NCLI="/home/nutanix/prism/cli/ncli"
+          VERSION_CMD="$NCLI cluster info | grep -i Version | grep -vi NCC"
+          SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+
+          PC_VERSION_INFO=$(sshpass -p "$PC_SSH_PASS" \
+            ssh $SSH_OPTS "$PC_SSH_USER@$NUTANIX_HOST" \
+            "$VERSION_CMD" 2>/dev/null || echo "Failed to fetch PC version")
+
+          if [ -n "$PE_IP" ]; then
+            AOS_VERSION_INFO=$(sshpass -p "$PE_SSH_PASS" \
+              ssh $SSH_OPTS "$PE_SSH_USER@$PE_IP" \
+              "$VERSION_CMD" 2>/dev/null || echo "Failed to fetch AOS version")
+          else
+            AOS_VERSION_INFO="PE IP not configured"
+          fi
+
           echo "### Detailed Test Results" >> $GITHUB_STEP_SUMMARY
 
           LOG_FILE="test_output.log"
@@ -272,6 +363,12 @@ jobs:
                 echo "- None"
               fi
               echo ""
+              echo "PC Version:"
+              echo "$PC_VERSION_INFO"
+              echo ""
+              echo "AOS Version:"
+              echo "$AOS_VERSION_INFO"
+              echo ""
               echo "Raw log file: test_output.log"
               echo "EOF"
             } >> $GITHUB_ENV
@@ -300,6 +397,12 @@ jobs:
               else
                 echo "- None"
               fi
+              echo ""
+              echo "PC Version:"
+              echo "$PC_VERSION_INFO"
+              echo ""
+              echo "AOS Version:"
+              echo "$AOS_VERSION_INFO"
             } >> $GITHUB_STEP_SUMMARY
 
           else
@@ -335,6 +438,7 @@ jobs:
           comment-id: ${{ github.event.client_payload.github.payload.comment.id }}
           body: |
             > Integration test run status is : ${{ job.status }}
+            > Authentication method: ${{ env.AUTH_METHOD == 'api_key' && '🔑 API Key' || '🔐 Username/Password' }}
             > Coverage is : ${{ env.TOTAL_COVERAGE }} %
             > Job link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
@@ -352,6 +456,7 @@ jobs:
         run: |
           echo "### Integration Test Summary" >> $GITHUB_STEP_SUMMARY
           echo "- Status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Authentication: ${{ env.AUTH_METHOD == 'api_key' && '🔑 API Key' || '🔐 Username/Password' }}" >> $GITHUB_STEP_SUMMARY
           echo "- Coverage: ${{ env.TOTAL_COVERAGE }}%" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Detailed Test Results" >> $GITHUB_STEP_SUMMARY

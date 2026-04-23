@@ -16,7 +16,33 @@ version_added: 2.0.0
 description:
     - Replicate recovery points using external ID
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Replicate a recovery point) -
+      Operation Name: Replicate Recovery Point -
+      Required Roles: Backup Admin, CSI System, Disaster Recovery Admin, Kubernetes Data Services System, NCM Connector, Prism Admin, Project Manager,
+      Super Admin, Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=dataprotection)"
 options:
+    nutanix_username:
+        description:
+            - The username to authenticate with the Nutanix Prism Central.
+            - Required as nutanix_api_key is not supported for Replicate Recovery Point.
+        type: str
+        required: true
+    nutanix_password:
+        description:
+            - The password to authenticate with the Nutanix Prism Central.
+            - Required as nutanix_api_key is not supported for Replicate Recovery Point.
+        type: str
+        required: true
+    nutanix_api_key:
+        description:
+            - Not Supported as this module is for Replicate Recovery Point.
+        type: str
+        required: false
     state:
         description:
             - State of the module.
@@ -44,6 +70,7 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
     - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
 author:
     - Abhinav Bansal (@abhinavbansal29)
     - Pradeepsingh Bhati (@bhati-pradeep)
@@ -144,10 +171,10 @@ failed:
 import traceback  # noqa: E402
 import warnings  # noqa: E402
 
-from ansible.module_utils.basic import missing_required_lib  # noqa: E402
+from ansible.module_utils.basic import env_fallback, missing_required_lib  # noqa: E402
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.data_protection.api_client import (  # noqa: E402
     get_etag,
     get_recovery_point_api_instance,
@@ -175,6 +202,15 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
     module_args = dict(
+        nutanix_username=dict(
+            type="str", fallback=(env_fallback, ["NUTANIX_USERNAME"]), required=True
+        ),
+        nutanix_password=dict(
+            type="str",
+            no_log=True,
+            fallback=(env_fallback, ["NUTANIX_PASSWORD"]),
+            required=True,
+        ),
         state=dict(type="str", default="present", choices=["present"]),
         ext_id=dict(type="str", required=True),
         pc_ext_id=dict(type="str"),
@@ -232,7 +268,7 @@ def replicate_recovery_point_with_ext_id(module, result):
 
 
 def run_module():
-    module = BaseModule(
+    module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )

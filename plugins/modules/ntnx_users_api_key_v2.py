@@ -17,6 +17,19 @@ description:
     - If state is present, this module will create a key for the user.
     - If state is absent, this module will delete the key for the user.
     - This modules uses PC v4 APIs based SDKs.
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create a key of the requested key type for a user) -
+      Operation Name: Create User Key -
+      Required Roles: Nutanix Central Admin, Prism Admin, Super Admin
+    - >-
+      B(Delete the requested key) -
+      Operation Name: Delete User Key -
+      Required Roles: Nutanix Central Admin, Prism Admin, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam)"
 options:
     user_ext_id:
         description:
@@ -65,6 +78,7 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
     - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
 author:
     - Abhinav Bansal (@abhinavbansal29)
 """
@@ -153,8 +167,8 @@ response:
 import traceback  # noqa: E402
 import warnings  # noqa: E402
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.iam.api_client import (  # noqa: E402
     get_etag,
     get_user_api_instance,
@@ -260,7 +274,7 @@ def delete_user_api_key(module, users_api, result):
 
 
 def run_module():
-    module = BaseModule(
+    module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[

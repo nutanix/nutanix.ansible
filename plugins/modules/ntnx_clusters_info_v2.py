@@ -18,6 +18,24 @@ description:
     - Fetch particular cluster info using external ID
     - Fetch multiple clusters info with/without using filters, limit, etc.
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Get cluster by ext_id) -
+      Operation Name: View Cluster -
+      Required Roles: Backup Admin, Cluster Admin, Cluster Viewer, Consumer, Developer, Files Admin, Flow Admin, Flow Policy Author, Flow Viewer,
+      Kubernetes Admin, LocalAccountManager Admin, LocalAccountManager Viewer, NCM Connector, Network Infra Admin, Objects Admin, Prism Admin,
+      Prism Viewer, Project Admin, Project Manager, Security Dashboard Admin, Security Dashboard Viewer, Storage Admin, Storage Viewer, Super Admin,
+      Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin, Self-Service Admin (deprecated)
+    - >-
+      B(Get the list of clusters) -
+      Operation Name: View Cluster -
+      Required Roles: Cluster Admin, Cluster Viewer, Consumer, Developer, Files Admin, Flow Admin, Flow Policy Author, Flow Viewer, Kubernetes Admin,
+      LocalAccountManager Admin, LocalAccountManager Viewer, NCM Connector, Network Infra Admin, Objects Admin, Prism Admin, Prism Viewer, Project Admin,
+      Project Manager, Security Dashboard Admin, Security Dashboard Viewer, Storage Admin, Storage Viewer, Super Admin, Virtual Machine Admin,
+      Virtual Machine Operator, Virtual Machine Viewer, VPC Admin, Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   ext_id:
     description:
@@ -29,6 +47,7 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_info_v2
       - nutanix.ncp.ntnx_logger
+      - nutanix.ncp.ntnx_proxy_v2
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)
 """

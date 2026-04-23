@@ -17,6 +17,21 @@ author:
 description:
   - This module fetches information about Nutanix PC image placement policies.
   - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Get an image placement policy) -
+      Operation Name: View Image Placement Policy -
+      Required Roles: Consumer, Developer, Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin, Virtual Machine Admin,
+      Self-Service Admin (deprecated)
+    - >-
+      B(List image placement policies) -
+      Operation Name: View Image Placement Policy -
+      Required Roles: Consumer, Developer, Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin, Virtual Machine Admin,
+      Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
   ext_id:
     description:
@@ -27,6 +42,7 @@ extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_info_v2
   - nutanix.ncp.ntnx_logger
+  - nutanix.ncp.ntnx_proxy_v2
 """
 
 EXAMPLES = r"""

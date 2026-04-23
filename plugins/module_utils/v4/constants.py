@@ -45,6 +45,9 @@ class Tasks:
         STORAGE_POLICY = "datapolicies:config:storage-policy"
         KMS = "security:encryption:key-management-server"
         CLUSTER_PROFILE = "clustermgmt:config:cluster-profile"
+        NETWORK_FUNCTION = "Networking:config:network-function"
+        VIRTUAL_SWITCH = "networking:config:virtual-switch"
+        ENTITY_GROUP = "microseg:config:entity-group"
         NIC_PROFILE = "networking:config:nic_profile"
 
     class CompletetionDetailsName:

@@ -13,6 +13,14 @@ version_added: 2.1.0
 description:
     - Fetch specific restore source info using external ID
     - Please provide Prism Element IP address here in C(nutanix_host)
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Fetch restore source) -
+      Operation Name: View Restore Source -
+      Required Roles: Domain Manager Admin, Domain Manager Viewer, Prism Admin, Prism Viewer, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:
     ext_id:
         description: External ID to fetch specific restore source info
@@ -23,17 +31,28 @@ options:
         type: str
         required: True
     nutanix_username:
-        description: The username to authenticate with the Nutanix Prism Element
+        description:
+            - The username to authenticate with the Nutanix Prism Element
+            - Required as nutanix_api_key is not supported for Prism Element.
         type: str
         required: True
     nutanix_password:
-        description: The password to authenticate with the Nutanix Prism Element
+        description:
+            - The password to authenticate with the Nutanix Prism Element
+            - Required as nutanix_api_key is not supported for Prism Element.
         type: str
         required: True
+    nutanix_api_key:
+        description:
+            - Not Supported as this module is for Prism Element.
+            - This field is only supported for Prism Central.
+        type: str
+        required: False
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_info_v2
     - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
 author:
     - Abhinav Bansal (@abhinavbansal29)
     - George Ghawali (@george-ghawali)
@@ -95,6 +114,8 @@ failed:
 
 import warnings  # noqa: E402
 
+from ansible.module_utils.basic import env_fallback  # noqa: E402
+
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.prism.helpers import get_restore_source  # noqa: E402
@@ -108,7 +129,18 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 
 def get_module_spec():
-    module_args = dict(ext_id=dict(type="str", required=True))
+    module_args = dict(
+        nutanix_username=dict(
+            type="str", fallback=(env_fallback, ["NUTANIX_USERNAME"]), required=True
+        ),
+        nutanix_password=dict(
+            type="str",
+            no_log=True,
+            fallback=(env_fallback, ["NUTANIX_PASSWORD"]),
+            required=True,
+        ),
+        ext_id=dict(type="str", required=True),
+    )
     return module_args
 
 
