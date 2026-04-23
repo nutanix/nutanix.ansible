@@ -319,6 +319,9 @@
     ext_id: "{{ cluster.uuid }}"
   register: result
   ignore_errors: true
+  retries: 60
+  delay: 5
+  until: result.response.recovery_status.recovery_state == "PROTECTED"
 
 - name: Print recovery info after protect
   ansible.builtin.debug:
@@ -424,6 +427,9 @@
     ext_id: "{{ cluster.uuid }}"
   register: result
   ignore_errors: true
+  retries: 60
+  delay: 5
+  until: result.response.recovery_status.recovery_state == "RECOVERY_PLAN_CREATED"
 
 - name: Print recovery info after recovery plan creation
   ansible.builtin.debug:
@@ -528,6 +534,9 @@
     ext_id: "{{ cluster.uuid }}"
   register: result
   ignore_errors: true
+  retries: 60
+  delay: 5
+  until: result.response.recovery_status.recovery_state == "UNPROTECTED"
 
 - name: Print recovery info after finalize
   ansible.builtin.debug:
@@ -550,7 +559,7 @@
 # Unprotect source cluster
 ########################################################
 
-- name: Protect source cluster
+- name: Protect source cluster to test unprotect
   nutanix.ncp.ntnx_clusters_protection_v2:
     ext_id: "{{ cluster.uuid }}"
     protection_rpo_minutes: 180
@@ -559,11 +568,11 @@
   register: result
   ignore_errors: true
 
-- name: Print re-protect source cluster result
+- name: Print protect source cluster to test unprotect result
   ansible.builtin.debug:
     var: result
 
-- name: Verify unprotect source cluster status
+- name: Verify protect source cluster to test unprotect status
   ansible.builtin.assert:
     that:
       - result.changed == true
@@ -572,8 +581,8 @@
       - result.ext_id == "{{ cluster.uuid }}"
       - result.task_ext_id is defined
       - result.response.status == "SUCCEEDED"
-    fail_msg: Failed to unprotect source cluster
-    success_msg: Source cluster unprotected successfully
+    fail_msg: Failed to protect source cluster to test unprotect
+    success_msg: Source cluster protected to test unprotect successfully
 
 - name: Get Protection status of source cluster
   nutanix.ncp.ntnx_clusters_protection_info_v2:
@@ -584,11 +593,12 @@
   delay: 5
   until: result.response.protection_state == "PROTECTED"
 
-- name: Print protection status after re-protect
+- name: Print protection status after protect source cluster to test unprotect
   ansible.builtin.debug:
     var: result
 
-- name: Verify protection status of source cluster
+- name: Verify protection status of source cluster after protect source cluster to
+    test unprotect
   ansible.builtin.assert:
     that:
       - result.changed == false
@@ -600,8 +610,10 @@
       - result.response.target_protection_state == "PROTECTED"
       - result.response.protection_target == "LOCAL"
       - result.response.protection_rpo_minutes == 180
-    fail_msg: Failed to get protection status of source cluster
-    success_msg: Protection status of source cluster retrieved successfully
+    fail_msg: Failed to get protection status of source cluster after protect source
+      cluster to test unprotect
+    success_msg: Protection status of source cluster after protect source cluster to
+      test unprotect retrieved successfully
 
 - name: Unprotect source cluster
   nutanix.ncp.ntnx_clusters_protection_v2:
@@ -701,6 +713,7 @@
 #     fail_msg: Protection info with invalid ext_id should have failed
 #     success_msg: Protection info with invalid ext_id failed as expected
 
+
 - name: Negative - unprotect cluster with invalid ext_id
   nutanix.ncp.ntnx_clusters_protection_v2:
     state: absent
@@ -712,17 +725,17 @@
   ansible.builtin.debug:
     var: result
 
-- name: Verify unprotect with invalid ext_id fails
+- name: Verify unprotect cluster with invalid ext_id fails
   ansible.builtin.assert:
     that:
       - result.changed == false
       - result.failed == true
-      - result.error is defined
-      - result.msg == "Api Exception raised while unprotecting cluster"
+      - result.msg == "Task Failed"
       - result.response is defined
-      - result.response.data.error | length > 0
-    fail_msg: Unprotect with invalid ext_id should have failed
-    success_msg: Unprotect with invalid ext_id failed as expected
+      - result.response.status == "FAILED"
+      - result.response.error_messages | length > 0
+    fail_msg: Unprotect cluster with invalid ext_id should have failed
+    success_msg: Unprotect cluster with invalid ext_id failed as expected
 
 - name: Negative - initialize recovery operation with invalid source ext_id
   nutanix.ncp.ntnx_clusters_recovery_v2:
@@ -764,9 +777,9 @@
     that:
       - result.changed == false
       - result.failed == true
-      - result.msg == "Api Exception raised while initializing cluster recovery"
-      - result.response is defined
-      - result.response.data.error | length > 0
+      - >-
+        result.msg == "operation is initialize but all of the following are
+        missing: destination_cluster_ext_id"
     fail_msg: Initialize recovery with missing destination_cluster_ext_id should
       have failed
     success_msg: Initialize recovery with missing destination_cluster_ext_id failed
@@ -788,9 +801,10 @@
     that:
       - result.changed == false
       - result.failed == true
-      - result.msg == "Api Exception raised while finalizing cluster recovery"
+      - result.msg == "Task Failed"
       - result.response is defined
-      - result.response.data.error | length > 0
+      - result.response.status == "FAILED"
+      - result.response.error_messages | length > 0
     fail_msg: Finalize recovery with invalid source ext_id should have failed
     success_msg: Finalize recovery with invalid source ext_id failed as expected
 
