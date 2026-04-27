@@ -1,20 +1,27 @@
 ---
 # Summary:
-# This playbook will update guest customization script for a VM
+# This playbook will do:
+# 1. Update guest script (cloud-init)
+# 2. Update guest script (Windows sysprep)
 
 - name: VM guest guest customization playbook
   hosts: localhost
   gather_facts: false
   module_defaults:
     group/nutanix.ncp.ntnx:
-      nutanix_host: <pc_ip>
-      nutanix_username: <user>
-      nutanix_password: <pass>
-      validate_certs: false
+      # nutanix_host: <pc_ip>
+      # nutanix_username: <user>
+      # nutanix_password: <pass>
+      # validate_certs: false
   tasks:
     - name: Setting Variables
       ansible.builtin.set_fact:
-        vm_uuid: "323e4567-e89b-12d3-a456-426614174001"
+        vm_uuid: "e07a5d6f-df91-4966-7689-af181ed5f34c"
+        unattend_xml_content: "{{ lookup('ansible.builtin.file', 'unattend_xml_content.xml') }}"
+        cloud_init_user_data: |
+          #cloud-config
+          disable_root: false
+          ssh_pwauth:   true
 
     - name: Update guest script
       nutanix.ncp.ntnx_vms_stage_guest_customization_v2:
@@ -24,5 +31,16 @@
             datasource_type: CONFIG_DRIVE_V2
             cloud_init_script:
               user_data:
-                value: I2Nsb3VkLWNvbmZpZwpkaXNhYmxlX3Jvb3Q6IGZhbHNlCnNzaF9wd2F1dGg6ICAgdHJ1ZQ==
+                value: "{{ cloud_init_user_data | b64encode }}"
+      register: result
+
+    - name: Update guest script (Windows sysprep)
+      nutanix.ncp.ntnx_vms_stage_guest_customization_v2:
+        ext_id: "{{ vm_uuid }}"
+        config:
+          sysprep:
+            install_type: "FRESH"
+            sysprep_script:
+              unattendxml:
+                value: "{{ unattend_xml_content | b64encode }}"
       register: result

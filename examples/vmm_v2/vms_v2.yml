@@ -1,10 +1,14 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create VM
-# 2. Update VM
-# 3. Fetch VM
-# 4. Delete VM
+# 1. Create a VM with minimum requirements
+# 2. Create a VM with full requirements
+# 3. Create a VM with different disks, using ubuntu image , with cdrom
+# 4. Create a VM with multiple serial port, and categories
+# 5. Create a VM with nics,cloud_init script
+# 6. Create a VM with nics,cloud_init script (encoded at task time)
+# 7. Create a VM with windows unattend xml file (pre-encoded base64)
+# 8. Create a VM with windows unattend xml file (encoded at task time)
 
 - name: VM crud playbook
   hosts: localhost
@@ -20,19 +24,23 @@
       ansible.builtin.set_fact:
         vm_name: "VM name"
         cluster:
-          uuid: "00062899-4a29-0cf9-0000-000000022f54"
-        vm_uuid: "a990cfaa-95a8-4861-bdf6-14060555442d"
+          uuid: "0006501f-7367-e963-543f-52540043fbd9"
+        vm_uuid: "1944c6b3-f81f-4641-627f-c5ef7887bf01"
         disk_image:
           image_ext_ids:
-            - "85478963-1232-4433-0000-000000022f54"
+            - "7c4d4fa3-085c-43ae-97d5-1fdb5c92eaee"
         storage_container:
-          uuid: "52441414-2211-5567-0000-000000022f54"
+          uuid: "1a2c7de1-7c12-4d04-a79c-703a2f8bff50"
         network:
           dhcp:
-            uuid: "11254788-3333-2321-0000-000000022f54"
-        category_ext_id_1: "00000000-0000-0000-0000-000000000001"
-        category_ext_id_2: "00000000-0000-0000-0000-000000000002"
-        xml_file_content: <xml_file_content>
+            uuid: "ac70d801-0e5d-450f-bb76-adf3234e0530"
+        category_ext_id_1: "66f4d0aa-4e77-5261-94c6-4dc19a857049"
+        category_ext_id_2: "594bb16c-3498-5706-bd9d-301dea6a6bcb"
+        xml_file_content: "{{ lookup('ansible.builtin.file', 'unattend_xml_content.xml') }}"
+        cloud_init_user_data: |
+          #cloud-config
+          disable_root: false
+          ssh_pwauth:   true
 
     - name: Create VM with minimum requirements
       nutanix.ncp.ntnx_vms_v2:
@@ -160,7 +168,7 @@
               datasource_type: CONFIG_DRIVE_V2
               cloud_init_script:
                 user_data:
-                  value: I2Nsb3VkLWNvbmZpZwpkaXNhYmxlX3Jvb3Q6IGZhbHNlCnNzaF9wd2F1dGg6ICAgdHJ1ZQ==
+                  value: "{{ cloud_init_user_data | b64encode }}"
       register: result
       ignore_errors: true
 
@@ -176,7 +184,7 @@
               install_type: "FRESH"
               sysprep_script:
                 unattendxml:
-                  value: "{{ xml_file_content }}"
+                  value: "{{ xml_file_content | b64encode }}"
       register: result
       ignore_errors: true
 
@@ -186,6 +194,10 @@
         description: ansible test
         cluster:
           ext_id: "{{ cluster.uuid }}"
+        machine_type: Q35
+        boot_config:
+          uefi_boot:
+            is_secure_boot_enabled: true
         vtpm_config:
           is_vtpm_enabled: true
       register: result
@@ -198,7 +210,7 @@
         name: "{{ vm_name }}"
         description: "vm description"
         cluster:
-          ext_id: "{{ cluster_uuid }}"
+          ext_id: "{{ cluster.uuid }}"
         num_sockets: 1
         num_cores_per_socket: 1
         num_threads_per_core: 1
