@@ -395,7 +395,9 @@ class TestAnsibleTaggedStrApiKey:
 
         # Use a str subclass (simulating Ansible's _AnsibleTaggedStr)
         tagged_api_key = _AnsibleTaggedStr("test-api-key-12345")
-        assert type(tagged_api_key) is not str, "Pre-condition: must be a str subclass"
+        assert isinstance(
+            tagged_api_key, _AnsibleTaggedStr
+        ), "Pre-condition: must be a str subclass"
 
         captured_module = {}
 
@@ -443,7 +445,9 @@ class TestAnsibleTaggedStrApiKey:
         ), "Mock_Module was not passed to get_vm_api_instance"
         module = captured_module["module"]
         stored_key = module.params.get("nutanix_api_key")
-        assert type(stored_key) is str, (
+        assert isinstance(stored_key, str) and not isinstance(
+            stored_key, _AnsibleTaggedStr
+        ), (
             f"Expected plain str in Mock_Module.params['nutanix_api_key'], "
             f"got {type(stored_key).__name__!r}. "
             "parse() must convert get_option() results to plain str before "
