@@ -6,9 +6,7 @@
 # 3. Create a VM with different disks, using ubuntu image , with cdrom
 # 4. Create a VM with multiple serial port, and categories
 # 5. Create a VM with nics,cloud_init script
-# 6. Create a VM with nics,cloud_init script (encoded at task time)
-# 7. Create a VM with windows unattend xml file (pre-encoded base64)
-# 8. Create a VM with windows unattend xml file (encoded at task time)
+# 6. Create a VM with windows unattend xml file
 
 - name: VM crud playbook
   hosts: localhost
