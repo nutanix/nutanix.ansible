@@ -43,7 +43,7 @@ options:
     description:
       - Auth type.
     type: str
-    choices: ['MD5', 'SHA']
+    choices: ['MD5', 'SHA', 'SHA224', 'SHA256', 'SHA384', 'SHA512']
   auth_key:
     description:
       - SNMP user authentication key.
@@ -52,7 +52,7 @@ options:
     description:
       - Priv type.
     type: str
-    choices: ['DES', 'AES']
+    choices: ['DES', 'AES', 'AES192', 'AES256']
   priv_key:
     description:
       - SNMP user encryption key.
@@ -217,11 +217,15 @@ def get_module_spec():
         cluster_ext_id=dict(type="str", required=True),
         username=dict(type="str"),
         auth_type=dict(
-            type="str", choices=["MD5", "SHA"], obj=clusters_sdk.SnmpAuthType
+            type="str",
+            choices=["MD5", "SHA", "SHA224", "SHA256", "SHA384", "SHA512"],
+            obj=clusters_sdk.SnmpAuthType,
         ),
         auth_key=dict(type="str", no_log=True),
         priv_type=dict(
-            type="str", choices=["DES", "AES"], obj=clusters_sdk.SnmpPrivType
+            type="str",
+            choices=["DES", "AES", "AES192", "AES256"],
+            obj=clusters_sdk.SnmpPrivType,
         ),
         priv_key=dict(type="str", no_log=True),
     )
