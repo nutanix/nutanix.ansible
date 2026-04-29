@@ -549,6 +549,12 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 return False
         return True
 
+    def _template_option(self, option_name):
+        raw = self.get_option(option_name)
+        if raw and self.templar:
+            return self.templar.template(raw)
+        return raw
+
     def parse(self, inventory, loader, path, cache=True):
         super().parse(inventory, loader, path, cache=cache)
         self._read_config_data(path)
@@ -566,19 +572,19 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             "NUTANIX_PORT", "9440"
         )
 
-        self.nutanix_username = self.get_option("nutanix_username") or os.environ.get(
+        self.nutanix_username = self._template_option("nutanix_username") or os.environ.get(
             "NUTANIX_USERNAME"
         )
-        self.nutanix_password = self.get_option("nutanix_password") or os.environ.get(
+        self.nutanix_password = self._template_option("nutanix_password") or os.environ.get(
             "NUTANIX_PASSWORD"
         )
-        _raw_api_key = self.get_option("nutanix_api_key") or os.environ.get(
+        _raw_api_key = self._template_option("nutanix_api_key") or os.environ.get(
             "NUTANIX_API_KEY"
         )
         # Convert to plain str: Ansible's get_option() may return _AnsibleTaggedStr
         # subclasses which fail strict type(key) is str checks in some SDK clients.
         self.nutanix_api_key = str(_raw_api_key) if _raw_api_key else None
-        self.custom_headers = self.get_option("custom_headers")
+        self.custom_headers = self._template_option("custom_headers")
 
         # Validate required parameters
         if not self.nutanix_host:
