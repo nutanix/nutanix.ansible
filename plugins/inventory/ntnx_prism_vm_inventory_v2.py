@@ -39,6 +39,8 @@ DOCUMENTATION = r"""
             description:
                 - Prism central username
                 - If not provided, values will be taken from environment variable NUTANIX_USERNAME
+                - Supports Jinja2 expressions including lookup plugins
+                  (e.g. C({{ lookup('community.general.onepassword', 'Nutanix', field='username') }}))
             required: false
             type: str
             env:
@@ -47,6 +49,7 @@ DOCUMENTATION = r"""
             description:
                 - Prism central password
                 - If not provided, values will be taken from environment variable NUTANIX_PASSWORD
+                - Supports Jinja2 expressions including lookup plugins
             required: false
             type: str
             env:
@@ -65,6 +68,8 @@ DOCUMENTATION = r"""
             description:
                 - Prism central API key
                 - If not provided, values will be taken from environment variable NUTANIX_API_KEY
+                - Supports Jinja2 expressions including lookup plugins
+                  (e.g. C({{ lookup('community.general.onepassword', 'Nutanix', field='api_key') }}))
             required: false
             type: str
             env:
@@ -76,6 +81,8 @@ DOCUMENTATION = r"""
                 - Headers can also be supplied via environment variables using the NUTANIX_HEADER_
                   prefix (e.g. NUTANIX_HEADER_CF_ACCESS_CLIENT_ID becomes Cf-Access-Client-Id).
                   Config values take precedence over environment variables.
+                - Supports Jinja2 expressions including lookup plugins for secret management.
+                  Inventory file values take precedence over environment variables.
             required: false
             type: dict
         fetch_all_vms:
@@ -245,6 +252,15 @@ EXAMPLES = r"""
   nutanix_host: 10.x.x.x
   nutanix_api_key: api_key
   validate_certs: false
+
+# Using a secrets manager lookup plugin for credentials
+- plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
+  nutanix_host: 10.x.x.x
+  nutanix_api_key: "{{ lookup('community.general.onepassword', 'Nutanix', field='api_key') }}"
+  custom_headers:
+    CF-Access-Client-Id: "{{ lookup('community.general.onepassword', 'Cloudflare', field='client_id') }}"
+    CF-Access-Client-Secret: "{{ lookup('community.general.onepassword', 'Cloudflare', field='client_secret') }}"
+  validate_certs: true
 """
 
 import json  # noqa: E402
