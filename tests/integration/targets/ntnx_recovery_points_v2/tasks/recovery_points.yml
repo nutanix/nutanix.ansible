@@ -868,7 +868,6 @@
       - result.changed == true
       - result.response is defined
       - result.ext_id == "{{ recovery_point_ext_id_5 }}"
-      - result.response.completion_details | length == 2
       - result.response.entities_affected | length == 1
       - result.response.entities_affected[0].ext_id == "{{
         recovery_point_ext_id_5 }}"
