@@ -448,7 +448,9 @@ def update_disk(module, result):
     if data_source:
         update_spec.backing_info.data_source = None
     storage_container = (
-        module.params.get("backing_info", {}).get("vm_disk", {}).get("storage_container")
+        module.params.get("backing_info", {})
+        .get("vm_disk", {})
+        .get("storage_container")
     )
     if storage_container:
         update_spec.backing_info.storage_container = None
