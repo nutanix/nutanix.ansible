@@ -1188,9 +1188,6 @@ def update_network_security_policy(module, result):
     # check for idempotency
     current_spec_dict = strip_internal_attributes(current_spec.to_dict())
     update_spec_dict = strip_internal_attributes(update_spec.to_dict())
-    import copy
-    result["current_spec_dict"] = copy.deepcopy(current_spec_dict)
-    result["update_spec_dict"] = copy.deepcopy(update_spec_dict)
     if check_network_security_policies_idempotency(current_spec_dict, update_spec_dict):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
