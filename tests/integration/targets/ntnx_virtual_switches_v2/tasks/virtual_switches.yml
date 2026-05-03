@@ -149,7 +149,7 @@
       - ext_id: "{{ cluster.uuid }}"
         hosts:
           - ext_id: "{{ host_ext_id }}"
-            host_nics: [ "eth0", "eth1" ]
+            host_nics: ["eth0", "eth1"]
             ip_address:
               ip:
                 value: "192.168.1.100"
@@ -660,7 +660,7 @@
       - ext_id: "{{ cluster.uuid }}"
         hosts:
           - ext_id: "{{ host_ext_id }}"
-            host_nics: [ "eth0", "eth1" ]
+            host_nics: ["eth0", "eth1"]
             ip_address:
               ip:
                 value: "10.0.0.100"
@@ -749,7 +749,7 @@
       snooping_timeout: 300
       querier_spec:
         is_querier_enabled: true
-        vlan_id_list: [ "{{ virtual_switch.vlan_id }}" ]
+        vlan_id_list: ["{{ virtual_switch.vlan_id }}"]
     metadata:
       owner_user_name: "{{ username }}"
       category_ids:
@@ -808,7 +808,7 @@
       snooping_timeout: 300
       querier_spec:
         is_querier_enabled: true
-        vlan_id_list: [ "{{ virtual_switch.vlan_id }}" ]
+        vlan_id_list: ["{{ virtual_switch.vlan_id }}"]
     metadata:
       owner_user_name: "{{ username }}"
       category_ids:
