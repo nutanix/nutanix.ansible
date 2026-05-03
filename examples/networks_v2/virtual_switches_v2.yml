@@ -31,7 +31,6 @@
     - name: Create virtual switch
       nutanix.ncp.ntnx_virtual_switch_v2:
         state: present
-        cluster_ext_id: "{{ cluster_uuid }}"
         name: "{{ virtual_switch_name }}"
         description: "Virtual switch created by Ansible"
         bond_mode: "NONE"
@@ -54,7 +53,6 @@
     - name: Create a virtual switch from an existing bridge
       nutanix.ncp.ntnx_virtual_switch_v2:
         state: present
-        cluster_ext_id: "{{ cluster_uuid }}"
         name: "{{ virtual_switch_name }}_from_bridge"
         description: "Virtual switch created from existing bridge"
         existing_bridge_name: "{{ existing_bridge_name }}"
@@ -69,7 +67,6 @@
     - name: Update virtual switch
       nutanix.ncp.ntnx_virtual_switch_v2:
         state: present
-        cluster_ext_id: "{{ cluster_uuid }}"
         ext_id: "{{ virtual_switch_ext_id }}"
         name: "{{ virtual_switch_name }}_updated"
         description: "Updated virtual switch description"
@@ -119,7 +116,6 @@
     - name: Delete virtual switch
       nutanix.ncp.ntnx_virtual_switch_v2:
         state: absent
-        cluster_ext_id: "{{ cluster_uuid }}"
         ext_id: "{{ virtual_switch_ext_id }}"
       register: result
       ignore_errors: true
@@ -127,7 +123,6 @@
     - name: Delete virtual switch from bridge
       nutanix.ncp.ntnx_virtual_switch_v2:
         state: absent
-        cluster_ext_id: "{{ cluster_uuid }}"
         ext_id: "{{ virtual_switch_from_bridge_ext_id }}"
       register: result
       ignore_errors: true
