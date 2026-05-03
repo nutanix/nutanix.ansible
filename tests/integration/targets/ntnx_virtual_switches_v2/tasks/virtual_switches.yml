@@ -5,7 +5,8 @@
 
 - name: Generate random names
   ansible.builtin.set_fact:
-    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    random_name: "{{ query('community.general.random_string', numbers=false,
+      special=false, length=12)[0] }}"
     suffix_name: "ansible"
     todelete: []
 
@@ -17,8 +18,8 @@
 - name: Set SSH command for PE
   ansible.builtin.set_fact:
     pe_ssh_cmd: >-
-      sshpass -p '{{ pe_ssh_password }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
-      {{ pe_ssh_username }}@{{ ip_pe }}
+      sshpass -p '{{ pe_ssh_password }}' ssh -o StrictHostKeyChecking=no -o
+      UserKnownHostsFile=/dev/null {{ pe_ssh_username }}@{{ ip_pe }}
     hostssh_cmd: "/usr/local/nutanix/cluster/bin/hostssh"
     manage_ovs_cmd: "/usr/local/nutanix/cluster/bin/manage_ovs"
 
@@ -51,6 +52,29 @@
     host_ext_id: "{{ hosts_info.response[0].ext_id }}"
 
 ########################################################################################
+# Fetch existing categories to use in metadata tests
+########################################################################################
+
+- name: Fetch all existing categories
+  nutanix.ncp.ntnx_categories_info_v2:
+  register: categories_info
+  ignore_errors: true
+
+- name: Fetch all existing categories status
+  ansible.builtin.assert:
+    that:
+      - categories_info is defined
+      - categories_info.failed == false
+      - categories_info.response is defined
+      - categories_info.response | length >= 5
+    success_msg: "Categories fetched successfully"
+    fail_msg: "Categories fetch failed or fewer than 5 categories available"
+
+- name: Save first 5 category ext_ids
+  ansible.builtin.set_fact:
+    categories: "{{ categories_info.response[:5] | map(attribute='ext_id') | list }}"
+
+########################################################################################
 # Get bridges from cluster
 ########################################################################################
 
@@ -63,7 +87,8 @@
 
 - name: Parse bridges from output
   ansible.builtin.set_fact:
-    cluster_bridges: "{{ bridges_output.stdout_lines | select('match', '^br') | list | unique }}"
+    cluster_bridges: "{{ bridges_output.stdout_lines | select('match', '^br') | list
+      | unique }}"
 
 - name: Find bridges and get the highest number
   ansible.builtin.set_fact:
@@ -71,7 +96,8 @@
 
 - name: Calculate next bridge number
   ansible.builtin.set_fact:
-    max_br_num: "{{ br_int_bridges | map('regex_replace', '^br', '') | map('int') | max | default(-1) }}"
+    max_br_num: "{{ br_int_bridges | map('regex_replace', '^br', '') | map('int') |
+      max | default(-1) }}"
 
 - name: Set new bridge name
   ansible.builtin.set_fact:
@@ -79,7 +105,8 @@
 
 - name: Set create bridge command
   ansible.builtin.set_fact:
-    create_bridge_cmd: "{{ manage_ovs_cmd }} --bridge_name {{ new_bridge_name }} create_single_bridge"
+    create_bridge_cmd: "{{ manage_ovs_cmd }} --bridge_name {{ new_bridge_name }}
+      create_single_bridge"
 
 - name: Create new bridge on cluster
   ansible.builtin.shell: |
@@ -95,7 +122,8 @@
 
 - name: Parse bridges after creation
   ansible.builtin.set_fact:
-    cluster_bridges_after: "{{ bridges_output_after.stdout_lines | select('match', '^br') | list | unique }}"
+    cluster_bridges_after: "{{ bridges_output_after.stdout_lines | select('match',
+      '^br') | list | unique }}"
 
 - name: Assert new bridge was created
   ansible.builtin.assert:
@@ -108,7 +136,8 @@
 # Create Virtual Switch Tests
 ########################################################################################
 
-- name: Generate spec for creating virtual switch using check mode with all attributes
+- name: Generate spec for creating virtual switch using check mode with all
+    attributes
   nutanix.ncp.ntnx_virtual_switch_v2:
     name: "check_mode_vs_full"
     description: "Virtual switch created in check mode with all attributes"
@@ -120,7 +149,7 @@
       - ext_id: "{{ cluster.uuid }}"
         hosts:
           - ext_id: "{{ host_ext_id }}"
-            host_nics: ["eth0", "eth1"]
+            host_nics: [ "eth0", "eth1" ]
             ip_address:
               ip:
                 value: "192.168.1.100"
@@ -139,11 +168,20 @@
         vlan_id_list:
           - 100
           - 200
+    metadata:
+      owner_reference_id: "f3a2b1c4-7d89-4e56-a012-3456789abcde"
+      owner_user_name: "test_owner_user"
+      project_reference_id: "b8d4e729-6f1a-4c3b-9e7d-218a45c69f01"
+      project_name: "test_project"
+      category_ids:
+        - "a1b2c3d4-e5f6-7890-abcd-ef0123456789"
+        - "9f8e7d6c-5b4a-3210-fedc-ba9876543210"
   check_mode: true
   register: result
   ignore_errors: true
 
-- name: Generate spec for creating virtual switch using check mode with all attributes status
+- name: Generate spec for creating virtual switch using check mode with all
+    attributes status
   ansible.builtin.assert:
     that:
       - result is defined
@@ -151,7 +189,8 @@
       - result.failed == false
       - result.response is defined
       - result.response.name == "check_mode_vs_full"
-      - result.response.description == "Virtual switch created in check mode with all attributes"
+      - result.response.description == "Virtual switch created in check mode
+        with all attributes"
       - result.response.bond_mode == "NONE"
       - result.response.mtu == 9000
       - result.response.is_default == false
@@ -169,8 +208,23 @@
       - result.response.igmp_spec.snooping_timeout == 600
       - result.response.igmp_spec.querier_spec.is_querier_enabled == true
       - result.response.igmp_spec.querier_spec.vlan_id_list | length == 2
-    success_msg: "Spec for creating virtual switch using check mode with all attributes is generated successfully"
-    fail_msg: "Spec for creating virtual switch using check mode with all attributes is not generated successfully"
+      - result.response.metadata is defined
+      - result.response.metadata.owner_reference_id ==
+        "f3a2b1c4-7d89-4e56-a012-3456789abcde"
+      - result.response.metadata.owner_user_name == "test_owner_user"
+      - result.response.metadata.project_reference_id ==
+        "b8d4e729-6f1a-4c3b-9e7d-218a45c69f01"
+      - result.response.metadata.project_name == "test_project"
+      - result.response.metadata.category_ids is defined
+      - result.response.metadata.category_ids | length == 2
+      - "'a1b2c3d4-e5f6-7890-abcd-ef0123456789' in
+        result.response.metadata.category_ids"
+      - "'9f8e7d6c-5b4a-3210-fedc-ba9876543210' in
+        result.response.metadata.category_ids"
+    success_msg: "Spec for creating virtual switch using check mode with all
+      attributes is generated successfully"
+    fail_msg: "Spec for creating virtual switch using check mode with all attributes
+      is not generated successfully"
 
 - name: Create virtual switch with minimum attributes
   nutanix.ncp.ntnx_virtual_switch_v2:
@@ -180,6 +234,10 @@
       - ext_id: "{{ cluster.uuid }}"
         hosts:
           - ext_id: "{{ host_ext_id }}"
+    metadata:
+      owner_reference_id: "{{ owner.uuid }}"
+      category_ids:
+        - "{{ categories[0] }}"
   register: result
   ignore_errors: true
 
@@ -194,6 +252,11 @@
       - result.response is defined
       - result.response.name == "{{ vs_name }}_min"
       - result.response.bond_mode == "NONE"
+      - result.response.metadata is defined
+      - result.response.metadata.owner_reference_id == "{{ owner.uuid }}"
+      - result.response.metadata.category_ids is defined
+      - result.response.metadata.category_ids | length == 1
+      - result.response.metadata.category_ids[0] == "{{ categories[0] }}"
     success_msg: "Virtual switch with minimum attributes created successfully"
     fail_msg: "Virtual switch with minimum attributes creation failed"
 
@@ -216,6 +279,11 @@
     igmp_spec:
       is_snooping_enabled: false
       snooping_timeout: 300
+    metadata:
+      owner_reference_id: "{{ owner.uuid }}"
+      category_ids:
+        - "{{ categories[1] }}"
+        - "{{ categories[2] }}"
   register: result
   ignore_errors: true
 
@@ -229,7 +297,8 @@
       - result.task_ext_id is defined
       - result.response is defined
       - result.response.name == "{{ vs_name }}_all"
-      - result.response.description == "Virtual switch created by Ansible integration tests with all attributes"
+      - result.response.description == "Virtual switch created by Ansible
+        integration tests with all attributes"
       - result.response.bond_mode == "NONE"
       - result.response.mtu == 1500
       - result.response.is_default == false
@@ -240,6 +309,12 @@
       - result.response.clusters[0].vlan_identifier == 0
       - result.response.igmp_spec.is_snooping_enabled == false
       - result.response.igmp_spec.snooping_timeout == 300
+      - result.response.metadata is defined
+      - result.response.metadata.owner_reference_id == "{{ owner.uuid }}"
+      - result.response.metadata.category_ids is defined
+      - result.response.metadata.category_ids | length == 2
+      - categories[1] in result.response.metadata.category_ids
+      - categories[2] in result.response.metadata.category_ids
     success_msg: "Virtual switch with all attributes created successfully"
     fail_msg: "Virtual switch with all attributes creation failed"
 
@@ -314,6 +389,14 @@
     description: "Virtual switch created from existing bridge"
     existing_bridge_name: "br2"
     cluster_reference: "d9da1f3b-3ddb-4585-9159-26d2318269e3"
+    metadata:
+      owner_reference_id: "c7d8e9f0-1a2b-3c4d-5e6f-7890abcdef12"
+      owner_user_name: "bridge_owner_user"
+      project_reference_id: "4d5e6f70-8b9c-1d2e-3f40-5a6b7c8d9e0f"
+      project_name: "bridge_project"
+      category_ids:
+        - "3a4b5c6d-7e8f-9012-3456-789abcdef012"
+        - "5e6f7081-9a2b-3c4d-5e6f-7890abcdef34"
   register: result
   ignore_errors: true
   check_mode: true
@@ -326,10 +409,26 @@
       - result.failed == false
       - result.response is defined
       - result.response.name == "virtual_switch_from_bridge"
-      - result.response.description == "Virtual switch created from existing bridge"
+      - result.response.description == "Virtual switch created from existing
+        bridge"
       - result.response.existing_bridge_name == "br2"
-      - result.response.cluster_reference == "d9da1f3b-3ddb-4585-9159-26d2318269e3"
-    success_msg: "Spec for creating virtual switch from existing bridge generated successfully"
+      - result.response.cluster_reference ==
+        "d9da1f3b-3ddb-4585-9159-26d2318269e3"
+      - result.response.metadata is defined
+      - result.response.metadata.owner_reference_id ==
+        "c7d8e9f0-1a2b-3c4d-5e6f-7890abcdef12"
+      - result.response.metadata.owner_user_name == "bridge_owner_user"
+      - result.response.metadata.project_reference_id ==
+        "4d5e6f70-8b9c-1d2e-3f40-5a6b7c8d9e0f"
+      - result.response.metadata.project_name == "bridge_project"
+      - result.response.metadata.category_ids is defined
+      - result.response.metadata.category_ids | length == 2
+      - "'3a4b5c6d-7e8f-9012-3456-789abcdef012' in
+        result.response.metadata.category_ids"
+      - "'5e6f7081-9a2b-3c4d-5e6f-7890abcdef34' in
+        result.response.metadata.category_ids"
+    success_msg: "Spec for creating virtual switch from existing bridge generated
+      successfully"
     fail_msg: "Spec for creating virtual switch from existing bridge generation failed"
 
 - name: Create a virtual switch from an existing bridge
@@ -338,6 +437,10 @@
     description: "Virtual switch created from existing bridge"
     existing_bridge_name: "{{ new_bridge_name }}"
     cluster_reference: "{{ cluster.uuid }}"
+    metadata:
+      owner_reference_id: "{{ owner.uuid }}"
+      category_ids:
+        - "{{ categories[0] }}"
   register: result
   ignore_errors: true
 
@@ -351,12 +454,19 @@
       - result.task_ext_id is defined
       - result.response is defined
       - result.response.name == "{{ vs_name }}_existing"
-      - result.response.description == "Virtual switch created from existing bridge"
+      - result.response.description == "Virtual switch created from existing
+        bridge"
       - result.response.clusters is defined
       - result.response.clusters[0].ext_id == "{{ cluster.uuid }}"
       - result.response.clusters[0].hosts is defined
       - result.response.clusters[0].hosts[0].ext_id == "{{ host_ext_id }}"
-      - result.response.clusters[0].hosts[0].internal_bridge_name == "{{ new_bridge_name }}"
+      - result.response.clusters[0].hosts[0].internal_bridge_name == "{{
+        new_bridge_name }}"
+      - result.response.metadata is defined
+      - result.response.metadata.owner_reference_id == "{{ owner.uuid }}"
+      - result.response.metadata.category_ids is defined
+      - result.response.metadata.category_ids | length == 1
+      - result.response.metadata.category_ids[0] == "{{ categories[0] }}"
     success_msg: "Virtual switch from existing bridge created successfully"
     fail_msg: "Virtual switch from existing bridge creation failed"
 
@@ -364,16 +474,19 @@
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [result.ext_id] }}"
 
-- name: Create a virtual switch from an existing bridge using bridge that is already in use
+- name: Create a virtual switch from an existing bridge using bridge that is
+    already in use
   nutanix.ncp.ntnx_virtual_switch_v2:
     name: "{{ new_bridge_name }}"
-    description: "Virtual switch created from existing bridge using bridge that is already in use"
+    description: "Virtual switch created from existing bridge using bridge that is
+      already in use"
     existing_bridge_name: "{{ new_bridge_name }}"
     cluster_reference: "{{ cluster.uuid }}"
   register: result
   ignore_errors: true
 
-- name: Create a virtual switch from an existing bridge using bridge that is already in use status
+- name: Create a virtual switch from an existing bridge using bridge that is
+    already in use status
   ansible.builtin.assert:
     that:
       - result is defined
@@ -382,14 +495,17 @@
       - result.response is defined
       - result.response.error_messages | length > 0
       - result.response.status == "FAILED"
-    success_msg: "Creation of virtual switch from existing bridge using bridge that is already in use failed as expected"
-    fail_msg: "Creation of virtual switch from existing bridge using bridge that is already in use did not fail as expected"
+    success_msg: "Creation of virtual switch from existing bridge using bridge that
+      is already in use failed as expected"
+    fail_msg: "Creation of virtual switch from existing bridge using bridge that is
+      already in use did not fail as expected"
 
 - name: Next bridge name
   ansible.builtin.set_fact:
     new_bridge_name: "br{{ (max_br_num | int) + 2 }}"
 
-- name: Create a virtual switch from an existing bridge with providing external ID (should fail)
+- name: Create a virtual switch from an existing bridge with providing external ID
+    (should fail)
   nutanix.ncp.ntnx_virtual_switch_v2:
     ext_id: "{{ todelete[1] }}"
     name: "{{ new_bridge_name }}"
@@ -399,17 +515,21 @@
   register: result
   ignore_errors: true
 
-- name: Create a virtual switch from an existing bridge with providing external ID status
+- name: Create a virtual switch from an existing bridge with providing external ID
+    status
   ansible.builtin.assert:
     that:
       - result is defined
       - result.changed == false
       - result.failed == true
       - result.msg == "parameters are mutually exclusive: ext_id|existing_bridge_name"
-    success_msg: "Creation of virtual switch from existing bridge with providing external ID failed as expected"
-    fail_msg: "Creation of virtual switch from existing bridge with providing external ID did not fail as expected"
+    success_msg: "Creation of virtual switch from existing bridge with providing
+      external ID failed as expected"
+    fail_msg: "Creation of virtual switch from existing bridge with providing
+      external ID did not fail as expected"
 
-- name: Create virtual switch from existing bridge with wrong cluster reference (should fail)
+- name: Create virtual switch from existing bridge with wrong cluster reference
+    (should fail)
   nutanix.ncp.ntnx_virtual_switch_v2:
     name: "{{ new_bridge_name }}"
     description: "Virtual switch created from existing bridge with wrong cluster reference"
@@ -418,7 +538,8 @@
   register: result
   ignore_errors: true
 
-- name: Create a virtual switch from an existing bridge with wrong cluster reference status
+- name: Create a virtual switch from an existing bridge with wrong cluster
+    reference status
   ansible.builtin.assert:
     that:
       - result.changed == false
@@ -427,30 +548,39 @@
       - result.response is defined
       - result.response.error_messages | length > 0
       - result.response.status == "FAILED"
-    success_msg: "Creation of virtual switch from existing bridge with wrong cluster reference failed as expected"
-    fail_msg: "Creation of virtual switch from existing bridge with wrong cluster reference did not fail as expected"
+    success_msg: "Creation of virtual switch from existing bridge with wrong cluster
+      reference failed as expected"
+    fail_msg: "Creation of virtual switch from existing bridge with wrong cluster
+      reference did not fail as expected"
 
-- name: Create virtual switch from existing bridge without providing cluster reference (should fail)
+- name: Create virtual switch from existing bridge without providing cluster
+    reference (should fail)
   nutanix.ncp.ntnx_virtual_switch_v2:
     name: "{{ new_bridge_name }}"
-    description: "Virtual switch created from existing bridge without providing cluster reference"
+    description: "Virtual switch created from existing bridge without providing
+      cluster reference"
     existing_bridge_name: "{{ new_bridge_name }}"
   register: result
   ignore_errors: true
 
-- name: Create virtual switch from existing bridge without providing cluster reference status
+- name: Create virtual switch from existing bridge without providing cluster
+    reference status
   ansible.builtin.assert:
     that:
       - result is defined
       - result.changed == false
       - result.failed == true
-      - result.msg == "Api Exception raised while creating virtual switch from an existing bridge"
+      - result.msg == "Api Exception raised while creating virtual switch from
+        an existing bridge"
       - result.response is defined
       - result.response.data.error | length > 0
-    success_msg: "Creation of virtual switch from existing bridge without providing cluster reference failed as expected"
-    fail_msg: "Creation of virtual switch from existing bridge without providing cluster reference did not fail as expected"
+    success_msg: "Creation of virtual switch from existing bridge without providing
+      cluster reference failed as expected"
+    fail_msg: "Creation of virtual switch from existing bridge without providing
+      cluster reference did not fail as expected"
 
-- name: Create a virtual switch from an existing bridge with wrong attributes (should fail)
+- name: Create a virtual switch from an existing bridge with wrong attributes
+    (should fail)
   nutanix.ncp.ntnx_virtual_switch_v2:
     name: "{{ new_bridge_name }}"
     description: "Virtual switch created from existing bridge with wrong cluster reference"
@@ -469,10 +599,13 @@
       - result.changed == false
       - result.failed == true
       - >-
-        result.msg == "When 'existing_bridge_name' is provided, only 'name', 'description'
-        and 'cluster_reference' are allowed. Invalid parameters: bond_mode, igmp_spec"
-    success_msg: "Creation of virtual switch from existing bridge with wrong attributes failed as expected"
-    fail_msg: "Creation of virtual switch from existing bridge with wrong attributes did not fail as expected"
+        result.msg == "When 'existing_bridge_name' is provided, only 'name',
+        'description', 'cluster_reference' and 'metadata' are allowed. Invalid
+        parameters: bond_mode, igmp_spec"
+    success_msg: "Creation of virtual switch from existing bridge with wrong
+      attributes failed as expected"
+    fail_msg: "Creation of virtual switch from existing bridge with wrong attributes
+      did not fail as expected"
 
 ########################################################################################
 # Create subnet for virtual switch
@@ -513,7 +646,8 @@
 # Update Virtual Switch Tests
 ########################################################################################
 
-- name: Generate spec for updating virtual switch using check mode with all attributes
+- name: Generate spec for updating virtual switch using check mode with all
+    attributes
   nutanix.ncp.ntnx_virtual_switch_v2:
     ext_id: "{{ todelete[1] }}"
     name: "{{ vs_name }}_updated"
@@ -526,7 +660,7 @@
       - ext_id: "{{ cluster.uuid }}"
         hosts:
           - ext_id: "{{ host_ext_id }}"
-            host_nics: ["eth0", "eth1"]
+            host_nics: [ "eth0", "eth1" ]
             ip_address:
               ip:
                 value: "10.0.0.100"
@@ -543,18 +677,28 @@
       querier_spec:
         is_querier_enabled: false
         vlan_id_list: []
+    metadata:
+      owner_reference_id: "2c8f4d1e-9a7b-4e3d-8c5f-6b1a4d7e2c9f"
+      owner_user_name: "update_owner_user"
+      project_reference_id: "7b3e9f1d-4c8a-2e5b-9f6c-1d8e3a7b4c2f"
+      project_name: "update_project"
+      category_ids:
+        - "8c2d5e9f-3a7b-4c1d-6e8f-2a5b9c1d4e7f"
+        - "1e4f7a2c-5d8b-3e6c-9a2d-5f8b1e4c7a2d"
   check_mode: true
   register: result
   ignore_errors: true
 
-- name: Generate spec for updating virtual switch using check mode with all attributes status
+- name: Generate spec for updating virtual switch using check mode with all
+    attributes status
   ansible.builtin.assert:
     that:
       - result is defined
       - result.failed == false
       - result.response is defined
       - result.response.name == "{{ vs_name }}_updated"
-      - result.response.description == "Updated description for virtual switch with all attributes"
+      - result.response.description == "Updated description for virtual switch
+        with all attributes"
       - result.response.bond_mode == "NONE"
       - result.response.mtu == 1500
       - result.response.is_default == false
@@ -569,8 +713,23 @@
       - result.response.clusters[0].vlan_identifier == 200
       - result.response.igmp_spec.is_snooping_enabled == true
       - result.response.igmp_spec.snooping_timeout == 400
-    success_msg: "Spec for updating virtual switch using check mode with all attributes is generated successfully"
-    fail_msg: "Spec for updating virtual switch using check mode with all attributes is not generated successfully"
+      - result.response.metadata is defined
+      - result.response.metadata.owner_reference_id ==
+        "2c8f4d1e-9a7b-4e3d-8c5f-6b1a4d7e2c9f"
+      - result.response.metadata.owner_user_name == "update_owner_user"
+      - result.response.metadata.project_reference_id ==
+        "7b3e9f1d-4c8a-2e5b-9f6c-1d8e3a7b4c2f"
+      - result.response.metadata.project_name == "update_project"
+      - result.response.metadata.category_ids is defined
+      - result.response.metadata.category_ids | length == 2
+      - "'8c2d5e9f-3a7b-4c1d-6e8f-2a5b9c1d4e7f' in
+        result.response.metadata.category_ids"
+      - "'1e4f7a2c-5d8b-3e6c-9a2d-5f8b1e4c7a2d' in
+        result.response.metadata.category_ids"
+    success_msg: "Spec for updating virtual switch using check mode with all
+      attributes is generated successfully"
+    fail_msg: "Spec for updating virtual switch using check mode with all attributes
+      is not generated successfully"
 
 - name: Update virtual switch with all attributes
   nutanix.ncp.ntnx_virtual_switch_v2:
@@ -590,7 +749,12 @@
       snooping_timeout: 300
       querier_spec:
         is_querier_enabled: true
-        vlan_id_list: ["{{ virtual_switch.vlan_id }}"]
+        vlan_id_list: [ "{{ virtual_switch.vlan_id }}" ]
+    metadata:
+      owner_user_name: "{{ username }}"
+      category_ids:
+        - "{{ categories[3] }}"
+        - "{{ categories[4] }}"
   register: result
   ignore_errors: true
 
@@ -602,7 +766,8 @@
       - result.failed == false
       - result.response is defined
       - result.response.name == "{{ vs_name }}_updated"
-      - result.response.description == "Updated description for virtual switch with all attributes"
+      - result.response.description == "Updated description for virtual switch
+        with all attributes"
       - result.response.bond_mode == "NONE"
       - result.response.mtu == 1500
       - result.response.is_default == false
@@ -614,7 +779,14 @@
       - result.response.igmp_spec.snooping_timeout == 300
       - result.response.igmp_spec.querier_spec.is_querier_enabled == true
       - result.response.igmp_spec.querier_spec.vlan_id_list | length == 1
-      - result.response.igmp_spec.querier_spec.vlan_id_list[0] == {{ virtual_switch.vlan_id | int }}
+      - result.response.igmp_spec.querier_spec.vlan_id_list[0] == {{
+        virtual_switch.vlan_id | int }}
+      - result.response.metadata is defined
+      - result.response.metadata.owner_user_name == "{{ username }}"
+      - result.response.metadata.category_ids is defined
+      - result.response.metadata.category_ids | length == 2
+      - categories[3] in result.response.metadata.category_ids
+      - categories[4] in result.response.metadata.category_ids
     success_msg: "Update virtual switch with all attributes passed"
     fail_msg: "Update virtual switch with all attributes failed"
 
@@ -636,7 +808,12 @@
       snooping_timeout: 300
       querier_spec:
         is_querier_enabled: true
-        vlan_id_list: ["{{ virtual_switch.vlan_id }}"]
+        vlan_id_list: [ "{{ virtual_switch.vlan_id }}" ]
+    metadata:
+      owner_user_name: "{{ username }}"
+      category_ids:
+        - "{{ categories[3] }}"
+        - "{{ categories[4] }}"
   register: result
   ignore_errors: true
 
@@ -688,7 +865,8 @@
       - result.failed == false
       - result.response is defined
       - result.response.name == "{{ vs_name }}_updated"
-      - result.response.description == "Updated description for virtual switch with all attributes"
+      - result.response.description == "Updated description for virtual switch
+        with all attributes"
       - result.response.bond_mode == "NONE"
       - result.response.mtu == 1500
       - result.response.is_default == false
@@ -700,7 +878,14 @@
       - result.response.igmp_spec.snooping_timeout == 300
       - result.response.igmp_spec.querier_spec.is_querier_enabled == true
       - result.response.igmp_spec.querier_spec.vlan_id_list | length == 1
-      - result.response.igmp_spec.querier_spec.vlan_id_list[0] == {{ virtual_switch.vlan_id | int }}
+      - result.response.igmp_spec.querier_spec.vlan_id_list[0] == {{
+        virtual_switch.vlan_id | int }}
+      - result.response.metadata is defined
+      - result.response.metadata.owner_user_name == "{{ username }}"
+      - result.response.metadata.category_ids is defined
+      - result.response.metadata.category_ids | length == 2
+      - categories[3] in result.response.metadata.category_ids
+      - categories[4] in result.response.metadata.category_ids
     success_msg: "Fetch virtual switch using external ID passed"
     fail_msg: "Fetch virtual switch using external ID failed"
 
@@ -864,6 +1049,7 @@
       - result is defined
       - result.changed == false
       - result.failed == true
-      - "'state is absent but all of the following are missing: ext_id' in result.msg"
+      - "'state is absent but all of the following are missing: ext_id' in
+        result.msg"
     success_msg: "Delete virtual switch with missing external ID failed as expected"
     fail_msg: "Delete virtual switch with missing external ID did not fail as expected"
