@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2024, Nutanix
+# Copyright: (c) 2024-2026, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -36,6 +36,7 @@ notes:
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)
+ - Abhinav Bansal (@abhinavbansal29)
 options:
     ext_id:
         description:
@@ -161,6 +162,12 @@ total_available_results:
     returned: when all vms are fetched
     sample: 125
 """
+
+import traceback  # noqa: E402
+import warnings  # noqa: E402
+
+from ansible.module_utils.basic import missing_required_lib  # noqa: E402
+
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
@@ -169,6 +176,19 @@ from ..module_utils.v4.utils import (  # noqa: E402
     strip_internal_attributes,
 )
 from ..module_utils.v4.vmm.api_client import get_vm_api_instance  # noqa: E402
+
+SDK_IMP_ERROR = None
+try:
+    import ntnx_vmm_py_client  # noqa: E402, F401
+except ImportError:
+
+    from ..module_utils.v4.sdk_mock import (  # noqa: E402, F401
+        mock_sdk as ntnx_vmm_py_client,
+    )
+
+    SDK_IMP_ERROR = traceback.format_exc()
+
+warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
 def get_module_spec():
@@ -231,6 +251,11 @@ def run_module():
             ("ext_id", "filter"),
         ],
     )
+    if SDK_IMP_ERROR:
+        module.fail_json(
+            msg=missing_required_lib("ntnx_vmm_py_client"), exception=SDK_IMP_ERROR
+        )
+
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None}
     if module.params.get("ext_id"):

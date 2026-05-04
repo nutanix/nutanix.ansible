@@ -1,0 +1,119 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create a VM with minimum configuration
+# 2. Create a VM with full configuration
+# 3. Update the VM
+# 4. Delete the VM
+
+- name: VM CRUD playbook using ntnx_vm_v2
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "10.0.0.1"
+      nutanix_username: "admin"
+      nutanix_password: "Nutanix.123"
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        vm_name: "ansible-vm-crud-test"
+        cluster_ext_id: "00062899-4a29-0cf9-0000-000000022f54"
+
+    ########################################################################
+    - name: Create VM with minimum requirements
+      nutanix.ncp.ntnx_vm_v2:
+        name: "{{ vm_name }}"
+        description: "ansible test vm"
+        cluster:
+          ext_id: "{{ cluster_ext_id }}"
+        wait: true
+      register: create_result
+      ignore_errors: true
+
+    - name: Print create result
+      ansible.builtin.debug:
+        var: create_result
+
+    ########################################################################
+    - name: Create VM with full configuration
+      nutanix.ncp.ntnx_vm_v2:
+        name: "{{ vm_name }}-full"
+        description: "ansible full config test vm"
+        cluster:
+          ext_id: "{{ cluster_ext_id }}"
+        num_sockets: 2
+        num_cores_per_socket: 2
+        num_threads_per_core: 1
+        num_numa_nodes: 1
+        memory_size_bytes: 4294967296
+        is_vcpu_hard_pinning_enabled: false
+        is_cpu_passthrough_enabled: false
+        is_memory_overcommit_enabled: false
+        is_gpu_console_enabled: false
+        is_vga_console_enabled: true
+        machine_type: "PC"
+        hardware_clock_timezone: "UTC"
+        is_branding_enabled: true
+        is_agent_vm: false
+        apc_config:
+          is_apc_enabled: false
+        vtpm_config:
+          is_vtpm_enabled: false
+        wait: true
+      register: create_full_result
+      ignore_errors: true
+
+    - name: Print full create result
+      ansible.builtin.debug:
+        var: create_full_result
+
+    ########################################################################
+    - name: Update VM name and description
+      nutanix.ncp.ntnx_vm_v2:
+        state: present
+        ext_id: "{{ create_result.ext_id }}"
+        name: "{{ vm_name }}-updated"
+        description: "updated ansible test vm"
+        num_sockets: 2
+        memory_size_bytes: 4294967296
+        wait: true
+      register: update_result
+      ignore_errors: true
+      when: create_result is succeeded
+
+    - name: Print update result
+      ansible.builtin.debug:
+        var: update_result
+      when: create_result is succeeded
+
+    ########################################################################
+    - name: Delete VM
+      nutanix.ncp.ntnx_vm_v2:
+        state: absent
+        ext_id: "{{ create_result.ext_id }}"
+        wait: true
+      register: delete_result
+      ignore_errors: true
+      when: create_result is succeeded
+
+    - name: Print delete result
+      ansible.builtin.debug:
+        var: delete_result
+      when: create_result is succeeded
+
+    ########################################################################
+    - name: Delete full config VM
+      nutanix.ncp.ntnx_vm_v2:
+        state: absent
+        ext_id: "{{ create_full_result.ext_id }}"
+        wait: true
+      register: delete_full_result
+      ignore_errors: true
+      when: create_full_result is succeeded
+
+    - name: Print full delete result
+      ansible.builtin.debug:
+        var: delete_full_result
+      when: create_full_result is succeeded

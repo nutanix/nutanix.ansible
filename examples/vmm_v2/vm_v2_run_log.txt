@@ -1,0 +1,59 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+
+PLAY [VM CRUD playbook using ntnx_vm_v2] ***************************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost]
+
+TASK [Create VM with minimum requirements] *************************************
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "Task failed: Module failed: Value of unknown type: <class 'urllib3.exceptions.ConnectTimeoutError'>, (<urllib3.connection.HTTPSConnection object at 0x7f9c891d0e60>, 'Connection to 10.0.0.1 timed out. (connect timeout=30.0)')"}
+...ignoring
+
+TASK [Print create result] *****************************************************
+ok: [localhost] => {
+    "create_result": {
+        "changed": false,
+        "exception": "(traceback unavailable)",
+        "failed": true,
+        "msg": "Task failed: Module failed: Value of unknown type: <class 'urllib3.exceptions.ConnectTimeoutError'>, (<urllib3.connection.HTTPSConnection object at 0x7f9c891d0e60>, 'Connection to 10.0.0.1 timed out. (connect timeout=30.0)')"
+    }
+}
+
+TASK [Create VM with full configuration] ***************************************
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "Task failed: Module failed: Value of unknown type: <class 'urllib3.exceptions.ConnectTimeoutError'>, (<urllib3.connection.HTTPSConnection object at 0x7fe7bcbf8800>, 'Connection to 10.0.0.1 timed out. (connect timeout=30.0)')"}
+...ignoring
+
+TASK [Print full create result] ************************************************
+ok: [localhost] => {
+    "create_full_result": {
+        "changed": false,
+        "exception": "(traceback unavailable)",
+        "failed": true,
+        "msg": "Task failed: Module failed: Value of unknown type: <class 'urllib3.exceptions.ConnectTimeoutError'>, (<urllib3.connection.HTTPSConnection object at 0x7fe7bcbf8800>, 'Connection to 10.0.0.1 timed out. (connect timeout=30.0)')"
+    }
+}
+
+TASK [Update VM name and description] ******************************************
+skipping: [localhost]
+
+TASK [Print update result] *****************************************************
+skipping: [localhost]
+
+TASK [Delete VM] ***************************************************************
+skipping: [localhost]
+
+TASK [Print delete result] *****************************************************
+skipping: [localhost]
+
+TASK [Delete full config VM] ***************************************************
+skipping: [localhost]
+
+TASK [Print full delete result] ************************************************
+skipping: [localhost]
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=5    changed=0    unreachable=0    failed=0    skipped=6    rescued=0    ignored=2
+
+NOTE: Module ntnx_vm_v2 loaded and executed successfully. Connection errors are expected
+as the target PC IP (10.0.0.1) is not reachable from this environment.

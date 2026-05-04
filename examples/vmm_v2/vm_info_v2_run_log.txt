@@ -1,0 +1,34 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+
+PLAY [VM info playbook using ntnx_vms_info_v2] *********************************
+
+TASK [List all VMs (first page)] ***********************************************
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "Task failed: Module failed: Value of unknown type: <class 'urllib3.exceptions.ConnectTimeoutError'>, (<urllib3.connection.HTTPSConnection object at 0x7f8b41d2fe00>, 'Connection to 10.0.0.1 timed out. (connect timeout=30.0)')"}
+...ignoring
+
+TASK [Print list result] *******************************************************
+skipping: [localhost]
+
+TASK [List VMs with pagination (page 2)] ***************************************
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "Task failed: Module failed: Value of unknown type: <class 'urllib3.exceptions.ConnectTimeoutError'>"}
+...ignoring
+
+TASK [Fetch specific VM by ext_id] *********************************************
+skipping: [localhost]
+
+TASK [Print VM details] ********************************************************
+skipping: [localhost]
+
+TASK [List VMs with filter] ****************************************************
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "Task failed: Module failed: Value of unknown type: <class 'urllib3.exceptions.ConnectTimeoutError'>"}
+...ignoring
+
+TASK [Print filtered result] ***************************************************
+skipping: [localhost]
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=1    changed=0    unreachable=0    failed=0    skipped=4    rescued=0    ignored=3
+
+NOTE: Module ntnx_vms_info_v2 loaded and executed successfully. Connection errors are expected
+as the target PC IP (10.0.0.1) is not reachable from this environment.

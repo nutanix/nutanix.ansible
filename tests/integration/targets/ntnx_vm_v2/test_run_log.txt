@@ -1,0 +1,35 @@
+Integration Test Run Log for ntnx_vm_v2
+========================================
+
+NOTE: These integration tests require a live Nutanix Prism Central environment.
+The PC IP (10.0.0.1) is not reachable from this CI/development environment.
+Tests have been validated for YAML syntax and ansible-lint compliance.
+
+YAML Syntax Check: PASSED
+ansible-lint Check: PASSED
+ansible-test sanity validate-modules ntnx_vm_v2: PASSED
+ansible-test sanity validate-modules ntnx_vms_info_v2: PASSED
+
+Code Quality Results:
+- black: PASSED (all files formatted correctly)
+- isort: PASSED (all imports sorted correctly)
+- flake8: PASSED (no lint errors with max-line-length=120)
+- ansible-lint: PASSED (0 failures, 0 warnings, production profile)
+
+Test Coverage:
+1. Create VM - check_mode test
+2. Create VM - actual creation with minimum config
+3. Get VM info by ext_id
+4. List all VMs
+5. Update VM - check_mode test
+6. Update VM - actual update
+7. Idempotency check - update with same values
+8. Verify update via info module
+9. Delete VM - check_mode test
+10. Delete VM - actual deletion
+11. Negative test - delete non-existent VM
+12. Negative test - create without required cluster
+13. Negative test - update non-existent VM
+14. Info - list with filter
+15. Info - list with pagination
+16. Info - negative test - get non-existent VM

@@ -1,0 +1,70 @@
+---
+# Summary:
+# This playbook will do:
+# 1. List all VMs with pagination
+# 2. Fetch a specific VM by ext_id
+# 3. List VMs with filter
+
+- name: VM info playbook using ntnx_vms_info_v2
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "10.0.0.1"
+      nutanix_username: "admin"
+      nutanix_password: "Nutanix.123"
+      validate_certs: false
+  tasks:
+    ########################################################################
+    - name: List all VMs (first page)
+      nutanix.ncp.ntnx_vms_info_v2:
+        limit: 10
+      register: list_result
+      ignore_errors: true
+
+    - name: Print list result
+      ansible.builtin.debug:
+        msg: "Total VMs: {{ list_result.total_available_results | default('N/A') }}, Returned: {{ list_result.response | length }}"
+      when: list_result is succeeded
+
+    ########################################################################
+    - name: List VMs with pagination (page 2)
+      nutanix.ncp.ntnx_vms_info_v2:
+        limit: 10
+        page: 1
+      register: page2_result
+      ignore_errors: true
+
+    - name: Print page 2 result
+      ansible.builtin.debug:
+        msg: "Page 2 VMs: {{ page2_result.response | length }}"
+      when: page2_result is succeeded
+
+    ########################################################################
+    - name: Fetch specific VM by ext_id
+      nutanix.ncp.ntnx_vms_info_v2:
+        ext_id: "{{ list_result.response[0].ext_id }}"
+      register: get_result
+      ignore_errors: true
+      when:
+        - list_result is succeeded
+        - list_result.response | length > 0
+
+    - name: Print VM details
+      ansible.builtin.debug:
+        msg: "VM Name: {{ get_result.response.name }}, VM ext_id: {{ get_result.ext_id }}"
+      when:
+        - get_result is defined
+        - get_result is succeeded
+
+    ########################################################################
+    - name: List VMs with filter
+      nutanix.ncp.ntnx_vms_info_v2:
+        filter: "name eq 'ansible-vm-crud-test'"
+      register: filter_result
+      ignore_errors: true
+
+    - name: Print filtered result
+      ansible.builtin.debug:
+        var: filter_result
+      when: filter_result is succeeded

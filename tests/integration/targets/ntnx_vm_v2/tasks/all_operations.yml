@@ -1,0 +1,388 @@
+---
+- name: Start ntnx_vm_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_vm_v2 tests
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set VM name and variables
+  ansible.builtin.set_fact:
+    todelete: []
+    suffix_name: "ansible-ag"
+    vm_name: "{{ random_name }}ansible-agvm"
+
+########################################################################
+# CREATE - check_mode
+########################################################################
+- name: Create VM with check_mode
+  nutanix.ncp.ntnx_vm_v2:
+    name: "{{ vm_name }}"
+    description: "ansible test vm"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    num_sockets: 1
+    num_cores_per_socket: 1
+    memory_size_bytes: 1073741824
+    machine_type: "PC"
+    wait: true
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Create check_mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == "{{ vm_name }}"
+      - result.response.description == "ansible test vm"
+      - result.response.num_sockets == 1
+      - result.response.num_cores_per_socket == 1
+      - result.response.memory_size_bytes == 1073741824
+    fail_msg: "Create check_mode failed"
+    success_msg: "Create check_mode passed"
+
+########################################################################
+# CREATE - actual
+########################################################################
+- name: Create VM with minimum requirements
+  nutanix.ncp.ntnx_vm_v2:
+    name: "{{ vm_name }}"
+    description: "ansible test vm"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    num_sockets: 1
+    num_cores_per_socket: 1
+    memory_size_bytes: 1073741824
+    machine_type: "PC"
+    wait: true
+  register: create_result
+  ignore_errors: true
+
+- name: Create status
+  ansible.builtin.assert:
+    that:
+      - create_result.changed == true
+      - create_result.failed == false
+      - create_result.response is defined
+      - create_result.response.name == "{{ vm_name }}"
+      - create_result.response.description == "ansible test vm"
+      - create_result.ext_id is defined
+      - create_result.ext_id | length > 0
+    fail_msg: "Create VM failed"
+    success_msg: "Create VM passed"
+
+- name: Add VM to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [create_result.ext_id] }}"
+  when: create_result is succeeded
+
+########################################################################
+# INFO - get by ext_id
+########################################################################
+- name: Fetch VM info by ext_id
+  nutanix.ncp.ntnx_vms_info_v2:
+    ext_id: "{{ create_result.ext_id }}"
+  register: info_result
+  ignore_errors: true
+  when: create_result is succeeded
+
+- name: Info by ext_id status
+  ansible.builtin.assert:
+    that:
+      - info_result.changed == false
+      - info_result.failed == false
+      - info_result.response is defined
+      - info_result.ext_id == create_result.ext_id
+      - info_result.response.name == "{{ vm_name }}"
+    fail_msg: "Fetch VM info by ext_id failed"
+    success_msg: "Fetch VM info by ext_id passed"
+  when: create_result is succeeded
+
+########################################################################
+# INFO - list all
+########################################################################
+- name: List all VMs
+  nutanix.ncp.ntnx_vms_info_v2:
+  register: list_result
+  ignore_errors: true
+
+- name: List all VMs status
+  ansible.builtin.assert:
+    that:
+      - list_result.changed == false
+      - list_result.failed == false
+      - list_result.response is defined
+      - list_result.response | length > 0
+      - list_result.total_available_results is defined
+      - list_result.total_available_results > 0
+    fail_msg: "List all VMs failed"
+    success_msg: "List all VMs passed"
+
+########################################################################
+# UPDATE - check_mode
+########################################################################
+- name: Update VM with check_mode
+  nutanix.ncp.ntnx_vm_v2:
+    state: present
+    ext_id: "{{ create_result.ext_id }}"
+    name: "{{ vm_name }}-updated"
+    description: "updated ansible test vm"
+    num_sockets: 2
+    memory_size_bytes: 2147483648
+    wait: true
+  register: result
+  ignore_errors: true
+  check_mode: true
+  when: create_result is succeeded
+
+- name: Update check_mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == "{{ vm_name }}-updated"
+      - result.response.description == "updated ansible test vm"
+      - result.response.num_sockets == 2
+      - result.response.memory_size_bytes == 2147483648
+    fail_msg: "Update check_mode failed"
+    success_msg: "Update check_mode passed"
+  when: create_result is succeeded
+
+########################################################################
+# UPDATE - actual
+########################################################################
+- name: Update VM
+  nutanix.ncp.ntnx_vm_v2:
+    state: present
+    ext_id: "{{ create_result.ext_id }}"
+    name: "{{ vm_name }}-updated"
+    description: "updated ansible test vm"
+    num_sockets: 2
+    memory_size_bytes: 2147483648
+    wait: true
+  register: update_result
+  ignore_errors: true
+  when: create_result is succeeded
+
+- name: Update status
+  ansible.builtin.assert:
+    that:
+      - update_result.changed == true
+      - update_result.failed == false
+      - update_result.response is defined
+      - update_result.response.name == "{{ vm_name }}-updated"
+      - update_result.response.description == "updated ansible test vm"
+      - update_result.response.num_sockets == 2
+      - update_result.response.memory_size_bytes == 2147483648
+    fail_msg: "Update VM failed"
+    success_msg: "Update VM passed"
+  when: create_result is succeeded
+
+########################################################################
+# IDEMPOTENCY - update with same values
+########################################################################
+- name: Check idempotency - update with same values
+  nutanix.ncp.ntnx_vm_v2:
+    state: present
+    ext_id: "{{ create_result.ext_id }}"
+    name: "{{ vm_name }}-updated"
+    description: "updated ansible test vm"
+    num_sockets: 2
+    memory_size_bytes: 2147483648
+    wait: true
+  register: idempotent_result
+  ignore_errors: true
+  when: create_result is succeeded
+
+- name: Idempotency status
+  ansible.builtin.assert:
+    that:
+      - idempotent_result.changed == false
+      - idempotent_result.failed == false
+      - idempotent_result.skipped == true
+      - idempotent_result.msg == "Nothing to change."
+    fail_msg: "Idempotency check failed"
+    success_msg: "Idempotency check passed"
+  when: create_result is succeeded
+
+########################################################################
+# INFO - verify update via info
+########################################################################
+- name: Verify update via info module
+  nutanix.ncp.ntnx_vms_info_v2:
+    ext_id: "{{ create_result.ext_id }}"
+  register: verify_result
+  ignore_errors: true
+  when: create_result is succeeded
+
+- name: Verify update status
+  ansible.builtin.assert:
+    that:
+      - verify_result.changed == false
+      - verify_result.failed == false
+      - verify_result.response.name == "{{ vm_name }}-updated"
+      - verify_result.response.num_sockets == 2
+    fail_msg: "Verify update via info failed"
+    success_msg: "Verify update via info passed"
+  when: create_result is succeeded
+
+########################################################################
+# DELETE - check_mode
+########################################################################
+- name: Delete VM with check_mode
+  nutanix.ncp.ntnx_vm_v2:
+    state: absent
+    ext_id: "{{ create_result.ext_id }}"
+    wait: true
+  register: result
+  ignore_errors: true
+  check_mode: true
+  when: create_result is succeeded
+
+- name: Delete check_mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.msg is defined
+      - result.ext_id == create_result.ext_id
+      - result.msg == "VM with ext_id:" + create_result.ext_id + " will be deleted."
+    fail_msg: "Delete check_mode failed"
+    success_msg: "Delete check_mode passed"
+  when: create_result is succeeded
+
+########################################################################
+# DELETE - actual
+########################################################################
+- name: Delete VM
+  nutanix.ncp.ntnx_vm_v2:
+    state: absent
+    ext_id: "{{ item }}"
+    wait: true
+  register: delete_result
+  loop: "{{ todelete }}"
+  ignore_errors: true
+
+- name: Delete status
+  ansible.builtin.assert:
+    that:
+      - delete_result.changed == true
+      - delete_result.msg == "All items completed"
+    fail_msg: "Delete VM failed"
+    success_msg: "Delete VM passed"
+
+########################################################################
+# NEGATIVE - delete non-existent VM
+########################################################################
+- name: Delete non-existent VM (negative test)
+  nutanix.ncp.ntnx_vm_v2:
+    state: absent
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    wait: true
+  register: negative_result
+  ignore_errors: true
+
+- name: Negative delete status
+  ansible.builtin.assert:
+    that:
+      - negative_result.failed == true
+      - negative_result.changed == false
+    fail_msg: "Negative delete test failed - should have errored"
+    success_msg: "Negative delete test passed"
+
+########################################################################
+# NEGATIVE - create without required cluster
+########################################################################
+- name: Create VM without cluster (negative test)
+  nutanix.ncp.ntnx_vm_v2:
+    name: "{{ vm_name }}-negative"
+    description: "negative test vm"
+    wait: true
+  register: negative_create_result
+  ignore_errors: true
+
+- name: Negative create status
+  ansible.builtin.assert:
+    that:
+      - negative_create_result.failed == true
+      - negative_create_result.changed == false
+    fail_msg: "Negative create test failed - should have errored"
+    success_msg: "Negative create test passed"
+
+########################################################################
+# NEGATIVE - update non-existent VM
+########################################################################
+- name: Update non-existent VM (negative test)
+  nutanix.ncp.ntnx_vm_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    name: "non-existent-vm"
+    wait: true
+  register: negative_update_result
+  ignore_errors: true
+
+- name: Negative update status
+  ansible.builtin.assert:
+    that:
+      - negative_update_result.failed == true
+      - negative_update_result.changed == false
+    fail_msg: "Negative update test failed - should have errored"
+    success_msg: "Negative update test passed"
+
+########################################################################
+# INFO - list with filter
+########################################################################
+- name: List VMs with filter
+  nutanix.ncp.ntnx_vms_info_v2:
+    filter: "name eq '{{ vm_name }}'"
+  register: filter_result
+  ignore_errors: true
+
+- name: Filter status
+  ansible.builtin.assert:
+    that:
+      - filter_result.changed == false
+      - filter_result.failed == false
+      - filter_result.response is defined
+    fail_msg: "List VMs with filter failed"
+    success_msg: "List VMs with filter passed"
+
+########################################################################
+# INFO - list with pagination
+########################################################################
+- name: List VMs with pagination
+  nutanix.ncp.ntnx_vms_info_v2:
+    limit: 5
+    page: 0
+  register: page_result
+  ignore_errors: true
+
+- name: Pagination status
+  ansible.builtin.assert:
+    that:
+      - page_result.changed == false
+      - page_result.failed == false
+      - page_result.response is defined
+      - page_result.total_available_results is defined
+    fail_msg: "List VMs with pagination failed"
+    success_msg: "List VMs with pagination passed"
+
+########################################################################
+# INFO - negative - get non-existent VM
+########################################################################
+- name: Fetch non-existent VM info (negative test)
+  nutanix.ncp.ntnx_vms_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: negative_info_result
+  ignore_errors: true
+
+- name: Negative info status
+  ansible.builtin.assert:
+    that:
+      - negative_info_result.failed == true
+      - negative_info_result.changed == false
+    fail_msg: "Negative info test failed - should have errored"
+    success_msg: "Negative info test passed"
