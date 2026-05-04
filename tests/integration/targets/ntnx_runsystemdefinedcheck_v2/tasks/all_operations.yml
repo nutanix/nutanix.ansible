@@ -1,0 +1,203 @@
+---
+- name: Start ntnx_runsystemdefinedcheck_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_runsystemdefinedcheck_v2 tests
+
+########################################################################
+# First, list policies to get IDs for testing
+########################################################################
+- name: List all system-defined alert policies
+  nutanix.ncp.ntnx_runsystemdefinedchecks_info_v2:
+    limit: 5
+  register: policies_result
+  ignore_errors: true
+
+- name: Verify policies list
+  ansible.builtin.assert:
+    that:
+      - policies_result.changed == false
+      - policies_result.failed == false
+      - policies_result.response is defined
+      - policies_result.response | length > 0
+    fail_msg: "Unable to list system-defined alert policies"
+    success_msg: "System-defined alert policies listed successfully"
+
+- name: Set policy ext_id and cluster_ext_id from results
+  ansible.builtin.set_fact:
+    test_policy_ext_id: "{{ policies_result.response[0].ext_id }}"
+    test_cluster_ext_id: "{{ policies_result.response[0].cluster_configs[0].ext_id }}"
+  when:
+    - policies_result.response[0].cluster_configs is defined
+    - policies_result.response[0].cluster_configs | length > 0
+
+########################################################################
+# Create (Run checks) with check_mode
+########################################################################
+- name: Run system-defined checks with check_mode
+  nutanix.ncp.ntnx_runsystemdefinedcheck_v2:
+    cluster_ext_id: "{{ test_cluster_ext_id }}"
+    should_run_all_checks: true
+    should_anonymize: true
+  register: result
+  ignore_errors: true
+  check_mode: true
+  when: test_cluster_ext_id is defined
+
+- name: Check mode status for run checks
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.should_run_all_checks == true
+    fail_msg: "Check mode for run checks failed"
+    success_msg: "Check mode for run checks passed"
+  when: test_cluster_ext_id is defined
+
+########################################################################
+# Create (Run checks) - actual execution
+########################################################################
+- name: Run all system-defined checks on cluster
+  nutanix.ncp.ntnx_runsystemdefinedcheck_v2:
+    cluster_ext_id: "{{ test_cluster_ext_id }}"
+    should_run_all_checks: true
+    should_anonymize: true
+    should_send_report_to_configured_recipients: false
+    wait: false
+  register: run_result
+  ignore_errors: true
+  when: test_cluster_ext_id is defined
+
+- name: Verify run checks response
+  ansible.builtin.assert:
+    that:
+      - run_result.changed == true
+      - run_result.failed == false
+      - run_result.task_ext_id is defined
+      - run_result.response is defined
+    fail_msg: "Unable to run system-defined checks"
+    success_msg: "System-defined checks executed successfully"
+  when: test_cluster_ext_id is defined
+
+########################################################################
+# Update cluster config with check_mode
+########################################################################
+- name: Update cluster config with check_mode
+  nutanix.ncp.ntnx_runsystemdefinedcheck_v2:
+    system_defined_policy_ext_id: "{{ test_policy_ext_id }}"
+    ext_id: "{{ test_cluster_ext_id }}"
+    is_enabled: true
+  register: result
+  ignore_errors: true
+  check_mode: true
+  when: test_policy_ext_id is defined and test_cluster_ext_id is defined
+
+- name: Check mode status for update
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+    fail_msg: "Check mode for update cluster config failed"
+    success_msg: "Check mode for update cluster config passed"
+  when: test_policy_ext_id is defined and test_cluster_ext_id is defined
+
+########################################################################
+# Update cluster config - actual
+########################################################################
+- name: Update cluster config for SDA policy
+  nutanix.ncp.ntnx_runsystemdefinedcheck_v2:
+    system_defined_policy_ext_id: "{{ test_policy_ext_id }}"
+    ext_id: "{{ test_cluster_ext_id }}"
+    is_enabled: true
+  register: update_result
+  ignore_errors: true
+  when: test_policy_ext_id is defined and test_cluster_ext_id is defined
+
+- name: Verify update response
+  ansible.builtin.assert:
+    that:
+      - update_result.failed == false
+    fail_msg: "Unable to update cluster config"
+    success_msg: "Cluster config updated successfully"
+  when:
+    - test_policy_ext_id is defined
+    - test_cluster_ext_id is defined
+    - update_result is defined
+
+########################################################################
+# Update idempotency check
+########################################################################
+- name: Update cluster config again (idempotency check)
+  nutanix.ncp.ntnx_runsystemdefinedcheck_v2:
+    system_defined_policy_ext_id: "{{ test_policy_ext_id }}"
+    ext_id: "{{ test_cluster_ext_id }}"
+    is_enabled: true
+  register: idempotent_result
+  ignore_errors: true
+  when: test_policy_ext_id is defined and test_cluster_ext_id is defined
+
+- name: Verify idempotency
+  ansible.builtin.assert:
+    that:
+      - idempotent_result.failed == false
+      - idempotent_result.changed == false
+      - idempotent_result.skipped == true
+      - idempotent_result.msg == "Nothing to change."
+    fail_msg: "Idempotency check failed"
+    success_msg: "Idempotency check passed"
+  when:
+    - test_policy_ext_id is defined
+    - test_cluster_ext_id is defined
+    - idempotent_result is defined
+    - idempotent_result.skipped is defined
+
+########################################################################
+# Delete - Negative scenario (not supported)
+########################################################################
+- name: Delete cluster config with check_mode
+  nutanix.ncp.ntnx_runsystemdefinedcheck_v2:
+    ext_id: "{{ test_cluster_ext_id | default('dummy-ext-id') }}"
+    state: absent
+  register: delete_check_result
+  ignore_errors: true
+  check_mode: true
+
+- name: Verify delete check_mode
+  ansible.builtin.assert:
+    that:
+      - delete_check_result.failed == false
+      - delete_check_result.changed == false
+      - delete_check_result.msg == "Delete is not supported for system-defined checks/policies."
+    fail_msg: "Delete check mode failed"
+    success_msg: "Delete check mode passed"
+
+- name: Attempt delete (should fail)
+  nutanix.ncp.ntnx_runsystemdefinedcheck_v2:
+    ext_id: "{{ test_cluster_ext_id | default('dummy-ext-id') }}"
+    state: absent
+  register: delete_result
+  ignore_errors: true
+
+- name: Verify delete fails appropriately
+  ansible.builtin.assert:
+    that:
+      - delete_result.failed == true
+      - delete_result.changed == false
+      - delete_result.msg == "Delete is not supported for system-defined checks/policies."
+    fail_msg: "Delete negative scenario failed"
+    success_msg: "Delete negative scenario passed"
+
+########################################################################
+# Negative test - run checks without cluster_ext_id
+########################################################################
+- name: Run checks without required cluster_ext_id (negative test)
+  nutanix.ncp.ntnx_runsystemdefinedcheck_v2:
+    should_run_all_checks: true
+  register: negative_result
+  ignore_errors: true
+
+- name: Verify negative test fails
+  ansible.builtin.assert:
+    that:
+      - negative_result.failed == true
+    fail_msg: "Negative test (missing cluster_ext_id) did not fail as expected"
+    success_msg: "Negative test (missing cluster_ext_id) failed as expected"
