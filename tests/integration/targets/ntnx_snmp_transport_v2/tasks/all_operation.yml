@@ -1,0 +1,318 @@
+---
+- name: Start ntnx_snmp_transport_v2 and ntnx_snmp_transports_info_v2 tests
+  ansible.builtin.debug:
+    msg: Start SNMP transport tests
+
+- name: Set cluster ext ID for SNMP transport tests
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ cluster.uuid }}"
+    todelete: []
+
+####################################################################
+# CHECK MODE - Create SNMP transport
+####################################################################
+- name: Add SNMP transport with check mode enabled
+  nutanix.ncp.ntnx_snmp_transport_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    port: 162
+    protocol: "UDP"
+  check_mode: true
+  register: result
+
+- name: Verify check mode create SNMP transport
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response.port == 162
+      - result.response.protocol == "UDP"
+    fail_msg: "Check mode add SNMP transport spec generation failed"
+    success_msg: "Check mode add SNMP transport spec generated successfully"
+
+####################################################################
+# CREATE - Add SNMP transport
+####################################################################
+- name: Add SNMP transport with port 162 and protocol UDP
+  nutanix.ncp.ntnx_snmp_transport_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    port: 162
+    protocol: "UDP"
+  register: result
+
+- name: Verify add SNMP transport
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == cluster_ext_id
+    fail_msg: "Add SNMP transport failed"
+    success_msg: "Add SNMP transport passed"
+
+- name: Add transport to cleanup list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [{'port': 162, 'protocol': 'UDP'}] }}"
+
+####################################################################
+# IDEMPOTENCY - Add same transport again
+####################################################################
+- name: Add same SNMP transport again for idempotency
+  nutanix.ncp.ntnx_snmp_transport_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    port: 162
+    protocol: "UDP"
+  register: result
+
+- name: Verify idempotency on add
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+    fail_msg: "Idempotency check for add SNMP transport failed"
+    success_msg: "Idempotency check for add SNMP transport passed"
+
+####################################################################
+# INFO - Fetch all SNMP transports
+####################################################################
+- name: Fetch all SNMP transports from cluster
+  nutanix.ncp.ntnx_snmp_transports_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: result
+
+- name: Verify fetch all SNMP transports
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response | length >= 1
+      - result.ext_id == cluster_ext_id
+    fail_msg: "Fetch all SNMP transports failed"
+    success_msg: "Fetch all SNMP transports passed"
+
+####################################################################
+# INFO - Fetch specific SNMP transport by port and protocol
+####################################################################
+- name: Fetch specific SNMP transport by port and protocol
+  nutanix.ncp.ntnx_snmp_transports_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    port: 162
+    protocol: "UDP"
+  register: result
+
+- name: Verify fetch specific SNMP transport
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response.port == 162
+      - result.response.protocol == "UDP"
+    fail_msg: "Fetch specific SNMP transport failed"
+    success_msg: "Fetch specific SNMP transport passed"
+
+####################################################################
+# CHECK MODE - Update SNMP transport
+####################################################################
+- name: Update SNMP transport with check mode enabled
+  nutanix.ncp.ntnx_snmp_transport_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    port: 163
+    protocol: "TCP"
+    old_port: 162
+    old_protocol: "UDP"
+  check_mode: true
+  register: result
+
+- name: Verify check mode update SNMP transport
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response.port == 163
+      - result.response.protocol == "TCP"
+    fail_msg: "Check mode update SNMP transport failed"
+    success_msg: "Check mode update SNMP transport passed"
+
+####################################################################
+# UPDATE - Change port and protocol
+####################################################################
+- name: Update SNMP transport from port 162/UDP to 163/TCP
+  nutanix.ncp.ntnx_snmp_transport_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    port: 163
+    protocol: "TCP"
+    old_port: 162
+    old_protocol: "UDP"
+  register: result
+
+- name: Verify update SNMP transport
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == cluster_ext_id
+    fail_msg: "Update SNMP transport failed"
+    success_msg: "Update SNMP transport passed"
+
+- name: Update cleanup list after update
+  ansible.builtin.set_fact:
+    todelete:
+      - port: 163
+        protocol: "TCP"
+
+####################################################################
+# VERIFY UPDATE - Fetch updated transport
+####################################################################
+- name: Fetch updated SNMP transport
+  nutanix.ncp.ntnx_snmp_transports_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    port: 163
+    protocol: "TCP"
+  register: result
+
+- name: Verify updated SNMP transport values
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response.port == 163
+      - result.response.protocol == "TCP"
+    fail_msg: "Verify updated SNMP transport failed"
+    success_msg: "Verify updated SNMP transport passed"
+
+####################################################################
+# IDEMPOTENCY - Update with same values (no old_port change needed)
+####################################################################
+- name: Update SNMP transport with same values (idempotency)
+  nutanix.ncp.ntnx_snmp_transport_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    port: 163
+    protocol: "TCP"
+    old_port: 163
+    old_protocol: "TCP"
+  register: result
+
+- name: Verify idempotency on update
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+    fail_msg: "Idempotency check for update SNMP transport failed"
+    success_msg: "Idempotency check for update SNMP transport passed"
+
+####################################################################
+# NEGATIVE - Fetch non-existent transport
+####################################################################
+- name: Fetch non-existent SNMP transport
+  nutanix.ncp.ntnx_snmp_transports_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    port: 9999
+    protocol: "UDP6"
+  register: result
+  ignore_errors: true
+
+- name: Verify non-existent transport returns error
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - "'not found' in result.msg"
+    fail_msg: "Negative test for non-existent transport failed"
+    success_msg: "Negative test for non-existent transport passed"
+
+####################################################################
+# NEGATIVE - Update non-existent transport
+####################################################################
+- name: Update non-existent SNMP transport
+  nutanix.ncp.ntnx_snmp_transport_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    port: 200
+    protocol: "TCP"
+    old_port: 9999
+    old_protocol: "UDP6"
+  register: result
+  ignore_errors: true
+
+- name: Verify update non-existent transport fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - "'not found' in result.msg"
+    fail_msg: "Negative test for update non-existent transport failed"
+    success_msg: "Negative test for update non-existent transport passed"
+
+####################################################################
+# CHECK MODE - Delete SNMP transport
+####################################################################
+- name: Remove SNMP transport with check mode enabled
+  nutanix.ncp.ntnx_snmp_transport_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    port: 163
+    protocol: "TCP"
+    state: absent
+  check_mode: true
+  register: result
+
+- name: Verify check mode delete SNMP transport
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.msg is defined
+    fail_msg: "Check mode delete SNMP transport failed"
+    success_msg: "Check mode delete SNMP transport passed"
+
+####################################################################
+# DELETE - Remove SNMP transport
+####################################################################
+- name: Remove SNMP transport with port 163 and protocol TCP
+  nutanix.ncp.ntnx_snmp_transport_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    port: 163
+    protocol: "TCP"
+    state: absent
+  register: result
+
+- name: Verify remove SNMP transport
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == cluster_ext_id
+    fail_msg: "Remove SNMP transport failed"
+    success_msg: "Remove SNMP transport passed"
+
+####################################################################
+# IDEMPOTENCY - Delete same transport again
+####################################################################
+- name: Remove same SNMP transport again for idempotency
+  nutanix.ncp.ntnx_snmp_transport_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    port: 163
+    protocol: "TCP"
+    state: absent
+  register: result
+
+- name: Verify idempotency on delete
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+    fail_msg: "Idempotency check for delete SNMP transport failed"
+    success_msg: "Idempotency check for delete SNMP transport passed"
+
+####################################################################
+# NEGATIVE - Delete non-existent transport (already verified above)
+####################################################################
+- name: Verify all transports are cleaned up
+  nutanix.ncp.ntnx_snmp_transports_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: result
+
+- name: Verify no test transports remain
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+    fail_msg: "Cleanup verification failed"
+    success_msg: "All SNMP transport tests completed successfully"

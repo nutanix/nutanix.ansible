@@ -1,0 +1,253 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [SNMP Transport CRUD playbook] ********************************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"cluster_ext_id": "0006507e-9fb0-cb29-1221-5254000db428"}, "changed": false}
+
+TASK [Add SNMP transport with check mode] **************************************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": null, "response": {"port": 162, "protocol": "UDP"}, "task_ext_id": null}
+
+TASK [Check mode result for add SNMP transport] ********************************
+ok: [localhost] => {
+    "result": {
+        "changed": false,
+        "error": null,
+        "ext_id": "0006507e-9fb0-cb29-1221-5254000db428",
+        "failed": false,
+        "msg": null,
+        "response": {
+            "port": 162,
+            "protocol": "UDP"
+        },
+        "skipped": false,
+        "task_ext_id": null
+    }
+}
+
+TASK [Verify check mode add result] ********************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Check mode add SNMP transport passed"
+}
+
+TASK [Add SNMP transport] ******************************************************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": null, "response": {"ext_id": "ZXJnb24=:9010cf85-0e39-4e23-48de-b8b0432ffccc"}, "task_ext_id": "ZXJnb24=:9010cf85-0e39-4e23-48de-b8b0432ffccc"}
+
+TASK [Add SNMP transport result] ***********************************************
+ok: [localhost] => {
+    "result": {
+        "changed": true,
+        "error": null,
+        "ext_id": "0006507e-9fb0-cb29-1221-5254000db428",
+        "failed": false,
+        "msg": null,
+        "response": {
+            "ext_id": "ZXJnb24=:9010cf85-0e39-4e23-48de-b8b0432ffccc"
+        },
+        "skipped": false,
+        "task_ext_id": "ZXJnb24=:9010cf85-0e39-4e23-48de-b8b0432ffccc"
+    }
+}
+
+TASK [Verify add SNMP transport] ***********************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Add SNMP transport passed"
+}
+
+TASK [Add same SNMP transport again (idempotency)] *****************************
+skipping: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": "SNMP transport already exists on cluster.", "response": null, "task_ext_id": null}
+
+TASK [Idempotency result] ******************************************************
+ok: [localhost] => {
+    "result": {
+        "changed": false,
+        "error": null,
+        "ext_id": "0006507e-9fb0-cb29-1221-5254000db428",
+        "failed": false,
+        "msg": "SNMP transport already exists on cluster.",
+        "response": null,
+        "skipped": true,
+        "task_ext_id": null
+    }
+}
+
+TASK [Verify idempotency] ******************************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Idempotency check passed"
+}
+
+TASK [Fetch all SNMP transports] ***********************************************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "response": [{"port": 162, "protocol": "UDP"}]}
+
+TASK [Fetch all SNMP transports result] ****************************************
+ok: [localhost] => {
+    "result": {
+        "changed": false,
+        "error": null,
+        "ext_id": "0006507e-9fb0-cb29-1221-5254000db428",
+        "failed": false,
+        "response": [
+            {
+                "port": 162,
+                "protocol": "UDP"
+            }
+        ]
+    }
+}
+
+TASK [Verify fetch all SNMP transports] ****************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Fetch all SNMP transports passed"
+}
+
+TASK [Fetch specific SNMP transport] *******************************************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "response": {"port": 162, "protocol": "UDP"}}
+
+TASK [Fetch specific SNMP transport result] ************************************
+ok: [localhost] => {
+    "result": {
+        "changed": false,
+        "error": null,
+        "ext_id": "0006507e-9fb0-cb29-1221-5254000db428",
+        "failed": false,
+        "response": {
+            "port": 162,
+            "protocol": "UDP"
+        }
+    }
+}
+
+TASK [Verify fetch specific SNMP transport] ************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Fetch specific SNMP transport passed"
+}
+
+TASK [Update SNMP transport (change port from 162 to 163, protocol from UDP to TCP)] ***
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": null, "response": {"ext_id": "ZXJnb24=:c78b9495-e928-4f1c-4a1f-ee18742f646b"}, "task_ext_id": "ZXJnb24=:c78b9495-e928-4f1c-4a1f-ee18742f646b"}
+
+TASK [Update SNMP transport result] ********************************************
+ok: [localhost] => {
+    "result": {
+        "changed": true,
+        "error": null,
+        "ext_id": "0006507e-9fb0-cb29-1221-5254000db428",
+        "failed": false,
+        "msg": null,
+        "response": {
+            "ext_id": "ZXJnb24=:c78b9495-e928-4f1c-4a1f-ee18742f646b"
+        },
+        "skipped": false,
+        "task_ext_id": "ZXJnb24=:c78b9495-e928-4f1c-4a1f-ee18742f646b"
+    }
+}
+
+TASK [Verify update SNMP transport] ********************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Update SNMP transport passed"
+}
+
+TASK [Fetch updated SNMP transport] ********************************************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "response": {"port": 163, "protocol": "TCP"}}
+
+TASK [Fetch updated transport result] ******************************************
+ok: [localhost] => {
+    "result": {
+        "changed": false,
+        "error": null,
+        "ext_id": "0006507e-9fb0-cb29-1221-5254000db428",
+        "failed": false,
+        "response": {
+            "port": 163,
+            "protocol": "TCP"
+        }
+    }
+}
+
+TASK [Verify fetch updated SNMP transport] *************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Fetch updated SNMP transport passed"
+}
+
+TASK [Remove SNMP transport with check mode] ***********************************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": "SNMP transport with port 163 and protocol TCP will be removed.", "response": null, "task_ext_id": null}
+
+TASK [Check mode result for remove SNMP transport] *****************************
+ok: [localhost] => {
+    "result": {
+        "changed": false,
+        "error": null,
+        "ext_id": "0006507e-9fb0-cb29-1221-5254000db428",
+        "failed": false,
+        "msg": "SNMP transport with port 163 and protocol TCP will be removed.",
+        "response": null,
+        "skipped": false,
+        "task_ext_id": null
+    }
+}
+
+TASK [Verify check mode remove result] *****************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Check mode remove SNMP transport passed"
+}
+
+TASK [Remove SNMP transport] ***************************************************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": null, "response": {"ext_id": "ZXJnb24=:5328c578-d9d3-4880-5d24-202d8d99d07a"}, "task_ext_id": "ZXJnb24=:5328c578-d9d3-4880-5d24-202d8d99d07a"}
+
+TASK [Remove SNMP transport result] ********************************************
+ok: [localhost] => {
+    "result": {
+        "changed": true,
+        "error": null,
+        "ext_id": "0006507e-9fb0-cb29-1221-5254000db428",
+        "failed": false,
+        "msg": null,
+        "response": {
+            "ext_id": "ZXJnb24=:5328c578-d9d3-4880-5d24-202d8d99d07a"
+        },
+        "skipped": false,
+        "task_ext_id": "ZXJnb24=:5328c578-d9d3-4880-5d24-202d8d99d07a"
+    }
+}
+
+TASK [Verify remove SNMP transport] ********************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Remove SNMP transport passed"
+}
+
+TASK [Remove same SNMP transport again (idempotency)] **************************
+skipping: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": "SNMP transport with port 163 and protocol TCP not found. Nothing to delete.", "response": null, "task_ext_id": null}
+
+TASK [Idempotency remove result] ***********************************************
+ok: [localhost] => {
+    "result": {
+        "changed": false,
+        "error": null,
+        "ext_id": "0006507e-9fb0-cb29-1221-5254000db428",
+        "failed": false,
+        "msg": "SNMP transport with port 163 and protocol TCP not found. Nothing to delete.",
+        "response": null,
+        "skipped": true,
+        "task_ext_id": null
+    }
+}
+
+TASK [Verify remove idempotency] ***********************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Idempotency remove check passed"
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=29   changed=3    unreachable=0    failed=0    skipped=2    rescued=0    ignored=0   
+
