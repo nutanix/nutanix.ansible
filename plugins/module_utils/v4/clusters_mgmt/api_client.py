@@ -142,3 +142,16 @@ def get_ssl_certificates_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_clustermgmt_py_client.SSLCertificateApi(client)
+
+
+def get_snmp_api_instance(module):
+    """
+    This method will return clusters api instance for SNMP operations from sdk.
+    SNMP operations (add/remove transports, get config) are part of ClustersApi.
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        ClustersApi: ClustersApi instance for SNMP operations
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.ClustersApi(client)

@@ -244,6 +244,8 @@ action_groups:
     - ntnx_network_functions_info_v2
     - ntnx_security_policy_rules_info_v2
     - ntnx_iam_entities_info_v2
+    - ntnx_snmp_transport_v2
+    - ntnx_snmp_transports_info_v2
     - ntnx_virtual_switch_v2
     - ntnx_virtual_switches_info_v2
     - ntnx_entity_group_v2

@@ -1,0 +1,186 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Run SNMP Transport integration tests] ************************************
+
+TASK [Get cluster info] ********************************************************
+ok: [localhost] => {"changed": false, "error": null, "response": [{"backup_eligibility_score": 1, "categories": null, "cluster_profile_ext_id": null, "config": {"authorized_public_key_list": [{"key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDWQlWGnPpWemdrFcHLykUr7Ni88jrVWGBo3+P/Ij6nuYH8ODAppFUlSHyMH562s1F4S89B0s3aS5vVJKntMq3vD5jIn7hOIBWj0L4Cr8RPIulzpswdvi+gRyHXbQoOLy5fCIBxVeDOYA0+3esZyMrQ/VNpidxkOmB0n4mnfq3FHmggVC8qTJOYV8dKvXDneNEbzMGw8tY+SLkkSZK6ibciNtrOSFr+kBjm56WPMYqbLaSN/bl2mMbwvKYOECJj25EPQSHjqTSLGF9e6Xa/99K9A8bOIWTisbzG+RuqjT7YYE/mQvuMh0ehvbpFJ9xWwYFFqh/5fZePEVi+j3oIiKWJ57ThRKBuaN7SvFr8pHj3YblJWc8yQ+9mkKskXns3MCEWMxCNqk5LmPIdA7QZLBkiQ+U47pUVTETjbY5A1pfgUOwcFrgaafl6s9xBS6KeJduzG4FcOcmwh3H/ZtsoP7NpFFw99zzctqxyN7wZdPfrG6iba+QcvIG1yH47n+w72tU= nutanix@ntnx-2e08eed1-ac6d-4fa3-819d-c5c25663dfb2-a-cvm", "name": "2e08eed1-ac6d-4fa3-819d-c5c25663dfb2"}, {"key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCdKyu5leVDpjj3zaxYlrAbSMz8Mb1PWK0FeJkiPaCn6gCn4n88Jg+K7mIKAaJgfcEJMXl0VSHfjnYFE0hDdpL6/AmczFLsp/EmfJQ8p0uPpkPMjCeAv1BnAm3lcIFbXUzHGCKshfaRMjydJRbX6psaST1CcvdEAWDzXEVu2WnhVXKUl4p0So+Bc5hyOtn/uoRx+MiIMvZ3FcNWgTTB5a8gZcbSyu60VQjFeSaYfDBOfxmMMN5Ce48+Yo3GxcpMZyt9n96PFDJyMI+oP0OFSdG0C90X8/32C0v7GbkBOmXWfl4tYhXLCErrnqYZc5FzoU2IdosDHu5n6mMhm6upY7DO2reXN0GTf/Tdomk5IWtVoj/fr10U/Dtd6pJeln8osAm1tQk9SkLzAfw97TwO6lR7nZ4uQUZeGTyPhuU8wpXkPdUEecyWSP4PyzJ9MJeTg+hYd8RMgSHJRrslq2/aUxII7voJgzLMBbGF+Ad4Aqd1b5vfZo9pW4G2tm/ERyEiSdc= root@Nested-AHV-69f041c87298f6e91878aa57-0", "name": "10.101.64.223"}, {"key": "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAw8NhpiLG/6c8c0LocaQVM6+x8yBvLS+z13nYlqzSKr64HQSH+IIx14bS+uh0xf8ou5ROnbUa44YM9qG2RBK1hBVrwTIKZBwFwOTxDuXH9YoswqflnOeyTGUFerrMxlg5iYvKE01QIErKWt/BJ+hK/qVQi6SHh/WhyjAGNQPxjPBG3oEUFoLV9uDLX9RT/sLIQpBf91DCbF9+2rSToqjydj36d38JbmuGJGqr+DrEd0lKzfiJiQ39t3AXBE1bY2ISX+uwq07XkYZbrHaijrxnOBFZE7ETQmyxdcOvgDxvhnhZpFsUqbPqIqa45CwFWV+btzITvpJkveYjGSGR7ZJNHQ== nutanix@titan", "name": "agave"}, {"key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC6oDEABPvDtwtOFEJhu7sx9oUZskh0R4CWW6IM9uIxVtjYR/XXu587rXKac34InclJ3U3+PFQcAgEvdw2qiCEWWWMFMiALMneDELPd5qepKRrFJxc3hkyfagot3n7i6r7Y83ceIII4qM1mGLdUA3XdSWlttbgugnBrfB9yLq/BgtVqBvBVFayTGb6IsoMUSbODX6zZEt9Uzh/Yr49DV40ULpGhSYS9vWFB3GrajrliQ9Ea8oOB+8vK9Cavf7IOsaIaPsGI20mypeKFn4qcinBKc6O3PqU3YyYv7pLJWAvwXr9D9+rukgNAhKnd1fFQVLj4sAHA4ixfQk9+0kgAJM4P", "name": "nutest"}], "build_info": {"build_type": "release", "commit_id": "e5715fa114b0241e6c328ebc9be171c1d17720bc", "full_version": "el9-release-ganges-7.6-stable-e5715fa114b0241e6c328ebc9be171c1d17720bc", "short_commit_id": "e5715f", "version": "7.6"}, "cluster_arch": "X86_64", "cluster_function": ["AOS", "ONE_NODE"], "cluster_software_map": [{"software_type": "NCC", "version": "ncc-6.0.0"}, {"software_type": "NOS", "version": "el9-release-ganges-7.6-stable-e5715fa114b0241e6c328ebc9be171c1d17720bc"}], "cluster_type": "HYPER_CONVERGED", "encryption_in_transit_status": null, "encryption_option": null, "encryption_scope": null, "fault_tolerance_state": {"current_cluster_fault_tolerance": "CFT_1N_OR_1D", "current_max_fault_tolerance": 1, "desired_cluster_fault_tolerance": "CFT_1N_OR_1D", "desired_max_fault_tolerance": 1, "domain_awareness_level": "DISK", "isStrictRackAwarenessEnabled": false, "redundancy_status": null}, "hypervisor_types": ["AHV"], "incarnation_id": 1777354635529001, "isDegradedNodeMonitoringDisabled": false, "is_available": true, "is_lts": false, "is_password_remote_login_enabled": true, "is_remote_support_enabled": false, "operation_mode": "NORMAL", "pulse_status": {"is_enabled": false, "pii_scrubbing_level": null}, "redundancy_factor": 2, "timezone": "UTC"}, "container_name": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "externalStorageProviderInfo": [{"$objectType": "clustermgmt.v4.config.ExternalStorageProviderInfo", "$reserved": {"$fv": "v4.r3"}, "compatibleVersion": "5.1.0.283_5214", "isInstalled": false, "providerType": "DELL_POWERFLEX"}, {"compatibleVersion": "null", "isInstalled": false, "providerType": "EVERPURE_FLASHARRAY"}, {"compatibleVersion": "null", "isInstalled": false, "providerType": "DELL_POWERSTORE"}], "inefficient_vm_count": null, "links": null, "name": "auto_cluster_nested_69f041c87298f6e91878aa57", "network": {"backplane": {"is_segmentation_enabled": false, "netmask": null, "subnet": null, "vlan_tag": null}, "external_address": {"ipv4": {"prefix_length": 32, "value": "10.101.64.224"}, "ipv6": null}, "external_data_service_ip": {"ipv4": {"prefix_length": 32, "value": "10.101.64.225"}, "ipv6": null}, "external_subnet": "10.101.64.0/255.255.224.0", "fqdn": null, "http_proxy_list": null, "http_proxy_white_list": null, "internal_subnet": "192.168.5.0/255.255.255.128", "key_management_server_type": null, "management_server": null, "masquerading_ip": null, "masquerading_port": null, "name_server_ip_list": [{"fqdn": null, "ipv4": {"prefix_length": 32, "value": "10.40.64.15"}, "ipv6": null}, {"fqdn": null, "ipv4": {"prefix_length": 32, "value": "10.40.64.16"}, "ipv6": null}], "nfs_subnet_whitelist": null, "ntp_server_config_list": null, "ntp_server_ip_list": [{"fqdn": {"value": "ntp.dyn.nutanix.com"}, "ipv4": null, "ipv6": null}, {"fqdn": {"value": "0.centos.pool.ntp.org"}, "ipv4": null, "ipv6": null}, {"fqdn": {"value": "1.centos.pool.ntp.org"}, "ipv4": null, "ipv6": null}, {"fqdn": {"value": "2.centos.pool.ntp.org"}, "ipv4": null, "ipv6": null}, {"fqdn": {"value": "3.centos.pool.ntp.org"}, "ipv4": null, "ipv6": null}], "smtp_server": null}, "nodes": {"node_list": [{"controller_vm_ip": {"ipv4": {"prefix_length": 32, "value": "10.101.64.222"}, "ipv6": null}, "host_ip": {"ipv4": {"prefix_length": 32, "value": "10.101.64.223"}, "ipv6": null}, "node_uuid": "2e08eed1-ac6d-4fa3-819d-c5c25663dfb2"}], "number_of_nodes": 1}, "tenant_id": null, "upgrade_status": "SUCCEEDED", "vm_count": 9}], "total_available_results": 2}
+
+TASK [Set cluster variable] ****************************************************
+ok: [localhost] => {"ansible_facts": {"cluster": {"uuid": "0006507e-9fb0-cb29-1221-5254000db428"}}, "changed": false}
+
+TASK [Start ntnx_snmp_transport_v2 tests] **************************************
+ok: [localhost] => {
+    "msg": "Start ntnx_snmp_transport_v2 tests"
+}
+
+TASK [Generate SNMP transport create spec with check mode enabled] *************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": null, "response": {"port": 162, "protocol": "UDP"}, "task_ext_id": null}
+
+TASK [Check mode create status] ************************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "SNMP transport create spec generated successfully with check mode enabled"
+}
+
+TASK [Add SNMP transport with UDP protocol on port 162] ************************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": null, "response": {"ext_id": null, "is_enabled": true, "links": null, "tenant_id": null, "transports": [{"port": 162, "protocol": "UDP"}], "traps": null, "users": null}, "task_ext_id": "ZXJnb24=:e71982d6-59ed-46aa-47bd-2a9903bbd361"}
+
+TASK [Check SNMP transport creation with UDP/162] ******************************
+[WARNING]: Jinja constant strings should not contain embedded templates. This feature will be disabled by default in ansible-core 2.23.
+Origin: /tmp/codegen/195a70712ee04788bb93a0d36669977d/repo/tests/integration/targets/ntnx_snmp_transport_v2/tasks/all_operation.yml:51:9
+
+49       - result.changed == true
+50       - result.failed == false
+51       - result.ext_id == "{{ cluster.uuid }}"
+           ^ column 9
+
+Use inline expressions, for example: `when: "{{ a_var }}" == 42` becomes `when: a_var == 42`
+
+ok: [localhost] => {
+    "changed": false,
+    "msg": "SNMP transport added successfully with UDP/162"
+}
+
+TASK [Test idempotency - add same SNMP transport again] ************************
+skipping: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": "SNMP transport already exists. Nothing to change.", "response": null, "task_ext_id": null}
+
+TASK [Check idempotency] *******************************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "SNMP transport idempotency check passed"
+}
+
+TASK [Add SNMP transport with TCP protocol on port 161] ************************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": null, "response": {"ext_id": null, "is_enabled": true, "links": null, "tenant_id": null, "transports": [{"port": 162, "protocol": "UDP"}, {"port": 161, "protocol": "TCP"}], "traps": null, "users": null}, "task_ext_id": "ZXJnb24=:8e982e5f-6117-4341-4994-21fc33b3fbac"}
+
+TASK [Check SNMP transport creation with TCP/161] ******************************
+[WARNING]: Jinja constant strings should not contain embedded templates. This feature will be disabled by default in ansible-core 2.23.
+Origin: /tmp/codegen/195a70712ee04788bb93a0d36669977d/repo/tests/integration/targets/ntnx_snmp_transport_v2/tasks/all_operation.yml:96:9
+
+94       - result.changed == true
+95       - result.failed == false
+96       - result.ext_id == "{{ cluster.uuid }}"
+           ^ column 9
+
+Use inline expressions, for example: `when: "{{ a_var }}" == 42` becomes `when: a_var == 42`
+
+ok: [localhost] => {
+    "changed": false,
+    "msg": "SNMP transport added successfully with TCP/161"
+}
+
+TASK [Fetch SNMP transports info for the cluster] ******************************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": null, "response": [{"port": 162, "protocol": "UDP"}, {"port": 161, "protocol": "TCP"}]}
+
+TASK [Check SNMP transports info] **********************************************
+[WARNING]: Jinja constant strings should not contain embedded templates. This feature will be disabled by default in ansible-core 2.23.
+Origin: /tmp/codegen/195a70712ee04788bb93a0d36669977d/repo/tests/integration/targets/ntnx_snmp_transport_v2/tasks/all_operation.yml:115:9
+
+113       - result.changed == false
+114       - result.failed == false
+115       - result.ext_id == "{{ cluster.uuid }}"
+            ^ column 9
+
+Use inline expressions, for example: `when: "{{ a_var }}" == 42` becomes `when: a_var == 42`
+
+ok: [localhost] => {
+    "changed": false,
+    "msg": "SNMP transports info fetched successfully"
+}
+
+TASK [Generate SNMP transport delete spec with check mode enabled] *************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": "SNMP transport with protocol:TCP and port:161 will be removed from cluster:0006507e-9fb0-cb29-1221-5254000db428.", "response": null, "task_ext_id": null}
+
+TASK [Check mode delete status] ************************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "SNMP transport delete spec generated successfully with check mode enabled"
+}
+
+TASK [Remove SNMP transport with TCP protocol on port 161] *********************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": null, "response": {"ext_id": null, "is_enabled": true, "links": null, "tenant_id": null, "transports": [{"port": 162, "protocol": "UDP"}], "traps": null, "users": null}, "task_ext_id": "ZXJnb24=:55a52608-4149-49d7-4082-9ed071788f21"}
+
+TASK [Check SNMP transport deletion of TCP/161] ********************************
+[WARNING]: Jinja constant strings should not contain embedded templates. This feature will be disabled by default in ansible-core 2.23.
+Origin: /tmp/codegen/195a70712ee04788bb93a0d36669977d/repo/tests/integration/targets/ntnx_snmp_transport_v2/tasks/all_operation.yml:162:9
+
+160       - result.changed == true
+161       - result.failed == false
+162       - result.ext_id == "{{ cluster.uuid }}"
+            ^ column 9
+
+Use inline expressions, for example: `when: "{{ a_var }}" == 42` becomes `when: a_var == 42`
+
+ok: [localhost] => {
+    "changed": false,
+    "msg": "SNMP transport removed successfully with TCP/161"
+}
+
+TASK [Test idempotency - remove already removed transport] *********************
+skipping: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": "SNMP transport does not exist. Nothing to change.", "response": null, "task_ext_id": null}
+
+TASK [Check delete idempotency] ************************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "SNMP transport delete idempotency check passed"
+}
+
+TASK [Try to add SNMP transport with invalid cluster ext_id] *******************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching SNMP config using cluster ext_id
+Origin: /tmp/codegen/195a70712ee04788bb93a0d36669977d/repo/tests/integration/targets/ntnx_snmp_transport_v2/tasks/all_operation.yml:193:3
+
+191 ############################################################
+192
+193 - name: Try to add SNMP transport with invalid cluster ext_id
+      ^ column 3
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching SNMP config using cluster ext_id", "response": {"$objectType": "clustermgmt.v4.config.GetSnmpConfigByClusterIdApiResponse", "$reserved": {"$fv": "v4.r3"}, "data": {"$objectType": "clustermgmt.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r3"}, "error": [{"$objectType": "clustermgmt.v4.error.AppMessage", "$reserved": {"$fv": "v4.r3"}, "argumentsMap": {"reason": "Unknown Cluster Uuid: 00000000-0000-0000-0000-000000000000"}, "code": "CLU-10005", "errorGroup": "CLUSTERMGMT_INVALID_INPUT", "locale": "en_US", "message": "Failed to perform the operation as the internal service could not find the entity due to an error - Unknown Cluster Uuid: 00000000-0000-0000-0000-000000000000.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [Check invalid cluster ext_id error] **************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Got expected failure for invalid cluster ext_id"
+}
+
+TASK [Try to add SNMP transport without required field cluster_ext_id] *********
+[ERROR]: Task failed: Module failed: missing required arguments: cluster_ext_id
+Origin: /tmp/codegen/195a70712ee04788bb93a0d36669977d/repo/tests/integration/targets/ntnx_snmp_transport_v2/tasks/all_operation.yml:210:3
+
+208     success_msg: "Got expected failure for invalid cluster ext_id"
+209
+210 - name: Try to add SNMP transport without required field cluster_ext_id
+      ^ column 3
+
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "missing required arguments: cluster_ext_id"}
+...ignoring
+
+TASK [Check missing cluster_ext_id error] **************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Got expected failure for missing cluster_ext_id"
+}
+
+TASK [Remove remaining SNMP transport with UDP protocol on port 162] ***********
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": null, "response": {"ext_id": null, "is_enabled": true, "links": null, "tenant_id": null, "transports": null, "traps": null, "users": null}, "task_ext_id": "ZXJnb24=:3ca473f0-f3e7-46cd-6f89-5b3ba8605f20"}
+
+TASK [Check cleanup deletion status] *******************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "SNMP transport cleanup successful"
+}
+
+TASK [Verify all test transports are removed] **********************************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": null, "response": []}
+
+TASK [Check final state] *******************************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "All SNMP transport tests completed successfully"
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=25   changed=4    unreachable=0    failed=0    skipped=2    rescued=0    ignored=2   
+

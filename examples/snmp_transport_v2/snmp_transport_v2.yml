@@ -1,0 +1,112 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Add SNMP transport (UDP/162)
+# 2. Add SNMP transport (TCP/161)
+# 3. Fetch SNMP transports info
+# 4. Remove SNMP transport (TCP/161)
+# 5. Remove SNMP transport (UDP/162)
+
+- name: SNMP Transport playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: 10.101.64.103
+      nutanix_username: admin
+      nutanix_password: Nutanix.123
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        cluster:
+          uuid: "{{ cluster_uuid | default('00061de6-4a87-6b06-185b-ac1f6b6f97e2') }}"
+
+    - name: Get cluster info for SNMP operations
+      nutanix.ncp.ntnx_clusters_info_v2:
+        limit: 1
+      register: clusters_result
+
+    - name: Set cluster UUID from first cluster
+      ansible.builtin.set_fact:
+        cluster:
+          uuid: "{{ clusters_result.response[0].ext_id }}"
+      when: clusters_result.response | length > 0
+
+    - name: Add SNMP transport with UDP protocol on port 162
+      nutanix.ncp.ntnx_snmp_transport_v2:
+        cluster_ext_id: "{{ cluster.uuid }}"
+        protocol: UDP
+        port: 162
+        state: present
+      register: result
+
+    - name: Print add UDP transport result
+      ansible.builtin.debug:
+        var: result
+
+    - name: Add SNMP transport with TCP protocol on port 161
+      nutanix.ncp.ntnx_snmp_transport_v2:
+        cluster_ext_id: "{{ cluster.uuid }}"
+        protocol: TCP
+        port: 161
+        state: present
+      register: result
+
+    - name: Print add TCP transport result
+      ansible.builtin.debug:
+        var: result
+
+    - name: Test idempotency - add same UDP transport again
+      nutanix.ncp.ntnx_snmp_transport_v2:
+        cluster_ext_id: "{{ cluster.uuid }}"
+        protocol: UDP
+        port: 162
+        state: present
+      register: result
+
+    - name: Print idempotency result
+      ansible.builtin.debug:
+        var: result
+
+    - name: Fetch SNMP transports info
+      nutanix.ncp.ntnx_snmp_transports_info_v2:
+        ext_id: "{{ cluster.uuid }}"
+      register: result
+
+    - name: Print SNMP transports info
+      ansible.builtin.debug:
+        var: result
+
+    - name: Remove SNMP transport with TCP protocol on port 161
+      nutanix.ncp.ntnx_snmp_transport_v2:
+        cluster_ext_id: "{{ cluster.uuid }}"
+        protocol: TCP
+        port: 161
+        state: absent
+      register: result
+
+    - name: Print remove TCP transport result
+      ansible.builtin.debug:
+        var: result
+
+    - name: Remove SNMP transport with UDP protocol on port 162
+      nutanix.ncp.ntnx_snmp_transport_v2:
+        cluster_ext_id: "{{ cluster.uuid }}"
+        protocol: UDP
+        port: 162
+        state: absent
+      register: result
+
+    - name: Print remove UDP transport result
+      ansible.builtin.debug:
+        var: result
+
+    - name: Verify all transports removed
+      nutanix.ncp.ntnx_snmp_transports_info_v2:
+        ext_id: "{{ cluster.uuid }}"
+      register: result
+
+    - name: Print final transports info
+      ansible.builtin.debug:
+        var: result

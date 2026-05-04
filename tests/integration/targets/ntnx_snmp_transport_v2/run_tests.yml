@@ -1,0 +1,23 @@
+---
+- name: Run SNMP Transport integration tests
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: 10.101.64.103
+      nutanix_username: admin
+      nutanix_password: Nutanix.123
+      validate_certs: false
+  tasks:
+    - name: Get cluster info
+      nutanix.ncp.ntnx_clusters_info_v2:
+        limit: 1
+      register: clusters_result
+
+    - name: Set cluster variable
+      ansible.builtin.set_fact:
+        cluster:
+          uuid: "{{ clusters_result.response[0].ext_id }}"
+
+    - name: Import all operation tests
+      ansible.builtin.import_tasks: "tasks/all_operation.yml"
