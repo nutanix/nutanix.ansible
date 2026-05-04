@@ -115,11 +115,10 @@ SDK_IMP_ERROR = None
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
 try:
-    import ntnx_clustermgmt_py_client  # noqa: E402
-
-    HAS_SDK = True
+    import ntnx_clustermgmt_py_client as clustermgmt_sdk  # noqa: E402
 except ImportError:
-    HAS_SDK = False  # noqa: F841
+    from ..module_utils.v4.sdk_mock import mock_sdk as clustermgmt_sdk  # noqa: E402
+
     SDK_IMP_ERROR = traceback.format_exc()
 
 # Suppress the InsecureRequestWarning
@@ -155,7 +154,7 @@ def run_module():
     )
     if SDK_IMP_ERROR:
         module.fail_json(
-            msg=missing_required_lib("ntnx_clustermgmt_py_client"),
+            msg=missing_required_lib(clustermgmt_sdk.__name__),
             exception=SDK_IMP_ERROR,
         )
     remove_param_with_none_value(module.params)
