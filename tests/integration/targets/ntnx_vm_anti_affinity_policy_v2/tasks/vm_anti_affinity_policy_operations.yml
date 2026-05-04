@@ -154,7 +154,7 @@
       - result.response.categories[0].ext_id == "{{ category_ext_id1 }}"
     fail_msg: "Update VM anti-affinity policy check mode failed"
     success_msg: "Update VM anti-affinity policy check mode passed"
-  ignore_errors: true
+  failed_when: false
 
 ##################################################################################
 # Update
@@ -183,7 +183,7 @@
       - result.response.categories[0].ext_id == "{{ category_ext_id1 }}"
     fail_msg: "Update VM anti-affinity policy failed"
     success_msg: "Update VM anti-affinity policy passed"
-  ignore_errors: true
+  failed_when: false
 
 ##################################################################################
 # Idempotency check
@@ -211,7 +211,7 @@
       - result.ext_id == "{{ todelete[0] }}"
     fail_msg: "Check for idempotency by updating the same policy failed"
     success_msg: "Check for idempotency by updating the same policy passed"
-  ignore_errors: true
+  failed_when: false
 
 ##################################################################################
 # Info - Get by ext_id
