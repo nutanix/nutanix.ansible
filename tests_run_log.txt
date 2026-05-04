@@ -1,0 +1,154 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [SNMP Transport Integration Tests] ****************************************
+
+TASK [Start ntnx_snmp_transport_v2 and ntnx_snmp_transports_info_v2 tests] *****
+ok: [localhost] => {
+    "msg": "Start SNMP transport tests"
+}
+
+TASK [List SNMP transports before tests] ***************************************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": null, "response": []}
+
+TASK [Verify initial info fetch] ***********************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Successfully fetched initial SNMP transports info"
+}
+
+TASK [Add SNMP transport with check mode enabled] ******************************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": null, "response": {"port": 162, "protocol": "UDP"}, "task_ext_id": null}
+
+TASK [Verify check mode add SNMP transport] ************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Check mode for add SNMP transport succeeded"
+}
+
+TASK [Add SNMP transport with UDP protocol on port 162] ************************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": null, "response": {"ext_id": null, "is_enabled": true, "links": null, "tenant_id": null, "transports": [{"port": 162, "protocol": "UDP"}], "traps": null, "users": null}, "task_ext_id": "ZXJnb24=:c159bde1-5c08-44f9-5e0b-340400be0b08"}
+
+TASK [Verify add UDP transport] ************************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Successfully added UDP SNMP transport"
+}
+
+TASK [Add same SNMP transport again (idempotency test)] ************************
+skipping: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": "SNMP transport already exists. Nothing to change.", "response": null, "task_ext_id": null}
+
+TASK [Verify idempotency for add] **********************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Idempotency check for add SNMP transport succeeded"
+}
+
+TASK [Add SNMP transport with TCP protocol on port 161] ************************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": null, "response": {"ext_id": null, "is_enabled": true, "links": null, "tenant_id": null, "transports": [{"port": 161, "protocol": "TCP"}, {"port": 162, "protocol": "UDP"}], "traps": null, "users": null}, "task_ext_id": "ZXJnb24=:4ce8f350-7fb1-4dd2-6112-a509bf1a06ca"}
+
+TASK [Verify add TCP transport] ************************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Successfully added TCP SNMP transport"
+}
+
+TASK [List SNMP transports after adding] ***************************************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": null, "response": [{"port": 161, "protocol": "TCP"}, {"port": 162, "protocol": "UDP"}]}
+
+TASK [Verify transports listed after add] **************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Successfully verified transports after add"
+}
+
+TASK [Remove SNMP transport with check mode enabled] ***************************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": "SNMP transport UDP:162 on cluster 0006507e-9fb0-cb29-1221-5254000db428 will be deleted.", "response": null, "task_ext_id": null}
+
+TASK [Verify check mode remove SNMP transport] *********************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Check mode for remove SNMP transport succeeded"
+}
+
+TASK [Remove SNMP transport with UDP protocol on port 162] *********************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": null, "response": {"ext_id": null, "is_enabled": true, "links": null, "tenant_id": null, "transports": [{"port": 161, "protocol": "TCP"}], "traps": null, "users": null}, "task_ext_id": "ZXJnb24=:07e16af6-b57f-459c-63c6-ddf58f4d5cce"}
+
+TASK [Verify remove UDP transport] *********************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Successfully removed UDP SNMP transport"
+}
+
+TASK [Remove same SNMP transport again (idempotency test)] *********************
+skipping: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": "SNMP transport does not exist. Nothing to change.", "response": null, "task_ext_id": null}
+
+TASK [Verify idempotency for remove] *******************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Idempotency check for remove SNMP transport succeeded"
+}
+
+TASK [Remove SNMP transport with TCP protocol on port 161] *********************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": null, "response": {"ext_id": null, "is_enabled": true, "links": null, "tenant_id": null, "transports": null, "traps": null, "users": null}, "task_ext_id": "ZXJnb24=:1874df8c-cba6-46da-40f2-bc7b494932f6"}
+
+TASK [Verify remove TCP transport] *********************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Successfully removed TCP SNMP transport"
+}
+
+TASK [List SNMP transports after cleanup] **************************************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": null, "response": []}
+
+TASK [Verify transports after cleanup] *****************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Successfully verified transports after cleanup"
+}
+
+TASK [Add SNMP transport with invalid cluster ext_id (negative test)] **********
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching SNMP config for cluster
+Origin: /tmp/codegen/ce3f37b27777456c8fe44ac61d8334ec/repo/tests/run_snmp_transport_tests.yml:212:7
+
+210
+211     # Negative - Invalid cluster ext_id
+212     - name: Add SNMP transport with invalid cluster ext_id (negative test)
+          ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "BAD REQUEST", "msg": "Api Exception raised while fetching SNMP config for cluster", "response": {"$dataItemDiscriminator": "clustermgmt.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "clustermgmt.v4.error.SchemaValidationError", "$objectType": "clustermgmt.v4.error.ErrorResponse", "error": {"$objectType": "clustermgmt.v4.error.SchemaValidationError", "error": "Bad Request", "path": "/api/clustermgmt/v4.2/config/clusters/invalid-cluster-ext-id-000/snmp", "statusCode": 400, "timestamp": "2026-05-04T06:42:25.696028099Z", "validationErrorMessages": [{"$objectType": "clustermgmt.v4.error.SchemaValidationErrorMessage", "location": "@path.clusterExtId", "message": "ECMA 262 regex \"^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$\" does not match input string \"invalid-cluster-ext-id-000\""}]}}}, "status": 400}
+...ignoring
+
+TASK [Verify invalid cluster ext_id error] *************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Invalid cluster ext_id correctly rejected"
+}
+
+TASK [Fetch SNMP transports with invalid cluster ext_id (negative test)] *******
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching SNMP config for cluster
+Origin: /tmp/codegen/ce3f37b27777456c8fe44ac61d8334ec/repo/tests/run_snmp_transport_tests.yml:229:7
+
+227
+228     # Negative - Info with invalid cluster ext_id
+229     - name: Fetch SNMP transports with invalid cluster ext_id (negative test)
+          ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "BAD REQUEST", "msg": "Api Exception raised while fetching SNMP config for cluster", "response": {"$dataItemDiscriminator": "clustermgmt.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "clustermgmt.v4.error.SchemaValidationError", "$objectType": "clustermgmt.v4.error.ErrorResponse", "error": {"$objectType": "clustermgmt.v4.error.SchemaValidationError", "error": "Bad Request", "path": "/api/clustermgmt/v4.2/config/clusters/invalid-cluster-ext-id-000/snmp", "statusCode": 400, "timestamp": "2026-05-04T06:42:26.354727865Z", "validationErrorMessages": [{"$objectType": "clustermgmt.v4.error.SchemaValidationErrorMessage", "location": "@path.clusterExtId", "message": "ECMA 262 regex \"^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$\" does not match input string \"invalid-cluster-ext-id-000\""}]}}}, "status": 400}
+...ignoring
+
+TASK [Verify invalid info cluster ext_id error] ********************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Invalid cluster ext_id correctly rejected for info"
+}
+
+TASK [End ntnx_snmp_transport_v2 and ntnx_snmp_transports_info_v2 tests] *******
+ok: [localhost] => {
+    "msg": "End SNMP transport tests - ALL PASSED"
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=26   changed=4    unreachable=0    failed=0    skipped=2    rescued=0    ignored=2   
+

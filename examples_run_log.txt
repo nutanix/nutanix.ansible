@@ -1,0 +1,185 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [SNMP transport management playbook] **************************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"cluster_ext_id": "0006507e-9fb0-cb29-1221-5254000db428"}, "changed": false}
+
+TASK [List SNMP transports before any operations] ******************************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": null, "response": []}
+
+TASK [Display initial SNMP transports] *****************************************
+ok: [localhost] => {
+    "initial_transports": {
+        "changed": false,
+        "error": null,
+        "ext_id": "0006507e-9fb0-cb29-1221-5254000db428",
+        "failed": false,
+        "msg": null,
+        "response": []
+    }
+}
+
+TASK [Add SNMP transport with UDP protocol on port 162] ************************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": null, "response": {"ext_id": null, "is_enabled": true, "links": null, "tenant_id": null, "transports": [{"port": 162, "protocol": "UDP"}], "traps": null, "users": null}, "task_ext_id": "ZXJnb24=:2a791fa1-9403-4109-6eba-2b16ec29efbc"}
+
+TASK [Display add UDP transport result] ****************************************
+ok: [localhost] => {
+    "add_udp_result": {
+        "changed": true,
+        "error": null,
+        "ext_id": "0006507e-9fb0-cb29-1221-5254000db428",
+        "failed": false,
+        "msg": null,
+        "response": {
+            "ext_id": null,
+            "is_enabled": true,
+            "links": null,
+            "tenant_id": null,
+            "transports": [
+                {
+                    "port": 162,
+                    "protocol": "UDP"
+                }
+            ],
+            "traps": null,
+            "users": null
+        },
+        "skipped": false,
+        "task_ext_id": "ZXJnb24=:2a791fa1-9403-4109-6eba-2b16ec29efbc"
+    }
+}
+
+TASK [Add SNMP transport with TCP protocol on port 161] ************************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": null, "response": {"ext_id": null, "is_enabled": true, "links": null, "tenant_id": null, "transports": [{"port": 162, "protocol": "UDP"}, {"port": 161, "protocol": "TCP"}], "traps": null, "users": null}, "task_ext_id": "ZXJnb24=:3c9f86cc-8eae-4dc3-4be8-a05f0bb8c524"}
+
+TASK [Display add TCP transport result] ****************************************
+ok: [localhost] => {
+    "add_tcp_result": {
+        "changed": true,
+        "error": null,
+        "ext_id": "0006507e-9fb0-cb29-1221-5254000db428",
+        "failed": false,
+        "msg": null,
+        "response": {
+            "ext_id": null,
+            "is_enabled": true,
+            "links": null,
+            "tenant_id": null,
+            "transports": [
+                {
+                    "port": 162,
+                    "protocol": "UDP"
+                },
+                {
+                    "port": 161,
+                    "protocol": "TCP"
+                }
+            ],
+            "traps": null,
+            "users": null
+        },
+        "skipped": false,
+        "task_ext_id": "ZXJnb24=:3c9f86cc-8eae-4dc3-4be8-a05f0bb8c524"
+    }
+}
+
+TASK [List SNMP transports after adding] ***************************************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": null, "response": [{"port": 162, "protocol": "UDP"}, {"port": 161, "protocol": "TCP"}]}
+
+TASK [Display SNMP transports after add] ***************************************
+ok: [localhost] => {
+    "after_add_transports": {
+        "changed": false,
+        "error": null,
+        "ext_id": "0006507e-9fb0-cb29-1221-5254000db428",
+        "failed": false,
+        "msg": null,
+        "response": [
+            {
+                "port": 162,
+                "protocol": "UDP"
+            },
+            {
+                "port": 161,
+                "protocol": "TCP"
+            }
+        ]
+    }
+}
+
+TASK [Remove SNMP transport with UDP protocol on port 162] *********************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": null, "response": {"ext_id": null, "is_enabled": true, "links": null, "tenant_id": null, "transports": [{"port": 161, "protocol": "TCP"}], "traps": null, "users": null}, "task_ext_id": "ZXJnb24=:c2bb3aed-dd0a-4794-6458-1044ea7a124a"}
+
+TASK [Display remove UDP transport result] *************************************
+ok: [localhost] => {
+    "remove_udp_result": {
+        "changed": true,
+        "error": null,
+        "ext_id": "0006507e-9fb0-cb29-1221-5254000db428",
+        "failed": false,
+        "msg": null,
+        "response": {
+            "ext_id": null,
+            "is_enabled": true,
+            "links": null,
+            "tenant_id": null,
+            "transports": [
+                {
+                    "port": 161,
+                    "protocol": "TCP"
+                }
+            ],
+            "traps": null,
+            "users": null
+        },
+        "skipped": false,
+        "task_ext_id": "ZXJnb24=:c2bb3aed-dd0a-4794-6458-1044ea7a124a"
+    }
+}
+
+TASK [Remove SNMP transport with TCP protocol on port 161] *********************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": null, "response": {"ext_id": null, "is_enabled": true, "links": null, "tenant_id": null, "transports": null, "traps": null, "users": null}, "task_ext_id": "ZXJnb24=:09510ea0-52b1-434c-659d-deb67b819a84"}
+
+TASK [Display remove TCP transport result] *************************************
+ok: [localhost] => {
+    "remove_tcp_result": {
+        "changed": true,
+        "error": null,
+        "ext_id": "0006507e-9fb0-cb29-1221-5254000db428",
+        "failed": false,
+        "msg": null,
+        "response": {
+            "ext_id": null,
+            "is_enabled": true,
+            "links": null,
+            "tenant_id": null,
+            "transports": null,
+            "traps": null,
+            "users": null
+        },
+        "skipped": false,
+        "task_ext_id": "ZXJnb24=:09510ea0-52b1-434c-659d-deb67b819a84"
+    }
+}
+
+TASK [List SNMP transports after removing] *************************************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": null, "response": []}
+
+TASK [Display SNMP transports after remove] ************************************
+ok: [localhost] => {
+    "after_remove_transports": {
+        "changed": false,
+        "error": null,
+        "ext_id": "0006507e-9fb0-cb29-1221-5254000db428",
+        "failed": false,
+        "msg": null,
+        "response": []
+    }
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=15   changed=4    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+

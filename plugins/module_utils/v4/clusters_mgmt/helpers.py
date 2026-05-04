@@ -109,3 +109,25 @@ def get_cluster_profile(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching cluster profile info using ext_id",
         )
+
+
+def get_snmp_config(module, api_instance, cluster_ext_id):
+    """
+    This method will return SNMP config for a cluster using cluster external ID.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+    return:
+        snmp config (object): SNMP config info
+    """
+    try:
+        return api_instance.get_snmp_config_by_cluster_id(
+            clusterExtId=cluster_ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching SNMP config using cluster ext_id",
+        )
