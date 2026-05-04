@@ -1,0 +1,168 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Run SNMP transport integration tests] ************************************
+
+TASK [Start SNMP transport CRUD tests] *****************************************
+ok: [localhost] => {
+    "msg": "Starting SNMP transport CRUD tests"
+}
+
+TASK [List all clusters to get a cluster external ID] **************************
+ok: [localhost] => {"changed": false, "error": null, "response": [{"backup_eligibility_score": 1, "categories": null, "cluster_profile_ext_id": null, "config": {"authorized_public_key_list": [{"key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDWQlWGnPpWemdrFcHLykUr7Ni88jrVWGBo3+P/Ij6nuYH8ODAppFUlSHyMH562s1F4S89B0s3aS5vVJKntMq3vD5jIn7hOIBWj0L4Cr8RPIulzpswdvi+gRyHXbQoOLy5fCIBxVeDOYA0+3esZyMrQ/VNpidxkOmB0n4mnfq3FHmggVC8qTJOYV8dKvXDneNEbzMGw8tY+SLkkSZK6ibciNtrOSFr+kBjm56WPMYqbLaSN/bl2mMbwvKYOECJj25EPQSHjqTSLGF9e6Xa/99K9A8bOIWTisbzG+RuqjT7YYE/mQvuMh0ehvbpFJ9xWwYFFqh/5fZePEVi+j3oIiKWJ57ThRKBuaN7SvFr8pHj3YblJWc8yQ+9mkKskXns3MCEWMxCNqk5LmPIdA7QZLBkiQ+U47pUVTETjbY5A1pfgUOwcFrgaafl6s9xBS6KeJduzG4FcOcmwh3H/ZtsoP7NpFFw99zzctqxyN7wZdPfrG6iba+QcvIG1yH47n+w72tU= nutanix@ntnx-2e08eed1-ac6d-4fa3-819d-c5c25663dfb2-a-cvm", "name": "2e08eed1-ac6d-4fa3-819d-c5c25663dfb2"}, {"key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCdKyu5leVDpjj3zaxYlrAbSMz8Mb1PWK0FeJkiPaCn6gCn4n88Jg+K7mIKAaJgfcEJMXl0VSHfjnYFE0hDdpL6/AmczFLsp/EmfJQ8p0uPpkPMjCeAv1BnAm3lcIFbXUzHGCKshfaRMjydJRbX6psaST1CcvdEAWDzXEVu2WnhVXKUl4p0So+Bc5hyOtn/uoRx+MiIMvZ3FcNWgTTB5a8gZcbSyu60VQjFeSaYfDBOfxmMMN5Ce48+Yo3GxcpMZyt9n96PFDJyMI+oP0OFSdG0C90X8/32C0v7GbkBOmXWfl4tYhXLCErrnqYZc5FzoU2IdosDHu5n6mMhm6upY7DO2reXN0GTf/Tdomk5IWtVoj/fr10U/Dtd6pJeln8osAm1tQk9SkLzAfw97TwO6lR7nZ4uQUZeGTyPhuU8wpXkPdUEecyWSP4PyzJ9MJeTg+hYd8RMgSHJRrslq2/aUxII7voJgzLMBbGF+Ad4Aqd1b5vfZo9pW4G2tm/ERyEiSdc= root@Nested-AHV-69f041c87298f6e91878aa57-0", "name": "10.101.64.223"}, {"key": "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAw8NhpiLG/6c8c0LocaQVM6+x8yBvLS+z13nYlqzSKr64HQSH+IIx14bS+uh0xf8ou5ROnbUa44YM9qG2RBK1hBVrwTIKZBwFwOTxDuXH9YoswqflnOeyTGUFerrMxlg5iYvKE01QIErKWt/BJ+hK/qVQi6SHh/WhyjAGNQPxjPBG3oEUFoLV9uDLX9RT/sLIQpBf91DCbF9+2rSToqjydj36d38JbmuGJGqr+DrEd0lKzfiJiQ39t3AXBE1bY2ISX+uwq07XkYZbrHaijrxnOBFZE7ETQmyxdcOvgDxvhnhZpFsUqbPqIqa45CwFWV+btzITvpJkveYjGSGR7ZJNHQ== nutanix@titan", "name": "agave"}, {"key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC6oDEABPvDtwtOFEJhu7sx9oUZskh0R4CWW6IM9uIxVtjYR/XXu587rXKac34InclJ3U3+PFQcAgEvdw2qiCEWWWMFMiALMneDELPd5qepKRrFJxc3hkyfagot3n7i6r7Y83ceIII4qM1mGLdUA3XdSWlttbgugnBrfB9yLq/BgtVqBvBVFayTGb6IsoMUSbODX6zZEt9Uzh/Yr49DV40ULpGhSYS9vWFB3GrajrliQ9Ea8oOB+8vK9Cavf7IOsaIaPsGI20mypeKFn4qcinBKc6O3PqU3YyYv7pLJWAvwXr9D9+rukgNAhKnd1fFQVLj4sAHA4ixfQk9+0kgAJM4P", "name": "nutest"}], "build_info": {"build_type": "release", "commit_id": "e5715fa114b0241e6c328ebc9be171c1d17720bc", "full_version": "el9-release-ganges-7.6-stable-e5715fa114b0241e6c328ebc9be171c1d17720bc", "short_commit_id": "e5715f", "version": "7.6"}, "cluster_arch": "X86_64", "cluster_function": ["AOS", "ONE_NODE"], "cluster_software_map": [{"software_type": "NCC", "version": "ncc-6.0.0"}, {"software_type": "NOS", "version": "el9-release-ganges-7.6-stable-e5715fa114b0241e6c328ebc9be171c1d17720bc"}], "cluster_type": "HYPER_CONVERGED", "encryption_in_transit_status": null, "encryption_option": null, "encryption_scope": null, "fault_tolerance_state": {"current_cluster_fault_tolerance": "CFT_1N_OR_1D", "current_max_fault_tolerance": 1, "desired_cluster_fault_tolerance": "CFT_1N_OR_1D", "desired_max_fault_tolerance": 1, "domain_awareness_level": "DISK", "isStrictRackAwarenessEnabled": false, "redundancy_status": null}, "hypervisor_types": ["AHV"], "incarnation_id": 1777354635529001, "isDegradedNodeMonitoringDisabled": false, "is_available": true, "is_lts": false, "is_password_remote_login_enabled": true, "is_remote_support_enabled": false, "operation_mode": "NORMAL", "pulse_status": {"is_enabled": false, "pii_scrubbing_level": null}, "redundancy_factor": 2, "timezone": "UTC"}, "container_name": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "externalStorageProviderInfo": [{"$objectType": "clustermgmt.v4.config.ExternalStorageProviderInfo", "$reserved": {"$fv": "v4.r3"}, "compatibleVersion": "5.1.0.283_5214", "isInstalled": false, "providerType": "DELL_POWERFLEX"}, {"compatibleVersion": "null", "isInstalled": false, "providerType": "EVERPURE_FLASHARRAY"}, {"compatibleVersion": "null", "isInstalled": false, "providerType": "DELL_POWERSTORE"}], "inefficient_vm_count": null, "links": null, "name": "auto_cluster_nested_69f041c87298f6e91878aa57", "network": {"backplane": {"is_segmentation_enabled": false, "netmask": null, "subnet": null, "vlan_tag": null}, "external_address": {"ipv4": {"prefix_length": 32, "value": "10.101.64.224"}, "ipv6": null}, "external_data_service_ip": {"ipv4": {"prefix_length": 32, "value": "10.101.64.225"}, "ipv6": null}, "external_subnet": "10.101.64.0/255.255.224.0", "fqdn": null, "http_proxy_list": null, "http_proxy_white_list": null, "internal_subnet": "192.168.5.0/255.255.255.128", "key_management_server_type": null, "management_server": null, "masquerading_ip": null, "masquerading_port": null, "name_server_ip_list": [{"fqdn": null, "ipv4": {"prefix_length": 32, "value": "10.40.64.15"}, "ipv6": null}, {"fqdn": null, "ipv4": {"prefix_length": 32, "value": "10.40.64.16"}, "ipv6": null}], "nfs_subnet_whitelist": null, "ntp_server_config_list": null, "ntp_server_ip_list": [{"fqdn": {"value": "ntp.dyn.nutanix.com"}, "ipv4": null, "ipv6": null}, {"fqdn": {"value": "0.centos.pool.ntp.org"}, "ipv4": null, "ipv6": null}, {"fqdn": {"value": "1.centos.pool.ntp.org"}, "ipv4": null, "ipv6": null}, {"fqdn": {"value": "2.centos.pool.ntp.org"}, "ipv4": null, "ipv6": null}, {"fqdn": {"value": "3.centos.pool.ntp.org"}, "ipv4": null, "ipv6": null}], "smtp_server": null}, "nodes": {"node_list": [{"controller_vm_ip": {"ipv4": {"prefix_length": 32, "value": "10.101.64.222"}, "ipv6": null}, "host_ip": {"ipv4": {"prefix_length": 32, "value": "10.101.64.223"}, "ipv6": null}, "node_uuid": "2e08eed1-ac6d-4fa3-819d-c5c25663dfb2"}], "number_of_nodes": 1}, "tenant_id": null, "upgrade_status": "SUCCEEDED", "vm_count": 9}], "total_available_results": 1}
+
+TASK [Set cluster ext_id for testing] ******************************************
+ok: [localhost] => {"ansible_facts": {"test_cluster_ext_id": "0006507e-9fb0-cb29-1221-5254000db428"}, "changed": false}
+
+TASK [Skip tests if no cluster found] ******************************************
+skipping: [localhost] => {"msg": "end_play", "skip_reason": "end_play conditional evaluated to False, continuing play"}
+
+TASK [Display test cluster ext_id] *********************************************
+ok: [localhost] => {
+    "msg": "Using cluster ext_id: 0006507e-9fb0-cb29-1221-5254000db428"
+}
+
+TASK [Create SNMP transport - check_mode] **************************************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "response": {"port": 162, "protocol": "UDP"}, "task_ext_id": null}
+
+TASK [Verify check_mode create result] *****************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "check_mode create test passed"
+}
+
+TASK [Add SNMP transport - UDP port 162] ***************************************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": ["0006507e-9fb0-cb29-1221-5254000db428"], "completed_time": "2026-05-04T06:39:16.957464+00:00", "completion_details": null, "created_time": "2026-05-04T06:39:16.650546+00:00", "entities_affected": [{"ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "name": null, "rel": "clustermgmt:config:cluster"}], "error_messages": null, "ext_id": "ZXJnb24=:e9c41b6e-cedd-463b-5a5e-73fee02d1098", "is_background_task": false, "is_cancelable": false, "last_updated_time": "2026-05-04T06:39:16.957463+00:00", "legacy_error_message": null, "number_of_entities_affected": 1, "number_of_subtasks": 1, "operation": "Add Snmp Transports", "operation_description": "Add snmp transports", "owned_by": {"ext_id": "00000000-0000-0000-0000-000000000000", "name": "admin"}, "parent_task": null, "progress_percentage": 100, "projectExtId": "00000000-0000-0000-0000-000000000000", "resource_links": null, "root_task": null, "started_time": "2026-05-04T06:39:16.674247+00:00", "status": "SUCCEEDED", "sub_steps": null, "sub_tasks": [{"ext_id": "ZXJnb24=:ce2692bb-fabf-4f0a-5647-97351b75f49c", "href": "https://10.101.64.103:9440/api/prism/v4.3/config/tasks/ZXJnb24=:ce2692bb-fabf-4f0a-5647-97351b75f49c", "rel": "subtask"}], "warnings": null}, "task_ext_id": "ZXJnb24=:e9c41b6e-cedd-463b-5a5e-73fee02d1098"}
+
+TASK [Verify create result] ****************************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "SNMP transport create passed"
+}
+
+TASK [Fetch SNMP transports after create] **************************************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "response": [{"port": 162, "protocol": "UDP"}]}
+
+TASK [Verify transport exists in list] *****************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Transport verified after creation"
+}
+
+TASK [Add same SNMP transport again - idempotency check] ***********************
+skipping: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": "SNMP transport with protocol 'UDP' and port '162' already exists.", "response": null, "task_ext_id": null}
+
+TASK [Verify idempotency - should be skipped] **********************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Idempotency check for create passed"
+}
+
+TASK [Update SNMP transport - check_mode] **************************************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "response": {"port": 163, "protocol": "TCP"}, "task_ext_id": null}
+
+TASK [Verify check_mode update result] *****************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "check_mode update test passed"
+}
+
+TASK [Update SNMP transport - change from UDP/162 to TCP/163] ******************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": ["0006507e-9fb0-cb29-1221-5254000db428"], "completed_time": "2026-05-04T06:39:26.738547+00:00", "completion_details": null, "created_time": "2026-05-04T06:39:26.458004+00:00", "entities_affected": [{"ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "name": null, "rel": "clustermgmt:config:cluster"}], "error_messages": null, "ext_id": "ZXJnb24=:313d8a50-0325-4fb4-6de5-fcc588c79cb1", "is_background_task": false, "is_cancelable": false, "last_updated_time": "2026-05-04T06:39:26.738546+00:00", "legacy_error_message": null, "number_of_entities_affected": 1, "number_of_subtasks": 1, "operation": "Add Snmp Transports", "operation_description": "Add snmp transports", "owned_by": {"ext_id": "00000000-0000-0000-0000-000000000000", "name": "admin"}, "parent_task": null, "progress_percentage": 100, "projectExtId": "00000000-0000-0000-0000-000000000000", "resource_links": null, "root_task": null, "started_time": "2026-05-04T06:39:26.475070+00:00", "status": "SUCCEEDED", "sub_steps": null, "sub_tasks": [{"ext_id": "ZXJnb24=:eeaf8f63-e14b-481a-4d39-0f4277902d97", "href": "https://10.101.64.103:9440/api/prism/v4.3/config/tasks/ZXJnb24=:eeaf8f63-e14b-481a-4d39-0f4277902d97", "rel": "subtask"}], "warnings": null}, "task_ext_id": "ZXJnb24=:313d8a50-0325-4fb4-6de5-fcc588c79cb1"}
+
+TASK [Verify update result] ****************************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "SNMP transport update passed"
+}
+
+TASK [Fetch SNMP transports after update] **************************************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "response": [{"port": 163, "protocol": "TCP"}]}
+
+TASK [Verify updated transport exists] *****************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Transport verification after update passed"
+}
+
+TASK [Delete SNMP transport - check_mode] **************************************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": "SNMP transport with protocol 'TCP' and port '163' will be removed.", "response": null, "task_ext_id": null}
+
+TASK [Verify check_mode delete result] *****************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "check_mode delete test passed"
+}
+
+TASK [Remove SNMP transport - TCP port 163] ************************************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": ["0006507e-9fb0-cb29-1221-5254000db428"], "completed_time": "2026-05-04T06:39:33.466325+00:00", "completion_details": null, "created_time": "2026-05-04T06:39:32.948039+00:00", "entities_affected": [{"ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "name": null, "rel": "clustermgmt:config:cluster"}], "error_messages": null, "ext_id": "ZXJnb24=:fd81106a-b3ff-4ea9-7448-0483d14b2fc4", "is_background_task": false, "is_cancelable": false, "last_updated_time": "2026-05-04T06:39:33.466324+00:00", "legacy_error_message": null, "number_of_entities_affected": 1, "number_of_subtasks": 1, "operation": "Remove Snmp Transports", "operation_description": "Remove snmp transports", "owned_by": {"ext_id": "00000000-0000-0000-0000-000000000000", "name": "admin"}, "parent_task": null, "progress_percentage": 100, "projectExtId": "00000000-0000-0000-0000-000000000000", "resource_links": null, "root_task": null, "started_time": "2026-05-04T06:39:32.965879+00:00", "status": "SUCCEEDED", "sub_steps": null, "sub_tasks": [{"ext_id": "ZXJnb24=:c521c880-59d8-4a08-70c1-32b524508922", "href": "https://10.101.64.103:9440/api/prism/v4.3/config/tasks/ZXJnb24=:c521c880-59d8-4a08-70c1-32b524508922", "rel": "subtask"}], "warnings": null}, "task_ext_id": "ZXJnb24=:fd81106a-b3ff-4ea9-7448-0483d14b2fc4"}
+
+TASK [Verify delete result] ****************************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "SNMP transport delete passed"
+}
+
+TASK [Fetch SNMP transports after delete] **************************************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "response": []}
+
+TASK [Verify transport info fetch succeeded after delete] **********************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Transport info fetch after delete passed"
+}
+
+TASK [Remove non-existent SNMP transport - idempotency check] ******************
+skipping: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": "SNMP transport with protocol 'TCP' and port '163' not found.", "response": null, "task_ext_id": null}
+
+TASK [Verify idempotent delete - should be skipped] ****************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Idempotency check for delete passed"
+}
+
+TASK [Add transport with invalid protocol - should fail] ***********************
+[ERROR]: Task failed: Module failed: value of protocol must be one of: UDP, UDP6, TCP, TCP6, got: INVALID
+Origin: /tmp/codegen/d30fad03583646e1bb8c87aed1edbb92/repo/tests/integration/targets/ntnx_snmp_transport_v2/tasks/snmp_transport_crud.yml:253:3
+
+251 ######################### Negative - Invalid protocol ################################
+252
+253 - name: Add transport with invalid protocol - should fail
+      ^ column 3
+
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "value of protocol must be one of: UDP, UDP6, TCP, TCP6, got: INVALID"}
+...ignoring
+
+TASK [Verify invalid protocol fails] *******************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Invalid protocol test passed - correctly rejected"
+}
+
+TASK [Add transport without cluster_ext_id - should fail] **********************
+[ERROR]: Task failed: Module failed: missing required arguments: cluster_ext_id
+Origin: /tmp/codegen/d30fad03583646e1bb8c87aed1edbb92/repo/tests/integration/targets/ntnx_snmp_transport_v2/tasks/snmp_transport_crud.yml:271:3
+
+269 ######################### Negative - Missing cluster_ext_id ##########################
+270
+271 - name: Add transport without cluster_ext_id - should fail
+      ^ column 3
+
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "missing required arguments: cluster_ext_id"}
+...ignoring
+
+TASK [Verify missing cluster_ext_id fails] *************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Missing cluster_ext_id test passed - correctly rejected"
+}
+
+TASK [End SNMP transport CRUD tests] *******************************************
+ok: [localhost] => {
+    "msg": "All SNMP transport CRUD tests completed successfully"
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=29   changed=3    unreachable=0    failed=0    skipped=2    rescued=0    ignored=2   
+

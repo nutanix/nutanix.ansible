@@ -1,0 +1,176 @@
+---
+# Summary:
+# This playbook demonstrates SNMP transport management operations:
+# 1. Fetch existing SNMP transports for the cluster
+# 2. Add an SNMP transport (UDP on port 162)
+# 3. Verify the transport was added by fetching transports info
+# 4. Update the SNMP transport (change from UDP/162 to TCP/163)
+# 5. Verify the transport was updated
+# 6. Remove the SNMP transport (TCP/163)
+# 7. Verify the transport was removed
+# 8. Idempotency check - add same transport again
+
+- name: SNMP Transport CRUD playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "10.101.64.103"
+      nutanix_username: "admin"
+      nutanix_password: "Nutanix.123"
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ cluster_uuid }}"
+      vars:
+        cluster_uuid: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
+
+    - name: Get cluster ext_id from list
+      nutanix.ncp.ntnx_clusters_info_v2:
+        limit: 1
+      register: clusters_result
+
+    - name: Set cluster ext_id from first cluster found
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ clusters_result.response[0].ext_id }}"
+      when: clusters_result.response | length > 0
+
+    - name: Display cluster ext_id
+      ansible.builtin.debug:
+        msg: "Using cluster ext_id: {{ cluster_ext_id }}"
+
+    # Step 1: Fetch existing SNMP transports
+    - name: Fetch existing SNMP transports for the cluster
+      nutanix.ncp.ntnx_snmp_transports_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: initial_transports
+      ignore_errors: true
+
+    - name: Display initial SNMP transports
+      ansible.builtin.debug:
+        var: initial_transports
+
+    # Step 2: Add SNMP transport (UDP port 162)
+    - name: Add SNMP transport - UDP port 162
+      nutanix.ncp.ntnx_snmp_transport_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        protocol: "UDP"
+        port: 162
+        state: present
+      register: add_result
+
+    - name: Display add result
+      ansible.builtin.debug:
+        var: add_result
+
+    - name: Verify transport was added
+      ansible.builtin.assert:
+        that:
+          - add_result.changed or add_result.skipped is defined
+        fail_msg: "SNMP transport add operation failed"
+
+    # Step 3: Fetch transports to verify addition
+    - name: Fetch SNMP transports after addition
+      nutanix.ncp.ntnx_snmp_transports_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: after_add_transports
+
+    - name: Display transports after addition
+      ansible.builtin.debug:
+        var: after_add_transports
+
+    # Step 4: Idempotency - Try adding same transport again
+    - name: Idempotency check - Add same SNMP transport again
+      nutanix.ncp.ntnx_snmp_transport_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        protocol: "UDP"
+        port: 162
+        state: present
+      register: idempotent_result
+
+    - name: Display idempotency result
+      ansible.builtin.debug:
+        var: idempotent_result
+
+    - name: Verify idempotency - should be skipped
+      ansible.builtin.assert:
+        that:
+          - idempotent_result.skipped is defined and idempotent_result.skipped
+        fail_msg: "Idempotency check failed - transport should have been skipped"
+
+    # Step 5: Update SNMP transport (from UDP/162 to TCP/163)
+    - name: Update SNMP transport - change from UDP/162 to TCP/163
+      nutanix.ncp.ntnx_snmp_transport_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        protocol: "TCP"
+        port: 163
+        old_transport:
+          protocol: "UDP"
+          port: 162
+        state: present
+      register: update_result
+
+    - name: Display update result
+      ansible.builtin.debug:
+        var: update_result
+
+    - name: Verify transport was updated
+      ansible.builtin.assert:
+        that:
+          - update_result.changed
+        fail_msg: "SNMP transport update operation failed"
+
+    # Step 6: Fetch transports to verify update
+    - name: Fetch SNMP transports after update
+      nutanix.ncp.ntnx_snmp_transports_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: after_update_transports
+
+    - name: Display transports after update
+      ansible.builtin.debug:
+        var: after_update_transports
+
+    # Step 7: Remove SNMP transport (TCP/163)
+    - name: Remove SNMP transport - TCP port 163
+      nutanix.ncp.ntnx_snmp_transport_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        protocol: "TCP"
+        port: 163
+        state: absent
+      register: delete_result
+
+    - name: Display delete result
+      ansible.builtin.debug:
+        var: delete_result
+
+    - name: Verify transport was removed
+      ansible.builtin.assert:
+        that:
+          - delete_result.changed
+        fail_msg: "SNMP transport delete operation failed"
+
+    # Step 8: Fetch transports to verify removal
+    - name: Fetch SNMP transports after removal
+      nutanix.ncp.ntnx_snmp_transports_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: after_delete_transports
+
+    - name: Display transports after removal
+      ansible.builtin.debug:
+        var: after_delete_transports
+
+    # Step 9: Idempotency - Try removing non-existent transport
+    - name: Idempotency check - Remove non-existent transport
+      nutanix.ncp.ntnx_snmp_transport_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        protocol: "TCP"
+        port: 163
+        state: absent
+      register: idempotent_delete_result
+
+    - name: Verify idempotent delete - should be skipped
+      ansible.builtin.assert:
+        that:
+          - idempotent_delete_result.skipped is defined and idempotent_delete_result.skipped
+        fail_msg: "Idempotent delete check failed - should have been skipped"
