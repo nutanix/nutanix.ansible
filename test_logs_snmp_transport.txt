@@ -1,0 +1,176 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Run SNMP Transport integration tests] ************************************
+
+TASK [Start ntnx_snmp_transport_v2 and ntnx_snmp_transports_info_v2 tests] *****
+ok: [localhost] => {
+    "msg": "Start SNMP transport tests"
+}
+
+TASK [Set cluster ext ID for SNMP transport tests] *****************************
+ok: [localhost] => {"ansible_facts": {"cluster_ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "todelete": []}, "changed": false}
+
+TASK [Add SNMP transport with check mode enabled] ******************************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": null, "response": {"port": 162, "protocol": "UDP"}, "task_ext_id": null}
+
+TASK [Verify check mode create SNMP transport] *********************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Check mode add SNMP transport spec generated successfully"
+}
+
+TASK [Add SNMP transport with port 162 and protocol UDP] ***********************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": null, "response": {"ext_id": "ZXJnb24=:d5cf1f76-fc86-4b2d-7835-936002a7cf07"}, "task_ext_id": "ZXJnb24=:d5cf1f76-fc86-4b2d-7835-936002a7cf07"}
+
+TASK [Verify add SNMP transport] ***********************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Add SNMP transport passed"
+}
+
+TASK [Add transport to cleanup list] *******************************************
+ok: [localhost] => {"ansible_facts": {"todelete": [{"port": 162, "protocol": "UDP"}]}, "changed": false}
+
+TASK [Add same SNMP transport again for idempotency] ***************************
+skipping: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": "SNMP transport already exists on cluster.", "response": null, "task_ext_id": null}
+
+TASK [Verify idempotency on add] ***********************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Idempotency check for add SNMP transport passed"
+}
+
+TASK [Fetch all SNMP transports from cluster] **********************************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "response": [{"port": 162, "protocol": "UDP"}]}
+
+TASK [Verify fetch all SNMP transports] ****************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Fetch all SNMP transports passed"
+}
+
+TASK [Fetch specific SNMP transport by port and protocol] **********************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "response": {"port": 162, "protocol": "UDP"}}
+
+TASK [Verify fetch specific SNMP transport] ************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Fetch specific SNMP transport passed"
+}
+
+TASK [Update SNMP transport with check mode enabled] ***************************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": null, "response": {"port": 163, "protocol": "TCP"}, "task_ext_id": null}
+
+TASK [Verify check mode update SNMP transport] *********************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Check mode update SNMP transport passed"
+}
+
+TASK [Update SNMP transport from port 162/UDP to 163/TCP] **********************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": null, "response": {"ext_id": "ZXJnb24=:3ef68ce8-0ca1-41b1-5875-e085c67da8b9"}, "task_ext_id": "ZXJnb24=:3ef68ce8-0ca1-41b1-5875-e085c67da8b9"}
+
+TASK [Verify update SNMP transport] ********************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Update SNMP transport passed"
+}
+
+TASK [Update cleanup list after update] ****************************************
+ok: [localhost] => {"ansible_facts": {"todelete": [{"port": 163, "protocol": "TCP"}]}, "changed": false}
+
+TASK [Fetch updated SNMP transport] ********************************************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "response": {"port": 163, "protocol": "TCP"}}
+
+TASK [Verify updated SNMP transport values] ************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Verify updated SNMP transport passed"
+}
+
+TASK [Update SNMP transport with same values (idempotency)] ********************
+skipping: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": "Nothing to change.", "response": null, "task_ext_id": null}
+
+TASK [Verify idempotency on update] ********************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Idempotency check for update SNMP transport passed"
+}
+
+TASK [Fetch non-existent SNMP transport] ***************************************
+[ERROR]: Task failed: Module failed: SNMP transport with port 9999 and protocol UDP6 not found.
+Origin: /tmp/codegen/93a09f09e44d45d9989a9ca3b3da339f/repo/tests/integration/targets/ntnx_snmp_transport_v2/tasks/all_operation.yml:206:3
+
+204 # NEGATIVE - Fetch non-existent transport
+205 ####################################################################
+206 - name: Fetch non-existent SNMP transport
+      ^ column 3
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": "SNMP transport with port 9999 and protocol UDP6 not found.", "response": null}
+...ignoring
+
+TASK [Verify non-existent transport returns error] *****************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Negative test for non-existent transport passed"
+}
+
+TASK [Update non-existent SNMP transport] **************************************
+[ERROR]: Task failed: Module failed: SNMP transport with port 9999 and protocol UDP6 not found on cluster.
+Origin: /tmp/codegen/93a09f09e44d45d9989a9ca3b3da339f/repo/tests/integration/targets/ntnx_snmp_transport_v2/tasks/all_operation.yml:225:3
+
+223 # NEGATIVE - Update non-existent transport
+224 ####################################################################
+225 - name: Update non-existent SNMP transport
+      ^ column 3
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": "SNMP transport with port 9999 and protocol UDP6 not found on cluster.", "response": null, "task_ext_id": null}
+...ignoring
+
+TASK [Verify update non-existent transport fails] ******************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Negative test for update non-existent transport passed"
+}
+
+TASK [Remove SNMP transport with check mode enabled] ***************************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": "SNMP transport with port 163 and protocol TCP will be removed.", "response": null, "task_ext_id": null}
+
+TASK [Verify check mode delete SNMP transport] *********************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Check mode delete SNMP transport passed"
+}
+
+TASK [Remove SNMP transport with port 163 and protocol TCP] ********************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": null, "response": {"ext_id": "ZXJnb24=:98e55c64-f19e-4021-5337-a4cd6dae3b9f"}, "task_ext_id": "ZXJnb24=:98e55c64-f19e-4021-5337-a4cd6dae3b9f"}
+
+TASK [Verify remove SNMP transport] ********************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Remove SNMP transport passed"
+}
+
+TASK [Remove same SNMP transport again for idempotency] ************************
+skipping: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "msg": "SNMP transport with port 163 and protocol TCP not found. Nothing to delete.", "response": null, "task_ext_id": null}
+
+TASK [Verify idempotency on delete] ********************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Idempotency check for delete SNMP transport passed"
+}
+
+TASK [Verify all transports are cleaned up] ************************************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "0006507e-9fb0-cb29-1221-5254000db428", "response": []}
+
+TASK [Verify no test transports remain] ****************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "All SNMP transport tests completed successfully"
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=31   changed=3    unreachable=0    failed=0    skipped=3    rescued=0    ignored=2   
+

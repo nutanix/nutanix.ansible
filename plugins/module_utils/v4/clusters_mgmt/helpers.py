@@ -1,4 +1,4 @@
-# Copyright: (c) 2024, Nutanix
+# Copyright: (c) 2026, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -108,4 +108,26 @@ def get_cluster_profile(module, api_instance, ext_id):
             module=module,
             exception=e,
             msg="Api Exception raised while fetching cluster profile info using ext_id",
+        )
+
+
+def get_snmp_config(module, api_instance, cluster_ext_id):
+    """
+    This method will return SNMP config for a cluster using cluster external ID.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+    Returns:
+        SnmpConfig: SNMP config object for the cluster
+    """
+    try:
+        return api_instance.get_snmp_config_by_cluster_id(
+            clusterExtId=cluster_ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching SNMP config for cluster",
         )
