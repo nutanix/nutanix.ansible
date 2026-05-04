@@ -91,10 +91,7 @@ failed:
   returned: always
 """
 
-import traceback  # noqa: E402
 import warnings  # noqa: E402
-
-from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
@@ -106,15 +103,6 @@ from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
 )
-
-SDK_IMP_ERROR = None
-try:
-    import ntnx_monitoring_py_client as monitoring_sdk  # noqa: E402
-except ImportError:
-
-    from ..module_utils.v4.sdk_mock import mock_sdk as monitoring_sdk  # noqa: E402, F401
-
-    SDK_IMP_ERROR = traceback.format_exc()
 
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
@@ -178,12 +166,6 @@ def run_module():
             ("ext_id", "filter"),
         ],
     )
-    if SDK_IMP_ERROR:
-        module.fail_json(
-            msg=missing_required_lib("ntnx_monitoring_py_client"),
-            exception=SDK_IMP_ERROR,
-        )
-
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None}
     policies_api = get_system_defined_policies_api_instance(module)
