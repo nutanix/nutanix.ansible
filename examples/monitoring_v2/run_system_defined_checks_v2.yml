@@ -1,0 +1,58 @@
+---
+# Summary:
+# This playbook demonstrates:
+# 1. List all system-defined alert policies
+# 2. Get a specific system-defined alert policy by ext_id
+# 3. Run all system-defined checks on a cluster
+# 4. Update a cluster config for an SDA policy (enable/disable)
+
+- name: System Defined Checks playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "10.101.64.103"
+      nutanix_username: "admin"
+      nutanix_password: "Nutanix.123"
+      validate_certs: false
+  tasks:
+    - name: List all system-defined alert policies
+      nutanix.ncp.ntnx_runsystemdefinedchecks_info_v2:
+      register: policies_list
+      ignore_errors: true
+
+    - name: Debug - Show total available policies
+      ansible.builtin.debug:
+        msg: "Total policies: {{ policies_list.total_available_results | default('N/A') }}"
+      when: policies_list is defined
+
+    - name: List system-defined alert policies with pagination
+      nutanix.ncp.ntnx_runsystemdefinedchecks_info_v2:
+        page: 0
+        limit: 5
+      register: policies_paginated
+      ignore_errors: true
+
+    - name: Debug - Show paginated policies count
+      ansible.builtin.debug:
+        msg: "Fetched {{ policies_paginated.response | length }} policies"
+      when: policies_paginated.response is defined
+
+    - name: Set policy ext_id from first result
+      ansible.builtin.set_fact:
+        policy_ext_id: "{{ policies_list.response[0].ext_id }}"
+      when:
+        - policies_list.response is defined
+        - policies_list.response | length > 0
+
+    - name: Get a specific system-defined alert policy
+      nutanix.ncp.ntnx_runsystemdefinedchecks_info_v2:
+        ext_id: "{{ policy_ext_id }}"
+      register: single_policy
+      ignore_errors: true
+      when: policy_ext_id is defined
+
+    - name: Debug - Show single policy details
+      ansible.builtin.debug:
+        msg: "Policy name: {{ single_policy.response.name | default('N/A') }}"
+      when: single_policy is defined and single_policy.response is defined

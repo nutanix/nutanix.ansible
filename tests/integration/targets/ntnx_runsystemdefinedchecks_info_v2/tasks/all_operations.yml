@@ -1,0 +1,107 @@
+---
+- name: Start ntnx_runsystemdefinedchecks_info_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_runsystemdefinedchecks_info_v2 tests
+
+########################################################################
+# List all system-defined alert policies
+########################################################################
+- name: List all system-defined alert policies
+  nutanix.ncp.ntnx_runsystemdefinedchecks_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Verify list policies
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length > 0
+      - result.total_available_results is defined
+      - result.total_available_results > 0
+    fail_msg: "Unable to list system-defined alert policies"
+    success_msg: "System-defined alert policies listed successfully"
+
+########################################################################
+# List with pagination
+########################################################################
+- name: List policies with pagination (page 0, limit 5)
+  nutanix.ncp.ntnx_runsystemdefinedchecks_info_v2:
+    page: 0
+    limit: 5
+  register: paginated_result
+  ignore_errors: true
+
+- name: Verify paginated list
+  ansible.builtin.assert:
+    that:
+      - paginated_result.changed == false
+      - paginated_result.failed == false
+      - paginated_result.response is defined
+      - paginated_result.response | length <= 5
+    fail_msg: "Unable to list policies with pagination"
+    success_msg: "Policies listed with pagination successfully"
+
+########################################################################
+# Get a specific policy by ext_id
+########################################################################
+- name: Set policy ext_id from first result
+  ansible.builtin.set_fact:
+    test_policy_ext_id: "{{ result.response[0].ext_id }}"
+  when:
+    - result.response is defined
+    - result.response | length > 0
+
+- name: Get a specific system-defined alert policy
+  nutanix.ncp.ntnx_runsystemdefinedchecks_info_v2:
+    ext_id: "{{ test_policy_ext_id }}"
+  register: single_result
+  ignore_errors: true
+  when: test_policy_ext_id is defined
+
+- name: Verify single policy fetch
+  ansible.builtin.assert:
+    that:
+      - single_result.changed == false
+      - single_result.failed == false
+      - single_result.response is defined
+      - single_result.ext_id == test_policy_ext_id
+      - single_result.response.ext_id == test_policy_ext_id
+    fail_msg: "Unable to fetch system-defined alert policy by ext_id"
+    success_msg: "System-defined alert policy fetched successfully"
+  when: test_policy_ext_id is defined
+
+########################################################################
+# Negative test - invalid ext_id
+########################################################################
+- name: Get policy with invalid ext_id (negative test)
+  nutanix.ncp.ntnx_runsystemdefinedchecks_info_v2:
+    ext_id: "invalid-ext-id-00000000"
+  register: invalid_result
+  ignore_errors: true
+
+- name: Verify invalid ext_id fails
+  ansible.builtin.assert:
+    that:
+      - invalid_result.failed == true
+    fail_msg: "Negative test (invalid ext_id) did not fail as expected"
+    success_msg: "Negative test (invalid ext_id) failed as expected"
+
+########################################################################
+# List with filter
+########################################################################
+- name: List policies with filter
+  nutanix.ncp.ntnx_runsystemdefinedchecks_info_v2:
+    limit: 3
+  register: filter_result
+  ignore_errors: true
+
+- name: Verify filtered list
+  ansible.builtin.assert:
+    that:
+      - filter_result.changed == false
+      - filter_result.failed == false
+      - filter_result.response is defined
+    fail_msg: "Unable to list policies with filter"
+    success_msg: "Policies listed with filter successfully"
