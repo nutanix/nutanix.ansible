@@ -98,15 +98,12 @@ options:
                           use_vm_name:
                             description:
                               - Use the VM name as the computer name.
-                              - To enable this option, specify the key with no value (C(use_vm_name:))
-                                or with an empty dictionary (C(use_vm_name: {})).
+                              - Specify C(use_vm_name) with no value or with an empty dictionary to enable this option.
                             type: dict
                           must_provide_during_deployment:
                             description:
                               - Indicates that this value must be provided during deployment.
-                              - To enable this option, specify the key with no value
-                                (C(must_provide_during_deployment:)) or with an empty dictionary
-                                (C(must_provide_during_deployment: {})).
+                              - Specify C(must_provide_during_deployment) with no value or with an empty dictionary to enable this option.
                             type: dict
                       timezone:
                         description:
@@ -240,24 +237,22 @@ options:
                                 elements: str
                           ipv4_config:
                             description:
-                              - Mechanism to configure IPv4 settings of the NIC. Either UseDhcp or MustProvideDuringDeployment should be specified as a value. If UseDhcp is specified,
-                                DhcpEnabled is set to True for the interface in the unattend XML.
-                              - If MustProvideDuringDeployment is specified, the user must provide the IPv4 address with the prefix length and gateway details during the deployment.
+                              - Mechanism to configure IPv4 settings of the NIC.
+                              - Either UseDhcp or MustProvideDuringDeployment should be specified as a value.
+                              - If UseDhcp is specified, DhcpEnabled is set to True for the interface in the unattend XML.
+                              - If MustProvideDuringDeployment is specified, the IPv4 address, prefix length, and gateway must be supplied during deployment.
                               - C(use_dhcp) and C(must_provide_during_deployment) are mutually exclusive.
                             type: dict
                             suboptions:
                               use_dhcp:
                                 description:
                                   - The NIC will obtain its IPv4 address via DHCP.
-                                  - To enable this option, specify the key with no value (C(use_dhcp:))
-                                    or with an empty dictionary (C(use_dhcp: {})).
+                                  - Specify C(use_dhcp) with no value or with an empty dictionary to enable this option.
                                 type: dict
                               must_provide_during_deployment:
                                 description:
                                   - The IPv4 configuration must be provided at deployment-time.
-                                  - To enable this option, specify the key with no value
-                                    (C(must_provide_during_deployment:)) or with an empty dictionary
-                                    (C(must_provide_during_deployment: {})).
+                                  - Specify C(must_provide_during_deployment) with no value or with an empty dictionary to enable this option.
                                 type: dict
               answer_file:
                 description:
