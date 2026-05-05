@@ -155,6 +155,9 @@
     groups_attribute: group_list
     groups_delim: ;
     is_signed_authn_req_enabled: true
+    request_signing_credential:
+      public_certificate: "{{ lookup('file', sp_tmpdir.path + '/sp.crt') }}"
+      private_key: "{{ lookup('file', sp_tmpdir.path + '/sp.key') }}"
   register: result
   ignore_errors: true
 

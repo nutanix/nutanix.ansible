@@ -197,7 +197,13 @@ options:
                                         type: dict
                                         suboptions:
                                             value:
-                                                description: The Vales of the field
+                                                description:
+                                                    - The contents of the unattend.xml file.
+                                                    - The API requires this value to be base64 encoded.
+                                                    - You can either pass an already-encoded string, or pass the raw
+                                                      unattend.xml content and let Ansible encode it using the
+                                                      C(b64encode) filter, e.g.
+                                                      C("{{ unattend_xml_content | b64encode }}").
                                                 type: str
                                     custom_key_values:
                                         description: Custom key-value pairs for system preparation.
@@ -242,7 +248,12 @@ options:
                                         suboptions:
                                             value:
                                                 description:
-                                                    - base64 encoded cloud init script.
+                                                    - The cloud-init user-data script.
+                                                    - The API requires this value to be base64 encoded.
+                                                    - You can either pass an already-encoded string, or pass the raw
+                                                      cloud-init script and let Ansible encode it using the
+                                                      C(b64encode) filter, e.g.
+                                                      C("{{ cloud_init_content | b64encode }}").
                                                 type: str
                                                 required: true
                                     custom_key_values:
@@ -1201,6 +1212,7 @@ EXAMPLES = r"""
       is_vtpm_enabled: false
   register: result
   ignore_errors: true
+
 - name: Update VM
   nutanix.ncp.ntnx_vms_v2:
     state: present
@@ -1223,10 +1235,39 @@ EXAMPLES = r"""
     enabled_cpu_features: HARDWARE_VIRTUALIZATION
   register: result
   ignore_errors: true
+
 - name: Delete VM
   nutanix.ncp.ntnx_vms_v2:
     state: absent
     ext_id: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
+  register: result
+
+- name: Create VM with cloud-init guest customization (base64 encoded)
+  nutanix.ncp.ntnx_vms_v2:
+    name: "cloud_init_vm"
+    cluster:
+      ext_id: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
+    guest_customization:
+      config:
+        cloudinit:
+          datasource_type: CONFIG_DRIVE_V2
+          cloud_init_script:
+            user_data:
+              value: "{{ vm_cloud_init_user_data | b64encode }}"
+  register: result
+
+- name: Create VM with Windows sysprep guest customization (base64 encoded)
+  nutanix.ncp.ntnx_vms_v2:
+    name: "sysprep_vm"
+    cluster:
+      ext_id: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
+    guest_customization:
+      config:
+        sysprep:
+          install_type: "FRESH"
+          sysprep_script:
+            unattendxml:
+              value: "{{ vm_sysprep_unattendxml | b64encode }}"
   register: result
 """
 RETURN = r"""

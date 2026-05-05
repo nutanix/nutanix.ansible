@@ -214,6 +214,12 @@ def create_user_group(module, user_groups, result):
         result["error"] = err
         module.fail_json(msg="Failed generating create user groups spec", **result)
 
+    if (
+        module.params.get("group_type") == "SAML"
+        and getattr(spec, "distinguished_name", None) is None
+    ):
+        spec.distinguished_name = ""
+
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
         return

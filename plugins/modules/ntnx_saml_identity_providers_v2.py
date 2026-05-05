@@ -126,6 +126,23 @@ options:
       - Flag indicating signing of SAML authnRequests.
     required: false
     type: bool
+  request_signing_credential:
+    description:
+      - Credential containing the private key and public certificate used for signing and verifying SAML Authentication and Single Logout requests."
+      - Required when C(is_signed_authn_req_enabled) is set to C(true).
+    required: false
+    type: dict
+    suboptions:
+        public_certificate:
+          description:
+            - Public certificate used by an identity provider to verify the signature of the SAML Authentication and Single Logout Requests.
+          required: false
+          type: str
+        private_key:
+          description:
+            - PEM-encoded RSA private key used to sign the SAML Authentication and Single Logout Requests.
+          required: false
+          type: str
   state:
     description:
         - Specify state
@@ -160,6 +177,9 @@ EXAMPLES = r"""
     groups_delim: ","
     idp_metadata_xml: "https://samltest.id/saml/idp"
     is_signed_authn_req_enabled: true
+    request_signing_credential:
+      public_certificate: "{{ lookup('file', '/path/to/sp.crt') }}"
+      private_key: "{{ lookup('file', '/path/to/sp.key') }}"
     state: present
   register: result
   ignore_errors: true
@@ -311,6 +331,11 @@ def get_module_spec():
         ),
     )
 
+    request_signing_credential_spec = dict(
+        public_certificate=dict(type="str", no_log=False),
+        private_key=dict(type="str", no_log=True),
+    )
+
     module_args = dict(
         ext_id=dict(type="str"),
         name=dict(type="str"),
@@ -326,6 +351,11 @@ def get_module_spec():
         custom_attributes=dict(type="list", elements="str"),
         entity_issuer=dict(type="str"),
         is_signed_authn_req_enabled=dict(type="bool"),
+        request_signing_credential=dict(
+            type="dict",
+            options=request_signing_credential_spec,
+            obj=iam_sdk.SamlSigningCredential,
+        ),
     )
     return module_args
 
