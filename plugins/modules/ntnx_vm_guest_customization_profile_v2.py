@@ -32,6 +32,14 @@ notes:
     - >-
       B(Delete the specified VM Guest Customization Profile.) -
       Required Roles: Prism Admin, Super Admin, Virtual Machine Admin
+    - >-
+      Profiles created by this module are consumed by
+      M(nutanix.ncp.ntnx_vms_clone_v2) and M(nutanix.ncp.ntnx_templates_deploy_v2)
+      via their C(guest_customization_profile_config) option. For the profile to
+      be applied successfully at clone or deploy time, Nutanix Guest Tools (NGT)
+      must be installed on the source VM (or the source VM that backs the
+      template); otherwise, the corresponding clone or deploy request will be
+      rejected by the API.
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
   state:
@@ -379,49 +387,55 @@ response:
   sample:
     {
       "config": {
-        "sysprep": {
           "customization": {
-            "sysprep_params": {
-              "first_logon_commands": ["powershell -Command Enable-PSRemoting -Force"],
+              "first_logon_commands": [
+                  "powershell -Command Enable-PSRemoting -Force"
+              ],
               "general_settings": {
-                "administrator_password": null,
-                "auto_logon_settings": null,
-                "computer_name": {"use_vm_name": {}},
-                "registered_organization": "Nutanix",
-                "registered_owner": "Nutanix",
-                "timezone": "Pacific Standard Time",
-                "windows_product_key": null
+                  "administrator_password": "MASKED_FIELD",
+                  "auto_logon_settings": null,
+                  "computer_name": {},
+                  "registered_organization": "admin",
+                  "registered_owner": "admin",
+                  "timezone": "Pacific Standard Time",
+                  "windows_product_key": null
               },
               "locale_settings": {
-                "system_locale": "en-US",
-                "ui_language": "en-US",
-                "user_locale": "en-US"
+                  "system_locale": "en-US",
+                  "ui_language": "en-US",
+                  "user_locale": "en-US"
               },
               "network_settings": {
-                "nic_config_list": [
-                  {
-                    "dns_config": {
-                      "alternate_dns_server_addresses": ["10.0.0.11"],
-                      "preferred_dns_server_address": "10.0.0.10"
-                    },
-                    "ipv4_config": {"use_dhcp": {}}
-                  }
-                ]
+                  "nic_config_list": [
+                      {
+                          "dns_config": {
+                              "alternate_dns_server_addresses": [
+                                  "10.0.0.11"
+                              ],
+                              "preferred_dns_server_address": "10.0.0.10"
+                          },
+                          "ipv4_config": {}
+                      }
+                  ]
               },
-              "workgroup_or_domain_info": {"workgroup": {"name": "WORKGROUP"}}
-            }
+              "workgroup_or_domain_info": {
+                  "name": "workgroup"
+              }
           }
-        }
       },
-      "created_by": null,
-      "create_time": "2026-05-03T11:25:36.123456+00:00",
-      "description": "Reusable Windows Sysprep profile for QA Workgroup VMs",
-      "ext_id": "a0dea088-5cd2-4d18-8d20-addba20c937c",
+      "create_time": "2026-05-05T11:26:57.496782+00:00",
+      "created_by": {
+          "ext_id": "00000000-0000-0000-0000-000000000000"
+      },
+      "description": "Sysprep profile created by integration tests",
+      "ext_id": "08bed846-7bf2-48b5-5c92-741500be3a3f",
       "links": null,
-      "name": "win2019-sysprep-profile",
+      "name": "vm_gc_profile_ansible_test_sysprep_WQOHNIIZdzzT",
       "tenant_id": null,
-      "update_time": "2026-05-03T11:25:36.123456+00:00",
-      "updated_by": null
+      "update_time": "2026-05-05T11:26:57.496782+00:00",
+      "updated_by": {
+          "ext_id": "00000000-0000-0000-0000-000000000000"
+      }
     }
 ext_id:
   description:
@@ -449,7 +463,7 @@ changed:
   sample: true
 failed:
   description: Indicates if the module failed
-  returned: when failed
+  returned: always
   type: bool
   sample: false
 """
@@ -472,6 +486,7 @@ from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     remove_fields_from_spec,
     strip_internal_attributes,
+    validate_required_params,
 )
 from ..module_utils.v4.vmm.api_client import (  # noqa: E402
     get_etag,
@@ -523,6 +538,7 @@ def normalize_oneof_marker_values(params):
 
 
 def create_profile(module, result, profiles):
+    validate_required_params(module, ["config"])
     sg = SpecGenerator(module)
     default_spec = vmm_sdk.VmGuestCustomizationProfile()
     spec, err = sg.generate_spec(obj=default_spec)

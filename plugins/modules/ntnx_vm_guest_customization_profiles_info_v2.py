@@ -84,53 +84,80 @@ response:
   description:
     - The response for fetching VM Guest Customization Profile(s).
     - Single profile if external ID is provided.
-    - List of profiles if external ID is not provided.
+    - List of multiple VM Guest Customization Profiles if external ID is not provided.
   type: dict
   returned: always
   sample:
     {
       "config": {
-        "sysprep": {
           "customization": {
-            "sysprep_params": {
-              "first_logon_commands": null,
+              "first_logon_commands": [
+                  "powershell -Command Enable-PSRemoting -Force",
+                  "powershell -Command Set-ExecutionPolicy RemoteSigned -Force"
+              ],
               "general_settings": {
-                "administrator_password": null,
-                "auto_logon_settings": null,
-                "computer_name": {"use_vm_name": {}},
-                "registered_organization": "Nutanix",
-                "registered_owner": "Nutanix",
-                "timezone": "Pacific Standard Time",
-                "windows_product_key": null
+                  "administrator_password": "MASKED_FIELD",
+                  "auto_logon_settings": null,
+                  "computer_name": {},
+                  "registered_organization": "admin Updated",
+                  "registered_owner": "admin Updated",
+                  "timezone": "Eastern Standard Time",
+                  "windows_product_key": null
               },
               "locale_settings": {
-                "system_locale": "en-US",
-                "ui_language": "en-US",
-                "user_locale": "en-US"
+                  "system_locale": "en-GB",
+                  "ui_language": "en-GB",
+                  "user_locale": "en-GB"
               },
-              "network_settings": null,
-              "workgroup_or_domain_info": {"workgroup": {"name": "WORKGROUP"}}
-            }
+              "network_settings": {
+                  "nic_config_list": [
+                      {
+                          "dns_config": {
+                              "alternate_dns_server_addresses": [
+                                  "10.0.0.51"
+                              ],
+                              "preferred_dns_server_address": "10.0.0.50"
+                          },
+                          "ipv4_config": {}
+                      }
+                  ]
+              },
+              "workgroup_or_domain_info": {
+                  "name": "QA"
+              }
           }
-        }
       },
-      "create_time": "2026-05-03T11:25:36.123456+00:00",
-      "created_by": null,
-      "description": "Reusable Windows Sysprep profile for QA Workgroup VMs",
-      "ext_id": "a0dea088-5cd2-4d18-8d20-addba20c937c",
+      "create_time": "2026-05-05T11:26:57.496782+00:00",
+      "created_by": {
+          "ext_id": "00000000-0000-0000-0000-000000000000"
+      },
+      "description": "Updated sysprep profile description",
+      "ext_id": "08bed846-7bf2-48b5-5c92-741500be3a3f",
       "links": null,
-      "name": "win2019-sysprep-profile",
+      "name": "vm_gc_profile_ansible_test_sysprep_WQOHNIIZdzzT_updated",
       "tenant_id": null,
-      "update_time": "2026-05-03T11:25:36.123456+00:00",
-      "updated_by": null
+      "update_time": "2026-05-05T11:27:21.493223+00:00",
+      "updated_by": {
+          "ext_id": "00000000-0000-0000-0000-000000000000"
+      }
     }
+changed:
+  description: Indicates if the module made any changes.
+  returned: always
+  type: bool
+  sample: true
+failed:
+  description: Indicates if the module failed.
+  returned: always
+  type: bool
+  sample: false
 msg:
   description: This indicates the message if any message occurred.
   returned: When there is an error
   type: str
   sample: "Api Exception raised while fetching VM Guest Customization Profiles info"
 error:
-  description: Error message if something goes wrong.
+  description: Error message if any error occurs.
   type: str
   returned: always
 ext_id:
@@ -139,7 +166,7 @@ ext_id:
   returned: when fetching a specific profile
   sample: "a3265671-de53-41be-af9b-f06241b95356"
 total_available_results:
-  description: The total number of available VM Guest Customization Profiles in PC.
+  description: The total number of available VM Guest Customization Profiles in the PC.
   type: int
   returned: when listing all profiles
   sample: 10
