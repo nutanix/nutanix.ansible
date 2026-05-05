@@ -1,0 +1,728 @@
+---
+- name: Start VM Guest Customization Profile tests
+  ansible.builtin.debug:
+    msg: Start VM Guest Customization Profile tests
+
+- name: Generate random suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false,
+      special=false, length=12)[0] }}"
+    suffix_name: "ansible_test"
+    todelete: []
+
+- name: Set profile names
+  ansible.builtin.set_fact:
+    profile_sysprep_name: "vm_gc_profile_{{ suffix_name }}_sysprep_{{ random_name }}"
+    profile_answer_file_name: "vm_gc_profile_{{ suffix_name }}_answer_{{ random_name }}"
+    profile_domain_name: "vm_gc_profile_{{ suffix_name }}_domain_{{ random_name }}"
+    profile_sysprep_name_updated: "vm_gc_profile_{{ suffix_name }}_sysprep_{{ random_name }}_updated"
+
+- name: Load sample unattend XML for answer-file profile from file (base64 encoded)
+  ansible.builtin.set_fact:
+    sample_unattend_xml: "{{ lookup('file', role_path ~
+      '/vars/unattend_xml_content.xml') | b64encode }}"
+
+########################################################################################
+# Check-mode: generate spec for creating a workgroup/sysprep profile
+########################################################################################
+- name: Generate spec for creating VM Guest Customization Profile (sysprep
+    params)using check mode
+  nutanix.ncp.ntnx_vm_guest_customization_profile_v2:
+    state: present
+    name: "{{ profile_sysprep_name }}"
+    description: "Windows Sysprep profile description"
+    config:
+      sysprep:
+        customization:
+          sysprep_params:
+            general_settings:
+              computer_name:
+                use_vm_name: {}
+              timezone: "Pacific Standard Time"
+              administrator_password: "admin123"
+              auto_logon_settings:
+                logon_count: 1
+              windows_product_key: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
+              registered_owner: "admin"
+              registered_organization: "admin"
+            first_logon_commands:
+              - "powershell -Command Enable-PSRemoting -Force"
+            locale_settings:
+              user_locale: "en-US"
+              system_locale: "en-US"
+              ui_language: "en-US"
+            workgroup_or_domain_info:
+              workgroup:
+                name: "workgroup"
+            network_settings:
+              nic_config_list:
+                - dns_config:
+                    preferred_dns_server_address: "8.8.8.8"
+                    alternate_dns_server_addresses:
+                      - "8.8.4.4"
+                  ipv4_config:
+                    use_dhcp: {}
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Print result of generated check-mode spec for sysprep params
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify generated spec for creating VM Guest Customization Profile (sysprep
+    params, Workgroup) using check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == profile_sysprep_name
+      - result.response.description == "Windows Sysprep profile description"
+      - result.response.config.customization is defined
+      - result.response.config.customization.general_settings.timezone ==
+        "Pacific Standard Time"
+      - result.response.config.customization.general_settings.registered_owner
+        == "admin"
+      - result.response.config.customization.general_settings.auto_logon_settings.logon_count
+        == 1
+      - result.response.config.customization.first_logon_commands | length == 1
+      - result.response.config.customization.locale_settings.user_locale ==
+        "en-US"
+      - result.response.config.customization.locale_settings.system_locale ==
+        "en-US"
+      - result.response.config.customization.locale_settings.ui_language ==
+        "en-US"
+      - result.response.config.customization.workgroup_or_domain_info.name ==
+        "workgroup"
+      - result.response.config.customization.network_settings.nic_config_list |
+        length == 1
+      - result.response.config.customization.network_settings.nic_config_list[0].dns_config.preferred_dns_server_address
+        == "8.8.8.8"
+      - result.response.config.customization.network_settings.nic_config_list[0].dns_config.alternate_dns_server_addresses
+        == ["8.8.4.4"]
+    fail_msg: "Failed to generate sysprep params profile spec in check mode"
+    success_msg: "Sysprep params profile spec generated successfully in check mode"
+
+########################################################################################
+# Create VM Guest Customization Profile
+########################################################################################
+- name: Create VM Guest Customization Profile (sysprep params, Workgroup)
+  nutanix.ncp.ntnx_vm_guest_customization_profile_v2:
+    state: present
+    name: "{{ profile_sysprep_name }}"
+    description: "Sysprep profile created by integration tests"
+    config:
+      sysprep:
+        customization:
+          sysprep_params:
+            general_settings:
+              computer_name:
+                use_vm_name:
+              timezone: "Pacific Standard Time"
+              administrator_password: "admin123"
+              registered_owner: "admin"
+              registered_organization: "admin"
+            first_logon_commands:
+              - "powershell -Command Enable-PSRemoting -Force"
+            locale_settings:
+              user_locale: "en-US"
+              system_locale: "en-US"
+              ui_language: "en-US"
+            workgroup_or_domain_info:
+              workgroup:
+                name: "workgroup"
+            network_settings:
+              nic_config_list:
+                - dns_config:
+                    preferred_dns_server_address: "10.0.0.10"
+                    alternate_dns_server_addresses:
+                      - "10.0.0.11"
+                  ipv4_config:
+                    use_dhcp:
+  register: result
+  ignore_errors: true
+
+- name: Print result of create VM Guest Customization Profile (sysprep params,
+    Sysprep params)
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify create VM Guest Customization Profile (sysprep params, Workgroup,
+    Sysprep params)
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response.name == profile_sysprep_name
+      - result.response.description == "Sysprep profile created by integration
+        tests"
+      - result.response.config.customization is defined
+      - result.response.config.customization.general_settings.timezone ==
+        "Pacific Standard Time"
+      - result.response.config.customization.general_settings.registered_owner
+        == "admin"
+      - result.response.config.customization.general_settings.registered_organization
+        == "admin"
+      - result.response.config.customization.first_logon_commands | length == 1
+      - result.response.config.customization.locale_settings.user_locale ==
+        "en-US"
+      - result.response.config.customization.locale_settings.system_locale ==
+        "en-US"
+      - result.response.config.customization.locale_settings.ui_language ==
+        "en-US"
+      - result.response.config.customization.workgroup_or_domain_info.name ==
+        "workgroup"
+      - result.response.config.customization.network_settings.nic_config_list |
+        length == 1
+      - result.response.config.customization.network_settings.nic_config_list[0].dns_config.preferred_dns_server_address
+        == "10.0.0.10"
+      - result.response.config.customization.network_settings.nic_config_list[0].dns_config.alternate_dns_server_addresses
+        == ["10.0.0.11"]
+    fail_msg: "Failed to create VM Guest Customization Profile (sysprep params,
+      Workgroup, DHCP)"
+    success_msg: "VM Guest Customization Profile (sysprep params, Workgroup, DHCP)
+      created successfully"
+
+- name: Save workgroup profile ext_id
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+########################################################################################
+# Create VM Guest Customization Profile (sysprep params, Domain join, must-provide IP)
+########################################################################################
+- name: Create VM Guest Customization Profile (sysprep params, Domain settings)
+  nutanix.ncp.ntnx_vm_guest_customization_profile_v2:
+    state: present
+    name: "{{ profile_domain_name }}"
+    description: "Domain settings sysprep profile created by integration tests"
+    config:
+      sysprep:
+        customization:
+          sysprep_params:
+            general_settings:
+              computer_name:
+                must_provide_during_deployment: {}
+              timezone: "UTC"
+              administrator_password: "admin123"
+              registered_owner: "admin"
+              registered_organization: "admin"
+            first_logon_commands:
+              - "net user admin /password:admin123"
+            locale_settings:
+              user_locale: "en-US"
+              system_locale: "en-US"
+              ui_language: "en-US"
+            workgroup_or_domain_info:
+              domain_settings:
+                credentials:
+                  domain_name: "domain.example.local"
+                  username: "admin"
+                  password: "admin123"
+            network_settings:
+              nic_config_list:
+                - dns_config:
+                    preferred_dns_server_address: "10.1.0.10"
+                    alternate_dns_server_addresses:
+                      - "10.1.0.11"
+                  ipv4_config:
+                    must_provide_during_deployment: {}
+  register: result
+  ignore_errors: true
+
+- name: Print result of create VM Guest Customization Profile (sysprep params,
+    Domain settings)
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify create VM Guest Customization Profile (sysprep params, Domain
+    settings) must-provide IP)
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response.name == profile_domain_name
+      - result.response.description == "Domain settings sysprep profile created
+        by integration tests"
+      - result.response.config.customization is defined
+      - result.response.config.customization.general_settings.timezone == "UTC"
+      - result.response.config.customization.general_settings.registered_owner
+        == "admin"
+      - result.response.config.customization.general_settings.registered_organization
+        == "admin"
+      - result.response.config.customization.workgroup_or_domain_info.credentials
+        is defined
+      - result.response.config.customization.workgroup_or_domain_info.credentials.domain_name
+        == "domain.example.local"
+      - result.response.config.customization.workgroup_or_domain_info.credentials.username
+        == "admin"
+      - result.response.config.customization.workgroup_or_domain_info.credentials.password
+        is defined
+      - result.response.config.customization.network_settings.nic_config_list |
+        length == 1
+      - result.response.config.customization.network_settings.nic_config_list[0].dns_config.preferred_dns_server_address
+        == "10.1.0.10"
+      - result.response.config.customization.network_settings.nic_config_list[0].dns_config.alternate_dns_server_addresses
+        == ["10.1.0.11"]
+    fail_msg: "Failed to create VM Guest Customization Profile (sysprep params,
+      Domain settings)"
+    success_msg: "VM Guest Customization Profile (sysprep params, Domain settings)
+      created successfully"
+
+- name: Save domain settings profile ext_id
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+########################################################################################
+# Create VM Guest Customization Profile (answer file)
+########################################################################################
+- name: Create VM Guest Customization Profile (answer file)
+  nutanix.ncp.ntnx_vm_guest_customization_profile_v2:
+    state: present
+    name: "{{ profile_answer_file_name }}"
+    description: "Answer file sysprep profile created by integration tests"
+    config:
+      sysprep:
+        customization:
+          answer_file:
+            unattend_xml: "{{ sample_unattend_xml }}"
+  register: result
+  ignore_errors: true
+
+- name: Print result of create answer-file profile
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify create answer-file profile
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response.name == profile_answer_file_name
+      - result.response.config.customization.unattend_xml is defined
+      - result.response.config.customization.unattend_xml == sample_unattend_xml
+    fail_msg: "Failed to create answer-file VM Guest Customization Profile"
+    success_msg: "Answer-file VM Guest Customization Profile created successfully"
+
+- name: Save answer-file profile ext_id
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+########################################################################################
+# Check-mode: generate update spec
+########################################################################################
+- name: Generate spec for updating sysprep profile using check mode
+  nutanix.ncp.ntnx_vm_guest_customization_profile_v2:
+    state: present
+    ext_id: "{{ todelete[0] }}"
+    name: "updated-sysprep-profile"
+    description: "Updated sysprep profile description"
+    config:
+      sysprep:
+        customization:
+          sysprep_params:
+            general_settings:
+              computer_name:
+                use_vm_name: {}
+              timezone: "Eastern Standard Time"
+              administrator_password: "admin12345"
+              registered_owner: "admin Updated"
+              registered_organization: "admin Updated"
+            first_logon_commands:
+              - "powershell -Command Enable-PSRemoting -Force"
+              - "powershell -Command Set-ExecutionPolicy RemoteSigned -Force"
+            locale_settings:
+              user_locale: "en-GB"
+              system_locale: "en-GB"
+              ui_language: "en-GB"
+            workgroup_or_domain_info:
+              workgroup:
+                name: "QA"
+            network_settings:
+              nic_config_list:
+                - dns_config:
+                    preferred_dns_server_address: "10.0.0.50"
+                    alternate_dns_server_addresses:
+                      - "10.0.0.51"
+                  ipv4_config:
+                    use_dhcp: {}
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Print result of generated update spec for sysprep profile using check mode
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify generated update spec for sysprep profile using check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "updated-sysprep-profile"
+      - result.response.description == "Updated sysprep profile description"
+      - result.response.config.customization is defined
+      - result.response.config.customization.general_settings.timezone ==
+        "Eastern Standard Time"
+      - result.response.config.customization.general_settings.registered_owner
+        == "admin Updated"
+      - result.response.config.customization.general_settings.registered_organization
+        == "admin Updated"
+      - result.response.config.customization.first_logon_commands | length == 2
+      - result.response.config.customization.locale_settings.user_locale ==
+        "en-GB"
+      - result.response.config.customization.workgroup_or_domain_info.name ==
+        "QA"
+      - result.response.config.customization.network_settings.nic_config_list |
+        length == 1
+      - result.response.config.customization.network_settings.nic_config_list[0].dns_config.preferred_dns_server_address
+        == "10.0.0.50"
+      - result.response.config.customization.network_settings.nic_config_list[0].dns_config.alternate_dns_server_addresses
+        == ["10.0.0.51"]
+    fail_msg: "Failed generating update spec in check mode"
+    success_msg: "Update spec generated successfully in check mode"
+
+########################################################################################
+# Update VM Guest Customization Profile
+########################################################################################
+- name: Update VM Guest Customization Profile
+  nutanix.ncp.ntnx_vm_guest_customization_profile_v2:
+    state: present
+    ext_id: "{{ todelete[0] }}"
+    name: "{{ profile_sysprep_name_updated }}"
+    description: "Updated sysprep profile description"
+    config:
+      sysprep:
+        customization:
+          sysprep_params:
+            general_settings:
+              computer_name:
+                use_vm_name: {}
+              timezone: "Eastern Standard Time"
+              administrator_password: "admin12345"
+              registered_owner: "admin Updated"
+              registered_organization: "admin Updated"
+            first_logon_commands:
+              - "powershell -Command Enable-PSRemoting -Force"
+              - "powershell -Command Set-ExecutionPolicy RemoteSigned -Force"
+            locale_settings:
+              user_locale: "en-GB"
+              system_locale: "en-GB"
+              ui_language: "en-GB"
+            workgroup_or_domain_info:
+              workgroup:
+                name: "QA"
+            network_settings:
+              nic_config_list:
+                - dns_config:
+                    preferred_dns_server_address: "10.0.0.50"
+                    alternate_dns_server_addresses:
+                      - "10.0.0.51"
+                  ipv4_config:
+                    use_dhcp: {}
+  register: result
+  ignore_errors: true
+
+- name: Print result of update VM Guest Customization Profile
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify update VM Guest Customization Profile
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == profile_sysprep_name_updated
+      - result.response.description == "Updated sysprep profile description"
+      - result.response.config.customization is defined
+      - result.response.config.customization.general_settings.timezone ==
+        "Eastern Standard Time"
+      - result.response.config.customization.general_settings.registered_owner
+        == "admin Updated"
+      - result.response.config.customization.general_settings.registered_organization
+        == "admin Updated"
+      - result.response.config.customization.first_logon_commands | length == 2
+      - result.response.config.customization.locale_settings.user_locale ==
+        "en-GB"
+      - result.response.config.customization.workgroup_or_domain_info.name ==
+        "QA"
+      - result.response.config.customization.network_settings.nic_config_list |
+        length == 1
+      - result.response.config.customization.network_settings.nic_config_list[0].dns_config.preferred_dns_server_address
+        == "10.0.0.50"
+      - result.response.config.customization.network_settings.nic_config_list[0].dns_config.alternate_dns_server_addresses
+        == ["10.0.0.51"]
+    fail_msg: "Failed to update VM Guest Customization Profile"
+    success_msg: "VM Guest Customization Profile updated successfully"
+
+########################################################################################
+# Idempotency: re-apply the same update payload, expect no change
+########################################################################################
+- name: Re-apply same update payload (idempotency test)
+  nutanix.ncp.ntnx_vm_guest_customization_profile_v2:
+    state: present
+    ext_id: "{{ todelete[0] }}"
+    name: "{{ profile_sysprep_name_updated }}"
+    description: "Updated sysprep profile description"
+    config:
+      sysprep:
+        customization:
+          sysprep_params:
+            general_settings:
+              computer_name:
+                use_vm_name: {}
+              timezone: "Eastern Standard Time"
+              administrator_password: "admin12345"
+              registered_owner: "admin Updated"
+              registered_organization: "admin Updated"
+            first_logon_commands:
+              - "powershell -Command Enable-PSRemoting -Force"
+              - "powershell -Command Set-ExecutionPolicy RemoteSigned -Force"
+            locale_settings:
+              user_locale: "en-GB"
+              system_locale: "en-GB"
+              ui_language: "en-GB"
+            workgroup_or_domain_info:
+              workgroup:
+                name: "QA"
+            network_settings:
+              nic_config_list:
+                - dns_config:
+                    preferred_dns_server_address: "10.0.0.50"
+                    alternate_dns_server_addresses:
+                      - "10.0.0.51"
+                  ipv4_config:
+                    use_dhcp: {}
+  register: result
+  ignore_errors: true
+
+- name: Print result of idempotency on update VM Guest Customization Profile
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify idempotency on update VM Guest Customization Profile
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.skipped == true
+      - result.msg == "Nothing to change."
+    fail_msg: "Failed to verify idempotency on update VM Guest Customization Profile"
+    success_msg: "Idempotency on update VM Guest Customization Profile verified
+      successfully"
+
+########################################################################################
+# Fetch a VM Guest Customization Profile by ext_id
+########################################################################################
+- name: Fetch the sysprep profile by ext_id
+  nutanix.ncp.ntnx_vm_guest_customization_profiles_info_v2:
+    ext_id: "{{ todelete[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: Print result of fetch by ext_id
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify fetch by ext_id
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == todelete[0]
+      - result.response.ext_id == todelete[0]
+      - result.response.name == profile_sysprep_name_updated
+      - result.response.description == "Updated sysprep profile description"
+      - result.response.config.customization is defined
+      - result.response.config.customization.general_settings.timezone ==
+        "Eastern Standard Time"
+      - result.response.config.customization.general_settings.registered_owner
+        == "admin Updated"
+      - result.response.config.customization.general_settings.registered_organization
+        == "admin Updated"
+      - result.response.config.customization.first_logon_commands | length == 2
+      - result.response.config.customization.locale_settings.user_locale ==
+        "en-GB"
+      - result.response.config.customization.locale_settings.system_locale ==
+        "en-GB"
+      - result.response.config.customization.locale_settings.ui_language ==
+        "en-GB"
+      - result.response.config.customization.workgroup_or_domain_info.name ==
+        "QA"
+      - result.response.config.customization.network_settings.nic_config_list |
+        length == 1
+      - result.response.config.customization.network_settings.nic_config_list[0].dns_config.preferred_dns_server_address
+        == "10.0.0.50"
+      - result.response.config.customization.network_settings.nic_config_list[0].dns_config.alternate_dns_server_addresses
+        == ["10.0.0.51"]
+    fail_msg: "Failed to fetch VM Guest Customization Profile by ext_id"
+    success_msg: "Fetched VM Guest Customization Profile by ext_id successfully"
+
+#######################################################################################
+# List VM Guest Customization Profiles
+########################################################################################
+- name: List VM Guest Customization Profiles
+  nutanix.ncp.ntnx_vm_guest_customization_profiles_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Print result of list VM Guest Customization Profiles
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify list VM Guest Customization Profiles
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length >= 2
+      - result.total_available_results is defined
+      - result.total_available_results >= 2
+    fail_msg: "Failed to list VM Guest Customization Profiles"
+    success_msg: "VM Guest Customization Profiles listed successfully"
+
+########################################################################################
+# List with filter
+########################################################################################
+- name: List VM Guest Customization Profiles with filter
+  nutanix.ncp.ntnx_vm_guest_customization_profiles_info_v2:
+    filter: "name eq '{{ profile_sysprep_name_updated }}'"
+  register: result
+  ignore_errors: true
+
+- name: Print result of list with filter
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify list with filter
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].ext_id == todelete[0]
+      - result.response[0].name == profile_sysprep_name_updated
+      - result.response[0].description == "Updated sysprep profile description"
+      - result.response[0].config.customization is defined
+      - result.response[0].config.customization.general_settings.timezone ==
+        "Eastern Standard Time"
+      - result.response[0].config.customization.general_settings.registered_owner
+        == "admin Updated"
+      - result.response[0].config.customization.general_settings.registered_organization
+        == "admin Updated"
+      - result.response[0].config.customization.first_logon_commands | length ==
+        2
+      - result.response[0].config.customization.locale_settings.user_locale ==
+        "en-GB"
+      - result.response[0].config.customization.locale_settings.system_locale ==
+        "en-GB"
+      - result.response[0].config.customization.locale_settings.ui_language ==
+        "en-GB"
+      - result.response[0].config.customization.workgroup_or_domain_info.name ==
+        "QA"
+      - result.response[0].config.customization.network_settings.nic_config_list
+        | length == 1
+      - result.response[0].config.customization.network_settings.nic_config_list[0].dns_config.preferred_dns_server_address
+        == "10.0.0.50"
+      - result.response[0].config.customization.network_settings.nic_config_list[0].dns_config.alternate_dns_server_addresses
+        == ["10.0.0.51"]
+      - result.total_available_results is defined
+      - result.total_available_results == 1
+    fail_msg: "Failed listing VM Guest Customization Profiles with filter"
+    success_msg: "VM Guest Customization Profiles listed with filter successfully"
+
+########################################################################################
+# List with limit
+########################################################################################
+- name: List VM Guest Customization Profiles with limit
+  nutanix.ncp.ntnx_vm_guest_customization_profiles_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Print result of list with limit
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify list with limit
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+      - result.total_available_results is defined
+      - result.total_available_results >= 2
+    fail_msg: "Failed listing VM Guest Customization Profiles with limit"
+    success_msg: "VM Guest Customization Profiles listed with limit successfully"
+
+########################################################################################
+# Delete VM Guest Customization Profile
+########################################################################################
+- name: Delete VM Guest Customization Profile in check mode
+  nutanix.ncp.ntnx_vm_guest_customization_profile_v2:
+    state: absent
+    ext_id: "{{ todelete[0] }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Print result of delete VM Guest Customization Profile in check mode
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify delete VM Guest Customization Profile in check mode
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.ext_id == todelete[0]
+      - result.msg == "VM Guest Customization Profile with ext_id:" ~
+        todelete[0] ~ " will be deleted."
+    fail_msg: "Failed to delete VM Guest Customization Profile in check mode"
+    success_msg: "Delete VM Guest Customization Profile in check mode passed"
+
+- name: Delete VM Guest Customization Profile
+  nutanix.ncp.ntnx_vm_guest_customization_profile_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  loop: "{{ todelete }}"
+  register: delete_results
+  ignore_errors: true
+
+- name: Print result of delete VM Guest Customization Profiles
+  ansible.builtin.debug:
+    var: delete_results
+
+- name: Verify all VM Guest Customization Profiles deleted
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.task_ext_id is defined
+      - item.ext_id in todelete
+      - delete_results.results | length == todelete | length
+      - delete_results.msg == "All items completed"
+    fail_msg: "Failed to delete one or more VM Guest Customization Profiles"
+    success_msg: "All VM Guest Customization Profiles deleted successfully"
+  loop: "{{ delete_results.results }}"
+  loop_control:
+    label: "{{ item.ext_id }}"
+
+- name: Reset todelete list
+  ansible.builtin.set_fact:
+    todelete: []
