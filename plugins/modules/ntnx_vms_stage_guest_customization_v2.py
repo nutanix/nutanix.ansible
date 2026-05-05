@@ -70,7 +70,12 @@ options:
                                 suboptions:
                                     value:
                                         description:
-                                            - The value of the unattend.xml file.
+                                            - The contents of the unattend.xml file.
+                                            - The API requires this value to be base64 encoded.
+                                            - You can either pass an already-encoded string, or pass the raw
+                                              unattend.xml content and let Ansible encode it using the
+                                              C(b64encode) filter, e.g.
+                                              C("{{ unattend_xml_content | b64encode }}").
                                         type: str
                             custom_key_values:
                                 description:
@@ -119,7 +124,12 @@ options:
                                 suboptions:
                                     value:
                                         description:
-                                            - base64 encoded cloud init script.
+                                            - The cloud-init user-data script.
+                                            - The API requires this value to be base64 encoded.
+                                            - You can either pass an already-encoded string, or pass the raw
+                                              cloud-init script and let Ansible encode it using the
+                                              C(b64encode) filter, e.g.
+                                              C("{{ cloud_init_content | b64encode }}").
                                         type: str
                                         required: true
                             custom_key_values:
@@ -159,6 +169,17 @@ EXAMPLES = r"""
         cloud_init_script:
           user_data:
             value: I2Nsb3VkLWNvbmZpZwpkaXNhYmxlX3Jvb3Q6IGZhbHNlCnNzaF9wd2F1dGg6ICAgdHJ1ZQ==
+  register: result
+
+- name: Stage cloud-init guest customization (encoded at task time)
+  nutanix.ncp.ntnx_vms_stage_guest_customization_v2:
+    ext_id: "7334f142-9653-4c84-7287-3c758d1a0aeb"
+    config:
+      cloudinit:
+        datasource_type: CONFIG_DRIVE_V2
+        cloud_init_script:
+          user_data:
+            value: "{{ vm_cloud_init_user_data | b64encode }}"
   register: result
 """
 

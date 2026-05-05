@@ -566,7 +566,13 @@ options:
                                         type: dict
                                         suboptions:
                                             value:
-                                                description: The Vales of the field
+                                                description:
+                                                    - The contents of the unattend.xml file.
+                                                    - The API requires this value to be base64 encoded.
+                                                    - You can either pass an already-encoded string, or pass the raw
+                                                      unattend.xml content and let Ansible encode it using the
+                                                      C(b64encode) filter, e.g.
+                                                      C("{{ unattend_xml_content | b64encode }}").
                                                 type: str
                                     custom_key_values:
                                         description: Custom key-value pairs for system preparation.
@@ -609,7 +615,12 @@ options:
                                         suboptions:
                                             value:
                                                 description:
-                                                    - base64 encoded cloud init script.
+                                                    - The cloud-init user-data script.
+                                                    - The API requires this value to be base64 encoded.
+                                                    - You can either pass an already-encoded string, or pass the raw
+                                                      cloud-init script and let Ansible encode it using the
+                                                      C(b64encode) filter, e.g.
+                                                      C("{{ cloud_init_content | b64encode }}").
                                                 type: str
                                                 required: true
                                     custom_key_values:
@@ -665,6 +676,22 @@ EXAMPLES = r"""
     num_sockets: 2
     num_cores_per_socket: 2
     num_threads_per_core: 2
+
+- name: Clone VM with cloud-init guest customization (base64 encoded)
+  nutanix.ncp.ntnx_vms_clone_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    ext_id: "de84a538-32bf-4a42-913b-340540af18fd"
+    name: "cloned_VM_cloudinit"
+    guest_customization:
+      config:
+        cloudinit:
+          datasource_type: CONFIG_DRIVE_V2
+          cloud_init_script:
+            user_data:
+              value: "{{ vm_cloud_init_user_data | b64encode }}"
 """
 
 RETURN = r"""
