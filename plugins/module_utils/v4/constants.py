@@ -48,9 +48,7 @@ class Tasks:
         NETWORK_FUNCTION = "Networking:config:network-function"
         VIRTUAL_SWITCH = "networking:config:virtual-switch"
         ENTITY_GROUP = "microseg:config:entity-group"
-        VM_GUEST_CUSTOMIZATION_PROFILE = (
-            "vmm:ahv:config:vm-guest-customization-profile"
-        )
+        VM_GUEST_CUSTOMIZATION_PROFILE = "vmm:ahv:config:vm-guest-customization-profile"
 
     class CompletetionDetailsName:
         """Completion details name for the task entities affected"""
