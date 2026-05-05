@@ -248,3 +248,9 @@ action_groups:
     - ntnx_virtual_switches_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
+    - ntnx_snmp_user_v2
+    - ntnx_snmp_user_info_v2
+    - ntnx_snmp_trap_v2
+    - ntnx_snmp_trap_info_v2
+    - ntnx_snmp_config_v2
+    - ntnx_snmp_config_info_v2

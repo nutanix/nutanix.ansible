@@ -1,0 +1,59 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Fetch SNMP config for a cluster
+# 2. Enable SNMP on a cluster
+# 3. Disable SNMP on a cluster
+# 4. Add SNMP transport
+# 5. Remove SNMP transport
+
+- name: SNMP config playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        cluster_ext_id: "913fa076-d385-4dd8-b549-0e628e645569"
+
+    - name: Fetch SNMP config for a cluster
+      nutanix.ncp.ntnx_snmp_config_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Enable SNMP on a cluster
+      nutanix.ncp.ntnx_snmp_config_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        is_enabled: true
+      register: result
+      ignore_errors: true
+
+    - name: Disable SNMP on a cluster
+      nutanix.ncp.ntnx_snmp_config_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        is_enabled: false
+      register: result
+      ignore_errors: true
+
+    - name: Add SNMP transport
+      nutanix.ncp.ntnx_snmp_config_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        protocol: UDP
+        port: 162
+      register: result
+      ignore_errors: true
+
+    - name: Remove SNMP transport
+      nutanix.ncp.ntnx_snmp_config_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        state: absent
+        protocol: UDP
+        port: 162
+      register: result
+      ignore_errors: true
