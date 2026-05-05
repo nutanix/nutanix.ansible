@@ -1,0 +1,227 @@
+---
+- name: Start ntnx_directory_server_config_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_directory_server_config_v2 tests
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set suffix_name
+  ansible.builtin.set_fact:
+    suffix_name: ansible-dsc
+
+- name: Set variables for the tests
+  ansible.builtin.set_fact:
+    dsc1: "{{ random_name }}{{ suffix_name }}1"
+
+- name: Set todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+###################################################################################################
+
+- name: Generate spec for create directory server config with check mode enabled
+  nutanix.ncp.ntnx_directory_server_config_v2:
+    state: present
+    directory_service_reference: "00062ffc-95ad-19e9-185b-ac1f6b6f97a3"
+    matching_criterias:
+      - match_entity: VM
+        match_field: NAME
+        match_type: CONTAINS
+        criteria: "test-criteria"
+    is_default_category_enabled: true
+    should_keep_default_category_on_login: false
+    domain_controllers:
+      - fqdn:
+          value: "dc1.test.local"
+      - ipv4:
+          value: "10.0.0.1"
+          prefix_length: 32
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Generate spec for create directory server config with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.directory_service_reference == "00062ffc-95ad-19e9-185b-ac1f6b6f97a3"
+      - result.response.is_default_category_enabled == true
+      - result.response.should_keep_default_category_on_login == false
+      - result.response.matching_criterias | length == 1
+      - result.response.matching_criterias[0].match_entity == "VM"
+      - result.response.matching_criterias[0].match_field == "NAME"
+      - result.response.matching_criterias[0].match_type == "CONTAINS"
+      - result.response.matching_criterias[0].criteria == "test-criteria"
+      - result.response.domain_controllers | length == 2
+    fail_msg: Generate spec for create directory server config with check mode enabled failed
+    success_msg: Generate spec for create directory server config with check mode enabled passed
+
+###################################################################################################
+
+- name: Generate spec for create directory server config with ALL match type in check mode
+  nutanix.ncp.ntnx_directory_server_config_v2:
+    state: present
+    directory_service_reference: "00062ffc-95ad-19e9-185b-ac1f6b6f97a3"
+    matching_criterias:
+      - match_entity: VM
+        match_field: NAME
+        match_type: ALL
+    is_default_category_enabled: false
+    should_keep_default_category_on_login: true
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Generate spec for create with ALL match type in check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.directory_service_reference == "00062ffc-95ad-19e9-185b-ac1f6b6f97a3"
+      - result.response.is_default_category_enabled == false
+      - result.response.should_keep_default_category_on_login == true
+      - result.response.matching_criterias | length == 1
+      - result.response.matching_criterias[0].match_entity == "VM"
+      - result.response.matching_criterias[0].match_field == "NAME"
+      - result.response.matching_criterias[0].match_type == "ALL"
+    fail_msg: Generate spec for create with ALL match type in check mode failed
+    success_msg: Generate spec for create with ALL match type in check mode passed
+
+###################################################################################################
+
+- name: Generate spec for update directory server config with check mode using fake ext_id
+  nutanix.ncp.ntnx_directory_server_config_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    directory_service_reference: "00062ffc-95ad-19e9-185b-ac1f6b6f97a3"
+    matching_criterias:
+      - match_entity: VM
+        match_field: NAME
+        match_type: CONTAINS
+        criteria: "updated-criteria"
+    is_default_category_enabled: false
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Generate spec for update directory server config with check mode using fake ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching directory server config info using ext_id"
+    fail_msg: Update with check mode using fake ext_id did not fail as expected
+    success_msg: Update with check mode using fake ext_id failed as expected
+
+###################################################################################################
+
+- name: Create directory server config without directory_service_reference
+  nutanix.ncp.ntnx_directory_server_config_v2:
+    state: present
+    matching_criterias:
+      - match_entity: VM
+        match_field: NAME
+        match_type: ALL
+  register: result
+  ignore_errors: true
+
+- name: Create directory server config without directory_service_reference status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - "'directory_service_reference' in result.msg or 'ext_id' in result.msg"
+    fail_msg: Create without directory_service_reference did not fail as expected
+    success_msg: Create without directory_service_reference failed as expected
+
+###################################################################################################
+
+- name: Delete directory server config with check mode
+  nutanix.ncp.ntnx_directory_server_config_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    state: absent
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete directory server config with check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.msg == "Directory server config with ext_id:00000000-0000-0000-0000-000000000000 will be deleted."
+    fail_msg: Delete directory server config with check mode failed
+    success_msg: Delete directory server config with check mode passed
+
+###################################################################################################
+
+- name: Delete directory server config with wrong ext_id
+  nutanix.ncp.ntnx_directory_server_config_v2:
+    ext_id: "83cbf00d-782f-4efc-87c8-4129f5942aaa"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Delete directory server config with wrong ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching directory server config info using ext_id"
+    fail_msg: Delete directory server config with wrong ext_id did not fail as expected
+    success_msg: Delete directory server config with wrong ext_id failed as expected
+
+###################################################################################################
+
+- name: Delete directory server config without ext_id
+  nutanix.ncp.ntnx_directory_server_config_v2:
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Delete directory server config without ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - "'ext_id' in result.msg"
+    fail_msg: Delete without ext_id did not fail as expected
+    success_msg: Delete without ext_id failed as expected
+
+###################################################################################################
+
+- name: List all directory server configs
+  nutanix.ncp.ntnx_directory_server_configs_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: List all directory server configs status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+    fail_msg: List all directory server configs failed
+    success_msg: All directory server configs listed successfully
+
+###################################################################################################
+
+- name: Get directory server config using wrong ext_id
+  nutanix.ncp.ntnx_directory_server_configs_info_v2:
+    ext_id: "83cbf00d-782f-4efc-87c8-4129f5942aaa"
+  register: result
+  ignore_errors: true
+
+- name: Get directory server config using wrong ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching directory server config info using ext_id"
+    fail_msg: Get directory server config using wrong ext_id did not fail as expected
+    success_msg: Get directory server config using wrong ext_id failed as expected

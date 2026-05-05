@@ -1,0 +1,60 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create a directory server config (check mode)
+# 2. List all directory server configs
+# 3. Delete the directory server config (check mode)
+
+- name: Directory server configs playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        directory_service_ext_id: "00062ffc-95ad-19e9-185b-ac1f6b6f97a3"
+
+    - name: Create directory server config (check mode)
+      nutanix.ncp.ntnx_directory_server_config_v2:
+        state: present
+        directory_service_reference: "{{ directory_service_ext_id }}"
+        matching_criterias:
+          - match_entity: VM
+            match_field: NAME
+            match_type: CONTAINS
+            criteria: "test"
+        is_default_category_enabled: true
+        should_keep_default_category_on_login: false
+      register: result
+      ignore_errors: true
+      check_mode: true
+
+    - name: Display create check mode result
+      ansible.builtin.debug:
+        var: result
+
+    - name: List all directory server configs
+      nutanix.ncp.ntnx_directory_server_configs_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Display list result
+      ansible.builtin.debug:
+        var: result
+
+    - name: Delete directory server config (check mode)
+      nutanix.ncp.ntnx_directory_server_config_v2:
+        state: absent
+        ext_id: "00000000-0000-0000-0000-000000000000"
+      register: result
+      ignore_errors: true
+      check_mode: true
+
+    - name: Display delete check mode result
+      ansible.builtin.debug:
+        var: result

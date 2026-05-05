@@ -1,4 +1,4 @@
-# Copyright: (c) 2024, Nutanix
+# Copyright: (c) 2024, 2026, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -102,3 +102,23 @@ def strip_service_group_extra_attributes(obj):
         setattr(obj, field, None)
 
     return obj
+
+
+def get_directory_server_config(module, api_instance, ext_id):
+    """
+    This method will return directory server config info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: DirectoryServerConfigsApi instance from ntnx_microseg_py_client sdk
+        ext_id (str): directory server config external ID
+    Returns:
+        directory_server_config (object): directory server config info
+    """
+    try:
+        return api_instance.get_directory_server_config_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching directory server config info using ext_id",
+        )

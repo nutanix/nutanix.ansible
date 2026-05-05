@@ -1,4 +1,4 @@
-# Copyright: (c) 2024, Nutanix
+# Copyright: (c) 2024, 2026, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -131,3 +131,15 @@ def get_entity_groups_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_microseg_py_client.EntityGroupsApi(client)
+
+
+def get_directory_server_configs_api_instance(module):
+    """
+    This method will return DirectoryServerConfigsApi instance.
+    Args:
+        module (object): Ansible module object
+    Returns:
+        api_instance (object): directory server configs api instance
+    """
+    client = get_api_client(module)
+    return ntnx_microseg_py_client.DirectoryServerConfigsApi(client)
