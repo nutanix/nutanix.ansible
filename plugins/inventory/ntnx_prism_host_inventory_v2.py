@@ -24,9 +24,11 @@ DOCUMENTATION = r"""
             choices: ['ntnx_prism_host_inventory_v2', 'nutanix.ncp.ntnx_prism_host_inventory_v2']
         nutanix_host:
             description:
-                - Prism central hostname or IP address
-                - If not provided, values will be taken from environment variables NUTANIX_HOSTNAME or NUTANIX_HOST
-                - If both are set, NUTANIX_HOSTNAME is preferred over NUTANIX_HOST
+                - Prism Central hostname or IP address
+                - If not provided, values will be taken from environment variables NUTANIX_HOSTNAME, NUTANIX_HOST,
+                  or NUTANIX_ENDPOINT (in that order of preference)
+                - NUTANIX_ENDPOINT is supported for alignment with the Nutanix Terraform provider and accepts
+                  a hostname, IP, or URL (e.g. C(prism.example.com) or C(https://prism.example.com:9440))
             required: false
             type: str
             env:
@@ -36,6 +38,8 @@ DOCUMENTATION = r"""
             description:
                 - Prism central username
                 - If not provided, values will be taken from environment variable NUTANIX_USERNAME
+                - Supports Jinja2 expressions including lookup plugins
+                  (e.g. C({{ lookup('community.general.onepassword', 'Nutanix', field='username') }}))
             required: false
             type: str
             env:
@@ -44,6 +48,7 @@ DOCUMENTATION = r"""
             description:
                 - Prism central password
                 - If not provided, values will be taken from environment variable NUTANIX_PASSWORD
+                - Supports Jinja2 expressions including lookup plugins
             required: false
             type: str
             env:
@@ -62,10 +67,23 @@ DOCUMENTATION = r"""
             description:
                 - Prism central API key
                 - If not provided, values will be taken from environment variable NUTANIX_API_KEY
+                - Supports Jinja2 expressions including lookup plugins
+                  (e.g. C({{ lookup('community.general.onepassword', 'Nutanix', field='api_key') }}))
             required: false
             type: str
             env:
                 - name: NUTANIX_API_KEY
+        custom_headers:
+            description:
+                - Custom HTTP headers to add to all API requests. Useful for environments that
+                  require additional headers such as Cloudflare Access service tokens.
+                - Headers can also be supplied via environment variables using the NUTANIX_HEADER_
+                  prefix (e.g. NUTANIX_HEADER_CF_ACCESS_CLIENT_ID becomes Cf-Access-Client-Id).
+                  Config values take precedence over environment variables.
+                - Supports Jinja2 expressions including lookup plugins for secret management.
+                  Inventory file values take precedence over environment variables.
+            required: false
+            type: dict
         fetch_all_hosts:
             description:
                 - Set to C(True) to fetch all hosts
@@ -192,6 +210,7 @@ EXAMPLES = r"""
 import json  # noqa: E402
 import os  # noqa: E402
 import tempfile  # noqa: E402
+from urllib.parse import urlparse  # noqa: E402
 
 from ansible.errors import AnsibleError  # noqa: E402
 from ansible.plugins.inventory import BaseInventoryPlugin, Constructable  # noqa: E402
@@ -216,6 +235,7 @@ class Mock_Module:
         nutanix_debug=False,
         nutanix_log_file=None,
         nutanix_api_key=None,
+        custom_headers=None,
     ):
         self.tmpdir = tempfile.gettempdir()
         self.params = {
@@ -229,6 +249,7 @@ class Mock_Module:
             "nutanix_debug": nutanix_debug,
             "nutanix_log_file": nutanix_log_file,
             "nutanix_api_key": nutanix_api_key,
+            "custom_headers": custom_headers,
         }
 
     def jsonify(self, data):
@@ -395,6 +416,12 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
 
         return host_vars
 
+    def _template_option(self, option_name):
+        raw = self.get_option(option_name)
+        if raw and self.templar:
+            return self.templar.template(raw)
+        return raw
+
     def _should_add_host(self, host_vars, host, host_filters, strict):
         """
         Evaluate filter expressions against host_vars and raw host data.
@@ -433,23 +460,37 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             or os.environ.get("NUTANIX_HOSTNAME")
             or os.environ.get("NUTANIX_HOST")
         )
-        self.nutanix_username = self.get_option("nutanix_username") or os.environ.get(
-            "NUTANIX_USERNAME"
-        )
-        self.nutanix_password = self.get_option("nutanix_password") or os.environ.get(
-            "NUTANIX_PASSWORD"
-        )
         self.nutanix_port = self.get_option("nutanix_port") or os.environ.get(
             "NUTANIX_PORT", "9440"
         )
-        self.nutanix_api_key = self.get_option("nutanix_api_key") or os.environ.get(
+
+        # Fall back to parsing NUTANIX_ENDPOINT (e.g. https://prism.example.com:9440)
+        if not self.nutanix_host:
+            endpoint = os.environ.get("NUTANIX_ENDPOINT")
+            if endpoint:
+                parsed = urlparse(endpoint)
+                self.nutanix_host = parsed.hostname or endpoint.split(":")[0]
+                if parsed.port:
+                    self.nutanix_port = str(parsed.port)
+
+        self.nutanix_username = self._template_option("nutanix_username") or os.environ.get(
+            "NUTANIX_USERNAME"
+        )
+        self.nutanix_password = self._template_option("nutanix_password") or os.environ.get(
+            "NUTANIX_PASSWORD"
+        )
+        _raw_api_key = self._template_option("nutanix_api_key") or os.environ.get(
             "NUTANIX_API_KEY"
         )
+        # Convert to plain str: Ansible's get_option() may return _AnsibleTaggedStr
+        # subclasses which fail strict type(key) is str checks in some SDK clients.
+        self.nutanix_api_key = str(_raw_api_key) if _raw_api_key else None
+        self.custom_headers = self._template_option("custom_headers")
 
         # Validate required parameters
         if not self.nutanix_host:
             raise AnsibleError(
-                "nutanix_host must be provided either in inventory file or as NUTANIX_HOSTNAME environment variable or NUTANIX_HOST environment variable"
+                "nutanix_host must be provided either in inventory file or as NUTANIX_HOSTNAME, NUTANIX_HOST, or NUTANIX_ENDPOINT environment variable"
             )
         if (
             not self.nutanix_username or not self.nutanix_password
@@ -493,6 +534,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             self.nutanix_debug,
             self.nutanix_log_file,
             self.nutanix_api_key,
+            self.custom_headers,
         )
 
         # Get Host API instance

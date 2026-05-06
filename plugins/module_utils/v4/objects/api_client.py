@@ -12,7 +12,7 @@ from ansible.module_utils.basic import missing_required_lib
 
 from ...constants import ALLOW_VERSION_NEGOTIATION
 from ..api_logger import setup_api_logging
-from ..utils import _apply_proxy_from_env
+from ..utils import _apply_custom_headers, _apply_proxy_from_env
 
 objects_SDK_IMP_ERROR = None
 try:
@@ -71,6 +71,17 @@ def get_api_client(module):
             encoded_cred = b64encode(bytes(cred).encode("ascii")).decode("ascii")
         auth_header = "Basic " + encoded_cred
         client.add_default_header(header_name="Authorization", header_value=auth_header)
+
+    # Ensure X-ntnx-api-key header is present — set_api_key() silently fails
+    # in some SDK clients.
+    if api_key:
+        default_headers = getattr(client, "_ApiClient__default_headers", {})
+        if "X-ntnx-api-key" not in default_headers:
+            client.add_default_header(
+                header_name="X-ntnx-api-key", header_value=api_key
+            )
+
+    _apply_custom_headers(client, module)
 
     # Setup API logging if debug is enabled
     setup_api_logging(module, client)

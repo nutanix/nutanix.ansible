@@ -1,2 +1,7 @@
 nutanix-ncp-*
 .ansible/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
