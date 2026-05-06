@@ -28,8 +28,8 @@ DOCUMENTATION = r"""
                 - Prism Central hostname or IP address
                 - If not provided, values will be taken from environment variables NUTANIX_HOSTNAME, NUTANIX_HOST,
                   or NUTANIX_ENDPOINT (in that order of preference)
-                - NUTANIX_ENDPOINT is supported for alignment with the Nutanix Terraform provider and should be
-                  set to just the hostname or IP (e.g. C(prism.example.com)), not a full URL
+                - NUTANIX_ENDPOINT is supported for alignment with the Nutanix Terraform provider and accepts
+                  a hostname, IP, or URL (e.g. C(prism.example.com) or C(https://prism.example.com:9440))
             required: false
             type: str
             env:
@@ -591,7 +591,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             endpoint = os.environ.get("NUTANIX_ENDPOINT")
             if endpoint:
                 parsed = urlparse(endpoint)
-                self.nutanix_host = parsed.hostname
+                self.nutanix_host = parsed.hostname or endpoint.split(":")[0]
                 if parsed.port:
                     self.nutanix_port = str(parsed.port)
 
