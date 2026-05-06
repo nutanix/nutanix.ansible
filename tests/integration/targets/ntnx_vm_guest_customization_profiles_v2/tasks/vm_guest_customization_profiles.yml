@@ -1337,11 +1337,22 @@
   register: must_provide_deploy_info
   ignore_errors: true
 
-- name: Delete must_provide deployed VM (cleanup inline)
+- name: Delete deployed VM with must_provide fields
   nutanix.ncp.ntnx_vms_v2:
     state: absent
     ext_id: "{{ must_provide_deploy_info.response[0].ext_id }}"
-    ignore_errors: true
+  register: result
+  ignore_errors: true
+
+- name: Verify deployed VM with must_provide fields was deleted
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Failed to delete deployed VM with must_provide fields"
+    success_msg: "Deployed VM with must_provide fields deleted successfully"
 
 ########################################################################################
 # Clone with must_provide profile and complete override
@@ -1394,11 +1405,22 @@
     fail_msg: "Clone failed unexpectedly when must_provide fields were supplied"
     success_msg: "Clone succeeded when must_provide fields were supplied"
 
-- name: Delete must_provide cloned VM (cleanup inline)
+- name: Delete cloned VM with must_provide fields
   nutanix.ncp.ntnx_vms_v2:
     state: absent
     ext_id: "{{ result.response.ext_id }}"
+  register: result
   ignore_errors: true
+
+- name: Verify cloned VM with must_provide fields was deleted
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Failed to delete cloned VM with must_provide fields"
+    success_msg: "Cloned VM with must_provide fields deleted successfully"
 
 ########################################################################################
 # Deploy from NGT-installed template with guest_customization_profile_config
