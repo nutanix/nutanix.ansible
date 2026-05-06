@@ -26,7 +26,7 @@
 # Pre-create an NGT-capable base VM and a (no-NGT) template used for the negative
 # deploy test. NGT is intentionally NOT installed yet on the base VM so that the
 # template1 captures a non-NGT source-VM state. We later install NGT and create a
-# second template (template2) from the same VM for the positive deploy test.
+# second template (template2) from the same VM for the deploy test.
 ########################################################################################
 - name: Set base VM / template / clone / deploy names
   ansible.builtin.set_fact:
@@ -849,7 +849,7 @@
     success_msg: "NGT confirmed as installed on base VM"
 
 ########################################################################################
-# Create a new template (template2) from the NGT-installed base VM. The positive
+# Create a new template (template2) from the NGT-installed base VM.
 # deploy test below uses this template.
 ########################################################################################
 - name: Create template from base VM (NGT now installed)
@@ -1317,37 +1317,34 @@
   register: result
   ignore_errors: true
 
-- name: Print result of positive deploy (must_provide fields supplied)
+- name: Print result of deploy (must_provide fields supplied)
   ansible.builtin.debug:
     var: result
 
-- name: Verify positive deploy succeeds when must_provide fields are supplied
+- name: Verify deploy succeeds when must_provide fields are supplied
   ansible.builtin.assert:
     that:
       - result.changed == true
       - result.failed == false
       - result.response is defined
       - result.response.status == "SUCCEEDED"
-    fail_msg: "Positive must_provide deploy failed unexpectedly"
-    success_msg: "Positive must_provide deploy succeeded as expected"
+    fail_msg: "Deploy failed unexpectedly when must_provide fields were supplied"
+    success_msg: "Deploy succeeded when must_provide fields were supplied"
 
-- name: Find positive must_provide deployed VM by name
+- name: Find must_provide deployed VM by name
   nutanix.ncp.ntnx_vms_info_v2:
     filter: "name eq '{{ deployed_vm_name }}_must_provide'"
   register: must_provide_deploy_info
   ignore_errors: true
 
-- name: Delete positive must_provide deployed VM (cleanup inline)
+- name: Delete must_provide deployed VM (cleanup inline)
   nutanix.ncp.ntnx_vms_v2:
     state: absent
     ext_id: "{{ must_provide_deploy_info.response[0].ext_id }}"
-  when:
-    - must_provide_deploy_info.response is defined
-    - must_provide_deploy_info.response | length == 1
-  ignore_errors: true
+    ignore_errors: true
 
 ########################################################################################
-# Positive CRUD test: Clone with must_provide profile and complete override
+# Clone with must_provide profile and complete override
 ########################################################################################
 - name: Clone with must_provide profile and complete override
   nutanix.ncp.ntnx_vms_clone_v2:
@@ -1382,11 +1379,11 @@
   register: result
   ignore_errors: true
 
-- name: Print result of positive clone (must_provide fields supplied)
+- name: Print result of clone (must_provide fields supplied)
   ansible.builtin.debug:
     var: result
 
-- name: Verify positive clone succeeds when must_provide fields are supplied
+- name: Verify clone succeeds when must_provide fields are supplied
   ansible.builtin.assert:
     that:
       - result.changed == true
@@ -1394,14 +1391,13 @@
       - result.response is defined
       - result.response.name == cloned_vm_name + "_must_provide"
       - result.response.ext_id is defined
-    fail_msg: "Positive must_provide clone failed unexpectedly"
-    success_msg: "Positive must_provide clone succeeded as expected"
+    fail_msg: "Clone failed unexpectedly when must_provide fields were supplied"
+    success_msg: "Clone succeeded when must_provide fields were supplied"
 
-- name: Delete positive must_provide cloned VM (cleanup inline)
+- name: Delete must_provide cloned VM (cleanup inline)
   nutanix.ncp.ntnx_vms_v2:
     state: absent
     ext_id: "{{ result.response.ext_id }}"
-  when: result.response is defined and result.response.ext_id is defined
   ignore_errors: true
 
 ########################################################################################

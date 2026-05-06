@@ -44,8 +44,7 @@
     # When the referenced profile marks fields with `must_provide_during_deployment`,
     # the per-clone override MUST supply those fields (e.g. computer_name, ipv4_config)
     # or the API rejects the request.
-    - name: Clone VM with Guest Customization Profile (registered owner/organization,
-        static IP)
+    - name: Clone VM with Guest Customization Profile
       nutanix.ncp.ntnx_vms_clone_v2:
         ext_id: "{{ vm_uuid }}"
         name: "integration_test_vm_clone_with_profile"

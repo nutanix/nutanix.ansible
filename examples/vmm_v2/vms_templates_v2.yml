@@ -71,7 +71,8 @@
       register: result
       ignore_errors: true
 
-    - name: Retrieve the Template Version details for the given Template Version identifier.
+    - name: Retrieve the Template Version details for the given Template Version
+        identifier.
       nutanix.ncp.ntnx_templates_versions_info_v2:
         ext_id: "{{ version_id }}"
         template_ext_id: "{{ template_ext_id }}"
@@ -100,9 +101,27 @@
       register: result
       ignore_errors: true
 
-    # NGT must be installed on the source VM the template was captured from,
-    # otherwise the deploy API rejects the request with an NGT-not-installed error.
-    - name: Deploy VM from template with Guest Customization Profile (workgroup join, DHCP)
+    - name: Initiate_guest_os_update
+      nutanix.ncp.ntnx_templates_guest_os_v2:
+        template_ext_id: "{{ template_ext_id }}"
+        version_id: "{{ version_id }}"
+        state: start
+      register: result
+      ignore_errors: true
+
+    - name: Finish guest_os_update
+      nutanix.ncp.ntnx_templates_guest_os_v2:
+        template_ext_id: "{{ template_ext_id }}"
+        version_id: "{{ version_id }}"
+        state: finish
+        version_name: "{{ version_name }}"
+        version_description: finish guest os update
+      register: result
+      ignore_errors: true
+      # NGT must be installed on the source VM the template was captured from,
+      # otherwise the deploy API rejects the request with an NGT-not-installed error.
+    - name: Deploy VM from template with Guest Customization Profile (workgroup join,
+        DHCP)
       nutanix.ncp.ntnx_templates_deploy_v2:
         ext_id: "{{ template_ext_id }}"
         version_id: "{{ version_id }}"
@@ -138,24 +157,6 @@
                               - "10.0.0.101"
                           ipv4_config:
                             use_dhcp: {}
-      register: result
-      ignore_errors: true
-
-    - name: Initiate_guest_os_update
-      nutanix.ncp.ntnx_templates_guest_os_v2:
-        template_ext_id: "{{ template_ext_id }}"
-        version_id: "{{ version_id }}"
-        state: start
-      register: result
-      ignore_errors: true
-
-    - name: Finish guest_os_update
-      nutanix.ncp.ntnx_templates_guest_os_v2:
-        template_ext_id: "{{ template_ext_id }}"
-        version_id: "{{ version_id }}"
-        state: finish
-        version_name: "{{ version_name }}"
-        version_description: finish guest os update
       register: result
       ignore_errors: true
 
