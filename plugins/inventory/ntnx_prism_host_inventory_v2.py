@@ -24,9 +24,11 @@ DOCUMENTATION = r"""
             choices: ['ntnx_prism_host_inventory_v2', 'nutanix.ncp.ntnx_prism_host_inventory_v2']
         nutanix_host:
             description:
-                - Prism central hostname or IP address
-                - If not provided, values will be taken from environment variables NUTANIX_HOSTNAME or NUTANIX_HOST
-                - If both are set, NUTANIX_HOSTNAME is preferred over NUTANIX_HOST
+                - Prism Central hostname or IP address
+                - If not provided, values will be taken from environment variables NUTANIX_HOSTNAME, NUTANIX_HOST,
+                  or NUTANIX_ENDPOINT (in that order of preference)
+                - NUTANIX_ENDPOINT is supported for alignment with the Nutanix Terraform provider and should be
+                  set to just the hostname or IP (e.g. C(prism.example.com)), not a full URL
             required: false
             type: str
             env:
@@ -36,6 +38,8 @@ DOCUMENTATION = r"""
             description:
                 - Prism central username
                 - If not provided, values will be taken from environment variable NUTANIX_USERNAME
+                - Supports Jinja2 expressions including lookup plugins
+                  (e.g. C({{ lookup('community.general.onepassword', 'Nutanix', field='username') }}))
             required: false
             type: str
             env:
@@ -44,6 +48,7 @@ DOCUMENTATION = r"""
             description:
                 - Prism central password
                 - If not provided, values will be taken from environment variable NUTANIX_PASSWORD
+                - Supports Jinja2 expressions including lookup plugins
             required: false
             type: str
             env:
@@ -62,6 +67,8 @@ DOCUMENTATION = r"""
             description:
                 - Prism central API key
                 - If not provided, values will be taken from environment variable NUTANIX_API_KEY
+                - Supports Jinja2 expressions including lookup plugins
+                  (e.g. C({{ lookup('community.general.onepassword', 'Nutanix', field='api_key') }}))
             required: false
             type: str
             env:
@@ -73,6 +80,8 @@ DOCUMENTATION = r"""
                 - Headers can also be supplied via environment variables using the NUTANIX_HEADER_
                   prefix (e.g. NUTANIX_HEADER_CF_ACCESS_CLIENT_ID becomes Cf-Access-Client-Id).
                   Config values take precedence over environment variables.
+                - Supports Jinja2 expressions including lookup plugins for secret management.
+                  Inventory file values take precedence over environment variables.
             required: false
             type: dict
         fetch_all_hosts:
@@ -407,6 +416,12 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
 
         return host_vars
 
+    def _template_option(self, option_name):
+        raw = self.get_option(option_name)
+        if raw and self.templar:
+            return self.templar.template(raw)
+        return raw
+
     def _should_add_host(self, host_vars, host, host_filters, strict):
         """
         Evaluate filter expressions against host_vars and raw host data.
@@ -458,16 +473,19 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 if parsed.port:
                     self.nutanix_port = str(parsed.port)
 
-        self.nutanix_username = self.get_option("nutanix_username") or os.environ.get(
+        self.nutanix_username = self._template_option("nutanix_username") or os.environ.get(
             "NUTANIX_USERNAME"
         )
-        self.nutanix_password = self.get_option("nutanix_password") or os.environ.get(
+        self.nutanix_password = self._template_option("nutanix_password") or os.environ.get(
             "NUTANIX_PASSWORD"
         )
-        self.nutanix_api_key = self.get_option("nutanix_api_key") or os.environ.get(
+        _raw_api_key = self._template_option("nutanix_api_key") or os.environ.get(
             "NUTANIX_API_KEY"
         )
-        self.custom_headers = self.get_option("custom_headers")
+        # Convert to plain str: Ansible's get_option() may return _AnsibleTaggedStr
+        # subclasses which fail strict type(key) is str checks in some SDK clients.
+        self.nutanix_api_key = str(_raw_api_key) if _raw_api_key else None
+        self.custom_headers = self._template_option("custom_headers")
 
         # Validate required parameters
         if not self.nutanix_host:
