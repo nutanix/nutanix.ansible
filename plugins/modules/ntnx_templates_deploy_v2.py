@@ -912,6 +912,48 @@ EXAMPLES = r"""
                             prefix_length: 24
                           default_gateways:
                             - "10.0.0.1"
+
+# NGT must be installed on the source VM that the template was captured from,
+# otherwise the deploy API rejects the request with an NGT-not-installed error.
+- name: Deploy VM from template with a Guest Customization Profile (workgroup join, DHCP)
+  nutanix.ncp.ntnx_templates_deploy_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    ext_id: "0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b3b"
+    cluster_reference: "f005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b3b"
+    override_vms_config:
+      - name: vm_deployed_from_template
+        num_sockets: 2
+        num_cores_per_socket: 2
+        guest_customization_profile_config:
+          profile:
+            ext_id: "b1c2d3e4-5f67-4890-a123-456789abcdef"
+          config_override_spec:
+            customization:
+              sysprep_params:
+                general_settings:
+                  computer_name:
+                    name:
+                      value: "deployed-host"
+                  timezone:
+                    value:
+                      value: "UTC"
+                  registered_owner:
+                    value:
+                      value: "deployed-owner"
+                workgroup_or_domain_info:
+                  workgroup:
+                    name: "DEPLOYED-WG"
+                network_settings:
+                  nic_config_list:
+                    - dns_config:
+                        preferred_dns_server_address: "10.0.0.100"
+                        alternate_dns_server_addresses:
+                          - "10.0.0.101"
+                      ipv4_config:
+                        use_dhcp: {}
 """
 
 RETURN = r"""

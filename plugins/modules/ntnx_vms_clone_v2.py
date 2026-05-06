@@ -1082,6 +1082,52 @@ EXAMPLES = r"""
                         prefix_length: 24
                       default_gateways:
                         - "10.0.0.1"
+
+# NGT must be installed on the source VM, otherwise the clone API rejects the
+# request with an NGT-not-installed error.
+# When the referenced profile marks fields with C(must_provide_during_deployment),
+# the per-clone override MUST supply those fields (e.g. computer_name, ipv4_config)
+# or the API rejects the request.
+- name: Clone VM with a Guest Customization Profile
+  nutanix.ncp.ntnx_vms_clone_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    ext_id: "de84a538-32bf-4a42-913b-340540af18fd"
+    name: "cloned_VM_with_profile"
+    guest_customization_profile_config:
+      profile:
+        ext_id: "b1c2d3e4-5f67-4890-a123-456789abcdef"
+      config_override_spec:
+        customization:
+          sysprep_params:
+            general_settings:
+              computer_name:
+                name:
+                  value: "cloned-host"
+              timezone:
+                value:
+                  value: "Pacific Standard Time"
+              registered_owner:
+                value:
+                  value: "cloned-owner"
+              registered_organization:
+                value:
+                  value: "cloned-org"
+            network_settings:
+              nic_config_list:
+                - dns_config:
+                    preferred_dns_server_address: "10.1.0.100"
+                    alternate_dns_server_addresses:
+                      - "10.1.0.101"
+                  ipv4_config:
+                    static_config:
+                      ip_address:
+                        value: "10.1.0.50"
+                        prefix_length: 24
+                      default_gateways:
+                        - "10.1.0.1"
 """
 
 RETURN = r"""
