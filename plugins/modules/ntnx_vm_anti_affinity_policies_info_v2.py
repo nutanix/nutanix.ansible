@@ -12,14 +12,21 @@ DOCUMENTATION = r"""
 module: ntnx_vm_anti_affinity_policies_info_v2
 short_description: Fetches information about VM-VM anti-affinity policies in Nutanix Prism Central.
 version_added: "2.6.0"
-author:
-    - Abhinav Bansal (@abhinavbansal29)
 description:
     - This module fetches information about VM-VM anti-affinity policies in Nutanix Prism Central.
-    - It supports fetching a single policy by external ID or listing all policies with pagination.
+    - It supports fetching a single policy by external ID or listing all policies with optional filter.
     - This module uses PC v4 APIs based SDKs.
 notes:
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Get VM Anti-Affinity Policy) -
+      Operation Name: Get VM Anti-Affinity Policy -
+      Required Roles: Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin, Virtual Machine Admin, Virtual Machine Viewer, Self-Service Admin (deprecated)
+    - >-
+      B(List VM Anti-Affinity Policies) -
+      Operation Name: List VM Anti-Affinity Policies -
+      Required Roles: Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin, Virtual Machine Admin, Virtual Machine Viewer, Self-Service Admin (deprecated)
 options:
     ext_id:
         description:
@@ -27,6 +34,9 @@ options:
             - If provided, fetches a single policy by its external ID.
         type: str
         required: false
+author:
+    - Abhinav Bansal (@abhinavbansal29)
+    - George Ghawali (@george-ghawali)
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_info_v2
@@ -42,6 +52,7 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     ext_id: "605a0cf9-d04e-3be7-911b-1e6f193f6eb9"
+  register: result
 
 - name: List all VM anti-affinity policies
   nutanix.ncp.ntnx_vm_anti_affinity_policies_info_v2:
@@ -49,6 +60,7 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
+  register: result
 
 - name: List VM anti-affinity policies with filter
   nutanix.ncp.ntnx_vm_anti_affinity_policies_info_v2:
@@ -57,6 +69,16 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     filter: "name eq 'my_policy'"
+  register: result
+
+- name: List all VM anti-affinity policies with limit
+  nutanix.ncp.ntnx_vm_anti_affinity_policies_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    limit: 1
+  register: result
 """
 
 
@@ -111,6 +133,7 @@ from ..module_utils.v4.utils import (  # noqa: E402
 )
 from ..module_utils.v4.vmm.api_client import (  # noqa: E402
     get_vm_anti_affinity_policies_api_instance,
+    get_vm_anti_affinity_policy,
 )
 
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
@@ -123,28 +146,15 @@ def get_module_spec():
     return module_args
 
 
-def get_policy(module, result):
+def get_policy(module, api_instance, result):
     """Fetch a single VM anti-affinity policy by ext_id."""
-    api_instance = get_vm_anti_affinity_policies_api_instance(module)
     ext_id = module.params.get("ext_id")
-
-    try:
-        resp = api_instance.get_vm_anti_affinity_policy_by_id(ext_id)
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while fetching VM anti-affinity policy info",
-        )
-
     result["ext_id"] = ext_id
-    result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    result["response"] = get_vm_anti_affinity_policy(module, api_instance, ext_id)
 
 
-def get_policies(module, result):
+def get_policies(module, api_instance, result):
     """List VM anti-affinity policies with pagination support."""
-    api_instance = get_vm_anti_affinity_policies_api_instance(module)
-
     sg = SpecGenerator(module)
     kwargs, err = sg.get_info_spec(attr=module.params)
 
@@ -181,10 +191,11 @@ def run_module():
     )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None}
+    api_instance = get_vm_anti_affinity_policies_api_instance(module)
     if module.params.get("ext_id"):
-        get_policy(module, result)
+        get_policy(module, api_instance, result)
     else:
-        get_policies(module, result)
+        get_policies(module, api_instance, result)
 
     module.exit_json(**result)
 

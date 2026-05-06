@@ -141,6 +141,44 @@ def remove_empty_ip_config(obj):
     setattr(obj, "ip_config", ip_config)
 
 
+def strip_read_only_fields(spec, extra_fields=None):
+    """
+    Clear server-populated read-only fields on a v4 SDK spec object before
+    sending it back as an update body. Most v4 entities share the same set
+    of read-only fields (create/update timestamps, created/updated by,
+    ext_id, links, tenant_id). Modules whose entity has additional read-only
+    fields (e.g. counters populated by the platform) can pass them via
+    `extra_fields`.
+
+    The spec is mutated in place; it is also returned so callers can chain.
+
+    Args:
+        spec (object): SDK model object to mutate.
+        extra_fields (Iterable[str] | None): Additional attribute names to
+            clear in addition to the common v4 read-only set.
+
+    Returns:
+        object: The same `spec`, with the listed attributes set to None.
+    """
+    common_read_only = (
+        "create_time",
+        "update_time",
+        "created_by",
+        "updated_by",
+        "ext_id",
+        "links",
+        "tenant_id",
+    )
+    fields = list(common_read_only)
+    if extra_fields:
+        fields.extend(extra_fields)
+
+    for field in fields:
+        if hasattr(spec, field):
+            setattr(spec, field, None)
+    return spec
+
+
 def remove_fields_from_spec(obj, fields_to_remove, deep=False):
     """
     Removes specified fields from a given object (dict or list).

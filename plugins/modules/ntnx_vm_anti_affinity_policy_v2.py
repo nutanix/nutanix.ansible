@@ -10,14 +10,15 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 module: ntnx_vm_anti_affinity_policy_v2
-short_description: Manage VM-VM anti-affinity policies in Nutanix Prism Central
+short_description: Manage VM-VM anti-affinity policy in Nutanix Prism Central
 description:
-    - This module allows you to create, update, and delete VM-VM anti-affinity policies in Nutanix Prism Central.
-    - VM-VM anti-affinity policies ensure that specified VMs are placed on different hosts.
+    - This module allows you to create, update, and delete VM-VM anti-affinity policy in Nutanix Prism Central.
+    - VM-VM anti-affinity policy ensures that specified VMs are placed on different hosts.
     - This module uses PC v4 APIs based SDKs.
 version_added: "2.6.0"
 author:
     - Abhinav Bansal (@abhinavbansal29)
+    - George Ghawali (@george-ghawali)
 options:
     ext_id:
         description:
@@ -39,6 +40,7 @@ options:
         description:
             - List of category references associated with the VM anti-affinity policy.
             - Each entry specifies a category by its external ID.
+            - VMs with the same category will be placed on different hosts.
         required: false
         type: list
         elements: dict
@@ -51,12 +53,9 @@ options:
     state:
         description:
             - Specify state.
-            - If C(state) is set to C(present) then the operation will be to create the item.
-            - If C(state) is set to C(present) and C(ext_id) is given then it will update that policy.
-            - If C(state) is set to C(present) then C(ext_id) or C(name) needs to be set.
-            - >-
-                If C(state) is set to C(absent) and if the item exists, then
-                item is removed.
+            - If C(state) is set to C(present) then the operation will be to create the anti-affinity policy.
+            - If C(state) is set to C(present) and C(ext_id) is given then it will update the anti-affinity policy.
+            - If C(state) is set to C(absent) and C(ext_id) is given then the anti-affinity policy will be deleted.
         choices:
             - present
             - absent
@@ -73,6 +72,20 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_logger
     - nutanix.ncp.ntnx_proxy_v2
 notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Create VM Anti-Affinity Policy) -
+      Operation Name: Create VM Anti-Affinity Policy -
+      Required Roles: Prism Admin, Project Admin, Project Manager, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
+    - >-
+      B(Update VM Anti-Affinity Policy) -
+      Operation Name: Update VM Anti-Affinity Policy -
+      Required Roles: Prism Admin, Project Admin, Project Manager, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
+    - >-
+      B(Delete VM Anti-Affinity Policy) -
+      Operation Name: Delete VM Anti-Affinity Policy -
+      Required Roles: Prism Admin, Project Admin, Project Manager, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 """
 
@@ -86,8 +99,8 @@ EXAMPLES = r"""
     name: my_anti_affinity_policy
     description: Policy to separate critical VMs
     categories:
-      - ext_id: "{{ category_ext_id_1 }}"
-      - ext_id: "{{ category_ext_id_2 }}"
+      - ext_id: "2f54419e-596d-4b34-aa8f-1a1e944ee7d7"
+      - ext_id: "8811743f-f3ea-463c-539a-8d6a7f69b8f5"
     state: present
     wait: true
 
@@ -97,11 +110,11 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    ext_id: "605a0cf9-d04e-3be7-911b-1e6f193f6eb9"
+    ext_id: "54fe0ed5-02d8-4588-b10b-3b9736bf3d06"
     name: updated_anti_affinity_policy
     description: Updated description
     categories:
-      - ext_id: "{{ category_ext_id_3 }}"
+      - ext_id: "9811743f-f3ea-463c-539a-8d6a7f69b8f5"
     state: present
     wait: true
 
@@ -184,6 +197,7 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
+    strip_read_only_fields,
 )
 from ..module_utils.v4.vmm.api_client import (  # noqa: E402
     get_etag,
@@ -267,24 +281,12 @@ def create_policy(module, api_instance, result):
     result["changed"] = True
 
 
-def _strip_read_only_fields(spec):
-    """Clear server-populated read-only fields before sending an update."""
-    read_only = [
-        "create_time",
-        "update_time",
-        "created_by",
-        "updated_by",
-        "num_compliant_vms",
-        "num_non_compliant_vms",
-        "num_pending_vms",
-        "ext_id",
-        "links",
-        "tenant_id",
-    ]
-    for field in read_only:
-        if hasattr(spec, field):
-            setattr(spec, field, None)
-    return spec
+def check_idempotency(current_spec, update_spec):
+    strip_internal_attributes(current_spec)
+    strip_internal_attributes(update_spec)
+    if current_spec != update_spec:
+        return False
+    return True
 
 
 def update_policy(module, api_instance, result):
@@ -306,7 +308,7 @@ def update_policy(module, api_instance, result):
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
 
-    if current_spec == update_spec:
+    if check_idempotency(current_spec, update_spec):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
 
@@ -318,7 +320,16 @@ def update_policy(module, api_instance, result):
 
     kwargs = {"if_match": etag}
 
-    _strip_read_only_fields(update_spec)
+    strip_read_only_fields(
+        update_spec,
+        extra_fields=(
+            "num_compliant_vms",
+            "num_non_compliant_vms",
+            "num_pending_vms",
+            "created_by",
+            "updated_by",
+        ),
+    )
 
     resp = None
     try:
