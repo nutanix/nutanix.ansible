@@ -191,3 +191,23 @@ def get_ova(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching OVA info using ext_id",
         )
+
+
+def get_vm_guest_customization_profile(module, api_instance, ext_id):
+    """
+    Get VM Guest Customization Profile by ext_id
+    Args:
+        module: Ansible module
+        api_instance: VmGuestCustomizationProfilesApi instance from ntnx_vmm_py_client sdk
+        ext_id: ext_id of VM Guest Customization Profile
+    Returns:
+        profile (obj): VM Guest Customization Profile info object
+    """
+    try:
+        return api_instance.get_vm_guest_customization_profile_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching VM Guest Customization Profile info using ext_id",
+        )

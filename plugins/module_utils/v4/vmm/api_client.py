@@ -131,3 +131,13 @@ def get_ova_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_vmm_py_client.OvasApi(api_client=api_client)
+
+
+def get_vm_guest_customization_profiles_api_instance(module):
+    """
+    This method will return VM Guest Customization Profiles API instance
+    Args:
+        api_instance (obj): v4 VM Guest Customization Profiles api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.VmGuestCustomizationProfilesApi(api_client=api_client)

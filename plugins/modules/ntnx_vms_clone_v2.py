@@ -639,6 +639,358 @@ options:
                                                         description: Key Value
                                                         type: raw
                                                         required: false
+    guest_customization_profile_config:
+        description:
+            - Reference to an existing VM Guest Customization Profile to apply at clone time,
+              with optional per-clone overrides.
+            - Mutually exclusive with C(guest_customization) at the API level
+              (use either an inline customization or a profile reference, not both).
+            - Nutanix Guest Tools (NGT) must be installed on the source VM for this
+              field to be accepted; otherwise, the API rejects the clone request.
+        required: false
+        type: dict
+        suboptions:
+            profile:
+                description:
+                    - Reference to a VM Guest Customization profile.
+                type: dict
+                suboptions:
+                    ext_id:
+                        description: External ID of the VM Guest Customization Profile.
+                        type: str
+                        required: true
+            config_override_spec:
+                description:
+                    - Sysprep configuration override specification for Windows operating system customization.
+                type: dict
+                suboptions:
+                    customization:
+                        description:
+                            - Sysprep customization override.
+                            - Either C(sysprep_params) or C(answer_file) is allowed, not both.
+                        type: dict
+                        suboptions:
+                            answer_file:
+                                description: Override the answer file (unattend.xml).
+                                type: dict
+                                suboptions:
+                                    unattend_xml:
+                                        description:
+                                            - The custom unattend.xml file content as a string.
+                                            - This replaces the unattend.xml from the referenced VM Guest Customization Profile.
+                                            - Note that double quotes in the XML file must be escaped to maintain correctness.
+                                            - Should be base64 encoded.
+                                            - You can either pass an already-encoded string, or pass the raw
+                                              unattend.xml content and let Ansible encode it using the
+                                              C(b64encode) filter, e.g.
+                                              C("{{ unattend_xml_content | b64encode }}").
+                                        type: str
+                            sysprep_params:
+                                description: Override individual Sysprep parameters.
+                                type: dict
+                                suboptions:
+                                    general_settings:
+                                        description:
+                                        - Override specification for general Windows unattended installation settings.
+                                        - These settings override the corresponding general settings from the referenced profile.
+                                        - To completely discard the setting from the referenced profile, specify an empty object as the value.
+                                        type: dict
+                                        suboptions:
+                                            computer_name:
+                                                description:
+                                                    - Override mechanism for computer name generation.
+                                                    - You can either use the VM name, provide a computer name,
+                                                      or discard the setting from the referenced profile.
+                                                    - If using a VM name or computer name, meet the sysprep's computer name requirements;
+                                                      otherwise, the request would fail.
+                                                type: dict
+                                                suboptions:
+                                                    name:
+                                                        description: Set computer name to a specific value.
+                                                        type: dict
+                                                        suboptions:
+                                                            value:
+                                                                description: The computer name.
+                                                                type: str
+                                                    use_vm_name:
+                                                        description: Use the cloned VM's name as the computer name.
+                                                        type: dict
+                                                    discard:
+                                                        description: Discard the profile's computer-name value.
+                                                        type: dict
+                                            timezone:
+                                                description:
+                                                    - Override for timezone setting. You can either provide a new timezone value or
+                                                      discard the setting from the referenced profile.
+                                                    - For valid timezone values, refer to Windows sysprep documentation.
+                                                type: dict
+                                                suboptions:
+                                                    value:
+                                                        description: Set timezone to a specific value.
+                                                        type: dict
+                                                        suboptions:
+                                                            value:
+                                                                description: Timezone value.
+                                                                type: str
+                                                    discard:
+                                                        description: Discard the profile's timezone.
+                                                        type: dict
+                                            administrator_password:
+                                                description:
+                                                    - Override for administrator password.
+                                                    - You can either provide a new password or discard the setting from the referenced profile.
+                                                type: dict
+                                                suboptions:
+                                                    value:
+                                                        description: Set administrator password to a specific value
+                                                        type: dict
+                                                        suboptions:
+                                                            value:
+                                                                description: The administrator password.
+                                                                type: str
+                                                    discard:
+                                                        description: Discard the profile's administrator password.
+                                                        type: dict
+                                            auto_logon_settings:
+                                                description:
+                                                    - Override specification for autologon settings.
+                                                    - These settings override the corresponding autologon settings from the referenced profile.
+                                                    - To completely discard the setting from the referenced profile, specify an empty object as the value.
+                                                type: dict
+                                                suboptions:
+                                                    logon_count:
+                                                        description:
+                                                            - Override value for the number of automatic logons allowed.
+                                                            - This overrides the logon count from the referenced profile.
+                                                        type: int
+                                            windows_product_key:
+                                                description:
+                                                    - Override for Windows product key.
+                                                    - You can either provide a new product key or discard the setting from the referenced profile.
+                                                    - Note that entering an invalid product key causes Windows Setup to fail.
+                                                type: dict
+                                                suboptions:
+                                                    value:
+                                                        description: Set Windows product key to a specific value.
+                                                        type: dict
+                                                        suboptions:
+                                                            value:
+                                                                description: The Windows product key.
+                                                                type: str
+                                                    discard:
+                                                        description: Discard the profile's Windows product key.
+                                                        type: dict
+                                            registered_owner:
+                                                description:
+                                                    - Override for registered owner information.
+                                                    - You can either provide new owner details or discard the setting from the referenced profile.
+                                                type: dict
+                                                suboptions:
+                                                    value:
+                                                        description: Set registered owner to a specific value.
+                                                        type: dict
+                                                        suboptions:
+                                                            value:
+                                                                description: The registered owner name.
+                                                                type: str
+                                                    discard:
+                                                        description: Discard the profile's registered owner.
+                                                        type: dict
+                                            registered_organization:
+                                                description:
+                                                    - Override for registered organization information.
+                                                    - You can either provide new organization details or discard the setting from the referenced profile.
+                                                type: dict
+                                                suboptions:
+                                                    value:
+                                                        description: Set registered organization to a specific value.
+                                                        type: dict
+                                                        suboptions:
+                                                            value:
+                                                                description: The registered organization name.
+                                                                type: str
+                                                    discard:
+                                                        description: Discard the profile's registered organization.
+                                                        type: dict
+                                    first_logon_commands:
+                                        description:
+                                            - Override for first logon commands.
+                                            - This overrides the first logon commands from the referenced profile.
+                                            - Commands are executed in the order specified.
+                                            - To completely discard the setting from the referenced profile, specify an empty array as the value.
+                                        type: list
+                                        elements: str
+                                    locale_settings:
+                                        description:
+                                            - Override specification for language and input locale settings.
+                                            - These settings override the corresponding locale settings from the referenced profile.
+                                            - To completely discard the setting from the referenced profile, specify an empty object as the value.
+                                        type: dict
+                                        suboptions:
+                                            user_locale:
+                                                description:
+                                                    - Override for per-user locale settings used for formatting dates, times, currency, and numbers.
+                                                    - You can either provide a new locale value or discard the setting from the referenced profile.
+                                                    - Value must follow RFC 3066 language-tagging conventions, for example, en-US, fr-FR, es-ES.
+                                                type: dict
+                                                suboptions:
+                                                    value:
+                                                        description: Set user locale to a specific value.
+                                                        type: dict
+                                                        suboptions:
+                                                            value:
+                                                                description: The new locale value.
+                                                                type: str
+                                                    discard:
+                                                        description: Discard the profile's user locale.
+                                                        type: dict
+                                            system_locale:
+                                                description:
+                                                    - Override for the default language used for non-Unicode programs.
+                                                    - You can either provide a new locale value or discard the setting from the referenced profile.
+                                                    - Value must follow RFC 3066 language-tagging conventions, for example, en-US, fr-FR, es-ES.
+                                                type: dict
+                                                suboptions:
+                                                    value:
+                                                        description: Set system locale to a specific value.
+                                                        type: dict
+                                                        suboptions:
+                                                            value:
+                                                                description: The new locale value.
+                                                                type: str
+                                                    discard:
+                                                        description: Discard the profile's system locale.
+                                                        type: dict
+                                            ui_language:
+                                                description:
+                                                    - Override for the default system language used to display user interface items.
+                                                    - You can either provide a new language value or discard the setting from the referenced profile.
+                                                    - Value must follow RFC 3066 language-tagging conventions, for example, en-US, fr-FR, es-ES.
+                                                type: dict
+                                                suboptions:
+                                                    value:
+                                                        description: Set UI language to a specific value.
+                                                        type: dict
+                                                        suboptions:
+                                                            value:
+                                                                description: The new language value.
+                                                                type: str
+                                                    discard:
+                                                        description: Discard the profile's UI language.
+                                                        type: dict
+                                    workgroup_or_domain_info:
+                                        description:
+                                            - Override specification for workgroup or domain information.
+                                            - You can either provide a new workgroup or domain settings or discard the settings from the referenced profile.
+                                        type: dict
+                                        suboptions:
+                                            workgroup:
+                                                description: Override workgroup settings.
+                                                type: dict
+                                                suboptions:
+                                                    name:
+                                                        description:
+                                                            - Override value for workgroup name.
+                                                            - This overrides the workgroup name from the referenced profile.
+                                                            - It must be a valid NetBIOS name.
+                                                        type: str
+                                            domain_settings:
+                                                description: Override domain join settings.
+                                                type: dict
+                                                suboptions:
+                                                    credentials:
+                                                        description:
+                                                            - Override specification for domain credentials.
+                                                            - This overrides the domain credentials from the referenced profile.
+                                                        type: dict
+                                                        suboptions:
+                                                            domain_name:
+                                                                description:
+                                                                    - Override value for domain name.
+                                                                    - This overrides the domain name from the referenced profile.
+                                                                    - Can be either the fully qualified DNS name or NetBIOS name of the domain.
+                                                                type: str
+                                                            username:
+                                                                description:
+                                                                    - Override value for domain username.
+                                                                    - This overrides the domain username from the referenced profile.
+                                                                type: str
+                                                            password:
+                                                                description:
+                                                                    - Override value for domain password.
+                                                                    - This overrides the domain password from the referenced profile.
+                                                                type: str
+                                            discard:
+                                                description: Discard the profile's workgroup or domain settings.
+                                                type: dict
+                                    network_settings:
+                                        description:
+                                           - Override specification for network settings.
+                                           - These settings override the corresponding network settings from the referenced profile.
+                                           - To completely discard the setting from the referenced profile, specify an empty object as the value.
+                                        type: dict
+                                        suboptions:
+                                            nic_config_list:
+                                                description:
+                                                   - Override specification for NIC configuration list.
+                                                   - This overrides the NIC configurations from the referenced profile.
+                                                   - Configurations are applied to NICs in serial order.
+                                                type: list
+                                                elements: dict
+                                                suboptions:
+                                                    dns_config:
+                                                        description:
+                                                            - Override specification for DNS configuration.
+                                                            - This overrides the DNS settings from the referenced profile.
+                                                        type: dict
+                                                        suboptions:
+                                                            preferred_dns_server_address:
+                                                                description:
+                                                                    - Override value for preferred DNS server address.
+                                                                    - This overrides the preferred DNS server from the referenced profile.
+                                                                type: str
+                                                            alternate_dns_server_addresses:
+                                                                description:
+                                                                    - Override value for alternate DNS server addresses.
+                                                                    - This overrides the alternate DNS servers from the referenced profile.
+                                                                type: list
+                                                                elements: str
+                                                    ipv4_config:
+                                                        description:
+                                                            - Override mechanism for IPv4 configuration.
+                                                            - You can either use DHCP, provide a custom IPv4 configuration,
+                                                              or discard the setting from the referenced profile.
+                                                            - If DHCP is specified, DhcpEnabled is set to True in the unattend.xml.
+                                                        type: dict
+                                                        suboptions:
+                                                            use_dhcp:
+                                                                description: Use DHCP for IPv4.
+                                                                type: dict
+                                                            static_config:
+                                                                description: Static IPv4 configuration.
+                                                                type: dict
+                                                                suboptions:
+                                                                    ip_address:
+                                                                        description:
+                                                                            - An unique address that identifies a device on the internet
+                                                                              or a local network in IPv4 format.
+                                                                        type: dict
+                                                                        suboptions:
+                                                                            value:
+                                                                                description: IPv4 address value.
+                                                                                type: str
+                                                                                required: true
+                                                                            prefix_length:
+                                                                                description:
+                                                                                    - Prefix length for the address.
+                                                                                    - Defaults to 32 if not provided.
+                                                                                type: int
+                                                                    default_gateways:
+                                                                        description:
+                                                                            - Override value for default gateways.
+                                                                            - This overrides the default gateway configuration from the referenced profile.
+                                                                        type: list
+                                                                        elements: str
     wait:
         description:
             - Whether to wait for the clone operation to complete.
@@ -692,6 +1044,90 @@ EXAMPLES = r"""
           cloud_init_script:
             user_data:
               value: "{{ vm_cloud_init_user_data | b64encode }}"
+
+- name: Clone VM with a VM Guest Customization Profile reference and per-clone overrides
+  nutanix.ncp.ntnx_vms_clone_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    ext_id: "de84a538-32bf-4a42-913b-340540af18fd"
+    name: "cloned_VM_with_profile"
+    guest_customization_profile_config:
+      profile:
+        ext_id: "b1c2d3e4-5f67-4890-a123-456789abcdef"
+      config_override_spec:
+        customization:
+          sysprep_params:
+            general_settings:
+              computer_name:
+                name:
+                  value: "PC-CLONE-1"
+              timezone:
+                value:
+                  value: "UTC"
+              administrator_password:
+                value:
+                  value: "Password123"
+            network_settings:
+              nic_config_list:
+                - dns_config:
+                    preferred_dns_server_address: "10.0.0.10"
+                    alternate_dns_server_addresses:
+                      - "10.0.0.11"
+                  ipv4_config:
+                    static_config:
+                      ip_address:
+                        value: "10.0.0.50"
+                        prefix_length: 24
+                      default_gateways:
+                        - "10.0.0.1"
+
+# NGT must be installed on the source VM, otherwise the clone API rejects the
+# request with an NGT-not-installed error.
+# When the referenced profile marks fields with C(must_provide_during_deployment),
+# the per-clone override MUST supply those fields (e.g. computer_name, ipv4_config)
+# or the API rejects the request.
+- name: Clone VM with a Guest Customization Profile
+  nutanix.ncp.ntnx_vms_clone_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    ext_id: "de84a538-32bf-4a42-913b-340540af18fd"
+    name: "cloned_VM_with_profile"
+    guest_customization_profile_config:
+      profile:
+        ext_id: "b1c2d3e4-5f67-4890-a123-456789abcdef"
+      config_override_spec:
+        customization:
+          sysprep_params:
+            general_settings:
+              computer_name:
+                name:
+                  value: "cloned-host"
+              timezone:
+                value:
+                  value: "Pacific Standard Time"
+              registered_owner:
+                value:
+                  value: "cloned-owner"
+              registered_organization:
+                value:
+                  value: "cloned-org"
+            network_settings:
+              nic_config_list:
+                - dns_config:
+                    preferred_dns_server_address: "10.1.0.100"
+                    alternate_dns_server_addresses:
+                      - "10.1.0.101"
+                  ipv4_config:
+                    static_config:
+                      ip_address:
+                        value: "10.1.0.50"
+                        prefix_length: 24
+                      default_gateways:
+                        - "10.1.0.1"
 """
 
 RETURN = r"""
@@ -823,6 +1259,9 @@ from ..module_utils.v4.utils import (  # noqa: E402
 )
 from ..module_utils.v4.vmm.api_client import get_etag, get_vm_api_instance  # noqa: E402
 from ..module_utils.v4.vmm.helpers import get_vm  # noqa: E402
+from ..module_utils.v4.vmm.spec.vm_guest_customization_profiles import (  # noqa: E402
+    VmGcProfileOverrideSpecs,
+)
 from ..module_utils.v4.vmm.spec.vms import VmSpecs as vm_specs  # noqa: E402
 
 SDK_IMP_ERROR = None
@@ -863,6 +1302,11 @@ def get_module_spec():
             type="dict",
             options=vm_specs.get_gc_spec(),
             obj=vmm_sdk.GuestCustomizationParams,
+        ),
+        guest_customization_profile_config=dict(
+            type="dict",
+            options=VmGcProfileOverrideSpecs.get_guest_customization_profile_config_spec(),
+            obj=vmm_sdk.VmGcProfileConfig,
         ),
     )
 
@@ -930,6 +1374,9 @@ def run_module():
     module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
+        mutually_exclusive=[
+            ("guest_customization", "guest_customization_profile_config"),
+        ],
     )
     if SDK_IMP_ERROR:
         module.fail_json(

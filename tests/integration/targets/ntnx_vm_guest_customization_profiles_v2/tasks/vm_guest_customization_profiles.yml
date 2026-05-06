@@ -1,0 +1,1859 @@
+---
+- name: Start VM Guest Customization Profile tests
+  ansible.builtin.debug:
+    msg: Start VM Guest Customization Profile tests
+
+- name: Generate random suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false,
+      special=false, length=12)[0] }}"
+    suffix_name: "ansible_test"
+    todelete: []
+
+- name: Set profile names
+  ansible.builtin.set_fact:
+    profile_sysprep_name: "vm_gc_profile_{{ suffix_name }}_sysprep_{{ random_name }}"
+    profile_answer_file_name: "vm_gc_profile_{{ suffix_name }}_answer_{{ random_name }}"
+    profile_domain_name: "vm_gc_profile_{{ suffix_name }}_domain_{{ random_name }}"
+    profile_sysprep_name_updated: "vm_gc_profile_{{ suffix_name }}_sysprep_{{ random_name }}_updated"
+
+- name: Load sample unattend XML for answer-file profile from file (base64 encoded)
+  ansible.builtin.set_fact:
+    sample_unattend_xml: "{{ lookup('file', role_path ~
+      '/vars/unattend_xml_content.xml') | b64encode }}"
+
+########################################################################################
+# Pre-create an NGT-capable base VM and a (no-NGT) template used for the negative
+# deploy test. NGT is intentionally NOT installed yet on the base VM so that the
+# template1 captures a non-NGT source-VM state. We later install NGT and create a
+# second template (template2) from the same VM for the deploy test.
+########################################################################################
+- name: Set base VM / template / clone / deploy names
+  ansible.builtin.set_fact:
+    base_vm_name: "vm_gc_profile_{{ suffix_name }}_base_{{ random_name }}"
+    template_name: "vm_gc_profile_{{ suffix_name }}_template_{{ random_name }}"
+    template2_name: "vm_gc_profile_{{ suffix_name }}_template2_{{ random_name }}"
+    deployed_vm_name: "vm_gc_profile_{{ suffix_name }}_deployed_{{ random_name }}"
+    cloned_vm_name: "vm_gc_profile_{{ suffix_name }}_clone_{{ random_name }}"
+    vms_to_delete: []
+
+- name: Create base VM (Windows UEFI image, CD-ROM, DHCP NIC) - NGT not yet installed
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    name: "{{ base_vm_name }}"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    num_sockets: 2
+    num_cores_per_socket: 2
+    memory_size_bytes: 8589934592
+    boot_config:
+      uefi_boot: {}
+    disks:
+      - backing_info:
+          vm_disk:
+            disk_size_bytes: 42949672960
+            data_source:
+              reference:
+                image_reference:
+                  image_ext_id: "{{ windows_image_config.image_uuid }}"
+        disk_address:
+          bus_type: SCSI
+          index: 0
+    cd_roms:
+      - disk_address:
+          bus_type: IDE
+          index: 0
+    nics:
+      - network_info:
+          subnet:
+            ext_id: "{{ network.dhcp.uuid }}"
+          ipv4_config:
+            should_assign_ip: true
+  register: result
+  ignore_errors: true
+
+- name: Verify creation of base VM
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id is defined
+      - result.response.name == base_vm_name
+      - result.response.cluster.ext_id == cluster.uuid
+      - result.response.cd_roms[0].disk_address.bus_type == "IDE"
+      - result.response.disks[0].disk_address.bus_type == "SCSI"
+      - result.response.nics[0].network_info.subnet.ext_id == network.dhcp.uuid
+    fail_msg: "Failed to create Windows base VM for guest-customization profile tests"
+    success_msg: "Windows base VM created successfully"
+
+- name: Add base VM ext_id to cleanup list
+  ansible.builtin.set_fact:
+    vms_to_delete: "{{ vms_to_delete + [result.ext_id] }}"
+
+- name: Power on the base VM (required to install NGT later)
+  nutanix.ncp.ntnx_vms_power_actions_v2:
+    state: power_on
+    ext_id: "{{ vms_to_delete[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify base VM powered on
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Failed to power on base VM"
+    success_msg: "Base VM powered on successfully"
+
+- name: Wait for the base VM to receive an IP address via DHCP
+  nutanix.ncp.ntnx_vms_info_v2:
+    ext_id: "{{ vms_to_delete[0] }}"
+  register: result
+  ignore_errors: true
+  retries: 60
+  delay: 5
+  until: result.response.nics[0].network_info.ipv4_info.learned_ip_addresses[0].value
+    is defined
+
+- name: Set base VM IP fact
+  ansible.builtin.set_fact:
+    base_vm_ip: "{{
+      result.response.nics[0].network_info.ipv4_info.learned_ip_addresses[0].va\
+      lue }}"
+
+- name: Create template (no-NGT) from base VM - used for the negative deploy test
+  nutanix.ncp.ntnx_templates_v2:
+    template_name: "{{ template_name }}"
+    template_description: "Template (NGT not installed) for VM Guest Customization Profile tests"
+    template_version_spec:
+      version_source:
+        template_vm_reference:
+          ext_id: "{{ vms_to_delete[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify creation of template (no-NGT) from base VM
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id is defined
+      - result.response.template_version_spec.ext_id is defined
+      - result.response.template_name == template_name
+    fail_msg: "Failed to create template from base VM (NGT not installed yet)"
+    success_msg: "Template (NGT not yet installed) created successfully"
+
+- name: Save template ext_id (template1, used for negative deploy test)
+  ansible.builtin.set_fact:
+    template_ext_id: "{{ result.ext_id }}"
+
+########################################################################################
+# Check-mode: generate spec for creating a workgroup/sysprep profile
+########################################################################################
+- name: Generate spec for creating VM Guest Customization Profile (sysprep
+    params)using check mode
+  nutanix.ncp.ntnx_vm_guest_customization_profile_v2:
+    state: present
+    name: "{{ profile_sysprep_name }}"
+    description: "Windows Sysprep profile description"
+    config:
+      sysprep:
+        customization:
+          sysprep_params:
+            general_settings:
+              computer_name:
+                use_vm_name: {}
+              timezone: "Pacific Standard Time"
+              administrator_password: "admin123"
+              auto_logon_settings:
+                logon_count: 1
+              windows_product_key: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
+              registered_owner: "admin"
+              registered_organization: "admin"
+            first_logon_commands:
+              - "powershell -Command Enable-PSRemoting -Force"
+            locale_settings:
+              user_locale: "en-US"
+              system_locale: "en-US"
+              ui_language: "en-US"
+            workgroup_or_domain_info:
+              workgroup:
+                name: "workgroup"
+            network_settings:
+              nic_config_list:
+                - dns_config:
+                    preferred_dns_server_address: "8.8.8.8"
+                    alternate_dns_server_addresses:
+                      - "8.8.4.4"
+                  ipv4_config:
+                    use_dhcp: {}
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Print result of generated check-mode spec for sysprep params
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify generated spec for creating VM Guest Customization Profile (sysprep
+    params, Workgroup) using check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == profile_sysprep_name
+      - result.response.description == "Windows Sysprep profile description"
+      - result.response.config.customization is defined
+      - result.response.config.customization.general_settings.timezone ==
+        "Pacific Standard Time"
+      - result.response.config.customization.general_settings.registered_owner
+        == "admin"
+      - result.response.config.customization.general_settings.auto_logon_settings.logon_count
+        == 1
+      - result.response.config.customization.first_logon_commands | length == 1
+      - result.response.config.customization.locale_settings.user_locale ==
+        "en-US"
+      - result.response.config.customization.locale_settings.system_locale ==
+        "en-US"
+      - result.response.config.customization.locale_settings.ui_language ==
+        "en-US"
+      - result.response.config.customization.workgroup_or_domain_info.name ==
+        "workgroup"
+      - result.response.config.customization.network_settings.nic_config_list |
+        length == 1
+      - result.response.config.customization.network_settings.nic_config_list[0].dns_config.preferred_dns_server_address
+        == "8.8.8.8"
+      - result.response.config.customization.network_settings.nic_config_list[0].dns_config.alternate_dns_server_addresses
+        == ["8.8.4.4"]
+    fail_msg: "Failed to generate sysprep params profile spec in check mode"
+    success_msg: "Sysprep params profile spec generated successfully in check mode"
+
+########################################################################################
+# Create VM Guest Customization Profile
+########################################################################################
+- name: Create VM Guest Customization Profile (sysprep params, Workgroup)
+  nutanix.ncp.ntnx_vm_guest_customization_profile_v2:
+    state: present
+    name: "{{ profile_sysprep_name }}"
+    description: "Sysprep profile created by integration tests"
+    config:
+      sysprep:
+        customization:
+          sysprep_params:
+            general_settings:
+              computer_name:
+                use_vm_name:
+              timezone: "Pacific Standard Time"
+              administrator_password: "admin123"
+              registered_owner: "admin"
+              registered_organization: "admin"
+            first_logon_commands:
+              - "powershell -Command Enable-PSRemoting -Force"
+            locale_settings:
+              user_locale: "en-US"
+              system_locale: "en-US"
+              ui_language: "en-US"
+            workgroup_or_domain_info:
+              workgroup:
+                name: "workgroup"
+            network_settings:
+              nic_config_list:
+                - dns_config:
+                    preferred_dns_server_address: "10.0.0.10"
+                    alternate_dns_server_addresses:
+                      - "10.0.0.11"
+                  ipv4_config:
+                    use_dhcp:
+  register: result
+  ignore_errors: true
+
+- name: Print result of create VM Guest Customization Profile (sysprep params,
+    Sysprep params)
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify create VM Guest Customization Profile (sysprep params, Workgroup,
+    Sysprep params)
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response.name == profile_sysprep_name
+      - result.response.description == "Sysprep profile created by integration
+        tests"
+      - result.response.config.customization is defined
+      - result.response.config.customization.general_settings.timezone ==
+        "Pacific Standard Time"
+      - result.response.config.customization.general_settings.registered_owner
+        == "admin"
+      - result.response.config.customization.general_settings.registered_organization
+        == "admin"
+      - result.response.config.customization.first_logon_commands | length == 1
+      - result.response.config.customization.locale_settings.user_locale ==
+        "en-US"
+      - result.response.config.customization.locale_settings.system_locale ==
+        "en-US"
+      - result.response.config.customization.locale_settings.ui_language ==
+        "en-US"
+      - result.response.config.customization.workgroup_or_domain_info.name ==
+        "workgroup"
+      - result.response.config.customization.network_settings.nic_config_list |
+        length == 1
+      - result.response.config.customization.network_settings.nic_config_list[0].dns_config.preferred_dns_server_address
+        == "10.0.0.10"
+      - result.response.config.customization.network_settings.nic_config_list[0].dns_config.alternate_dns_server_addresses
+        == ["10.0.0.11"]
+    fail_msg: "Failed to create VM Guest Customization Profile (sysprep params,
+      Workgroup, DHCP)"
+    success_msg: "VM Guest Customization Profile (sysprep params, Workgroup, DHCP)
+      created successfully"
+
+- name: Save workgroup profile ext_id
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+########################################################################################
+# Create VM Guest Customization Profile (sysprep params, Domain join, must-provide IP)
+########################################################################################
+- name: Create VM Guest Customization Profile (sysprep params, Domain settings)
+  nutanix.ncp.ntnx_vm_guest_customization_profile_v2:
+    state: present
+    name: "{{ profile_domain_name }}"
+    description: "Domain settings sysprep profile created by integration tests"
+    config:
+      sysprep:
+        customization:
+          sysprep_params:
+            general_settings:
+              computer_name:
+                must_provide_during_deployment: {}
+              timezone: "UTC"
+              administrator_password: "admin123"
+              registered_owner: "admin"
+              registered_organization: "admin"
+            first_logon_commands:
+              - "net user admin /password:admin123"
+            locale_settings:
+              user_locale: "en-US"
+              system_locale: "en-US"
+              ui_language: "en-US"
+            workgroup_or_domain_info:
+              domain_settings:
+                credentials:
+                  domain_name: "domain.example.local"
+                  username: "admin"
+                  password: "admin123"
+            network_settings:
+              nic_config_list:
+                - dns_config:
+                    preferred_dns_server_address: "10.1.0.10"
+                    alternate_dns_server_addresses:
+                      - "10.1.0.11"
+                  ipv4_config:
+                    must_provide_during_deployment: {}
+  register: result
+  ignore_errors: true
+
+- name: Print result of create VM Guest Customization Profile (sysprep params,
+    Domain settings)
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify create VM Guest Customization Profile (sysprep params, Domain
+    settings) must-provide IP)
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response.name == profile_domain_name
+      - result.response.description == "Domain settings sysprep profile created
+        by integration tests"
+      - result.response.config.customization is defined
+      - result.response.config.customization.general_settings.timezone == "UTC"
+      - result.response.config.customization.general_settings.registered_owner
+        == "admin"
+      - result.response.config.customization.general_settings.registered_organization
+        == "admin"
+      - result.response.config.customization.workgroup_or_domain_info.credentials
+        is defined
+      - result.response.config.customization.workgroup_or_domain_info.credentials.domain_name
+        == "domain.example.local"
+      - result.response.config.customization.workgroup_or_domain_info.credentials.username
+        == "admin"
+      - result.response.config.customization.workgroup_or_domain_info.credentials.password
+        is defined
+      - result.response.config.customization.network_settings.nic_config_list |
+        length == 1
+      - result.response.config.customization.network_settings.nic_config_list[0].dns_config.preferred_dns_server_address
+        == "10.1.0.10"
+      - result.response.config.customization.network_settings.nic_config_list[0].dns_config.alternate_dns_server_addresses
+        == ["10.1.0.11"]
+    fail_msg: "Failed to create VM Guest Customization Profile (sysprep params,
+      Domain settings)"
+    success_msg: "VM Guest Customization Profile (sysprep params, Domain settings)
+      created successfully"
+
+- name: Save domain settings profile ext_id
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+########################################################################################
+# Create VM Guest Customization Profile (answer file)
+########################################################################################
+- name: Create VM Guest Customization Profile (answer file)
+  nutanix.ncp.ntnx_vm_guest_customization_profile_v2:
+    state: present
+    name: "{{ profile_answer_file_name }}"
+    description: "Answer file sysprep profile created by integration tests"
+    config:
+      sysprep:
+        customization:
+          answer_file:
+            unattend_xml: "{{ sample_unattend_xml }}"
+  register: result
+  ignore_errors: true
+
+- name: Print result of create answer-file profile
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify create answer-file profile
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response.name == profile_answer_file_name
+      - result.response.config.customization.unattend_xml is defined
+      - result.response.config.customization.unattend_xml == sample_unattend_xml
+    fail_msg: "Failed to create answer-file VM Guest Customization Profile"
+    success_msg: "Answer-file VM Guest Customization Profile created successfully"
+
+- name: Save answer-file profile ext_id
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+########################################################################################
+# Check-mode: generate update spec
+########################################################################################
+- name: Generate spec for updating sysprep profile using check mode
+  nutanix.ncp.ntnx_vm_guest_customization_profile_v2:
+    state: present
+    ext_id: "{{ todelete[0] }}"
+    name: "updated-sysprep-profile"
+    description: "Updated sysprep profile description"
+    config:
+      sysprep:
+        customization:
+          sysprep_params:
+            general_settings:
+              computer_name:
+                use_vm_name: {}
+              timezone: "Eastern Standard Time"
+              administrator_password: "admin12345"
+              registered_owner: "admin Updated"
+              registered_organization: "admin Updated"
+            first_logon_commands:
+              - "powershell -Command Enable-PSRemoting -Force"
+              - "powershell -Command Set-ExecutionPolicy RemoteSigned -Force"
+            locale_settings:
+              user_locale: "en-GB"
+              system_locale: "en-GB"
+              ui_language: "en-GB"
+            workgroup_or_domain_info:
+              workgroup:
+                name: "QA"
+            network_settings:
+              nic_config_list:
+                - dns_config:
+                    preferred_dns_server_address: "10.0.0.50"
+                    alternate_dns_server_addresses:
+                      - "10.0.0.51"
+                  ipv4_config:
+                    use_dhcp: {}
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Print result of generated update spec for sysprep profile using check mode
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify generated update spec for sysprep profile using check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "updated-sysprep-profile"
+      - result.response.description == "Updated sysprep profile description"
+      - result.response.config.customization is defined
+      - result.response.config.customization.general_settings.timezone ==
+        "Eastern Standard Time"
+      - result.response.config.customization.general_settings.registered_owner
+        == "admin Updated"
+      - result.response.config.customization.general_settings.registered_organization
+        == "admin Updated"
+      - result.response.config.customization.first_logon_commands | length == 2
+      - result.response.config.customization.locale_settings.user_locale ==
+        "en-GB"
+      - result.response.config.customization.workgroup_or_domain_info.name ==
+        "QA"
+      - result.response.config.customization.network_settings.nic_config_list |
+        length == 1
+      - result.response.config.customization.network_settings.nic_config_list[0].dns_config.preferred_dns_server_address
+        == "10.0.0.50"
+      - result.response.config.customization.network_settings.nic_config_list[0].dns_config.alternate_dns_server_addresses
+        == ["10.0.0.51"]
+    fail_msg: "Failed generating update spec in check mode"
+    success_msg: "Update spec generated successfully in check mode"
+
+########################################################################################
+# Update VM Guest Customization Profile
+########################################################################################
+- name: Update VM Guest Customization Profile
+  nutanix.ncp.ntnx_vm_guest_customization_profile_v2:
+    state: present
+    ext_id: "{{ todelete[0] }}"
+    name: "{{ profile_sysprep_name_updated }}"
+    description: "Updated sysprep profile description"
+    config:
+      sysprep:
+        customization:
+          sysprep_params:
+            general_settings:
+              computer_name:
+                use_vm_name: {}
+              timezone: "Eastern Standard Time"
+              administrator_password: "admin12345"
+              registered_owner: "admin Updated"
+              registered_organization: "admin Updated"
+            first_logon_commands:
+              - "powershell -Command Enable-PSRemoting -Force"
+              - "powershell -Command Set-ExecutionPolicy RemoteSigned -Force"
+            locale_settings:
+              user_locale: "en-GB"
+              system_locale: "en-GB"
+              ui_language: "en-GB"
+            workgroup_or_domain_info:
+              workgroup:
+                name: "QA"
+            network_settings:
+              nic_config_list:
+                - dns_config:
+                    preferred_dns_server_address: "10.0.0.50"
+                    alternate_dns_server_addresses:
+                      - "10.0.0.51"
+                  ipv4_config:
+                    use_dhcp: {}
+  register: result
+  ignore_errors: true
+
+- name: Print result of update VM Guest Customization Profile
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify update VM Guest Customization Profile
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == profile_sysprep_name_updated
+      - result.response.description == "Updated sysprep profile description"
+      - result.response.config.customization is defined
+      - result.response.config.customization.general_settings.timezone ==
+        "Eastern Standard Time"
+      - result.response.config.customization.general_settings.registered_owner
+        == "admin Updated"
+      - result.response.config.customization.general_settings.registered_organization
+        == "admin Updated"
+      - result.response.config.customization.first_logon_commands | length == 2
+      - result.response.config.customization.locale_settings.user_locale ==
+        "en-GB"
+      - result.response.config.customization.workgroup_or_domain_info.name ==
+        "QA"
+      - result.response.config.customization.network_settings.nic_config_list |
+        length == 1
+      - result.response.config.customization.network_settings.nic_config_list[0].dns_config.preferred_dns_server_address
+        == "10.0.0.50"
+      - result.response.config.customization.network_settings.nic_config_list[0].dns_config.alternate_dns_server_addresses
+        == ["10.0.0.51"]
+    fail_msg: "Failed to update VM Guest Customization Profile"
+    success_msg: "VM Guest Customization Profile updated successfully"
+
+########################################################################################
+# Idempotency: re-apply the same update payload, expect no change
+########################################################################################
+- name: Re-apply same update payload (idempotency test)
+  nutanix.ncp.ntnx_vm_guest_customization_profile_v2:
+    state: present
+    ext_id: "{{ todelete[0] }}"
+    name: "{{ profile_sysprep_name_updated }}"
+    description: "Updated sysprep profile description"
+    config:
+      sysprep:
+        customization:
+          sysprep_params:
+            general_settings:
+              computer_name:
+                use_vm_name: {}
+              timezone: "Eastern Standard Time"
+              administrator_password: "admin12345"
+              registered_owner: "admin Updated"
+              registered_organization: "admin Updated"
+            first_logon_commands:
+              - "powershell -Command Enable-PSRemoting -Force"
+              - "powershell -Command Set-ExecutionPolicy RemoteSigned -Force"
+            locale_settings:
+              user_locale: "en-GB"
+              system_locale: "en-GB"
+              ui_language: "en-GB"
+            workgroup_or_domain_info:
+              workgroup:
+                name: "QA"
+            network_settings:
+              nic_config_list:
+                - dns_config:
+                    preferred_dns_server_address: "10.0.0.50"
+                    alternate_dns_server_addresses:
+                      - "10.0.0.51"
+                  ipv4_config:
+                    use_dhcp: {}
+  register: result
+  ignore_errors: true
+
+- name: Print result of idempotency on update VM Guest Customization Profile
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify idempotency on update VM Guest Customization Profile
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.skipped == true
+      - result.msg == "Nothing to change."
+    fail_msg: "Failed to verify idempotency on update VM Guest Customization Profile"
+    success_msg: "Idempotency on update VM Guest Customization Profile verified
+      successfully"
+
+########################################################################################
+# Fetch a VM Guest Customization Profile by ext_id
+########################################################################################
+- name: Fetch the sysprep profile by ext_id
+  nutanix.ncp.ntnx_vm_guest_customization_profiles_info_v2:
+    ext_id: "{{ todelete[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: Print result of fetch by ext_id
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify fetch by ext_id
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == todelete[0]
+      - result.response.ext_id == todelete[0]
+      - result.response.name == profile_sysprep_name_updated
+      - result.response.description == "Updated sysprep profile description"
+      - result.response.config.customization is defined
+      - result.response.config.customization.general_settings.timezone ==
+        "Eastern Standard Time"
+      - result.response.config.customization.general_settings.registered_owner
+        == "admin Updated"
+      - result.response.config.customization.general_settings.registered_organization
+        == "admin Updated"
+      - result.response.config.customization.first_logon_commands | length == 2
+      - result.response.config.customization.locale_settings.user_locale ==
+        "en-GB"
+      - result.response.config.customization.locale_settings.system_locale ==
+        "en-GB"
+      - result.response.config.customization.locale_settings.ui_language ==
+        "en-GB"
+      - result.response.config.customization.workgroup_or_domain_info.name ==
+        "QA"
+      - result.response.config.customization.network_settings.nic_config_list |
+        length == 1
+      - result.response.config.customization.network_settings.nic_config_list[0].dns_config.preferred_dns_server_address
+        == "10.0.0.50"
+      - result.response.config.customization.network_settings.nic_config_list[0].dns_config.alternate_dns_server_addresses
+        == ["10.0.0.51"]
+    fail_msg: "Failed to fetch VM Guest Customization Profile by ext_id"
+    success_msg: "Fetched VM Guest Customization Profile by ext_id successfully"
+
+#######################################################################################
+# List VM Guest Customization Profiles
+########################################################################################
+- name: List VM Guest Customization Profiles
+  nutanix.ncp.ntnx_vm_guest_customization_profiles_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Print result of list VM Guest Customization Profiles
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify list VM Guest Customization Profiles
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length >= 2
+      - result.total_available_results is defined
+      - result.total_available_results >= 2
+    fail_msg: "Failed to list VM Guest Customization Profiles"
+    success_msg: "VM Guest Customization Profiles listed successfully"
+
+########################################################################################
+# List with filter
+########################################################################################
+- name: List VM Guest Customization Profiles with filter
+  nutanix.ncp.ntnx_vm_guest_customization_profiles_info_v2:
+    filter: "name eq '{{ profile_sysprep_name_updated }}'"
+  register: result
+  ignore_errors: true
+
+- name: Print result of list with filter
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify list with filter
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].ext_id == todelete[0]
+      - result.response[0].name == profile_sysprep_name_updated
+      - result.response[0].description == "Updated sysprep profile description"
+      - result.response[0].config.customization is defined
+      - result.response[0].config.customization.general_settings.timezone ==
+        "Eastern Standard Time"
+      - result.response[0].config.customization.general_settings.registered_owner
+        == "admin Updated"
+      - result.response[0].config.customization.general_settings.registered_organization
+        == "admin Updated"
+      - result.response[0].config.customization.first_logon_commands | length ==
+        2
+      - result.response[0].config.customization.locale_settings.user_locale ==
+        "en-GB"
+      - result.response[0].config.customization.locale_settings.system_locale ==
+        "en-GB"
+      - result.response[0].config.customization.locale_settings.ui_language ==
+        "en-GB"
+      - result.response[0].config.customization.workgroup_or_domain_info.name ==
+        "QA"
+      - result.response[0].config.customization.network_settings.nic_config_list
+        | length == 1
+      - result.response[0].config.customization.network_settings.nic_config_list[0].dns_config.preferred_dns_server_address
+        == "10.0.0.50"
+      - result.response[0].config.customization.network_settings.nic_config_list[0].dns_config.alternate_dns_server_addresses
+        == ["10.0.0.51"]
+      - result.total_available_results is defined
+      - result.total_available_results == 1
+    fail_msg: "Failed listing VM Guest Customization Profiles with filter"
+    success_msg: "VM Guest Customization Profiles listed with filter successfully"
+
+########################################################################################
+# List with limit
+########################################################################################
+- name: List VM Guest Customization Profiles with limit
+  nutanix.ncp.ntnx_vm_guest_customization_profiles_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Print result of list with limit
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify list with limit
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+      - result.total_available_results is defined
+      - result.total_available_results >= 2
+    fail_msg: "Failed listing VM Guest Customization Profiles with limit"
+    success_msg: "VM Guest Customization Profiles listed with limit successfully"
+
+########################################################################################
+# Install NGT on the base VM so guest_customization_profile_config can be applied.
+########################################################################################
+- name: Install NGT on the base VM (reboot IMMEDIATE)
+  nutanix.ncp.ntnx_vms_ngt_v2:
+    state: present
+    ext_id: "{{ vms_to_delete[0] }}"
+    capabilities:
+      - VSS_SNAPSHOT
+    credential:
+      username: "{{ windows_image_config.username }}"
+      password: "{{ windows_image_config.password }}"
+    reboot_preference:
+      schedule_type: IMMEDIATE
+  register: result
+  ignore_errors: true
+
+- name: Verify NGT install was triggered
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.task_ext_id is defined
+      - result.ext_id == vms_to_delete[0]
+    fail_msg: "Failed to install NGT on base VM"
+    success_msg: "NGT install triggered on base VM"
+
+- name: Wait 2 minutes for NGT install to complete
+  ansible.builtin.pause:
+    minutes: 2
+
+- name: Fetch base VM info to confirm NGT install
+  nutanix.ncp.ntnx_vms_info_v2:
+    ext_id: "{{ vms_to_delete[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify NGT is reported as installed on the base VM
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.response.guest_tools is defined
+      - result.response.guest_tools.is_installed == true
+      - result.response.guest_tools.is_enabled == true
+    fail_msg: "NGT not reported as installed on base VM after install task"
+    success_msg: "NGT confirmed as installed on base VM"
+
+########################################################################################
+# Create a new template (template2) from the NGT-installed base VM.
+# deploy test below uses this template.
+########################################################################################
+- name: Create template from base VM (NGT now installed)
+  nutanix.ncp.ntnx_templates_v2:
+    template_name: "{{ template2_name }}"
+    template_description: "Template (NGT installed) for VM Guest Customization Profile tests"
+    template_version_spec:
+      version_source:
+        template_vm_reference:
+          ext_id: "{{ vms_to_delete[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify creation of NGT-installed template
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id is defined
+      - result.response.template_version_spec.ext_id is defined
+      - result.response.template_name == "{{ template2_name }}"
+    fail_msg: "Failed to create template after NGT install"
+    success_msg: "Template (NGT installed) created successfully"
+
+- name: Save template2 ext_id
+  ansible.builtin.set_fact:
+    template2_ext_id: "{{ result.ext_id }}"
+
+########################################################################################
+# Negative CRUD test: Create profile without name nor ext_id (state=present)
+# Expected: module-level required_if rejects the call with
+# "one of the following is required: name, ext_id".
+########################################################################################
+- name: Negative - Create profile without name nor ext_id
+  nutanix.ncp.ntnx_vm_guest_customization_profile_v2:
+    state: present
+    description: "should fail - no name and no ext_id"
+    config:
+      sysprep:
+        customization:
+          sysprep_params:
+            general_settings:
+              computer_name:
+                use_vm_name: {}
+              timezone: "UTC"
+              administrator_password: "admin123"
+            workgroup_or_domain_info:
+              workgroup:
+                name: "workgroup"
+            network_settings:
+              nic_config_list:
+                - ipv4_config:
+                    use_dhcp: {}
+  register: result
+  ignore_errors: true
+
+- name: Verify create without name nor ext_id fails as expected
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - >-
+        result.msg == "state is present but any of the following are missing:
+        name, ext_id"
+    fail_msg: "Create profile without name nor ext_id did not fail as expected"
+    success_msg: "Create profile without name nor ext_id failed as expected"
+
+########################################################################################
+# Negative CRUD test: Create profile with name but without required `config`
+# Expected: module-level validate_required_params rejects the call with
+# "Missing required parameter(s): config".
+########################################################################################
+- name: Negative - Create profile without required `config` field
+  nutanix.ncp.ntnx_vm_guest_customization_profile_v2:
+    state: present
+    name: "vm_gc_profile_{{ suffix_name }}_no_config_{{ random_name }}"
+    description: "should fail - no config provided"
+  register: result
+  ignore_errors: true
+
+- name: Verify create without `config` fails as expected
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Missing required parameter(s): config"
+    fail_msg: "Create profile without `config` did not fail as expected"
+    success_msg: "Create profile without `config` failed as expected"
+
+########################################################################################
+# Negative CRUD test: Create profile with mutually-exclusive customization branches
+# (sysprep_params AND answer_file). Argspec mutual_exclusive constraint should reject.
+########################################################################################
+- name: Negative - Create profile with both sysprep_params and answer_file
+    (mutually exclusive)
+  nutanix.ncp.ntnx_vm_guest_customization_profile_v2:
+    state: present
+    name: "vm_gc_profile_{{ suffix_name }}_mutex_{{ random_name }}"
+    description: "should fail - both sysprep_params and answer_file provided"
+    config:
+      sysprep:
+        customization:
+          sysprep_params:
+            general_settings:
+              computer_name:
+                use_vm_name: {}
+              timezone: "UTC"
+              administrator_password: "admin123"
+            workgroup_or_domain_info:
+              workgroup:
+                name: "workgroup"
+            network_settings:
+              nic_config_list:
+                - ipv4_config:
+                    use_dhcp: {}
+          answer_file:
+            unattend_xml: "{{ sample_unattend_xml }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify create with both sysprep_params and answer_file fails as expected
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg is search("parameters are mutually exclusive")
+      - result.msg is search("sysprep_params")
+      - result.msg is search("answer_file")
+    fail_msg: "Create with both sysprep_params and answer_file did not fail as expected"
+    success_msg: "Create with both sysprep_params and answer_file failed as expected"
+
+########################################################################################
+# Negative CRUD test: Create profile with mutually-exclusive workgroup AND domain_settings.
+########################################################################################
+- name: Negative - Create profile with both workgroup and domain_settings
+    (mutually exclusive)
+  nutanix.ncp.ntnx_vm_guest_customization_profile_v2:
+    state: present
+    name: "vm_gc_profile_{{ suffix_name }}_wg_dom_{{ random_name }}"
+    description: "should fail - both workgroup and domain_settings provided"
+    config:
+      sysprep:
+        customization:
+          sysprep_params:
+            general_settings:
+              computer_name:
+                use_vm_name: {}
+              timezone: "UTC"
+              administrator_password: "admin123"
+            workgroup_or_domain_info:
+              workgroup:
+                name: "workgroup"
+              domain_settings:
+                credentials:
+                  domain_name: "domain.example.local"
+                  username: "admin"
+                  password: "admin123"
+            network_settings:
+              nic_config_list:
+                - ipv4_config:
+                    use_dhcp: {}
+  register: result
+  ignore_errors: true
+
+- name: Verify create with both workgroup and domain_settings fails as expected
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg is search("parameters are mutually exclusive")
+      - result.msg is search("workgroup")
+      - result.msg is search("domain_settings")
+    fail_msg: "Create with both workgroup and domain_settings did not fail as expected"
+    success_msg: "Create with both workgroup and domain_settings failed as expected"
+
+########################################################################################
+# Negative CRUD test: Fetch profile using a non-existent External ID
+# Expected: API exception with "Api Exception raised while fetching VM Guest
+# Customization Profile info using ext_id".
+########################################################################################
+- name: Negative - Fetch profile using non-existent External ID
+  nutanix.ncp.ntnx_vm_guest_customization_profiles_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Verify fetch with non-existent External ID fails as expected
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching VM Guest
+        Customization Profile info using ext_id"
+      - result.response is defined
+      - result.response.data.error | length > 0
+    fail_msg: "Fetch profile with non-existent External ID did not fail as expected"
+    success_msg: "Fetch profile with non-existent External ID failed as expected"
+
+########################################################################################
+# Negative CRUD test: Update profile using a non-existent External ID
+# Expected: API exception (the module fetches current profile first to obtain etag).
+########################################################################################
+- name: Negative - Update profile using non-existent External ID
+  nutanix.ncp.ntnx_vm_guest_customization_profile_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    name: "vm_gc_profile_{{ suffix_name }}_update_neg_{{ random_name }}"
+    description: "should fail - non-existent External ID"
+    config:
+      sysprep:
+        customization:
+          sysprep_params:
+            general_settings:
+              computer_name:
+                use_vm_name: {}
+              timezone: "UTC"
+              administrator_password: "admin123"
+            workgroup_or_domain_info:
+              workgroup:
+                name: "workgroup"
+            network_settings:
+              nic_config_list:
+                - ipv4_config:
+                    use_dhcp: {}
+  register: result
+  ignore_errors: true
+
+- name: Verify update with non-existent External ID fails as expected
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching VM Guest
+        Customization Profile info using ext_id"
+      - result.response is defined
+      - result.response.data.error | length > 0
+    fail_msg: "Update profile with non-existent External ID did not fail as expected"
+    success_msg: "Update profile with non-existent External ID failed as expected"
+
+########################################################################################
+# Negative CRUD test: Delete profile using a non-existent External ID
+# Expected: API exception (delete also fetches current profile first to obtain etag).
+########################################################################################
+- name: Negative - Delete profile using non-existent External ID
+  nutanix.ncp.ntnx_vm_guest_customization_profile_v2:
+    state: absent
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Verify delete with non-existent External ID fails as expected
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching VM Guest
+        Customization Profile info using ext_id"
+      - result.response is defined
+      - result.response.data.error | length > 0
+    fail_msg: "Delete profile with non-existent External ID did not fail as expected"
+    success_msg: "Delete profile with non-existent External ID failed as expected"
+
+########################################################################################
+# Negative CRUD test: Deploy from template using guest_customization_profile_config when
+# NGT is NOT installed on the source VM. The API rejects the request.
+########################################################################################
+- name: Negative - Deploy template + profile config when NGT not installed
+  nutanix.ncp.ntnx_templates_deploy_v2:
+    ext_id: "{{ template_ext_id }}"
+    cluster_reference: "{{ cluster.uuid }}"
+    override_vms_config:
+      - name: "{{ deployed_vm_name }}_neg"
+        guest_customization_profile_config:
+          profile:
+            ext_id: "{{ todelete[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: Print result of negative deploy
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify negative deploy fails because NGT is not installed on the source VM
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.response is defined
+      - result.response.status == "FAILED"
+      - result.response.error_messages is defined
+      - result.response.error_messages | length > 0
+    fail_msg: "Negative deploy did not fail as expected (NGT-not-installed precondition)"
+    success_msg: "Negative deploy correctly failed because NGT is not installed on
+      source VM"
+
+########################################################################################
+# Negative CRUD test: Clone the base VM with guest_customization_profile_config when NGT
+# is NOT installed on the source VM. The clone API enforces the same NGT
+# prerequisite as deploy and returns a FAILED task.
+########################################################################################
+- name: Negative - Clone VM + profile config when NGT not installed
+  nutanix.ncp.ntnx_vms_clone_v2:
+    ext_id: "{{ vms_to_delete[0] }}"
+    name: "{{ cloned_vm_name }}_neg"
+    guest_customization_profile_config:
+      profile:
+        ext_id: "{{ todelete[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: Print result of negative clone
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify negative clone fails because NGT is not installed on the source VM
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.response is defined
+      - result.response.status == "FAILED"
+      - result.response.error_messages is defined
+      - result.response.error_messages | length > 0
+    fail_msg: "Negative clone did not fail as expected (NGT-not-installed precondition)"
+    success_msg: "Negative clone correctly failed because NGT is not installed on source VM"
+
+- name: Delete the no-NGT template (used only for the negative deploy test)
+  nutanix.ncp.ntnx_templates_v2:
+    state: absent
+    ext_id: "{{ template_ext_id }}"
+  register: template_delete_result
+  ignore_errors: true
+
+- name: Verify the no-NGT template was deleted
+  ansible.builtin.assert:
+    that:
+      - template_delete_result.changed == true
+      - template_delete_result.failed == false
+      - template_delete_result.response is defined
+      - template_delete_result.response.status == "SUCCEEDED"
+    fail_msg: "Failed to delete the no-NGT template after negative test"
+    success_msg: "No-NGT template deleted successfully"
+
+########################################################################################
+# Negative CRUD test: Deploy with must_provide profile, override missing computer_name and ipv4_config
+########################################################################################
+- name: Negative - Deploy with must_provide profile, override missing
+    computer_name and ipv4_config
+  nutanix.ncp.ntnx_templates_deploy_v2:
+    ext_id: "{{ template2_ext_id }}"
+    cluster_reference: "{{ cluster.uuid }}"
+    override_vms_config:
+      - name: "{{ deployed_vm_name }}_neg_must_provide"
+        guest_customization_profile_config:
+          profile:
+            ext_id: "{{ todelete[1] }}"
+          config_override_spec:
+            customization:
+              sysprep_params:
+                general_settings:
+                  timezone:
+                    value:
+                      value: "UTC"
+                  registered_owner:
+                    value:
+                      value: "neg-owner"
+  register: result
+  ignore_errors: true
+
+- name: Print result of negative deploy (must_provide fields missing)
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify negative deploy fails because must_provide_during_deployment fields
+    are missing
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.response is defined
+      - result.response.status == "FAILED"
+      - result.response.error_messages is defined
+      - result.response.error_messages | length > 0
+    fail_msg: "Negative deploy did not fail as expected
+      (must_provide_during_deployment fields missing)"
+    success_msg: "Negative deploy correctly failed as expected because must_provide
+      fields were not supplied in the override"
+
+########################################################################################
+# Negative CRUD test: Clone with must_provide profile, override missing computer_name and ipv4_config
+########################################################################################
+
+- name: Negative - Clone with must_provide profile, override missing computer_name
+    and ipv4_config
+  nutanix.ncp.ntnx_vms_clone_v2:
+    ext_id: "{{ vms_to_delete[0] }}"
+    name: "{{ cloned_vm_name }}_neg_must_provide"
+    guest_customization_profile_config:
+      profile:
+        ext_id: "{{ todelete[1] }}"
+      config_override_spec:
+        customization:
+          sysprep_params:
+            general_settings:
+              timezone:
+                value:
+                  value: "UTC"
+              registered_owner:
+                value:
+                  value: "neg-owner"
+  register: result
+  ignore_errors: true
+
+- name: Print result of negative clone (must_provide fields missing)
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify negative clone fails because must_provide_during_deployment fields
+    are missing
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.response is defined
+      - result.response.status == "FAILED"
+      - result.response.error_messages is defined
+      - result.response.error_messages | length > 0
+    fail_msg: "Negative clone did not fail as expected
+      (must_provide_during_deployment fields missing)"
+    success_msg: "Negative clone correctly failed as expected because must_provide
+      fields were not supplied in the override"
+
+########################################################################################
+# Deploy with must_provide profile, override complete computer_name and ipv4_config
+########################################################################################
+- name: Deploy with must_provide profile, override computer_name and ipv4_config
+    ipv4_config
+  nutanix.ncp.ntnx_templates_deploy_v2:
+    ext_id: "{{ template2_ext_id }}"
+    cluster_reference: "{{ cluster.uuid }}"
+    override_vms_config:
+      - name: "{{ deployed_vm_name }}_must_provide"
+        guest_customization_profile_config:
+          profile:
+            ext_id: "{{ todelete[1] }}"
+          config_override_spec:
+            customization:
+              sysprep_params:
+                general_settings:
+                  computer_name:
+                    name:
+                      value: "deployed-mp"
+                  timezone:
+                    value:
+                      value: "UTC"
+                network_settings:
+                  nic_config_list:
+                    - dns_config:
+                        preferred_dns_server_address: "10.1.0.10"
+                        alternate_dns_server_addresses:
+                          - "10.1.0.11"
+                      ipv4_config:
+                        use_dhcp: {}
+  register: result
+  ignore_errors: true
+
+- name: Print result of deploy (must_provide fields supplied)
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify deploy succeeds when must_provide fields are supplied
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Deploy failed unexpectedly when must_provide fields were supplied"
+    success_msg: "Deploy succeeded when must_provide fields were supplied"
+
+- name: Find must_provide deployed VM by name
+  nutanix.ncp.ntnx_vms_info_v2:
+    filter: "name eq '{{ deployed_vm_name }}_must_provide'"
+  register: must_provide_deploy_info
+  ignore_errors: true
+
+- name: Delete deployed VM with must_provide fields
+  nutanix.ncp.ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ must_provide_deploy_info.response[0].ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify deployed VM with must_provide fields was deleted
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Failed to delete deployed VM with must_provide fields"
+    success_msg: "Deployed VM with must_provide fields deleted successfully"
+
+########################################################################################
+# Clone with must_provide profile and complete override
+########################################################################################
+- name: Clone with must_provide profile and complete override
+  nutanix.ncp.ntnx_vms_clone_v2:
+    ext_id: "{{ vms_to_delete[0] }}"
+    name: "{{ cloned_vm_name }}_must_provide"
+    guest_customization_profile_config:
+      profile:
+        ext_id: "{{ todelete[1] }}"
+      config_override_spec:
+        customization:
+          sysprep_params:
+            general_settings:
+              computer_name:
+                name:
+                  value: "cloned-mp"
+              timezone:
+                value:
+                  value: "UTC"
+            network_settings:
+              nic_config_list:
+                - dns_config:
+                    preferred_dns_server_address: "10.1.0.10"
+                    alternate_dns_server_addresses:
+                      - "10.1.0.11"
+                  ipv4_config:
+                    static_config:
+                      ip_address:
+                        value: "10.1.0.51"
+                        prefix_length: 24
+                      default_gateways:
+                        - "10.1.0.1"
+  register: result
+  ignore_errors: true
+
+- name: Print result of clone (must_provide fields supplied)
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify clone succeeds when must_provide fields are supplied
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == cloned_vm_name + "_must_provide"
+      - result.response.ext_id is defined
+    fail_msg: "Clone failed unexpectedly when must_provide fields were supplied"
+    success_msg: "Clone succeeded when must_provide fields were supplied"
+
+- name: Delete cloned VM with must_provide fields
+  nutanix.ncp.ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ result.response.ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify cloned VM with must_provide fields was deleted
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Failed to delete cloned VM with must_provide fields"
+    success_msg: "Cloned VM with must_provide fields deleted successfully"
+
+########################################################################################
+# Deploy from NGT-installed template with guest_customization_profile_config
+# + per-VM overrides (todelete[0] = updated workgroup-sysprep profile)
+########################################################################################
+- name: Deploy from NGT template with guest customization profile and overrides
+  nutanix.ncp.ntnx_templates_deploy_v2:
+    ext_id: "{{ template2_ext_id }}"
+    cluster_reference: "{{ cluster.uuid }}"
+    override_vms_config:
+      - name: "{{ deployed_vm_name }}"
+        num_sockets: 2
+        num_cores_per_socket: 2
+        guest_customization_profile_config:
+          profile:
+            ext_id: "{{ todelete[0] }}"
+          config_override_spec:
+            customization:
+              sysprep_params:
+                general_settings:
+                  computer_name:
+                    name:
+                      value: "deployed-host"
+                  timezone:
+                    value:
+                      value: "UTC"
+                  registered_owner:
+                    value:
+                      value: "deployed-owner"
+                workgroup_or_domain_info:
+                  workgroup:
+                    name: "DEPLOYED-WG"
+                network_settings:
+                  nic_config_list:
+                    - dns_config:
+                        preferred_dns_server_address: "10.0.0.100"
+                        alternate_dns_server_addresses:
+                          - "10.0.0.101"
+                      ipv4_config:
+                        use_dhcp: {}
+  register: result
+  ignore_errors: true
+
+- name: Print result of deploying VM with guest customization profile and overrides
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify deploy VM with guest customization profile and overrides
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Failed to deploy VM with guest customization profile (NGT installed)"
+    success_msg: "Deployed VM with guest customization profile successfully"
+
+- name: Find deployed VM by name
+  nutanix.ncp.ntnx_vms_info_v2:
+    filter: "name eq '{{ deployed_vm_name }}'"
+  register: deployed_vm_info
+  ignore_errors: true
+
+- name: Verify deployed VM exists
+  ansible.builtin.assert:
+    that:
+      - deployed_vm_info.response is defined
+      - deployed_vm_info.response | length == 1
+      - deployed_vm_info.response[0].name == "{{ deployed_vm_name }}"
+      - deployed_vm_info.response[0].ext_id is defined
+    fail_msg: "Failed to locate the deployed VM by name after template deploy"
+    success_msg: "Deployed VM found by name successfully"
+
+- name: Track deployed VM for cleanup
+  ansible.builtin.set_fact:
+    vms_to_delete: "{{ vms_to_delete + [deployed_vm_info.response[0].ext_id] }}"
+
+- name: Fetch deployed VM by ext_id to inspect guest customization status
+  nutanix.ncp.ntnx_vms_info_v2:
+    ext_id: "{{ deployed_vm_info.response[0].ext_id }}"
+  register: deployed_vm
+  ignore_errors: true
+
+- name: Print fetched deployed VM details
+  ansible.builtin.debug:
+    var: deployed_vm
+
+- name: Verify deployed VM has guest customization pending and overrides applied
+  ansible.builtin.assert:
+    that:
+      - deployed_vm.response is defined
+      - deployed_vm.response.ext_id == deployed_vm_info.response[0].ext_id
+      - deployed_vm.response.name == "{{ deployed_vm_name }}"
+      - deployed_vm.response.vm_guest_customization_status == "PENDING"
+      - deployed_vm.response.power_state == "OFF"
+      - deployed_vm.response.num_sockets == 2
+      - deployed_vm.response.num_cores_per_socket == 2
+      - deployed_vm.response.memory_size_bytes == 8589934592
+      - deployed_vm.response.cluster.ext_id == "{{ cluster.uuid }}"
+      - deployed_vm.response.source is defined
+      - deployed_vm.response.source.entity_type == "VM"
+      - deployed_vm.response.source.ext_id is defined
+      - deployed_vm.response.disks | length == 1
+      - deployed_vm.response.nics | length == 1
+      - deployed_vm.response.cd_roms | length == 1
+    fail_msg: "Deployed VM did not have expected guest customization status or overrides"
+    success_msg: "Deployed VM is in PENDING guest customization state with overrides
+      applied"
+
+########################################################################################
+# Clone the base VM using todelete[1] (domain-settings profile) + per-clone
+# overrides. computer_name and ipv4_config are marked must_provide_during_deployment in
+# the profile, so the override MUST supply both.
+########################################################################################
+- name: Clone base VM with guest customization profile and overrides
+  nutanix.ncp.ntnx_vms_clone_v2:
+    ext_id: "{{ vms_to_delete[0] }}"
+    name: "{{ cloned_vm_name }}"
+    guest_customization_profile_config:
+      profile:
+        ext_id: "{{ todelete[1] }}"
+      config_override_spec:
+        customization:
+          sysprep_params:
+            general_settings:
+              computer_name:
+                name:
+                  value: "cloned-host"
+              timezone:
+                value:
+                  value: "Pacific Standard Time"
+              registered_owner:
+                value:
+                  value: "cloned-owner"
+              registered_organization:
+                value:
+                  value: "cloned-org"
+            network_settings:
+              nic_config_list:
+                - dns_config:
+                    preferred_dns_server_address: "10.1.0.100"
+                    alternate_dns_server_addresses:
+                      - "10.1.0.101"
+                  ipv4_config:
+                    static_config:
+                      ip_address:
+                        value: "10.1.0.50"
+                        prefix_length: 24
+                      default_gateways:
+                        - "10.1.0.1"
+  register: result
+  ignore_errors: true
+
+- name: Print result of cloning VM with guest customization profile and overrides
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify clone VM with guest customization profile and overrides
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "{{ cloned_vm_name }}"
+      - result.response.ext_id is defined
+    fail_msg: "Failed to clone VM with guest customization profile (NGT installed)"
+    success_msg: "Cloned VM with guest customization profile successfully"
+
+- name: Track cloned VM for cleanup
+  ansible.builtin.set_fact:
+    vms_to_delete: "{{ vms_to_delete + [result.response.ext_id] }}"
+
+- name: Fetch cloned VM by ext_id to inspect guest customization status
+  nutanix.ncp.ntnx_vms_info_v2:
+    ext_id: "{{ vms_to_delete[2] }}"
+  register: cloned_vm
+  ignore_errors: true
+
+- name: Print fetched cloned VM details
+  ansible.builtin.debug:
+    var: cloned_vm
+
+- name: Verify cloned VM has guest customization pending and inherits base VM config
+  ansible.builtin.assert:
+    that:
+      - cloned_vm.response is defined
+      - cloned_vm.response.ext_id == vms_to_delete[2]
+      - cloned_vm.response.name == "{{ cloned_vm_name }}"
+      - cloned_vm.response.vm_guest_customization_status == "PENDING"
+      - cloned_vm.response.power_state == "OFF"
+      - cloned_vm.response.num_sockets == 2
+      - cloned_vm.response.num_cores_per_socket == 2
+      - cloned_vm.response.memory_size_bytes == 8589934592
+      - cloned_vm.response.cluster.ext_id == "{{ cluster.uuid }}"
+      - cloned_vm.response.source is defined
+      - cloned_vm.response.source.entity_type == "VM"
+      - cloned_vm.response.source.ext_id is defined
+      - cloned_vm.response.disks | length == 1
+      - cloned_vm.response.nics | length == 1
+      - cloned_vm.response.cd_roms | length == 1
+    fail_msg: "Cloned VM did not have expected guest customization status or
+      inherited config"
+    success_msg: "Cloned VM is in PENDING guest customization state with inherited config"
+
+########################################################################################
+# Power on the deployed and cloned VMs so guest customization actually executes
+# then wait for NGT to become reachable and assert post-customization state
+# After the VM boots and customization runs, the API stops returning
+# vm_guest_customization_status (PENDING is the only meaningful enum value), and
+# guest_tools/NGT comes online with a learned IP on the NIC
+########################################################################################
+- name: Power on the deployed VM to trigger guest customization
+  nutanix.ncp.ntnx_vms_power_actions_v2:
+    state: power_on
+    ext_id: "{{ vms_to_delete[1] }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify deployed VM powered on
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Failed to power on deployed VM"
+    success_msg: "Deployed VM powered on successfully"
+
+- name: Power on the cloned VM to trigger guest customization
+  nutanix.ncp.ntnx_vms_power_actions_v2:
+    state: power_on
+    ext_id: "{{ vms_to_delete[2] }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify cloned VM powered on
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Failed to power on cloned VM"
+    success_msg: "Cloned VM powered on successfully"
+
+- name: Wait for deployed VM NGT to become reachable after customization
+  nutanix.ncp.ntnx_vms_info_v2:
+    ext_id: "{{ vms_to_delete[1] }}"
+  register: deployed_vm_post
+  ignore_errors: true
+  retries: 60
+  delay: 10
+  until:
+    - deployed_vm_post.response is defined
+    - deployed_vm_post.response.power_state == "ON"
+    - deployed_vm_post.response.guest_tools is defined
+    - deployed_vm_post.response.guest_tools.is_reachable == true
+    - deployed_vm_post.response.nics[0].network_info.ipv4_info is defined
+    - deployed_vm_post.response.nics[0].network_info.ipv4_info.learned_ip_addresses
+      is defined
+    - deployed_vm_post.response.nics[0].network_info.ipv4_info.learned_ip_addresses
+      | length > 0
+
+- name: Print deployed VM post-customization details
+  ansible.builtin.debug:
+    var: deployed_vm_post
+
+- name: Verify deployed VM completed guest customization (NGT reachable, IP learned)
+  ansible.builtin.assert:
+    that:
+      - deployed_vm_post.response is defined
+      - deployed_vm_post.response.ext_id == vms_to_delete[1]
+      - deployed_vm_post.response.power_state == "ON"
+      - deployed_vm_post.response.vm_guest_customization_status is not defined
+        or deployed_vm_post.response.vm_guest_customization_status == None
+      - deployed_vm_post.response.host is defined
+      - deployed_vm_post.response.host.ext_id is defined
+      - deployed_vm_post.response.guest_tools.is_installed == true
+      - deployed_vm_post.response.guest_tools.is_reachable == true
+      - deployed_vm_post.response.guest_tools.is_enabled == true
+      - deployed_vm_post.response.guest_tools.version is defined
+      - deployed_vm_post.response.guest_tools.guest_os_version is defined
+      - "'windows' in deployed_vm_post.response.guest_tools.guest_os_version"
+      - deployed_vm_post.response.guest_tools.guest_info is defined
+      - deployed_vm_post.response.guest_tools.guest_info.guest_os_full_name is
+        defined
+      - "'windows' in
+        deployed_vm_post.response.guest_tools.guest_info.guest_os_full_name"
+    fail_msg: "Deployed VM did not reach the expected post-customization state"
+    success_msg: "Deployed VM completed guest customization"
+
+- name: Wait for cloned VM NGT to become reachable after customization
+  nutanix.ncp.ntnx_vms_info_v2:
+    ext_id: "{{ vms_to_delete[2] }}"
+  register: cloned_vm_post
+  ignore_errors: true
+  retries: 60
+  delay: 10
+  until:
+    - cloned_vm_post.response is defined
+    - cloned_vm_post.response.power_state == "ON"
+    - cloned_vm_post.response.guest_tools is defined
+    - cloned_vm_post.response.guest_tools.is_reachable == true
+    - cloned_vm_post.response.nics[0].network_info.ipv4_info is defined
+    - cloned_vm_post.response.nics[0].network_info.ipv4_info.learned_ip_addresses
+      is defined
+    - cloned_vm_post.response.nics[0].network_info.ipv4_info.learned_ip_addresses
+      | length > 0
+
+- name: Print cloned VM post-customization details
+  ansible.builtin.debug:
+    var: cloned_vm_post
+
+- name: Verify cloned VM completed guest customization (NGT reachable, IP learned)
+  ansible.builtin.assert:
+    that:
+      - cloned_vm_post.response is defined
+      - cloned_vm_post.response.ext_id == vms_to_delete[2]
+      - cloned_vm_post.response.power_state == "ON"
+      - cloned_vm_post.response.vm_guest_customization_status is not defined or
+        cloned_vm_post.response.vm_guest_customization_status == None
+      - cloned_vm_post.response.host is defined
+      - cloned_vm_post.response.host.ext_id is defined
+      - cloned_vm_post.response.guest_tools.is_installed == true
+      - cloned_vm_post.response.guest_tools.is_reachable == true
+      - cloned_vm_post.response.guest_tools.is_enabled == true
+      - cloned_vm_post.response.guest_tools.version is defined
+      - cloned_vm_post.response.guest_tools.guest_os_version is defined
+      - "'windows' in cloned_vm_post.response.guest_tools.guest_os_version"
+      - cloned_vm_post.response.guest_tools.guest_info is defined
+      - cloned_vm_post.response.guest_tools.guest_info.guest_os_full_name is
+        defined
+      - "'windows' in
+        cloned_vm_post.response.guest_tools.guest_info.guest_os_full_name"
+    fail_msg: "Cloned VM did not reach the expected post-customization state"
+    success_msg: "Cloned VM completed guest customization"
+
+########################################################################################
+# Cleanup VMs and template2 before deleting the guest customization profiles
+########################################################################################
+- name: Delete deployed/cloned/base VMs
+  nutanix.ncp.ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  loop: "{{ vms_to_delete }}"
+  register: vms_delete_result
+  ignore_errors: true
+
+- name: Verify all VMs were deleted
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.ext_id in vms_to_delete
+      - vms_delete_result.results is defined
+      - vms_delete_result.results | length == vms_to_delete | length
+      - vms_delete_result.msg == "All items completed"
+    fail_msg: "Failed to delete one or more VMs created during the test"
+    success_msg: "All VMs deleted successfully"
+  loop: "{{ vms_delete_result.results }}"
+  loop_control:
+    label: "{{ item.ext_id }}"
+
+- name: Delete the NGT-installed template
+  nutanix.ncp.ntnx_templates_v2:
+    state: absent
+    ext_id: "{{ template2_ext_id }}"
+  register: template_delete_result
+  ignore_errors: true
+
+- name: Verify NGT-installed template was deleted
+  ansible.builtin.assert:
+    that:
+      - template_delete_result.changed == true
+      - template_delete_result.failed == false
+      - template_delete_result.response is defined
+      - template_delete_result.response.status == "SUCCEEDED"
+    fail_msg: "Failed to delete the NGT-installed VM Template"
+    success_msg: "NGT-installed VM Template is deleted successfully"
+
+########################################################################################
+# Delete VM Guest Customization Profile
+########################################################################################
+- name: Delete VM Guest Customization Profile in check mode
+  nutanix.ncp.ntnx_vm_guest_customization_profile_v2:
+    state: absent
+    ext_id: "{{ todelete[0] }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Print result of delete VM Guest Customization Profile in check mode
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify delete VM Guest Customization Profile in check mode
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.ext_id == todelete[0]
+      - result.msg == "VM Guest Customization Profile with ext_id:" ~
+        todelete[0] ~ " will be deleted."
+    fail_msg: "Failed to delete VM Guest Customization Profile in check mode"
+    success_msg: "Delete VM Guest Customization Profile in check mode passed"
+
+- name: Delete VM Guest Customization Profile
+  nutanix.ncp.ntnx_vm_guest_customization_profile_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  loop: "{{ todelete }}"
+  register: delete_results
+  ignore_errors: true
+
+- name: Print result of delete VM Guest Customization Profiles
+  ansible.builtin.debug:
+    var: delete_results
+
+- name: Verify all VM Guest Customization Profiles deleted
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.task_ext_id is defined
+      - item.ext_id in todelete
+      - delete_results.results | length == todelete | length
+      - delete_results.msg == "All items completed"
+    fail_msg: "Failed to delete one or more VM Guest Customization Profiles"
+    success_msg: "All VM Guest Customization Profiles deleted successfully"
+  loop: "{{ delete_results.results }}"
+  loop_control:
+    label: "{{ item.ext_id }}"
+
+- name: Reset todelete list
+  ansible.builtin.set_fact:
+    todelete: []
