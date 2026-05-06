@@ -1,9 +1,6 @@
 nutanix-ncp-*
 .ansible/
 
-# Claude Code
-.claude/
-
 # Python
 __pycache__/
 *.pyc

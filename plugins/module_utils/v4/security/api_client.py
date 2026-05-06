@@ -67,6 +67,8 @@ def get_api_client(module):
         auth_header = "Basic " + encoded_cred
         client.add_default_header(header_name="Authorization", header_value=auth_header)
 
+    # Ensure X-ntnx-api-key header is present — set_api_key() silently fails
+    # in some SDK clients.
     if api_key:
         default_headers = getattr(client, "_ApiClient__default_headers", {})
         if "X-ntnx-api-key" not in default_headers:

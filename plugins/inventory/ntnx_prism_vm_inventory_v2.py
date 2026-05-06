@@ -267,6 +267,7 @@ import json  # noqa: E402
 import os  # noqa: E402
 import re  # noqa: E402
 import tempfile  # noqa: E402
+from urllib.parse import urlparse  # noqa: E402
 
 from ansible.errors import AnsibleError  # noqa: E402
 from ansible.plugins.inventory import BaseInventoryPlugin, Constructable  # noqa: E402
@@ -576,17 +577,23 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         self._read_config_data(path)
 
         # Get configuration options from inventory file or environment variables
-        # NUTANIX_ENDPOINT is supported for alignment with the Nutanix Terraform provider.
-        # The value should be a plain hostname or IP (e.g. prism.example.com), not a URL.
         self.nutanix_host = (
             self.get_option("nutanix_host")
             or os.environ.get("NUTANIX_HOSTNAME")
             or os.environ.get("NUTANIX_HOST")
-            or os.environ.get("NUTANIX_ENDPOINT")
         )
         self.nutanix_port = self.get_option("nutanix_port") or os.environ.get(
             "NUTANIX_PORT", "9440"
         )
+
+        # Fall back to parsing NUTANIX_ENDPOINT (e.g. https://prism.example.com:9440)
+        if not self.nutanix_host:
+            endpoint = os.environ.get("NUTANIX_ENDPOINT")
+            if endpoint:
+                parsed = urlparse(endpoint)
+                self.nutanix_host = parsed.hostname
+                if parsed.port:
+                    self.nutanix_port = str(parsed.port)
 
         self.nutanix_username = self._template_option("nutanix_username") or os.environ.get(
             "NUTANIX_USERNAME"
