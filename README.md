@@ -318,6 +318,8 @@ export NUTANIX_HEADER_CF_ACCESS_CLIENT_ID=<client-id>
 export NUTANIX_HEADER_CF_ACCESS_CLIENT_SECRET=<client-secret>
 ```
 
+> **Cloudflare ETag note:** Cloudflare strips `ETag` response headers by default. The Nutanix v4 API requires ETags for power actions and updates (via the `If-Match` request header). If you are proxying through Cloudflare, add a cache rule to your Cloudflare zone that preserves `ETag` headers, otherwise these operations will fail.
+
 # Included Content
 
 Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on prism central v4 APIs.
