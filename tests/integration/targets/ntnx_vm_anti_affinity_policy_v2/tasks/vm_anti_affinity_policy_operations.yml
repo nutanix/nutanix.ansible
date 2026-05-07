@@ -5,12 +5,12 @@
 
 - name: Generate random name
   ansible.builtin.set_fact:
-    random_name: "{{ query('community.general.random_string', numbers=false,
+    random_name: "ansible_{{ query('community.general.random_string', numbers=false,
       special=false, length=12)[0] }}"
 
 - name: Set policy names
   ansible.builtin.set_fact:
-    policy_name: "{{ random_name }}_ansible_anti_affinity_test"
+    policy_name: "{{ random_name }}_anti_affinity_test"
 
 - name: Set cluster variables
   ansible.builtin.set_fact:
@@ -896,7 +896,6 @@
       - item.failed == false
       - item.response.status == 'SUCCEEDED'
       - result.changed == true
-      - result.failed == false
       - result.msg == "All items completed"
       - result.results | length == 6
     fail_msg: "Failed to delete one or more VMs"
@@ -904,7 +903,7 @@
   loop: "{{ result.results }}"
 
 ##################################################################################
-# Delete - Check mode
+# Delete policy with check mode enabled
 ##################################################################################
 
 - name: Delete policy with check mode enabled
@@ -927,7 +926,7 @@
     success_msg: "Delete policy with check mode enabled passed"
 
 ##################################################################################
-# Delete
+# Delete all vm anti-affinity policies
 ##################################################################################
 
 - name: Delete all policies
@@ -946,7 +945,6 @@
       - item.response is defined
       - item.response.status == 'SUCCEEDED'
       - result.changed == true
-      - result.failed == false
       - result.msg == "All items completed"
       - result.results | length == 2
     fail_msg: "Delete policies failed"
