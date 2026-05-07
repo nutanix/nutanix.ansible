@@ -197,7 +197,6 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
-    strip_read_only_fields,
 )
 from ..module_utils.v4.vmm.api_client import (  # noqa: E402
     get_etag,
@@ -319,17 +318,6 @@ def update_policy(module, api_instance, result):
         )
 
     kwargs = {"if_match": etag}
-
-    strip_read_only_fields(
-        update_spec,
-        extra_fields=(
-            "num_compliant_vms",
-            "num_non_compliant_vms",
-            "num_pending_vms",
-            "created_by",
-            "updated_by",
-        ),
-    )
 
     resp = None
     try:

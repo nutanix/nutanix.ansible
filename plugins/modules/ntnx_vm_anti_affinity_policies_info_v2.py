@@ -134,8 +134,8 @@ from ..module_utils.v4.utils import (  # noqa: E402
 )
 from ..module_utils.v4.vmm.api_client import (  # noqa: E402
     get_vm_anti_affinity_policies_api_instance,
-    get_vm_anti_affinity_policy,
 )
+from ..module_utils.v4.vmm.helpers import get_vm_anti_affinity_policy  # noqa: E402
 
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
@@ -151,7 +151,8 @@ def get_policy(module, api_instance, result):
     """Fetch a single VM anti-affinity policy by ext_id."""
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
-    result["response"] = get_vm_anti_affinity_policy(module, api_instance, ext_id)
+    resp = get_vm_anti_affinity_policy(module, api_instance, ext_id)
+    result["response"] = strip_internal_attributes(resp.to_dict())
 
 
 def get_policies(module, api_instance, result):
