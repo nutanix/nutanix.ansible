@@ -14,7 +14,6 @@
 - name: Generate resource group names
   ansible.builtin.set_fact:
     rg_name: "{{ random_name }}{{ suffix_name }}"
-    cluster_ext_id: "00064d33-1010-d636-5dc1-525400a68708"
 
 - name: Set todelete lists
   ansible.builtin.set_fact:
@@ -59,7 +58,9 @@
     name: "check-mode-rg"
     project_ext_id: "{{ project1_ext_id }}"
     placement_targets:
-      - cluster_ext_id: "{{ cluster_ext_id }}"
+      - cluster_ext_id: "00064d33-1010-d636-5dc1-525400a68708"
+        storage_containers:
+          - ext_id: "4f4a1816-214f-4430-ba52-54fe9df34077"
   register: result
   check_mode: true
   ignore_errors: true
@@ -73,7 +74,9 @@
       - result.response.name == "check-mode-rg"
       - result.response.project_ext_id == project1_ext_id
       - result.response.placement_targets | length == 1
-      - result.response.placement_targets[0].cluster_ext_id == cluster_ext_id
+      - result.response.placement_targets[0].cluster_ext_id == "00064d33-1010-d636-5dc1-525400a68708" 
+      - result.response.placement_targets[0].storage_containers | length == 1
+      - result.response.placement_targets[0].storage_containers[0].ext_id == "4f4a1816-214f-4430-ba52-54fe9df34077"
     fail_msg: "Check mode create with all fields failed"
     success_msg: "Check mode create with all fields passed"
 
@@ -113,11 +116,10 @@
 - name: Create resource group with all fields (project 2)
   nutanix.ncp.ntnx_resource_group_v2:
     state: present
-
     name: "{{ rg_name }}2"
     project_ext_id: "{{ project2_ext_id }}"
     placement_targets:
-      - cluster_ext_id: "{{ cluster_ext_id }}"
+      - cluster_ext_id: "{{ cluster.uuid }}"
   register: result
   ignore_errors: true
 
@@ -133,7 +135,7 @@
       - result.response.name == rg_name ~ "2"
       - result.response.project_ext_id == project2_ext_id
       - result.response.placement_targets | length == 1
-      - result.response.placement_targets[0].cluster_ext_id == cluster_ext_id
+      - result.response.placement_targets[0].cluster_ext_id == cluster.uuid
     fail_msg: "Create resource group with all fields failed"
     success_msg: "Create resource group with all fields passed"
 

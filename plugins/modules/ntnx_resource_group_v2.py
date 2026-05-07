@@ -71,36 +71,6 @@ options:
                         description:
                             - UUID of the storage container.
                         type: str
-                    capabilities:
-                        description:
-                            - Capabilities and features of the storage container.
-                            - Each item is a key-value pair.
-                        type: list
-                        elements: dict
-                        suboptions:
-                            name:
-                                description:
-                                    - The key of the key-value pair.
-                                type: str
-                            value:
-                                description:
-                                    - The value associated with the key.
-                                type: raw
-            capabilities:
-                description:
-                    - Capabilities and features available at this placement target.
-                    - Each item is a key-value pair.
-                type: list
-                elements: dict
-                suboptions:
-                    name:
-                        description:
-                            - The key of the key-value pair.
-                        type: str
-                    value:
-                        description:
-                            - The value associated with the key.
-                        type: raw
     capabilities:
         description:
             - Capabilities and features for this resource group.
@@ -258,12 +228,6 @@ def get_module_spec():
 
     storage_container_spec = dict(
         ext_id=dict(type="str"),
-        capabilities=dict(
-            type="list",
-            elements="dict",
-            options=kv_pair_spec,
-            obj=multidomain_sdk.KVPair,
-        ),
     )
 
     placement_target_spec = dict(
@@ -273,12 +237,6 @@ def get_module_spec():
             elements="dict",
             options=storage_container_spec,
             obj=multidomain_sdk.StorageContainerDetails,
-        ),
-        capabilities=dict(
-            type="list",
-            elements="dict",
-            options=kv_pair_spec,
-            obj=multidomain_sdk.KVPair,
         ),
     )
 
