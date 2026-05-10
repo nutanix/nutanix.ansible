@@ -5,7 +5,8 @@
 
 - name: Generate random name
   ansible.builtin.set_fact:
-    random_name: "ansible_{{ query('community.general.random_string', numbers=false,
+    random_name:
+      "ansible_{{ query('community.general.random_string', numbers=false,
       special=false, length=12)[0] }}"
 
 - name: Set policy names
@@ -14,7 +15,7 @@
 
 - name: Set cluster variables
   ansible.builtin.set_fact:
-    node_indices: [ 0, 1, 2, 3 ]
+    node_indices: [0, 1, 2, 3]
     prefix_name: ansible_cluster_test
     pe_ssh_cmd: sshpass -p '{{ clusters[0].pe_password }}' ssh -o
       StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {{
@@ -25,7 +26,7 @@
 - name: Set cluster name and reset command
   ansible.builtin.set_fact:
     cluster_name: "{{ prefix_name }}_{{ clusters[0].name }}"
-    reset_command: "{{ pe_ssh_cmd }} \"{{ reset_username_password }}\""
+    reset_command: '{{ pe_ssh_cmd }} "{{ reset_username_password }}"'
 
 - name: Check if each cluster node is unconfigured
   ansible.builtin.command: "sshpass -p \"{{ clusters[0].pe_password }}\" ssh -o
@@ -335,9 +336,11 @@
         "00065133-7ad0-1d82-451d-5254003d8209"
       - result.response.name == 'test_policy_1'
       - result.response.description == "test_policy_1_description"
-    fail_msg: "Verify generated spec for a VM anti-affinity policy using check mode
+    fail_msg:
+      "Verify generated spec for a VM anti-affinity policy using check mode
       failed"
-    success_msg: "Verify generated spec for a VM anti-affinity policy using check
+    success_msg:
+      "Verify generated spec for a VM anti-affinity policy using check
       mode passed"
 
 ##################################################################################
@@ -367,7 +370,7 @@
 
 - name: Add to delete list
   ansible.builtin.set_fact:
-    todelete: "{{ todelete + [result[\"response\"][\"ext_id\"]] }}"
+    todelete: '{{ todelete + [result["response"]["ext_id"]] }}'
 
 ##################################################################################
 # Create - Full spec
@@ -403,13 +406,14 @@
 
 - name: Add to delete list
   ansible.builtin.set_fact:
-    todelete: "{{ todelete + [result[\"response\"][\"ext_id\"]] }}"
+    todelete: '{{ todelete + [result["response"]["ext_id"]] }}'
 
 ##################################################################################
 # Update - Check mode
 ##################################################################################
 
-- name: Generate spec for updating an existing VM anti-affinity policy using check
+- name:
+    Generate spec for updating an existing VM anti-affinity policy using check
     mode
   nutanix.ncp.ntnx_vm_anti_affinity_policy_v2:
     state: present
@@ -441,7 +445,8 @@
         "00065133-7ad0-1d82-451d-5254003d8209"
     fail_msg: "Verify generated spec for updating an existing VM anti-affinity
       policy using check mode failed"
-    success_msg: "Verify generated spec for updating an existing VM anti-affinity
+    success_msg:
+      "Verify generated spec for updating an existing VM anti-affinity
       policy using check mode passed"
 
 ##################################################################################
@@ -851,7 +856,8 @@
       - item.response.host is defined
       - item.response.host is not none
       - item.response.host.ext_id is defined
-    fail_msg: "VM {{ item.response.ext_id | default('unknown') }} is not powered on
+    fail_msg:
+      "VM {{ item.response.ext_id | default('unknown') }} is not powered on
       or has no host assigned"
     success_msg: "VM {{ item.response.ext_id }} is powered on and hosted on {{
       item.response.host.ext_id }}"
@@ -877,7 +883,8 @@
       vms_info.results[3].response.host.ext_id }}]. Cat3 hosts: [{{
       vms_info.results[4].response.host.ext_id }}, {{
       vms_info.results[5].response.host.ext_id }}].
-    success_msg: "Anti-affinity enforced successfully - VMs in same category are on
+    success_msg:
+      "Anti-affinity enforced successfully - VMs in same category are on
       different hosts"
 
 - name: Delete all 6 created VMs

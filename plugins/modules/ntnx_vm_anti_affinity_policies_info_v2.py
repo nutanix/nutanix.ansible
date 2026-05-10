@@ -22,11 +22,13 @@ notes:
     - >-
       B(Get VM Anti-Affinity Policy) -
       Operation Name: Get VM Anti-Affinity Policy -
-      Required Roles: Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin, Virtual Machine Admin, Virtual Machine Viewer, Self-Service Admin (deprecated)
+      Required Roles: Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin, Virtual Machine Admin,
+      Virtual Machine Viewer, Self-Service Admin (deprecated)
     - >-
       B(List VM Anti-Affinity Policies) -
       Operation Name: List VM Anti-Affinity Policies -
-      Required Roles: Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin, Virtual Machine Admin, Virtual Machine Viewer, Self-Service Admin (deprecated)
+      Required Roles: Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin, Virtual Machine Admin,
+      Virtual Machine Viewer, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     ext_id:
