@@ -109,3 +109,23 @@ def get_cluster_profile(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching cluster profile info using ext_id",
         )
+
+
+def get_vcenter_extension(module, api_instance, ext_id):
+    """
+    This method will return vCenter extension info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: VcenterExtensionsApi instance from sdk
+        ext_id (str): vCenter extension external ID
+    return:
+        vCenter extension info (object): vCenter extension info
+    """
+    try:
+        return api_instance.get_vcenter_extension_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching vCenter extension info using ext_id",
+        )

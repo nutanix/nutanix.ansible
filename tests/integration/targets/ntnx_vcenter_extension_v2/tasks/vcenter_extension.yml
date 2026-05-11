@@ -1,0 +1,225 @@
+---
+- name: Start vCenter Extension tests
+  ansible.builtin.debug:
+    msg: Start vCenter Extension tests
+
+################################################################################
+# Check mode tests - Register (Create)
+################################################################################
+
+- name: Generate spec for registering vCenter extension using check mode
+  nutanix.ncp.ntnx_vcenter_extension_v2:
+    ext_id: "{{ vcenter_extension.ext_id }}"
+    username: "test_user"
+    password: "test_password"
+    port: 443
+    state: present
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Check mode register status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.username == "test_user"
+      - result.response.port == 443
+      - result.ext_id == "{{ vcenter_extension.ext_id }}"
+    fail_msg: "Failed to generate spec for registering vCenter extension using check mode"
+    success_msg: "Spec for registering vCenter extension generated successfully using check mode"
+
+################################################################################
+# Check mode tests - Unregister (Delete)
+################################################################################
+
+- name: Generate spec for unregistering vCenter extension using check mode
+  nutanix.ncp.ntnx_vcenter_extension_v2:
+    ext_id: "{{ vcenter_extension.ext_id }}"
+    username: "test_user"
+    password: "test_password"
+    port: 443
+    state: absent
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Check mode unregister status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.username == "test_user"
+      - result.response.port == 443
+      - result.ext_id == "{{ vcenter_extension.ext_id }}"
+      - result.msg is defined
+    fail_msg: "Failed to generate spec for unregistering vCenter extension using check mode"
+    success_msg: "Spec for unregistering vCenter extension generated successfully using check mode"
+
+################################################################################
+# List vCenter extensions
+################################################################################
+
+- name: List all vCenter extensions
+  nutanix.ncp.ntnx_vcenter_extensions_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: List all vCenter extensions status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+    fail_msg: "Failed to list all vCenter extensions"
+    success_msg: "Listed all vCenter extensions successfully"
+
+################################################################################
+# Get vCenter extension by ext_id
+################################################################################
+
+- name: Get vCenter extension info by ext_id
+  nutanix.ncp.ntnx_vcenter_extensions_info_v2:
+    ext_id: "{{ vcenter_extension.ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Get vCenter extension info by ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == "{{ vcenter_extension.ext_id }}"
+    fail_msg: "Failed to get vCenter extension info by ext_id"
+    success_msg: "Got vCenter extension info by ext_id successfully"
+
+################################################################################
+# Register vCenter extension
+################################################################################
+
+- name: Register vCenter extension
+  nutanix.ncp.ntnx_vcenter_extension_v2:
+    ext_id: "{{ vcenter_extension.ext_id }}"
+    username: "{{ vcenter_extension.username }}"
+    password: "{{ vcenter_extension.password }}"
+    port: "{{ vcenter_extension.port }}"
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Register vCenter extension status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true or result.skipped is defined
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == "{{ vcenter_extension.ext_id }}"
+    fail_msg: "Failed to register vCenter extension"
+    success_msg: "vCenter extension registered successfully"
+
+################################################################################
+# Idempotency - Register again (should be skipped)
+################################################################################
+
+- name: Register vCenter extension again (idempotency check)
+  nutanix.ncp.ntnx_vcenter_extension_v2:
+    ext_id: "{{ vcenter_extension.ext_id }}"
+    username: "{{ vcenter_extension.username }}"
+    password: "{{ vcenter_extension.password }}"
+    port: "{{ vcenter_extension.port }}"
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Register vCenter extension idempotency status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == "{{ vcenter_extension.ext_id }}"
+    fail_msg: "vCenter extension idempotency check failed"
+    success_msg: "vCenter extension idempotency check passed"
+
+################################################################################
+# Unregister vCenter extension
+################################################################################
+
+- name: Unregister vCenter extension
+  nutanix.ncp.ntnx_vcenter_extension_v2:
+    ext_id: "{{ vcenter_extension.ext_id }}"
+    username: "{{ vcenter_extension.username }}"
+    password: "{{ vcenter_extension.password }}"
+    port: "{{ vcenter_extension.port }}"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Unregister vCenter extension status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true or result.skipped is defined
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == "{{ vcenter_extension.ext_id }}"
+    fail_msg: "Failed to unregister vCenter extension"
+    success_msg: "vCenter extension unregistered successfully"
+
+################################################################################
+# Negative Scenarios
+################################################################################
+
+- name: Register vCenter extension with invalid ext_id
+  nutanix.ncp.ntnx_vcenter_extension_v2:
+    ext_id: "12345678-0000-6524-9856-123456789854"
+    username: "test_user"
+    password: "test_password"
+    port: 443
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Register vCenter extension with invalid ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+    fail_msg: "Register vCenter extension with invalid ext_id did not fail as expected"
+    success_msg: "Register vCenter extension with invalid ext_id failed as expected"
+
+- name: Unregister vCenter extension with invalid ext_id
+  nutanix.ncp.ntnx_vcenter_extension_v2:
+    ext_id: "12345678-0000-6524-9856-123456789854"
+    username: "test_user"
+    password: "test_password"
+    port: 443
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Unregister vCenter extension with invalid ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+    fail_msg: "Unregister vCenter extension with invalid ext_id did not fail as expected"
+    success_msg: "Unregister vCenter extension with invalid ext_id failed as expected"
+
+- name: Get vCenter extension info with invalid ext_id
+  nutanix.ncp.ntnx_vcenter_extensions_info_v2:
+    ext_id: "12345678-0000-6524-9856-123456789854"
+  register: result
+  ignore_errors: true
+
+- name: Get vCenter extension info with invalid ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching vCenter extension info using ext_id"
+    fail_msg: "Get vCenter extension info with invalid ext_id did not fail as expected"
+    success_msg: "Get vCenter extension info with invalid ext_id failed as expected"

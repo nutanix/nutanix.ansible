@@ -1,0 +1,5 @@
+<Need to add sample>
+
+Note: Examples require valid vCenter extension ext_id and vCenter credentials
+to execute successfully. The PC at 10.103.241.190 needs to have vCenter
+extensions configured for these examples to produce actual output.
