@@ -9,9 +9,24 @@
       "ansible_{{ query('community.general.random_string', numbers=false,
       special=false, length=12)[0] }}"
 
-- name: Set policy names
+- name: Set policy name
   ansible.builtin.set_fact:
     policy_name: "{{ random_name }}_host_affinity_test"
+
+- name: Set cluster variables
+  ansible.builtin.set_fact:
+    node_indices: [0, 1, 2, 3]
+    prefix_name: ansible_cluster_test
+    pe_ssh_cmd: sshpass -p '{{ clusters[0].pe_password }}' ssh -o
+      StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {{
+      clusters[0].pe_username }}@{{ clusters[0].nodes[0].cvm_ip }}
+    reset_username_password: /home/nutanix/prism/cli/ncli user reset-password
+      user-name={{ username_for_tests }} password={{ password_for_tests }}
+
+- name: Set cluster name and reset command
+  ansible.builtin.set_fact:
+    cluster_name: "{{ prefix_name }}_{{ clusters[0].name }}"
+    reset_command: '{{ pe_ssh_cmd }} "{{ reset_username_password }}"'
 
 - name: Check if each cluster node is unconfigured
   ansible.builtin.command: "sshpass -p \"{{ clusters[0].pe_password }}\" ssh -o
@@ -25,10 +40,6 @@
   no_log: true
 
 # verify that all nodes are unconfigured by checking the return code and stderr in all of them
-- name: Print cluster node status results
-  ansible.builtin.debug:
-    var: results
-
 - name: Assert that all cluster nodes are unconfigured
   ansible.builtin.assert:
     that:
@@ -48,10 +59,6 @@
   loop: "{{ node_indices }}"
   register: results
   ignore_errors: true
-
-- name: Print discover unconfigured nodes results
-  ansible.builtin.debug:
-    var: results
 
 - name: Assert discover unconfigured nodes status for each node
   ansible.builtin.assert:
@@ -129,10 +136,6 @@
   register: result
   ignore_errors: true
 
-- name: Print cluster create prechecks result
-  ansible.builtin.debug:
-    var: result
-
 - name: Verify cluster create prechecks run
   ansible.builtin.assert:
     that:
@@ -168,10 +171,6 @@
     timeout: 1800
   register: result
   ignore_errors: true
-
-- name: Print cluster create result
-  ansible.builtin.debug:
-    var: result
 
 - name: Verify cluster create task status
   ansible.builtin.assert:
@@ -216,10 +215,6 @@
   register: result
   ignore_errors: true
 
-- name: Print PE PC registration result
-  ansible.builtin.debug:
-    var: result
-
 - name: Run PE PC registration status
   ansible.builtin.assert:
     that:
@@ -234,6 +229,56 @@
 - name: Sleep for 1 minute
   ansible.builtin.pause:
     seconds: 60
+
+- name: Fetch cluster using name
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: name eq '{{ cluster_name }}'
+  register: result
+  ignore_errors: true
+
+- name: Verify listing
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response | length > 0
+    fail_msg: Failed verifying PE PC registration
+    success_msg: PE PC registration passed successfully
+
+- name: Set cluster external ID
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ result.response[0].ext_id }}"
+
+- name: Fetch cluster info using external ID
+  nutanix.ncp.ntnx_clusters_info_v2:
+    ext_id: "{{ cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify created cluster's details using cluster info
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id == cluster_ext_id
+      - result.response.name == "{{ cluster_name }}"
+      - result.response.nodes.node_list[0].controller_vm_ip.ipv4.value == "{{
+        clusters[0].nodes[0].cvm_ip }}"
+      - result.response.nodes.node_list[1].controller_vm_ip.ipv4.value == "{{
+        clusters[0].nodes[1].cvm_ip }}"
+      - result.response.nodes.node_list[2].controller_vm_ip.ipv4.value == "{{
+        clusters[0].nodes[2].cvm_ip }}"
+      - result.response.config.cluster_function[0] == "{{
+        clusters[0].config.cluster_functions[0] }}"
+      - result.response.config.redundancy_factor ==
+        clusters[0].config.redundancy_factor_cluster_expanding
+      - result.response.config.cluster_arch == "{{
+        clusters[0].config.cluster_arch }}"
+      - >
+        result.response.config.fault_tolerance_state.domain_awareness_level ==
+        "{{
+        clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_expanding
+        }}"
+    fail_msg: Failed verifying cluster creation
+    success_msg: Cluster creation passed successfully
 
 - name: List all categories and get the first five
   nutanix.ncp.ntnx_categories_info_v2:
@@ -801,36 +846,44 @@
   ansible.builtin.set_fact:
     target_host_ext_id: "{{ hosts_result.response[0].ext_id }}"
 
+- name: Set host v3 API
+  ansible.builtin.set_fact:
+    host_v3_api: "{{ update_host_category_api }}{{ target_host_ext_id }}"
+
 - name: Get current host details from v3 API
   ansible.builtin.uri:
-    url: "https://{{ ip }}:9440/api/nutanix/v3/hosts/{{ target_host_ext_id }}"
+    url: "{{ host_v3_api }}"
     method: GET
-    user: "{{ username }}"
-    password: "{{ password }}"
-    validate_certs: false
+    user: "{{ username_for_tests }}"
+    password: "{{ password_for_tests }}"
     force_basic_auth: true
-    return_content: true
-    status_code: [200]
+    validate_certs: false
+    headers:
+      Accept: "application/json"
+    status_code: [200, 202]
   register: host_info_v3
+  ignore_errors: true
 
 - name: Print host details from v3 API
   ansible.builtin.debug:
-    var: host_info_v3.json
+    var: host_info_v3
 
 - name: Associate category to host using v3 API
   ansible.builtin.uri:
-    url: "https://{{ ip }}:9440/api/nutanix/v3/hosts/{{ target_host_ext_id }}"
+    url: "{{ host_v3_api }}"
     method: PUT
-    user: "{{ username }}"
-    password: "{{ password }}"
-    validate_certs: false
+    user: "{{ username_for_tests }}"
+    password: "{{ password_for_tests }}"
     force_basic_auth: true
-    body_format: json
+    validate_certs: false
+    headers:
+      Accept: "application/json"
     status_code: [200, 202]
     body:
       metadata: "{{ host_info_v3.json.metadata | combine({'categories': (host_info_v3.json.metadata.categories | default({})) | combine({functional_host_category_key: functional_host_category_value})}, recursive=True) }}"
       spec: "{{ host_info_v3.json.spec }}"
   register: host_update_v3
+  ignore_errors: true
 
 - name: Print host category association response
   ansible.builtin.debug:
@@ -843,6 +896,36 @@
       - host_update_v3.status in [200, 202]
     fail_msg: "Failed to associate category to host using v3 API"
     success_msg: "Host category association request accepted"
+
+- name: Get current host details from v3 API
+  ansible.builtin.uri:
+    url: "{{ host_v3_api }}"
+    method: GET
+    user: "{{ username_for_tests }}"
+    password: "{{ password_for_tests }}"
+    force_basic_auth: true
+    validate_certs: false
+    headers:
+      Accept: "application/json"
+    status_code: [200, 202]
+  register: host_info_v3_after_update
+  ignore_errors: true
+
+- name: Print host details from v3 API
+  ansible.builtin.debug:
+    var: host_info_v3_after_update
+
+- name: Verify host info v3 after update
+  ansible.builtin.assert:
+    that:
+      - host_info_v3_after_update.failed == false
+      - host_info_v3_after_update.json is defined
+      - host_info_v3_after_update.json.metadata is defined
+      - host_info_v3_after_update.json.metadata.categories is defined
+      - host_info_v3_after_update.json.metadata.categories[functional_host_category_key] is defined
+      - host_info_v3_after_update.json.metadata.categories[functional_host_category_key] == functional_host_category_value
+    fail_msg: "Failed to verify host info v3 after update"
+    success_msg: "Host info v3 after update verified"
 
 - name: Update functional policy mapping (vm category -> host category)
   nutanix.ncp.ntnx_vm_host_affinity_policy_v2:
