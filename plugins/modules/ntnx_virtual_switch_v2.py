@@ -16,7 +16,6 @@ version_added: 2.5.0
 description:
   - This module allows you to create, update, and delete virtual switches in Nutanix Prism Central.
   - It also supports creating a virtual switch from an existing bridge using the migrate operation.
-  - Metadata is not supported in this module.
   - This module uses PC v4 APIs based SDKs
 notes:
     - >-
@@ -234,6 +233,38 @@ options:
         type: int
         required: false
         default: 300
+  metadata:
+    description:
+      - Metadata associated with this resource.
+    type: dict
+    required: false
+    suboptions:
+      owner_reference_id:
+        description:
+          - A globally unique identifier that represents the owner of this resource.
+        type: str
+        required: false
+      owner_user_name:
+        description:
+          - The userName of the owner of this resource.
+        type: str
+        required: false
+      project_reference_id:
+        description:
+          - A globally unique identifier that represents the project this resource belongs to.
+        type: str
+        required: false
+      project_name:
+        description:
+          - The name of the project this resource belongs to.
+        type: str
+        required: false
+      category_ids:
+        description:
+          - A list of globally unique identifiers that represent all the categories the resource is associated with.
+        type: list
+        elements: str
+        required: false
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
@@ -510,6 +541,14 @@ def get_module_spec():
         snooping_timeout=dict(type="int", required=False, default=300),
     )
 
+    metadata_spec = dict(
+        owner_reference_id=dict(type="str", required=False),
+        owner_user_name=dict(type="str", required=False),
+        project_reference_id=dict(type="str", required=False),
+        project_name=dict(type="str", required=False),
+        category_ids=dict(type="list", elements="str", required=False),
+    )
+
     module_args = dict(
         ext_id=dict(type="str"),
         name=dict(type="str"),
@@ -534,6 +573,11 @@ def get_module_spec():
             type="dict",
             options=igmp_spec,
             obj=networking_sdk.IgmpSpec,
+        ),
+        metadata=dict(
+            type="dict",
+            options=metadata_spec,
+            obj=networking_sdk.Metadata,
         ),
     )
     return module_args
@@ -639,6 +683,11 @@ def check_for_idempotency(old_spec_dict, update_spec_dict):
     update_spec_dict.pop("is_quick_mode")
     old_spec_dict.pop("owner_type")
     update_spec_dict.pop("owner_type")
+    for spec_dict in (old_spec_dict, update_spec_dict):
+        metadata = spec_dict.get("metadata") or {}
+        category_ids = metadata.get("category_ids")
+        if category_ids:
+            metadata["category_ids"] = sorted(category_ids)
     return old_spec_dict == update_spec_dict
 
 
@@ -761,6 +810,7 @@ def run_module():
             "name",
             "description",
             "cluster_reference",
+            "metadata",
         }
         module_specific_params = set(get_module_spec().keys())
         extra_params = (
@@ -768,7 +818,7 @@ def run_module():
         ) - allowed_with_bridge
         if extra_params:
             module.fail_json(
-                msg="When 'existing_bridge_name' is provided, only 'name', 'description' and 'cluster_reference' are allowed. "
+                msg="When 'existing_bridge_name' is provided, only 'name', 'description', 'cluster_reference' and 'metadata' are allowed. "
                 "Invalid parameters: {0}".format(", ".join(sorted(extra_params)))
             )
     result = {
