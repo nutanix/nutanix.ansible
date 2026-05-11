@@ -1,0 +1,5 @@
+<Need to add sample>
+
+Note: Tests require valid vCenter extension ext_id and vCenter credentials
+to execute successfully. The test environment needs to have vCenter extensions
+configured for the integration tests to produce actual output.

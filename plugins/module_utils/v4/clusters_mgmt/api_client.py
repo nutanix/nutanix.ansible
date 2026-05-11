@@ -142,3 +142,15 @@ def get_ssl_certificates_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_clustermgmt_py_client.SSLCertificateApi(client)
+
+
+def get_vcenter_extensions_api_instance(module):
+    """
+    This method will return vCenter extensions api instance from sdk.
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        VcenterExtensionsApi: VcenterExtensionsApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.VcenterExtensionsApi(client)

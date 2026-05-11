@@ -1,0 +1,68 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Register vCenter server extension
+# 2. Get vCenter extension info by ext_id
+# 3. List all vCenter extensions
+# 4. Unregister vCenter server extension
+
+- name: VCenter Extension playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: 10.103.241.190
+      nutanix_username: admin
+      nutanix_password: Nutanix.123
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        vcenter_extension:
+          ext_id: "<vcenter_extension_ext_id>"
+          username: "<vcenter_username>"
+          password: "<vcenter_password>"
+          port: 443
+
+    - name: Register vCenter server extension
+      nutanix.ncp.ntnx_vcenter_extension_v2:
+        ext_id: "{{ vcenter_extension.ext_id }}"
+        username: "{{ vcenter_extension.username }}"
+        password: "{{ vcenter_extension.password }}"
+        port: "{{ vcenter_extension.port }}"
+        state: present
+      register: register_result
+
+    - name: Print register result
+      ansible.builtin.debug:
+        var: register_result
+
+    - name: Get vCenter extension info by ext_id
+      nutanix.ncp.ntnx_vcenter_extensions_info_v2:
+        ext_id: "{{ vcenter_extension.ext_id }}"
+      register: info_result
+
+    - name: Print info result
+      ansible.builtin.debug:
+        var: info_result
+
+    - name: List all vCenter extensions
+      nutanix.ncp.ntnx_vcenter_extensions_info_v2:
+      register: list_result
+
+    - name: Print list result
+      ansible.builtin.debug:
+        var: list_result
+
+    - name: Unregister vCenter server extension
+      nutanix.ncp.ntnx_vcenter_extension_v2:
+        ext_id: "{{ vcenter_extension.ext_id }}"
+        username: "{{ vcenter_extension.username }}"
+        password: "{{ vcenter_extension.password }}"
+        port: "{{ vcenter_extension.port }}"
+        state: absent
+      register: unregister_result
+
+    - name: Print unregister result
+      ansible.builtin.debug:
+        var: unregister_result
