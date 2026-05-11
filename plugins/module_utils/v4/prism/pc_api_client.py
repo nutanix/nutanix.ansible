@@ -117,3 +117,15 @@ def get_tasks_api_instance(module):
     """
     api_client = get_pc_api_client(module)
     return ntnx_prism_py_client.TasksApi(api_client=api_client)
+
+
+def get_categories_api_instance(module):
+    """
+    This method will return categories api instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): categories api instance
+    """
+    api_client = get_pc_api_client(module)
+    return ntnx_prism_py_client.CategoriesApi(api_client=api_client)
