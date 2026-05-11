@@ -10,66 +10,65 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 module: ntnx_vm_host_affinity_policy_v2
-short_description: Manage VM-host affinity policies in Nutanix Prism Central
+short_description: Manage VM-host affinity policy in Nutanix Prism Central
 description:
-    - This module allows you to create, update, and delete VM-host affinity policies in Nutanix Prism Central.
-    - VM-host affinity policies enforce that certain VMs run on specific hosts based on category matching.
-    - This module uses PC v4 APIs based SDKs
+    - This module allows you to create, update, and delete VM-host affinity policy in Nutanix Prism Central.
+    - VM-host affinity policy enforces that VMs matching certain categories run on hosts matching certain categories.
+    - This module uses PC v4 APIs based SDKs.
 version_added: "2.6.0"
 author:
- - Abhinav Bansal (@abhinavbansal29)
+    - Abhinav Bansal (@abhinavbansal29)
+    - George Ghawali (@george-ghawali)
 options:
     ext_id:
         description:
-            - The unique identifier of the VM-host affinity policy.
+            - The unique identifier of the VM host affinity policy.
             - This parameter is required for update and delete operations.
         required: false
         type: str
     name:
         description:
-            - The name of the VM-host affinity policy.
+            - The name of the VM host affinity policy.
         required: false
         type: str
     description:
         description:
-            - The description of the VM-host affinity policy.
+            - The description of the VM host affinity policy.
         required: false
         type: str
     vm_categories:
         description:
             - List of category references for VMs that this policy applies to.
-            - Each item is a dict with an C(ext_id) key representing the category UUID.
+            - Each entry specifies a category by its external ID.
+            - VMs with these categories will be hosted on hosts that match C(host_categories).
         required: false
         type: list
         elements: dict
         suboptions:
             ext_id:
                 description:
-                    - The external ID (UUID) of the category.
+                    - The external ID of the category.
                 required: true
                 type: str
     host_categories:
         description:
             - List of category references for hosts that VMs should have affinity with.
-            - Each item is a dict with an C(ext_id) key representing the category UUID.
+            - Each entry specifies a category by its external ID.
         required: false
         type: list
         elements: dict
         suboptions:
             ext_id:
                 description:
-                    - The external ID (UUID) of the category.
+                    - The external ID of the category.
                 required: true
                 type: str
     state:
         description:
-            - Specify state
-            - If C(state) is set to C(present) then the operation will be to create the item.
-            - if C(state) is set to C(present) and C(ext_id) is given then it will update that policy.
-            - if C(state) is set to C(present) then C(ext_id) or C(name) needs to be set.
-            - >-
-                If C(state) is set to C(absent) and if the item exists, then
-                item is removed.
+            - Specify state.
+            - If C(state) is set to C(present) then the operation will be to create the host affinity policy.
+            - If C(state) is set to C(present) and C(ext_id) is given then it will update the host affinity policy.
+            - If C(state) is set to C(absent) and C(ext_id) is given then the host affinity policy will be deleted.
         choices:
             - present
             - absent
@@ -79,7 +78,7 @@ options:
         description: Wait for the CRUD operation to complete.
         type: bool
         required: false
-        default: True
+        default: true
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
@@ -88,61 +87,57 @@ extends_documentation_fragment:
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
-      The required roles depend on the operation being performed.
     - >-
-      B(Create a VM-host affinity policy) -
-      Operation Name: Create VM Host Affinity Policy -
-      Required Roles: Prism Admin, Super Admin
+      B(Create VM Host Affinity Policy) -
+      Required Roles: Prism Admin, Super Admin, Virtual Machine Admin
     - >-
-      B(Update a VM-host affinity policy) -
-      Operation Name: Update VM Host Affinity Policy -
-      Required Roles: Prism Admin, Super Admin
+      B(Update VM Host Affinity Policy) -
+      Required Roles: Prism Admin, Super Admin, Virtual Machine Admin
     - >-
-      B(Delete a VM-host affinity policy) -
-      Operation Name: Delete VM Host Affinity Policy -
-      Required Roles: Prism Admin, Super Admin
+      B(Delete VM Host Affinity Policy) -
+      Required Roles: Prism Admin, Super Admin, Virtual Machine Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 """
 
 EXAMPLES = r"""
-- name: Create a VM-host affinity policy
+- name: Create a VM host affinity policy
   nutanix.ncp.ntnx_vm_host_affinity_policy_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    name: my_affinity_policy
-    description: My VM host affinity policy
+    name: my_host_affinity_policy
+    description: Policy to keep critical VMs on specific hosts
     vm_categories:
-      - ext_id: "{{ vm_category_ext_id }}"
+      - ext_id: "2f54419e-596d-4b34-aa8f-1a1e944ee7d7"
     host_categories:
-      - ext_id: "{{ host_category_ext_id }}"
+      - ext_id: "8811743f-f3ea-463c-539a-8d6a7f69b8f5"
     state: present
     wait: true
 
-- name: Update a VM-host affinity policy
+- name: Update a VM host affinity policy
   nutanix.ncp.ntnx_vm_host_affinity_policy_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    ext_id: "{{ policy_ext_id }}"
-    name: updated_policy_name
+    ext_id: "54fe0ed5-02d8-4588-b10b-3b9736bf3d06"
+    name: updated_host_affinity_policy
     description: Updated description
     vm_categories:
-      - ext_id: "{{ new_vm_category_ext_id }}"
+      - ext_id: "9811743f-f3ea-463c-539a-8d6a7f69b8f5"
     host_categories:
-      - ext_id: "{{ new_host_category_ext_id }}"
+      - ext_id: "1a1e944e-e7d7-2f54-419e-596d4b34aa8f"
     state: present
     wait: true
 
-- name: Delete a VM-host affinity policy
+- name: Delete a VM host affinity policy
   nutanix.ncp.ntnx_vm_host_affinity_policy_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    ext_id: "{{ policy_ext_id }}"
+    ext_id: "605a0cf9-d04e-3be7-911b-1e6f193f6eb9"
     state: absent
     wait: true
 """
@@ -151,52 +146,50 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
     description:
-        - The response from the VM-host affinity policy operation.
+        - The response from the VM host affinity policy operation.
         - It will be task response if C(wait) is false.
     type: dict
     returned: always
     sample: {
-            "name": "my_affinity_policy",
-            "description": "My VM host affinity policy",
-            "vm_categories": [
-                {"ext_id": "605a0cf9-d04e-3be7-911b-1e6f193f6ebe"}
-            ],
-            "host_categories": [
-                {"ext_id": "98b9dc89-be08-3c56-b554-692b8b676fd1"}
-            ],
-            "ext_id": "54fe0ed5-02d8-4588-b10b-3b9736bf3d06",
-            "links": null,
-            "tenant_id": null
-        }
+        "name": "my_host_affinity_policy",
+        "description": "Policy to keep critical VMs on specific hosts",
+        "vm_categories": [
+            {"ext_id": "605a0cf9-d04e-3be7-911b-1e6f193f6ebe"}
+        ],
+        "host_categories": [
+            {"ext_id": "98b9dc89-be08-3c56-b554-692b8b676fd1"}
+        ],
+        "ext_id": "54fe0ed5-02d8-4588-b10b-3b9736bf3d06",
+        "create_time": "2026-01-01T00:00:00.000000+00:00",
+        "update_time": "2026-01-01T00:00:00.000000+00:00"
+    }
 task_ext_id:
-    description:
-        - The external ID of the task associated with the operation.
+    description: The external ID of the task associated with the operation.
     type: str
     returned: when a task is created
     sample: "98b9dc89-be08-3c56-b554-692b8b676fd2"
 ext_id:
-    description:
-        - The external ID of the VM-host affinity policy.
+    description: The external ID of the VM host affinity policy.
     type: str
-    sample: "98b9dc89-be08-3c56-b554-692b8b676fd2"
     returned: always
+    sample: "98b9dc89-be08-3c56-b554-692b8b676fd2"
 changed:
     description: Indicates whether the resource was changed.
     type: bool
     returned: always
-skipped:
-    description: Indicates whether the operation was skipped due to no changes.
-    type: bool
-    returned: when the operation is skipped
-msg:
-    description: A message describing the result of the operation.
-    returned: When there is an error, module is idempotent or check mode
-    type: str
-    sample: "Failed generating create VM Host Affinity Policy Spec"
 error:
     description: The error message if an error occurred.
     type: str
     returned: when an error occurs
+skipped:
+    description: Indicates whether the operation was skipped due to idempotency.
+    type: bool
+    returned: when the operation is skipped
+msg:
+    description: A message describing the result.
+    type: str
+    returned: on error, idempotency, or check mode
+    sample: "VM host affinity policy created successfully"
 failed:
     description: Indicates whether the operation failed.
     type: bool
@@ -223,7 +216,7 @@ from ..module_utils.v4.utils import (  # noqa: E402
 )
 from ..module_utils.v4.vmm.api_client import (  # noqa: E402
     get_etag,
-    get_vm_host_affinity_policy_api_instance,
+    get_vm_host_affinity_policies_api_instance,
 )
 from ..module_utils.v4.vmm.helpers import get_vm_host_affinity_policy  # noqa: E402
 
@@ -241,9 +234,9 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
     """
-    Returns the module specification.
+    Returns the module argument specification for VM host affinity policy.
     """
-    category_ref = dict(
+    category_spec = dict(
         ext_id=dict(type="str", required=True),
     )
     module_args = dict(
@@ -254,14 +247,14 @@ def get_module_spec():
             type="list",
             required=False,
             elements="dict",
-            options=category_ref,
+            options=category_spec,
             obj=vmm_sdk.AhvPoliciesCategoryReference,
         ),
         host_categories=dict(
             type="list",
             required=False,
             elements="dict",
-            options=category_ref,
+            options=category_spec,
             obj=vmm_sdk.AhvPoliciesCategoryReference,
         ),
     )
@@ -269,13 +262,7 @@ def get_module_spec():
 
 
 def create_policy(module, api_instance, result):
-    """
-    Create a new VM-host affinity policy.
-    Args:
-        module: Ansible module
-        api_instance: VmHostAffinityPoliciesApi instance
-        result: Result dict to populate
-    """
+    """Create a new VM host affinity policy."""
     sg = SpecGenerator(module)
     default_spec = vmm_sdk.VmHostAffinityPolicy()
     spec, err = sg.generate_spec(obj=default_spec)
@@ -283,7 +270,7 @@ def create_policy(module, api_instance, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating create VM Host Affinity Policy Spec", **result
+            msg="Failed generating create VM host affinity policy spec", **result
         )
 
     if module.check_mode:
@@ -297,7 +284,7 @@ def create_policy(module, api_instance, result):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while creating VM Host Affinity Policy",
+            msg="Api Exception raised while creating VM host affinity policy",
         )
 
     task_ext_id = resp.data.ext_id
@@ -316,14 +303,16 @@ def create_policy(module, api_instance, result):
     result["changed"] = True
 
 
+def check_idempotency(current_spec, update_spec):
+    strip_internal_attributes(current_spec)
+    strip_internal_attributes(update_spec)
+    if current_spec != update_spec:
+        return False
+    return True
+
+
 def update_policy(module, api_instance, result):
-    """
-    Update an existing VM-host affinity policy.
-    Args:
-        module: Ansible module
-        api_instance: VmHostAffinityPoliciesApi instance
-        result: Result dict to populate
-    """
+    """Update an existing VM host affinity policy."""
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
@@ -334,23 +323,21 @@ def update_policy(module, api_instance, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating VM Host Affinity Policy update spec", **result
+            msg="Failed generating VM host affinity policy update spec", **result
         )
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
 
-    current_dict = strip_internal_attributes(deepcopy(current_spec.to_dict()))
-    update_dict = strip_internal_attributes(deepcopy(update_spec.to_dict()))
-    if current_dict == update_dict:
+    if check_idempotency(current_spec, update_spec):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
 
     etag = get_etag(data=current_spec)
     if not etag:
         return module.fail_json(
-            "unable to fetch etag for updating VM Host Affinity Policy", **result
+            "Unable to fetch etag for updating VM host affinity policy", **result
         )
 
     kwargs = {"if_match": etag}
@@ -364,7 +351,7 @@ def update_policy(module, api_instance, result):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while updating VM Host Affinity Policy",
+            msg="Api Exception raised while updating VM host affinity policy",
         )
 
     task_ext_id = resp.data.ext_id
@@ -379,13 +366,7 @@ def update_policy(module, api_instance, result):
 
 
 def delete_policy(module, api_instance, result):
-    """
-    Delete an existing VM-host affinity policy.
-    Args:
-        module: Ansible module
-        api_instance: VmHostAffinityPoliciesApi instance
-        result: Result dict to populate
-    """
+    """Delete an existing VM host affinity policy."""
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
@@ -398,7 +379,7 @@ def delete_policy(module, api_instance, result):
     etag = get_etag(data=current_spec)
     if not etag:
         return module.fail_json(
-            "unable to fetch etag for deleting VM Host Affinity Policy", **result
+            "Unable to fetch etag for deleting VM host affinity policy", **result
         )
 
     kwargs = {"if_match": etag}
@@ -409,7 +390,7 @@ def delete_policy(module, api_instance, result):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while deleting VM Host Affinity Policy",
+            msg="Api Exception raised while deleting VM host affinity policy",
         )
 
     task_ext_id = resp.data.ext_id
@@ -443,7 +424,7 @@ def run_module():
         "ext_id": None,
     }
 
-    api_instance = get_vm_host_affinity_policy_api_instance(module)
+    api_instance = get_vm_host_affinity_policies_api_instance(module)
 
     state = module.params["state"]
     if state == "present":

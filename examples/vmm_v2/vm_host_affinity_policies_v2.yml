@@ -1,0 +1,124 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create VM host affinity policy
+# 2. Update VM host affinity policy
+# 3. Fetch VM host affinity policy by ext_id
+# 4. List all VM host affinity policies
+# 5. List all VM host affinity policies with filter
+# 6. List all VM host affinity policies with limit
+# 7. Delete VM host affinity policy
+
+- name: VM host affinity policy CRUD playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        policy_name: "example_host_affinity_policy"
+        vm_category_ext_id: "6e50299a-b7c9-5c5c-9faf-246ee249c597"
+        host_category_ext_id: "3785fbdd-623e-577f-96d9-af4d53683e01"
+        vm_category_ext_id_2: "f01477fe-3201-5746-9077-38f9ad863287"
+        host_category_ext_id_2: "abfba9d5-4c34-5381-9163-fc1630a657cc"
+
+    ################################################################################
+    # Create operation
+    ################################################################################
+
+    - name: Create VM host affinity policy
+      nutanix.ncp.ntnx_vm_host_affinity_policy_v2:
+        name: "{{ policy_name }}"
+        description: "Example VM host affinity policy"
+        vm_categories:
+          - ext_id: "{{ vm_category_ext_id }}"
+        host_categories:
+          - ext_id: "{{ host_category_ext_id }}"
+        state: present
+        wait: true
+      register: create_result
+
+    - name: Print create result
+      ansible.builtin.debug:
+        var: create_result
+
+    - name: Set policy ext_id
+      ansible.builtin.set_fact:
+        policy_ext_id: "{{ create_result.ext_id }}"
+
+    ################################################################################
+    # Info operations
+    ################################################################################
+
+    - name: Fetch VM host affinity policy by ext_id
+      nutanix.ncp.ntnx_vm_host_affinity_policies_info_v2:
+        ext_id: "{{ policy_ext_id }}"
+      register: get_result
+
+    - name: Print get result
+      ansible.builtin.debug:
+        var: get_result
+
+    - name: List all VM host affinity policies
+      nutanix.ncp.ntnx_vm_host_affinity_policies_info_v2:
+      register: list_result
+
+    - name: Print list result
+      ansible.builtin.debug:
+        var: list_result
+
+    - name: List all VM host affinity policies with filter
+      nutanix.ncp.ntnx_vm_host_affinity_policies_info_v2:
+        filter: "name eq '{{ policy_name }}'"
+      register: filter_result
+
+    - name: Print filter result
+      ansible.builtin.debug:
+        var: filter_result
+
+    - name: List all VM host affinity policies with limit
+      nutanix.ncp.ntnx_vm_host_affinity_policies_info_v2:
+        limit: 1
+      register: limit_result
+
+    ################################################################################
+    # Update operation
+    ################################################################################
+
+    - name: Update VM host affinity policy
+      nutanix.ncp.ntnx_vm_host_affinity_policy_v2:
+        ext_id: "{{ policy_ext_id }}"
+        name: "{{ policy_name }}_updated"
+        description: "Updated example VM host affinity policy"
+        vm_categories:
+          - ext_id: "{{ vm_category_ext_id }}"
+          - ext_id: "{{ vm_category_ext_id_2 }}"
+        host_categories:
+          - ext_id: "{{ host_category_ext_id }}"
+          - ext_id: "{{ host_category_ext_id_2 }}"
+        state: present
+        wait: true
+      register: update_result
+
+    - name: Print update result
+      ansible.builtin.debug:
+        var: update_result
+
+    ################################################################################
+    # Delete operation
+    ################################################################################
+
+    - name: Delete VM host affinity policy
+      nutanix.ncp.ntnx_vm_host_affinity_policy_v2:
+        ext_id: "{{ policy_ext_id }}"
+        state: absent
+      register: delete_result
+
+    - name: Print delete result
+      ansible.builtin.debug:
+        var: delete_result

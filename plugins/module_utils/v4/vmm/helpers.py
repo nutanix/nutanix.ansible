@@ -1,4 +1,4 @@
-# Copyright: (c) 2024, 2026, Nutanix
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -195,13 +195,13 @@ def get_ova(module, api_instance, ext_id):
 
 def get_vm_host_affinity_policy(module, api_instance, ext_id):
     """
-    Get VM Host Affinity Policy by ext_id
+    Get VM host affinity policy by ext_id.
     Args:
         module: Ansible module
         api_instance: VmHostAffinityPoliciesApi instance from ntnx_vmm_py_client sdk
-        ext_id: ext_id of VM Host Affinity Policy
+        ext_id: ext_id of VM host affinity policy
     Returns:
-        policy (obj): VM Host Affinity Policy info object
+        policy (obj): VM host affinity policy info object
     """
     try:
         return api_instance.get_vm_host_affinity_policy_by_id(extId=ext_id).data

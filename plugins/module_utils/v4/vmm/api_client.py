@@ -1,4 +1,4 @@
-# Copyright: (c) 2024, 2026, Nutanix
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -133,13 +133,13 @@ def get_ova_api_instance(module):
     return ntnx_vmm_py_client.OvasApi(api_client=api_client)
 
 
-def get_vm_host_affinity_policy_api_instance(module):
+def get_vm_host_affinity_policies_api_instance(module):
     """
-    This method will return VM Host Affinity Policy API instance
+    This method will return VM Host Affinity Policies API instance.
     Args:
-        module (obj): Ansible module
+        module (obj): Ansible module object with connection parameters
     Returns:
-        api_instance (obj): v4 VM Host Affinity Policy api instance
+        VmHostAffinityPoliciesApi: v4 VM Host Affinity Policies api instance
     """
     api_client = get_api_client(module)
     return ntnx_vmm_py_client.VmHostAffinityPoliciesApi(api_client=api_client)

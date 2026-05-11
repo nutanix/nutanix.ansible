@@ -1,0 +1,1055 @@
+---
+- name: Start testing ntnx_vm_host_affinity_policy_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_vm_host_affinity_policy_v2
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name:
+      "ansible_{{ query('community.general.random_string', numbers=false,
+      special=false, length=12)[0] }}"
+
+- name: Set policy names
+  ansible.builtin.set_fact:
+    policy_name: "{{ random_name }}_host_affinity_test"
+
+- name: Check if each cluster node is unconfigured
+  ansible.builtin.command: "sshpass -p \"{{ clusters[0].pe_password }}\" ssh -o
+    StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \\ {{
+    clusters[0].pe_username }}@{{ clusters[0].nodes[item].cvm_ip }}
+    \"/usr/local/nutanix/cluster/bin/cluster status\""
+  loop: "{{ node_indices }}"
+  register: results
+  ignore_errors: true
+  changed_when: results.rc != 0
+  no_log: true
+
+# verify that all nodes are unconfigured by checking the return code and stderr in all of them
+- name: Print cluster node status results
+  ansible.builtin.debug:
+    var: results
+
+- name: Assert that all cluster nodes are unconfigured
+  ansible.builtin.assert:
+    that:
+      - results.results | map(attribute='rc') | select('equalto', 1) | list |
+        length == 4
+      - results.results | map(attribute='stderr') | select('search', 'Cluster is
+        currently unconfigured') | list | length == 4
+    fail_msg: Cannot create cluster, one or more nodes are already configured
+    success_msg: All cluster nodes are unconfigured
+
+- name: Discover unconfigured nodes
+  nutanix.ncp.ntnx_discover_unconfigured_nodes_v2:
+    address_type: "IPV4"
+    ip_filter_list:
+      - ipv4:
+          value: "{{ clusters[0].nodes[item].cvm_ip }}"
+  loop: "{{ node_indices }}"
+  register: results
+  ignore_errors: true
+
+- name: Print discover unconfigured nodes results
+  ansible.builtin.debug:
+    var: results
+
+- name: Assert discover unconfigured nodes status for each node
+  ansible.builtin.assert:
+    that:
+      - item.changed == false
+      - item.failed == false
+      - item.response.ext_id is defined
+      - item.response.response.node_list.0.cvm_ip.ipv4.value | string in "{{
+        clusters[0].nodes }}"
+      - results | map(attribute='response.node_list.0.cvm_ip.ipv4.value') | list
+        | length == clusters[0].nodes | length
+    fail_msg: "Discover unconfigured nodes failed"
+    success_msg: "Discover unconfigured nodes passed"
+  loop: "{{ results.results }}"
+  no_log: true
+
+- name: Run cluster create prechecks
+  nutanix.ncp.ntnx_clusters_v2:
+    name: "{{ clusters[0].name }}"
+    nodes:
+      node_list:
+        - controller_vm_ip:
+            ipv4:
+              value: "{{ clusters[0].nodes[0].cvm_ip }}"
+        - controller_vm_ip:
+            ipv4:
+              value: "{{ clusters[0].nodes[1].cvm_ip }}"
+        - controller_vm_ip:
+            ipv4:
+              value: "{{ clusters[0].nodes[2].cvm_ip }}"
+    config:
+      cluster_function: "{{ clusters[0].config.cluster_functions }}"
+      authorized_public_key_list:
+        - name: "{{ clusters[0].config.auth_public_keys[0].name }}"
+          key: "{{ clusters[0].config.auth_public_keys[0].key }}"
+      redundancy_factor: "{{ clusters[0].config.redundancy_factor_cluster_expanding }}"
+      cluster_arch: "{{ clusters[0].config.cluster_arch }}"
+      fault_tolerance_state:
+        domain_awareness_level: "{{
+          clusters[0].config.fault_tolerance_state.domain_awareness_level_clust\
+          er_expanding }}"
+    network:
+      external_address:
+        ipv4:
+          value: "{{ clusters[0].network.virtual_ip }}"
+      external_data_service_ip:
+        ipv4:
+          value: "{{ clusters[0].network.iscsi_ip }}"
+      ntp_server_ip_list:
+        - fqdn:
+            value: "{{ clusters[0].network.ntp_servers[0] }}"
+        - fqdn:
+            value: "{{ clusters[0].network.ntp_servers[1] }}"
+        - fqdn:
+            value: "{{ clusters[0].network.ntp_servers[2] }}"
+        - fqdn:
+            value: "{{ clusters[0].network.ntp_servers[3] }}"
+      name_server_ip_list:
+        - ipv4:
+            value: "{{ clusters[0].network.dns_servers[0] }}"
+        - ipv4:
+            value: "{{ clusters[0].network.dns_servers[1] }}"
+      smtp_server:
+        email_address: "{{ clusters[0].network.smtp_server.email_address }}"
+        server:
+          ip_address:
+            ipv4:
+              value: "{{ clusters[0].network.smtp_server.ip }}"
+          port: "{{ clusters[0].network.smtp_server.port }}"
+          username: "{{ clusters[0].network.smtp_server.username }}"
+          password: "{{ clusters[0].network.smtp_server.password }}"
+        type: "{{ clusters[0].network.smtp_server.type }}"
+    dryrun: true
+    timeout: 1800
+  register: result
+  ignore_errors: true
+
+- name: Print cluster create prechecks result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify cluster create prechecks run
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Cluster create prechecks failed
+    success_msg: Cluster create prechecks passed
+
+- name: Create 3 nodes cluster with minimum spec
+  nutanix.ncp.ntnx_clusters_v2:
+    name: "{{cluster_name}}"
+    nodes:
+      node_list:
+        - controller_vm_ip:
+            ipv4:
+              value: "{{ clusters[0].nodes[0].cvm_ip }}"
+        - controller_vm_ip:
+            ipv4:
+              value: "{{ clusters[0].nodes[1].cvm_ip }}"
+        - controller_vm_ip:
+            ipv4:
+              value: "{{ clusters[0].nodes[2].cvm_ip }}"
+    config:
+      cluster_function: "{{ clusters[0].config.cluster_functions }}"
+      redundancy_factor: "{{ clusters[0].config.redundancy_factor_cluster_expanding }}"
+      cluster_arch: "{{ clusters[0].config.cluster_arch }}"
+      fault_tolerance_state:
+        domain_awareness_level: "{{
+          clusters[0].config.fault_tolerance_state.domain_awareness_level_clust\
+          er_expanding }}"
+    timeout: 1800
+  register: result
+  ignore_errors: true
+
+- name: Print cluster create result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify cluster create task status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Cluster create failed
+    success_msg: Cluster create passed
+
+- name: Reset username and password
+  ansible.builtin.command: "{{ reset_command }}"
+  register: result
+  ignore_errors: true
+  changed_when: result.rc != 0
+
+- name: List all clusters to get prism central external ID
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq
+      Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
+  register: result
+  ignore_errors: true
+
+- name: Get prism central external ID
+  ansible.builtin.set_fact:
+    prism_central_external_id: "{{ result.response[0].ext_id }}"
+
+- name: Run PE PC registration
+  nutanix.ncp.ntnx_pc_registration_v2:
+    ext_id: "{{ prism_central_external_id }}"
+    remote_cluster:
+      aos_remote_cluster:
+        remote_cluster:
+          address:
+            ipv4:
+              value: "{{ clusters[0].nodes[0].cvm_ip }}"
+          credentials:
+            authentication:
+              username: "{{ username_for_tests }}"
+              password: "{{ password_for_tests }}"
+  register: result
+  ignore_errors: true
+
+- name: Print PE PC registration result
+  ansible.builtin.debug:
+    var: result
+
+- name: Run PE PC registration status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.ext_id is defined
+      - result.ext_id == prism_central_external_id
+      - result.response.status == 'SUCCEEDED'
+      - result.task_ext_id is defined
+    fail_msg: "Run PE PC registration failed"
+    success_msg: "Run PE PC registration passed"
+
+- name: Sleep for 1 minute
+  ansible.builtin.pause:
+    seconds: 60
+
+- name: List all categories and get the first five
+  nutanix.ncp.ntnx_categories_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Print categories listing result
+  ansible.builtin.debug:
+    var: result
+
+- name: Status of all categories
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response | length >= 5
+    fail_msg: "Unable to list categories"
+    success_msg: "Categories listed successfully"
+
+- name: Set host-affinity test variables
+  ansible.builtin.set_fact:
+    categories_ext_ids:
+      - "{{ result.response[0].ext_id }}"
+      - "{{ result.response[1].ext_id }}"
+      - "{{ result.response[2].ext_id }}"
+      - "{{ result.response[3].ext_id }}"
+      - "{{ result.response[4].ext_id }}"
+    todelete: []
+
+##################################################################################
+# Create - Check mode
+##################################################################################
+
+- name: Generate spec for a VM host affinity policy using check mode
+  nutanix.ncp.ntnx_vm_host_affinity_policy_v2:
+    state: present
+    name: "test_policy_1"
+    description: "test_policy_1_description"
+    vm_categories:
+      - ext_id: "00065133-7ad0-1d82-451d-5254003d8207"
+    host_categories:
+      - ext_id: "00065133-7ad0-1d82-451d-5254003d8209"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Print check mode create spec result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify generated spec for a VM host affinity policy using check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.vm_categories | length == 1
+      - result.response.host_categories | length == 1
+      - result.response.vm_categories[0].ext_id ==
+        "00065133-7ad0-1d82-451d-5254003d8207"
+      - result.response.host_categories[0].ext_id ==
+        "00065133-7ad0-1d82-451d-5254003d8209"
+      - result.response.name == 'test_policy_1'
+      - result.response.description == "test_policy_1_description"
+    fail_msg:
+      "Verify generated spec for a VM host affinity policy using check mode
+      failed"
+    success_msg:
+      "Verify generated spec for a VM host affinity policy using check
+      mode passed"
+
+##################################################################################
+# Create - Minimal spec
+##################################################################################
+
+- name: Create a VM host affinity policy with minimal spec
+  nutanix.ncp.ntnx_vm_host_affinity_policy_v2:
+    state: present
+    name: "{{ policy_name }}_1"
+    vm_categories:
+      - ext_id: "{{ categories_ext_ids[0] }}"
+    host_categories:
+      - ext_id: "{{ categories_ext_ids[0] }}"
+    wait: true
+  register: result
+  ignore_errors: true
+
+- name: Print create minimal spec result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify created VM host affinity policy with minimal spec
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.vm_categories[0].ext_id == "{{ categories_ext_ids[0] }}"
+      - result.response.host_categories[0].ext_id == "{{ categories_ext_ids[0] }}"
+      - result.response.name == "{{ policy_name }}_1"
+    fail_msg: "Verify created VM host affinity policy with minimal spec failed"
+    success_msg: "Verify created VM host affinity policy with minimal spec passed"
+
+- name: Add to delete list
+  ansible.builtin.set_fact:
+    todelete: '{{ todelete + [result["response"]["ext_id"]] }}'
+
+##################################################################################
+# Create - Full spec
+##################################################################################
+
+- name: Create a VM host affinity policy with full spec
+  nutanix.ncp.ntnx_vm_host_affinity_policy_v2:
+    state: present
+    name: "{{ policy_name }}_3"
+    description: "{{ policy_name }}_3_description"
+    vm_categories:
+      - ext_id: "{{ categories_ext_ids[1] }}"
+      - ext_id: "{{ categories_ext_ids[2] }}"
+    host_categories:
+      - ext_id: "{{ categories_ext_ids[3] }}"
+    wait: true
+  register: result
+  ignore_errors: true
+
+- name: Print create full spec result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify created VM host affinity policy with full spec
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "{{ policy_name }}_3"
+      - result.response.description == "{{ policy_name }}_3_description"
+      - result.response.vm_categories | length == 2
+      - result.response.host_categories | length == 1
+      - >-
+        (result.response.vm_categories | map(attribute='ext_id') | list | sort) ==
+        ([categories_ext_ids[1], categories_ext_ids[2]] | sort)
+      - result.response.host_categories[0].ext_id == "{{ categories_ext_ids[3] }}"
+    fail_msg: "Verify created VM host affinity policy with full spec failed"
+    success_msg: "Verify created VM host affinity policy with full spec passed"
+
+- name: Add to delete list
+  ansible.builtin.set_fact:
+    todelete: '{{ todelete + [result["response"]["ext_id"]] }}'
+
+##################################################################################
+# Update - Check mode
+##################################################################################
+
+- name:
+    Generate spec for updating an existing VM host affinity policy using check
+    mode
+  nutanix.ncp.ntnx_vm_host_affinity_policy_v2:
+    state: present
+    ext_id: "{{ todelete[0] }}"
+    name: "test_policy_2"
+    description: "description for test_policy_2 updated"
+    vm_categories:
+      - ext_id: "00065133-7ad0-1d82-451d-5254003d8207"
+    host_categories:
+      - ext_id: "00065133-7ad0-1d82-451d-5254003d8209"
+    wait: true
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Print check mode update spec result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify generated spec for updating an existing VM host affinity policy
+    using check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "test_policy_2"
+      - result.response.ext_id == "{{ todelete[0] }}"
+      - result.response.description == "description for test_policy_2 updated"
+      - result.response.vm_categories | length == 1
+      - result.response.host_categories | length == 1
+      - result.response.vm_categories[0].ext_id ==
+        "00065133-7ad0-1d82-451d-5254003d8207"
+      - result.response.host_categories[0].ext_id ==
+        "00065133-7ad0-1d82-451d-5254003d8209"
+    fail_msg: "Verify generated spec for updating an existing VM host affinity
+      policy using check mode failed"
+    success_msg:
+      "Verify generated spec for updating an existing VM host affinity
+      policy using check mode passed"
+
+##################################################################################
+# Update Host Affinity Policy
+##################################################################################
+
+- name: Update an existing VM host affinity policy
+  nutanix.ncp.ntnx_vm_host_affinity_policy_v2:
+    state: present
+    ext_id: "{{ todelete[0] }}"
+    name: "{{ policy_name }}_updated"
+    description: "description for {{ policy_name }}_updated"
+    vm_categories:
+      - ext_id: "{{ categories_ext_ids[0] }}"
+    host_categories:
+      - ext_id: "{{ categories_ext_ids[4] }}"
+  register: result
+  ignore_errors: true
+
+- name: Print update result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify updated VM host affinity Policy
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "{{ policy_name }}_updated"
+      - result.response.description == "description for {{ policy_name
+        }}_updated"
+      - result.response.vm_categories | length == 1
+      - result.response.host_categories | length == 1
+      - result.response.vm_categories[0].ext_id == "{{ categories_ext_ids[0] }}"
+      - result.response.host_categories[0].ext_id == "{{ categories_ext_ids[4] }}"
+    fail_msg: "Verify updated VM host affinity Policy failed"
+    success_msg: "Verify updated VM host affinity Policy passed"
+
+##################################################################################
+# Idempotency check
+##################################################################################
+
+- name: Check for idempotency by updating the same policy with same spec
+  nutanix.ncp.ntnx_vm_host_affinity_policy_v2:
+    state: present
+    ext_id: "{{ todelete[0] }}"
+    name: "{{ policy_name }}_updated"
+    description: "description for {{ policy_name }}_updated"
+    vm_categories:
+      - ext_id: "{{ categories_ext_ids[0] }}"
+    host_categories:
+      - ext_id: "{{ categories_ext_ids[4] }}"
+  register: result
+  ignore_errors: true
+
+- name: Print idempotency check result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify idempotency by updating the same policy with same spec
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.msg == "Nothing to change."
+    fail_msg: "Verify idempotency by updating the same policy with same spec failed"
+    success_msg: "Verify idempotency by updating the same policy with same spec passed"
+
+##################################################################################
+# Get Host Affinity Policy by ext_id
+##################################################################################
+
+- name: Get an existing VM host affinity policy by ext_id
+  nutanix.ncp.ntnx_vm_host_affinity_policies_info_v2:
+    ext_id: "{{ todelete[1] }}"
+  register: result
+  ignore_errors: true
+
+- name: Print get by ext_id result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify retrieved VM host affinity policy by ext_id
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.ext_id == "{{ todelete[1] }}"
+      - result.response.name == "{{ policy_name }}_3"
+      - result.response.description == "{{ policy_name }}_3_description"
+      - result.response.vm_categories | length == 2
+      - result.response.host_categories | length == 1
+      - >-
+        (result.response.vm_categories | map(attribute='ext_id') | list | sort) ==
+        ([categories_ext_ids[1], categories_ext_ids[2]] | sort)
+      - result.response.host_categories[0].ext_id == "{{ categories_ext_ids[3] }}"
+    fail_msg: "Verify retrieved VM host affinity policy by ext_id failed"
+    success_msg: "Verify retrieved VM host affinity policy by ext_id passed"
+
+##################################################################################
+# List all Host Affinity Policies
+##################################################################################
+
+- name: List all VM host affinity policies
+  nutanix.ncp.ntnx_vm_host_affinity_policies_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Print list all policies result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify list of all VM host affinity policies
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response | length > 0
+      - result.total_available_results is defined
+      - result.total_available_results > 0
+    fail_msg: "Verify list of all VM host affinity policies failed"
+    success_msg: "Verify list of all VM host affinity policies passed"
+
+##################################################################################
+# List Host Affinity Policies with filter
+##################################################################################
+
+- name: List VM host affinity policies with filter by name
+  nutanix.ncp.ntnx_vm_host_affinity_policies_info_v2:
+    filter: "name eq '{{ policy_name }}_updated'"
+  register: result
+  ignore_errors: true
+
+- name: Print list with filter result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify list of VM host affinity policies with filter by name
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].name == "{{ policy_name }}_updated"
+      - result.response[0].description == "description for {{ policy_name
+        }}_updated"
+      - result.response[0].vm_categories | length == 1
+      - result.response[0].host_categories | length == 1
+      - result.response[0].vm_categories[0].ext_id == "{{ categories_ext_ids[0] }}"
+      - result.response[0].host_categories[0].ext_id == "{{ categories_ext_ids[4] }}"
+      - result.total_available_results is defined
+      - result.total_available_results == 1
+    fail_msg: "Verify list of VM host affinity policies with filter by name failed"
+    success_msg: "Verify list of VM host affinity policies with filter by name passed"
+
+##################################################################################
+# List Host Affinity Policies with limit
+##################################################################################
+
+- name: List VM host affinity policies with limit 1
+  nutanix.ncp.ntnx_vm_host_affinity_policies_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Print list with limit result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify list of VM host affinity policies with limit 1
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+    fail_msg: "Verify list of VM host affinity policies with limit 1 failed"
+    success_msg: "Verify list of VM host affinity policies with limit 1 passed"
+
+##################################################################################
+# Negative - Create without name
+##################################################################################
+
+- name: Create VM host affinity policy without name (negative test)
+  nutanix.ncp.ntnx_vm_host_affinity_policy_v2:
+    vm_categories:
+      - ext_id: "{{ categories_ext_ids[0] }}"
+    host_categories:
+      - ext_id: "{{ categories_ext_ids[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: Print negative test (missing name) result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify negative test for missing name
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+      - >-
+        result.msg == "state is present but any of the following are missing:
+        name, ext_id"
+    fail_msg: "Verify negative test for missing name failed"
+    success_msg: "Verify negative test for missing name passed"
+
+##################################################################################
+# Negative - Get non-existent policy
+##################################################################################
+
+- name: Get non-existent VM host affinity policy
+  nutanix.ncp.ntnx_vm_host_affinity_policies_info_v2:
+    ext_id: "12345678-1234-1234-1234-123456789123"
+  register: result
+  ignore_errors: true
+
+- name: Print negative test (non-existent get) result
+  ansible.builtin.debug:
+    var: result
+
+- name: Negative test status - non-existent policy
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.error == "NOT FOUND"
+      - result.status == 404
+      - >-
+        result.msg == "Api Exception raised while fetching VM host affinity
+        policy info using ext_id"
+      - result.response is defined
+      - result.response.data is defined
+      - result.response.data.error is defined
+      - result.response.data.error | length > 0
+    fail_msg: "Negative test for non-existent policy get failed"
+    success_msg: "Negative test for non-existent policy get passed"
+
+##################################################################################
+# Negative - Update non-existent policy
+##################################################################################
+
+- name: Update non-existent VM host affinity policy
+  nutanix.ncp.ntnx_vm_host_affinity_policy_v2:
+    state: present
+    ext_id: "12345678-1234-1234-1234-123456789123"
+    name: "non_existent_policy"
+    vm_categories:
+      - ext_id: "{{ categories_ext_ids[0] }}"
+    host_categories:
+      - ext_id: "{{ categories_ext_ids[0] }}"
+    wait: true
+  register: result
+  ignore_errors: true
+
+- name: Print negative test (non-existent update) result
+  ansible.builtin.debug:
+    var: result
+
+- name: Negative test status - update non-existent policy
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.error == "NOT FOUND"
+      - result.status == 404
+      - >-
+        result.msg == "Api Exception raised while fetching VM host affinity
+        policy info using ext_id"
+      - result.response is defined
+      - result.response.data is defined
+      - result.response.data.error is defined
+      - result.response.data.error | length > 0
+    fail_msg: "Negative test for non-existent policy update failed"
+    success_msg: "Negative test for non-existent policy update passed"
+
+##################################################################################
+# Negative - Delete non-existent policy
+##################################################################################
+
+- name: Delete non-existent VM host affinity policy
+  nutanix.ncp.ntnx_vm_host_affinity_policy_v2:
+    state: absent
+    ext_id: "12345678-1234-1234-1234-123456789123"
+    wait: true
+  register: result
+  ignore_errors: true
+
+- name: Print negative test (non-existent delete) result
+  ansible.builtin.debug:
+    var: result
+
+- name: Negative test status - delete non-existent policy
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.error == "NOT FOUND"
+      - result.status == 404
+      - >-
+        result.msg == "Api Exception raised while fetching VM host affinity
+        policy info using ext_id"
+      - result.response is defined
+      - result.response.data is defined
+      - result.response.data.error is defined
+      - result.response.data.error | length > 0
+    fail_msg: "Negative test for non-existent policy delete failed"
+    success_msg: "Negative test for non-existent policy delete passed"
+
+##################################################################################
+# Functional - v3 host category association + policy placement
+##################################################################################
+
+- name: Set functional test variables
+  ansible.builtin.set_fact:
+    vm_name_prefix: "{{ random_name }}_haf_vm"
+    functional_vm_category_ext_id: "{{ categories_ext_ids[4] }}"
+    functional_host_category_ext_id: "{{ categories_ext_ids[3] }}"
+
+- name: Fetch host category details by ext_id
+  nutanix.ncp.ntnx_categories_info_v2:
+    ext_id: "{{ functional_host_category_ext_id }}"
+  register: host_category_info
+  ignore_errors: true
+
+- name: Print host category details
+  ansible.builtin.debug:
+    var: host_category_info
+
+- name: Verify host category details fetched
+  ansible.builtin.assert:
+    that:
+      - host_category_info.failed == false
+      - host_category_info.response is defined
+      - host_category_info.response.key is defined
+      - host_category_info.response.value is defined
+    fail_msg: "Unable to fetch host category details"
+    success_msg: "Host category details fetched"
+
+- name: Set host category key/value
+  ansible.builtin.set_fact:
+    functional_host_category_key: "{{ host_category_info.response.key }}"
+    functional_host_category_value: "{{ host_category_info.response.value }}"
+
+- name: List all hosts
+  nutanix.ncp.ntnx_hosts_info_v2:
+  register: hosts_result
+  ignore_errors: true
+
+- name: Print hosts list
+  ansible.builtin.debug:
+    var: hosts_result
+
+- name: Verify hosts list fetched
+  ansible.builtin.assert:
+    that:
+      - hosts_result.failed == false
+      - hosts_result.response is defined
+      - hosts_result.response | length > 0
+    fail_msg: "No hosts found for functional test"
+    success_msg: "Hosts found for functional test"
+
+- name: Pick target host for category association
+  ansible.builtin.set_fact:
+    target_host_ext_id: "{{ hosts_result.response[0].ext_id }}"
+
+- name: Get current host details from v3 API
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:9440/api/nutanix/v3/hosts/{{ target_host_ext_id }}"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    validate_certs: false
+    force_basic_auth: true
+    return_content: true
+    status_code: [200]
+  register: host_info_v3
+
+- name: Print host details from v3 API
+  ansible.builtin.debug:
+    var: host_info_v3.json
+
+- name: Associate category to host using v3 API
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:9440/api/nutanix/v3/hosts/{{ target_host_ext_id }}"
+    method: PUT
+    user: "{{ username }}"
+    password: "{{ password }}"
+    validate_certs: false
+    force_basic_auth: true
+    body_format: json
+    status_code: [200, 202]
+    body:
+      metadata: "{{ host_info_v3.json.metadata | combine({'categories': (host_info_v3.json.metadata.categories | default({})) | combine({functional_host_category_key: functional_host_category_value})}, recursive=True) }}"
+      spec: "{{ host_info_v3.json.spec }}"
+  register: host_update_v3
+
+- name: Print host category association response
+  ansible.builtin.debug:
+    var: host_update_v3
+
+- name: Verify host category association response
+  ansible.builtin.assert:
+    that:
+      - host_update_v3 is defined
+      - host_update_v3.status in [200, 202]
+    fail_msg: "Failed to associate category to host using v3 API"
+    success_msg: "Host category association request accepted"
+
+- name: Update functional policy mapping (vm category -> host category)
+  nutanix.ncp.ntnx_vm_host_affinity_policy_v2:
+    state: present
+    ext_id: "{{ todelete[1] }}"
+    name: "{{ policy_name }}_functional"
+    description: "functional vm-host affinity mapping"
+    vm_categories:
+      - ext_id: "{{ functional_vm_category_ext_id }}"
+    host_categories:
+      - ext_id: "{{ functional_host_category_ext_id }}"
+    wait: true
+  register: result
+  ignore_errors: true
+
+- name: Print functional policy update result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify functional policy update
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.vm_categories | length == 1
+      - result.response.host_categories | length == 1
+      - result.response.vm_categories[0].ext_id == functional_vm_category_ext_id
+      - result.response.host_categories[0].ext_id == functional_host_category_ext_id
+    fail_msg: "Failed to update functional VM host affinity policy"
+    success_msg: "Functional VM host affinity policy updated"
+
+- name: Create 3 VMs with functional VM category
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    name: "{{ vm_name_prefix }}_{{ item + 1 }}"
+    description: "host-affinity functional test VM"
+    categories:
+      - ext_id: "{{ functional_vm_category_ext_id }}"
+  register: vms_result
+  loop: "{{ range(0, 3) | list }}"
+  ignore_errors: true
+
+- name: Print VM creation result
+  ansible.builtin.debug:
+    var: vms_result
+
+- name: Verify creation of all 3 VMs
+  ansible.builtin.assert:
+    that:
+      - vms_result.results | length == 3
+      - item.changed == true
+      - item.failed == false
+      - item.response.categories[0].ext_id == functional_vm_category_ext_id
+    fail_msg: "Failed to create VM at index {{ vm_idx }}"
+    success_msg: "VM {{ vm_idx + 1 }} created successfully"
+  loop: "{{ vms_result.results }}"
+  loop_control:
+    index_var: vm_idx
+
+- name: Collect VM ext_ids for cleanup
+  ansible.builtin.set_fact:
+    vms_todelete: "{{ (vms_todelete | default([])) + [item.ext_id | default(item.response.entities_affected[0].ext_id)] }}"
+  loop: "{{ vms_result.results }}"
+
+- name: Power on all 3 VMs
+  nutanix.ncp.ntnx_vms_power_actions_v2:
+    state: power_on
+    ext_id: "{{ item }}"
+  register: power_on_result
+  loop: "{{ vms_todelete }}"
+  ignore_errors: true
+
+- name: Print VM power on result
+  ansible.builtin.debug:
+    var: power_on_result
+
+- name: Verify power on for all VMs
+  ansible.builtin.assert:
+    that:
+      - item.response is defined
+      - item.changed == true
+      - item.failed == false
+      - item.response.status == "SUCCEEDED"
+    fail_msg: "Failed to power on one or more VMs"
+    success_msg: "Power on requests accepted for all VMs"
+  loop: "{{ power_on_result.results }}"
+
+- name: Fetch info for all 3 VMs
+  nutanix.ncp.ntnx_vms_info_v2:
+    ext_id: "{{ item }}"
+  register: vms_info
+  loop: "{{ vms_todelete }}"
+  ignore_errors: true
+
+- name: Print VM info result
+  ansible.builtin.debug:
+    var: vms_info
+
+- name: Verify VMs are placed on the category-associated host
+  ansible.builtin.assert:
+    that:
+      - item.response is defined
+      - item.response.host is defined
+      - item.response.host.ext_id is defined
+      - item.response.host.ext_id == target_host_ext_id
+    fail_msg: "VM {{ item.response.ext_id | default('unknown') }} is not on the expected host"
+    success_msg: "VM {{ item.response.ext_id }} is on host {{ target_host_ext_id }}"
+  loop: "{{ vms_info.results }}"
+
+- name: Delete all 3 functional test VMs
+  nutanix.ncp.ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  loop: "{{ vms_todelete }}"
+  ignore_errors: true
+
+- name: Print VM deletion result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify deletion of all functional test VMs
+  ansible.builtin.assert:
+    that:
+      - item.response is defined
+      - item.changed == true
+      - item.failed == false
+      - item.response.status == "SUCCEEDED"
+    fail_msg: "Failed to delete one or more functional test VMs"
+    success_msg: "Functional test VMs deleted successfully"
+  loop: "{{ result.results }}"
+
+##################################################################################
+# Delete policy with check mode enabled
+##################################################################################
+
+- name: Delete policy with check mode enabled
+  nutanix.ncp.ntnx_vm_host_affinity_policy_v2:
+    state: absent
+    ext_id: "{{ todelete[0] }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Print delete check mode result
+  ansible.builtin.debug:
+    var: result
+
+- name: Deletion check mode status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ todelete[0] }}"
+      - result.msg == "Policy with ext_id:{{ todelete[0] }} will be deleted."
+    fail_msg: "Delete policy with check mode enabled failed"
+    success_msg: "Delete policy with check mode enabled passed"
+
+##################################################################################
+# Delete all vm host-affinity policies
+##################################################################################
+
+- name: Delete all policies
+  nutanix.ncp.ntnx_vm_host_affinity_policy_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  ignore_errors: true
+  loop: "{{ todelete }}"
+
+- name: Print delete all policies result
+  ansible.builtin.debug:
+    var: result
+
+- name: Deletion status
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.response is defined
+      - item.response.status == 'SUCCEEDED'
+      - result.changed == true
+      - result.msg == "All items completed"
+      - result.results | length == 2
+    fail_msg: "Delete policies failed"
+    success_msg: "Delete policies passed"
+  loop: "{{ result.results }}"
+
+- name: Destroy the cluster for cleanup
+  nutanix.ncp.ntnx_clusters_v2:
+    state: absent
+    ext_id: "{{ cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Print cluster deletion result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify cluster deletion
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.response.status == "SUCCEEDED"
+      - result.ext_id == cluster_ext_id
+    fail_msg: Failed verifying cluster deletion
+    success_msg: Cluster deletion passed successfully
