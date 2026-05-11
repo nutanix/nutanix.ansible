@@ -492,17 +492,22 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         vm_ip = self._extract_vm_ip(vm)
         host_vars["ansible_host"] = vm_ip
 
-        # Resolve categories from ext_ids to key/value pairs
+        # Convert categories to list of extId and build key/value map
         if vm.get("categories"):
-            categories = {}
+            category_ext_ids = []
+            categories_map = {}
             for category in vm.get("categories") or []:
                 if isinstance(category, dict):
                     category_ext_id = category.get("ext_id")
-                    if category_ext_id and category_ext_id in category_ext_id_map:
-                        cat = category_ext_id_map[category_ext_id]
-                        categories[cat["key"]] = cat["value"]
-            if categories:
-                host_vars["categories"] = categories
+                    if category_ext_id:
+                        category_ext_ids.append(category_ext_id)
+                        if category_ext_id in category_ext_id_map:
+                            cat = category_ext_id_map[category_ext_id]
+                            categories_map[cat["key"]] = cat["value"]
+            if category_ext_ids:
+                host_vars["categories"] = category_ext_ids
+            if categories_map:
+                host_vars["categories_map"] = categories_map
 
         # Handle custom ansible_host
         if getattr(self, "custom_ansible_host", None) and self.custom_ansible_host.get(
