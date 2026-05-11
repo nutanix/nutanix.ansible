@@ -227,6 +227,24 @@ EXAMPLES = r"""
       prefix: power
       separator: "_"
 
+# using keyed groups with categories_map and cluster_name
+# categories_map resolves category ext_ids to {key: value} pairs
+# categories retains the original list of category ext_ids
+- plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
+  nutanix_host: 10.x.x.x
+  nutanix_username: admin
+  nutanix_password: password
+  validate_certs: false
+  auto_create_cluster_groups: false
+  keyed_groups:
+    - key: cluster_name
+      prefix: cluster
+      separator: "_"
+    - key: categories_map.Environment
+      prefix: env
+      separator: "_"
+      default_value: unassigned
+
 # using custom ansible host for defining the ansible_host for the VMs
 - plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
   nutanix_host: 10.x.x.x
