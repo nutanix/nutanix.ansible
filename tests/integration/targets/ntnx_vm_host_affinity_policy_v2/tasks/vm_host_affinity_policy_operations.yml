@@ -868,10 +868,22 @@
   ansible.builtin.debug:
     var: host_info_v3
 
+- name: Build merged host categories for v3 update payload
+  ansible.builtin.set_fact:
+    merged_host_categories: >-
+      {{
+        (host_info_v3.json.metadata.categories | default({}))
+        | combine({functional_host_category_key: functional_host_category_value})
+      }}
+
 - name: Build host v3 update payload
   ansible.builtin.set_fact:
     host_update_v3_payload:
-      metadata: "{{ host_info_v3.json.metadata | combine({'categories': (host_info_v3.json.metadata.categories | default({})) | combine({functional_host_category_key: functional_host_category_value})}, recursive=True) }}"
+      metadata: >-
+        {{
+          host_info_v3.json.metadata
+          | combine({'categories': merged_host_categories}, recursive=True)
+        }}
       spec: "{{ host_info_v3.json.spec }}"
 
 - name: Associate category to host using v3 API
