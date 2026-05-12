@@ -696,7 +696,7 @@
 ##################################################################################
 # Negative - Create with category already in use by another policy
 # A category can only belong to one anti-affinity policy at a time.
-# Reuses todelete_categories[0] which is already attached to todelete[0].
+# Reuses todelete_categories[3] which is already attached to todelete[0].
 ##################################################################################
 
 - name: Create VM anti-affinity policy with a category already in use (negative test)
@@ -705,7 +705,7 @@
     name: "{{ policy_name }}_duplicate_category"
     description: "negative test - category already in use by another policy"
     categories:
-      - ext_id: "{{ todelete_categories[0] }}"
+      - ext_id: "{{ todelete_categories[3] }}"
   register: result
   ignore_errors: true
 
@@ -872,7 +872,7 @@
     name: "{{ vm_name_prefix }}_{{ item + 1 }}"
     description: "anti-affinity test VM"
     categories:
-      - ext_id: "{{ todelete_categories[(item // 2) + 1] }}"
+      - ext_id: "{{ todelete_categories[1] }}"
   register: vms_result
   loop: "{{ range(0, 2) | list }}"
   ignore_errors: true
@@ -924,79 +924,6 @@
     success_msg: "Power on requests for all VMs accepted successfully"
   loop: "{{ power_on_result.results }}"
 
-- name: List VM anti-affinity policy compliance states until pending is observed
-  nutanix.ncp.ntnx_vm_anti_affinity_policy_compliance_info_v2:
-    ext_id: "{{ todelete[1] }}"
-  register: pending_compliance_result
-  until: >-
-    pending_compliance_result.response is defined and
-    (
-      (
-        pending_compliance_result.response
-        | selectattr("compliance_status._object_type", "defined")
-        | selectattr(
-          "compliance_status._object_type",
-          "equalto",
-          "vmm.v4.ahv.policies.PendingVmAntiAffinityPolicy"
-        )
-        | list
-        | length
-      ) > 0
-      or
-      (
-        pending_compliance_result.response
-        | selectattr("compliance_status._object_type", "defined")
-        | selectattr(
-          "compliance_status._object_type",
-          "equalto",
-          "vmm.v4.ahv.policies.CompliantVmAntiAffinityPolicy"
-        )
-        | list
-        | length
-      ) > 0
-    )
-  retries: 12
-  delay: 5
-  ignore_errors: true
-
-- name: Debug - Verify pending VM anti-affinity policy compliance states response
-  ansible.builtin.debug:
-    var: pending_compliance_result
-
-- name: Verify pending VM anti-affinity policy compliance states response
-  ansible.builtin.assert:
-    that:
-      - pending_compliance_result.changed == false
-      - pending_compliance_result.failed == false
-      - pending_compliance_result.response is defined
-      - pending_compliance_result.response | length > 0
-      - >-
-        (
-          pending_compliance_result.response
-          | selectattr("compliance_status._object_type", "defined")
-          | selectattr(
-            "compliance_status._object_type",
-            "equalto",
-            "vmm.v4.ahv.policies.PendingVmAntiAffinityPolicy"
-          )
-          | list
-          | length
-        ) > 0
-        or
-        (
-          pending_compliance_result.response
-          | selectattr("compliance_status._object_type", "defined")
-          | selectattr(
-            "compliance_status._object_type",
-            "equalto",
-            "vmm.v4.ahv.policies.CompliantVmAntiAffinityPolicy"
-          )
-          | list
-          | length
-        ) > 0
-    fail_msg: "Verify pending VM anti-affinity policy compliance states failed"
-    success_msg: "Verify pending VM anti-affinity policy compliance states passed"
-
 - name: Wait until all VMs are powered on
   nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ item }}"
@@ -1033,17 +960,32 @@
       item.response.host.ext_id }}"
   loop: "{{ vms_info.results }}"
 
-- name: List VM anti-affinity policy compliance states
+- name: List VM anti-affinity policy compliance states until compliant is observed
   nutanix.ncp.ntnx_vm_anti_affinity_policy_compliance_info_v2:
     ext_id: "{{ todelete[1] }}"
   register: compliance_result
+  until: >-
+    compliance_result.response is defined and
+      (
+        compliance_result.response
+        | selectattr("compliance_status._object_type", "defined")
+        | selectattr(
+          "compliance_status._object_type",
+          "equalto",
+          "vmm.v4.ahv.policies.CompliantVmAntiAffinityPolicy"
+        )
+        | list
+        | length
+      ) == (vms_todelete | length)
+  retries: 12
+  delay: 5
   ignore_errors: true
 
-- name: Debug - Verify VM anti-affinity policy compliance states response
+- name: Debug - Verify pending VM anti-affinity policy compliance states response
   ansible.builtin.debug:
     var: compliance_result
 
-- name: Verify VM anti-affinity policy compliance states response
+- name: Verify pending VM anti-affinity policy compliance states response
   ansible.builtin.assert:
     that:
       - compliance_result.changed == false
@@ -1051,9 +993,8 @@
       - compliance_result.response is defined
       - compliance_result.response | length > 0
       - compliance_result.total_available_results is defined
-      - compliance_result.total_available_results > 0
+      - compliance_result.total_available_results == (vms_todelete | length)
       - compliance_result.total_available_results == (compliance_result.response | length)
-      - compliance_result.response | length == (vms_todelete | length)
       - >-
         (
           compliance_result.response | map(attribute='ext_id') | list | sort
@@ -1071,9 +1012,9 @@
           )
           | list
           | length
-        ) == (compliance_result.response | length)
-    fail_msg: "Verify VM anti-affinity policy compliance states failed"
-    success_msg: "Verify VM anti-affinity policy compliance states passed"
+        ) == (vms_todelete | length)
+    fail_msg: "Verify pending VM anti-affinity policy compliance states failed"
+    success_msg: "Verify pending VM anti-affinity policy compliance states passed"
 
 - name: Debug - Assert that VMs in the same category are hosted on different hosts
   ansible.builtin.debug:
