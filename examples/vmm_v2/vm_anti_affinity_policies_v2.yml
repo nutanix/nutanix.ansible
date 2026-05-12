@@ -7,7 +7,8 @@
 # 4. List all VM anti-affinity policies
 # 5. List all VM anti-affinity policies with filter
 # 6. List all VM anti-affinity policies with limit
-# 7. Delete VM anti-affinity policy
+# 7. List VM anti-affinity policy compliance states
+# 8. Delete VM anti-affinity policy
 
 - name: VM anti-affinity policy CRUD playbook
   hosts: localhost
@@ -81,6 +82,15 @@
       nutanix.ncp.ntnx_vm_anti_affinity_policies_info_v2:
         limit: 1
       register: limit_result
+
+    - name: List VM anti-affinity policy compliance states
+      nutanix.ncp.ntnx_vm_anti_affinity_policy_compliance_info_v2:
+        ext_id: "{{ policy_ext_id }}"
+      register: compliance_result
+
+    - name: Print compliance result
+      ansible.builtin.debug:
+        var: compliance_result
 
     ################################################################################
     # Update operation

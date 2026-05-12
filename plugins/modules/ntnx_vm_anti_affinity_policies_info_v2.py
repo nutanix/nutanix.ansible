@@ -88,42 +88,70 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
     description:
-        - The response from the Nutanix PC VM anti-affinity policies API.
-        - It can be a single policy or list of policies as per spec.
+        - The response for fetching VM anti-affinity policy(s).
+        - Single VM anti-affinity policy if external ID is provided.
+        - List of VM anti-affinity policies if external ID is not provided.
     type: dict
     returned: always
-    sample: {
-        "name": "my_anti_affinity_policy",
-        "description": "Policy to separate critical VMs",
-        "categories": [
-            {"ext_id": "605a0cf9-d04e-3be7-911b-1e6f193f6eb9"}
-        ],
-        "ext_id": "54fe0ed5-02d8-4588-b10b-3b9736bf3d06",
-        "create_time": "2026-01-01T00:00:00.000000+00:00",
-        "update_time": "2026-01-01T00:00:00.000000+00:00"
-    }
-ext_id:
-    description: The external ID of the policy.
-    type: str
-    returned: when fetching a single policy
-    sample: "98b9dc89-be08-3c56-b554-692b8b676fd2"
+    sample:
+        {
+            "categories": [
+                {
+                    "ext_id": "e4bda88f-e5da-5eb1-a031-2c0bb00d923d"
+                },
+                {
+                    "ext_id": "4d552748-e119-540a-b06c-3c6f0d213fa2"
+                },
+                {
+                    "ext_id": "0e7eee83-4313-5066-bd39-3834ac350f81"
+                }
+            ],
+            "create_time": "2026-05-12T07:13:51.724117+00:00",
+            "created_by": {
+                "ext_id": "00000000-0000-0000-0000-000000000000"
+            },
+            "description": "ansible_lBrqyhPVeYWw_anti_affinity_test_3_description",
+            "ext_id": "c673c650-4afe-419c-59b0-441a645df9e9",
+            "links": null,
+            "name": "ansible_lBrqyhPVeYWw_anti_affinity_test_3",
+            "num_compliant_vms": 0,
+            "num_non_compliant_vms": 0,
+            "num_pending_vms": 0,
+            "tenant_id": null,
+            "update_time": "2026-05-12T07:13:52.055646+00:00",
+            "updated_by": {
+                "ext_id": "00000000-0000-0000-0000-000000000000"
+            }
+        }
 changed:
-    description: Indicates whether any changes were made (always false for info modules).
-    type: bool
+    description: This indicates whether the task resulted in any changes
     returned: always
-msg:
-    description: A message describing the result.
-    type: str
-    returned: when there is an error
-    sample: "Api Exception raised while fetching VM anti-affinity policies info"
+    type: bool
+    sample: false
+
 error:
-    description: The error message if an error occurs.
+    description: This field typically holds information about if the task have errors that occurred during the task execution
     type: str
-    returned: when an error occurs
-failed:
-    description: Indicates whether the operation failed.
-    type: bool
     returned: always
+    sample: null
+
+failed:
+    description: This field typically holds information about if the task have failed
+    returned: always
+    type: bool
+    sample: false
+
+ext_id:
+    description: The external ID of the VM anti-affinity policy.
+    type: str
+    returned: always
+    sample: "54fe0ed5-02d8-4588-b10b-3b9736bf3d06"
+
+total_available_results:
+    description: The total number of available VM anti-affinity policies in PC.
+    type: int
+    returned: when all VM anti-affinity policies are fetched
+    sample: 10
 """
 import warnings  # noqa: E402
 

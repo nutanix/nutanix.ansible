@@ -133,36 +133,57 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
     description:
-        - The response from the VM anti-affinity policy operation.
-        - It will be task response if C(wait) is false.
+        - Response for creating, updating, or deleting VM anti-affinity policy.
+        - VM anti-affinity policy details if the operation is create or update and C(wait) is true.
+        - Task details if the operation is delete or C(wait) is false.
     type: dict
     returned: always
-    sample: {
-        "name": "my_anti_affinity_policy",
-        "description": "Policy to separate critical VMs",
-        "categories": [
-            {"ext_id": "605a0cf9-d04e-3be7-911b-1e6f193f6eb9"}
-        ],
-        "ext_id": "54fe0ed5-02d8-4588-b10b-3b9736bf3d06",
-        "create_time": "2026-01-01T00:00:00.000000+00:00",
-        "update_time": "2026-01-01T00:00:00.000000+00:00"
-    }
+    sample:
+        {
+            "categories": [
+                {
+                    "ext_id": "e4bda88f-e5da-5eb1-a031-2c0bb00d923d"
+                },
+                {
+                    "ext_id": "4d552748-e119-540a-b06c-3c6f0d213fa2"
+                },
+                {
+                    "ext_id": "0e7eee83-4313-5066-bd39-3834ac350f81"
+                }
+            ],
+            "create_time": "2026-05-12T07:13:51.724117+00:00",
+            "created_by": {
+                "ext_id": "00000000-0000-0000-0000-000000000000"
+            },
+            "description": "ansible_lBrqyhPVeYWw_anti_affinity_test_3_description",
+            "ext_id": "c673c650-4afe-419c-59b0-441a645df9e9",
+            "links": null,
+            "name": "ansible_lBrqyhPVeYWw_anti_affinity_test_3",
+            "num_compliant_vms": 0,
+            "num_non_compliant_vms": 0,
+            "num_pending_vms": 0,
+            "tenant_id": null,
+            "update_time": "2026-05-12T07:13:52.055646+00:00",
+            "updated_by": {
+                "ext_id": "00000000-0000-0000-0000-000000000000"
+            }
+        }
 task_ext_id:
     description: The external ID of the task associated with the operation.
     type: str
     returned: when a task is created
-    sample: "98b9dc89-be08-3c56-b554-692b8b676fd2"
+    sample: "ZXJnb24=:350f0fd5-097d-4ece-8f44-6e5bfbe2dc08"
 ext_id:
     description: The external ID of the VM anti-affinity policy.
     type: str
     returned: always
     sample: "98b9dc89-be08-3c56-b554-692b8b676fd2"
 changed:
-    description: Indicates whether the resource was changed.
+    description: This indicates whether the task resulted in any changes
     type: bool
     returned: always
 error:
-    description: The error message if an error occurred.
+    description: This field typically holds information about if the task have errors that occurred during the task execution
     type: str
     returned: when an error occurs
 skipped:
@@ -170,12 +191,12 @@ skipped:
     type: bool
     returned: when the operation is skipped
 msg:
-    description: A message describing the result.
+    description: This indicates the message if any message occurred
     type: str
     returned: on error, idempotency, or check mode
-    sample: "VM anti-affinity policy created successfully"
+    sample: "Api Exception raised while creating VM anti-affinity policy"
 failed:
-    description: Indicates whether the operation failed.
+    description: This field typically holds information about if the task have failed
     type: bool
     returned: always
 """

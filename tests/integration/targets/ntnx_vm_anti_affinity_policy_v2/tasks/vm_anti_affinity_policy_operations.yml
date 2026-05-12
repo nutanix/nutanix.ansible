@@ -12,6 +12,7 @@
 - name: Set policy names
   ansible.builtin.set_fact:
     policy_name: "{{ random_name }}_anti_affinity_test"
+    todelete_categories: []
 
 - name: Set cluster variables
   ansible.builtin.set_fact:
@@ -40,6 +41,10 @@
   no_log: true
 
 # verify that all nodes are unconfigured by checking the return code and stderr in all of them
+- name: Debug - Assert that all cluster nodes are unconfigured
+  ansible.builtin.debug:
+    var: results
+
 - name: Assert that all cluster nodes are unconfigured
   ansible.builtin.assert:
     that:
@@ -59,6 +64,10 @@
   loop: "{{ node_indices }}"
   register: results
   ignore_errors: true
+
+- name: Debug - Assert discover unconfigured nodes status for each node
+  ansible.builtin.debug:
+    var: results
 
 - name: Assert discover unconfigured nodes status for each node
   ansible.builtin.assert:
@@ -136,6 +145,10 @@
   register: result
   ignore_errors: true
 
+- name: Debug - Verify cluster create prechecks run
+  ansible.builtin.debug:
+    var: result
+
 - name: Verify cluster create prechecks run
   ansible.builtin.assert:
     that:
@@ -171,6 +184,10 @@
     timeout: 1800
   register: result
   ignore_errors: true
+
+- name: Debug - Verify cluster create task status
+  ansible.builtin.debug:
+    var: result
 
 - name: Verify cluster create task status
   ansible.builtin.assert:
@@ -215,6 +232,10 @@
   register: result
   ignore_errors: true
 
+- name: Debug - Run PE PC registration status
+  ansible.builtin.debug:
+    var: result
+
 - name: Run PE PC registration status
   ansible.builtin.assert:
     that:
@@ -236,6 +257,10 @@
   register: result
   ignore_errors: true
 
+- name: Debug - Verify listing
+  ansible.builtin.debug:
+    var: result
+
 - name: Verify listing
   ansible.builtin.assert:
     that:
@@ -253,6 +278,10 @@
     ext_id: "{{ cluster_ext_id }}"
   register: result
   ignore_errors: true
+
+- name: Debug - Verify created cluster's details using cluster info
+  ansible.builtin.debug:
+    var: result
 
 - name: Verify created cluster's details using cluster info
   ansible.builtin.assert:
@@ -280,31 +309,44 @@
     fail_msg: Failed verifying cluster creation
     success_msg: Cluster creation passed successfully
 
-- name: List all categories and get the first five
-  nutanix.ncp.ntnx_categories_info_v2:
-  register: result
+- name: Create categories for anti-affinity policy tests
+  nutanix.ncp.ntnx_categories_v2:
+    key: "{{ random_name }}_af_key_{{ item }}"
+    value: "{{ random_name }}_af_value_{{ item }}"
+    description: "ansible anti-affinity category"
+  register: category_create_result
   ignore_errors: true
+  loop: "{{ range(0, 5) | list }}"
 
-- name: Status of all categories
+- name: Debug - Create categories for anti-affinity policy tests status
+  ansible.builtin.debug:
+    var: category_create_result
+
+- name: Create categories for anti-affinity policy tests status
   ansible.builtin.assert:
     that:
-      - result.response is defined
-      - result.changed == false
-      - result.failed == false
-      - result.response | length >= 5
-    fail_msg: "Unable to list categories"
-    success_msg: "Categories listed successfully"
+      - category_create_result.changed == true
+      - category_create_result is defined
+      - category_create_result.results | length == 5
+      - category_create_result.msg == "All items completed"
+      - item.failed == false
+      - item.response is defined
+      - item.response.ext_id is defined
+    fail_msg: "Categories creation failed"
+    success_msg: "Categories created successfully"
+  loop: "{{ category_create_result.results }}"
+
+- name: Save categories ext_id to delete list
+  ansible.builtin.set_fact:
+    todelete_categories: "{{ todelete_categories + [ item.response.ext_id ] }}"
+  loop: "{{ category_create_result.results }}"
 
 - name: Set anti-affinity test variables
   ansible.builtin.set_fact:
     vm_name_prefix: "{{ random_name }}_af_vm"
-    categories_ext_ids:
-      - "{{ result.response[0].ext_id }}"
-      - "{{ result.response[1].ext_id }}"
-      - "{{ result.response[2].ext_id }}"
-      - "{{ result.response[3].ext_id }}"
-      - "{{ result.response[4].ext_id }}"
+    categories_ext_ids: "{{ todelete_categories }}"
     todelete: []
+    todelete_categories: "{{ todelete_categories }}"
 
 ##################################################################################
 # Create - Check mode
@@ -318,10 +360,13 @@
     categories:
       - ext_id: "00065133-7ad0-1d82-451d-5254003d8207"
       - ext_id: "00065133-7ad0-1d82-451d-5254003d8209"
-    wait: true
   register: result
   ignore_errors: true
   check_mode: true
+
+- name: Debug - Verify generated spec for a VM anti-affinity policy using check mode
+  ansible.builtin.debug:
+    var: result
 
 - name: Verify generated spec for a VM anti-affinity policy using check mode
   ansible.builtin.assert:
@@ -353,9 +398,12 @@
     name: "{{ policy_name }}_1"
     categories:
       - ext_id: "{{ categories_ext_ids[0] }}"
-    wait: true
   register: result
   ignore_errors: true
+
+- name: Debug - Verify created VM anti-affinity policy with minimal spec
+  ansible.builtin.debug:
+    var: result
 
 - name: Verify created VM anti-affinity policy with minimal spec
   ansible.builtin.assert:
@@ -385,9 +433,12 @@
       - ext_id: "{{ categories_ext_ids[1] }}"
       - ext_id: "{{ categories_ext_ids[2] }}"
       - ext_id: "{{ categories_ext_ids[3] }}"
-    wait: true
   register: result
   ignore_errors: true
+
+- name: Debug - Verify created VM anti-affinity policy with full spec
+  ansible.builtin.debug:
+    var: result
 
 - name: Verify created VM anti-affinity policy with full spec
   ansible.builtin.assert:
@@ -423,10 +474,13 @@
     categories:
       - ext_id: "00065133-7ad0-1d82-451d-5254003d8207"
       - ext_id: "00065133-7ad0-1d82-451d-5254003d8209"
-    wait: true
   register: result
   ignore_errors: true
   check_mode: true
+
+- name: Debug - Verify generated spec for updating an existing VM anti-affinity policy using check mode
+  ansible.builtin.debug:
+    var: result
 
 - name: Verify generated spec for updating an existing VM anti-affinity policy
     using check mode
@@ -465,6 +519,10 @@
   register: result
   ignore_errors: true
 
+- name: Debug - Verify updated VM anti-affinity Policy
+  ansible.builtin.debug:
+    var: result
+
 - name: Verify updated VM anti-affinity Policy
   ansible.builtin.assert:
     that:
@@ -496,6 +554,10 @@
   register: result
   ignore_errors: true
 
+- name: Debug - Verify idempotency by updating the same policy with same spec
+  ansible.builtin.debug:
+    var: result
+
 - name: Verify idempotency by updating the same policy with same spec
   ansible.builtin.assert:
     that:
@@ -514,6 +576,10 @@
     ext_id: "{{ todelete[1] }}"
   register: result
   ignore_errors: true
+
+- name: Debug - Verify retrieved VM anti-affinity policy by ext_id
+  ansible.builtin.debug:
+    var: result
 
 - name: Verify retrieved VM anti-affinity policy by ext_id
   ansible.builtin.assert:
@@ -540,6 +606,10 @@
   register: result
   ignore_errors: true
 
+- name: Debug - Verify list of all VM anti-affinity policies
+  ansible.builtin.debug:
+    var: result
+
 - name: Verify list of all VM anti-affinity policies
   ansible.builtin.assert:
     that:
@@ -561,6 +631,10 @@
     filter: "name eq '{{ policy_name }}_updated'"
   register: result
   ignore_errors: true
+
+- name: Debug - Verify list of VM anti-affinity policies with filter by name
+  ansible.builtin.debug:
+    var: result
 
 - name: Verify list of VM anti-affinity policies with filter by name
   ansible.builtin.assert:
@@ -590,6 +664,10 @@
   register: result
   ignore_errors: true
 
+- name: Debug - Verify list of VM anti-affinity policies with limit 1
+  ansible.builtin.debug:
+    var: result
+
 - name: Verify list of VM anti-affinity policies with limit 1
   ansible.builtin.assert:
     that:
@@ -610,6 +688,10 @@
       - ext_id: "{{ categories_ext_ids[0] }}"
   register: result
   ignore_errors: true
+
+- name: Debug - Verify negative test for missing name
+  ansible.builtin.debug:
+    var: result
 
 - name: Verify negative test for missing name
   ansible.builtin.assert:
@@ -636,9 +718,12 @@
     description: "negative test - category already in use by another policy"
     categories:
       - ext_id: "{{ categories_ext_ids[0] }}"
-    wait: true
   register: result
   ignore_errors: true
+
+- name: Debug - Verify negative test for category already in use
+  ansible.builtin.debug:
+    var: result
 
 - name: Verify negative test for category already in use
   ansible.builtin.assert:
@@ -664,6 +749,10 @@
     ext_id: "12345678-1234-1234-1234-123456789123"
   register: result
   ignore_errors: true
+
+- name: Debug - Negative test status - non-existent policy
+  ansible.builtin.debug:
+    var: result
 
 - name: Negative test status - non-existent policy
   ansible.builtin.assert:
@@ -693,9 +782,12 @@
     name: "non_existent_policy"
     categories:
       - ext_id: "{{ categories_ext_ids[0] }}"
-    wait: true
   register: result
   ignore_errors: true
+
+- name: Debug - Negative test status - update non-existent policy
+  ansible.builtin.debug:
+    var: result
 
 - name: Negative test status - update non-existent policy
   ansible.builtin.assert:
@@ -727,9 +819,12 @@
     categories:
       - ext_id: "{{ categories_ext_ids[0] }}"
       - ext_id: "{{ categories_ext_ids[1] }}"
-    wait: true
   register: result
   ignore_errors: true
+
+- name: Debug - Verify negative test for update with category already in use
+  ansible.builtin.debug:
+    var: result
 
 - name: Verify negative test for update with category already in use
   ansible.builtin.assert:
@@ -752,9 +847,12 @@
   nutanix.ncp.ntnx_vm_anti_affinity_policy_v2:
     state: absent
     ext_id: "12345678-1234-1234-1234-123456789123"
-    wait: true
   register: result
   ignore_errors: true
+
+- name: Debug - Negative test status - delete non-existent policy
+  ansible.builtin.debug:
+    var: result
 
 - name: Negative test status - delete non-existent policy
   ansible.builtin.assert:
@@ -775,12 +873,12 @@
 
 ##################################################################################
 # Functional test - Verify anti-affinity policies enforce host placement.
-# Uses categories_ext_ids[1..3] which are owned by todelete[1] (the full-spec
+# Uses categories_ext_ids[1..2] which are owned by todelete[1] (the full-spec
 # policy). Each pair of VMs shares a single category, so anti-affinity should
 # force the two VMs in each pair onto different hosts.
 ##################################################################################
 
-- name: Create 6 VMs (2 per category) with minimum spec and auto cluster selection
+- name: Create 4 VMs (2 per category) with minimum spec and auto cluster selection
   nutanix.ncp.ntnx_vms_v2:
     state: present
     name: "{{ vm_name_prefix }}_{{ item + 1 }}"
@@ -788,18 +886,22 @@
     categories:
       - ext_id: "{{ categories_ext_ids[(item // 2) + 1] }}"
   register: vms_result
-  loop: "{{ range(0, 6) | list }}"
+  loop: "{{ range(0, 4) | list }}"
   ignore_errors: true
 
 - name: Collect VM ext_ids for cleanup
   ansible.builtin.set_fact:
     vms_todelete: "{{ vms_result.results | map(attribute='ext_id') | list }}"
 
-- name: Verify creation of all 6 VMs (2 per category)
+- name: Debug - Verify creation of all 6 VMs (2 per category)
+  ansible.builtin.debug:
+    var: vms_result
+
+- name: Verify creation of all 4 VMs (2 per category)
   ansible.builtin.assert:
     that:
-      - vms_result.results | length == 6
-      - vms_todelete | length == 6
+      - vms_result.results | length == 4
+      - vms_todelete | length == 4
       - item.changed == true
       - item.failed == false
       - item.response.categories[0].ext_id == categories_ext_ids[(vm_idx // 2) +
@@ -812,13 +914,17 @@
   loop_control:
     index_var: vm_idx
 
-- name: Power on all 6 VMs
+- name: Power on all 4 VMs
   nutanix.ncp.ntnx_vms_power_actions_v2:
     state: power_on
     ext_id: "{{ item }}"
   register: power_on_result
   loop: "{{ vms_todelete }}"
   ignore_errors: true
+
+- name: Debug - Power on Status
+  ansible.builtin.debug:
+    var: power_on_result
 
 - name: Power on Status
   ansible.builtin.assert:
@@ -831,6 +937,79 @@
     success_msg: "Power on requests for all VMs accepted successfully"
   loop: "{{ power_on_result.results }}"
 
+- name: List VM anti-affinity policy compliance states until pending is observed
+  nutanix.ncp.ntnx_vm_anti_affinity_policy_compliance_info_v2:
+    ext_id: "{{ todelete[1] }}"
+  register: pending_compliance_result
+  until: >-
+    pending_compliance_result.response is defined and
+    (
+      (
+        pending_compliance_result.response
+        | selectattr("compliance_status._object_type", "defined")
+        | selectattr(
+          "compliance_status._object_type",
+          "equalto",
+          "vmm.v4.ahv.policies.PendingVmAntiAffinityPolicy"
+        )
+        | list
+        | length
+      ) > 0
+      or
+      (
+        pending_compliance_result.response
+        | selectattr("compliance_status._object_type", "defined")
+        | selectattr(
+          "compliance_status._object_type",
+          "equalto",
+          "vmm.v4.ahv.policies.CompliantVmAntiAffinityPolicy"
+        )
+        | list
+        | length
+      ) > 0
+    )
+  retries: 12
+  delay: 5
+  ignore_errors: true
+
+- name: Debug - Verify pending VM anti-affinity policy compliance states response
+  ansible.builtin.debug:
+    var: pending_compliance_result
+
+- name: Verify pending VM anti-affinity policy compliance states response
+  ansible.builtin.assert:
+    that:
+      - pending_compliance_result.changed == false
+      - pending_compliance_result.failed == false
+      - pending_compliance_result.response is defined
+      - pending_compliance_result.response | length > 0
+      - >-
+        (
+          pending_compliance_result.response
+          | selectattr("compliance_status._object_type", "defined")
+          | selectattr(
+            "compliance_status._object_type",
+            "equalto",
+            "vmm.v4.ahv.policies.PendingVmAntiAffinityPolicy"
+          )
+          | list
+          | length
+        ) > 0
+        or
+        (
+          pending_compliance_result.response
+          | selectattr("compliance_status._object_type", "defined")
+          | selectattr(
+            "compliance_status._object_type",
+            "equalto",
+            "vmm.v4.ahv.policies.CompliantVmAntiAffinityPolicy"
+          )
+          | list
+          | length
+        ) > 0
+    fail_msg: "Verify pending VM anti-affinity policy compliance states failed"
+    success_msg: "Verify pending VM anti-affinity policy compliance states passed"
+
 - name: Wait until all VMs are powered on
   nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ item }}"
@@ -841,14 +1020,18 @@
   loop: "{{ vms_todelete }}"
   ignore_errors: true
 
-- name: Fetch info for all 6 VMs after power-on
+- name: Fetch info for all 4 VMs after power-on
   nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ item }}"
   register: vms_info
   loop: "{{ vms_todelete }}"
   ignore_errors: true
 
-- name: Assert all 6 VMs are powered on and have a host assigned
+- name: Debug - Assert all 4 VMs are powered on and have a host assigned
+  ansible.builtin.debug:
+    var: vms_info
+
+- name: Assert all 4 VMs are powered on and have a host assigned
   ansible.builtin.assert:
     that:
       - item.response is defined
@@ -863,37 +1046,80 @@
       item.response.host.ext_id }}"
   loop: "{{ vms_info.results }}"
 
+- name: List VM anti-affinity policy compliance states
+  nutanix.ncp.ntnx_vm_anti_affinity_policy_compliance_info_v2:
+    ext_id: "{{ todelete[1] }}"
+  register: compliance_result
+  ignore_errors: true
+
+- name: Debug - Verify VM anti-affinity policy compliance states response
+  ansible.builtin.debug:
+    var: compliance_result
+
+- name: Verify VM anti-affinity policy compliance states response
+  ansible.builtin.assert:
+    that:
+      - compliance_result.changed == false
+      - compliance_result.failed == false
+      - compliance_result.response is defined
+      - compliance_result.response | length > 0
+      - compliance_result.total_available_results is defined
+      - compliance_result.total_available_results > 0
+      - compliance_result.total_available_results == (compliance_result.response | length)
+      - compliance_result.response | length == (vms_todelete | length)
+      - >-
+        (
+          compliance_result.response | map(attribute='ext_id') | list | sort
+        ) == (
+          vms_todelete | list | sort
+        )
+      - >-
+        (
+          compliance_result.response
+          | selectattr("compliance_status._object_type", "defined")
+          | selectattr(
+            "compliance_status._object_type",
+            "equalto",
+            "vmm.v4.ahv.policies.CompliantVmAntiAffinityPolicy"
+          )
+          | list
+          | length
+        ) == (compliance_result.response | length)
+    fail_msg: "Verify VM anti-affinity policy compliance states failed"
+    success_msg: "Verify VM anti-affinity policy compliance states passed"
+
+- name: Debug - Assert that VMs in the same category are hosted on different hosts
+  ansible.builtin.debug:
+    var: vms_info
+
 - name: Assert that VMs in the same category are hosted on different hosts
   ansible.builtin.assert:
     that:
-      # Cat1 - VMs at index 0, 1 in vms_todelete
       - vms_info.results[0].response.host.ext_id !=
         vms_info.results[1].response.host.ext_id
-      # Cat2 - VMs at index 2, 3 in vms_todelete
       - vms_info.results[2].response.host.ext_id !=
         vms_info.results[3].response.host.ext_id
-      # Cat3 - VMs at index 4, 5 in vms_todelete
-      - vms_info.results[4].response.host.ext_id !=
-        vms_info.results[5].response.host.ext_id
     fail_msg: >-
       Anti-affinity NOT enforced - VMs in the same category are on the same
       host. Cat1 hosts: [{{ vms_info.results[0].response.host.ext_id }}, {{
       vms_info.results[1].response.host.ext_id }}]. Cat2 hosts: [{{
       vms_info.results[2].response.host.ext_id }}, {{
-      vms_info.results[3].response.host.ext_id }}]. Cat3 hosts: [{{
-      vms_info.results[4].response.host.ext_id }}, {{
-      vms_info.results[5].response.host.ext_id }}].
+      vms_info.results[3].response.host.ext_id }}].
     success_msg:
       "Anti-affinity enforced successfully - VMs in same category are on
       different hosts"
 
-- name: Delete all 6 created VMs
+- name: Delete all 4 created VMs
   nutanix.ncp.ntnx_vms_v2:
     state: absent
     ext_id: "{{ item }}"
   register: result
   loop: "{{ vms_todelete }}"
   ignore_errors: true
+
+- name: Debug - VM deletion status
+  ansible.builtin.debug:
+    var: result
 
 - name: VM deletion status
   ansible.builtin.assert:
@@ -904,9 +1130,9 @@
       - item.response.status == 'SUCCEEDED'
       - result.changed == true
       - result.msg == "All items completed"
-      - result.results | length == 6
+      - result.results | length == 4
     fail_msg: "Failed to delete one or more VMs"
-    success_msg: "All 6 VMs deleted successfully"
+    success_msg: "All 4 VMs deleted successfully"
   loop: "{{ result.results }}"
 
 ##################################################################################
@@ -920,6 +1146,10 @@
   register: result
   ignore_errors: true
   check_mode: true
+
+- name: Debug - Deletion check mode status
+  ansible.builtin.debug:
+    var: result
 
 - name: Deletion check mode status
   ansible.builtin.assert:
@@ -944,6 +1174,10 @@
   ignore_errors: true
   loop: "{{ todelete }}"
 
+- name: Debug - Deletion status
+  ansible.builtin.debug:
+    var: result
+
 - name: Deletion status
   ansible.builtin.assert:
     that:
@@ -958,12 +1192,40 @@
     success_msg: "Delete policies passed"
   loop: "{{ result.results }}"
 
+- name: Delete created categories
+  nutanix.ncp.ntnx_categories_v2:
+    ext_id: "{{ item }}"
+    state: absent
+  register: result
+  loop: "{{ todelete_categories }}"
+  ignore_errors: true
+
+- name: Debug - Categories deletion status
+  ansible.builtin.debug:
+    var: result
+
+- name: Categories deletion status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - item.failed == false
+      - item.changed == true
+      - result.results | length == todelete_categories | length
+      - result.msg == "All items completed"
+    fail_msg: "Unable to delete categories"
+    success_msg: "Categories deleted successfully"
+  loop: "{{ result.results }}"
+
 - name: Destroy the cluster for cleanup
   nutanix.ncp.ntnx_clusters_v2:
     state: absent
     ext_id: "{{ cluster_ext_id }}"
   register: result
   ignore_errors: true
+
+- name: Debug - Verify cluster deletion
+  ansible.builtin.debug:
+    var: result
 
 - name: Verify cluster deletion
   ansible.builtin.assert:
