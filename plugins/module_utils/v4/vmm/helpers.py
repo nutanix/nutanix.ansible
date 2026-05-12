@@ -191,3 +191,23 @@ def get_ova(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching OVA info using ext_id",
         )
+
+
+def get_vm_anti_affinity_policy(module, api_instance, ext_id):
+    """
+    Get VM anti-affinity policy by ext_id.
+    Args:
+        module: Ansible module
+        api_instance: VmAntiAffinityPoliciesApi instance from ntnx_vmm_py_client sdk
+        ext_id: ext_id of VM anti-affinity policy
+    Returns:
+        policy (obj): VM anti-affinity policy info object
+    """
+    try:
+        return api_instance.get_vm_anti_affinity_policy_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching VM anti-affinity policy info using ext_id",
+        )
