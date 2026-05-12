@@ -1,0 +1,284 @@
+---
+- name: Start testing ntnx_SecurityPolicy_v2 and ntnx_SecurityPolicys_info_v2 modules
+  ansible.builtin.debug:
+    msg: Start testing ntnx_SecurityPolicy_v2 and ntnx_SecurityPolicys_info_v2 modules
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set security policy name
+  ansible.builtin.set_fact:
+    policy_name: "ansible-sp-{{ random_name }}"
+
+- name: Set todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+#####################################################################
+# Create with check_mode
+#####################################################################
+- name: Create application security policy with check mode enabled
+  nutanix.ncp.ntnx_SecurityPolicy_v2:
+    name: "{{ policy_name }}_1"
+    description: "Ansible test security policy"
+    type: "APPLICATION"
+    policy_state: "MONITOR"
+    scope: "ALL_VLAN"
+    is_hitlog_enabled: true
+    is_ipv6_traffic_allowed: false
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Create check mode status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.name == "{{ policy_name }}_1"
+      - result.response.description == "Ansible test security policy"
+    fail_msg: "Fail: Unable to create security policy with check mode enabled"
+    success_msg: "Pass: Security policy check mode create passed"
+
+#####################################################################
+# Create security policy
+#####################################################################
+- name: Create application security policy
+  nutanix.ncp.ntnx_SecurityPolicy_v2:
+    name: "{{ policy_name }}_1"
+    description: "Ansible test security policy"
+    type: "APPLICATION"
+    policy_state: "MONITOR"
+    scope: "ALL_VLAN"
+    is_hitlog_enabled: true
+    is_ipv6_traffic_allowed: false
+  register: result
+  ignore_errors: true
+
+- name: Creation status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.response.name == "{{ policy_name }}_1"
+      - result.response.description == "Ansible test security policy"
+      - result.response.type == "APPLICATION"
+      - result.response.state == "MONITOR"
+      - result.response.is_hitlog_enabled == true
+      - result.response.is_ipv6_traffic_allowed == false
+    fail_msg: "Fail: Unable to create application security policy"
+    success_msg: "Pass: Application security policy created successfully"
+
+- name: Add policy to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+#####################################################################
+# Get by ext_id using info module
+#####################################################################
+- name: Get security policy by ext_id
+  nutanix.ncp.ntnx_SecurityPolicys_info_v2:
+    ext_id: "{{ todelete[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch security policy status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.name == "{{ policy_name }}_1"
+      - result.response.description == "Ansible test security policy"
+    fail_msg: "Fail: Unable to fetch security policy by ext_id"
+    success_msg: "Pass: Security policy fetched successfully by ext_id"
+
+#####################################################################
+# List all security policies
+#####################################################################
+- name: List all security policies
+  nutanix.ncp.ntnx_SecurityPolicys_info_v2:
+  register: list_result
+  ignore_errors: true
+
+- name: List all security policies status
+  ansible.builtin.assert:
+    that:
+      - list_result.response is defined
+      - list_result.changed == false
+      - list_result.failed == false
+      - list_result.response | length > 0
+      - list_result.total_available_results is defined
+      - list_result.total_available_results > 0
+    fail_msg: "Fail: Unable to list all security policies"
+    success_msg: "Pass: All security policies listed successfully"
+
+#####################################################################
+# List with limit
+#####################################################################
+- name: List security policies using limit
+  nutanix.ncp.ntnx_SecurityPolicys_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List with limit status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response | length == 1
+    fail_msg: "Fail: Unable to list security policies using limit"
+    success_msg: "Pass: Security policies listed successfully using limit"
+
+#####################################################################
+# Update with check_mode
+#####################################################################
+- name: Update security policy with check mode enabled
+  nutanix.ncp.ntnx_SecurityPolicy_v2:
+    ext_id: "{{ todelete[0] }}"
+    name: "{{ policy_name }}_1_updated"
+    description: "Updated ansible test security policy"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Update check mode status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.name == "{{ policy_name }}_1_updated"
+      - result.response.description == "Updated ansible test security policy"
+    fail_msg: "Fail: Unable to update security policy with check mode enabled"
+    success_msg: "Pass: Security policy check mode update passed"
+
+#####################################################################
+# Update security policy
+#####################################################################
+- name: Update security policy name and description
+  nutanix.ncp.ntnx_SecurityPolicy_v2:
+    ext_id: "{{ todelete[0] }}"
+    name: "{{ policy_name }}_1_updated"
+    description: "Updated ansible test security policy"
+  register: result
+  ignore_errors: true
+
+- name: Update status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == true
+      - result.ext_id is defined
+      - result.response.name == "{{ policy_name }}_1_updated"
+      - result.response.description == "Updated ansible test security policy"
+    fail_msg: "Fail: Unable to update security policy"
+    success_msg: "Pass: Security policy updated successfully"
+
+#####################################################################
+# Idempotency check - update with same values
+#####################################################################
+- name: Update security policy with same values (idempotency)
+  nutanix.ncp.ntnx_SecurityPolicy_v2:
+    ext_id: "{{ todelete[0] }}"
+    name: "{{ policy_name }}_1_updated"
+    description: "Updated ansible test security policy"
+  register: result
+  ignore_errors: true
+
+- name: Idempotency status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.msg == "Nothing to change."
+    fail_msg: "Fail: Security policy updated with same values (idempotency failed)"
+    success_msg: "Pass: Idempotency check passed"
+
+#####################################################################
+# Delete with check_mode
+#####################################################################
+- name: Delete security policy with check mode enabled
+  nutanix.ncp.ntnx_SecurityPolicy_v2:
+    state: absent
+    ext_id: "{{ todelete[0] }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete check mode status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ todelete[0] }}"
+      - result.msg == "Network security policy with ext_id:{{ todelete[0] }} will be deleted."
+    fail_msg: "Fail: Delete security policy with check mode failed"
+    success_msg: "Pass: Delete security policy with check mode passed"
+
+#####################################################################
+# Negative test - delete with invalid ext_id
+#####################################################################
+- name: Delete security policy with invalid ext_id
+  nutanix.ncp.ntnx_SecurityPolicy_v2:
+    state: absent
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Negative delete status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: "Fail: Expected error for invalid ext_id deletion"
+    success_msg: "Pass: Got expected error for invalid ext_id deletion"
+
+#####################################################################
+# Negative test - create without required fields
+#####################################################################
+- name: Create security policy without name (should fail)
+  nutanix.ncp.ntnx_SecurityPolicy_v2:
+    description: "This should fail"
+    type: "APPLICATION"
+  register: result
+  ignore_errors: true
+
+- name: Negative create status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: "Fail: Expected error when creating without name"
+    success_msg: "Pass: Got expected error when creating without name"
+
+#####################################################################
+# Delete all created security policies
+#####################################################################
+- name: Delete all created security policies
+  nutanix.ncp.ntnx_SecurityPolicy_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: true
+
+- name: Delete security policies status
+  ansible.builtin.assert:
+    that:
+      - result.changed is defined
+      - result.changed == true
+      - result.msg == "All items completed"
+    fail_msg: "Fail: Unable to delete all created security policies"
+    success_msg: "Pass: All security policies deleted successfully"
+
+- name: Set todelete to empty list
+  ansible.builtin.set_fact:
+    todelete: []

@@ -1,0 +1,84 @@
+- name: Security Policy CRUD operations using ntnx_SecurityPolicy_v2 and ntnx_SecurityPolicys_info_v2
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: 10.0.0.1
+      nutanix_username: admin
+      nutanix_password: Nutanix.123
+      validate_certs: false
+  tasks:
+    - name: Create an application security policy with MONITOR state
+      nutanix.ncp.ntnx_SecurityPolicy_v2:
+        name: "example-security-policy"
+        description: "Example security policy created by Ansible"
+        type: "APPLICATION"
+        policy_state: "MONITOR"
+        scope: "ALL_VLAN"
+        is_hitlog_enabled: true
+        is_ipv6_traffic_allowed: false
+      register: create_result
+
+    - name: Print create result
+      ansible.builtin.debug:
+        var: create_result
+
+    - name: Get the created security policy by ext_id
+      nutanix.ncp.ntnx_SecurityPolicys_info_v2:
+        ext_id: "{{ create_result.ext_id }}"
+      register: get_result
+
+    - name: Print get result
+      ansible.builtin.debug:
+        var: get_result
+
+    - name: List all security policies
+      nutanix.ncp.ntnx_SecurityPolicys_info_v2:
+      register: list_result
+
+    - name: Print total available results
+      ansible.builtin.debug:
+        msg: "Total security policies: {{ list_result.total_available_results }}"
+
+    - name: List security policies with limit
+      nutanix.ncp.ntnx_SecurityPolicys_info_v2:
+        limit: 2
+      register: list_limited_result
+
+    - name: Print limited list result
+      ansible.builtin.debug:
+        var: list_limited_result
+
+    - name: Update the security policy name and description
+      nutanix.ncp.ntnx_SecurityPolicy_v2:
+        ext_id: "{{ create_result.ext_id }}"
+        name: "example-security-policy-updated"
+        description: "Updated example security policy"
+      register: update_result
+
+    - name: Print update result
+      ansible.builtin.debug:
+        var: update_result
+
+    - name: Verify the update via info module
+      nutanix.ncp.ntnx_SecurityPolicys_info_v2:
+        ext_id: "{{ create_result.ext_id }}"
+      register: verify_result
+
+    - name: Assert update was applied
+      ansible.builtin.assert:
+        that:
+          - verify_result.response.name == "example-security-policy-updated"
+          - verify_result.response.description == "Updated example security policy"
+        success_msg: "Security policy update verified successfully"
+        fail_msg: "Security policy update verification failed"
+
+    - name: Delete the security policy
+      nutanix.ncp.ntnx_SecurityPolicy_v2:
+        state: absent
+        ext_id: "{{ create_result.ext_id }}"
+      register: delete_result
+
+    - name: Print delete result
+      ansible.builtin.debug:
+        var: delete_result
