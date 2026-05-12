@@ -110,6 +110,20 @@
         var: update_result
 
     ################################################################################
+    # Re-enforce operation
+    ################################################################################
+
+    - name: Re-enforce VM host affinity policy
+      nutanix.ncp.ntnx_vm_host_affinity_policy_re_enforce_v2:
+        ext_id: "{{ policy_ext_id }}"
+        wait: true
+      register: re_enforce_result
+
+    - name: Print re-enforce result
+      ansible.builtin.debug:
+        var: re_enforce_result
+
+    ################################################################################
     # Delete operation
     ################################################################################
 

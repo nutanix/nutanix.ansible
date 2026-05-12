@@ -12,6 +12,7 @@
 - name: Set policy name
   ansible.builtin.set_fact:
     policy_name: "{{ random_name }}_host_affinity_test"
+    todelete_categories: []
 
 - name: Set cluster variables
   ansible.builtin.set_fact:
@@ -280,33 +281,45 @@
     fail_msg: Failed verifying cluster creation
     success_msg: Cluster creation passed successfully
 
-- name: List all categories and get the first five
-  nutanix.ncp.ntnx_categories_info_v2:
-  register: result
+- name: Create categories for host-affinity policy tests
+  nutanix.ncp.ntnx_categories_v2:
+    key: "{{ random_name }}_haf_key_{{ item }}"
+    value: "{{ random_name }}_haf_value_{{ item }}"
+    description: "ansible host-affinity category"
+  register: category_create_result
   ignore_errors: true
+  loop: "{{ range(0, 5) | list }}"
 
-- name: Print categories listing result
+- name: Print categories creation result
   ansible.builtin.debug:
-    var: result
+    var: category_create_result
 
-- name: Status of all categories
+- name: Create categories for host-affinity policy tests status
   ansible.builtin.assert:
     that:
-      - result.response is defined
-      - result.changed == false
-      - result.failed == false
-      - result.response | length >= 5
-    fail_msg: "Unable to list categories"
-    success_msg: "Categories listed successfully"
+      - category_create_result.changed == true
+      - category_create_result is defined
+      - category_create_result.results | length == 5
+      - item.failed == false
+      - item.changed == true
+      - item.ext_id is defined
+    fail_msg: "Unable to create categories for host-affinity policy tests"
+    success_msg: "Categories for host-affinity policy tests created successfully"
+  loop: "{{ category_create_result.results }}"
+
+- name: Save categories ext_id to delete list
+  ansible.builtin.set_fact:
+    todelete_categories: "{{ todelete_categories + [item.ext_id] }}"
+  loop: "{{ category_create_result.results }}"
+
+- name: Print categories ext_ids to delete
+  ansible.builtin.debug:
+    var: todelete_categories
 
 - name: Set host-affinity test variables
   ansible.builtin.set_fact:
-    categories_ext_ids:
-      - "{{ result.response[0].ext_id }}"
-      - "{{ result.response[1].ext_id }}"
-      - "{{ result.response[2].ext_id }}"
-      - "{{ result.response[3].ext_id }}"
-      - "{{ result.response[4].ext_id }}"
+    categories_ext_ids: "{{ todelete_categories }}"
+    todelete_categories: "{{ todelete_categories }}"
     todelete: []
 
 ##################################################################################
@@ -975,6 +988,78 @@
     fail_msg: "Failed to update functional VM host affinity policy"
     success_msg: "Functional VM host affinity policy updated"
 
+##################################################################################
+# Re-enforce Host Affinity Policy
+##################################################################################
+
+- name: Re-enforce VM host affinity policy with check mode enabled
+  nutanix.ncp.ntnx_vm_host_affinity_policy_re_enforce_v2:
+    ext_id: "{{ todelete[1] }}"
+  register: re_enforce_check_mode_result
+  ignore_errors: true
+  check_mode: true
+
+- name: Print re-enforce check mode result
+  ansible.builtin.debug:
+    var: re_enforce_check_mode_result
+
+- name: Verify re-enforce VM host affinity policy using check mode
+  ansible.builtin.assert:
+    that:
+      - re_enforce_check_mode_result.changed == false
+      - re_enforce_check_mode_result.failed == false
+      - re_enforce_check_mode_result.ext_id == "{{ todelete[1] }}"
+      - re_enforce_check_mode_result.msg == "VM-host affinity policy with ext_id:{{ todelete[1] }} will be re-enforced."
+    fail_msg: "Re-enforce VM host affinity policy using check mode validation failed"
+    success_msg: "Re-enforce VM host affinity policy using check mode validation passed"
+
+- name: Re-enforce VM host affinity policy
+  nutanix.ncp.ntnx_vm_host_affinity_policy_re_enforce_v2:
+    ext_id: "{{ todelete[1] }}"
+  register: re_enforce_result
+  ignore_errors: true
+
+- name: Print re-enforce result
+  ansible.builtin.debug:
+    var: re_enforce_result
+
+- name: Verify VM host affinity policy re-enforce
+  ansible.builtin.assert:
+    that:
+      - re_enforce_result.changed == true
+      - re_enforce_result.failed == false
+      - re_enforce_result.ext_id == "{{ todelete[1] }}"
+      - re_enforce_result.task_ext_id is defined
+      - re_enforce_result.response is defined
+      - re_enforce_result.response.status == "SUCCEEDED"
+    fail_msg: "VM host affinity policy re-enforce failed"
+    success_msg: "VM host affinity policy re-enforce passed"
+
+- name: Re-enforce non-existent VM host affinity policy
+  nutanix.ncp.ntnx_vm_host_affinity_policy_re_enforce_v2:
+    ext_id: "12345678-1234-1234-1234-123456789123"
+  register: re_enforce_negative_result
+  ignore_errors: true
+
+- name: Print re-enforce non-existent VM host affinity policy result
+  ansible.builtin.debug:
+    var: re_enforce_negative_result
+
+- name: Verify re-enforce non-existent VM host affinity policy
+  ansible.builtin.assert:
+    that:
+      - re_enforce_negative_result.changed == false
+      - re_enforce_negative_result.failed == true
+      - re_enforce_negative_result.error == "NOT FOUND"
+      - re_enforce_negative_result.status == 404
+      - re_enforce_negative_result.msg == "Api Exception raised while fetching VM host affinity policy info using ext_id"
+      - re_enforce_negative_result.response is defined
+      - re_enforce_negative_result.response.data is defined
+      - re_enforce_negative_result.response.data.error is defined
+      - re_enforce_negative_result.response.data.error | length > 0
+    fail_msg: "Re-enforce non-existent VM host affinity policy failed"
+    success_msg: "Re-enforce non-existent VM host affinity policy passed"
+
 - name: Create 3 VMs with functional VM category
   nutanix.ncp.ntnx_vms_v2:
     state: present
@@ -1131,6 +1216,99 @@
       - result.results | length == 2
     fail_msg: "Delete policies failed"
     success_msg: "Delete policies passed"
+  loop: "{{ result.results }}"
+
+- name: Get current host details from v3 API before category cleanup
+  ansible.builtin.uri:
+    url: "{{ host_v3_api }}"
+    method: GET
+    user: "{{ username_for_tests }}"
+    password: "{{ password_for_tests }}"
+    force_basic_auth: true
+    validate_certs: false
+    headers:
+      Accept: "application/json"
+    status_code: [200, 202]
+  register: host_info_v3_before_cleanup
+  ignore_errors: true
+
+- name: Print host details before category cleanup
+  ansible.builtin.debug:
+    var: host_info_v3_before_cleanup
+
+- name: Build host categories cleanup payload
+  ansible.builtin.set_fact:
+    cleaned_host_categories: >-
+      {{
+        (
+          host_info_v3_before_cleanup.json.metadata.categories
+          | default({})
+          | dict2items
+          | rejectattr('key', 'equalto', functional_host_category_key)
+          | list
+        ) | items2dict
+      }}
+
+- name: Build host v3 cleanup payload
+  ansible.builtin.set_fact:
+    host_cleanup_v3_payload:
+      metadata: >-
+        {{
+          host_info_v3_before_cleanup.json.metadata
+          | combine({'categories': cleaned_host_categories}, recursive=True)
+        }}
+      spec: "{{ host_info_v3_before_cleanup.json.spec }}"
+
+- name: Remove functional host category association using v3 API
+  ansible.builtin.uri:
+    url: "{{ host_v3_api }}"
+    method: PUT
+    user: "{{ username_for_tests }}"
+    password: "{{ password_for_tests }}"
+    force_basic_auth: true
+    validate_certs: false
+    headers:
+      Accept: "application/json"
+    body_format: json
+    status_code: [200, 202]
+    body: "{{ host_cleanup_v3_payload }}"
+  register: host_cleanup_v3
+  ignore_errors: true
+
+- name: Print host category cleanup response
+  ansible.builtin.debug:
+    var: host_cleanup_v3
+
+- name: Verify host category cleanup response
+  ansible.builtin.assert:
+    that:
+      - host_cleanup_v3 is defined
+      - host_cleanup_v3.failed == false
+      - host_cleanup_v3.status in [200, 202]
+    fail_msg: "Failed to cleanup host category association before category deletion"
+    success_msg: "Host category association cleanup request accepted"
+
+- name: Delete created categories
+  nutanix.ncp.ntnx_categories_v2:
+    ext_id: "{{ item }}"
+    state: absent
+  register: result
+  loop: "{{ todelete_categories }}"
+  ignore_errors: true
+
+- name: Print categories deletion result
+  ansible.builtin.debug:
+    var: result
+
+- name: Categories deletion status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - item.failed == false
+      - result.results | length == todelete_categories | length
+      - result.msg == "All items completed"
+    fail_msg: "Unable to delete categories for host-affinity policy tests"
+    success_msg: "Categories for host-affinity policy tests deleted successfully"
   loop: "{{ result.results }}"
 
 - name: Destroy the cluster for cleanup
