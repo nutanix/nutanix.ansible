@@ -12,6 +12,8 @@
 - name: Set policy names
   ansible.builtin.set_fact:
     policy_name: "{{ random_name }}_anti_affinity_test"
+    vm_name_prefix: "{{ random_name }}_af_vm"
+    todelete: []
     todelete_categories: []
 
 - name: Set cluster variables
@@ -316,7 +318,7 @@
     description: "ansible anti-affinity category"
   register: category_create_result
   ignore_errors: true
-  loop: "{{ range(0, 3) | list }}"
+  loop: "{{ range(0, 4) | list }}"
 
 - name: Debug - Create categories for anti-affinity policy tests status
   ansible.builtin.debug:
@@ -327,7 +329,7 @@
     that:
       - category_create_result.changed == true
       - category_create_result is defined
-      - category_create_result.results | length == 3
+      - category_create_result.results | length == 4
       - category_create_result.msg == "All items completed"
       - item.failed == false
       - item.response is defined
@@ -340,13 +342,6 @@
   ansible.builtin.set_fact:
     todelete_categories: "{{ todelete_categories + [ item.response.ext_id ] }}"
   loop: "{{ category_create_result.results }}"
-
-- name: Set anti-affinity test variables
-  ansible.builtin.set_fact:
-    vm_name_prefix: "{{ random_name }}_af_vm"
-    categories_ext_ids: "{{ todelete_categories }}"
-    todelete: []
-    todelete_categories: "{{ todelete_categories }}"
 
 ##################################################################################
 # Create - Check mode
@@ -397,7 +392,7 @@
     state: present
     name: "{{ policy_name }}_1"
     categories:
-      - ext_id: "{{ categories_ext_ids[0] }}"
+      - ext_id: "{{ todelete_categories[0] }}"
   register: result
   ignore_errors: true
 
@@ -411,7 +406,7 @@
       - result.changed == true
       - result.failed == false
       - result.response is defined
-      - result.response.categories[0].ext_id == "{{ categories_ext_ids[0] }}"
+      - result.response.categories[0].ext_id == "{{ todelete_categories[0] }}"
       - result.response.name == "{{ policy_name }}_1"
     fail_msg: "Verify created VM anti-affinity policy with minimal spec failed"
     success_msg: "Verify created VM anti-affinity policy with minimal spec passed"
@@ -430,8 +425,8 @@
     name: "{{ policy_name }}_3"
     description: "{{ policy_name }}_3_description"
     categories:
-      - ext_id: "{{ categories_ext_ids[1] }}"
-      - ext_id: "{{ categories_ext_ids[2] }}"
+      - ext_id: "{{ todelete_categories[1] }}"
+      - ext_id: "{{ todelete_categories[2] }}"
   register: result
   ignore_errors: true
 
@@ -448,8 +443,8 @@
       - result.response.name == "{{ policy_name }}_3"
       - result.response.description == "{{ policy_name }}_3_description"
       - result.response.categories | length == 2
-      - result.response.categories[0].ext_id == "{{ categories_ext_ids[1] }}"
-      - result.response.categories[1].ext_id == "{{ categories_ext_ids[2] }}"
+      - result.response.categories[0].ext_id == "{{ todelete_categories[1] }}"
+      - result.response.categories[1].ext_id == "{{ todelete_categories[2] }}"
     fail_msg: "Verify created VM anti-affinity policy with full spec failed"
     success_msg: "Verify created VM anti-affinity policy with full spec passed"
 
@@ -512,8 +507,7 @@
     name: "{{ policy_name }}_updated"
     description: "description for {{ policy_name }}_updated"
     categories:
-      - ext_id: "{{ categories_ext_ids[0] }}"
-      - ext_id: "{{ categories_ext_ids[2] }}"
+      - ext_id: "{{ todelete_categories[3] }}"
   register: result
   ignore_errors: true
 
@@ -530,9 +524,8 @@
       - result.response.name == "{{ policy_name }}_updated"
       - result.response.description == "description for {{ policy_name
         }}_updated"
-      - result.response.categories | length == 2
-      - result.response.categories[0].ext_id == "{{ categories_ext_ids[0] }}"
-      - result.response.categories[1].ext_id == "{{ categories_ext_ids[2] }}"
+      - result.response.categories | length == 1
+      - result.response.categories[0].ext_id == "{{ todelete_categories[3] }}"
     fail_msg: "Verify updated VM anti-affinity Policy failed"
     success_msg: "Verify updated VM anti-affinity Policy passed"
 
@@ -547,8 +540,7 @@
     name: "{{ policy_name }}_updated"
     description: "description for {{ policy_name }}_updated"
     categories:
-      - ext_id: "{{ categories_ext_ids[0] }}"
-      - ext_id: "{{ categories_ext_ids[2] }}"
+      - ext_id: "{{ todelete_categories[3] }}"
   register: result
   ignore_errors: true
 
@@ -589,8 +581,8 @@
       - result.response.name == "{{ policy_name }}_3"
       - result.response.description == "{{ policy_name }}_3_description"
       - result.response.categories | length == 2
-      - result.response.categories[0].ext_id == "{{ categories_ext_ids[1] }}"
-      - result.response.categories[1].ext_id == "{{ categories_ext_ids[2] }}"
+      - result.response.categories[0].ext_id == "{{ todelete_categories[1] }}"
+      - result.response.categories[1].ext_id == "{{ todelete_categories[2] }}"
     fail_msg: "Verify retrieved VM anti-affinity policy by ext_id failed"
     success_msg: "Verify retrieved VM anti-affinity policy by ext_id passed"
 
@@ -643,9 +635,8 @@
       - result.response[0].name == "{{ policy_name }}_updated"
       - result.response[0].description == "description for {{ policy_name
         }}_updated"
-      - result.response[0].categories | length == 2
-      - result.response[0].categories[0].ext_id == "{{ categories_ext_ids[0] }}"
-      - result.response[0].categories[1].ext_id == "{{ categories_ext_ids[2] }}"
+      - result.response[0].categories | length == 1
+      - result.response[0].categories[0].ext_id == "{{ todelete_categories[3] }}"
       - result.total_available_results is defined
       - result.total_available_results == 1
     fail_msg: "Verify list of VM anti-affinity policies with filter by name failed"
@@ -682,7 +673,7 @@
 - name: Create VM anti-affinity policy without name (negative test)
   nutanix.ncp.ntnx_vm_anti_affinity_policy_v2:
     categories:
-      - ext_id: "{{ categories_ext_ids[0] }}"
+      - ext_id: "{{ todelete_categories[0] }}"
   register: result
   ignore_errors: true
 
@@ -705,7 +696,7 @@
 ##################################################################################
 # Negative - Create with category already in use by another policy
 # A category can only belong to one anti-affinity policy at a time.
-# Reuses categories_ext_ids[0] which is already attached to todelete[0].
+# Reuses todelete_categories[0] which is already attached to todelete[0].
 ##################################################################################
 
 - name: Create VM anti-affinity policy with a category already in use (negative test)
@@ -714,7 +705,7 @@
     name: "{{ policy_name }}_duplicate_category"
     description: "negative test - category already in use by another policy"
     categories:
-      - ext_id: "{{ categories_ext_ids[0] }}"
+      - ext_id: "{{ todelete_categories[0] }}"
   register: result
   ignore_errors: true
 
@@ -778,7 +769,7 @@
     ext_id: "12345678-1234-1234-1234-123456789123"
     name: "non_existent_policy"
     categories:
-      - ext_id: "{{ categories_ext_ids[0] }}"
+      - ext_id: "{{ todelete_categories[0] }}"
   register: result
   ignore_errors: true
 
@@ -814,8 +805,8 @@
     name: "{{ policy_name }}_updated"
     description: "description for {{ policy_name }}_updated"
     categories:
-      - ext_id: "{{ categories_ext_ids[0] }}"
-      - ext_id: "{{ categories_ext_ids[1] }}"
+      - ext_id: "{{ todelete_categories[0] }}"
+      - ext_id: "{{ todelete_categories[1] }}"
   register: result
   ignore_errors: true
 
@@ -870,7 +861,7 @@
 
 ##################################################################################
 # Functional test - Verify anti-affinity policies enforce host placement.
-# Uses categories_ext_ids[1] which is owned by todelete[1] (the full-spec
+# Uses todelete_categories[1] which is owned by todelete[1] (the full-spec
 # policy). Two VMs share a single category, so anti-affinity should force
 # the pair onto different hosts.
 ##################################################################################
@@ -881,7 +872,7 @@
     name: "{{ vm_name_prefix }}_{{ item + 1 }}"
     description: "anti-affinity test VM"
     categories:
-      - ext_id: "{{ categories_ext_ids[(item // 2) + 1] }}"
+      - ext_id: "{{ todelete_categories[(item // 2) + 1] }}"
   register: vms_result
   loop: "{{ range(0, 2) | list }}"
   ignore_errors: true
@@ -901,11 +892,11 @@
       - vms_todelete | length == 2
       - item.changed == true
       - item.failed == false
-      - item.response.categories[0].ext_id == categories_ext_ids[1]
+      - item.response.categories[0].ext_id == todelete_categories[1]
     fail_msg: "Failed to create VM at index {{ vm_idx }} (expected category {{
-      categories_ext_ids[1] }})"
+      todelete_categories[1] }})"
     success_msg: "VM {{ vm_idx + 1 }} created successfully with category {{
-      categories_ext_ids[1] }}"
+      todelete_categories[1] }}"
   loop: "{{ vms_result.results }}"
   loop_control:
     index_var: vm_idx
