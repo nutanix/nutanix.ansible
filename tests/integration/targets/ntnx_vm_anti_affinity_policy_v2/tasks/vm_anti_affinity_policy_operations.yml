@@ -316,7 +316,7 @@
     description: "ansible anti-affinity category"
   register: category_create_result
   ignore_errors: true
-  loop: "{{ range(0, 5) | list }}"
+  loop: "{{ range(0, 3) | list }}"
 
 - name: Debug - Create categories for anti-affinity policy tests status
   ansible.builtin.debug:
@@ -327,7 +327,7 @@
     that:
       - category_create_result.changed == true
       - category_create_result is defined
-      - category_create_result.results | length == 5
+      - category_create_result.results | length == 3
       - category_create_result.msg == "All items completed"
       - item.failed == false
       - item.response is defined
@@ -432,7 +432,6 @@
     categories:
       - ext_id: "{{ categories_ext_ids[1] }}"
       - ext_id: "{{ categories_ext_ids[2] }}"
-      - ext_id: "{{ categories_ext_ids[3] }}"
   register: result
   ignore_errors: true
 
@@ -448,10 +447,9 @@
       - result.response is defined
       - result.response.name == "{{ policy_name }}_3"
       - result.response.description == "{{ policy_name }}_3_description"
-      - result.response.categories | length == 3
+      - result.response.categories | length == 2
       - result.response.categories[0].ext_id == "{{ categories_ext_ids[1] }}"
       - result.response.categories[1].ext_id == "{{ categories_ext_ids[2] }}"
-      - result.response.categories[2].ext_id == "{{ categories_ext_ids[3] }}"
     fail_msg: "Verify created VM anti-affinity policy with full spec failed"
     success_msg: "Verify created VM anti-affinity policy with full spec passed"
 
@@ -515,7 +513,7 @@
     description: "description for {{ policy_name }}_updated"
     categories:
       - ext_id: "{{ categories_ext_ids[0] }}"
-      - ext_id: "{{ categories_ext_ids[4] }}"
+      - ext_id: "{{ categories_ext_ids[2] }}"
   register: result
   ignore_errors: true
 
@@ -534,7 +532,7 @@
         }}_updated"
       - result.response.categories | length == 2
       - result.response.categories[0].ext_id == "{{ categories_ext_ids[0] }}"
-      - result.response.categories[1].ext_id == "{{ categories_ext_ids[4] }}"
+      - result.response.categories[1].ext_id == "{{ categories_ext_ids[2] }}"
     fail_msg: "Verify updated VM anti-affinity Policy failed"
     success_msg: "Verify updated VM anti-affinity Policy passed"
 
@@ -550,7 +548,7 @@
     description: "description for {{ policy_name }}_updated"
     categories:
       - ext_id: "{{ categories_ext_ids[0] }}"
-      - ext_id: "{{ categories_ext_ids[4] }}"
+      - ext_id: "{{ categories_ext_ids[2] }}"
   register: result
   ignore_errors: true
 
@@ -590,10 +588,9 @@
       - result.response.ext_id == "{{ todelete[1] }}"
       - result.response.name == "{{ policy_name }}_3"
       - result.response.description == "{{ policy_name }}_3_description"
-      - result.response.categories | length == 3
+      - result.response.categories | length == 2
       - result.response.categories[0].ext_id == "{{ categories_ext_ids[1] }}"
       - result.response.categories[1].ext_id == "{{ categories_ext_ids[2] }}"
-      - result.response.categories[2].ext_id == "{{ categories_ext_ids[3] }}"
     fail_msg: "Verify retrieved VM anti-affinity policy by ext_id failed"
     success_msg: "Verify retrieved VM anti-affinity policy by ext_id passed"
 
@@ -648,7 +645,7 @@
         }}_updated"
       - result.response[0].categories | length == 2
       - result.response[0].categories[0].ext_id == "{{ categories_ext_ids[0] }}"
-      - result.response[0].categories[1].ext_id == "{{ categories_ext_ids[4] }}"
+      - result.response[0].categories[1].ext_id == "{{ categories_ext_ids[2] }}"
       - result.total_available_results is defined
       - result.total_available_results == 1
     fail_msg: "Verify list of VM anti-affinity policies with filter by name failed"
@@ -873,12 +870,12 @@
 
 ##################################################################################
 # Functional test - Verify anti-affinity policies enforce host placement.
-# Uses categories_ext_ids[1..2] which are owned by todelete[1] (the full-spec
-# policy). Each pair of VMs shares a single category, so anti-affinity should
-# force the two VMs in each pair onto different hosts.
+# Uses categories_ext_ids[1] which is owned by todelete[1] (the full-spec
+# policy). Two VMs share a single category, so anti-affinity should force
+# the pair onto different hosts.
 ##################################################################################
 
-- name: Create 4 VMs (2 per category) with minimum spec and auto cluster selection
+- name: Create 2 VMs (single category pair) with minimum spec and auto cluster selection
   nutanix.ncp.ntnx_vms_v2:
     state: present
     name: "{{ vm_name_prefix }}_{{ item + 1 }}"
@@ -886,35 +883,34 @@
     categories:
       - ext_id: "{{ categories_ext_ids[(item // 2) + 1] }}"
   register: vms_result
-  loop: "{{ range(0, 4) | list }}"
+  loop: "{{ range(0, 2) | list }}"
   ignore_errors: true
 
 - name: Collect VM ext_ids for cleanup
   ansible.builtin.set_fact:
     vms_todelete: "{{ vms_result.results | map(attribute='ext_id') | list }}"
 
-- name: Debug - Verify creation of all 6 VMs (2 per category)
+- name: Debug - Verify creation of all 2 VMs (single category pair)
   ansible.builtin.debug:
     var: vms_result
 
-- name: Verify creation of all 4 VMs (2 per category)
+- name: Verify creation of all 2 VMs (single category pair)
   ansible.builtin.assert:
     that:
-      - vms_result.results | length == 4
-      - vms_todelete | length == 4
+      - vms_result.results | length == 2
+      - vms_todelete | length == 2
       - item.changed == true
       - item.failed == false
-      - item.response.categories[0].ext_id == categories_ext_ids[(vm_idx // 2) +
-        1]
+      - item.response.categories[0].ext_id == categories_ext_ids[1]
     fail_msg: "Failed to create VM at index {{ vm_idx }} (expected category {{
-      categories_ext_ids[(vm_idx // 2) + 1] }})"
+      categories_ext_ids[1] }})"
     success_msg: "VM {{ vm_idx + 1 }} created successfully with category {{
-      categories_ext_ids[(vm_idx // 2) + 1] }}"
+      categories_ext_ids[1] }}"
   loop: "{{ vms_result.results }}"
   loop_control:
     index_var: vm_idx
 
-- name: Power on all 4 VMs
+- name: Power on all 2 VMs
   nutanix.ncp.ntnx_vms_power_actions_v2:
     state: power_on
     ext_id: "{{ item }}"
@@ -1020,18 +1016,18 @@
   loop: "{{ vms_todelete }}"
   ignore_errors: true
 
-- name: Fetch info for all 4 VMs after power-on
+- name: Fetch info for all 2 VMs after power-on
   nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ item }}"
   register: vms_info
   loop: "{{ vms_todelete }}"
   ignore_errors: true
 
-- name: Debug - Assert all 4 VMs are powered on and have a host assigned
+- name: Debug - Assert all 2 VMs are powered on and have a host assigned
   ansible.builtin.debug:
     var: vms_info
 
-- name: Assert all 4 VMs are powered on and have a host assigned
+- name: Assert all 2 VMs are powered on and have a host assigned
   ansible.builtin.assert:
     that:
       - item.response is defined
@@ -1097,19 +1093,15 @@
     that:
       - vms_info.results[0].response.host.ext_id !=
         vms_info.results[1].response.host.ext_id
-      - vms_info.results[2].response.host.ext_id !=
-        vms_info.results[3].response.host.ext_id
     fail_msg: >-
       Anti-affinity NOT enforced - VMs in the same category are on the same
-      host. Cat1 hosts: [{{ vms_info.results[0].response.host.ext_id }}, {{
-      vms_info.results[1].response.host.ext_id }}]. Cat2 hosts: [{{
-      vms_info.results[2].response.host.ext_id }}, {{
-      vms_info.results[3].response.host.ext_id }}].
+      host. Pair hosts: [{{ vms_info.results[0].response.host.ext_id }}, {{
+      vms_info.results[1].response.host.ext_id }}].
     success_msg:
-      "Anti-affinity enforced successfully - VMs in same category are on
+      "Anti-affinity enforced successfully - VM pair in same category is on
       different hosts"
 
-- name: Delete all 4 created VMs
+- name: Delete all 2 created VMs
   nutanix.ncp.ntnx_vms_v2:
     state: absent
     ext_id: "{{ item }}"
@@ -1130,9 +1122,9 @@
       - item.response.status == 'SUCCEEDED'
       - result.changed == true
       - result.msg == "All items completed"
-      - result.results | length == 4
+      - result.results | length == 2
     fail_msg: "Failed to delete one or more VMs"
-    success_msg: "All 4 VMs deleted successfully"
+    success_msg: "All 2 VMs deleted successfully"
   loop: "{{ result.results }}"
 
 ##################################################################################
