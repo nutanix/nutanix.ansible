@@ -19,6 +19,15 @@ author:
     - Abhinav Bansal (@abhinavbansal29)
     - George Ghawali (@george-ghawali)
 options:
+    state:
+        description:
+            - Specify state.
+            - If C(state) is set to C(present), VM-host affinity policy re-enforce operation is triggered.
+            - No other choices are supported for this module.
+        choices:
+            - present
+        type: str
+        default: present
     ext_id:
         description:
             - The external ID of the VM-host affinity policy to re-enforce.
@@ -103,11 +112,6 @@ from ..module_utils.v4.vmm.api_client import (  # noqa: E402
 )
 from ..module_utils.v4.vmm.helpers import get_vm_host_affinity_policy  # noqa: E402
 
-SDK_IMP_ERROR = None
-try:
-    import ntnx_vmm_py_client as vmm_sdk  # noqa: E402,F401
-except ImportError:
-    SDK_IMP_ERROR = traceback.format_exc()
 
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
@@ -125,8 +129,10 @@ def re_enforce_policy(module, api_instance, result):
     result["ext_id"] = ext_id
 
     if module.check_mode:
-        result["msg"] = "VM-host affinity policy with ext_id:{0} will be re-enforced.".format(
-            ext_id
+        result["msg"] = (
+            "VM-host affinity policy with ext_id:{0} will be re-enforced.".format(
+                ext_id
+            )
         )
         return
 
@@ -134,7 +140,8 @@ def re_enforce_policy(module, api_instance, result):
     etag = get_etag(data=current_spec)
     if not etag:
         return module.fail_json(
-            msg="Unable to fetch etag for re-enforcing VM host affinity policy", **result
+            msg="Unable to fetch etag for re-enforcing VM host affinity policy",
+            **result,
         )
     kwargs = {"if_match": etag}
 
@@ -164,10 +171,6 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )
-    if SDK_IMP_ERROR:
-        module.fail_json(
-            msg=missing_required_lib("ntnx_vmm_py_client"), exception=SDK_IMP_ERROR
-        )
 
     remove_param_with_none_value(module.params)
     result = {
