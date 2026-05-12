@@ -39,6 +39,11 @@ options:
             - A URL query parameter that specifies the total number of records returned in the result set.
         type: int
         required: false
+    read_timeout:
+        description: Read timeout in milliseconds for API calls.
+        type: int
+        required: false
+        default: 30000
 author:
     - Abhinav Bansal (@abhinavbansal29)
     - George Ghawali (@george-ghawali)
@@ -206,9 +211,7 @@ import warnings  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
-from ..module_utils.v4.utils import (  # noqa: E402
-    raise_api_exception,
-)
+from ..module_utils.v4.utils import raise_api_exception  # noqa: E402
 from ..module_utils.v4.vmm.api_client import (  # noqa: E402
     get_vm_anti_affinity_policies_api_instance,
 )
