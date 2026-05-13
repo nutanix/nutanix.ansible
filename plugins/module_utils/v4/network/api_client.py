@@ -195,3 +195,15 @@ def get_bridges_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_networking_py_client.BridgesApi(api_client=api_client)
+
+
+def get_nic_profiles_api_instance(module):
+    """
+    This method will return NicProfilesApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): nic profiles api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.NicProfilesApi(api_client=api_client)
