@@ -1,0 +1,137 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create a DS category mapping (check mode)
+# 2. Create a DS category mapping
+# 3. Update the DS category mapping
+# 4. List all DS category mappings
+# 5. List DS category mappings using filter
+# 6. List DS category mappings using limit
+# 7. Get DS category mapping using ext_id
+# 8. Delete the DS category mapping
+
+- name: DS Category Mappings playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host }}"
+      nutanix_username: "{{ nutanix_username }}"
+      nutanix_password: "{{ nutanix_password }}"
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        category_mapping_name: "ansible_category_mapping"
+        category_name: "AppType"
+        category_value: "Default"
+        directory_service_reference: "{{ directory_service_reference }}"
+        object_identifier: "{{ object_identifier }}"
+
+    - name: Create DS category mapping in check mode
+      nutanix.ncp.ntnx_category_mapping_v2:
+        state: present
+        name: "{{ category_mapping_name }}"
+        category_name: "{{ category_name }}"
+        category_value: "{{ category_value }}"
+        ad_info:
+          directory_service_reference: "{{ directory_service_reference }}"
+          object_identifier: "{{ object_identifier }}"
+      register: result
+      ignore_errors: true
+      check_mode: true
+
+    - name: Print check mode result
+      ansible.builtin.debug:
+        var: result
+
+    - name: Create DS category mapping
+      nutanix.ncp.ntnx_category_mapping_v2:
+        state: present
+        name: "{{ category_mapping_name }}"
+        category_name: "{{ category_name }}"
+        category_value: "{{ category_value }}"
+        ad_info:
+          directory_service_reference: "{{ directory_service_reference }}"
+          object_identifier: "{{ object_identifier }}"
+      register: result
+      ignore_errors: true
+
+    - name: Print create result
+      ansible.builtin.debug:
+        var: result
+
+    - name: Store category mapping ext_id
+      ansible.builtin.set_fact:
+        category_mapping_ext_id: "{{ result.ext_id }}"
+      when: result.ext_id is defined
+
+    - name: Update DS category mapping
+      nutanix.ncp.ntnx_category_mapping_v2:
+        state: present
+        ext_id: "{{ category_mapping_ext_id }}"
+        name: "{{ category_mapping_name }}_updated"
+        category_name: "{{ category_name }}"
+        category_value: "{{ category_value }}"
+        ad_info:
+          directory_service_reference: "{{ directory_service_reference }}"
+          object_identifier: "{{ object_identifier }}"
+      register: result
+      ignore_errors: true
+      when: category_mapping_ext_id is defined
+
+    - name: Print update result
+      ansible.builtin.debug:
+        var: result
+
+    - name: List all DS category mappings
+      nutanix.ncp.ntnx_category_mappings_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Print list result
+      ansible.builtin.debug:
+        var: result
+
+    - name: List DS category mappings using filter
+      nutanix.ncp.ntnx_category_mappings_info_v2:
+        filter: "name eq '{{ category_mapping_name }}_updated'"
+      register: result
+      ignore_errors: true
+
+    - name: Print filter result
+      ansible.builtin.debug:
+        var: result
+
+    - name: List DS category mappings using limit
+      nutanix.ncp.ntnx_category_mappings_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: Print limit result
+      ansible.builtin.debug:
+        var: result
+
+    - name: Get DS category mapping using ext_id
+      nutanix.ncp.ntnx_category_mappings_info_v2:
+        ext_id: "{{ category_mapping_ext_id }}"
+      register: result
+      ignore_errors: true
+      when: category_mapping_ext_id is defined
+
+    - name: Print get result
+      ansible.builtin.debug:
+        var: result
+
+    - name: Delete DS category mapping
+      nutanix.ncp.ntnx_category_mapping_v2:
+        ext_id: "{{ category_mapping_ext_id }}"
+        state: absent
+      register: result
+      ignore_errors: true
+      when: category_mapping_ext_id is defined
+
+    - name: Print delete result
+      ansible.builtin.debug:
+        var: result

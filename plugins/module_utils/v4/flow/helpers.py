@@ -1,4 +1,4 @@
-# Copyright: (c) 2024, Nutanix
+# Copyright: (c) 2026, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -102,3 +102,23 @@ def strip_service_group_extra_attributes(obj):
         setattr(obj, field, None)
 
     return obj
+
+
+def get_ds_category_mapping(module, api_instance, ext_id):
+    """
+    This method will return DS category mapping info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: DirectoryServerConfigsApi instance from ntnx_microseg_py_client sdk
+        ext_id (str): DS category mapping external ID
+    Returns:
+        category_mapping (object): DS category mapping info
+    """
+    try:
+        return api_instance.get_ds_category_mapping_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching DS category mapping info using ext_id",
+        )
