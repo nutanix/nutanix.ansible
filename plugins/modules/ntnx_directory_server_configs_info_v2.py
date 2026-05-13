@@ -63,7 +63,6 @@ EXAMPLES = r"""
     nutanix_password: <pass>
     validate_certs: false
   register: result
-
 """
 
 RETURN = r"""
