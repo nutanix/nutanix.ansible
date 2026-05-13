@@ -22,11 +22,9 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create user group) -
-      Operation Name: Create User Group -
       Required Roles: Nutanix Central Admin, Prism Admin, Project Admin, Project Manager, Super Admin, Self-Service Admin (deprecated)
     - >-
       B(Delete user group) -
-      Operation Name: Delete User Group -
       Required Roles: Nutanix Central Admin, Prism Admin, Project Manager, Super Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam)"
 options:

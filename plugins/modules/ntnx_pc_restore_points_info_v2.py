@@ -19,11 +19,9 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get restore point by ext_id) -
-      Operation Name: View Restorable Domain Manager Restore Point -
       Required Roles: Domain Manager Admin, Domain Manager Viewer, Prism Admin, Prism Viewer, Super Admin
     - >-
       B(List restore points) -
-      Operation Name: View Restorable Domain Manager Restore Point -
       Required Roles: Domain Manager Admin, Domain Manager Viewer, Prism Admin, Prism Viewer, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:

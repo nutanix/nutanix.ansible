@@ -20,7 +20,6 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Revoke the requested key) -
-      Operation Name: Revoke User Key -
       Required Roles: Nutanix Central Admin, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam)"
 options:

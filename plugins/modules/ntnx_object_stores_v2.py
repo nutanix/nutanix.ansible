@@ -21,15 +21,12 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create an Object store) -
-      Operation Name: Create Object Store -
       Required Roles: Objects Admin, Prism Admin, Super Admin
     - >-
       B(Delete an Object store) -
-      Operation Name: Delete Object Store -
       Required Roles: Objects Admin, Objects Editor, Prism Admin, Super Admin
     - >-
       B(Update an Object store) -
-      Operation Name: Update Object Store -
       Required Roles: Objects Admin, Objects Editor, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=objects)"
 options:

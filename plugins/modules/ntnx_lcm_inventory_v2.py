@@ -22,7 +22,6 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Perform an inventory operation to identify/scan entities on the cluster that can be updated through LCM.) -
-      Operation Name: Perform Inventory Component -
       Required Roles: Cluster Admin, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle)"
 options:

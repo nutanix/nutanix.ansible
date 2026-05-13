@@ -22,17 +22,14 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create a category) -
-      Operation Name: Create Category -
       Required Roles: Category Admin, CSI System, Kubernetes Admin, Kubernetes Data Services System, Kubernetes Infrastructure Provision, NCM Connector,
       Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
     - >-
       B(Delete a category) -
-      Operation Name: Delete Category -
       Required Roles: Category Admin, CSI System, Kubernetes Admin, Kubernetes Data Services System, Kubernetes Infrastructure Provision, NCM Connector,
       Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
     - >-
       B(Update a category) -
-      Operation Name: Update Category -
       Required Roles: Category Admin, CSI System, Kubernetes Admin, Kubernetes Data Services System, Kubernetes Infrastructure Provision, Prism Admin,
       Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
