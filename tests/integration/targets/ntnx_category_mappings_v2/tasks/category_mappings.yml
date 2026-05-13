@@ -1,0 +1,258 @@
+---
+- name: Start ntnx_category_mapping_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_category_mapping_v2 tests
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set suffix_name
+  ansible.builtin.set_fact:
+    suffix_name: ansible-cm
+
+- name: Set variables for the tests
+  ansible.builtin.set_fact:
+    cm1: "{{ random_name }}{{ suffix_name }}1"
+    cm2: "{{ random_name }}{{ suffix_name }}2"
+
+- name: Set todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+###################################################################################################
+
+- name: Generate spec for create DS category mapping with check mode enabled
+  nutanix.ncp.ntnx_category_mapping_v2:
+    state: present
+    name: "test-ansible-category-mapping-1"
+    category_name: "AppType"
+    category_value: "Default"
+    ad_info:
+      directory_service_reference: "00000000-0000-0000-0000-000000000000"
+      object_identifier: "00000000-0000-0000-0000-000000000001"
+      object_path: "CN=TestGroup,DC=example,DC=com"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Generate spec for create DS category mapping with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "test-ansible-category-mapping-1"
+      - result.response.category_name == "AppType"
+      - result.response.category_value == "Default"
+      - result.response.ad_info.directory_service_reference == "00000000-0000-0000-0000-000000000000"
+      - result.response.ad_info.object_identifier == "00000000-0000-0000-0000-000000000001"
+      - result.response.ad_info.object_path == "CN=TestGroup,DC=example,DC=com"
+    fail_msg: "Generate spec for create DS category mapping with check mode enabled failed"
+    success_msg: "Generate spec for create DS category mapping with check mode enabled passed"
+
+###################################################################################################
+
+- name: Create DS category mapping without name (negative test)
+  nutanix.ncp.ntnx_category_mapping_v2:
+    state: present
+    category_name: "AppType"
+    category_value: "Default"
+    ad_info:
+      directory_service_reference: "00000000-0000-0000-0000-000000000000"
+      object_identifier: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Create DS category mapping without name status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - >-
+        "state is present but all of the following are missing" in result.msg
+    fail_msg: "Create DS category mapping without name did not fail as expected"
+    success_msg: "Create DS category mapping without name failed as expected"
+
+###################################################################################################
+
+- name: Delete DS category mapping without ext_id (negative test)
+  nutanix.ncp.ntnx_category_mapping_v2:
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Delete DS category mapping without ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - >-
+        "state is absent but all of the following are missing" in result.msg
+    fail_msg: "Delete DS category mapping without ext_id did not fail as expected"
+    success_msg: "Delete DS category mapping without ext_id failed as expected"
+
+###################################################################################################
+
+- name: Create DS category mapping (will fail due to no AD config on test PC)
+  nutanix.ncp.ntnx_category_mapping_v2:
+    state: present
+    name: "{{ cm1 }}_category_mapping"
+    category_name: "AppType"
+    category_value: "Default"
+    ad_info:
+      directory_service_reference: "00000000-0000-0000-0000-000000000000"
+      object_identifier: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Create DS category mapping status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Task Failed"
+    fail_msg: "Create DS category mapping should fail due to missing AD config"
+    success_msg: "Create DS category mapping failed as expected due to missing AD config"
+
+###################################################################################################
+
+- name: Update DS category mapping with wrong ext_id (negative test)
+  nutanix.ncp.ntnx_category_mapping_v2:
+    state: present
+    ext_id: "83cbf00d-782f-4efc-87c8-4129f5942aaa"
+    name: "{{ cm1 }}_category_mapping_updated"
+    category_name: "AppType"
+    category_value: "Default"
+    ad_info:
+      directory_service_reference: "00000000-0000-0000-0000-000000000000"
+      object_identifier: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Update DS category mapping with wrong ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - >-
+        "Api Exception raised while fetching DS category mapping info using ext_id" in result.msg
+    fail_msg: "Update DS category mapping with wrong ext_id did not fail as expected"
+    success_msg: "Update DS category mapping with wrong ext_id failed as expected"
+
+###################################################################################################
+
+- name: Delete DS category mapping with wrong ext_id (negative test)
+  nutanix.ncp.ntnx_category_mapping_v2:
+    ext_id: "83cbf00d-782f-4efc-87c8-4129f5942aaa"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Delete DS category mapping with wrong ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+    fail_msg: "Delete DS category mapping with wrong ext_id did not fail as expected"
+    success_msg: "Delete DS category mapping with wrong ext_id failed as expected"
+
+###################################################################################################
+
+- name: Delete DS category mapping in check mode
+  nutanix.ncp.ntnx_category_mapping_v2:
+    ext_id: "83cbf00d-782f-4efc-87c8-4129f5942aaa"
+    state: absent
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete DS category mapping in check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - >-
+        "DS category mapping with ext_id" in result.msg
+      - >-
+        "will be deleted" in result.msg
+    fail_msg: "Delete DS category mapping in check mode failed"
+    success_msg: "Delete DS category mapping in check mode passed"
+
+###################################################################################################
+
+- name: Generate spec for update DS category mapping with check mode (will fail - wrong ext_id)
+  nutanix.ncp.ntnx_category_mapping_v2:
+    state: present
+    ext_id: "83cbf00d-782f-4efc-87c8-4129f5942aaa"
+    name: "{{ cm1 }}_updated_name"
+    category_name: "AppType"
+    category_value: "Default"
+    ad_info:
+      directory_service_reference: "00000000-0000-0000-0000-000000000000"
+      object_identifier: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Generate spec for update with wrong ext_id in check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - >-
+        "Api Exception raised while fetching DS category mapping info using ext_id" in result.msg
+    fail_msg: "Generate spec for update with wrong ext_id in check mode did not fail as expected"
+    success_msg: "Generate spec for update with wrong ext_id in check mode failed as expected"
+
+###################################################################################################
+
+- name: List all DS category mappings
+  nutanix.ncp.ntnx_category_mappings_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: List all DS category mappings status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.total_available_results is defined
+    fail_msg: "List all DS category mappings failed"
+    success_msg: "All DS category mappings listed successfully"
+
+###################################################################################################
+
+- name: List DS category mappings using limit
+  nutanix.ncp.ntnx_category_mappings_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List DS category mappings using limit status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+    fail_msg: "List DS category mappings using limit failed"
+    success_msg: "DS category mappings listed successfully using limit"
+
+###################################################################################################
+
+- name: Get DS category mapping using wrong ext_id (negative test)
+  nutanix.ncp.ntnx_category_mappings_info_v2:
+    ext_id: "83cbf00d-782f-4efc-87c8-4129f5942aaa"
+  register: result
+  ignore_errors: true
+
+- name: Get DS category mapping using wrong ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - >-
+        "Api Exception raised while fetching DS category mapping info using ext_id" in result.msg
+    fail_msg: "Get DS category mapping using wrong ext_id did not fail as expected"
+    success_msg: "Get DS category mapping using wrong ext_id failed as expected"
