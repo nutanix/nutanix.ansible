@@ -14,7 +14,7 @@ module: ntnx_directory_server_config_v2
 short_description: Create, Update, Delete directory server config
 version_added: 2.6.0
 description:
-    - Create, Update, Delete directory server config
+    - This module is used to create, update and delete directory server config in Nutanix PC.
     - This module uses PC v4 APIs based SDKs
 notes:
     - >-
@@ -22,89 +22,90 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Configure Directory Servers) -
-      Operation Name: Create Directory Server Config -
-      Required Roles: Flow Admin, Prism Admin, Super Admin
+      Required Roles: Flow Admin, Prism Admin, Project Manager, Super Admin
     - >-
       B(Delete a Directory Server by ExtID) -
-      Operation Name: Delete Directory Server Config -
-      Required Roles: Flow Admin, Prism Admin, Super Admin
+      Required Roles: Flow Admin, Prism Admin, Project Manager, Super Admin
     - >-
       B(Update a Directory Server by ExtID) -
-      Operation Name: Update Directory Server Config -
-      Required Roles: Flow Admin, Prism Admin, Super Admin
+      Required Roles: Flow Admin, Prism Admin, Project Manager, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg)"
 options:
     state:
         description:
-            - State of the directory server config, whether to create, update or delete.
-            - present -> Create directory server config if external ID is not provided,
-              Update directory server config if external ID is provided.
-            - absent -> Delete directory server config with the given external ID.
+            - State of the directory server config. Whether to create, update, or delete.
+            - If C(state) is C(present) and C(ext_id) is not provided, create a new directory server config.
+            - If C(state) is C(present) and C(ext_id) is provided, update the directory server config.
+            - If C(state) is C(absent), it will delete the directory server config with the given External ID.
         type: str
         choices: ['present', 'absent']
     ext_id:
         description:
-            - Directory server config External ID.
+            - External ID of the directory server config.
             - Required for updating or deleting directory server config.
         type: str
     is_default_category_enabled:
         description:
-            - Whether the default category is enabled.
+            - Enablement status of the default category.
         type: bool
     should_keep_default_category_on_login:
         description:
-            - Whether to keep the default category on login.
+            - Retain default category on user login.
         type: bool
     matching_criterias:
         description:
-            - List of matching criterias for the directory server config.
+            - The matching criteria used to determine whether an entity will be categorized by identity categorization.
+            - If match type is ALL, all the entities will be categorized.
         type: list
         elements: dict
         suboptions:
             match_entity:
                 description:
-                    - The entity to match against.
+                    - The entity to perform matching on. Currently, only the target VM that a logon occurred on is supported.
                 type: str
                 choices: ["VM"]
             match_field:
                 description:
-                    - The field to match against.
+                    - The field to match on. Today only NAME is supported, which matches on an entity's name.
                 type: str
                 choices: ["NAME"]
             match_type:
                 description:
-                    - The type of match to perform.
+                    - The type of match. Today only CONTAINS and ALL are supported.
+                    - C(CONTAINS) performs a substring match on the given entity and field for the
+                      criteria value whereas C(ALL) allows all strings to match on the given entity.
                 type: str
                 choices: ["ALL", "CONTAINS"]
             criteria:
                 description:
-                    - The criteria string for matching.
+                    - The criteria to use for matching entities to be categorized.
+                    - Note that depending on the match type, the usage of this value may differ.
                 type: str
     directory_service_reference:
         description:
-            - The external ID of the directory service reference.
+            - The External ID of the directory service that will be used for mapping.
         type: str
     domain_controllers:
         description:
-            - List of domain controllers for the directory server config.
+            - List of domain controllers to be used for event scraping.
         type: list
         elements: dict
         suboptions:
             ipv4:
                 description:
-                    - IPv4 address of the domain controller.
+                    - IPv4 address of the domain controller for the directory server config.
                 type: dict
                 suboptions:
                     value:
-                        description: The IPv4 address value.
+                        description: The IPv4 address value for the directory server config.
                         type: str
                     prefix_length:
-                        description: The prefix length of the IPv4 address.
+                        description: The prefix length of the IPv4 address for the directory server config.
                         type: int
                         default: 32
             ipv6:
                 description:
-                    - IPv6 address of the domain controller.
+                    - IPv6 address of the domain controller for the directory server config.
                 type: dict
                 suboptions:
                     value:
@@ -134,6 +135,7 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_proxy_v2
 author:
  - Abhinav Bansal (@abhinavbansal29)
+ - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
@@ -161,7 +163,7 @@ EXAMPLES = r"""
     nutanix_password: <pass>
     validate_certs: false
     state: present
-    ext_id: "{{ result.ext_id }}"
+    ext_id: "b215708c-252f-400c-bc90-2f36242d3d3c"
     directory_service_reference: "00062ffc-95ad-19e9-185b-ac1f6b6f97a3"
     matching_criterias:
       - match_entity: VM
@@ -178,7 +180,7 @@ EXAMPLES = r"""
     nutanix_password: <pass>
     validate_certs: false
     state: absent
-    ext_id: "{{ result.ext_id }}"
+    ext_id: "b215708c-252f-400c-bc90-2f36242d3d3c"
   register: result
 """
 
@@ -187,7 +189,7 @@ response:
   description:
     - Response for directory server config operations.
     - Directory server config details if C(wait) is true and the operation is create or update.
-    - Task details if C(wait) is false.
+    - Task details if the operation is delete or C(wait) is false.
   returned: always
   type: dict
   sample:
@@ -242,7 +244,7 @@ task_ext_id:
   description: The task ext_id for the operation
   returned: when applicable
   type: str
-  sample: "63311404-8b2e-4dbf-9e33-7848cc88d330"
+  sample: "ZXJnb24=:ef448c66-0acc-48ae-b30f-56f93b1981e7"
 
 skipped:
   description: This indicates whether the task was skipped due to idempotency checks

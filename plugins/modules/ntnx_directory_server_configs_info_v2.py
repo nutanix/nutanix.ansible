@@ -15,19 +15,17 @@ short_description: Get directory server configs info
 version_added: 2.6.0
 description:
     - Fetch specific directory server config info using external ID
-    - Fetch list of all directory server configs if external ID is not provided
+    - Fetch list of all directory server configs if External ID is not provided.
     - This module uses PC v4 APIs based SDKs
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get directory server config by ext_id) -
-      Operation Name: View Directory Server Config -
-      Required Roles: Flow Admin, Flow Viewer, Prism Admin, Prism Viewer, Super Admin
+      Required Roles: Flow Admin, Flow Viewer, Prism Admin, Prism Viewer, Project Manager, Super Admin
     - >-
       B(List all the Directory Servers) -
-      Operation Name: View Directory Server Config -
-      Required Roles: Flow Admin, Flow Viewer, Prism Admin, Prism Viewer, Super Admin
+      Required Roles: Flow Admin, Flow Viewer, Prism Admin, Prism Viewer, Project Manager, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg)"
 options:
     ext_id:
@@ -36,22 +34,14 @@ options:
         type: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
-      - nutanix.ncp.ntnx_info_v2
       - nutanix.ncp.ntnx_logger
       - nutanix.ncp.ntnx_proxy_v2
 author:
  - Abhinav Bansal (@abhinavbansal29)
+ - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
-- name: List all directory server configs
-  nutanix.ncp.ntnx_directory_server_configs_info_v2:
-    nutanix_host: <pc_ip>
-    nutanix_username: <user>
-    nutanix_password: <pass>
-    validate_certs: false
-  register: result
-
 - name: Get directory server config using ext_id
   nutanix.ncp.ntnx_directory_server_configs_info_v2:
     nutanix_host: <pc_ip>
@@ -60,6 +50,15 @@ EXAMPLES = r"""
     validate_certs: false
     ext_id: "b215708c-252f-400c-bc90-2f36242d3d3c"
   register: result
+
+- name: List all directory server configs
+  nutanix.ncp.ntnx_directory_server_configs_info_v2:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    validate_certs: false
+  register: result
+
 """
 
 RETURN = r"""
@@ -185,6 +184,7 @@ def run_module():
     module = BaseInfoModule(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
+        skip_info_args=True,
     )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None}
