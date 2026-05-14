@@ -416,7 +416,7 @@ def update_directory_server_config(module, api_instance, result):
         current_spec.to_dict(), update_spec.to_dict()
     ):
         result["skipped"] = True
-        module.exit_json(msg="Nothing to change.")
+        module.exit_json(msg="Nothing to change.", **result)
 
     etag = get_etag(current_spec)
     kwargs = {"if_match": etag}
