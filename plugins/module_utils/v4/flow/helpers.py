@@ -102,3 +102,23 @@ def strip_service_group_extra_attributes(obj):
         setattr(obj, field, None)
 
     return obj
+
+
+def get_directory_server_config(module, api_instance, ext_id):
+    """
+    This method will return directory server config info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: DirectoryServerConfigsApi instance from ntnx_microseg_py_client sdk
+        ext_id (str): directory server config external ID
+    Returns:
+        directory_server_config (object): directory server config info
+    """
+    try:
+        return api_instance.get_directory_server_config_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching directory server config info using ext_id",
+        )
