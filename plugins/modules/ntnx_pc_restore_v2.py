@@ -511,7 +511,7 @@ options:
                             ip_ranges:
                                 description: Range of IPs used for Prism Central network setup.
                                 type: list
-                                required: true
+                                required: false
                                 elements: dict
                                 suboptions:
                                     begin:

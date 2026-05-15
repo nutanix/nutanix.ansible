@@ -491,7 +491,7 @@ options:
                         description: Range of IPs used for Prism Central network setup.
                         type: list
                         elements: dict
-                        required: true
+                        required: false
                         suboptions:
                             begin:
                                 description: An unique address that identifies a device on the internet or a local network in IPv4 or IPv6 format.
