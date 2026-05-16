@@ -1,0 +1,14 @@
+---
+- name: Run ntnx_role_membership_v2, ntnx_role_memberships_info_v2 tests
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+
+  tasks:
+    - name: Import all_operations test tasks
+      ansible.builtin.import_tasks: all_operations.yml
