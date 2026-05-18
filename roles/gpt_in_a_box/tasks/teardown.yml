@@ -1,0 +1,39 @@
+---
+- name: Get existing worker VMs
+  nutanix.ansible.ntnx_vms_info_v2:
+    nutanix_host: "{{ gptbox_nutanix_host }}"
+    nutanix_username: "{{ gptbox_nutanix_username }}"
+    nutanix_password: "{{ gptbox_nutanix_password }}"
+    validate_certs: "{{ gptbox_nutanix_validate_certs }}"
+  register: _gptbox_all_vms
+
+- name: Find GPT-in-a-Box worker VMs
+  ansible.builtin.set_fact:
+    _gptbox_teardown_vms: >-
+      {{ _gptbox_all_vms.response | default([]) |
+         selectattr('name', 'match', gptbox_nkp_name ~ '-worker-.*') | list }}
+
+- name: Delete GPT-in-a-Box worker VMs
+  nutanix.ansible.ntnx_vms_v2:
+    nutanix_host: "{{ gptbox_nutanix_host }}"
+    nutanix_username: "{{ gptbox_nutanix_username }}"
+    nutanix_password: "{{ gptbox_nutanix_password }}"
+    validate_certs: "{{ gptbox_nutanix_validate_certs }}"
+    state: absent
+    ext_id: "{{ item.ext_id }}"
+  loop: "{{ _gptbox_teardown_vms }}"
+  loop_control:
+    label: "{{ item.name }}"
+  when: _gptbox_teardown_vms | length > 0
+
+- name: Remove model storage volume
+  nutanix.ansible.ntnx_volume_groups_v2:
+    nutanix_host: "{{ gptbox_nutanix_host }}"
+    nutanix_username: "{{ gptbox_nutanix_username }}"
+    nutanix_password: "{{ gptbox_nutanix_password }}"
+    validate_certs: "{{ gptbox_nutanix_validate_certs }}"
+    state: absent
+    name: "{{ gptbox_nkp_name }}-model-storage"
+    cluster_reference:
+      ext_id: "{{ _gptbox_cluster.ext_id }}"
+  ignore_errors: true

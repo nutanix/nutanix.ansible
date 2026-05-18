@@ -1,0 +1,23 @@
+---
+galaxy_info:
+  role_name: ai_workload_config
+  author: Ansible Cloud Team
+  description: >-
+    Configure GPU resources for AI workloads on Nutanix AHV. Assigns GPU
+    devices to VMs via passthrough or vGPU and validates GPU availability
+    on the target cluster.
+  company: Red Hat
+  license: GPL-3.0-or-later
+  min_ansible_version: "2.14"
+  platforms:
+    - name: EL
+      versions:
+        - "8"
+        - "9"
+  galaxy_tags:
+    - nutanix
+    - gpu
+    - ai
+    - ahv
+
+dependencies: []

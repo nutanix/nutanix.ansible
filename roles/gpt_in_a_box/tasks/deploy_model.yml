@@ -1,0 +1,36 @@
+---
+- name: Display model deployment information
+  ansible.builtin.debug:
+    msg: >-
+      Deploying model {{ gptbox_model_name }} as endpoint {{ gptbox_model_endpoint_name }}
+      with {{ gptbox_model_replicas }} replica(s), {{ gptbox_model_gpu_count }} GPU(s) each,
+      on port {{ gptbox_inference_port }}
+
+- name: Create model storage volume
+  nutanix.ansible.ntnx_volume_groups_v2:
+    nutanix_host: "{{ gptbox_nutanix_host }}"
+    nutanix_username: "{{ gptbox_nutanix_username }}"
+    nutanix_password: "{{ gptbox_nutanix_password }}"
+    validate_certs: "{{ gptbox_nutanix_validate_certs }}"
+    state: present
+    name: "{{ gptbox_nkp_name }}-model-storage"
+    description: "Model storage for GPT-in-a-Box {{ gptbox_model_name }}"
+    cluster_reference:
+      ext_id: "{{ _gptbox_cluster.ext_id }}"
+  register: _gptbox_model_storage
+
+- name: Generate model deployment manifest
+  ansible.builtin.set_fact:
+    _gptbox_model_manifest:
+      model_name: "{{ gptbox_model_name }}"
+      endpoint_name: "{{ gptbox_model_endpoint_name }}"
+      replicas: "{{ gptbox_model_replicas }}"
+      gpu_count: "{{ gptbox_model_gpu_count }}"
+      inference_port: "{{ gptbox_inference_port }}"
+      storage_size_gb: "{{ gptbox_model_storage_size_gb }}"
+      nkp_cluster: "{{ gptbox_nkp_name }}"
+
+- name: Display deployment manifest
+  ansible.builtin.debug:
+    var: _gptbox_model_manifest
+    verbosity: 1

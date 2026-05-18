@@ -1,0 +1,35 @@
+---
+- name: Create GPU worker VMs for GPT-in-a-Box
+  nutanix.ansible.ntnx_vms_v2:
+    nutanix_host: "{{ gptbox_nutanix_host }}"
+    nutanix_username: "{{ gptbox_nutanix_username }}"
+    nutanix_password: "{{ gptbox_nutanix_password }}"
+    validate_certs: "{{ gptbox_nutanix_validate_certs }}"
+    state: present
+    name: "{{ gptbox_nkp_name }}-worker-{{ item }}"
+    cluster:
+      ext_id: "{{ _gptbox_cluster.ext_id }}"
+    num_sockets: 1
+    num_cores_per_socket: "{{ gptbox_nkp_worker_vcpus }}"
+    memory_size_bytes: "{{ gptbox_nkp_worker_memory_gb * 1073741824 }}"
+    nics:
+      - network_info:
+          subnet:
+            ext_id: "{{ _gptbox_subnet.ext_id }}"
+    disks:
+      - disk_size_bytes: "{{ gptbox_nkp_worker_disk_gb * 1073741824 }}"
+        backing_info:
+          disk_type: SCSI
+    gpus:
+      - mode: "{{ gptbox_gpu_mode | upper }}"
+        name: "{{ gptbox_gpu_name | default(omit) }}"
+        vendor: "{{ gptbox_gpu_vendor }}"
+  loop: "{{ range(1, gptbox_nkp_worker_count + 1) | list }}"
+  loop_control:
+    label: "{{ gptbox_nkp_name }}-worker-{{ item }}"
+  register: _gptbox_worker_results
+
+- name: Build worker VM name list
+  ansible.builtin.set_fact:
+    _gptbox_worker_vms: >-
+      {{ range(1, gptbox_nkp_worker_count + 1) | map('regex_replace', '^(.*)$', gptbox_nkp_name ~ '-worker-\1') | list }}
