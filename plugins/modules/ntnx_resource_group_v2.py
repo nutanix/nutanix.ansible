@@ -139,7 +139,40 @@ response:
         - It will contain task details when C(wait) is false.
     returned: always
     type: dict
-    sample: "<Need to add sample>"
+    sample: {
+            "capabilities": null,
+            "create_time": "2026-05-19T14:45:40.129823+00:00",
+            "created_by": "00000000-0000-0000-0000-000000000000",
+            "ext_id": "14669a45-1ee4-4b62-619e-2401c9a35621",
+            "last_update_time": "2026-05-19T14:45:40.129823+00:00",
+            "last_updated_by": "00000000-0000-0000-0000-000000000000",
+            "links": null,
+            "name": "my-resource-group",
+            "placement_targets": [
+                {
+                    "capabilities": [
+                        {
+                            "name": "cluster_name",
+                            "value": "my-cluster",
+                        },
+                    ],
+                    "cluster_ext_id": "000651ae-e050-d250-2d7a-5254001a3d38",
+                    "storage_containers": [
+                        {
+                            "capabilities": [
+                                {
+                                    "name": "replication_factor",
+                                    "value": "2",
+                                },
+                            ],
+                            "ext_id": "5d4f7039-b1d4-437c-9b0e-c34a87e08583",
+                        },
+                    ],
+                },
+            ],
+            "project_ext_id": "4b53a755-0e1e-593c-9798-d179db2df309",
+            "tenant_id": null,
+        }
 
 changed:
     description: This indicates whether the task resulted in any changes.

@@ -77,7 +77,45 @@ response:
         - List of multiple resource groups if external ID is not provided.
     returned: always
     type: dict
-    sample: "<Need to add sample>"
+    sample: [
+            {
+                "capabilities": null,
+                "create_time": "2026-05-19T14:45:36.847543+00:00",
+                "created_by": "00000000-0000-0000-0000-000000000000",
+                "ext_id": "c8275149-4468-47e9-5adc-9d441157c94a",
+                "last_update_time": "2026-05-19T14:45:36.847543+00:00",
+                "last_updated_by": "00000000-0000-0000-0000-000000000000",
+                "links": null,
+                "name": "my-resource-group-1",
+                "placement_targets": null,
+                "project_ext_id": "532477b8-53eb-5ec4-8c1a-a458e70bc7e9",
+                "tenant_id": null,
+            },
+            {
+                "capabilities": null,
+                "create_time": "2026-05-19T14:45:40.129823+00:00",
+                "created_by": "00000000-0000-0000-0000-000000000000",
+                "ext_id": "14669a45-1ee4-4b62-619e-2401c9a35621",
+                "last_update_time": "2026-05-19T14:45:40.129823+00:00",
+                "last_updated_by": "00000000-0000-0000-0000-000000000000",
+                "links": null,
+                "name": "my-resource-group-2",
+                "placement_targets": [
+                    {
+                        "capabilities": null,
+                        "cluster_ext_id": "000651ae-e050-d250-2d7a-5254001a3d38",
+                        "storage_containers": [
+                            {
+                                "capabilities": null,
+                                "ext_id": "5d4f7039-b1d4-437c-9b0e-c34a87e08583",
+                            },
+                        ],
+                    },
+                ],
+                "project_ext_id": "4b53a755-0e1e-593c-9798-d179db2df309",
+                "tenant_id": null,
+            },
+        ]
 
 changed:
     description: This indicates whether the task resulted in any changes.
