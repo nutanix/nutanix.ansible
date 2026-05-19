@@ -77,7 +77,38 @@ response:
         - List of multiple projects if external ID is not provided.
     returned: always
     type: dict
-    sample: "<Need to add sample>"
+    sample: [
+            {
+                "created_by": "00000000-0000-0000-0000-000000000000",
+                "created_timestamp": 1779200371249947,
+                "description": null,
+                "ext_id": "54924afe-85bc-599e-9280-698a99234ca4",
+                "id": "my-project-id-1",
+                "is_default": false,
+                "is_system_defined": false,
+                "links": null,
+                "modified_timestamp": 1779200371249947,
+                "name": "my-project-1",
+                "state": "ACTIVE",
+                "tenant_id": null,
+                "updated_by": "00000000-0000-0000-0000-000000000000",
+            },
+            {
+                "created_by": "00000000-0000-0000-0000-000000000000",
+                "created_timestamp": 1779200374640754,
+                "description": "Project with all fields for testing",
+                "ext_id": "9aed0472-2df3-5a19-9065-bc9ef4435f61",
+                "id": "my-project-id-2",
+                "is_default": false,
+                "is_system_defined": false,
+                "links": null,
+                "modified_timestamp": 1779200382340566,
+                "name": "my-project-2",
+                "state": "ACTIVE",
+                "tenant_id": null,
+                "updated_by": "00000000-0000-0000-0000-000000000000",
+            },
+        ]
 
 changed:
     description: This indicates whether the task resulted in any changes.
