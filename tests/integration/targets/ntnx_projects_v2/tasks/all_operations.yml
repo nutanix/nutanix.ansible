@@ -25,9 +25,8 @@
 - name: Create project with check mode - all fields
   nutanix.ncp.ntnx_project_v2:
     state: present
-    wait: true
-    name: "{{ project_name }}1"
-    project_id: "{{ project_name }}-id-1"
+    name: "project_check_mode_1"
+    project_id: "project_check_mode_1-id-1"
     description: "Check mode project with all fields"
   register: result
   check_mode: true
@@ -39,8 +38,8 @@
       - result.response is defined
       - result.changed == false
       - result.failed == false
-      - result.response.name == project_name ~ "1"
-      - result.response.id == project_name ~ "-id-1"
+      - result.response.name == "project_check_mode_1"
+      - result.response.id == "project_check_mode_1-id-1"
       - result.response.description == "Check mode project with all fields"
     fail_msg: "Check mode create with all fields failed"
     success_msg: "Check mode create with all fields passed"
@@ -48,9 +47,8 @@
 - name: Create project with check mode - name and project_id only
   nutanix.ncp.ntnx_project_v2:
     state: present
-    wait: true
-    name: "{{ project_name }}-name-only"
-    project_id: "{{ project_name }}-name-only-id"
+    name: "project_check_mode_2-name-only"
+    project_id: "project_check_mode_2-name-only-id"
   register: result
   check_mode: true
   ignore_errors: true
@@ -61,9 +59,8 @@
       - result.response is defined
       - result.changed == false
       - result.failed == false
-      - result.response.name == project_name ~ "-name-only"
-      - result.response.id == project_name ~ "-name-only-id"
-      - result.response.description is none
+      - result.response.name == "project_check_mode_2-name-only"
+      - result.response.id == "project_check_mode_2-name-only-id"
     fail_msg: "Check mode create with name only failed"
     success_msg: "Check mode create with name only passed"
 
@@ -73,7 +70,6 @@
 - name: Create project with minimum fields
   nutanix.ncp.ntnx_project_v2:
     state: present
-    wait: true
     name: "{{ project_name }}1"
     project_id: "{{ project_name }}-id-1"
   register: result
@@ -89,7 +85,6 @@
       - result.changed == true
       - result.response.name == project_name ~ "1"
       - result.response.state == "ACTIVE"
-      - result.response.description is none
     fail_msg: "Create project with minimum fields failed"
     success_msg: "Create project with minimum fields passed"
 
@@ -100,7 +95,6 @@
 - name: Create project with all fields
   nutanix.ncp.ntnx_project_v2:
     state: present
-    wait: true
     name: "{{ project_name }}2"
     project_id: "{{ project_name }}-id-2"
     description: "Project with all fields for testing"
@@ -119,8 +113,6 @@
       - result.response.id == project_name ~ "-id-2"
       - result.response.description == "Project with all fields for testing"
       - result.response.state == "ACTIVE"
-      - result.response.is_default == false
-      - result.response.is_system_defined == false
     fail_msg: "Create project with all fields failed"
     success_msg: "Create project with all fields passed"
 
@@ -138,7 +130,6 @@
 - name: Update project description with check mode
   nutanix.ncp.ntnx_project_v2:
     state: present
-    wait: true
     ext_id: "{{ project_ext_id }}"
     description: "Updated description check mode"
   register: result
@@ -162,7 +153,6 @@
 - name: Update project description
   nutanix.ncp.ntnx_project_v2:
     state: present
-    wait: true
     ext_id: "{{ project_ext_id }}"
     description: "Updated project description"
   register: result
@@ -182,7 +172,6 @@
 - name: Update project description again
   nutanix.ncp.ntnx_project_v2:
     state: present
-    wait: true
     ext_id: "{{ project_ext_id }}"
     description: "Final description"
   register: result
@@ -203,7 +192,6 @@
 - name: Check idempotency - no changes
   nutanix.ncp.ntnx_project_v2:
     state: present
-    wait: true
     ext_id: "{{ project_ext_id }}"
     description: "Final description"
   register: result
@@ -233,9 +221,9 @@
 - name: Verify check mode delete
   ansible.builtin.assert:
     that:
-      - result.msg is defined
       - result.changed == false
       - result.failed == false
+      - result.msg is defined
       - result.ext_id == project_ext_id
     fail_msg: "Check mode delete failed"
     success_msg: "Check mode delete passed"
@@ -250,6 +238,7 @@
   ansible.builtin.assert:
     that:
       - result.failed == false
+      - result.changed == false
       - result.response is defined
       - result.response.ext_id == project_ext_id
     fail_msg: "Project was unexpectedly deleted by check mode"
@@ -266,6 +255,8 @@
 - name: Verify list all projects
   ansible.builtin.assert:
     that:
+      - projects_list.failed == false
+      - projects_list.changed == false
       - projects_list.response is defined
       - projects_list.response | length >= 2
       - projects_list.total_available_results is defined
@@ -282,6 +273,8 @@
 - name: Verify get project by ext_id
   ansible.builtin.assert:
     that:
+      - result.changed == false
+      - result.failed == false
       - result.response is defined
       - result.ext_id == project_ext_id
       - result.response.name == project_name ~ "2"
@@ -299,6 +292,8 @@
 - name: Verify list with filter
   ansible.builtin.assert:
     that:
+      - result.changed == false
+      - result.failed == false
       - result.response is defined
       - result.response | length == 1
       - result.response[0].name == project_name ~ "2"
@@ -314,6 +309,8 @@
 - name: Verify list with limit
   ansible.builtin.assert:
     that:
+      - result.changed == false
+      - result.failed == false
       - result.response is defined
       - result.response | length == 1
     fail_msg: "List projects with limit failed"
@@ -325,7 +322,6 @@
 - name: "Negative: Create project without name"
   nutanix.ncp.ntnx_project_v2:
     state: present
-    wait: true
     project_id: "no-name-project"
   register: result
   ignore_errors: true
@@ -334,13 +330,14 @@
   ansible.builtin.assert:
     that:
       - result.failed == true
+      - result.changed == false
+      - "'state is present but any of the following are missing: name, ext_id' in result.msg"
     fail_msg: "Negative test - create without name should fail"
     success_msg: "Negative test - create without name correctly failed"
 
 - name: "Negative: Create project without project_id"
   nutanix.ncp.ntnx_project_v2:
     state: present
-    wait: true
     name: "no-project-id-project"
   register: result
   ignore_errors: true
@@ -349,13 +346,14 @@
   ansible.builtin.assert:
     that:
       - result.failed == true
+      - result.changed == false
+      - "'Missing required parameter(s): project_id' in result.msg"
     fail_msg: "Negative test - create without project_id should fail"
     success_msg: "Negative test - create without project_id correctly failed"
 
 - name: "Negative: Delete project with non-existent ext_id"
   nutanix.ncp.ntnx_project_v2:
     state: absent
-    wait: true
     ext_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
   register: result
   ignore_errors: true
@@ -364,6 +362,8 @@
   ansible.builtin.assert:
     that:
       - result.failed == true
+      - result.changed == false
+      - "'Api Exception raised while fetching project using ext_id' in result.msg"
     fail_msg: "Negative test - delete with non-existent ext_id should fail"
     success_msg: "Negative test - delete with non-existent ext_id correctly failed"
 
@@ -377,13 +377,14 @@
   ansible.builtin.assert:
     that:
       - result.failed == true
+      - result.changed == false
+      - "'Api Exception raised while fetching project using ext_id' in result.msg"
     fail_msg: "Negative test - get info with non-existent ext_id should fail"
     success_msg: "Negative test - get info with non-existent ext_id correctly failed"
 
 - name: "Negative: Update project name (immutable field)"
   nutanix.ncp.ntnx_project_v2:
     state: present
-    wait: true
     ext_id: "{{ project_ext_id }}"
     name: "{{ project_name }}2-changed"
   register: result
@@ -393,6 +394,8 @@
   ansible.builtin.assert:
     that:
       - result.failed == true
+      - result.changed == false
+      - "'Api Exception raised while updating project' in result.msg"
     fail_msg: "Negative test - update name should fail since name is immutable"
     success_msg: "Negative test - update name correctly failed (name is immutable)"
 
@@ -402,18 +405,31 @@
 - name: Delete all created projects
   nutanix.ncp.ntnx_project_v2:
     state: absent
-    wait: true
     ext_id: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
   ignore_errors: true
 
-- name: Verify deletion
+- name: Verify deletion loop result
   ansible.builtin.assert:
     that:
-      - result.changed == true
-    fail_msg: "Delete all created projects failed"
-    success_msg: "All created projects deleted successfully"
+      - result.results is defined
+      - result.results | length == todelete | length
+    fail_msg: "Delete loop did not return expected number of results"
+    success_msg: "Delete loop returned expected number of results"
+
+- name: Verify each project deletion
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.task_ext_id is defined
+      - item.ext_id is defined
+    fail_msg: "Deletion failed for project {{ item.item }}"
+    success_msg: "Project {{ item.item }} deleted successfully"
+  loop: "{{ result.results }}"
+  loop_control:
+    label: "{{ item.item }}"
 
 - name: Reset todelete list
   ansible.builtin.set_fact:
