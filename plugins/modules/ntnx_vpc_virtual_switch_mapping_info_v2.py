@@ -14,15 +14,17 @@ module: ntnx_vpc_virtual_switch_mapping_info_v2
 short_description: Fetch VPC virtual switch mappings info in Nutanix Prism Central
 version_added: 2.6.0
 description:
-  - This module fetches VPC virtual switch mappings info from Nutanix Prism Central.
-  - If C(ext_id) is provided, fetch a specific mapping by filtering on its external ID.
-  - If C(ext_id) is not provided, fetch all mappings with optional filtering and pagination.
+  - This module fetches the VPC virtual switch mappings configuration from Nutanix Prism Central.
+  - Fetch all mappings with optional filtering and pagination.
   - This module uses PC v4 APIs based SDKs
-options:
-  ext_id:
-    description:
-      - The external identifier of the VPC virtual switch mapping.
-    type: str
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Get VPC virtual switch mappings) -
+      Required Roles: Prism Admin, Prism Viewer, Super Admin, VPC Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
+options: {}
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_info_v2
@@ -30,6 +32,7 @@ extends_documentation_fragment:
   - nutanix.ncp.ntnx_proxy_v2
 author:
   - Abhinav Bansal (@abhinavbansal29)
+  - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
@@ -41,13 +44,13 @@ EXAMPLES = r"""
     validate_certs: false
   register: result
 
-- name: Get a specific VPC virtual switch mapping by ext_id
+- name: List VPC virtual switch mappings with filter
   nutanix.ncp.ntnx_vpc_virtual_switch_mapping_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    ext_id: "{{ mapping_ext_id }}"
+    filter: "virtualSwitchUuid eq '11111111-1111-1111-1111-111111111111'"
   register: result
 
 - name: List VPC virtual switch mappings with limit
@@ -56,27 +59,31 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    limit: 10
+    limit: 1
   register: result
+
+
 """
 
 RETURN = r"""
 response:
   description:
     - Response for fetching VPC virtual switch mappings info.
-    - Specific mapping info if External ID is provided.
-    - List of mappings if External ID is not provided.
+    - It contains the list of VPC virtual switch mappings.
   returned: always
-  type: dict
+  type: list
+  elements: dict
   sample:
-    {
-      "ext_id": null,
-      "virtual_switch_uuid": "11111111-1111-1111-1111-111111111111",
-      "cluster_uuids": ["22222222-2222-2222-2222-222222222222"],
-      "is_all_traffic_permitted": true,
-      "metadata": null,
-      "tenant_id": null
-    }
+    [
+      {
+        "ext_id": null,
+        "virtual_switch_uuid": "11111111-1111-1111-1111-111111111111",
+        "cluster_uuids": ["22222222-2222-2222-2222-222222222222"],
+        "is_all_traffic_permitted": true,
+        "metadata": null,
+        "tenant_id": null
+      }
+    ]
 
 changed:
   description: This indicates whether the task resulted in any changes.
@@ -84,26 +91,27 @@ changed:
   type: bool
   sample: false
 
-ext_id:
-  description: External ID of the VPC virtual switch mapping.
-  type: str
-  returned: When external ID is provided.
-
 msg:
-  description: Status message.
+  description: This indicates the message if any message occurred.
   returned: When there is an error.
   type: str
 
 error:
-  description: Error information if the task encountered errors.
+  description: This field typically holds information about if the task have errors that occurred during the task execution.
   returned: When an error occurs.
   type: str
 
 failed:
-  description: Whether the task failed.
+  description: This field typically holds information about if the task have failed.
   returned: always
   type: bool
   sample: false
+
+total_available_results:
+  description: The total number of available VPC virtual switch mappings in PC.
+  type: int
+  returned: always
+  sample: 1
 """
 
 import warnings  # noqa: E402
@@ -119,44 +127,16 @@ from ..module_utils.v4.utils import (  # noqa: E402
     strip_internal_attributes,
 )
 
+# Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
 def get_module_spec():
-    module_args = dict(
-        ext_id=dict(type="str"),
-    )
+    module_args = dict()
     return module_args
 
 
-def get_mapping_by_ext_id(module, api_instance, result):
-    ext_id = module.params.get("ext_id")
-    result["ext_id"] = ext_id
-
-    try:
-        resp = api_instance.list_vpc_virtual_switch_mappings(
-            _filter="extId eq '{0}'".format(ext_id)
-        )
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while fetching VPC virtual switch mapping",
-        )
-
-    if resp and resp.data:
-        for mapping in resp.data:
-            if getattr(mapping, "ext_id", None) == ext_id:
-                result["response"] = strip_internal_attributes(mapping.to_dict())
-                return
-
-    module.fail_json(
-        msg="VPC virtual switch mapping with ext_id {0} not found".format(ext_id),
-        **result,
-    )
-
-
-def list_mappings(module, api_instance, result):
+def get_vpc_virtual_switch_mappings(module, api_instance, result):
     sg = SpecGenerator(module)
     kwargs, err = sg.get_info_spec(attr=module.params)
 
@@ -173,15 +153,13 @@ def list_mappings(module, api_instance, result):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while fetching VPC virtual switch mappings",
+            msg="Api Exception raised while fetching VPC virtual switch mappings info",
         )
 
-    resp = strip_internal_attributes(resp.to_dict())
-    metadata = resp.get("metadata") or {}
-    total_available_results = metadata.get("total_available_results")
+    total_available_results = resp.metadata.total_available_results
     result["total_available_results"] = total_available_results
-    resp = resp.get("data")
 
+    resp = strip_internal_attributes(resp.to_dict()).get("data")
     if not resp:
         resp = []
     result["response"] = resp
@@ -191,20 +169,11 @@ def run_module():
     module = BaseInfoModule(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
-        mutually_exclusive=[
-            ("ext_id", "filter"),
-        ],
     )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "response": None, "error": None}
-
     api_instance = get_vpc_virtual_switch_mappings_api_instance(module)
-
-    if module.params.get("ext_id"):
-        get_mapping_by_ext_id(module, api_instance, result)
-    else:
-        list_mappings(module, api_instance, result)
-
+    get_vpc_virtual_switch_mappings(module, api_instance, result)
     module.exit_json(**result)
 
 

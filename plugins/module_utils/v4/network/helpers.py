@@ -170,33 +170,3 @@ def get_virtual_switch(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching virtual switch info using ext_id",
         )
-
-
-def get_vpc_virtual_switch_mapping(module, api_instance, ext_id):
-    """
-    This method will return a VPC virtual switch mapping by ext_id.
-    Since the SDK does not provide a get-by-id method, this fetches
-    all mappings via list and filters for the requested ext_id.
-    Args:
-        module: Ansible module
-        api_instance: VpcVirtualSwitchMappingsApi instance from ntnx_networking_py_client sdk
-        ext_id (str): VPC virtual switch mapping external ID
-    return:
-        mapping (object): VpcVirtualSwitchMapping object, or None if not found
-    """
-    try:
-        resp = api_instance.list_vpc_virtual_switch_mappings(
-            _filter="extId eq '{0}'".format(ext_id)
-        )
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while fetching vpc virtual switch mapping using ext_id",
-        )
-
-    if resp and resp.data:
-        for mapping in resp.data:
-            if getattr(mapping, "ext_id", None) == ext_id:
-                return mapping
-    return None

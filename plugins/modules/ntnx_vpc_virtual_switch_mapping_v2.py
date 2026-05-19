@@ -11,111 +11,118 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_vpc_virtual_switch_mapping_v2
-short_description: Manage VPC virtual switch mappings in Nutanix Prism Central
+short_description: Set VPC for virtual switch mappings traffic config
 version_added: 2.6.0
 description:
-  - Create, Update, Delete VPC virtual switch mappings.
-  - Set VPC for virtual switch mappings traffic config.
-  - The API manages the full list of VPC virtual switch mappings as a batch.
-    Each create or update call replaces the entire configuration.
+  - Configures and updates VPC to Virtual Switch mappings for specific clusters.
+  - It allows targeted updates by applying configurations only to the clusters explicitly provided in the payload.
   - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Set VPC for virtual switch mappings traffic config) -
+      Required Roles: Prism Admin, Super Admin, VPC Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   state:
     description:
-      - Specify state.
-      - If C(state) is set to C(present) then the module will create or update a VPC virtual switch mapping.
-      - If C(state) is set to C(absent) with C(virtual_switch_uuid), then the module will delete the mapping.
+      - State of the VPC virtual switch mapping.
+      - Only present is supported.
+    type: str
+    required: false
+    default: present
     choices:
       - present
-      - absent
-    type: str
-    default: present
   wait:
     description: Wait for the operation to complete.
     type: bool
     required: false
-    default: True
-  ext_id:
+    default: true
+  virtual_switch_mappings:
     description:
-      - The external ID of the VPC virtual switch mapping (if available).
-      - Can be used to identify a mapping for update or delete.
-    type: str
-  virtual_switch_uuid:
-    description:
-      - The UUID of the virtual switch to map.
-      - Used as the key identifier for a specific mapping.
-      - Required for create and delete operations.
-    type: str
-  cluster_uuids:
-    description:
-      - List of cluster UUIDs associated with the mapping.
+      - List of VPC virtual switch mappings to apply.
     type: list
-    elements: str
-  is_all_traffic_permitted:
-    description:
-      - Whether all traffic is permitted for this mapping.
-    type: bool
+    elements: dict
+    required: true
+    suboptions:
+      virtual_switch_uuid:
+        description: UUID of the virtual switch.
+        type: str
+        required: true
+      cluster_uuids:
+        description: UUIDs of the clusters.
+        type: list
+        elements: str
+      is_all_traffic_permitted:
+        description:
+          - Whether to permit all traffic through virtual switch or only the ICMP and statistics collection requests.
+        type: bool
+      metadata:
+        description: Metadata associated with this resource.
+        type: dict
+        suboptions:
+          owner_reference_id:
+            description: A globally unique identifier that represents the owner of this resource.
+            type: str
+          owner_user_name:
+            description: The userName of the owner of this resource.
+            type: str
+          project_reference_id:
+            description: A globally unique identifier that represents the project this resource belongs to.
+            type: str
+          project_name:
+            description: The name of the project this resource belongs to.
+            type: str
+          category_ids:
+            description: A list of globally unique identifiers that represent all the categories the resource is associated with.
+            type: list
+            elements: str
 extends_documentation_fragment:
-  - nutanix.ncp.ntnx_credentials
-  - nutanix.ncp.ntnx_operations_v2
-  - nutanix.ncp.ntnx_logger
-  - nutanix.ncp.ntnx_proxy_v2
+      - nutanix.ncp.ntnx_credentials
+      - nutanix.ncp.ntnx_operations_v2
+      - nutanix.ncp.ntnx_logger
+      - nutanix.ncp.ntnx_proxy_v2
 author:
   - Abhinav Bansal (@abhinavbansal29)
+  - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
-- name: Create a VPC virtual switch mapping
+- name: Set VPC virtual switch mappings
   nutanix.ncp.ntnx_vpc_virtual_switch_mapping_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    state: present
-    virtual_switch_uuid: "{{ virtual_switch_uuid }}"
-    cluster_uuids:
-      - "{{ cluster_uuid }}"
-    is_all_traffic_permitted: true
-  register: result
-
-- name: Update a VPC virtual switch mapping
-  nutanix.ncp.ntnx_vpc_virtual_switch_mapping_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    state: present
-    virtual_switch_uuid: "{{ virtual_switch_uuid }}"
-    cluster_uuids:
-      - "{{ cluster_uuid }}"
-    is_all_traffic_permitted: false
-  register: result
-
-- name: Delete a VPC virtual switch mapping
-  nutanix.ncp.ntnx_vpc_virtual_switch_mapping_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    state: absent
-    virtual_switch_uuid: "{{ virtual_switch_uuid }}"
+    virtual_switch_mappings:
+      - virtual_switch_uuid: "ae3db57a-49ef-471b-8480-b6f03b577af6"
+        cluster_uuids:
+          - "d5534b54-4b54-4b54-4b54-d5534b544b54"
+          - "d5534b54-4b54-4b54-4b54-d5534b544b55"
+        is_all_traffic_permitted: true
+      - virtual_switch_uuid: "ae3db57a-49ef-471b-8480-b6f03b577af6"
+        cluster_uuids:
+          - "d5534b54-4b54-4b54-4b54-d5534b544b54"
+        is_all_traffic_permitted: false
+        metadata:
+          owner_reference_id: "123e4567-e89b-12d3-a456-426614174000"
+          owner_user_name: "admin"
+          project_reference_id: "123e4567-e89b-12d3-a456-426614174000"
+          project_name: "project_name"
+          category_ids:
+            - "123e4567-e89b-12d3-a456-426614174000"
+            - "123e4567-e89b-12d3-a456-426614174001"
   register: result
 """
 
 RETURN = r"""
 response:
-  description: The VPC virtual switch mapping response.
+  description:
+    - Response for creating a VPC virtual switch mapping.
+    - It contains task details for the creation of the VPC virtual switch mapping.
   returned: always
   type: dict
-  sample:
-    {
-      "ext_id": null,
-      "virtual_switch_uuid": "11111111-1111-1111-1111-111111111111",
-      "cluster_uuids": ["22222222-2222-2222-2222-222222222222"],
-      "is_all_traffic_permitted": true,
-      "metadata": null,
-      "tenant_id": null
-    }
 
 changed:
   description: This indicates whether the task resulted in any changes.
@@ -124,33 +131,22 @@ changed:
   sample: true
 
 msg:
-  description: Status message.
-  returned: When there is an error, module is idempotent or check mode.
+  description: This indicates the message if any message occurred.
+  returned: When there is an error or check mode.
   type: str
 
 error:
-  description: Error information if the task encountered errors.
+  description: This field typically holds information about errors that occurred during the task execution.
   returned: When an error occurs.
   type: str
 
 ext_id:
   description: The external ID of the VPC virtual switch mapping.
-  returned: always
+  returned: When a VPC virtual switch mapping is created.
   type: str
-
-task_ext_id:
-  description: The external ID of the task.
-  returned: When a task is created.
-  type: str
-
-skipped:
-  description: Whether the task was skipped due to idempotency.
-  returned: When no changes are needed.
-  type: bool
-  sample: false
 
 failed:
-  description: Whether the task failed.
+  description: This field typically holds information about if the task has failed.
   returned: always
   type: bool
   sample: false
@@ -167,6 +163,7 @@ from ..module_utils.v4.network.api_client import (  # noqa: E402
     get_vpc_virtual_switch_mappings_api_instance,
 )
 from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
+from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
@@ -180,77 +177,63 @@ except ImportError:
 
     SDK_IMP_ERROR = traceback.format_exc()
 
+# Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
 def get_module_spec():
-    module_args = dict(
-        ext_id=dict(type="str"),
-        virtual_switch_uuid=dict(type="str"),
+    metadata_spec = dict(
+        owner_reference_id=dict(type="str"),
+        owner_user_name=dict(type="str"),
+        project_reference_id=dict(type="str"),
+        project_name=dict(type="str"),
+        category_ids=dict(type="list", elements="str"),
+    )
+
+    mapping_spec = dict(
+        virtual_switch_uuid=dict(type="str", required=True),
         cluster_uuids=dict(type="list", elements="str"),
         is_all_traffic_permitted=dict(type="bool"),
+        metadata=dict(type="dict", options=metadata_spec, obj=net_sdk.Metadata),
     )
+
+    module_args = dict(
+        virtual_switch_mappings=dict(
+            type="list",
+            elements="dict",
+            required=True,
+            options=mapping_spec,
+            obj=net_sdk.VpcVirtualSwitchMapping,
+        ),
+    )
+
     return module_args
 
 
-def _list_existing_mappings(module, api_instance):
-    """Fetch all current VPC virtual switch mappings from the API."""
-    try:
-        resp = api_instance.list_vpc_virtual_switch_mappings()
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while listing VPC virtual switch mappings",
+def set_vpc_virtual_switch_mappings(module, api_instance, result):
+
+    sg = SpecGenerator(module)
+    default_spec = net_sdk.VpcVirtualSwitchMapping()
+    spec, err = sg.generate_spec(obj=default_spec)
+
+    if err:
+        result["error"] = err
+        module.fail_json(
+            msg="Failed generating VPC virtual switch mapping Spec", **result
         )
-    if resp and resp.data:
-        return list(resp.data)
-    return []
 
+    if module.check_mode:
+        result["response"] = strip_internal_attributes(spec.to_dict())
+        return
 
-def _find_mapping_by_vs_uuid(mappings, virtual_switch_uuid):
-    """Find a mapping in the list by virtual_switch_uuid."""
-    for mapping in mappings:
-        if getattr(mapping, "virtual_switch_uuid", None) == virtual_switch_uuid:
-            return mapping
-    return None
-
-
-def _build_mapping_spec(module):
-    """Build a VpcVirtualSwitchMapping from module params."""
-    spec = net_sdk.VpcVirtualSwitchMapping()
-    params = module.params
-
-    if params.get("virtual_switch_uuid"):
-        spec.virtual_switch_uuid = params["virtual_switch_uuid"]
-    if params.get("cluster_uuids"):
-        spec.cluster_uuids = params["cluster_uuids"]
-    if params.get("is_all_traffic_permitted") is not None:
-        spec.is_all_traffic_permitted = params["is_all_traffic_permitted"]
-    return spec
-
-
-def _mapping_to_comparable_dict(mapping):
-    """Convert a mapping to a dict suitable for idempotency comparison."""
-    if hasattr(mapping, "to_dict"):
-        d = mapping.to_dict()
-    else:
-        d = dict(mapping)
-    strip_internal_attributes(d)
-    for key in ("ext_id", "links", "tenant_id", "metadata"):
-        d.pop(key, None)
-    return d
-
-
-def _post_mappings(module, api_instance, mappings_list, result):
-    """POST the full list of VPC virtual switch mappings to the API."""
+    resp = None
     try:
-        resp = api_instance.create_vpc_virtual_switch_mapping(body=mappings_list)
+        resp = api_instance.create_vpc_virtual_switch_mapping(body=spec)
     except Exception as e:
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while setting VPC virtual switch mappings",
+            msg="Api Exception raised while creating VPC virtual switch mapping",
         )
 
     task_ext_id = resp.data.ext_id
@@ -261,133 +244,6 @@ def _post_mappings(module, api_instance, mappings_list, result):
         task_status = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_status.to_dict())
 
-
-def create_mapping(module, api_instance, result):
-    vs_uuid = module.params.get("virtual_switch_uuid")
-    existing = _list_existing_mappings(module, api_instance)
-    current = _find_mapping_by_vs_uuid(existing, vs_uuid)
-
-    new_spec = _build_mapping_spec(module)
-
-    if current:
-        old_dict = _mapping_to_comparable_dict(current)
-        new_dict = _mapping_to_comparable_dict(new_spec)
-        if old_dict == new_dict:
-            result["skipped"] = True
-            result["response"] = strip_internal_attributes(current.to_dict())
-            result["ext_id"] = getattr(current, "ext_id", None)
-            module.exit_json(msg="Nothing to change.", **result)
-
-    if module.check_mode:
-        result["response"] = strip_internal_attributes(new_spec.to_dict())
-        return
-
-    updated_list = [
-        m for m in existing if getattr(m, "virtual_switch_uuid", None) != vs_uuid
-    ]
-    updated_list.append(new_spec)
-
-    _post_mappings(module, api_instance, updated_list, result)
-
-    if module.params.get("wait"):
-        refreshed = _list_existing_mappings(module, api_instance)
-        mapping = _find_mapping_by_vs_uuid(refreshed, vs_uuid)
-        if mapping:
-            result["ext_id"] = getattr(mapping, "ext_id", None)
-            result["response"] = strip_internal_attributes(mapping.to_dict())
-
-    result["changed"] = True
-
-
-def update_mapping(module, api_instance, result):
-    ext_id = module.params.get("ext_id")
-    vs_uuid = module.params.get("virtual_switch_uuid")
-    result["ext_id"] = ext_id
-
-    existing = _list_existing_mappings(module, api_instance)
-
-    current = None
-    if vs_uuid:
-        current = _find_mapping_by_vs_uuid(existing, vs_uuid)
-    if not current and ext_id:
-        for m in existing:
-            if getattr(m, "ext_id", None) == ext_id:
-                current = m
-                vs_uuid = getattr(m, "virtual_switch_uuid", None)
-                break
-
-    if not current:
-        module.fail_json(
-            msg="VPC virtual switch mapping not found for update",
-            **result,
-        )
-
-    new_spec = _build_mapping_spec(module)
-    if not new_spec.virtual_switch_uuid:
-        new_spec.virtual_switch_uuid = vs_uuid
-
-    old_dict = _mapping_to_comparable_dict(current)
-    new_dict = _mapping_to_comparable_dict(new_spec)
-    if old_dict == new_dict:
-        result["skipped"] = True
-        result["response"] = strip_internal_attributes(current.to_dict())
-        module.exit_json(msg="Nothing to change.", **result)
-
-    if module.check_mode:
-        result["response"] = strip_internal_attributes(new_spec.to_dict())
-        return
-
-    updated_list = [
-        m for m in existing if getattr(m, "virtual_switch_uuid", None) != vs_uuid
-    ]
-    updated_list.append(new_spec)
-
-    _post_mappings(module, api_instance, updated_list, result)
-
-    if module.params.get("wait"):
-        refreshed = _list_existing_mappings(module, api_instance)
-        mapping = _find_mapping_by_vs_uuid(refreshed, new_spec.virtual_switch_uuid)
-        if mapping:
-            result["ext_id"] = getattr(mapping, "ext_id", None)
-            result["response"] = strip_internal_attributes(mapping.to_dict())
-
-    result["changed"] = True
-
-
-def delete_mapping(module, api_instance, result):
-    ext_id = module.params.get("ext_id")
-    vs_uuid = module.params.get("virtual_switch_uuid")
-    result["ext_id"] = ext_id
-
-    existing = _list_existing_mappings(module, api_instance)
-
-    target = None
-    if vs_uuid:
-        target = _find_mapping_by_vs_uuid(existing, vs_uuid)
-    if not target and ext_id:
-        for m in existing:
-            if getattr(m, "ext_id", None) == ext_id:
-                target = m
-                vs_uuid = getattr(m, "virtual_switch_uuid", None)
-                break
-
-    if not target:
-        result["skipped"] = True
-        result["msg"] = "VPC virtual switch mapping not found. Nothing to delete."
-        module.exit_json(**result)
-
-    if module.check_mode:
-        result["msg"] = (
-            "VPC virtual switch mapping for virtual switch {0} "
-            "will be deleted.".format(vs_uuid)
-        )
-        return
-
-    updated_list = [
-        m for m in existing if getattr(m, "virtual_switch_uuid", None) != vs_uuid
-    ]
-
-    _post_mappings(module, api_instance, updated_list, result)
     result["changed"] = True
 
 
@@ -395,10 +251,6 @@ def run_module():
     module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-        required_if=[
-            ("state", "absent", ("virtual_switch_uuid", "ext_id"), True),
-            ("state", "present", ("virtual_switch_uuid",)),
-        ],
     )
     if SDK_IMP_ERROR:
         module.fail_json(
@@ -411,21 +263,9 @@ def run_module():
         "changed": False,
         "response": None,
         "ext_id": None,
-        "error": None,
-        "failed": False,
     }
-
     api_instance = get_vpc_virtual_switch_mappings_api_instance(module)
-    state = module.params["state"]
-
-    if state == "present":
-        if module.params.get("ext_id"):
-            update_mapping(module, api_instance, result)
-        else:
-            create_mapping(module, api_instance, result)
-    else:
-        delete_mapping(module, api_instance, result)
-
+    set_vpc_virtual_switch_mappings(module, api_instance, result)
     module.exit_json(**result)
 
 

@@ -47,7 +47,6 @@ class Tasks:
         CLUSTER_PROFILE = "clustermgmt:config:cluster-profile"
         NETWORK_FUNCTION = "Networking:config:network-function"
         VIRTUAL_SWITCH = "networking:config:virtual-switch"
-        VPC_VIRTUAL_SWITCH_MAPPING = "networking:config:vpc-virtual-switch-mapping"
         ENTITY_GROUP = "microseg:config:entity-group"
 
     class CompletetionDetailsName:

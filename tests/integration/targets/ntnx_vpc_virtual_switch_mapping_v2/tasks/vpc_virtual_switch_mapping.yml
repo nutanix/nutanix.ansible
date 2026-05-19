@@ -3,224 +3,357 @@
   ansible.builtin.debug:
     msg: Start VPC Virtual Switch Mapping tests
 
-########################################################################################
-# Fetch virtual switch and cluster information
-########################################################################################
-- name: List virtual switches
-  nutanix.ncp.ntnx_virtual_switches_info_v2:
-    limit: 1
-  register: vs_info
-
-- name: Assert virtual switches listed
-  ansible.builtin.assert:
-    that:
-      - vs_info.failed == false
-      - vs_info.response is defined
-      - vs_info.response | length > 0
-    fail_msg: "No virtual switches found"
-
-- name: Set virtual switch UUID
+- name: Generate random names
   ansible.builtin.set_fact:
-    virtual_switch_uuid: "{{ vs_info.response[0].ext_id }}"
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    suffix_name: "ansible"
+    todelete_categories: []
 
-- name: List clusters
-  nutanix.ncp.ntnx_clusters_info_v2:
-    limit: 1
-  register: cluster_info
-
-- name: Assert clusters listed
-  ansible.builtin.assert:
-    that:
-      - cluster_info.failed == false
-      - cluster_info.response is defined
-      - cluster_info.response | length > 0
-    fail_msg: "No clusters found"
-
-- name: Set cluster UUID
+- name: Set names for virtual switch and categories
   ansible.builtin.set_fact:
-    cluster_uuid: "{{ cluster_info.response[0].ext_id }}"
+    vs_name: "vs_{{ suffix_name }}_{{ random_name }}_vpc_map"
+    category_key_1: "{{ random_name }}{{ suffix_name }}_key1"
+    category_value_1: "{{ random_name }}{{ suffix_name }}_value1"
+    category_key_2: "{{ random_name }}{{ suffix_name }}_key2"
+    category_value_2: "{{ random_name }}{{ suffix_name }}_value2"
 
 ########################################################################################
-# Test: Create VPC Virtual Switch Mapping
+# Step 1: List all existing VPC virtual switch mappings (initial state)
 ########################################################################################
-- name: Create VPC virtual switch mapping
-  nutanix.ncp.ntnx_vpc_virtual_switch_mapping_v2:
-    state: present
-    virtual_switch_uuid: "{{ virtual_switch_uuid }}"
-    cluster_uuids:
-      - "{{ cluster_uuid }}"
-    is_all_traffic_permitted: true
-  register: create_result
+
+- name: List all VPC virtual switch mappings (initial state)
+  nutanix.ncp.ntnx_vpc_virtual_switch_mapping_info_v2:
+  register: initial_mappings
   ignore_errors: true
 
-- name: Assert create result
+- name: Print initial mappings result
+  ansible.builtin.debug:
+    var: initial_mappings
+
+- name: Assert initial mappings listed successfully
   ansible.builtin.assert:
     that:
-      - create_result.failed == false
-    fail_msg: "Create VPC virtual switch mapping failed"
+      - initial_mappings is defined
+      - initial_mappings.failed == false
+      - initial_mappings.changed == false
+      - initial_mappings.response is defined
+    success_msg: "Initial VPC virtual switch mappings listed successfully"
+    fail_msg: "Failed to list initial VPC virtual switch mappings"
+
+- name: Save initial mappings spec for restore at cleanup
+  ansible.builtin.set_fact:
+    initial_mappings_restore: >-
+      {{ initial_mappings.response
+         | map('combine', {})
+         | list
+         | json_query('[].{virtual_switch_uuid: virtual_switch_uuid,
+                            cluster_uuids: cluster_uuids,
+                            is_all_traffic_permitted: is_all_traffic_permitted}') }}
 
 ########################################################################################
-# Test: Create check_mode
+# Step 2: Fetch hosts in cluster and create a virtual switch
 ########################################################################################
-- name: Create VPC virtual switch mapping in check_mode
-  nutanix.ncp.ntnx_vpc_virtual_switch_mapping_v2:
-    state: present
-    virtual_switch_uuid: "{{ virtual_switch_uuid }}"
-    cluster_uuids:
-      - "{{ cluster_uuid }}"
-    is_all_traffic_permitted: true
-  check_mode: true
-  register: check_create_result
 
-- name: Assert check_mode create
-  ansible.builtin.assert:
-    that:
-      - check_create_result.failed == false
-      - check_create_result.changed == false
-    fail_msg: "Check mode create assertion failed"
-
-########################################################################################
-# Test: Idempotency - create same mapping again
-########################################################################################
-- name: Create same mapping again (idempotency)
-  nutanix.ncp.ntnx_vpc_virtual_switch_mapping_v2:
-    state: present
-    virtual_switch_uuid: "{{ virtual_switch_uuid }}"
-    cluster_uuids:
-      - "{{ cluster_uuid }}"
-    is_all_traffic_permitted: true
-  register: idempotent_result
-
-- name: Assert idempotency
-  ansible.builtin.assert:
-    that:
-      - idempotent_result.failed == false
-      - idempotent_result.changed == false
-      - idempotent_result.skipped == true
-    fail_msg: "Idempotency check failed"
-
-########################################################################################
-# Test: List VPC Virtual Switch Mappings (info module)
-########################################################################################
-- name: List all VPC virtual switch mappings
-  nutanix.ncp.ntnx_vpc_virtual_switch_mapping_info_v2:
-  register: list_result
-
-- name: Assert list result
-  ansible.builtin.assert:
-    that:
-      - list_result.failed == false
-      - list_result.changed == false
-      - list_result.response is defined
-      - list_result.response | length > 0
-    fail_msg: "List VPC virtual switch mappings failed"
-
-- name: Assert list contains virtual_switch_uuid
-  ansible.builtin.assert:
-    that:
-      - list_result.response | selectattr('virtual_switch_uuid', 'equalto', virtual_switch_uuid) | list | length > 0
-    fail_msg: "Expected virtual switch mapping not found in list"
-
-########################################################################################
-# Test: List with limit
-########################################################################################
-- name: List VPC virtual switch mappings with limit
-  nutanix.ncp.ntnx_vpc_virtual_switch_mapping_info_v2:
-    limit: 1
-  register: limited_list_result
-
-- name: Assert limited list result
-  ansible.builtin.assert:
-    that:
-      - limited_list_result.failed == false
-      - limited_list_result.changed == false
-      - limited_list_result.response | length <= 1
-    fail_msg: "Limited list returned more than expected"
-
-########################################################################################
-# Test: Update check_mode
-########################################################################################
-- name: Update mapping in check_mode (change is_all_traffic_permitted)
-  nutanix.ncp.ntnx_vpc_virtual_switch_mapping_v2:
-    state: present
-    virtual_switch_uuid: "{{ virtual_switch_uuid }}"
-    cluster_uuids:
-      - "{{ cluster_uuid }}"
-    is_all_traffic_permitted: false
-  check_mode: true
-  register: check_update_result
-
-- name: Assert check_mode update detects change
-  ansible.builtin.assert:
-    that:
-      - check_update_result.failed == false
-      - check_update_result.response is defined
-    fail_msg: "Check mode update assertion failed"
-
-########################################################################################
-# Test: Delete check_mode
-########################################################################################
-- name: Delete mapping in check_mode
-  nutanix.ncp.ntnx_vpc_virtual_switch_mapping_v2:
-    state: absent
-    virtual_switch_uuid: "{{ virtual_switch_uuid }}"
-  check_mode: true
-  register: check_delete_result
-
-- name: Assert check_mode delete
-  ansible.builtin.assert:
-    that:
-      - check_delete_result.failed == false
-      - check_delete_result.msg is defined
-    fail_msg: "Check mode delete assertion failed"
-
-########################################################################################
-# Test: Negative scenario - create without required params
-########################################################################################
-- name: Try create without virtual_switch_uuid (should fail)
-  nutanix.ncp.ntnx_vpc_virtual_switch_mapping_v2:
-    state: present
-    cluster_uuids:
-      - "{{ cluster_uuid }}"
-    is_all_traffic_permitted: true
-  register: neg_create_result
+- name: Fetch hosts in cluster
+  nutanix.ncp.ntnx_hosts_info_v2:
+    cluster_ext_id: "{{ cluster.uuid }}"
+  register: hosts_info
   ignore_errors: true
 
-- name: Assert negative create fails
+- name: Print hosts info result
+  ansible.builtin.debug:
+    var: hosts_info
+
+- name: Assert hosts in cluster fetched
   ansible.builtin.assert:
     that:
-      - neg_create_result.failed == true
-    fail_msg: "Create without virtual_switch_uuid should have failed"
+      - hosts_info is defined
+      - hosts_info.failed == false
+      - hosts_info.response is defined
+      - hosts_info.response | length > 0
+    success_msg: "Hosts in cluster fetched successfully"
+    fail_msg: "Failed to fetch hosts in cluster"
+
+- name: Set host ext_id
+  ansible.builtin.set_fact:
+    host_ext_id: "{{ hosts_info.response[0].ext_id }}"
+
+- name: Create virtual switch with minimum attributes
+  nutanix.ncp.ntnx_virtual_switch_v2:
+    name: "{{ vs_name }}"
+    bond_mode: "NONE"
+    clusters:
+      - ext_id: "{{ cluster.uuid }}"
+        hosts:
+          - ext_id: "{{ host_ext_id }}"
+  register: vs_create_result
+  ignore_errors: true
+
+- name: Print virtual switch create result
+  ansible.builtin.debug:
+    var: vs_create_result
+
+- name: Assert virtual switch created successfully
+  ansible.builtin.assert:
+    that:
+      - vs_create_result is defined
+      - vs_create_result.changed == true
+      - vs_create_result.failed == false
+      - vs_create_result.ext_id is defined
+      - vs_create_result.task_ext_id is defined
+      - vs_create_result.response is defined
+      - vs_create_result.response.name == vs_name
+    success_msg: "Virtual switch created successfully"
+    fail_msg: "Virtual switch creation failed"
+
+- name: Save virtual switch ext_id
+  ansible.builtin.set_fact:
+    virtual_switch_uuid: "{{ vs_create_result.ext_id }}"
 
 ########################################################################################
-# Test: Negative scenario - delete non-existent mapping
+# Step 3: Create two categories with random keys and values
 ########################################################################################
-- name: Delete non-existent mapping
+
+- name: Create first category
+  nutanix.ncp.ntnx_categories_v2:
+    key: "{{ category_key_1 }}"
+    value: "{{ category_value_1 }}"
+    description: "Category 1 for VPC virtual switch mapping tests"
+  register: category_1_result
+  ignore_errors: true
+
+- name: Print first category result
+  ansible.builtin.debug:
+    var: category_1_result
+
+- name: Assert first category created
+  ansible.builtin.assert:
+    that:
+      - category_1_result is defined
+      - category_1_result.failed == false
+      - category_1_result.changed == true
+      - category_1_result.response is defined
+      - category_1_result.response.key == category_key_1
+      - category_1_result.response.value == category_value_1
+      - category_1_result.response.ext_id is defined
+    success_msg: "First category created successfully"
+    fail_msg: "Failed to create first category"
+
+- name: Save first category ext_id
+  ansible.builtin.set_fact:
+    category_ext_id_1: "{{ category_1_result.response.ext_id }}"
+    todelete_categories: "{{ todelete_categories + [category_1_result.response.ext_id] }}"
+
+- name: Create second category
+  nutanix.ncp.ntnx_categories_v2:
+    key: "{{ category_key_2 }}"
+    value: "{{ category_value_2 }}"
+    description: "Category 2 for VPC virtual switch mapping tests"
+  register: category_2_result
+  ignore_errors: true
+
+- name: Print second category result
+  ansible.builtin.debug:
+    var: category_2_result
+
+- name: Assert second category created
+  ansible.builtin.assert:
+    that:
+      - category_2_result is defined
+      - category_2_result.failed == false
+      - category_2_result.changed == true
+      - category_2_result.response is defined
+      - category_2_result.response.key == category_key_2
+      - category_2_result.response.value == category_value_2
+      - category_2_result.response.ext_id is defined
+    success_msg: "Second category created successfully"
+    fail_msg: "Failed to create second category"
+
+- name: Save second category ext_id
+  ansible.builtin.set_fact:
+    category_ext_id_2: "{{ category_2_result.response.ext_id }}"
+    todelete_categories: "{{ todelete_categories + [category_2_result.response.ext_id] }}"
+
+########################################################################################
+# Step 4: Set VPC virtual switch mappings using check_mode with random hardcoded values
+########################################################################################
+
+- name: Generate spec for Setting VPC virtual switch mappings
   nutanix.ncp.ntnx_vpc_virtual_switch_mapping_v2:
-    state: absent
-    virtual_switch_uuid: "00000000-0000-0000-0000-000000000000"
-  register: neg_delete_result
+    virtual_switch_mappings:
+      - virtual_switch_uuid: "11111111-1111-1111-1111-111111111111"
+        cluster_uuids:
+          - "22222222-2222-2222-2222-222222222222"
+          - "33333333-3333-3333-3333-333333333333"
+        is_all_traffic_permitted: true
+        metadata:
+          owner_reference_id: "44444444-4444-4444-4444-444444444444"
+          owner_user_name: "dummy_owner"
+          project_reference_id: "55555555-5555-5555-5555-555555555555"
+          project_name: "dummy_project"
+          category_ids:
+            - "66666666-6666-6666-6666-666666666666"
+            - "77777777-7777-7777-7777-777777777777"
+      - virtual_switch_uuid: "88888888-8888-8888-8888-888888888888"
+        cluster_uuids:
+          - "99999999-9999-9999-9999-999999999999"
+        is_all_traffic_permitted: false
+  check_mode: true
+  register: check_mode_set_result
+  ignore_errors: true
 
-- name: Assert non-existent delete is skipped
+- name: Print check_mode set result
+  ansible.builtin.debug:
+    var: check_mode_set_result
+
+- name: Assert spec for Setting VPC virtual switch mappings generated successfully
   ansible.builtin.assert:
     that:
-      - neg_delete_result.failed == false
-      - neg_delete_result.skipped == true
-    fail_msg: "Delete of non-existent mapping should be skipped"
+      - check_mode_set_result is defined
+      - check_mode_set_result.failed == false
+      - check_mode_set_result.changed == false
+      - check_mode_set_result.response is defined
+      - check_mode_set_result.response | length == 2
+      - check_mode_set_result.response[0].virtual_switch_uuid == "11111111-1111-1111-1111-111111111111"
+      - check_mode_set_result.response[0].cluster_uuids | length == 2
+      - check_mode_set_result.response[0].is_all_traffic_permitted == true
+      - check_mode_set_result.response[0].metadata.owner_reference_id == "44444444-4444-4444-4444-444444444444"
+      - check_mode_set_result.response[0].metadata.owner_user_name == "dummy_owner"
+      - check_mode_set_result.response[0].metadata.project_reference_id == "55555555-5555-5555-5555-555555555555"
+      - check_mode_set_result.response[0].metadata.project_name == "dummy_project"
+      - check_mode_set_result.response[0].metadata.category_ids | length == 2
+      - check_mode_set_result.response[1].virtual_switch_uuid == "88888888-8888-8888-8888-888888888888"
+      - check_mode_set_result.response[1].is_all_traffic_permitted == false
+    success_msg: "Spec for Setting VPC virtual switch mappings generated successfully"
+    fail_msg: "Spec for Setting VPC virtual switch mappings generation failed"
 
 ########################################################################################
-# Test: Verify mapping still exists after check_mode delete
+# Step 5: Set VPC virtual switch mappings with real values
 ########################################################################################
-- name: List mappings to verify no changes from check_mode
+
+- name: Set VPC virtual switch mappings with metadata and newly created virtual switch
+  nutanix.ncp.ntnx_vpc_virtual_switch_mapping_v2:
+    virtual_switch_mappings:
+      - virtual_switch_uuid: "{{ virtual_switch_uuid }}"
+        cluster_uuids:
+          - "{{ cluster.uuid }}"
+        is_all_traffic_permitted: true
+        metadata:
+          owner_reference_id: "{{ owner.uuid }}"
+          project_reference_id: "{{ project.uuid }}"
+          project_name: "{{ project.name }}"
+          category_ids:
+            - "{{ category_ext_id_1 }}"
+            - "{{ category_ext_id_2 }}"
+  register: set_mappings_result
+  ignore_errors: true
+
+- name: Print set mappings result
+  ansible.builtin.debug:
+    var: set_mappings_result
+
+- name: Assert set VPC virtual switch mappings task succeeded
+  ansible.builtin.assert:
+    that:
+      - set_mappings_result is defined
+      - set_mappings_result.changed == true
+      - set_mappings_result.failed == false
+      - set_mappings_result.task_ext_id is defined
+      - set_mappings_result.response is defined
+      - set_mappings_result.response.status == "SUCCEEDED"
+    success_msg: "Set VPC virtual switch mappings task succeeded"
+    fail_msg: "Set VPC virtual switch mappings task failed"
+
+########################################################################################
+# Step 6: Negative test - set with wrong (non-existent) virtual switch UUID
+########################################################################################
+
+- name: Set VPC virtual switch mappings with wrong virtual switch UUID (should fail)
+  nutanix.ncp.ntnx_vpc_virtual_switch_mapping_v2:
+    virtual_switch_mappings:
+      - virtual_switch_uuid: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+        cluster_uuids:
+          - "{{ cluster.uuid }}"
+        is_all_traffic_permitted: true
+  register: negative_set_result
+  ignore_errors: true
+
+- name: Print negative set result
+  ansible.builtin.debug:
+    var: negative_set_result
+
+- name: Assert negative set failed as expected
+  ansible.builtin.assert:
+    that:
+      - negative_set_result is defined
+      - negative_set_result.failed == true
+      - negative_set_result.changed == false
+    success_msg: "Set VPC virtual switch mappings with wrong virtual switch UUID failed as expected"
+    fail_msg: "Set VPC virtual switch mappings with wrong virtual switch UUID did not fail as expected"
+
+########################################################################################
+# Step 7: List all VPC virtual switch mappings again and assert new changes
+########################################################################################
+
+- name: List all VPC virtual switch mappings after set
   nutanix.ncp.ntnx_vpc_virtual_switch_mapping_info_v2:
-  register: verify_list
+  register: list_after_set_result
+  ignore_errors: true
 
-- name: Assert mapping still exists
+- name: Print list after set result
+  ansible.builtin.debug:
+    var: list_after_set_result
+
+- name: Assert new mapping is present and configured correctly
   ansible.builtin.assert:
     that:
-      - verify_list.failed == false
-      - verify_list.response | selectattr('virtual_switch_uuid', 'equalto', virtual_switch_uuid) | list | length > 0
-    fail_msg: "Mapping should still exist after check_mode delete"
+      - list_after_set_result is defined
+      - list_after_set_result.failed == false
+      - list_after_set_result.changed == false
+      - list_after_set_result.response is defined
+      - list_after_set_result.response | length > 0
+      - list_after_set_result.response | selectattr('virtual_switch_uuid', 'equalto', virtual_switch_uuid) | list | length == 1
+      - (list_after_set_result.response | selectattr('virtual_switch_uuid', 'equalto', virtual_switch_uuid) | list)[0].cluster_uuids | length == 1
+      - (list_after_set_result.response | selectattr('virtual_switch_uuid', 'equalto', virtual_switch_uuid) | list)[0].cluster_uuids[0] == cluster.uuid
+      - (list_after_set_result.response | selectattr('virtual_switch_uuid', 'equalto', virtual_switch_uuid) | list)[0].is_all_traffic_permitted == true
+    success_msg: "VPC virtual switch mappings updated successfully with new configuration"
+    fail_msg: "VPC virtual switch mappings do not reflect the new configuration"
+
+########################################################################################
+# Cleanup: restore initial mappings (if any) and delete created categories
+########################################################################################
+
+- name: Restore initial VPC virtual switch mappings
+  nutanix.ncp.ntnx_vpc_virtual_switch_mapping_v2:
+    virtual_switch_mappings: "{{ initial_mappings_restore }}"
+  register: restore_mappings_result
+  ignore_errors: true
+  when: initial_mappings_restore | length > 0
+
+- name: Print restore mappings result
+  ansible.builtin.debug:
+    var: restore_mappings_result
+
+- name: Delete created categories
+  nutanix.ncp.ntnx_categories_v2:
+    ext_id: "{{ item }}"
+    state: absent
+  register: delete_categories_result
+  loop: "{{ todelete_categories }}"
+  ignore_errors: true
+
+- name: Print delete categories result
+  ansible.builtin.debug:
+    var: delete_categories_result
+
+- name: Assert categories deleted
+  ansible.builtin.assert:
+    that:
+      - delete_categories_result is defined
+      - delete_categories_result.changed == true
+      - delete_categories_result.msg == "All items completed"
+    success_msg: "Categories deleted successfully"
+    fail_msg: "Failed to delete categories"
 
 - name: End VPC Virtual Switch Mapping tests
   ansible.builtin.debug:
