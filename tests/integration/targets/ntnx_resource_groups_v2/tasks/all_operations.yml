@@ -23,31 +23,31 @@
 ###########################################################
 # SETUP - Create projects for resource group tests
 ###########################################################
-# - name: Create project 1 for resource group tests
-#   nutanix.ncp.ntnx_project_v2:
-#     state: present
-#     name: "{{ rg_name }}-project1"
-#     project_id: "{{ rg_name }}-project-id1"
-#   register: project_result1
-#   ignore_errors: true
+- name: Create project 1 for resource group tests
+  nutanix.ncp.ntnx_project_v2:
+    state: present
+    name: "{{ rg_name }}-project1"
+    project_id: "{{ rg_name }}-project-id1"
+  register: project_result1
+  ignore_errors: true
 
 - name: Save project 1 ext_id
   ansible.builtin.set_fact:
-    project1_ext_id: "a16692a5-d844-4ae7-9a30-108c2e2e990c"
-    todelete_projects: "{{ todelete_projects + ['a16692a5-d844-4ae7-9a30-108c2e2e990c'] }}"
+    project1_ext_id: "{{ project_result1.ext_id }}"
+    todelete_projects: "{{ todelete_projects + [project_result1.ext_id] }}"
 
-# - name: Create project 2 for resource group tests
-#   nutanix.ncp.ntnx_project_v2:
-#     state: present
-#     name: "{{ rg_name }}-project2"
-#     project_id: "{{ rg_name }}-project-id2"
-#   register: project_result2
-#   ignore_errors: true
+- name: Create project 2 for resource group tests
+  nutanix.ncp.ntnx_project_v2:
+    state: present
+    name: "{{ rg_name }}-project2"
+    project_id: "{{ rg_name }}-project-id2"
+  register: project_result2
+  ignore_errors: true
 
 - name: Save project 2 ext_id
   ansible.builtin.set_fact:
-    project2_ext_id: "596390fc-7588-4b2e-89d9-212e10aa0d78"
-    todelete_projects: "{{ todelete_projects + ['596390fc-7588-4b2e-89d9-212e10aa0d78'] }}"
+    project2_ext_id: "{{ project_result2.ext_id }}"
+    todelete_projects: "{{ todelete_projects + [project_result2.ext_id] }}"
 
 ###########################################################
 # CHECK MODE TESTS - CREATE
@@ -186,7 +186,6 @@
 - name: Update resource group name
   nutanix.ncp.ntnx_resource_group_v2:
     state: present
-
     ext_id: "{{ rg_ext_id }}"
     name: "{{ rg_name }}1-updated"
   register: result
@@ -348,6 +347,7 @@
     that:
       - result.changed == false
       - result.failed == true
+      - "'state is present but any of the following are missing: name, ext_id' in result.msg"
     fail_msg: "Negative test - create without name should fail"
     success_msg: "Negative test - create without name correctly failed"
 
@@ -363,11 +363,12 @@
     that:
       - result.changed == false
       - result.failed == true
+      - "'Api Exception raised while fetching resource group using ext_id' in result.msg"
     fail_msg: "Negative test - delete with non-existent ext_id should fail"
     success_msg: "Negative test - delete with non-existent ext_id correctly failed"
 
 - name: "Negative: Get resource group info with non-existent ext_id"
-  nutanix.ncp.ntnx_resource_group_info_v2:
+  nutanix.ncp.ntnx_resource_groups_info_v2:
     ext_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
   register: result
   ignore_errors: true
@@ -377,6 +378,7 @@
     that:
       - result.changed == false
       - result.failed == true
+      - "'Api Exception raised while fetching resource group using ext_id' in result.msg"
     fail_msg: "Negative test - get info with non-existent ext_id should fail"
     success_msg: "Negative test - get info with non-existent ext_id correctly failed"
 
@@ -393,6 +395,7 @@
     that:
       - result.changed == false
       - result.failed == true
+      - "'Api Exception raised while fetching resource group using ext_id' in result.msg"
     fail_msg: "Negative test - update with non-existent ext_id should fail"
     success_msg: "Negative test - update with non-existent ext_id correctly failed"
 
@@ -402,36 +405,33 @@
 - name: Delete all created resource groups
   nutanix.ncp.ntnx_resource_group_v2:
     state: absent
-
     ext_id: "{{ item }}"
   register: result
   loop: "{{ todelete_rg }}"
   ignore_errors: true
 
-- name: Verify deletion for each resource group
+- name: Verify deletion loop result
+  ansible.builtin.assert:
+    that:
+      - result.results is defined
+      - result.results | length == todelete_rg | length
+    fail_msg: "Delete loop did not return expected number of results"
+    success_msg: "Delete loop returned expected number of results"
+
+- name: Verify each resource group deletion
   ansible.builtin.assert:
     that:
       - item.changed == true
       - item.failed == false
       - item.task_ext_id is defined
+      - item.ext_id is defined
       - item.response is defined
-    fail_msg: "Delete resource group {{ item.ext_id | default('unknown') }} failed"
-    success_msg: "Delete resource group {{ item.ext_id | default('unknown') }} passed"
+      - item.response.status == "SUCCEEDED"
+    fail_msg: "Deletion failed for resource group {{ item.item }}"
+    success_msg: "Resource group {{ item.item }} deleted successfully"
   loop: "{{ result.results }}"
-
-- name: Verify resource group no longer exists
-  nutanix.ncp.ntnx_resource_groups_info_v2:
-    ext_id: "{{ rg_ext_id }}"
-  register: verify_delete
-  ignore_errors: true
-
-- name: Assert resource group not found after deletion
-  ansible.builtin.assert:
-    that:
-      - verify_delete.changed == false
-      - verify_delete.failed == true
-    fail_msg: "Resource group still exists after deletion"
-    success_msg: "Resource group confirmed deleted"
+  loop_control:
+    label: "{{ item.item }}"
 
 ###########################################################
 # CLEANUP - Delete test projects
@@ -443,6 +443,19 @@
   register: cleanup_result
   loop: "{{ todelete_projects }}"
   ignore_errors: true
+
+- name: Verify each project cleanup
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.task_ext_id is defined
+      - item.ext_id is defined
+    fail_msg: "Cleanup failed for project {{ item.item }}"
+    success_msg: "Project {{ item.item }} cleaned up successfully"
+  loop: "{{ cleanup_result.results }}"
+  loop_control:
+    label: "{{ item.item }}"
 
 - name: End testing ntnx_resource_groups_v2, ntnx_resource_groups_info_v2
   ansible.builtin.debug:
