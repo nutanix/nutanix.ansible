@@ -119,6 +119,14 @@
       - vs_create_result.task_ext_id is defined
       - vs_create_result.response is defined
       - vs_create_result.response.name == vs_name
+      - vs_create_result.response.clusters | length == 1
+      - vs_create_result.response.clusters[0].ext_id == cluster.uuid
+      - vs_create_result.response.clusters[0].hosts | length == 1
+      - vs_create_result.response.clusters[0].hosts[0].ext_id == host_ext_id
+      - vs_create_result.response.clusters[0].hosts[0].ip_address.ip.value == vs_host_bridge_ip
+      - vs_create_result.response.clusters[0].hosts[0].ip_address.prefix_length == vs_host_bridge_prefix_length
+      - vs_create_result.response.clusters[0].gateway_ip_address.value == vs_gateway_ip
+      - vs_create_result.response.clusters[0].vlan_identifier == vs_vlan_identifier
     success_msg: "Virtual switch with bridge interface IP created successfully"
     fail_msg: "Virtual switch creation failed"
 
@@ -149,9 +157,9 @@
       - category_1_result.failed == false
       - category_1_result.changed == true
       - category_1_result.response is defined
+      - category_1_result.response.ext_id is defined
       - category_1_result.response.key == category_key_1
       - category_1_result.response.value == category_value_1
-      - category_1_result.response.ext_id is defined
     success_msg: "First category created successfully"
     fail_msg: "Failed to create first category"
 
@@ -179,9 +187,9 @@
       - category_2_result.failed == false
       - category_2_result.changed == true
       - category_2_result.response is defined
+      - category_2_result.response.ext_id is defined
       - category_2_result.response.key == category_key_2
       - category_2_result.response.value == category_value_2
-      - category_2_result.response.ext_id is defined
     success_msg: "Second category created successfully"
     fail_msg: "Failed to create second category"
 
@@ -281,10 +289,10 @@
     fail_msg: "Set VPC virtual switch mappings task failed"
 
 ########################################################################################
-# Step 6: Negative test - set with wrong (non-existent) virtual switch UUID
+# Step 6: Negative test - set with wrong (non-existent) virtual switch External ID
 ########################################################################################
 
-- name: Set VPC virtual switch mappings with wrong virtual switch UUID (should fail)
+- name: Set VPC virtual switch mappings with wrong virtual switch External ID (should fail)
   nutanix.ncp.ntnx_vpc_virtual_switch_mapping_v2:
     virtual_switch_mappings:
       - virtual_switch_uuid: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
@@ -304,14 +312,19 @@
       - negative_set_result is defined
       - negative_set_result.failed == true
       - negative_set_result.changed == false
-    success_msg: "Set VPC virtual switch mappings with wrong virtual switch UUID failed as expected"
-    fail_msg: "Set VPC virtual switch mappings with wrong virtual switch UUID did not fail as expected"
+      - negative_set_result.msg == "Task Failed"
+      - negative_set_result.response is defined
+      - negative_set_result.response.status == "FAILED"
+      - negative_set_result.response.error_messages is defined
+      - negative_set_result.response.error_messages | length > 0
+    success_msg: "Set VPC virtual switch mappings with wrong virtual switch External ID failed as expected"
+    fail_msg: "Set VPC virtual switch mappings with wrong virtual switch External ID did not fail as expected"
 
 ########################################################################################
 # Step 7: List all VPC virtual switch mappings again and assert new changes
 ########################################################################################
 
-- name: List all VPC virtual switch mappings after set
+- name: List all VPC virtual switch mappings after set with new configuration
   nutanix.ncp.ntnx_vpc_virtual_switch_mapping_info_v2:
   register: list_after_set_result
   ignore_errors: true
@@ -320,7 +333,14 @@
   ansible.builtin.debug:
     var: list_after_set_result
 
-- name: Assert new mapping is present and configured correctly
+- name: Filter list to mappings for the newly created virtual switch
+  ansible.builtin.set_fact:
+    new_vs_mappings: >-
+      {{ list_after_set_result.response
+         | selectattr('virtual_switch_uuid', 'equalto', virtual_switch_uuid)
+         | list }}
+
+- name: Assert new mapping is present and configured correctly with new configuration
   ansible.builtin.assert:
     that:
       - list_after_set_result is defined
@@ -328,10 +348,12 @@
       - list_after_set_result.changed == false
       - list_after_set_result.response is defined
       - list_after_set_result.response | length > 0
-      - list_after_set_result.response | selectattr('virtual_switch_uuid', 'equalto', virtual_switch_uuid) | list | length == 1
-      - (list_after_set_result.response | selectattr('virtual_switch_uuid', 'equalto', virtual_switch_uuid) | list)[0].cluster_uuids | length == 1
-      - (list_after_set_result.response | selectattr('virtual_switch_uuid', 'equalto', virtual_switch_uuid) | list)[0].cluster_uuids[0] == cluster.uuid
-      - (list_after_set_result.response | selectattr('virtual_switch_uuid', 'equalto', virtual_switch_uuid) | list)[0].is_all_traffic_permitted == true
+      - new_vs_mappings | length == 1
+      - new_vs_mappings[0].virtual_switch_uuid == virtual_switch_uuid
+      - new_vs_mappings[0].cluster_uuids | length == 1
+      - new_vs_mappings[0].cluster_uuids[0] == cluster.uuid
+      - new_vs_mappings[0].is_all_traffic_permitted == true
+      - new_vs_mappings[0].ext_id is none
     success_msg: "VPC virtual switch mappings updated successfully with new configuration"
     fail_msg: "VPC virtual switch mappings do not reflect the new configuration"
 
@@ -350,6 +372,18 @@
   ansible.builtin.debug:
     var: restore_mappings_result
 
+- name: Assert restore mappings task succeeded
+  ansible.builtin.assert:
+    that:
+      - restore_mappings_result is defined
+      - restore_mappings_result.changed == true
+      - restore_mappings_result.failed == false
+      - restore_mappings_result.task_ext_id is defined
+      - restore_mappings_result.response is defined
+      - restore_mappings_result.response.status == "SUCCEEDED"
+    success_msg: "Restore VPC virtual switch mappings task succeeded"
+    fail_msg: "Restore VPC virtual switch mappings task failed"
+
 - name: Delete created virtual switch
   nutanix.ncp.ntnx_virtual_switch_v2:
     ext_id: "{{ virtual_switch_uuid }}"
@@ -360,6 +394,18 @@
 - name: Print delete virtual switch result
   ansible.builtin.debug:
     var: delete_vs_result
+
+- name: Assert virtual switch deleted
+  ansible.builtin.assert:
+    that:
+      - delete_vs_result is defined
+      - delete_vs_result.changed == true
+      - delete_vs_result.failed == false
+      - delete_vs_result.task_ext_id is defined
+      - delete_vs_result.response is defined
+      - delete_vs_result.response.status == "SUCCEEDED"
+    success_msg: "Virtual switch deleted successfully"
+    fail_msg: "Failed to delete virtual switch"
 
 - name: Delete created categories
   nutanix.ncp.ntnx_categories_v2:
@@ -373,15 +419,13 @@
   ansible.builtin.debug:
     var: delete_categories_result
 
-- name: Assert categories deleted
+- name: Assert categories deletion task overall
   ansible.builtin.assert:
     that:
       - delete_categories_result is defined
       - delete_categories_result.changed == true
       - delete_categories_result.msg == "All items completed"
-    success_msg: "Categories deleted successfully"
-    fail_msg: "Failed to delete categories"
-
-- name: End VPC Virtual Switch Mapping tests
-  ansible.builtin.debug:
-    msg: VPC Virtual Switch Mapping tests completed successfully
+      - delete_categories_result.results is defined
+      - delete_categories_result.results | length == todelete_categories | length
+    success_msg: "All categories deletion task completed"
+    fail_msg: "Categories deletion task did not complete as expected"
