@@ -17,6 +17,13 @@
     category_key_2: "{{ random_name }}{{ suffix_name }}_key2"
     category_value_2: "{{ random_name }}{{ suffix_name }}_value2"
 
+- name: Set bridge interface network config for new virtual switch
+  ansible.builtin.set_fact:
+    vs_host_bridge_ip: "192.168.100.10"
+    vs_host_bridge_prefix_length: 24
+    vs_gateway_ip: "192.168.100.1"
+    vs_vlan_identifier: 100
+
 ########################################################################################
 # Step 1: List all existing VPC virtual switch mappings (initial state)
 ########################################################################################
@@ -78,7 +85,7 @@
   ansible.builtin.set_fact:
     host_ext_id: "{{ hosts_info.response[0].ext_id }}"
 
-- name: Create virtual switch with minimum attributes
+- name: Create virtual switch with bridge interface IP configured on host
   nutanix.ncp.ntnx_virtual_switch_v2:
     name: "{{ vs_name }}"
     bond_mode: "NONE"
@@ -86,6 +93,15 @@
       - ext_id: "{{ cluster.uuid }}"
         hosts:
           - ext_id: "{{ host_ext_id }}"
+            ip_address:
+              ip:
+                value: "{{ vs_host_bridge_ip }}"
+                prefix_length: "{{ vs_host_bridge_prefix_length }}"
+              prefix_length: "{{ vs_host_bridge_prefix_length }}"
+        gateway_ip_address:
+          value: "{{ vs_gateway_ip }}"
+          prefix_length: "{{ vs_host_bridge_prefix_length }}"
+        vlan_identifier: "{{ vs_vlan_identifier }}"
   register: vs_create_result
   ignore_errors: true
 
@@ -93,7 +109,7 @@
   ansible.builtin.debug:
     var: vs_create_result
 
-- name: Assert virtual switch created successfully
+- name: Assert virtual switch created successfully with bridge interface IP
   ansible.builtin.assert:
     that:
       - vs_create_result is defined
@@ -103,7 +119,7 @@
       - vs_create_result.task_ext_id is defined
       - vs_create_result.response is defined
       - vs_create_result.response.name == vs_name
-    success_msg: "Virtual switch created successfully"
+    success_msg: "Virtual switch with bridge interface IP created successfully"
     fail_msg: "Virtual switch creation failed"
 
 - name: Save virtual switch ext_id
@@ -333,6 +349,17 @@
 - name: Print restore mappings result
   ansible.builtin.debug:
     var: restore_mappings_result
+
+- name: Delete created virtual switch
+  nutanix.ncp.ntnx_virtual_switch_v2:
+    ext_id: "{{ virtual_switch_uuid }}"
+    state: absent
+  register: delete_vs_result
+  ignore_errors: true
+
+- name: Print delete virtual switch result
+  ansible.builtin.debug:
+    var: delete_vs_result
 
 - name: Delete created categories
   nutanix.ncp.ntnx_categories_v2:

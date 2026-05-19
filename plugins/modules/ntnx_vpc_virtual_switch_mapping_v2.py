@@ -16,6 +16,7 @@ version_added: 2.6.0
 description:
   - Configures and updates VPC to Virtual Switch mappings for specific clusters.
   - It allows targeted updates by applying configurations only to the clusters explicitly provided in the payload.
+  - One or more mappings can be submitted in a single invocation (up to 200 items per the API).
   - This module uses PC v4 APIs based SDKs
 notes:
     - >-
@@ -41,7 +42,7 @@ options:
     default: true
   virtual_switch_mappings:
     description:
-      - List of VPC virtual switch mappings to apply.
+      - List of VPC virtual switch mappings to apply in a single API call.
     type: list
     elements: dict
     required: true
@@ -119,8 +120,8 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - Response for creating a VPC virtual switch mapping.
-    - It contains task details for the creation of the VPC virtual switch mapping.
+    - Response for setting VPC virtual switch mappings.
+    - It contains task details for the set operation.
   returned: always
   type: dict
 
@@ -140,9 +141,9 @@ error:
   returned: When an error occurs.
   type: str
 
-ext_id:
-  description: The external ID of the VPC virtual switch mapping.
-  returned: When a VPC virtual switch mapping is created.
+task_ext_id:
+  description: The external ID of the task created by the set operation.
+  returned: when available
   type: str
 
 failed:
@@ -181,7 +182,7 @@ except ImportError:
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
-def get_module_spec():
+def get_mapping_spec():
     metadata_spec = dict(
         owner_reference_id=dict(type="str"),
         owner_user_name=dict(type="str"),
@@ -190,19 +191,21 @@ def get_module_spec():
         category_ids=dict(type="list", elements="str"),
     )
 
-    mapping_spec = dict(
+    return dict(
         virtual_switch_uuid=dict(type="str", required=True),
         cluster_uuids=dict(type="list", elements="str"),
         is_all_traffic_permitted=dict(type="bool"),
         metadata=dict(type="dict", options=metadata_spec, obj=net_sdk.Metadata),
     )
 
+
+def get_module_spec():
     module_args = dict(
         virtual_switch_mappings=dict(
             type="list",
             elements="dict",
             required=True,
-            options=mapping_spec,
+            options=get_mapping_spec(),
             obj=net_sdk.VpcVirtualSwitchMapping,
         ),
     )
@@ -211,29 +214,34 @@ def get_module_spec():
 
 
 def set_vpc_virtual_switch_mappings(module, api_instance, result):
-
     sg = SpecGenerator(module)
-    default_spec = net_sdk.VpcVirtualSwitchMapping()
-    spec, err = sg.generate_spec(obj=default_spec)
+    mapping_args = get_mapping_spec()
 
-    if err:
-        result["error"] = err
-        module.fail_json(
-            msg="Failed generating VPC virtual switch mapping Spec", **result
+    body = []
+    for item in module.params["virtual_switch_mappings"]:
+        default_spec = net_sdk.VpcVirtualSwitchMapping()
+        spec, err = sg.generate_spec(
+            obj=default_spec, attr=item, module_args=mapping_args
         )
+        if err:
+            result["error"] = err
+            module.fail_json(
+                msg="Failed generating VPC virtual switch mapping Spec", **result
+            )
+        body.append(spec)
 
     if module.check_mode:
-        result["response"] = strip_internal_attributes(spec.to_dict())
+        result["response"] = [strip_internal_attributes(s.to_dict()) for s in body]
         return
 
     resp = None
     try:
-        resp = api_instance.create_vpc_virtual_switch_mapping(body=spec)
+        resp = api_instance.create_vpc_virtual_switch_mapping(body=body)
     except Exception as e:
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while creating VPC virtual switch mapping",
+            msg="Api Exception raised while setting VPC virtual switch mappings",
         )
 
     task_ext_id = resp.data.ext_id
@@ -262,7 +270,7 @@ def run_module():
     result = {
         "changed": False,
         "response": None,
-        "ext_id": None,
+        "task_ext_id": None,
     }
     api_instance = get_vpc_virtual_switch_mappings_api_instance(module)
     set_vpc_virtual_switch_mappings(module, api_instance, result)
