@@ -304,5 +304,5 @@ def strip_read_only_fields(spec, fields=None):
 
     for field in fields:
         if hasattr(spec, field):
-            setattr(spec, field, None)
+            delattr(spec, field)
     return spec
