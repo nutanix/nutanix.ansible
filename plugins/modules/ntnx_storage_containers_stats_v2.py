@@ -16,6 +16,15 @@ version_added: 2.0.0
 description:
     - Get Stats for a Storage Container
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Get Stats for a Storage Container) -
+      Operation Name: View Storage Container Stats -
+      Required Roles: CSI System, Kubernetes Data Services System, Prism Admin, Prism Viewer, Project Manager, Storage Admin, Storage Viewer, Super Admin,
+      Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   ext_id:
     description:
@@ -54,6 +63,11 @@ options:
         - MAX
         - COUNT
         - LAST
+  read_timeout:
+    description: Read timeout in milliseconds for API calls.
+    type: int
+    required: false
+    default: 30000
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_logger

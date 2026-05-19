@@ -16,6 +16,19 @@ version_added: 2.0.0
 description:
     - This module fetches route tables information
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Get route table by ext_id) -
+      Operation Name: View VPC Route Table -
+      Required Roles: Account Owner, Administrator, Prism Admin, Prism Viewer, Super Admin, User, VPC Admin
+    - >-
+      B(List route tables) -
+      Operation Name: View VPC Route Table -
+      Required Roles: Account Owner, Administrator, Prism Admin, Prism Viewer, Super Admin, User, VPC Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
     ext_id:
         description:

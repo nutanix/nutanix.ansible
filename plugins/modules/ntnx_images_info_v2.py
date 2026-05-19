@@ -18,6 +18,22 @@ description:
 version_added: "2.0.0"
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Get an image) -
+      Operation Name: View Image -
+      Required Roles: Account Owner, Administrator, Backup Admin, Consumer, CSI System, Developer, Kubernetes Data Services System,
+      Kubernetes Infrastructure Provision, NCM Connector, Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin, User, Virtual Machine Admin,
+      Self-Service Admin (deprecated)
+    - >-
+      B(List images) -
+      Operation Name: View Image -
+      Required Roles: Account Owner, Administrator, Backup Admin, Consumer, CSI System, Developer, Kubernetes Data Services System,
+      Kubernetes Infrastructure Provision, NCM Connector, Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin, User, Virtual Machine Admin,
+      Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
   ext_id:
     description:

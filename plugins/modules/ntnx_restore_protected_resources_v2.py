@@ -19,6 +19,14 @@ description:
   - Restore VM/VG will create new VM/VG in the secondary PC (PC) for the given VM/VG external ID
   - Restore VM/VG uses secondary PC IP and its credentials in C(nutanix_host), C(nutanix_username), C(nutanix_password).
   - You can provide restore time to restore the VM/VG to a specific point in time
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Restore protected resource) -
+      Operation Name: Restore Protected Resource -
+      Required Roles: Disaster Recovery Admin, Prism Admin, Project Manager, Super Admin, Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=dataprotection)"
 options:
   state:
     description:

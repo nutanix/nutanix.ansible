@@ -211,24 +211,19 @@
   register: result
   ignore_errors: true
 
-# this fails since data source is null in response
-# - name: Create Disk with disk reference status
-#   ansible.builtin.assert:
-#     that:
-#       - result.response is defined
-#       - result.changed == true
-#       - result.failed == false
-#       - result.ext_id is defined
-#       - result.task_ext_id is defined
-#       - result.vm_ext_id == "{{ vm_uuid }}"
-#       - result.response.backing_info.data_source.vm_disk_reference.disk_ext_id == "{{ todelete[0] }}"
-#       - result.response.backing_info.data_source.vm_disk_reference.vm_reference.ext_id == "{{ vm_uuid }}"
-#       - result.response.backing_info.data_source.vm_disk_reference.disk_address.index == 2
-#       - result.response.backing_info.data_source.vm_disk_reference.disk_address.bus_type == "SCSI"
-#       - result.response.disk_address.index == 3
-#       - result.response.disk_address.bus_type == "SCSI"
-#     fail_msg: "Create Disk with disk reference failed"
-#     success_msg: "Create Disk with disk reference passed"
+- name: Create Disk with disk reference status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.vm_ext_id == "{{ vm_uuid }}"
+      - result.response.disk_address.index == 3
+      - result.response.disk_address.bus_type == "SCSI"
+    fail_msg: "Create Disk with disk reference failed"
+    success_msg: "Create Disk with disk reference passed"
 
 ################################################################################
 
@@ -420,39 +415,6 @@
       - result.response.disk_address.index == 2
     fail_msg: "Update Disk - check mode is enabled failed"
     success_msg: "Update Disk - check mode is enabled passed"
-
-#################################################################################
-
-# Update disk image is not working, the disk is not getting updated
-# - name: Update disk image
-#   ntnx_vms_disks_v2:
-#     vm_ext_id: "{{ vm_uuid }}"
-#     ext_id: "{{ todelete[1] }}"
-#     backing_info:
-#       vm_disk:
-#         storage_container:
-#           ext_id: "{{ storage_container.uuid }}"
-#         data_source:
-#           reference:
-#             image_reference:
-#               image_ext_id: "{{ disk_image.image_ext_ids[1] }}"
-#     state: present
-#   register: result
-#   ignore_errors: true
-
-# - name: Update disk image status
-#   ansible.builtin.assert:
-#     that:
-#       - result.response is defined
-#       - result.changed == true
-#       - result.failed == false
-#       - result.response.backing_info.data_source.reference.image_ext_id == "{{ disk_image.image_ext_ids[1] }}"
-#       - result.response.backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
-#       - result.response.backing_info.storage_config.is_flash_mode_enabled == true
-#       - result.response.backing_info.disk_ext_id == "{{ todelete[1] }}"
-#       - result.vm_ext_id == "{{ vm_uuid }}"
-#     fail_msg: "Update disk image failed"
-#     success_msg: "Update disk image passed"
 
 #################################################################################
 

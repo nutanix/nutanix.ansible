@@ -16,6 +16,20 @@ version_added: 2.0.0
 description:
     - Get users info using user external ID or list multiple users
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Get user by ext_id) -
+      Operation Name: View User -
+      Required Roles: Backup Admin, Nutanix Central Admin, Prism Admin, Prism Viewer, Project Admin, Project Manager, Secure Policy Admin,
+      Secure Policy Editor, Secure Policy Viewer, Super Admin, Self-Service Admin (deprecated)
+    - >-
+      B(List user(s)) -
+      Operation Name: View User -
+      Required Roles: Backup Admin, Nutanix Central Admin, Prism Admin, Prism Viewer, Project Admin, Project Manager,
+      Secure Policy Admin, Secure Policy Editor, Secure Policy Viewer, Super Admin, Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam)"
 options:
     ext_id:
         description:
