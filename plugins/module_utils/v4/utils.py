@@ -285,7 +285,7 @@ def _apply_proxy_from_env(config, module=None):
 
 def strip_read_only_fields(spec, fields=None):
     """
-    Clear server-populated read-only fields on a v4 SDK spec object before
+    Remove server-populated read-only fields from a v4 SDK spec object before
     sending it back as an update body. Modules whose entity has read-only
     fields (e.g. counters populated by the platform) can pass them via
     ``fields``.
@@ -294,10 +294,10 @@ def strip_read_only_fields(spec, fields=None):
 
     Args:
         spec (object): SDK model object to mutate.
-        fields (Iterable[str] | None): Attribute names to clear.
+        fields (Iterable[str] | None): Attribute names to remove.
 
     Returns:
-        object: The same ``spec``, with the listed attributes set to None.
+        object: The same ``spec``, with the listed attributes removed.
     """
     if not fields:
         return spec
