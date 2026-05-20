@@ -15,8 +15,20 @@ description:
     - This module allows you to create, update, and delete template placement policies in Nutanix Prism Central.
     - This module uses PC v4 APIs based SDKs
 version_added: "2.6.0"
-author:
- - Abhinav Bansal (@abhinavbansal29)
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create a template placement policy) -
+      Required Roles: Prism Admin, Super Admin
+    - >-
+      B(Update a template placement policy) -
+      Required Roles: Prism Admin, Super Admin
+    - >-
+      B(Delete a template placement policy) -
+      Required Roles: Prism Admin, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     ext_id:
         description:
@@ -100,28 +112,15 @@ options:
         type: bool
         required: false
         default: True
+author:
+ - Abhinav Bansal (@abhinavbansal29)
+ - George Ghawali (@george-ghawali)
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
     - nutanix.ncp.ntnx_logger
     - nutanix.ncp.ntnx_proxy_v2
-notes:
-    - >-
-      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
-      The required roles depend on the operation being performed.
-    - >-
-      B(Create a template placement policy) -
-      Operation Name: Create Template Placement Policy -
-      Required Roles: Prism Admin, Super Admin
-    - >-
-      B(Update a template placement policy) -
-      Operation Name: Update Template Placement Policy -
-      Required Roles: Prism Admin, Super Admin
-    - >-
-      B(Delete a template placement policy) -
-      Operation Name: Delete Template Placement Policy -
-      Required Roles: Prism Admin, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
+
 """
 
 EXAMPLES = r"""
