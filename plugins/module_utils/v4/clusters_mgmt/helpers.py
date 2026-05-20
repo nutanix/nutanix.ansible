@@ -109,3 +109,43 @@ def get_cluster_profile(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching cluster profile info using ext_id",
         )
+
+
+def get_cluster_protection_info(module, api_instance, ext_id):
+    """
+    This method will return cluster protection info using cluster external ID.
+    Args:
+        module: Ansible module
+        api_instance: ClusterProtectionApi instance from sdk
+        ext_id (str): cluster external ID
+    return:
+        protection info (object): cluster protection info
+    """
+    try:
+        return api_instance.get_cluster_protection_info(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching cluster protection info using ext_id",
+        )
+
+
+def get_cluster_recovery_info(module, api_instance, ext_id):
+    """
+    This method will return cluster recovery info using cluster external ID.
+    Args:
+        module: Ansible module
+        api_instance: ClusterProtectionApi instance from sdk
+        ext_id (str): cluster external ID
+    return:
+        recovery info (object): cluster recovery info
+    """
+    try:
+        return api_instance.get_cluster_recovery_info(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching cluster recovery info using ext_id",
+        )
