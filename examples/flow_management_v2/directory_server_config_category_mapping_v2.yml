@@ -1,0 +1,144 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create a directory server config (required to enable Id categorization)
+# 2. Update the directory server config
+# 3. List all directory server configs
+# 4. Get directory server config using ext_id
+# 5. Create a DS category mapping
+# 6. Update the DS category mapping
+# 7. List all DS category mappings
+# 8. List DS category mappings using filter
+# 9. List DS category mappings using limit
+# 10. Get DS category mapping using ext_id
+# 11. Delete the DS category mapping
+# 12. Delete the directory server config
+
+- name: Directory server config and DS category mappings playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        directory_service_reference: "954dc8b6-46dd-5fc0-90d6-edb0b8311e3c"
+        object_identifier: "9316163d-6a31-9542-bb71-3f2105d840d6"
+        dsc_criteria: "ansible-dsc-criteria"
+        category_mapping_name: "ansible_category_mapping"
+        category_name: "ADGroup"
+        category_value: "ad-group-12345678"
+
+    - name: Create directory server config
+      nutanix.ncp.ntnx_directory_server_config_v2:
+        state: present
+        directory_service_reference: "{{ directory_service_reference }}"
+        matching_criterias:
+          - match_entity: VM
+            match_field: NAME
+            match_type: CONTAINS
+            criteria: "{{ dsc_criteria }}"
+        is_default_category_enabled: true
+        should_keep_default_category_on_login: true
+      register: result
+      ignore_errors: true
+
+    - name: Store directory server config ext_id
+      ansible.builtin.set_fact:
+        directory_server_config_ext_id: "{{ result.ext_id }}"
+
+    - name: Update directory server config
+      nutanix.ncp.ntnx_directory_server_config_v2:
+        state: present
+        ext_id: "{{ directory_server_config_ext_id }}"
+        directory_service_reference: "{{ directory_service_reference }}"
+        matching_criterias:
+          - match_entity: VM
+            match_field: NAME
+            match_type: CONTAINS
+            criteria: "{{ dsc_criteria }}_updated"
+        is_default_category_enabled: true
+        should_keep_default_category_on_login: false
+      register: result
+      ignore_errors: true
+
+    - name: List all directory server configs
+      nutanix.ncp.ntnx_directory_server_configs_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Get directory server config using ext_id
+      nutanix.ncp.ntnx_directory_server_configs_info_v2:
+        ext_id: "{{ directory_server_config_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Create DS category mapping
+      nutanix.ncp.ntnx_category_mapping_v2:
+        state: present
+        name: "{{ category_mapping_name }}"
+        category_name: "{{ category_name }}"
+        category_value: "{{ category_value }}"
+        ad_info:
+          directory_service_reference: "{{ directory_service_reference }}"
+          object_identifier: "{{ object_identifier }}"
+      register: result
+      ignore_errors: true
+
+    - name: Store category mapping ext_id
+      ansible.builtin.set_fact:
+        category_mapping_ext_id: "{{ result.ext_id }}"
+
+    - name: Update DS category mapping
+      nutanix.ncp.ntnx_category_mapping_v2:
+        state: present
+        ext_id: "{{ category_mapping_ext_id }}"
+        name: "{{ category_mapping_name }}_updated"
+        category_name: "{{ category_name }}"
+        category_value: "{{ category_value }}"
+        ad_info:
+          directory_service_reference: "{{ directory_service_reference }}"
+          object_identifier: "{{ object_identifier }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all DS category mappings
+      nutanix.ncp.ntnx_category_mappings_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List DS category mappings using filter
+      nutanix.ncp.ntnx_category_mappings_info_v2:
+        filter: "name eq '{{ category_mapping_name }}_updated'"
+      register: result
+      ignore_errors: true
+
+    - name: List DS category mappings using limit
+      nutanix.ncp.ntnx_category_mappings_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: Get DS category mapping using ext_id
+      nutanix.ncp.ntnx_category_mappings_info_v2:
+        ext_id: "{{ category_mapping_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Delete DS category mapping
+      nutanix.ncp.ntnx_category_mapping_v2:
+        ext_id: "{{ category_mapping_ext_id }}"
+        state: absent
+      register: result
+      ignore_errors: true
+
+    - name: Delete directory server config
+      nutanix.ncp.ntnx_directory_server_config_v2:
+        ext_id: "{{ directory_server_config_ext_id }}"
+        state: absent
+      register: result
+      ignore_errors: true
