@@ -1,4 +1,4 @@
-# Copyright: (c) 2024, Nutanix
+# Copyright: (c) 2024, 2026, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -121,6 +121,18 @@ def get_etag(data):
         data (dict): v4 api response
     """
     return ntnx_vmm_py_client.ApiClient.get_etag(data)
+
+
+def get_image_rate_limit_policy_api_instance(module):
+    """
+    This method will return Image Rate Limit Policy API instance.
+    Args:
+        module: Ansible module instance
+    Returns:
+        ImageRateLimitPoliciesApi: v4 Image rate limit policies api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.ImageRateLimitPoliciesApi(api_client=api_client)
 
 
 def get_ova_api_instance(module):
