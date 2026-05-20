@@ -1,7 +1,7 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create a directory server config (required to enable Id categorization)
+# 1. Create a directory server config
 # 2. Update the directory server config
 # 3. List all directory server configs
 # 4. Get directory server config using ext_id
