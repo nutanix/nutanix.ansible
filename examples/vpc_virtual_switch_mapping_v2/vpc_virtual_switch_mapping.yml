@@ -102,7 +102,7 @@
     # List all VPC virtual switch mappings
     ############################################################################
     - name: List all VPC virtual switch mappings
-      nutanix.ncp.ntnx_vpc_virtual_switch_mapping_info_v2:
+      nutanix.ncp.ntnx_vpc_virtual_switch_mappings_info_v2:
       register: list_result
       ignore_errors: true
 

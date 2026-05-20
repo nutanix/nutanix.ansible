@@ -10,7 +10,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_vpc_virtual_switch_mapping_info_v2
+module: ntnx_vpc_virtual_switch_mappings_info_v2
 short_description: Fetch VPC virtual switch mappings info in Nutanix Prism Central
 version_added: 2.6.0
 description:
@@ -37,7 +37,7 @@ author:
 
 EXAMPLES = r"""
 - name: List all VPC virtual switch mappings
-  nutanix.ncp.ntnx_vpc_virtual_switch_mapping_info_v2:
+  nutanix.ncp.ntnx_vpc_virtual_switch_mappings_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -45,7 +45,7 @@ EXAMPLES = r"""
   register: result
 
 - name: List VPC virtual switch mappings with filter
-  nutanix.ncp.ntnx_vpc_virtual_switch_mapping_info_v2:
+  nutanix.ncp.ntnx_vpc_virtual_switch_mappings_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -54,15 +54,13 @@ EXAMPLES = r"""
   register: result
 
 - name: List VPC virtual switch mappings with limit
-  nutanix.ncp.ntnx_vpc_virtual_switch_mapping_info_v2:
+  nutanix.ncp.ntnx_vpc_virtual_switch_mappings_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
     limit: 1
   register: result
-
-
 """
 
 RETURN = r"""

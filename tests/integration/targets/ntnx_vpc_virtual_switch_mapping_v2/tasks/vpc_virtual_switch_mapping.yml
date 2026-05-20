@@ -29,7 +29,7 @@
 ########################################################################################
 
 - name: List all VPC virtual switch mappings (initial state)
-  nutanix.ncp.ntnx_vpc_virtual_switch_mapping_info_v2:
+  nutanix.ncp.ntnx_vpc_virtual_switch_mappings_info_v2:
   register: initial_mappings
   ignore_errors: true
 
@@ -325,7 +325,7 @@
 ########################################################################################
 
 - name: List all VPC virtual switch mappings after set with new configuration
-  nutanix.ncp.ntnx_vpc_virtual_switch_mapping_info_v2:
+  nutanix.ncp.ntnx_vpc_virtual_switch_mappings_info_v2:
   register: list_after_set_result
   ignore_errors: true
 

@@ -35,11 +35,6 @@ options:
     default: present
     choices:
       - present
-  wait:
-    description: Wait for the operation to complete.
-    type: bool
-    required: false
-    default: true
   virtual_switch_mappings:
     description:
       - List of VPC virtual switch mappings to apply in a single API call.
@@ -201,6 +196,7 @@ def get_mapping_spec():
 
 def get_module_spec():
     module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
         virtual_switch_mappings=dict(
             type="list",
             elements="dict",

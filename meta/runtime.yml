@@ -247,6 +247,6 @@ action_groups:
     - ntnx_virtual_switch_v2
     - ntnx_virtual_switches_info_v2
     - ntnx_vpc_virtual_switch_mapping_v2
-    - ntnx_vpc_virtual_switch_mapping_info_v2
+    - ntnx_vpc_virtual_switch_mappings_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
