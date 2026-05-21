@@ -12,10 +12,9 @@ DOCUMENTATION = r"""
 module: ntnx_template_placement_policies_info_v2
 short_description: Fetches information about Nutanix PC template placement policies.
 version_added: "2.6.0"
-author:
- - Abhinav Bansal (@abhinavbansal29)
 description:
   - This module fetches information about Nutanix PC template placement policies.
+  - It can fetch a single template placement policy by ext_id or list multiple template placement policies with optional filter.
   - This module uses PC v4 APIs based SDKs
 notes:
     - >-
@@ -23,19 +22,21 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Get a template placement policy) -
-      Operation Name: View Template Placement Policy -
       Required Roles: Prism Admin, Prism Viewer, Super Admin
     - >-
       B(List template placement policies) -
-      Operation Name: View Template Placement Policy -
       Required Roles: Prism Admin, Prism Viewer, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
   ext_id:
     description:
       - The external ID of the template placement policy.
+      - Mutually exclusive with C(filter).
     type: str
     required: false
+author:
+ - Abhinav Bansal (@abhinavbansal29)
+ - George Ghawali (@george-ghawali)
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_info_v2
@@ -50,7 +51,7 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    ext_id: "policy-12345"
+    ext_id: "c4696582-29c0-4a23-454d-5c1128aeaffb"
 
 - name: List all template placement policies
   nutanix.ncp.ntnx_template_placement_policies_info_v2:
@@ -58,14 +59,30 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-"""
 
+- name: List all template placement policies with filter
+  nutanix.ncp.ntnx_template_placement_policies_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    filter: name eq 'my_template_policy'
+
+- name: List all template placement policies with limit
+  nutanix.ncp.ntnx_template_placement_policies_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    limit: 1
+"""
 
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix PC Template Placement policies.
-    - it can be single policy or list of policies as per spec.
+    - The response from the Nutanix PC vms v4 API.
+    - Single template placement policy if external ID is provided.
+    - List of multiple template placement policies if external ID is not provided.
   type: dict
   returned: always
   sample: {
@@ -88,9 +105,14 @@ response:
             "placement_type": "SOFT",
             "tenant_id": null
         }
+changed:
+  description: This indicates whether the task resulted in any changes
+  type: bool
+  returned: always
+  sample: false
 ext_id:
     description:
-        - The external ID of the policy.
+        - The external ID of the template placement policy.
     type: str
     sample: "98b9dc89-be08-3c56-b554-692b8b676fd2"
     returned: always
@@ -98,7 +120,7 @@ msg:
     description: This indicates the message if any message occurred
     returned: When there is an error
     type: str
-    sample: "Api Exception raised while fetching template placement policy info"
+    sample: "Api Exception raised while fetching template placement policies info"
 error:
   description: The error message if an error occurs.
   type: str
@@ -129,12 +151,7 @@ from ..module_utils.v4.utils import (  # noqa: E402
 from ..module_utils.v4.vmm.api_client import (  # noqa: E402
     get_template_placement_policy_api_instance,
 )
-
-SDK_IMP_ERROR = None
-try:
-    import ntnx_vmm_py_client  # noqa: F401
-except ImportError:
-    SDK_IMP_ERROR = traceback.format_exc()
+from ..module_utils.v4.vmm.helpers import get_template_placement_policy  # noqa: E402
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
@@ -147,38 +164,14 @@ def get_module_spec():
     return module_args
 
 
-def get_policy(module, result):
-    """
-    Get a single template placement policy by ext_id.
-    Args:
-        module: Ansible module
-        result: Result dict to populate
-    """
-    policies = get_template_placement_policy_api_instance(module)
+def get_policy(module, policies, result):
     ext_id = module.params.get("ext_id")
-
-    try:
-        resp = policies.get_template_placement_policy_by_id(extId=ext_id)
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while fetching template placement policy info",
-        )
-
     result["ext_id"] = ext_id
+    resp = get_template_placement_policy(module, policies, ext_id)
     result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
 
 
-def get_policies(module, result):
-    """
-    List all template placement policies with pagination support.
-    Args:
-        module: Ansible module
-        result: Result dict to populate
-    """
-    policies = get_template_placement_policy_api_instance(module)
-
+def get_policies(module, policies, result):
     sg = SpecGenerator(module)
     kwargs, err = sg.get_info_spec(attr=module.params)
 
@@ -199,11 +192,10 @@ def get_policies(module, result):
 
     total_available_results = resp.metadata.total_available_results
     result["total_available_results"] = total_available_results
-
-    if not getattr(resp, "data", None):
-        result["response"] = []
-        return
-    result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    resp = strip_internal_attributes(resp.to_dict()).get("data")
+    if not resp:
+        resp = []
+    result["response"] = resp
 
 
 def run_module():
@@ -214,17 +206,14 @@ def run_module():
             ("ext_id", "filter"),
         ],
     )
-    if SDK_IMP_ERROR:
-        module.fail_json(
-            msg=missing_required_lib("ntnx_vmm_py_client"), exception=SDK_IMP_ERROR
-        )
 
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None}
+    policies = get_template_placement_policy_api_instance(module)
     if module.params.get("ext_id"):
-        get_policy(module, result)
+        get_policy(module, policies, result)
     else:
-        get_policies(module, result)
+        get_policies(module, policies, result)
 
     module.exit_json(**result)
 

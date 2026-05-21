@@ -30,6 +30,17 @@ notes:
       Required Roles: Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
+    state:
+        description:
+            - Specify state
+            - If C(state) is set to C(present) then the module will create the template placement policy.
+            - If C(state) is set to C(present) and C(ext_id) is given then the module will update that template placement policy.
+            - If C(state) is set to C(absent) and C(ext_id) is given then the module will delete that template placement policy.
+        choices:
+            - present
+            - absent
+        type: str
+        default: present
     ext_id:
         description:
             - The unique identifier of the template placement policy.
@@ -55,7 +66,7 @@ options:
         type: str
     content_filter:
         description:
-            - The filter for selecting templates for the template placement policy.
+            - Category-based entity filter.
         required: false
         type: dict
         suboptions:
@@ -69,13 +80,13 @@ options:
                 type: str
             category_ext_ids:
                 description:
-                    - The list of category external IDs to match.
+                    - Filter to match entities based on the provided categories.
                 required: true
                 type: list
                 elements: str
     cluster_filter:
         description:
-            - The filter for selecting clusters for the template placement policy.
+            - Category-based entity filter.
         required: false
         type: dict
         suboptions:
@@ -89,24 +100,10 @@ options:
                 type: str
             category_ext_ids:
                 description:
-                    - The list of category external IDs to match.
+                    - Filter to match entities based on the provided categories.
                 required: true
                 type: list
                 elements: str
-    state:
-        description:
-            - Specify state
-            - If C(state) is set to C(present) then the operation will be to create the item.
-            - if C(state) is set to C(present) and C(ext_id) is given then it will update that policy.
-            - if C(state) is set to C(present) then C(ext_id) or C(name) needs to be set.
-            - >-
-                If C(state) is set to C(absent) and if the item exists, then
-                item is removed.
-        choices:
-            - present
-            - absent
-        type: str
-        default: present
     wait:
         description: Wait for the CRUD operation to complete.
         type: bool
@@ -120,7 +117,6 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_operations_v2
     - nutanix.ncp.ntnx_logger
     - nutanix.ncp.ntnx_proxy_v2
-
 """
 
 EXAMPLES = r"""
@@ -136,13 +132,11 @@ EXAMPLES = r"""
     content_filter:
       type: CATEGORIES_MATCH_ALL
       category_ext_ids:
-        - "category-ext-id-1"
+        - "d596161e-1622-495f-805a-b86865559663"
     cluster_filter:
       type: CATEGORIES_MATCH_ANY
       category_ext_ids:
-        - "category-ext-id-2"
-    state: present
-    wait: true
+        - "d596161e-1622-495f-805a-b86865559664"
 
 - name: Update a template placement policy
   nutanix.ncp.ntnx_template_placement_policy_v2:
@@ -153,8 +147,15 @@ EXAMPLES = r"""
     ext_id: "605a0cf9-d04e-3be7-911b-1e6f193f6eb9"
     name: my_template_policy_updated
     description: Updated description
-    state: present
-    wait: true
+    placement_type: HARD
+    content_filter:
+      type: CATEGORIES_MATCH_ALL
+      category_ext_ids:
+        - "d596161e-1622-495f-805a-b86865559663"
+    cluster_filter:
+      type: CATEGORIES_MATCH_ANY
+      category_ext_ids:
+        - "d596161e-1622-495f-805a-b86865559664"
 
 - name: Delete a template placement policy
   nutanix.ncp.ntnx_template_placement_policy_v2:
@@ -172,7 +173,8 @@ RETURN = r"""
 response:
     description:
         - The response from the template placement policy operation.
-        - It will be task response if C(wait) is false.
+        - It will be Template Placement Policy info if the operation is create or update and C(wait) is true.
+        - It will be task details if the operation is delete or C(wait) is false.
     type: dict
     returned: always
     sample: {
@@ -196,38 +198,40 @@ response:
             "tenant_id": null
         }
 task_ext_id:
-    description:
-        - The external ID of the task associated with the template placement policy operation.
+    description: The unique identifier of the task.
     type: str
-    returned: when a task is created
-    sample: "98b9dc89-be08-3c56-b554-692b8b676fd2"
+    returned: always
+    sample: "ZXJnb24=:0e040d14-5dcf-5302-8b48-d3c6cf115cd1"
+
 ext_id:
-    description:
-        - The external ID of the policy
+    description: Template Placement Policy external ID
     type: str
-    sample: "98b9dc89-be08-3c56-b554-692b8b676fd2"
     returned: always
+    sample: "0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b3b"
+
 changed:
-    description: Indicates whether the template placement policy was changed.
-    type: bool
-    returned: always
+  description: This indicates whether the task resulted in any changes
+  returned: always
+  type: bool
+  sample: true
+
 msg:
     description: This indicates the message if any message occurred
     returned: When there is an error, module is idempotent or check mode (in delete operation)
     type: str
-    sample: "Failed generating create Template Placement Policy Spec"
+    sample: "Api Exception raised while creating template placement policy"
+
 error:
-    description: The error message if an error occurred during the template placement policy operation.
-    type: str
-    returned: when an error occurs
-skipped:
-    description: Indicates whether the template placement policy operation was skipped.
-    type: bool
-    returned: when the operation is skipped
+  description: This field typically holds information about if the task have errors that occurred during the task execution
+  returned: always
+  type: bool
+  sample: false
+
 failed:
-    description: Indicates whether the operation failed.
+    description: This field indicates if the task execution failed
+    returned: always
     type: bool
-    returned: on failure
+    sample: false
 """
 
 import traceback  # noqa: E402
@@ -301,13 +305,6 @@ def get_module_spec():
 
 
 def create_policy(module, api_instance, result):
-    """
-    Create a new template placement policy.
-    Args:
-        module: Ansible module
-        api_instance: TemplatePlacementPoliciesApi instance
-        result: Result dict to populate
-    """
     sg = SpecGenerator(module)
     default_spec = vmm_sdk.TemplatePlacementPolicy()
     spec, err = sg.generate_spec(obj=default_spec)
@@ -348,14 +345,15 @@ def create_policy(module, api_instance, result):
     result["changed"] = True
 
 
+def check_idempotency(current_spec, update_spec):
+    strip_internal_attributes(current_spec)
+    strip_internal_attributes(update_spec)
+    if current_spec == update_spec:
+        return True
+    return False
+
+
 def update_policy(module, api_instance, result):
-    """
-    Update an existing template placement policy.
-    Args:
-        module: Ansible module
-        api_instance: TemplatePlacementPoliciesApi instance
-        result: Result dict to populate
-    """
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
@@ -373,7 +371,7 @@ def update_policy(module, api_instance, result):
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
 
-    if current_spec == update_spec:
+    if check_idempotency(current_spec.to_dict(), update_spec.to_dict()):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
 
@@ -409,13 +407,6 @@ def update_policy(module, api_instance, result):
 
 
 def delete_policy(module, api_instance, result):
-    """
-    Delete a template placement policy.
-    Args:
-        module: Ansible module
-        api_instance: TemplatePlacementPoliciesApi instance
-        result: Result dict to populate
-    """
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
@@ -423,20 +414,8 @@ def delete_policy(module, api_instance, result):
         result["msg"] = "Policy with ext_id:{0} will be deleted.".format(ext_id)
         return
 
-    current_spec = get_template_placement_policy(module, api_instance, ext_id=ext_id)
-
-    etag = get_etag(data=current_spec)
-    if not etag:
-        return module.fail_json(
-            "unable to fetch etag for deleting Template Placement Policy", **result
-        )
-
-    kwargs = {"if_match": etag}
-
     try:
-        resp = api_instance.delete_template_placement_policy_by_id(
-            extId=ext_id, **kwargs
-        )
+        resp = api_instance.delete_template_placement_policy_by_id(extId=ext_id)
     except Exception as e:
         raise_api_exception(
             module=module,
