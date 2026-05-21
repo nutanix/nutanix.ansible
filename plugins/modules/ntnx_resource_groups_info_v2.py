@@ -23,11 +23,27 @@ notes:
     - >-
       B(List resource groups) -
       Operation Name: List Resource Groups -
-      Required Roles: Backup Admin, Cluster Admin, Cluster Viewer, Consumer, CSI System, Developer, Disaster Recovery Admin, Disaster Recovery Viewer, File Server Security Admin, File Server Share Admin, Files Admin, Files Viewer, Flow Admin, Flow Policy Author, Flow Viewer, Kubernetes Data Services System, Kubernetes Infrastructure Provision, License Admin, License Viewer, LocalAccountManager Admin, LocalAccountManager Viewer, Monitoring Admin, Monitoring Viewer, NCM Connector, Network Infra Admin, Objects Admin, Operator, Prism Admin, Prism Viewer, Project Admin, Project Manager, Security Dashboard Admin, Security Dashboard Viewer, Storage Admin, Storage Viewer, Super Admin, Tenant Admin, Tenant Consumer, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin
+      Required Roles: Backup Admin, Cluster Admin, Cluster Viewer, Consumer, CSI System, Developer,
+      Disaster Recovery Admin, Disaster Recovery Viewer, File Server Security Admin,
+      File Server Share Admin, Files Admin, Files Viewer, Flow Admin, Flow Policy Author, Flow Viewer,
+      Internal Super Admin, Kubernetes Data Services System, Kubernetes Infrastructure Provision,
+      License Admin, License Viewer, LocalAccountManager Admin, LocalAccountManager Viewer,
+      Monitoring Admin, Monitoring Viewer, NCM Connector, Network Infra Admin, Objects Admin, Operator,
+      Prism Admin, Prism Viewer, Project Admin, Project Manager, Security Dashboard Admin,
+      Security Dashboard Viewer, Storage Admin, Storage Viewer, Super Admin, Tenant Admin,
+      Tenant Consumer, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin
     - >-
       B(Get resource group by external ID) -
       Operation Name: View Resource Group -
-      Required Roles: Backup Admin, Cluster Admin, Cluster Viewer, Consumer, CSI System, Developer, Disaster Recovery Admin, Disaster Recovery Viewer, File Server Security Admin, File Server Share Admin, Files Admin, Files Viewer, Flow Admin, Flow Policy Author, Flow Viewer, Kubernetes Data Services System, Kubernetes Infrastructure Provision, License Admin, License Viewer, LocalAccountManager Admin, LocalAccountManager Viewer, Monitoring Admin, Monitoring Viewer, NCM Connector, Network Infra Admin, Objects Admin, Operator, Prism Admin, Prism Viewer, Project Admin, Project Manager, Security Dashboard Admin, Security Dashboard Viewer, Storage Admin, Storage Viewer, Super Admin, Tenant Admin, Tenant Consumer, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin
+      Required Roles: Backup Admin, Cluster Admin, Cluster Viewer, Consumer, CSI System, Developer,
+      Disaster Recovery Admin, Disaster Recovery Viewer, File Server Security Admin,
+      File Server Share Admin, Files Admin, Files Viewer, Flow Admin, Flow Policy Author, Flow Viewer,
+      Internal Super Admin, Kubernetes Data Services System, Kubernetes Infrastructure Provision,
+      License Admin, License Viewer, LocalAccountManager Admin, LocalAccountManager Viewer,
+      Monitoring Admin, Monitoring Viewer, NCM Connector, Network Infra Admin, Objects Admin, Operator,
+      Prism Admin, Prism Viewer, Project Admin, Project Manager, Security Dashboard Admin,
+      Security Dashboard Viewer, Storage Admin, Storage Viewer, Super Admin, Tenant Admin,
+      Tenant Consumer, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=multidomain)"
 options:
     ext_id:
