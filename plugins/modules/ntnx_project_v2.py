@@ -17,13 +17,29 @@ description:
     - Create, update, and delete projects in Nutanix Prism Central.
     - Projects are logical grouping constructs that organize resources across the Nutanix platform.
     - This module uses PC v4 APIs based SDKs.
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Create a project) -
+      Operation Name: Create Project -
+      Required Roles: Super Admin, NCM Admin, Prism Admin, Project Manager
+    - >-
+      B(Update a project) -
+      Operation Name: Update Project -
+      Required Roles: Super Admin, NCM Admin, Prism Admin, Project Manager
+    - >-
+      B(Delete a project) -
+      Operation Name: Delete Project -
+      Required Roles: Super Admin, NCM Admin, Prism Admin, Project Manager
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=multidomain)"
 options:
     state:
         description:
             - Specify state.
             - If C(state) is set to C(present) then the module will create a project.
             - If C(state) is set to C(present) and C(ext_id) is given, then the module will update the project.
-            - If C(state) is set to C(absent) with C(ext_id), then the module will delete the project.
+            - If C(state) is set to C(absent) and C(ext_id) is provided, then the module will delete the project.
         choices:
             - present
             - absent
@@ -87,7 +103,7 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     state: present
-    ext_id: "{{ project_ext_id }}"
+    ext_id: "29656051-720e-4923-814f-485288374114"
     description: "Updated description"
   register: result
 
@@ -98,7 +114,7 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     state: absent
-    ext_id: "{{ project_ext_id }}"
+    ext_id: "29656051-720e-4923-814f-485288374114"
   register: result
 """
 
@@ -142,7 +158,7 @@ task_ext_id:
     description: The external ID of the task created for the operation.
     returned: always
     type: str
-    sample: "00000000-0000-0000-0000-000000000000"
+    sample: "ZXJnb24=:3a2267ad-5e17-4813-b474-b5c7ea0aa848"
 
 skipped:
     description: Whether the operation was skipped due to no changes (idempotency).

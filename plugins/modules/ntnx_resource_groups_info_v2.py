@@ -17,6 +17,18 @@ description:
     - Fetch information about resource groups from Nutanix Prism Central.
     - Retrieve a single resource group by external ID or list all resource groups with optional filters.
     - This module uses PC v4 APIs based SDKs.
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(List resource groups) -
+      Operation Name: List Resource Groups -
+      Required Roles: Backup Admin, Cluster Admin, Cluster Viewer, Consumer, CSI System, Developer, Disaster Recovery Admin, Disaster Recovery Viewer, File Server Security Admin, File Server Share Admin, Files Admin, Files Viewer, Flow Admin, Flow Policy Author, Flow Viewer, Kubernetes Data Services System, Kubernetes Infrastructure Provision, License Admin, License Viewer, LocalAccountManager Admin, LocalAccountManager Viewer, Monitoring Admin, Monitoring Viewer, NCM Connector, Network Infra Admin, Objects Admin, Operator, Prism Admin, Prism Viewer, Project Admin, Project Manager, Security Dashboard Admin, Security Dashboard Viewer, Storage Admin, Storage Viewer, Super Admin, Tenant Admin, Tenant Consumer, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin
+    - >-
+      B(Get resource group by external ID) -
+      Operation Name: View Resource Group -
+      Required Roles: Backup Admin, Cluster Admin, Cluster Viewer, Consumer, CSI System, Developer, Disaster Recovery Admin, Disaster Recovery Viewer, File Server Security Admin, File Server Share Admin, Files Admin, Files Viewer, Flow Admin, Flow Policy Author, Flow Viewer, Kubernetes Data Services System, Kubernetes Infrastructure Provision, License Admin, License Viewer, LocalAccountManager Admin, LocalAccountManager Viewer, Monitoring Admin, Monitoring Viewer, NCM Connector, Network Infra Admin, Objects Admin, Operator, Prism Admin, Prism Viewer, Project Admin, Project Manager, Security Dashboard Admin, Security Dashboard Viewer, Storage Admin, Storage Viewer, Super Admin, Tenant Admin, Tenant Consumer, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=multidomain)"
 options:
     ext_id:
         description:
@@ -47,7 +59,7 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    ext_id: "{{ resource_group_ext_id }}"
+    ext_id: "384280b2-8f08-414a-b7b6-68a1b522001a"
   register: result
 
 - name: List resource groups with filter
@@ -74,7 +86,7 @@ response:
     description:
         - The response from the Nutanix PC Resource Groups info v4 API.
         - It can be a single resource group if external ID is provided.
-        - List of multiple resource groups if external ID is not provided.
+        - List of multiple resource groups with optional filters if external ID is not provided.
     returned: always
     type: dict
     sample: [
@@ -139,7 +151,7 @@ msg:
     description: Additional message about the operation.
     returned: When there is an error
     type: str
-
+    sample: "Api Exception raised while fetching resource groups info"
 error:
     description: This field holds information about errors that occurred during the task execution.
     returned: When an error occurs
@@ -169,14 +181,6 @@ from ..module_utils.v4.utils import (  # noqa: E402
     strip_internal_attributes,
 )
 
-SDK_IMP_ERROR = None
-try:
-    import ntnx_multidomain_py_client as multidomain_sdk  # noqa: E402
-except ImportError:
-
-    from ..module_utils.v4.sdk_mock import mock_sdk as multidomain_sdk  # noqa: E402
-
-    SDK_IMP_ERROR = traceback.format_exc()
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
@@ -242,11 +246,6 @@ def run_module():
             ("ext_id", "filter"),
         ],
     )
-    if SDK_IMP_ERROR:
-        module.fail_json(
-            msg=missing_required_lib(multidomain_sdk.__name__),
-            exception=SDK_IMP_ERROR,
-        )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "response": None}
 

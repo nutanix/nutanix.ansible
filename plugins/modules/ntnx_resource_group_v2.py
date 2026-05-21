@@ -18,13 +18,29 @@ description:
     - Resource groups define placement targets (clusters and storage containers)
       where resources within a project can be deployed.
     - This module uses PC v4 APIs based SDKs.
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Create a resource group) -
+      Operation Name: Create Resource Group -
+      Required Roles: Cluster Admin, Prism Admin, Project Manager, Storage Admin
+    - >-
+      B(Update a resource group) -
+      Operation Name: Update Resource Group -
+      Required Roles: Cluster Admin, Prism Admin, Project Manager, Storage Admin
+    - >-
+      B(Delete a resource group) -
+      Operation Name: Delete Resource Group -
+      Required Roles: Cluster Admin, Prism Admin, Project Manager, Storage Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=multidomain)"
 options:
     state:
         description:
             - Specify state.
             - If C(state) is set to C(present) then the module will create a resource group.
             - If C(state) is set to C(present) and C(ext_id) is given, then the module will update the resource group.
-            - If C(state) is set to C(absent) with C(ext_id), then the module will delete the resource group.
+            - If C(state) is set to C(absent) and C(ext_id) is given, then the module will delete the resource group.
         choices:
             - present
             - absent
@@ -50,6 +66,7 @@ options:
     project_ext_id:
         description:
             - UUID of the project that owns this resource group.
+            - Required for create operations.
         type: str
     placement_targets:
         description:
@@ -118,6 +135,10 @@ EXAMPLES = r"""
     state: present
     ext_id: "93673459-0234-4789-a123-456789012345"
     name: "my-resource-group-updated"
+    placement_targets:
+      - cluster_ext_id: "00064c46-8fef-6895-185b-ac1f6b6f97e2"
+        storage_containers:
+          - ext_id: "5d4f7039-b1d4-437c-9b0e-c34a87e08583"
   register: result
 
 - name: Delete a resource group
@@ -190,7 +211,7 @@ task_ext_id:
     description: The external ID of the task created for the operation.
     returned: always
     type: str
-    sample: "00000000-0000-0000-0000-000000000000"
+    sample: "ZXJnb24=:3a2267ad-5e17-4813-b474-b5c7ea0aa848"
 
 skipped:
     description: Whether the operation was skipped due to no changes (idempotency).
@@ -294,7 +315,7 @@ def get_module_spec():
 
 
 def create_resource_group(module, resource_groups, result):
-    validate_required_params(module, ["name"])
+    validate_required_params(module, ["name", "project_ext_id"])
 
     sg = SpecGenerator(module)
     default_spec = multidomain_sdk.ResourceGroup()
