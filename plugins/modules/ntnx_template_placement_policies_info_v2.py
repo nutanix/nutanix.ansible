@@ -168,7 +168,7 @@ def get_policy(module, policies, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
     resp = get_template_placement_policy(module, policies, ext_id)
-    result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    result["response"] = strip_internal_attributes(resp.to_dict())
 
 
 def get_policies(module, policies, result):

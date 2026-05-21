@@ -251,6 +251,7 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
+    validate_required_params,
 )
 from ..module_utils.v4.vmm.api_client import (  # noqa: E402
     get_etag,
@@ -305,6 +306,9 @@ def get_module_spec():
 
 
 def create_policy(module, api_instance, result):
+    validate_required_params(
+        module, ["name", "placement_type", "content_filter", "cluster_filter"]
+    )
     sg = SpecGenerator(module)
     default_spec = vmm_sdk.TemplatePlacementPolicy()
     spec, err = sg.generate_spec(obj=default_spec)
