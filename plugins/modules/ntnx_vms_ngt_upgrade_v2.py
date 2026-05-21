@@ -17,6 +17,15 @@ description:
     - This module uses PC v4 APIs based SDKs
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Upgrade NGT inside a VM) -
+      Operation Name: Upgrade Virtual Machine NGT -
+      Required Roles: Account Owner, Administrator, Backup Admin, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Super Admin, User,
+      Virtual Machine Admin, Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     state:
         description:

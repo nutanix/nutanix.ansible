@@ -15,6 +15,14 @@ version_added: 2.2.0
 description:
     - This module can be used to revoke the requested API key for a user in Nutanix Prism Central.
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Revoke the requested key) -
+      Operation Name: Revoke User Key -
+      Required Roles: Nutanix Central Admin, Prism Admin, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam)"
 options:
     state:
         description:

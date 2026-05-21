@@ -16,6 +16,21 @@ version_added: "2.0.0"
 description:
   - This module can insert or eject ISO from CD ROM of Nutanix VMs
   - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Ejects an ISO from the provided CD-ROM device) -
+      Operation Name: Eject Virtual Machine CD ROM -
+      Required Roles: Account Owner, Administrator, Consumer, Developer, NCM Connector, Operator, Prism Admin, Project Admin, Project Manager, Super Admin,
+      User, Virtual Machine Admin, Virtual Machine Operator, Self-Service Admin (deprecated)
+    - >-
+      B(Inserts an ISO in the provided CD-ROM device) -
+      Operation Name: Insert Virtual Machine CD ROM -
+      Required Roles: Account Owner, Administrator, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Super Admin, User,
+      Virtual Machine Admin, Virtual Machine Operator, Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
   state:
     description:

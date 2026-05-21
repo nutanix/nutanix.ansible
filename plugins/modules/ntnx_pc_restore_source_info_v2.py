@@ -13,6 +13,14 @@ version_added: 2.1.0
 description:
     - Fetch specific restore source info using external ID
     - Please provide Prism Element IP address here in C(nutanix_host)
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Fetch restore source) -
+      Operation Name: View Restore Source -
+      Required Roles: Domain Manager Admin, Domain Manager Viewer, Prism Admin, Prism Viewer, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:
     ext_id:
         description: External ID to fetch specific restore source info

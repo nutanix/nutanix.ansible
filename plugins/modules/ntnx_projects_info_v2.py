@@ -15,8 +15,21 @@ short_description: Fetch projects info from Nutanix Prism Central using v4 APIs
 version_added: "2.6.0"
 description:
     - This module fetches information about Nutanix projects.
-    - The module can fetch information about all projects or a specific project.
+    - The module retrieves information about a single project by external ID or
+        lists all projects with optional filters and limit.
     - This module uses PC v4 APIs based SDKs.
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(List projects) -
+      Operation Name: List Projects -
+      Required Roles: Basic Project Member, Consumer, CSI System, Developer, Flow Admin, Flow Viewer, Kubernetes Data Services System, Kubernetes Infrastructure Provision, NCM Admin, NCM Viewer, Operator, Prism Admin, Prism Viewer, Project Admin, Project Manager, Storage Admin, Storage Viewer, Super Admin, Virtual Machine Admin, Virtual Machine Operator
+    - >-
+      B(Get project by external ID) -
+      Operation Name: View Project -
+      Required Roles: Basic Project Member, Consumer, CSI System, Developer, Flow Admin, Flow Viewer, Kubernetes Data Services System, Kubernetes Infrastructure Provision, NCM Admin, NCM Viewer, Operator, Prism Admin, Prism Viewer, Project Admin, Project Manager, Storage Admin, Storage Viewer, Super Admin, Virtual Machine Admin, Virtual Machine Operator
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=multidomain)"
 options:
     ext_id:
         description:
@@ -47,7 +60,7 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    ext_id: "{{ project_ext_id }}"
+    ext_id: "29656051-720e-4923-814f-485288374114"
   register: result
 
 - name: List projects with filter
@@ -77,7 +90,38 @@ response:
         - List of multiple projects if external ID is not provided.
     returned: always
     type: dict
-    sample: "<Need to add sample>"
+    sample: [
+            {
+                "created_by": "00000000-0000-0000-0000-000000000000",
+                "created_timestamp": 1779200371249947,
+                "description": null,
+                "ext_id": "54924afe-85bc-599e-9280-698a99234ca4",
+                "id": "my-project-id-1",
+                "is_default": false,
+                "is_system_defined": false,
+                "links": null,
+                "modified_timestamp": 1779200371249947,
+                "name": "my-project-1",
+                "state": "ACTIVE",
+                "tenant_id": null,
+                "updated_by": "00000000-0000-0000-0000-000000000000",
+            },
+            {
+                "created_by": "00000000-0000-0000-0000-000000000000",
+                "created_timestamp": 1779200374640754,
+                "description": "Project with all fields for testing",
+                "ext_id": "9aed0472-2df3-5a19-9065-bc9ef4435f61",
+                "id": "my-project-id-2",
+                "is_default": false,
+                "is_system_defined": false,
+                "links": null,
+                "modified_timestamp": 1779200382340566,
+                "name": "my-project-2",
+                "state": "ACTIVE",
+                "tenant_id": null,
+                "updated_by": "00000000-0000-0000-0000-000000000000",
+            },
+        ]
 
 changed:
     description: This indicates whether the task resulted in any changes.

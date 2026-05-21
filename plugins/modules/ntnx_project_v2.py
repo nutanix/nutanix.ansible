@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2024, Nutanix
+# Copyright: (c) 2026, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -17,13 +17,29 @@ description:
     - Create, update, and delete projects in Nutanix Prism Central.
     - Projects are logical grouping constructs that organize resources across the Nutanix platform.
     - This module uses PC v4 APIs based SDKs.
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Create a project) -
+      Operation Name: Create Project -
+      Required Roles: Super Admin, NCM Admin, Prism Admin, Project Manager
+    - >-
+      B(Update a project) -
+      Operation Name: Update Project -
+      Required Roles: Super Admin, NCM Admin, Prism Admin, Project Manager
+    - >-
+      B(Delete a project) -
+      Operation Name: Delete Project -
+      Required Roles: Super Admin, NCM Admin, Prism Admin, Project Manager
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=multidomain)"
 options:
     state:
         description:
             - Specify state.
             - If C(state) is set to C(present) then the module will create a project.
             - If C(state) is set to C(present) and C(ext_id) is given, then the module will update the project.
-            - If C(state) is set to C(absent) with C(ext_id), then the module will delete the project.
+            - If C(state) is set to C(absent) and C(ext_id) is provided, then the module will delete the project.
         choices:
             - present
             - absent
@@ -75,7 +91,6 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     state: present
-    wait: true
     name: "my-project"
     project_id: "my-project-id"
     description: "A test project created via Ansible"
@@ -88,8 +103,7 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     state: present
-    wait: true
-    ext_id: "{{ project_ext_id }}"
+    ext_id: "29656051-720e-4923-814f-485288374114"
     description: "Updated description"
   register: result
 
@@ -100,8 +114,7 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     state: absent
-    wait: true
-    ext_id: "{{ project_ext_id }}"
+    ext_id: "29656051-720e-4923-814f-485288374114"
   register: result
 """
 
@@ -110,10 +123,24 @@ response:
     description:
         - The response from the Nutanix PC Projects v4 API.
         - It will contain the project details after create or update when C(wait) is true.
-        - It will contain task details when C(wait) is false.
+        - It will contain task details when the operation is delete or C(wait) is false.
     returned: always
     type: dict
-    sample: "<Need to add sample>"
+    sample: {
+            "created_by": "00000000-0000-0000-0000-000000000000",
+            "created_timestamp": 1779200374640754,
+            "description": "Project with all fields for testing",
+            "ext_id": "9aed0472-2df3-5a19-9065-bc9ef4435f61",
+            "id": "my-project-id",
+            "is_default": false,
+            "is_system_defined": false,
+            "links": null,
+            "modified_timestamp": 1779200374640754,
+            "name": "my-project",
+            "state": "ACTIVE",
+            "tenant_id": null,
+            "updated_by": "00000000-0000-0000-0000-000000000000",
+        }
 
 changed:
     description: This indicates whether the task resulted in any changes.
@@ -131,7 +158,7 @@ task_ext_id:
     description: The external ID of the task created for the operation.
     returned: always
     type: str
-    sample: "00000000-0000-0000-0000-000000000000"
+    sample: "ZXJnb24=:3a2267ad-5e17-4813-b474-b5c7ea0aa848"
 
 skipped:
     description: Whether the operation was skipped due to no changes (idempotency).
@@ -262,22 +289,6 @@ def check_project_idempotency(old_spec, update_spec):
     return True
 
 
-def _clear_read_only_fields(spec):
-    """
-    Clear server-managed read-only fields on an SDK Project spec so they
-    are omitted from the serialized PUT body (the SDK excludes None attrs).
-    """
-    spec.created_timestamp = None
-    spec.modified_timestamp = None
-    spec.created_by = None
-    spec.updated_by = None
-    spec.is_system_defined = None
-    spec.is_default = None
-    spec.ext_id = None
-    spec.links = None
-    spec.tenant_id = None
-
-
 def update_project(module, projects, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
@@ -306,16 +317,13 @@ def update_project(module, projects, result):
     # does not leak into the API payload.
     update_spec.state = original_state
 
-    if check_project_idempotency(current_spec.to_dict(), update_spec.to_dict()):
-        result["skipped"] = True
-        module.exit_json(msg="Nothing to change.", **result)
-
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
 
-    # Clear server-managed read-only fields before sending to API
-    _clear_read_only_fields(update_spec)
+    if check_project_idempotency(current_spec.to_dict(), update_spec.to_dict()):
+        result["skipped"] = True
+        module.exit_json(msg="Nothing to change.", **result)
 
     resp = None
     kwargs = {"if_match": etag}

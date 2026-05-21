@@ -3,7 +3,7 @@ Official Nutanix Ansible Collection
 
 ## Requirements
 
-To run any Nutanix Ansible module, the host must have the Python dependencies listed in [requirements.txt](https://github.com/nutanix/nutanix.ansible/blob/v2.4.0/requirements.txt)
+To run any Nutanix Ansible module, the host must have the Python dependencies listed in [requirements.txt](https://github.com/nutanix/nutanix.ansible/blob/v2.5.0/requirements.txt)
 Once the collection is installed, install these dependencies into your Python environment using pip: `pip install -r ~/.ansible/collections/ansible_collections/nutanix/ncp/requirements.txt`
 This collection requires ansible-core>=2.16.0. This should be installed explicitly if ansible-core version is not installed previously or is below the specified version.
 
@@ -16,15 +16,51 @@ It is designed keeping simplicity as the core value. Hence it is
 
 Checkout this [blog](https://www.nutanix.dev/2022/08/05/getting-started-with-the-nutanix-ansible-module/) for getting started with nutanix ansible module.
 
-NOTE: The latest version of the Nutanix Ansible collection is [v2.4.0](https://github.com/nutanix/nutanix.ansible/releases/tag/v2.4.0).
+NOTE: The latest version of the Nutanix Ansible collection is [v2.5.0](https://github.com/nutanix/nutanix.ansible/releases/tag/v2.5.0).
 
-## Introducing Nutanix Ansible Collection Version v2.4.0
+## Introducing Nutanix Ansible Collection Version v2.5.0
 
-We are excited to announce the release of **Nutanix Ansible Collection v2.4.0** — a major update that brings powerful new features and enhancements for automating your Nutanix infrastructure.
+We are excited to announce the release of **Nutanix Ansible Collection v2.5.0** — a major update that brings powerful new features, enhancements, and critical bug fixes for automating your Nutanix infrastructure.
+
+### What's New in v2.5.0
+
+- **Built on v4 APIs/SDKs**
+  This release continues to expand coverage of the latest Nutanix v4 APIs and SDKs, providing improved performance, stability, and alignment with the newest platform capabilities.
+
+- **New Resource Support**
+  - **Network Functions (Networking)**: Create, Update and Delete network functions using v4 SDKs. [#850](https://github.com/nutanix/nutanix.ansible/issues/850)
+  - **Entity Groups (Flow Management)**: Create, update, delete, and list entity groups for microsegmentation using v4 SDKs. [#851](https://github.com/nutanix/nutanix.ansible/issues/851)
+  - **Security Policy Rules listing (Flow Management)**: List all network security policy rules by policy ExtID using v4 SDKs. [#852](https://github.com/nutanix/nutanix.ansible/issues/852)
+  - **IAM Entities (IAM)**: List and get IAM entities using v4 SDKs. [#854](https://github.com/nutanix/nutanix.ansible/issues/854)
+  - **Virtual Switches (Networking)**: CRUD operations, migrate from existing bridge, list and get virtual switches using v4 SDKs. [#905](https://github.com/nutanix/nutanix.ansible/issues/905)
+
+- **Major Improvements**
+  - **Global scope and intratier rules (ntnx_security_rules_v2)**: Add functionality for global scope, specific intratier rules, and subnet/VPC references. [#853](https://github.com/nutanix/nutanix.ansible/issues/853)
+  - **Read timeout (All v4 modules)**: Add configurable read_timeout functionality to all v4 modules to avoid failures when Prism Central responds slowly. [#882](https://github.com/nutanix/nutanix.ansible/issues/882)
+  - **Service Account API key authentication (All)**: Support authentication via Service Account API keys (X-Ntnx-Api-Key header) alongside local and LDAP accounts. [#888](https://github.com/nutanix/nutanix.ansible/issues/888)
+  - **Proxy support (All v4 modules)**: Add HTTP/HTTPS proxy support via module parameters or environment variables, with authentication and precedence control. [#900](https://github.com/nutanix/nutanix.ansible/issues/900)
+  - **Python 3.12 CI/CD (Internal)**: Update CI/CD pipeline and dependencies to Python 3.12 for compatibility with Ansible Core 2.16 and modern Python packaging. [#915](https://github.com/nutanix/nutanix.ansible/issues/915)
+  - **Invalid group name characters (ntnx_prism_vm_inventory)**: Handle invalid characters in cluster-based group names in inventory plugins. [#917](https://github.com/nutanix/nutanix.ansible/issues/917)
+  - **Separate Base Module for v4 (Internal)**: Create a dedicated BaseModulev4 class to avoid unnecessary flags for v4-only parameters. [#918](https://github.com/nutanix/nutanix.ansible/issues/918)
+  - **Karbon deprecation notice (Karbon)**: Add deprecation message for Karbon modules as Karbon is not supported on PC 7.3+. [#921](https://github.com/nutanix/nutanix.ansible/issues/921)
+  - **Required permissions documentation (All modules)**: Document required permissions for Ansible service account used across all modules. [#769](https://github.com/nutanix/nutanix.ansible/issues/769)
+- **Bug Fixes and Stability Improvements**
+  - NoneType crash in inventory plugins when VM fields are explicitly None [#939](https://github.com/nutanix/nutanix.ansible/issues/939)
+  - Unnecessary required fields for `state: present` in module ntnx_subnets_v2 [#895](https://github.com/nutanix/nutanix.ansible/issues/895)
+  - Missing total_available_results in response in module ntnx_password_managers_info_v2 [#902](https://github.com/nutanix/nutanix.ansible/issues/902)
+  - vSwitches spec issue in module ntnx_foundation [#749](https://github.com/nutanix/nutanix.ansible/issues/749)
+
+---
+
+Upgrade now to take advantage of these powerful features and streamline your Nutanix automation workflows!
+
+
+<details>
+<summary><b>Previous Release: v2.4.0</b></summary>
 
 ### What's New in v2.4.0
 
-- **Built on v4 APIs/SDKs**  
+- **Built on v4 APIs/SDKs**
   This release is built on the latest Nutanix v4 APIs and SDKs, providing improved performance, stability, and alignment with the newest platform capabilities.
 
 - **New Resource Support**
@@ -45,7 +81,7 @@ We are excited to announce the release of **Nutanix Ansible Collection v2.4.0** 
   - **Provide sysprep or cloud-init (ntnx_vms)**: Add functionality to provide sysprep or cloud-init to module ntnx_vms via a variable instead of a file
   - **Remove resource limit (ntnx_projects)**: Remove resource limit functionality from ntnx_projects as not supported by API
 
-- **Bug Fixes and Stability Improvements**  
+- **Bug Fixes and Stability Improvements**
   - Setting script_path fails in module ncp.ntnx_vms [#835](https://github.com/nutanix/nutanix.ansible/issues/835)
   - Ansible Inventory Plugin is missing project filter [#869](https://github.com/nutanix/nutanix.ansible/issues/869)
   - Remove Default Values in module ntnx_lcm_config_v2 [#879](https://github.com/nutanix/nutanix.ansible/issues/879)
@@ -55,9 +91,7 @@ We are excited to announce the release of **Nutanix Ansible Collection v2.4.0** 
 - **Breaking change**
   - **Remove resource limit (ntnx_projects)**: Remove resource limit functionality from ntnx_projects as not supported by API
 
----
-
-Upgrade now to take advantage of these powerful features and streamline your Nutanix automation workflows!
+</details>
 
 
 ## Important Notice
@@ -84,12 +118,13 @@ Customers not taking advantage of the [Advanced API/SDK Support Program](https:/
 This collection requires ansible-core>=2.16.0. This should be installed explicitly if ansible-core version is not installed previously or is below the specified version.
 
 ## Python
-This collection requires Python 3.10 or greater
+This collection requires Python 3.12 or greater
 
 ## Releases
 
 | Ansible Version |  AOS Version | PC version  | Other software versions | Supported |
 |  :--- |  :--- | :--- | :--- | :--- |
+| 2.5.0 | 7.5, 7.5.1 |  pc7.5, pc7.5.1 or later| | yes |
 | 2.4.0 | 7.5 |  pc7.5 or later| | yes |
 | 2.3.0 | 7.3, 7.3.1 |  pc7.3, pc7.3.1 or later| | yes |
 | 2.2.0 | 7.0.1, 7.0, 7.3 | pc2024.3, pc2024.3.1, pc7.3 or later| | yes |
@@ -112,7 +147,7 @@ This collection requires Python 3.10 or greater
 
 | SDK | PC | PE |
 |  :--- |  :--- | :--- |
-| v4.2, v4.1, v4.0 | pc7.5 | 7.5 |
+| v4.2, v4.1, v4.0 | pc7.5, pc7.5.1 | 7.5, 7.5.1 |
 | v4.1, v4.0 | pc7.3, pc7.3.1 | 7.3, 7.3.1 |
 | v4.0 | pc2024.3.1, pc2024.3 | 7.0.1, 7.0 |
 
@@ -126,6 +161,8 @@ This collection requires Python 3.10 or greater
 4. ntnx_security_rules - The ``apptier`` option in target group has been removed. New option called ``apptiers`` has been added to support multi tier policy.
 
 5. Currently NDB based modules are supported and tested against postgres based databases.
+
+6. **Karbon (NKE) modules are deprecated** — Prism Central versions later than 7.3 no longer support Karbon. Karbon modules (`ntnx_karbon_clusters`, `ntnx_karbon_clusters_node_pools`, `ntnx_karbon_registries`, `ntnx_karbon_clusters_info`, `ntnx_karbon_registries_info`) will not be supported on PC versions later than 7.3 and will be removed in a future release.
 
 ### Examples:
 1. [Prism Central](https://github.com/nutanix/nutanix.ansible/tree/main/examples/)
@@ -153,7 +190,7 @@ Installation:
 
 ```ansible-galaxy collection install nutanix.ncp```
 
-Install [requirements](https://github.com/nutanix/nutanix.ansible/blob/v2.4.0/requirements.txt) from repository if dependencies are missing in environment (Ref: [GitHub Issue](https://github.com/nutanix/nutanix.ansible/issues/600)):
+Install [requirements](https://github.com/nutanix/nutanix.ansible/blob/v2.5.0/requirements.txt) from repository if dependencies are missing in environment (Ref: [GitHub Issue](https://github.com/nutanix/nutanix.ansible/issues/600)):
 
 ```pip install -r requirements.txt```
 
@@ -258,9 +295,9 @@ Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on p
 | ntnx_foundation | - |
 | ntnx_foundation_central | - |
 | ntnx_foundation_central_api_keys | - |
-| ntnx_karbon_clusters | - |
-| ntnx_karbon_clusters_node_pools | - |
-| ntnx_karbon_registries | - |
+| ntnx_karbon_clusters *(deprecated, PC 7.3 max)* | - |
+| ntnx_karbon_clusters_node_pools *(deprecated, PC 7.3 max)* | - |
+| ntnx_karbon_registries *(deprecated, PC 7.3 max)* | - |
 | ntnx_ndb_databases | - |
 | ntnx_ndb_register_database | - |
 | ntnx_ndb_db_server_vms | - |
@@ -345,6 +382,9 @@ Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on p
 | - | ntnx_clusters_profiles_v2 |
 | - | ntnx_clusters_profile_association_v2 |
 | - | ntnx_eula_accept_v2 |
+| - | ntnx_network_function_v2 |
+| - | ntnx_entity_group_v2 |
+| - | ntnx_virtual_switch_v2 |
 
 
 ## Data Sources
@@ -380,8 +420,8 @@ Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on p
 | ntnx_foundation_central_imaged_nodes_info | - |
 | ntnx_foundation_central_imaged_clusters_info | - |
 | ntnx_foundation_central_api_keys_info | - |
-| ntnx_karbon_clusters_info | - |
-| ntnx_karbon_registries_info | - |
+| ntnx_karbon_clusters_info *(deprecated, PC 7.3 max)* | - |
+| ntnx_karbon_registries_info *(deprecated, PC 7.3 max)* | - |
 | ntnx_ndb_databases_info | - |
 | ntnx_ndb_clones_info | - |
 | ntnx_ndb_time_machines_info | - |
@@ -434,6 +474,11 @@ Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on p
 | - | ntnx_key_management_server_info_v2 |
 | - | ntnx_clusters_profiles_info_v2 |
 | - | ntnx_eula_info_v2 |
+| - | ntnx_network_functions_info_v2 |
+| - | ntnx_entity_groups_info_v2 |
+| - | ntnx_security_policy_rules_info_v2 |
+| - | ntnx_iam_entities_info_v2 |
+| - | ntnx_virtual_switches_info_v2 |
 
 
 ## Inventory Plugins
@@ -454,6 +499,7 @@ ansible-doc nutanix.ncp.<module_name>
 We glady welcome contributions from the community. From updating the documentation to adding more functions for Ansible, all ideas are welcome. Thank you in advance for all of your issues, pull requests, and comments!
 
 * [Contributing Guide](https://github.com/nutanix/nutanix.ansible/blob/main/CONTRIBUTING.md)
+* [Contributing Guide for v4 modules](https://github.com/nutanix/nutanix.ansible/blob/main/CONTRIBUTING-v4.md) — for modules built on Nutanix v4 APIs/SDKs (recommended for all new contributions)
 * [Code of Conduct](https://github.com/nutanix/nutanix.ansible/blob/main/CODE_OF_CONDUCT.md)
 
 # Testing

@@ -19,6 +19,18 @@ version_added: 2.1.0
 author:
     - Abhinav Bansal (@abhinavbansal29)
     - George Ghawali (@george-ghawali)
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Get details about a particular LCM entity.) -
+      Operation Name: View LCM Entity -
+      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Security Dashboard Admin, Security Dashboard Viewer, Super Admin
+    - >-
+      B(Get details about all LCM entities.) -
+      Operation Name: View LCM Entity -
+      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Security Dashboard Admin, Security Dashboard Viewer, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle)"
 options:
     ext_id:
         description:

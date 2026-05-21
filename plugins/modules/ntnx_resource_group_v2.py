@@ -18,13 +18,29 @@ description:
     - Resource groups define placement targets (clusters and storage containers)
       where resources within a project can be deployed.
     - This module uses PC v4 APIs based SDKs.
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Create a resource group) -
+      Operation Name: Create Resource Group -
+      Required Roles: Cluster Admin, Prism Admin, Project Manager, Storage Admin
+    - >-
+      B(Update a resource group) -
+      Operation Name: Update Resource Group -
+      Required Roles: Cluster Admin, Prism Admin, Project Manager, Storage Admin
+    - >-
+      B(Delete a resource group) -
+      Operation Name: Delete Resource Group -
+      Required Roles: Cluster Admin, Prism Admin, Project Manager, Storage Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=multidomain)"
 options:
     state:
         description:
             - Specify state.
             - If C(state) is set to C(present) then the module will create a resource group.
             - If C(state) is set to C(present) and C(ext_id) is given, then the module will update the resource group.
-            - If C(state) is set to C(absent) with C(ext_id), then the module will delete the resource group.
+            - If C(state) is set to C(absent) and C(ext_id) is given, then the module will delete the resource group.
         choices:
             - present
             - absent
@@ -50,6 +66,7 @@ options:
     project_ext_id:
         description:
             - UUID of the project that owns this resource group.
+            - Required for create operations.
         type: str
     placement_targets:
         description:
@@ -71,51 +88,6 @@ options:
                         description:
                             - UUID of the storage container.
                         type: str
-                    capabilities:
-                        description:
-                            - Capabilities and features of the storage container.
-                            - Each item is a key-value pair.
-                        type: list
-                        elements: dict
-                        suboptions:
-                            name:
-                                description:
-                                    - The key of the key-value pair.
-                                type: str
-                            value:
-                                description:
-                                    - The value associated with the key.
-                                type: raw
-            capabilities:
-                description:
-                    - Capabilities and features available at this placement target.
-                    - Each item is a key-value pair.
-                type: list
-                elements: dict
-                suboptions:
-                    name:
-                        description:
-                            - The key of the key-value pair.
-                        type: str
-                    value:
-                        description:
-                            - The value associated with the key.
-                        type: raw
-    capabilities:
-        description:
-            - Capabilities and features for this resource group.
-            - Each item is a key-value pair.
-        type: list
-        elements: dict
-        suboptions:
-            name:
-                description:
-                    - The key of the key-value pair.
-                type: str
-            value:
-                description:
-                    - The value associated with the key.
-                type: raw
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
@@ -137,6 +109,8 @@ EXAMPLES = r"""
     project_ext_id: "78945612-3579-11e9-8647-d663bd873d93"
     placement_targets:
       - cluster_ext_id: "00064c46-8fef-6895-185b-ac1f6b6f97e2"
+        storage_containers:
+          - ext_id: "5d4f7039-b1d4-437c-9b0e-c34a87e08583"
   register: result
 
 - name: Update a resource group name
@@ -148,6 +122,11 @@ EXAMPLES = r"""
     state: present
     ext_id: "93673459-0234-4789-a123-456789012345"
     name: "my-resource-group-updated"
+    placement_targets:
+      - cluster_ext_id: "00064c46-8fef-6895-185b-ac1f6b6f97e2"
+        storage_containers:
+          - ext_id: "5d4f7039-b1d4-437c-9b0e-c34a87e08583"
+          - ext_id: "5d4f7039-b1d4-437c-9b0e-c34a87e08584"
   register: result
 
 - name: Delete a resource group
@@ -166,10 +145,43 @@ response:
     description:
         - The response from the Nutanix PC Resource Groups v4 API.
         - It will contain the resource group details after create or update when C(wait) is true.
-        - It will contain task details when C(wait) is false.
+        - It will contain task details when the operation is delete or C(wait) is false.
     returned: always
     type: dict
-    sample: "<Need to add sample>"
+    sample: {
+            "capabilities": null,
+            "create_time": "2026-05-19T14:45:40.129823+00:00",
+            "created_by": "00000000-0000-0000-0000-000000000000",
+            "ext_id": "14669a45-1ee4-4b62-619e-2401c9a35621",
+            "last_update_time": "2026-05-19T14:45:40.129823+00:00",
+            "last_updated_by": "00000000-0000-0000-0000-000000000000",
+            "links": null,
+            "name": "my-resource-group",
+            "placement_targets": [
+                {
+                    "capabilities": [
+                        {
+                            "name": "cluster_name",
+                            "value": "my-cluster",
+                        },
+                    ],
+                    "cluster_ext_id": "000651ae-e050-d250-2d7a-5254001a3d38",
+                    "storage_containers": [
+                        {
+                            "capabilities": [
+                                {
+                                    "name": "replication_factor",
+                                    "value": "2",
+                                },
+                            ],
+                            "ext_id": "5d4f7039-b1d4-437c-9b0e-c34a87e08583",
+                        },
+                    ],
+                },
+            ],
+            "project_ext_id": "4b53a755-0e1e-593c-9798-d179db2df309",
+            "tenant_id": null,
+        }
 
 changed:
     description: This indicates whether the task resulted in any changes.
@@ -187,7 +199,7 @@ task_ext_id:
     description: The external ID of the task created for the operation.
     returned: always
     type: str
-    sample: "00000000-0000-0000-0000-000000000000"
+    sample: "ZXJnb24=:3a2267ad-5e17-4813-b474-b5c7ea0aa848"
 
 skipped:
     description: Whether the operation was skipped due to no changes (idempotency).
@@ -251,19 +263,8 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 
 def get_module_spec():
-    kv_pair_spec = dict(
-        name=dict(type="str"),
-        value=dict(type="raw"),
-    )
-
     storage_container_spec = dict(
         ext_id=dict(type="str"),
-        capabilities=dict(
-            type="list",
-            elements="dict",
-            options=kv_pair_spec,
-            obj=multidomain_sdk.KVPair,
-        ),
     )
 
     placement_target_spec = dict(
@@ -273,12 +274,6 @@ def get_module_spec():
             elements="dict",
             options=storage_container_spec,
             obj=multidomain_sdk.StorageContainerDetails,
-        ),
-        capabilities=dict(
-            type="list",
-            elements="dict",
-            options=kv_pair_spec,
-            obj=multidomain_sdk.KVPair,
         ),
     )
 
@@ -292,18 +287,12 @@ def get_module_spec():
             options=placement_target_spec,
             obj=multidomain_sdk.TargetDetails,
         ),
-        capabilities=dict(
-            type="list",
-            elements="dict",
-            options=kv_pair_spec,
-            obj=multidomain_sdk.KVPair,
-        ),
     )
     return module_args
 
 
 def create_resource_group(module, resource_groups, result):
-    validate_required_params(module, ["name"])
+    validate_required_params(module, ["name", "project_ext_id"])
 
     sg = SpecGenerator(module)
     default_spec = multidomain_sdk.ResourceGroup()
@@ -371,13 +360,13 @@ def update_resource_group(module, resource_groups, result):
         result["error"] = err
         module.fail_json(msg="Failed generating update resource group spec", **result)
 
-    if check_resource_group_idempotency(current_spec.to_dict(), update_spec.to_dict()):
-        result["skipped"] = True
-        module.exit_json(msg="Nothing to change.", **result)
-
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
+
+    if check_resource_group_idempotency(current_spec.to_dict(), update_spec.to_dict()):
+        result["skipped"] = True
+        module.exit_json(msg="Nothing to change.", **result)
 
     resp = None
     kwargs = {"if_match": etag}

@@ -20,6 +20,22 @@ notes:
   - For updating IPAM config using C(ip_config), provide all details again. Module will not fetch existing IPAM config.
   - For subnet create and delete, module will return tasks status in response after operation.
   - For subnet update, module will return subnet info if C(wait) is true, else task status.
+  - >-
+    This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    The required roles depend on the operation being performed.
+  - >-
+    B(Create a subnet) -
+    Operation Name: Create Subnet -
+    Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Super Admin, User, VPC Admin
+  - >-
+    B(Update the specified subnet) -
+    Operation Name: Update Subnet -
+    Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Super Admin, VPC Admin
+  - >-
+    B(Delete the specified subnet) -
+    Operation Name: Delete Subnet -
+    Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Super Admin, VPC Admin
+  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   state:
     description:
