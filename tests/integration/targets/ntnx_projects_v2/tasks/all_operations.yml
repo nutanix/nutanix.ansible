@@ -264,6 +264,9 @@
       - result.response is defined
       - result.response | length == 1
       - result.response[0].name == project_name ~ "2"
+      - result.response[0].id == project_name ~ "-id-2"
+      - result.response[0].description == "Updated project description"
+      - result.response[0].state == "ACTIVE"
     fail_msg: "List projects with filter failed"
     success_msg: "List projects with filter passed"
 

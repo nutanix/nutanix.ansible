@@ -123,7 +123,7 @@ response:
     description:
         - The response from the Nutanix PC Projects v4 API.
         - It will contain the project details after create or update when C(wait) is true.
-        - It will contain task details when C(wait) is false.
+        - It will contain task details when the operation is delete or C(wait) is false.
     returned: always
     type: dict
     sample: {
@@ -317,13 +317,13 @@ def update_project(module, projects, result):
     # does not leak into the API payload.
     update_spec.state = original_state
 
-    if check_project_idempotency(current_spec.to_dict(), update_spec.to_dict()):
-        result["skipped"] = True
-        module.exit_json(msg="Nothing to change.", **result)
-
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
+
+    if check_project_idempotency(current_spec.to_dict(), update_spec.to_dict()):
+        result["skipped"] = True
+        module.exit_json(msg="Nothing to change.", **result)
 
     resp = None
     kwargs = {"if_match": etag}

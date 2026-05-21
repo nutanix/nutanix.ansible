@@ -15,7 +15,7 @@ short_description: Fetch projects info from Nutanix Prism Central using v4 APIs
 version_added: "2.6.0"
 description:
     - This module fetches information about Nutanix projects.
-    - The module retrieves information about a single project by external ID or 
+    - The module retrieves information about a single project by external ID or
         lists all projects with optional filters and limit.
     - This module uses PC v4 APIs based SDKs.
 notes:

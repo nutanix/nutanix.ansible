@@ -88,21 +88,6 @@ options:
                         description:
                             - UUID of the storage container.
                         type: str
-    capabilities:
-        description:
-            - Capabilities and features for this resource group.
-            - Each item is a key-value pair.
-        type: list
-        elements: dict
-        suboptions:
-            name:
-                description:
-                    - The key of the key-value pair.
-                type: str
-            value:
-                description:
-                    - The value associated with the key.
-                type: raw
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
@@ -124,6 +109,8 @@ EXAMPLES = r"""
     project_ext_id: "78945612-3579-11e9-8647-d663bd873d93"
     placement_targets:
       - cluster_ext_id: "00064c46-8fef-6895-185b-ac1f6b6f97e2"
+        storage_containers:
+          - ext_id: "5d4f7039-b1d4-437c-9b0e-c34a87e08583"
   register: result
 
 - name: Update a resource group name
@@ -139,6 +126,7 @@ EXAMPLES = r"""
       - cluster_ext_id: "00064c46-8fef-6895-185b-ac1f6b6f97e2"
         storage_containers:
           - ext_id: "5d4f7039-b1d4-437c-9b0e-c34a87e08583"
+          - ext_id: "5d4f7039-b1d4-437c-9b0e-c34a87e08584"
   register: result
 
 - name: Delete a resource group
@@ -157,7 +145,7 @@ response:
     description:
         - The response from the Nutanix PC Resource Groups v4 API.
         - It will contain the resource group details after create or update when C(wait) is true.
-        - It will contain task details when C(wait) is false.
+        - It will contain task details when the operation is delete or C(wait) is false.
     returned: always
     type: dict
     sample: {
@@ -275,11 +263,6 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 
 def get_module_spec():
-    kv_pair_spec = dict(
-        name=dict(type="str"),
-        value=dict(type="raw"),
-    )
-
     storage_container_spec = dict(
         ext_id=dict(type="str"),
     )
@@ -303,12 +286,6 @@ def get_module_spec():
             elements="dict",
             options=placement_target_spec,
             obj=multidomain_sdk.TargetDetails,
-        ),
-        capabilities=dict(
-            type="list",
-            elements="dict",
-            options=kv_pair_spec,
-            obj=multidomain_sdk.KVPair,
         ),
     )
     return module_args
@@ -383,13 +360,13 @@ def update_resource_group(module, resource_groups, result):
         result["error"] = err
         module.fail_json(msg="Failed generating update resource group spec", **result)
 
-    if check_resource_group_idempotency(current_spec.to_dict(), update_spec.to_dict()):
-        result["skipped"] = True
-        module.exit_json(msg="Nothing to change.", **result)
-
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
+
+    if check_resource_group_idempotency(current_spec.to_dict(), update_spec.to_dict()):
+        result["skipped"] = True
+        module.exit_json(msg="Nothing to change.", **result)
 
     resp = None
     kwargs = {"if_match": etag}
