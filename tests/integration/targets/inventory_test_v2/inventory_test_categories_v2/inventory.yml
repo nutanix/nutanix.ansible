@@ -52,7 +52,7 @@
     - name: Assert keyed_groups created cluster groups from cluster_name
       ansible.builtin.assert:
         that:
-          - ('cluster_' ~ hostvars[inventory_hostname].cluster_name) in hostvars[inventory_hostname].groups.keys()
+          - ('cluster_' ~ hostvars[inventory_hostname].cluster_name | regex_replace('[^A-Za-z0-9_]', '_')) in hostvars[inventory_hostname].groups.keys()
         fail_msg: "keyed_group cluster_<name> not found for {{ inventory_hostname }}"
         success_msg: "keyed_group cluster_<name> found for {{ inventory_hostname }}"
       when: hostvars[inventory_hostname].cluster_name is defined

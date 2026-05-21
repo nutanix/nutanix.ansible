@@ -7,7 +7,7 @@ plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
 # validate_certs: false # Or set VALIDATE_CERTS environment variable
 fetch_all_vms: true
 auto_create_cluster_groups: false
-strict: true
+strict: false
 keyed_groups:
   - key: cluster_name
     prefix: cluster
