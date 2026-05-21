@@ -482,7 +482,9 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         for key in unwanted_keys:
             host_vars.pop(key, None)
 
-    def _build_host_vars(self, vm, cluster_ext_id_name_map, category_ext_id_map, strict=False):
+    def _build_host_vars(
+        self, vm, cluster_ext_id_name_map, category_ext_id_map, strict=False
+    ):
         """
         Build a dictionary of host variables from the V4 VM response.
         Returns all VM attributes, excluding null/empty values.
@@ -570,6 +572,40 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 return False
         return True
 
+    def _build_cluster_ext_id_name_map(self, clusters):
+        result = {}
+        list_clusters = clusters.list_clusters()
+        for cluster in list_clusters.data or []:
+            if cluster:
+                cluster_dict = cluster.to_dict()
+                ext_id = cluster_dict.get("ext_id")
+                name = cluster_dict.get("name")
+                result[ext_id] = name
+        return result
+
+    def _build_category_ext_id_map(self, categories_api):
+        result = {}
+        try:
+            page = 0
+            while True:
+                list_categories = categories_api.list_categories(_page=page, _limit=100)
+                if not list_categories.data:
+                    break
+                for cat in list_categories.data:
+                    cat_dict = cat.to_dict()
+                    ext_id = cat_dict.get("ext_id")
+                    if ext_id:
+                        result[ext_id] = {
+                            "key": cat_dict.get("key"),
+                            "value": cat_dict.get("value"),
+                        }
+                if len(list_categories.data) < 100:
+                    break
+                page += 1
+        except Exception:
+            pass
+        return result
+
     def parse(self, inventory, loader, path, cache=True):
         super().parse(inventory, loader, path, cache=cache)
         self._read_config_data(path)
@@ -651,37 +687,8 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         clusters = get_clusters_api_instance(module)
         categories_api = get_categories_api_instance(module)
 
-        # Build cluster ext_id → name map
-        list_clusters = clusters.list_clusters()
-        cluster_ext_id_name_map = {}
-        for cluster in list_clusters.data or []:
-            if cluster:
-                cluster_dict = cluster.to_dict()
-                ext_id = cluster_dict.get("ext_id")
-                name = cluster_dict.get("name")
-                cluster_ext_id_name_map[ext_id] = name
-
-        # Build category ext_id → {key, value} map
-        category_ext_id_map = {}
-        try:
-            page = 0
-            while True:
-                list_categories = categories_api.list_categories(_page=page, _limit=100)
-                if not list_categories.data:
-                    break
-                for cat in list_categories.data:
-                    cat_dict = cat.to_dict()
-                    ext_id = cat_dict.get("ext_id")
-                    if ext_id:
-                        category_ext_id_map[ext_id] = {
-                            "key": cat_dict.get("key"),
-                            "value": cat_dict.get("value"),
-                        }
-                if len(list_categories.data) < 100:
-                    break
-                page += 1
-        except Exception:
-            pass
+        cluster_ext_id_name_map = self._build_cluster_ext_id_name_map(clusters)
+        category_ext_id_map = self._build_category_ext_id_map(categories_api)
 
         # Fetch VMs
         vms = self._fetch_vms(
@@ -701,7 +708,9 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             cluster_ext_id = (vm.get("cluster") or {}).get("ext_id")
             cluster_name = cluster_ext_id_name_map.get(cluster_ext_id)
             try:
-                host_vars = self._build_host_vars(vm, cluster_ext_id_name_map, category_ext_id_map, strict)
+                host_vars = self._build_host_vars(
+                    vm, cluster_ext_id_name_map, category_ext_id_map, strict
+                )
             except Exception as e:
                 raise AnsibleError(
                     f"Failed to build host vars for VM {vm.get('name')} with ext_id {vm.get('ext_id')}: {str(e)}"
