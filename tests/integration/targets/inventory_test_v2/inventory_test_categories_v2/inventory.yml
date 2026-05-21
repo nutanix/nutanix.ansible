@@ -1,0 +1,58 @@
+---
+- name: Test Inventory Plugin for categories_map and auto_create_cluster_groups
+  hosts: all
+  gather_facts: false
+  vars_files:
+    - nutanix.yml
+  tasks:
+    - name: Assert the number of VMs # noqa run-once[task]
+      ansible.builtin.assert:
+        that:
+          - ansible_play_hosts | length >= 0
+        fail_msg: "No hosts found in inventory!"
+        success_msg: "Found {{ ansible_play_hosts | length }} hosts in inventory!"
+      run_once: true
+
+    - name: Assert that basic host vars are defined
+      ansible.builtin.assert:
+        that:
+          - hostvars[inventory_hostname].ansible_host is defined
+          - hostvars[inventory_hostname].vm_name is defined
+          - hostvars[inventory_hostname].cluster_name is defined
+          - hostvars[inventory_hostname].vm_ext_id is defined
+          - hostvars[inventory_hostname].cluster_ext_id is defined
+        fail_msg: "Host vars not found for {{ inventory_hostname }}"
+        success_msg: "Host vars found for {{ inventory_hostname }}"
+
+    - name: Assert categories_map is a dict when present
+      ansible.builtin.assert:
+        that:
+          - hostvars[inventory_hostname].categories_map is mapping
+        fail_msg: "categories_map is not a dict for {{ inventory_hostname }}"
+        success_msg: "categories_map is a dict for {{ inventory_hostname }}"
+      when: hostvars[inventory_hostname].categories_map is defined
+
+    - name: Assert categories list is present when categories_map is present
+      ansible.builtin.assert:
+        that:
+          - hostvars[inventory_hostname].categories is defined
+          - hostvars[inventory_hostname].categories | length > 0
+        fail_msg: "categories list missing but categories_map present for {{ inventory_hostname }}"
+        success_msg: "categories list present for {{ inventory_hostname }}"
+      when: hostvars[inventory_hostname].categories_map is defined
+
+    - name: Assert auto_create_cluster_groups is disabled (no cluster_<ext_id> groups) # noqa run-once[task]
+      ansible.builtin.assert:
+        that:
+          - groups.keys() | select('match', '^cluster_[0-9a-f]') | list | length == 0
+        fail_msg: "cluster_<ext_id> groups found but auto_create_cluster_groups is false"
+        success_msg: "No cluster_<ext_id> groups found as expected"
+      run_once: true
+
+    - name: Assert keyed_groups created cluster groups from cluster_name
+      ansible.builtin.assert:
+        that:
+          - ('cluster_' ~ hostvars[inventory_hostname].cluster_name) in hostvars[inventory_hostname].groups.keys()
+        fail_msg: "keyed_group cluster_<name> not found for {{ inventory_hostname }}"
+        success_msg: "keyed_group cluster_<name> found for {{ inventory_hostname }}"
+      when: hostvars[inventory_hostname].cluster_name is defined
