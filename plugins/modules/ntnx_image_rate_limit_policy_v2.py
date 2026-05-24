@@ -292,12 +292,14 @@ def create_rate_limit_policy(module, api_instance, result):
 
     result["changed"] = True
 
+
 def check_idempotency(current_spec, update_spec):
     strip_internal_attributes(current_spec)
     strip_internal_attributes(update_spec)
     if current_spec == update_spec:
         return True
     return False
+
 
 def update_rate_limit_policy(module, api_instance, result):
     ext_id = module.params.get("ext_id")
