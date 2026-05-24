@@ -15,9 +15,32 @@ description:
     - This module allows you to create, update, and delete image rate limit policies in Nutanix Prism Central.
     - This module uses PC v4 APIs based SDKs
 version_added: "2.6.0"
-author:
- - Abhinav Bansal (@abhinavbansal29)
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create an image rate limit policy) -
+      Required Roles: Prism Admin, Super Admin
+    - >-
+      B(Update an image rate limit policy) -
+      Required Roles: Prism Admin, Super Admin
+    - >-
+      B(Delete an image rate limit policy) -
+      Required Roles: Prism Admin, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
+    state:
+        description:
+            - Specify state
+            - If C(state) is set to C(present) then the operation will be create the image rate limit policy.
+            - if C(state) is set to C(present) and C(ext_id) is given then it will update the image rate limit policy.
+            - if C(state) is set to C(absent) and C(ext_id) is given then it will delete the image rate limit policy.
+        choices:
+            - present
+            - absent
+        type: str
+        default: present
     ext_id:
         description:
             - The unique identifier of the image rate limit policy.
@@ -41,7 +64,7 @@ options:
         type: int
     cluster_entity_filter:
         description:
-            - The filter for selecting clusters for the image rate limit policy.
+            - Category-based entity filter.
         required: false
         type: dict
         suboptions:
@@ -55,51 +78,23 @@ options:
                 type: str
             category_ext_ids:
                 description:
-                    - The list of category external IDs to match.
+                    - Filter matches entities that have these categories attached.
                 required: true
                 type: list
                 elements: str
-    state:
-        description:
-            - Specify state
-            - If C(state) is set to C(present) then the operation will be to create the item.
-            - if C(state) is set to C(present) and C(ext_id) is given then it will update that policy.
-            - if C(state) is set to C(present) then C(ext_id) or C(name) needs to be set.
-            - >-
-                If C(state) is set to C(absent) and if the item exists, then
-                item is removed.
-        choices:
-            - present
-            - absent
-        type: str
-        default: present
     wait:
         description: Wait for the CRUD operation to complete.
         type: bool
         required: false
-        default: True
+        default: true
+author:
+ - Abhinav Bansal (@abhinavbansal29)
+ - George Ghawali (@george-ghawali)
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
     - nutanix.ncp.ntnx_logger
     - nutanix.ncp.ntnx_proxy_v2
-notes:
-    - >-
-      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
-      The required roles depend on the operation being performed.
-    - >-
-      B(Create an image rate limit policy) -
-      Operation Name: Create Image Rate Limit Policy -
-      Required Roles: Prism Admin, Super Admin
-    - >-
-      B(Update an image rate limit policy) -
-      Operation Name: Update Image Rate Limit Policy -
-      Required Roles: Prism Admin, Super Admin
-    - >-
-      B(Delete an image rate limit policy) -
-      Operation Name: Delete Image Rate Limit Policy -
-      Required Roles: Prism Admin, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 """
 
 EXAMPLES = r"""
@@ -115,9 +110,7 @@ EXAMPLES = r"""
     cluster_entity_filter:
       type: CATEGORIES_MATCH_ALL
       category_ext_ids:
-        - "category-uuid-1"
-    state: present
-    wait: true
+        - "d89e250f-8535-4251-8e9d-2a50240f4502"
 
 - name: Update an image rate limit policy
   nutanix.ncp.ntnx_image_rate_limit_policy_v2:
@@ -125,15 +118,14 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    ext_id: "policy-uuid"
+    ext_id: "54fe0ed5-02d8-4588-b10b-3b9736bf3d06"
     name: updated_rate_limit_policy
     rate_limit_kbps: 2048
     cluster_entity_filter:
       type: CATEGORIES_MATCH_ANY
       category_ext_ids:
-        - "category-uuid-2"
-    state: present
-    wait: true
+        - "d89e250f-8535-4251-8e9d-2a50240f4502"
+        - "605a0cf9-d04e-3be7-911b-1e6f193f6ebe"
 
 - name: Delete an image rate limit policy
   nutanix.ncp.ntnx_image_rate_limit_policy_v2:
@@ -141,68 +133,63 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    ext_id: "policy-uuid"
+    ext_id: "54fe0ed5-02d8-4588-b10b-3b9736bf3d06"
     state: absent
-    wait: true
 """
 
 
 RETURN = r"""
 response:
-    description:
-        - The response from the image rate limit policy operation.
-        - It will be task response if C(wait) is false.
-    type: dict
-    returned: always
-    sample: {
-            "cluster_entity_filter": {
-                "category_ext_ids": [
-                    "605a0cf9-d04e-3be7-911b-1e6f193f6ebe"
-                ],
-                "type": "CATEGORIES_MATCH_ALL"
-            },
-            "create_time": "2026-01-25T23:03:17.610346+00:00",
-            "description": "Rate limit policy for images",
-            "ext_id": "54fe0ed5-02d8-4588-b10b-3b9736bf3d06",
-            "last_update_time": "2026-01-25T23:44:01.955468+00:00",
-            "name": "my_rate_limit_policy",
-            "rate_limit_kbps": 1024,
-            "owner_ext_id": "00000000-0000-0000-0000-000000000000",
-            "tenant_id": null
-        }
+  description:
+    - Response for creating, updating, or deleting image rate limit policy
+    - If the operation is create or update and C(wait) is true, it will return the image rate limit policy details
+    - If the operation is create or update and C(wait) is false, it will return the task details
+    - If the operation is delete, it will return the task details
+  returned: always
+  type: dict
+  sample:
+
 task_ext_id:
-    description:
-        - The external ID of the task associated with the image rate limit policy operation.
-    type: str
-    returned: when a task is created
-    sample: "98b9dc89-be08-3c56-b554-692b8b676fd2"
+  description:
+    - The external ID of the task.
+  returned: always
+  type: str
+  sample: "ZXJnb24=:90458bc7-a12b-4616-ac66-562fdb00c209"
+
 ext_id:
-    description:
-        - The external ID of the policy
-    type: str
-    sample: "98b9dc89-be08-3c56-b554-692b8b676fd2"
-    returned: always
+  description:
+    - The external ID of the image rate limit policy.
+  returned: always
+  type: str
+  sample: "54fe0ed5-02d8-4588-b10b-3b9736bf3d06"
+
 changed:
-    description: Indicates whether the image rate limit policy was changed.
-    type: bool
-    returned: always
-msg:
-    description: This indicates the message if any message occurred
-    returned: When there is an error, module is idempotent or check mode (in delete operation)
-    type: str
-    sample: "Failed generating create Image Rate Limit Policy Spec"
-error:
-    description: The error message if an error occurred during the image rate limit policy operation.
-    type: str
-    returned: when an error occurs
+  description: This indicates whether the task resulted in any changes
+  returned: always
+  type: bool
+  sample: true
+
 skipped:
-    description: Indicates whether the image rate limit policy operation was skipped.
-    type: bool
-    returned: when the operation is skipped
+  description: This indicates whether the task was skipped
+  returned: always
+  type: bool
+  sample: false
+
+error:
+  description: This indicates the error message if any error occurred
+  returned: When an error occurs
+  type: str
+
 failed:
-    description: Indicates whether the operation failed.
-    type: bool
-    returned: always
+  description: This indicates whether the task failed
+  returned: always
+  type: bool
+  sample: false
+
+msg:
+  description: This indicates the message if any message occurred
+  returned: When there is an error, module is idempotent or check mode (in delete operation)
+  type: str
 """
 
 import traceback  # noqa: E402
@@ -266,13 +253,6 @@ def get_module_spec():
 
 
 def create_rate_limit_policy(module, api_instance, result):
-    """
-    Create a new image rate limit policy.
-    Args:
-        module: Ansible module instance
-        api_instance: ImageRateLimitPoliciesApi instance
-        result: Result dict to populate
-    """
     sg = SpecGenerator(module)
     default_spec = vmm_sdk.RateLimitPolicy()
     spec, err = sg.generate_spec(obj=default_spec)
@@ -312,15 +292,14 @@ def create_rate_limit_policy(module, api_instance, result):
 
     result["changed"] = True
 
+def check_idempotency(current_spec, update_spec):
+    strip_internal_attributes(current_spec)
+    strip_internal_attributes(update_spec)
+    if current_spec == update_spec:
+        return True
+    return False
 
 def update_rate_limit_policy(module, api_instance, result):
-    """
-    Update an existing image rate limit policy.
-    Args:
-        module: Ansible module instance
-        api_instance: ImageRateLimitPoliciesApi instance
-        result: Result dict to populate
-    """
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
@@ -338,7 +317,7 @@ def update_rate_limit_policy(module, api_instance, result):
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
 
-    if current_spec == update_spec:
+    if check_idempotency(current_spec.to_dict(), update_spec.to_dict()):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
 
@@ -374,13 +353,6 @@ def update_rate_limit_policy(module, api_instance, result):
 
 
 def delete_rate_limit_policy(module, api_instance, result):
-    """
-    Delete an existing image rate limit policy.
-    Args:
-        module: Ansible module instance
-        api_instance: ImageRateLimitPoliciesApi instance
-        result: Result dict to populate
-    """
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
@@ -388,18 +360,8 @@ def delete_rate_limit_policy(module, api_instance, result):
         result["msg"] = "Policy with ext_id:{0} will be deleted.".format(ext_id)
         return
 
-    current_spec = get_rate_limit_policy(module, api_instance, ext_id=ext_id)
-
-    etag = get_etag(data=current_spec)
-    if not etag:
-        return module.fail_json(
-            "unable to fetch etag for deleting Image Rate Limit Policy", **result
-        )
-
-    kwargs = {"if_match": etag}
-
     try:
-        resp = api_instance.delete_rate_limit_policy_by_id(extId=ext_id, **kwargs)
+        resp = api_instance.delete_rate_limit_policy_by_id(extId=ext_id)
     except Exception as e:
         raise_api_exception(
             module=module,
