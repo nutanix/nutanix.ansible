@@ -148,6 +148,26 @@ response:
   returned: always
   type: dict
   sample:
+    {
+        "cluster_entity_filter": {
+            "category_ext_ids": [
+                "bbc3555a-133b-5348-9764-bfff196e84e4",
+                "e4bda88f-e5da-5eb1-a031-2c0bb00d923d"
+            ],
+            "type": "CATEGORIES_MATCH_ANY"
+        },
+        "create_time": "2026-05-24T11:11:31.134515+00:00",
+        "description": "ansible_rate_limit_policy_LBZXZWtFgMFT_all_description",
+        "ext_id": "f119e0f4-5bf8-4202-af9a-8d82bad400f5",
+        "last_update_time": "2026-05-24T11:11:31.134515+00:00",
+        "links": null,
+        "matching_cluster_ext_ids": null,
+        "name": "ansible_rate_limit_policy_LBZXZWtFgMFT_all",
+        "owner_ext_id": "00000000-0000-0000-0000-000000000000",
+        "owner_name": "admin",
+        "rate_limit_kbps": 2048,
+        "tenant_id": null
+    }
 
 task_ext_id:
   description:
