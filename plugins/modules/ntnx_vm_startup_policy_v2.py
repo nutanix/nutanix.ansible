@@ -86,7 +86,7 @@ options:
                     power_on:
                         description:
                             - The VM must be powered on before the dependent VMs are started.
-                            - This branch has no fields; supply it as C(power_on:) (YAML null) or C(power_on: {}).
+                            - This branch has no fields; supply it as an empty mapping (for example C(power_on:) which is YAML null, or an explicit empty dict).
                         type: dict
                         required: false
                     guest_bootup:
