@@ -9,132 +9,165 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
+---
 module: ntnx_vm_startup_policy_v2
-short_description: Manage VM startup policies in Nutanix Prism Central
+short_description: Create, Update, Delete VM startup policies in Nutanix Prism Central
+version_added: "2.6.0"
 description:
     - This module allows you to create, update, and delete VM startup policies in Nutanix Prism Central.
-    - This module uses PC v4 APIs based SDKs
-version_added: "2.6.0"
-author:
- - Abhinav Bansal (@abhinavbansal29)
+    - This module uses PC v4 APIs based SDKs.
 options:
-    ext_id:
-        description:
-            - The unique identifier of the VM startup policy.
-            - This parameter is required for update and delete operations.
-        required: false
-        type: str
-    name:
-        description:
-            - The name of the VM startup policy.
-        required: false
-        type: str
-    description:
-        description:
-            - The description of the VM startup policy.
-        required: false
-        type: str
-    groups:
-        description:
-            - List of dependency groups for the VM startup policy.
-            - Each group contains a list of category references.
-        required: false
-        type: list
-        elements: dict
-        suboptions:
-            categories:
-                description:
-                    - List of category references in the dependency group.
-                required: true
-                type: list
-                elements: dict
-                suboptions:
-                    ext_id:
-                        description:
-                            - The external ID of the category.
-                        required: true
-                        type: str
-    start_conditions:
-        description:
-            - List of start conditions for the VM startup policy.
-        required: false
-        type: list
-        elements: dict
-        suboptions:
-            power_state_criteria:
-                description:
-                    - The power state criteria for the start condition.
-                required: true
-                type: dict
-                suboptions:
-                    criteria_type:
-                        description:
-                            - The type of power state criteria.
-                        required: true
-                        choices:
-                            - POWER_ON
-                            - GUEST_BOOTUP
-                        type: str
-                    timeout_duration_secs:
-                        description:
-                            - Timeout duration in seconds for guest bootup criteria.
-                            - Only applicable when criteria_type is GUEST_BOOTUP.
-                        required: false
-                        type: int
-            delay_duration_secs:
-                description:
-                    - Delay duration in seconds before starting the next group.
-                required: false
-                type: int
     state:
         description:
-            - Specify state
-            - If C(state) is set to C(present) then the operation will be to create the item.
-            - if C(state) is set to C(present) and C(ext_id) is given then it will update that policy.
-            - if C(state) is set to C(present) then C(ext_id) or C(name) needs to be set.
-            - >-
-                If C(state) is set to C(absent) and if the item exists, then
-                item is removed.
+            - If C(state) is set to C(present) and C(ext_id) is not provided then the operation will create a new VM startup policy.
+            - If C(state) is set to C(present) and C(ext_id) is provided then the operation will update that policy.
+            - If C(state) is set to C(absent) and C(ext_id) is provided then the operation will delete that policy.
+        type: str
+        required: false
         choices:
             - present
             - absent
-        type: str
         default: present
-    wait:
-        description: Wait for the CRUD operation to complete.
-        type: bool
+    ext_id:
+        description:
+            - The external ID of the VM startup policy.
+            - Required for update and delete operations.
+        type: str
         required: false
-        default: True
+    name:
+        description:
+            - Name of the VM startup policy.
+            - Required for create operation.
+        type: str
+        required: false
+    description:
+        description:
+            - Description of the VM startup policy.
+        type: str
+        required: false
+    groups:
+        description:
+            - Ordered list of groups configured for the VM startup policy.
+            - Each group is represented by one or more categories which VMs are expected to be associated with.
+            - The list should be ordered in the sequence in which VMs are to be started in
+              an HA event or cluster restart event.
+            - Required for create operation.
+        type: list
+        elements: dict
+        required: false
+        suboptions:
+            categories:
+                description:
+                    - Categories configured for the group.
+                type: list
+                elements: dict
+                required: true
+                suboptions:
+                    ext_id:
+                        description:
+                            - The external ID (UUID) of the category.
+                        type: str
+                        required: true
+    start_conditions:
+        description:
+            - Ordered list of start conditions for the VM startup policy.
+            - Required for create operation.
+        type: list
+        elements: dict
+        required: false
+        suboptions:
+            power_state_criteria:
+                description:
+                    - The power state criteria that the VMs in the group must attain before the dependent VMs are started.
+                    - Exactly one of C(power_on) or C(guest_bootup) must be supplied
+                type: dict
+                required: true
+                suboptions:
+                    power_on:
+                        description:
+                            - The VM must be powered on before the dependent VMs are started.
+                            - This branch has no fields; supply it as C(power_on:) (YAML null) or C(power_on: {}).
+                        type: dict
+                        required: false
+                    guest_bootup:
+                        description:
+                            - The VM's Guest OS must be booted up before the dependent VMs are started.
+                            - Guest bootup is detected via Nutanix Guest Tools (NGT).
+                        type: dict
+                        required: false
+                        suboptions:
+                            timeout_duration_secs:
+                                description:
+                                    - Timeout in seconds in which the VM's Guest OS bootup must be detected successfully.
+                                type: int
+                                required: false
+            delay_duration_secs:
+                description:
+                    - Delay in seconds after the power state criteria is met before the dependent VMs are started.
+                type: int
+                required: false
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
     - nutanix.ncp.ntnx_logger
     - nutanix.ncp.ntnx_proxy_v2
+author:
+    - Abhinav Bansal (@abhinavbansal29)
+    - George Ghawali (@george-ghawali)
 notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create a VM Startup Policy) -
+      Required Roles: Prism Admin, Project Admin, Project Manager, Super Admin, Self-Service Admin (deprecated)
+    - >-
+      B(Update a VM Startup Policy) -
+      Required Roles: Prism Admin, Project Admin, Project Manager, Super Admin, Self Service Admin (deprecated)
+    - >-
+      B(Delete a VM Startup Policy) -
+      Required Roles: Prism Admin, Project Admin, Project Manager, Super Admin, Self Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 """
 
 EXAMPLES = r"""
-- name: Create a VM startup policy
+- name: Create a VM startup policy with guest bootup criteria
   nutanix.ncp.ntnx_vm_startup_policy_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
+    state: present
     name: my_startup_policy
     description: My VM startup policy
     groups:
       - categories:
-          - ext_id: "category-ext-id-1"
+          - ext_id: "f8a21952-306f-409a-975e-1021c3827860"
       - categories:
-          - ext_id: "category-ext-id-2"
+          - ext_id: "6b1f7792-1297-4f4f-85b4-729b50333906"
     start_conditions:
       - power_state_criteria:
-          criteria_type: GUEST_BOOTUP
-          timeout_duration_secs: 300
+          guest_bootup:
+            timeout_duration_secs: 300
         delay_duration_secs: 60
+  register: result
+
+- name: Create a VM startup policy with power-on criteria
+  nutanix.ncp.ntnx_vm_startup_policy_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     state: present
-    wait: true
+    name: power_on_policy
+    groups:
+      - categories:
+          - ext_id: "f8a21952-306f-409a-975e-1021c3827860"
+    start_conditions:
+      - power_state_criteria:
+          power_on: {}
+        delay_duration_secs: 30
+  register: result
 
 - name: Update a VM startup policy
   nutanix.ncp.ntnx_vm_startup_policy_v2:
@@ -142,10 +175,18 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
+    state: present
     ext_id: "605a0cf9-d04e-3be7-911b-1e6f193f6eb9"
     name: my_startup_policy_updated
-    state: present
-    wait: true
+    description: Updated description
+    groups:
+      - categories:
+          - ext_id: "f8a21952-306f-409a-975e-1021c3827860"
+    start_conditions:
+      - power_state_criteria:
+          power_on: {}
+        delay_duration_secs: 30
+  register: result
 
 - name: Delete a VM startup policy
   nutanix.ncp.ntnx_vm_startup_policy_v2:
@@ -153,70 +194,107 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    ext_id: "605a0cf9-d04e-3be7-911b-1e6f193f6eb9"
     state: absent
-    wait: true
+    ext_id: "605a0cf9-d04e-3be7-911b-1e6f193f6eb9"
+  register: result
 """
-
 
 RETURN = r"""
 response:
-    description:
-        - The response from the VM startup policy operation.
-        - It will be task response if C(wait) is false.
-    type: dict
-    returned: always
-    sample: {
-            "name": "my_startup_policy",
-            "description": "My VM startup policy",
-            "ext_id": "54fe0ed5-02d8-4588-b10b-3b9736bf3d06",
-            "groups": [
-                {
-                    "categories": [
-                        {"ext_id": "category-ext-id-1"}
-                    ]
+  description:
+    - Response for creating, updating, or deleting VM startup policy
+    - If the operation is create or update and C(wait) is true, it will return the VM startup policy details
+    - If the operation is create or update and C(wait) is false, it will return the task details
+    - If the operation is delete, it will return the task details
+  returned: always
+  type: dict
+  sample:
+    {
+        "create_time": "2026-05-25T09:52:40.341137+00:00",
+        "created_by": {
+            "ext_id": "00000000-0000-0000-0000-000000000000"
+        },
+        "description": "VM startup policy created by Ansible integration tests with all attributes",
+        "ext_id": "58b9a9e4-567a-4cc1-73dc-4926331c8eb1",
+        "groups": [
+            {
+                "categories": [
+                    {
+                        "ext_id": "4d552748-e119-540a-b06c-3c6f0d213fa2"
+                    }
+                ]
+            },
+            {
+                "categories": [
+                    {
+                        "ext_id": "0e7eee83-4313-5066-bd39-3834ac350f81"
+                    }
+                ]
+            }
+        ],
+        "links": null,
+        "name": "policy_ansible_hVQRuZXyBtrn_all",
+        "num_compliant_vms": 0,
+        "num_dependency_conflicts": 0,
+        "num_non_compliant_vms": 0,
+        "num_pending_vms": 0,
+        "num_start_condition_conflicts": 0,
+        "start_conditions": [
+            {
+                "delay_duration_secs": 60,
+                "power_state_criteria": {
+                    "timeout_duration_secs": 300
                 }
-            ],
-            "start_conditions": [
-                {
-                    "power_state_criteria": {"timeout_duration_secs": 300},
-                    "delay_duration_secs": 60
-                }
-            ]
+            }
+        ],
+        "tenant_id": null,
+        "update_time": "2026-05-25T09:52:40.340182+00:00",
+        "updated_by": {
+            "ext_id": "00000000-0000-0000-0000-000000000000"
         }
+    }
+
 task_ext_id:
-    description:
-        - The external ID of the task associated with the VM startup policy operation.
-    type: str
-    returned: when a task is created
-    sample: "98b9dc89-be08-3c56-b554-692b8b676fd2"
+  description:
+    - The external id of the task.
+  returned: always
+  type: str
+  sample: "ZXJnb24=:90458bc7-a12b-4616-ac66-562fdb00c209"
+
 ext_id:
-    description:
-        - The external ID of the VM startup policy.
-    type: str
-    sample: "98b9dc89-be08-3c56-b554-692b8b676fd2"
-    returned: always
+  description:
+    - The external id of the VM startup policy.
+  returned: always
+  type: str
+  sample: "7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0"
+
 changed:
-    description: Indicates whether the VM startup policy was changed.
-    type: bool
-    returned: always
-msg:
-    description: This indicates the message if any message occurred
-    returned: When there is an error, module is idempotent or check mode (in delete operation)
-    type: str
-    sample: "Failed generating create VM startup policy Spec"
-error:
-    description: The error message if an error occurred during the VM startup policy operation.
-    type: str
-    returned: when an error occurs
+  description: This indicates whether the task resulted in any changes
+  returned: always
+  type: bool
+  sample: true
+
 skipped:
-    description: Indicates whether the VM startup policy operation was skipped.
-    type: bool
-    returned: when the operation is skipped
+  description: This indicates whether the task was skipped
+  returned: always
+  type: bool
+  sample: false
+
+error:
+  description: This indicates the error message if any error occurred
+  returned: When an error occurs
+  type: str
+
 failed:
-    description: Indicates whether the VM startup policy operation failed.
-    type: bool
-    returned: always
+  description: This indicates whether the task failed
+  returned: always
+  type: bool
+  sample: false
+
+msg:
+  description: This indicates the message if any message occurred
+  returned: When there is an error, module is idempotent or check mode (in delete operation)
+  type: str
 """
 
 import traceback  # noqa: E402
@@ -227,14 +305,16 @@ from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
-from ..module_utils.v4.constants import Tasks  # noqa: E402
+from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
 from ..module_utils.v4.prism.tasks import (  # noqa: E402
     get_entity_ext_id_from_task,
     wait_for_completion,
 )
+from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
+    validate_required_params,
 )
 from ..module_utils.v4.vmm.api_client import (  # noqa: E402
     get_etag,
@@ -255,51 +335,55 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 
 def get_module_spec():
-    """
-    Returns the module specification for ntnx_vm_startup_policy_v2.
-    """
     category_ref_spec = dict(
         ext_id=dict(type="str", required=True),
     )
+
     dependency_group_spec = dict(
         categories=dict(
             type="list",
-            required=True,
             elements="dict",
             options=category_ref_spec,
+            required=True,
             obj=vmm_sdk.AhvPoliciesCategoryReference,
         ),
     )
+
     power_state_criteria_spec = dict(
-        criteria_type=dict(
-            type="str",
-            required=True,
-            choices=["POWER_ON", "GUEST_BOOTUP"],
+        power_on=dict(type="dict", options=dict(), required=False),
+        guest_bootup=dict(
+            type="dict",
+            options=dict(timeout_duration_secs=dict(type="int", required=False)),
+            required=False,
         ),
-        timeout_duration_secs=dict(type="int", required=False),
     )
+
     start_condition_spec = dict(
         power_state_criteria=dict(
             type="dict",
-            required=True,
             options=power_state_criteria_spec,
+            required=True,
+            obj={
+                "power_on": vmm_sdk.PowerStateCriteriaPowerOn,
+                "guest_bootup": vmm_sdk.PowerStateCriteriaGuestBootup,
+            },
+            mutually_exclusive=[("power_on", "guest_bootup")],
         ),
         delay_duration_secs=dict(type="int", required=False),
     )
+
     module_args = dict(
-        ext_id=dict(type="str", required=False),
-        name=dict(type="str", required=False),
-        description=dict(type="str", required=False),
+        ext_id=dict(type="str"),
+        name=dict(type="str"),
+        description=dict(type="str"),
         groups=dict(
             type="list",
-            required=False,
             elements="dict",
             options=dependency_group_spec,
             obj=vmm_sdk.DependencyGroup,
         ),
         start_conditions=dict(
             type="list",
-            required=False,
             elements="dict",
             options=start_condition_spec,
             obj=vmm_sdk.StartCondition,
@@ -308,70 +392,17 @@ def get_module_spec():
     return module_args
 
 
-def _build_start_conditions(params_start_conditions):
-    """
-    Build StartCondition SDK objects from module params.
-    The SpecGenerator cannot handle the OneOf power_state_criteria polymorphism,
-    so we build these manually.
-    """
-    if not params_start_conditions:
-        return None
+def create_vm_startup_policy(module, api_instance, result):
+    validate_required_params(module, ["name", "groups", "start_conditions"])
 
-    conditions = []
-    for sc_param in params_start_conditions:
-        condition = vmm_sdk.StartCondition()
-        psc = sc_param.get("power_state_criteria")
-        if psc:
-            criteria_type = psc.get("criteria_type")
-            if criteria_type == "GUEST_BOOTUP":
-                timeout = psc.get("timeout_duration_secs")
-                condition.power_state_criteria = vmm_sdk.PowerStateCriteriaGuestBootup(
-                    timeout_duration_secs=timeout
-                )
-            else:
-                condition.power_state_criteria = vmm_sdk.PowerStateCriteriaPowerOn()
-        delay = sc_param.get("delay_duration_secs")
-        if delay is not None:
-            condition.delay_duration_secs = delay
-        conditions.append(condition)
-    return conditions
-
-
-def _build_groups(params_groups):
-    """
-    Build DependencyGroup SDK objects from module params.
-    """
-    if not params_groups:
-        return None
-
-    groups = []
-    for g_param in params_groups:
-        group = vmm_sdk.DependencyGroup()
-        cats = g_param.get("categories")
-        if cats:
-            cat_refs = []
-            for c in cats:
-                cat_ref = vmm_sdk.AhvPoliciesCategoryReference()
-                cat_ref.ext_id = c.get("ext_id")
-                cat_refs.append(cat_ref)
-            group.categories = cat_refs
-        groups.append(group)
-    return groups
-
-
-def create_policy(module, api_instance, result):
-    """Create a new VM startup policy."""
-    spec = vmm_sdk.VmStartupPolicy()
-    spec.name = module.params.get("name")
-    spec.description = module.params.get("description")
-
-    groups = _build_groups(module.params.get("groups"))
-    if groups is not None:
-        spec.groups = groups
-
-    start_conditions = _build_start_conditions(module.params.get("start_conditions"))
-    if start_conditions is not None:
-        spec.start_conditions = start_conditions
+    sg = SpecGenerator(module)
+    default_spec = vmm_sdk.VmStartupPolicy()
+    spec, err = sg.generate_spec(obj=default_spec)
+    if err:
+        result["error"] = err
+        module.fail_json(
+            msg="Failed generating create VM startup policy spec", **result
+        )
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
@@ -393,7 +424,7 @@ def create_policy(module, api_instance, result):
     if task_ext_id and module.params.get("wait"):
         task = wait_for_completion(module, task_ext_id)
         ext_id = get_entity_ext_id_from_task(
-            task, rel=Tasks.RelEntityType.VM_STARTUP_POLICY
+            task, rel=TASK_CONSTANTS.RelEntityType.VM_STARTUP_POLICY
         )
         if ext_id:
             result["ext_id"] = ext_id
@@ -403,43 +434,41 @@ def create_policy(module, api_instance, result):
     result["changed"] = True
 
 
-def update_policy(module, api_instance, result):
-    """Update an existing VM startup policy."""
+def check_idempotency(current_spec, update_spec):
+    strip_internal_attributes(current_spec)
+    strip_internal_attributes(update_spec)
+    if current_spec == update_spec:
+        return True
+    return False
+
+
+def update_vm_startup_policy(module, api_instance, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
     current_spec = get_vm_startup_policy(module, api_instance, ext_id=ext_id)
+    etag = get_etag(data=current_spec)
+    if not etag:
+        return module.fail_json(
+            msg="Unable to fetch etag for updating VM startup policy", **result
+        )
+    kwargs = {"if_match": etag}
 
-    update_spec = deepcopy(current_spec)
-
-    if module.params.get("name") is not None:
-        update_spec.name = module.params["name"]
-    if module.params.get("description") is not None:
-        update_spec.description = module.params["description"]
-
-    groups = _build_groups(module.params.get("groups"))
-    if groups is not None:
-        update_spec.groups = groups
-
-    start_conditions = _build_start_conditions(module.params.get("start_conditions"))
-    if start_conditions is not None:
-        update_spec.start_conditions = start_conditions
-
-    if current_spec == update_spec:
-        result["skipped"] = True
-        module.exit_json(msg="Nothing to change.", **result)
+    sg = SpecGenerator(module)
+    update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
+    if err:
+        result["error"] = err
+        module.fail_json(
+            msg="Failed generating update VM startup policy spec", **result
+        )
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
 
-    etag = get_etag(data=current_spec)
-    if not etag:
-        return module.fail_json(
-            "unable to fetch etag for updating VM startup policy", **result
-        )
-
-    kwargs = {"if_match": etag}
+    if check_idempotency(current_spec.to_dict(), update_spec.to_dict()):
+        result["skipped"] = True
+        module.exit_json(msg="Nothing to change.", **result)
 
     resp = None
     try:
@@ -458,31 +487,31 @@ def update_policy(module, api_instance, result):
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
         wait_for_completion(module, task_ext_id)
+        policy = get_vm_startup_policy(module, api_instance, ext_id)
+        result["response"] = strip_internal_attributes(policy.to_dict())
 
-    updated_policy = get_vm_startup_policy(module, api_instance, ext_id)
-    result["response"] = strip_internal_attributes(updated_policy.to_dict())
     result["changed"] = True
 
 
-def delete_policy(module, api_instance, result):
-    """Delete an existing VM startup policy."""
+def delete_vm_startup_policy(module, api_instance, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
     if module.check_mode:
-        result["msg"] = "Policy with ext_id:{0} will be deleted.".format(ext_id)
+        result["msg"] = "VM startup policy with ext_id:{0} will be deleted.".format(
+            ext_id
+        )
         return
 
     current_spec = get_vm_startup_policy(module, api_instance, ext_id=ext_id)
-
     etag = get_etag(data=current_spec)
     if not etag:
         return module.fail_json(
-            "unable to fetch etag for deleting VM startup policy", **result
+            msg="Unable to fetch etag for deleting VM startup policy", **result
         )
-
     kwargs = {"if_match": etag}
 
+    resp = None
     try:
         resp = api_instance.delete_vm_startup_policy_by_id(extId=ext_id, **kwargs)
     except Exception as e:
@@ -496,8 +525,9 @@ def delete_policy(module, api_instance, result):
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
-        resp = wait_for_completion(module, task_ext_id)
-        result["response"] = strip_internal_attributes(resp.to_dict())
+        task_status = wait_for_completion(module, task_ext_id)
+        result["response"] = strip_internal_attributes(task_status.to_dict())
+
     result["changed"] = True
 
 
@@ -506,8 +536,8 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[
-            ("state", "present", ("name", "ext_id"), True),
             ("state", "absent", ("ext_id",)),
+            ("state", "present", ("name", "ext_id"), True),
         ],
     )
     if SDK_IMP_ERROR:
@@ -517,23 +547,33 @@ def run_module():
         )
 
     remove_param_with_none_value(module.params)
+
+    # Treat `power_on:` (YAML null) as a shorthand for `power_on: {}`.
+    # mutually_exclusive on the arg-spec guarantees guest_bootup isn't also set.
+    for sc in module.params.get("start_conditions") or []:
+        psc = sc.setdefault("power_state_criteria", {})
+        if "guest_bootup" not in psc:
+            psc["power_on"] = {}
+
     result = {
         "changed": False,
         "error": None,
         "response": None,
+        "failed": False,
         "ext_id": None,
     }
 
     api_instance = get_vm_startup_policies_api_instance(module)
+    state = module.params.get("state")
 
-    state = module.params["state"]
     if state == "present":
         if module.params.get("ext_id"):
-            update_policy(module, api_instance, result)
+            update_vm_startup_policy(module, api_instance, result)
         else:
-            create_policy(module, api_instance, result)
+            create_vm_startup_policy(module, api_instance, result)
     else:
-        delete_policy(module, api_instance, result)
+        delete_vm_startup_policy(module, api_instance, result)
+
     module.exit_json(**result)
 
 

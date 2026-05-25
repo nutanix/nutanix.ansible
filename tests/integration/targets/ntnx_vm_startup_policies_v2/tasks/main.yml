@@ -1,7 +1,5 @@
 ---
-- name: VM startup policy tests
-  hosts: localhost
-  gather_facts: false
+- name: Set module defaults
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: "{{ ip }}"
@@ -11,6 +9,6 @@
       validate_certs: "{{ validate_certs }}"
       nutanix_debug: "{{ nutanix_debug | default(omit) }}"
       nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
-  tasks:
-    - name: Import vm_startup_policy_operations.yml
-      ansible.builtin.import_tasks: vm_startup_policy_operations.yml
+  block:
+    - name: Import vm_startup_policies.yml
+      ansible.builtin.import_tasks: vm_startup_policies.yml
