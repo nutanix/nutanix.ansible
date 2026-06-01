@@ -21,7 +21,6 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Revert the AHV VM.) -
-      Operation Name: Revert Existing Virtual Machine -
       Required Roles: Backup Admin, Consumer, Developer, Disaster Recovery Admin, Operator, Prism Admin, Project Admin, Project Manager, Super Admin,
       Virtual Machine Admin, Virtual Machine Operator, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"

@@ -25,15 +25,12 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create a network function.) -
-      Operation Name: Create Network Function -
       Required Roles: Account Owner, Administrator, Flow Admin, Network Infra Admin, Prism Admin, Super Admin
     - >-
       B(Delete the specified network function.) -
-      Operation Name: Delete Network Function -
       Required Roles: Account Owner, Administrator, Flow Admin, Network Infra Admin, Prism Admin, Super Admin
     - >-
       B(Update the specified network function.) -
-      Operation Name: Update Network Function -
       Required Roles: Account Owner, Administrator, Flow Admin, Network Infra Admin, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
@@ -348,6 +345,12 @@ msg:
   returned: When there is an error, module is idempotent or check mode (in delete operation)
   type: str
   sample: "Api Exception raised while creating network function"
+skipped:
+  description:
+      - Indicates if the operation was skipped.
+  type: bool
+  returned: when the operation was skipped
+  sample: true
 error:
   description: Error message if any
   returned: always
