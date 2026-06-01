@@ -22,15 +22,12 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Create a project) -
-      Operation Name: Create Project -
       Required Roles: Super Admin, NCM Admin, Prism Admin, Project Manager
     - >-
       B(Update a project) -
-      Operation Name: Update Project -
       Required Roles: Super Admin, NCM Admin, Prism Admin, Project Manager
     - >-
       B(Delete a project) -
-      Operation Name: Delete Project -
       Required Roles: Super Admin, NCM Admin, Prism Admin, Project Manager
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=multidomain)"
 options:

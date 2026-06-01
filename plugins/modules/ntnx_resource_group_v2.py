@@ -23,15 +23,12 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Create a resource group) -
-      Operation Name: Create Resource Group -
       Required Roles: Cluster Admin, Prism Admin, Project Manager, Storage Admin
     - >-
       B(Update a resource group) -
-      Operation Name: Update Resource Group -
       Required Roles: Cluster Admin, Prism Admin, Project Manager, Storage Admin
     - >-
       B(Delete a resource group) -
-      Operation Name: Delete Resource Group -
       Required Roles: Cluster Admin, Prism Admin, Project Manager, Storage Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=multidomain)"
 options:

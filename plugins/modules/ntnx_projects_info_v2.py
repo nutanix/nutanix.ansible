@@ -23,14 +23,12 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(List projects) -
-      Operation Name: List Projects -
       Required Roles: Basic Project Member, Consumer, CSI System, Developer, Flow Admin, Flow Viewer,
       Kubernetes Data Services System, Kubernetes Infrastructure Provision, NCM Admin, NCM Viewer,
       Operator, Prism Admin, Prism Viewer, Project Admin, Project Manager, Storage Admin,
       Storage Viewer, Super Admin, Virtual Machine Admin, Virtual Machine Operator
     - >-
       B(Get project by external ID) -
-      Operation Name: View Project -
       Required Roles: Basic Project Member, Consumer, CSI System, Developer, Flow Admin, Flow Viewer,
       Kubernetes Data Services System, Kubernetes Infrastructure Provision, NCM Admin, NCM Viewer,
       Operator, Prism Admin, Prism Viewer, Project Admin, Project Manager, Storage Admin,
