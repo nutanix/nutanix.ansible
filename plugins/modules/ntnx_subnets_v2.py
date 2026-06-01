@@ -25,15 +25,12 @@ notes:
     The required roles depend on the operation being performed.
   - >-
     B(Create a subnet) -
-    Operation Name: Create Subnet -
     Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Super Admin, User, VPC Admin
   - >-
     B(Update the specified subnet) -
-    Operation Name: Update Subnet -
     Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Super Admin, VPC Admin
   - >-
     B(Delete the specified subnet) -
-    Operation Name: Delete Subnet -
     Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Super Admin, VPC Admin
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:

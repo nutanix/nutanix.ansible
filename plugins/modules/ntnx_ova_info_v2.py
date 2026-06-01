@@ -22,11 +22,9 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get OVA by ext_id) -
-      Operation Name: View Ova -
       Required Roles: Prism Admin, Prism Viewer, Super Admin, Virtual Machine Admin, Virtual Machine Operator
     - >-
       B(List OVAs) -
-      Operation Name: View Ova -
       Required Roles: Prism Admin, Prism Viewer, Super Admin, Virtual Machine Admin, Virtual Machine Operator
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
