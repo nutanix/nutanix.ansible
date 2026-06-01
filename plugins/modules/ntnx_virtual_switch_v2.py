@@ -24,19 +24,15 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create a Virtual Switch) -
-      Operation Name: Add Virtual Switch -
       Required Roles: Prism Admin, Super Admin
     - >-
       B(Delete a Virtual Switch) -
-      Operation Name: Delete Virtual Switch -
       Required Roles: Prism Admin, Super Admin
     - >-
       B(Create a Virtual Switch from an existing bridge) -
-      Operation Name: Migrate Bridge -
       Required Roles: Network Infra Admin, Prism Admin, Super Admin
     - >-
       B(Update a Virtual Switch) -
-      Operation Name: Update Virtual Switch -
       Required Roles: Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
