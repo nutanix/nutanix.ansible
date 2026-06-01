@@ -248,3 +248,7 @@ action_groups:
     - ntnx_virtual_switches_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
+    - ntnx_project_v2
+    - ntnx_projects_info_v2
+    - ntnx_resource_group_v2
+    - ntnx_resource_groups_info_v2
