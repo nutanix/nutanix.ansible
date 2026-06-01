@@ -12,10 +12,10 @@
   gather_facts: false
   module_defaults:
     group/nutanix.ncp.ntnx:
-      # nutanix_host: <pc_ip>
-      # nutanix_username: <user>
-      # nutanix_password: <pass>
-      # validate_certs: false
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
   tasks:
     - name: Setting Variables
       ansible.builtin.set_fact:
@@ -24,7 +24,7 @@
         rsyslog_ext_id: "437de8a2-640d-4fd7-9b5f-1bd287a3aa4e"
 
     - name: Create RSYSLOG server
-      nutanix.ncp.ntnx_rsyslog_servers_v2:
+      nutanix.ncp.ntnx_rsyslog_server_v2:
         state: present
         cluster_ext_id: "{{ cluster_ext_id }}"
         server_name: "{{ rsyslog_name }}"
@@ -48,7 +48,7 @@
       ignore_errors: true
 
     - name: Update RSYSLOG server
-      nutanix.ncp.ntnx_rsyslog_servers_v2:
+      nutanix.ncp.ntnx_rsyslog_server_v2:
         state: present
         cluster_ext_id: "{{ cluster_ext_id }}"
         ext_id: "{{ rsyslog_ext_id }}"
@@ -86,7 +86,7 @@
       ignore_errors: true
 
     - name: Delete RSYSLOG server
-      nutanix.ncp.ntnx_rsyslog_servers_v2:
+      nutanix.ncp.ntnx_rsyslog_server_v2:
         state: absent
         cluster_ext_id: "{{ cluster_ext_id }}"
         ext_id: "{{ rsyslog_ext_id }}"

@@ -10,8 +10,8 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_rsyslog_servers_v2
-short_description: Create, Update, Delete RSYSLOG server configurations in Nutanix clusters
+module: ntnx_rsyslog_server_v2
+short_description: Create, Update, Delete RSYSLOG server configurations in Nutanix cluster.
 version_added: 2.6.0
 description:
   - This module allows you to create, update, and delete RSYSLOG server configurations on a Nutanix cluster.
@@ -60,13 +60,13 @@ options:
   server_name:
     description:
       - The name of the RSYSLOG server.
-      - Required for create and update operations.
+      - Required for create operation.
     type: str
     required: false
   ip_address:
     description:
       - The IP address of the RSYSLOG server.
-      - Required for create and update operations.
+      - Required for create operation.
     type: dict
     required: false
     suboptions:
@@ -107,13 +107,13 @@ options:
   port:
     description:
       - The port of the RSYSLOG server.
-      - Required for create and update operations.
+      - Required for create operation.
     type: int
     required: false
   network_protocol:
     description:
       - The network protocol to use for the RSYSLOG server.
-      - Required for create and update operations.
+      - Required for create operation.
     type: str
     required: false
     choices:
@@ -185,7 +185,7 @@ author:
 
 EXAMPLES = r"""
 - name: Create RSYSLOG server
-  nutanix.ncp.ntnx_rsyslog_servers_v2:
+  nutanix.ncp.ntnx_rsyslog_server_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -206,7 +206,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Update RSYSLOG server
-  nutanix.ncp.ntnx_rsyslog_servers_v2:
+  nutanix.ncp.ntnx_rsyslog_server_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -227,7 +227,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Delete RSYSLOG server
-  nutanix.ncp.ntnx_rsyslog_servers_v2:
+  nutanix.ncp.ntnx_rsyslog_server_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -572,7 +572,6 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "failed": False,
         "ext_id": None,
@@ -581,12 +580,13 @@ def run_module():
     state = module.params.get("state")
     cluster_ext_id = module.params.get("cluster_ext_id")
     result["cluster_ext_id"] = cluster_ext_id
-    if state == "absent":
-        delete_rsyslog_server(module, api_instance, cluster_ext_id, result)
-    elif module.params.get("ext_id"):
-        update_rsyslog_server(module, api_instance, cluster_ext_id, result)
+    if state == "present":
+        if module.params.get("ext_id"):
+            update_rsyslog_server(module, api_instance, cluster_ext_id, result)
+        else:
+            create_rsyslog_server(module, api_instance, cluster_ext_id, result)
     else:
-        create_rsyslog_server(module, api_instance, cluster_ext_id, result)
+        delete_rsyslog_server(module, api_instance, cluster_ext_id, result)
     module.exit_json(**result)
 
 

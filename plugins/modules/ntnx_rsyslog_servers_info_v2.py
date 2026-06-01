@@ -200,7 +200,7 @@ def run_module():
         skip_info_args=True,
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "response": None, "error": None}
+    result = {"changed": False, "response": None}
     api_instance = get_clusters_api_instance(module)
     cluster_ext_id = module.params.get("cluster_ext_id")
     result["cluster_ext_id"] = cluster_ext_id
