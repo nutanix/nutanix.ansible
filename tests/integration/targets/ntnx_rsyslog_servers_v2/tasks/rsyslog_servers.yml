@@ -607,7 +607,7 @@
       - result.changed == false
       - result.failed == true
       - result.msg == "Task Failed"
-      - result.response.task_status == "FAILED"
+      - result.response.status == "FAILED"
       - result.response.error_messages is defined
       - result.response.error_messages | length > 0
     success_msg: "Delete RSYSLOG server with wrong external ID failed as expected"
