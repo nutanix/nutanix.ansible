@@ -39,7 +39,7 @@ options:
     description:
       - Whether to execute in a dry-run mode providing ability to identify trouble spots and system failures without performing the actual operation.
       - This mode offers a summary snapshot of the resultant system in order to better understand how things fit together.
-      -The operation runs in dry-run mode only if the provided value is true.
+      - The operation runs in dry-run mode only if the provided value is true.
     type: bool
     required: false
 author:
