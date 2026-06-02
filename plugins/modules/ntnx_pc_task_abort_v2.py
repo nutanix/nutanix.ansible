@@ -19,7 +19,6 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Cancel an ongoing task) -
-      Operation Name: Cancel Task -
       Required Roles: Intelligent Ops Admin, NCM Admin, Prism Admin, Super Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:
