@@ -440,7 +440,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             "source",
             "availability_zone",
             "guest_customization",
-            "guest_tools",
             "apc_config",
             "storage_config",
             "gpus",
