@@ -21,7 +21,6 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Deploy a Prism Central) -
-      Operation Name: Create Domain Manager -
       Required Roles: Cluster Admin, Domain Manager Admin, Internal Super Admin, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:

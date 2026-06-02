@@ -18,12 +18,10 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get PC Configuration info by ext_id) -
-      Operation Name: View Domain Manager -
       Required Roles: Cluster Admin, Cluster Viewer, Domain Manager Admin, Domain Manager Viewer, Internal Super Admin, NCM Connector, Prism Admin,
       Prism Viewer, Super Admin
     - >-
       B(List domain manager (Prism Central) configuration details) -
-      Operation Name: View Domain Manager -
       Required Roles: Cluster Admin, Cluster Viewer, Domain Manager Admin, Domain Manager Viewer, Internal Super Admin, NCM Connector, Prism Admin,
       Prism Viewer, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
