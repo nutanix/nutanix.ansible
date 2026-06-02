@@ -49,6 +49,8 @@ class Tasks:
         VIRTUAL_SWITCH = "networking:config:virtual-switch"
         ENTITY_GROUP = "microseg:config:entity-group"
         VM_GUEST_CUSTOMIZATION_PROFILE = "vmm:ahv:config:vm-guest-customization-profile"
+        PROJECT = "multidomain:config:Project"
+        RESOURCE_GROUP = "multidomain:config:nutanix-resource-group"
 
     class CompletetionDetailsName:
         """Completion details name for the task entities affected"""

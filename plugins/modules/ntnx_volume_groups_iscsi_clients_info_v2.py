@@ -24,12 +24,10 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Fetch an iSCSI client details) -
-      Operation Name: View External ISCSI Client -
       Required Roles: Backup Admin, CSI System, Kubernetes Data Services System, Prism Admin, Prism Viewer, Project Manager, Storage Admin, Storage Viewer,
       Super Admin, Self-Service Admin (deprecated)
     - >-
       B(List all the iSCSI clients) -
-      Operation Name: View External ISCSI Client -
       Required Roles: Backup Admin, CSI System, Kubernetes Data Services System, Prism Admin, Prism Viewer, Project Manager, Storage Admin, Storage Viewer,
       Super Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes)"

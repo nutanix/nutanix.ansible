@@ -22,15 +22,12 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create authorization policy) -
-      Operation Name: Create Authorization Policy -
       Required Roles: Nutanix Central Admin, Prism Admin, Super Admin
     - >-
       B(Delete authorization policy) -
-      Operation Name: Delete Authorization Policy -
       Required Roles: Nutanix Central Admin, Prism Admin, Super Admin
     - >-
       B(Update authorization policy) -
-      Operation Name: Update Authorization Policy -
       Required Roles: Nutanix Central Admin, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam)"
 options:
