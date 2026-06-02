@@ -23,11 +23,9 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create a key of the requested key type for a user) -
-      Operation Name: Create User Key -
       Required Roles: Nutanix Central Admin, Prism Admin, Super Admin
     - >-
       B(Delete the requested key) -
-      Operation Name: Delete User Key -
       Required Roles: Nutanix Central Admin, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam)"
 options:

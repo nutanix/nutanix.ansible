@@ -22,15 +22,12 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create a cluster) -
-      Operation Name: Create Cluster -
       Required Roles: Cluster Admin, Prism Admin, Super Admin
     - >-
       B(Delete a cluster) -
-      Operation Name: Destroy Cluster -
       Required Roles: Cluster Admin, Prism Admin, Super Admin
     - >-
       B(Update cluster) -
-      Operation Name: Update Cluster -
       Required Roles: Backup Admin, Cluster Admin, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:

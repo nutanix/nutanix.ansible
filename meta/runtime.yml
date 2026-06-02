@@ -252,3 +252,7 @@ action_groups:
     - ntnx_category_mappings_info_v2
     - ntnx_directory_server_config_v2
     - ntnx_directory_server_configs_info_v2
+    - ntnx_project_v2
+    - ntnx_projects_info_v2
+    - ntnx_resource_group_v2
+    - ntnx_resource_groups_info_v2

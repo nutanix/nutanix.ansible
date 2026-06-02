@@ -22,13 +22,11 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Get configuration details for the provided network device) -
-      Operation Name: View Virtual Machine NIC -
       Required Roles: Account Owner, Administrator, Backup Admin, Consumer, Developer, Flow Admin, Flow Policy Author, Flow Viewer, NCM Connector,
       Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin, Project Manager, Storage Admin, Super Admin, User, Virtual Machine Admin,
       Virtual Machine Operator, Virtual Machine Viewer, VPC Admin, Self-Service Admin (deprecated)
     - >-
       B(List network devices attached to a VM) -
-      Operation Name: View Virtual Machine NIC -
       Required Roles: Account Owner, Administrator, Backup Admin, Consumer, Developer, Flow Admin, Flow Policy Author, Flow Viewer, NCM Connector,
       Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin, Project Manager, Storage Admin, Super Admin, User, Virtual Machine Admin,
       Virtual Machine Operator, Virtual Machine Viewer, VPC Admin, Self-Service Admin (deprecated)

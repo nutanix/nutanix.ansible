@@ -50,6 +50,8 @@ class Tasks:
         ENTITY_GROUP = "microseg:config:entity-group"
         CATEGORY_MAPPING = "microseg:config:category-mapping"
         DIRECTORY_SERVER_CONFIG = "microseg:config:directory-server-config"
+        PROJECT = "multidomain:config:Project"
+        RESOURCE_GROUP = "multidomain:config:nutanix-resource-group"
 
     class CompletetionDetailsName:
         """Completion details name for the task entities affected"""
