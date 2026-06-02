@@ -21,19 +21,17 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get VM Anti-Affinity Policy) -
-      Operation Name: Get VM Anti-Affinity Policy -
       Required Roles: Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin, Virtual Machine Admin,
       Virtual Machine Viewer, Self-Service Admin (deprecated)
     - >-
       B(List VM Anti-Affinity Policies) -
-      Operation Name: List VM Anti-Affinity Policies -
       Required Roles: Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin, Virtual Machine Admin,
       Virtual Machine Viewer, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     ext_id:
         description:
-            - The external ID of the VM anti-affinity policy.
+            - The external ID of the VM-VM anti-affinity policy.
             - If provided, fetches a single policy by its external ID.
         type: str
         required: false
@@ -48,7 +46,7 @@ extends_documentation_fragment:
 """
 
 EXAMPLES = r"""
-- name: Get a VM anti-affinity policy by ID
+- name: Get a VM-VM anti-affinity policy by ID
   nutanix.ncp.ntnx_vm_anti_affinity_policies_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -57,7 +55,7 @@ EXAMPLES = r"""
     ext_id: "605a0cf9-d04e-3be7-911b-1e6f193f6eb9"
   register: result
 
-- name: List all VM anti-affinity policies
+- name: List all VM-VM anti-affinity policies
   nutanix.ncp.ntnx_vm_anti_affinity_policies_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -65,7 +63,7 @@ EXAMPLES = r"""
     validate_certs: false
   register: result
 
-- name: List VM anti-affinity policies with filter
+- name: List VM-VM anti-affinity policies with filter
   nutanix.ncp.ntnx_vm_anti_affinity_policies_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -74,7 +72,7 @@ EXAMPLES = r"""
     filter: "name eq 'my_policy'"
   register: result
 
-- name: List all VM anti-affinity policies with limit
+- name: List all VM-VM anti-affinity policies with limit
   nutanix.ncp.ntnx_vm_anti_affinity_policies_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -88,9 +86,9 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
     description:
-        - The response for fetching VM anti-affinity policy(s).
-        - Single VM anti-affinity policy if external ID is provided.
-        - List of VM anti-affinity policies if external ID is not provided.
+        - The response for fetching VM-VM anti-affinity policy(s).
+        - Single VM-VM anti-affinity policy if external ID is provided.
+        - List of VM-VM anti-affinity policies if external ID is not provided.
     type: dict
     returned: always
     sample:
@@ -132,8 +130,7 @@ changed:
 error:
     description: This field typically holds information about if the task have errors that occurred during the task execution
     type: str
-    returned: always
-    sample: null
+    returned: when there is an error
 
 failed:
     description: This field typically holds information about if the task have failed
@@ -142,15 +139,15 @@ failed:
     sample: false
 
 ext_id:
-    description: The external ID of the VM anti-affinity policy.
+    description: The external ID of the VM-VM anti-affinity policy.
     type: str
     returned: always
     sample: "54fe0ed5-02d8-4588-b10b-3b9736bf3d06"
 
 total_available_results:
-    description: The total number of available VM anti-affinity policies in PC.
+    description: The total number of available VM-VM anti-affinity policies in PC.
     type: int
-    returned: when all VM anti-affinity policies are fetched
+    returned: when all VM-VM anti-affinity policies are fetched
     sample: 10
 """
 import warnings  # noqa: E402
@@ -178,7 +175,7 @@ def get_module_spec():
 
 
 def get_policy(module, api_instance, result):
-    """Fetch a single VM anti-affinity policy by ext_id."""
+    """Fetch a single VM-VM anti-affinity policy by ext_id."""
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
     resp = get_vm_anti_affinity_policy(module, api_instance, ext_id)
@@ -186,14 +183,14 @@ def get_policy(module, api_instance, result):
 
 
 def get_policies(module, api_instance, result):
-    """List VM anti-affinity policies with pagination support."""
+    """List VM-VM anti-affinity policies with pagination support."""
     sg = SpecGenerator(module)
     kwargs, err = sg.get_info_spec(attr=module.params)
 
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating VM anti-affinity policies info spec", **result
+            msg="Failed generating VM-VM anti-affinity policies info spec", **result
         )
 
     try:
@@ -202,7 +199,7 @@ def get_policies(module, api_instance, result):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while fetching VM anti-affinity policies info",
+            msg="Api Exception raised while fetching VM-VM anti-affinity policies info",
         )
 
     total_available_results = resp.metadata.total_available_results

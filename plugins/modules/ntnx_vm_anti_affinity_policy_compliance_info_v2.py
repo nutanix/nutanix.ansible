@@ -10,7 +10,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 module: ntnx_vm_anti_affinity_policy_compliance_info_v2
-short_description: Fetch VM compliance states for a VM anti-affinity policy in Nutanix Prism Central.
+short_description: Fetch VM compliance states for a VM-VM anti-affinity policy in Nutanix Prism Central.
 version_added: "2.6.0"
 description:
     - This module fetches VM compliance states for a VM-VM anti-affinity policy in Nutanix Prism Central.
@@ -26,7 +26,7 @@ notes:
 options:
     ext_id:
         description:
-            - The external ID of the VM anti-affinity policy.
+            - The external ID of the VM-VM anti-affinity policy.
         type: str
         required: true
     page:
@@ -54,7 +54,7 @@ extends_documentation_fragment:
 """
 
 EXAMPLES = r"""
-- name: Fetch VM anti-affinity policy compliance states
+- name: Fetch VM-VM anti-affinity policy compliance states
   nutanix.ncp.ntnx_vm_anti_affinity_policy_compliance_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -63,7 +63,7 @@ EXAMPLES = r"""
     ext_id: "54fe0ed5-02d8-4588-b10b-3b9736bf3d06"
   register: result
 
-- name: Fetch VM anti-affinity policy compliance states with limit
+- name: Fetch VM-VM anti-affinity policy compliance states with limit
   nutanix.ncp.ntnx_vm_anti_affinity_policy_compliance_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -77,7 +77,7 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
     description:
-        - The list of VMs for the specified VM anti-affinity policy with their compliance states.
+        - The list of VMs for the specified VM-VM anti-affinity policy with their compliance states.
     type: list
     returned: always
     sample:
@@ -184,13 +184,12 @@ msg:
     description: This indicates the message if any message occurred
     returned: When there is an error
     type: str
-    sample: "Api Exception raised while fetching VM anti-affinity policy compliance states"
+    sample: "Api Exception raised while fetching VM-VM anti-affinity policy compliance states"
 
 error:
   description: This field typically holds information about if the task have errors that occurred during the task execution
-  returned: always
+  returned: when there is an error
   type: bool
-  sample: false
 
 failed:
     description: This field typically holds information about if the task have failed
@@ -200,9 +199,9 @@ failed:
 
 total_available_results:
     description:
-        - The total number of available VMs for the specified VM anti-affinity policy.
+        - The total number of available VMs for the specified VM-VM anti-affinity policy.
     type: int
-    returned: when all VMs for the specified VM anti-affinity policy are fetched
+    returned: when all VMs for the specified VM-VM anti-affinity policy are fetched
     sample: 10
 """
 
@@ -229,7 +228,7 @@ def get_module_spec():
 
 
 def get_policy_vm_compliance_states(module, api_instance, result):
-    """List VM compliance states for a VM anti-affinity policy."""
+    """List VM compliance states for a VM-VM anti-affinity policy."""
     ext_id = module.params.get("ext_id")
     sg = SpecGenerator(module)
     kwargs, err = sg.get_info_spec(attr=module.params)
@@ -237,7 +236,7 @@ def get_policy_vm_compliance_states(module, api_instance, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating VM anti-affinity policy compliance info spec",
+            msg="Failed generating VM-VM anti-affinity policy compliance info spec",
             **result,
         )
 
@@ -249,7 +248,7 @@ def get_policy_vm_compliance_states(module, api_instance, result):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while fetching VM anti-affinity policy compliance states",
+            msg="Api Exception raised while fetching VM-VM anti-affinity policy compliance states",
         )
 
     total_available_results = resp.metadata.total_available_results

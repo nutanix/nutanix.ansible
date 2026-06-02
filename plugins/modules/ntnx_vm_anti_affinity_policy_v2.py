@@ -22,23 +22,23 @@ author:
 options:
     ext_id:
         description:
-            - The unique identifier of the VM anti-affinity policy.
+            - The unique identifier of the VM-VM anti-affinity policy.
             - This parameter is required for update and delete operations.
         required: false
         type: str
     name:
         description:
-            - The name of the VM anti-affinity policy.
+            - The name of the VM-VM anti-affinity policy.
         required: false
         type: str
     description:
         description:
-            - The description of the VM anti-affinity policy.
+            - The description of the VM-VM anti-affinity policy.
         required: false
         type: str
     categories:
         description:
-            - List of category references associated with the VM anti-affinity policy.
+            - List of category references associated with the VM-VM anti-affinity policy.
             - Each entry specifies a category by its external ID.
             - VMs with the same category will be placed on different hosts.
         required: false
@@ -76,21 +76,18 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Create VM Anti-Affinity Policy) -
-      Operation Name: Create VM Anti-Affinity Policy -
       Required Roles: Prism Admin, Project Admin, Project Manager, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
     - >-
       B(Update VM Anti-Affinity Policy) -
-      Operation Name: Update VM Anti-Affinity Policy -
       Required Roles: Prism Admin, Project Admin, Project Manager, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
     - >-
       B(Delete VM Anti-Affinity Policy) -
-      Operation Name: Delete VM Anti-Affinity Policy -
       Required Roles: Prism Admin, Project Admin, Project Manager, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 """
 
 EXAMPLES = r"""
-- name: Create a VM anti-affinity policy
+- name: Create a VM-VM anti-affinity policy
   nutanix.ncp.ntnx_vm_anti_affinity_policy_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -101,10 +98,8 @@ EXAMPLES = r"""
     categories:
       - ext_id: "2f54419e-596d-4b34-aa8f-1a1e944ee7d7"
       - ext_id: "8811743f-f3ea-463c-539a-8d6a7f69b8f5"
-    state: present
-    wait: true
 
-- name: Update a VM anti-affinity policy
+- name: Update a VM-VM anti-affinity policy
   nutanix.ncp.ntnx_vm_anti_affinity_policy_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -115,10 +110,8 @@ EXAMPLES = r"""
     description: Updated description
     categories:
       - ext_id: "9811743f-f3ea-463c-539a-8d6a7f69b8f5"
-    state: present
-    wait: true
 
-- name: Delete a VM anti-affinity policy
+- name: Delete a VM-VM anti-affinity policy
   nutanix.ncp.ntnx_vm_anti_affinity_policy_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -126,15 +119,14 @@ EXAMPLES = r"""
     validate_certs: false
     ext_id: "605a0cf9-d04e-3be7-911b-1e6f193f6eb9"
     state: absent
-    wait: true
 """
 
 
 RETURN = r"""
 response:
     description:
-        - Response for creating, updating, or deleting VM anti-affinity policy.
-        - VM anti-affinity policy details if the operation is create or update and C(wait) is true.
+        - Response for creating, updating, or deleting VM-VM anti-affinity policy.
+        - VM-VM anti-affinity policy details if the operation is create or update and C(wait) is true.
         - Task details if the operation is delete or C(wait) is false.
     type: dict
     returned: always
@@ -174,7 +166,7 @@ task_ext_id:
     returned: when a task is created
     sample: "ZXJnb24=:350f0fd5-097d-4ece-8f44-6e5bfbe2dc08"
 ext_id:
-    description: The external ID of the VM anti-affinity policy.
+    description: The external ID of the VM-VM anti-affinity policy.
     type: str
     returned: always
     sample: "98b9dc89-be08-3c56-b554-692b8b676fd2"
@@ -194,7 +186,7 @@ msg:
     description: This indicates the message if any message occurred
     type: str
     returned: on error, idempotency, or check mode
-    sample: "Api Exception raised while creating VM anti-affinity policy"
+    sample: "Api Exception raised while creating VM-VM anti-affinity policy"
 failed:
     description: This field typically holds information about if the task have failed
     type: bool
@@ -239,7 +231,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
     """
-    Returns the module argument specification for VM anti-affinity policy.
+    Returns the module argument specification for VM-VM anti-affinity policy.
     """
     category_spec = dict(
         ext_id=dict(type="str", required=True),
@@ -260,7 +252,7 @@ def get_module_spec():
 
 
 def create_policy(module, api_instance, result):
-    """Create a new VM anti-affinity policy."""
+    """Create a new VM-VM anti-affinity policy."""
     sg = SpecGenerator(module)
     default_spec = vmm_sdk.VmAntiAffinityPolicy()
     spec, err = sg.generate_spec(obj=default_spec)
@@ -268,7 +260,7 @@ def create_policy(module, api_instance, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating create VM anti-affinity policy spec", **result
+            msg="Failed generating create VM-VM anti-affinity policy spec", **result
         )
 
     if module.check_mode:
@@ -282,7 +274,7 @@ def create_policy(module, api_instance, result):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while creating VM anti-affinity policy",
+            msg="Api Exception raised while creating VM-VM anti-affinity policy",
         )
 
     task_ext_id = resp.data.ext_id
@@ -310,7 +302,7 @@ def check_idempotency(current_spec, update_spec):
 
 
 def update_policy(module, api_instance, result):
-    """Update an existing VM anti-affinity policy."""
+    """Update an existing VM-VM anti-affinity policy."""
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
@@ -321,7 +313,7 @@ def update_policy(module, api_instance, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating VM anti-affinity policy update spec", **result
+            msg="Failed generating VM-VM anti-affinity policy update spec", **result
         )
 
     if module.check_mode:
@@ -335,7 +327,7 @@ def update_policy(module, api_instance, result):
     etag = get_etag(data=current_spec)
     if not etag:
         return module.fail_json(
-            "Unable to fetch etag for updating VM anti-affinity policy", **result
+            "Unable to fetch etag for updating VM-VM anti-affinity policy", **result
         )
 
     kwargs = {"if_match": etag}
@@ -349,7 +341,7 @@ def update_policy(module, api_instance, result):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while updating VM anti-affinity policy",
+            msg="Api Exception raised while updating VM-VM anti-affinity policy",
         )
 
     task_ext_id = resp.data.ext_id
@@ -364,7 +356,7 @@ def update_policy(module, api_instance, result):
 
 
 def delete_policy(module, api_instance, result):
-    """Delete an existing VM anti-affinity policy."""
+    """Delete an existing VM-VM anti-affinity policy."""
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
@@ -377,7 +369,7 @@ def delete_policy(module, api_instance, result):
     etag = get_etag(data=current_spec)
     if not etag:
         return module.fail_json(
-            "Unable to fetch etag for deleting VM anti-affinity policy", **result
+            "Unable to fetch etag for deleting VM-VM anti-affinity policy", **result
         )
 
     kwargs = {"if_match": etag}
@@ -388,7 +380,7 @@ def delete_policy(module, api_instance, result):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while deleting VM anti-affinity policy",
+            msg="Api Exception raised while deleting VM-VM anti-affinity policy",
         )
 
     task_ext_id = resp.data.ext_id
@@ -417,7 +409,6 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "ext_id": None,
     }
