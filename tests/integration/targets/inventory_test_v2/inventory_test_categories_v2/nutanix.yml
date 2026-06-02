@@ -6,6 +6,7 @@ plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
 # nutanix_port: port # Or set NUTANIX_PORT environment variable
 # validate_certs: false # Or set VALIDATE_CERTS environment variable
 fetch_all_vms: true
+filter: "startswith(name, 'categories_test_')"
 auto_create_cluster_groups: false
 strict: false
 keyed_groups:
