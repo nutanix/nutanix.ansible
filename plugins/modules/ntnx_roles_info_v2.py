@@ -21,12 +21,10 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get role by ext_id) -
-      Operation Name: View Role -
       Required Roles: Account Owner, Administrator, Nutanix Central Admin, Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin,
       User, Self-Service Admin (deprecated)
     - >-
       B(List role(s)) -
-      Operation Name: View Role -
       Required Roles: Account Owner, Administrator, Nutanix Central Admin, Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin,
       User, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam)"
