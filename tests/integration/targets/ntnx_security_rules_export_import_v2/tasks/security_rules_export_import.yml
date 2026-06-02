@@ -6,6 +6,7 @@
 - name: Set export/import file paths
   ansible.builtin.set_fact:
     export_file: "/tmp/ntnx_nsp_export_{{ 999999 | random }}.flw"
+    export_file_all: "/tmp/ntnx_nsp_export_all_{{ 999999 | random }}.flw"
     missing_export_file: "/tmp/ntnx_nsp_export_does_not_exist_{{ 999999 | random }}.flw"
 
 ########################################################################################
@@ -122,6 +123,32 @@
     policy_ext_id_2: "{{ result.ext_id }}"
 
 ########################################################################################
+# Export - negative: missing required path
+########################################################################################
+
+- name: Export of network security policies without the required path
+  nutanix.ncp.ntnx_security_rules_export_v2:
+    policy_references:
+      - "{{ policy_ext_id_1 }}"
+  register: result
+  ignore_errors: true
+
+- name: Print export without the required path result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify export without the required path fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - result.msg == "missing required arguments: path"
+    success_msg: "Export without the required path failed as expected"
+    fail_msg: "Export without the required path did not fail as expected"
+
+########################################################################################
 # Export - check mode
 ########################################################################################
 
@@ -129,6 +156,7 @@
   nutanix.ncp.ntnx_security_rules_export_v2:
     policy_references:
       - "{{ policy_ext_id_1 }}"
+    path: "{{ export_file }}"
   register: result
   check_mode: true
   ignore_errors: true
@@ -147,6 +175,7 @@
       - result.response.policy_references is defined
       - result.response.policy_references | length == 1
       - result.response.policy_references[0] == policy_ext_id_1
+      - result.path == export_file
     success_msg: "Export of network security policy check mode passed"
     fail_msg: "Export of network security policy check mode failed"
 
@@ -198,11 +227,12 @@
     fail_msg: "Export file was not downloaded to the provided file path"
 
 ########################################################################################
-# Export of all policies without a file path (downloads to a default temporary path)
+# Export of all policies to a provided file path
 ########################################################################################
 
-- name: Export of all network security policies without a file path
+- name: Export of all network security policies to a provided file path
   nutanix.ncp.ntnx_security_rules_export_v2:
+    path: "{{ export_file_all }}"
   register: result
   ignore_errors: true
 
@@ -218,32 +248,27 @@
       - result.failed == false
       - result.task_ext_id is defined
       - result.response.status == "SUCCEEDED"
-      - result.path is defined
-      - result.path | length > 0
+      - result.path == export_file_all
     success_msg: "Export of all network security policies succeeded"
     fail_msg: "Export of all network security policies failed"
 
-- name: Set default downloaded export file path
-  ansible.builtin.set_fact:
-    default_export_file: "{{ result.path }}"
-
-- name: Stat the default downloaded export file
+- name: Stat the downloaded export-all file
   ansible.builtin.stat:
-    path: "{{ default_export_file }}"
-  register: default_export_file_stat
+    path: "{{ export_file_all }}"
+  register: export_file_all_stat
 
-- name: Print the default downloaded export file
+- name: Print the downloaded export-all file
   ansible.builtin.debug:
-    var: default_export_file_stat
+    var: export_file_all_stat
 
-- name: Verify the export file was downloaded to a default path
+- name: Verify the export file was downloaded to the provided file path
   ansible.builtin.assert:
     that:
-      - default_export_file_stat.stat.exists
-      - default_export_file_stat.stat.size > 0
-      - default_export_file_stat.stat.path == default_export_file
-    success_msg: "Export file downloaded successfully to a default path ({{ default_export_file }})"
-    fail_msg: "Export file was not downloaded to a default path"
+      - export_file_all_stat.stat.exists
+      - export_file_all_stat.stat.size > 0
+      - export_file_all_stat.stat.path == export_file_all
+    success_msg: "Export-all file downloaded successfully to the provided file path ({{ export_file_all }})"
+    fail_msg: "Export-all file was not downloaded to the provided file path"
 
 ########################################################################################
 # Export - negative: non-existent policy reference
@@ -253,6 +278,7 @@
   nutanix.ncp.ntnx_security_rules_export_v2:
     policy_references:
       - "00000000-0000-0000-0000-000000000000"
+    path: "{{ export_file }}"
   register: result
   ignore_errors: true
 
@@ -484,7 +510,7 @@
   register: result
   loop:
     - "{{ export_file }}"
-    - "{{ default_export_file | default('') }}"
+    - "{{ export_file_all }}"
 
 - name: Stat the downloaded export files after deletion
   ansible.builtin.stat:
@@ -492,7 +518,7 @@
   register: deleted_export_files_stat
   loop:
     - "{{ export_file }}"
-    - "{{ default_export_file | default('') }}"
+    - "{{ export_file_all }}"
 
 - name: Verify the downloaded export files were deleted
   ansible.builtin.assert:

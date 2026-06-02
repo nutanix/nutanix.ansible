@@ -36,11 +36,10 @@ options:
   path:
     description:
       - Local destination path where the exported network security policies file is saved.
-      - If not provided, the file is downloaded to a temporary directory and the resulting path is returned in C(path).
       - The file can later be used by the C(ntnx_security_rules_import_v2) module to import the policies.
       - The module always waits for the export task to complete in order to download the file.
     type: path
-    required: false
+    required: true
 author:
   - George Ghawali (@george-ghawali)
 extends_documentation_fragment:
@@ -51,7 +50,7 @@ extends_documentation_fragment:
 """
 
 EXAMPLES = r"""
-- name: Export specific network security policies
+- name: Export specific network security policies to a file
   nutanix.ncp.ntnx_security_rules_export_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -60,19 +59,11 @@ EXAMPLES = r"""
     policy_references:
       - "ac8e7c8a-3e6f-4f2a-8d2b-9f3a6b6f97e2"
       - "18dbfce0-f7e1-4b19-a9e6-43b0be8c2507"
+    path: "/tmp/network_security_policies_export.flw"
   register: result
   ignore_errors: true
 
-- name: Export all network security policies
-  nutanix.ncp.ntnx_security_rules_export_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-  register: result
-  ignore_errors: true
-
-- name: Export all network security policies and download them to a file
+- name: Export all network security policies to a file
   nutanix.ncp.ntnx_security_rules_export_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -125,7 +116,6 @@ msg:
 path:
   description:
     - The local path of the downloaded export file.
-    - When C(path) is not provided, this is a path in a temporary directory.
   returned: always
   type: str
   sample: "/tmp/network_security_policies_export.flw"
@@ -133,7 +123,6 @@ path:
 
 import os  # noqa: E402
 import shutil  # noqa: E402
-import tempfile  # noqa: E402
 import traceback  # noqa: E402
 import uuid  # noqa: E402
 import warnings  # noqa: E402
@@ -168,16 +157,13 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def get_module_spec():
     module_args = dict(
         policy_references=dict(type="list", elements="str", required=False),
-        path=dict(type="path", required=False),
+        path=dict(type="path", required=True),
     )
     return module_args
 
 
 def download_export_file(module, network_security_policies, request_id, path, result):
-    if path:
-        dest_dir = os.path.dirname(os.path.abspath(path))
-    else:
-        dest_dir = tempfile.gettempdir()
+    dest_dir = os.path.dirname(os.path.abspath(path))
     if not os.path.isdir(dest_dir):
         os.makedirs(dest_dir)
 
@@ -209,7 +195,7 @@ def download_export_file(module, network_security_policies, request_id, path, re
         )
 
     downloaded_path = str(downloaded_path)
-    if path and os.path.abspath(downloaded_path) != os.path.abspath(path):
+    if os.path.abspath(downloaded_path) != os.path.abspath(path):
         shutil.move(downloaded_path, path)
         return path
     return downloaded_path
@@ -229,8 +215,7 @@ def export_policies(module, network_security_policies, result):
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
-        if path:
-            result["path"] = path
+        result["path"] = path
         return
 
     request_id = str(uuid.uuid4())
