@@ -22,11 +22,9 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Get the template version detail) -
-      Operation Name: View VM Templates Versions -
       Required Roles: Prism Admin, Prism Viewer, Super Admin, Virtual Machine Admin, Virtual Machine Operator
     - >-
       B(List all versions in a template) -
-      Operation Name: View VM Templates Versions -
       Required Roles: Prism Admin, Prism Viewer, Super Admin, Virtual Machine Admin, Virtual Machine Operator
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:

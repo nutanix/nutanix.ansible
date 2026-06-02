@@ -22,15 +22,12 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create a Routing Policy) -
-      Operation Name: Create Routing Policy -
       Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
     - >-
       B(Delete the Routing Policy corresponding to the extId) -
-      Operation Name: Delete Routing Policy -
       Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
     - >-
       B(Update the Routing Policy corresponding to the extId) -
-      Operation Name: Update Routing Policy -
       Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:

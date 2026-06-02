@@ -27,11 +27,15 @@
         host_uuid: "8300384a-56ee-4750-aeb8-3d1c42908bee"
         virtual_switch_name: "virtual_switch_ansible"
         existing_bridge_name: "br2"
+        owner_reference_id: "00000000-0000-0000-0000-000000000000"
+        owner_user_name: "admin"
+        category_ids:
+          - "66f4d0aa-4e77-5261-94c6-4dc19a857049"
+          - "594bb16c-3498-5706-bd9d-301dea6a6bcb"
 
     - name: Create virtual switch
       nutanix.ncp.ntnx_virtual_switch_v2:
         state: present
-        cluster_ext_id: "{{ cluster_uuid }}"
         name: "{{ virtual_switch_name }}"
         description: "Virtual switch created by Ansible"
         bond_mode: "NONE"
@@ -44,6 +48,10 @@
             vlan_identifier: 0
         igmp_spec:
           is_snooping_enabled: false
+        metadata:
+          owner_reference_id: "{{ owner_reference_id }}"
+          owner_user_name: "{{ owner_user_name }}"
+          category_ids: "{{ category_ids }}"
       register: result
       ignore_errors: true
 
@@ -54,11 +62,14 @@
     - name: Create a virtual switch from an existing bridge
       nutanix.ncp.ntnx_virtual_switch_v2:
         state: present
-        cluster_ext_id: "{{ cluster_uuid }}"
         name: "{{ virtual_switch_name }}_from_bridge"
         description: "Virtual switch created from existing bridge"
         existing_bridge_name: "{{ existing_bridge_name }}"
         cluster_reference: "{{ cluster_uuid }}"
+        metadata:
+          owner_reference_id: "{{ owner_reference_id }}"
+          owner_user_name: "{{ owner_user_name }}"
+          category_ids: "{{ category_ids }}"
       register: result
       ignore_errors: true
 
@@ -69,7 +80,6 @@
     - name: Update virtual switch
       nutanix.ncp.ntnx_virtual_switch_v2:
         state: present
-        cluster_ext_id: "{{ cluster_uuid }}"
         ext_id: "{{ virtual_switch_ext_id }}"
         name: "{{ virtual_switch_name }}_updated"
         description: "Updated virtual switch description"
@@ -86,6 +96,11 @@
           snooping_timeout: 600
           querier_spec:
             is_querier_enabled: true
+        metadata:
+          owner_reference_id: "{{ owner_reference_id }}"
+          owner_user_name: "{{ owner_user_name }}"
+          category_ids:
+            - "{{ category_ids[0] }}"
       register: result
       ignore_errors: true
 
@@ -119,7 +134,6 @@
     - name: Delete virtual switch
       nutanix.ncp.ntnx_virtual_switch_v2:
         state: absent
-        cluster_ext_id: "{{ cluster_uuid }}"
         ext_id: "{{ virtual_switch_ext_id }}"
       register: result
       ignore_errors: true
@@ -127,7 +141,6 @@
     - name: Delete virtual switch from bridge
       nutanix.ncp.ntnx_virtual_switch_v2:
         state: absent
-        cluster_ext_id: "{{ cluster_uuid }}"
         ext_id: "{{ virtual_switch_from_bridge_ext_id }}"
       register: result
       ignore_errors: true
