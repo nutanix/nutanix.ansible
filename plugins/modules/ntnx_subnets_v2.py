@@ -782,7 +782,6 @@ def _unshare_subnet_from_project(module, subnets, ext_id, project_ext_id):
         )
 
 
-
 def create_subnet(module, result):
     subnets = get_subnet_api_instance(module)
     shared_with_projects = module.params.pop("shared_with_projects", None)

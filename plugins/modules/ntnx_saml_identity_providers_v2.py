@@ -453,7 +453,6 @@ def _unshare_from_project(module, identity_providers, ext_id, project_ext_id):
         )
 
 
-
 def create_identity_provider(module, identity_providers, result):
     is_shared_with_all = module.params.pop("is_shared_with_all_projects", None)
     shared_with_projects = module.params.pop("shared_with_projects", None)

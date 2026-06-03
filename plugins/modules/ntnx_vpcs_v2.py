@@ -578,7 +578,6 @@ def _unshare_vpc_from_project(module, vpcs, ext_id, project_ext_id):
         )
 
 
-
 def create_vpc(module, result):
     vpcs = get_vpc_api_instance(module)
     shared_with_projects = module.params.pop("shared_with_projects", None)

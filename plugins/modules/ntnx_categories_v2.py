@@ -290,7 +290,6 @@ def _unshare_from_project(module, categories, ext_id, project_ext_id):
         )
 
 
-
 def create_category(module, result):
     categories = get_category_api_instance(module)
     shared_with_projects = module.params.pop("shared_with_projects", None)

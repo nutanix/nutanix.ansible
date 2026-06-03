@@ -544,7 +544,6 @@ def _unshare_from_project(module, directory_services, ext_id, project_ext_id):
         )
 
 
-
 def create_directory_service(module, directory_services, result):
     is_shared_with_all = module.params.pop("is_shared_with_all_projects", None)
     shared_with_projects = module.params.pop("shared_with_projects", None)
