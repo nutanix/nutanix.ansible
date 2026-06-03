@@ -26,7 +26,6 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get the STIG controls details) -
-      Operation Name: View Stig -
       Required Roles: Prism Admin, Prism Viewer, Security Dashboard Admin, Security Dashboard Viewer, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=security)"
 extends_documentation_fragment:

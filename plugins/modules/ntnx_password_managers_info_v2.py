@@ -22,7 +22,6 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(List password status of system users) -
-      Operation Name: View System User Password -
       Required Roles: LocalAccountManager Admin, LocalAccountManager Viewer, Prism Admin, Prism Viewer, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 extends_documentation_fragment:

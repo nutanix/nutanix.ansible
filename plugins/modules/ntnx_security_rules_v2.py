@@ -22,15 +22,12 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create a Network Security Policy) -
-      Operation Name: Create Flow Policy -
       Required Roles: Flow Admin, Prism Admin, Super Admin
     - >-
       B(Delete a Network Security Policy by ExtID) -
-      Operation Name: Delete Flow Policy -
       Required Roles: Flow Admin, Prism Admin, Super Admin
     - >-
       B(Update a Network Security Policy by ExtID) -
-      Operation Name: Update Flow Policy -
       Required Roles: Flow Admin, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg)"
 options:
@@ -124,6 +121,11 @@ options:
           - External ID of the rule.
         required: false
         type: str
+      name:
+        description:
+          - Name of the rule.
+        required: false
+        type: str
       description:
         description:
           - Description of rule
@@ -140,6 +142,12 @@ options:
           - INTRA_GROUP
           - MULTI_ENV_ISOLATION
           - SHARED_SERVICE
+      is_logging_enabled:
+        description:
+          - Specifies whether hit log is enabled for the rule.
+        required: false
+        type: bool
+        default: false
       spec:
         description:
           - The specification of the rule.
@@ -256,6 +264,19 @@ options:
                     description:
                       - The prefix length of the source subnet.
                     type: int
+              src_ipv6_subnet:
+                description:
+                  - An unique address that identifies a device on the internet or a local network in IPv6 format.
+                type: dict
+                suboptions:
+                  value:
+                    description:
+                      - The IPv6 address of the host.
+                    type: str
+                  prefix_length:
+                    description:
+                      - The prefix length of the network to which this host IPv6 address belongs.
+                    type: int
               dest_subnet:
                 description:
                   - The destination subnet/IP specification.
@@ -268,6 +289,19 @@ options:
                   prefix_length:
                     description:
                       - The prefix length of the destination subnet.
+                    type: int
+              dest_ipv6_subnet:
+                description:
+                  - An unique address that identifies a device on the internet or a local network in IPv6 format.
+                type: dict
+                suboptions:
+                  value:
+                    description:
+                      - The IPv6 address of the host.
+                    type: str
+                  prefix_length:
+                    description:
+                      - The prefix length of the network to which this host IPv6 address belongs.
                     type: int
               src_address_group_references:
                 description:
@@ -335,6 +369,24 @@ options:
                   code:
                     description:
                       - Icmp service Code. Ignore this field if Code has to be ANY.
+                    type: int
+              icmp_v6_services:
+                description:
+                  - ICMPv6 Type Code List.
+                type: list
+                elements: dict
+                suboptions:
+                  is_all_allowed:
+                    description:
+                      - Set this field to true if both Type and Code is ANY.
+                    type: bool
+                  type:
+                    description:
+                      - ICMP service Type. Ignore this field if Type has to be ANY.
+                    type: int
+                  code:
+                    description:
+                      - ICMP service Code. Ignore this field if Code has to be ANY.
                     type: int
               network_function_chain_reference:
                 description:
@@ -430,6 +482,24 @@ options:
                   code:
                     description:
                       - Icmp service Code. Ignore this field if Code has to be ANY.
+                    type: int
+              icmp_v6_services:
+                description:
+                  - ICMPv6 Type Code List.
+                type: list
+                elements: dict
+                suboptions:
+                  is_all_allowed:
+                    description:
+                      - Set this field to true if both Type and Code is ANY.
+                    type: bool
+                  type:
+                    description:
+                      - ICMP service Type. Ignore this field if Type has to be ANY.
+                    type: int
+                  code:
+                    description:
+                      - ICMP service Code. Ignore this field if Code has to be ANY.
                     type: int
           multi_env_isolation_rule_spec:
             description:
@@ -816,8 +886,14 @@ def get_module_spec():
         src_subnet=dict(
             type="dict", options=ip_address_sub_spec, obj=mic_sdk.IPv4Address
         ),
+        src_ipv6_subnet=dict(
+            type="dict", options=ip_address_sub_spec, obj=mic_sdk.IPv6Address
+        ),
         dest_subnet=dict(
             type="dict", options=ip_address_sub_spec, obj=mic_sdk.IPv4Address
+        ),
+        dest_ipv6_subnet=dict(
+            type="dict", options=ip_address_sub_spec, obj=mic_sdk.IPv6Address
         ),
         src_address_group_references=dict(type="list", elements="str"),
         dest_address_group_references=dict(type="list", elements="str"),
@@ -840,6 +916,12 @@ def get_module_spec():
             elements="dict",
             options=icmp_service_spec,
             obj=mic_sdk.IcmpTypeCodeSpec,
+        ),
+        icmp_v6_services=dict(
+            type="list",
+            elements="dict",
+            options=icmp_service_spec,
+            obj=mic_sdk.IcmpV6TypeCodeSpec,
         ),
         network_function_chain_reference=dict(type="str"),
         network_function_reference=dict(type="str"),
@@ -869,6 +951,12 @@ def get_module_spec():
             elements="dict",
             options=icmp_service_spec,
             obj=mic_sdk.IcmpTypeCodeSpec,
+        ),
+        icmp_v6_services=dict(
+            type="list",
+            elements="dict",
+            options=icmp_service_spec,
+            obj=mic_sdk.IcmpV6TypeCodeSpec,
         ),
     )
 
@@ -917,6 +1005,7 @@ def get_module_spec():
 
     policy_rule = dict(
         ext_id=dict(type="str"),
+        name=dict(type="str"),
         description=dict(type="str"),
         type=dict(
             type="str",
@@ -929,6 +1018,7 @@ def get_module_spec():
                 "SHARED_SERVICE",
             ],
         ),
+        is_logging_enabled=dict(type="bool", default=False),
         spec=dict(
             type="dict",
             options=rule_spec,
