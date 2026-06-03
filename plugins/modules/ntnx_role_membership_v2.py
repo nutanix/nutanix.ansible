@@ -42,18 +42,18 @@ options:
         type: str
     identity_type:
         description:
-            - The type of identity to which the role is being assigned.
+            - Type of identity associated with the role membership.
         type: str
         choices:
             - USER
             - GROUP
     identity_ext_id:
         description:
-            - The external ID of the identity (user or user group) to which the role is assigned.
+            - External identifier of the identity (user or group) associated with the role membership.
         type: str
     scope_template_name:
         description:
-            - The name of the scope template to use for the role membership.
+            - Display name of the scope template for the authorization policy created via the role membership.
         type: str
     scope_template_name_values:
         description:
@@ -72,17 +72,14 @@ options:
                 type: raw
     idp_ext_id:
         description:
-            - The external ID of the identity provider.
+            - External Identifier of the identity provider associated with the role membership.
         type: str
     project_ext_id:
         description:
-            - The external ID of the project for scoped role membership.
+            - External identifier of the project associated with the role membership.
             - Defaults to C(00000000-0000-0000-0000-000000000000) if not provided.
         type: str
-    authorization_policy_ext_id:
-        description:
-            - The external ID of the authorization policy.
-        type: str
+        default: 00000000-0000-0000-0000-000000000000
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
@@ -100,12 +97,15 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     state: present
-    role_ext_id: "{{ role_ext_id }}"
+    role_ext_id: "93939393-9393-9393-9393-939393939393"
     identity_type: "USER"
-    identity_ext_id: "{{ user_ext_id }}"
+    identity_ext_id: "90909090-9090-9090-9090-909090909090"
     scope_template_name: "ProjectsScopeTemplate"
-    idp_ext_id: "{{ idp_ext_id }}"
-    project_ext_id: "{{ project_ext_id }}"
+    scope_template_name_values:
+      - name: "projectExtId"
+        value: "00000000-0000-0000-0000-000000000000"
+    idp_ext_id: "99999999-9999-9999-9999-999999999999"
+    project_ext_id: "00000000-0000-0000-0000-000000000000"
   register: result
 
 - name: Delete a role membership
@@ -122,11 +122,38 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
     description:
-        - The response from the Nutanix PC Role Membership v4 API.
-        - It will contain the role membership details after create.
+        - Response for creating or deleting role memberships.
+        - Role membership details if C(state) is C(present).
+        - Status dict with C(status)=C(SUCCEEDED) if C(state) is C(absent).
     returned: always
     type: dict
-    sample: "<Need to add sample>"
+    sample: {
+        "authorization_policy_ext_id": "a313661d-b127-5446-bd18-31366273637e",
+        "created_by": "00000000-0000-0000-0000-000000000000",
+        "created_time": "2026-06-02T08:32:09.680175+00:00",
+        "ext_id": "44844104-873b-5a14-a89c-ea6fb67d6055",
+        "identity_ext_id": "f6dbbd12-cecd-5a54-88bb-bc1abc7468d4",
+        "identity_type": "USER",
+        "identity_value": "f6dbbd12-cecd-5a54-88bb-bc1abc7468d4",
+        "idp_ext_id": "0572e531-4c2c-57ef-92a6-b33aabe61806",
+        "key_value_pairs": [
+            {
+                "key": "projectExtId",
+                "value": "00000000-0000-0000-0000-000000000000"
+            }
+        ],
+        "last_updated_time": "2026-06-02T08:32:09.680175+00:00",
+        "project_ext_id": "00000000-0000-0000-0000-000000000000",
+        "role_ext_id": "468c1fe7-d986-5788-af71-72c3031bc98d",
+        "scope_template_name": "ProjectsScopeTemplate",
+        "scope_template_name_values": [
+            {
+                "name": "projectExtId",
+                "value": "00000000-0000-0000-0000-000000000000"
+            }
+        ],
+        "tenant_id": "59d5de78-a964-5746-8c6e-677c4c7a79df"
+    }
 
 changed:
     description: This indicates whether the task resulted in any changes.
@@ -138,25 +165,13 @@ ext_id:
     description: The external ID of the role membership.
     returned: always
     type: str
-    sample: "00000000-0000-0000-0000-000000000000"
-
-task_ext_id:
-    description: The external ID of the task created for the operation.
-    returned: always
-    type: str
-    sample: null
-
-skipped:
-    description: Whether the operation was skipped due to no changes (idempotency).
-    returned: When module is idempotent
-    type: bool
-    sample: true
+    sample: "44844104-873b-5a14-a89c-ea6fb67d6055"
 
 msg:
     description: Additional message about the operation.
-    returned: When there is an error, module is idempotent or check mode (in delete operation)
+    returned: When there is an error or check mode (in delete operation)
     type: str
-    sample: "Nothing to change."
+    sample: "Role membership with ext_id:aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee will be deleted."
 
 error:
     description: This field holds information about errors that occurred during the task execution.
@@ -188,6 +203,7 @@ from ..module_utils.v4.utils import (  # noqa: E402
     strip_internal_attributes,
     validate_required_params,
 )
+
 
 SDK_IMP_ERROR = None
 try:
@@ -221,8 +237,7 @@ def get_module_spec():
             obj=iam_sdk.KVPair,
         ),
         idp_ext_id=dict(type="str"),
-        project_ext_id=dict(type="str"),
-        authorization_policy_ext_id=dict(type="str"),
+        project_ext_id=dict(type="str", default="00000000-0000-0000-0000-000000000000"),
     )
     return module_args
 
@@ -236,7 +251,7 @@ def create_role_membership(module, role_memberships, result):
         result: Result dict to populate
     """
     validate_required_params(
-        module, ["role_ext_id", "identity_type", "identity_ext_id", "idp_ext_id"]
+        module, ["role_ext_id", "identity_type", "identity_ext_id", "idp_ext_id", "scope_template_name"]
     )
 
     sg = SpecGenerator(module)
@@ -261,25 +276,16 @@ def create_role_membership(module, role_memberships, result):
             msg="Api Exception raised while creating role membership",
         )
 
-    result["ext_id"] = resp.data.ext_id
-    result["response"] = strip_internal_attributes(resp.data.to_dict())
+    resp_data = strip_internal_attributes(resp.data.to_dict())
+    ext_id = resp.data.ext_id
+    result["ext_id"] = ext_id
+    result["response"] = resp_data
+
+    if ext_id and module.params.get("wait"):
+        resp = get_role_membership(module, role_memberships, ext_id)
+        result["response"] = strip_internal_attributes(resp.to_dict())
+
     result["changed"] = True
-
-
-def check_role_membership_idempotency(old_spec, update_spec):
-    """
-    Check if the role membership spec has changed.
-    Args:
-        old_spec (dict): Current role membership spec
-        update_spec (dict): Updated role membership spec
-    Returns:
-        bool: True if specs are identical (no change needed)
-    """
-    strip_internal_attributes(old_spec)
-    strip_internal_attributes(update_spec)
-    if old_spec != update_spec:
-        return False
-    return True
 
 
 def delete_role_membership(module, role_memberships, result):
@@ -310,7 +316,7 @@ def delete_role_membership(module, role_memberships, result):
     kwargs = {"if_match": etag}
 
     try:
-        resp = role_memberships.delete_role_membership_by_id(extId=ext_id, **kwargs)
+        role_memberships.delete_role_membership_by_id(extId=ext_id, **kwargs)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -319,7 +325,7 @@ def delete_role_membership(module, role_memberships, result):
         )
 
     result["changed"] = True
-    result["response"] = strip_internal_attributes(resp.data.to_dict())
+    result["response"] = {"status": "SUCCEEDED"}
 
 
 def run_module():
@@ -330,7 +336,7 @@ def run_module():
             (
                 "state",
                 "present",
-                ("role_ext_id", "identity_type", "identity_ext_id", "idp_ext_id"),
+                ("role_ext_id", "identity_type", "identity_ext_id", "idp_ext_id", "scope_template_name"),
             ),
             ("state", "absent", ("ext_id",)),
         ],
@@ -346,7 +352,6 @@ def run_module():
         "changed": False,
         "response": None,
         "ext_id": None,
-        "task_ext_id": None,
     }
 
     role_memberships = get_role_membership_api_instance(module)

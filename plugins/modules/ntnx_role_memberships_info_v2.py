@@ -77,7 +77,33 @@ response:
         - List of multiple role memberships if external ID is not provided.
     returned: always
     type: dict
-    sample: "<Need to add sample>"
+    sample: {
+        "authorization_policy_ext_id": "a313661d-b127-5446-bd18-31366273637e",
+        "created_by": "00000000-0000-0000-0000-000000000000",
+        "created_time": "2026-06-02T08:32:09.680175+00:00",
+        "ext_id": "44844104-873b-5a14-a89c-ea6fb67d6055",
+        "identity_ext_id": "f6dbbd12-cecd-5a54-88bb-bc1abc7468d4",
+        "identity_type": "USER",
+        "identity_value": "f6dbbd12-cecd-5a54-88bb-bc1abc7468d4",
+        "idp_ext_id": "0572e531-4c2c-57ef-92a6-b33aabe61806",
+        "key_value_pairs": [
+            {
+                "key": "projectExtId",
+                "value": "00000000-0000-0000-0000-000000000000"
+            }
+        ],
+        "last_updated_time": "2026-06-02T08:32:09.680175+00:00",
+        "project_ext_id": "00000000-0000-0000-0000-000000000000",
+        "role_ext_id": "468c1fe7-d986-5788-af71-72c3031bc98d",
+        "scope_template_name": "ProjectsScopeTemplate",
+        "scope_template_name_values": [
+            {
+                "name": "projectExtId",
+                "value": "00000000-0000-0000-0000-000000000000"
+            }
+        ],
+        "tenant_id": "59d5de78-a964-5746-8c6e-677c4c7a79df"
+    }
 
 changed:
     description: This indicates whether the task resulted in any changes.
@@ -89,7 +115,7 @@ ext_id:
     description: The external ID of the role membership.
     returned: When single entity is fetched
     type: str
-    sample: "00000000-0000-0000-0000-000000000000"
+    sample: "44844104-873b-5a14-a89c-ea6fb67d6055"
 
 total_available_results:
     description: Total number of available results when listing role memberships.
