@@ -283,6 +283,104 @@ def _apply_proxy_from_env(config, module=None):
         )
 
 
+def handle_sharing_after_create(
+    share_fn,
+    module,
+    api_instance,
+    ext_id,
+    shared_with_projects,
+    share_all_fn=None,
+    is_shared_with_all=None,
+):
+    """
+    Handle project sharing immediately after resource creation.
+
+    Args:
+        share_fn (callable): Function to share with a single project.
+            Signature: share_fn(module, api_instance, ext_id, project_ext_id)
+        module: Ansible module object.
+        api_instance: SDK API instance for the resource.
+        ext_id (str): External ID of the newly created resource.
+        shared_with_projects (list | None): List of project ext_ids to share with.
+        share_all_fn (callable | None): Optional function to share with all projects.
+            Signature: share_all_fn(module, api_instance, ext_id)
+        is_shared_with_all (bool | None): Whether to share with all projects.
+    """
+    if share_all_fn and is_shared_with_all is True:
+        share_all_fn(module, api_instance, ext_id)
+    if shared_with_projects:
+        for project_ext_id in shared_with_projects:
+            share_fn(module, api_instance, ext_id, project_ext_id)
+
+
+def handle_sharing_update(
+    share_fn,
+    unshare_fn,
+    module,
+    api_instance,
+    ext_id,
+    current_spec,
+    shared_with_projects,
+    share_all_fn=None,
+    unshare_all_fn=None,
+    is_shared_with_all=None,
+):
+    """
+    Compute the diff between current and desired project sharing state,
+    then call the appropriate share/unshare functions.
+
+    Args:
+        share_fn (callable): Function to share with a single project.
+            Signature: share_fn(module, api_instance, ext_id, project_ext_id)
+        unshare_fn (callable): Function to unshare from a single project.
+            Signature: unshare_fn(module, api_instance, ext_id, project_ext_id)
+        module: Ansible module object.
+        api_instance: SDK API instance for the resource.
+        ext_id (str): External ID of the resource.
+        current_spec: Current SDK spec object of the resource.
+        shared_with_projects (list | None): Desired list of project ext_ids.
+        share_all_fn (callable | None): Optional function to share with all projects.
+            Signature: share_all_fn(module, api_instance, ext_id)
+        unshare_all_fn (callable | None): Optional function to unshare from all projects.
+            Signature: unshare_all_fn(module, api_instance, ext_id)
+        is_shared_with_all (bool | None): Desired state for sharing with all projects.
+
+    Returns:
+        bool: True if any sharing state was changed.
+    """
+    changed = False
+
+    if share_all_fn and unshare_all_fn and is_shared_with_all is not None:
+        current_shared_all = (
+            getattr(current_spec, "is_shared_with_all_projects", False)
+            or getattr(current_spec, "shared_with_all_projects", False)
+            or False
+        )
+        if is_shared_with_all and not current_shared_all:
+            share_all_fn(module, api_instance, ext_id)
+            changed = True
+        elif not is_shared_with_all and current_shared_all:
+            unshare_all_fn(module, api_instance, ext_id)
+            changed = True
+
+    if shared_with_projects is not None:
+        current_shared_projects = (
+            getattr(current_spec, "shared_with_projects", None) or []
+        )
+        desired_set = set(shared_with_projects)
+        current_set = set(current_shared_projects)
+
+        for pid in desired_set - current_set:
+            share_fn(module, api_instance, ext_id, pid)
+            changed = True
+
+        for pid in current_set - desired_set:
+            unshare_fn(module, api_instance, ext_id, pid)
+            changed = True
+
+    return changed
+
+
 def strip_read_only_fields(spec, fields=None):
     """
     Remove server-populated read-only fields from a v4 SDK spec object before

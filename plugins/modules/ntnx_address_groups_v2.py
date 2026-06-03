@@ -108,7 +108,7 @@ EXAMPLES = r"""
     state: present
     name: "{{ag1}}"
     description: test-ansible-group-1-desc
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "79298789-1234-1111-2222-6788222f17b8"
     ipv4_addresses:
       - value: "10.1.1.0"
         prefix_length: 24

@@ -307,6 +307,8 @@ from ..module_utils.v4.iam.api_client import (  # noqa: E402
 from ..module_utils.v4.iam.helpers import get_identity_provider  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    handle_sharing_after_create,
+    handle_sharing_update,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -451,58 +453,6 @@ def _unshare_from_project(module, identity_providers, ext_id, project_ext_id):
         )
 
 
-def _handle_sharing_after_create(
-    module, identity_providers, ext_id, is_shared_with_all, shared_with_projects
-):
-    if is_shared_with_all is True:
-        _share_with_all_projects(module, identity_providers, ext_id)
-
-    if shared_with_projects:
-        for project_ext_id in shared_with_projects:
-            _share_with_project(module, identity_providers, ext_id, project_ext_id)
-
-
-def _handle_sharing_update(
-    module,
-    identity_providers,
-    ext_id,
-    current_spec,
-    is_shared_with_all,
-    shared_with_projects,
-):
-    changed = False
-    current_shared_all = (
-        getattr(current_spec, "is_shared_with_all_projects", False)
-        or getattr(current_spec, "shared_with_all_projects", False)
-        or False
-    )
-
-    if is_shared_with_all is not None and current_shared_all != is_shared_with_all:
-        if is_shared_with_all:
-            _share_with_all_projects(module, identity_providers, ext_id)
-        else:
-            _unshare_from_all_projects(module, identity_providers, ext_id)
-        changed = True
-
-    if shared_with_projects is not None:
-        current_shared_projects = (
-            getattr(current_spec, "shared_with_projects", None) or []
-        )
-        desired_set = set(shared_with_projects)
-        current_set = set(current_shared_projects)
-        to_share = desired_set - current_set
-        to_unshare = current_set - desired_set
-
-        for pid in to_share:
-            _share_with_project(module, identity_providers, ext_id, pid)
-            changed = True
-
-        for pid in to_unshare:
-            _unshare_from_project(module, identity_providers, ext_id, pid)
-            changed = True
-
-    return changed
-
 
 def create_identity_provider(module, identity_providers, result):
     is_shared_with_all = module.params.pop("is_shared_with_all_projects", None)
@@ -534,12 +484,14 @@ def create_identity_provider(module, identity_providers, result):
 
     result["ext_id"] = resp.data.ext_id
     if is_shared_with_all is not None or shared_with_projects:
-        _handle_sharing_after_create(
-            module,
-            identity_providers,
-            result["ext_id"],
-            is_shared_with_all,
-            shared_with_projects,
+        handle_sharing_after_create(
+            share_fn=_share_with_project,
+            module=module,
+            api_instance=identity_providers,
+            ext_id=result["ext_id"],
+            shared_with_projects=shared_with_projects,
+            share_all_fn=_share_with_all_projects,
+            is_shared_with_all=is_shared_with_all,
         )
         current = get_identity_provider(
             module, identity_providers, ext_id=result["ext_id"]
@@ -580,13 +532,17 @@ def update_identity_provider(module, identity_providers, result):
     spec_changed = not check_identity_providers_idempotency(
         current_spec.to_dict(), update_spec.to_dict()
     )
-    sharing_changed = _handle_sharing_update(
-        module,
-        identity_providers,
-        ext_id,
-        current_spec,
-        is_shared_with_all,
-        shared_with_projects,
+    sharing_changed = handle_sharing_update(
+        share_fn=_share_with_project,
+        unshare_fn=_unshare_from_project,
+        module=module,
+        api_instance=identity_providers,
+        ext_id=ext_id,
+        current_spec=current_spec,
+        shared_with_projects=shared_with_projects,
+        share_all_fn=_share_with_all_projects,
+        unshare_all_fn=_unshare_from_all_projects,
+        is_shared_with_all=is_shared_with_all,
     )
 
     if not spec_changed and not sharing_changed:

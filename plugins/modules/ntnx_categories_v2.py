@@ -189,6 +189,8 @@ from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    handle_sharing_after_create,
+    handle_sharing_update,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -288,35 +290,6 @@ def _unshare_from_project(module, categories, ext_id, project_ext_id):
         )
 
 
-def _handle_sharing_after_create(module, categories, ext_id, shared_with_projects):
-    if shared_with_projects:
-        for project_ext_id in shared_with_projects:
-            _share_with_project(module, categories, ext_id, project_ext_id)
-
-
-def _handle_sharing_update(
-    module, categories, ext_id, current_spec, shared_with_projects
-):
-    changed = False
-    current_shared_projects = getattr(current_spec, "shared_with_projects", None) or []
-    if shared_with_projects is None:
-        return changed
-
-    desired_set = set(shared_with_projects)
-    current_set = set(current_shared_projects)
-    to_share = desired_set - current_set
-    to_unshare = current_set - desired_set
-
-    for pid in to_share:
-        _share_with_project(module, categories, ext_id, pid)
-        changed = True
-
-    for pid in to_unshare:
-        _unshare_from_project(module, categories, ext_id, pid)
-        changed = True
-
-    return changed
-
 
 def create_category(module, result):
     categories = get_category_api_instance(module)
@@ -346,8 +319,12 @@ def create_category(module, result):
 
     result["ext_id"] = resp.data.ext_id
     if shared_with_projects:
-        _handle_sharing_after_create(
-            module, categories, result["ext_id"], shared_with_projects
+        handle_sharing_after_create(
+            share_fn=_share_with_project,
+            module=module,
+            api_instance=categories,
+            ext_id=result["ext_id"],
+            shared_with_projects=shared_with_projects,
         )
         current = get_category(module, ext_id=result["ext_id"])
         result["response"] = strip_internal_attributes(current.to_dict())
@@ -388,8 +365,14 @@ def update_category(module, result):
     spec_changed = not check_categories_idempotency(
         current_spec.to_dict(), update_spec.to_dict()
     )
-    sharing_changed = _handle_sharing_update(
-        module, categories, ext_id, current_spec, shared_with_projects
+    sharing_changed = handle_sharing_update(
+        share_fn=_share_with_project,
+        unshare_fn=_unshare_from_project,
+        module=module,
+        api_instance=categories,
+        ext_id=ext_id,
+        current_spec=current_spec,
+        shared_with_projects=shared_with_projects,
     )
 
     if not spec_changed and not sharing_changed:
