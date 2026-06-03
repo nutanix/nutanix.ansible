@@ -204,7 +204,6 @@ from ..module_utils.v4.utils import (  # noqa: E402
     validate_required_params,
 )
 
-
 SDK_IMP_ERROR = None
 try:
     import ntnx_iam_py_client as iam_sdk  # noqa: E402
@@ -251,7 +250,14 @@ def create_role_membership(module, role_memberships, result):
         result: Result dict to populate
     """
     validate_required_params(
-        module, ["role_ext_id", "identity_type", "identity_ext_id", "idp_ext_id", "scope_template_name"]
+        module,
+        [
+            "role_ext_id",
+            "identity_type",
+            "identity_ext_id",
+            "idp_ext_id",
+            "scope_template_name",
+        ],
     )
 
     sg = SpecGenerator(module)
@@ -336,7 +342,13 @@ def run_module():
             (
                 "state",
                 "present",
-                ("role_ext_id", "identity_type", "identity_ext_id", "idp_ext_id", "scope_template_name"),
+                (
+                    "role_ext_id",
+                    "identity_type",
+                    "identity_ext_id",
+                    "idp_ext_id",
+                    "scope_template_name",
+                ),
             ),
             ("state", "absent", ("ext_id",)),
         ],
