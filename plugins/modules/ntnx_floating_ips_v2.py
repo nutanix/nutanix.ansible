@@ -24,15 +24,12 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create a floating IP) -
-      Operation Name: Create Floating Ip -
       Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
     - >-
       B(Delete the floating IP corresponding to the extId) -
-      Operation Name: Delete Floating Ip -
       Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
     - >-
       B(Update the floating IP for this extId) -
-      Operation Name: Update Floating Ip -
       Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:

@@ -22,17 +22,14 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create a recovery point) -
-      Operation Name: Create Recovery Point -
       Required Roles: Backup Admin, CSI System, Disaster Recovery Admin, Kubernetes Data Services System, NCM Connector, Prism Admin, Project Manager,
       Super Admin, Self-Service Admin (deprecated)
     - >-
       B(Delete a recovery point) -
-      Operation Name: Delete Recovery Point -
       Required Roles: Backup Admin, CSI System, Disaster Recovery Admin, Kubernetes Data Services System, NCM Connector, Prism Admin, Project Manager,
       Super Admin, Self-Service Admin (deprecated)
     - >-
       B(Set the expiration time of the recovery point) -
-      Operation Name: Set Expiration Time Recovery Point -
       Required Roles: Backup Admin, CSI System, Disaster Recovery Admin, Kubernetes Data Services System, NCM Connector, Prism Admin, Project Manager,
       Super Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=dataprotection)"

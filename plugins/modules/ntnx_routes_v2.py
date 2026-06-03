@@ -23,15 +23,12 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create a route for the specified route table) -
-      Operation Name: Create Route Table Route -
       Required Roles: Prism Admin, Super Admin, VPC Admin
     - >-
       B(Delete the specified route of the specified route table) -
-      Operation Name: Delete Route Table Route -
       Required Roles: Prism Admin, Super Admin, VPC Admin
     - >-
       B(Update the specified route of the specified route table) -
-      Operation Name: Update Route Table Route -
       Required Roles: Prism Admin, Super Admin, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:

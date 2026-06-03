@@ -22,15 +22,12 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create a VPC) -
-      Operation Name: Create VPC -
       Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
     - >-
       B(Delete the specified VPC) -
-      Operation Name: Delete VPC -
       Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
     - >-
       B(Update the specified VPC) -
-      Operation Name: Update VPC -
       Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:

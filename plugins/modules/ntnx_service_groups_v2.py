@@ -20,15 +20,12 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create a Service Group) -
-      Operation Name: Create Service Group -
       Required Roles: Flow Admin, Prism Admin, Project Manager, Super Admin
     - >-
       B(Delete a Service Group by ExtID) -
-      Operation Name: Delete Service Group -
       Required Roles: Flow Admin, Prism Admin, Project Manager, Super Admin
     - >-
       B(Update a Service Group by ExtID) -
-      Operation Name: Update Service Group -
       Required Roles: Flow Admin, Prism Admin, Project Manager, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg)"
 options:

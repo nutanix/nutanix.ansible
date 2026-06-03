@@ -20,7 +20,6 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Deploy VMs from a template) -
-      Operation Name: Deploy VM Templates -
       Required Roles: Prism Admin, Super Admin, Virtual Machine Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
@@ -391,7 +390,13 @@ options:
                                                             type: dict
                                                             suboptions:
                                                                 value:
-                                                                    description: XML content for unattend.xml
+                                                                    description:
+                                                                        - XML content for unattend.xml.
+                                                                        - The API requires this value to be base64 encoded.
+                                                                        - You can either pass an already-encoded string, or pass the raw
+                                                                          unattend.xml content and let Ansible encode it using the
+                                                                          C(b64encode) filter, e.g.
+                                                                          C("{{ unattend_xml_content | b64encode }}").
                                                                     type: str
                                                         custom_key_values:
                                                             description: Custom key-value pairs
@@ -434,7 +439,12 @@ options:
                                                             suboptions:
                                                                 value:
                                                                     description:
-                                                                        - base64 encoded cloud init script.
+                                                                        - The cloud-init user-data script.
+                                                                        - The API requires this value to be base64 encoded.
+                                                                        - You can either pass an already-encoded string, or pass the raw
+                                                                          cloud-init script and let Ansible encode it using the
+                                                                          C(b64encode) filter, e.g.
+                                                                          C("{{ cloud_init_content | b64encode }}").
                                                                     type: str
                                                                     required: True
                                                         custom_key_values:

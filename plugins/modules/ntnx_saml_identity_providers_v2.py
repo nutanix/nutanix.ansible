@@ -21,15 +21,12 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create SAML identity provider) -
-      Operation Name: Create Saml Identity Provider -
       Required Roles: Nutanix Central Admin, Prism Admin, Super Admin
     - >-
       B(Delete SAML identity provider) -
-      Operation Name: Delete Saml Identity Provider -
       Required Roles: Nutanix Central Admin, Prism Admin, Super Admin
     - >-
       B(Update SAML identity provider) -
-      Operation Name: Update Saml Identity Provider -
       Required Roles: Nutanix Central Admin, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam)"
 options:
@@ -143,6 +140,23 @@ options:
     required: false
     type: list
     elements: str
+  request_signing_credential:
+    description:
+      - Credential containing the private key and public certificate used for signing and verifying SAML Authentication and Single Logout requests."
+      - Required when C(is_signed_authn_req_enabled) is set to C(true).
+    required: false
+    type: dict
+    suboptions:
+        public_certificate:
+          description:
+            - Public certificate used by an identity provider to verify the signature of the SAML Authentication and Single Logout Requests.
+          required: false
+          type: str
+        private_key:
+          description:
+            - PEM-encoded RSA private key used to sign the SAML Authentication and Single Logout Requests.
+          required: false
+          type: str
   state:
     description:
         - Specify state
@@ -179,6 +193,9 @@ EXAMPLES = r"""
     is_signed_authn_req_enabled: true
     project_ext_id: "12345678-1234-1234-1234-123456789012"
     is_shared_with_all_projects: true
+    request_signing_credential:
+      public_certificate: "{{ lookup('file', '/path/to/sp.crt') }}"
+      private_key: "{{ lookup('file', '/path/to/sp.key') }}"
     state: present
   register: result
   ignore_errors: true
@@ -330,6 +347,11 @@ def get_module_spec():
         ),
     )
 
+    request_signing_credential_spec = dict(
+        public_certificate=dict(type="str", no_log=False),
+        private_key=dict(type="str", no_log=True),
+    )
+
     module_args = dict(
         ext_id=dict(type="str"),
         project_ext_id=dict(type="str"),
@@ -348,6 +370,11 @@ def get_module_spec():
         is_signed_authn_req_enabled=dict(type="bool"),
         is_shared_with_all_projects=dict(type="bool"),
         shared_with_projects=dict(type="list", elements="str"),
+        request_signing_credential=dict(
+            type="dict",
+            options=request_signing_credential_spec,
+            obj=iam_sdk.SamlSigningCredential,
+        ),
     )
     return module_args
 

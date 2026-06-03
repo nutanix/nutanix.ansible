@@ -21,7 +21,6 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Change the LCM configuration.) -
-      Operation Name: Update Config -
       Required Roles: Cluster Admin, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle)"
 options:
