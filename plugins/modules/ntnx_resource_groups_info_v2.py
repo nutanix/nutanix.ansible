@@ -17,6 +17,32 @@ description:
     - Fetch information about resource groups from Nutanix Prism Central.
     - Retrieve a single resource group by external ID or list all resource groups with optional filters.
     - This module uses PC v4 APIs based SDKs.
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(List resource groups) -
+      Required Roles: Backup Admin, Cluster Admin, Cluster Viewer, Consumer, CSI System, Developer,
+      Disaster Recovery Admin, Disaster Recovery Viewer, File Server Security Admin,
+      File Server Share Admin, Files Admin, Files Viewer, Flow Admin, Flow Policy Author, Flow Viewer,
+      Internal Super Admin, Kubernetes Data Services System, Kubernetes Infrastructure Provision,
+      License Admin, License Viewer, LocalAccountManager Admin, LocalAccountManager Viewer,
+      Monitoring Admin, Monitoring Viewer, NCM Connector, Network Infra Admin, Objects Admin, Operator,
+      Prism Admin, Prism Viewer, Project Admin, Project Manager, Security Dashboard Admin,
+      Security Dashboard Viewer, Storage Admin, Storage Viewer, Super Admin, Tenant Admin,
+      Tenant Consumer, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin
+    - >-
+      B(Get resource group by external ID) -
+      Required Roles: Backup Admin, Cluster Admin, Cluster Viewer, Consumer, CSI System, Developer,
+      Disaster Recovery Admin, Disaster Recovery Viewer, File Server Security Admin,
+      File Server Share Admin, Files Admin, Files Viewer, Flow Admin, Flow Policy Author, Flow Viewer,
+      Internal Super Admin, Kubernetes Data Services System, Kubernetes Infrastructure Provision,
+      License Admin, License Viewer, LocalAccountManager Admin, LocalAccountManager Viewer,
+      Monitoring Admin, Monitoring Viewer, NCM Connector, Network Infra Admin, Objects Admin, Operator,
+      Prism Admin, Prism Viewer, Project Admin, Project Manager, Security Dashboard Admin,
+      Security Dashboard Viewer, Storage Admin, Storage Viewer, Super Admin, Tenant Admin,
+      Tenant Consumer, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=multidomain)"
 options:
     ext_id:
         description:
@@ -47,7 +73,7 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    ext_id: "{{ resource_group_ext_id }}"
+    ext_id: "384280b2-8f08-414a-b7b6-68a1b522001a"
   register: result
 
 - name: List resource groups with filter
@@ -74,10 +100,48 @@ response:
     description:
         - The response from the Nutanix PC Resource Groups info v4 API.
         - It can be a single resource group if external ID is provided.
-        - List of multiple resource groups if external ID is not provided.
+        - List of multiple resource groups with optional filters if external ID is not provided.
     returned: always
     type: dict
-    sample: "<Need to add sample>"
+    sample: [
+            {
+                "capabilities": null,
+                "create_time": "2026-05-19T14:45:36.847543+00:00",
+                "created_by": "00000000-0000-0000-0000-000000000000",
+                "ext_id": "c8275149-4468-47e9-5adc-9d441157c94a",
+                "last_update_time": "2026-05-19T14:45:36.847543+00:00",
+                "last_updated_by": "00000000-0000-0000-0000-000000000000",
+                "links": null,
+                "name": "my-resource-group-1",
+                "placement_targets": null,
+                "project_ext_id": "532477b8-53eb-5ec4-8c1a-a458e70bc7e9",
+                "tenant_id": null,
+            },
+            {
+                "capabilities": null,
+                "create_time": "2026-05-19T14:45:40.129823+00:00",
+                "created_by": "00000000-0000-0000-0000-000000000000",
+                "ext_id": "14669a45-1ee4-4b62-619e-2401c9a35621",
+                "last_update_time": "2026-05-19T14:45:40.129823+00:00",
+                "last_updated_by": "00000000-0000-0000-0000-000000000000",
+                "links": null,
+                "name": "my-resource-group-2",
+                "placement_targets": [
+                    {
+                        "capabilities": null,
+                        "cluster_ext_id": "000651ae-e050-d250-2d7a-5254001a3d38",
+                        "storage_containers": [
+                            {
+                                "capabilities": null,
+                                "ext_id": "5d4f7039-b1d4-437c-9b0e-c34a87e08583",
+                            },
+                        ],
+                    },
+                ],
+                "project_ext_id": "4b53a755-0e1e-593c-9798-d179db2df309",
+                "tenant_id": null,
+            },
+        ]
 
 changed:
     description: This indicates whether the task resulted in any changes.
@@ -101,7 +165,7 @@ msg:
     description: Additional message about the operation.
     returned: When there is an error
     type: str
-
+    sample: "Api Exception raised while fetching resource groups info"
 error:
     description: This field holds information about errors that occurred during the task execution.
     returned: When an error occurs
@@ -114,10 +178,7 @@ failed:
     sample: true
 """
 
-import traceback  # noqa: E402
 import warnings  # noqa: E402
-
-from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
@@ -130,15 +191,6 @@ from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
 )
-
-SDK_IMP_ERROR = None
-try:
-    import ntnx_multidomain_py_client as multidomain_sdk  # noqa: E402
-except ImportError:
-
-    from ..module_utils.v4.sdk_mock import mock_sdk as multidomain_sdk  # noqa: E402
-
-    SDK_IMP_ERROR = traceback.format_exc()
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
@@ -204,11 +256,6 @@ def run_module():
             ("ext_id", "filter"),
         ],
     )
-    if SDK_IMP_ERROR:
-        module.fail_json(
-            msg=missing_required_lib(multidomain_sdk.__name__),
-            exception=SDK_IMP_ERROR,
-        )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "response": None}
 

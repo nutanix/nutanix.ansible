@@ -16,6 +16,23 @@ version_added: 2.0.0
 description:
   - Create, Update, Delete Routing Policies
   - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create a Routing Policy) -
+      Operation Name: Create Routing Policy -
+      Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
+    - >-
+      B(Delete the Routing Policy corresponding to the extId) -
+      Operation Name: Delete Routing Policy -
+      Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
+    - >-
+      B(Update the Routing Policy corresponding to the extId) -
+      Operation Name: Update Routing Policy -
+      Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   state:
     description:

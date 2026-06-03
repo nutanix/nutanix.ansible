@@ -15,6 +15,19 @@ short_description: Module to associate or disassociate categories with a volume 
 version_added: 2.1.0
 description:
   - This module can be used to associate or disassociate categories with a volume group in Nutanix Prism Central.
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Associate category to a Volume Group) -
+      Operation Name: Associate Volume Group Categories -
+      Required Roles: CSI System, Kubernetes Data Services System, Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
+    - >-
+      B(Disassociate category from a Volume Group) -
+      Operation Name: Disassociate Volume Group Categories -
+      Required Roles: CSI System, Kubernetes Data Services System, Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes)"
 options:
     state:
         description:

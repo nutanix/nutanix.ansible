@@ -15,6 +15,23 @@ version_added: "2.0.0"
 description:
   - Create, Update, Delete SAML identity providers in Nutanix PC
   - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create SAML identity provider) -
+      Operation Name: Create Saml Identity Provider -
+      Required Roles: Nutanix Central Admin, Prism Admin, Super Admin
+    - >-
+      B(Delete SAML identity provider) -
+      Operation Name: Delete Saml Identity Provider -
+      Required Roles: Nutanix Central Admin, Prism Admin, Super Admin
+    - >-
+      B(Update SAML identity provider) -
+      Operation Name: Update Saml Identity Provider -
+      Required Roles: Nutanix Central Admin, Prism Admin, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam)"
 options:
   ext_id:
     description:

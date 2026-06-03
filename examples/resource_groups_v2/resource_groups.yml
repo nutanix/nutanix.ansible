@@ -1,152 +1,87 @@
 ---
-- name: Resource Groups v2 - Complete Operations Example
+# Summary:
+# This playbook will do:
+# 1. Create a resource group with placement targets
+# 2. Update the resource group name
+# 3. Fetch a resource group using external ID
+# 4. List all resource groups
+# 5. List resource groups with name filter
+# 6. List resource groups with limit
+# 7. Delete the resource group
+
+- name: Resource Groups playbook
   hosts: localhost
   gather_facts: false
   module_defaults:
     group/nutanix.ncp.ntnx:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: "{{ validate_certs }}"
-  vars:
-    cluster_ext_id: "00064c46-8fef-6895-185b-ac1f6b6f97e2"
-    project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
   tasks:
-    ############################################
-    # Setup - Create a project first
-    ############################################
-    - name: Create a project for resource group tests
-      nutanix.ncp.ntnx_project_v2:
-        state: present
-        name: "example-rg-project"
-        project_id: "example-rg-project-id"
-      register: project_result
-
-    - name: Save project ext_id
+    - name: Setting Variables
       ansible.builtin.set_fact:
-        project_ext_id: "{{ project_result.ext_id }}"
+        rg_name: "ansible-example-resource-group"
+        project_ext_id: "11223344-1234-1111-2222-6788222f17b8"
+        cluster_ext_id: "00064c46-8fef-6895-185b-ac1f6b6f97e2"
+        rg_ext_id: "aabb1122-3344-5566-7788-99aabbccddee"
 
-    - name: Display project created
-      ansible.builtin.debug:
-        msg: "Project created with ext_id: {{ project_ext_id }}"
-
-    ############################################
-    # Create resource group with placement targets
-    ############################################
+    ###########################################################
+    # CREATE OPERATIONS
+    ###########################################################
     - name: Create a resource group with placement targets
       nutanix.ncp.ntnx_resource_group_v2:
         state: present
-        name: "example-resource-group"
+        name: "{{ rg_name }}-full"
         project_ext_id: "{{ project_ext_id }}"
         placement_targets:
           - cluster_ext_id: "{{ cluster_ext_id }}"
-      register: create_result
+      register: result
+      ignore_errors: true
 
-    - name: Display created resource group
-      ansible.builtin.debug:
-        var: create_result
-
-    - name: Save resource group ext_id
-      ansible.builtin.set_fact:
-        rg_ext_id: "{{ create_result.ext_id }}"
-
-    ############################################
-    # Update resource group name
-    ############################################
+    ###########################################################
+    # UPDATE OPERATIONS
+    ###########################################################
     - name: Update resource group name
       nutanix.ncp.ntnx_resource_group_v2:
         state: present
         ext_id: "{{ rg_ext_id }}"
-        name: "example-resource-group-updated"
-      register: update_result
+        name: "{{ rg_name }}-updated"
+      register: result
+      ignore_errors: true
 
-    - name: Display updated resource group
-      ansible.builtin.debug:
-        var: update_result
-
-    ############################################
-    # Idempotency check
-    ############################################
-    - name: Update resource group with no changes (idempotency)
-      nutanix.ncp.ntnx_resource_group_v2:
-        state: present
-        ext_id: "{{ rg_ext_id }}"
-        name: "example-resource-group-updated"
-      register: idempotent_result
-
-    - name: Display idempotency result
-      ansible.builtin.debug:
-        var: idempotent_result
-
-    ############################################
-    # Info - get single resource group
-    ############################################
-    - name: Get resource group by ext_id
+    ###########################################################
+    # INFO OPERATIONS
+    ###########################################################
+    - name: Fetch resource group using external ID
       nutanix.ncp.ntnx_resource_groups_info_v2:
         ext_id: "{{ rg_ext_id }}"
-      register: get_result
+      register: result
+      ignore_errors: true
 
-    - name: Display resource group details
-      ansible.builtin.debug:
-        var: get_result
-
-    ############################################
-    # Info - list all resource groups
-    ############################################
     - name: List all resource groups
       nutanix.ncp.ntnx_resource_groups_info_v2:
-      register: list_result
+      register: result
+      ignore_errors: true
 
-    - name: Display total resource groups
-      ansible.builtin.debug:
-        msg: "Total resource groups: {{ list_result.total_available_results }}"
-
-    ############################################
-    # Info - list with filter
-    ############################################
-    - name: List resource groups with filter
+    - name: List resource groups with name filter
       nutanix.ncp.ntnx_resource_groups_info_v2:
-        filter: "name eq 'example-resource-group-updated'"
-      register: filter_result
+        filter: "name eq '{{ rg_name }}-updated'"
+      register: result
+      ignore_errors: true
 
-    - name: Display filtered resource groups
-      ansible.builtin.debug:
-        var: filter_result.response
-
-    ############################################
-    # Info - list with limit
-    ############################################
     - name: List resource groups with limit
       nutanix.ncp.ntnx_resource_groups_info_v2:
         limit: 1
-      register: limit_result
+      register: result
+      ignore_errors: true
 
-    - name: Display limited results
-      ansible.builtin.debug:
-        msg: "Got {{ limit_result.response | length }} resource groups"
-
-    ############################################
-    # Delete resource group
-    ############################################
+    ###########################################################
+    # DELETE OPERATIONS
+    ###########################################################
     - name: Delete resource group
       nutanix.ncp.ntnx_resource_group_v2:
         state: absent
         ext_id: "{{ rg_ext_id }}"
-      register: delete_result
-
-    - name: Display deletion result
-      ansible.builtin.debug:
-        var: delete_result
-
-    ############################################
-    # Cleanup - delete project
-    ############################################
-    - name: Delete test project
-      nutanix.ncp.ntnx_project_v2:
-        state: absent
-        ext_id: "{{ project_ext_id }}"
-      register: cleanup_result
-
-    - name: Resource Groups v2 example playbook completed
-      ansible.builtin.debug:
-        msg: "All Resource Groups v2 example operations completed successfully!"
+      register: result
+      ignore_errors: true

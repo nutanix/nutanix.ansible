@@ -16,6 +16,23 @@ version_added: 2.3.0
 description:
     - Create, Update and Delete Ova from VM, url or object lite
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create OVA) -
+      Operation Name: Create Ova -
+      Required Roles: Prism Admin, Super Admin, Virtual Machine Admin
+    - >-
+      B(Delete an OVA) -
+      Operation Name: Delete Ova -
+      Required Roles: Prism Admin, Super Admin, Virtual Machine Admin
+    - >-
+      B(Update an OVA) -
+      Operation Name: Update Ova -
+      Required Roles: Prism Admin, Super Admin, Virtual Machine Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     state:
         description:

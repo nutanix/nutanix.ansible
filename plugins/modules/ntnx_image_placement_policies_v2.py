@@ -125,6 +125,30 @@ notes:
     - This module follows two steps update process. Configuration update and enforcement state update.
     - If enforcement state is changed, then task_ext_id will have the task id of enforcement state update.
     - Else it will be create, update config or delete task id as per C(state).
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create an image placement policy) -
+      Operation Name: Create Image Placement Policy -
+      Required Roles: Consumer, Developer, Prism Admin, Project Manager, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
+    - >-
+      B(Delete an image placement policy) -
+      Operation Name: Delete Image Placement Policy -
+      Required Roles: Prism Admin, Project Manager, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
+    - >-
+      B(Resume an image placement policy) -
+      Operation Name: Resume Image Placement Policy -
+      Required Roles: Prism Admin, Project Manager, Super Admin, Self-Service Admin (deprecated)
+    - >-
+      B(Suspend an image placement policy) -
+      Operation Name: Suspend Image Placement Policy -
+      Required Roles: Prism Admin, Project Manager, Super Admin, Self-Service Admin (deprecated)
+    - >-
+      B(Update an image placement policy) -
+      Operation Name: Update Image Placement Policy -
+      Required Roles: Prism Admin, Project Manager, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 """
 
 EXAMPLES = r"""

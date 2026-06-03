@@ -28,4 +28,7 @@ class BaseModuleV4(BaseModule):
         if "argument_spec" not in self.__dict__:
             self.argument_spec = deepcopy(BaseModule.argument_spec)
         self.argument_spec.update(deepcopy(self.proxy_argument_spec))
+        self.argument_spec.update(
+            read_timeout=dict(type="int", default=30000),
+        )
         super(BaseModuleV4, self).__init__(**kwargs)

@@ -15,6 +15,14 @@ description:
     - The restore domain manager is a task-driven operation to restore a domain manager
         from a cluster or object store backup location based on the selected restore point.
     - Please provide Prism Element IP address here in C(nutanix_host)
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Restore domain manager) -
+      Operation Name: Restore Domain Manager Restore Point -
+      Required Roles: Domain Manager Admin, Prism Admin, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:
     state:
         description:

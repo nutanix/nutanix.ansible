@@ -255,50 +255,52 @@
     success_msg: user group info obtained successfully
 
 ###############################################################################
-# these tests are commented because the filter is not working as expected: https://jira.nutanix.com/browse/ENG-673830
-# - name: Fetch only LDAP user groups
-#   ntnx_user_groups_info_v2:
-#     filter: "groupType eq Schema.Enums.GroupType'LDAP'"
-#   register: result
-#   ignore_errors: True
 
-# - ansible.builtin.set_fact:
-#     group_type: "{{ result.response | map(attribute='group_type') | list | unique }}"
+- name: Fetch only LDAP user groups
+  nutanix.ncp.ntnx_user_groups_info_v2:
+    filter: "groupType eq Schema.Enums.GroupType'LDAP'"
+  register: result
+  ignore_errors: true
 
-# - name: Fetch only LDAP user groups Status
-#   ansible.builtin.assert:
-#     that:
-#       - result.response is defined
-#       - result.changed == false
-#       - result.failed == false
-#       - result.response | length > 0        # response is null
-#       - group_type | length == 1
-#       - group_type[0] == "LDAP"
-#     fail_msg: "Unable to fetch only LDAP user groups"
-#     success_msg: "LDAP user groups fetched successfully"
+- name: Set group type
+  ansible.builtin.set_fact:
+    group_type: "{{ result.response | map(attribute='group_type') | list | unique }}"
 
-# ###############################################################################
+- name: Fetch only LDAP user groups Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response | length > 0
+      - group_type | length == 1
+      - group_type[0] == "LDAP"
+    fail_msg: "Unable to fetch only LDAP user groups"
+    success_msg: "LDAP user groups fetched successfully"
 
-# - name: Fetch only SAML user groups
-#   ntnx_user_groups_info_v2:
-#     filter: "groupType eq Schema.Enums.GroupType'SAML'"
-#   register: result
-#   ignore_errors: True
+###############################################################################
 
-# - ansible.builtin.set_fact:
-#     group_type: "{{ result.response | map(attribute='group_type') | list | unique }}"
+- name: Fetch only SAML user groups
+  nutanix.ncp.ntnx_user_groups_info_v2:
+    filter: "groupType eq Schema.Enums.GroupType'SAML'"
+  register: result
+  ignore_errors: true
 
-# - name: Fetch only SAML user groups Status
-#   ansible.builtin.assert:
-#     that:
-#       - result.response is defined
-#       - result.changed == false
-#       - result.failed == false
-#       - result.response | length > 0    # response is null
-#       - group_type | length == 1
-#       - group_type[0] == "SAML"
-#     fail_msg: "Unable to fetch only SAML user groups"
-#     success_msg: "SAML user groups fetched successfully"
+- name: Set group type
+  ansible.builtin.set_fact:
+    group_type: "{{ result.response | map(attribute='group_type') | list | unique }}"
+
+- name: Fetch only SAML user groups Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response | length > 0
+      - group_type | length == 1
+      - group_type[0] == "SAML"
+    fail_msg: "Unable to fetch only SAML user groups"
+    success_msg: "SAML user groups fetched successfully"
 
 ###############################################################################
 
