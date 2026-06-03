@@ -13,8 +13,8 @@
 
     - name: Set category key and value
       ansible.builtin.set_fact:
-        category_key: "{{ random_name }}ansible-agkey"
-        category_value: "{{ random_name }}ansible-agval"
+        category_key: "{{ random_name }}ansible_agkey"
+        category_value: "{{ random_name }}ansible_agval"
 
     - name: Create category
       nutanix.ncp.ntnx_categories_v2:
