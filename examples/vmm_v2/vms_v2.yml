@@ -31,14 +31,8 @@
           uuid: "1a2c7de1-7c12-4d04-a79c-703a2f8bff50"
         network:
           dhcp:
-<<<<<<< HEAD
             uuid: "11254788-3333-2321-0000-000000022f54"
         project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
-        category_ext_id_1: "00000000-0000-0000-0000-000000000001"
-        category_ext_id_2: "00000000-0000-0000-0000-000000000002"
-        xml_file_content: <xml_file_content>
-=======
-            uuid: "ac70d801-0e5d-450f-bb76-adf3234e0530"
         category_ext_id_1: "66f4d0aa-4e77-5261-94c6-4dc19a857049"
         category_ext_id_2: "594bb16c-3498-5706-bd9d-301dea6a6bcb"
         xml_file_content: "{{ lookup('ansible.builtin.file', 'unattend_xml_content.xml') }}"
@@ -46,7 +40,6 @@
           #cloud-config
           disable_root: false
           ssh_pwauth:   true
->>>>>>> release/2.6.0
 
     - name: Create VM with minimum requirements
       nutanix.ncp.ntnx_vms_v2:
