@@ -13,7 +13,7 @@ keyed_groups:
   - key: cluster_name
     prefix: cluster
     separator: "_"
-  - key: categories_map.Environment
+  - key: (categories_map | default({})).values() | list | first | default('')
     prefix: env
     separator: "_"
     default_value: unassigned

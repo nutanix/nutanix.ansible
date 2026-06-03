@@ -7,28 +7,37 @@
     # Setup: Create category, VM, and associate them
     # =========================================================================
 
-    - name: Create category Environment:Testing
+    - name: Generate random category name
+      ansible.builtin.set_fact:
+        random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+    - name: Set category key and value
+      ansible.builtin.set_fact:
+        category_key: "{{ random_name }}ansible-agkey"
+        category_value: "{{ random_name }}ansible-agval"
+
+    - name: Create category
       nutanix.ncp.ntnx_categories_v2:
-        key: "Environment"
-        value: "Testing"
+        key: "{{ category_key }}"
+        value: "{{ category_value }}"
       register: category_result
       ignore_errors: true
 
-    - name: Assert category created
+    - name: Create category status
       ansible.builtin.assert:
         that:
+          - category_result.changed == true
           - category_result.failed == false
           - category_result.response is defined
-          - category_result.response.key == "Environment"
-          - category_result.response.value == "Testing"
+          - category_result.response.key == category_key
+          - category_result.response.value == category_value
           - category_result.response.ext_id is defined
-        fail_msg: "Failed to create category Environment:Testing"
-        success_msg: "Category Environment:Testing created"
+        fail_msg: "Failed to create category {{ category_key }}:{{ category_value }}"
+        success_msg: "Category {{ category_key }}:{{ category_value }} created"
 
     - name: Set category ext_id
       ansible.builtin.set_fact:
         category_ext_id: "{{ category_result.response.ext_id }}"
-        category_was_created: "{{ category_result.changed }}"
 
     - name: Create test VM
       nutanix.ncp.ntnx_vms_v2:
@@ -36,7 +45,7 @@
       register: vm_result
       ignore_errors: true
 
-    - name: Assert VM created
+    - name: Create test VM status
       ansible.builtin.assert:
         that:
           - vm_result.changed == true
@@ -58,27 +67,31 @@
       register: assoc_result
       ignore_errors: true
 
-    - name: Assert category associated
+    - name: Associate category with VM status
       ansible.builtin.assert:
         that:
+          - assoc_result.changed == true
           - assoc_result.failed == false
+          - assoc_result.response is defined
+          - assoc_result.task_ext_id is defined
+          - assoc_result.vm_ext_id == vm_ext_id
         fail_msg: "Failed to associate category with VM"
         success_msg: "Category associated with VM"
 
     - name: Run tests and cleanup
       block:
         # =====================================================================
-        # Test 1: Verify categories_map and categories in host vars
+        # Tests: Verify inventory output
         # =====================================================================
 
-        - name: "Test 1: Run inventory"
+        - name: Run inventory
           ansible.builtin.command:
             cmd: ansible-inventory --inventory nutanix.yml --list
             chdir: "{{ playbook_dir }}"
           register: inv_result
           changed_when: false
 
-        - name: "Test 1: Parse inventory output"
+        - name: Parse inventory output
           ansible.builtin.set_fact:
             inv_data: "{{ inv_result.stdout | from_json }}"
 
@@ -91,23 +104,23 @@
               Got hostvars keys: {{ inv_data._meta.hostvars.keys() | list }}
             success_msg: "Test VM found in inventory"
 
-        - name: "Test 1: Set host vars shortcut"
+        - name: Set host vars shortcut
           ansible.builtin.set_fact:
             vm_hostvars: "{{ inv_data._meta.hostvars['categories_test_vm_v2'] }}"
 
-        - name: "Test 1: Assert categories_map contains Environment:Testing"
+        - name: "Test 2: Assert categories_map contains the category key and value"
           ansible.builtin.assert:
             that:
               - vm_hostvars.categories_map is defined
               - vm_hostvars.categories_map is mapping
-              - vm_hostvars.categories_map.Environment is defined
-              - vm_hostvars.categories_map.Environment == "Testing"
+              - vm_hostvars.categories_map[category_key] is defined
+              - vm_hostvars.categories_map[category_key] == category_value
             fail_msg: >-
-              categories_map should contain Environment:Testing.
+              categories_map should contain {{ category_key }}:{{ category_value }}.
               Got: {{ vm_hostvars.categories_map | default('undefined') }}
-            success_msg: "categories_map correctly contains Environment:Testing"
+            success_msg: "categories_map correctly contains {{ category_key }}:{{ category_value }}"
 
-        - name: "Test 1: Assert categories list contains the category ext_id"
+        - name: "Test 3: Assert categories list contains the category ext_id"
           ansible.builtin.assert:
             that:
               - vm_hostvars.categories is defined
@@ -118,11 +131,7 @@
               Got: {{ vm_hostvars.categories | default('undefined') }}
             success_msg: "categories list correctly contains the category ext_id"
 
-        # =====================================================================
-        # Test 2: Verify auto_create_cluster_groups is disabled
-        # =====================================================================
-
-        - name: "Test 2: Assert no cluster_<ext_id> groups exist"
+        - name: "Test 4: Assert no cluster_<ext_id> groups exist"
           ansible.builtin.assert:
             that:
               - >-
@@ -133,11 +142,7 @@
               Found: cluster_{{ vm_hostvars.cluster_ext_id | regex_replace('-', '_') }}
             success_msg: "No cluster_<ext_id> groups as expected (auto_create_cluster_groups is false)"
 
-        # =====================================================================
-        # Test 3: Verify keyed_groups from cluster_name
-        # =====================================================================
-
-        - name: "Test 3: Assert cluster_<name> keyed_group exists"
+        - name: "Test 5: Assert cluster_<name> keyed_group exists"
           ansible.builtin.assert:
             that:
               - >-
@@ -148,27 +153,23 @@
               Expected: cluster_{{ vm_hostvars.cluster_name | regex_replace('[^A-Za-z0-9_]', '_') }}
             success_msg: "keyed_group cluster_<name> found"
 
-        # =====================================================================
-        # Test 4: Verify keyed_groups from categories_map.Environment
-        # =====================================================================
-
-        - name: "Test 4: Assert env_Testing keyed_group exists"
+        - name: "Test 6: Assert keyed_group from categories_map value exists"
           ansible.builtin.assert:
             that:
-              - "'env_Testing' in inv_data.keys()"
+              - "('env_' ~ category_value) in inv_data.keys()"
             fail_msg: >-
-              keyed_group env_Testing not found.
+              keyed_group env_{{ category_value }} not found.
               Available groups: {{ inv_data.keys() | list }}
-            success_msg: "keyed_group env_Testing found"
+            success_msg: "keyed_group env_{{ category_value }} found"
 
-        - name: "Test 4: Assert test VM is in the env_Testing group"
+        - name: "Test 7: Assert test VM is in the keyed_group"
           ansible.builtin.assert:
             that:
-              - "'categories_test_vm_v2' in inv_data['env_Testing']['hosts']"
+              - "'categories_test_vm_v2' in inv_data['env_' ~ category_value]['hosts']"
             fail_msg: >-
-              Test VM not in env_Testing group.
-              Group hosts: {{ inv_data['env_Testing']['hosts'] | default([]) }}
-            success_msg: "Test VM correctly placed in env_Testing group"
+              Test VM not in env_{{ category_value }} group.
+              Group hosts: {{ inv_data['env_' ~ category_value]['hosts'] | default([]) }}
+            success_msg: "Test VM correctly placed in env_{{ category_value }} group"
 
       # =======================================================================
       # Cleanup: Always delete test entities
@@ -180,8 +181,19 @@
             categories:
               - ext_id: "{{ category_ext_id }}"
             state: absent
+          register: disassoc_result
           ignore_errors: true
-          when: vm_ext_id is defined and category_ext_id is defined
+
+        - name: Disassociate category from VM status
+          ansible.builtin.assert:
+            that:
+              - disassoc_result.response is defined
+              - disassoc_result.changed == true
+              - disassoc_result.failed == false
+              - disassoc_result.task_ext_id is defined
+              - disassoc_result.vm_ext_id == vm_ext_id
+            fail_msg: "Failed to disassociate category from VM"
+            success_msg: "Category disassociated from VM"
 
         - name: Delete test VM
           nutanix.ncp.ntnx_vms_v2:
@@ -189,20 +201,28 @@
             state: absent
           register: delete_vm_result
           ignore_errors: true
-          when: vm_ext_id is defined
 
-        - name: Delete VM status
+        - name: Delete test VM status
           ansible.builtin.assert:
             that:
               - delete_vm_result.changed == true
               - delete_vm_result.failed == false
+              - delete_vm_result.response is defined
+              - delete_vm_result.response.status == "SUCCEEDED"
             fail_msg: "Failed to delete test VM"
             success_msg: "Test VM deleted"
-          when: vm_ext_id is defined
 
-        - name: Delete category (only if we created it)
+        - name: Delete category
           nutanix.ncp.ntnx_categories_v2:
             ext_id: "{{ category_ext_id }}"
             state: absent
+          register: delete_cat_result
           ignore_errors: true
-          when: category_ext_id is defined and category_was_created | bool
+
+        - name: Delete category status
+          ansible.builtin.assert:
+            that:
+              - delete_cat_result.changed == true
+              - delete_cat_result.failed == false
+            fail_msg: "Failed to delete category"
+            success_msg: "Category deleted"
