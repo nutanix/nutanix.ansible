@@ -22,7 +22,6 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(List resource groups) -
-      Operation Name: List Resource Groups -
       Required Roles: Backup Admin, Cluster Admin, Cluster Viewer, Consumer, CSI System, Developer,
       Disaster Recovery Admin, Disaster Recovery Viewer, File Server Security Admin,
       File Server Share Admin, Files Admin, Files Viewer, Flow Admin, Flow Policy Author, Flow Viewer,
@@ -34,7 +33,6 @@ notes:
       Tenant Consumer, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin
     - >-
       B(Get resource group by external ID) -
-      Operation Name: View Resource Group -
       Required Roles: Backup Admin, Cluster Admin, Cluster Viewer, Consumer, CSI System, Developer,
       Disaster Recovery Admin, Disaster Recovery Viewer, File Server Security Admin,
       File Server Share Admin, Files Admin, Files Viewer, Flow Admin, Flow Policy Author, Flow Viewer,
