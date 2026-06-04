@@ -524,6 +524,12 @@ class LookupModule(LookupBase):
                 )
             )
         data = strip_internal_attributes(resp.to_dict()).get("data") or []
+        if resource == "storage_container":
+            return [
+                item.get("ext_id") or item.get("container_ext_id")
+                for item in data
+                if item.get("ext_id") or item.get("container_ext_id")
+            ]
         return [item.get("ext_id") for item in data if item.get("ext_id")]
 
     def run(self, terms, variables=None, **kwargs):
