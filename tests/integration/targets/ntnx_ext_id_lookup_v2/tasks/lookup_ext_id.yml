@@ -1,0 +1,538 @@
+---
+- name: Start ntnx_ext_id lookup plugin tests
+  ansible.builtin.debug:
+    msg: Start ntnx_ext_id lookup plugin tests
+
+############################################################################
+# Name based resolution for every top level entity that exposes a list API.
+# Each entity is listed with its *_info_v2 module, then the first entity's
+# name is resolved back to its ext_id via the lookup and compared.
+############################################################################
+
+- name: List clusters
+  nutanix.ncp.ntnx_clusters_info_v2:
+  register: cluster_info
+  ignore_errors: true
+
+- name: Verify lookup for cluster
+  ansible.builtin.include_tasks: resolve_and_assert.yml
+  vars:
+    res_resource: cluster
+    res_info: "{{ cluster_info }}"
+
+- name: List subnets
+  nutanix.ncp.ntnx_subnets_info_v2:
+  register: subnet_info
+  ignore_errors: true
+
+- name: Verify lookup for subnet
+  ansible.builtin.include_tasks: resolve_and_assert.yml
+  vars:
+    res_resource: subnet
+    res_info: "{{ subnet_info }}"
+
+- name: List VPCs
+  nutanix.ncp.ntnx_vpcs_info_v2:
+  register: vpc_info
+  ignore_errors: true
+
+- name: Verify lookup for vpc
+  ansible.builtin.include_tasks: resolve_and_assert.yml
+  vars:
+    res_resource: vpc
+    res_info: "{{ vpc_info }}"
+
+- name: List VMs
+  nutanix.ncp.ntnx_vms_info_v2:
+  register: vm_info
+  ignore_errors: true
+
+- name: Verify lookup for vm
+  ansible.builtin.include_tasks: resolve_and_assert.yml
+  vars:
+    res_resource: vm
+    res_info: "{{ vm_info }}"
+
+- name: List virtual switches
+  nutanix.ncp.ntnx_virtual_switches_info_v2:
+  register: vs_info
+  ignore_errors: true
+
+- name: Verify lookup for virtual_switch
+  ansible.builtin.include_tasks: resolve_and_assert.yml
+  vars:
+    res_resource: virtual_switch
+    res_info: "{{ vs_info }}"
+
+- name: List images
+  nutanix.ncp.ntnx_images_info_v2:
+  register: image_info
+  ignore_errors: true
+
+- name: Verify lookup for image
+  ansible.builtin.include_tasks: resolve_and_assert.yml
+  vars:
+    res_resource: image
+    res_info: "{{ image_info }}"
+
+- name: List volume groups
+  nutanix.ncp.ntnx_volume_groups_info_v2:
+  register: vg_info
+  ignore_errors: true
+
+- name: Verify lookup for volume_group
+  ansible.builtin.include_tasks: resolve_and_assert.yml
+  vars:
+    res_resource: volume_group
+    res_info: "{{ vg_info }}"
+
+- name: List storage containers
+  nutanix.ncp.ntnx_storage_containers_info_v2:
+  register: storage_container_info
+  ignore_errors: true
+
+- name: Verify lookup for storage_container
+  ansible.builtin.include_tasks: resolve_and_assert.yml
+  vars:
+    res_resource: storage_container
+    res_info: "{{ storage_container_info }}"
+
+- name: List floating IPs
+  nutanix.ncp.ntnx_floating_ips_info_v2:
+  register: floating_ip_info
+  ignore_errors: true
+
+- name: Verify lookup for floating_ip
+  ansible.builtin.include_tasks: resolve_and_assert.yml
+  vars:
+    res_resource: floating_ip
+    res_info: "{{ floating_ip_info }}"
+
+- name: List cluster profiles
+  nutanix.ncp.ntnx_clusters_profiles_info_v2:
+  register: cluster_profile_info
+  ignore_errors: true
+
+- name: Verify lookup for cluster_profile
+  ansible.builtin.include_tasks: resolve_and_assert.yml
+  vars:
+    res_resource: cluster_profile
+    res_info: "{{ cluster_profile_info }}"
+
+- name: List network functions
+  nutanix.ncp.ntnx_network_functions_info_v2:
+  register: network_function_info
+  ignore_errors: true
+
+- name: Verify lookup for network_function
+  ansible.builtin.include_tasks: resolve_and_assert.yml
+  vars:
+    res_resource: network_function
+    res_info: "{{ network_function_info }}"
+
+- name: List routing policies
+  nutanix.ncp.ntnx_pbrs_info_v2:
+  register: routing_policy_info
+  ignore_errors: true
+
+- name: Verify lookup for routing_policy
+  ansible.builtin.include_tasks: resolve_and_assert.yml
+  vars:
+    res_resource: routing_policy
+    res_info: "{{ routing_policy_info }}"
+
+- name: List image placement policies
+  nutanix.ncp.ntnx_image_placement_policies_info_v2:
+  register: image_placement_policy_info
+  ignore_errors: true
+
+- name: Verify lookup for image_placement_policy
+  ansible.builtin.include_tasks: resolve_and_assert.yml
+  vars:
+    res_resource: image_placement_policy
+    res_info: "{{ image_placement_policy_info }}"
+
+- name: List templates
+  nutanix.ncp.ntnx_templates_info_v2:
+  register: template_info
+  ignore_errors: true
+
+- name: Verify lookup for template
+  ansible.builtin.include_tasks: resolve_and_assert.yml
+  vars:
+    res_resource: template
+    res_info: "{{ template_info }}"
+    res_ref_attr: template_name
+    res_filter_attr: templateName
+
+- name: List OVAs
+  nutanix.ncp.ntnx_ova_info_v2:
+  register: ova_info
+  ignore_errors: true
+
+- name: Verify lookup for ova
+  ansible.builtin.include_tasks: resolve_and_assert.yml
+  vars:
+    res_resource: ova
+    res_info: "{{ ova_info }}"
+
+- name: List iSCSI clients
+  nutanix.ncp.ntnx_volume_groups_iscsi_clients_info_v2:
+  register: iscsi_client_info
+  ignore_errors: true
+
+- name: Verify lookup for iscsi_client
+  ansible.builtin.include_tasks: resolve_and_assert.yml
+  vars:
+    res_resource: iscsi_client
+    res_info: "{{ iscsi_client_info }}"
+    res_ref_attr: iscsi_initiator_name
+    res_filter_attr: iscsiInitiatorName
+
+- name: List users
+  nutanix.ncp.ntnx_users_info_v2:
+  register: user_info
+  ignore_errors: true
+
+- name: Verify lookup for user
+  ansible.builtin.include_tasks: resolve_and_assert.yml
+  vars:
+    res_resource: user
+    res_info: "{{ user_info }}"
+    res_ref_attr: username
+
+- name: List user groups
+  nutanix.ncp.ntnx_user_groups_info_v2:
+  register: user_group_info
+  ignore_errors: true
+
+- name: Verify lookup for user_group
+  ansible.builtin.include_tasks: resolve_and_assert.yml
+  vars:
+    res_resource: user_group
+    res_info: "{{ user_group_info }}"
+
+- name: List roles
+  nutanix.ncp.ntnx_roles_info_v2:
+  register: role_info
+  ignore_errors: true
+
+- name: Verify lookup for role
+  ansible.builtin.include_tasks: resolve_and_assert.yml
+  vars:
+    res_resource: role
+    res_info: "{{ role_info }}"
+    res_ref_attr: display_name
+    res_filter_attr: displayName
+
+- name: List operations
+  nutanix.ncp.ntnx_operations_info_v2:
+  register: operation_info
+  ignore_errors: true
+
+- name: Verify lookup for operation
+  ansible.builtin.include_tasks: resolve_and_assert.yml
+  vars:
+    res_resource: operation
+    res_info: "{{ operation_info }}"
+    res_ref_attr: display_name
+    res_filter_attr: displayName
+
+- name: List authorization policies
+  nutanix.ncp.ntnx_authorization_policies_info_v2:
+  register: authorization_policy_info
+  ignore_errors: true
+
+- name: Verify lookup for authorization_policy
+  ansible.builtin.include_tasks: resolve_and_assert.yml
+  vars:
+    res_resource: authorization_policy
+    res_info: "{{ authorization_policy_info }}"
+    res_ref_attr: display_name
+    res_filter_attr: displayName
+
+- name: List directory services
+  nutanix.ncp.ntnx_directory_services_info_v2:
+  register: directory_service_info
+  ignore_errors: true
+
+- name: Verify lookup for directory_service
+  ansible.builtin.include_tasks: resolve_and_assert.yml
+  vars:
+    res_resource: directory_service
+    res_info: "{{ directory_service_info }}"
+
+- name: List SAML identity providers
+  nutanix.ncp.ntnx_saml_identity_providers_info_v2:
+  register: saml_identity_provider_info
+  ignore_errors: true
+
+- name: Verify lookup for saml_identity_provider
+  ansible.builtin.include_tasks: resolve_and_assert.yml
+  vars:
+    res_resource: saml_identity_provider
+    res_info: "{{ saml_identity_provider_info }}"
+
+- name: List service groups
+  nutanix.ncp.ntnx_service_groups_info_v2:
+  register: service_group_info
+  ignore_errors: true
+
+- name: Verify lookup for service_group
+  ansible.builtin.include_tasks: resolve_and_assert.yml
+  vars:
+    res_resource: service_group
+    res_info: "{{ service_group_info }}"
+
+- name: List address groups
+  nutanix.ncp.ntnx_address_groups_info_v2:
+  register: address_group_info
+  ignore_errors: true
+
+- name: Verify lookup for address_group
+  ansible.builtin.include_tasks: resolve_and_assert.yml
+  vars:
+    res_resource: address_group
+    res_info: "{{ address_group_info }}"
+
+- name: List network security policies
+  nutanix.ncp.ntnx_security_rules_info_v2:
+  register: network_security_policy_info
+  ignore_errors: true
+
+- name: Verify lookup for network_security_policy
+  ansible.builtin.include_tasks: resolve_and_assert.yml
+  vars:
+    res_resource: network_security_policy
+    res_info: "{{ network_security_policy_info }}"
+
+- name: List entity groups
+  nutanix.ncp.ntnx_entity_groups_info_v2:
+  register: entity_group_info
+  ignore_errors: true
+
+- name: Verify lookup for entity_group
+  ansible.builtin.include_tasks: resolve_and_assert.yml
+  vars:
+    res_resource: entity_group
+    res_info: "{{ entity_group_info }}"
+
+- name: List recovery points
+  nutanix.ncp.ntnx_recovery_points_info_v2:
+  register: recovery_point_info
+  ignore_errors: true
+
+- name: Verify lookup for recovery_point
+  ansible.builtin.include_tasks: resolve_and_assert.yml
+  vars:
+    res_resource: recovery_point
+    res_info: "{{ recovery_point_info }}"
+
+- name: List protection policies
+  nutanix.ncp.ntnx_protection_policies_info_v2:
+  register: protection_policy_info
+  ignore_errors: true
+
+- name: Verify lookup for protection_policy
+  ansible.builtin.include_tasks: resolve_and_assert.yml
+  vars:
+    res_resource: protection_policy
+    res_info: "{{ protection_policy_info }}"
+
+- name: List storage policies
+  nutanix.ncp.ntnx_storage_policies_info_v2:
+  register: storage_policy_info
+  ignore_errors: true
+
+- name: Verify lookup for storage_policy
+  ansible.builtin.include_tasks: resolve_and_assert.yml
+  vars:
+    res_resource: storage_policy
+    res_info: "{{ storage_policy_info }}"
+
+- name: List object stores
+  nutanix.ncp.ntnx_object_stores_info_v2:
+  register: object_store_info
+  ignore_errors: true
+
+- name: Verify lookup for object_store
+  ansible.builtin.include_tasks: resolve_and_assert.yml
+  vars:
+    res_resource: object_store
+    res_info: "{{ object_store_info }}"
+
+############################################################################
+# Categories are keyed on key/value rather than a unique name. The lookup
+# defaults to matching the category 'key', which can map to several
+# categories, so fail_on_multiple is disabled and membership is asserted.
+############################################################################
+
+- name: List categories
+  nutanix.ncp.ntnx_categories_info_v2:
+  register: category_info
+  ignore_errors: true
+
+- name: Verify lookup for category by key
+  when:
+    - category_info.failed | default(false) == false
+    - category_info.response is defined
+    - category_info.response | length > 0
+  block:
+    - name: Capture a reference category
+      ansible.builtin.set_fact:
+        category_ref_key: "{{ category_info.response[0].key | default('', true) }}"
+        category_ref_value: "{{ category_info.response[0].value | default('', true) }}"
+        category_ref_ext_id: "{{ category_info.response[0].ext_id }}"
+
+    - name: Resolve category by key (returns all matching ext_ids)
+      ansible.builtin.set_fact:
+        category_resolved_ext_ids: >-
+          {{ query('nutanix.ncp.ntnx_ext_id', category_ref_key, resource='category',
+                   fail_on_multiple=false,
+                   nutanix_host=ip, nutanix_username=username,
+                   nutanix_password=password, validate_certs=validate_certs) }}
+      when: category_ref_key | length > 0
+
+    - name: Assert category resolved correctly
+      ansible.builtin.assert:
+        that:
+          - category_ref_ext_id in category_resolved_ext_ids
+        success_msg: "ntnx_ext_id resolved category key '{{ category_ref_key }}' including ext_id {{ category_ref_ext_id }}"
+        fail_msg: "ntnx_ext_id failed to resolve category key '{{ category_ref_key }}'"
+      when: category_ref_key | length > 0
+
+############################################################################
+# Option and error handling tests, anchored on cluster which always exists.
+############################################################################
+
+- name: Capture a reference cluster for option tests
+  ansible.builtin.set_fact:
+    cluster_ref_name: "{{ cluster_info.response[0].name }}"
+    cluster_ref_ext_id: "{{ cluster_info.response[0].ext_id }}"
+  when:
+    - cluster_info.response is defined
+    - cluster_info.response | length > 0
+
+- name: Option and error handling tests
+  when: cluster_ref_name is defined
+  block:
+    - name: Resolve a non existent name with fail_on_missing=false
+      ansible.builtin.set_fact:
+        missing_resolved: >-
+          {{ query('nutanix.ncp.ntnx_ext_id',
+                   'ntnx_ext_id_lookup_does_not_exist_xyz', resource='cluster',
+                   fail_on_missing=false,
+                   nutanix_host=ip, nutanix_username=username,
+                   nutanix_password=password, validate_certs=validate_certs) }}
+
+    - name: Assert fail_on_missing=false returns a single None entry
+      ansible.builtin.assert:
+        that:
+          - missing_resolved | length == 1
+          - missing_resolved[0] is none
+        success_msg: "ntnx_ext_id returned None for a missing entity when fail_on_missing=false"
+        fail_msg: "ntnx_ext_id did not return None for a missing entity when fail_on_missing=false"
+
+    - name: Resolve a non existent name with default fail_on_missing (should fail)
+      ansible.builtin.set_fact:
+        should_not_be_set: >-
+          {{ query('nutanix.ncp.ntnx_ext_id',
+                   'ntnx_ext_id_lookup_does_not_exist_xyz', resource='cluster',
+                   nutanix_host=ip, nutanix_username=username,
+                   nutanix_password=password, validate_certs=validate_certs) }}
+      register: missing_default_result
+      ignore_errors: true
+
+    - name: Assert default fail_on_missing raises an error
+      ansible.builtin.assert:
+        that:
+          - missing_default_result is failed
+        success_msg: "ntnx_ext_id raised an error for a missing entity by default"
+        fail_msg: "ntnx_ext_id did not raise an error for a missing entity by default"
+
+    - name: Use an unsupported resource (should fail)
+      ansible.builtin.set_fact:
+        unsupported_result: >-
+          {{ query('nutanix.ncp.ntnx_ext_id', cluster_ref_name, resource='not_a_real_resource',
+                   nutanix_host=ip, nutanix_username=username,
+                   nutanix_password=password, validate_certs=validate_certs) }}
+      register: unsupported_resource_result
+      ignore_errors: true
+
+    - name: Assert unsupported resource raises an error
+      ansible.builtin.assert:
+        that:
+          - unsupported_resource_result is failed
+        success_msg: "ntnx_ext_id raised an error for an unsupported resource"
+        fail_msg: "ntnx_ext_id did not raise an error for an unsupported resource"
+
+############################################################################
+# End to end: use the lookup inline to resolve references by name and create
+# a real subnet, exactly the workflow requested in issue #979. Cleaned up
+# afterwards. Only runs when a cluster and a virtual switch are available.
+############################################################################
+
+- name: End to end subnet creation using name based lookups
+  when:
+    - cluster_ref_name is defined
+    - vs_info.response is defined
+    - vs_info.response | length > 0
+    - (vs_info.response[0].name | default('', true)) | length > 0
+  block:
+    - name: Set end to end inputs
+      ansible.builtin.set_fact:
+        e2e_vs_name: "{{ vs_info.response[0].name }}"
+        e2e_subnet_name: "ntnx_ext_id_e2e_{{ query('community.general.random_string', numbers=false, special=false, length=8)[0] }}"
+        e2e_network_id: "{{ 200 + (3000 | random) }}"
+
+    - name: Create a VLAN subnet using lookup resolved references
+      nutanix.ncp.ntnx_subnets_v2:
+        state: present
+        name: "{{ e2e_subnet_name }}"
+        subnet_type: VLAN
+        network_id: "{{ e2e_network_id | int }}"
+        cluster_reference: >-
+          {{ lookup('nutanix.ncp.ntnx_ext_id', cluster_ref_name, resource='cluster',
+                    nutanix_host=ip, nutanix_username=username,
+                    nutanix_password=password, validate_certs=validate_certs) }}
+        virtual_switch_reference: >-
+          {{ lookup('nutanix.ncp.ntnx_ext_id', e2e_vs_name, resource='virtual_switch',
+                    fail_on_multiple=false,
+                    nutanix_host=ip, nutanix_username=username,
+                    nutanix_password=password, validate_certs=validate_certs) }}
+      register: e2e_subnet_result
+      ignore_errors: true
+
+    - name: Assert subnet created with lookup resolved cluster reference
+      ansible.builtin.assert:
+        that:
+          - e2e_subnet_result.changed == true
+          - e2e_subnet_result.failed == false
+          - e2e_subnet_result.response is defined
+          - e2e_subnet_result.response.name == e2e_subnet_name
+          - e2e_subnet_result.response.cluster_reference == cluster_ref_ext_id
+        success_msg: "Subnet created successfully using ntnx_ext_id resolved references"
+        fail_msg: "Subnet creation using ntnx_ext_id resolved references failed"
+
+    - name: Delete the end to end subnet
+      nutanix.ncp.ntnx_subnets_v2:
+        state: absent
+        ext_id: "{{ e2e_subnet_result.ext_id }}"
+      when:
+        - e2e_subnet_result.ext_id is defined
+      register: e2e_subnet_delete
+      ignore_errors: true
+
+    - name: Assert end to end subnet deleted
+      ansible.builtin.assert:
+        that:
+          - e2e_subnet_delete.changed == true
+          - e2e_subnet_delete.failed == false
+        success_msg: "End to end subnet deleted successfully"
+        fail_msg: "End to end subnet deletion failed"
+      when:
+        - e2e_subnet_result.ext_id is defined
+
+- name: ntnx_ext_id lookup plugin tests completed
+  ansible.builtin.debug:
+    msg: ntnx_ext_id lookup plugin tests completed
