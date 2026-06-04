@@ -23,3 +23,11 @@ build_ignore:
   - changelogs/.plugin-cache.yaml
   - .github
   - .vscode
+  - py3*_virt
+  - venv
+  - .venv
+  - env
+  - __pycache__
+  - "*.pyc"
+  - .tox
+  - tests/output

@@ -1,2 +1,10 @@
 nutanix-ncp-*
 .ansible/
+py3*_virt/
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+.tox/
+tests/output/

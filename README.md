@@ -3,9 +3,12 @@ Official Nutanix Ansible Collection
 
 ## Requirements
 
-To run any Nutanix Ansible module, the host must have the Python dependencies listed in [requirements.txt](https://github.com/nutanix/nutanix.ansible/blob/v2.5.0/requirements.txt)
-Once the collection is installed, install these dependencies into your Python environment using pip: `pip install -r ~/.ansible/collections/ansible_collections/nutanix/ncp/requirements.txt`
-This collection requires ansible-core>=2.16.0. This should be installed explicitly if ansible-core version is not installed previously or is below the specified version.
+This collection requires ansible-core>=2.16.0 and the Python dependencies listed in [requirements.txt](https://github.com/nutanix/nutanix.ansible/blob/v2.5.0/requirements.txt).
+
+**Red Hat Ansible Automation Platform customers** should use an Execution Environment (EE) that includes this collection and its dependencies rather than installing packages directly with pip. See the [Red Hat Ansible Automation Platform documentation](https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/) for guidance on building and using Execution Environments, and install the collection from [Red Hat Automation Hub](https://console.redhat.com/ansible/automation-hub/).
+
+**Community / upstream users** can install dependencies into a Python environment after installing the collection:
+`pip install -r ~/.ansible/collections/ansible_collections/nutanix/ncp/requirements.txt`
 
 # About
 Nutanix ansible collection nutanix.ncp is the official Nutanix ansible collection to automate Nutanix Cloud Platform (ncp).
@@ -115,7 +118,7 @@ Customers not taking advantage of the [Advanced API/SDK Support Program](https:/
 # Version compatibility
 
 ## Ansible
-This collection requires ansible-core>=2.16.0. This should be installed explicitly if ansible-core version is not installed previously or is below the specified version.
+This collection requires ansible-core>=2.16.0. Red Hat Ansible Automation Platform customers should obtain ansible-core through an Execution Environment (EE) rather than installing it directly with pip. Community users should ensure their environment has the required version installed.
 
 ## Python
 This collection requires Python 3.12 or greater
@@ -190,11 +193,13 @@ Installation:
 
 ```ansible-galaxy collection install nutanix.ncp```
 
-Install [requirements](https://github.com/nutanix/nutanix.ansible/blob/v2.5.0/requirements.txt) from repository if dependencies are missing in environment (Ref: [GitHub Issue](https://github.com/nutanix/nutanix.ansible/issues/600)):
+**Red Hat Ansible Automation Platform customers** should use an Execution Environment (EE) that bundles this collection and its dependencies instead of pip-installing them directly. See the [Red Hat Ansible Automation Platform documentation](https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/) for building and using EEs, and install the collection from [Red Hat Automation Hub](https://console.redhat.com/ansible/automation-hub/).
+
+**Community / upstream users** — install [requirements](https://github.com/nutanix/nutanix.ansible/blob/v2.5.0/requirements.txt) if dependencies are missing in your environment (Ref: [GitHub Issue](https://github.com/nutanix/nutanix.ansible/issues/600)):
 
 ```pip install -r requirements.txt```
 
-This collection requires ansible-core>=2.16.0. This should be installed explicitly if ansible-core version is not installed previously or is below the specified version.
+This collection requires ansible-core>=2.16.0.
 
 
 ## **2. Build and install from code:**
@@ -608,6 +613,10 @@ By following these steps, you can perform comprehensive integration testing for 
         - {vm_name: "Dev-Wordpress-App"}
 
 ```
+
+## Changelog
+
+See the full list of changes in the [CHANGELOG.rst](https://github.com/nutanix/nutanix.ansible/blob/v2.5.0/CHANGELOG.rst) or [CHANGELOG.md](https://github.com/nutanix/nutanix.ansible/blob/v2.5.0/CHANGELOG.md).
 
 ## License
 
