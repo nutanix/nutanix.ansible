@@ -15,6 +15,13 @@
         res_ref_value: "{{ res_info.response[0][res_ref_attr | default('name')] | default('', true) }}"
         res_expected_ext_id: "{{ res_info.response[0].ext_id }}"
 
+    - name: Use container_ext_id fallback for storage_container
+      when:
+        - res_resource == 'storage_container'
+        - (res_expected_ext_id | default('', true) | length) == 0
+      ansible.builtin.set_fact:
+        res_expected_ext_id: "{{ res_info.response[0].container_ext_id | default('', true) }}"
+
     - name: Resolve by reference value and assert ext_id
       when: res_ref_value | length > 0
       block:
