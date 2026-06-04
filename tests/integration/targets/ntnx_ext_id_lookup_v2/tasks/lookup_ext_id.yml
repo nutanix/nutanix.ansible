@@ -374,7 +374,7 @@
 
 - name: Verify lookup for category by key
   when:
-    - category_info.failed | default(false) == false
+    - not (category_info.failed | default(false))
     - category_info.response is defined
     - category_info.response | length > 0
   block:
@@ -533,6 +533,6 @@
       when:
         - e2e_subnet_result.ext_id is defined
 
-- name: ntnx_ext_id lookup plugin tests completed
+- name: Ntnx_ext_id lookup plugin tests completed
   ansible.builtin.debug:
     msg: ntnx_ext_id lookup plugin tests completed
