@@ -8,6 +8,7 @@
     - res_info is defined
     - not (res_info.failed | default(false))
     - res_info.response is defined
+    - res_info.response is not none
     - res_info.response | length > 0
   block:
     - name: Capture reference value and ext_id

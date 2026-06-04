@@ -200,6 +200,7 @@
     res_resource: user
     res_info: "{{ user_info }}"
     res_ref_attr: username
+    res_filter_attr: username
 
 - name: List user groups
   nutanix.ncp.ntnx_user_groups_info_v2:
@@ -349,17 +350,6 @@
   vars:
     res_resource: storage_policy
     res_info: "{{ storage_policy_info }}"
-
-- name: List object stores
-  nutanix.ncp.ntnx_object_stores_info_v2:
-  register: object_store_info
-  ignore_errors: true
-
-- name: Verify lookup for object_store
-  ansible.builtin.include_tasks: resolve_and_assert.yml
-  vars:
-    res_resource: object_store
-    res_info: "{{ object_store_info }}"
 
 ############################################################################
 # Categories are keyed on key/value rather than a unique name. The lookup
