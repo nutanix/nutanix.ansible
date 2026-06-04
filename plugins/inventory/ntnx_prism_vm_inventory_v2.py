@@ -250,6 +250,8 @@ EXAMPLES = r"""
     - key: cluster_name
       prefix: cluster
       separator: "_"
+    # categories_map values are lists (a key can have multiple values);
+    # keyed_groups creates one group per item in the list
     - key: categories_map.Environment
       prefix: env
       separator: "_"
