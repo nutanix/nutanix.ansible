@@ -18,6 +18,7 @@ DOCUMENTATION = r"""
     requirements:
         - "ntnx_vmm_py_client"
         - "ntnx_clustermgmt_py_client"
+        - "ntnx_prism_py_client"
     options:
         plugin:
             description: Name of the plugin
@@ -685,12 +686,12 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 if parsed.port:
                     self.nutanix_port = str(parsed.port)
 
-        self.nutanix_username = self._template_option("nutanix_username") or os.environ.get(
-            "NUTANIX_USERNAME"
-        )
-        self.nutanix_password = self._template_option("nutanix_password") or os.environ.get(
-            "NUTANIX_PASSWORD"
-        )
+        self.nutanix_username = self._template_option(
+            "nutanix_username"
+        ) or os.environ.get("NUTANIX_USERNAME")
+        self.nutanix_password = self._template_option(
+            "nutanix_password"
+        ) or os.environ.get("NUTANIX_PASSWORD")
         _raw_api_key = self._template_option("nutanix_api_key") or os.environ.get(
             "NUTANIX_API_KEY"
         )
