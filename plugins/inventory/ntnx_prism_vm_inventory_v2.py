@@ -74,6 +74,15 @@ DOCUMENTATION = r"""
                   human-readable cluster groups instead.
             default: true
             type: bool
+        resolve_categories:
+            description:
+                - Resolve category ext_ids to key/value pairs and populate C(categories_map)
+                  in host variables.
+                - Requires fetching all categories from Prism Central via the Categories API.
+                - Set to C(False) to skip the API calls if you do not use C(categories_map)
+                  in keyed_groups, compose, or groups expressions.
+            default: true
+            type: bool
         fetch_all_vms:
             description:
                 - Set to C(True) to fetch all VMs
@@ -228,7 +237,8 @@ EXAMPLES = r"""
       separator: "_"
 
 # using keyed groups with categories_map and cluster_name
-# categories_map resolves category ext_ids to {key: value} pairs
+# categories_map resolves category ext_ids to {key: [values]} pairs
+# (values are lists to support multiple values per key)
 # categories retains the original list of category ext_ids
 - plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
   nutanix_host: 10.x.x.x
@@ -268,6 +278,7 @@ import tempfile  # noqa: E402
 
 from ansible.errors import AnsibleError  # noqa: E402
 from ansible.plugins.inventory import BaseInventoryPlugin, Constructable  # noqa: E402
+from ansible.utils.display import Display  # noqa: E402
 
 from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
     get_clusters_api_instance,
@@ -278,6 +289,8 @@ from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
 from ..module_utils.v4.utils import strip_internal_attributes  # noqa: E402
 from ..module_utils.v4.vmm.api_client import get_vm_api_instance  # noqa: E402
 from ..plugin_utils.inventory_utils import get_hostname  # noqa: E402
+
+display = Display()
 
 
 class Mock_Module:
@@ -523,7 +536,9 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                         category_ext_ids.append(category_ext_id)
                         if category_ext_id in category_ext_id_map:
                             cat = category_ext_id_map[category_ext_id]
-                            categories_map[cat["key"]] = cat["value"]
+                            categories_map.setdefault(cat["key"], []).append(
+                                cat["value"]
+                            )
             if category_ext_ids:
                 host_vars["categories"] = category_ext_ids
             if categories_map:
@@ -602,8 +617,11 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 if len(list_categories.data) < 100:
                     break
                 page += 1
-        except Exception:
-            pass
+        except Exception as e:
+            display.warning(
+                "Failed to fetch categories from Prism Central, "
+                "categories_map will not be available: {0}".format(str(e))
+            )
         return result
 
     def parse(self, inventory, loader, path, cache=True):
@@ -650,6 +668,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             == "true"
         )
         self.auto_create_cluster_groups = self.get_option("auto_create_cluster_groups")
+        self.resolve_categories = self.get_option("resolve_categories")
         self.fetch_all_vms = self.get_option("fetch_all_vms")
         self.page = self.get_option("page")
         self.limit = self.get_option("limit")
@@ -685,10 +704,13 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         # Get API instances
         vmm = get_vm_api_instance(module)
         clusters = get_clusters_api_instance(module)
-        categories_api = get_categories_api_instance(module)
 
         cluster_ext_id_name_map = self._build_cluster_ext_id_name_map(clusters)
-        category_ext_id_map = self._build_category_ext_id_map(categories_api)
+
+        category_ext_id_map = {}
+        if self.resolve_categories:
+            categories_api = get_categories_api_instance(module)
+            category_ext_id_map = self._build_category_ext_id_map(categories_api)
 
         # Fetch VMs
         vms = self._fetch_vms(

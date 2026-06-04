@@ -114,11 +114,12 @@
               - vm_hostvars.categories_map is defined
               - vm_hostvars.categories_map is mapping
               - vm_hostvars.categories_map[category_key] is defined
-              - vm_hostvars.categories_map[category_key] == category_value
+              - vm_hostvars.categories_map[category_key] is sequence
+              - category_value in vm_hostvars.categories_map[category_key]
             fail_msg: >-
-              categories_map should contain {{ category_key }}:{{ category_value }}.
+              categories_map should contain {{ category_key }}:[{{ category_value }}].
               Got: {{ vm_hostvars.categories_map | default('undefined') }}
-            success_msg: "categories_map correctly contains {{ category_key }}:{{ category_value }}"
+            success_msg: "categories_map correctly contains {{ category_key }}:[{{ category_value }}]"
 
         - name: "Test 3: Assert categories list contains the category ext_id"
           ansible.builtin.assert:
