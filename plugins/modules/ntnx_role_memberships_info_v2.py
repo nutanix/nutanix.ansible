@@ -33,6 +33,15 @@ author:
 """
 
 EXAMPLES = r"""
+- name: Get role membership by ext_id
+  nutanix.ncp.ntnx_role_memberships_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    ext_id: "44844104-873b-5a14-a89c-ea6fb67d6055"
+  register: result
+
 - name: Get all role memberships
   nutanix.ncp.ntnx_role_memberships_info_v2:
     nutanix_host: "{{ ip }}"
@@ -41,22 +50,13 @@ EXAMPLES = r"""
     validate_certs: false
   register: result
 
-- name: Get role membership by ext_id
-  nutanix.ncp.ntnx_role_memberships_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    ext_id: "{{ role_membership_ext_id }}"
-  register: result
-
 - name: List role memberships with filter
   nutanix.ncp.ntnx_role_memberships_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    filter: "roleExtId eq '{{ role_ext_id }}'"
+    filter: "roleExtId eq '93939393-9393-9393-9393-939393939393'"
   register: result
 
 - name: List role memberships with limit

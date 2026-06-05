@@ -23,7 +23,7 @@ options:
         description:
             - Specify state.
             - If C(state) is set to C(present), the module will create a role membership.
-            - If C(state) is set to C(absent) with C(ext_id), the module will delete the role membership.
+            - If C(state) is set to C(absent) and C(ext_id) is provided, the module will delete the role membership.
             - Update is not supported by the Role Membership API.
         choices:
             - present
@@ -115,7 +115,7 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     state: absent
-    ext_id: "{{ role_membership_ext_id }}"
+    ext_id: "44844104-873b-5a14-a89c-ea6fb67d6055"
   register: result
 """
 
@@ -123,8 +123,8 @@ RETURN = r"""
 response:
     description:
         - Response for creating or deleting role memberships.
-        - Role membership details if C(state) is C(present).
-        - Status dict with C(status)=C(SUCCEEDED) if C(state) is C(absent).
+        - Role membership details if the operation is create.
+        - Status dict with C(status)=C(SUCCEEDED) if the operation is delete.
     returned: always
     type: dict
     sample: {

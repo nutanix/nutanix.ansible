@@ -334,3 +334,24 @@
       - "'identity_type' in result.msg"
     fail_msg: "Negative test - invalid identity_type should fail"
     success_msg: "Negative test - invalid identity_type correctly failed"
+
+- name: "Negative: Create role membership with invalid scope_template_name"
+  nutanix.ncp.ntnx_role_membership_v2:
+    state: present
+    role_ext_id: "{{ test_role_ext_id }}"
+    identity_type: "USER"
+    identity_ext_id: "{{ test_user_ext_id }}"
+    idp_ext_id: "{{ test_idp_ext_id }}"
+    scope_template_name: "InvalidScopeTemplate"
+  register: result
+  ignore_errors: true
+
+- name: Verify create with invalid scope_template_name fails
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+      - result.msg == "Api Exception raised while creating role membership"
+    fail_msg: "Negative test - invalid scope_template_name should fail"
+    success_msg: "Negative test - invalid scope_template_name correctly failed"
