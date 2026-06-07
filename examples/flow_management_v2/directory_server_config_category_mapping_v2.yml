@@ -1,18 +1,19 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create a directory server config
-# 2. Update the directory server config
-# 3. List all directory server configs
-# 4. Get directory server config using ext_id
-# 5. Create a DS category mapping
-# 6. Update the DS category mapping
-# 7. List all DS category mappings
-# 8. List DS category mappings using filter
-# 9. List DS category mappings using limit
-# 10. Get DS category mapping using ext_id
-# 11. Delete the DS category mapping
-# 12. Delete the directory server config
+# 1. Resolve the AD group object GUID dynamically using the directory service search module
+# 2. Create a directory server config
+# 3. Update the directory server config
+# 4. List all directory server configs
+# 5. Get directory server config using ext_id
+# 6. Create a DS category mapping
+# 7. Update the DS category mapping
+# 8. List all DS category mappings
+# 9. List DS category mappings using filter
+# 10. List DS category mappings using limit
+# 11. Get DS category mapping using ext_id
+# 12. Delete the DS category mapping
+# 13. Delete the directory server config
 
 - name: Directory server config and DS category mappings playbook
   hosts: localhost
@@ -27,11 +28,33 @@
     - name: Setting Variables
       ansible.builtin.set_fact:
         directory_service_reference: "954dc8b6-46dd-5fc0-90d6-edb0b8311e3c"
-        object_identifier: "9316163d-6a31-9542-bb71-3f2105d840d6"
+        object_name: "test_cac_g98"
         dsc_criteria: "ansible-dsc-criteria"
         category_mapping_name: "ansible_category_mapping"
         category_name: "ADGroup"
         category_value: "ad-group-12345678"
+
+    - name: Resolve AD group object GUID using directory service search
+      nutanix.ncp.ntnx_directory_services_search_v2:
+        ext_id: "{{ directory_service_reference }}"
+        query: "{{ object_name }}"
+        searched_attributes:
+          - name
+          - sAMAccountName
+          - cn
+        returned_attributes:
+          - name
+          - objectGUID
+      register: search_result
+
+    - name: Set object_identifier from search result
+      ansible.builtin.set_fact:
+        object_identifier: >-
+          {{ ((search_result.response.search_results
+               | selectattr('entity_type', 'equalto', 'Group')
+               | first).attributes
+               | selectattr('name', 'equalto', 'objectGUID')
+               | map(attribute='values') | first | first) }}
 
     - name: Create directory server config
       nutanix.ncp.ntnx_directory_server_config_v2:

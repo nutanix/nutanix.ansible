@@ -33,6 +33,62 @@
       - "Category value lifecycle is handled via category mapping operations"
 
 ###################################################################################################
+# Resolve the AD group object GUID dynamically using the directory service search module
+###################################################################################################
+- name: Search directory service for AD group object
+  nutanix.ncp.ntnx_directory_services_search_v2:
+    ext_id: "{{ active_directory_ext_id }}"
+    query: "{{ active_directory_object_name }}"
+    searched_attributes:
+      - name
+      - sAMAccountName
+      - cn
+    returned_attributes:
+      - name
+      - objectGUID
+  register: ad_object_search_result
+
+- name: Assert AD object search returned a matching group
+  ansible.builtin.assert:
+    that:
+      - ad_object_search_result.changed == false
+      - ad_object_search_result.failed == false
+      - ad_object_search_result.ext_id == active_directory_ext_id
+      - ad_object_search_result.response is defined
+      - ad_object_search_result.response.domain_name is defined
+      - ad_object_search_result.response.search_results is defined
+      - ad_object_search_result.response.search_results | length > 0
+      - >-
+        ad_object_search_result.response.search_results
+        | selectattr('entity_type', 'equalto', 'Group')
+        | list | length > 0
+      - >-
+        (ad_object_search_result.response.search_results
+         | selectattr('entity_type', 'equalto', 'Group')
+         | first).attributes
+         | selectattr('name', 'equalto', 'objectGUID')
+         | list | length > 0
+    fail_msg: "Directory service search did not return a matching group object for '{{ active_directory_object_name }}'"
+    success_msg: "Directory service search returned a matching group object for '{{ active_directory_object_name }}'"
+
+- name: Set AD object ext_id from directory service search result
+  ansible.builtin.set_fact:
+    active_directory_object_ext_id: >-
+      {{ ((ad_object_search_result.response.search_results
+           | selectattr('entity_type', 'equalto', 'Group')
+           | first).attributes
+           | selectattr('name', 'equalto', 'objectGUID')
+           | map(attribute='values') | first | first) }}
+
+- name: Assert AD object ext_id was resolved from search
+  ansible.builtin.assert:
+    that:
+      - active_directory_object_ext_id is defined
+      - active_directory_object_ext_id | length > 0
+    fail_msg: "Failed to resolve AD group object ext_id from directory service search"
+    success_msg: "Resolved AD group object ext_id from directory service search: {{ active_directory_object_ext_id }}"
+
+###################################################################################################
 
 ###################################################################################################
 # CREATE TESTS
