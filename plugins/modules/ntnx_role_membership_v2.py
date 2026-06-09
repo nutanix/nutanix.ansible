@@ -322,7 +322,7 @@ def delete_role_membership(module, role_memberships, result):
     kwargs = {"if_match": etag}
 
     try:
-        role_memberships.delete_role_membership_by_id(extId=ext_id, **kwargs)
+        resp = role_memberships.delete_role_membership_by_id(extId=ext_id, **kwargs)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -331,7 +331,12 @@ def delete_role_membership(module, role_memberships, result):
         )
 
     result["changed"] = True
-    result["response"] = {"status": "SUCCEEDED"}
+    if resp is None:
+        result["msg"] = (
+            "Role membership with ext_id: {} deleted successfully".format(ext_id)
+        )
+    else:
+        result["response"] = strip_internal_attributes(resp.to_dict())
 
 
 def run_module():
@@ -339,17 +344,6 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[
-            (
-                "state",
-                "present",
-                (
-                    "role_ext_id",
-                    "identity_type",
-                    "identity_ext_id",
-                    "idp_ext_id",
-                    "scope_template_name",
-                ),
-            ),
             ("state", "absent", ("ext_id",)),
         ],
     )
