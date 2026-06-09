@@ -332,8 +332,8 @@ def delete_role_membership(module, role_memberships, result):
 
     result["changed"] = True
     if resp is None:
-        result["msg"] = (
-            "Role membership with ext_id: {} deleted successfully".format(ext_id)
+        result["msg"] = "Role membership with ext_id: {} deleted successfully".format(
+            ext_id
         )
     else:
         result["response"] = strip_internal_attributes(resp.to_dict())
