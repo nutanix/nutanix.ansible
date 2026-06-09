@@ -515,7 +515,7 @@
     fail_msg: "Negative test - get info with non-existent ext_id should fail"
     success_msg: "Negative test - get info with non-existent ext_id correctly failed"
 
-- name: "Negative: Create role membership with invalid identity_type"
+- name: "Negative: Create role membership with invalid identity_type" # noqa: args[module]
   nutanix.ncp.ntnx_role_membership_v2:
     state: present
     role_ext_id: "{{ test_role_ext_id }}"
@@ -587,7 +587,7 @@
     state: absent
     ext_id: "{{ item }}"
   loop: "{{ todelete_rm }}"
-  ignore_errors: true
+  failed_when: false
   when: todelete_rm | length > 0
 
 - name: End testing ntnx_role_membership_v2, ntnx_role_memberships_info_v2
