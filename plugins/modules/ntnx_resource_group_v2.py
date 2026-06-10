@@ -64,6 +64,7 @@ options:
         description:
             - UUID of the project that owns this resource group.
             - Required for create operations.
+            - Update of this field is not supported.
         type: str
     placement_targets:
         description:

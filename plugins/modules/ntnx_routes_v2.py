@@ -47,6 +47,7 @@ options:
   project_ext_id:
     description:
       - UUID of the project that owns this route.
+      - Update of this field is not supported.
     type: str
   vpc_reference:
     description:

@@ -56,6 +56,7 @@ options:
   project_ext_id:
     description:
             - UUID of the project that owns this VPC.
+            - Update of this field is not supported.
     type: str
 
   name:

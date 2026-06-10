@@ -42,6 +42,7 @@ options:
     project_ext_id:
         description:
             - UUID of the project that owns this template.
+            - Update of this field is not supported.
         type: str
     template_name:
         description:

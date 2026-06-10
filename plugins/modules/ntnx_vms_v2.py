@@ -127,6 +127,7 @@ options:
     project_ext_id:
         description:
             - UUID of the project associated with this VM.
+            - Update of this field is not supported.
         required: false
         type: str
     project:

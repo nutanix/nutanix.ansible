@@ -48,6 +48,7 @@ options:
     project_ext_id:
         description:
             - UUID of the project that owns this directory service.
+            - Update of this field is not supported.
         required: false
         type: str
     name:

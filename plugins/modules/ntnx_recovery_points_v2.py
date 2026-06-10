@@ -50,6 +50,7 @@ options:
     project_ext_id:
         description:
             - UUID of the project that owns this recovery point.
+            - Update of this field is not supported.
         type: str
 
     name:

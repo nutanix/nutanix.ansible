@@ -55,6 +55,7 @@ options:
   project_ext_id:
     description:
       - UUID of the project that owns this routing policy.
+      - Update of this field is not supported.
     type: str
   metadata:
     description: Metadata associated with this resource.

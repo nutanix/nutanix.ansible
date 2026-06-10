@@ -564,6 +564,25 @@
 
 ###########################################################################################################
 
+- name: Verify update of project_ext_id is not supported
+  nutanix.ncp.ntnx_routes_v2:
+    state: present
+    ext_id: "{{ static_route_external_id_1 }}"
+    route_table_ext_id: "{{ route_table_external_id_1 }}"
+    project_ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Verify update of project_ext_id is blocked status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.msg == "Update is not supported for the following field(s): project_ext_id"
+    fail_msg: "Update of project_ext_id should have been blocked"
+    success_msg: "Update of project_ext_id is correctly blocked"
+
+###########################################################################################################
+
 - name: Delete static route with check mode enabled
   nutanix.ncp.ntnx_routes_v2:
     state: absent

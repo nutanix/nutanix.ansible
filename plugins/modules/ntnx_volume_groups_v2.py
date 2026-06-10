@@ -61,6 +61,7 @@ options:
     project_ext_id:
         description:
             - UUID of the project that owns this volume group.
+            - Update of this field is not supported.
         type: str
         required: false
     name:
@@ -326,6 +327,7 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
+    raise_unsupported_update_fields,
 )
 from ..module_utils.v4.volumes.api_client import (  # noqa: E402
     get_etag,
@@ -412,6 +414,10 @@ def update_vg(module, result):
 
     sg = SpecGenerator(module)
     update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
+
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
 
     default_spec = volumes_sdk.VolumeGroup()
     spec, err = sg.generate_spec(obj=default_spec)
