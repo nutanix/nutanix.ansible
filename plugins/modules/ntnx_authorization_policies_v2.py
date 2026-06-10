@@ -268,6 +268,7 @@ from ..module_utils.v4.iam.helpers import get_authorization_policy  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 
@@ -380,6 +381,10 @@ def update_authorization_policy(module, result):
         module.fail_json(
             msg="Failed generating authorization policy update spec", **result
         )
+
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
 
     # handling identities and entities spec creation separately as their dicts are to be passed in $reserved
     identities = module.params.get("identities")

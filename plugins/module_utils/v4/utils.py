@@ -380,6 +380,59 @@ def handle_sharing_update(
 
     return changed
 
+def raise_unsupported_update_fields(module, current_spec, update_spec, fields):
+    """
+    Fail the module if the user attempts to update fields that the API does
+    not allow to be changed.
+
+    Compares the values of each field in ``fields`` between ``current_spec``
+    and ``update_spec``.  If any value differs, the module is failed with a
+    message listing the offending fields.
+
+    Dot-notation is supported for nested fields.  For example,
+    ``"a.b"`` will traverse into key/attribute ``a`` and then compare ``b``.
+
+    Both specs may be SDK model objects (with attributes) or plain dicts;
+    the look-up strategy adapts automatically at each nesting level.
+
+    Args:
+        module: AnsibleModule instance.
+        current_spec: The existing resource spec fetched from the API.
+        update_spec: The spec generated from the user-provided parameters.
+        fields (list[str]): Field names (dot-notation for nested) for which
+            update is not supported.
+    """
+    if not fields:
+        return
+
+    _sentinel = object()
+
+    def _get(obj, name):
+        if isinstance(obj, dict):
+            return obj.get(name, _sentinel)
+        return getattr(obj, name, _sentinel)
+
+    def _resolve(obj, path):
+        for part in path.split("."):
+            if obj is _sentinel or obj is None:
+                return _sentinel
+            obj = _get(obj, part)
+        return obj
+
+    changed = []
+    for field in fields:
+        current_val = _resolve(current_spec, field)
+        update_val = _resolve(update_spec, field)
+        if current_val != update_val:
+            changed.append(field)
+
+    if changed:
+        module.fail_json(
+            msg="Update is not supported for the following field(s): {0}".format(
+                ", ".join(changed)
+            )
+        )
+
 
 def strip_read_only_fields(spec, fields=None):
     """

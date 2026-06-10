@@ -622,6 +622,7 @@ from ..module_utils.v4.utils import (  # noqa: E402
     handle_sharing_after_create,
     handle_sharing_update,
     raise_api_exception,
+    raise_unsupported_update_fields,
     remove_empty_ip_config,
     strip_internal_attributes,
 )
@@ -855,6 +856,10 @@ def update_subnet(module, result):
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating subnets update spec", **result)
+
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())

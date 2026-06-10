@@ -208,6 +208,7 @@ from ..module_utils.v4.iam.helpers import get_role  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 
@@ -286,6 +287,10 @@ def update_role(module, result):
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating roles update spec", **result)
+
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
 
     # check for idempotency
     if check_roles_idempotency(current_spec.to_dict(), update_spec.to_dict()):

@@ -823,6 +823,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 
@@ -1181,6 +1182,10 @@ def update_network_security_policy(module, result):
         module.fail_json(
             msg="Failed generating network_security_policies update spec", **result
         )
+
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
 
     # due to conflict of spec.state with module state
     if module.params.get("policy_state"):

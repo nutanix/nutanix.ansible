@@ -310,6 +310,7 @@ from ..module_utils.v4.utils import (  # noqa: E402
     handle_sharing_after_create,
     handle_sharing_update,
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 
@@ -523,6 +524,10 @@ def update_identity_provider(module, identity_providers, result):
         module.fail_json(
             msg="Failed generating identity providers update spec", **result
         )
+
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
