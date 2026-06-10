@@ -151,7 +151,7 @@
     state: present
     name: "route_test"
     description: "Route for testing"
-    project_ext_id: "{{ project.uuid | default(omit) }}"
+    project_ext_id: "{{ project.uuid }}"
     vpc_reference: "54228821-52b9-4862-a623-05b28ce93a92"
     route_table_ext_id: "60448d4b-0532-44c3-8e10-9662cb138b37"
     route_type: STATIC
@@ -187,6 +187,7 @@
       - result.response.nexthop.nexthop_reference == "f4b3b3b4-4b3b-4b3b-4b3b-4b3b4b3b4b3b"
       - result.response.metadata.owner_reference_id == "a88a8226-83a4-4159-aa99-298eefcc5af0"
       - result.response.metadata.project_reference_id == "6aeec7b5-6ab6-4eb6-acf9-cf1e8b14a0b8"
+      - result.response.project_ext_id == project.uuid
     fail_msg: "Create route with check mode enabled failed "
     success_msg: "Create route with check mode enabled passed "
 
@@ -197,7 +198,7 @@
     state: present
     name: "{{ random_name }}_route_1"
     description: "Route for testing"
-    project_ext_id: "{{ project.uuid | default(omit) }}"
+    project_ext_id: "{{ project.uuid }}"
     vpc_reference: "{{ vpc_uuid_1 }}"
     route_table_ext_id: "{{ route_table_external_id_1 }}"
     route_type: STATIC
@@ -233,6 +234,7 @@
       - result.response.metadata.owner_reference_id == "{{ vpc_uuid_1 }}"
       - result.response.metadata.project_reference_id == "{{ project.uuid }}"
       - result.task_ext_id is defined
+      - result.response.project_ext_id == project.uuid
     fail_msg: "Create first static route failed "
     success_msg: "Create first static route passed "
 

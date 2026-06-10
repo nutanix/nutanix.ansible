@@ -44,7 +44,7 @@
   nutanix.ncp.ntnx_floating_ips_v2:
     state: present
     name: "{{ fip1_name }}"
-    project_ext_id: "{{ project.uuid | default(omit) }}"
+    project_ext_id: "{{ project.uuid }}"
     external_subnet_reference: "{{ external_nat_subnet.uuid }}"
     floating_ip:
       ipv4:
@@ -62,6 +62,7 @@
       - result.response.name == "{{ fip1_name }}"
       - result.response.floating_ip.ipv4.value == "{{ external_nat_subnets[0].floating_ip }}"
       - result.response.external_subnet_reference == "{{ external_nat_subnet.uuid }}"
+      - result.response.project_ext_id == project.uuid
     fail_msg: " Unable to create floating ip with external subnet uuid with check mode"
     success_msg: " Floating ip with external subnet uuid created successfully with check mode"
 ##############################################################
@@ -69,7 +70,7 @@
   nutanix.ncp.ntnx_floating_ips_v2:
     state: present
     name: "{{ fip1_name }}"
-    project_ext_id: "{{ project.uuid | default(omit) }}"
+    project_ext_id: "{{ project.uuid }}"
     external_subnet_reference: "{{ external_nat_subnet.uuid }}"
     metadata:
       project_reference_id: "{{ project.uuid }}"
@@ -94,6 +95,7 @@
       - result.response.metadata.owner_reference_id == "{{ users[0] }}"
       - result.response.metadata.category_ids[0] == "{{ category_ext_id }}"
       - result.response.floating_ip.ipv4.value == "{{ external_nat_subnets[0].floating_ip }}"
+      - result.response.project_ext_id == project.uuid
     fail_msg: " Unable to create floating ip with external subnet uuid "
     success_msg: " Floating ip with external subnet uuid created successfully "
 

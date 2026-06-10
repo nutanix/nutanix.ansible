@@ -29,7 +29,7 @@
     cluster_reference: "{{ cluster.uuid }}"
     usage_type: "USER"
     is_hidden: true
-    project_ext_id: "{{ project.uuid | default(omit) }}"
+    project_ext_id: "{{ project.uuid }}"
     storage_features:
       flash_mode:
         is_enabled: true
@@ -56,6 +56,7 @@
       - result.response.is_hidden == true
       - result.response.storage_features.flash_mode.is_enabled == true
       - result.response.iscsi_features.enabled_authentications == "CHAP"
+      - result.response.project_ext_id == project.uuid
 
     fail_msg: "Unable to create spec for VG create"
     success_msg: "Spec generated successfully for VG create"
@@ -65,7 +66,7 @@
     name: "{{vg1_name}}"
     description: "Volume group 1"
     cluster_reference: "{{ cluster.uuid }}"
-    project_ext_id: "{{ project.uuid | default(omit) }}"
+    project_ext_id: "{{ project.uuid }}"
   register: result
   ignore_errors: true
 
@@ -83,6 +84,7 @@
       - result.response.description == "Volume group 1"
       - result.response.should_load_balance_vm_attachments == false
       - result.response.sharing_status == None
+      - result.response.project_ext_id == project.uuid
     fail_msg: "Unable to create VG"
     success_msg: "VG created successfully"
 
@@ -99,7 +101,7 @@
     target_prefix: "vg1"
     cluster_reference: "{{ cluster.uuid }}"
     usage_type: "USER"
-    project_ext_id: "{{ project.uuid | default(omit) }}"
+    project_ext_id: "{{ project.uuid }}"
     storage_features:
       flash_mode:
         is_enabled: true
@@ -127,6 +129,7 @@
       - result.response.storage_features.flash_mode.is_enabled == true
       - result.response.iscsi_features.target_secret == None
       - result.response.iscsi_features.enabled_authentications == "CHAP"
+      - result.response.project_ext_id == project.uuid
     fail_msg: "Unable to create VG"
     success_msg: "VG created successfully"
 

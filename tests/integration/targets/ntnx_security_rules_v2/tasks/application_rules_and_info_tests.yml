@@ -121,7 +121,7 @@
   nutanix.ncp.ntnx_security_rules_v2:
     name: "{{ rule_name_1 }}"
     description: Ansible created rule
-    project_ext_id: "{{ project.uuid | default(omit) }}"
+    project_ext_id: "{{ project.uuid }}"
     type: APPLICATION
     policy_state: SAVE
     scope: ALL_VPC
@@ -291,6 +291,7 @@
       - result.response.rules[2].spec.icmp_services[0].is_all_allowed == true
       - result.response.rules[2].spec.icmp_services[0].type == 8
       - result.response.rules[2].spec.icmp_services[0].code == 0
+      - result.response.project_ext_id == project.uuid
     fail_msg: Failed to create security rule
     success_msg: Successfully created security rule
 
@@ -298,7 +299,7 @@
   nutanix.ncp.ntnx_security_rules_v2:
     name: "{{ rule_name_1 }}"
     description: Ansible created rule
-    project_ext_id: "{{ project.uuid | default(omit) }}"
+    project_ext_id: "{{ project.uuid }}"
     type: APPLICATION
     policy_state: ENFORCE
     scope: VPC_LIST
@@ -405,6 +406,7 @@
       - result.response.rules[inbound2_index].spec.secured_group_category_references[0] in category_list
       - result.response.rules[inbound2_index].spec.secured_group_category_references[1] in category_list
       - result.response.rules[inbound2_index].spec.is_all_protocol_allowed == true
+      - result.response.project_ext_id == project.uuid
     fail_msg: Failed to create security rule
     success_msg: Successfully created security rule
 

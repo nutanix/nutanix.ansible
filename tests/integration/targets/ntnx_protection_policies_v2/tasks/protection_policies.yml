@@ -352,7 +352,7 @@
   nutanix.ncp.ntnx_protection_policies_v2:
     name: "ansible-create-protection-policy-name"
     description: "ansible-create-protection-policy-description"
-    project_ext_id: "{{ project.uuid | default(omit) }}"
+    project_ext_id: "{{ project.uuid }}"
     replication_locations:
       - label: "ansible-label-{{label1}}"
         domain_manager_ext_id: "{{domain_manager_ext_id}}"
@@ -452,6 +452,7 @@
       - result.response.replication_locations[0] != result.response.replication_locations[1]
       - result.response.replication_configurations[0] != result.response.replication_configurations[1]
       - result.response.category_ids[0] == "00000000-0000-0000-0000-000000000000"
+      - result.response.project_ext_id == project.uuid
     success_msg: "Protection policy spec generated successfully"
     fail_msg: "Protection policy spec generation failed"
 
@@ -461,7 +462,7 @@
   nutanix.ncp.ntnx_protection_policies_v2:
     name: "ansible-name-linear-{{random_name}}"
     description: "ansible-description-linear-{{random_name}}"
-    project_ext_id: "{{ project.uuid | default(omit) }}"
+    project_ext_id: "{{ project.uuid }}"
     replication_locations:
       - label: "ansible-label-{{label1}}"
         domain_manager_ext_id: "{{domain_manager_ext_id}}"
@@ -559,6 +560,7 @@
       - result.response.replication_locations[0] != result.response.replication_locations[1]
       - result.response.replication_configurations[0] != result.response.replication_configurations[1]
       - result.response.category_ids[0] == "{{category_ext_id_1}}"
+      - result.response.project_ext_id == project.uuid
     success_msg: "Protection policy created successfully"
     fail_msg: "Protection policy creation failed"
 

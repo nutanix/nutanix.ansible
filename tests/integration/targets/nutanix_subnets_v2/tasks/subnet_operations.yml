@@ -30,7 +30,7 @@
   nutanix.ncp.ntnx_subnets_v2:
     state: present
     name: "{{ subnet_name }}_1"
-    project_ext_id: "{{ project.uuid | default(omit) }}"
+    project_ext_id: "{{ project.uuid }}"
     shared_with_projects: "{{ [project.uuid] if project is defined and project.uuid is defined else omit }}"
     subnet_type: VLAN
     cluster_reference: "{{ cluster.uuid }}"
@@ -101,6 +101,7 @@
       - result.response.metadata.category_ids.0 == "00061663-9fa0-28ca-185b-ac1f6b6f97e4"
       - result.response.network_function_chain_reference == "00061663-9fa0-28ca-185b-ac1f6b6f97e1"
       - result.response.is_advanced_networking == true
+      - result.response.project_ext_id == project.uuid
     fail_msg: " Unable to create VLAN subnet with check mode enabled "
     success_msg: " VLAN subnet with check mode enabled created successfully "
 
@@ -110,7 +111,7 @@
     state: present
     wait: true
     name: "{{ subnet_name }}_1"
-    project_ext_id: "{{ project.uuid | default(omit) }}"
+    project_ext_id: "{{ project.uuid }}"
     shared_with_projects: "{{ [project.uuid] if project is defined and project.uuid is defined else omit }}"
     subnet_type: VLAN
     cluster_reference: "{{ cluster.uuid }}"
@@ -129,6 +130,7 @@
       - result.response.virtual_switch_reference == "{{ virtual_switch.uuid }}"
       - result.response.cluster_reference == "{{ cluster.uuid }}"
       - result.response.network_id == {{ vlan_subnets_ids.0 }}
+      - result.response.project_ext_id == project.uuid
     fail_msg: " Unable to create VLAN subnet without IPAM "
     success_msg: " VLAN subnet without IPAM created successfully "
 
@@ -975,7 +977,7 @@
   nutanix.ncp.ntnx_subnets_v2:
     state: present
     name: "{{ subnet_name }}_shared"
-    project_ext_id: "{{ project.uuid | default(omit) }}"
+    project_ext_id: "{{ project.uuid }}"
     subnet_type: VLAN
     cluster_reference: "{{ cluster.uuid }}"
     virtual_switch_reference: "{{ virtual_switch.uuid }}"

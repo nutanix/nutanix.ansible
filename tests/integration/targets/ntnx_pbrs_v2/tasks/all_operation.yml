@@ -96,7 +96,7 @@
     name: "{{pbr_name}}1"
     priority: "{{ priority.0 }}"
     vpc_ext_id: "{{pbr.vpc.uuid}}"
-    project_ext_id: "{{ project.uuid | default(omit) }}"
+    project_ext_id: "{{ project.uuid }}"
     policies:
       - policy_action:
           action_type: PERMIT
@@ -134,6 +134,7 @@
       - result.response.policies.0.policy_match.protocol_parameters.icmp_type == 25
       - result.changed == false
       - result.failed == false
+      - result.response.project_ext_id == project.uuid
     fail_msg: " Create PBR with vpc, source network, external destination, with PERMIT action and icmp with check_mode failed"
     success_msg: " Create PBR with vpc, source network, external destination, with PERMIT action and icmp with check_mode passed"
 ###############################################################################################################################
@@ -143,7 +144,7 @@
     name: "{{pbr_name}}1"
     priority: "{{ priority.0 }}"
     vpc_ext_id: "{{pbr.vpc.uuid}}"
-    project_ext_id: "{{ project.uuid | default(omit) }}"
+    project_ext_id: "{{ project.uuid }}"
     description: "test description"
     policies:
       - policy_action:
@@ -183,6 +184,7 @@
       - result.response.policies.0.policy_match.protocol_parameters.icmp_type == 25
       - result.changed == true
       - result.failed == false
+      - result.response.project_ext_id == project.uuid
     fail_msg: " Create PBR with vpc, source network, external destination, with PERMIT action and icmp failed"
     success_msg: " Create PBR with vpc, source network, external destination, with PERMIT action and icmp passed"
 

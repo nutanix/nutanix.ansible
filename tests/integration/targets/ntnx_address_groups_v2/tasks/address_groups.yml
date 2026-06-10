@@ -25,7 +25,7 @@
     state: present
     name: "{{ ag1 }}"
     description: test-ansible-address-group-2-desc
-    project_ext_id: "{{ project.uuid | default(omit) }}"
+    project_ext_id: "{{ project.uuid }}"
     ipv4_addresses:
       - value: 10.1.1.0
         prefix_length: 24
@@ -64,7 +64,7 @@
     state: present
     name: "{{ ag2 }}"
     description: test-ansible-group-1-desc
-    project_ext_id: "{{ project.uuid | default(omit) }}"
+    project_ext_id: "{{ project.uuid }}"
     ipv4_addresses:
       - value: 10.1.1.0
         prefix_length: 24

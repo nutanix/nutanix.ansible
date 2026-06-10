@@ -65,7 +65,7 @@
     description: ansible created acps
     role: "{{ role_ext_id }}"
     authorization_policy_type: USER_DEFINED
-    project_ext_id: "{{ project.uuid | default(omit) }}"
+    project_ext_id: "{{ project.uuid }}"
     entities:
       - images:
           "*":
@@ -125,7 +125,7 @@
     description: ansible created acps
     role: "{{ role_ext_id }}"
     authorization_policy_type: USER_DEFINED
-    project_ext_id: "{{ project.uuid | default(omit) }}"
+    project_ext_id: "{{ project.uuid }}"
     entities:
       - images:
           "*":

@@ -19,7 +19,7 @@
   nutanix.ncp.ntnx_service_groups_v2:
     name: "{{ service_group_name }}_1"
     description: desc
-    project_ext_id: "{{ project.uuid | default(omit) }}"
+    project_ext_id: "{{ project.uuid }}"
     tcp_services:
       - start_port: 10
         end_port: 50
@@ -50,6 +50,7 @@
       - result.response.tcp_services[2].end_port == 98
       - result.response.tcp_services[3].start_port == 99
       - result.response.tcp_services[3].end_port == 99
+      - result.response.project_ext_id == project.uuid
     fail_msg: "Fail: Unable to create tcp service group with check mode enabled"
     success_msg: "Pass: tcp service group created successfully with check mode enabled"
 #####################################################################
@@ -57,7 +58,7 @@
   nutanix.ncp.ntnx_service_groups_v2:
     name: "{{ service_group_name }}_1"
     description: desc
-    project_ext_id: "{{ project.uuid | default(omit) }}"
+    project_ext_id: "{{ project.uuid }}"
     tcp_services:
       - start_port: 10
         end_port: 50
@@ -94,6 +95,7 @@
       - result.response.tcp_services[2].end_port == 98
       - result.response.tcp_services[3].start_port == 99
       - result.response.tcp_services[3].end_port == 99
+      - result.response.project_ext_id == project.uuid
     fail_msg: "Fail: Unable to create tcp service group  "
     success_msg: "Pass: tcp service group  created successfully"
 
