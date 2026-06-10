@@ -76,44 +76,57 @@ response:
   sample:
     {
       "algorithm": "FIVE_TUPLE_HASH",
-      "description": "Load balancer session created by Ansible",
-      "ext_id": "7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0",
+      "description": "ansible test updated",
+      "ext_id": "b83e9fc6-dfba-48d1-8319-fe208be30238",
       "health_check_config": {
-          "failure_threshold": 3,
-          "interval_secs": 10,
-          "success_threshold": 3,
-          "timeout_secs": 5
+          "failure_threshold": 12,
+          "interval_secs": 13,
+          "success_threshold": 10,
+          "timeout_secs": 14
       },
       "links": null,
       "listener": {
           "port_ranges": [
               {
-                  "end_port": 80,
-                  "start_port": 80
+                  "end_port": 105,
+                  "start_port": 100
               }
           ],
           "protocol": "TCP",
           "virtual_ip": {
               "assignment_type": "DYNAMIC",
-              "ip_address": null,
-              "subnet_reference": "2e40ff57-20aa-4d2b-b179-298db969c20d"
+              "ip_address": {
+                  "ipv4": {
+                      "prefix_length": 32,
+                      "value": "192.168.1.100"
+                  },
+                  "ipv6": null
+              },
+              "subnet_reference": "a40c3403-9f4c-4205-8506-64f524545be4"
           }
       },
-      "metadata": null,
-      "name": "load_balancer_session_ansible",
+      "metadata": {
+          "category_ids": null,
+          "owner_reference_id": "00000000-0000-0000-0000-000000000000",
+          "owner_user_name": "admin",
+          "project_name": null,
+          "project_reference_id": null
+      },
+      "name": "YHjdsObUDrBeansible-lbs_updated",
       "targets_config": {
           "category_targets": null,
           "nic_targets": [
               {
-                  "health": null,
-                  "port": 80,
-                  "virtual_nic_reference": "f28e7475-f835-42ef-ac35-ecbc48d5421e"
+                  "health": "UNHEALTHY",
+                  "port": 1080,
+                  "virtual_nic_reference": "34ed7568-8d2d-40a6-a702-0d27fe33c536",
+                  "vm_reference": "6238f063-fda8-461f-5ed2-ad6b7f32875f"
               }
           ]
       },
       "tenant_id": null,
       "type": "NETWORK_LOAD_BALANCER",
-      "vpc_reference": "b1a7c9d2-3f4e-4a6b-8c9d-0e1f2a3b4c5d"
+      "vpc_reference": "ff1c27f0-1f10-42f6-8ffc-45f3179c4bff"
     }
 
 changed:

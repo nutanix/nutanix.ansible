@@ -321,8 +321,8 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     state: present
-    name: "load_balancer_session_ansible"
-    description: "Load balancer session created by Ansible"
+    name: "load_balancer_name"
+    description: "ansible test full spec"
     type: "NETWORK_LOAD_BALANCER"
     vpc_reference: "b1a7c9d2-3f4e-4a6b-8c9d-0e1f2a3b4c5d"
     algorithm: "FIVE_TUPLE_HASH"
@@ -333,7 +333,10 @@ EXAMPLES = r"""
           end_port: 80
       virtual_ip:
         subnet_reference: "2e40ff57-20aa-4d2b-b179-298db969c20d"
-        assignment_type: "DYNAMIC"
+        assignment_type: "STATIC"
+        ip_address:
+          ipv4:
+            value: "192.168.1.100"
     targets_config:
       nic_targets:
         - virtual_nic_reference: "f28e7475-f835-42ef-ac35-ecbc48d5421e"
@@ -341,8 +344,8 @@ EXAMPLES = r"""
     health_check_config:
       interval_secs: 10
       timeout_secs: 5
-      success_threshold: 3
-      failure_threshold: 3
+      success_threshold: 4
+      failure_threshold: 6
   register: result
   ignore_errors: true
 
@@ -353,9 +356,26 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     state: present
-    ext_id: "7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0"
-    name: "load_balancer_session_ansible_updated"
-    description: "Updated load balancer session description"
+    ext_id: "d1a36642-962e-4b45-9b52-150165100494"
+    name: "load_balancer_name_updated"
+    description: "ansible test updated"
+    listener:
+      protocol: "TCP"
+      port_ranges:
+        - start_port: 100
+          end_port: 105
+      virtual_ip:
+        subnet_reference: "2e40ff57-20aa-4d2b-b179-298db969c20d"
+        assignment_type: "DYNAMIC"
+    targets_config:
+      nic_targets:
+        - virtual_nic_reference: "f28e7475-f835-42ef-ac35-ecbc48d5421e"
+          port: 1080
+    health_check_config:
+      interval_secs: 13
+      timeout_secs: 14
+      success_threshold: 10
+      failure_threshold: 12
   register: result
   ignore_errors: true
 
@@ -383,12 +403,12 @@ response:
   sample:
     {
       "algorithm": "FIVE_TUPLE_HASH",
-      "description": "Load balancer session created by Ansible",
-      "ext_id": "7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0",
+      "description": "ansible test full spec",
+      "ext_id": "b83e9fc6-dfba-48d1-8319-fe208be30238",
       "health_check_config": {
-          "failure_threshold": 3,
+          "failure_threshold": 6,
           "interval_secs": 10,
-          "success_threshold": 3,
+          "success_threshold": 4,
           "timeout_secs": 5
       },
       "links": null,
@@ -401,38 +421,51 @@ response:
           ],
           "protocol": "TCP",
           "virtual_ip": {
-              "assignment_type": "DYNAMIC",
-              "ip_address": null,
-              "subnet_reference": "2e40ff57-20aa-4d2b-b179-298db969c20d"
+              "assignment_type": "STATIC",
+              "ip_address": {
+                  "ipv4": {
+                      "prefix_length": 32,
+                      "value": "192.168.1.100"
+                  },
+                  "ipv6": null
+              },
+              "subnet_reference": "a40c3403-9f4c-4205-8506-64f524545be4"
           }
       },
-      "metadata": null,
-      "name": "load_balancer_session_ansible",
+      "metadata": {
+          "category_ids": null,
+          "owner_reference_id": "00000000-0000-0000-0000-000000000000",
+          "owner_user_name": "admin",
+          "project_name": null,
+          "project_reference_id": null
+      },
+      "name": "YHjdsObUDrBeansible-lbs_2",
       "targets_config": {
           "category_targets": null,
           "nic_targets": [
               {
-                  "health": null,
+                  "health": "UNHEALTHY",
                   "port": 80,
-                  "virtual_nic_reference": "f28e7475-f835-42ef-ac35-ecbc48d5421e"
+                  "virtual_nic_reference": "34ed7568-8d2d-40a6-a702-0d27fe33c536",
+                  "vm_reference": "6238f063-fda8-461f-5ed2-ad6b7f32875f"
               }
           ]
       },
       "tenant_id": null,
       "type": "NETWORK_LOAD_BALANCER",
-      "vpc_reference": "b1a7c9d2-3f4e-4a6b-8c9d-0e1f2a3b4c5d"
+      "vpc_reference": "ff1c27f0-1f10-42f6-8ffc-45f3179c4bff"
     }
 
 task_ext_id:
   description:
-    - The external id of the task.
+    - The external ID of the task.
   returned: always
   type: str
   sample: "ZXJnb24=:90458bc7-a12b-4616-ac66-562fdb00c209"
 
 ext_id:
   description:
-    - The external id of the load balancer session.
+    - The external ID of the load balancer session.
   returned: always
   type: str
   sample: "7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0"
@@ -445,7 +478,7 @@ changed:
 
 skipped:
   description: This indicates whether the task was skipped
-  returned: always
+  returned: when the task is idempotent
   type: bool
   sample: false
 
