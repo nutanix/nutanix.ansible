@@ -28,18 +28,31 @@
   ansible.builtin.set_fact:
     test_role_ext_id: "{{ roles_result.response[0].ext_id }}"
 
-- name: List existing users
-  nutanix.ncp.ntnx_users_info_v2:
-    filter: "idpId eq '{{ identity_provider_uuid }}'"
-  register: users_result
+- name: Create SAML user
+  nutanix.ncp.ntnx_users_v2:
+    user_type: SAML
+    username: "{{ new_saml_user }}"
+    idp_id: "{{ identity_provider_uuid }}"
+  register: result
+  ignore_errors: true
 
-- name: Debug users result
-  ansible.builtin.debug:
-    var: users_result
+- name: Create SAML user status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.response.user_type == "SAML"
+      - result.response.username == "{{ new_saml_user }}"
+      - result.response.idp_id == "{{ identity_provider_uuid }}"
+      - result.ext_id == result.response.ext_id
+    fail_msg: Create SAML user failed
+    success_msg: Create SAML user passed
 
 - name: Set user variables for tests
   ansible.builtin.set_fact:
-    test_user_ext_id: "{{ users_result.response[0].ext_id }}"
+    test_user_ext_id: "{{ result.ext_id }}"
 
 - name: Create SAML user group
   nutanix.ncp.ntnx_user_groups_v2:
@@ -582,17 +595,28 @@
 ###########################################################
 # CLEANUP
 ###########################################################
-- name: Cleanup remaining role memberships
-  nutanix.ncp.ntnx_role_membership_v2:
-    state: absent
-    ext_id: "{{ item }}"
-  loop: "{{ todelete_rm }}"
-  failed_when: false
-  when: todelete_rm | length > 0
 
-- name: End testing ntnx_role_membership_v2, ntnx_role_memberships_info_v2
+# Use the V3 delete API to remove users, as the V4 delete API is not available for user deletion.
+- name: Delete created users
+  nutanix.ncp.ntnx_users:
+    state: absent
+    user_uuid: "{{ test_user_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug result
   ansible.builtin.debug:
-    msg: End testing ntnx_role_membership_v2, ntnx_role_memberships_info_v2
+    var: result
+
+- name: Delete created users status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == "SUCCEEDED"
+      - result.uuid == test_user_ext_id
+    fail_msg: Delete created users failed
+    success_msg: Delete created users passed
 
 - name: Delete created SAML user group
   nutanix.ncp.ntnx_user_groups_v2:
