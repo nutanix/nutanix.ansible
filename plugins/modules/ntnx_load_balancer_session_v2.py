@@ -242,7 +242,7 @@ options:
       - Health check configuration for the load balancer session.
       - Required for create operation.
     type: dict
-    required: true
+    required: false
     suboptions:
       interval_secs:
         description:
@@ -607,10 +607,10 @@ def get_module_spec():
     )
 
     health_check_config_spec = dict(
-        interval_secs=dict(type="int"),
-        timeout_secs=dict(type="int"),
-        success_threshold=dict(type="int"),
-        failure_threshold=dict(type="int"),
+        interval_secs=dict(type="int", default=5),
+        timeout_secs=dict(type="int", default=2),
+        success_threshold=dict(type="int", default=3),
+        failure_threshold=dict(type="int", default=3),
     )
 
     metadata_spec = dict(
