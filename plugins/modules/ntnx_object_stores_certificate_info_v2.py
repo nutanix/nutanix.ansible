@@ -225,7 +225,7 @@ def get_object_store_certificate_ca(module, object_stores_api, result):
     if not downloaded_path:
         module.fail_json(
             msg="Failed to determine the downloaded certificate authority file path",
-            **result
+            **result,
         )
 
     downloaded_path = str(downloaded_path)
