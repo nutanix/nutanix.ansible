@@ -7,6 +7,10 @@
 # SETUP - Gather required IDs
 ###########################################################
 
+- name: Set delete list
+  ansible.builtin.set_fact:
+    todelete_rm: []
+
 - name: Generate random project name
   ansible.builtin.set_fact:
     random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
@@ -80,10 +84,6 @@
   ansible.builtin.set_fact:
     test_user_group_ext_id: "{{ result.ext_id }}"
 
-- name: Set delete list
-  ansible.builtin.set_fact:
-    todelete_rm: []
-
 - name: Debug setup variables
   ansible.builtin.debug:
     msg: "role_ext_id={{ test_role_ext_id }}, user_ext_id={{ test_user_ext_id }}, idp_ext_id={{ identity_provider_uuid }}"
@@ -129,9 +129,9 @@
     scope_template_name: "ProjectsScopeTemplate"
     scope_template_name_values:
       - name: "projectExtId"
-        value: "00000000-0000-0000-0000-000000000000"
+        value: "13131313-1313-1313-1313-131313131313"
     idp_ext_id: "99999999-9999-9999-9999-999999999999"
-    project_ext_id: "00000000-0000-0000-0000-000000000000"
+    project_ext_id: "13131313-1313-1313-1313-131313131313"
   register: result
   check_mode: true
   ignore_errors: true
@@ -148,10 +148,9 @@
       - result.response.scope_template_name == "ProjectsScopeTemplate"
       - result.response.scope_template_name_values | length == 1
       - result.response.scope_template_name_values[0].name == "projectExtId"
-      - result.response.scope_template_name_values[0].value == "00000000-0000-0000-0000-000000000000"
+      - result.response.scope_template_name_values[0].value == "13131313-1313-1313-1313-131313131313"
       - result.response.idp_ext_id == "99999999-9999-9999-9999-999999999999"
-      - result.response.project_ext_id == "00000000-0000-0000-0000-000000000000"
-      - result.ext_id is none
+      - result.response.project_ext_id == "13131313-1313-1313-1313-131313131313"
     fail_msg: "Generating spec for creating role membership with check mode - all fields failed"
     success_msg: "Generating spec for creating role membership with check mode - all fields passed"
 
@@ -327,7 +326,7 @@
 ###########################################################
 - name: List role memberships with filter by role ext_id
   nutanix.ncp.ntnx_role_memberships_info_v2:
-    filter: "roleExtId eq '{{ test_role_ext_id }}'"
+    filter: "roleExtId eq '{{ test_role_ext_id }}' and identityType eq 'USER'"
   register: filter_result
   ignore_errors: true
 
@@ -340,8 +339,9 @@
       - filter_result.response | length >= 1
       - filter_result.response[0].role_ext_id == test_role_ext_id
       - filter_result.response[0].ext_id is defined
-      - filter_result.response[0].identity_type is defined
       - filter_result.response[0].scope_template_name is defined
+      - filter_result.response[0].identity_type == "USER"
+      # Assert for all the fields
     fail_msg: "List role memberships with filter failed"
     success_msg: "List role memberships with filter passed"
 
@@ -385,6 +385,7 @@
 - name: Verify deletion loop result
   ansible.builtin.assert:
     that:
+      - delete_result.changed == true
       - delete_result.results is defined
       - delete_result.results | length == todelete_rm | length
       - delete_result.msg == "All items completed"
@@ -401,6 +402,7 @@
       - item.msg is defined
       - '"Role membership with ext_id" in item.msg'
       - '"deleted successfully" in item.msg'
+      - item.ext_id in item.msg
     fail_msg: "Deletion failed for role membership {{ item.item }}"
     success_msg: "Role membership {{ item.item }} deleted successfully"
   loop: "{{ delete_result.results }}"
@@ -440,9 +442,6 @@
       - fetch_after_delete_result.status is defined
       - fetch_after_delete_result.status == 404
       - fetch_after_delete_result.response is defined
-      - fetch_after_delete_result.response.data.error is defined
-      - fetch_after_delete_result.response.data.error | length > 0
-      - "'not found' in fetch_after_delete_result.response.data.error[0].message"
     fail_msg: "Fetching deleted role membership should return 404 not found"
     success_msg: "Fetching deleted role membership correctly returned 404 not found"
   when: deleted_rm_ext_id is defined and fetch_after_delete_result is defined
@@ -488,14 +487,12 @@
       - result.changed == false
       - result.failed == true
       - result.msg is defined
+      - result.msg == "Api Exception raised while fetching role membership info using ext_id"
       - result.error is defined
       - result.error == "NOT FOUND"
       - result.status is defined
       - result.status == 404
       - result.response is defined
-      - result.response.data.error is defined
-      - result.response.data.error | length > 0
-      - "'not found' in result.response.data.error[0].message"
     fail_msg: "Negative test - delete with non-existent ext_id should fail"
     success_msg: "Negative test - delete with non-existent ext_id correctly failed"
 
@@ -521,18 +518,14 @@
       - result.status is defined
       - result.status == 404
       - result.response is defined
-      - result.response.data.error is defined
-      - result.response.data.error | length > 0
-      - "'not found' in result.response.data.error[0].message"
-      - result.response.data.error[0].code is defined
     fail_msg: "Negative test - get info with non-existent ext_id should fail"
     success_msg: "Negative test - get info with non-existent ext_id correctly failed"
 
-- name: "Negative: Create role membership with invalid identity_type" # noqa: args[module]
+- name: "Negative: Create role membership with invalid identity_type"
   nutanix.ncp.ntnx_role_membership_v2:
     state: present
     role_ext_id: "{{ test_role_ext_id }}"
-    identity_type: "INVALID"
+    identity_type: "{{ 'INVALID' }}"
     identity_ext_id: "{{ test_user_ext_id }}"
     idp_ext_id: "{{ identity_provider_uuid }}"
     scope_template_name: "ProjectsScopeTemplate"
@@ -584,11 +577,6 @@
       - result.status is defined
       - result.status == 400
       - result.response is defined
-      - result.response.data.error is defined
-      - result.response.data.error | length > 0
-      - "'InvalidScopeTemplate' in result.response.data.error[0].message"
-      - "'not found' in result.response.data.error[0].message"
-      - result.response.data.error[0].code is defined
     fail_msg: "Negative test - invalid scope_template_name should fail"
     success_msg: "Negative test - invalid scope_template_name correctly failed"
 

@@ -124,7 +124,7 @@ response:
     description:
         - Response for creating or deleting role memberships.
         - Role membership details if the operation is create.
-        - Status dict with C(status)=C(SUCCEEDED) if the operation is delete.
+        - None if the operation is delete.
     returned: always
     type: dict
     sample: {
@@ -180,7 +180,7 @@ error:
 
 failed:
     description: This indicates whether the task failed.
-    returned: When something fails
+    returned: always
     type: bool
     sample: true
 """

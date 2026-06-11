@@ -127,6 +127,7 @@ msg:
     description: Additional message about the operation.
     returned: When there is an error
     type: str
+    sample: "Api Exception raised while fetching role membership info using ext_id"
 
 error:
     description: This field holds information about errors that occurred during the task execution.
@@ -135,7 +136,7 @@ error:
 
 failed:
     description: This indicates whether the task failed.
-    returned: When something fails
+    returned: always
     type: bool
     sample: true
 """
