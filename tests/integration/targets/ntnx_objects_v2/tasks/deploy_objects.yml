@@ -279,18 +279,12 @@
   register: result
   ignore_errors: true
 
-- ansible.builtin.debug:
-    var: result
-
 - name: Stat the downloaded certificate authority (CA) file
   ansible.builtin.stat:
     path: "{{ result.response.path }}"
   register: ca_file_stat
   when: result.response.path is defined
   ignore_errors: true
-
-- ansible.builtin.debug:
-    var: ca_file_stat
 
 - name: Download certificate authority (CA) for the certificate to a destination path status
   ansible.builtin.assert:
@@ -317,9 +311,6 @@
   register: ca_file_stat_after_removal
   ignore_errors: true
 
-- ansible.builtin.debug:
-    var: ca_file_stat_after_removal
-
 - name: Verify certificate authority (CA) file is removed status
   ansible.builtin.assert:
     that:
@@ -334,9 +325,6 @@
     download_ca: true
   register: result
   ignore_errors: true
-
-- ansible.builtin.debug:
-    var: result
 
 - name: Stat the downloaded certificate authority (CA) file at the default location
   ansible.builtin.stat:
@@ -383,9 +371,6 @@
     download_ca: true
   register: result
   ignore_errors: true
-
-- ansible.builtin.debug:
-    var: result
 
 - name: Download certificate authority (CA) for the certificate to a destination path without ext_id status
   ansible.builtin.assert:
@@ -482,7 +467,7 @@
 
 - name: Set time window for object store statistics
   ansible.builtin.set_fact:
-    stats_start_time: "{{ lookup('pipe', 'date -u -d \"1 hour ago\" +%Y-%m-%dT%H:%M:%S.000+00:00') }}"
+    stats_start_time: '{{ lookup(''pipe'', ''date -u -d "1 hour ago" +%Y-%m-%dT%H:%M:%S.000+00:00'') }}'
     stats_end_time: "{{ lookup('pipe', 'date -u +%Y-%m-%dT%H:%M:%S.000+00:00') }}"
 
 - name: Fetch object store statistics for the time window
@@ -494,9 +479,6 @@
     stat_type: "SUM"
   register: result
   ignore_errors: true
-
-- ansible.builtin.debug:
-    var: result
 
 - name: Fetch object store statistics for the time window status
   ansible.builtin.assert:
