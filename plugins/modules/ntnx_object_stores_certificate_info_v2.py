@@ -13,6 +13,8 @@ version_added: 2.2.0
 description:
     - Fetch specific object store certificate info if external ID is provided
     - Fetch list of multiple object store certificates info if external ID is not provided with optional filters
+    - Download the certificate authority (CA) of a specific object store certificate when C(download_ca) is set to true
+    - The certificate authority is returned as an C(application/octet-stream) download and is saved to a local file, whose path is returned in the response
     - This module uses PC v4 APIs based GA SDKs
 notes:
     - >-
@@ -23,15 +25,35 @@ notes:
     - >-
       B(Get a list of the SSL certificates of an Object store) -
       Required Roles: Objects Admin, Objects Editor, Objects Viewer, Prism Admin, Super Admin
+    - >-
+      B(Download the certificate authority of an Object store certificate) -
+      Required Roles: Objects Admin, Objects Editor, Objects Viewer, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=objects)"
 options:
     object_store_ext_id:
-        description: object store external ID
+        description: Object store External ID
         type: str
         required: true
     ext_id:
-        description: external ID of certificate to fetch
+        description:
+            - External ID of certificate to fetch
+            - Required when C(download_ca) is set to true
         type: str
+    download_ca:
+        description:
+            - Download the certificate authority (CA) of the object store certificate identified by C(ext_id)
+            - The CA is returned as an C(application/octet-stream) download and saved to a local file
+            - The path of the downloaded file is returned under C(response.path)
+            - Requires C(ext_id) to be set
+        type: bool
+        default: false
+    dest:
+        description:
+            - Local destination file path where the downloaded certificate authority (CA) should be saved.
+            - Only used when C(download_ca) is set to true
+            - The parent directory is created if it does not already exist
+            - If not provided, the CA is saved to the SDK default download location and that path is returned
+        type: path
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_info_v2
@@ -53,6 +75,21 @@ EXAMPLES = r"""
     object_store_ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
     ext_id: "f3197423-f486-4037-6037-95442e58484e"
   register: result
+
+- name: Download the certificate authority (CA) of an object store certificate
+  nutanix.ncp.ntnx_object_stores_certificate_info_v2:
+    object_store_ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
+    ext_id: "f3197423-f486-4037-6037-95442e58484e"
+    download_ca: true
+  register: result
+
+- name: Download the certificate authority (CA) to a specific destination path
+  nutanix.ncp.ntnx_object_stores_certificate_info_v2:
+    object_store_ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
+    ext_id: "f3197423-f486-4037-6037-95442e58484e"
+    download_ca: true
+    dest: "/tmp/object_store_ca.pem"
+  register: result
 """
 
 RETURN = r"""
@@ -61,6 +98,7 @@ response:
         - Response for fetching object store certificate info
         - Object store certificate info if external ID is provided
         - List of multiple object store certificates info if external ID is not provided
+        - When C(download_ca) is set to true, a dict with the local C(path) of the downloaded certificate authority file
     type: dict
     returned: always
     sample:
@@ -121,12 +159,17 @@ total_available_results:
     sample: 125
 """
 
+import os  # noqa: E402
+import shutil  # noqa: E402
 import warnings  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.objects.api_client import get_objects_api_instance  # noqa: E402
-from ..module_utils.v4.objects.helpers import get_object_store_certificate  # noqa: E402
+from ..module_utils.v4.objects.helpers import (  # noqa: E402
+    get_object_store_certificate,
+    get_object_store_certificate_authority,
+)
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
@@ -141,6 +184,8 @@ def get_module_spec():
     module_args = dict(
         object_store_ext_id=dict(type="str", required=True),
         ext_id=dict(type="str"),
+        download_ca=dict(type="bool", default=False),
+        dest=dict(type="path"),
     )
     return module_args
 
@@ -153,6 +198,42 @@ def get_object_store_certificate_with_ext_id(module, object_stores_api, result):
     )
     result["ext_id"] = ext_id
     result["response"] = strip_internal_attributes(resp.to_dict())
+
+
+def get_object_store_certificate_ca(module, object_stores_api, result):
+    ext_id = module.params.get("ext_id")
+    object_store_ext_id = module.params.get("object_store_ext_id")
+    dest = module.params.get("dest")
+    result["ext_id"] = ext_id
+
+    if dest:
+        dest_dir = os.path.dirname(os.path.abspath(dest))
+        if not os.path.isdir(dest_dir):
+            os.makedirs(dest_dir)
+        object_stores_api.api_client.configuration.download_directory = dest_dir
+
+    resp = get_object_store_certificate_authority(
+        module, object_stores_api, ext_id, object_store_ext_id
+    )
+
+    data = resp.data
+    if isinstance(data, dict):
+        downloaded_path = data.get("path")
+    else:
+        downloaded_path = getattr(data, "path", None)
+
+    if not downloaded_path:
+        module.fail_json(
+            msg="Failed to determine the downloaded certificate authority file path",
+            **result
+        )
+
+    downloaded_path = str(downloaded_path)
+    if dest and os.path.abspath(downloaded_path) != os.path.abspath(dest):
+        shutil.move(downloaded_path, dest)
+        downloaded_path = dest
+
+    result["response"] = {"path": downloaded_path}
 
 
 def get_object_store_certificates(module, object_stores_api, result):
@@ -192,11 +273,16 @@ def run_module():
         mutually_exclusive=[
             ("ext_id", "filter"),
         ],
+        required_if=[
+            ("download_ca", True, ("ext_id",)),
+        ],
     )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "response": None}
     object_stores_api = get_objects_api_instance(module)
-    if module.params.get("ext_id"):
+    if module.params.get("download_ca"):
+        get_object_store_certificate_ca(module, object_stores_api, result)
+    elif module.params.get("ext_id"):
         get_object_store_certificate_with_ext_id(module, object_stores_api, result)
     else:
         get_object_store_certificates(module, object_stores_api, result)
