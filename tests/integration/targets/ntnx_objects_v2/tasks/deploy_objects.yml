@@ -303,14 +303,13 @@
   ansible.builtin.file:
     path: "/tmp/object_store_ca.pem"
     state: absent
-  register: result
-  ignore_errors: true
+  failed_when: false
 
 - name: Stat the certificate authority (CA) file after removal
   ansible.builtin.stat:
     path: "/tmp/object_store_ca.pem"
   register: ca_file_stat_after_removal
-  ignore_errors: true
+  failed_when: false
 
 - name: Verify certificate authority (CA) file is removed status
   ansible.builtin.assert:
@@ -327,12 +326,17 @@
   register: result
   ignore_errors: true
 
+- name: Set the default location certificate authority (CA) file path
+  ansible.builtin.set_fact:
+    ca_default_path: "{{ result.response.path }}"
+  when: result.response.path is defined
+
 - name: Stat the downloaded certificate authority (CA) file at the default location
   ansible.builtin.stat:
-    path: "{{ result.response.path }}"
+    path: "{{ ca_default_path }}"
   register: ca_default_file_stat
-  when: result.response.path is defined
-  ignore_errors: true
+  when: ca_default_path is defined
+  failed_when: false
 
 - name: Download certificate authority (CA) for the certificate without a destination path status
   ansible.builtin.assert:
@@ -349,16 +353,15 @@
 
 - name: Remove the downloaded certificate authority (CA) file from the default location
   ansible.builtin.file:
-    path: "{{ result.response.path }}"
+    path: "{{ ca_default_path }}"
     state: absent
-  register: result
-  ignore_errors: true
+  failed_when: false
 
 - name: Stat the certificate authority (CA) file at the default location after removal
   ansible.builtin.stat:
-    path: "{{ result.response.path }}"
+    path: "{{ ca_default_path }}"
   register: ca_default_file_stat_after_removal
-  ignore_errors: true
+  failed_when: false
 
 - name: Verify certificate authority (CA) file at the default location is removed status
   ansible.builtin.assert:
