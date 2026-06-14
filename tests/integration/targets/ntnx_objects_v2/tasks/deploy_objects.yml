@@ -303,6 +303,7 @@
   ansible.builtin.file:
     path: "/tmp/object_store_ca.pem"
     state: absent
+  register: result
   ignore_errors: true
 
 - name: Stat the certificate authority (CA) file after removal
@@ -350,6 +351,7 @@
   ansible.builtin.file:
     path: "{{ result.response.path }}"
     state: absent
+  register: result
   ignore_errors: true
 
 - name: Stat the certificate authority (CA) file at the default location after removal
