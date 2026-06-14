@@ -90,6 +90,10 @@
   ignore_errors: true
   changed_when: "'ETag' in upload_result.stdout"
 
+- name: Debug upload result
+  ansible.builtin.debug:
+    msg: "{{ upload_result }}"
+
 - name: Assert image upload to object store bucket succeeded
   ansible.builtin.assert:
     that:
