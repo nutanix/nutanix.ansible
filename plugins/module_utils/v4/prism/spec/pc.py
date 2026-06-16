@@ -101,8 +101,7 @@ class PrismSpecs:
             type="list",
             elements="dict",
             options=ip_ranges_spec,
-            obj=prism_sdk.IpRange,
-            required=True,
+            obj=prism_sdk.IpRange
         ),
     )
 
@@ -124,6 +123,7 @@ class PrismSpecs:
             elements="dict",
             options=ip_ranges_spec,
             obj=prism_sdk.IpRange,
+            required=True,
         ),
         network_ext_id=dict(type="str", required=True),
     )
