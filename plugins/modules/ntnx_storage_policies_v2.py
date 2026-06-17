@@ -24,15 +24,12 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create a Storage Policy) -
-      Operation Name: Create Storage Policy -
       Required Roles: Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
     - >-
       B(Delete an existing Storage Policy) -
-      Operation Name: Delete Storage Policy -
       Required Roles: Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
     - >-
       B(Update an existing Storage Policy) -
-      Operation Name: Update Storage Policy -
       Required Roles: Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=datapolicies)"
 options:
