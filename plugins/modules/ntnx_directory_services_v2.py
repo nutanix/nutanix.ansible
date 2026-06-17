@@ -22,15 +22,12 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create directory service) -
-      Operation Name: Create Directory Service -
       Required Roles: Nutanix Central Admin, Super Admin
     - >-
       B(Delete directory service) -
-      Operation Name: Delete Directory Service -
       Required Roles: Nutanix Central Admin, Super Admin
     - >-
       B(Update directory service) -
-      Operation Name: Update Directory Service -
       Required Roles: Nutanix Central Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam)"
 options:

@@ -281,3 +281,28 @@ def _apply_proxy_from_env(config, module=None):
         config.proxy_password = module.params.get("proxy_password") or os.environ.get(
             "PROXY_PASSWORD"
         )
+
+
+def strip_read_only_fields(spec, fields=None):
+    """
+    Remove server-populated read-only fields from a v4 SDK spec object before
+    sending it back as an update body. Modules whose entity has read-only
+    fields (e.g. counters populated by the platform) can pass them via
+    ``fields``.
+
+    The spec is mutated in place; it is also returned so callers can chain.
+
+    Args:
+        spec (object): SDK model object to mutate.
+        fields (Iterable[str] | None): Attribute names to remove.
+
+    Returns:
+        object: The same ``spec``, with the listed attributes removed.
+    """
+    if not fields:
+        return spec
+
+    for field in fields:
+        if hasattr(spec, field):
+            delattr(spec, field)
+    return spec
