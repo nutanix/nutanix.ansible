@@ -81,9 +81,18 @@
       - result.ext_id is defined
       - result.response.name == base_vm_name
       - result.response.cluster.ext_id == cluster.uuid
-      - result.response.cd_roms[0].disk_address.bus_type == "IDE"
+      - result.response.num_sockets == 2
+      - result.response.num_cores_per_socket == 2
+      - result.response.memory_size_bytes == 8589934592
+      - result.response.boot_config is defined
+      - result.response.disks[0].backing_info.disk_size_bytes == 42949672960
+      - result.response.disks[0].backing_info.data_source.reference.image_ext_id == windows_image_config.image_uuid
       - result.response.disks[0].disk_address.bus_type == "SCSI"
+      - result.response.disks[0].disk_address.index == 0
+      - result.response.cd_roms[0].disk_address.bus_type == "IDE"
+      - result.response.cd_roms[0].disk_address.index == 0
       - result.response.nics[0].network_info.subnet.ext_id == network.dhcp.uuid
+      - result.response.nics[0].network_info.ipv4_config.should_assign_ip == true
     fail_msg: "Failed to create Windows base VM for guest-customization profile tests"
     success_msg: "Windows base VM created successfully"
 
@@ -115,7 +124,8 @@
   ignore_errors: true
   retries: 60
   delay: 5
-  until: result.response.nics[0].network_info.ipv4_info.learned_ip_addresses[0].value
+  until:
+    result.response.nics[0].network_info.ipv4_info.learned_ip_addresses[0].value
     is defined
 
 - name: Set base VM IP fact
@@ -195,11 +205,8 @@
   register: result
   ignore_errors: true
 
-- name: Print result of generated check-mode spec for sysprep params
-  ansible.builtin.debug:
-    var: result
-
-- name: Verify generated spec for creating VM Guest Customization Profile (sysprep
+- name:
+    Verify generated spec for creating VM Guest Customization Profile (sysprep
     params, Workgroup) using check mode
   ansible.builtin.assert:
     that:
@@ -272,11 +279,6 @@
   register: result
   ignore_errors: true
 
-- name: Print result of create VM Guest Customization Profile (sysprep params,
-    Sysprep params)
-  ansible.builtin.debug:
-    var: result
-
 - name: Verify create VM Guest Customization Profile (sysprep params, Workgroup,
     Sysprep params)
   ansible.builtin.assert:
@@ -313,7 +315,8 @@
         == ["10.0.0.11"]
     fail_msg: "Failed to create VM Guest Customization Profile (sysprep params,
       Workgroup, DHCP)"
-    success_msg: "VM Guest Customization Profile (sysprep params, Workgroup, DHCP)
+    success_msg:
+      "VM Guest Customization Profile (sysprep params, Workgroup, DHCP)
       created successfully"
 
 - name: Save workgroup profile ext_id
@@ -362,11 +365,6 @@
   register: result
   ignore_errors: true
 
-- name: Print result of create VM Guest Customization Profile (sysprep params,
-    Domain settings)
-  ansible.builtin.debug:
-    var: result
-
 - name: Verify create VM Guest Customization Profile (sysprep params, Domain
     settings) must-provide IP)
   ansible.builtin.assert:
@@ -401,7 +399,8 @@
         == ["10.1.0.11"]
     fail_msg: "Failed to create VM Guest Customization Profile (sysprep params,
       Domain settings)"
-    success_msg: "VM Guest Customization Profile (sysprep params, Domain settings)
+    success_msg:
+      "VM Guest Customization Profile (sysprep params, Domain settings)
       created successfully"
 
 - name: Save domain settings profile ext_id
@@ -423,10 +422,6 @@
             unattend_xml: "{{ sample_unattend_xml }}"
   register: result
   ignore_errors: true
-
-- name: Print result of create answer-file profile
-  ansible.builtin.debug:
-    var: result
 
 - name: Verify create answer-file profile
   ansible.builtin.assert:
@@ -487,10 +482,6 @@
   check_mode: true
   register: result
   ignore_errors: true
-
-- name: Print result of generated update spec for sysprep profile using check mode
-  ansible.builtin.debug:
-    var: result
 
 - name: Verify generated update spec for sysprep profile using check mode
   ansible.builtin.assert:
@@ -562,10 +553,6 @@
   register: result
   ignore_errors: true
 
-- name: Print result of update VM Guest Customization Profile
-  ansible.builtin.debug:
-    var: result
-
 - name: Verify update VM Guest Customization Profile
   ansible.builtin.assert:
     that:
@@ -636,10 +623,6 @@
   register: result
   ignore_errors: true
 
-- name: Print result of idempotency on update VM Guest Customization Profile
-  ansible.builtin.debug:
-    var: result
-
 - name: Verify idempotency on update VM Guest Customization Profile
   ansible.builtin.assert:
     that:
@@ -659,10 +642,6 @@
     ext_id: "{{ todelete[0] }}"
   register: result
   ignore_errors: true
-
-- name: Print result of fetch by ext_id
-  ansible.builtin.debug:
-    var: result
 
 - name: Verify fetch by ext_id
   ansible.builtin.assert:
@@ -707,10 +686,6 @@
   register: result
   ignore_errors: true
 
-- name: Print result of list VM Guest Customization Profiles
-  ansible.builtin.debug:
-    var: result
-
 - name: Verify list VM Guest Customization Profiles
   ansible.builtin.assert:
     that:
@@ -731,10 +706,6 @@
     filter: "name eq '{{ profile_sysprep_name_updated }}'"
   register: result
   ignore_errors: true
-
-- name: Print result of list with filter
-  ansible.builtin.debug:
-    var: result
 
 - name: Verify list with filter
   ansible.builtin.assert:
@@ -782,10 +753,6 @@
     limit: 1
   register: result
   ignore_errors: true
-
-- name: Print result of list with limit
-  ansible.builtin.debug:
-    var: result
 
 - name: Verify list with limit
   ansible.builtin.assert:
@@ -1129,10 +1096,6 @@
   register: result
   ignore_errors: true
 
-- name: Print result of negative deploy
-  ansible.builtin.debug:
-    var: result
-
 - name: Verify negative deploy fails because NGT is not installed on the source VM
   ansible.builtin.assert:
     that:
@@ -1143,7 +1106,8 @@
       - result.response.error_messages is defined
       - result.response.error_messages | length > 0
     fail_msg: "Negative deploy did not fail as expected (NGT-not-installed precondition)"
-    success_msg: "Negative deploy correctly failed because NGT is not installed on
+    success_msg:
+      "Negative deploy correctly failed because NGT is not installed on
       source VM"
 
 ########################################################################################
@@ -1160,10 +1124,6 @@
         ext_id: "{{ todelete[0] }}"
   register: result
   ignore_errors: true
-
-- name: Print result of negative clone
-  ansible.builtin.debug:
-    var: result
 
 - name: Verify negative clone fails because NGT is not installed on the source VM
   ansible.builtin.assert:
@@ -1220,11 +1180,8 @@
   register: result
   ignore_errors: true
 
-- name: Print result of negative deploy (must_provide fields missing)
-  ansible.builtin.debug:
-    var: result
-
-- name: Verify negative deploy fails because must_provide_during_deployment fields
+- name:
+    Verify negative deploy fails because must_provide_during_deployment fields
     are missing
   ansible.builtin.assert:
     that:
@@ -1236,14 +1193,16 @@
       - result.response.error_messages | length > 0
     fail_msg: "Negative deploy did not fail as expected
       (must_provide_during_deployment fields missing)"
-    success_msg: "Negative deploy correctly failed as expected because must_provide
+    success_msg:
+      "Negative deploy correctly failed as expected because must_provide
       fields were not supplied in the override"
 
 ########################################################################################
 # Negative CRUD test: Clone with must_provide profile, override missing computer_name and ipv4_config
 ########################################################################################
 
-- name: Negative - Clone with must_provide profile, override missing computer_name
+- name:
+    Negative - Clone with must_provide profile, override missing computer_name
     and ipv4_config
   nutanix.ncp.ntnx_vms_clone_v2:
     ext_id: "{{ vms_to_delete[0] }}"
@@ -1264,11 +1223,8 @@
   register: result
   ignore_errors: true
 
-- name: Print result of negative clone (must_provide fields missing)
-  ansible.builtin.debug:
-    var: result
-
-- name: Verify negative clone fails because must_provide_during_deployment fields
+- name:
+    Verify negative clone fails because must_provide_during_deployment fields
     are missing
   ansible.builtin.assert:
     that:
@@ -1280,7 +1236,8 @@
       - result.response.error_messages | length > 0
     fail_msg: "Negative clone did not fail as expected
       (must_provide_during_deployment fields missing)"
-    success_msg: "Negative clone correctly failed as expected because must_provide
+    success_msg:
+      "Negative clone correctly failed as expected because must_provide
       fields were not supplied in the override"
 
 ########################################################################################
@@ -1316,10 +1273,6 @@
                         use_dhcp: {}
   register: result
   ignore_errors: true
-
-- name: Print result of deploy (must_provide fields supplied)
-  ansible.builtin.debug:
-    var: result
 
 - name: Verify deploy succeeds when must_provide fields are supplied
   ansible.builtin.assert:
@@ -1389,10 +1342,6 @@
                         - "10.1.0.1"
   register: result
   ignore_errors: true
-
-- name: Print result of clone (must_provide fields supplied)
-  ansible.builtin.debug:
-    var: result
 
 - name: Verify clone succeeds when must_provide fields are supplied
   ansible.builtin.assert:
@@ -1464,10 +1413,6 @@
   register: result
   ignore_errors: true
 
-- name: Print result of deploying VM with guest customization profile and overrides
-  ansible.builtin.debug:
-    var: result
-
 - name: Verify deploy VM with guest customization profile and overrides
   ansible.builtin.assert:
     that:
@@ -1504,10 +1449,6 @@
   register: deployed_vm
   ignore_errors: true
 
-- name: Print fetched deployed VM details
-  ansible.builtin.debug:
-    var: deployed_vm
-
 - name: Verify deployed VM has guest customization pending and overrides applied
   ansible.builtin.assert:
     that:
@@ -1527,7 +1468,8 @@
       - deployed_vm.response.nics | length == 1
       - deployed_vm.response.cd_roms | length == 1
     fail_msg: "Deployed VM did not have expected guest customization status or overrides"
-    success_msg: "Deployed VM is in PENDING guest customization state with overrides
+    success_msg:
+      "Deployed VM is in PENDING guest customization state with overrides
       applied"
 
 ########################################################################################
@@ -1574,10 +1516,6 @@
   register: result
   ignore_errors: true
 
-- name: Print result of cloning VM with guest customization profile and overrides
-  ansible.builtin.debug:
-    var: result
-
 - name: Verify clone VM with guest customization profile and overrides
   ansible.builtin.assert:
     that:
@@ -1598,10 +1536,6 @@
     ext_id: "{{ vms_to_delete[2] }}"
   register: cloned_vm
   ignore_errors: true
-
-- name: Print fetched cloned VM details
-  ansible.builtin.debug:
-    var: cloned_vm
 
 - name: Verify cloned VM has guest customization pending and inherits base VM config
   ansible.builtin.assert:
@@ -1684,10 +1618,6 @@
     - deployed_vm_post.response.nics[0].network_info.ipv4_info.learned_ip_addresses
       | length > 0
 
-- name: Print deployed VM post-customization details
-  ansible.builtin.debug:
-    var: deployed_vm_post
-
 - name: Verify deployed VM completed guest customization (NGT reachable, IP learned)
   ansible.builtin.assert:
     that:
@@ -1729,10 +1659,6 @@
       is defined
     - cloned_vm_post.response.nics[0].network_info.ipv4_info.learned_ip_addresses
       | length > 0
-
-- name: Print cloned VM post-customization details
-  ansible.builtin.debug:
-    var: cloned_vm_post
 
 - name: Verify cloned VM completed guest customization (NGT reachable, IP learned)
   ansible.builtin.assert:
@@ -1812,10 +1738,6 @@
   register: result
   ignore_errors: true
 
-- name: Print result of delete VM Guest Customization Profile in check mode
-  ansible.builtin.debug:
-    var: result
-
 - name: Verify delete VM Guest Customization Profile in check mode
   ansible.builtin.assert:
     that:
@@ -1834,10 +1756,6 @@
   loop: "{{ todelete }}"
   register: delete_results
   ignore_errors: true
-
-- name: Print result of delete VM Guest Customization Profiles
-  ansible.builtin.debug:
-    var: delete_results
 
 - name: Verify all VM Guest Customization Profiles deleted
   ansible.builtin.assert:

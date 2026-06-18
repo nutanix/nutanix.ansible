@@ -170,7 +170,8 @@ options:
                         description:
                           - Default language to use for non-Unicode programs.
                           - Its value is based on the language-tagging conventions of RFC 3066.
-                          - The pattern language-region is used, where language is a language code and region is a country or region identifier.
+                          - The pattern language-region is used, where language is a language code and region is a country or region identifier
+                            (for example, en-US, fr-FR, or es-ES).
                         type: str
                       ui_language:
                         description:
@@ -193,6 +194,7 @@ options:
                             description:
                               - Name of workgroup to be applied to the computer when joining the workgroup. It must be a valid NetBIOS name.
                             type: str
+                            required: true
                       domain_settings:
                         description:
                           - Domain Settings Configuration.
@@ -202,21 +204,25 @@ options:
                             description:
                               - Credentials of the domain account to use to join the domain.
                             type: dict
+                            required: true
                             suboptions:
                               domain_name:
                                 description:
                                   - The name of the domain to use for authentication of the account before the computer
                                     can be joined to a domain. A domain name can be the fully qualified DNS name or the NetBIOS name of the domain.
                                 type: str
+                                required: true
                               username:
                                 description:
                                   - Name of the domain user account with permission to add the computer to a domain.
                                 type: str
+                                required: true
                               password:
                                 description:
                                   - The password of the domain user account to use for authenticating an account to the domain before
                                     the computer can be joined to a domain.
                                 type: str
+                                required: true
                   network_settings:
                     description:
                       - Network settings to apply to the NICs attached to the VM.
@@ -238,6 +244,7 @@ options:
                                 description:
                                   - An IPv4 address is preferred to search first when searching for the DNS server on the network.
                                 type: str
+                                required: true
                               alternate_dns_server_addresses:
                                 description:
                                   - List of IPv4 addresses to look for after preferred DNS server when searching for the DNS server on the network.
@@ -246,11 +253,12 @@ options:
                           ipv4_config:
                             description:
                               - Mechanism to configure IPv4 settings of the NIC.
-                              - Either UseDhcp or MustProvideDuringDeployment should be specified as a value.
+                              - Either specify C(use_dhcp) or C(must_provide_during_deployment) as a value.
                               - If UseDhcp is specified, DhcpEnabled is set to True for the interface in the unattend XML.
                               - If MustProvideDuringDeployment is specified, the IPv4 address, prefix length, and gateway must be supplied during deployment.
                               - C(use_dhcp) and C(must_provide_during_deployment) are mutually exclusive.
                             type: dict
+                            required: true
                             suboptions:
                               use_dhcp:
                                 description:
@@ -273,6 +281,7 @@ options:
                       - Note that double quotes in the XML file need to be escaped to maintain correctness.
                       - The XML file needs to be Base64 encoded (e.g. using the Ansible C(b64encode) filter).
                     type: str
+                    required: true
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
@@ -442,6 +451,7 @@ ext_id:
     - External ID of the VM Guest Customization Profile.
   type: str
   returned: always
+  sample: "08bed846-7bf2-48b5-5c92-741500be3a3f"
 task_ext_id:
   description: Task External ID
   returned: always
@@ -483,6 +493,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    normalize_oneof_marker_values,
     raise_api_exception,
     remove_fields_from_spec,
     strip_internal_attributes,
@@ -509,32 +520,11 @@ except ImportError:
 
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
+SECRET_FIELDS = {"administrator_password", "windows_product_key", "password"}
+
 
 def get_module_spec():
     return profile_specs.get_module_spec()
-
-
-def normalize_oneof_marker_values(params):
-    """Normalize one-of marker variants from ``null`` to ``{}``.
-
-    The empty-marker variants (``use_vm_name``, ``must_provide_during_deployment``,
-    ``use_dhcp``) map to SDK classes with no user-facing fields; the variant is
-    selected purely by *which* key is present. Users may write either
-    ``use_vm_name: {}`` or simply ``use_vm_name:`` (null) in their playbook.
-    The latter form would otherwise be stripped by ``remove_param_with_none_value``
-    before the spec generator could dispatch it, so we promote ``null`` to ``{}``
-    for known marker keys here.
-    """
-    marker_keys = profile_specs.empty_marker_keys
-    if isinstance(params, dict):
-        for key, value in params.items():
-            if key in marker_keys and value is None:
-                params[key] = {}
-            elif isinstance(value, dict):
-                normalize_oneof_marker_values(value)
-            elif isinstance(value, list):
-                for item in value:
-                    normalize_oneof_marker_values(item)
 
 
 def create_profile(module, result, profiles):
@@ -579,9 +569,6 @@ def create_profile(module, result, profiles):
             result["response"] = strip_internal_attributes(resp.to_dict())
 
     result["changed"] = True
-
-
-SECRET_FIELDS = {"administrator_password", "windows_product_key", "password"}
 
 
 def check_idempotency(current_spec, update_spec):
@@ -708,11 +695,11 @@ def run_module():
             exception=SDK_IMP_ERROR,
         )
 
-    normalize_oneof_marker_values(module.params)
+    normalize_oneof_marker_values(module.params, profile_specs.empty_marker_keys)
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
+        "failed": False,
         "response": None,
         "ext_id": None,
         "task_ext_id": None,
