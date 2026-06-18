@@ -277,7 +277,9 @@ def create_project(module, projects, result):
         else:
             raise_api_exception(
                 module=module,
-                exception=Exception("Failed to get entity ext_id from task for Project"),
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Project"
+                ),
                 msg="Failed to get entity ext_id from task for Project",
             )
 
