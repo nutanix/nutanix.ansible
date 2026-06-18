@@ -256,7 +256,8 @@ options:
                               - Mechanism to configure IPv4 settings of the NIC.
                               - Either specify C(use_dhcp) or C(must_provide_during_deployment) as a value.
                               - If C(use_dhcp) is specified, DhcpEnabled is set to True for the interface in the unattend XML.
-                              - If C(must_provide_during_deployment) is specified, the IPv4 address, prefix length, and gateway must be supplied during deployment.
+                              - If C(must_provide_during_deployment) is specified, the IPv4 address, prefix length,
+                                and gateway must be supplied during deployment.
                               - C(use_dhcp) and C(must_provide_during_deployment) are mutually exclusive.
                             type: dict
                             required: true
@@ -574,7 +575,9 @@ def create_profile(module, result, profiles):
         else:
             raise_api_exception(
                 module=module,
-                exception=Exception("Failed to get entity ext_id from task for VM Guest Customization Profile"),
+                exception=Exception(
+                    "Failed to get entity ext_id from task for VM Guest Customization Profile"
+                ),
                 msg="Failed to get entity ext_id from task for VM Guest Customization Profile",
             )
 
