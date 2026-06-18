@@ -143,6 +143,18 @@ def get_vm_guest_customization_profiles_api_instance(module):
     return ntnx_vmm_py_client.VmGuestCustomizationProfilesApi(api_client=api_client)
 
 
+def get_vm_host_affinity_policies_api_instance(module):
+    """
+    This method will return VM Host Affinity Policies API instance.
+    Args:
+        module (obj): Ansible module object with connection parameters
+    Returns:
+        VmHostAffinityPoliciesApi: v4 VM Host Affinity Policies api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.VmHostAffinityPoliciesApi(api_client=api_client)
+
+
 def get_vm_anti_affinity_policies_api_instance(module):
     """
     This method will return VM Anti-Affinity Policies API instance.
