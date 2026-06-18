@@ -14,7 +14,7 @@ module: ntnx_security_rules_import_v2
 short_description: Import network security policies into Nutanix Prism Central
 version_added: "2.6.0"
 description:
-  - This module imports Flow network security policies into Nutanix Prism Central from a previously exported file.
+  - This module imports Flow network security policies into Nutanix Prism Central from a data file.
   - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
@@ -27,7 +27,6 @@ options:
   path:
     description:
       - Local path to the network security policies file to import.
-      - Path to exported file from ``ntnx_security_rules_export_v2`` module.
     type: path
     required: true
   purge_policies:
@@ -94,6 +93,38 @@ response:
   returned: always
   type: dict
   sample:
+    {
+      "app_name": null,
+      "batch_summary": null,
+      "cluster_ext_ids": null,
+      "completed_time": "2026-06-18T12:46:31.475401+00:00",
+      "completion_details": null,
+      "created_time": "2026-06-18T12:46:31.399813+00:00",
+      "entities_affected": null,
+      "error_messages": null,
+      "ext_id": "ZXJnb24=:9bfb6e09-8cdf-4c80-94de-affc5292cded",
+      "is_background_task": false,
+      "is_cancelable": false,
+      "last_updated_time": "2026-06-18T12:46:31.475400+00:00",
+      "legacy_error_message": null,
+      "number_of_entities_affected": 0,
+      "number_of_subtasks": 0,
+      "operation": "kNetworkSecurityPolicyImportApply",
+      "operation_description": "Import Network Security Policy and Associated entities",
+      "owned_by": {
+          "ext_id": "00000000-0000-0000-0000-000000000000",
+          "name": "admin"
+      },
+      "parent_task": null,
+      "progress_percentage": 100,
+      "resource_links": null,
+      "root_task": null,
+      "started_time": "2026-06-18T12:46:31.411897+00:00",
+      "status": "SUCCEEDED",
+      "sub_steps": null,
+      "sub_tasks": null,
+      "warnings": null
+    }
 
 task_ext_id:
   description:
@@ -221,7 +252,6 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "failed": False,
     }

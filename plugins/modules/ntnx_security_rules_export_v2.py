@@ -17,6 +17,7 @@ description:
   - This module exports one or more Flow network security policies in Nutanix Prism Central.
   - If C(policy_references) is not provided, all network security policies are exported.
   - The exported content is always downloaded and saved to a local file. The local path is returned in C(path).
+  - If C(path) is not provided, the file is saved to the current working directory using the server-provided file name.
   - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
@@ -28,7 +29,7 @@ notes:
 options:
   policy_references:
     description:
-      - A list of network security policy external identifiers to export.
+      - A list of network security policy external ids to export.
       - If not provided, all network security policies are exported.
     type: list
     elements: str
@@ -38,8 +39,21 @@ options:
       - Local destination path where the exported network security policies file is saved.
       - The file can later be used by the C(ntnx_security_rules_import_v2) module to import the policies.
       - The module always waits for the export task to complete in order to download the file.
+      - If not provided, the file is downloaded to the current working directory using the
+        file name returned by the server. The final location is always returned in C(path).
     type: path
-    required: true
+    required: false
+  wait:
+    description:
+      - Wait for the export task to complete.
+      - This module must always wait for the export task to finish, because the exported
+        file can only be downloaded once the task is complete.
+      - Only C(true) is supported.
+    type: bool
+    required: false
+    default: true
+    choices:
+      - true
 author:
   - George Ghawali (@george-ghawali)
 extends_documentation_fragment:
@@ -72,17 +86,93 @@ EXAMPLES = r"""
     path: "/tmp/network_security_policies_export.flw"
   register: result
   ignore_errors: true
+
+- name: Export all network security policies without specifying a path
+  nutanix.ncp.ntnx_security_rules_export_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
 response:
   description:
     - Response for exporting network security policies.
-    - If C(wait) is true, it returns the completed task details.
-    - If C(wait) is false, it returns the task reference details.
+    - It returns the completed task details.
   returned: always
   type: dict
   sample:
+    {
+      "app_name": null,
+      "batch_summary": null,
+      "cluster_ext_ids": null,
+      "completed_time": "2026-06-18T12:34:19.213650+00:00",
+      "completion_details": null,
+      "created_time": "2026-06-18T12:34:19.124020+00:00",
+      "entities_affected": [
+          {
+              "ext_id": "38d9f279-c0d7-4951-ae52-33925ac4dd11",
+              "name": "Quarantine Strict Policy",
+              "rel": "microseg:config:policy"
+          },
+          {
+              "ext_id": "6c8c9d38-c39c-4626-9b88-85f45e700a33",
+              "name": "ansible-nsr-kxigsDsDbiLt1",
+              "rel": "microseg:config:policy"
+          },
+          {
+              "ext_id": "d376aa6f-e5ad-4052-890e-e56d4b1b1b09",
+              "name": "Quarantine Forensic Policy",
+              "rel": "microseg:config:policy"
+          },
+          {
+              "ext_id": "7329e3d6-5eac-4395-6671-4ca9527780ba",
+              "name": "AnsibleSecurityRuleTest:AnsibleSecurityRuleTestkxigsDsDbiLt1",
+              "rel": "prism:config:category"
+          },
+          {
+              "ext_id": "4c313d99-ad50-5480-ae34-6c29ee35ed92",
+              "name": "Quarantine:Default",
+              "rel": "prism:config:category"
+          },
+          {
+              "ext_id": "252887b5-1462-501e-9e1d-aac971085a45",
+              "name": "Quarantine:Forensics",
+              "rel": "prism:config:category"
+          },
+          {
+              "ext_id": "8714753a-18d7-4bf7-5912-3ba62952f829",
+              "name": "AnsibleSecurityRuleTest:AnsibleSecurityRuleTestkxigsDsDbiLt0",
+              "rel": "prism:config:category"
+          }
+      ],
+      "error_messages": null,
+      "ext_id": "ZXJnb24=:4c34bfa3-294d-4ac4-933a-b527e03f7f9a",
+      "is_background_task": false,
+      "is_cancelable": false,
+      "last_updated_time": "2026-06-18T12:34:19.213649+00:00",
+      "legacy_error_message": null,
+      "number_of_entities_affected": 7,
+      "number_of_subtasks": 0,
+      "operation": "kNetworkSecurityPolicyExportAsync",
+      "operation_description": "Export Network Security Policy and Associated entities",
+      "owned_by": {
+          "ext_id": "00000000-0000-0000-0000-000000000000",
+          "name": "admin"
+      },
+      "parent_task": null,
+      "progress_percentage": 100,
+      "resource_links": null,
+      "root_task": null,
+      "started_time": "2026-06-18T12:34:19.135460+00:00",
+      "status": "SUCCEEDED",
+      "sub_steps": null,
+      "sub_tasks": null,
+      "warnings": null
+    }
 
 task_ext_id:
   description:
@@ -112,6 +202,7 @@ msg:
   description: This indicates the message if any message occurred
   returned: When there is an error
   type: str
+  sample: "Failed to determine the downloaded export file path"
 
 path:
   description:
@@ -157,17 +248,21 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def get_module_spec():
     module_args = dict(
         policy_references=dict(type="list", elements="str", required=False),
-        path=dict(type="path", required=True),
+        path=dict(type="path", required=False),
+        wait=dict(type="bool", default=True, choices=[True]),
     )
     return module_args
 
 
 def download_export_file(module, network_security_policies, request_id, path, result):
-    dest_dir = os.path.dirname(os.path.abspath(path))
-    if not os.path.isdir(dest_dir):
-        os.makedirs(dest_dir)
+    # When the user provides a path, download into its directory; otherwise let
+    # the SDK use its default download directory (the current working directory).
+    if path:
+        dest_dir = os.path.dirname(os.path.abspath(path))
+        if not os.path.isdir(dest_dir):
+            os.makedirs(dest_dir)
 
-    network_security_policies.api_client.configuration.download_directory = dest_dir
+        network_security_policies.api_client.configuration.download_directory = dest_dir
 
     headers = {
         "NTNX-Request-Id": request_id,
@@ -195,7 +290,9 @@ def download_export_file(module, network_security_policies, request_id, path, re
         )
 
     downloaded_path = str(downloaded_path)
-    if os.path.abspath(downloaded_path) != os.path.abspath(path):
+    # If a destination path was requested, move the downloaded file there;
+    # otherwise return the SDK default location as-is.
+    if path and os.path.abspath(downloaded_path) != os.path.abspath(path):
         shutil.move(downloaded_path, path)
         return path
     return downloaded_path
@@ -262,7 +359,6 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "failed": False,
     }
