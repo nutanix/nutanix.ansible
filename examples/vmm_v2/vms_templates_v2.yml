@@ -8,9 +8,13 @@
 # 5. Publish template version as active version
 # 6. Delete Template Version
 # 7. Deploy VM
-# 8. Initiate_guest_os_update
-# 9. Finish guest_os_update
-# 10. Delete Template
+# 8. Deploy VM from template with a VM Guest Customization Profile reference and
+#    per-VM overrides (workgroup join, DHCP). Requires NGT installed on the
+#    source VM the template was captured from; otherwise the deploy API rejects
+#    the request.
+# 9. Initiate_guest_os_update
+# 10. Finish guest_os_update
+# 11. Delete Template
 
 - name: VM templates playbook
   hosts: localhost
@@ -31,6 +35,7 @@
         version_id: "00000000-0000-0000-0000-000000000000"
         vm2_name: "ansible_template_vm"
         cluster_uuid: "00062899-4a29-0cf9-0000-000000028f57"
+        gc_profile_ext_id: "b1c2d3e4-5f67-4890-a123-456789abcdef"
 
     - name: Create new template from a vm
       nutanix.ncp.ntnx_templates_v2:
@@ -66,7 +71,8 @@
       register: result
       ignore_errors: true
 
-    - name: Retrieve the Template Version details for the given Template Version identifier.
+    - name: Retrieve the Template Version details for the given Template Version
+        identifier.
       nutanix.ncp.ntnx_templates_versions_info_v2:
         ext_id: "{{ version_id }}"
         template_ext_id: "{{ template_ext_id }}"
@@ -110,6 +116,47 @@
         state: finish
         version_name: "{{ version_name }}"
         version_description: finish guest os update
+      register: result
+      ignore_errors: true
+      # NGT must be installed on the source VM the template was captured from,
+      # otherwise the deploy API rejects the request with an NGT-not-installed error.
+    - name: Deploy VM from template with Guest Customization Profile (workgroup join,
+        DHCP)
+      nutanix.ncp.ntnx_templates_deploy_v2:
+        ext_id: "{{ template_ext_id }}"
+        version_id: "{{ version_id }}"
+        cluster_reference: "{{ cluster_uuid }}"
+        override_vms_config:
+          - name: vm_deployed_with_profile
+            num_sockets: 2
+            num_cores_per_socket: 2
+            guest_customization_profile_config:
+              profile:
+                ext_id: "{{ gc_profile_ext_id }}"
+              config_override_spec:
+                customization:
+                  sysprep_params:
+                    general_settings:
+                      computer_name:
+                        name:
+                          value: "deployed-host"
+                      timezone:
+                        value:
+                          value: "UTC"
+                      registered_owner:
+                        value:
+                          value: "deployed-owner"
+                    workgroup_or_domain_info:
+                      workgroup:
+                        name: "DEPLOYED-WG"
+                    network_settings:
+                      nic_config_list:
+                        - dns_config:
+                            preferred_dns_server_address: "10.0.0.100"
+                            alternate_dns_server_addresses:
+                              - "10.0.0.101"
+                          ipv4_config:
+                            use_dhcp: {}
       register: result
       ignore_errors: true
 
