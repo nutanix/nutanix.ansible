@@ -66,6 +66,45 @@ response:
         - It will be task response if C(wait) is false.
     type: dict
     returned: always
+    sample:
+        {
+            "app_name": null,
+            "batch_summary": null,
+            "cluster_ext_ids": null,
+            "completed_time": "2026-06-18T07:06:20.750802+00:00",
+            "completion_details": null,
+            "created_time": "2026-06-18T07:06:19.975722+00:00",
+            "entities_affected": [
+                {
+                    "ext_id": "3714b301-a75c-4384-715b-f096c5520cfd",
+                    "name": "ansible_AFFwugpxMuBW_host_affinity_test_functional",
+                    "rel": "vmm:ahv:policies:vm-host-affinity-policy"
+                }
+            ],
+            "error_messages": null,
+            "ext_id": "ZXJnb24=:916a732d-1ca6-5750-9869-196fbd781205",
+            "is_background_task": false,
+            "is_cancelable": false,
+            "last_updated_time": "2026-06-18T07:06:20.750801+00:00",
+            "legacy_error_message": null,
+            "number_of_entities_affected": 1,
+            "number_of_subtasks": 0,
+            "operation": "VmHostAffinityPolicyEnforce",
+            "operation_description": "Enforce VM-Host Affinity Policy",
+            "owned_by": {
+                "ext_id": "00000000-0000-0000-0000-000000000000",
+                "name": "admin"
+            },
+            "parent_task": null,
+            "progress_percentage": 100,
+            "resource_links": null,
+            "root_task": null,
+            "started_time": "2026-06-18T07:06:19.985487+00:00",
+            "status": "SUCCEEDED",
+            "sub_steps": null,
+            "sub_tasks": null,
+            "warnings": null
+        }
 task_ext_id:
     description: The external ID of the task associated with the operation.
     type: str
@@ -80,6 +119,7 @@ changed:
     description: Indicates whether the resource was changed.
     type: bool
     returned: always
+    sample: true
 error:
     description: The error message if an error occurred.
     type: str
@@ -88,10 +128,12 @@ msg:
     description: A message describing the result.
     type: str
     returned: on error or check mode
+    sample: "VM-host affinity policy with ext_id:98b9dc89-be08-3c56-b554-692b8b676fd2 will be re-enforced."
 failed:
     description: Indicates whether the operation failed.
     type: bool
     returned: always
+    sample: false
 """
 
 import warnings  # noqa: E402
@@ -171,7 +213,7 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
+        "failed": False,
         "response": None,
         "ext_id": None,
         "task_ext_id": None,

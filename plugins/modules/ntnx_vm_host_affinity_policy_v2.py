@@ -106,14 +106,13 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
+    state: present
     name: my_host_affinity_policy
     description: Policy to keep critical VMs on specific hosts
     vm_categories:
       - ext_id: "2f54419e-596d-4b34-aa8f-1a1e944ee7d7"
     host_categories:
       - ext_id: "8811743f-f3ea-463c-539a-8d6a7f69b8f5"
-    state: present
-    wait: true
 
 - name: Update a VM host affinity policy
   nutanix.ncp.ntnx_vm_host_affinity_policy_v2:
@@ -121,6 +120,7 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
+    state: present
     ext_id: "54fe0ed5-02d8-4588-b10b-3b9736bf3d06"
     name: updated_host_affinity_policy
     description: Updated description
@@ -128,8 +128,6 @@ EXAMPLES = r"""
       - ext_id: "9811743f-f3ea-463c-539a-8d6a7f69b8f5"
     host_categories:
       - ext_id: "1a1e944e-e7d7-2f54-419e-596d4b34aa8f"
-    state: present
-    wait: true
 
 - name: Delete a VM host affinity policy
   nutanix.ncp.ntnx_vm_host_affinity_policy_v2:
@@ -137,9 +135,8 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    ext_id: "605a0cf9-d04e-3be7-911b-1e6f193f6eb9"
     state: absent
-    wait: true
+    ext_id: "605a0cf9-d04e-3be7-911b-1e6f193f6eb9"
 """
 
 
@@ -147,7 +144,9 @@ RETURN = r"""
 response:
     description:
         - The response from the VM host affinity policy operation.
-        - It will be task response if C(wait) is false.
+        - If the operation is create or update and C(wait) is true, it will return the VM host affinity policy details
+        - If the operation is create or update and C(wait) is false, it will return the task details
+        - If the operation is delete, it will return the task details
     type: dict
     returned: always
     sample: {
@@ -177,6 +176,7 @@ changed:
     description: Indicates whether the resource was changed.
     type: bool
     returned: always
+    sample: true
 error:
     description: The error message if an error occurred.
     type: str
@@ -185,15 +185,17 @@ skipped:
     description: Indicates whether the operation was skipped due to idempotency.
     type: bool
     returned: when the operation is skipped
+    sample: false
 msg:
     description: A message describing the result.
     type: str
     returned: on error, idempotency, or check mode
-    sample: "VM host affinity policy created successfully"
+    sample: "Api Exception raised while creating VM host affinity policy"
 failed:
     description: Indicates whether the operation failed.
     type: bool
     returned: always
+    sample: false
 """
 
 import traceback  # noqa: E402
@@ -359,9 +361,8 @@ def update_policy(module, api_instance, result):
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
         wait_for_completion(module, task_ext_id)
-
-    updated_policy = get_vm_host_affinity_policy(module, api_instance, ext_id)
-    result["response"] = strip_internal_attributes(updated_policy.to_dict())
+        resp = get_vm_host_affinity_policy(module, api_instance, ext_id)
+        result["response"] = strip_internal_attributes(resp.to_dict())
     result["changed"] = True
 
 
@@ -419,7 +420,7 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
+        "failed": False,
         "response": None,
         "ext_id": None,
     }

@@ -110,6 +110,7 @@ changed:
     description: Indicates whether any changes were made (always false for info modules).
     type: bool
     returned: always
+    sample: false
 total_available_results:
     description:
         - The total number of available VM host affinity policies in PC.
@@ -129,6 +130,7 @@ failed:
     description: Indicates whether the operation failed.
     type: bool
     returned: always
+    sample: false
 """
 import warnings  # noqa: E402
 
