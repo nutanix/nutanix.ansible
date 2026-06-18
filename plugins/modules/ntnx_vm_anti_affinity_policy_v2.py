@@ -292,7 +292,9 @@ def create_policy(module, api_instance, result):
         else:
             raise_api_exception(
                 module=module,
-                exception=Exception("Failed to get entity ext_id from task for VM Anti-Affinity Policy"),
+                exception=Exception(
+                    "Failed to get entity ext_id from task for VM Anti-Affinity Policy"
+                ),
                 msg="Failed to get entity ext_id from task for VM Anti-Affinity Policy",
             )
 
