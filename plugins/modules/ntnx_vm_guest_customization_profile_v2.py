@@ -67,7 +67,6 @@ options:
   config:
     description:
       - The customization configuration that will be applied to the guest OS.
-      - Currently only Windows Sysprep customization is supported.
     type: dict
     suboptions:
       sysprep:
@@ -164,7 +163,8 @@ options:
                         description:
                           - Per-user settings to be used for formatting dates, times, currency, and numbers.
                           - Its value is based on the language-tagging conventions of RFC 3066.
-                          - The pattern language-region is used, where language is a language code and region is a country or region identifier.
+                          - The pattern language-region is used, where language is a language code and region is a country or region identifier
+                            (for example, en-US, fr-FR, or es-ES).
                         type: str
                       system_locale:
                         description:
@@ -177,7 +177,8 @@ options:
                         description:
                           - Default system language to use to display user interface (UI) items.
                           - Its value is based on the language-tagging conventions of RFC 3066.
-                          - The pattern language-region is used, where language is a language code and region is a country or region identifier.
+                          - The pattern language-region is used, where language is a language code and region is a country or region identifier
+                            (for example, en-US, fr-FR, or es-ES).
                         type: str
                   workgroup_or_domain_info:
                     description:
@@ -254,8 +255,8 @@ options:
                             description:
                               - Mechanism to configure IPv4 settings of the NIC.
                               - Either specify C(use_dhcp) or C(must_provide_during_deployment) as a value.
-                              - If UseDhcp is specified, DhcpEnabled is set to True for the interface in the unattend XML.
-                              - If MustProvideDuringDeployment is specified, the IPv4 address, prefix length, and gateway must be supplied during deployment.
+                              - If C(use_dhcp) is specified, DhcpEnabled is set to True for the interface in the unattend XML.
+                              - If C(must_provide_during_deployment) is specified, the IPv4 address, prefix length, and gateway must be supplied during deployment.
                               - C(use_dhcp) and C(must_provide_during_deployment) are mutually exclusive.
                             type: dict
                             required: true
@@ -329,6 +330,7 @@ EXAMPLES = r"""
                       - "8.8.4.4"
                   ipv4_config:
                     use_dhcp:
+  register: result
 
 - name: Create VM Guest Customization Profile with an unattend XML answer file
   nutanix.ncp.ntnx_vm_guest_customization_profile_v2:
@@ -344,6 +346,7 @@ EXAMPLES = r"""
         customization:
           answer_file:
             unattend_xml: "{{ lookup('file', 'unattend.xml') | b64encode }}"
+  register: result
 
 - name: Update VM Guest Customization Profile (switch to domain join, must-provide IP)
   nutanix.ncp.ntnx_vm_guest_customization_profile_v2:
@@ -374,7 +377,7 @@ EXAMPLES = r"""
               nic_config_list:
                 - ipv4_config:
                     must_provide_during_deployment: {}
-
+  register: result
 - name: Delete VM Guest Customization Profile
   nutanix.ncp.ntnx_vm_guest_customization_profile_v2:
     state: absent
@@ -383,6 +386,7 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     ext_id: "a3265671-de53-41be-af9b-f06241b95356"
+  register: result
 """
 
 RETURN = r"""
@@ -567,6 +571,12 @@ def create_profile(module, result, profiles):
             resp = get_vm_guest_customization_profile(module, profiles, ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception("Failed to get entity ext_id from task for VM Guest Customization Profile"),
+                msg="Failed to get entity ext_id from task for VM Guest Customization Profile",
+            )
 
     result["changed"] = True
 
