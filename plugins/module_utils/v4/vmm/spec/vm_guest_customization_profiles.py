@@ -45,31 +45,31 @@ def _logon_count_options():
     return dict(logon_count=dict(type="int"))
 
 
-def _dns_config_options():
+def _dns_config_options(required=False):
     """Options dict shared by ``VmGcProfileDnsConfig`` and its override."""
     return dict(
-        preferred_dns_server_address=dict(type="str"),
+        preferred_dns_server_address=dict(type="str", required=required),
         alternate_dns_server_addresses=dict(type="list", elements="str"),
     )
 
 
-def _domain_credentials_options():
+def _domain_credentials_options(required=False):
     """Options dict shared by ``VmGcProfileDomainCredentials`` and its override."""
     return dict(
-        domain_name=dict(type="str"),
-        username=dict(type="str"),
-        password=dict(type="str", no_log=True),
+        domain_name=dict(type="str", required=required),
+        username=dict(type="str", required=required),
+        password=dict(type="str", no_log=True, required=required),
     )
 
 
-def _workgroup_options():
+def _workgroup_options(required=False):
     """Options dict shared by ``VmGcProfileWorkgroup`` and its override."""
-    return dict(name=dict(type="str"))
+    return dict(name=dict(type="str", required=required))
 
 
-def _answer_file_options():
+def _answer_file_options(required=False):
     """Options dict shared by ``VmGcProfileAnswerFile`` and its override."""
-    return dict(unattend_xml=dict(type="str"))
+    return dict(unattend_xml=dict(type="str", required=required))
 
 
 class VmGuestCustomizationProfileSpecs:
@@ -156,16 +156,17 @@ class VmGuestCustomizationProfileSpecs:
         domain_settings_spec = dict(
             credentials=dict(
                 type="dict",
-                options=_domain_credentials_options(),
+                options=_domain_credentials_options(required=True),
                 obj=vmm_sdk.VmGcProfileDomainCredentials,
                 no_log=False,
+                required=True,
             ),
         )
 
         workgroup_or_domain_info_spec = dict(
             workgroup=dict(
                 type="dict",
-                options=_workgroup_options(),
+                options=_workgroup_options(required=True),
                 obj=vmm_sdk.VmGcProfileWorkgroup,
             ),
             domain_settings=dict(
@@ -191,13 +192,14 @@ class VmGuestCustomizationProfileSpecs:
         nic_config_spec = dict(
             dns_config=dict(
                 type="dict",
-                options=_dns_config_options(),
+                options=_dns_config_options(required=True),
                 obj=vmm_sdk.VmGcProfileDnsConfig,
             ),
             ipv4_config=dict(
                 type="dict",
                 options=ipv4_config_spec,
                 obj=cls.nic_ipv4_config_allowed_types,
+                required=True,
                 mutually_exclusive=[
                     ("use_dhcp", "must_provide_during_deployment"),
                 ],
@@ -251,7 +253,7 @@ class VmGuestCustomizationProfileSpecs:
             ),
             answer_file=dict(
                 type="dict",
-                options=_answer_file_options(),
+                options=_answer_file_options(required=True),
                 obj=vmm_sdk.VmGcProfileAnswerFile,
             ),
         )
