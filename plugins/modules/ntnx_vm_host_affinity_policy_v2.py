@@ -301,6 +301,12 @@ def create_policy(module, api_instance, result):
             result["ext_id"] = ext_id
             policy = get_vm_host_affinity_policy(module, api_instance, ext_id)
             result["response"] = strip_internal_attributes(policy.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception("Failed to get entity ext_id from task for VM Host Affinity Policy"),
+                msg="Failed to get entity ext_id from task for VM Host Affinity Policy",
+            )
 
     result["changed"] = True
 
