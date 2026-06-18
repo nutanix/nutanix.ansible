@@ -22,7 +22,6 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Register a domain manager to a cluster) -
-      Operation Name: Register Domain Manager -
       Required Roles: Cluster Admin, Domain Manager Admin, Internal Super Admin, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:

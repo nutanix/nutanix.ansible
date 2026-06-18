@@ -1,0 +1,229 @@
+---
+- name: Test categories_map and auto_create_cluster_groups in V2 inventory plugin
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    # =========================================================================
+    # Setup: Create category, VM, and associate them
+    # =========================================================================
+
+    - name: Generate random category name
+      ansible.builtin.set_fact:
+        random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+    - name: Set category key and value
+      ansible.builtin.set_fact:
+        category_key: "{{ random_name }}ansible_agkey"
+        category_value: "{{ random_name }}ansible_agval"
+
+    - name: Create category
+      nutanix.ncp.ntnx_categories_v2:
+        key: "{{ category_key }}"
+        value: "{{ category_value }}"
+      register: category_result
+      ignore_errors: true
+
+    - name: Create category status
+      ansible.builtin.assert:
+        that:
+          - category_result.changed == true
+          - category_result.failed == false
+          - category_result.response is defined
+          - category_result.response.key == category_key
+          - category_result.response.value == category_value
+          - category_result.response.ext_id is defined
+        fail_msg: "Failed to create category {{ category_key }}:{{ category_value }}"
+        success_msg: "Category {{ category_key }}:{{ category_value }} created"
+
+    - name: Set category ext_id
+      ansible.builtin.set_fact:
+        category_ext_id: "{{ category_result.response.ext_id }}"
+
+    - name: Create test VM
+      nutanix.ncp.ntnx_vms_v2:
+        name: "categories_test_vm_v2"
+      register: vm_result
+      ignore_errors: true
+
+    - name: Create test VM status
+      ansible.builtin.assert:
+        that:
+          - vm_result.changed == true
+          - vm_result.failed == false
+          - vm_result.response is defined
+          - vm_result.response.name == "categories_test_vm_v2"
+        fail_msg: "Failed to create test VM"
+        success_msg: "Test VM created"
+
+    - name: Set VM ext_id
+      ansible.builtin.set_fact:
+        vm_ext_id: "{{ vm_result.ext_id }}"
+
+    - name: Associate category with VM
+      nutanix.ncp.ntnx_vms_categories_v2:
+        vm_ext_id: "{{ vm_ext_id }}"
+        categories:
+          - ext_id: "{{ category_ext_id }}"
+      register: assoc_result
+      ignore_errors: true
+
+    - name: Associate category with VM status
+      ansible.builtin.assert:
+        that:
+          - assoc_result.changed == true
+          - assoc_result.failed == false
+          - assoc_result.response is defined
+          - assoc_result.task_ext_id is defined
+          - assoc_result.vm_ext_id == vm_ext_id
+        fail_msg: "Failed to associate category with VM"
+        success_msg: "Category associated with VM"
+
+    - name: Run tests and cleanup
+      block:
+        # =====================================================================
+        # Tests: Verify inventory output
+        # =====================================================================
+
+        - name: Run inventory
+          ansible.builtin.command:
+            cmd: ansible-inventory --inventory nutanix.yml --list
+            chdir: "{{ playbook_dir }}"
+          register: inv_result
+          changed_when: false
+
+        - name: Parse inventory output
+          ansible.builtin.set_fact:
+            inv_data: "{{ inv_result.stdout | from_json }}"
+
+        - name: "Test 1: Assert test VM appears in inventory"
+          ansible.builtin.assert:
+            that:
+              - "'categories_test_vm_v2' in inv_data._meta.hostvars"
+            fail_msg: >-
+              Test VM not found in inventory.
+              Got hostvars keys: {{ inv_data._meta.hostvars.keys() | list }}
+            success_msg: "Test VM found in inventory"
+
+        - name: Set host vars shortcut
+          ansible.builtin.set_fact:
+            vm_hostvars: "{{ inv_data._meta.hostvars['categories_test_vm_v2'] }}"
+
+        - name: "Test 2: Assert categories_map contains the category key and value"
+          ansible.builtin.assert:
+            that:
+              - vm_hostvars.categories_map is defined
+              - vm_hostvars.categories_map is mapping
+              - vm_hostvars.categories_map[category_key] is defined
+              - vm_hostvars.categories_map[category_key] is sequence
+              - category_value in vm_hostvars.categories_map[category_key]
+            fail_msg: >-
+              categories_map should contain {{ category_key }}:[{{ category_value }}].
+              Got: {{ vm_hostvars.categories_map | default('undefined') }}
+            success_msg: "categories_map correctly contains {{ category_key }}:[{{ category_value }}]"
+
+        - name: "Test 3: Assert categories list contains the category ext_id"
+          ansible.builtin.assert:
+            that:
+              - vm_hostvars.categories is defined
+              - vm_hostvars.categories | length > 0
+              - category_ext_id in vm_hostvars.categories
+            fail_msg: >-
+              categories list should contain {{ category_ext_id }}.
+              Got: {{ vm_hostvars.categories | default('undefined') }}
+            success_msg: "categories list correctly contains the category ext_id"
+
+        - name: "Test 4: Assert no cluster_<ext_id> groups exist"
+          ansible.builtin.assert:
+            that:
+              - >-
+                ('cluster_' ~ (vm_hostvars.cluster_ext_id | regex_replace('-', '_')))
+                not in inv_data.keys()
+            fail_msg: >-
+              cluster_<ext_id> group found but auto_create_cluster_groups is false.
+              Found: cluster_{{ vm_hostvars.cluster_ext_id | regex_replace('-', '_') }}
+            success_msg: "No cluster_<ext_id> groups as expected (auto_create_cluster_groups is false)"
+
+        - name: "Test 5: Assert cluster_<name> keyed_group exists"
+          ansible.builtin.assert:
+            that:
+              - >-
+                ('cluster_' ~ (vm_hostvars.cluster_name | regex_replace('[^A-Za-z0-9_]', '_')))
+                in inv_data.keys()
+            fail_msg: >-
+              keyed_group cluster_<name> not found.
+              Expected: cluster_{{ vm_hostvars.cluster_name | regex_replace('[^A-Za-z0-9_]', '_') }}
+            success_msg: "keyed_group cluster_<name> found"
+
+        - name: "Test 6: Assert keyed_group from categories_map value exists"
+          ansible.builtin.assert:
+            that:
+              - "('env_' ~ category_value) in inv_data.keys()"
+            fail_msg: >-
+              keyed_group env_{{ category_value }} not found.
+              Available groups: {{ inv_data.keys() | list }}
+            success_msg: "keyed_group env_{{ category_value }} found"
+
+        - name: "Test 7: Assert test VM is in the keyed_group"
+          ansible.builtin.assert:
+            that:
+              - "'categories_test_vm_v2' in inv_data['env_' ~ category_value]['hosts']"
+            fail_msg: >-
+              Test VM not in env_{{ category_value }} group.
+              Group hosts: {{ inv_data['env_' ~ category_value]['hosts'] | default([]) }}
+            success_msg: "Test VM correctly placed in env_{{ category_value }} group"
+
+      # =======================================================================
+      # Cleanup: Always delete test entities
+      # =======================================================================
+      always:
+        - name: Disassociate category from VM
+          nutanix.ncp.ntnx_vms_categories_v2:
+            vm_ext_id: "{{ vm_ext_id }}"
+            categories:
+              - ext_id: "{{ category_ext_id }}"
+            state: absent
+          register: disassoc_result
+          ignore_errors: true
+
+        - name: Disassociate category from VM status
+          ansible.builtin.assert:
+            that:
+              - disassoc_result.response is defined
+              - disassoc_result.changed == true
+              - disassoc_result.failed == false
+              - disassoc_result.task_ext_id is defined
+              - disassoc_result.vm_ext_id == vm_ext_id
+            fail_msg: "Failed to disassociate category from VM"
+            success_msg: "Category disassociated from VM"
+
+        - name: Delete test VM
+          nutanix.ncp.ntnx_vms_v2:
+            ext_id: "{{ vm_ext_id }}"
+            state: absent
+          register: delete_vm_result
+          ignore_errors: true
+
+        - name: Delete test VM status
+          ansible.builtin.assert:
+            that:
+              - delete_vm_result.changed == true
+              - delete_vm_result.failed == false
+              - delete_vm_result.response is defined
+              - delete_vm_result.response.status == "SUCCEEDED"
+            fail_msg: "Failed to delete test VM"
+            success_msg: "Test VM deleted"
+
+        - name: Delete category
+          nutanix.ncp.ntnx_categories_v2:
+            ext_id: "{{ category_ext_id }}"
+            state: absent
+          register: delete_cat_result
+          ignore_errors: true
+
+        - name: Delete category status
+          ansible.builtin.assert:
+            that:
+              - delete_cat_result.changed == true
+              - delete_cat_result.failed == false
+            fail_msg: "Failed to delete category"
+            success_msg: "Category deleted"

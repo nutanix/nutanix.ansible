@@ -24,11 +24,9 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Get a single Routing Policy corresponding to the extId) -
-      Operation Name: View Routing Policy -
       Required Roles: Account Owner, Administrator, Prism Admin, Prism Viewer, Super Admin, User, VPC Admin
     - >-
       B(Get a list of Routing Policies) -
-      Operation Name: View Routing Policy -
       Required Roles: Account Owner, Administrator, Prism Admin, Prism Viewer, Super Admin, User, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
