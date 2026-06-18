@@ -48,6 +48,7 @@ class Tasks:
         NETWORK_FUNCTION = "Networking:config:network-function"
         VIRTUAL_SWITCH = "networking:config:virtual-switch"
         ENTITY_GROUP = "microseg:config:entity-group"
+        VM_HOST_AFFINITY_POLICY = "vmm:ahv:policies:vm-host-affinity-policy"
         VM_ANTI_AFFINITY_POLICY = "vmm:ahv:policies:vm-anti-affinity-policy"
         PROJECT = "multidomain:config:Project"
         RESOURCE_GROUP = "multidomain:config:nutanix-resource-group"
