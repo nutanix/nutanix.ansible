@@ -201,7 +201,7 @@ def run_module():
         ],
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None}
+    result = {"changed": False, "failed": False, "response": None}
     api_instance = get_vm_host_affinity_policies_api_instance(module)
     if module.params.get("ext_id"):
         get_policy(module, api_instance, result)
