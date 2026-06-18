@@ -168,9 +168,10 @@ from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
+from ..module_utils.v4.prism.helpers import get_category  # noqa: E402
 from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
+    get_categories_api_instance,
     get_etag,
-    get_pc_api_client,
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
@@ -204,33 +205,7 @@ def get_module_spec():
     return module_args
 
 
-_PRISM_SDK = None
-
-
-def get_category_api_instance(module):
-    global _PRISM_SDK
-    if not _PRISM_SDK:
-        api_client = get_pc_api_client(module)
-        _PRISM_SDK = prism_sdk.CategoriesApi(api_client=api_client)
-
-    return _PRISM_SDK
-
-
-def get_category(module, ext_id):
-    categories = get_category_api_instance(module)
-    try:
-        return categories.get_category_by_id(extId=ext_id).data
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while fetching category info using ext_id",
-        )
-
-
-def create_category(module, result):
-    categories = get_category_api_instance(module)
-
+def create_category(module, categories, result):
     sg = SpecGenerator(module)
     default_spec = prism_sdk.Category()
     spec, err = sg.generate_spec(obj=default_spec)
@@ -269,11 +244,11 @@ def check_categories_idempotency(old_spec, update_spec):
     return True
 
 
-def update_category(module, result):
+def update_category(module, categories, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
-    current_spec = get_category(module, ext_id=ext_id)
+    current_spec = get_category(module, categories, ext_id=ext_id)
     sg = SpecGenerator(module)
     update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
 
@@ -291,7 +266,6 @@ def update_category(module, result):
         return
 
     resp = None
-    categories = get_category_api_instance(module)
     try:
         resp = categories.update_category_by_id(extId=ext_id, body=update_spec)
     except Exception as e:
@@ -314,8 +288,7 @@ def update_category(module, result):
     result["changed"] = True
 
 
-def delete_category(module, result):
-    categories = get_category_api_instance(module)
+def delete_category(module, categories, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
@@ -323,7 +296,7 @@ def delete_category(module, result):
         result["msg"] = "Category with ext_id:{0} will be deleted.".format(ext_id)
         return
 
-    current_spec = get_category(module, ext_id=ext_id)
+    current_spec = get_category(module, categories, ext_id=ext_id)
 
     etag = get_etag(data=current_spec)
     if not etag:
@@ -366,13 +339,14 @@ def run_module():
         "ext_id": None,
     }
     state = module.params["state"]
+    categories = get_categories_api_instance(module)
     if state == "present":
         if module.params.get("ext_id"):
-            update_category(module, result)
+            update_category(module, categories, result)
         else:
-            create_category(module, result)
+            create_category(module, categories, result)
     else:
-        delete_category(module, result)
+        delete_category(module, categories, result)
     module.exit_json(**result)
 
 
