@@ -30,7 +30,7 @@
     state: present
     wait: true
     name: "{{ vpc_name }}1"
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "83083083-0000-0000-0000-000000000000"
     shared_with_projects: "{{ [project.uuid] if project is defined and project.uuid is defined else omit }}"
   register: result
   check_mode: true
@@ -43,7 +43,7 @@
       - result.changed == false
       - result.failed == false
       - result.response.name == "{{vpc_name}}1"
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
     fail_msg: " Unable to Create min VPC with check mode"
     success_msg: "Create min VPC with check mode finished as expected"
 ###########################################################

@@ -29,7 +29,7 @@
     cluster_reference: "{{ cluster.uuid }}"
     usage_type: "USER"
     is_hidden: true
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "83083083-0000-0000-0000-000000000000"
     storage_features:
       flash_mode:
         is_enabled: true
@@ -56,7 +56,7 @@
       - result.response.is_hidden == true
       - result.response.storage_features.flash_mode.is_enabled == true
       - result.response.iscsi_features.enabled_authentications == "CHAP"
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
 
     fail_msg: "Unable to create spec for VG create"
     success_msg: "Spec generated successfully for VG create"

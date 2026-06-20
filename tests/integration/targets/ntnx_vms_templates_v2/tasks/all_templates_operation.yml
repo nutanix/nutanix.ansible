@@ -59,7 +59,7 @@
   nutanix.ncp.ntnx_templates_v2:
     template_name: "{{ template_name }}"
     template_description: ansible test
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "83083083-0000-0000-0000-000000000000"
     template_version_spec:
       version_source:
         template_vm_reference:
@@ -77,7 +77,7 @@
       - result.response.template_name == "{{ template_name }}"
       - result.response.template_description == "ansible test"
       - result.response.template_version_spec.version_source.ext_id == "{{ vm_uuid }}"
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
     fail_msg: "Create new template from a vm with check mode failed"
     success_msg: "Create new template from a vm with check mode passed"
 ########################################################################

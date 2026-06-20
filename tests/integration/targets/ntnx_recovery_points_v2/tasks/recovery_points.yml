@@ -155,7 +155,7 @@
 - name: Create VM recovery point with check mode enabled
   nutanix.ncp.ntnx_recovery_points_v2:
     name: "Recovery Point"
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "83083083-0000-0000-0000-000000000000"
     expiration_time: "2024-09-30T14:15:22+00:00"
     recovery_point_type: "APPLICATION_CONSISTENT"
     vm_recovery_points:
@@ -196,7 +196,7 @@
         == true
       - result.response.volume_group_recovery_points[0].volume_group_ext_id ==
         "6aeec7b5-6ab6-4eb6-acf9-cf1e8b14a0b8"
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
     fail_msg: "Unable to create VM recovery point with check mode enabled"
     success_msg: "VM recovery point created successfully with check mode enabled"
 

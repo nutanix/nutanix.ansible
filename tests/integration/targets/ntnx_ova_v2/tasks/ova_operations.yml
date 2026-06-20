@@ -54,7 +54,7 @@
 - name: Create an Ova from a VM check mode
   nutanix.ncp.ntnx_ova_v2:
     name: "ova_name"
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "83083083-0000-0000-0000-000000000000"
     checksum:
       ova_sha1_checksum:
         hex_digest: "1234567890abcdef1234567890abcdef12345678"
@@ -82,7 +82,7 @@
       - result.response.source.disk_file_format == "QCOW2"
       - result.response.cluster_location_ext_ids == ["b7f9c1a2-4d3e-4c2a-9e2f-1a2b3c4d5e6f", "0a1b2c3d-4e5f-6789-abcd-ef0123456789"]
       - result.response.disk_format == "QCOW2"
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
     fail_msg: " Unable to create Ova from VM in check mode "
     success_msg: " Ova created successfully from VM in check mode "
 

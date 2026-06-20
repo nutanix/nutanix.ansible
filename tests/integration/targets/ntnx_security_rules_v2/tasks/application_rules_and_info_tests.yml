@@ -121,7 +121,7 @@
   nutanix.ncp.ntnx_security_rules_v2:
     name: "{{ rule_name_1 }}"
     description: Ansible created rule
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "83083083-0000-0000-0000-000000000000"
     type: APPLICATION
     policy_state: SAVE
     scope: ALL_VPC
@@ -291,7 +291,7 @@
       - result.response.rules[2].spec.icmp_services[0].is_all_allowed == true
       - result.response.rules[2].spec.icmp_services[0].type == 8
       - result.response.rules[2].spec.icmp_services[0].code == 0
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
     fail_msg: Failed to create security rule
     success_msg: Successfully created security rule
 

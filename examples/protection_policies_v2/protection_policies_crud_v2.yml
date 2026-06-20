@@ -238,6 +238,7 @@
               sync_replication_auto_suspend_timeout_seconds: 300
         category_ids:
           - "{{ category_ext_id_2 }}"
+        project_ext_id: "{{ project_ext_id }}"
       register: result
 
     - name: Add auto retention protection policy external ID to todelete list

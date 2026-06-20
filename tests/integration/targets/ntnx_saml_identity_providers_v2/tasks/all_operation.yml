@@ -31,7 +31,7 @@
     idp_metadata_xml: idp_xml_value
     entity_issuer: entity_issuer_test
     is_signed_authn_req_enabled: true
-    project_ext_id: "00000000-0000-0000-0000-000000000000"
+    project_ext_id: "83083083-0000-0000-0000-000000000000"
     is_shared_with_all_projects: true
     custom_attributes:
       - custom1
@@ -56,7 +56,7 @@
       - result.response.idp_metadata_xml == "idp_xml_value"
       - result.response.entity_issuer == "entity_issuer_test"
       - result.response.is_signed_authn_req_enabled == true
-      - result.response.project_ext_id == "00000000-0000-0000-0000-000000000000"
+      - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
       - result.response.custom_attributes[0] == "custom1"
       - result.response.custom_attributes[1] == "custom2"
     fail_msg: " Unable to Verify spec generation for identity providers with check_mode "

@@ -30,7 +30,7 @@
   nutanix.ncp.ntnx_subnets_v2:
     state: present
     name: "{{ subnet_name }}_1"
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "83083083-0000-0000-0000-000000000000"
     shared_with_projects: "{{ [project.uuid] if project is defined and project.uuid is defined else omit }}"
     subnet_type: VLAN
     cluster_reference: "{{ cluster.uuid }}"
@@ -101,7 +101,7 @@
       - result.response.metadata.category_ids.0 == "00061663-9fa0-28ca-185b-ac1f6b6f97e4"
       - result.response.network_function_chain_reference == "00061663-9fa0-28ca-185b-ac1f6b6f97e1"
       - result.response.is_advanced_networking == true
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
     fail_msg: " Unable to create VLAN subnet with check mode enabled "
     success_msg: " VLAN subnet with check mode enabled created successfully "
 

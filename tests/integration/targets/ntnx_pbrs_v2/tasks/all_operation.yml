@@ -96,7 +96,7 @@
     name: "{{pbr_name}}1"
     priority: "{{ priority.0 }}"
     vpc_ext_id: "{{pbr.vpc.uuid}}"
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: 83083083-0000-0000-0000-000000000000
     policies:
       - policy_action:
           action_type: PERMIT
@@ -134,7 +134,7 @@
       - result.response.policies.0.policy_match.protocol_parameters.icmp_type == 25
       - result.changed == false
       - result.failed == false
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == 83083083-0000-0000-0000-000000000000
     fail_msg: " Create PBR with vpc, source network, external destination, with PERMIT action and icmp with check_mode failed"
     success_msg: " Create PBR with vpc, source network, external destination, with PERMIT action and icmp with check_mode passed"
 ###############################################################################################################################

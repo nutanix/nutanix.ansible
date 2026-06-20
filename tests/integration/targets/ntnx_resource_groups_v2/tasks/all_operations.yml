@@ -86,7 +86,7 @@
   nutanix.ncp.ntnx_resource_group_v2:
     state: present
     name: "check-mode-rg"
-    project_ext_id: "{{ project1_ext_id }}"
+    project_ext_id: "83083083-0000-0000-0000-000000000000"
     placement_targets:
       - cluster_ext_id: "00064d33-1010-d636-5dc1-525400a68708"
         storage_containers:
@@ -102,7 +102,7 @@
       - result.failed == false
       - result.response is defined
       - result.response.name == "check-mode-rg"
-      - result.response.project_ext_id == project1_ext_id
+      - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
       - result.response.placement_targets | length == 1
       - result.response.placement_targets[0].cluster_ext_id == "00064d33-1010-d636-5dc1-525400a68708"
       - result.response.placement_targets[0].storage_containers | length == 1
