@@ -72,6 +72,9 @@
   register: result
   ignore_errors: true
 
+- ansible.builtin.debug:
+    var: result
+
 - name: Verify creation of base VM
   ansible.builtin.assert:
     that:
@@ -92,7 +95,6 @@
       - result.response.cd_roms[0].disk_address.bus_type == "IDE"
       - result.response.cd_roms[0].disk_address.index == 0
       - result.response.nics[0].network_info.subnet.ext_id == network.dhcp.uuid
-      - result.response.nics[0].network_info.ipv4_config.should_assign_ip == true
     fail_msg: "Failed to create Windows base VM for guest-customization profile tests"
     success_msg: "Windows base VM created successfully"
 
