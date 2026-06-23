@@ -250,6 +250,14 @@ action_groups:
     - ntnx_entity_groups_info_v2
     - ntnx_rsyslog_server_v2
     - ntnx_rsyslog_servers_info_v2
+    - ntnx_vm_guest_customization_profile_v2
+    - ntnx_vm_guest_customization_profiles_info_v2
+    - ntnx_vm_host_affinity_policy_v2
+    - ntnx_vm_host_affinity_policies_info_v2
+    - ntnx_vm_host_affinity_policy_re_enforce_v2
+    - ntnx_vm_anti_affinity_policy_v2
+    - ntnx_vm_anti_affinity_policies_info_v2
+    - ntnx_vm_anti_affinity_policy_compliance_info_v2
     - ntnx_project_v2
     - ntnx_projects_info_v2
     - ntnx_resource_group_v2
