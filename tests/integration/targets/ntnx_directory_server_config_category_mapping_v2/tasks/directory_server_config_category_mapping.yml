@@ -7,6 +7,73 @@
   ansible.builtin.set_fact:
     suffix_name: ansible-dsc
 
+- name: Generate random suffix for directory service names
+  ansible.builtin.set_fact:
+    ds_random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Create primary ACTIVE_DIRECTORY service
+  nutanix.ncp.ntnx_directory_services_v2:
+    state: present
+    name: "{{ ds_random_name }}-{{ suffix_name }}-primary"
+    url: "{{ active_directory.url }}"
+    directory_type: ACTIVE_DIRECTORY
+    domain_name: "{{ active_directory.domain_name }}"
+    service_account:
+      username: "{{ active_directory.username }}"
+      password: "{{ active_directory.password }}"
+    white_listed_groups:
+      - "{{ white_listed_groups[0] }}"
+  register: primary_directory_service
+  ignore_errors: true
+
+- name: Assert primary ACTIVE_DIRECTORY service creation status
+  ansible.builtin.assert:
+    that:
+      - primary_directory_service.response is defined
+      - primary_directory_service.changed == true
+      - primary_directory_service.failed == false
+      - primary_directory_service.response.directory_type == "ACTIVE_DIRECTORY"
+      - primary_directory_service.response.url == "{{ active_directory.url }}"
+      - primary_directory_service.response.domain_name == "{{ active_directory.domain_name }}"
+      - primary_directory_service.ext_id is defined
+      - primary_directory_service.response.ext_id == primary_directory_service.ext_id
+    fail_msg: Unable to create primary ACTIVE_DIRECTORY service
+    success_msg: Primary ACTIVE_DIRECTORY service created successfully
+
+- name: Create secondary ACTIVE_DIRECTORY service
+  nutanix.ncp.ntnx_directory_services_v2:
+    state: present
+    name: "{{ ds_random_name }}-{{ suffix_name }}-secondary"
+    url: "{{ active_directory_secondary.url }}"
+    directory_type: ACTIVE_DIRECTORY
+    domain_name: "{{ active_directory_secondary.domain_name }}"
+    service_account:
+      username: "{{ active_directory_secondary.username }}"
+      password: "{{ active_directory_secondary.password }}"
+    white_listed_groups:
+      - "{{ white_listed_groups[0] }}"
+  register: secondary_directory_service
+  ignore_errors: true
+
+- name: Assert secondary ACTIVE_DIRECTORY service creation status
+  ansible.builtin.assert:
+    that:
+      - secondary_directory_service.response is defined
+      - secondary_directory_service.changed == true
+      - secondary_directory_service.failed == false
+      - secondary_directory_service.response.directory_type == "ACTIVE_DIRECTORY"
+      - secondary_directory_service.response.url == "{{ active_directory_secondary.url }}"
+      - secondary_directory_service.response.domain_name == "{{ active_directory_secondary.domain_name }}"
+      - secondary_directory_service.ext_id is defined
+      - secondary_directory_service.response.ext_id == secondary_directory_service.ext_id
+    fail_msg: Unable to create secondary ACTIVE_DIRECTORY service
+    success_msg: Secondary ACTIVE_DIRECTORY service created successfully
+
+- name: Capture created directory service ext_ids
+  ansible.builtin.set_fact:
+    active_directory_ext_id: "{{ primary_directory_service.response.ext_id }}"
+    active_directory_secondary_ext_id: "{{ secondary_directory_service.response.ext_id }}"
+
 - name: Set test variables
   ansible.builtin.set_fact:
     directory_service_ref_first: "{{ active_directory_ext_id }}"
@@ -895,3 +962,42 @@
       - delete_wrong_ext_id_result.response.error_messages | length > 0
     fail_msg: Delete DS category mapping using wrong ext_id did not fail as expected
     success_msg: Delete DS category mapping using wrong ext_id failed as expected
+
+###################################################################################################
+- name: Delete secondary ACTIVE_DIRECTORY service
+  nutanix.ncp.ntnx_directory_services_v2:
+    state: absent
+    ext_id: "{{ active_directory_secondary_ext_id }}"
+  register: delete_secondary_directory_service
+  ignore_errors: true
+
+- name: Assert secondary ACTIVE_DIRECTORY service deletion status
+  ansible.builtin.assert:
+    that:
+      - delete_secondary_directory_service.changed == true
+      - delete_secondary_directory_service.failed == false
+      - delete_secondary_directory_service.ext_id == active_directory_secondary_ext_id
+      - >-
+        delete_secondary_directory_service.msg ==
+        "Directory Service with ext_id: {{ active_directory_secondary_ext_id }} deleted successfully"
+    fail_msg: Unable to delete secondary ACTIVE_DIRECTORY service
+    success_msg: Secondary ACTIVE_DIRECTORY service deleted successfully
+
+- name: Delete primary ACTIVE_DIRECTORY service
+  nutanix.ncp.ntnx_directory_services_v2:
+    state: absent
+    ext_id: "{{ active_directory_ext_id }}"
+  register: delete_primary_directory_service
+  ignore_errors: true
+
+- name: Assert primary ACTIVE_DIRECTORY service deletion status
+  ansible.builtin.assert:
+    that:
+      - delete_primary_directory_service.changed == true
+      - delete_primary_directory_service.failed == false
+      - delete_primary_directory_service.ext_id == active_directory_ext_id
+      - >-
+        delete_primary_directory_service.msg ==
+        "Directory Service with ext_id: {{ active_directory_ext_id }} deleted successfully"
+    fail_msg: Unable to delete primary ACTIVE_DIRECTORY service
+    success_msg: Primary ACTIVE_DIRECTORY service deleted successfully
