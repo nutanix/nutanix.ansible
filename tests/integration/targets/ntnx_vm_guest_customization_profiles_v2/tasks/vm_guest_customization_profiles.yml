@@ -72,9 +72,6 @@
   register: result
   ignore_errors: true
 
-- ansible.builtin.debug:
-    var: result
-
 - name: Verify creation of base VM
   ansible.builtin.assert:
     that:
