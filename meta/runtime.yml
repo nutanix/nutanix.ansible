@@ -246,6 +246,8 @@ action_groups:
     - ntnx_iam_entities_info_v2
     - ntnx_virtual_switch_v2
     - ntnx_virtual_switches_info_v2
+    - ntnx_network_controller_v2
+    - ntnx_network_controllers_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
     - ntnx_vm_guest_customization_profile_v2

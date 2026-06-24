@@ -47,6 +47,7 @@ class Tasks:
         CLUSTER_PROFILE = "clustermgmt:config:cluster-profile"
         NETWORK_FUNCTION = "Networking:config:network-function"
         VIRTUAL_SWITCH = "networking:config:virtual-switch"
+        NETWORK_CONTROLLER = "networking:config:network-controller"
         ENTITY_GROUP = "microseg:config:entity-group"
         VM_GUEST_CUSTOMIZATION_PROFILE = "vmm:ahv:config:vm-guest-customization-profile"
         VM_HOST_AFFINITY_POLICY = "vmm:ahv:policies:vm-host-affinity-policy"
