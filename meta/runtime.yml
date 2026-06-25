@@ -166,6 +166,8 @@ action_groups:
     - ntnx_authorization_policies_info_v2
     - ntnx_security_rules_v2
     - ntnx_security_rules_info_v2
+    - ntnx_security_rules_export_v2
+    - ntnx_security_rules_import_v2
     - ntnx_service_groups_v2
     - ntnx_service_groups_info_v2
     - ntnx_address_groups_v2
