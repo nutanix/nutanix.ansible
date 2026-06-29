@@ -250,6 +250,8 @@ action_groups:
     - ntnx_virtual_switches_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
+    - ntnx_rsyslog_server_v2
+    - ntnx_rsyslog_servers_info_v2
     - ntnx_vm_guest_customization_profile_v2
     - ntnx_vm_guest_customization_profiles_info_v2
     - ntnx_vm_host_affinity_policy_v2
