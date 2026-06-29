@@ -52,7 +52,6 @@ options:
   cloud_substrate:
     description:
       - The cloud substrate on which the network controller is deployed.
-      - Applicable only for cloud deployments.
     type: str
     choices:
       - AZURE
@@ -61,8 +60,7 @@ options:
     required: false
   default_vlan_stack:
     description:
-      - The default VLAN networking stack used by the network controller.
-      - C(ADVANCED) enables the advanced networking stack, C(LEGACY) keeps the legacy stack.
+      - Default VLAN stack(Legacy or Advanced) to instatiate VLAN-backed subnets on if advanced networking is enabled.
     type: str
     choices:
       - ADVANCED
@@ -70,21 +68,16 @@ options:
     required: false
   vpc_global_config:
     description:
-      - Global VPC configuration for the network controller.
+      - Global settings for all VPCs within the network controller.
     type: dict
     required: false
     suboptions:
       is_overlapping_erps_enabled:
         description:
-          - Option to enable or disable overlapping External Routable Prefixes (ERPs) across VPCs.
+          - Option to enable or disable overlapping ERPs (External Routable Prefixes) across VPCs.
         type: bool
         required: false
         default: false
-  project_ext_id:
-    description:
-      - A globally unique identifier that represents the project this network controller belongs to.
-    type: str
-    required: false
   metadata:
     description:
       - Metadata associated with this resource.
@@ -303,7 +296,6 @@ def get_module_spec():
             options=vpc_global_config_spec,
             obj=networking_sdk.VpcGlobalConfig,
         ),
-        project_ext_id=dict(type="str"),
         metadata=dict(
             type="dict",
             options=metadata_spec,
@@ -349,6 +341,14 @@ def create_network_controller(module, network_controllers, result):
             result["ext_id"] = ext_id
             resp = get_network_controller(module, network_controllers, ext_id)
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Network Controller"
+                ),
+                msg="Failed to get entity ext_id from task for Network Controller",
+            )
     result["changed"] = True
 
 
@@ -455,7 +455,6 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "failed": False,
         "ext_id": None,
@@ -463,12 +462,13 @@ def run_module():
     network_controllers = get_network_controllers_api_instance(module)
     state = module.params.get("state")
 
-    if state == "absent":
+    if state == "present":
+        if module.params.get("ext_id"):
+            update_network_controller(module, network_controllers, result)
+        else:
+            create_network_controller(module, network_controllers, result)
+    elif state == "absent":
         delete_network_controller(module, network_controllers, result)
-    elif module.params.get("ext_id"):
-        update_network_controller(module, network_controllers, result)
-    else:
-        create_network_controller(module, network_controllers, result)
     module.exit_json(**result)
 
 

@@ -16,7 +16,7 @@ version_added: 2.6.0
 description:
   - This module allows you to fetch network controllers info or specific network controller in Nutanix Prism Central.
   - If ext_id is provided, fetch particular network controller info using external ID
-  - If ext_id is not provided, fetch multiple network controllers info with/without using filters, limit, etc.
+  - If ext_id is not provided, fetch list of multiple network controllers info with/without using page and limit parameters.
   - This module uses PC v4 APIs based SDKs
 notes:
     - >-
@@ -33,9 +33,16 @@ options:
     description:
       - The external identifier of the network controller.
     type: str
+  page:
+    description:
+      - The page number
+    type: int
+  limit:
+    description:
+      - The number of network controllers to fetch per page
+    type: int
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
-  - nutanix.ncp.ntnx_info_v2
   - nutanix.ncp.ntnx_logger
   - nutanix.ncp.ntnx_proxy_v2
 author:
@@ -131,7 +138,6 @@ from ..module_utils.v4.network.api_client import (  # noqa: E402
     get_network_controllers_api_instance,
 )
 from ..module_utils.v4.network.helpers import get_network_controller  # noqa: E402
-from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
@@ -145,6 +151,8 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        page=dict(type="int"),
+        limit=dict(type="int"),
     )
 
     return module_args
@@ -159,14 +167,11 @@ def get_network_controller_using_ext_id(module, network_controllers, result):
 
 def get_network_controllers(module, network_controllers, result):
 
-    sg = SpecGenerator(module)
-    kwargs, err = sg.get_info_spec(attr=module.params)
-
-    if err:
-        result["error"] = err
-        module.fail_json(
-            msg="Failed generating network controllers info spec", **result
-        )
+    kwargs = {}
+    if module.params.get("page") is not None:
+        kwargs["_page"] = module.params.get("page")
+    if module.params.get("limit") is not None:
+        kwargs["_limit"] = module.params.get("limit")
 
     try:
         resp = network_controllers.list_network_controllers(**kwargs)
@@ -191,12 +196,10 @@ def run_module():
     module = BaseInfoModule(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
-        mutually_exclusive=[
-            ("ext_id", "filter"),
-        ],
+        skip_info_args=True,
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "response": None, "error": None}
+    result = {"changed": False, "response": None}
     network_controllers = get_network_controllers_api_instance(module)
     if module.params.get("ext_id"):
         get_network_controller_using_ext_id(module, network_controllers, result)
