@@ -39,18 +39,22 @@ options:
     name:
         description:
             - Name of Category Mapping.
+            - Required for create operation.
         type: str
     category_name:
         description:
             - The name for the category that this mapping is for.
+            - Required for create operation.
         type: str
     category_value:
         description:
             - The value for the category that this mapping is for.
+            - Required for create operation.
         type: str
     ad_info:
         description:
             - A mapping to an object in Active Directory.
+            - Required for create operation.
         type: dict
         suboptions:
             directory_service_reference:
@@ -207,6 +211,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    validate_required_params,
     strip_internal_attributes,
 )
 
@@ -244,6 +249,9 @@ def get_module_spec():
 
 
 def create_category_mapping(module, api_instance, result):
+    validate_required_params(
+        module, ["name", "category_name", "category_value", "ad_info"]
+    )
     sg = SpecGenerator(module)
     default_spec = mic_sdk.CategoryMapping()
     spec, err = sg.generate_spec(obj=default_spec)
@@ -279,6 +287,14 @@ def create_category_mapping(module, api_instance, result):
             resp = get_category_mapping(module, api_instance, ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Category Mapping"
+                ),
+                msg="Failed to get entity ext_id from task for Category Mapping",
+            )
 
     result["changed"] = True
 
@@ -391,9 +407,9 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "ext_id": None,
+        "failed": False,
     }
     api_instance = get_directory_server_configs_api_instance(module)
     state = module.params.get("state")

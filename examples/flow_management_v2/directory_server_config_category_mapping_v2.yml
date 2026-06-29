@@ -6,16 +6,16 @@
 # 3. Update the directory server config
 # 4. List all directory server configs
 # 5. Get directory server config using ext_id
-# 6. Create a DS category mapping
-# 7. Update the DS category mapping
-# 8. List all DS category mappings
-# 9. List DS category mappings using filter
-# 10. List DS category mappings using limit
-# 11. Get DS category mapping using ext_id
-# 12. Delete the DS category mapping
-# 13. Delete the directory server config
+# 6. Create a Directory Server category mapping
+# 7. Update the Directory Server category mapping
+# 8. List all Directory Server category mappings
+# 9. List Directory Server category mappings using filter
+# 10. List Directory Server category mappings using limit
+# 11. Get Directory Server category mapping using ext_id
+# 12. Delete the Directory Server category mapping
+# 13. Delete the Directory Server config
 
-- name: Directory server config and DS category mappings playbook
+- name: Directory server config and Directory Server category mappings playbook
   hosts: localhost
   gather_facts: false
   module_defaults:
@@ -100,7 +100,7 @@
       register: result
       ignore_errors: true
 
-    - name: Create DS category mapping
+    - name: Create Directory Service category mapping
       nutanix.ncp.ntnx_category_mapping_v2:
         state: present
         name: "{{ category_mapping_name }}"
@@ -116,7 +116,7 @@
       ansible.builtin.set_fact:
         category_mapping_ext_id: "{{ result.ext_id }}"
 
-    - name: Update DS category mapping
+    - name: Update Directory Server category mapping
       nutanix.ncp.ntnx_category_mapping_v2:
         state: present
         ext_id: "{{ category_mapping_ext_id }}"
@@ -129,37 +129,37 @@
       register: result
       ignore_errors: true
 
-    - name: List all DS category mappings
+    - name: List all Directory Server category mappings
       nutanix.ncp.ntnx_category_mappings_info_v2:
       register: result
       ignore_errors: true
 
-    - name: List DS category mappings using filter
+    - name: List Directory Server category mappings using filter
       nutanix.ncp.ntnx_category_mappings_info_v2:
         filter: "name eq '{{ category_mapping_name }}_updated'"
       register: result
       ignore_errors: true
 
-    - name: List DS category mappings using limit
+    - name: List Directory Server category mappings using limit
       nutanix.ncp.ntnx_category_mappings_info_v2:
         limit: 1
       register: result
       ignore_errors: true
 
-    - name: Get DS category mapping using ext_id
+    - name: Get Directory Server category mapping using ext_id
       nutanix.ncp.ntnx_category_mappings_info_v2:
         ext_id: "{{ category_mapping_ext_id }}"
       register: result
       ignore_errors: true
 
-    - name: Delete DS category mapping
+    - name: Delete Directory Server category mapping
       nutanix.ncp.ntnx_category_mapping_v2:
         ext_id: "{{ category_mapping_ext_id }}"
         state: absent
       register: result
       ignore_errors: true
 
-    - name: Delete directory server config
+    - name: Delete Directory Server config
       nutanix.ncp.ntnx_directory_server_config_v2:
         ext_id: "{{ directory_server_config_ext_id }}"
         state: absent
