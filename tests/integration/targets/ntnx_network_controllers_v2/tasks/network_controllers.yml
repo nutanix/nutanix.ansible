@@ -1,0 +1,270 @@
+---
+- name: Start Network Controllers tests
+  ansible.builtin.debug:
+    msg: Start Network Controllers tests
+
+- name: Generate random values
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false,
+      special=false, length=12)[0] }}"
+    wrong_ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+
+########################################################################################
+# Fetch existing categories to use in metadata tests
+########################################################################################
+
+- name: Fetch all existing categories
+  nutanix.ncp.ntnx_categories_info_v2:
+  register: categories_info
+  ignore_errors: true
+
+- name: Fetch all existing categories status
+  ansible.builtin.assert:
+    that:
+      - categories_info is defined
+      - categories_info.failed == false
+      - categories_info.response is defined
+      - categories_info.response | length >= 2
+    success_msg: "Categories fetched successfully"
+    fail_msg: "Categories fetch failed or fewer than 2 categories available"
+
+- name: Save first 2 category ext_ids
+  ansible.builtin.set_fact:
+    categories: "{{ categories_info.response[:2] | map(attribute='ext_id') | list }}"
+
+########################################################################################
+# Create Network Controller check mode tests
+########################################################################################
+
+- name: Generate spec for creating network controller using check mode with all
+    attributes
+  nutanix.ncp.ntnx_network_controller_v2:
+    state: present
+    cloud_substrate: "AWS"
+    default_vlan_stack: "ADVANCED"
+    vpc_global_config:
+      is_overlapping_erps_enabled: true
+    project_ext_id: "b8d4e729-6f1a-4c3b-9e7d-218a45c69f01"
+    metadata:
+      owner_reference_id: "f3a2b1c4-7d89-4e56-a012-3456789abcde"
+      owner_user_name: "test_owner_user"
+      project_reference_id: "b8d4e729-6f1a-4c3b-9e7d-218a45c69f01"
+      project_name: "test_project"
+      category_ids:
+        - "{{ categories[0] }}"
+        - "{{ categories[1] }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for creating network controller using check mode with all
+    attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.cloud_substrate == "AWS"
+      - result.response.default_vlan_stack == "ADVANCED"
+      - result.response.vpc_global_config.is_overlapping_erps_enabled == true
+      - result.response.project_ext_id == "b8d4e729-6f1a-4c3b-9e7d-218a45c69f01"
+      - result.response.metadata is defined
+      - result.response.metadata.owner_reference_id ==
+        "f3a2b1c4-7d89-4e56-a012-3456789abcde"
+      - result.response.metadata.owner_user_name == "test_owner_user"
+      - result.response.metadata.project_reference_id ==
+        "b8d4e729-6f1a-4c3b-9e7d-218a45c69f01"
+      - result.response.metadata.project_name == "test_project"
+      - result.response.metadata.category_ids | length == 2
+      - categories[0] in result.response.metadata.category_ids
+      - categories[1] in result.response.metadata.category_ids
+    success_msg: "Spec for creating network controller using check mode with all
+      attributes is generated successfully"
+    fail_msg: "Spec for creating network controller using check mode with all
+      attributes is not generated successfully"
+
+- name: Generate spec for creating network controller using check mode with minimum
+    attributes
+  nutanix.ncp.ntnx_network_controller_v2:
+    state: present
+    default_vlan_stack: "LEGACY"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for creating network controller using check mode with minimum
+    attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.default_vlan_stack == "LEGACY"
+    success_msg: "Spec for creating network controller using check mode with minimum
+      attributes is generated successfully"
+    fail_msg: "Spec for creating network controller using check mode with minimum
+      attributes is not generated successfully"
+
+########################################################################################
+# List / Get Network Controllers tests
+########################################################################################
+
+- name: List all network controllers
+  nutanix.ncp.ntnx_network_controllers_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: List all network controllers status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.total_available_results is defined
+    success_msg: "Network controllers listed successfully"
+    fail_msg: "Network controllers listing failed"
+
+- name: Set first network controller ext_id when available
+  ansible.builtin.set_fact:
+    network_controller_ext_id: "{{ result.response[0].ext_id }}"
+  when: result.response | length > 0
+
+- name: Get network controller using ext_id
+  nutanix.ncp.ntnx_network_controllers_info_v2:
+    ext_id: "{{ network_controller_ext_id }}"
+  register: result
+  ignore_errors: true
+  when: network_controller_ext_id is defined
+
+- name: Get network controller using ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.ext_id == network_controller_ext_id
+      - result.ext_id == network_controller_ext_id
+    success_msg: "Network controller fetched successfully using ext_id"
+    fail_msg: "Network controller fetch using ext_id failed"
+  when: network_controller_ext_id is defined
+
+- name: List network controllers with limit
+  nutanix.ncp.ntnx_network_controllers_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List network controllers with limit status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length <= 1
+    success_msg: "Network controllers listed with limit successfully"
+    fail_msg: "Network controllers listing with limit failed"
+
+########################################################################################
+# Update Network Controller check mode test (uses existing controller if any)
+########################################################################################
+
+- name: Generate spec for updating network controller using check mode
+  nutanix.ncp.ntnx_network_controller_v2:
+    state: present
+    ext_id: "{{ network_controller_ext_id }}"
+    vpc_global_config:
+      is_overlapping_erps_enabled: true
+  check_mode: true
+  register: result
+  ignore_errors: true
+  when: network_controller_ext_id is defined
+
+- name: Generate spec for updating network controller using check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.ext_id == network_controller_ext_id
+      - result.response.vpc_global_config.is_overlapping_erps_enabled == true
+    success_msg: "Spec for updating network controller using check mode is generated
+      successfully"
+    fail_msg: "Spec for updating network controller using check mode is not generated
+      successfully"
+  when: network_controller_ext_id is defined
+
+########################################################################################
+# Negative tests
+########################################################################################
+
+- name: Get network controller with wrong ext_id
+  nutanix.ncp.ntnx_network_controllers_info_v2:
+    ext_id: "{{ wrong_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Get network controller with wrong ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Get network controller with wrong ext_id failed as expected"
+    fail_msg: "Get network controller with wrong ext_id did not fail as expected"
+
+- name: Delete network controller without ext_id
+  nutanix.ncp.ntnx_network_controller_v2:
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Delete network controller without ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is present but all of the following are missing: ext_id' in result.msg or
+        'state is absent but all of the following are missing: ext_id' in result.msg"
+    success_msg: "Delete network controller without ext_id failed as expected"
+    fail_msg: "Delete network controller without ext_id did not fail as expected"
+
+- name: Delete network controller with check mode
+  nutanix.ncp.ntnx_network_controller_v2:
+    state: absent
+    ext_id: "{{ wrong_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Delete network controller with check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - "'will be deleted' in result.msg"
+    success_msg: "Delete network controller with check mode passed"
+    fail_msg: "Delete network controller with check mode failed"
+
+- name: Delete network controller with wrong ext_id
+  nutanix.ncp.ntnx_network_controller_v2:
+    state: absent
+    ext_id: "{{ wrong_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete network controller with wrong ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Delete network controller with wrong ext_id failed as expected"
+    fail_msg: "Delete network controller with wrong ext_id did not fail as expected"
