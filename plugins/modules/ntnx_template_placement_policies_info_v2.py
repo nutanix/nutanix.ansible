@@ -205,7 +205,7 @@ def run_module():
     )
 
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None}
+    result = {"changed": False, "response": None}
     policies = get_template_placement_policy_api_instance(module)
     if module.params.get("ext_id"):
         get_policy(module, policies, result)

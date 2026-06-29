@@ -60,6 +60,7 @@ options:
     placement_type:
         description:
             - The placement type of the template placement policy.
+            - Required for create operation.
         required: false
         choices:
             - SOFT
@@ -67,6 +68,7 @@ options:
     content_filter:
         description:
             - Category-based entity filter.
+            - Required for create operation.
         required: false
         type: dict
         suboptions:
@@ -87,6 +89,7 @@ options:
     cluster_filter:
         description:
             - Category-based entity filter.
+            - Required for create operation.
         required: false
         type: dict
         suboptions:
@@ -223,9 +226,8 @@ msg:
 
 error:
   description: This field typically holds information about if the task have errors that occurred during the task execution
-  returned: always
-  type: bool
-  sample: false
+  returned: When there is an error
+  type: str
 
 failed:
     description: This field indicates if the task execution failed
@@ -345,6 +347,14 @@ def create_policy(module, api_instance, result):
             result["ext_id"] = ext_id
             policy = get_template_placement_policy(module, api_instance, ext_id)
             result["response"] = strip_internal_attributes(policy.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Template Placement Policy"
+                ),
+                msg="Failed to get entity ext_id from task for Template Placement Policy",
+            )
 
     result["changed"] = True
 
@@ -453,7 +463,6 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "ext_id": None,
     }

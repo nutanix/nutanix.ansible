@@ -38,7 +38,6 @@
           type: "CATEGORIES_MATCH_ANY"
           category_ext_ids:
             - "{{ cluster_category_ext_id }}"
-        wait: true
       register: result
       ignore_errors: true
 
@@ -83,7 +82,6 @@
           type: "CATEGORIES_MATCH_ALL"
           category_ext_ids:
             - "{{ cluster_category_ext_id }}"
-        wait: true
       register: result
       ignore_errors: true
 
@@ -91,6 +89,5 @@
       nutanix.ncp.ntnx_template_placement_policy_v2:
         state: absent
         ext_id: "{{ policy_ext_id }}"
-        wait: true
       register: result
       ignore_errors: true
