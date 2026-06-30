@@ -654,6 +654,24 @@
 # DELETE TESTS
 ###################################################################################################
 
+- name: Delete Directory Server category mapping with check mode
+  nutanix.ncp.ntnx_category_mapping_v2:
+    state: absent
+    ext_id: "d21d21d2-1d21-4d21-4d21-1d21d21d21d2"
+  register: delete_result
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert delete Directory Server category mapping with check mode status
+  ansible.builtin.assert:
+    that:
+      - delete_result.changed == false
+      - delete_result.failed == false
+      - delete_result.ext_id == "d21d21d2-1d21-4d21-4d21-1d21d21d21d2"
+      - delete_result.msg == "Category Mapping with ext_id:d21d21d2-1d21-4d21-4d21-1d21d21d21d2 will be deleted."
+    fail_msg: Delete Directory Server category mapping with check mode failed
+    success_msg: Delete Directory Server category mapping with check mode passed
+
 - name: Delete Directory Server category mapping
   nutanix.ncp.ntnx_category_mapping_v2:
     state: absent
