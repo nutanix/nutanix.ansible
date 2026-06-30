@@ -251,3 +251,23 @@ def get_vm_host_affinity_policy(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching VM host affinity policy info using ext_id",
         )
+
+
+def get_template_placement_policy(module, api_instance, ext_id):
+    """
+    Get Template Placement Policy by ext_id.
+    Args:
+        module: Ansible module
+        api_instance: TemplatePlacementPoliciesApi instance from ntnx_vmm_py_client sdk
+        ext_id: ext_id of the template placement policy
+    Returns:
+        policy (obj): TemplatePlacementPolicy info object
+    """
+    try:
+        return api_instance.get_template_placement_policy_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching template placement policy info using ext_id",
+        )
