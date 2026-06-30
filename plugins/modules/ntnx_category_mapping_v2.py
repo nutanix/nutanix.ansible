@@ -249,9 +249,7 @@ def get_module_spec():
 
 
 def create_category_mapping(module, api_instance, result):
-    validate_required_params(
-        module, ["name", "category_name", "category_value", "ad_info"]
-    )
+    validate_required_params(module, ["category_name", "category_value", "ad_info"])
     sg = SpecGenerator(module)
     default_spec = mic_sdk.CategoryMapping()
     spec, err = sg.generate_spec(obj=default_spec)

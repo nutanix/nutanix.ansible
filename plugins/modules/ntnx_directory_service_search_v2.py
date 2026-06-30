@@ -10,7 +10,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_directory_services_search_v2
+module: ntnx_directory_service_search_v2
 short_description: Search users and groups in a directory service in Nutanix PC.
 version_added: "2.6.0"
 description:
@@ -59,6 +59,7 @@ options:
         description:
             - Flag indicating whether the search should be a wildcard search or not.
         type: bool
+        default: true
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
@@ -70,7 +71,7 @@ author:
 
 EXAMPLES = r"""
 - name: Search directory service for a group
-  nutanix.ncp.ntnx_directory_services_search_v2:
+  nutanix.ncp.ntnx_directory_service_search_v2:
     ext_id: "6863c60b-ae9d-5c32-b8c1-2d45b9ba343a"
     query: "test_query"
     searched_attributes:
@@ -199,7 +200,7 @@ def get_module_spec():
         query=dict(type="str", required=True),
         searched_attributes=dict(type="list", elements="str"),
         returned_attributes=dict(type="list", elements="str"),
-        is_wildcard_search=dict(type="bool"),
+        is_wildcard_search=dict(type="bool", default=True),
     )
     return module_args
 
@@ -248,6 +249,7 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
+        "failed": False,
         "response": None,
         "ext_id": None,
     }

@@ -214,7 +214,7 @@ def run_module():
         ],
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None}
+    result = {"changed": False, "failed": False, "response": None}
     api_instance = get_directory_server_configs_api_instance(module)
     if module.params.get("ext_id"):
         get_category_mapping_using_ext_id(module, api_instance, result)

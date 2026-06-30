@@ -35,7 +35,7 @@
         category_value: "ad-group-12345678"
 
     - name: Resolve AD group object GUID using directory service search
-      nutanix.ncp.ntnx_directory_services_search_v2:
+      nutanix.ncp.ntnx_directory_service_search_v2:
         ext_id: "{{ directory_service_reference }}"
         query: "{{ object_name }}"
         searched_attributes:

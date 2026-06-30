@@ -64,11 +64,13 @@ options:
                     - The entity to perform matching on. Currently, only the target VM that a logon occurred on is supported.
                 type: str
                 choices: ["VM"]
+                required: true
             match_field:
                 description:
                     - The field to match on. Today only NAME is supported, which matches on an entity's name.
                 type: str
                 choices: ["NAME"]
+                required: true
             match_type:
                 description:
                     - The type of match. Today only CONTAINS and ALL are supported.
@@ -76,6 +78,7 @@ options:
                       criteria value whereas C(ALL) allows all strings to match on the given entity.
                 type: str
                 choices: ["ALL", "CONTAINS"]
+                required: true
             criteria:
                 description:
                     - The criteria to use for matching entities to be categorized.
@@ -99,6 +102,7 @@ options:
                     value:
                         description: The IPv4 address value for the directory server config.
                         type: str
+                        required: true
                     prefix_length:
                         description: The prefix length of the IPv4 address for the directory server config.
                         type: int
@@ -111,6 +115,7 @@ options:
                     value:
                         description: The IPv6 address value.
                         type: str
+                        required: true
                     prefix_length:
                         description: The prefix length of the IPv6 address.
                         type: int
@@ -380,6 +385,14 @@ def create_directory_server_config(module, api_instance, result):
             resp = get_directory_server_config(module, api_instance, ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Directory Server Config"
+                ),
+                msg="Failed to get entity ext_id from task for Directory Server Config",
+            )
 
     result["changed"] = True
 
@@ -503,7 +516,7 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
+        "failed": False,
         "response": None,
         "ext_id": None,
     }
