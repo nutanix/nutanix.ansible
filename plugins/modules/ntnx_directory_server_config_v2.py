@@ -297,12 +297,12 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
     ipv4_sub_spec = dict(
-        value=dict(type="str"),
+        value=dict(type="str", required=True),
         prefix_length=dict(type="int", default=32),
     )
 
     ipv6_sub_spec = dict(
-        value=dict(type="str"),
+        value=dict(type="str", required=True),
         prefix_length=dict(type="int", default=128),
     )
 
@@ -317,9 +317,9 @@ def get_module_spec():
     )
 
     matching_criteria_sub_spec = dict(
-        match_entity=dict(type="str", choices=["VM"]),
-        match_field=dict(type="str", choices=["NAME"]),
-        match_type=dict(type="str", choices=["ALL", "CONTAINS"]),
+        match_entity=dict(type="str", choices=["VM"], required=True),
+        match_field=dict(type="str", choices=["NAME"], required=True),
+        match_type=dict(type="str", choices=["ALL", "CONTAINS"], required=True),
         criteria=dict(type="str"),
     )
 
