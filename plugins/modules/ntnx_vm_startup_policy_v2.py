@@ -430,6 +430,14 @@ def create_vm_startup_policy(module, api_instance, result):
             result["ext_id"] = ext_id
             policy = get_vm_startup_policy(module, api_instance, ext_id)
             result["response"] = strip_internal_attributes(policy.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for VM startup policy"
+                ),
+                msg="Failed to get entity ext_id from task for VM startup policy",
+            )
 
     result["changed"] = True
 
@@ -557,7 +565,6 @@ def run_module():
 
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "failed": False,
         "ext_id": None,

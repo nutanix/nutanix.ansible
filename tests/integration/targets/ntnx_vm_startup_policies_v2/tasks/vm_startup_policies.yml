@@ -22,10 +22,6 @@
   register: categories_info
   ignore_errors: true
 
-- name: Print categories info
-  ansible.builtin.debug:
-    var: categories_info
-
 - name: List all categories status
   ansible.builtin.assert:
     that:
@@ -69,10 +65,6 @@
   register: result
   ignore_errors: true
 
-- name: Print create VM startup policy check mode result
-  ansible.builtin.debug:
-    var: result
-
 - name: Generate spec for creating VM startup policy using check mode with all attributes status
   ansible.builtin.assert:
     that:
@@ -106,10 +98,6 @@
           power_on: {}
   register: result
   ignore_errors: true
-
-- name: Print create VM startup policy with minimum attributes result
-  ansible.builtin.debug:
-    var: result
 
 - name: Create VM startup policy with minimum attributes status
   ansible.builtin.assert:
@@ -157,10 +145,6 @@
   register: result
   ignore_errors: true
 
-- name: Print create VM startup policy with all attributes result
-  ansible.builtin.debug:
-    var: result
-
 - name: Create VM startup policy with all attributes status
   ansible.builtin.assert:
     that:
@@ -206,10 +190,6 @@
   register: result
   ignore_errors: true
 
-- name: Print create VM startup policy with missing name result
-  ansible.builtin.debug:
-    var: result
-
 - name: Create VM startup policy with missing name status
   ansible.builtin.assert:
     that:
@@ -231,10 +211,6 @@
   register: result
   ignore_errors: true
 
-- name: Print create VM startup policy with missing groups result
-  ansible.builtin.debug:
-    var: result
-
 - name: Create VM startup policy with missing groups status
   ansible.builtin.assert:
     that:
@@ -255,10 +231,6 @@
     wait: true
   register: result
   ignore_errors: true
-
-- name: Print create VM startup policy with missing start_conditions result
-  ansible.builtin.debug:
-    var: result
 
 - name: Create VM startup policy with missing start_conditions status
   ansible.builtin.assert:
@@ -282,13 +254,8 @@
           power_on: {}
           guest_bootup:
             timeout_duration_secs: 300
-    wait: true
   register: result
   ignore_errors: true
-
-- name: Print create VM startup policy with both power_on and guest_bootup result
-  ansible.builtin.debug:
-    var: result
 
 - name: Create VM startup policy with both power_on and guest_bootup status
   ansible.builtin.assert:
@@ -322,10 +289,6 @@
   check_mode: true
   register: result
   ignore_errors: true
-
-- name: Print update VM startup policy check mode result
-  ansible.builtin.debug:
-    var: result
 
 - name: Generate spec for updating VM startup policy using check mode with all attributes status
   ansible.builtin.assert:
@@ -363,10 +326,6 @@
     wait: true
   register: result
   ignore_errors: true
-
-- name: Print update VM startup policy with all attributes result
-  ansible.builtin.debug:
-    var: result
 
 - name: Update VM startup policy with all attributes status
   ansible.builtin.assert:
@@ -411,10 +370,6 @@
   register: result
   ignore_errors: true
 
-- name: Print update VM startup policy idempotency result
-  ansible.builtin.debug:
-    var: result
-
 - name: Update VM startup policy with same values to test idempotency status
   ansible.builtin.assert:
     that:
@@ -442,10 +397,6 @@
     wait: true
   register: result
   ignore_errors: true
-
-- name: Print update VM startup policy with wrong external ID result
-  ansible.builtin.debug:
-    var: result
 
 - name: Update VM startup policy with wrong external ID status
   ansible.builtin.assert:
@@ -481,10 +432,6 @@
   register: result
   ignore_errors: true
 
-- name: Print update VM startup policy with mismatched counts result
-  ansible.builtin.debug:
-    var: result
-
 - name: Update VM startup policy with mismatched groups and start_conditions count status (should fail)
   ansible.builtin.assert:
     that:
@@ -509,10 +456,6 @@
     ext_id: "{{ todelete[1] }}"
   register: result
   ignore_errors: true
-
-- name: Print fetch VM startup policy by external ID result
-  ansible.builtin.debug:
-    var: result
 
 - name: Fetch VM startup policy using external ID status
   ansible.builtin.assert:
@@ -542,10 +485,6 @@
   register: result
   ignore_errors: true
 
-- name: Print fetch VM startup policy with wrong external ID result
-  ansible.builtin.debug:
-    var: result
-
 - name: Fetch VM startup policy using wrong external ID status
   ansible.builtin.assert:
     that:
@@ -570,10 +509,6 @@
   register: result
   ignore_errors: true
 
-- name: Print list all VM startup policies result
-  ansible.builtin.debug:
-    var: result
-
 - name: List all VM startup policies status
   ansible.builtin.assert:
     that:
@@ -592,10 +527,6 @@
     filter: "name eq '{{ policy_name }}_updated'"
   register: result
   ignore_errors: true
-
-- name: Print list VM startup policies with filter result
-  ansible.builtin.debug:
-    var: result
 
 - name: List VM startup policies with filter status
   ansible.builtin.assert:
@@ -621,10 +552,6 @@
   register: result
   ignore_errors: true
 
-- name: Print list VM startup policies with limit result
-  ansible.builtin.debug:
-    var: result
-
 - name: List VM startup policies with limit status
   ansible.builtin.assert:
     that:
@@ -649,10 +576,6 @@
   register: result
   ignore_errors: true
 
-- name: Print delete VM startup policy check mode result
-  ansible.builtin.debug:
-    var: result
-
 - name: Delete VM startup policy with check mode status
   ansible.builtin.assert:
     that:
@@ -674,10 +597,6 @@
   register: result
   ignore_errors: true
   loop: "{{ todelete }}"
-
-- name: Print delete all created VM startup policies result
-  ansible.builtin.debug:
-    var: result
 
 - name: Deletion Status
   ansible.builtin.assert:
@@ -704,10 +623,6 @@
   register: result
   ignore_errors: true
 
-- name: Print delete VM startup policy with wrong external ID result
-  ansible.builtin.debug:
-    var: result
-
 - name: Delete VM startup policy with wrong external ID status
   ansible.builtin.assert:
     that:
@@ -728,10 +643,6 @@
     wait: true
   register: result
   ignore_errors: true
-
-- name: Print delete VM startup policy with missing external ID result
-  ansible.builtin.debug:
-    var: result
 
 - name: Delete VM startup policy with missing external ID status
   ansible.builtin.assert:

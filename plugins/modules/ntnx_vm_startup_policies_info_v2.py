@@ -136,7 +136,6 @@ error:
   description: This field typically holds information about if the task have errors that occurred during the task execution
   type: str
   returned: when an error occurs
-  sample: null
 
 failed:
   description: This field typically holds information about if the task have failed
@@ -229,7 +228,7 @@ def run_module():
         ],
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "response": None, "error": None}
+    result = {"changed": False, "response": None, "failed": False}
     policies = get_vm_startup_policies_api_instance(module)
     if module.params.get("ext_id"):
         get_vm_startup_policy_using_ext_id(module, policies, result)
