@@ -1,0 +1,170 @@
+---
+- name: BGP Session Operations
+  hosts: localhost
+  gather_facts: false
+  vars:
+    ip: "10.0.0.1"
+    username: "admin"
+    password: "password"
+    local_gw_ref: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    remote_gw_ref: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+
+  tasks:
+    ########################################################################################
+    # Create BGP Session with minimum attributes
+    ########################################################################################
+    - name: Create BGP session with minimum attributes
+      nutanix.ncp.ntnx_BgpSession_v2:
+        nutanix_host: "{{ ip }}"
+        nutanix_username: "{{ username }}"
+        nutanix_password: "{{ password }}"
+        validate_certs: false
+        state: present
+        name: "bgp_session_min"
+        local_gateway_reference: "{{ local_gw_ref }}"
+        remote_gateway_reference: "{{ remote_gw_ref }}"
+      register: create_min_result
+      ignore_errors: true
+
+    ########################################################################################
+    # Create BGP Session with all attributes
+    ########################################################################################
+    - name: Create BGP session with all attributes
+      nutanix.ncp.ntnx_BgpSession_v2:
+        nutanix_host: "{{ ip }}"
+        nutanix_username: "{{ username }}"
+        nutanix_password: "{{ password }}"
+        validate_certs: false
+        state: present
+        name: "bgp_session_all"
+        description: "BGP session created with all attributes"
+        local_gateway_reference: "{{ local_gw_ref }}"
+        remote_gateway_reference: "{{ remote_gw_ref }}"
+        local_gateway_interface_ip_address:
+          ipv4:
+            value: "192.168.1.1"
+            prefix_length: 32
+        dynamic_route_priority: 100
+        password: "bgp_password"
+        should_advertise_all_externally_routable_prefixes: true
+        externally_routable_prefixes_to_advertise:
+          - ipv4:
+              ip:
+                value: "10.0.0.0"
+              prefix_length: 24
+        prepended_autonomous_system_path:
+          - 65000
+          - 65001
+        advertised_routes_communities:
+          - autonomous_system_number: 65000
+            community_value: 100
+      register: create_all_result
+      ignore_errors: true
+
+    ########################################################################################
+    # Get BGP Session by ext_id
+    ########################################################################################
+    - name: Get BGP session by ext_id
+      nutanix.ncp.ntnx_BgpSession_info_v2:
+        nutanix_host: "{{ ip }}"
+        nutanix_username: "{{ username }}"
+        nutanix_password: "{{ password }}"
+        validate_certs: false
+        ext_id: "{{ create_all_result.ext_id }}"
+      register: get_result
+      ignore_errors: true
+      when: create_all_result is succeeded
+
+    ########################################################################################
+    # List all BGP Sessions
+    ########################################################################################
+    - name: List all BGP sessions
+      nutanix.ncp.ntnx_BgpSession_info_v2:
+        nutanix_host: "{{ ip }}"
+        nutanix_username: "{{ username }}"
+        nutanix_password: "{{ password }}"
+        validate_certs: false
+      register: list_result
+      ignore_errors: true
+
+    ########################################################################################
+    # List BGP Sessions with filter
+    ########################################################################################
+    - name: List BGP sessions with filter
+      nutanix.ncp.ntnx_BgpSession_info_v2:
+        nutanix_host: "{{ ip }}"
+        nutanix_username: "{{ username }}"
+        nutanix_password: "{{ password }}"
+        validate_certs: false
+        filter: "name eq 'bgp_session_all'"
+      register: filter_result
+      ignore_errors: true
+
+    ########################################################################################
+    # List BGP Sessions with limit
+    ########################################################################################
+    - name: List BGP sessions with limit
+      nutanix.ncp.ntnx_BgpSession_info_v2:
+        nutanix_host: "{{ ip }}"
+        nutanix_username: "{{ username }}"
+        nutanix_password: "{{ password }}"
+        validate_certs: false
+        limit: 5
+      register: limit_result
+      ignore_errors: true
+
+    ########################################################################################
+    # Update BGP Session
+    ########################################################################################
+    - name: Update BGP session
+      nutanix.ncp.ntnx_BgpSession_v2:
+        nutanix_host: "{{ ip }}"
+        nutanix_username: "{{ username }}"
+        nutanix_password: "{{ password }}"
+        validate_certs: false
+        state: present
+        ext_id: "{{ create_all_result.ext_id }}"
+        name: "bgp_session_updated"
+        description: "Updated BGP session description"
+        dynamic_route_priority: 200
+        should_advertise_all_externally_routable_prefixes: false
+        externally_routable_prefixes_to_advertise:
+          - ipv4:
+              ip:
+                value: "172.16.0.0"
+              prefix_length: 16
+        advertised_routes_communities:
+          - autonomous_system_number: 65000
+            community_value: 200
+          - autonomous_system_number: 65001
+            community_value: 300
+      register: update_result
+      ignore_errors: true
+      when: create_all_result is succeeded
+
+    ########################################################################################
+    # Delete BGP Sessions
+    ########################################################################################
+    - name: Delete BGP session
+      nutanix.ncp.ntnx_BgpSession_v2:
+        nutanix_host: "{{ ip }}"
+        nutanix_username: "{{ username }}"
+        nutanix_password: "{{ password }}"
+        validate_certs: false
+        state: absent
+        ext_id: "{{ create_all_result.ext_id }}"
+      register: delete_result
+      ignore_errors: true
+      when: create_all_result is succeeded
+
+    - name: Delete BGP session with minimum attributes
+      nutanix.ncp.ntnx_BgpSession_v2:
+        nutanix_host: "{{ ip }}"
+        nutanix_username: "{{ username }}"
+        nutanix_password: "{{ password }}"
+        validate_certs: false
+        state: absent
+        ext_id: "{{ create_min_result.ext_id }}"
+      register: delete_min_result
+      ignore_errors: true
+      when: create_min_result is succeeded
