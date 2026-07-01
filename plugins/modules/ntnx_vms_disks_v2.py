@@ -22,19 +22,16 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create a disk device for a VM) -
-      Operation Name: Create Virtual Machine Disk -
       Required Roles: Account Owner, Administrator, Backup Admin, Consumer, CSI System, Developer, Kubernetes Data Services System,
       Kubernetes Infrastructure Provision, NCM Connector, Operator, Prism Admin, Project Admin, Project Manager, Storage Admin, Super Admin, User,
       Virtual Machine Admin, Self-Service Admin (deprecated)
     - >-
       B(Delete a disk device from a VM) -
-      Operation Name: Delete Virtual Machine Disk -
       Required Roles: Account Owner, Administrator, Backup Admin, Consumer, CSI System, Developer, Kubernetes Data Services System,
       Kubernetes Infrastructure Provision, NCM Connector, Operator, Prism Admin, Project Admin, Project Manager, Storage Admin, Super Admin, User,
       Virtual Machine Admin, Self-Service Admin (deprecated)
     - >-
       B(Update the configuration for the provided disk device) -
-      Operation Name: Update Virtual Machine Disk -
       Required Roles: Account Owner, Administrator, Consumer, Developer, NCM Connector, Operator, Prism Admin, Project Admin, Project Manager, Super Admin,
       User, Virtual Machine Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
@@ -442,20 +439,18 @@ def update_disk(module, result):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
 
-    # data source and disk_size_bytes cannot be sent together
-    disk_size_bytes = (
-        module.params.get("backing_info", {}).get("vm_disk", {}).get("disk_size_bytes")
-    )
     data_source = (
         module.params.get("backing_info", {}).get("vm_disk", {}).get("data_source")
     )
-    if disk_size_bytes and data_source:
-        result["error"] = "data source and disk_size_bytes cannot be sent together"
-        module.exit_json(**result)
-    elif disk_size_bytes:
+    if data_source:
         update_spec.backing_info.data_source = None
-    elif data_source:
-        update_spec.backing_info.disk_size_bytes = None
+    storage_container = (
+        module.params.get("backing_info", {})
+        .get("vm_disk", {})
+        .get("storage_container")
+    )
+    if storage_container:
+        update_spec.backing_info.storage_container = None
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return

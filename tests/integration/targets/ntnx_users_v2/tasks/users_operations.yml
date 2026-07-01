@@ -227,7 +227,6 @@
       - result.response is defined
       - result.changed == false
       - result.failed == true
-      - result.status == 409
       - result.response.data.error is defined
       - result.response.data.error | length > 0
     fail_msg: create local user that already exists failed

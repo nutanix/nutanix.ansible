@@ -1,0 +1,144 @@
+---
+# Summary:
+# This playbook will:
+# 1. Create a VM Guest Customization Profile using sysprep parameters (Workgroup, DHCP).
+# 2. Create a VM Guest Customization Profile using a pre-built unattend XML answer file.
+# 3. Update an existing profile to use a domain join and a must-provide-during-deployment IP config.
+# 4. Fetch a single profile by external ID.
+# 5. List profiles using a filter and a limit.
+# 6. Delete the created profiles.
+
+- name: VM Guest Customization Profile playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Create VM Guest Customization Profile with sysprep params (Workgroup,DHCP)
+      nutanix.ncp.ntnx_vm_guest_customization_profile_v2:
+        state: present
+        name: "win-sysprep-profile-workgroup"
+        description: "Reusable Windows Sysprep profile - Workgroup, DHCP"
+        config:
+          sysprep:
+            customization:
+              sysprep_params:
+                general_settings:
+                  computer_name:
+                    use_vm_name: {}
+                  timezone: "Pacific Standard Time"
+                  administrator_password: "admin123"
+                  registered_owner: "admin"
+                  registered_organization: "admin"
+                locale_settings:
+                  user_locale: "en-US"
+                  system_locale: "en-US"
+                  ui_language: "en-US"
+                first_logon_commands:
+                  - "powershell -Command Enable-PSRemoting -Force"
+                workgroup_or_domain_info:
+                  workgroup:
+                    name: "workgroup"
+                network_settings:
+                  nic_config_list:
+                    - dns_config:
+                        preferred_dns_server_address: "10.0.0.10"
+                        alternate_dns_server_addresses:
+                          - "10.0.0.11"
+                      ipv4_config:
+                        use_dhcp: {}
+      register: result_workgroup
+      ignore_errors: true
+
+    - name: Save workgroup profile ext_id
+      ansible.builtin.set_fact:
+        workgroup_profile_ext_id: "{{ result_workgroup.response.ext_id }}"
+
+    - name: Create VM Guest Customization Profile using an unattend XML answer file
+      nutanix.ncp.ntnx_vm_guest_customization_profile_v2:
+        state: present
+        name: "win-sysprep-profile-answer-file"
+        description: "Sysprep using a pre-built unattend.xml"
+        config:
+          sysprep:
+            customization:
+              answer_file:
+                unattend_xml: "{{ lookup('file', 'unattend_xml_content.xml') | b64encode }}"
+      register: result_answer_file
+      ignore_errors: true
+
+    - name: Save answer-file profile ext_id
+      ansible.builtin.set_fact:
+        answer_file_profile_ext_id: "{{ result_answer_file.response.ext_id }}"
+
+    - name: Update profile to use domain settings
+      nutanix.ncp.ntnx_vm_guest_customization_profile_v2:
+        state: present
+        ext_id: "{{ workgroup_profile_ext_id }}"
+        name: "win-sysprep-profile-domain-settings"
+        description: "Updated profile - domain settings"
+        config:
+          sysprep:
+            customization:
+              sysprep_params:
+                general_settings:
+                  computer_name:
+                    must_provide_during_deployment: {}
+                  timezone: "UTC"
+                  administrator_password: "admin123"
+                workgroup_or_domain_info:
+                  domain_settings:
+                    credentials:
+                      domain_name: "domain.example.local"
+                      username: "admin"
+                      password: "admin123"
+                network_settings:
+                  nic_config_list:
+                    - dns_config:
+                        preferred_dns_server_address: "10.0.0.10"
+                        alternate_dns_server_addresses:
+                          - "10.0.0.11"
+                      ipv4_config:
+                        must_provide_during_deployment: {}
+      register: result_update
+      ignore_errors: true
+
+    - name: Fetch VM Guest Customization Profile by ext_id
+      nutanix.ncp.ntnx_vm_guest_customization_profiles_info_v2:
+        ext_id: "{{ workgroup_profile_ext_id }}"
+      register: profile_info
+
+    - name: List all VM Guest Customization Profiles
+      nutanix.ncp.ntnx_vm_guest_customization_profiles_info_v2:
+      register: profile_list_all
+      ignore_errors: true
+
+    - name: List VM Guest Customization Profiles using filter
+      nutanix.ncp.ntnx_vm_guest_customization_profiles_info_v2:
+        filter: "name eq 'win-sysprep-profile-domain-settings'"
+      register: profile_list_filter
+      ignore_errors: true
+
+    - name: List VM Guest Customization Profiles with limit
+      nutanix.ncp.ntnx_vm_guest_customization_profiles_info_v2:
+        limit: 1
+      register: profile_list_limit
+      ignore_errors: true
+
+    - name: Delete the workgroup/domain profile
+      nutanix.ncp.ntnx_vm_guest_customization_profile_v2:
+        state: absent
+        ext_id: "{{ workgroup_profile_ext_id }}"
+      register: result_delete_workgroup
+      ignore_errors: true
+
+    - name: Delete the answer_file profile
+      nutanix.ncp.ntnx_vm_guest_customization_profile_v2:
+        state: absent
+        ext_id: "{{ answer_file_profile_ext_id }}"
+      register: result_delete_answer_file
+      ignore_errors: true

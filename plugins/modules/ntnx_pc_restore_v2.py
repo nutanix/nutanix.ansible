@@ -20,7 +20,6 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Restore domain manager) -
-      Operation Name: Restore Domain Manager Restore Point -
       Required Roles: Domain Manager Admin, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:
@@ -341,7 +340,7 @@ options:
                             ip_ranges:
                                 description: Range of IPs used for Prism Central network setup.
                                 type: list
-                                required: true
+                                required: false
                                 elements: dict
                                 suboptions:
                                     begin:
