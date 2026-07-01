@@ -133,6 +133,16 @@ def get_ova_api_instance(module):
     return ntnx_vmm_py_client.OvasApi(api_client=api_client)
 
 
+def get_template_placement_policy_api_instance(module):
+    """
+    This method will return Template Placement Policy API instance.
+    Args:
+        api_instance (obj): v4 Template Placement Policy api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.TemplatePlacementPoliciesApi(api_client=api_client)
+
+
 def get_vm_guest_customization_profiles_api_instance(module):
     """
     This method will return VM Guest Customization Profiles API instance

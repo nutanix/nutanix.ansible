@@ -167,6 +167,8 @@ action_groups:
     - ntnx_authorization_policies_info_v2
     - ntnx_security_rules_v2
     - ntnx_security_rules_info_v2
+    - ntnx_security_rules_export_v2
+    - ntnx_security_rules_import_v2
     - ntnx_service_groups_v2
     - ntnx_service_groups_info_v2
     - ntnx_address_groups_v2
@@ -253,6 +255,8 @@ action_groups:
     - ntnx_category_mappings_info_v2
     - ntnx_directory_server_config_v2
     - ntnx_directory_server_configs_info_v2
+    - ntnx_template_placement_policy_v2
+    - ntnx_template_placement_policies_info_v2
     - ntnx_vm_guest_customization_profile_v2
     - ntnx_vm_guest_customization_profiles_info_v2
     - ntnx_vm_host_affinity_policy_v2
