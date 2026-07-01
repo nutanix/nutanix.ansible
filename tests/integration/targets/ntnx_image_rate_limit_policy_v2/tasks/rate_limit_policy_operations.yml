@@ -24,10 +24,6 @@
   register: result
   ignore_errors: true
 
-- name: Print result
-  ansible.builtin.debug:
-    var: result
-
 - name: Status of all categories
   ansible.builtin.assert:
     that:
@@ -59,14 +55,9 @@
         - "605a0cf9-d04e-3be7-911b-1e6f193f6ebe"
         - "d89e250f-8535-4251-8e9d-2a50240f4502"
         - "605a0cf9-d04e-3be7-911b-1e6f193f6ebe"
-    wait: true
   register: result
   ignore_errors: true
   check_mode: true
-
-- name: Print result
-  ansible.builtin.debug:
-    var: result
 
 - name: Generate spec for creating image rate limit policy using check mode with all attributes status
   ansible.builtin.assert:
@@ -100,10 +91,6 @@
     wait: true
   register: result
   ignore_errors: true
-
-- name: Print result
-  ansible.builtin.debug:
-    var: result
 
 - name: Create an image rate limit policy with minimal spec status
   ansible.builtin.assert:
@@ -143,10 +130,6 @@
   register: result
   ignore_errors: true
 
-- name: Print result
-  ansible.builtin.debug:
-    var: result
-
 - name: Create an image rate limit policy with all attributes status
   ansible.builtin.assert:
     that:
@@ -185,10 +168,6 @@
   register: result
   ignore_errors: true
 
-- name: Print result
-  ansible.builtin.debug:
-    var: result
-
 - name: Create image rate limit policy with missing name status
   ansible.builtin.assert:
     that:
@@ -198,6 +177,23 @@
       - result.msg == "state is present but any of the following are missing: name, ext_id"
     fail_msg: "Create image rate limit policy with missing name did not fail as expected"
     success_msg: "Create image rate limit policy with missing name failed as expected"
+
+- name: Create image rate limit policy with missing rate_limit_kbps and cluster_entity_filter
+  nutanix.ncp.ntnx_image_rate_limit_policy_v2:
+    state: present
+    name: "{{ policy_name }}_missing_rate_limit_kbps_and_cluster_entity_filter"
+  register: result
+  ignore_errors: true
+
+- name: Create image rate limit policy with missing rate_limit_kbps status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Missing required parameter(s): rate_limit_kbps, cluster_entity_filter"
+    fail_msg: "Create image rate limit policy with missing rate_limit_kbps and cluster_entity_filter did not fail as expected"
+    success_msg: "Create image rate limit policy with missing rate_limit_kbps and cluster_entity_filter failed as expected"
 
 ########################################################################################
 
@@ -212,10 +208,6 @@
         - "{{ category_ext_id }}"
   register: result
   ignore_errors: true
-
-- name: Print result
-  ansible.builtin.debug:
-    var: result
 
 - name: Create image rate limit policy with invalid filter type status
   ansible.builtin.assert:
@@ -248,10 +240,6 @@
   register: result
   ignore_errors: true
   check_mode: true
-
-- name: Print result
-  ansible.builtin.debug:
-    var: result
 
 - name: Generate spec for updating image rate limit policy using check mode status
   ansible.builtin.assert:
@@ -286,10 +274,6 @@
   register: result
   ignore_errors: true
 
-- name: Print result
-  ansible.builtin.debug:
-    var: result
-
 - name: Update image rate limit policy status
   ansible.builtin.assert:
     that:
@@ -323,10 +307,6 @@
   register: result
   ignore_errors: true
 
-- name: Print result
-  ansible.builtin.debug:
-    var: result
-
 - name: Idempotency check status
   ansible.builtin.assert:
     that:
@@ -357,10 +337,6 @@
   register: result
   ignore_errors: true
 
-- name: Print result
-  ansible.builtin.debug:
-    var: result
-
 - name: Negative update non-existent policy status
   ansible.builtin.assert:
     that:
@@ -383,10 +359,6 @@
     ext_id: "{{ todelete[0] }}"
   register: result
   ignore_errors: true
-
-- name: Print result
-  ansible.builtin.debug:
-    var: result
 
 - name: Fetch image rate limit policy using ext_id status
   ansible.builtin.assert:
@@ -413,10 +385,6 @@
   register: result
   ignore_errors: true
 
-- name: Print result
-  ansible.builtin.debug:
-    var: result
-
 - name: Negative fetch non-existent policy status
   ansible.builtin.assert:
     that:
@@ -439,10 +407,6 @@
   register: result
   ignore_errors: true
 
-- name: Print result
-  ansible.builtin.debug:
-    var: result
-
 - name: List all image rate limit policies status
   ansible.builtin.assert:
     that:
@@ -463,10 +427,6 @@
     filter: "name eq '{{ policy_name }}_updated'"
   register: result
   ignore_errors: true
-
-- name: Print result
-  ansible.builtin.debug:
-    var: result
 
 - name: List image rate limit policies with filter status
   ansible.builtin.assert:
@@ -491,10 +451,6 @@
     limit: 1
   register: result
   ignore_errors: true
-
-- name: Print result
-  ansible.builtin.debug:
-    var: result
 
 - name: List image rate limit policies with limit status
   ansible.builtin.assert:
@@ -521,10 +477,6 @@
   ignore_errors: true
   check_mode: true
 
-- name: Print result
-  ansible.builtin.debug:
-    var: result
-
 - name: Delete image rate limit policy with check mode status
   ansible.builtin.assert:
     that:
@@ -546,10 +498,6 @@
   register: result
   ignore_errors: true
   loop: "{{ todelete }}"
-
-- name: Print result
-  ansible.builtin.debug:
-    var: result
 
 - name: Delete all image rate limit policies status
   ansible.builtin.assert:
@@ -577,10 +525,6 @@
   register: result
   ignore_errors: true
 
-- name: Print result
-  ansible.builtin.debug:
-    var: result
-
 - name: Negative delete non-existent policy status
   ansible.builtin.assert:
     that:
@@ -599,10 +543,6 @@
     state: absent
   register: result
   ignore_errors: true
-
-- name: Print result
-  ansible.builtin.debug:
-    var: result
 
 - name: Negative delete with missing ext_id status
   ansible.builtin.assert:

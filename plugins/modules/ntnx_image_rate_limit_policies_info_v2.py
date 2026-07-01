@@ -113,7 +113,6 @@ error:
   description: This field typically holds information about if the task have errors that occurred during the task execution
   type: str
   returned: when an error occurs
-  sample: null
 
 failed:
   description: This field typically holds information about if the task have failed
@@ -202,7 +201,7 @@ def run_module():
         ],
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None}
+    result = {"changed": False, "failed": False, "response": None}
 
     api_instance = get_image_rate_limit_policy_api_instance(module)
 

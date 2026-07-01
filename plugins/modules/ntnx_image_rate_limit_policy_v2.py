@@ -50,6 +50,7 @@ options:
     name:
         description:
             - The name of the image rate limit policy.
+            - Required for create operation.
         required: false
         type: str
     description:
@@ -60,11 +61,13 @@ options:
     rate_limit_kbps:
         description:
             - Network bandwidth in KBps that the rate limited image operation can utilize.
+            - Required for create operation.
         required: false
         type: int
     cluster_entity_filter:
         description:
             - Category-based entity filter.
+            - Required for create operation.
         required: false
         type: dict
         suboptions:
@@ -82,11 +85,6 @@ options:
                 required: true
                 type: list
                 elements: str
-    wait:
-        description: Wait for the CRUD operation to complete.
-        type: bool
-        required: false
-        default: true
 author:
  - Abhinav Bansal (@abhinavbansal29)
  - George Ghawali (@george-ghawali)
@@ -229,6 +227,7 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
+    validate_required_params,
 )
 from ..module_utils.v4.vmm.api_client import (  # noqa: E402
     get_etag,
@@ -273,6 +272,7 @@ def get_module_spec():
 
 
 def create_rate_limit_policy(module, api_instance, result):
+    validate_required_params(module, ["rate_limit_kbps", "cluster_entity_filter"])
     sg = SpecGenerator(module)
     default_spec = vmm_sdk.RateLimitPolicy()
     spec, err = sg.generate_spec(obj=default_spec)
@@ -309,6 +309,14 @@ def create_rate_limit_policy(module, api_instance, result):
             result["ext_id"] = ext_id
             policy = get_rate_limit_policy(module, api_instance, ext_id)
             result["response"] = strip_internal_attributes(policy.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Image Rate Limit Policy"
+                ),
+                msg="Failed to get entity ext_id from task for Image Rate Limit Policy",
+            )
 
     result["changed"] = True
 
@@ -368,9 +376,8 @@ def update_rate_limit_policy(module, api_instance, result):
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
         wait_for_completion(module, task_ext_id)
-
-    updated_policy = get_rate_limit_policy(module, api_instance, ext_id)
-    result["response"] = strip_internal_attributes(updated_policy.to_dict())
+        updated_policy = get_rate_limit_policy(module, api_instance, ext_id)
+        result["response"] = strip_internal_attributes(updated_policy.to_dict())
     result["changed"] = True
 
 
@@ -417,7 +424,7 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
+        "failed": False,
         "response": None,
         "ext_id": None,
     }
