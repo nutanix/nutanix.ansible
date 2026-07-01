@@ -87,6 +87,7 @@ options:
     directory_service_reference:
         description:
             - The External ID of the directory service that will be used for mapping.
+            - Required for create operation.
         type: str
     domain_controllers:
         description:
