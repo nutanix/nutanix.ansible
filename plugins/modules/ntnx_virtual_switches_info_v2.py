@@ -33,7 +33,7 @@ notes:
 options:
   ext_id:
     description:
-      - The external identifier of the virtual switch.
+      - The external ID of the virtual switch.
     type: str
   cluster_ext_id:
     description:
