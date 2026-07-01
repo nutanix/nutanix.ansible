@@ -769,7 +769,6 @@ def run_module():
             )
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "failed": False,
         "ext_id": None,
