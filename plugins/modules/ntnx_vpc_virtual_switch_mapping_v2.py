@@ -37,7 +37,7 @@ options:
       - present
   virtual_switch_mappings:
     description:
-      - List of VPC virtual switch mappings to apply in a single API call.
+      - List of VPC virtual switch mappings to apply in a single call.
     type: list
     elements: dict
     required: true
@@ -265,6 +265,7 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
+        "failed": False,
         "response": None,
         "task_ext_id": None,
     }

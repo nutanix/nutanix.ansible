@@ -33,10 +33,6 @@
   register: initial_mappings
   ignore_errors: true
 
-- name: Print initial mappings result
-  ansible.builtin.debug:
-    var: initial_mappings
-
 - name: Assert initial mappings listed successfully
   ansible.builtin.assert:
     that:
@@ -66,10 +62,6 @@
     cluster_ext_id: "{{ cluster.uuid }}"
   register: hosts_info
   ignore_errors: true
-
-- name: Print hosts info result
-  ansible.builtin.debug:
-    var: hosts_info
 
 - name: Assert hosts in cluster fetched
   ansible.builtin.assert:
@@ -104,10 +96,6 @@
         vlan_identifier: "{{ vs_vlan_identifier }}"
   register: vs_create_result
   ignore_errors: true
-
-- name: Print virtual switch create result
-  ansible.builtin.debug:
-    var: vs_create_result
 
 - name: Assert virtual switch created successfully with bridge interface IP
   ansible.builtin.assert:
@@ -146,10 +134,6 @@
   register: category_1_result
   ignore_errors: true
 
-- name: Print first category result
-  ansible.builtin.debug:
-    var: category_1_result
-
 - name: Assert first category created
   ansible.builtin.assert:
     that:
@@ -175,10 +159,6 @@
     description: "Category 2 for VPC virtual switch mapping tests"
   register: category_2_result
   ignore_errors: true
-
-- name: Print second category result
-  ansible.builtin.debug:
-    var: category_2_result
 
 - name: Assert second category created
   ansible.builtin.assert:
@@ -226,10 +206,6 @@
   register: check_mode_set_result
   ignore_errors: true
 
-- name: Print check_mode set result
-  ansible.builtin.debug:
-    var: check_mode_set_result
-
 - name: Assert spec for Setting VPC virtual switch mappings generated successfully
   ansible.builtin.assert:
     that:
@@ -272,10 +248,6 @@
   register: set_mappings_result
   ignore_errors: true
 
-- name: Print set mappings result
-  ansible.builtin.debug:
-    var: set_mappings_result
-
 - name: Assert set VPC virtual switch mappings task succeeded
   ansible.builtin.assert:
     that:
@@ -302,10 +274,6 @@
   register: negative_set_result
   ignore_errors: true
 
-- name: Print negative set result
-  ansible.builtin.debug:
-    var: negative_set_result
-
 - name: Assert negative set failed as expected
   ansible.builtin.assert:
     that:
@@ -328,10 +296,6 @@
   nutanix.ncp.ntnx_vpc_virtual_switch_mappings_info_v2:
   register: list_after_set_result
   ignore_errors: true
-
-- name: Print list after set result
-  ansible.builtin.debug:
-    var: list_after_set_result
 
 - name: Filter list to mappings for the newly created virtual switch
   ansible.builtin.set_fact:
@@ -368,10 +332,6 @@
   ignore_errors: true
   when: initial_mappings_restore | length > 0
 
-- name: Print restore mappings result
-  ansible.builtin.debug:
-    var: restore_mappings_result
-
 - name: Assert restore mappings task succeeded
   ansible.builtin.assert:
     that:
@@ -390,10 +350,6 @@
     state: absent
   register: delete_vs_result
   ignore_errors: true
-
-- name: Print delete virtual switch result
-  ansible.builtin.debug:
-    var: delete_vs_result
 
 - name: Assert virtual switch deleted
   ansible.builtin.assert:
@@ -414,10 +370,6 @@
   register: delete_categories_result
   loop: "{{ todelete_categories }}"
   ignore_errors: true
-
-- name: Print delete categories result
-  ansible.builtin.debug:
-    var: delete_categories_result
 
 - name: Assert categories deletion task overall
   ansible.builtin.assert:

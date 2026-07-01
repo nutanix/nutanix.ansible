@@ -169,7 +169,7 @@ def run_module():
         supports_check_mode=False,
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "response": None, "error": None}
+    result = {"changed": False, "response": None, "failed": False}
     api_instance = get_vpc_virtual_switch_mappings_api_instance(module)
     get_vpc_virtual_switch_mappings(module, api_instance, result)
     module.exit_json(**result)
