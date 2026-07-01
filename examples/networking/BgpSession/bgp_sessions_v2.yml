@@ -1,0 +1,124 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create BGP session with required fields
+# 2. Create BGP session with all fields
+# 3. Update BGP session
+# 4. Get BGP session using ext_id
+# 5. List all BGP sessions
+# 6. List BGP sessions with filter
+# 7. List BGP sessions with limit
+# 8. Delete BGP session
+
+- name: BGP Sessions playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        local_gw_uuid: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        remote_gw_uuid: "f1e2d3c4-b5a6-7890-abcd-ef0987654321"
+
+    - name: Create BGP session with required fields
+      nutanix.ncp.ntnx_BgpSession_v2:
+        state: present
+        name: "bgp_session_minimal"
+        local_gateway_reference: "{{ local_gw_uuid }}"
+        remote_gateway_reference: "{{ remote_gw_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Set BGP session ext_id
+      ansible.builtin.set_fact:
+        bgp_session_ext_id: "{{ result.ext_id }}"
+
+    - name: Create BGP session with all fields
+      nutanix.ncp.ntnx_BgpSession_v2:
+        state: present
+        name: "bgp_session_full"
+        description: "BGP session with all attributes"
+        local_gateway_reference: "{{ local_gw_uuid }}"
+        remote_gateway_reference: "{{ remote_gw_uuid }}"
+        local_gateway_interface_ip_address:
+          ipv4:
+            value: "10.0.0.1"
+            prefix_length: 32
+        dynamic_route_priority: 100
+        password: "bgp_secret"
+        should_advertise_all_externally_routable_prefixes: true
+        externally_routable_prefixes_to_advertise:
+          - ipv4:
+              ip:
+                value: "192.168.1.0"
+              prefix_length: 24
+        prepended_autonomous_system_path:
+          - 65001
+          - 65002
+        advertised_routes_communities:
+          - autonomous_system_number: 65001
+            community_value: 100
+      register: result_full
+      ignore_errors: true
+
+    - name: Set full BGP session ext_id
+      ansible.builtin.set_fact:
+        bgp_session_full_ext_id: "{{ result_full.ext_id }}"
+
+    - name: Update BGP session
+      nutanix.ncp.ntnx_BgpSession_v2:
+        state: present
+        ext_id: "{{ bgp_session_ext_id }}"
+        name: "bgp_session_updated"
+        description: "Updated BGP session description"
+        dynamic_route_priority: 200
+        should_advertise_all_externally_routable_prefixes: false
+        prepended_autonomous_system_path:
+          - 65003
+        advertised_routes_communities:
+          - autonomous_system_number: 65002
+            community_value: 200
+      register: result
+      ignore_errors: true
+
+    - name: Get BGP session using ext_id
+      nutanix.ncp.ntnx_BgpSession_info_v2:
+        ext_id: "{{ bgp_session_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all BGP sessions
+      nutanix.ncp.ntnx_BgpSession_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List BGP sessions with filter
+      nutanix.ncp.ntnx_BgpSession_info_v2:
+        filter: "name eq 'bgp_session_updated'"
+      register: result
+      ignore_errors: true
+
+    - name: List BGP sessions with limit
+      nutanix.ncp.ntnx_BgpSession_info_v2:
+        limit: 5
+      register: result
+      ignore_errors: true
+
+    - name: Delete BGP session
+      nutanix.ncp.ntnx_BgpSession_v2:
+        state: absent
+        ext_id: "{{ bgp_session_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Delete full BGP session
+      nutanix.ncp.ntnx_BgpSession_v2:
+        state: absent
+        ext_id: "{{ bgp_session_full_ext_id }}"
+      register: result
+      ignore_errors: true
