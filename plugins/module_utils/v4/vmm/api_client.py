@@ -143,3 +143,47 @@ def get_vm_startup_policies_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_vmm_py_client.VmStartupPoliciesApi(api_client=api_client)
+
+
+def get_template_placement_policy_api_instance(module):
+    """
+    This method will return Template Placement Policy API instance.
+    Args:
+        api_instance (obj): v4 Template Placement Policy api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.TemplatePlacementPoliciesApi(api_client=api_client)
+
+
+def get_vm_guest_customization_profiles_api_instance(module):
+    """
+    This method will return VM Guest Customization Profiles API instance
+    Args:
+        api_instance (obj): v4 VM Guest Customization Profiles api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.VmGuestCustomizationProfilesApi(api_client=api_client)
+
+
+def get_vm_host_affinity_policies_api_instance(module):
+    """
+    This method will return VM Host Affinity Policies API instance.
+    Args:
+        module (obj): Ansible module object with connection parameters
+    Returns:
+        VmHostAffinityPoliciesApi: v4 VM Host Affinity Policies api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.VmHostAffinityPoliciesApi(api_client=api_client)
+
+
+def get_vm_anti_affinity_policies_api_instance(module):
+    """
+    This method will return VM Anti-Affinity Policies API instance.
+    Args:
+        module (obj): Ansible module object with connection parameters
+    Returns:
+        VmAntiAffinityPoliciesApi: v4 VM Anti-Affinity Policies api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.VmAntiAffinityPoliciesApi(api_client=api_client)
