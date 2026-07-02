@@ -271,10 +271,9 @@
     fail_msg: "Certificate details are not fetched successfully using external ID"
 
 - name: Download certificate authority (CA) for the certificate to a destination path
-  nutanix.ncp.ntnx_object_stores_certificate_info_v2:
+  nutanix.ncp.ntnx_object_stores_certificate_download_v2:
     object_store_ext_id: "{{ object_store_ext_id_1 }}"
     ext_id: "{{ certificate_ext_id }}"
-    download_ca: true
     dest: "/tmp/object_store_ca.pem"
   register: result
   ignore_errors: true
@@ -319,10 +318,9 @@
     fail_msg: "Certificate authority (CA) file is not removed successfully"
 
 - name: Download certificate authority (CA) for the certificate without a destination path
-  nutanix.ncp.ntnx_object_stores_certificate_info_v2:
+  nutanix.ncp.ntnx_object_stores_certificate_download_v2:
     object_store_ext_id: "{{ object_store_ext_id_1 }}"
     ext_id: "{{ certificate_ext_id }}"
-    download_ca: true
   register: result
   ignore_errors: true
 
@@ -371,9 +369,8 @@
     fail_msg: "Certificate authority (CA) file at the default location is not removed successfully"
 
 - name: Download certificate authority (CA) for the certificate to a destination path without ext_id
-  nutanix.ncp.ntnx_object_stores_certificate_info_v2:
+  nutanix.ncp.ntnx_object_stores_certificate_download_v2:
     object_store_ext_id: "{{ object_store_ext_id_1 }}"
-    download_ca: true
   register: result
   ignore_errors: true
 
@@ -383,8 +380,7 @@
       - result.changed is false
       - result.failed is true
       - >-
-        result.msg == "download_ca is True but all of the following are
-        missing: ext_id"
+        result.msg == "missing required arguments: ext_id"
     success_msg: "Download certificate authority (CA) for the certificate to a destination path without ext_id failed as expected"
     fail_msg: "Download certificate authority (CA) for the certificate to a destination path without ext_id did not fail as expected"
 

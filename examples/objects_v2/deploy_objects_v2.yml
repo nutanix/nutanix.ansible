@@ -112,18 +112,16 @@
       register: result
 
     - name: Download the certificate authority (CA) of a certificate to a destination path
-      nutanix.ncp.ntnx_object_stores_certificate_info_v2:
+      nutanix.ncp.ntnx_object_stores_certificate_download_v2:
         object_store_ext_id: "{{ object_store_ext_id }}"
         ext_id: "{{ certificate_ext_id }}"
-        download_ca: true
         dest: "/tmp/object_store_ca.pem"
       register: result
 
     - name: Download the certificate authority (CA) of a certificate to the default location
-      nutanix.ncp.ntnx_object_stores_certificate_info_v2:
+      nutanix.ncp.ntnx_object_stores_certificate_download_v2:
         object_store_ext_id: "{{ object_store_ext_id }}"
         ext_id: "{{ certificate_ext_id }}"
-        download_ca: true
       register: result
 
     - name: List all object stores
