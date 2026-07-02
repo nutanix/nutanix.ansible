@@ -174,7 +174,6 @@ def check_directory_service_connection(module, directory_services, result):
         )
 
     result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
-    result["changed"] = True
 
 
 def run_module():
@@ -190,6 +189,7 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
+        "failed": False,
         "response": None,
         "ext_id": None,
     }
