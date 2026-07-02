@@ -71,10 +71,6 @@
   register: subnet_result
   ignore_errors: true
 
-- name: Print create overlay subnet inside the VPC result
-  ansible.builtin.debug:
-    var: subnet_result
-
 - name: Creation overlay subnet inside the VPC status
   ansible.builtin.assert:
     that:
@@ -106,10 +102,6 @@
   register: vm_result
   ignore_errors: true
 
-- name: Print create VM result
-  ansible.builtin.debug:
-    var: vm_result
-
 - name: Creation VM status
   ansible.builtin.assert:
     that:
@@ -134,10 +126,6 @@
         ext_id: "{{ subnet_uuid }}"
   register: nic_result
   ignore_errors: true
-
-- name: Print create NIC on the VM attached to the overlay subnet result
-  ansible.builtin.debug:
-    var: nic_result
 
 - name: Creation NIC status
   ansible.builtin.assert:
@@ -183,10 +171,6 @@
   register: result
   ignore_errors: true
   check_mode: true
-
-- name: Print create load balancer session with check mode result
-  ansible.builtin.debug:
-    var: result
 
 - name: Generate spec for creating load balancer session using check mode status
   ansible.builtin.assert:
@@ -237,10 +221,6 @@
       failure_threshold: 2
   register: result
   ignore_errors: true
-
-- name: Print create load balancer session with minimum spec result
-  ansible.builtin.debug:
-    var: result
 
 - name: Create load balancer session with minimum spec status
   ansible.builtin.assert:
@@ -303,10 +283,6 @@
   register: result
   ignore_errors: true
 
-- name: Print create load balancer session result
-  ansible.builtin.debug:
-    var: result
-
 - name: Creation status
   ansible.builtin.assert:
     that:
@@ -345,10 +321,6 @@
   register: result
   ignore_errors: true
 
-- name: Print create load balancer session with name only result
-  ansible.builtin.debug:
-    var: result
-
 - name: Create load balancer session with name only status
   ansible.builtin.assert:
     that:
@@ -366,10 +338,6 @@
     algorithm: "FIVE_TUPLE_HASH"
   register: result
   ignore_errors: true
-
-- name: Print create load balancer session with missing all required attributes result
-  ansible.builtin.debug:
-    var: result
 
 - name: Create load balancer session with missing all required attributes status
   ansible.builtin.assert:
@@ -415,10 +383,6 @@
   register: result
   ignore_errors: true
   check_mode: true
-
-- name: Print update load balancer session with check mode result
-  ansible.builtin.debug:
-    var: result
 
 - name: Generate spec for updating load balancer session using check mode status
   ansible.builtin.assert:
@@ -470,10 +434,6 @@
       failure_threshold: 12
   register: result
   ignore_errors: true
-
-- name: Print update load balancer session result
-  ansible.builtin.debug:
-    var: result
 
 - name: Update status
   ansible.builtin.assert:
@@ -527,10 +487,6 @@
   register: result
   ignore_errors: true
 
-- name: Print update load balancer session with updating immutable fields result
-  ansible.builtin.debug:
-    var: result
-
 - name: Update load balancer session with updating immutable fields status
   ansible.builtin.assert:
     that:
@@ -567,10 +523,6 @@
       failure_threshold: 12
   register: result
   ignore_errors: true
-
-- name: Print update load balancer session with wrong external ID result
-  ansible.builtin.debug:
-    var: result
 
 - name: Update load balancer session with wrong external ID status
   ansible.builtin.assert:
@@ -610,10 +562,6 @@
   register: result
   ignore_errors: true
 
-- name: Print idempotency result
-  ansible.builtin.debug:
-    var: result
-
 - name: Idempotency status
   ansible.builtin.assert:
     that:
@@ -630,10 +578,6 @@
     ext_id: "{{ todelete[1] }}"
   register: result
   ignore_errors: true
-
-- name: Print get load balancer session using ext_id result
-  ansible.builtin.debug:
-    var: result
 
 - name: Get load balancer session using ext_id status
   ansible.builtin.assert:
@@ -664,10 +608,6 @@
   register: result
   ignore_errors: true
 
-- name: Print get load balancer session using ext_id with wrong external ID result
-  ansible.builtin.debug:
-    var: result
-
 - name: Get load balancer session using ext_id with wrong external ID status
   ansible.builtin.assert:
     that:
@@ -685,10 +625,6 @@
   nutanix.ncp.ntnx_load_balancer_sessions_info_v2:
   register: result
   ignore_errors: true
-
-- name: Print list all load balancer sessions result
-  ansible.builtin.debug:
-    var: result
 
 - name: List all load balancer sessions status
   ansible.builtin.assert:
@@ -708,10 +644,6 @@
   register: result
   ignore_errors: true
 
-- name: Print list load balancer sessions with filter result
-  ansible.builtin.debug:
-    var: result
-
 - name: List load balancer sessions with filter status
   ansible.builtin.assert:
     that:
@@ -728,10 +660,6 @@
     limit: 1
   register: result
   ignore_errors: true
-
-- name: Print list load balancer sessions with limit result
-  ansible.builtin.debug:
-    var: result
 
 - name: List load balancer sessions with limit status
   ansible.builtin.assert:
@@ -753,10 +681,6 @@
   ignore_errors: true
   check_mode: true
 
-- name: Print delete load balancer session with check mode result
-  ansible.builtin.debug:
-    var: result
-
 - name: Delete load balancer session with check mode status
   ansible.builtin.assert:
     that:
@@ -775,10 +699,6 @@
   loop: "{{ todelete }}"
   register: result
   ignore_errors: true
-
-- name: Print delete all created load balancer sessions result
-  ansible.builtin.debug:
-    var: result
 
 - name: Delete all created load balancer sessions status
   ansible.builtin.assert:
