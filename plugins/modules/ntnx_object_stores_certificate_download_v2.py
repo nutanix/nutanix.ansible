@@ -38,6 +38,11 @@ options:
             - The parent directory is created if it does not already exist.
             - If not provided, the CA is saved to the SDK default download location and that path is returned.
         type: path
+    read_timeout:
+        description: Read timeout in milliseconds for API calls.
+        type: int
+        required: false
+        default: 30000
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_logger

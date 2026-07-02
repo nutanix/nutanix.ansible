@@ -54,7 +54,7 @@ EXAMPLES = r"""
     object_store_ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
     ext_id: "f3197423-f486-4037-6037-95442e58484e"
   register: result
-
+  ignore_errors: true
 """
 
 RETURN = r"""
@@ -128,9 +128,7 @@ import warnings  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.objects.api_client import get_objects_api_instance  # noqa: E402
-from ..module_utils.v4.objects.helpers import (  # noqa: E402
-    get_object_store_certificate,
-)
+from ..module_utils.v4.objects.helpers import get_object_store_certificate  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
