@@ -89,6 +89,7 @@ options:
           subnet_reference:
             description:
               - UUID of the subnet from which virtual IP address is allocated.
+              - This field is immutable after creation and cannot be updated.
             type: str
             required: true
           assignment_type:
@@ -497,6 +498,7 @@ msg:
   description: This indicates the message if any message occurred
   returned: When there is an error, module is idempotent or check mode (in delete operation)
   type: str
+  sample: "Api Exception raised while creating load balancer session"
 """
 
 import traceback  # noqa: E402
@@ -740,6 +742,14 @@ def create_load_balancer_session(module, load_balancer_sessions, result):
             result["ext_id"] = ext_id
             resp = get_load_balancer_session(module, load_balancer_sessions, ext_id)
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Load Balancer Session"
+                ),
+                msg="Failed to get entity ext_id from task for Load Balancer Session",
+            )
     result["changed"] = True
 
 

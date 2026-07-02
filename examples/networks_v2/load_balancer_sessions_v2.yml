@@ -1,13 +1,13 @@
 ---
 # Summary:
 # This playbook will do:
-# 2. Create load balancer session
-# 3. Update load balancer session
-# 4. Get load balancer session using ext_id
-# 5. List all load balancer sessions
-# 6. List load balancer sessions with filter
-# 7. List load balancer sessions with limit
-# 8. Delete load balancer session
+# 1. Create load balancer session
+# 2. Update load balancer session
+# 3. Get load balancer session using ext_id
+# 4. List all load balancer sessions
+# 5. List load balancer sessions with filter
+# 6. List load balancer sessions with limit
+# 7. Delete load balancer session
 
 - name: Load Balancer Sessions playbook
   hosts: localhost
