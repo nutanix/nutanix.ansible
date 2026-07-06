@@ -48,6 +48,8 @@ class Tasks:
         NETWORK_FUNCTION = "Networking:config:network-function"
         VIRTUAL_SWITCH = "networking:config:virtual-switch"
         ENTITY_GROUP = "microseg:config:entity-group"
+        CATEGORY_MAPPING = "microseg:config:category-mapping"
+        DIRECTORY_SERVER_CONFIG = "microseg:config:directory-server-config"
         TEMPLATE_PLACEMENT_POLICY = "vmm:config:template-placement-policy"
         VM_GUEST_CUSTOMIZATION_PROFILE = "vmm:ahv:config:vm-guest-customization-profile"
         VM_HOST_AFFINITY_POLICY = "vmm:ahv:policies:vm-host-affinity-policy"
