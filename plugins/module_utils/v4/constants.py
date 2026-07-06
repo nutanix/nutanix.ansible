@@ -49,6 +49,7 @@ class Tasks:
         NETWORK_FUNCTION = "Networking:config:network-function"
         VIRTUAL_SWITCH = "networking:config:virtual-switch"
         ENTITY_GROUP = "microseg:config:entity-group"
+        VM_STARTUP_POLICY = "vmm:ahv:policies:vm-startup-policy"
         CATEGORY_MAPPING = "microseg:config:category-mapping"
         DIRECTORY_SERVER_CONFIG = "microseg:config:directory-server-config"
         TEMPLATE_PLACEMENT_POLICY = "vmm:config:template-placement-policy"

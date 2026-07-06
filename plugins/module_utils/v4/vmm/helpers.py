@@ -8,6 +8,26 @@ __metaclass__ = type
 from ..utils import raise_api_exception  # noqa: E402
 
 
+def get_vm_startup_policy(module, api_instance, ext_id):
+    """
+    Get VM startup policy by ext_id.
+    Args:
+        module: Ansible module
+        api_instance: VmStartupPoliciesApi instance from ntnx_vmm_py_client sdk
+        ext_id: ext_id of the VM startup policy
+    Returns:
+        vm_startup_policy (obj): VM startup policy info object
+    """
+    try:
+        return api_instance.get_vm_startup_policy_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching VM startup policy info using ext_id",
+        )
+
+
 def get_vm(module, api_instance, ext_id):
     """
     Get VM by ext_id
