@@ -193,6 +193,26 @@ def get_ova(module, api_instance, ext_id):
         )
 
 
+def get_rate_limit_policy(module, api_instance, ext_id):
+    """
+    Get Image Rate Limit Policy by ext_id.
+    Args:
+        module: Ansible module
+        api_instance: ImageRateLimitPoliciesApi instance from ntnx_vmm_py_client sdk
+        ext_id: ext_id of the rate limit policy
+    Returns:
+        rate_limit_policy (obj): Rate limit policy info object
+    """
+    try:
+        return api_instance.get_rate_limit_policy_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching image rate limit policy info using ext_id",
+        )
+
+
 def get_vm_guest_customization_profile(module, api_instance, ext_id):
     """
     Get VM Guest Customization Profile by ext_id

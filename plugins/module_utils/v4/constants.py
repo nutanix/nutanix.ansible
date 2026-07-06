@@ -21,6 +21,7 @@ class Tasks:
         VM = "vmm:ahv:config:vm"
         IMAGES = "vmm:content:image"
         IMAGE_PLACEMENT_POLICY = "vmm:images:config:placement-policy"
+        IMAGE_RATE_LIMIT_POLICY = "vmm:images:config:rate-limit-policy"
         TEMPLATES = "vmm:content:template"
         VOLUME_GROUP = "volumes:config:volume-group"
         VOLUME_GROUP_DISK = "volumes:config:volume-group:disk"
