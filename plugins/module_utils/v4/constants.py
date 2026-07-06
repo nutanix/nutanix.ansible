@@ -48,6 +48,7 @@ class Tasks:
         CLUSTER_PROFILE = "clustermgmt:config:cluster-profile"
         NETWORK_FUNCTION = "Networking:config:network-function"
         VIRTUAL_SWITCH = "networking:config:virtual-switch"
+        LOAD_BALANCER_SESSION = "networking:config:load-balancer-session"
         ENTITY_GROUP = "microseg:config:entity-group"
         VM_STARTUP_POLICY = "vmm:ahv:policies:vm-startup-policy"
         CATEGORY_MAPPING = "microseg:config:category-mapping"

@@ -197,6 +197,18 @@ def get_bridges_api_instance(module):
     return ntnx_networking_py_client.BridgesApi(api_client=api_client)
 
 
+def get_load_balancer_sessions_api_instance(module):
+    """
+    This method will return LoadBalancerSessionsApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Load Balancer Sessions Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.LoadBalancerSessionsApi(api_client=api_client)
+
+
 def get_vpc_virtual_switch_mappings_api_instance(module):
     """
     This method will return VpcVirtualSwitchMappingsApi instance.
