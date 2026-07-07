@@ -26,6 +26,35 @@
   ansible.builtin.set_fact:
     todelete: []
 
+#################################################################
+# Create a project to be used for project_ext_id and sharing tests
+#################################################################
+- name: Create project for tests
+  nutanix.ncp.ntnx_project_v2:
+    state: present
+    name: "{{ random_name }}-ansible-project"
+    project_id: "{{ random_name }}-ansible-project-id"
+  register: create_project_result
+  ignore_errors: true
+
+- name: Status of project creation for tests
+  ansible.builtin.assert:
+    that:
+      - create_project_result.changed == true
+      - create_project_result.failed == false
+      - create_project_result.response is defined
+      - create_project_result.ext_id is defined
+      - create_project_result.ext_id | length > 0
+      - create_project_result.response.state == "ACTIVE"
+    fail_msg: "Unable to create project for tests"
+    success_msg: "Project for tests created successfully"
+
+- name: Set project fact for tests
+  ansible.builtin.set_fact:
+    project:
+      name: "{{ random_name }}-ansible-project"
+      uuid: "{{ create_project_result.ext_id }}"
+
 - name: Create VLAN subnet with check mode enabled
   nutanix.ncp.ntnx_subnets_v2:
     state: present
@@ -1016,7 +1045,6 @@
       - "{{ project.uuid }}"
   register: result
   ignore_errors: true
-  when: project is defined and project.uuid is defined
 
 - name: Status of subnet share with specific projects
   ansible.builtin.assert:
@@ -1026,8 +1054,6 @@
       - result.failed == false
     fail_msg: "Subnet share with specific projects failed"
     success_msg: "Subnet shared with specific projects successfully"
-  when: project is defined and project.uuid is defined
-
 - name: Update subnet to unshare from specific projects
   nutanix.ncp.ntnx_subnets_v2:
     state: present
@@ -1035,7 +1061,6 @@
     shared_with_projects: []
   register: result
   ignore_errors: true
-  when: project is defined and project.uuid is defined
 
 - name: Status of subnet unshare from specific projects
   ansible.builtin.assert:
@@ -1043,8 +1068,6 @@
       - result.failed == false
     fail_msg: "Subnet unshare from specific projects failed with error"
     success_msg: "Subnet unshare from specific projects completed"
-  when: project is defined and project.uuid is defined
-
 - name: Delete shared subnet
   nutanix.ncp.ntnx_subnets_v2:
     state: absent
@@ -1079,4 +1102,22 @@
       - result.task_ext_id is defined
     fail_msg: " Unable to Delete  VPC"
     success_msg: "Vpc has been deleted successfully"
+#################################################################
+# Delete the project created for tests
+#################################################################
+- name: Delete project created for tests
+  nutanix.ncp.ntnx_project_v2:
+    state: absent
+    ext_id: "{{ project.uuid }}"
+  register: delete_project_result
+  ignore_errors: true
+
+- name: Status of project deletion for tests
+  ansible.builtin.assert:
+    that:
+      - delete_project_result.changed == true
+      - delete_project_result.failed == false
+      - delete_project_result.ext_id == project.uuid
+    fail_msg: "Unable to delete project created for tests"
+    success_msg: "Project created for tests deleted successfully"
 #################################################################

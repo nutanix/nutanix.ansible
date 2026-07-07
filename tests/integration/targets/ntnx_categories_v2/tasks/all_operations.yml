@@ -18,6 +18,34 @@
     value1: "{{random_name}}{{suffix_name}}value1"
     value2: "{{random_name}}{{suffix_name}}value2"
 ########################################################################
+# Create a project to be used for project_ext_id and sharing tests
+########################################################################
+- name: Create project for tests
+  nutanix.ncp.ntnx_project_v2:
+    state: present
+    name: "{{ random_name }}-ansible-project"
+    project_id: "{{ random_name }}-ansible-project-id"
+  register: create_project_result
+  ignore_errors: true
+
+- name: Status of project creation for tests
+  ansible.builtin.assert:
+    that:
+      - create_project_result.changed == true
+      - create_project_result.failed == false
+      - create_project_result.response is defined
+      - create_project_result.ext_id is defined
+      - create_project_result.ext_id | length > 0
+      - create_project_result.response.state == "ACTIVE"
+    fail_msg: "Unable to create project for tests"
+    success_msg: "Project for tests created successfully"
+
+- name: Set project fact for tests
+  ansible.builtin.set_fact:
+    project:
+      name: "{{ random_name }}-ansible-project"
+      uuid: "{{ create_project_result.ext_id }}"
+########################################################################
 - name: Create category key & value with check_mode
   nutanix.ncp.ntnx_categories_v2:
     key: "{{key1}}"
@@ -268,7 +296,6 @@
       - "{{ project.uuid }}"
   register: result
   ignore_errors: true
-  when: project is defined and project.uuid is defined
 
 - name: Status of share with specific projects
   ansible.builtin.assert:
@@ -278,8 +305,6 @@
       - result.failed == false
     fail_msg: "Share with specific projects failed"
     success_msg: "Shared with specific projects successfully"
-  when: project is defined and project.uuid is defined
-
 ########################################################################
 
 - name: Update category to unshare from specific projects
@@ -289,7 +314,6 @@
     shared_with_projects: []
   register: result
   ignore_errors: true
-  when: project is defined and project.uuid is defined
 
 - name: Status of unshare from specific projects
   ansible.builtin.assert:
@@ -297,8 +321,6 @@
       - result.failed == false
     fail_msg: "Unshare from specific projects failed with error"
     success_msg: "Unshare from specific projects completed"
-  when: project is defined and project.uuid is defined
-
 ########################################################################
 
 - name: Verify update of project_ext_id is not supported
@@ -334,3 +356,22 @@
       - result.ext_id == "{{ shared_category_ext_id }}"
     fail_msg: "Unable to delete shared category"
     success_msg: "Shared category deleted successfully"
+
+########################################################################
+# Delete the project created for tests
+########################################################################
+- name: Delete project created for tests
+  nutanix.ncp.ntnx_project_v2:
+    state: absent
+    ext_id: "{{ project.uuid }}"
+  register: delete_project_result
+  ignore_errors: true
+
+- name: Status of project deletion for tests
+  ansible.builtin.assert:
+    that:
+      - delete_project_result.changed == true
+      - delete_project_result.failed == false
+      - delete_project_result.ext_id == project.uuid
+    fail_msg: "Unable to delete project created for tests"
+    success_msg: "Project created for tests deleted successfully"
