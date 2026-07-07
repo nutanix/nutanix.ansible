@@ -41,7 +41,7 @@
       - result.changed == false
       - result.response.name == "{{ service_group_name }}_1"
       - result.response.description == "desc"
-      - result.response.project_ext_id == 83083083-0000-0000-0000-000000000000
+      - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
       - result.response.tcp_services[0].start_port == 10
       - result.response.tcp_services[0].end_port == 50
       - result.response.tcp_services[1].start_port == 60
@@ -382,7 +382,7 @@
   ansible.builtin.assert:
     that:
       - result.failed == true
-      - result.msg == "Update is not supported for the following field(s): project_ext_id"
+      - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
     fail_msg: "Update of project_ext_id should have been blocked"
     success_msg: "Update of project_ext_id is correctly blocked"
 ################################################################

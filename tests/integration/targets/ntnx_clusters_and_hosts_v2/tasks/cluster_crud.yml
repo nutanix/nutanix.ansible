@@ -844,7 +844,7 @@
   ansible.builtin.assert:
     that:
       - result.failed == true
-      - result.error.msg == "missing required arguments: categories, cluster_ext_id"
+      - 'result.error.msg == "missing required arguments: categories, cluster_ext_id"'
       - result.changed == false
     fail_msg: "Test failed, expected error not found"
     success_msg: "Test passed, expected error found"
@@ -941,7 +941,7 @@
   ansible.builtin.assert:
     that:
       - result.failed == true
-      - result.error.msg == "missing required arguments: categories, cluster_ext_id"
+      - 'result.error.msg == "missing required arguments: categories, cluster_ext_id"'
       - result.changed == false
     fail_msg: "Test failed, expected error not found"
     success_msg: "Test passed, expected error found"

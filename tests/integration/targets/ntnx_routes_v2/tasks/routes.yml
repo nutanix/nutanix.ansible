@@ -187,7 +187,7 @@
       - result.response.nexthop.nexthop_reference == "f4b3b3b4-4b3b-4b3b-4b3b-4b3b4b3b4b3b"
       - result.response.metadata.owner_reference_id == "a88a8226-83a4-4159-aa99-298eefcc5af0"
       - result.response.metadata.project_reference_id == "6aeec7b5-6ab6-4eb6-acf9-cf1e8b14a0b8"
-      - result.response.project_ext_id == 83083083-0000-0000-0000-000000000000
+      - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
     fail_msg: "Create route with check mode enabled failed "
     success_msg: "Create route with check mode enabled passed "
 
@@ -579,7 +579,7 @@
   ansible.builtin.assert:
     that:
       - result.failed == true
-      - result.msg == "Update is not supported for the following field(s): project_ext_id"
+      - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
     fail_msg: "Update of project_ext_id should have been blocked"
     success_msg: "Update of project_ext_id is correctly blocked"
 

@@ -335,7 +335,7 @@
   ansible.builtin.assert:
     that:
       - result.failed == true
-      - result.msg == "Update is not supported for the following field(s): project_ext_id"
+      - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
     fail_msg: "Update of project_ext_id should have been blocked"
     success_msg: "Update of project_ext_id is correctly blocked"
 

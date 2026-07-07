@@ -144,7 +144,7 @@
 - name: Creation Status
   ansible.builtin.assert:
     that:
-      - result.msg == ' Unsupported operation: Unable to decrease disk size.'
+      - "result.msg == ' Unsupported operation: Unable to decrease disk size.'"
     fail_msg: " Fail: decreasing the size of the disk that contains the image with SCSI bus type "
     success_msg: " Success: returned error as expected "
 
@@ -161,7 +161,7 @@
 - name: Creation Status
   ansible.builtin.assert:
     that:
-      - result.msg == ' Unsupported operation: Unable to decrease disk size.'
+      - "result.msg == ' Unsupported operation: Unable to decrease disk size.'"
     fail_msg: " Fail: decreasing the size of the SCSI disk with storage container "
     success_msg: " Success: returned error as expected "
 
@@ -178,7 +178,7 @@
 - name: Creation Status
   ansible.builtin.assert:
     that:
-      - result.msg ==  'Unsupported operation: Cannot resize empty cdrom.'
+      - "result.msg ==  'Unsupported operation: Cannot resize empty cdrom.'"
       - result.changed == false
       - result.failed == true
     fail_msg: " Fail: change the size of the empty CDROM"
@@ -197,7 +197,7 @@
 - name: Creation Status
   ansible.builtin.assert:
     that:
-      - result.msg == ' Unsupported operation: Unable to decrease disk size.'
+      - "result.msg == ' Unsupported operation: Unable to decrease disk size.'"
     fail_msg: " Fail: decreasing the size of the pci disk"
     success_msg: " Success: returned error as expected "
 
@@ -214,7 +214,7 @@
 - name: Creation Status
   ansible.builtin.assert:
     that:
-      - result.msg == ' Unsupported operation: Unable to decrease disk size.'
+      - "result.msg == ' Unsupported operation: Unable to decrease disk size.'"
     fail_msg: " Fail: decreasing the size of the sata disk"
     success_msg: " Success: returned error as expected "
 
@@ -231,7 +231,7 @@
 - name: Creation Status
   ansible.builtin.assert:
     that:
-      - result.msg == ' Unsupported operation: Unable to decrease disk size.'
+      - "result.msg == ' Unsupported operation: Unable to decrease disk size.'"
     fail_msg: " Fail: decreasing the size of the SCSI disk"
     success_msg: " Success: returned error as expected "
 
@@ -248,7 +248,7 @@
 - name: Creation Status
   ansible.builtin.assert:
     that:
-      - result.msg == ' Unsupported operation: Unable to decrease disk size.'
+      - "result.msg == ' Unsupported operation: Unable to decrease disk size.'"
     fail_msg: " Fail: decreasing the size of the IDE disk"
     success_msg: " Success: returned error as expected "
 ################
@@ -265,7 +265,7 @@
 - name: Creation Status
   ansible.builtin.assert:
     that:
-      - result.msg == ' parameters are mutually exclusive: uuid|bus found in disks '
+      - "result.msg == ' parameters are mutually exclusive: uuid|bus found in disks '"
       - result.failed == true
     success_msg: " Success: returned error as expected "
     fail_msg: " Fail: Update VM by change ths bus type of ide disk successfully "

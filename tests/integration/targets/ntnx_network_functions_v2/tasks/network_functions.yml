@@ -553,7 +553,7 @@
     that:
       - network_function_result.changed == false
       - network_function_result.failed == true
-      - network_function_result.msg == "state is present but any of the following are missing: name, ext_id"
+      - 'network_function_result.msg == "state is present but any of the following are missing: name, ext_id"'
     fail_msg: "Failed to validate missing name error"
     success_msg: "Missing name validation passed successfully"
 
