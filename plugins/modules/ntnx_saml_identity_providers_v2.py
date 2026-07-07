@@ -132,12 +132,14 @@ options:
     description:
       - Flag to share the identity provider with all projects.
       - If C(true), the identity provider is shared with all projects.
+      - During create operations, this parameter requires C(wait) to be C(true) (default). If C(wait) is set to C(false), this parameter will be ignored.
     required: false
     type: bool
   shared_with_projects:
     description:
       - List of project external IDs to share the identity provider with.
       - Projects not in the list will be unshared during update.
+      - During create operations, this parameter requires C(wait) to be C(true) (default). If C(wait) is set to C(false), this parameter will be ignored.
     required: false
     type: list
     elements: str

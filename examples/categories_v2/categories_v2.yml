@@ -3,9 +3,10 @@
 # This playbook will do:
 # 1. Create a category key & value
 # 2. Update the category value and description
-# 3. List all categories
-# 4. Fetch category using ext id & expand detailedAssociations
-# 5. Delete Created category
+# 3. Update category to unshare from specific projects
+# 4. List all categories
+# 5. Fetch category using ext id & expand detailedAssociations
+# 6. Delete Created category
 
 - name: Categories playbook
   hosts: localhost
@@ -44,6 +45,15 @@
         key: "{{ key1 }}"
         value: "{{ value2 }}"
         description: "ansible test New value"
+      register: result
+      ignore_errors: true
+
+    - name: Update category to unshare from specific projects
+      nutanix.ncp.ntnx_categories_v2:
+        ext_id: "{{ category_ext_id }}"
+        key: "{{ key1 }}"
+        value: "{{ value2 }}"
+        shared_with_projects: []
       register: result
       ignore_errors: true
 

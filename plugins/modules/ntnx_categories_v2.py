@@ -77,6 +77,7 @@ options:
     description:
       - List of project external IDs to share the category with.
       - Projects not in the list will be unshared during update.
+      - During create operations, this parameter requires C(wait) to be C(true) (default). If C(wait) is set to C(false), this parameter will be ignored.
     required: false
     type: list
     elements: str
