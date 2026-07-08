@@ -27,31 +27,41 @@
 ###########################################################
 # Create a project to be used for project_ext_id and sharing tests
 ###########################################################
-- name: Create project for tests
+- name: Create projects for tests
   nutanix.ncp.ntnx_project_v2:
     state: present
-    name: "{{ random_name }}-ansible-project"
-    project_id: "{{ random_name }}-ansible-project-id"
-  register: create_project_result
+    name: "{{ random_name }}-ansible-project-{{ item }}"
+    project_id: "{{ random_name }}-ansible-project-id-{{ item }}"
+  register: create_projects_result
+  loop: "{{ range(1, 4) | list }}"
   ignore_errors: true
 
-- name: Status of project creation for tests
+- name: Status of projects creation for tests
   ansible.builtin.assert:
     that:
-      - create_project_result.changed == true
-      - create_project_result.failed == false
-      - create_project_result.response is defined
-      - create_project_result.ext_id is defined
-      - create_project_result.ext_id | length > 0
-      - create_project_result.response.state == "ACTIVE"
+      - item.changed == true
+      - item.failed == false
+      - item.response is defined
+      - item.ext_id is defined
+      - item.ext_id | length > 0
+      - item.response.state == "ACTIVE"
     fail_msg: "Unable to create project for tests"
     success_msg: "Project for tests created successfully"
+  loop: "{{ create_projects_result.results }}"
+  loop_control:
+    label: "{{ item.item }}"
 
-- name: Set project fact for tests
+- name: Set project facts for tests
   ansible.builtin.set_fact:
     project:
-      name: "{{ random_name }}-ansible-project"
-      uuid: "{{ create_project_result.ext_id }}"
+      name: "{{ random_name }}-ansible-project-1"
+      uuid: "{{ create_projects_result.results[0].ext_id }}"
+    project2:
+      name: "{{ random_name }}-ansible-project-2"
+      uuid: "{{ create_projects_result.results[1].ext_id }}"
+    project3:
+      name: "{{ random_name }}-ansible-project-3"
+      uuid: "{{ create_projects_result.results[2].ext_id }}"
 
 ###########################################################
 - name: Create min VPC with check mode
@@ -436,14 +446,16 @@
 # Tests for shared_with_projects
 ###########################################################
 
-- name: Create VPC for sharing tests
+- name: Create VPC for sharing tests shared with two projects on create
   nutanix.ncp.ntnx_vpcs_v2:
     state: present
     wait: true
     name: "{{vpc_name}}_shared"
-    project_ext_id: "{{ project.uuid }}"
     external_subnets:
       - subnet_reference: "{{ external_nat_subnet.uuid }}"
+    shared_with_projects:
+      - "{{ project.uuid }}"
+      - "{{ project2.uuid }}"
   register: result
   ignore_errors: true
 
@@ -454,7 +466,9 @@
       - result.changed == true
       - result.failed == false
       - result.ext_id is defined
-      - result.response.project_ext_id == project.uuid
+      - result.response.shared_with_projects is defined
+      - result.response.shared_with_projects | length == 2
+      - (result.response.shared_with_projects | sort) == ([project.uuid, project2.uuid] | sort)
     fail_msg: "Create VPC for sharing tests failed"
     success_msg: "Created VPC for sharing tests"
 
@@ -463,27 +477,61 @@
     shared_vpc_ext_id: "{{ result.ext_id }}"
 
 ###########################################################
-
-- name: Update VPC to share with specific projects
+# Scenario: share with all three projects (add a project)
+###########################################################
+- name: Update VPC to share with all three projects
   nutanix.ncp.ntnx_vpcs_v2:
     state: present
     ext_id: "{{ shared_vpc_ext_id }}"
     shared_with_projects:
       - "{{ project.uuid }}"
+      - "{{ project2.uuid }}"
+      - "{{ project3.uuid }}"
   register: result
   ignore_errors: true
 
-- name: Status of VPC share with specific projects
+- name: Status of VPC share with all three projects
   ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
       - result.failed == false
-    fail_msg: "VPC share with specific projects failed"
-    success_msg: "VPC shared with specific projects successfully"
-###########################################################
+      - result.response.shared_with_projects is not none
+      - result.response.shared_with_projects | length == 3
+      - (result.response.shared_with_projects | sort) == ([project.uuid, project2.uuid, project3.uuid] | sort)
+    fail_msg: "VPC share with all three projects failed"
+    success_msg: "VPC shared with all three projects successfully"
 
-- name: Update VPC to unshare from specific projects
+###########################################################
+# Scenario: reconcile shared projects to a subset (drop one, keep two)
+###########################################################
+- name: Update VPC to reconcile shared projects to a subset
+  nutanix.ncp.ntnx_vpcs_v2:
+    state: present
+    ext_id: "{{ shared_vpc_ext_id }}"
+    shared_with_projects:
+      - "{{ project2.uuid }}"
+      - "{{ project3.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of VPC reconcile shared projects to a subset
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.shared_with_projects is not none
+      - result.response.shared_with_projects | length == 2
+      - (result.response.shared_with_projects | sort) == ([project2.uuid, project3.uuid] | sort)
+      - project.uuid not in result.response.shared_with_projects
+    fail_msg: "VPC reconcile shared projects to a subset failed"
+    success_msg: "VPC reconciled shared projects to a subset successfully"
+
+###########################################################
+# Scenario: unshare from all projects
+###########################################################
+- name: Update VPC to unshare from all projects
   nutanix.ncp.ntnx_vpcs_v2:
     state: present
     ext_id: "{{ shared_vpc_ext_id }}"
@@ -491,12 +539,14 @@
   register: result
   ignore_errors: true
 
-- name: Status of VPC unshare from specific projects
+- name: Status of VPC unshare from all projects
   ansible.builtin.assert:
     that:
       - result.failed == false
-    fail_msg: "VPC unshare from specific projects failed with error"
-    success_msg: "VPC unshare from specific projects completed"
+      - result.changed == true
+      - result.response.shared_with_projects is none or result.response.shared_with_projects | length == 0
+    fail_msg: "VPC unshare from all projects failed with error"
+    success_msg: "VPC unshare from all projects completed"
 ###########################################################
 
 - name: Delete shared VPC
@@ -517,18 +567,25 @@
 ###########################################################
 # Delete the project created for tests
 ###########################################################
-- name: Delete project created for tests
+- name: Delete projects created for tests
   nutanix.ncp.ntnx_project_v2:
     state: absent
-    ext_id: "{{ project.uuid }}"
-  register: delete_project_result
+    ext_id: "{{ item }}"
+  register: delete_projects_result
+  loop:
+    - "{{ project.uuid }}"
+    - "{{ project2.uuid }}"
+    - "{{ project3.uuid }}"
   ignore_errors: true
 
-- name: Status of project deletion for tests
+- name: Status of projects deletion for tests
   ansible.builtin.assert:
     that:
-      - delete_project_result.changed == true
-      - delete_project_result.failed == false
-      - delete_project_result.ext_id == project.uuid
+      - item.changed == true
+      - item.failed == false
+      - item.ext_id == item.item
     fail_msg: "Unable to delete project created for tests"
     success_msg: "Project created for tests deleted successfully"
+  loop: "{{ delete_projects_result.results }}"
+  loop_control:
+    label: "{{ item.item }}"

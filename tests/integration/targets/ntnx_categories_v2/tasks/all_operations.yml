@@ -20,31 +20,41 @@
 ########################################################################
 # Create a project to be used for project_ext_id and sharing tests
 ########################################################################
-- name: Create project for tests
+- name: Create projects for tests
   nutanix.ncp.ntnx_project_v2:
     state: present
-    name: "{{ random_name }}-ansible-project"
-    project_id: "{{ random_name }}-ansible-project-id"
-  register: create_project_result
+    name: "{{ random_name }}-ansible-project-{{ item }}"
+    project_id: "{{ random_name }}-ansible-project-id-{{ item }}"
+  register: create_projects_result
+  loop: "{{ range(1, 4) | list }}"
   ignore_errors: true
 
-- name: Status of project creation for tests
+- name: Status of projects creation for tests
   ansible.builtin.assert:
     that:
-      - create_project_result.changed == true
-      - create_project_result.failed == false
-      - create_project_result.response is defined
-      - create_project_result.ext_id is defined
-      - create_project_result.ext_id | length > 0
-      - create_project_result.response.state == "ACTIVE"
+      - item.changed == true
+      - item.failed == false
+      - item.response is defined
+      - item.ext_id is defined
+      - item.ext_id | length > 0
+      - item.response.state == "ACTIVE"
     fail_msg: "Unable to create project for tests"
     success_msg: "Project for tests created successfully"
+  loop: "{{ create_projects_result.results }}"
+  loop_control:
+    label: "{{ item.item }}"
 
-- name: Set project fact for tests
+- name: Set project facts for tests
   ansible.builtin.set_fact:
     project:
-      name: "{{ random_name }}-ansible-project"
-      uuid: "{{ create_project_result.ext_id }}"
+      name: "{{ random_name }}-ansible-project-1"
+      uuid: "{{ create_projects_result.results[0].ext_id }}"
+    project2:
+      name: "{{ random_name }}-ansible-project-2"
+      uuid: "{{ create_projects_result.results[1].ext_id }}"
+    project3:
+      name: "{{ random_name }}-ansible-project-3"
+      uuid: "{{ create_projects_result.results[2].ext_id }}"
 ########################################################################
 - name: Create category key & value with check_mode
   nutanix.ncp.ntnx_categories_v2:
@@ -262,12 +272,14 @@
 # Tests for shared_with_projects
 ########################################################################
 
-- name: Create category for sharing tests
+- name: Create category for sharing tests shared with two projects on create
   nutanix.ncp.ntnx_categories_v2:
     key: "{{ key1 }}_shared"
     value: "{{ value1 }}_shared"
     description: "ansible shared test"
-    project_ext_id: "{{ project.uuid }}"
+    shared_with_projects:
+      - "{{ project.uuid }}"
+      - "{{ project2.uuid }}"
   register: result
   ignore_errors: true
 
@@ -278,7 +290,11 @@
       - result.changed == true
       - result.failed == false
       - result.ext_id is defined
-      - result.response.project_ext_id == project.uuid
+      - result.response.key == key1 ~ "_shared"
+      - result.response.value == value1 ~ "_shared"
+      - result.response.description == "ansible shared test"
+      - result.response.is_shared_with_all_projects == false
+      - result.response.shared_with_projects is defined
     fail_msg: "Create category for sharing tests failed"
     success_msg: "Created category for sharing tests"
 
@@ -286,28 +302,80 @@
   ansible.builtin.set_fact:
     shared_category_ext_id: "{{ result.ext_id }}"
 
-########################################################################
+# The sharing read is eventually consistent, so the create response above can
+# momentarily lag. Re-read until it reflects both requested projects.
+- name: Fetch shared category to verify it is shared with both projects on create
+  nutanix.ncp.ntnx_categories_info_v2:
+    ext_id: "{{ shared_category_ext_id }}"
+  register: shared_create_info
+  until: (shared_create_info.response.shared_with_projects | default([], true) | sort) == ([project.uuid, project2.uuid] | sort)
+  retries: 6
+  delay: 5
 
-- name: Update category to share with specific projects
+- name: Status of sharing with two projects on create
+  ansible.builtin.assert:
+    that:
+      - shared_create_info.response.shared_with_projects | length == 2
+      - (shared_create_info.response.shared_with_projects | sort) == ([project.uuid, project2.uuid] | sort)
+    fail_msg: "Category was not shared with both projects on create"
+    success_msg: "Category shared with both projects on create verified"
+
+########################################################################
+# Scenario: share with all three projects (add a project)
+########################################################################
+- name: Update category to share with all three projects
   nutanix.ncp.ntnx_categories_v2:
     state: present
     ext_id: "{{ shared_category_ext_id }}"
     shared_with_projects:
       - "{{ project.uuid }}"
+      - "{{ project2.uuid }}"
+      - "{{ project3.uuid }}"
   register: result
   ignore_errors: true
 
-- name: Status of share with specific projects
+- name: Status of share with all three projects
   ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
       - result.failed == false
-    fail_msg: "Share with specific projects failed"
-    success_msg: "Shared with specific projects successfully"
-########################################################################
+      - result.response.shared_with_projects is not none
+      - result.response.shared_with_projects | length == 3
+      - (result.response.shared_with_projects | sort) == ([project.uuid, project2.uuid, project3.uuid] | sort)
+    fail_msg: "Share with all three projects failed"
+    success_msg: "Shared with all three projects successfully"
 
-- name: Update category to unshare from specific projects
+########################################################################
+# Scenario: reconcile shared projects to a subset (drop one, keep two)
+########################################################################
+- name: Update category to reconcile shared projects to a subset
+  nutanix.ncp.ntnx_categories_v2:
+    state: present
+    ext_id: "{{ shared_category_ext_id }}"
+    shared_with_projects:
+      - "{{ project2.uuid }}"
+      - "{{ project3.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of reconcile shared projects to a subset
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.shared_with_projects is not none
+      - result.response.shared_with_projects | length == 2
+      - (result.response.shared_with_projects | sort) == ([project2.uuid, project3.uuid] | sort)
+      - project.uuid not in result.response.shared_with_projects
+    fail_msg: "Reconcile shared projects to a subset failed"
+    success_msg: "Reconciled shared projects to a subset successfully"
+
+########################################################################
+# Scenario: unshare from all projects
+########################################################################
+- name: Update category to unshare from all projects
   nutanix.ncp.ntnx_categories_v2:
     state: present
     ext_id: "{{ shared_category_ext_id }}"
@@ -315,12 +383,14 @@
   register: result
   ignore_errors: true
 
-- name: Status of unshare from specific projects
+- name: Status of unshare from all projects
   ansible.builtin.assert:
     that:
       - result.failed == false
-    fail_msg: "Unshare from specific projects failed with error"
-    success_msg: "Unshare from specific projects completed"
+      - result.changed == true
+      - result.response.shared_with_projects is none or result.response.shared_with_projects | length == 0
+    fail_msg: "Unshare from all projects failed with error"
+    success_msg: "Unshare from all projects completed"
 ########################################################################
 
 - name: Verify update of project_ext_id is not supported
@@ -360,18 +430,25 @@
 ########################################################################
 # Delete the project created for tests
 ########################################################################
-- name: Delete project created for tests
+- name: Delete projects created for tests
   nutanix.ncp.ntnx_project_v2:
     state: absent
-    ext_id: "{{ project.uuid }}"
-  register: delete_project_result
+    ext_id: "{{ item }}"
+  register: delete_projects_result
+  loop:
+    - "{{ project.uuid }}"
+    - "{{ project2.uuid }}"
+    - "{{ project3.uuid }}"
   ignore_errors: true
 
-- name: Status of project deletion for tests
+- name: Status of projects deletion for tests
   ansible.builtin.assert:
     that:
-      - delete_project_result.changed == true
-      - delete_project_result.failed == false
-      - delete_project_result.ext_id == project.uuid
+      - item.changed == true
+      - item.failed == false
+      - item.ext_id == item.item
     fail_msg: "Unable to delete project created for tests"
     success_msg: "Project created for tests deleted successfully"
+  loop: "{{ delete_projects_result.results }}"
+  loop_control:
+    label: "{{ item.item }}"

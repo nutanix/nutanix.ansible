@@ -283,34 +283,13 @@ def _apply_proxy_from_env(config, module=None):
         )
 
 
-def handle_sharing_after_create(
-    share_fn,
-    module,
-    api_instance,
-    ext_id,
-    shared_with_projects,
-    share_all_fn=None,
-    is_shared_with_all=None,
-):
-    """
-    Handle project sharing immediately after resource creation.
-
-    Args:
-        share_fn (callable): Function to share with a single project.
-            Signature: share_fn(module, api_instance, ext_id, project_ext_id)
-        module: Ansible module object.
-        api_instance: SDK API instance for the resource.
-        ext_id (str): External ID of the newly created resource.
-        shared_with_projects (list | None): List of project ext_ids to share with.
-        share_all_fn (callable | None): Optional function to share with all projects.
-            Signature: share_all_fn(module, api_instance, ext_id)
-        is_shared_with_all (bool | None): Whether to share with all projects.
-    """
-    if share_all_fn and is_shared_with_all is True:
-        share_all_fn(module, api_instance, ext_id)
-    if shared_with_projects:
-        for project_ext_id in shared_with_projects:
-            share_fn(module, api_instance, ext_id, project_ext_id)
+# The project-sharing read APIs are eventually consistent: a get_* performed
+# right after a share/unshare can return a stale spec/etag, so a single diff
+# pass may leave a share/unshare unapplied. Callers (both create and update)
+# re-run handle_sharing_update in a short bounded loop, re-reading the live spec
+# each time, until it reports there is nothing left to change.
+SHARING_RECONCILE_MAX_ATTEMPTS = 6
+SHARING_RECONCILE_POLLING_GAP = 5
 
 
 def handle_sharing_update(
@@ -326,8 +305,13 @@ def handle_sharing_update(
     is_shared_with_all=None,
 ):
     """
-    Compute the diff between current and desired project sharing state,
-    then call the appropriate share/unshare functions.
+    Compute the diff between the current and desired project sharing state for a
+    single snapshot, then call the appropriate share/unshare functions.
+
+    Because the sharing reads are eventually consistent (see
+    ``SHARING_RECONCILE_*``), callers should invoke this in a bounded loop,
+    passing a freshly fetched ``current_spec`` each time and stopping once it
+    returns ``False``.
 
     Args:
         share_fn (callable): Function to share with a single project.
@@ -346,7 +330,7 @@ def handle_sharing_update(
         is_shared_with_all (bool | None): Desired state for sharing with all projects.
 
     Returns:
-        bool: True if any sharing state was changed.
+        bool: True if any sharing state was changed on this pass.
     """
     changed = False
 
@@ -379,6 +363,7 @@ def handle_sharing_update(
             changed = True
 
     return changed
+
 
 def raise_unsupported_update_fields(module, current_spec, update_spec, fields):
     """

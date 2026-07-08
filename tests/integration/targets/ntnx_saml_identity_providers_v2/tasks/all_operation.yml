@@ -23,31 +23,41 @@
 ########################################################################
 # Create a project to be used for project_ext_id and sharing tests
 ########################################################################
-- name: Create project for tests
+- name: Create projects for tests
   nutanix.ncp.ntnx_project_v2:
     state: present
-    name: "{{ random_name }}-ansible-project"
-    project_id: "{{ random_name }}-ansible-project-id"
-  register: create_project_result
+    name: "{{ random_name }}-ansible-project-{{ item }}"
+    project_id: "{{ random_name }}-ansible-project-id-{{ item }}"
+  register: create_projects_result
+  loop: "{{ range(1, 4) | list }}"
   ignore_errors: true
 
-- name: Status of project creation for tests
+- name: Status of projects creation for tests
   ansible.builtin.assert:
     that:
-      - create_project_result.changed == true
-      - create_project_result.failed == false
-      - create_project_result.response is defined
-      - create_project_result.ext_id is defined
-      - create_project_result.ext_id | length > 0
-      - create_project_result.response.state == "ACTIVE"
+      - item.changed == true
+      - item.failed == false
+      - item.response is defined
+      - item.ext_id is defined
+      - item.ext_id | length > 0
+      - item.response.state == "ACTIVE"
     fail_msg: "Unable to create project for tests"
     success_msg: "Project for tests created successfully"
+  loop: "{{ create_projects_result.results }}"
+  loop_control:
+    label: "{{ item.item }}"
 
-- name: Set project fact for tests
+- name: Set project facts for tests
   ansible.builtin.set_fact:
     project:
-      name: "{{ random_name }}-ansible-project"
-      uuid: "{{ create_project_result.ext_id }}"
+      name: "{{ random_name }}-ansible-project-1"
+      uuid: "{{ create_projects_result.results[0].ext_id }}"
+    project2:
+      name: "{{ random_name }}-ansible-project-2"
+      uuid: "{{ create_projects_result.results[1].ext_id }}"
+    project3:
+      name: "{{ random_name }}-ansible-project-3"
+      uuid: "{{ create_projects_result.results[2].ext_id }}"
 
 - name: Verify spec generation for identity providers with check_mode
   nutanix.ncp.ntnx_saml_identity_providers_v2:
@@ -91,9 +101,21 @@
     fail_msg: " Unable to Verify spec generation for identity providers with check_mode "
     success_msg: " Verify spec generation for identity providers with check_mode finished successfully "
 
+- name: Create temp dir for SAML IdP metadata
+  ansible.builtin.tempfile:
+    state: directory
+    suffix: saml_xml
+  register: saml_xml_dir
+
+- name: Download SAML IdP metadata content
+  ansible.builtin.get_url:
+    url: "{{ xml_content.url }}"
+    dest: "{{ saml_xml_dir.path }}/content.txt"
+    mode: "0644"
+
 - name: Read content from file
   ansible.builtin.set_fact:
-    xml_file_content: "{{ lookup('file', xml_content.dest + '/content.txt') }}"
+    xml_file_content: "{{ lookup('file', saml_xml_dir.path + '/content.txt') }}"
 
 - name: Create saml
   nutanix.ncp.ntnx_saml_identity_providers_v2:
@@ -121,7 +143,7 @@
       - result.response.groups_attribute == "groups"
       - result.response.groups_delim == ","
       - result.response.project_ext_id == "00000000-0000-0000-0000-000000000000"
-      - result.response.shared_with_all_projects == true
+      - result.response.is_shared_with_all_projects == true
     fail_msg: " Unable to create saml "
     success_msg: " saml created successfully "
 
@@ -347,7 +369,7 @@
       - result.failed == false
       - result.ext_id is defined
       - result.response.project_ext_id == "00000000-0000-0000-0000-000000000000"
-      - result.response.shared_with_all_projects == false
+      - result.response.is_shared_with_all_projects == false
     fail_msg: "Create SAML for sharing tests failed"
     success_msg: "Created SAML for sharing tests"
 
@@ -371,7 +393,7 @@
       - result.response is defined
       - result.changed == true
       - result.failed == false
-      - result.response.shared_with_all_projects == true
+      - result.response.is_shared_with_all_projects == true
     fail_msg: "SAML share with all projects failed"
     success_msg: "SAML shared with all projects successfully"
 
@@ -391,34 +413,92 @@
       - result.response is defined
       - result.changed == true
       - result.failed == false
-      - result.response.shared_with_all_projects == false
+      - result.response.is_shared_with_all_projects == false
     fail_msg: "SAML unshare from all projects failed"
     success_msg: "SAML unshared from all projects successfully"
 
 ########################################################################
 
-- name: Update SAML to share with specific projects
+- name: Update SAML to share with two specific projects
   nutanix.ncp.ntnx_saml_identity_providers_v2:
     state: present
     ext_id: "{{ shared_saml_ext_id }}"
     shared_with_projects:
       - "{{ project.uuid }}"
+      - "{{ project2.uuid }}"
   register: result
   ignore_errors: true
 
-- name: Status of SAML share with specific projects
+- name: Status of SAML share with two specific projects
   ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
       - result.failed == false
       - result.response.shared_with_projects is defined
+      - result.response.shared_with_projects | length == 2
       - project.uuid in result.response.shared_with_projects
-    fail_msg: "SAML share with specific projects failed"
-    success_msg: "SAML shared with specific projects successfully"
-########################################################################
+      - project2.uuid in result.response.shared_with_projects
+    fail_msg: "SAML share with two specific projects failed"
+    success_msg: "SAML shared with two specific projects successfully"
 
-- name: Update SAML to unshare from specific projects
+########################################################################
+# Scenario: share with all three projects (add a project)
+########################################################################
+- name: Update SAML to share with all three projects
+  nutanix.ncp.ntnx_saml_identity_providers_v2:
+    state: present
+    ext_id: "{{ shared_saml_ext_id }}"
+    shared_with_projects:
+      - "{{ project.uuid }}"
+      - "{{ project2.uuid }}"
+      - "{{ project3.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of SAML share with all three projects
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.shared_with_projects | length == 3
+      - project.uuid in result.response.shared_with_projects
+      - project2.uuid in result.response.shared_with_projects
+      - project3.uuid in result.response.shared_with_projects
+    fail_msg: "SAML share with all three projects failed"
+    success_msg: "SAML shared with all three projects successfully"
+
+########################################################################
+# Scenario: reconcile shared projects to a subset (drop one, keep two)
+########################################################################
+- name: Update SAML to reconcile shared projects to a subset
+  nutanix.ncp.ntnx_saml_identity_providers_v2:
+    state: present
+    ext_id: "{{ shared_saml_ext_id }}"
+    shared_with_projects:
+      - "{{ project2.uuid }}"
+      - "{{ project3.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of SAML reconcile shared projects to a subset
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.shared_with_projects | length == 2
+      - project.uuid not in result.response.shared_with_projects
+      - project2.uuid in result.response.shared_with_projects
+      - project3.uuid in result.response.shared_with_projects
+    fail_msg: "SAML reconcile shared projects to a subset failed"
+    success_msg: "SAML reconciled shared projects to a subset successfully"
+
+########################################################################
+# Scenario: unshare from all specific projects
+########################################################################
+- name: Update SAML to unshare from all specific projects
   nutanix.ncp.ntnx_saml_identity_providers_v2:
     state: present
     ext_id: "{{ shared_saml_ext_id }}"
@@ -426,12 +506,14 @@
   register: result
   ignore_errors: true
 
-- name: Status of SAML unshare from specific projects
+- name: Status of SAML unshare from all specific projects
   ansible.builtin.assert:
     that:
+      - result.response is defined
       - result.failed == false
-    fail_msg: "SAML unshare from specific projects failed with error"
-    success_msg: "SAML unshare from specific projects completed"
+      - (result.response.shared_with_projects | default([], true)) | length == 0
+    fail_msg: "SAML unshare from all specific projects failed with error"
+    success_msg: "SAML unshare from all specific projects completed"
 ########################################################################
 
 - name: Delete shared SAML identity provider
@@ -453,18 +535,25 @@
 ########################################################################
 # Delete the project created for tests
 ########################################################################
-- name: Delete project created for tests
+- name: Delete projects created for tests
   nutanix.ncp.ntnx_project_v2:
     state: absent
-    ext_id: "{{ project.uuid }}"
-  register: delete_project_result
+    ext_id: "{{ item }}"
+  register: delete_projects_result
+  loop:
+    - "{{ project.uuid }}"
+    - "{{ project2.uuid }}"
+    - "{{ project3.uuid }}"
   ignore_errors: true
 
-- name: Status of project deletion for tests
+- name: Status of projects deletion for tests
   ansible.builtin.assert:
     that:
-      - delete_project_result.changed == true
-      - delete_project_result.failed == false
-      - delete_project_result.ext_id == project.uuid
+      - item.changed == true
+      - item.failed == false
+      - item.ext_id == item.item
     fail_msg: "Unable to delete project created for tests"
     success_msg: "Project created for tests deleted successfully"
+  loop: "{{ delete_projects_result.results }}"
+  loop_control:
+    label: "{{ item.item }}"

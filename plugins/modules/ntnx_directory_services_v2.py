@@ -391,6 +391,7 @@ msg:
 """
 
 
+import time  # noqa: E402
 import traceback  # noqa: E402
 import warnings  # noqa: E402
 from copy import deepcopy  # noqa: E402
@@ -406,7 +407,8 @@ from ..module_utils.v4.iam.api_client import (  # noqa: E402
 from ..module_utils.v4.iam.helpers import get_directory_service  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
-    handle_sharing_after_create,
+    SHARING_RECONCILE_MAX_ATTEMPTS,
+    SHARING_RECONCILE_POLLING_GAP,
     handle_sharing_update,
     raise_api_exception,
     raise_unsupported_update_fields,
@@ -548,6 +550,38 @@ def _unshare_from_project(module, directory_services, ext_id, project_ext_id):
         )
 
 
+def _reconcile_sharing(
+    module, directory_services, ext_id, shared_with_projects, is_shared_with_all
+):
+    """Drive the directory service's project sharing towards the desired state.
+
+    The share/unshare APIs are eventually consistent: right after a share the
+    read can still return the old etag, so a follow-up share/unshare can
+    silently fail to apply. Re-read and re-apply the diff until nothing is left
+    to change (or we run out of attempts).
+    """
+    changed = False
+    for _ in range(SHARING_RECONCILE_MAX_ATTEMPTS):
+        current_spec = get_directory_service(module, directory_services, ext_id=ext_id)
+        applied = handle_sharing_update(
+            share_fn=_share_with_project,
+            unshare_fn=_unshare_from_project,
+            module=module,
+            api_instance=directory_services,
+            ext_id=ext_id,
+            current_spec=current_spec,
+            shared_with_projects=shared_with_projects,
+            share_all_fn=_share_with_all_projects,
+            unshare_all_fn=_unshare_from_all_projects,
+            is_shared_with_all=is_shared_with_all,
+        )
+        changed = changed or applied
+        if not applied:
+            break
+        time.sleep(SHARING_RECONCILE_POLLING_GAP)
+    return changed
+
+
 def create_directory_service(module, directory_services, result):
     is_shared_with_all = module.params.pop("is_shared_with_all_projects", None)
     shared_with_projects = module.params.pop("shared_with_projects", None)
@@ -580,14 +614,12 @@ def create_directory_service(module, directory_services, result):
     result["ext_id"] = ext_id
 
     if is_shared_with_all or shared_with_projects:
-        handle_sharing_after_create(
-            share_fn=_share_with_project,
-            module=module,
-            api_instance=directory_services,
-            ext_id=ext_id,
-            shared_with_projects=shared_with_projects,
-            share_all_fn=_share_with_all_projects,
-            is_shared_with_all=is_shared_with_all,
+        _reconcile_sharing(
+            module,
+            directory_services,
+            ext_id,
+            shared_with_projects,
+            is_shared_with_all,
         )
         current = get_directory_service(module, directory_services, ext_id=ext_id)
         result["response"] = strip_internal_attributes(current.to_dict())
@@ -649,18 +681,15 @@ def update_directory_service(module, directory_services, result):
                 msg="Api Exception raised while updating directory service",
             )
 
-    sharing_changed = handle_sharing_update(
-        share_fn=_share_with_project,
-        unshare_fn=_unshare_from_project,
-        module=module,
-        api_instance=directory_services,
-        ext_id=ext_id,
-        current_spec=current_spec,
-        shared_with_projects=shared_with_projects,
-        share_all_fn=_share_with_all_projects,
-        unshare_all_fn=_unshare_from_all_projects,
-        is_shared_with_all=is_shared_with_all,
-    )
+    sharing_changed = False
+    if shared_with_projects is not None or is_shared_with_all is not None:
+        sharing_changed = _reconcile_sharing(
+            module,
+            directory_services,
+            ext_id,
+            shared_with_projects,
+            is_shared_with_all,
+        )
 
     if not spec_changed and not sharing_changed:
         result["skipped"] = True
