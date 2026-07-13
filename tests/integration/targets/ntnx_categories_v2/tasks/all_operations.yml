@@ -295,30 +295,14 @@
       - result.response.description == "ansible shared test"
       - result.response.is_shared_with_all_projects == false
       - result.response.shared_with_projects is defined
+      - result.response.shared_with_projects | length == 2
+      - (result.response.shared_with_projects | sort) == ([project.uuid, project2.uuid] | sort)
     fail_msg: "Create category for sharing tests failed"
     success_msg: "Created category for sharing tests"
 
 - name: Set shared category ext_id
   ansible.builtin.set_fact:
     shared_category_ext_id: "{{ result.ext_id }}"
-
-# The sharing read is eventually consistent, so the create response above can
-# momentarily lag. Re-read until it reflects both requested projects.
-- name: Fetch shared category to verify it is shared with both projects on create
-  nutanix.ncp.ntnx_categories_info_v2:
-    ext_id: "{{ shared_category_ext_id }}"
-  register: shared_create_info
-  until: (shared_create_info.response.shared_with_projects | default([], true) | sort) == ([project.uuid, project2.uuid] | sort)
-  retries: 6
-  delay: 5
-
-- name: Status of sharing with two projects on create
-  ansible.builtin.assert:
-    that:
-      - shared_create_info.response.shared_with_projects | length == 2
-      - (shared_create_info.response.shared_with_projects | sort) == ([project.uuid, project2.uuid] | sort)
-    fail_msg: "Category was not shared with both projects on create"
-    success_msg: "Category shared with both projects on create verified"
 
 ########################################################################
 # Scenario: share with all three projects (add a project)

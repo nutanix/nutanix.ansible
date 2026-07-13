@@ -391,7 +391,6 @@ msg:
 """
 
 
-import time  # noqa: E402
 import traceback  # noqa: E402
 import warnings  # noqa: E402
 from copy import deepcopy  # noqa: E402
@@ -405,13 +404,13 @@ from ..module_utils.v4.iam.api_client import (  # noqa: E402
     get_etag,
 )
 from ..module_utils.v4.iam.helpers import get_directory_service  # noqa: E402
+from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
-    SHARING_RECONCILE_MAX_ATTEMPTS,
-    SHARING_RECONCILE_POLLING_GAP,
-    handle_sharing_update,
+    get_task_ext_id_from_response,
     raise_api_exception,
     raise_unsupported_update_fields,
+    reconcile_sharing,
     strip_internal_attributes,
 )
 
@@ -493,7 +492,9 @@ def _get_etag_for_sharing(module, directory_services, ext_id):
 def _share_with_all_projects(module, directory_services, ext_id):
     etag = _get_etag_for_sharing(module, directory_services, ext_id)
     try:
-        directory_services.share_all_directory_service(extId=ext_id, if_match=etag)
+        resp = directory_services.share_all_directory_service(
+            extId=ext_id, if_match=etag
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -505,7 +506,9 @@ def _share_with_all_projects(module, directory_services, ext_id):
 def _unshare_from_all_projects(module, directory_services, ext_id):
     etag = _get_etag_for_sharing(module, directory_services, ext_id)
     try:
-        directory_services.unshare_all_directory_service(extId=ext_id, if_match=etag)
+        resp = directory_services.unshare_all_directory_service(
+            extId=ext_id, if_match=etag
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -519,7 +522,7 @@ def _share_with_project(module, directory_services, ext_id, project_ext_id):
     try:
         share_req = iam_sdk.DirectoryServiceShareRequest()
         share_req.project_ext_id = project_ext_id
-        directory_services.share_directory_service(
+        resp = directory_services.share_directory_service(
             extId=ext_id, body=share_req, if_match=etag
         )
     except Exception as e:
@@ -537,7 +540,7 @@ def _unshare_from_project(module, directory_services, ext_id, project_ext_id):
     try:
         unshare_req = iam_sdk.DirectoryServiceUnshareRequest()
         unshare_req.project_ext_id = project_ext_id
-        directory_services.unshare_directory_service(
+        resp = directory_services.unshare_directory_service(
             extId=ext_id, body=unshare_req, if_match=etag
         )
     except Exception as e:
@@ -555,31 +558,30 @@ def _reconcile_sharing(
 ):
     """Drive the directory service's project sharing towards the desired state.
 
-    The share/unshare APIs are eventually consistent: right after a share the
-    read can still return the old etag, so a follow-up share/unshare can
-    silently fail to apply. Re-read and re-apply the diff until nothing is left
-    to change (or we run out of attempts).
+    Delegates to the shared ``reconcile_sharing`` helper, which diffs once and
+    applies each share/unshare one by one. IAM sharing is synchronous (no task
+    to await), but each call returns only once the change has taken effect, so a
+    single pass reaches the desired state.
     """
-    changed = False
-    for _ in range(SHARING_RECONCILE_MAX_ATTEMPTS):
-        current_spec = get_directory_service(module, directory_services, ext_id=ext_id)
-        applied = handle_sharing_update(
-            share_fn=_share_with_project,
-            unshare_fn=_unshare_from_project,
-            module=module,
-            api_instance=directory_services,
-            ext_id=ext_id,
-            current_spec=current_spec,
-            shared_with_projects=shared_with_projects,
-            share_all_fn=_share_with_all_projects,
-            unshare_all_fn=_unshare_from_all_projects,
-            is_shared_with_all=is_shared_with_all,
+
+    def read_current(current_module, current_ext_id):
+        return get_directory_service(
+            current_module, directory_services, ext_id=current_ext_id
         )
-        changed = changed or applied
-        if not applied:
-            break
-        time.sleep(SHARING_RECONCILE_POLLING_GAP)
-    return changed
+
+    return reconcile_sharing(
+        module=module,
+        api_instance=directory_services,
+        ext_id=ext_id,
+        read_fn=read_current,
+        share_fn=_share_with_project,
+        unshare_fn=_unshare_from_project,
+        shared_with_projects=shared_with_projects,
+        share_all_fn=_share_with_all_projects,
+        unshare_all_fn=_unshare_from_all_projects,
+        is_shared_with_all=is_shared_with_all,
+        resource_label="directory service",
+    )
 
 
 def create_directory_service(module, directory_services, result):

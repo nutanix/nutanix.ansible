@@ -601,7 +601,6 @@ error:
     returned: when an error occurs
 """
 
-import time  # noqa: E402
 import traceback  # noqa: E402
 import warnings  # noqa: E402
 from copy import deepcopy  # noqa: E402
@@ -622,11 +621,10 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
-    SHARING_RECONCILE_MAX_ATTEMPTS,
-    SHARING_RECONCILE_POLLING_GAP,
-    handle_sharing_update,
+    get_task_ext_id_from_response,
     raise_api_exception,
     raise_unsupported_update_fields,
+    reconcile_sharing,
     remove_empty_ip_config,
     strip_internal_attributes,
 )
@@ -757,7 +755,9 @@ def _share_subnet_with_project(module, subnets, ext_id, project_ext_id):
     try:
         project_ref = net_sdk.ProjectReference()
         project_ref.project_ext_id = project_ext_id
-        subnets.share_subnet_by_id(subnetExtId=ext_id, body=project_ref, if_match=etag)
+        resp = subnets.share_subnet_by_id(
+            subnetExtId=ext_id, body=project_ref, if_match=etag
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -766,6 +766,8 @@ def _share_subnet_with_project(module, subnets, ext_id, project_ext_id):
                 project_ext_id
             ),
         )
+    task_ext_id = get_task_ext_id_from_response(resp)
+    wait_for_completion(module, task_ext_id)
 
 
 def _unshare_subnet_from_project(module, subnets, ext_id, project_ext_id):
@@ -774,7 +776,7 @@ def _unshare_subnet_from_project(module, subnets, ext_id, project_ext_id):
     try:
         project_ref = net_sdk.ProjectReference()
         project_ref.project_ext_id = project_ext_id
-        subnets.unshare_subnet_by_id(
+        resp = subnets.unshare_subnet_by_id(
             subnetExtId=ext_id, body=project_ref, if_match=etag
         )
     except Exception as e:
@@ -785,33 +787,31 @@ def _unshare_subnet_from_project(module, subnets, ext_id, project_ext_id):
                 project_ext_id
             ),
         )
+    task_ext_id = get_task_ext_id_from_response(resp)
+    wait_for_completion(module, task_ext_id)
 
 
 def _reconcile_sharing(module, subnets, ext_id, shared_with_projects):
     """Drive the subnet's project sharing towards the desired state.
 
-    The share/unshare APIs are eventually consistent: right after a share the
-    read can still return the old etag, so a follow-up share/unshare can
-    silently fail to apply. Re-read and re-apply the diff until nothing is left
-    to change (or we run out of attempts).
+    Delegates to the shared ``reconcile_sharing`` helper, which diffs once and
+    applies each share/unshare one by one; every call blocks on its task via
+    ``wait_for_completion``, so a single pass reaches the desired state.
     """
-    changed = False
-    for _ in range(SHARING_RECONCILE_MAX_ATTEMPTS):
-        current_spec = get_subnet(module, subnets, ext_id)
-        applied = handle_sharing_update(
-            share_fn=_share_subnet_with_project,
-            unshare_fn=_unshare_subnet_from_project,
-            module=module,
-            api_instance=subnets,
-            ext_id=ext_id,
-            current_spec=current_spec,
-            shared_with_projects=shared_with_projects,
-        )
-        changed = changed or applied
-        if not applied:
-            break
-        time.sleep(SHARING_RECONCILE_POLLING_GAP)
-    return changed
+
+    def read_current(current_module, current_ext_id):
+        return get_subnet(current_module, subnets, current_ext_id)
+
+    return reconcile_sharing(
+        module=module,
+        api_instance=subnets,
+        ext_id=ext_id,
+        read_fn=read_current,
+        share_fn=_share_subnet_with_project,
+        unshare_fn=_unshare_subnet_from_project,
+        shared_with_projects=shared_with_projects,
+        resource_label="subnet",
+    )
 
 
 def create_subnet(module, result):

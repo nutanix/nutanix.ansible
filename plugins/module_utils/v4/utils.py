@@ -283,83 +283,101 @@ def _apply_proxy_from_env(config, module=None):
         )
 
 
-# The project-sharing read APIs are eventually consistent: a get_* performed
-# right after a share/unshare can return a stale spec/etag, so a single diff
-# pass may leave a share/unshare unapplied. Callers (both create and update)
-# re-run handle_sharing_update in a short bounded loop, re-reading the live spec
-# each time, until it reports there is nothing left to change.
-SHARING_RECONCILE_MAX_ATTEMPTS = 6
-SHARING_RECONCILE_POLLING_GAP = 5
+def get_task_ext_id_from_response(resp):
+    """Return the task ext_id from an async share/unshare API response.
+
+    Only a genuine ``TaskReference`` payload is treated as awaitable. Responses
+    that completed synchronously (e.g. IAM's ``DirectoryServiceShareResponse``)
+    or that carry an empty list/map return ``None`` so the caller skips waiting.
+
+    Args:
+        resp: The SDK response object returned by a share/unshare call.
+
+    Returns:
+        str | None: The task external ID, or None when there is no task.
+    """
+    data = getattr(resp, "data", None)
+    if data is None:
+        return None
+    if type(data).__name__ != "TaskReference":
+        return None
+    return getattr(data, "ext_id", None)
 
 
-def handle_sharing_update(
-    share_fn,
-    unshare_fn,
+def reconcile_sharing(
     module,
     api_instance,
     ext_id,
-    current_spec,
-    shared_with_projects,
+    read_fn,
+    share_fn,
+    unshare_fn,
+    shared_with_projects=None,
     share_all_fn=None,
     unshare_all_fn=None,
     is_shared_with_all=None,
+    resource_label="resource",
 ):
-    """
-    Compute the diff between the current and desired project sharing state for a
-    single snapshot, then call the appropriate share/unshare functions.
+    """Drive a resource's project sharing to the desired state.
 
-    Because the sharing reads are eventually consistent (see
-    ``SHARING_RECONCILE_*``), callers should invoke this in a bounded loop,
-    passing a freshly fetched ``current_spec`` each time and stopping once it
-    returns ``False``.
+    Reads the current sharing state once, then walks the difference against the
+    desired state and performs each share/unshare one at a time. Every
+    ``share_fn``/``unshare_fn`` call is expected to block until its change is
+    applied (task-based APIs wait on their task via ``wait_for_completion``;
+    the synchronous IAM endpoints return only once applied), so a single pass
+    reaches the desired state. If nothing differs, no call is made and the
+    resource is already in the desired state (idempotent no-op).
 
     Args:
-        share_fn (callable): Function to share with a single project.
-            Signature: share_fn(module, api_instance, ext_id, project_ext_id)
-        unshare_fn (callable): Function to unshare from a single project.
-            Signature: unshare_fn(module, api_instance, ext_id, project_ext_id)
         module: Ansible module object.
-        api_instance: SDK API instance for the resource.
+        api_instance: SDK API instance, passed through to the callables.
         ext_id (str): External ID of the resource.
-        current_spec: Current SDK spec object of the resource.
+        read_fn (callable): ``read_fn(module, ext_id)`` returning the current
+            SDK spec of the resource.
+        share_fn/unshare_fn (callable): Per-project share/unshare functions
+            (signature ``fn(module, api_instance, ext_id, project_ext_id)``).
         shared_with_projects (list | None): Desired list of project ext_ids.
-        share_all_fn (callable | None): Optional function to share with all projects.
-            Signature: share_all_fn(module, api_instance, ext_id)
-        unshare_all_fn (callable | None): Optional function to unshare from all projects.
-            Signature: unshare_all_fn(module, api_instance, ext_id)
-        is_shared_with_all (bool | None): Desired state for sharing with all projects.
+            ``None`` leaves per-project sharing untouched. Ignored when the
+            resource ends up shared with all projects, whether because
+            ``is_shared_with_all`` was set truthy in this call or the resource
+            was already shared with every project, since per-project sharing is
+            then redundant.
+        share_all_fn/unshare_all_fn (callable | None): Optional all-projects
+            share/unshare functions (signature ``fn(module, api_instance, ext_id)``).
+        is_shared_with_all (bool | None): Desired shared-with-all-projects state.
+            ``None`` leaves it untouched.
+        resource_label (str): Unused; kept for call-site compatibility.
 
     Returns:
-        bool: True if any sharing state was changed on this pass.
+        bool: True if any share/unshare was performed.
     """
+    current = read_fn(module, ext_id)
     changed = False
 
-    if share_all_fn and unshare_all_fn and is_shared_with_all is not None:
-        current_shared_all = (
-            getattr(current_spec, "is_shared_with_all_projects", False)
-            or getattr(current_spec, "shared_with_all_projects", False)
-            or False
-        )
+    current_shared_all = bool(
+        getattr(current, "is_shared_with_all_projects", None)
+        or getattr(current, "shared_with_all_projects", None)
+    )
+
+    if is_shared_with_all is not None and share_all_fn and unshare_all_fn:
         if is_shared_with_all and not current_shared_all:
             share_all_fn(module, api_instance, ext_id)
             changed = True
+            current_shared_all = True
         elif not is_shared_with_all and current_shared_all:
             unshare_all_fn(module, api_instance, ext_id)
             changed = True
+            current_shared_all = False
 
-    if shared_with_projects is not None:
-        current_shared_projects = (
-            getattr(current_spec, "shared_with_projects", None) or []
-        )
-        desired_set = set(shared_with_projects)
-        current_set = set(current_shared_projects)
+    if shared_with_projects is not None and not current_shared_all:
+        current_projects = set(getattr(current, "shared_with_projects", None) or [])
+        desired_projects = set(shared_with_projects)
 
-        for pid in desired_set - current_set:
-            share_fn(module, api_instance, ext_id, pid)
+        for project_ext_id in desired_projects - current_projects:
+            share_fn(module, api_instance, ext_id, project_ext_id)
             changed = True
 
-        for pid in current_set - desired_set:
-            unshare_fn(module, api_instance, ext_id, pid)
+        for project_ext_id in current_projects - desired_projects:
+            unshare_fn(module, api_instance, ext_id, project_ext_id)
             changed = True
 
     return changed
