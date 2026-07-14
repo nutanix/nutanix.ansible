@@ -506,7 +506,15 @@ def create_identity_provider(module, identity_providers, result):
         )
 
     if module.check_mode:
-        result["response"] = strip_internal_attributes(spec.to_dict())
+        response = strip_internal_attributes(spec.to_dict())
+        # Sharing is applied via a separate share API (not the create body), so
+        # these are popped before spec generation. Reflect the requested values
+        # here so check mode does not mislead about the resulting sharing.
+        if shared_with_projects is not None:
+            response["shared_with_projects"] = shared_with_projects
+        if is_shared_with_all is not None:
+            response["is_shared_with_all_projects"] = is_shared_with_all
+        result["response"] = response
         return
 
     resp = None
@@ -565,7 +573,16 @@ def update_identity_provider(module, identity_providers, result):
     )
 
     if module.check_mode:
-        result["response"] = strip_internal_attributes(update_spec.to_dict())
+        response = strip_internal_attributes(update_spec.to_dict())
+        # Sharing is reconciled via a separate share API, so these are popped
+        # before spec generation and update_spec still carries the current
+        # values. Reflect the requested values so check mode shows the intended
+        # sharing rather than the existing one.
+        if shared_with_projects is not None:
+            response["shared_with_projects"] = shared_with_projects
+        if is_shared_with_all is not None:
+            response["is_shared_with_all_projects"] = is_shared_with_all
+        result["response"] = response
         return
 
     spec_changed = not check_identity_providers_idempotency(

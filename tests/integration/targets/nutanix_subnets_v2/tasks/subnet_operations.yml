@@ -70,7 +70,9 @@
     state: present
     name: "{{ subnet_name }}_1"
     project_ext_id: "83083083-0000-0000-0000-000000000000"
-    shared_with_projects: "{{ [project.uuid] if project is defined and project.uuid is defined else omit }}"
+    shared_with_projects:
+      - "11111111-1111-1111-1111-111111111111"
+      - "22222222-2222-2222-2222-222222222222"
     subnet_type: VLAN
     cluster_reference: "{{ cluster.uuid }}"
     virtual_switch_reference: "{{ virtual_switch.uuid }}"
@@ -141,17 +143,45 @@
       - result.response.network_function_chain_reference == "00061663-9fa0-28ca-185b-ac1f6b6f97e1"
       - result.response.is_advanced_networking == true
       - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
+      - result.response.shared_with_projects == ["11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222"]
     fail_msg: " Unable to create VLAN subnet with check mode enabled "
     success_msg: " VLAN subnet with check mode enabled created successfully "
 
 ##################################################
+- name: Create a dedicated project for the VLAN subnet sharing test
+  nutanix.ncp.ntnx_project_v2:
+    state: present
+    name: "{{ random_name }}-ansible-subnet-project"
+    project_id: "{{ random_name }}-ansible-subnet-project-id"
+  register: create_subnet_project_result
+  ignore_errors: true
+
+- name: Status of dedicated project creation for VLAN subnet sharing test
+  ansible.builtin.assert:
+    that:
+      - create_subnet_project_result.changed == true
+      - create_subnet_project_result.failed == false
+      - create_subnet_project_result.ext_id is defined
+      - create_subnet_project_result.ext_id | length > 0
+      - create_subnet_project_result.response.state == "ACTIVE"
+    fail_msg: "Unable to create dedicated project for VLAN subnet sharing test"
+    success_msg: "Dedicated project for VLAN subnet sharing test created successfully"
+
+- name: Set dedicated subnet project fact
+  ansible.builtin.set_fact:
+    subnet_project:
+      name: "{{ random_name }}-ansible-subnet-project"
+      uuid: "{{ create_subnet_project_result.ext_id }}"
+
 - name: VLAN subnet without IPAM
+  # VLAN subnets can only be owned by the default project, so create it there
+  # (no project_ext_id) and grant the dedicated project access via shared_with_projects.
   nutanix.ncp.ntnx_subnets_v2:
     state: present
     wait: true
     name: "{{ subnet_name }}_1"
-    project_ext_id: "{{ project.uuid }}"
-    shared_with_projects: "{{ [project.uuid] if project is defined and project.uuid is defined else omit }}"
+    shared_with_projects:
+      - "{{ subnet_project.uuid }}"
     subnet_type: VLAN
     cluster_reference: "{{ cluster.uuid }}"
     virtual_switch_reference: "{{ virtual_switch.uuid }}"
@@ -169,7 +199,7 @@
       - result.response.virtual_switch_reference == "{{ virtual_switch.uuid }}"
       - result.response.cluster_reference == "{{ cluster.uuid }}"
       - result.response.network_id == {{ vlan_subnets_ids.0 }}
-      - result.response.project_ext_id == project.uuid
+      - subnet_project.uuid in (result.response.shared_with_projects | default([]))
     fail_msg: " Unable to create VLAN subnet without IPAM "
     success_msg: " VLAN subnet without IPAM created successfully "
 
@@ -304,6 +334,10 @@
                 value: "{{ ip_address_pools.start_address_2 }}"
               end_ip:
                 value: "{{ ip_address_pools.end_address_2 }}"
+    # Dummy sharing values to verify check mode reflects the requested sharing.
+    shared_with_projects:
+      - "11111111-1111-1111-1111-111111111111"
+      - "22222222-2222-2222-2222-222222222222"
   register: result
   ignore_errors: true
   check_mode: true
@@ -321,6 +355,7 @@
       - result.response.ip_config.0.ipv4.pool_list.1.start_ip.value == "{{ ip_address_pools.start_address_2 }}"
       - result.response.ip_config.0.ipv4.pool_list.1.end_ip.value == "{{ ip_address_pools.end_address_2 }}"
       - result.response.ip_config.0.ipv4.default_gateway_ip.value == "{{ ip_address_management.gateway_ip_address }}"
+      - result.response.shared_with_projects == ["11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222"]
     fail_msg: " Unable to update VLAN subnet name and IP pools "
     success_msg: " VLAN subnet name and IP pools updated successfully "
 
