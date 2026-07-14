@@ -404,6 +404,33 @@
     success_msg: "SAML shared with all projects successfully"
 
 ########################################################################
+# Scenario: shared_with_projects is ignored when already shared with all projects
+########################################################################
+- name: Update SAML with shared_with_projects while already shared with all projects
+  nutanix.ncp.ntnx_saml_identity_providers_v2:
+    state: present
+    ext_id: "{{ shared_saml_ext_id }}"
+    shared_with_projects:
+      - "{{ project.uuid }}"
+      - "{{ project2.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of shared_with_projects being ignored when already shared with all projects
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      # The identity provider stays shared with all projects; the requested
+      # per-project sharing is ignored, so no specific projects are added.
+      - result.response.is_shared_with_all_projects == true
+      - (result.response.shared_with_projects | default([], true)) | length == 0
+      - project.uuid not in (result.response.shared_with_projects | default([], true))
+      - project2.uuid not in (result.response.shared_with_projects | default([], true))
+    fail_msg: "shared_with_projects should be ignored when identity provider is already shared with all projects"
+    success_msg: "shared_with_projects correctly ignored when identity provider is already shared with all projects"
+
+########################################################################
 
 - name: Update SAML to unshare from all projects
   nutanix.ncp.ntnx_saml_identity_providers_v2:

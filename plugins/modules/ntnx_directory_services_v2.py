@@ -163,6 +163,7 @@ options:
             - During update, the sharing will be reconciled to match this list.
             - Projects not in the list will be unshared, and new projects will be shared.
             - Mutually exclusive with C(is_shared_with_all_projects).
+            - If the directory service is already shared with all projects, this parameter is ignored.
             - During create operations, this parameter requires C(wait) to be C(true) (default). If C(wait) is set to C(false), this parameter will be ignored.
         required: false
         type: list
