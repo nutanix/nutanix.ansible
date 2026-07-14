@@ -77,8 +77,8 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.changed == False
-      - result.failed == False
+      - result.changed == false
+      - result.failed == false
       - result.response.name == "{{ directory_service }}"
       - result.response.domain_name == "{{ active_directory.domain_name }}"
       - result.response.directory_type == "ACTIVE_DIRECTORY"
@@ -121,8 +121,8 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.changed == False
-      - result.failed == False
+      - result.changed == false
+      - result.failed == false
       - result.response.is_shared_with_all_projects == true
       - result.response.name == "{{ directory_service }}_name"
       - result.response.domain_name == "{{ directory_service }}_domain_name"
@@ -163,7 +163,7 @@
     that:
       - result.response is defined
       - result.changed == true
-      - result.failed == False
+      - result.failed == false
       - result.response.name == "{{ directory_service }}"
       - result.response.directory_type == "ACTIVE_DIRECTORY"
       - result.response.url == "{{ active_directory.url }}"
@@ -201,8 +201,8 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.changed == False
-      - result.failed == True
+      - result.changed == false
+      - result.failed == true
       - result.response.data.error | length > 0
       - result.status == 409
     fail_msg: "Unable to create ACTIVE_DIRECTORY service "
@@ -232,7 +232,7 @@
     that:
       - result.response is defined
       - result.changed == true
-      - result.failed == False
+      - result.failed == false
       - result.ext_id == "{{ todelete }}"
       - result.response.name == "{{ directory_service }}"
       - result.response.directory_type == "ACTIVE_DIRECTORY"
@@ -264,7 +264,7 @@
     that:
       - result.response is defined
       - result.changed == true
-      - result.failed == False
+      - result.failed == false
       - result.ext_id == "{{ todelete }}"
       - result.response.group_search_type == "NON_RECURSIVE"
       - result.response.white_listed_groups[0] == "{{ white_listed_groups[0] }}"
@@ -294,8 +294,8 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.changed == True
-      - result.failed == False
+      - result.changed == true
+      - result.failed == false
       - result.response.name == "{{ directory_service }}"
       - result.response.directory_type == "ACTIVE_DIRECTORY"
       - result.response.url == "{{ active_directory.url }}"
@@ -328,8 +328,8 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.changed == False
-      - result.failed == False
+      - result.changed == false
+      - result.failed == false
       - result.ext_id == "{{ todelete }}"
       - result.msg == "Nothing to change."
     fail_msg: "Verify if module is idempotent if same config is provided failed "
@@ -347,8 +347,8 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.changed == False
-      - result.failed == False
+      - result.changed == false
+      - result.failed == false
       - result.response.ext_id == "{{ todelete }}"
       - result.response.name == "{{ directory_service }}"
       - result.response.directory_type == "ACTIVE_DIRECTORY"
@@ -372,8 +372,8 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.changed == False
-      - result.failed == False
+      - result.changed == false
+      - result.failed == false
       - result.response | length > 0
       - result.total_available_results is defined
       - result.total_available_results > 0
@@ -392,8 +392,8 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.changed == False
-      - result.failed == False
+      - result.changed == false
+      - result.failed == false
       - result.response | length == 1
       - result.response[0].name == "{{ directory_service }}"
     fail_msg: Unable to list all directory services with filter
@@ -411,11 +411,111 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.changed == False
-      - result.failed == False
+      - result.changed == false
+      - result.failed == false
       - result.response | length == 1
     fail_msg: Unable to list all directory services with limit
     success_msg: All directory services listed with limit successfully
+
+########################################################################
+
+- name: Generate spec for verifying directory service connection using check mode
+  nutanix.ncp.ntnx_directory_services_connection_v2:
+    ext_id: "{{ todelete }}"
+    username: "username"
+    password: "password"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Generate spec for verifying directory service connection using check mode status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ todelete }}"
+      - result.response.username == "username"
+    fail_msg: Generate spec for verifying directory service connection using check mode failed
+    success_msg: Generate spec for verifying directory service connection using check mode passed
+
+########################################################################
+
+- name: Check directory service connection
+  nutanix.ncp.ntnx_directory_services_connection_v2:
+    ext_id: "{{ todelete }}"
+    username: "{{ active_directory.username }}"
+    password: "{{ active_directory.password }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of directory service connection check
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == "{{ todelete }}"
+      - result.response.message == "Directory Service connection check successful."
+    fail_msg: Directory service connection check failed
+    success_msg: Directory service connection check passed
+
+########################################################################
+
+- name: Check directory service connection with missing required attributes
+  nutanix.ncp.ntnx_directory_services_connection_v2:
+    ext_id: "{{ todelete }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of directory service connection check with missing attributes
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - '"missing required arguments: password, username" in result.msg'
+    fail_msg: Directory service connection check should fail when required attributes are missing
+    success_msg: Directory service connection check failed as expected with missing attributes
+
+########################################################################
+
+- name: Check directory service connection with wrong external ID
+  nutanix.ncp.ntnx_directory_services_connection_v2:
+    ext_id: "54681525-3227-5144-b1b3-155057984061"
+    username: "{{ active_directory.username }}"
+    password: "{{ active_directory.password }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of directory service connection check with wrong external ID
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while checking directory service connection"
+      - result.response.data.error | length > 0
+    fail_msg: Directory service connection check should fail when wrong external ID is provided
+    success_msg: Directory service connection check failed as expected with wrong external ID
+
+########################################################################
+
+- name: Check directory service connection with wrong username and password
+  nutanix.ncp.ntnx_directory_services_connection_v2:
+    ext_id: "{{ todelete }}"
+    username: "wrong_username"
+    password: "wrong_password"
+  register: result
+  ignore_errors: true
+
+- name: Status of directory service connection check with wrong username and password
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while checking directory service connection"
+      - result.response.data.message == "Directory Service connection check failed."
+    fail_msg: Directory service connection check should fail when wrong username and password are provided
+    success_msg: Directory service connection check failed as expected with wrong username and password
 
 ########################################################################
 
@@ -454,8 +554,8 @@
 - name: Deletion Status
   ansible.builtin.assert:
     that:
-      - result.changed == True
-      - result.failed == False
+      - result.changed == true
+      - result.failed == false
       - result.ext_id == "{{ todelete }}"
       - result.msg == "{{ msg }}"
     fail_msg: Unable to delete directory service

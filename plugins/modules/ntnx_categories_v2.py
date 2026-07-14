@@ -185,9 +185,10 @@ from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
+from ..module_utils.v4.prism.helpers import get_category  # noqa: E402
 from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
+    get_categories_api_instance,
     get_etag,
-    get_pc_api_client,
 )
 from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
@@ -385,13 +386,13 @@ def check_categories_idempotency(old_spec, update_spec):
     return True
 
 
-def update_category(module, result):
+def update_category(module, categories, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
     shared_with_projects = module.params.pop("shared_with_projects", None)
     categories = get_category_api_instance(module)
 
-    current_spec = get_category(module, ext_id=ext_id)
+    current_spec = get_category(module, categories, ext_id=ext_id)
     sg = SpecGenerator(module)
     update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
 
@@ -451,8 +452,7 @@ def update_category(module, result):
     result["changed"] = True
 
 
-def delete_category(module, result):
-    categories = get_category_api_instance(module)
+def delete_category(module, categories, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
@@ -460,7 +460,7 @@ def delete_category(module, result):
         result["msg"] = "Category with ext_id:{0} will be deleted.".format(ext_id)
         return
 
-    current_spec = get_category(module, ext_id=ext_id)
+    current_spec = get_category(module, categories, ext_id=ext_id)
 
     etag = get_etag(data=current_spec)
     if not etag:
@@ -503,13 +503,14 @@ def run_module():
         "ext_id": None,
     }
     state = module.params["state"]
+    categories = get_categories_api_instance(module)
     if state == "present":
         if module.params.get("ext_id"):
-            update_category(module, result)
+            update_category(module, categories, result)
         else:
-            create_category(module, result)
+            create_category(module, categories, result)
     else:
-        delete_category(module, result)
+        delete_category(module, categories, result)
     module.exit_json(**result)
 
 
