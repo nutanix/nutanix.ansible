@@ -65,6 +65,48 @@
       - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
     fail_msg: " Unable to create floating ip with external subnet uuid with check mode"
     success_msg: " Floating ip with external subnet uuid created successfully with check mode"
+
+##############################################################
+
+# The floating IP below is created in the seed integration_test_project. A
+# dedicated project is intentionally NOT used here: floating IPs need a real
+# external NAT subnet, and the only one on the cluster (external_nat_subnet) is
+# permanently attached to the seed VPC. A VPC-attached subnet cannot have a
+# project share removed (NETWORKING-10068), and a project cannot be deleted while
+# a subnet is shared with it, so a dedicated project could never be torn down.
+# The seed subnet must be shared with the project, otherwise floating IP creation
+# fails with NETWORKING-10056. Sharing is idempotent (unique), so this is safe to
+# re-run.
+- name: Get current sharing of external NAT subnet
+  nutanix.ncp.ntnx_subnets_info_v2:
+    ext_id: "{{ external_nat_subnet.uuid }}"
+  register: external_subnet_info
+
+- name: Set current external NAT subnet sharing fact
+  ansible.builtin.set_fact:
+    external_subnet_current_shares: "{{ external_subnet_info.response.shared_with_projects if external_subnet_info.response.shared_with_projects else [] }}"
+
+- name: Share external NAT subnet with the floating IP project
+  nutanix.ncp.ntnx_subnets_v2:
+    state: present
+    ext_id: "{{ external_nat_subnet.uuid }}"
+    shared_with_projects: "{{ (external_subnet_current_shares + [project.uuid]) | unique }}"
+  register: share_external_subnet_result
+
+- name: Verify external NAT subnet sharing after share
+  nutanix.ncp.ntnx_subnets_info_v2:
+    ext_id: "{{ external_nat_subnet.uuid }}"
+  register: external_subnet_after_share
+
+- name: Status of sharing external NAT subnet with the floating IP project
+  ansible.builtin.assert:
+    that:
+      - share_external_subnet_result.failed == false
+      - external_subnet_after_share.response.shared_with_projects is not none
+      - project.uuid in external_subnet_after_share.response.shared_with_projects
+    fail_msg: "External NAT subnet is not shared with project {{ project.uuid }}"
+    success_msg: "External NAT subnet shared with project {{ project.uuid }} successfully"
+
 ##############################################################
 - name: Create floating ip with external subnet uuid
   nutanix.ncp.ntnx_floating_ips_v2:
