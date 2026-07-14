@@ -74,7 +74,7 @@
     that:
       - result.changed == false
       - result.failed == true
-      - 'result.msg == "missing required arguments: company_name, job_title, login_id, user_name"'
+      - result.msg == "missing required arguments: company_name, job_title, login_id, user_name"
     fail_msg: "Accept End of User License Agreement without passing any parameter did not fail as expected"
     success_msg: "Accept End of User License Agreement without passing any parameter failed as expected"
 
