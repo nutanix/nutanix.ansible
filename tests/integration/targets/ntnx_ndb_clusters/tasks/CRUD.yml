@@ -155,7 +155,7 @@
     that:
       - out.changed == false
       - out.failed == true
-      - 'out.msg == "parameters are mutually exclusive: uuid|storage_container"'
+      - out.msg == "parameters are mutually exclusive: uuid|storage_container"
     fail_msg: "Fail: storage_container updated "
     success_msg: " Success: returned error as expected "
 
@@ -180,7 +180,7 @@
     that:
       - out.changed == false
       - out.failed == true
-      - 'out.msg == "parameters are mutually exclusive: uuid|vlan_access"'
+      - out.msg == "parameters are mutually exclusive: uuid|vlan_access"
     fail_msg: "Fail: vlan_access updated "
     success_msg: " Success: returned error as expected "
 
@@ -207,7 +207,7 @@
     that:
       - out.changed == false
       - out.failed == true
-      - 'out.msg == "parameters are mutually exclusive: uuid|agent_network"'
+      - out.msg == "parameters are mutually exclusive: uuid|agent_network"
     fail_msg: "Fail: agent_network updated "
     success_msg: " Success: returned error as expected "
 
@@ -226,7 +226,7 @@
     that:
       - out.changed == false
       - out.failed == true
-      - 'out.msg == "parameters are mutually exclusive: uuid|name_prefix"'
+      - out.msg == "parameters are mutually exclusive: uuid|name_prefix"
     fail_msg: "Fail: name_prefix updated "
     success_msg: " Success: returned error as expected "
 
