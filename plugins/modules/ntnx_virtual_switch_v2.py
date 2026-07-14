@@ -608,7 +608,9 @@ def get_module_spec():
 def _get_etag_for_sharing(module, virtual_switch):
     etag = get_etag(data=virtual_switch)
     if not etag:
-        module.fail_json(msg="Unable to fetch etag for virtual switch sharing operation")
+        module.fail_json(
+            msg="Unable to fetch etag for virtual switch sharing operation"
+        )
     return etag
 
 
@@ -963,8 +965,10 @@ def run_module():
         ) - allowed_with_bridge
         if extra_params:
             module.fail_json(
-                msg="When 'existing_bridge_name' is provided, only 'name', 'description', 'cluster_reference', 'metadata' and 'shared_with_projects' are allowed. "
-                "Invalid parameters: {0}".format(", ".join(sorted(extra_params)))
+                msg="When 'existing_bridge_name' is provided, only 'name', "
+                "'description', 'cluster_reference', 'metadata' and "
+                "'shared_with_projects' are allowed. Invalid parameters: "
+                "{0}".format(", ".join(sorted(extra_params)))
             )
     result = {
         "changed": False,

@@ -308,10 +308,8 @@ from ..module_utils.v4.iam.api_client import (  # noqa: E402
     get_identity_provider_api_instance,
 )
 from ..module_utils.v4.iam.helpers import get_identity_provider  # noqa: E402
-from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
-    get_task_ext_id_from_response,
     raise_api_exception,
     raise_unsupported_update_fields,
     reconcile_sharing,
@@ -399,9 +397,7 @@ def _get_etag_for_sharing(module, identity_providers, ext_id):
 def _share_with_all_projects(module, identity_providers, ext_id):
     etag = _get_etag_for_sharing(module, identity_providers, ext_id)
     try:
-        resp = identity_providers.share_all_saml_identity_provider(
-            extId=ext_id, if_match=etag
-        )
+        identity_providers.share_all_saml_identity_provider(extId=ext_id, if_match=etag)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -413,7 +409,7 @@ def _share_with_all_projects(module, identity_providers, ext_id):
 def _unshare_from_all_projects(module, identity_providers, ext_id):
     etag = _get_etag_for_sharing(module, identity_providers, ext_id)
     try:
-        resp = identity_providers.unshare_all_saml_identity_provider(
+        identity_providers.unshare_all_saml_identity_provider(
             extId=ext_id, if_match=etag
         )
     except Exception as e:
@@ -429,7 +425,7 @@ def _share_with_project(module, identity_providers, ext_id, project_ext_id):
     try:
         share_req = iam_sdk.SamlIdentityProviderShareRequest()
         share_req.project_ext_id = project_ext_id
-        resp = identity_providers.share_saml_identity_provider(
+        identity_providers.share_saml_identity_provider(
             extId=ext_id, body=share_req, if_match=etag
         )
     except Exception as e:
@@ -447,7 +443,7 @@ def _unshare_from_project(module, identity_providers, ext_id, project_ext_id):
     try:
         unshare_req = iam_sdk.SamlIdentityProviderUnshareRequest()
         unshare_req.project_ext_id = project_ext_id
-        resp = identity_providers.unshare_saml_identity_provider(
+        identity_providers.unshare_saml_identity_provider(
             extId=ext_id, body=unshare_req, if_match=etag
         )
     except Exception as e:

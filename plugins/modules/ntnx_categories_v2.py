@@ -228,30 +228,6 @@ def get_module_spec():
     return module_args
 
 
-_PRISM_SDK = None
-
-
-def get_category_api_instance(module):
-    global _PRISM_SDK
-    if not _PRISM_SDK:
-        api_client = get_pc_api_client(module)
-        _PRISM_SDK = prism_sdk.CategoriesApi(api_client=api_client)
-
-    return _PRISM_SDK
-
-
-def get_category(module, ext_id):
-    categories = get_category_api_instance(module)
-    try:
-        return categories.get_category_by_id(extId=ext_id).data
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while fetching category info using ext_id",
-        )
-
-
 def _get_etag_for_sharing(module, category):
     etag = get_etag(data=category)
     if not etag:
@@ -260,7 +236,7 @@ def _get_etag_for_sharing(module, category):
 
 
 def _share_with_project(module, categories, ext_id, project_ext_id):
-    category = get_category(module, ext_id)
+    category = get_category(module, categories, ext_id)
     etag = _get_etag_for_sharing(module, category)
     try:
         share_req = prism_sdk.ShareCategoryRequest()
@@ -281,7 +257,7 @@ def _share_with_project(module, categories, ext_id, project_ext_id):
 
 
 def _unshare_from_project(module, categories, ext_id, project_ext_id):
-    category = get_category(module, ext_id)
+    category = get_category(module, categories, ext_id)
     etag = _get_etag_for_sharing(module, category)
     try:
         unshare_req = prism_sdk.UnshareCategoryRequest()
@@ -314,18 +290,21 @@ def _reconcile_sharing(module, categories, ext_id, shared_with_projects):
     """
     if shared_with_projects is not None:
         owner_project_ext_id = getattr(
-            get_category(module, ext_id=ext_id), "project_ext_id", None
+            get_category(module, categories, ext_id=ext_id), "project_ext_id", None
         )
         if owner_project_ext_id is not None:
             shared_with_projects = [
                 pid for pid in shared_with_projects if pid != owner_project_ext_id
             ]
 
+    def read_current(current_module, current_ext_id):
+        return get_category(current_module, categories, current_ext_id)
+
     return reconcile_sharing(
         module=module,
         api_instance=categories,
         ext_id=ext_id,
-        read_fn=get_category,
+        read_fn=read_current,
         share_fn=_share_with_project,
         unshare_fn=_unshare_from_project,
         shared_with_projects=shared_with_projects,
@@ -333,8 +312,7 @@ def _reconcile_sharing(module, categories, ext_id, shared_with_projects):
     )
 
 
-def create_category(module, result):
-    categories = get_category_api_instance(module)
+def create_category(module, categories, result):
     shared_with_projects = module.params.pop("shared_with_projects", None)
 
     sg = SpecGenerator(module)
@@ -368,7 +346,7 @@ def create_category(module, result):
     result["ext_id"] = resp.data.ext_id
     if shared_with_projects:
         _reconcile_sharing(module, categories, result["ext_id"], shared_with_projects)
-        current = get_category(module, ext_id=result["ext_id"])
+        current = get_category(module, categories, ext_id=result["ext_id"])
         result["response"] = strip_internal_attributes(current.to_dict())
     else:
         result["response"] = strip_internal_attributes(resp.data.to_dict())
@@ -390,7 +368,6 @@ def update_category(module, categories, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
     shared_with_projects = module.params.pop("shared_with_projects", None)
-    categories = get_category_api_instance(module)
 
     current_spec = get_category(module, categories, ext_id=ext_id)
     sg = SpecGenerator(module)

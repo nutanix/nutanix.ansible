@@ -326,8 +326,8 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
-    strip_internal_attributes,
     raise_unsupported_update_fields,
+    strip_internal_attributes,
 )
 from ..module_utils.v4.volumes.api_client import (  # noqa: E402
     get_etag,

@@ -404,10 +404,8 @@ from ..module_utils.v4.iam.api_client import (  # noqa: E402
     get_etag,
 )
 from ..module_utils.v4.iam.helpers import get_directory_service  # noqa: E402
-from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
-    get_task_ext_id_from_response,
     raise_api_exception,
     raise_unsupported_update_fields,
     reconcile_sharing,
@@ -492,9 +490,7 @@ def _get_etag_for_sharing(module, directory_services, ext_id):
 def _share_with_all_projects(module, directory_services, ext_id):
     etag = _get_etag_for_sharing(module, directory_services, ext_id)
     try:
-        resp = directory_services.share_all_directory_service(
-            extId=ext_id, if_match=etag
-        )
+        directory_services.share_all_directory_service(extId=ext_id, if_match=etag)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -506,9 +502,7 @@ def _share_with_all_projects(module, directory_services, ext_id):
 def _unshare_from_all_projects(module, directory_services, ext_id):
     etag = _get_etag_for_sharing(module, directory_services, ext_id)
     try:
-        resp = directory_services.unshare_all_directory_service(
-            extId=ext_id, if_match=etag
-        )
+        directory_services.unshare_all_directory_service(extId=ext_id, if_match=etag)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -522,7 +516,7 @@ def _share_with_project(module, directory_services, ext_id, project_ext_id):
     try:
         share_req = iam_sdk.DirectoryServiceShareRequest()
         share_req.project_ext_id = project_ext_id
-        resp = directory_services.share_directory_service(
+        directory_services.share_directory_service(
             extId=ext_id, body=share_req, if_match=etag
         )
     except Exception as e:
@@ -540,7 +534,7 @@ def _unshare_from_project(module, directory_services, ext_id, project_ext_id):
     try:
         unshare_req = iam_sdk.DirectoryServiceUnshareRequest()
         unshare_req.project_ext_id = project_ext_id
-        resp = directory_services.unshare_directory_service(
+        directory_services.unshare_directory_service(
             extId=ext_id, body=unshare_req, if_match=etag
         )
     except Exception as e:
