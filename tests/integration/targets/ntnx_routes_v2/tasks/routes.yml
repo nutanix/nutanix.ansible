@@ -1,6 +1,7 @@
 ---
-# Variables required before running this playbook:
+# Variables required before running this playbook (set up by prepare_env):
 # - external_nat_subnets
+# - external_subnet_project  (project permanently shared with the external NAT subnet)
 
 - name: Start testing ntnx_routes_v2
   ansible.builtin.debug:
@@ -10,38 +11,21 @@
   ansible.builtin.set_fact:
     random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
 
-- name: Set Subnet and VPC name
+- name: Set VPC name
   ansible.builtin.set_fact:
-    subnet_name: "{{ random_name }}_subnet_test"
     vpc_name: "{{ random_name }}_vpc_test"
 
 ############################################################################################
+# Use the fixture project that prepare_env created and permanently shared with
+# the external NAT subnet. The subnet cannot be unshared at runtime while the
+# fixture VPC is attached to it (NETWORKING-10068), so the test must not
+# share/unshare it; it consumes the pre-shared fixture project instead.
 
-- name: Create project for tests
-  nutanix.ncp.ntnx_project_v2:
-    state: present
-    name: "{{ random_name }}-ansible-project"
-    project_id: "{{ random_name }}-ansible-project-id"
-  register: create_project_result
-  ignore_errors: true
-
-- name: Status of project creation for tests
-  ansible.builtin.assert:
-    that:
-      - create_project_result.changed == true
-      - create_project_result.failed == false
-      - create_project_result.response is defined
-      - create_project_result.ext_id is defined
-      - create_project_result.ext_id | length > 0
-      - create_project_result.response.state == "ACTIVE"
-    fail_msg: "Unable to create project for tests"
-    success_msg: "Project for tests created successfully"
-
-- name: Set project fact for tests
+- name: Set project fact from prepare_env fixture
   ansible.builtin.set_fact:
     project:
-      name: "{{ random_name }}-ansible-project"
-      uuid: "{{ create_project_result.ext_id }}"
+      name: "{{ external_subnet_project.name }}"
+      uuid: "{{ external_subnet_project.uuid }}"
 
 ############################################################################################
 
@@ -67,35 +51,6 @@
 
 ############################################################################################
 
-- name: Get current sharing of external subnet
-  nutanix.ncp.ntnx_subnets_info_v2:
-    ext_id: "{{ external_subnet_uuid }}"
-  register: external_subnet_current
-  ignore_errors: true
-
-- name: Set original sharing of external subnet
-  ansible.builtin.set_fact:
-    external_subnet_original_shares: "{{ external_subnet_current.response.shared_with_projects | default([], true) }}"
-
-- name: Share external subnet with the test project
-  nutanix.ncp.ntnx_subnets_v2:
-    state: present
-    ext_id: "{{ external_subnet_uuid }}"
-    shared_with_projects: "{{ external_subnet_original_shares + [project.uuid] }}"
-  register: share_subnet_result
-  ignore_errors: true
-
-- name: Verify external subnet is shared with the test project
-  ansible.builtin.assert:
-    that:
-      - share_subnet_result.failed == false
-      - share_subnet_result.response.shared_with_projects is defined
-      - project.uuid in share_subnet_result.response.shared_with_projects
-    fail_msg: "Unable to share external subnet with the test project"
-    success_msg: "External subnet shared with the test project successfully"
-
-############################################################################################
-
 - name: Create first VPC
   nutanix.ncp.ntnx_vpcs_v2:
     state: present
@@ -118,6 +73,7 @@
       - result.response.vpc_type == "REGULAR"
       - result.response.name == "{{ vpc_name }}_1"
       - result.task_ext_id is defined
+      - result.response.project_ext_id == project.uuid
     fail_msg: "Create first VPC failed "
     success_msg: "Create first VPC passed "
 
@@ -149,6 +105,7 @@
       - result.response.vpc_type == "REGULAR"
       - result.response.name == "{{ vpc_name }}_2"
       - result.task_ext_id is defined
+      - result.response.project_ext_id == project.uuid
     fail_msg: "Create second VPC failed "
     success_msg: "Create second VPC passed "
 
@@ -754,40 +711,7 @@
     success_msg: "second VPC has been deleted successfully"
 
 ############################################################################################
-
-- name: Restore original sharing of external subnet
-  nutanix.ncp.ntnx_subnets_v2:
-    state: present
-    ext_id: "{{ external_subnet_uuid }}"
-    shared_with_projects: "{{ external_subnet_original_shares }}"
-  register: unshare_subnet_result
-  ignore_errors: true
-
-- name: Verify external subnet is unshared from the test project
-  ansible.builtin.assert:
-    that:
-      - unshare_subnet_result.failed == false
-      - project.uuid not in (unshare_subnet_result.response.shared_with_projects | default([], true))
-    fail_msg: "Unable to restore original sharing of external subnet"
-    success_msg: "Original sharing of external subnet restored successfully"
-
-############################################################################################
-
-- name: Delete project created for tests
-  nutanix.ncp.ntnx_project_v2:
-    state: absent
-    ext_id: "{{ project.uuid }}"
-  register: delete_project_result
-  ignore_errors: true
-
-- name: Status of project deletion for tests
-  ansible.builtin.assert:
-    that:
-      - delete_project_result.changed == true
-      - delete_project_result.failed == false
-      - delete_project_result.ext_id == project.uuid
-      - delete_project_result.response is defined
-      - delete_project_result.response.status == "SUCCEEDED"
-      - delete_project_result.task_ext_id is defined
-    fail_msg: "Unable to delete project created for tests"
-    success_msg: "Project created for tests deleted successfully"
+# The fixture project and the external NAT subnet's project-share are owned by
+# prepare_env and are intentionally left in place (the subnet cannot be
+# unshared while its fixture VPC is attached), so there is no project/subnet
+# teardown here.

@@ -174,6 +174,30 @@
     fail_msg: " Unable to fetch saml using filter name "
     success_msg: " saml fetched using filter name successfully "
 
+- name: Create identity provider that already exists
+  nutanix.ncp.ntnx_saml_identity_providers_v2:
+    name: "{{ full_name }}1"
+    username_attribute: "{{ user_name }}1"
+    email_attribute: email
+    groups_attribute: groups
+    groups_delim: ","
+    idp_metadata_xml: "{{ xml_file_content }}"
+    project_ext_id: "00000000-0000-0000-0000-000000000000"
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Status of creating identity provider that already exists
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == true
+      - result.response.data.error | length > 0
+      - result.status == 409
+    fail_msg: " Creating identity provider with an existing name should have failed "
+    success_msg: " Creating identity provider with an existing name failed as expected "
+
 - name: Verify spec generation for update identity providers with check_mode
   nutanix.ncp.ntnx_saml_identity_providers_v2:
     state: present
@@ -293,6 +317,22 @@
       - result.total_available_results > 0
     fail_msg: " Unable to list all identity providers "
     success_msg: " list all identity providers successfully "
+
+- name: List all identity providers with limit
+  nutanix.ncp.ntnx_saml_identity_providers_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List all identity providers with limit status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response | length == 1
+    fail_msg: " Unable to list all identity providers with limit "
+    success_msg: " list all identity providers with limit successfully "
 
 - name: Verify update of project_ext_id is not supported
   nutanix.ncp.ntnx_saml_identity_providers_v2:
@@ -590,3 +630,12 @@
   loop: "{{ delete_projects_result.results }}"
   loop_control:
     label: "{{ item.item }}"
+
+- name: Verify all test projects were deleted
+  ansible.builtin.assert:
+    that:
+      - delete_projects_result.results | length == 3
+      - delete_projects_result.results | selectattr('changed', 'equalto', true) | list | length == 3
+      - delete_projects_result.results | selectattr('failed', 'equalto', false) | list | length == 3
+    fail_msg: "Not all test projects were deleted successfully"
+    success_msg: "All test projects deleted successfully"

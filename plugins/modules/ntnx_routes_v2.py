@@ -523,6 +523,14 @@ def update_route_table(module, route_api_instance, result):
     result["ext_id"] = ext_id
     result["route_table_ext_id"] = route_table_ext_id
     current_spec = get_route(module, route_api_instance, ext_id, route_table_ext_id)
+
+    # The API returns both the singular `nexthop` and the server-managed plural
+    # `nexthops` on GET, but rejects an update body that contains both
+    # (NETWORKING-10007). The module only manages `nexthop`, so drop the
+    # server-only `nexthops` field before building and comparing the update spec.
+    if getattr(current_spec, "nexthops", None) is not None:
+        current_spec.nexthops = None
+
     sg = SpecGenerator(module)
     update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
     if err:

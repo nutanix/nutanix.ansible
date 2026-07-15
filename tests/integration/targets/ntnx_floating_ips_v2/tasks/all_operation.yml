@@ -3,7 +3,7 @@
 # - vm
 # - external_nat_subnet
 # - external_nat_subnets
-# - project
+# - external_subnet_project
 # - users
 # - overlay_subnet
 # - vpc
@@ -68,15 +68,15 @@
 
 ##############################################################
 
-# The floating IP below is created in the seed integration_test_project. A
-# dedicated project is intentionally NOT used here: floating IPs need a real
+# The floating IP below is created in the external_subnet_project fixture that
+# prepare_env creates and permanently shares with the external NAT subnet. A
+# per-run dedicated project is intentionally NOT used: floating IPs need a real
 # external NAT subnet, and the only one on the cluster (external_nat_subnet) is
-# permanently attached to the seed VPC. A VPC-attached subnet cannot have a
+# permanently attached to the fixture VPC. A VPC-attached subnet cannot have a
 # project share removed (NETWORKING-10068), and a project cannot be deleted while
-# a subnet is shared with it, so a dedicated project could never be torn down.
-# The seed subnet must be shared with the project, otherwise floating IP creation
-# fails with NETWORKING-10056. Sharing is idempotent (unique), so this is safe to
-# re-run.
+# a subnet is shared with it, so a per-run project could never be torn down.
+# The subnet is already shared with external_subnet_project by prepare_env;
+# re-sharing here is idempotent (unique) and safe, and avoids NETWORKING-10056.
 - name: Get current sharing of external NAT subnet
   nutanix.ncp.ntnx_subnets_info_v2:
     ext_id: "{{ external_nat_subnet.uuid }}"
@@ -90,7 +90,7 @@
   nutanix.ncp.ntnx_subnets_v2:
     state: present
     ext_id: "{{ external_nat_subnet.uuid }}"
-    shared_with_projects: "{{ (external_subnet_current_shares + [project.uuid]) | unique }}"
+    shared_with_projects: "{{ (external_subnet_current_shares + [external_subnet_project.uuid]) | unique }}"
   register: share_external_subnet_result
 
 - name: Verify external NAT subnet sharing after share
@@ -103,19 +103,19 @@
     that:
       - share_external_subnet_result.failed == false
       - external_subnet_after_share.response.shared_with_projects is not none
-      - project.uuid in external_subnet_after_share.response.shared_with_projects
-    fail_msg: "External NAT subnet is not shared with project {{ project.uuid }}"
-    success_msg: "External NAT subnet shared with project {{ project.uuid }} successfully"
+      - external_subnet_project.uuid in external_subnet_after_share.response.shared_with_projects
+    fail_msg: "External NAT subnet is not shared with project {{ external_subnet_project.uuid }}"
+    success_msg: "External NAT subnet shared with project {{ external_subnet_project.uuid }} successfully"
 
 ##############################################################
 - name: Create floating ip with external subnet uuid
   nutanix.ncp.ntnx_floating_ips_v2:
     state: present
     name: "{{ fip1_name }}"
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "{{ external_subnet_project.uuid }}"
     external_subnet_reference: "{{ external_nat_subnet.uuid }}"
     metadata:
-      project_reference_id: "{{ project.uuid }}"
+      project_reference_id: "{{ external_subnet_project.uuid }}"
       owner_reference_id: "{{ users[0] }}"
       category_ids:
         - "{{ category_ext_id }}"
@@ -133,11 +133,11 @@
       - result.failed == false
       - result.response.name == "{{ fip1_name }}"
       - result.response.external_subnet_reference == "{{ external_nat_subnet.uuid }}"
-      - result.response.metadata.project_reference_id == "{{ project.uuid }}"
+      - result.response.metadata.project_reference_id == "{{ external_subnet_project.uuid }}"
       - result.response.metadata.owner_reference_id == "{{ users[0] }}"
       - result.response.metadata.category_ids[0] == "{{ category_ext_id }}"
       - result.response.floating_ip.ipv4.value == "{{ external_nat_subnets[0].floating_ip }}"
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == external_subnet_project.uuid
     fail_msg: " Unable to create floating ip with external subnet uuid "
     success_msg: " Floating ip with external subnet uuid created successfully "
 
@@ -155,7 +155,7 @@
       - result.failed == false
       - result.response[0].name == "{{ fip1_name }}"
       - result.response[0].external_subnet_reference == "{{ external_nat_subnet.uuid }}"
-      - result.response[0].metadata.project_reference_id == "{{ project.uuid }}"
+      - result.response[0].metadata.project_reference_id == "{{ external_subnet_project.uuid }}"
       - result.response[0].metadata.owner_reference_id == "{{ users[0] }}"
       - result.response[0].metadata.category_ids[0] == "{{ category_ext_id }}"
       - result.response[0].floating_ip.ipv4.value == "{{ external_nat_subnets[0].floating_ip }}"
