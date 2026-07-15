@@ -255,6 +255,25 @@
     success_msg: "Idempotency check passed"
 
 ###########################################################
+# UPDATE OF project_ext_id IS BLOCKED
+###########################################################
+- name: Verify update of project_ext_id is not supported
+  nutanix.ncp.ntnx_resource_group_v2:
+    state: present
+    ext_id: "{{ rg_ext_id }}"
+    project_ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Verify update of project_ext_id is blocked status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
+    fail_msg: "Update of project_ext_id should have been blocked"
+    success_msg: "Update of project_ext_id is correctly blocked"
+
+###########################################################
 # CHECK MODE TESTS - DELETE
 ###########################################################
 - name: Delete resource group with check mode

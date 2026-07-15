@@ -67,11 +67,12 @@
 - name: Creation status
   ansible.builtin.assert:
     that:
+      - result.changed == true
+      - result.failed == false
       - result.response is defined
       - result.response.name == "{{random_name}}vpc"
       - result.response.ext_id is defined
-      - result.changed == true
-      - result.failed == false
+      - result.response.project_ext_id == project.uuid
     fail_msg: " Unable to create min VPC "
     success_msg: " Min VPC for pbr testing created successfully "
 
@@ -112,6 +113,7 @@
       - result.response.ip_config.0.ipv4.default_gateway_ip.value == "{{ overlay_subnet.gateway_ip }}"
       - result.response.ip_config.0.ipv4.ip_subnet.prefix_length == {{ overlay_subnet.network_prefix }}
       - result.response.ip_config.0.ipv4.ip_subnet.ip.value == "{{ overlay_subnet.network_ip }}"
+      - result.response.project_ext_id == project.uuid
     fail_msg: " Unable to create Overlay Subnet with minimum requirements "
     success_msg: " Overlay Subnet with minimum requirements created successfully "
 

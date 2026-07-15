@@ -1,7 +1,6 @@
 ---
 # Variables required before running this playbook:
 # - external_nat_subnets
-# - project
 
 - name: Start testing ntnx_routes_v2
   ansible.builtin.debug:
@@ -15,6 +14,34 @@
   ansible.builtin.set_fact:
     subnet_name: "{{ random_name }}_subnet_test"
     vpc_name: "{{ random_name }}_vpc_test"
+
+############################################################################################
+
+- name: Create project for tests
+  nutanix.ncp.ntnx_project_v2:
+    state: present
+    name: "{{ random_name }}-ansible-project"
+    project_id: "{{ random_name }}-ansible-project-id"
+  register: create_project_result
+  ignore_errors: true
+
+- name: Status of project creation for tests
+  ansible.builtin.assert:
+    that:
+      - create_project_result.changed == true
+      - create_project_result.failed == false
+      - create_project_result.response is defined
+      - create_project_result.ext_id is defined
+      - create_project_result.ext_id | length > 0
+      - create_project_result.response.state == "ACTIVE"
+    fail_msg: "Unable to create project for tests"
+    success_msg: "Project for tests created successfully"
+
+- name: Set project fact for tests
+  ansible.builtin.set_fact:
+    project:
+      name: "{{ random_name }}-ansible-project"
+      uuid: "{{ create_project_result.ext_id }}"
 
 ############################################################################################
 
@@ -692,3 +719,24 @@
       - result.task_ext_id is defined
     fail_msg: " Unable to Delete second VPC"
     success_msg: "second VPC has been deleted successfully"
+
+############################################################################################
+
+- name: Delete project created for tests
+  nutanix.ncp.ntnx_project_v2:
+    state: absent
+    ext_id: "{{ project.uuid }}"
+  register: delete_project_result
+  ignore_errors: true
+
+- name: Status of project deletion for tests
+  ansible.builtin.assert:
+    that:
+      - delete_project_result.changed == true
+      - delete_project_result.failed == false
+      - delete_project_result.ext_id == project.uuid
+      - delete_project_result.response is defined
+      - delete_project_result.response.status == "SUCCEEDED"
+      - delete_project_result.task_ext_id is defined
+    fail_msg: "Unable to delete project created for tests"
+    success_msg: "Project created for tests deleted successfully"
