@@ -119,7 +119,7 @@ def remove_empty_ip_config(obj):
         "$dataItemDiscriminator",
     ]
 
-    ip_config = obj.to_dict().get("ip_config", [])
+    ip_config = obj.to_dict().get("ip_config") or []
     empty_ipv4 = False
     empty_ipv6 = False
     for item in ip_config.copy():

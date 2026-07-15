@@ -28,10 +28,40 @@
   ansible.builtin.set_fact:
     todelete: []
 
+###################################################################################################
+# Create a project to be used for project_ext_id tests
+###################################################################################################
+- name: Create project for tests
+  nutanix.ncp.ntnx_project_v2:
+    state: present
+    name: "{{ random_name }}-ansible-project"
+    project_id: "{{ random_name }}-ansible-project-id"
+  register: create_project_result
+  ignore_errors: true
+
+- name: Status of project creation for tests
+  ansible.builtin.assert:
+    that:
+      - create_project_result.changed == true
+      - create_project_result.failed == false
+      - create_project_result.response is defined
+      - create_project_result.ext_id is defined
+      - create_project_result.ext_id | length > 0
+      - create_project_result.response.state == "ACTIVE"
+    fail_msg: "Unable to create project for tests"
+    success_msg: "Project for tests created successfully"
+
+- name: Set project fact for tests
+  ansible.builtin.set_fact:
+    project:
+      name: "{{ random_name }}-ansible-project"
+      uuid: "{{ create_project_result.ext_id }}"
+
 - name: Create min VPC
   nutanix.ncp.ntnx_vpcs_v2:
     state: present
     name: "{{random_name}}vpc"
+    project_ext_id: "{{ project.uuid }}"
   register: result
 
 - name: Creation status
@@ -59,6 +89,7 @@
     name: "{{ random_name }}_subnet_pbrs"
     subnet_type: OVERLAY
     vpc_reference: "{{ pbr.vpc.uuid }}"
+    project_ext_id: "{{ project.uuid }}"
     ip_config:
       - ipv4:
           ip_subnet:
@@ -263,6 +294,7 @@
 - name: Create PBR with vpc, any source, any destination, any protocol and permit action
   nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
+    project_ext_id: "{{ project.uuid }}"
     state: present
     priority: "{{ priority.1 }}"
     name: "{{pbr_name}}2"
@@ -343,6 +375,7 @@
 - name: Create PBR with vpc, any source, external destination and deny action with protocol number
   nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
+    project_ext_id: "{{ project.uuid }}"
     state: present
     priority: "{{ priority.2 }}"
     name: "{{pbr_name}}3"
@@ -443,6 +476,7 @@
 - name: Create PBR with vpc with source external and destination network with reroute action and with tcp protocol
   nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
+    project_ext_id: "{{ project.uuid }}"
     state: present
     priority: "{{ priority.3 }}"
     name: "{{pbr_name}}4"
@@ -511,6 +545,7 @@
 - name: Create PBR with vpc with source external and destination network with reroute action and any tcp port rangelist
   nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
+    project_ext_id: "{{ project.uuid }}"
     state: present
     priority: "{{ priority.4 }}"
     name: "{{pbr_name}}5"
@@ -562,6 +597,7 @@
 - name: Create PBR with vpc, custom source network, external destination, reroute action and udp port rangelist
   nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
+    project_ext_id: "{{ project.uuid }}"
     state: present
     priority: "{{ priority.5 }}"
     name: "{{pbr_name}}6"
@@ -631,6 +667,7 @@
 - name: Create PBR with vpc name, custom source network, external destination, reroute action and any udp ports
   nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
+    project_ext_id: "{{ project.uuid }}"
     state: present
     priority: "{{ priority.6 }}"
     name: "{{pbr_name}}7"
@@ -690,6 +727,7 @@
 - name: Create PBR with vpc, source network, external destination, with reroute action and icmp
   nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
+    project_ext_id: "{{ project.uuid }}"
     state: present
     priority: "{{ priority.7 }}"
     name: "{{pbr_name}}8"
@@ -745,6 +783,7 @@
 - name: Create PBR with vpc, source network, external destination, with forward action and icmp
   nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
+    project_ext_id: "{{ project.uuid }}"
     state: present
     priority: "{{ priority.9 }}"
     name: "{{pbr_name}}9"
@@ -918,3 +957,22 @@
 - name: Reset todelete list
   ansible.builtin.set_fact:
     todelete: []
+
+###################################################################################################
+# Delete the project created for tests
+###################################################################################################
+- name: Delete project created for tests
+  nutanix.ncp.ntnx_project_v2:
+    state: absent
+    ext_id: "{{ project.uuid }}"
+  register: delete_project_result
+  ignore_errors: true
+
+- name: Status of project deletion for tests
+  ansible.builtin.assert:
+    that:
+      - delete_project_result.changed == true
+      - delete_project_result.failed == false
+      - delete_project_result.ext_id == project.uuid
+    fail_msg: "Unable to delete project created for tests"
+    success_msg: "Project created for tests deleted successfully"
