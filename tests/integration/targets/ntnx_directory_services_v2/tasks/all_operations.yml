@@ -631,6 +631,9 @@
       - (result.response.shared_with_projects | default([], true)) | length == 0
       - project.uuid not in (result.response.shared_with_projects | default([], true))
       - project2.uuid not in (result.response.shared_with_projects | default([], true))
+      # The user is warned that their shared_with_projects input was dropped.
+      - result.warnings is defined
+      - result.warnings | select('search', 'shared_with_projects was ignored') | list | length > 0
     fail_msg: "shared_with_projects should be ignored when directory service is already shared with all projects"
     success_msg: "shared_with_projects correctly ignored when directory service is already shared with all projects"
 

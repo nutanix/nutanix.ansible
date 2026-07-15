@@ -345,7 +345,9 @@ def reconcile_sharing(
             share/unshare functions (signature ``fn(module, api_instance, ext_id)``).
         is_shared_with_all (bool | None): Desired shared-with-all-projects state.
             ``None`` leaves it untouched.
-        resource_label (str): Unused; kept for call-site compatibility.
+        resource_label (str): Human-readable resource name used in the warning
+            emitted when ``shared_with_projects`` is ignored because the resource
+            is already shared with all projects.
 
     Returns:
         bool: True if any share/unshare was performed.
@@ -367,6 +369,14 @@ def reconcile_sharing(
             unshare_all_fn(module, api_instance, ext_id)
             changed = True
             current_shared_all = False
+
+    if shared_with_projects is not None and current_shared_all:
+        module.warn(
+            "shared_with_projects was ignored because the {0} is shared with all "
+            "projects, which already grants access to every project. To manage "
+            "per-project sharing, first set is_shared_with_all_projects to false, "
+            "then specify shared_with_projects.".format(resource_label)
+        )
 
     if shared_with_projects is not None and not current_shared_all:
         current_projects = set(getattr(current, "shared_with_projects", None) or [])
