@@ -1,6 +1,7 @@
 ---
 # Variables required before running this playbook:
 # - external_nat_subnet
+# - external_subnet_project  (project permanently shared with the external NAT subnet)
 # - routable_ips
 # - dns_servers
 
@@ -93,11 +94,14 @@
   # projects ("Can only share VPCs owned by the default project"), so no
   # shared_with_projects here - the sharing feature is covered by the default-owned
   # VPC tests further below.
+  # The external NAT subnet must belong to / be shared with the owning project, so
+  # use the prepare_env fixture project that is permanently shared with it (a
+  # freshly created project is outside the subnet's project boundary).
   nutanix.ncp.ntnx_vpcs_v2:
     state: present
     wait: true
     name: "{{vpc_name}}2"
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "{{ external_subnet_project.uuid }}"
     external_subnets:
       - subnet_reference: "{{ external_nat_subnet.uuid }}"
   register: result
@@ -110,7 +114,7 @@
       - result.ext_id is defined
       - result.response.external_subnets.0.subnet_reference == "{{ external_nat_subnet.uuid }}"
       - result.response.name == "{{vpc_name}}2"
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == external_subnet_project.uuid
     fail_msg: " Unable to create Min vpc with external subnet uuid "
     success_msg: " Min vpc with external subnet uuid created successfully "
 

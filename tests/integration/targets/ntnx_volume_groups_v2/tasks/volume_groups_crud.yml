@@ -45,6 +45,38 @@
       name: "{{ random_name }}-ansible-project"
       uuid: "{{ create_project_result.ext_id }}"
 
+# A project needs a Resource Group (placement targets) before volume groups can
+# be created in it; without one, VolumeGroupCreate fails with "No Resource Group
+# Objects found for Project". Create the resource group so project-scoped volume
+# groups below succeed.
+- name: Create resource group for the test project
+  nutanix.ncp.ntnx_resource_group_v2:
+    state: present
+    name: "{{ random_name }}-ansible-rg"
+    project_ext_id: "{{ project.uuid }}"
+    placement_targets:
+      - cluster_ext_id: "{{ cluster.uuid }}"
+        storage_containers:
+          - ext_id: "{{ storage_container.uuid }}"
+  register: create_rg_result
+  ignore_errors: true
+
+- name: Status of resource group creation for tests
+  ansible.builtin.assert:
+    that:
+      - create_rg_result.changed == true
+      - create_rg_result.failed == false
+      - create_rg_result.response is defined
+      - create_rg_result.ext_id is defined
+      - create_rg_result.ext_id | length > 0
+      - create_rg_result.response.project_ext_id == project.uuid
+    fail_msg: "Unable to create resource group for tests"
+    success_msg: "Resource group for tests created successfully"
+
+- name: Set resource group fact for tests
+  ansible.builtin.set_fact:
+    resource_group_ext_id: "{{ create_rg_result.ext_id }}"
+
 - name: Create Volume group with check mode
   nutanix.ncp.ntnx_volume_groups_v2:
     name: "{{vg1_name}}"
@@ -406,6 +438,22 @@
       - result.response.status == "SUCCEEDED"
     fail_msg: "Unable to delete VG"
     success_msg: "VG deleted successfully"
+
+- name: Delete resource group created for tests
+  nutanix.ncp.ntnx_resource_group_v2:
+    state: absent
+    ext_id: "{{ resource_group_ext_id }}"
+  register: delete_rg_result
+  ignore_errors: true
+
+- name: Status of resource group deletion for tests
+  ansible.builtin.assert:
+    that:
+      - delete_rg_result.changed == true
+      - delete_rg_result.failed == false
+      - delete_rg_result.ext_id == resource_group_ext_id
+    fail_msg: "Unable to delete resource group created for tests"
+    success_msg: "Resource group created for tests deleted successfully"
 
 - name: Delete project created for tests
   nutanix.ncp.ntnx_project_v2:
