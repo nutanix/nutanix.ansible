@@ -49,6 +49,37 @@
       name: "{{ random_name }}-ansible-project"
       uuid: "{{ create_project_result.ext_id }}"
 
+# A project needs a Resource Group (placement targets) before VMs can be created
+# in it via the v4 API; without one, v4 CreateVm fails with VMM-10000. Create
+# the resource group so the project-scoped VM below succeeds.
+- name: Create resource group for the test project
+  nutanix.ncp.ntnx_resource_group_v2:
+    state: present
+    name: "{{ random_name }}-ansible-rg"
+    project_ext_id: "{{ project.uuid }}"
+    placement_targets:
+      - cluster_ext_id: "{{ cluster.uuid }}"
+        storage_containers:
+          - ext_id: "{{ storage_container.uuid }}"
+  register: create_rg_result
+  ignore_errors: true
+
+- name: Status of resource group creation for tests
+  ansible.builtin.assert:
+    that:
+      - create_rg_result.changed == true
+      - create_rg_result.failed == false
+      - create_rg_result.response is defined
+      - create_rg_result.ext_id is defined
+      - create_rg_result.ext_id | length > 0
+      - create_rg_result.response.project_ext_id == project.uuid
+    fail_msg: "Unable to create resource group for tests"
+    success_msg: "Resource group for tests created successfully"
+
+- name: Set resource group fact for tests
+  ansible.builtin.set_fact:
+    resource_group_ext_id: "{{ create_rg_result.ext_id }}"
+
 - name: Create VM with full requirements with check_mode
   nutanix.ncp.ntnx_vms_v2:
     name: "{{ vm_name }}"
@@ -286,7 +317,7 @@
       - result.response.boot_config.nvram_device.backing_storage_info.storage_container.ext_id == "{{ storage_container.uuid }}"
       - result.response.boot_config.nvram_device.backing_storage_info.data_source.reference.image_ext_id == "{{ disk_image.image_ext_ids[0] }}"
       - result.response.boot_config.nvram_device.backing_storage_info.disk_size_bytes == 26843545600
-      - result.response.project.ext_id == "83083083-0000-0000-0000-000000000000"
+      - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
       - result.response.host.ext_id == "f47ac10b-58cc-4372-a567-0e02b2c3d479"
     fail_msg: " Create VM with full requirements with check_mode failed"
     success_msg: "Create VM with full requirements with check_mode passed"
@@ -758,9 +789,21 @@
 
 ########################################################################
 
+- name: Create temp dir for unattend xml
+  ansible.builtin.tempfile:
+    state: directory
+    suffix: unattend_xml
+  register: unattend_xml_dir
+
+- name: Download unattend xml content
+  ansible.builtin.get_url:
+    url: "{{ unattendxml.url }}"
+    dest: "{{ unattend_xml_dir.path }}/unattendxml.txt"
+    mode: "0644"
+
 - name: Read content from file
   ansible.builtin.set_fact:
-    xml_file_content: "{{ lookup('file', unattendxml.dest + '/unattendxml.txt') }}"
+    xml_file_content: "{{ lookup('file', unattend_xml_dir.path + '/unattendxml.txt') }}"
 
 - name: Create vm with windows unattend xml file
   nutanix.ncp.ntnx_vms_v2:
@@ -936,6 +979,22 @@
     todelete: []
 
 ########################################################################
+
+- name: Delete resource group created for tests
+  nutanix.ncp.ntnx_resource_group_v2:
+    state: absent
+    ext_id: "{{ resource_group_ext_id }}"
+  register: delete_rg_result
+  ignore_errors: true
+
+- name: Status of resource group deletion for tests
+  ansible.builtin.assert:
+    that:
+      - delete_rg_result.changed == true
+      - delete_rg_result.failed == false
+      - delete_rg_result.ext_id == resource_group_ext_id
+    fail_msg: "Unable to delete resource group created for tests"
+    success_msg: "Resource group created for tests deleted successfully"
 
 - name: Delete project created for tests
   nutanix.ncp.ntnx_project_v2:
