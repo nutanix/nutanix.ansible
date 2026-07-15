@@ -256,6 +256,7 @@
       - result.response.0.priority == {{ priority.0 }}
       - result.response[0].vpc_ext_id == '{{pbr.vpc.uuid}}'
       - result.response[0].name == "{{pbr_name}}1"
+      - result.response[0].project_ext_id == project.uuid
       - result.response.0.policies.0.policy_action.action_type == "PERMIT"
       - result.response.0.policies.0.policy_match.destination.address_type == "EXTERNAL"
       - result.response.0.policies.0.policy_match.protocol_type == "ICMP"
@@ -280,6 +281,7 @@
       - result.response.ext_id == "{{todelete[-1]}}"
       - result.response.name == "{{pbr_name}}1"
       - result.response.vpc_ext_id == "{{pbr.vpc.uuid}}"
+      - result.response.project_ext_id == project.uuid
       - result.response.policies.0.policy_action.action_type == "PERMIT"
       - result.response.policies.0.policy_match.destination.address_type == "EXTERNAL"
       - result.response.policies.0.policy_match.protocol_type == "ICMP"
@@ -318,6 +320,7 @@
       - result.failed == false
       - result.response.vpc_ext_id == "{{pbr.vpc.uuid}}"
       - result.response.name == "{{pbr_name}}2"
+      - result.response.project_ext_id == project.uuid
       - result.response.policies.0.policy_action.action_type == "PERMIT"
       - result.response.policies.0.policy_match.destination.address_type == "ANY"
       - result.response.policies.0.policy_match.protocol_type == "ANY"
@@ -405,6 +408,7 @@
       - result.response.description == "Test desc"
       - result.response.vpc_ext_id == "{{pbr.vpc.uuid}}"
       - result.response.name == "{{pbr_name}}3"
+      - result.response.project_ext_id == project.uuid
       - result.response.policies.0.policy_action.action_type == "DENY"
       - result.response.policies.0.policy_match.destination.address_type == "EXTERNAL"
       - result.response.policies.0.policy_match.protocol_type == "PROTOCOL_NUMBER"
@@ -520,6 +524,7 @@
       - result.failed == false
       - result.response.vpc_ext_id == "{{pbr.vpc.uuid}}"
       - result.response.name == "{{pbr_name}}4"
+      - result.response.project_ext_id == project.uuid
       - result.response.policies.0.policy_action.action_type == "REROUTE"
       - result.response.policies.0.policy_match.destination.address_type == "SUBNET"
       - result.response.policies.0.policy_match.source.address_type == "EXTERNAL"
@@ -580,6 +585,7 @@
       - result.failed == false
       - result.response.vpc_ext_id == "{{pbr.vpc.uuid}}"
       - result.response.name == "{{pbr_name}}5"
+      - result.response.project_ext_id == project.uuid
       - result.response.policies.0.policy_action.action_type == "PERMIT"
       - result.response.policies.0.policy_match.destination.address_type == "SUBNET"
       - result.response.policies.0.policy_match.source.address_type == "EXTERNAL"
@@ -643,6 +649,7 @@
       - result.failed == false
       - result.response.vpc_ext_id == "{{pbr.vpc.uuid}}"
       - result.response.name == "{{pbr_name}}6"
+      - result.response.project_ext_id == project.uuid
       - result.response.policies.0.policy_action.action_type == "REROUTE"
       - result.response.policies.0.policy_match.destination.address_type == "ANY"
       - result.response.policies.0.policy_match.source.address_type == "SUBNET"
@@ -707,6 +714,7 @@
       - result.failed == false
       - result.response.vpc_ext_id == "{{pbr.vpc.uuid}}"
       - result.response.name == "{{pbr_name}}7"
+      - result.response.project_ext_id == project.uuid
       - result.response.policies.0.policy_action.action_type == "REROUTE"
       - result.response.policies.0.policy_match.destination.address_type == "ANY"
       - result.response.policies.0.policy_match.source.address_type == "SUBNET"
@@ -766,6 +774,7 @@
       - result.failed == false
       - result.response.vpc_ext_id == "{{pbr.vpc.uuid}}"
       - result.response.name == "{{pbr_name}}8"
+      - result.response.project_ext_id == project.uuid
       - result.response.policies.0.policy_action.action_type == "REROUTE"
       - result.response.policies.0.policy_match.destination.address_type == "EXTERNAL"
       - result.response.policies.0.policy_match.protocol_type == "ICMP"
@@ -822,6 +831,7 @@
       - result.failed == false
       - result.response.vpc_ext_id == "{{pbr.vpc.uuid}}"
       - result.response.name == "{{pbr_name}}9"
+      - result.response.project_ext_id == project.uuid
       - result.response.policies.0.policy_action.action_type == "FORWARD"
       - result.response.policies.0.policy_action.nexthop_ip_address.ipv4.value == "{{reroute.ip}}"
       - result.response.policies.0.policy_match.destination.address_type == "EXTERNAL"
@@ -853,6 +863,7 @@
       - result.response[0].ext_id == "{{ todelete[-1] }}"
       - result.response[0].name == "{{pbr_name}}9"
       - result.response[0].vpc_ext_id == "{{pbr.vpc.uuid}}"
+      - result.response[0].project_ext_id == project.uuid
       - result.response.0.policies.0.policy_action.action_type == "FORWARD"
       - result.response.0.policies.0.policy_action.nexthop_ip_address.ipv4.value == "{{reroute.ip}}"
       - result.response.0.policies.0.policy_match.destination.address_type == "EXTERNAL"
