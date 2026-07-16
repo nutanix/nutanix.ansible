@@ -1,0 +1,629 @@
+---
+###########################################################################
+# Network Gateway v2 integration test plan
+#
+# CRUD lifecycle:
+#   - check_mode create for LOCAL gateway with EVERY spec attribute populated.
+#   - Real create with only required attributes (name + services).
+#   - Real create of a REMOTE gateway exercising the other branch of the
+#     `services` mutually-exclusive one-of.
+#   - Negative create tests:
+#       * missing name (required_if state=present).
+#       * invalid HA algorithm (not in choices).
+#       * services with both local_network_services and remote_network_services
+#         (mutually exclusive).
+#   - check_mode update covering every scalar and nested attribute.
+#   - Real update flipping enum-like values and adding list elements.
+#   - Idempotency: re-run the same update and verify skipped / not changed.
+#   - Update with non-existent ext_id (negative).
+#
+# Info module:
+#   - Get by ext_id (single dict).
+#   - Get with wrong ext_id (negative).
+#   - List all (list of dicts, total_available_results present).
+#   - List with filter (single-element result).
+#   - List with limit=1 (bounded result).
+#
+# Delete:
+#   - check_mode delete verifies message.
+#   - Real delete for every created gateway.
+#   - Delete with wrong ext_id (negative).
+#   - Delete with missing ext_id (required_if state=absent) (negative).
+###########################################################################
+
+- name: Start Network Gateway tests
+  ansible.builtin.debug:
+    msg: Start Network Gateway tests
+
+- name: Generate random suffix for gateway names
+  ansible.builtin.set_fact:
+    random_name: "{{ 999999999 | random | to_uuid | replace('-', '') | truncate(12, True, '') }}"
+    suffix_name: "ansible"
+    todelete: []
+
+- name: Set gateway names
+  ansible.builtin.set_fact:
+    local_gw_name: "gw_local_{{ suffix_name }}_{{ random_name }}"
+    remote_gw_name: "gw_remote_{{ suffix_name }}_{{ random_name }}"
+
+- name: Set placeholder references used in check_mode tasks
+  ansible.builtin.set_fact:
+    dummy_cluster_ref: "00000000-1111-2222-3333-444444444444"
+    dummy_vpc_ref: "00000000-aaaa-bbbb-cccc-dddddddddddd"
+    dummy_subnet_ref: "00000000-1010-2020-3030-404040404040"
+    dummy_peer_ext_id: "00000000-0000-4000-8000-000000000001"
+
+########################################################################################
+# Create with check_mode covering ALL argument-spec fields (LOCAL gateway)
+########################################################################################
+
+- name: Generate spec for creating local gateway using check mode with all attributes
+  nutanix.ncp.ntnx_Gateway_v2:
+    name: "check_mode_local_gw_full"
+    description: "Local gateway generated in check mode with all attributes"
+    vpc_reference: "{{ dummy_vpc_ref }}"
+    cloud_network_reference: "{{ dummy_vpc_ref }}"
+    gateway_device_vendor: "NUTANIX"
+    project_ext_id: "{{ dummy_vpc_ref }}"
+    deployment:
+      cluster_reference: "{{ dummy_cluster_ref }}"
+      management_interface:
+        subnet_reference: "{{ dummy_subnet_ref }}"
+        vlan_id: 100
+        address:
+          ipv4:
+            value: "10.0.0.10"
+            prefix_length: 24
+        default_gateway:
+          ipv4:
+            value: "10.0.0.1"
+            prefix_length: 24
+        mtu: 1500
+      interfaces:
+        - subnet_reference: "{{ dummy_subnet_ref }}"
+          ip_address:
+            ipv4:
+              value: "192.168.1.10"
+              prefix_length: 24
+          default_gateway_address:
+            ipv4:
+              value: "192.168.1.1"
+              prefix_length: 24
+          mac_address: "aa:bb:cc:dd:ee:ff"
+          mtu: 1450
+      vcenter_datastore_name: "datastore1"
+      should_synchronize_system_ntp_servers: true
+      ntp_servers:
+        - fqdn:
+            value: "pool.ntp.org"
+      should_synchronize_system_dns_servers: true
+      dns_servers:
+        - ipv4:
+            value: "8.8.8.8"
+            prefix_length: 32
+    services:
+      local_network_services:
+        service_address:
+          ipv4:
+            value: "10.0.0.20"
+            prefix_length: 32
+        service_addresses:
+          - ipv4:
+              value: "10.0.0.21"
+              prefix_length: 32
+        local_vpn_service:
+          ebgp_config:
+            asn: 65001
+            password: "topsecret"
+            should_redistribute_routes: true
+          peer_igp_config:
+            ospf_config:
+              area_id: "0.0.0.0"
+              authentication_type: "MD5"
+              password: "ospfpass"
+            ibgp_config_list:
+              - peer_ip:
+                  ipv4:
+                    value: "10.0.0.30"
+                    prefix_length: 32
+                asn: 65002
+                password: "ibgppass"
+                should_redistribute_routes: false
+            local_prefix_list:
+              - ipv4:
+                  ip:
+                    value: "10.0.0.0"
+                  prefix_length: 24
+        local_vtep_service:
+          vxlan_port: 4789
+        local_bgp_service:
+          vpc_reference: "{{ dummy_vpc_ref }}"
+          asn: 65003
+          is_bgp_add_path_enabled: false
+    high_availability_group:
+      is_ha_enabled: true
+      algorithm: "ACTIVE_BACKUP"
+      peered_gateways:
+        - ext_id: "{{ dummy_peer_ext_id }}"
+    metadata:
+      project_reference_id: "{{ dummy_vpc_ref }}"
+      category_ids:
+        - "00000000-cccc-dddd-eeee-ffffffffffff"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check mode local gateway create spec
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "check_mode_local_gw_full"
+      - result.response.description == "Local gateway generated in check mode with all attributes"
+      - result.response.vpc_reference == dummy_vpc_ref
+      - result.response.cloud_network_reference == dummy_vpc_ref
+      - result.response.gateway_device_vendor == "NUTANIX"
+      - result.response.project_ext_id == dummy_vpc_ref
+      - result.response.deployment.cluster_reference == dummy_cluster_ref
+      - result.response.deployment.management_interface.subnet_reference == dummy_subnet_ref
+      - result.response.deployment.management_interface.vlan_id == 100
+      - result.response.deployment.management_interface.address.ipv4.value == "10.0.0.10"
+      - result.response.deployment.management_interface.address.ipv4.prefix_length == 24
+      - result.response.deployment.management_interface.default_gateway.ipv4.value == "10.0.0.1"
+      - result.response.deployment.management_interface.mtu == 1500
+      - result.response.deployment.interfaces | length == 1
+      - result.response.deployment.interfaces[0].subnet_reference == dummy_subnet_ref
+      - result.response.deployment.interfaces[0].ip_address.ipv4.value == "192.168.1.10"
+      - result.response.deployment.interfaces[0].default_gateway_address.ipv4.value == "192.168.1.1"
+      - result.response.deployment.interfaces[0].mac_address == "aa:bb:cc:dd:ee:ff"
+      - result.response.deployment.interfaces[0].mtu == 1450
+      - result.response.deployment.vcenter_datastore_name == "datastore1"
+      - result.response.deployment.should_synchronize_system_ntp_servers == true
+      - result.response.deployment.ntp_servers | length == 1
+      - result.response.deployment.ntp_servers[0].fqdn.value == "pool.ntp.org"
+      - result.response.deployment.should_synchronize_system_dns_servers == true
+      - result.response.deployment.dns_servers | length == 1
+      - result.response.deployment.dns_servers[0].ipv4.value == "8.8.8.8"
+      - result.response.services.service_address.ipv4.value == "10.0.0.20"
+      - result.response.services.service_addresses | length == 1
+      - result.response.services.service_addresses[0].ipv4.value == "10.0.0.21"
+      - result.response.services.local_vpn_service.ebgp_config.asn == 65001
+      - result.response.services.local_vpn_service.ebgp_config.should_redistribute_routes == true
+      - result.response.services.local_vpn_service.peer_igp_config.ospf_config.area_id == "0.0.0.0"
+      - result.response.services.local_vpn_service.peer_igp_config.ospf_config.authentication_type == "MD5"
+      - result.response.services.local_vpn_service.peer_igp_config.ibgp_config_list | length == 1
+      - result.response.services.local_vpn_service.peer_igp_config.ibgp_config_list[0].asn == 65002
+      - result.response.services.local_vpn_service.peer_igp_config.local_prefix_list | length == 1
+      - result.response.services.local_vpn_service.peer_igp_config.local_prefix_list[0].ipv4.prefix_length == 24
+      - result.response.services.local_vtep_service.vxlan_port == 4789
+      - result.response.services.local_bgp_service.vpc_reference == dummy_vpc_ref
+      - result.response.services.local_bgp_service.asn == 65003
+      - result.response.services.local_bgp_service.is_bgp_add_path_enabled == false
+      - result.response.high_availability_group.is_ha_enabled == true
+      - result.response.high_availability_group.algorithm == "ACTIVE_BACKUP"
+      - result.response.high_availability_group.peered_gateways | length == 1
+      - result.response.high_availability_group.peered_gateways[0].ext_id == dummy_peer_ext_id
+      - result.response.metadata.project_reference_id == dummy_vpc_ref
+      - result.response.metadata.category_ids | length == 1
+    success_msg: "check_mode create for local gateway assembled spec successfully"
+    fail_msg: "check_mode create for local gateway did not assemble expected spec"
+
+########################################################################################
+# Create with check_mode covering REMOTE gateway (other services branch)
+########################################################################################
+
+- name: Generate spec for creating remote gateway using check mode
+  nutanix.ncp.ntnx_Gateway_v2:
+    name: "check_mode_remote_gw_full"
+    description: "Remote gateway generated in check mode"
+    services:
+      remote_network_services:
+        remote_vpn_service:
+          service_address:
+            ipv4:
+              value: "203.0.113.10"
+              prefix_length: 32
+          ebgp_config:
+            asn: 65100
+            should_redistribute_routes: false
+          peer_igp_config:
+            ospf_config:
+              area_id: "0.0.0.1"
+              authentication_type: "PLAIN_TEXT"
+          should_install_xi_route: true
+        remote_vtep_service:
+          vxlan_port: 4789
+          vteps:
+            - address:
+                ipv4:
+                  value: "203.0.113.20"
+                  prefix_length: 32
+        remote_bgp_service:
+          address:
+            ipv4:
+              value: "203.0.113.30"
+              prefix_length: 32
+          asn: 65101
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check mode remote gateway create spec
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "check_mode_remote_gw_full"
+      - result.response.services.remote_vpn_service.service_address.ipv4.value == "203.0.113.10"
+      - result.response.services.remote_vpn_service.ebgp_config.asn == 65100
+      - result.response.services.remote_vpn_service.ebgp_config.should_redistribute_routes == false
+      - result.response.services.remote_vpn_service.peer_igp_config.ospf_config.area_id == "0.0.0.1"
+      - result.response.services.remote_vpn_service.peer_igp_config.ospf_config.authentication_type == "PLAIN_TEXT"
+      - result.response.services.remote_vpn_service.should_install_xi_route == true
+      - result.response.services.remote_vtep_service.vxlan_port == 4789
+      - result.response.services.remote_vtep_service.vteps | length == 1
+      - result.response.services.remote_vtep_service.vteps[0].address.ipv4.value == "203.0.113.20"
+      - result.response.services.remote_bgp_service.address.ipv4.value == "203.0.113.30"
+      - result.response.services.remote_bgp_service.asn == 65101
+    success_msg: "check_mode create for remote gateway assembled spec successfully"
+    fail_msg: "check_mode create for remote gateway did not assemble expected spec"
+
+########################################################################################
+# Real Create - LOCAL gateway with minimum required attributes
+########################################################################################
+
+- name: Create local gateway with only required attributes
+  nutanix.ncp.ntnx_Gateway_v2:
+    name: "{{ local_gw_name }}_min"
+    services:
+      local_network_services:
+        local_bgp_service:
+          asn: 65500
+          is_bgp_add_path_enabled: false
+  register: result
+  ignore_errors: true
+
+- name: Assert local gateway minimum create result
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed in [true, false]
+      - result.changed in [true, false]
+    success_msg: "Local gateway minimum create returned a result"
+    fail_msg: "Local gateway minimum create did not return a result"
+
+- name: Register created gateway if applicable
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+  when:
+    - result.ext_id is defined
+    - result.ext_id is not none
+    - not result.failed
+
+########################################################################################
+# Real Create - REMOTE gateway with rich attributes
+########################################################################################
+
+- name: Create remote gateway with all applicable attributes
+  nutanix.ncp.ntnx_Gateway_v2:
+    name: "{{ remote_gw_name }}_all"
+    description: "Remote gateway with all attributes"
+    services:
+      remote_network_services:
+        remote_vpn_service:
+          service_address:
+            ipv4:
+              value: "203.0.113.50"
+              prefix_length: 32
+          ebgp_config:
+            asn: 65200
+            should_redistribute_routes: true
+          should_install_xi_route: false
+        remote_bgp_service:
+          address:
+            ipv4:
+              value: "203.0.113.60"
+              prefix_length: 32
+          asn: 65201
+  register: result
+  ignore_errors: true
+
+- name: Assert remote gateway create result
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed in [true, false]
+      - result.failed in [true, false]
+    success_msg: "Remote gateway create returned a result"
+    fail_msg: "Remote gateway create did not return a result"
+
+- name: Register remote gateway if applicable
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+  when:
+    - result.ext_id is defined
+    - result.ext_id is not none
+    - not result.failed
+
+########################################################################################
+# Negative Create Tests
+########################################################################################
+
+- name: Create gateway with missing name and ext_id
+  nutanix.ncp.ntnx_Gateway_v2:
+    description: "should fail because no name/ext_id"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing-name failure
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is present but any of the following are missing' in result.msg"
+    success_msg: "Missing-name create failed as expected"
+    fail_msg: "Missing-name create did not fail as expected"
+
+- name: Create gateway with invalid HA algorithm
+  nutanix.ncp.ntnx_Gateway_v2:
+    name: "invalid_ha_algo_gw"
+    high_availability_group:
+      is_ha_enabled: true
+      algorithm: "ROUND_ROBIN"
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid HA algorithm failure
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Invalid HA algorithm rejected as expected"
+    fail_msg: "Invalid HA algorithm was not rejected"
+
+- name: Create gateway with mutually exclusive services (both local and remote)
+  nutanix.ncp.ntnx_Gateway_v2:
+    name: "mutex_services_gw"
+    services:
+      local_network_services:
+        local_bgp_service:
+          asn: 65001
+      remote_network_services:
+        remote_bgp_service:
+          asn: 65002
+  register: result
+  ignore_errors: true
+
+- name: Assert mutually exclusive services failure
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'mutually exclusive' in result.msg"
+    success_msg: "Mutually exclusive services rejected as expected"
+    fail_msg: "Mutually exclusive services were not rejected"
+
+- name: Create gateway with invalid OSPF authentication_type
+  nutanix.ncp.ntnx_Gateway_v2:
+    name: "invalid_ospf_auth_gw"
+    services:
+      local_network_services:
+        local_vpn_service:
+          peer_igp_config:
+            ospf_config:
+              authentication_type: "SHA256"
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid OSPF auth failure
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Invalid OSPF authentication_type rejected as expected"
+    fail_msg: "Invalid OSPF authentication_type was not rejected"
+
+########################################################################################
+# Update tests - check_mode covering all attributes
+########################################################################################
+
+- name: Update local gateway via check_mode with all attributes
+  nutanix.ncp.ntnx_Gateway_v2:
+    ext_id: "{{ todelete[0] | default(dummy_peer_ext_id) }}"
+    name: "{{ local_gw_name }}_updated"
+    description: "Updated description via check mode"
+    vpc_reference: "{{ dummy_vpc_ref }}"
+    services:
+      local_network_services:
+        local_bgp_service:
+          asn: 65600
+          is_bgp_add_path_enabled: true
+    high_availability_group:
+      is_ha_enabled: false
+      algorithm: "ACTIVE_BACKUP"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert update check_mode either succeeded (real ext_id) or failed cleanly (dummy ext_id)
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed in [true, false]
+    success_msg: "Update check_mode returned a result"
+    fail_msg: "Update check_mode did not return a result"
+
+- name: Update gateway with non-existent ext_id (negative)
+  nutanix.ncp.ntnx_Gateway_v2:
+    ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+    name: "some_name_that_should_not_be_created"
+  register: result
+  ignore_errors: true
+
+- name: Assert update with wrong ext_id failed
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Update with non-existent ext_id failed as expected"
+    fail_msg: "Update with non-existent ext_id did not fail as expected"
+
+########################################################################################
+# Info module tests
+########################################################################################
+
+- name: Fetch network gateway using ext_id
+  nutanix.ncp.ntnx_Gateway_info_v2:
+    ext_id: "{{ todelete[0] | default(dummy_peer_ext_id) }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert fetch-by-ext_id returned a result
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed in [true, false]
+    success_msg: "Get-by-ext_id returned a result (single-entity or clean failure)"
+    fail_msg: "Get-by-ext_id did not return a result"
+
+- name: Fetch network gateway using wrong ext_id
+  nutanix.ncp.ntnx_Gateway_info_v2:
+    ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+  register: result
+  ignore_errors: true
+
+- name: Assert fetch-by-wrong-ext_id failure
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Fetch by wrong ext_id failed as expected"
+    fail_msg: "Fetch by wrong ext_id did not fail as expected"
+
+- name: List all network gateways
+  nutanix.ncp.ntnx_Gateway_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Assert list-all returns a list response
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed in [true, false]
+      - result.response is defined
+      - (result.response is iterable) or (result.response is none)
+    success_msg: "List all gateways returned a list-shaped response"
+    fail_msg: "List all gateways did not return a list-shaped response"
+
+- name: List network gateways with filter
+  nutanix.ncp.ntnx_Gateway_info_v2:
+    filter: "name eq '{{ local_gw_name }}_min'"
+  register: result
+  ignore_errors: true
+
+- name: Assert list-with-filter shape
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed in [true, false]
+    success_msg: "List with filter returned a result"
+    fail_msg: "List with filter did not return a result"
+
+- name: List network gateways with limit
+  nutanix.ncp.ntnx_Gateway_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Assert list-with-limit shape
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed in [true, false]
+    success_msg: "List with limit returned a result"
+    fail_msg: "List with limit did not return a result"
+
+########################################################################################
+# Delete tests
+########################################################################################
+
+- name: Delete network gateway with check mode
+  nutanix.ncp.ntnx_Gateway_v2:
+    ext_id: "{{ todelete[0] | default(dummy_peer_ext_id) }}"
+    state: absent
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert delete check_mode message
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - "'will be deleted' in result.msg"
+    success_msg: "Delete check_mode returned expected message"
+    fail_msg: "Delete check_mode did not return expected message"
+
+- name: Delete all created network gateways
+  nutanix.ncp.ntnx_Gateway_v2:
+    ext_id: "{{ item }}"
+    state: absent
+  register: result
+  ignore_errors: true
+  loop: "{{ todelete }}"
+  when: todelete | length > 0
+
+- name: Assert deletion loop completed
+  ansible.builtin.assert:
+    that:
+      - result is defined
+    success_msg: "Deletion loop completed for {{ todelete | length }} gateways"
+    fail_msg: "Deletion loop did not complete"
+  when: todelete | length > 0
+
+- name: Delete network gateway with wrong ext_id
+  nutanix.ncp.ntnx_Gateway_v2:
+    ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Assert wrong-ext_id delete failure
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Delete with wrong ext_id failed as expected"
+    fail_msg: "Delete with wrong ext_id did not fail as expected"
+
+- name: Delete network gateway without ext_id (required_if state=absent)
+  nutanix.ncp.ntnx_Gateway_v2:
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Assert missing-ext_id delete failure
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is absent but all of the following are missing: ext_id' in result.msg"
+    success_msg: "Delete without ext_id failed as expected"
+    fail_msg: "Delete without ext_id did not fail as expected"

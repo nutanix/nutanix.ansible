@@ -1,0 +1,150 @@
+---
+# Summary:
+# This playbook demonstrates all operations of the ntnx_Gateway_v2 and
+# ntnx_Gateway_info_v2 modules:
+# 1. Create a local network gateway (BGP service).
+# 2. Create a remote network gateway (VPN service).
+# 3. Update a network gateway.
+# 4. Get a specific network gateway using ext_id.
+# 5. Get a network gateway using ext_id and expand VPC/VM references.
+# 6. List all network gateways.
+# 7. List network gateways with a filter.
+# 8. List network gateways with a limit.
+# 9. Delete a network gateway.
+
+- name: Network Gateway v2 playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting variables
+      ansible.builtin.set_fact:
+        cluster_uuid: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
+        vpc_uuid: "1a2b3c4d-5e6f-7g8h-9i0j-1k2l3m4n5o6p"
+        mgmt_subnet_uuid: "9a5a3f5a-1234-4d2b-b179-298db969c20d"
+        local_gateway_name: "local_gateway_ansible"
+        remote_gateway_name: "remote_gateway_ansible"
+
+    - name: Create local network gateway (BGP)
+      nutanix.ncp.ntnx_Gateway_v2:
+        state: present
+        name: "{{ local_gateway_name }}"
+        description: "Local BGP gateway created by Ansible"
+        vpc_reference: "{{ vpc_uuid }}"
+        deployment:
+          cluster_reference: "{{ cluster_uuid }}"
+          management_interface:
+            subnet_reference: "{{ mgmt_subnet_uuid }}"
+            address:
+              ipv4:
+                value: "10.0.0.10"
+                prefix_length: 24
+            default_gateway:
+              ipv4:
+                value: "10.0.0.1"
+                prefix_length: 24
+            mtu: 1500
+          should_synchronize_system_ntp_servers: true
+          should_synchronize_system_dns_servers: true
+        services:
+          local_network_services:
+            local_bgp_service:
+              vpc_reference: "{{ vpc_uuid }}"
+              asn: 65001
+              is_bgp_add_path_enabled: false
+      register: local_result
+      ignore_errors: true
+
+    - name: Set local gateway ext_id
+      ansible.builtin.set_fact:
+        local_gateway_ext_id: "{{ local_result.ext_id }}"
+      when: local_result.ext_id is defined
+
+    - name: Create remote network gateway (VPN)
+      nutanix.ncp.ntnx_Gateway_v2:
+        state: present
+        name: "{{ remote_gateway_name }}"
+        description: "Remote VPN gateway created by Ansible"
+        services:
+          remote_network_services:
+            remote_vpn_service:
+              service_address:
+                ipv4:
+                  value: "203.0.113.10"
+                  prefix_length: 32
+              ebgp_config:
+                asn: 65100
+                should_redistribute_routes: true
+              should_install_xi_route: false
+      register: remote_result
+      ignore_errors: true
+
+    - name: Set remote gateway ext_id
+      ansible.builtin.set_fact:
+        remote_gateway_ext_id: "{{ remote_result.ext_id }}"
+      when: remote_result.ext_id is defined
+
+    - name: Update local network gateway
+      nutanix.ncp.ntnx_Gateway_v2:
+        state: present
+        ext_id: "{{ local_gateway_ext_id }}"
+        name: "{{ local_gateway_name }}_updated"
+        description: "Updated local BGP gateway"
+        vpc_reference: "{{ vpc_uuid }}"
+        services:
+          local_network_services:
+            local_bgp_service:
+              vpc_reference: "{{ vpc_uuid }}"
+              asn: 65002
+              is_bgp_add_path_enabled: true
+      register: update_result
+      ignore_errors: true
+
+    - name: Get network gateway using ext_id
+      nutanix.ncp.ntnx_Gateway_info_v2:
+        ext_id: "{{ local_gateway_ext_id }}"
+      register: get_single_result
+      ignore_errors: true
+
+    - name: Get network gateway using ext_id and expand VPC/VM references
+      nutanix.ncp.ntnx_Gateway_info_v2:
+        ext_id: "{{ local_gateway_ext_id }}"
+        expand: "vpc,vm"
+      register: get_expanded_result
+      ignore_errors: true
+
+    - name: List all network gateways
+      nutanix.ncp.ntnx_Gateway_info_v2:
+      register: list_result
+      ignore_errors: true
+
+    - name: List network gateways with filter
+      nutanix.ncp.ntnx_Gateway_info_v2:
+        filter: "name eq '{{ local_gateway_name }}_updated'"
+      register: filter_result
+      ignore_errors: true
+
+    - name: List network gateways with limit
+      nutanix.ncp.ntnx_Gateway_info_v2:
+        limit: 1
+      register: limit_result
+      ignore_errors: true
+
+    - name: Delete local network gateway
+      nutanix.ncp.ntnx_Gateway_v2:
+        state: absent
+        ext_id: "{{ local_gateway_ext_id }}"
+      register: delete_local_result
+      ignore_errors: true
+
+    - name: Delete remote network gateway
+      nutanix.ncp.ntnx_Gateway_v2:
+        state: absent
+        ext_id: "{{ remote_gateway_ext_id }}"
+      register: delete_remote_result
+      ignore_errors: true
