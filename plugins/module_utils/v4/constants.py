@@ -47,6 +47,7 @@ class Tasks:
         CLUSTER_PROFILE = "clustermgmt:config:cluster-profile"
         NETWORK_FUNCTION = "Networking:config:network-function"
         VIRTUAL_SWITCH = "networking:config:virtual-switch"
+        VPN_CONNECTION = "networking:config:vpn-connection"
         ENTITY_GROUP = "microseg:config:entity-group"
 
     class CompletetionDetailsName:

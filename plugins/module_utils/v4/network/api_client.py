@@ -195,3 +195,27 @@ def get_bridges_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_networking_py_client.BridgesApi(api_client=api_client)
+
+
+def get_vpn_connections_api_instance(module):
+    """
+    This method will return VpnConnectionsApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): VPN connections Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.VpnConnectionsApi(api_client=api_client)
+
+
+def get_vpn_connection_stats_api_instance(module):
+    """
+    This method will return VpnConnectionStatsApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): VPN connection stats Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.VpnConnectionStatsApi(api_client=api_client)
