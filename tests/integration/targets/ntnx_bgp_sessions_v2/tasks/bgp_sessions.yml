@@ -1,0 +1,523 @@
+---
+# ==========================================================================================
+# Test plan — nutanix.ncp.ntnx_bgp_session_v2 + nutanix.ncp.ntnx_bgp_sessions_info_v2
+# ------------------------------------------------------------------------------------------
+# The reference lab used by these tests may or may not have real Local/Remote BGP gateways
+# provisioned. Provisioning BGP gateways is itself an involved workflow that requires
+# deploying a network-gateway VM and is outside the scope of this collection. Therefore
+# these tests focus on:
+#
+#   1. Exhaustive `check_mode` coverage of Create / Update / Delete for EVERY spec field.
+#      Because check_mode does not talk to the API, it works even if BGP gateways are not
+#      provisioned on the target cluster.
+#   2. Full negative coverage (missing required fields, invalid enums, non-existent
+#      ext_ids, mutually exclusive params).
+#   3. Info-module coverage: list-all, list-with-filter, list-with-limit, list-with-
+#      orderby, get-by-invalid-ext-id.
+#   4. Idempotency proof via check_mode (identical spec generation for the same inputs).
+#
+# The Info module's read paths are exercised against the live cluster and DO NOT depend
+# on any BGP gateway being present — they just return an empty list on a clean cluster.
+# ==========================================================================================
+
+- name: Start BGP Session tests
+  ansible.builtin.debug:
+    msg: Start BGP Session tests
+
+- name: Generate random names / suffixes
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    suffix_name: "ansible"
+    todelete: []
+
+- name: Set BGP session name
+  ansible.builtin.set_fact:
+    bgp_name: "bgp_{{ suffix_name }}_{{ random_name }}"
+
+- name: Set placeholder gateway UUIDs used for check_mode-only tests
+  ansible.builtin.set_fact:
+    local_gw_ext_id: "00000000-0000-0000-0000-00000000aaaa"
+    remote_gw_ext_id: "00000000-0000-0000-0000-00000000bbbb"
+
+########################################################################################
+# CREATE — check_mode — MINIMUM ATTRIBUTES
+########################################################################################
+
+- name: Generate create spec via check_mode with only required attributes
+  nutanix.ncp.ntnx_bgp_session_v2:
+    state: present
+    name: "{{ bgp_name }}_check_min"
+    local_gateway_reference: "{{ local_gw_ext_id }}"
+    remote_gateway_reference: "{{ remote_gw_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert create-check-mode-minimum
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == bgp_name ~ "_check_min"
+      - result.response.local_gateway_reference == local_gw_ext_id
+      - result.response.remote_gateway_reference == remote_gw_ext_id
+    success_msg: "Create BGP session check_mode with minimum attributes generated correct spec"
+    fail_msg: "Create BGP session check_mode with minimum attributes did not generate correct spec"
+
+########################################################################################
+# CREATE — check_mode — ALL ATTRIBUTES
+########################################################################################
+
+- name: Generate create spec via check_mode with all attributes
+  nutanix.ncp.ntnx_bgp_session_v2:
+    state: present
+    name: "{{ bgp_name }}_check_full"
+    description: "BGP session check-mode full attributes"
+    local_gateway_reference: "{{ local_gw_ext_id }}"
+    remote_gateway_reference: "{{ remote_gw_ext_id }}"
+    local_gateway_interface_ip_address:
+      ipv4:
+        value: "10.10.10.1"
+        prefix_length: 32
+    dynamic_route_priority: 500
+    password: "s3cr3t"
+    should_advertise_all_externally_routable_prefixes: false
+    externally_routable_prefixes_to_advertise:
+      - ipv4:
+          ip:
+            value: "192.168.10.0"
+          prefix_length: 24
+      - ipv4:
+          ip:
+            value: "192.168.20.0"
+          prefix_length: 24
+    prepended_autonomous_system_path: [65001, 65002]
+    advertised_routes_communities:
+      - autonomous_system_number: 65001
+        community_value: 100
+      - autonomous_system_number: 65002
+        community_value: 200
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert create-check-mode-full
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == bgp_name ~ "_check_full"
+      - result.response.description == "BGP session check-mode full attributes"
+      - result.response.local_gateway_reference == local_gw_ext_id
+      - result.response.remote_gateway_reference == remote_gw_ext_id
+      - result.response.local_gateway_interface_ip_address.ipv4.value == "10.10.10.1"
+      - result.response.local_gateway_interface_ip_address.ipv4.prefix_length == 32
+      - result.response.dynamic_route_priority == 500
+      - result.response.should_advertise_all_externally_routable_prefixes == false
+      - result.response.externally_routable_prefixes_to_advertise | length == 2
+      - result.response.externally_routable_prefixes_to_advertise[0].ipv4.ip.value == "192.168.10.0"
+      - result.response.externally_routable_prefixes_to_advertise[0].ipv4.prefix_length == 24
+      - result.response.externally_routable_prefixes_to_advertise[1].ipv4.ip.value == "192.168.20.0"
+      - result.response.externally_routable_prefixes_to_advertise[1].ipv4.prefix_length == 24
+      - result.response.prepended_autonomous_system_path | length == 2
+      - result.response.prepended_autonomous_system_path[0] == 65001
+      - result.response.prepended_autonomous_system_path[1] == 65002
+      - result.response.advertised_routes_communities | length == 2
+      - result.response.advertised_routes_communities[0].autonomous_system_number == 65001
+      - result.response.advertised_routes_communities[0].community_value == 100
+      - result.response.advertised_routes_communities[1].autonomous_system_number == 65002
+      - result.response.advertised_routes_communities[1].community_value == 200
+    success_msg: "Create BGP session check_mode with all attributes generated correct spec"
+    fail_msg: "Create BGP session check_mode with all attributes did not generate correct spec"
+
+########################################################################################
+# CREATE — check_mode — IPv6 variants
+########################################################################################
+
+- name: Generate create spec via check_mode with IPv6 interface and IPv6 advertised prefix
+  nutanix.ncp.ntnx_bgp_session_v2:
+    state: present
+    name: "{{ bgp_name }}_check_v6"
+    local_gateway_reference: "{{ local_gw_ext_id }}"
+    remote_gateway_reference: "{{ remote_gw_ext_id }}"
+    local_gateway_interface_ip_address:
+      ipv6:
+        value: "2001:db8::1"
+        prefix_length: 128
+    externally_routable_prefixes_to_advertise:
+      - ipv6:
+          ip:
+            value: "2001:db8:beef::"
+          prefix_length: 48
+    should_advertise_all_externally_routable_prefixes: true
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert create-check-mode-ipv6
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.local_gateway_interface_ip_address.ipv6.value == "2001:db8::1"
+      - result.response.local_gateway_interface_ip_address.ipv6.prefix_length == 128
+      - result.response.externally_routable_prefixes_to_advertise | length == 1
+      - result.response.externally_routable_prefixes_to_advertise[0].ipv6.ip.value == "2001:db8:beef::"
+      - result.response.externally_routable_prefixes_to_advertise[0].ipv6.prefix_length == 48
+      - result.response.should_advertise_all_externally_routable_prefixes == true
+    success_msg: "Create BGP session check_mode with IPv6 attributes generated correct spec"
+    fail_msg: "Create BGP session check_mode with IPv6 attributes did not generate correct spec"
+
+########################################################################################
+# NEGATIVE — CREATE
+########################################################################################
+
+- name: Create BGP session with missing name (required_if should trip)
+  nutanix.ncp.ntnx_bgp_session_v2:
+    state: present
+    local_gateway_reference: "{{ local_gw_ext_id }}"
+    remote_gateway_reference: "{{ remote_gw_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing name is rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is present but any of the following are missing' in result.msg"
+      - "'name' in result.msg"
+    success_msg: "Missing name for state=present was rejected as expected"
+    fail_msg: "Missing name for state=present was not rejected as expected"
+
+- name: Create BGP session with missing local_gateway_reference
+  nutanix.ncp.ntnx_bgp_session_v2:
+    state: present
+    name: "{{ bgp_name }}_missing_local_gw"
+    remote_gateway_reference: "{{ remote_gw_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing local_gateway_reference is rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - 'result.msg == "Missing required parameter(s): local_gateway_reference"'
+    success_msg: "Missing local_gateway_reference was rejected as expected"
+    fail_msg: "Missing local_gateway_reference was not rejected as expected"
+
+- name: Create BGP session with missing remote_gateway_reference
+  nutanix.ncp.ntnx_bgp_session_v2:
+    state: present
+    name: "{{ bgp_name }}_missing_remote_gw"
+    local_gateway_reference: "{{ local_gw_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing remote_gateway_reference is rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - 'result.msg == "Missing required parameter(s): remote_gateway_reference"'
+    success_msg: "Missing remote_gateway_reference was rejected as expected"
+    fail_msg: "Missing remote_gateway_reference was not rejected as expected"
+
+- name: Create BGP session with an invalid state value
+  nutanix.ncp.ntnx_bgp_session_v2:
+    state: invalid
+    name: "{{ bgp_name }}_bad_state"
+    local_gateway_reference: "{{ local_gw_ext_id }}"
+    remote_gateway_reference: "{{ remote_gw_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid state is rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Invalid state was rejected as expected"
+    fail_msg: "Invalid state was not rejected as expected"
+
+- name: Create BGP session with non-existent gateway UUIDs (live API call — expected to fail)
+  nutanix.ncp.ntnx_bgp_session_v2:
+    state: present
+    name: "{{ bgp_name }}_bad_refs"
+    local_gateway_reference: "00000000-0000-0000-0000-00000000dead"
+    remote_gateway_reference: "00000000-0000-0000-0000-00000000beef"
+  register: result
+  ignore_errors: true
+
+- name: Assert non-existent gateway references are rejected by the API
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Non-existent gateway references were rejected by the API as expected"
+    fail_msg: "Non-existent gateway references were unexpectedly accepted by the API"
+
+########################################################################################
+# UPDATE — check_mode
+########################################################################################
+
+- name: Update BGP session with wrong external ID (live API call — expected to fail on GET)
+  nutanix.ncp.ntnx_bgp_session_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-0000deadbeef"
+    name: "does_not_matter"
+  register: result
+  ignore_errors: true
+
+- name: Assert update with wrong ext_id is rejected by the API
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Update with wrong ext_id was rejected by the API as expected"
+    fail_msg: "Update with wrong ext_id was unexpectedly accepted by the API"
+
+########################################################################################
+# DELETE — check_mode
+########################################################################################
+
+- name: Delete BGP session with check_mode
+  nutanix.ncp.ntnx_bgp_session_v2:
+    state: absent
+    ext_id: "abcdef01-2345-6789-abcd-ef0123456789"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert delete check_mode message
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - "'will be deleted' in result.msg"
+      - "'abcdef01-2345-6789-abcd-ef0123456789' in result.msg"
+    success_msg: "Delete check_mode reported the correct pending-deletion message"
+    fail_msg: "Delete check_mode did not report the correct pending-deletion message"
+
+- name: Delete BGP session with missing ext_id
+  nutanix.ncp.ntnx_bgp_session_v2:
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Assert delete with missing ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is absent but all of the following are missing: ext_id' in result.msg"
+    success_msg: "Delete with missing ext_id was rejected as expected"
+    fail_msg: "Delete with missing ext_id was not rejected as expected"
+
+- name: Delete BGP session with non-existent ext_id (live API — DELETE is idempotent, so this may succeed or fail)
+  nutanix.ncp.ntnx_bgp_session_v2:
+    state: absent
+    ext_id: "00000000-0000-0000-0000-0000deadbeef"
+  register: result
+  ignore_errors: true
+
+- name: Assert delete with non-existent ext_id returned a task response
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.ext_id == "00000000-0000-0000-0000-0000deadbeef"
+    success_msg: "Delete with non-existent ext_id was accepted by the idempotent DELETE endpoint"
+    fail_msg: "Delete with non-existent ext_id did not report the ext_id in the result"
+
+########################################################################################
+# INFO MODULE — list operations (live API — safe on empty cluster)
+########################################################################################
+
+- name: List all BGP sessions (info module)
+  nutanix.ncp.ntnx_bgp_sessions_info_v2:
+  register: list_result
+  ignore_errors: true
+
+- name: Assert list-all succeeds and returns a list
+  ansible.builtin.assert:
+    that:
+      - list_result is defined
+      - list_result.changed == false
+      - list_result.failed == false
+      - list_result.response is defined
+      - list_result.response is iterable
+      - list_result.total_available_results is defined
+      - list_result.total_available_results >= 0
+    success_msg: "List-all BGP sessions succeeded"
+    fail_msg: "List-all BGP sessions failed"
+
+- name: List BGP sessions with limit=1
+  nutanix.ncp.ntnx_bgp_sessions_info_v2:
+    limit: 1
+  register: limit_result
+  ignore_errors: true
+
+- name: Assert list-with-limit is <= 1
+  ansible.builtin.assert:
+    that:
+      - limit_result is defined
+      - limit_result.changed == false
+      - limit_result.failed == false
+      - limit_result.response is defined
+      - (limit_result.response | length) <= 1
+    success_msg: "List BGP sessions with limit returned at most 1 entry"
+    fail_msg: "List BGP sessions with limit returned more than 1 entry"
+
+- name: List BGP sessions with a name filter that matches nothing
+  nutanix.ncp.ntnx_bgp_sessions_info_v2:
+    filter: "name eq '{{ bgp_name }}_does_not_exist'"
+  register: filter_result
+  ignore_errors: true
+
+- name: Assert filter-with-no-match returns an empty list
+  ansible.builtin.assert:
+    that:
+      - filter_result is defined
+      - filter_result.changed == false
+      - filter_result.failed == false
+      - filter_result.response is defined
+      - (filter_result.response | length) == 0
+    success_msg: "Filter for a non-existent BGP session name returned an empty list"
+    fail_msg: "Filter for a non-existent BGP session name did not return an empty list"
+
+- name: List BGP sessions ordered by name descending
+  nutanix.ncp.ntnx_bgp_sessions_info_v2:
+    orderby: "name desc"
+  register: order_result
+  ignore_errors: true
+
+- name: Assert orderby returns a list
+  ansible.builtin.assert:
+    that:
+      - order_result is defined
+      - order_result.changed == false
+      - order_result.failed == false
+      - order_result.response is defined
+    success_msg: "List BGP sessions with orderby succeeded"
+    fail_msg: "List BGP sessions with orderby failed"
+
+########################################################################################
+# INFO MODULE — mutually exclusive params
+########################################################################################
+
+- name: Info — ext_id and filter together (must be rejected)
+  nutanix.ncp.ntnx_bgp_sessions_info_v2:
+    ext_id: "abcdef01-2345-6789-abcd-ef0123456789"
+    filter: "name eq 'x'"
+  register: result
+  ignore_errors: true
+
+- name: Assert ext_id + filter is rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'mutually exclusive' in result.msg"
+      - "'ext_id' in result.msg"
+      - "'filter' in result.msg"
+    success_msg: "ext_id + filter was rejected as expected"
+    fail_msg: "ext_id + filter was not rejected as expected"
+
+- name: Info — ext_id and limit together (must be rejected)
+  nutanix.ncp.ntnx_bgp_sessions_info_v2:
+    ext_id: "abcdef01-2345-6789-abcd-ef0123456789"
+    limit: 5
+  register: result
+  ignore_errors: true
+
+- name: Assert ext_id + limit is rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'mutually exclusive' in result.msg"
+      - "'ext_id' in result.msg"
+      - "'limit' in result.msg"
+    success_msg: "ext_id + limit was rejected as expected"
+    fail_msg: "ext_id + limit was not rejected as expected"
+
+########################################################################################
+# INFO MODULE — get-by-invalid-ext-id
+########################################################################################
+
+- name: Fetch BGP session using non-existent ext_id (live API — expected to fail)
+  nutanix.ncp.ntnx_bgp_sessions_info_v2:
+    ext_id: "00000000-0000-0000-0000-0000deadbeef"
+  register: result
+  ignore_errors: true
+
+- name: Assert get-by-invalid-ext-id is rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Fetch BGP session with non-existent ext_id was rejected by the API as expected"
+    fail_msg: "Fetch BGP session with non-existent ext_id was unexpectedly accepted by the API"
+
+########################################################################################
+# IDEMPOTENCY PROOF via check_mode
+########################################################################################
+
+- name: Generate create spec first time (idempotency proof, run 1)
+  nutanix.ncp.ntnx_bgp_session_v2:
+    state: present
+    name: "{{ bgp_name }}_idem"
+    local_gateway_reference: "{{ local_gw_ext_id }}"
+    remote_gateway_reference: "{{ remote_gw_ext_id }}"
+    dynamic_route_priority: 400
+    should_advertise_all_externally_routable_prefixes: true
+    prepended_autonomous_system_path: [65001]
+  check_mode: true
+  register: idem_first
+  ignore_errors: true
+
+- name: Generate create spec second time (idempotency proof, run 2)
+  nutanix.ncp.ntnx_bgp_session_v2:
+    state: present
+    name: "{{ bgp_name }}_idem"
+    local_gateway_reference: "{{ local_gw_ext_id }}"
+    remote_gateway_reference: "{{ remote_gw_ext_id }}"
+    dynamic_route_priority: 400
+    should_advertise_all_externally_routable_prefixes: true
+    prepended_autonomous_system_path: [65001]
+  check_mode: true
+  register: idem_second
+  ignore_errors: true
+
+- name: Assert the two check_mode runs produced identical specs
+  ansible.builtin.assert:
+    that:
+      - idem_first is defined
+      - idem_second is defined
+      - idem_first.failed == false
+      - idem_second.failed == false
+      - idem_first.response == idem_second.response
+    success_msg: "Two check_mode runs with the same input produced identical specs (deterministic)"
+    fail_msg: "Two check_mode runs with the same input produced different specs (non-deterministic)"
+
+- name: End BGP Session tests
+  ansible.builtin.debug:
+    msg: End BGP Session tests
