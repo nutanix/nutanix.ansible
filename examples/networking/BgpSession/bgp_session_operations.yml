@@ -1,0 +1,169 @@
+---
+# BGP session CRUD + info operations for Nutanix Prism Central v4 networking APIs.
+#
+# Prerequisites (before running these tasks):
+#   * A Prism Central endpoint with the networking v4 SDK installed.
+#   * A local BGP gateway (Atlas Flow Gateway) already deployed. Use its ext_id
+#     as ``local_gateway_reference``.
+#   * A remote BGP gateway configured with its ASN/peer IP. Use its ext_id as
+#     ``remote_gateway_reference``.
+#   * Adjust the placeholder credentials, PC host and gateway ext_ids below.
+- name: BGP session CRUD flow
+  hosts: localhost
+  gather_facts: false
+  vars:
+    nutanix_host: "<pc-fqdn-or-ip>"
+    nutanix_username: "<pc-username>"
+    nutanix_password: "<pc-password>"
+    validate_certs: false
+    local_gateway_ext_id: "<local-bgp-gateway-ext-id>"
+    remote_gateway_ext_id: "<remote-bgp-gateway-ext-id>"
+  tasks:
+    - name: Create BGP session with only the required attributes
+      nutanix.ncp.ntnx_BgpSession_v2:
+        nutanix_host: "{{ nutanix_host }}"
+        nutanix_username: "{{ nutanix_username }}"
+        nutanix_password: "{{ nutanix_password }}"
+        validate_certs: "{{ validate_certs }}"
+        state: present
+        name: "bgp_session_ansible_min"
+        local_gateway_reference: "{{ local_gateway_ext_id }}"
+        remote_gateway_reference: "{{ remote_gateway_ext_id }}"
+      register: bgp_min
+
+    # Sample: <Need to add sample>
+
+    - name: Create BGP session with the full set of attributes
+      nutanix.ncp.ntnx_BgpSession_v2:
+        nutanix_host: "{{ nutanix_host }}"
+        nutanix_username: "{{ nutanix_username }}"
+        nutanix_password: "{{ nutanix_password }}"
+        validate_certs: "{{ validate_certs }}"
+        state: present
+        name: "bgp_session_ansible_full"
+        description: "BGP session created by Ansible with all attributes"
+        local_gateway_reference: "{{ local_gateway_ext_id }}"
+        remote_gateway_reference: "{{ remote_gateway_ext_id }}"
+        local_gateway_interface_ip_address:
+          ipv4:
+            value: "10.10.1.10"
+            prefix_length: 32
+        dynamic_route_priority: 500
+        password: "S3cretBgpPa$$"
+        should_advertise_all_externally_routable_prefixes: false
+        externally_routable_prefixes_to_advertise:
+          - ipv4:
+              ip:
+                value: "192.168.10.0"
+                prefix_length: 32
+              prefix_length: 24
+          - ipv4:
+              ip:
+                value: "192.168.20.0"
+                prefix_length: 32
+              prefix_length: 24
+        prepended_autonomous_system_path:
+          - 65001
+          - 65002
+        advertised_routes_communities:
+          - autonomous_system_number: 65001
+            community_value: 100
+          - autonomous_system_number: 65001
+            community_value: 200
+      register: bgp_full
+
+    # Sample: <Need to add sample>
+
+    - name: Get BGP session by ext_id
+      nutanix.ncp.ntnx_BgpSession_info_v2:
+        nutanix_host: "{{ nutanix_host }}"
+        nutanix_username: "{{ nutanix_username }}"
+        nutanix_password: "{{ nutanix_password }}"
+        validate_certs: "{{ validate_certs }}"
+        ext_id: "{{ bgp_full.ext_id }}"
+      register: bgp_by_id
+
+    # Sample: <Need to add sample>
+
+    - name: List all BGP sessions
+      nutanix.ncp.ntnx_BgpSession_info_v2:
+        nutanix_host: "{{ nutanix_host }}"
+        nutanix_username: "{{ nutanix_username }}"
+        nutanix_password: "{{ nutanix_password }}"
+        validate_certs: "{{ validate_certs }}"
+      register: bgp_list
+
+    # Sample: <Need to add sample>
+
+    - name: List BGP sessions with filter
+      nutanix.ncp.ntnx_BgpSession_info_v2:
+        nutanix_host: "{{ nutanix_host }}"
+        nutanix_username: "{{ nutanix_username }}"
+        nutanix_password: "{{ nutanix_password }}"
+        validate_certs: "{{ validate_certs }}"
+        filter: "name eq 'bgp_session_ansible_full'"
+      register: bgp_filter
+
+    # Sample: <Need to add sample>
+
+    - name: List BGP sessions with limit
+      nutanix.ncp.ntnx_BgpSession_info_v2:
+        nutanix_host: "{{ nutanix_host }}"
+        nutanix_username: "{{ nutanix_username }}"
+        nutanix_password: "{{ nutanix_password }}"
+        validate_certs: "{{ validate_certs }}"
+        limit: 1
+      register: bgp_limit
+
+    # Sample: <Need to add sample>
+
+    - name: Update BGP session
+      nutanix.ncp.ntnx_BgpSession_v2:
+        nutanix_host: "{{ nutanix_host }}"
+        nutanix_username: "{{ nutanix_username }}"
+        nutanix_password: "{{ nutanix_password }}"
+        validate_certs: "{{ validate_certs }}"
+        state: present
+        ext_id: "{{ bgp_full.ext_id }}"
+        name: "bgp_session_ansible_full_updated"
+        description: "BGP session updated by Ansible"
+        local_gateway_reference: "{{ local_gateway_ext_id }}"
+        remote_gateway_reference: "{{ remote_gateway_ext_id }}"
+        dynamic_route_priority: 700
+        should_advertise_all_externally_routable_prefixes: true
+      register: bgp_update
+
+    # Sample: <Need to add sample>
+
+    - name: Update BGP session with same params (idempotency)
+      nutanix.ncp.ntnx_BgpSession_v2:
+        nutanix_host: "{{ nutanix_host }}"
+        nutanix_username: "{{ nutanix_username }}"
+        nutanix_password: "{{ nutanix_password }}"
+        validate_certs: "{{ validate_certs }}"
+        state: present
+        ext_id: "{{ bgp_full.ext_id }}"
+        name: "bgp_session_ansible_full_updated"
+        description: "BGP session updated by Ansible"
+        local_gateway_reference: "{{ local_gateway_ext_id }}"
+        remote_gateway_reference: "{{ remote_gateway_ext_id }}"
+        dynamic_route_priority: 700
+        should_advertise_all_externally_routable_prefixes: true
+      register: bgp_update_idempotent
+
+    # Sample: <Need to add sample>
+
+    - name: Delete the created BGP sessions
+      nutanix.ncp.ntnx_BgpSession_v2:
+        nutanix_host: "{{ nutanix_host }}"
+        nutanix_username: "{{ nutanix_username }}"
+        nutanix_password: "{{ nutanix_password }}"
+        validate_certs: "{{ validate_certs }}"
+        state: absent
+        ext_id: "{{ item }}"
+      loop:
+        - "{{ bgp_min.ext_id }}"
+        - "{{ bgp_full.ext_id }}"
+      register: bgp_delete
+
+    # Sample: <Need to add sample>

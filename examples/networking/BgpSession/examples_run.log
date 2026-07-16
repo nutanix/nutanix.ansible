@@ -1,0 +1,65 @@
+# BGP session examples — sample run log
+#
+# These examples must be run against a real Prism Central endpoint that has
+# both a local (Atlas Flow Gateway) and remote BGP gateway already configured.
+# The environment used to generate this code did not have such gateways
+# provisioned, so the sample response values below are recorded as
+# <Need to add sample>.
+#
+# Re-run:
+#   ansible-playbook -i localhost, -c local examples/networking/BgpSession/bgp_session_operations.yml \
+#     -e nutanix_host=<pc-fqdn-or-ip> \
+#     -e nutanix_username=<user> \
+#     -e nutanix_password=<password> \
+#     -e local_gateway_ext_id=<local-bgp-gw-uuid> \
+#     -e remote_gateway_ext_id=<remote-bgp-gw-uuid>
+#
+# Expected outcomes per task:
+#
+# Create BGP session with only the required attributes
+#   changed: true
+#   failed:  false
+#   ext_id:  <Need to add sample>
+#   response: <Need to add sample>
+#
+# Create BGP session with the full set of attributes
+#   changed: true
+#   failed:  false
+#   ext_id:  <Need to add sample>
+#   response: <Need to add sample>
+#
+# Get BGP session by ext_id
+#   changed: false
+#   failed:  false
+#   response: <Need to add sample>
+#
+# List all BGP sessions
+#   changed: false
+#   failed:  false
+#   total_available_results: <Need to add sample>
+#   response: <Need to add sample>
+#
+# List BGP sessions with filter
+#   changed: false
+#   failed:  false
+#   response: <Need to add sample>
+#
+# List BGP sessions with limit
+#   changed: false
+#   failed:  false
+#   response: <Need to add sample>
+#
+# Update BGP session
+#   changed: true
+#   failed:  false
+#   response: <Need to add sample>
+#
+# Update BGP session with same params (idempotency)
+#   changed: false
+#   failed:  false
+#   msg:     "Nothing to change."
+#
+# Delete the created BGP sessions
+#   changed: true
+#   failed:  false
+#   response: <Need to add sample>
