@@ -170,3 +170,23 @@ def get_virtual_switch(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching virtual switch info using ext_id",
         )
+
+
+def get_traffic_mirror(module, api_instance, ext_id):
+    """
+    This method will return traffic mirror session info using its ext_id
+    Args:
+        module: Ansible module
+        api_instance: TrafficMirrorsApi instance from ntnx_networking_py_client sdk
+        ext_id (str): traffic mirror session external ID
+    return:
+        info (object): traffic mirror session info
+    """
+    try:
+        return api_instance.get_traffic_mirror_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching traffic mirror info using ext_id",
+        )

@@ -1,0 +1,606 @@
+---
+# Test plan for ntnx_TrafficMirror_v2 and ntnx_TrafficMirror_info_v2 modules.
+#
+# Coverage:
+#   1. check_mode Create with all attributes -> assert every field is echoed back
+#      in the generated spec without any API call.
+#   2. check_mode Create with the minimum required set of attributes
+#      (name, source_list, destination_list) -> assert defaults / spec shape.
+#   3. Negative Create: missing name -> required_if error.
+#   4. Negative Create: missing source_list -> validate_required_params error.
+#   5. Negative Create: missing destination_list -> validate_required_params error.
+#   6. Negative Create: invalid enum for source_list.direction -> arg-spec error.
+#   7. Negative Create: invalid enum for destination_list.nic_type -> arg-spec error.
+#   8. Create with minimum attributes -> assert changed/failed/ext_id/response.
+#   9. Create with all attributes -> assert full response mapping.
+#  10. check_mode Update with all attributes -> assert updated spec without change.
+#  11. Update with meaningful state transition (enum + scalar + list length) ->
+#      assert changed, new values.
+#  12. Idempotent Update (same values) -> assert changed==false, msg='Nothing to change.'.
+#  13. Negative Update: wrong ext_id -> failed==true.
+#  14. Info: get-by-ID -> assert response is a dict with the expected fields.
+#  15. Info: list all -> assert response is a list containing our sessions.
+#  16. Info: list with filter -> assert filtered result count / name.
+#  17. Info: list with limit -> assert length <= limit.
+#  18. Info: get-by-ID with wrong ext_id -> failed==true.
+#  19. check_mode Delete -> assert 'will be deleted' message.
+#  20. Delete both created sessions in a loop.
+#  21. Negative Delete: wrong ext_id -> failed==true.
+#  22. Negative Delete: missing ext_id -> required_if error.
+
+- name: Start Traffic mirror sessions tests
+  ansible.builtin.debug:
+    msg: Start Traffic mirror sessions tests
+
+- name: Generate random suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    suffix_name: "ansible"
+    todelete: []
+
+- name: Set test fixture data
+  ansible.builtin.set_fact:
+    tm_name: "tm_{{ suffix_name }}_{{ random_name }}"
+    source_vnic_uuid: "a3265671-de53-41be-af9b-f06241b95356"
+    destination_vnic_uuid: "b4376782-ef64-52cf-bc0c-a17352ca6467"
+    virtual_switch_uuid: "2e40ff57-20aa-4d2b-b179-298db969c20d"
+    fake_ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+
+########################################################################################
+# Create Traffic mirror session - check_mode
+########################################################################################
+
+- name: Generate spec for creating Traffic mirror session using check mode with all attributes
+  nutanix.ncp.ntnx_TrafficMirror_v2:
+    state: present
+    name: "check_mode_tm_full"
+    description: "Traffic mirror session created in check mode with all attributes"
+    is_enabled: true
+    source_list:
+      - direction: "BIDIRECTIONAL"
+        nic_type: "VIRTUAL_NIC"
+        nic_uuid: "{{ source_vnic_uuid }}"
+      - direction: "INGRESS"
+        nic_type: "HOST_NIC"
+        nic_uuid: "{{ source_vnic_uuid }}"
+    destination_list:
+      - nic_type: "VIRTUAL_NIC"
+        nic_uuid: "{{ destination_vnic_uuid }}"
+    cluster_reference_list:
+      - "{{ cluster.uuid | default('bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258') }}"
+    host_reference_list:
+      - "8300384a-56ee-4750-aeb8-3d1c42908bee"
+    virtual_switch_reference: "{{ virtual_switch_uuid }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check_mode create spec with all attributes
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "check_mode_tm_full"
+      - result.response.description == "Traffic mirror session created in check mode with all attributes"
+      - result.response.is_enabled == true
+      - result.response.source_list | length == 2
+      - result.response.source_list[0].direction == "BIDIRECTIONAL"
+      - result.response.source_list[0].nic_type == "VIRTUAL_NIC"
+      - result.response.source_list[0].nic_uuid == source_vnic_uuid
+      - result.response.source_list[1].direction == "INGRESS"
+      - result.response.source_list[1].nic_type == "HOST_NIC"
+      - result.response.destination_list | length == 1
+      - result.response.destination_list[0].nic_type == "VIRTUAL_NIC"
+      - result.response.destination_list[0].nic_uuid == destination_vnic_uuid
+      - result.response.cluster_reference_list | length == 1
+      - result.response.host_reference_list | length == 1
+      - result.response.virtual_switch_reference == virtual_switch_uuid
+    success_msg: "check_mode create with all attributes generated spec successfully"
+    fail_msg: "check_mode create with all attributes did not generate the expected spec"
+
+- name: Generate spec for creating Traffic mirror session using check mode with minimum attributes
+  nutanix.ncp.ntnx_TrafficMirror_v2:
+    state: present
+    name: "check_mode_tm_min"
+    source_list:
+      - direction: "EGRESS"
+        nic_type: "VIRTUAL_NIC"
+        nic_uuid: "{{ source_vnic_uuid }}"
+    destination_list:
+      - nic_type: "VIRTUAL_NIC"
+        nic_uuid: "{{ destination_vnic_uuid }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check_mode create spec with minimum attributes
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "check_mode_tm_min"
+      - result.response.source_list | length == 1
+      - result.response.source_list[0].direction == "EGRESS"
+      - result.response.destination_list | length == 1
+      - result.response.is_enabled == true
+    success_msg: "check_mode create with minimum attributes generated spec successfully"
+    fail_msg: "check_mode create with minimum attributes did not generate expected spec"
+
+########################################################################################
+# Negative Create tests - missing required fields / invalid enum values
+########################################################################################
+
+- name: Create Traffic mirror session with missing name (should fail required_if)
+  nutanix.ncp.ntnx_TrafficMirror_v2:
+    state: present
+    source_list:
+      - direction: "BIDIRECTIONAL"
+        nic_type: "VIRTUAL_NIC"
+        nic_uuid: "{{ source_vnic_uuid }}"
+    destination_list:
+      - nic_type: "VIRTUAL_NIC"
+        nic_uuid: "{{ destination_vnic_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert Create Traffic mirror session with missing name failed
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "state is present but any of the following are missing: name, ext_id"
+    success_msg: "Create Traffic mirror session with missing name failed as expected"
+    fail_msg: "Create Traffic mirror session with missing name did not fail as expected"
+
+- name: Create Traffic mirror session with missing source_list (should fail)
+  nutanix.ncp.ntnx_TrafficMirror_v2:
+    state: present
+    name: "missing_source"
+    destination_list:
+      - nic_type: "VIRTUAL_NIC"
+        nic_uuid: "{{ destination_vnic_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert Create Traffic mirror session with missing source_list failed
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Missing required parameter(s): source_list"
+    success_msg: "Create Traffic mirror session with missing source_list failed as expected"
+    fail_msg: "Create Traffic mirror session with missing source_list did not fail as expected"
+
+- name: Create Traffic mirror session with missing destination_list (should fail)
+  nutanix.ncp.ntnx_TrafficMirror_v2:
+    state: present
+    name: "missing_destination"
+    source_list:
+      - direction: "BIDIRECTIONAL"
+        nic_type: "VIRTUAL_NIC"
+        nic_uuid: "{{ source_vnic_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert Create Traffic mirror session with missing destination_list failed
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Missing required parameter(s): destination_list"
+    success_msg: "Create Traffic mirror session with missing destination_list failed as expected"
+    fail_msg: "Create Traffic mirror session with missing destination_list did not fail as expected"
+
+- name: Create Traffic mirror session with invalid source direction enum (should fail)
+  nutanix.ncp.ntnx_TrafficMirror_v2:
+    state: present
+    name: "invalid_direction"
+    source_list:
+      - direction: "INVALID_DIRECTION"
+        nic_type: "VIRTUAL_NIC"
+        nic_uuid: "{{ source_vnic_uuid }}"
+    destination_list:
+      - nic_type: "VIRTUAL_NIC"
+        nic_uuid: "{{ destination_vnic_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert Create Traffic mirror session with invalid direction failed
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'value of direction must be one of' in result.msg"
+    success_msg: "Create Traffic mirror session with invalid direction failed as expected"
+    fail_msg: "Create Traffic mirror session with invalid direction did not fail as expected"
+
+- name: Create Traffic mirror session with invalid destination nic_type enum (should fail)
+  nutanix.ncp.ntnx_TrafficMirror_v2:
+    state: present
+    name: "invalid_nic_type"
+    source_list:
+      - direction: "BIDIRECTIONAL"
+        nic_type: "VIRTUAL_NIC"
+        nic_uuid: "{{ source_vnic_uuid }}"
+    destination_list:
+      - nic_type: "INVALID_NIC_TYPE"
+        nic_uuid: "{{ destination_vnic_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert Create Traffic mirror session with invalid destination nic_type failed
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'value of nic_type must be one of' in result.msg"
+    success_msg: "Create Traffic mirror session with invalid destination nic_type failed as expected"
+    fail_msg: "Create Traffic mirror session with invalid destination nic_type did not fail as expected"
+
+########################################################################################
+# Create Traffic mirror sessions - real API calls
+########################################################################################
+
+- name: Create Traffic mirror session with minimum attributes
+  nutanix.ncp.ntnx_TrafficMirror_v2:
+    state: present
+    name: "{{ tm_name }}_min"
+    source_list:
+      - direction: "BIDIRECTIONAL"
+        nic_type: "VIRTUAL_NIC"
+        nic_uuid: "{{ source_vnic_uuid }}"
+    destination_list:
+      - nic_type: "VIRTUAL_NIC"
+        nic_uuid: "{{ destination_vnic_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert Create Traffic mirror session with minimum attributes
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.name == tm_name + "_min"
+      - result.response.source_list | length == 1
+      - result.response.destination_list | length == 1
+    success_msg: "Traffic mirror session with minimum attributes created successfully"
+    fail_msg: "Traffic mirror session with minimum attributes creation failed"
+
+- name: Add Traffic mirror session to todelete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+- name: Create Traffic mirror session with all attributes
+  nutanix.ncp.ntnx_TrafficMirror_v2:
+    state: present
+    name: "{{ tm_name }}_full"
+    description: "Traffic mirror session with all attributes"
+    is_enabled: true
+    source_list:
+      - direction: "INGRESS"
+        nic_type: "VIRTUAL_NIC"
+        nic_uuid: "{{ source_vnic_uuid }}"
+    destination_list:
+      - nic_type: "VIRTUAL_NIC"
+        nic_uuid: "{{ destination_vnic_uuid }}"
+    cluster_reference_list:
+      - "{{ cluster.uuid | default('bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258') }}"
+    virtual_switch_reference: "{{ virtual_switch_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert Create Traffic mirror session with all attributes
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.name == tm_name + "_full"
+      - result.response.description == "Traffic mirror session with all attributes"
+      - result.response.is_enabled == true
+      - result.response.source_list | length == 1
+      - result.response.source_list[0].direction == "INGRESS"
+      - result.response.destination_list | length == 1
+      - result.response.destination_list[0].nic_type == "VIRTUAL_NIC"
+      - result.response.virtual_switch_reference == virtual_switch_uuid
+    success_msg: "Traffic mirror session with all attributes created successfully"
+    fail_msg: "Traffic mirror session with all attributes creation failed"
+
+- name: Add Traffic mirror session to todelete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+########################################################################################
+# Update Traffic mirror session
+########################################################################################
+
+- name: Generate spec for updating Traffic mirror session using check mode
+  nutanix.ncp.ntnx_TrafficMirror_v2:
+    state: present
+    ext_id: "{{ todelete[1] }}"
+    name: "{{ tm_name }}_full_updated"
+    description: "Updated Traffic mirror session"
+    is_enabled: false
+    source_list:
+      - direction: "EGRESS"
+        nic_type: "VIRTUAL_NIC"
+        nic_uuid: "{{ source_vnic_uuid }}"
+    destination_list:
+      - nic_type: "VIRTUAL_NIC"
+        nic_uuid: "{{ destination_vnic_uuid }}"
+    virtual_switch_reference: "{{ virtual_switch_uuid }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check_mode update spec
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == tm_name + "_full_updated"
+      - result.response.description == "Updated Traffic mirror session"
+      - result.response.is_enabled == false
+      - result.response.source_list[0].direction == "EGRESS"
+    success_msg: "check_mode update generated spec successfully"
+    fail_msg: "check_mode update did not generate the expected spec"
+
+- name: Update Traffic mirror session with meaningful transitions
+  nutanix.ncp.ntnx_TrafficMirror_v2:
+    state: present
+    ext_id: "{{ todelete[1] }}"
+    name: "{{ tm_name }}_full_updated"
+    description: "Updated Traffic mirror session"
+    is_enabled: false
+    source_list:
+      - direction: "EGRESS"
+        nic_type: "VIRTUAL_NIC"
+        nic_uuid: "{{ source_vnic_uuid }}"
+    destination_list:
+      - nic_type: "VIRTUAL_NIC"
+        nic_uuid: "{{ destination_vnic_uuid }}"
+    virtual_switch_reference: "{{ virtual_switch_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert Update Traffic mirror session
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == tm_name + "_full_updated"
+      - result.response.description == "Updated Traffic mirror session"
+      - result.response.is_enabled == false
+      - result.response.source_list[0].direction == "EGRESS"
+    success_msg: "Update Traffic mirror session passed"
+    fail_msg: "Update Traffic mirror session failed"
+
+- name: Update Traffic mirror session with same values (idempotency)
+  nutanix.ncp.ntnx_TrafficMirror_v2:
+    state: present
+    ext_id: "{{ todelete[1] }}"
+    name: "{{ tm_name }}_full_updated"
+    description: "Updated Traffic mirror session"
+    is_enabled: false
+    source_list:
+      - direction: "EGRESS"
+        nic_type: "VIRTUAL_NIC"
+        nic_uuid: "{{ source_vnic_uuid }}"
+    destination_list:
+      - nic_type: "VIRTUAL_NIC"
+        nic_uuid: "{{ destination_vnic_uuid }}"
+    virtual_switch_reference: "{{ virtual_switch_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert idempotency
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.msg == "Nothing to change."
+    success_msg: "Update Traffic mirror session idempotency passed"
+    fail_msg: "Update Traffic mirror session idempotency failed"
+
+- name: Update Traffic mirror session with wrong external ID
+  nutanix.ncp.ntnx_TrafficMirror_v2:
+    state: present
+    ext_id: "{{ fake_ext_id }}"
+    name: "will_fail_update"
+    source_list:
+      - direction: "BIDIRECTIONAL"
+        nic_type: "VIRTUAL_NIC"
+        nic_uuid: "{{ source_vnic_uuid }}"
+    destination_list:
+      - nic_type: "VIRTUAL_NIC"
+        nic_uuid: "{{ destination_vnic_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert Update Traffic mirror session with wrong external ID
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Update Traffic mirror session with wrong external ID failed as expected"
+    fail_msg: "Update Traffic mirror session with wrong external ID did not fail as expected"
+
+########################################################################################
+# Info module tests - Get by ID, list, filter, limit
+########################################################################################
+
+- name: Fetch Traffic mirror session using external ID
+  nutanix.ncp.ntnx_TrafficMirror_info_v2:
+    ext_id: "{{ todelete[1] }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert Fetch Traffic mirror session by ext_id
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response is defined
+      - result.response.name == tm_name + "_full_updated"
+      - result.response.description == "Updated Traffic mirror session"
+      - result.response.is_enabled == false
+      - result.response.source_list[0].direction == "EGRESS"
+    success_msg: "Fetch Traffic mirror session by external ID passed"
+    fail_msg: "Fetch Traffic mirror session by external ID failed"
+
+- name: Fetch Traffic mirror session using wrong external ID
+  nutanix.ncp.ntnx_TrafficMirror_info_v2:
+    ext_id: "{{ fake_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert Fetch Traffic mirror session using wrong external ID
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+    success_msg: "Fetch Traffic mirror session using wrong external ID failed as expected"
+    fail_msg: "Fetch Traffic mirror session using wrong external ID did not fail as expected"
+
+- name: List all Traffic mirror sessions
+  nutanix.ncp.ntnx_TrafficMirror_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Assert List all Traffic mirror sessions
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length >= 2
+    success_msg: "List all Traffic mirror sessions passed"
+    fail_msg: "List all Traffic mirror sessions failed"
+
+- name: List Traffic mirror sessions with filter
+  nutanix.ncp.ntnx_TrafficMirror_info_v2:
+    filter: "name eq '{{ tm_name }}_full_updated'"
+  register: result
+  ignore_errors: true
+
+- name: Assert List Traffic mirror sessions with filter
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].name == tm_name + "_full_updated"
+    success_msg: "List Traffic mirror sessions with filter passed"
+    fail_msg: "List Traffic mirror sessions with filter failed"
+
+- name: List Traffic mirror sessions with limit
+  nutanix.ncp.ntnx_TrafficMirror_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Assert List Traffic mirror sessions with limit
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+    success_msg: "List Traffic mirror sessions with limit passed"
+    fail_msg: "List Traffic mirror sessions with limit failed"
+
+########################################################################################
+# Delete Traffic mirror sessions
+########################################################################################
+
+- name: Delete Traffic mirror session with check mode
+  nutanix.ncp.ntnx_TrafficMirror_v2:
+    state: absent
+    ext_id: "{{ todelete[0] }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert Delete Traffic mirror session with check mode
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - "'will be deleted' in result.msg"
+    success_msg: "Delete Traffic mirror session with check mode passed"
+    fail_msg: "Delete Traffic mirror session with check mode failed"
+
+- name: Delete all created Traffic mirror sessions
+  nutanix.ncp.ntnx_TrafficMirror_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  ignore_errors: true
+  loop: "{{ todelete }}"
+
+- name: Assert Delete all Traffic mirror sessions
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.results | length == todelete | length
+      - result.msg == "All items completed"
+    success_msg: "All Traffic mirror sessions deleted successfully"
+    fail_msg: "Unable to delete all Traffic mirror sessions"
+
+- name: Delete Traffic mirror session with wrong external ID
+  nutanix.ncp.ntnx_TrafficMirror_v2:
+    state: absent
+    ext_id: "{{ fake_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert Delete Traffic mirror session with wrong external ID
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Delete Traffic mirror session with wrong external ID failed as expected"
+    fail_msg: "Delete Traffic mirror session with wrong external ID did not fail as expected"
+
+- name: Delete Traffic mirror session with missing external ID
+  nutanix.ncp.ntnx_TrafficMirror_v2:
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Assert Delete Traffic mirror session with missing external ID
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is absent but all of the following are missing: ext_id' in result.msg"
+    success_msg: "Delete Traffic mirror session with missing external ID failed as expected"
+    fail_msg: "Delete Traffic mirror session with missing external ID did not fail as expected"
