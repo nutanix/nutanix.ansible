@@ -103,6 +103,8 @@ action_groups:
     - ntnx_pbrs_info_v2
     - ntnx_subnets_v2
     - ntnx_subnets_info_v2
+    - ntnx_subnet_migrate_v2
+    - not_applicable
     - ntnx_vpcs_info_v2
     - ntnx_vpcs_v2
     - ntnx_roles_info_v2

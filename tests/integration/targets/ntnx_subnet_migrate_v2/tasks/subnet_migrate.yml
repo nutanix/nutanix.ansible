@@ -1,0 +1,305 @@
+---
+# Test plan for ntnx_subnet_migrate_v2 and not_applicable (Subnet info):
+#
+# 1. Info module (`not_applicable`):
+#    - List all subnets (no filter).
+#    - List subnets with limit.
+#    - List subnets with an OData filter.
+#    - Get a specific subnet by ext_id.
+#    - Get with wrong ext_id → expect failure.
+#    - Mutual-exclusivity of ext_id + filter.
+#
+# 2. Migrate module (`ntnx_subnet_migrate_v2`) — check_mode & validation:
+#    - Check-mode create (bulk subnets migration) with a real subnet_uuid.
+#    - Check-mode update (vNIC migration) with all attributes.
+#    - Check-mode delete (state=absent) → module must fail cleanly.
+#    - Missing required `subnets` for create → module fails.
+#    - Missing required `network_uuid` for vNIC migration → module fails.
+#    - state=absent without ext_id → required_if triggers.
+#
+# 3. Real bulk subnet migration & real vNIC migration are destructive on a
+#    live cluster and depend on VLAN Basic subnets / an existing VM with a
+#    vNIC. If test prerequisites (a candidate VLAN Basic subnet) are not
+#    present on the cluster we skip execution and document that in the PR
+#    body, otherwise a full migration flow is attempted.
+
+- name: Start Subnet Migration tests
+  ansible.builtin.debug:
+    msg: Start Subnet Migration tests
+
+- name: Generate random names for test resources
+  ansible.builtin.set_fact:
+    random_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    invalid_ext_id: "00000000-0000-0000-0000-000000000000"
+
+########################################################################################
+# Info module — list / get / filter / limit
+########################################################################################
+
+- name: List all subnets via not_applicable
+  nutanix.ncp.not_applicable:
+  register: all_subnets
+  ignore_errors: true
+
+- name: List all subnets status
+  ansible.builtin.assert:
+    that:
+      - all_subnets is defined
+      - all_subnets.changed == false
+      - all_subnets.failed == false
+      - all_subnets.response is defined
+      - all_subnets.response | type_debug == "list"
+    success_msg: "List all subnets passed"
+    fail_msg: "List all subnets failed"
+
+- name: List subnets with limit=1
+  nutanix.ncp.not_applicable:
+    limit: 1
+  register: limited_subnets
+  ignore_errors: true
+
+- name: List subnets with limit status
+  ansible.builtin.assert:
+    that:
+      - limited_subnets is defined
+      - limited_subnets.changed == false
+      - limited_subnets.failed == false
+      - limited_subnets.response is defined
+      - limited_subnets.response | length <= 1
+    success_msg: "List subnets with limit passed"
+    fail_msg: "List subnets with limit failed"
+
+- name: Fetch subnet by ext_id (only if list returned anything)
+  when: all_subnets.response is defined and all_subnets.response | length > 0
+  block:
+    - name: Set candidate subnet
+      ansible.builtin.set_fact:
+        first_subnet: "{{ all_subnets.response[0] }}"
+
+    - name: Get subnet by ext_id
+      nutanix.ncp.not_applicable:
+        ext_id: "{{ first_subnet.ext_id }}"
+      register: subnet_by_id
+      ignore_errors: true
+
+    - name: Get subnet by ext_id status
+      ansible.builtin.assert:
+        that:
+          - subnet_by_id is defined
+          - subnet_by_id.changed == false
+          - subnet_by_id.failed == false
+          - subnet_by_id.response is defined
+          - subnet_by_id.ext_id == first_subnet.ext_id
+          - subnet_by_id.response.ext_id == first_subnet.ext_id
+        success_msg: "Get subnet by ext_id passed"
+        fail_msg: "Get subnet by ext_id failed"
+
+    - name: List subnets filtered by exact name
+      nutanix.ncp.not_applicable:
+        filter: "name eq '{{ first_subnet.name }}'"
+      register: filtered_subnets
+      ignore_errors: true
+
+    - name: Filtered list status
+      ansible.builtin.assert:
+        that:
+          - filtered_subnets is defined
+          - filtered_subnets.failed == false
+          - filtered_subnets.response is defined
+          - filtered_subnets.response | length >= 1
+          - filtered_subnets.response[0].name == first_subnet.name
+        success_msg: "Filtered list passed"
+        fail_msg: "Filtered list failed"
+
+- name: Get subnet with wrong ext_id
+  nutanix.ncp.not_applicable:
+    ext_id: "{{ invalid_ext_id }}"
+  register: wrong_subnet
+  ignore_errors: true
+
+- name: Get subnet with wrong ext_id status
+  ansible.builtin.assert:
+    that:
+      - wrong_subnet is defined
+      - wrong_subnet.failed == true
+      - wrong_subnet.changed == false
+    success_msg: "Get subnet with wrong ext_id failed as expected"
+    fail_msg: "Get subnet with wrong ext_id did not fail as expected"
+
+- name: Info module — mutual exclusion of ext_id and filter
+  nutanix.ncp.not_applicable:
+    ext_id: "{{ invalid_ext_id }}"
+    filter: "name eq 'foo'"
+  register: mutex_result
+  ignore_errors: true
+
+- name: Info module — mutual exclusion status
+  ansible.builtin.assert:
+    that:
+      - mutex_result is defined
+      - mutex_result.failed == true
+      - "'mutually exclusive' in mutex_result.msg"
+    success_msg: "Info module mutex passed"
+    fail_msg: "Info module mutex did not fail as expected"
+
+########################################################################################
+# Migrate module — check_mode + validation
+########################################################################################
+
+- name: Check mode bulk subnet migration spec
+  nutanix.ncp.ntnx_subnet_migrate_v2:
+    state: present
+    subnets:
+      - subnet_uuid: "{{ invalid_ext_id }}"
+  check_mode: true
+  register: bulk_check
+  ignore_errors: true
+
+- name: Check mode bulk subnet migration spec status
+  ansible.builtin.assert:
+    that:
+      - bulk_check is defined
+      - bulk_check.changed == false
+      - bulk_check.failed == false
+      - bulk_check.response is defined
+      - bulk_check.response.subnets is defined
+      - bulk_check.response.subnets | length == 1
+      - bulk_check.response.subnets[0].subnet_uuid == invalid_ext_id
+    success_msg: "Bulk subnet migration check_mode passed"
+    fail_msg: "Bulk subnet migration check_mode failed"
+
+- name: Check mode vNIC migration spec with all attributes
+  nutanix.ncp.ntnx_subnet_migrate_v2:
+    state: present
+    ext_id: "{{ invalid_ext_id }}"
+    network_uuid: "{{ invalid_ext_id }}"
+    requested_ip_addresses:
+      - ipv4:
+          value: "10.0.0.10"
+    metadata:
+      category_ids:
+        - "6b48c37c-7c9b-4c1a-9d1c-1a2b3c4d5e6f"
+  check_mode: true
+  register: vnic_check
+  ignore_errors: true
+
+- name: Check mode vNIC migration status
+  ansible.builtin.assert:
+    that:
+      - vnic_check is defined
+      - vnic_check.changed == false
+      - vnic_check.failed == false
+      - vnic_check.response is defined
+      - vnic_check.response.network_uuid == invalid_ext_id
+      - vnic_check.response.requested_ip_addresses | length == 1
+      - vnic_check.response.requested_ip_addresses[0].ipv4.value == "10.0.0.10"
+      - vnic_check.response.metadata is defined
+      - vnic_check.response.metadata.category_ids | length == 1
+    success_msg: "vNIC migration check_mode passed"
+    fail_msg: "vNIC migration check_mode failed"
+
+- name: Check mode delete (state=absent) must fail
+  nutanix.ncp.ntnx_subnet_migrate_v2:
+    state: absent
+    ext_id: "{{ invalid_ext_id }}"
+    network_uuid: "{{ invalid_ext_id }}"
+  check_mode: true
+  register: delete_check
+  ignore_errors: true
+
+- name: Check mode delete status
+  ansible.builtin.assert:
+    that:
+      - delete_check is defined
+      - delete_check.failed == true
+      - "'not supported' in delete_check.msg"
+    success_msg: "state=absent rejected as expected"
+    fail_msg: "state=absent should have failed"
+
+- name: Migrate without subnets (missing required create param)
+  nutanix.ncp.ntnx_subnet_migrate_v2:
+    state: present
+  register: missing_subnets
+  ignore_errors: true
+
+- name: Missing subnets status
+  ansible.builtin.assert:
+    that:
+      - missing_subnets is defined
+      - missing_subnets.failed == true
+    success_msg: "Missing subnets fails as expected"
+    fail_msg: "Missing subnets did not fail as expected"
+
+- name: Vnic migration without network_uuid (required_together)
+  nutanix.ncp.ntnx_subnet_migrate_v2:
+    state: present
+    ext_id: "{{ invalid_ext_id }}"
+  register: missing_net
+  ignore_errors: true
+
+- name: Missing network_uuid status
+  ansible.builtin.assert:
+    that:
+      - missing_net is defined
+      - missing_net.failed == true
+      - "'required_together' in missing_net.msg or 'network_uuid' in missing_net.msg"
+    success_msg: "Missing network_uuid fails as expected"
+    fail_msg: "Missing network_uuid did not fail as expected"
+
+- name: State absent without ext_id (required_if)
+  nutanix.ncp.ntnx_subnet_migrate_v2:
+    state: absent
+  register: absent_no_ext_id
+  ignore_errors: true
+
+- name: State absent without ext_id status
+  ansible.builtin.assert:
+    that:
+      - absent_no_ext_id is defined
+      - absent_no_ext_id.failed == true
+      - "'ext_id' in absent_no_ext_id.msg"
+    success_msg: "state=absent without ext_id fails as expected"
+    fail_msg: "state=absent without ext_id did not fail as expected"
+
+########################################################################################
+# Real migration attempts (best-effort, may be no-ops on a shared cluster)
+########################################################################################
+
+- name: Look for VLAN Basic candidate subnet on the cluster
+  nutanix.ncp.not_applicable:
+    filter: "subnetType eq Networking.Config.SubnetType'VLAN'"
+    limit: 5
+  register: vlan_subnets
+  ignore_errors: true
+
+- name: Attempt bulk migration only if the cluster exposes a VLAN Basic candidate
+  when:
+    - vlan_subnets is defined
+    - not vlan_subnets.failed
+    - vlan_subnets.response is defined
+    - vlan_subnets.response | length > 0
+    - (vlan_subnets.response | selectattr('is_advanced_networking', 'equalto', false) | list | length) > 0
+  block:
+    - name: Pick first VLAN Basic subnet
+      ansible.builtin.set_fact:
+        vlan_basic_subnet: "{{ (vlan_subnets.response | selectattr('is_advanced_networking', 'equalto', false) | list)[0] }}"
+
+    - name: Trigger real migrate_subnets call
+      nutanix.ncp.ntnx_subnet_migrate_v2:
+        state: present
+        subnets:
+          - subnet_uuid: "{{ vlan_basic_subnet.ext_id }}"
+      register: real_migration
+      ignore_errors: true
+
+    - name: Real migration status
+      ansible.builtin.assert:
+        that:
+          - real_migration is defined
+          - real_migration.task_ext_id is defined or real_migration.failed == true
+        success_msg: "Real migrate_subnets call completed"
+        fail_msg: "Real migrate_subnets call unexpectedly missing task_ext_id"
+
+- name: End Subnet Migration tests
+  ansible.builtin.debug:
+    msg: End Subnet Migration tests

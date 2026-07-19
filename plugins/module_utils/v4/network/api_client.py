@@ -195,3 +195,20 @@ def get_bridges_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_networking_py_client.BridgesApi(api_client=api_client)
+
+
+def get_subnet_migrations_api_instance(module):
+    """
+    This method will return SubnetMigrationsApi instance.
+
+    The SubnetMigrationsApi exposes actions to migrate VLAN Basic subnets
+    to VLAN Advanced (managed by Prism Central Network Controller) and to
+    migrate individual vNICs between subnets (Acropolis <-> Atlas).
+
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Subnet Migrations Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.SubnetMigrationsApi(api_client=api_client)
