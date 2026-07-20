@@ -109,3 +109,30 @@ def get_cluster_profile(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching cluster profile info using ext_id",
         )
+
+
+def get_rackable_unit(module, api_instance, ext_id, cluster_ext_id):
+    """
+    This method will return rackable unit info using external ID.
+
+    A rackable unit is the physical block/chassis that houses one or more
+    Nutanix nodes; it is scoped under a cluster in the v4 clustermgmt API.
+
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        ext_id (str): rackable unit external ID
+        cluster_ext_id (str): parent cluster external ID
+    return:
+        rackable unit info (object): rackable unit info
+    """
+    try:
+        return api_instance.get_rackable_unit_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching rackable unit info using ext_id",
+        )
