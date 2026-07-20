@@ -1,0 +1,233 @@
+---
+# Variables required before running this playbook:
+# - cluster: dict with `uuid` (source Prism Element cluster hosting the VG).
+# Optional (real migrate only exercised when both are provided):
+# - target_availability_zone: dict with `uuid`.
+# - target_cluster: dict with `uuid` of the destination PE cluster.
+#
+# Test plan (each scenario aims to catch a concrete bug):
+# - Argument-spec validation:
+#     * missing required target_availability_zone_id
+#     * missing required ext_id
+# - check_mode with ALL attributes populated.
+# - check_mode with only required attributes.
+# - Real API negative cases:
+#     * invalid Volume Group ext_id (should surface API error).
+#     * invalid target_availability_zone_id (should surface API error).
+# - Real migrate (only when target_availability_zone and target_cluster
+#   variables are provided; otherwise skipped with a debug message because a
+#   single-cluster lab cannot exercise cross-site migrate).
+
+- name: Start ntnx_volume_group_migrate_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_volume_group_migrate_v2 tests
+
+- name: Generate random name suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set Volume Group name
+  ansible.builtin.set_fact:
+    vg_name: "ansible-vg-migrate-{{ random_name }}"
+
+- name: Create Volume Group on the source cluster (for migrate scenarios)
+  nutanix.ncp.ntnx_volume_groups_v2:
+    state: present
+    name: "{{ vg_name }}"
+    description: "Volume Group used for migrate integration tests"
+    cluster_reference: "{{ cluster.uuid }}"
+    sharing_status: "SHARED"
+    target_prefix: "vgmig"
+    usage_type: "USER"
+  register: create_result
+  ignore_errors: true
+
+- name: Verify Volume Group was created
+  ansible.builtin.assert:
+    that:
+      - create_result.changed == true
+      - create_result.failed == false
+      - create_result.ext_id is defined
+      - create_result.response.name == vg_name
+      - create_result.response.cluster_reference == cluster.uuid
+    fail_msg: "Unable to create Volume Group for migrate tests"
+    success_msg: "Volume Group created successfully for migrate tests"
+
+- name: Set Volume Group ext_id
+  ansible.builtin.set_fact:
+    vg_ext_id: "{{ create_result.ext_id }}"
+
+########################################################################
+# Argument-spec validation (negative)
+########################################################################
+
+- name: Fail-run when target_availability_zone_id is missing
+  nutanix.ncp.ntnx_volume_group_migrate_v2:
+    ext_id: "{{ vg_ext_id }}"
+  register: missing_az_result
+  ignore_errors: true
+
+- name: Verify module fails when target_availability_zone_id is missing
+  ansible.builtin.assert:
+    that:
+      - missing_az_result.failed == true
+      - missing_az_result.changed == false
+      - "'target_availability_zone_id' in (missing_az_result.msg | string)"
+    fail_msg: "Module accepted request without required target_availability_zone_id"
+    success_msg: "Module correctly rejected request without target_availability_zone_id"
+
+- name: Fail-run when ext_id is missing
+  nutanix.ncp.ntnx_volume_group_migrate_v2:
+    target_availability_zone_id: "17838034-1111-2222-3333-e0c44b868efa"
+  register: missing_ext_id_result
+  ignore_errors: true
+
+- name: Verify module fails when ext_id is missing
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id_result.failed == true
+      - missing_ext_id_result.changed == false
+      - "'ext_id' in (missing_ext_id_result.msg | string)"
+    fail_msg: "Module accepted request without required ext_id"
+    success_msg: "Module correctly rejected request without ext_id"
+
+########################################################################
+# check_mode
+########################################################################
+
+- name: Migrate Volume Group with ALL attributes in check_mode
+  nutanix.ncp.ntnx_volume_group_migrate_v2:
+    ext_id: "{{ vg_ext_id }}"
+    target_availability_zone_id: "17838034-1111-2222-3333-e0c44b868efa"
+    target_cluster_id: "0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b35"
+  register: check_mode_full_result
+  check_mode: true
+  ignore_errors: true
+
+- name: Verify check_mode with ALL attributes
+  ansible.builtin.assert:
+    that:
+      - check_mode_full_result.failed == false
+      - check_mode_full_result.changed == false
+      - check_mode_full_result.ext_id == vg_ext_id
+      - check_mode_full_result.response is defined
+      - check_mode_full_result.response.target_availability_zone_id == "17838034-1111-2222-3333-e0c44b868efa"
+      - check_mode_full_result.response.target_cluster_id == "0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b35"
+      - "'will be migrated' in check_mode_full_result.msg"
+    fail_msg: "Volume Group migrate check_mode with all attributes did not build the expected spec"
+    success_msg: "Volume Group migrate check_mode with all attributes built the expected spec"
+
+- name: Migrate Volume Group with only REQUIRED attributes in check_mode
+  nutanix.ncp.ntnx_volume_group_migrate_v2:
+    ext_id: "{{ vg_ext_id }}"
+    target_availability_zone_id: "17838034-1111-2222-3333-e0c44b868efa"
+  register: check_mode_min_result
+  check_mode: true
+  ignore_errors: true
+
+- name: Verify check_mode with only required attributes
+  ansible.builtin.assert:
+    that:
+      - check_mode_min_result.failed == false
+      - check_mode_min_result.changed == false
+      - check_mode_min_result.ext_id == vg_ext_id
+      - check_mode_min_result.response is defined
+      - check_mode_min_result.response.target_availability_zone_id == "17838034-1111-2222-3333-e0c44b868efa"
+      - check_mode_min_result.response.target_cluster_id is none
+    fail_msg: "Volume Group migrate check_mode with only required attributes did not build the expected spec"
+    success_msg: "Volume Group migrate check_mode with only required attributes built the expected spec"
+
+########################################################################
+# Real API — negative
+########################################################################
+
+- name: Attempt migrate with invalid Volume Group ext_id
+  nutanix.ncp.ntnx_volume_group_migrate_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    target_availability_zone_id: "17838034-1111-2222-3333-e0c44b868efa"
+  register: invalid_ext_id_result
+  ignore_errors: true
+
+- name: Verify migrate fails for invalid Volume Group ext_id
+  ansible.builtin.assert:
+    that:
+      - invalid_ext_id_result.failed == true
+      - invalid_ext_id_result.changed == false
+    fail_msg: "Migrate did not fail for an invalid Volume Group ext_id"
+    success_msg: "Migrate correctly failed for an invalid Volume Group ext_id"
+
+- name: Attempt migrate with invalid target_availability_zone_id
+  nutanix.ncp.ntnx_volume_group_migrate_v2:
+    ext_id: "{{ vg_ext_id }}"
+    target_availability_zone_id: "00000000-0000-0000-0000-000000000000"
+  register: invalid_az_result
+  ignore_errors: true
+
+- name: Verify migrate fails for invalid target_availability_zone_id
+  ansible.builtin.assert:
+    that:
+      - invalid_az_result.failed == true
+      - invalid_az_result.changed == false
+    fail_msg: "Migrate did not fail for an invalid target_availability_zone_id"
+    success_msg: "Migrate correctly failed for an invalid target_availability_zone_id"
+
+########################################################################
+# Real API — cross-site migrate (executed only when both variables exist)
+########################################################################
+
+- name: Attempt real Volume Group migrate (requires sync-rep setup)
+  when:
+    - target_availability_zone is defined
+    - target_availability_zone.uuid is defined
+    - target_cluster is defined
+    - target_cluster.uuid is defined
+  block:
+    - name: Migrate Volume Group to the target availability zone
+      nutanix.ncp.ntnx_volume_group_migrate_v2:
+        ext_id: "{{ vg_ext_id }}"
+        target_availability_zone_id: "{{ target_availability_zone.uuid }}"
+        target_cluster_id: "{{ target_cluster.uuid }}"
+      register: migrate_result
+      ignore_errors: true
+
+    - name: Verify Volume Group migrate result
+      ansible.builtin.assert:
+        that:
+          - migrate_result.failed == false
+          - migrate_result.changed == true
+          - migrate_result.ext_id == vg_ext_id
+          - migrate_result.task_ext_id is defined
+          - migrate_result.response is defined
+          - migrate_result.response.status == "SUCCEEDED"
+        fail_msg: "Volume Group migrate to target availability zone failed"
+        success_msg: "Volume Group migrate to target availability zone succeeded"
+
+- name: Skip real migrate scenario when sync-rep prerequisites are missing
+  when:
+    - target_availability_zone is not defined or target_availability_zone.uuid is not defined
+      or target_cluster is not defined or target_cluster.uuid is not defined
+  ansible.builtin.debug:
+    msg: >-
+      Skipping real migrate scenario because target_availability_zone.uuid or
+      target_cluster.uuid was not provided. A single-cluster lab cannot exercise
+      cross-site migrate; see PR body for details.
+
+########################################################################
+# Cleanup
+########################################################################
+
+- name: Delete Volume Group used for migrate tests
+  nutanix.ncp.ntnx_volume_groups_v2:
+    state: absent
+    ext_id: "{{ vg_ext_id }}"
+  register: delete_result
+  ignore_errors: true
+
+- name: Verify Volume Group deletion
+  ansible.builtin.assert:
+    that:
+      - delete_result.failed == false
+      - delete_result.changed == true
+      - delete_result.ext_id == vg_ext_id
+    fail_msg: "Unable to delete Volume Group after migrate tests"
+    success_msg: "Volume Group deleted successfully after migrate tests"

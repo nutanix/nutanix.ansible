@@ -1,0 +1,68 @@
+---
+# Summary:
+# This playbook demonstrates how to:
+# 1. Create a Volume Group on the source Prism Element cluster.
+# 2. Look up an existing Volume Group by ext_id (info module).
+# 3. Trigger the migrate action on the Volume Group to move it to the target
+#    availability zone (part of the VG synchronous replication / cross-cluster
+#    live migration workflow).
+# 4. Delete the Volume Group after migration.
+#
+# Prerequisites (must exist on the cluster BEFORE running this playbook):
+# - Two Prism Element clusters registered to the same or paired Prism Central.
+# - A synchronous-replication protection policy that covers the Volume Group.
+# - An availability zone reference for the target site.
+
+- name: Volume Group migrate playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        source_cluster_uuid: "<source_pe_cluster_uuid>"
+        target_availability_zone_uuid: "<target_availability_zone_uuid>"
+        target_cluster_uuid: "<target_pe_cluster_uuid>"
+        volume_group_name: "ansible-vg-migrate-example"
+
+    - name: Create Volume Group on the source cluster
+      nutanix.ncp.ntnx_volume_groups_v2:
+        state: present
+        name: "{{ volume_group_name }}"
+        description: "Volume Group used for migrate example"
+        cluster_reference: "{{ source_cluster_uuid }}"
+        sharing_status: "SHARED"
+        target_prefix: "vg-migrate"
+        usage_type: "USER"
+      register: create_result
+      ignore_errors: true
+
+    - name: Set Volume Group ext_id
+      ansible.builtin.set_fact:
+        volume_group_ext_id: "{{ create_result.ext_id }}"
+
+    - name: Get Volume Group details using ext_id
+      nutanix.ncp.ntnx_volume_groups_info_v2:
+        ext_id: "{{ volume_group_ext_id }}"
+      register: get_result
+      ignore_errors: true
+
+    - name: Migrate Volume Group to the target availability zone
+      nutanix.ncp.ntnx_volume_group_migrate_v2:
+        ext_id: "{{ volume_group_ext_id }}"
+        target_availability_zone_id: "{{ target_availability_zone_uuid }}"
+        target_cluster_id: "{{ target_cluster_uuid }}"
+      register: migrate_result
+      ignore_errors: true
+
+    - name: Delete Volume Group
+      nutanix.ncp.ntnx_volume_groups_v2:
+        state: absent
+        ext_id: "{{ volume_group_ext_id }}"
+      register: delete_result
+      ignore_errors: true
