@@ -1,0 +1,31 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [LoadBalancerSessionStat info examples] ***********************************
+
+TASK [Compute end_time (now) in ISO-8601 (UTC)] ********************************
+ok: [localhost] => {"changed": false, "changed_when_result": false, "cmd": ["date", "-u", "+%Y-%m-%dT%H:%M:%S.%3NZ"], "delta": "0:00:00.003481", "end": "2026-07-20 13:30:24.045495", "msg": "", "rc": 0, "start": "2026-07-20 13:30:24.042014", "stderr": "", "stderr_lines": [], "stdout": "2026-07-20T13:30:24.045Z", "stdout_lines": ["2026-07-20T13:30:24.045Z"]}
+
+TASK [Compute start_time (5 minutes back) in ISO-8601 (UTC)] *******************
+ok: [localhost] => {"changed": false, "changed_when_result": false, "cmd": ["date", "-u", "-d", "-300 seconds", "+%Y-%m-%dT%H:%M:%S.%3NZ"], "delta": "0:00:00.003199", "end": "2026-07-20 13:30:24.353819", "msg": "", "rc": 0, "start": "2026-07-20 13:30:24.350620", "stderr": "", "stderr_lines": [], "stdout": "2026-07-20T13:25:24.353Z", "stdout_lines": ["2026-07-20T13:25:24.353Z"]}
+
+TASK [Fetch load balancer session stats (minimum required attributes)] *********
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "00061de6-4a87-6b06-185b-ac1f6b6f97e2", "response": {"ext_id": "00061de6-4a87-6b06-185b-ac1f6b6f97e2", "links": null, "listener_stats": null, "stat_type": "AVG", "target_stats": null, "tenant_id": null}}
+
+TASK [Fetch load balancer session stats with all attributes] *******************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "00061de6-4a87-6b06-185b-ac1f6b6f97e2", "response": {"ext_id": "00061de6-4a87-6b06-185b-ac1f6b6f97e2", "links": null, "listener_stats": null, "stat_type": "SUM", "target_stats": null, "tenant_id": null}}
+
+TASK [Show stats results] ******************************************************
+ok: [localhost] => {
+    "msg": [
+        "Minimum-attributes call succeeded: True",
+        "All-attributes call succeeded: True",
+        "The example is authored to run against a real load balancer session on the cluster.",
+        "Override the target session by exporting LB_SESSION_EXT_ID before running the playbook."
+    ]
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=5    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
