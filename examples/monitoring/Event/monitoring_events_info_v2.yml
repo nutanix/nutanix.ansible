@@ -1,0 +1,66 @@
+---
+# Summary:
+# This playbook demonstrates all Event info operations exposed by
+# nutanix.ncp.ntnx_monitoring_events_info_v2 (v4 monitoring API):
+#   1. List all monitoring events
+#   2. List monitoring events with limit / pagination
+#   3. List monitoring events with orderby (sort by creationTime desc)
+#   4. List monitoring events with select projection
+#   5. List monitoring events with filter (OData $filter)
+#   6. Get a specific monitoring event by ext_id (using the id from the list)
+#
+# Notes:
+# - Monitoring Events are read-only; there is no create/update/delete operation
+#   on the v4 Events API. Only list + get-by-id are supported.
+
+- name: Monitoring Events info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: 10.44.76.28
+      nutanix_username: admin
+      nutanix_password: Nutanix.123
+      validate_certs: false
+  tasks:
+    - name: List all monitoring events
+      nutanix.ncp.ntnx_monitoring_events_info_v2:
+      register: all_events
+      ignore_errors: true
+
+    - name: List monitoring events with limit and page
+      nutanix.ncp.ntnx_monitoring_events_info_v2:
+        limit: 5
+        page: 0
+      register: limited_events
+      ignore_errors: true
+
+    - name: List monitoring events sorted by creationTime descending
+      nutanix.ncp.ntnx_monitoring_events_info_v2:
+        orderby: "creationTime desc"
+        limit: 3
+      register: sorted_events
+      ignore_errors: true
+
+    - name: List monitoring events with select projection
+      nutanix.ncp.ntnx_monitoring_events_info_v2:
+        select: "extId,eventType,creationTime,sourceEntity"
+        limit: 3
+      register: projected_events
+      ignore_errors: true
+
+    - name: List monitoring events with filter on eventType
+      nutanix.ncp.ntnx_monitoring_events_info_v2:
+        filter: "eventType eq 'ClusterAnomalyAudit'"
+        limit: 3
+      register: filtered_events
+      ignore_errors: true
+
+    - name: Get monitoring event by ext_id (first ext_id from the list)
+      nutanix.ncp.ntnx_monitoring_events_info_v2:
+        ext_id: "{{ all_events.response[0].ext_id }}"
+      register: single_event
+      when:
+        - all_events.response is defined
+        - all_events.response | length > 0
+      ignore_errors: true

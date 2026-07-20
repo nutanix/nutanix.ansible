@@ -1,0 +1,256 @@
+---
+# Integration tests for the read-only v4 Monitoring Events info module
+# (nutanix.ncp.ntnx_monitoring_events_info_v2).
+#
+# Test plan:
+#   1. List all monitoring events (baseline - assert list returned).
+#   2. List with limit -> assert response length <= limit.
+#   3. List with page + limit -> assert response length <= limit.
+#   4. List with orderby=creationTime desc -> assert ordering.
+#   5. List with select projection -> assert only projected fields kept.
+#   6. List with filter on eventType -> assert every entry matches.
+#   7. Get event by ext_id (using an ext_id captured from step 1).
+#   8. Negative: get event by non-existent ext_id -> assert failure.
+#   9. Negative: mutually exclusive filter + ext_id -> assert failure.
+#  10. Negative: invalid orderby field -> assert graceful failure.
+
+- name: Start monitoring events info tests
+  ansible.builtin.debug:
+    msg: Start ntnx_monitoring_events_info_v2 tests
+
+########################################################################################
+# 1. List all monitoring events (baseline)
+########################################################################################
+- name: List all monitoring events
+  nutanix.ncp.ntnx_monitoring_events_info_v2:
+  register: all_events
+  ignore_errors: true
+
+- name: List all monitoring events status
+  ansible.builtin.assert:
+    that:
+      - all_events is defined
+      - all_events.failed == false
+      - all_events.changed == false
+      - all_events.response is defined
+      - all_events.response is iterable
+      - all_events.total_available_results is defined
+    success_msg: "List all monitoring events passed"
+    fail_msg: "List all monitoring events failed"
+
+########################################################################################
+# 2. List monitoring events with limit
+########################################################################################
+- name: List monitoring events with limit
+  nutanix.ncp.ntnx_monitoring_events_info_v2:
+    limit: 2
+  register: limited_events
+  ignore_errors: true
+
+- name: List monitoring events with limit status
+  ansible.builtin.assert:
+    that:
+      - limited_events is defined
+      - limited_events.failed == false
+      - limited_events.changed == false
+      - limited_events.response is defined
+      - (limited_events.response | length) <= 2
+    success_msg: "List monitoring events with limit passed"
+    fail_msg: "List monitoring events with limit failed"
+
+########################################################################################
+# 3. List monitoring events with page + limit (pagination)
+########################################################################################
+- name: List monitoring events with limit and page
+  nutanix.ncp.ntnx_monitoring_events_info_v2:
+    limit: 1
+    page: 0
+  register: paginated_events
+  ignore_errors: true
+
+- name: List monitoring events with limit and page status
+  ansible.builtin.assert:
+    that:
+      - paginated_events is defined
+      - paginated_events.failed == false
+      - paginated_events.changed == false
+      - paginated_events.response is defined
+      - (paginated_events.response | length) <= 1
+    success_msg: "List monitoring events with limit and page passed"
+    fail_msg: "List monitoring events with limit and page failed"
+
+########################################################################################
+# 4. List monitoring events sorted by creationTime desc
+########################################################################################
+- name: List monitoring events sorted by creationTime desc
+  nutanix.ncp.ntnx_monitoring_events_info_v2:
+    orderby: "creationTime desc"
+    limit: 5
+  register: sorted_events
+  ignore_errors: true
+
+- name: List monitoring events sorted by creationTime desc status
+  ansible.builtin.assert:
+    that:
+      - sorted_events is defined
+      - sorted_events.failed == false
+      - sorted_events.changed == false
+      - sorted_events.response is defined
+      - (sorted_events.response | length) <= 5
+    success_msg: "List monitoring events sorted by creationTime desc passed"
+    fail_msg: "List monitoring events sorted by creationTime desc failed"
+
+- name: Assert descending ordering (only if at least 2 events returned)
+  ansible.builtin.assert:
+    that:
+      - sorted_events.response[0].creation_time >= sorted_events.response[1].creation_time
+    success_msg: "Descending ordering by creationTime holds"
+    fail_msg: "Descending ordering by creationTime is violated"
+  when: (sorted_events.response | default([]) | length) >= 2
+
+########################################################################################
+# 5. List monitoring events with select projection
+########################################################################################
+- name: List monitoring events with select projection
+  nutanix.ncp.ntnx_monitoring_events_info_v2:
+    select: "extId,eventType,creationTime"
+    limit: 3
+  register: projected_events
+  ignore_errors: true
+
+- name: List monitoring events with select projection status
+  ansible.builtin.assert:
+    that:
+      - projected_events is defined
+      - projected_events.failed == false
+      - projected_events.changed == false
+      - projected_events.response is defined
+    success_msg: "List monitoring events with select projection passed"
+    fail_msg: "List monitoring events with select projection failed"
+
+- name: Assert select projection returned ext_id / event_type / creation_time (skips if list empty)
+  ansible.builtin.assert:
+    that:
+      - projected_events.response[0].ext_id is defined
+      - projected_events.response[0].event_type is defined
+      - projected_events.response[0].creation_time is defined
+    success_msg: "select projection returned the expected fields"
+    fail_msg: "select projection did not return the expected fields"
+  when: (projected_events.response | default([]) | length) > 0
+
+########################################################################################
+# 6. List monitoring events with filter on eventType (only if any exist)
+########################################################################################
+- name: Capture a real event_type value from the baseline list (if any)
+  ansible.builtin.set_fact:
+    sample_event_type: "{{ all_events.response[0].event_type }}"
+  when: (all_events.response | default([]) | length) > 0 and all_events.response[0].event_type is defined
+
+- name: List monitoring events with filter on eventType
+  nutanix.ncp.ntnx_monitoring_events_info_v2:
+    filter: "eventType eq '{{ sample_event_type }}'"
+    limit: 5
+  register: filtered_events
+  ignore_errors: true
+  when: sample_event_type is defined
+
+- name: List monitoring events with filter on eventType status
+  ansible.builtin.assert:
+    that:
+      - filtered_events is defined
+      - filtered_events.failed == false
+      - filtered_events.changed == false
+      - filtered_events.response is defined
+    success_msg: "List monitoring events with filter on eventType passed"
+    fail_msg: "List monitoring events with filter on eventType failed"
+  when: sample_event_type is defined
+
+- name: Assert every returned event matches the filter (skips if list empty)
+  ansible.builtin.assert:
+    that:
+      - item.event_type == sample_event_type
+    success_msg: "Every filtered event matches eventType = {{ sample_event_type }}"
+    fail_msg: "Filtered event does not match eventType = {{ sample_event_type }}"
+  loop: "{{ filtered_events.response | default([]) }}"
+  loop_control:
+    label: "{{ item.ext_id | default(item.event_type) }}"
+  when: sample_event_type is defined and (filtered_events.response | default([]) | length) > 0
+
+########################################################################################
+# 7. Get monitoring event by ext_id (skip if the cluster has zero events)
+########################################################################################
+- name: Get monitoring event by ext_id (using the first ext_id from the baseline list)
+  nutanix.ncp.ntnx_monitoring_events_info_v2:
+    ext_id: "{{ all_events.response[0].ext_id }}"
+  register: single_event
+  ignore_errors: true
+  when: (all_events.response | default([]) | length) > 0
+
+- name: Get monitoring event by ext_id status
+  ansible.builtin.assert:
+    that:
+      - single_event is defined
+      - single_event.failed == false
+      - single_event.changed == false
+      - single_event.response is defined
+      - single_event.ext_id == all_events.response[0].ext_id
+      - single_event.response.ext_id == all_events.response[0].ext_id
+    success_msg: "Get monitoring event by ext_id passed"
+    fail_msg: "Get monitoring event by ext_id failed"
+  when: (all_events.response | default([]) | length) > 0
+
+########################################################################################
+# 8. Negative: get monitoring event by non-existent ext_id
+########################################################################################
+- name: Get monitoring event by non-existent ext_id (should fail)
+  nutanix.ncp.ntnx_monitoring_events_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: missing_event
+  ignore_errors: true
+
+- name: Get monitoring event by non-existent ext_id status
+  ansible.builtin.assert:
+    that:
+      - missing_event is defined
+      - missing_event.failed == true
+      - missing_event.changed == false
+    success_msg: "Get monitoring event by non-existent ext_id failed as expected"
+    fail_msg: "Get monitoring event by non-existent ext_id did not fail as expected"
+
+########################################################################################
+# 9. Negative: mutually exclusive filter + ext_id
+########################################################################################
+- name: Fetch monitoring event using mutually exclusive filter + ext_id (should fail)
+  nutanix.ncp.ntnx_monitoring_events_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    filter: "eventType eq 'ClusterAnomalyAudit'"
+  register: mutex_result
+  ignore_errors: true
+
+- name: Fetch monitoring event using mutually exclusive filter + ext_id status
+  ansible.builtin.assert:
+    that:
+      - mutex_result is defined
+      - mutex_result.failed == true
+      - mutex_result.changed == false
+      - "'mutually exclusive' in mutex_result.msg"
+    success_msg: "Mutually exclusive ext_id + filter failed as expected"
+    fail_msg: "Mutually exclusive ext_id + filter did not fail as expected"
+
+########################################################################################
+# 10. Negative: invalid orderby field
+########################################################################################
+- name: List monitoring events with invalid orderby (should fail)
+  nutanix.ncp.ntnx_monitoring_events_info_v2:
+    orderby: "definitelyNotAField desc"
+  register: bad_orderby
+  ignore_errors: true
+
+- name: List monitoring events with invalid orderby status
+  ansible.builtin.assert:
+    that:
+      - bad_orderby is defined
+      - bad_orderby.failed == true
+      - bad_orderby.changed == false
+    success_msg: "Invalid orderby field failed as expected"
+    fail_msg: "Invalid orderby field did not fail as expected"
