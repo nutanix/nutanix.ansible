@@ -109,3 +109,27 @@ def get_cluster_profile(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching cluster profile info using ext_id",
         )
+
+
+def get_virtual_nic(module, api_instance, ext_id, cluster_ext_id, host_ext_id):
+    """
+    This method will return virtual NIC info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        ext_id (str): virtual NIC external ID
+        cluster_ext_id (str): cluster external ID (Prism Element cluster UUID)
+        host_ext_id (str): host external ID
+    return:
+        virtual NIC info (object): virtual NIC info
+    """
+    try:
+        return api_instance.get_virtual_nic_by_id(
+            clusterExtId=cluster_ext_id, hostExtId=host_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching virtual NIC info using ext_id",
+        )
