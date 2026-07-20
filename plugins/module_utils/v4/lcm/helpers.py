@@ -66,3 +66,25 @@ def get_lcm_entity(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching entity info using external identifier of the entity",
         )
+
+
+def get_lcm_notification(module, api_instance, ext_id):
+    """
+    This method will return the LCM compute-notification resource details for a given
+    external identifier. The resource is created by an earlier compute-notifications
+    action and remains valid for one hour after creation.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): LCM notifications api instance
+        ext_id (str): External id of the notification resource
+    Returns:
+        notification_info (object): LCM notification info object
+    """
+    try:
+        return api_instance.get_notification_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching LCM compute-notification info using external identifier of the resource",
+        )
