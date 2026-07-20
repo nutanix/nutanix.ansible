@@ -170,3 +170,30 @@ def get_virtual_switch(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching virtual switch info using ext_id",
         )
+
+
+def get_nic_profile(module, api_instance, ext_id):
+    """
+    This method will return the NIC Profile info using its ext_id.
+
+    The returned object contains ``host_nic_references`` which is the list of
+    Host NICs currently associated with this NIC Profile. The disassociate
+    action module uses this both for the pre-check (verifying the target Host
+    NIC belongs to the profile) and for building the response after a
+    successful disassociation.
+
+    Args:
+        module: Ansible module
+        api_instance: NicProfilesApi instance from ntnx_networking_py_client sdk
+        ext_id (str): NIC Profile external ID
+    return:
+        info (object): NIC Profile info
+    """
+    try:
+        return api_instance.get_nic_profile_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching NIC profile info using ext_id",
+        )

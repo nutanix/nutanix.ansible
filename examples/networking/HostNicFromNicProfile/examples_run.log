@@ -1,0 +1,45 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [HostNicFromNicProfile playbook] ******************************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"host_nic_ext_id": "11111111-1111-4111-8111-111111111111", "nic_profile_ext_id": "00000000-0000-0000-0000-000000000000", "nic_profile_name": "nic_profile_ansible"}, "changed": false}
+
+TASK [Get HostNicFromNicProfile info using NIC Profile ext_id] *****************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching NIC profile info using ext_id
+Origin: /tmp/codegen-artifacts.ajCNTp/run_example/host_nic_from_nic_profile_v2.yml:33:7
+
+31         nic_profile_name: "nic_profile_ansible"
+32
+33     - name: Get HostNicFromNicProfile info using NIC Profile ext_id
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching NIC profile info using ext_id", "response": {"$objectType": "networking.v4.config.GetNicProfileApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10060", "locale": "en_US", "message": "Failed to get Nic Profile 00000000-0000-0000-0000-000000000000 as a referenced resource was not found - Nic Profile: 00000000-0000-0000-0000-000000000000 not found", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.3/config/nic-profiles/00000000-0000-0000-0000-000000000000", "rel": "self"}], "totalAvailableResults": 0}}, "status": 404}
+...ignoring
+
+TASK [List all HostNicFromNicProfile entries] **********************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List HostNicFromNicProfile filtered by NIC Profile name] *****************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List HostNicFromNicProfile with a limit] *********************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [Disassociate Host NIC from NIC Profile] **********************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching NIC profile info using ext_id
+Origin: /tmp/codegen-artifacts.ajCNTp/run_example/host_nic_from_nic_profile_v2.yml:56:7
+
+54       ignore_errors: true
+55
+56     - name: Disassociate Host NIC from NIC Profile
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching NIC profile info using ext_id", "response": {"$objectType": "networking.v4.config.GetNicProfileApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10060", "locale": "en_US", "message": "Failed to get Nic Profile 00000000-0000-0000-0000-000000000000 as a referenced resource was not found - Nic Profile: 00000000-0000-0000-0000-000000000000 not found", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.3/config/nic-profiles/00000000-0000-0000-0000-000000000000", "rel": "self"}], "totalAvailableResults": 0}}, "status": 404}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=6    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=2   
+
