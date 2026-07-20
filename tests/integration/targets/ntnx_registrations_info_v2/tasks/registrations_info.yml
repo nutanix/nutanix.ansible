@@ -1,0 +1,319 @@
+---
+# Test plan for ntnx_registrations_info_v2 (Prism Central v4 RegistrationApi).
+#
+# The v4 RegistrationApi is read-only, so this file exercises the entire
+# surface exposed by both SDK methods:
+#   - get_registration_by_id(domainManagerExtId, extId)
+#   - list_registrations(domainManagerExtId, _page, _limit, _filter, _orderby, _select)
+#
+# Scenarios covered:
+#   1. Discover the local domain manager (Prism Central) ext_id.
+#   2. List all registrations under the domain manager (happy path) and
+#      assert on shape / total_available_results / per-item fields.
+#   3. Get a specific registration by ext_id and cross-check its remote
+#      cluster details match the corresponding entry in the list.
+#   4. List with paging (page=0, limit=1) and assert only one result.
+#   5. List with $filter on remote_cluster_ext_id and assert filter works.
+#   6. List with $orderby.
+#   7. List with $select projection.
+#   8. Negative: missing required domain_manager_ext_id.
+#   9. Negative: unknown/invalid registration ext_id.
+#  10. Mutually-exclusive params: ext_id + filter (module-side validation).
+
+- name: Start ntnx_registrations_info_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_registrations_info_v2 tests
+
+###############################################################################
+# 1. Discover local domain manager ext_id
+###############################################################################
+
+- name: Fetch domain manager list from the local Prism Central
+  nutanix.ncp.ntnx_pc_config_info_v2: {}
+  register: pc_config
+  ignore_errors: true
+
+- name: Validate domain manager was discovered
+  ansible.builtin.assert:
+    that:
+      - pc_config is defined
+      - pc_config.failed == false
+      - pc_config.response is defined
+    success_msg: "Domain manager list fetched"
+    fail_msg: "Failed to fetch domain manager list"
+
+- name: Set domain_manager_ext_id (handles both list and dict shapes)
+  ansible.builtin.set_fact:
+    domain_manager_ext_id: >-
+      {{ (pc_config.response[0].ext_id)
+         if (pc_config.response is iterable and pc_config.response is not mapping
+             and (pc_config.response | length) > 0)
+         else pc_config.response.ext_id }}
+
+- name: Assert we have a domain_manager_ext_id
+  ansible.builtin.assert:
+    that:
+      - domain_manager_ext_id is defined
+      - domain_manager_ext_id | length > 0
+    success_msg: "domain_manager_ext_id resolved successfully"
+    fail_msg: "Could not resolve domain_manager_ext_id"
+
+###############################################################################
+# 2. List all registrations under the domain manager (happy path)
+###############################################################################
+
+- name: List all registrations under the domain manager
+  nutanix.ncp.ntnx_registrations_info_v2:
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+  register: list_result
+  ignore_errors: true
+
+- name: Validate list-all response shape
+  ansible.builtin.assert:
+    that:
+      - list_result is defined
+      - list_result.changed == false
+      - list_result.failed == false
+      - list_result.response is defined
+      - list_result.response is iterable
+      - list_result.total_available_results is defined
+      - (list_result.total_available_results | int) >= 0
+    success_msg: "List-all response shape looks good"
+    fail_msg: "List-all response shape is wrong"
+
+- name: Sanity-check each returned registration entry
+  ansible.builtin.assert:
+    that:
+      - item.remote_cluster_ext_id is defined
+      - item.remote_cluster_ext_id | length > 0
+      - item.connectivity_status is defined
+      - item.remote_cluster_details is defined
+      - item.remote_cluster_details.name is defined
+      - item.remote_cluster_details.cluster_type is defined
+      - item.remote_cluster_details.cluster_type in
+        ["AOS", "DOMAIN_MANAGER", "WITNESS_VM", "$UNKNOWN"]
+    success_msg: "Registration entry {{ item.remote_cluster_ext_id }} has expected fields"
+    fail_msg: "Registration entry is missing required fields"
+  loop: "{{ list_result.response | default([]) }}"
+  loop_control:
+    label: "{{ item.remote_cluster_ext_id | default('<no-id>') }}"
+
+- name: Capture the first registration id for follow-up tests
+  ansible.builtin.set_fact:
+    first_registration_ext_id: "{{ list_result.response[0].remote_cluster_ext_id }}"
+    first_registration_cluster_type: "{{ list_result.response[0].remote_cluster_details.cluster_type }}"
+    first_registration_name: "{{ list_result.response[0].remote_cluster_details.name }}"
+  when: (list_result.response | default([]) | length) > 0
+
+###############################################################################
+# 3. Get a specific registration by ext_id
+###############################################################################
+
+- name: Get registration by ext_id
+  nutanix.ncp.ntnx_registrations_info_v2:
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    ext_id: "{{ first_registration_ext_id }}"
+  register: single_result
+  ignore_errors: true
+  when: first_registration_ext_id is defined
+
+- name: Validate get-by-id response
+  ansible.builtin.assert:
+    that:
+      - single_result is defined
+      - single_result.changed == false
+      - single_result.failed == false
+      - single_result.ext_id == first_registration_ext_id
+      - single_result.response is defined
+      - single_result.response.remote_cluster_ext_id == first_registration_ext_id
+      - single_result.response.remote_cluster_details.cluster_type == first_registration_cluster_type
+      - single_result.response.remote_cluster_details.name == first_registration_name
+    success_msg: "Get-by-id returned the correct registration"
+    fail_msg: "Get-by-id returned an unexpected registration"
+  when: first_registration_ext_id is defined
+
+###############################################################################
+# 4. List with paging (page=0, limit=1)
+###############################################################################
+
+- name: List registrations with limit=1
+  nutanix.ncp.ntnx_registrations_info_v2:
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    page: 0
+    limit: 1
+  register: page_result
+  ignore_errors: true
+
+- name: Validate limit=1 result
+  ansible.builtin.assert:
+    that:
+      - page_result is defined
+      - page_result.failed == false
+      - page_result.response is defined
+      - (page_result.response | length) <= 1
+    success_msg: "limit=1 respected"
+    fail_msg: "limit=1 was not respected"
+
+###############################################################################
+# 5. List with $filter on remoteClusterExtId
+###############################################################################
+
+- name: List registrations with $filter on remoteClusterExtId
+  nutanix.ncp.ntnx_registrations_info_v2:
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    filter: "remoteClusterExtId eq '{{ first_registration_ext_id }}'"
+  register: filter_result
+  ignore_errors: true
+  when: first_registration_ext_id is defined
+
+- name: Validate filter result
+  ansible.builtin.assert:
+    that:
+      - filter_result is defined
+      - filter_result.failed == false
+      - filter_result.response is defined
+      - (filter_result.response | length) >= 1
+      - filter_result.response[0].remote_cluster_ext_id == first_registration_ext_id
+    success_msg: "Filter matched the expected registration"
+    fail_msg: "Filter did not return the expected registration"
+  when: first_registration_ext_id is defined
+
+###############################################################################
+# 6. List with $orderby (ascending vs descending on a sortable field)
+###############################################################################
+
+# The v4 Registration list backend only allows a subset of fields to be
+# sorted on (see error code PRI-55106). remoteClusterDetails/name and
+# createdTime are known sortable — remoteClusterExtId is NOT.
+
+- name: List registrations ordered by remoteClusterDetails/name asc
+  nutanix.ncp.ntnx_registrations_info_v2:
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    orderby: "remoteClusterDetails/name"
+  register: orderby_asc
+  ignore_errors: true
+
+- name: Validate orderby ascending succeeded
+  ansible.builtin.assert:
+    that:
+      - orderby_asc is defined
+      - orderby_asc.failed == false
+      - orderby_asc.response is defined
+    success_msg: "orderby ascending succeeded"
+    fail_msg: "orderby ascending failed"
+
+- name: List registrations ordered by remoteClusterDetails/name desc
+  nutanix.ncp.ntnx_registrations_info_v2:
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    orderby: "remoteClusterDetails/name desc"
+  register: orderby_desc
+  ignore_errors: true
+
+- name: Validate orderby descending succeeded
+  ansible.builtin.assert:
+    that:
+      - orderby_desc is defined
+      - orderby_desc.failed == false
+      - orderby_desc.response is defined
+    success_msg: "orderby descending succeeded"
+    fail_msg: "orderby descending failed"
+
+- name: List registrations ordered by an unsupported field (negative)
+  nutanix.ncp.ntnx_registrations_info_v2:
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    orderby: "remoteClusterExtId"
+  register: orderby_bad
+  ignore_errors: true
+
+- name: Validate unsupported orderby field is rejected
+  ansible.builtin.assert:
+    that:
+      - orderby_bad is defined
+      - orderby_bad.failed == true
+      - "'not sortable' in (orderby_bad.response.data.error[0].message | default('') | lower)"
+    success_msg: "Unsortable orderby field correctly rejected by the backend"
+    fail_msg: "Unsortable orderby field was NOT rejected"
+
+###############################################################################
+# 7. List with $select projection
+###############################################################################
+
+- name: List registrations with $select projection
+  nutanix.ncp.ntnx_registrations_info_v2:
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    select: "remoteClusterExtId,connectivityStatus"
+  register: select_result
+  ignore_errors: true
+
+- name: Validate select projection succeeded
+  ansible.builtin.assert:
+    that:
+      - select_result is defined
+      - select_result.failed == false
+      - select_result.response is defined
+    success_msg: "$select projection succeeded"
+    fail_msg: "$select projection failed"
+
+###############################################################################
+# 8. Negative: missing required domain_manager_ext_id
+###############################################################################
+
+- name: Call info module without required domain_manager_ext_id
+  nutanix.ncp.ntnx_registrations_info_v2: {}
+  register: missing_dm
+  ignore_errors: true
+
+- name: Validate missing-domain-manager-ext-id failure
+  ansible.builtin.assert:
+    that:
+      - missing_dm is defined
+      - missing_dm.failed == true
+      - "'domain_manager_ext_id' in (missing_dm.msg | default(''))"
+    success_msg: "Missing domain_manager_ext_id correctly rejected"
+    fail_msg: "Module did not reject missing domain_manager_ext_id"
+
+###############################################################################
+# 9. Negative: unknown / invalid registration ext_id
+###############################################################################
+
+- name: Get registration with a bogus ext_id
+  nutanix.ncp.ntnx_registrations_info_v2:
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: bogus_result
+  ignore_errors: true
+
+- name: Validate bogus ext_id fails with a descriptive error
+  ansible.builtin.assert:
+    that:
+      - bogus_result is defined
+      - bogus_result.failed == true
+      - bogus_result.msg is defined
+      - "'registration' in (bogus_result.msg | lower)"
+    success_msg: "Bogus ext_id was rejected with a clear error"
+    fail_msg: "Bogus ext_id did not fail as expected"
+
+###############################################################################
+# 10. Mutually-exclusive params: ext_id + filter
+###############################################################################
+
+- name: Provide ext_id together with filter (mutually exclusive)
+  nutanix.ncp.ntnx_registrations_info_v2:
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    ext_id: "{{ first_registration_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    filter: "name eq 'anything'"
+  register: mex_result
+  ignore_errors: true
+
+- name: Validate mutually-exclusive rejection
+  ansible.builtin.assert:
+    that:
+      - mex_result is defined
+      - mex_result.failed == true
+      - "'mutually exclusive' in (mex_result.msg | default('') | lower)"
+    success_msg: "ext_id and filter are correctly mutually exclusive"
+    fail_msg: "ext_id + filter combination was not rejected"
+
+- name: Finish ntnx_registrations_info_v2 tests
+  ansible.builtin.debug:
+    msg: Finished ntnx_registrations_info_v2 tests
