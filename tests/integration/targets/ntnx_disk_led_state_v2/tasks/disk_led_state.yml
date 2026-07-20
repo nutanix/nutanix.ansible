@@ -1,0 +1,255 @@
+---
+# Test plan for ntnx_disk_led_state_v2
+# ------------------------------------
+# The module is action-only: it POSTs to the Cluster Management v4
+# ``/config/disks/{extId}/$actions/update-led-state`` endpoint. The API
+# submits a task, so tests focus on:
+#   * argument-spec validation (required fields, choice constraints)
+#   * check_mode behaviour (no API call, spec echoed back)
+#   * the happy-path locate/unlocate flow against a real disk on the cluster
+#   * wait=false path (task_ext_id returned, response is the task submission)
+#   * negative path with an invalid ext_id
+#
+# The target is marked ``disabled`` (like every other v2 integration
+# target). It is executed on-demand during code-gen; do not enable it in
+# the default sanity gate.
+
+- name: Start Disk LED State tests
+  ansible.builtin.debug:
+    msg: Start Disk LED State tests
+
+########################################################################
+# Discover a disk on the live cluster via the raw v4 REST API. We use
+# ``ansible.builtin.uri`` so this test target does not require the
+# (still to be generated) ``ntnx_disks_info_v2`` module.
+########################################################################
+
+- name: List disks on the cluster (raw v4 REST call)
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:{{ port | default(9440) }}/api/clustermgmt/v4.2/config/disks?$limit=1"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs }}"
+    return_content: true
+    status_code: 200
+    headers:
+      Accept: application/json
+  register: disks_list_response
+  ignore_errors: true
+
+- name: Verify at least one disk was returned
+  ansible.builtin.assert:
+    that:
+      - disks_list_response is defined
+      - disks_list_response.failed == false
+      - disks_list_response.json is defined
+      - disks_list_response.json.data is defined
+      - disks_list_response.json.data | length > 0
+    fail_msg: "No disks were returned from the cluster — cannot exercise disk LED tests"
+    success_msg: "Fetched at least one disk from the cluster"
+
+- name: Capture a disk ext_id for the tests
+  ansible.builtin.set_fact:
+    disk_ext_id: "{{ disks_list_response.json.data[0].extId }}"
+
+- name: Show the captured disk ext_id
+  ansible.builtin.debug:
+    var: disk_ext_id
+
+########################################################################
+# check_mode: turning the LED on must build a valid spec, must not
+# trigger a real API call, and must not report ``changed``.
+########################################################################
+
+- name: Check_mode turn LED ON — spec is built without calling API
+  nutanix.ncp.ntnx_disk_led_state_v2:
+    ext_id: "{{ disk_ext_id }}"
+    is_engaged: true
+  check_mode: true
+  register: cm_on
+  ignore_errors: true
+
+- name: Verify check_mode LED ON
+  ansible.builtin.assert:
+    that:
+      - cm_on.changed == false
+      - cm_on.failed == false
+      - cm_on.ext_id == disk_ext_id
+      - cm_on.response is defined
+      - cm_on.response.is_engaged == true
+      - cm_on.task_ext_id is none
+    fail_msg: "check_mode LED-ON did not produce the expected spec-only response"
+    success_msg: "check_mode LED-ON produced the expected spec-only response"
+
+- name: Check_mode turn LED OFF — spec is built without calling API
+  nutanix.ncp.ntnx_disk_led_state_v2:
+    ext_id: "{{ disk_ext_id }}"
+    is_engaged: false
+  check_mode: true
+  register: cm_off
+  ignore_errors: true
+
+- name: Verify check_mode LED OFF
+  ansible.builtin.assert:
+    that:
+      - cm_off.changed == false
+      - cm_off.failed == false
+      - cm_off.ext_id == disk_ext_id
+      - cm_off.response is defined
+      - cm_off.response.is_engaged == false
+      - cm_off.task_ext_id is none
+    fail_msg: "check_mode LED-OFF did not produce the expected spec-only response"
+    success_msg: "check_mode LED-OFF produced the expected spec-only response"
+
+########################################################################
+# Happy path: locate the drive (turn LED on), then unlocate it (turn LED
+# off). Both must return ``changed=true`` and produce a SUCCEEDED task
+# with the disk in ``entities_affected``.
+########################################################################
+
+- name: Turn LED ON for the disk (locate)
+  nutanix.ncp.ntnx_disk_led_state_v2:
+    ext_id: "{{ disk_ext_id }}"
+    is_engaged: true
+  register: led_on
+  ignore_errors: true
+
+- name: Verify LED ON task succeeded
+  ansible.builtin.assert:
+    that:
+      - led_on.changed == true
+      - led_on.failed == false
+      - led_on.ext_id == disk_ext_id
+      - led_on.task_ext_id is defined
+      - led_on.task_ext_id | length > 0
+      - led_on.response is defined
+      - led_on.response.status == "SUCCEEDED"
+      - led_on.response.entities_affected is defined
+      - led_on.response.entities_affected | length >= 1
+      - led_on.response.entities_affected | selectattr('ext_id', 'equalto', disk_ext_id) | list | length >= 1
+    fail_msg: "Turning LED ON did not complete successfully"
+    success_msg: "Turned LED ON successfully"
+
+- name: Turn LED OFF for the disk (unlocate)
+  nutanix.ncp.ntnx_disk_led_state_v2:
+    ext_id: "{{ disk_ext_id }}"
+    is_engaged: false
+  register: led_off
+  ignore_errors: true
+
+- name: Verify LED OFF task succeeded
+  ansible.builtin.assert:
+    that:
+      - led_off.changed == true
+      - led_off.failed == false
+      - led_off.ext_id == disk_ext_id
+      - led_off.task_ext_id is defined
+      - led_off.task_ext_id | length > 0
+      - led_off.response is defined
+      - led_off.response.status == "SUCCEEDED"
+      - led_off.response.entities_affected is defined
+      - led_off.response.entities_affected | length >= 1
+      - led_off.response.entities_affected | selectattr('ext_id', 'equalto', disk_ext_id) | list | length >= 1
+    fail_msg: "Turning LED OFF did not complete successfully"
+    success_msg: "Turned LED OFF successfully"
+
+########################################################################
+# wait=false path: the module must return a task submission response
+# (no ``status`` field yet) and still surface the task_ext_id so the
+# caller can poll on their own.
+########################################################################
+
+- name: Turn LED ON but do not wait for the task to complete
+  nutanix.ncp.ntnx_disk_led_state_v2:
+    ext_id: "{{ disk_ext_id }}"
+    is_engaged: true
+    wait: false
+  register: led_on_no_wait
+  ignore_errors: true
+
+- name: Verify wait=false returned the task submission only
+  ansible.builtin.assert:
+    that:
+      - led_on_no_wait.changed == true
+      - led_on_no_wait.failed == false
+      - led_on_no_wait.task_ext_id is defined
+      - led_on_no_wait.task_ext_id | length > 0
+      - led_on_no_wait.response is defined
+      - led_on_no_wait.response.ext_id == led_on_no_wait.task_ext_id
+    fail_msg: "wait=false did not return the initial task submission response"
+    success_msg: "wait=false returned the initial task submission response"
+
+- name: Clean up — turn LED OFF (best-effort) after wait=false test
+  nutanix.ncp.ntnx_disk_led_state_v2:
+    ext_id: "{{ disk_ext_id }}"
+    is_engaged: false
+  register: led_off_cleanup
+  ignore_errors: true
+
+- name: Verify cleanup LED OFF succeeded
+  ansible.builtin.assert:
+    that:
+      - led_off_cleanup.changed == true
+      - led_off_cleanup.failed == false
+      - led_off_cleanup.response.status == "SUCCEEDED"
+    fail_msg: "Cleanup LED OFF did not complete successfully"
+    success_msg: "Cleanup LED OFF completed successfully"
+
+########################################################################
+# Negative: argument spec validation (required fields).
+########################################################################
+
+- name: Negative — missing ext_id must fail (argument spec)
+  nutanix.ncp.ntnx_disk_led_state_v2:
+    is_engaged: true
+  register: neg_missing_ext_id
+  ignore_errors: true
+
+- name: Verify missing ext_id was rejected by the module argument spec
+  ansible.builtin.assert:
+    that:
+      - neg_missing_ext_id.failed == true
+      - neg_missing_ext_id.changed == false
+      - >-
+        (neg_missing_ext_id.msg is defined and 'ext_id' in neg_missing_ext_id.msg)
+        or (neg_missing_ext_id.module_stderr is defined and 'ext_id' in neg_missing_ext_id.module_stderr)
+    fail_msg: "Module did not reject the missing ext_id parameter"
+    success_msg: "Module correctly rejected the missing ext_id parameter"
+
+- name: Negative — missing is_engaged must fail (argument spec)
+  nutanix.ncp.ntnx_disk_led_state_v2:
+    ext_id: "{{ disk_ext_id }}"
+  register: neg_missing_is_engaged
+  ignore_errors: true
+
+- name: Verify missing is_engaged was rejected by the module argument spec
+  ansible.builtin.assert:
+    that:
+      - neg_missing_is_engaged.failed == true
+      - neg_missing_is_engaged.changed == false
+      - >-
+        (neg_missing_is_engaged.msg is defined and 'is_engaged' in neg_missing_is_engaged.msg)
+        or (neg_missing_is_engaged.module_stderr is defined and 'is_engaged' in neg_missing_is_engaged.module_stderr)
+    fail_msg: "Module did not reject the missing is_engaged parameter"
+    success_msg: "Module correctly rejected the missing is_engaged parameter"
+
+########################################################################
+# Negative: invalid disk ext_id (Disk not found).
+########################################################################
+
+- name: Negative — invalid disk ext_id must fail on the API call
+  nutanix.ncp.ntnx_disk_led_state_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    is_engaged: true
+  register: neg_bad_ext_id
+  ignore_errors: true
+
+- name: Verify invalid disk ext_id was rejected by the API
+  ansible.builtin.assert:
+    that:
+      - neg_bad_ext_id.failed == true
+      - neg_bad_ext_id.changed == false
+    fail_msg: "Module did not fail on an invalid disk ext_id"
+    success_msg: "Module correctly failed on an invalid disk ext_id"
