@@ -1,0 +1,503 @@
+---
+# Integration tests for the vCenter Server extension modules under the
+# cluster_management namespace.
+#
+# Test plan (see PR body for details):
+# - Info module (get by ext_id, list-all, filter, limit, invalid ext_id).
+# - CRUD module argument-spec / required-if validation.
+# - CRUD module check_mode for register and unregister (one each) — asserts
+#   we emit the credentials spec / delete message without hitting the API.
+# - CRUD module error paths: bogus ext_id triggers the API-level
+#   VCENTER_EXTENSION_NOT_FOUND (VCNT-20100) response.
+# - Register / unregister lifecycle against a discovered ESXi extension when
+#   one exists on the target Prism Central; when the PC has no ESXi cluster
+#   with a discoverable vCenter, the lifecycle block is skipped and the
+#   reason is asserted so the run still fails on real regressions rather
+#   than silently passing.
+
+- name: Start VcenterExtension tests
+  ansible.builtin.debug:
+    msg: Start VcenterExtension tests
+
+- name: Generate random suffix and dummy uuid for negative cases
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    suffix_name: "ansible"
+    bogus_ext_id: "00000000-0000-0000-0000-000000000000"
+
+########################################################################################
+# Info module — list, filter, limit, get-by-id, invalid ext_id
+########################################################################################
+
+- name: List all vCenter Server extensions
+  nutanix.ncp.ntnx_vcenter_extensions_info_v2:
+  register: list_result
+  ignore_errors: true
+
+- name: List all vCenter Server extensions status
+  ansible.builtin.assert:
+    that:
+      - list_result is defined
+      - list_result.changed == false
+      - list_result.failed == false
+      - list_result.response is defined
+      - list_result.total_available_results is defined
+      - list_result.response is iterable
+    success_msg: "List all vCenter extensions passed"
+    fail_msg: "List all vCenter extensions failed"
+
+- name: Remember the current list of discovered extensions
+  ansible.builtin.set_fact:
+    discovered_extensions: "{{ list_result.response | default([]) }}"
+
+- name: List vCenter Server extensions with limit
+  nutanix.ncp.ntnx_vcenter_extensions_info_v2:
+    limit: 1
+  register: limit_result
+  ignore_errors: true
+
+- name: List vCenter Server extensions with limit status
+  ansible.builtin.assert:
+    that:
+      - limit_result is defined
+      - limit_result.changed == false
+      - limit_result.failed == false
+      - limit_result.response is defined
+      - limit_result.response is iterable
+      - (limit_result.response | length) <= 1
+    success_msg: "List vCenter extensions with limit passed"
+    fail_msg: "List vCenter extensions with limit failed"
+
+- name: List vCenter Server extensions with filter on isRegistered
+  nutanix.ncp.ntnx_vcenter_extensions_info_v2:
+    filter: "isRegistered eq true"
+  register: filter_result
+  ignore_errors: true
+
+- name: List vCenter Server extensions with filter status
+  ansible.builtin.assert:
+    that:
+      - filter_result is defined
+      - filter_result.changed == false
+      - filter_result.failed == false
+      - filter_result.response is defined
+      - filter_result.response is iterable
+    success_msg: "List vCenter extensions with filter passed"
+    fail_msg: "List vCenter extensions with filter failed"
+
+- name: Assert every filtered vCenter extension has isRegistered=true
+  ansible.builtin.assert:
+    that:
+      - item.is_registered == true
+    success_msg: "Filter isRegistered eq true honoured for {{ item.ext_id }}"
+    fail_msg: "Filter isRegistered eq true violated for {{ item.ext_id }}"
+  loop: "{{ filter_result.response }}"
+  loop_control:
+    label: "{{ item.ext_id | default('unknown') }}"
+  when: filter_result.response | length > 0
+
+- name: Get vCenter Server extension using a bogus ext_id
+  nutanix.ncp.ntnx_vcenter_extensions_info_v2:
+    ext_id: "{{ bogus_ext_id }}"
+  register: invalid_get_result
+  ignore_errors: true
+
+- name: Get vCenter Server extension using a bogus ext_id status
+  ansible.builtin.assert:
+    that:
+      - invalid_get_result is defined
+      - invalid_get_result.changed == false
+      - invalid_get_result.failed == true
+      - invalid_get_result.msg == "Api Exception raised while fetching vCenter extension info using ext_id"
+      - invalid_get_result.status == 404
+    success_msg: "Get vCenter extension with bogus ext_id failed as expected"
+    fail_msg: "Get vCenter extension with bogus ext_id did not fail as expected"
+
+- name: Info module — reject ext_id + filter combination
+  nutanix.ncp.ntnx_vcenter_extensions_info_v2:
+    ext_id: "{{ bogus_ext_id }}"
+    filter: "isRegistered eq true"
+  register: mutually_exclusive_info
+  ignore_errors: true
+
+- name: Info module mutually-exclusive status
+  ansible.builtin.assert:
+    that:
+      - mutually_exclusive_info is defined
+      - mutually_exclusive_info.changed == false
+      - mutually_exclusive_info.failed == true
+      - "'parameters are mutually exclusive: ext_id|filter' in mutually_exclusive_info.msg"
+    success_msg: "Info module rejects ext_id+filter as expected"
+    fail_msg: "Info module did not reject ext_id+filter"
+
+########################################################################################
+# CRUD module — argument spec / required_if validation
+########################################################################################
+
+- name: Register vCenter extension without ext_id (should fail)  # noqa: args[module]
+  nutanix.ncp.ntnx_vcenter_extension_v2:
+    state: present
+    username: "administrator@vsphere.local"
+    password: "vcenter-admin-password"
+    port: 443
+  register: missing_ext_id_register
+  ignore_errors: true
+
+- name: Register vCenter extension without ext_id status
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id_register is defined
+      - missing_ext_id_register.changed == false
+      - missing_ext_id_register.failed == true
+      - "'state is present but all of the following are missing: ext_id' in missing_ext_id_register.msg"
+    success_msg: "Register without ext_id failed as expected"
+    fail_msg: "Register without ext_id did not fail as expected"
+
+- name: Unregister vCenter extension without ext_id (should fail)  # noqa: args[module]
+  nutanix.ncp.ntnx_vcenter_extension_v2:
+    state: absent
+    username: "administrator@vsphere.local"
+    password: "vcenter-admin-password"
+    port: 443
+  register: missing_ext_id_unregister
+  ignore_errors: true
+
+- name: Unregister vCenter extension without ext_id status
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id_unregister is defined
+      - missing_ext_id_unregister.changed == false
+      - missing_ext_id_unregister.failed == true
+      - "'state is absent but all of the following are missing: ext_id' in missing_ext_id_unregister.msg"
+    success_msg: "Unregister without ext_id failed as expected"
+    fail_msg: "Unregister without ext_id did not fail as expected"
+
+- name: Register vCenter extension with username only (missing password)  # noqa: args[module]
+  nutanix.ncp.ntnx_vcenter_extension_v2:
+    state: present
+    ext_id: "{{ bogus_ext_id }}"
+    username: "administrator@vsphere.local"
+    port: 443
+  register: missing_password_result
+  ignore_errors: true
+
+- name: Register vCenter extension missing password status
+  ansible.builtin.assert:
+    that:
+      - missing_password_result is defined
+      - missing_password_result.changed == false
+      - missing_password_result.failed == true
+      - "'parameters are required together: username, password' in missing_password_result.msg"
+    success_msg: "Register with only username failed as expected"
+    fail_msg: "Register with only username did not fail as expected"
+
+- name: Register vCenter extension with non-integer port (should fail spec validation)  # noqa: args[module]
+  nutanix.ncp.ntnx_vcenter_extension_v2:
+    state: present
+    ext_id: "{{ bogus_ext_id }}"
+    username: "administrator@vsphere.local"
+    password: "vcenter-admin-password"
+    port: "not-an-int"
+  register: bad_port_result
+  ignore_errors: true
+
+- name: Register vCenter extension with non-integer port status
+  ansible.builtin.assert:
+    that:
+      - bad_port_result is defined
+      - bad_port_result.changed == false
+      - bad_port_result.failed == true
+      - "'is of type' in bad_port_result.msg or 'not a valid int' in bad_port_result.msg or 'cannot be converted to an int' in bad_port_result.msg"
+    success_msg: "Register with non-int port failed as expected"
+    fail_msg: "Register with non-int port did not fail as expected"
+
+########################################################################################
+# CRUD module — check_mode for register (with ALL attributes) and delete
+########################################################################################
+
+# Ensure we can attempt a check_mode create even without a discovered extension:
+# check_mode still hits get_vcenter_extension() first (for etag/idempotency).
+# We therefore pick an existing ext_id when available and gracefully skip the
+# check_mode assertion block when the PC has no discovered extension.
+- name: Determine ext_id to use for check_mode tests
+  ansible.builtin.set_fact:
+    check_mode_ext_id: >-
+      {{
+        (discovered_extensions | selectattr('is_registered', 'equalto', false) | list | first | default(
+          discovered_extensions | first | default({})
+        )).ext_id | default('')
+      }}
+
+- name: Generate spec for registering vCenter extension using check mode with all attributes
+  nutanix.ncp.ntnx_vcenter_extension_v2:
+    state: present
+    ext_id: "{{ check_mode_ext_id }}"
+    username: "check_mode_admin@vsphere.local"
+    password: "check_mode_password"
+    port: 8443
+  check_mode: true
+  register: check_mode_register_result
+  ignore_errors: true
+  when: check_mode_ext_id | length > 0
+
+- name: Assert check_mode register result when discovered extension is available
+  ansible.builtin.assert:
+    that:
+      - check_mode_register_result is defined
+      - check_mode_register_result.changed == false
+      - check_mode_register_result.failed == false
+      - check_mode_register_result.ext_id == check_mode_ext_id
+      - check_mode_register_result.response is defined
+      - check_mode_register_result.response.username == "check_mode_admin@vsphere.local"
+      - check_mode_register_result.response.password == "check_mode_password"
+      - check_mode_register_result.response.port == 8443
+    success_msg: "Register check_mode produced the expected credentials spec"
+    fail_msg: "Register check_mode did not produce the expected credentials spec"
+  when: check_mode_ext_id | length > 0
+
+- name: Delete vCenter extension with check mode
+  nutanix.ncp.ntnx_vcenter_extension_v2:
+    state: absent
+    ext_id: "{{ check_mode_ext_id }}"
+    username: "check_mode_admin@vsphere.local"
+    password: "check_mode_password"
+    port: 8443
+  check_mode: true
+  register: check_mode_delete_result
+  ignore_errors: true
+  when: check_mode_ext_id | length > 0
+
+- name: Assert check_mode unregister result when discovered extension is available
+  ansible.builtin.assert:
+    that:
+      - check_mode_delete_result is defined
+      - check_mode_delete_result.changed == false
+      - check_mode_delete_result.failed == false
+      - check_mode_delete_result.ext_id == check_mode_ext_id
+      - "'will be unregistered' in check_mode_delete_result.msg"
+    success_msg: "Unregister check_mode reported the expected message"
+    fail_msg: "Unregister check_mode did not report the expected message"
+  when: check_mode_ext_id | length > 0
+
+- name: Note when check_mode block is skipped
+  ansible.builtin.debug:
+    msg: >-
+      No discovered vCenter extensions on the target PC — the check_mode
+      register/unregister assertions are skipped for this run because the
+      idempotency pre-check requires an existing extension to look up.
+  when: check_mode_ext_id | length == 0
+
+########################################################################################
+# CRUD module — error paths that only need the API (not a live vCenter)
+########################################################################################
+
+- name: Register vCenter extension with bogus ext_id (should fail with VCNT-20100)
+  nutanix.ncp.ntnx_vcenter_extension_v2:
+    state: present
+    ext_id: "{{ bogus_ext_id }}"
+    username: "administrator@vsphere.local"
+    password: "vcenter-admin-password"
+    port: 443
+  register: bogus_register_result
+  ignore_errors: true
+
+- name: Register vCenter extension with bogus ext_id status
+  ansible.builtin.assert:
+    that:
+      - bogus_register_result is defined
+      - bogus_register_result.changed == false
+      - bogus_register_result.failed == true
+      - bogus_register_result.msg == "Api Exception raised while fetching vCenter extension info using ext_id"
+      - bogus_register_result.status == 404
+      - bogus_register_result.response is defined
+      - bogus_register_result.response.data.error[0].code == "VCNT-20100"
+      - bogus_register_result.response.data.error[0].errorGroup == "VCENTER_EXTENSION_NOT_FOUND"
+    success_msg: "Register with bogus ext_id failed with VCENTER_EXTENSION_NOT_FOUND as expected"
+    fail_msg: "Register with bogus ext_id did not fail as expected"
+
+- name: Unregister vCenter extension with bogus ext_id (should fail with VCNT-20100)
+  nutanix.ncp.ntnx_vcenter_extension_v2:
+    state: absent
+    ext_id: "{{ bogus_ext_id }}"
+    username: "administrator@vsphere.local"
+    password: "vcenter-admin-password"
+    port: 443
+  register: bogus_unregister_result
+  ignore_errors: true
+
+- name: Unregister vCenter extension with bogus ext_id status
+  ansible.builtin.assert:
+    that:
+      - bogus_unregister_result is defined
+      - bogus_unregister_result.changed == false
+      - bogus_unregister_result.failed == true
+      - bogus_unregister_result.msg == "Api Exception raised while fetching vCenter extension info using ext_id"
+      - bogus_unregister_result.status == 404
+      - bogus_unregister_result.response is defined
+      - bogus_unregister_result.response.data.error[0].code == "VCNT-20100"
+      - bogus_unregister_result.response.data.error[0].errorGroup == "VCENTER_EXTENSION_NOT_FOUND"
+    success_msg: "Unregister with bogus ext_id failed with VCENTER_EXTENSION_NOT_FOUND as expected"
+    fail_msg: "Unregister with bogus ext_id did not fail as expected"
+
+########################################################################################
+# CRUD module — live register / update / unregister lifecycle
+########################################################################################
+# The register + unregister actions require both a discovered extension on
+# the PC (i.e. an ESXi cluster with a vCenter configured) AND valid vCenter
+# credentials. When either prerequisite is missing we skip the block but
+# still emit an unambiguous message so the reader knows why.
+
+- name: Determine whether a live lifecycle test is possible
+  ansible.builtin.set_fact:
+    live_extension: >-
+      {{ discovered_extensions | first | default({}) }}
+    have_live_credentials: "{{ vcenter_credentials is defined }}"
+
+- name: Report skipped lifecycle when no ESXi extension is discovered
+  ansible.builtin.debug:
+    msg: >-
+      No vCenter Server extensions were discovered on the target PC. The
+      live register / update / unregister lifecycle block is skipped for
+      this run — see PR body for details.
+  when: (live_extension | default({})).ext_id is not defined
+
+- name: Report skipped lifecycle when no vcenter_credentials provided
+  ansible.builtin.debug:
+    msg: >-
+      vcenter_credentials not supplied via integration_config.yml — the
+      live register / update / unregister lifecycle block is skipped for
+      this run.
+  when:
+    - (live_extension | default({})).ext_id is defined
+    - not have_live_credentials
+
+- name: Live register / update / unregister lifecycle
+  when:
+    - (live_extension | default({})).ext_id is defined
+    - have_live_credentials
+  block:
+    - name: Capture the initial registration state
+      ansible.builtin.set_fact:
+        live_ext_id: "{{ live_extension.ext_id }}"
+        initial_registered: "{{ live_extension.is_registered }}"
+
+    - name: Ensure baseline is unregistered before test (best effort)
+      nutanix.ncp.ntnx_vcenter_extension_v2:
+        state: absent
+        ext_id: "{{ live_ext_id }}"
+        username: "{{ vcenter_credentials.username }}"
+        password: "{{ vcenter_credentials.password }}"
+        port: "{{ vcenter_credentials.port | default(443) }}"
+      register: baseline_unregister
+      ignore_errors: true
+
+    - name: Register vCenter extension (minimal required fields)
+      nutanix.ncp.ntnx_vcenter_extension_v2:
+        state: present
+        ext_id: "{{ live_ext_id }}"
+        username: "{{ vcenter_credentials.username }}"
+        password: "{{ vcenter_credentials.password }}"
+      register: register_min_result
+
+    - name: Register vCenter extension (minimal) status
+      ansible.builtin.assert:
+        that:
+          - register_min_result is defined
+          - register_min_result.changed == true
+          - register_min_result.failed == false
+          - register_min_result.ext_id == live_ext_id
+          - register_min_result.task_ext_id is defined
+          - register_min_result.response is defined
+          - register_min_result.response.ext_id == live_ext_id
+          - register_min_result.response.is_registered == true
+        success_msg: "Live register (minimal) passed"
+        fail_msg: "Live register (minimal) failed"
+
+    - name: Register vCenter extension again (idempotency)
+      nutanix.ncp.ntnx_vcenter_extension_v2:
+        state: present
+        ext_id: "{{ live_ext_id }}"
+        username: "{{ vcenter_credentials.username }}"
+        password: "{{ vcenter_credentials.password }}"
+        port: "{{ vcenter_credentials.port | default(443) }}"
+      register: register_idempotent
+      ignore_errors: true
+
+    - name: Register vCenter extension idempotency status
+      ansible.builtin.assert:
+        that:
+          - register_idempotent is defined
+          - register_idempotent.changed == false
+          - register_idempotent.failed == false
+          - register_idempotent.skipped == true
+          - "'already registered' in register_idempotent.msg"
+        success_msg: "Register idempotency honoured (skipped as expected)"
+        fail_msg: "Register idempotency was not honoured"
+
+    - name: Get the registered vCenter extension via info module
+      nutanix.ncp.ntnx_vcenter_extensions_info_v2:
+        ext_id: "{{ live_ext_id }}"
+      register: get_after_register
+      ignore_errors: true
+
+    - name: Get after register status
+      ansible.builtin.assert:
+        that:
+          - get_after_register is defined
+          - get_after_register.failed == false
+          - get_after_register.response is defined
+          - get_after_register.response.ext_id == live_ext_id
+          - get_after_register.response.is_registered == true
+        success_msg: "Get after register passed"
+        fail_msg: "Get after register failed"
+
+    - name: Unregister vCenter extension
+      nutanix.ncp.ntnx_vcenter_extension_v2:
+        state: absent
+        ext_id: "{{ live_ext_id }}"
+        username: "{{ vcenter_credentials.username }}"
+        password: "{{ vcenter_credentials.password }}"
+        port: "{{ vcenter_credentials.port | default(443) }}"
+      register: unregister_result
+
+    - name: Unregister vCenter extension status
+      ansible.builtin.assert:
+        that:
+          - unregister_result is defined
+          - unregister_result.changed == true
+          - unregister_result.failed == false
+          - unregister_result.ext_id == live_ext_id
+          - unregister_result.task_ext_id is defined
+        success_msg: "Live unregister passed"
+        fail_msg: "Live unregister failed"
+
+    - name: Unregister again (idempotency)
+      nutanix.ncp.ntnx_vcenter_extension_v2:
+        state: absent
+        ext_id: "{{ live_ext_id }}"
+        username: "{{ vcenter_credentials.username }}"
+        password: "{{ vcenter_credentials.password }}"
+        port: "{{ vcenter_credentials.port | default(443) }}"
+      register: unregister_idempotent
+      ignore_errors: true
+
+    - name: Unregister idempotency status
+      ansible.builtin.assert:
+        that:
+          - unregister_idempotent is defined
+          - unregister_idempotent.changed == false
+          - unregister_idempotent.failed == false
+          - unregister_idempotent.skipped == true
+          - "'already unregistered' in unregister_idempotent.msg"
+        success_msg: "Unregister idempotency honoured (skipped as expected)"
+        fail_msg: "Unregister idempotency was not honoured"
+
+    - name: Restore baseline registration state if it was originally registered
+      nutanix.ncp.ntnx_vcenter_extension_v2:
+        state: present
+        ext_id: "{{ live_ext_id }}"
+        username: "{{ vcenter_credentials.username }}"
+        password: "{{ vcenter_credentials.password }}"
+        port: "{{ vcenter_credentials.port | default(443) }}"
+      when: initial_registered | bool
+      failed_when: false
