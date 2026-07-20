@@ -1,0 +1,23 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Recovery Plan Network Mapping playbook] **********************************
+
+TASK [Set variables] ***********************************************************
+ok: [localhost] => {"ansible_facts": {"primary_subnet_ext_id": "5a6f8f2c-3f2b-4a1c-9c14-2d17b3e6b555", "primary_test_subnet_ext_id": "7c8f1e4d-5b12-6c23-9d16-4e17b3e6d777", "recovery_plan_ext_id": "b0e1a7b2-8c31-4a41-9f2c-3f2f0f76de11", "recovery_subnet_ext_id": "6b7e9d3c-4a1f-5b12-8e15-3d17b3e6c666", "recovery_test_subnet_ext_id": "8d9e2f5e-6c23-7d34-9e17-5f17b3e6e888", "updated_recovery_subnet_ext_id": "9e1a3d6f-7d34-8e45-af18-6f17b3e6f999"}, "changed": false}
+
+TASK [Create network mapping with all attributes] ******************************
+[ERROR]: Task failed: Module failed: Api Exception raised while creating network mapping
+Origin: /tmp/codegen/baee82e7e95449fc9a81f45b339b7b31/repo/examples/data_policies/NetworkMapping/network_mapping_v2.yml:31:7
+
+29         updated_recovery_subnet_ext_id: "9e1a3d6f-7d34-8e45-af18-6f17b3e6f999"
+30
+31     - name: Create network mapping with all attributes
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while creating network mapping", "response": {"$dataItemDiscriminator": "datapolicies.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<datapolicies.v4.error.AppMessage>", "$objectType": "datapolicies.v4.error.ErrorResponse", "error": [{"$objectType": "datapolicies.v4.error.AppMessage", "argumentsMap": {"reason": "Recovery Plan with given external identifier b0e1a7b2-8c31-4a41-9f2c-3f2f0f76de11 not found."}, "code": "DPO-10400", "errorGroup": "DATAPOLICIES_ENTITY_NON_EXISTENT_ERROR", "locale": "en-US", "message": "Request failed as one or more entities do not exist - Recovery Plan with given external identifier b0e1a7b2-8c31-4a41-9f2c-3f2f0f76de11 not found..", "severity": "ERROR"}]}}, "status": 404}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=1    changed=0    unreachable=0    failed=1    skipped=0    rescued=0    ignored=0   
+
