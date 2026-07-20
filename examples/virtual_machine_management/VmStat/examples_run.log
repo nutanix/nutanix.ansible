@@ -1,0 +1,33 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Nutanix ESXi VM Stats info playbook] *************************************
+
+TASK [Setting variables for the run] *******************************************
+ok: [localhost] => {"ansible_facts": {"disk_ext_id": "839feff9-bac0-4a70-9523-82ea9e431517", "end_time": "2025-07-31T12:41:56.955Z", "nic_ext_id": "1eb11972-dce6-40b9-8d1f-b878ef8410be", "start_time": "2024-07-31T12:41:56.955Z", "vm_ext_id": "522670d7-e92d-45c5-9139-76ccff6813c2"}, "changed": false}
+
+TASK [List ESXi VM stats for all VMs during a time window] *********************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "BAD REQUEST", "msg": "Api Exception raised while listing ESXi VM stats", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "code": "VMM-10000", "errorGroup": "INTERNAL_ERROR", "locale": "en-US", "message": "Failed to perform the operation due to an internal error.", "severity": "ERROR"}]}}, "status": 400}
+...ignoring
+
+TASK [List ESXi VM stats with sampling interval, stat type, limit and filter] ***
+fatal: [localhost]: FAILED! => {"changed": false, "error": "BAD REQUEST", "msg": "Api Exception raised while listing ESXi VM stats", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "code": "VMM-10000", "errorGroup": "INTERNAL_ERROR", "locale": "en-US", "message": "Failed to perform the operation due to an internal error.", "severity": "ERROR"}]}}, "status": 400}
+...ignoring
+
+TASK [Fetch ESXi VM stats for a specific VM] ***********************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching ESXi VM stats", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "argumentsMap": {"vm_uuid": "522670d7-e92d-45c5-9139-76ccff6813c2"}, "code": "VMM-30100", "errorGroup": "VM_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the VM with UUID '522670d7-e92d-45c5-9139-76ccff6813c2', because it is not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [Fetch ESXi VM disk stats for a specific VM disk] *************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching ESXi VM disk stats", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "argumentsMap": {"vm_uuid": "522670d7-e92d-45c5-9139-76ccff6813c2"}, "code": "VMM-30100", "errorGroup": "VM_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the VM with UUID '522670d7-e92d-45c5-9139-76ccff6813c2', because it is not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [Fetch ESXi VM NIC stats for a specific VM NIC] ***************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching ESXi VM NIC stats", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "argumentsMap": {"vm_uuid": "522670d7-e92d-45c5-9139-76ccff6813c2"}, "code": "VMM-30100", "errorGroup": "VM_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the VM with UUID '522670d7-e92d-45c5-9139-76ccff6813c2', because it is not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=6    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=5   
+

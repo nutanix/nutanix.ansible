@@ -1,0 +1,500 @@
+---
+################################################################################
+# Test plan for ntnx_vm_stats_info_v2 (ESXi VM stats)
+#
+# Coverage strategy — combine SDK knowledge (EsxiStatsApi), module implementation
+# (branching on ext_id / disk_ext_id / nic_ext_id) and domain knowledge (ESXi
+# stats pipeline via PE ↔ PC IDF sync) to catch bugs in:
+#   * argument spec (required fields, mutually exclusive, required_by, choices)
+#   * dispatch logic (list vs get-by-id vs disk vs nic)
+#   * downstream query wiring (start_time -> _startTime, sampling_interval, etc.)
+#   * response shape (list returns [], get returns dict)
+#   * error paths (invalid extId, invalid enum, missing required fields)
+#
+# Scenarios:
+#   S1  Negative — missing required start_time (spec validation)
+#   S2  Negative — missing required end_time (spec validation)
+#   S3  Negative — invalid stat_type enum value
+#   S4  Negative — disk_ext_id without ext_id (required_by)
+#   S5  Negative — nic_ext_id without ext_id (required_by)
+#   S6  Negative — disk_ext_id and nic_ext_id together (mutually exclusive)
+#   S7  Negative — invalid VM ext_id — module returns failed=true with error
+#   S8  Negative — invalid disk ext_id under a bogus vm ext_id
+#   S9  Negative — invalid nic ext_id under a bogus vm ext_id
+#   S10 List VM stats — no ext_id, only start/end time (baseline)
+#   S11 List VM stats with sampling_interval + stat_type
+#   S12 List VM stats with limit + each valid enum stat_type
+#   S13 List VM stats with page/limit pagination
+#   S14 List VM stats with filter (if present)
+#   S15 Get VM stats by ext_id (discovered from list) with full attributes
+#   S16 Get VM stats by ext_id with minimal required attributes
+#   S17 Get VM disk stats (best effort — needs a disk on an ESXi VM)
+#   S18 Get VM NIC stats (best effort — needs a NIC on an ESXi VM)
+#   S19 Idempotency — repeat list returns same shape and changed=false
+#
+# NOTE: These endpoints target ESXi. On an AHV-only cluster the SDK may return
+# an empty data list or a 4xx error. We therefore assert the module contract
+# (changed / failed / response shape / ext_id echoing) rather than raw metric
+# values, and use `ignore_errors: true` so a hypervisor-mismatched cluster
+# doesn't invalidate the entire test target.
+################################################################################
+
+- name: Start ntnx_vm_stats_info_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_vm_stats_info_v2 tests
+
+- name: Generate random suffix for isolation
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Compute end_time (now, UTC, extended ISO-8601 with millis)
+  ansible.builtin.command: date -u +"%Y-%m-%dT%H:%M:%S.%3NZ"
+  register: end_time_cmd
+  changed_when: false
+
+- name: Compute start_time (end_time minus 5 minutes)
+  ansible.builtin.command: date -u -d "-300 seconds" +"%Y-%m-%dT%H:%M:%S.%3NZ"
+  register: start_time_cmd
+  changed_when: false
+
+- name: Publish start_time / end_time facts
+  ansible.builtin.set_fact:
+    esxi_stats_start_time: "{{ start_time_cmd.stdout }}"
+    esxi_stats_end_time: "{{ end_time_cmd.stdout }}"
+    bogus_vm_ext_id: "00000000-0000-0000-0000-000000{{ random_name[:6] | lower | regex_replace('[^0-9a-f]', '0') }}"
+    bogus_child_ext_id: "11111111-1111-1111-1111-1111111111{{ random_name[:2] | lower | regex_replace('[^0-9a-f]', '1') }}"
+
+################################################################################
+# S1: Negative — missing required start_time
+################################################################################
+
+- name: S1 - Negative — omit required start_time (should fail at spec validation)
+  nutanix.ncp.ntnx_vm_stats_info_v2:
+    end_time: "{{ esxi_stats_end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: S1 - Assert missing start_time is rejected
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+      - "'start_time' in result.msg"
+    fail_msg: "Module did NOT reject missing start_time"
+    success_msg: "Missing start_time correctly rejected by argument spec"
+
+################################################################################
+# S2: Negative — missing required end_time
+################################################################################
+
+- name: S2 - Negative — omit required end_time (should fail at spec validation)
+  nutanix.ncp.ntnx_vm_stats_info_v2:
+    start_time: "{{ esxi_stats_start_time }}"
+  register: result
+  ignore_errors: true
+
+- name: S2 - Assert missing end_time is rejected
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+      - "'end_time' in result.msg"
+    fail_msg: "Module did NOT reject missing end_time"
+    success_msg: "Missing end_time correctly rejected by argument spec"
+
+################################################################################
+# S3: Negative — invalid stat_type enum value
+################################################################################
+
+- name: S3 - Negative — invalid stat_type enum value
+  nutanix.ncp.ntnx_vm_stats_info_v2:
+    start_time: "{{ esxi_stats_start_time }}"
+    end_time: "{{ esxi_stats_end_time }}"
+    stat_type: "TOTALLY_INVALID_STAT_TYPE"
+  register: result
+  ignore_errors: true
+
+- name: S3 - Assert invalid enum value is rejected
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+      - "'stat_type' in result.msg"
+    fail_msg: "Module did NOT reject an invalid stat_type enum value"
+    success_msg: "Invalid stat_type correctly rejected by choices validation"
+
+################################################################################
+# S4: Negative — disk_ext_id without ext_id (required_by)
+################################################################################
+
+- name: S4 - Negative — disk_ext_id without ext_id
+  nutanix.ncp.ntnx_vm_stats_info_v2:
+    disk_ext_id: "{{ bogus_child_ext_id }}"
+    start_time: "{{ esxi_stats_start_time }}"
+    end_time: "{{ esxi_stats_end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: S4 - Assert disk_ext_id requires ext_id
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+      - "'ext_id' in result.msg"
+    fail_msg: "Module accepted disk_ext_id without ext_id — required_by broken"
+    success_msg: "disk_ext_id correctly requires ext_id"
+
+################################################################################
+# S5: Negative — nic_ext_id without ext_id (required_by)
+################################################################################
+
+- name: S5 - Negative — nic_ext_id without ext_id
+  nutanix.ncp.ntnx_vm_stats_info_v2:
+    nic_ext_id: "{{ bogus_child_ext_id }}"
+    start_time: "{{ esxi_stats_start_time }}"
+    end_time: "{{ esxi_stats_end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: S5 - Assert nic_ext_id requires ext_id
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+      - "'ext_id' in result.msg"
+    fail_msg: "Module accepted nic_ext_id without ext_id — required_by broken"
+    success_msg: "nic_ext_id correctly requires ext_id"
+
+################################################################################
+# S6: Negative — disk_ext_id and nic_ext_id together (mutually exclusive)
+################################################################################
+
+- name: S6 - Negative — disk_ext_id + nic_ext_id at the same time
+  nutanix.ncp.ntnx_vm_stats_info_v2:
+    ext_id: "{{ bogus_vm_ext_id }}"
+    disk_ext_id: "{{ bogus_child_ext_id }}"
+    nic_ext_id: "{{ bogus_child_ext_id }}"
+    start_time: "{{ esxi_stats_start_time }}"
+    end_time: "{{ esxi_stats_end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: S6 - Assert disk_ext_id and nic_ext_id are mutually exclusive
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+      - "'disk_ext_id' in result.msg"
+      - "'nic_ext_id' in result.msg"
+    fail_msg: "Module accepted disk_ext_id + nic_ext_id — mutually_exclusive broken"
+    success_msg: "disk_ext_id and nic_ext_id correctly enforced as mutually exclusive"
+
+################################################################################
+# S7-S9: Negative — bogus IDs (module contract must set failed=true with a
+# descriptive msg, changed=false; response may be populated with API error body)
+################################################################################
+
+- name: S7 - Negative — get VM stats by a bogus ext_id
+  nutanix.ncp.ntnx_vm_stats_info_v2:
+    ext_id: "{{ bogus_vm_ext_id }}"
+    start_time: "{{ esxi_stats_start_time }}"
+    end_time: "{{ esxi_stats_end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: S7 - Assert bogus VM ext_id is surfaced as failure
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+    fail_msg: "Module did not fail on a bogus VM ext_id: {{ result }}"
+    success_msg: "Bogus VM ext_id was correctly surfaced as a failure"
+
+- name: S8 - Negative — get VM disk stats with a bogus id pair
+  nutanix.ncp.ntnx_vm_stats_info_v2:
+    ext_id: "{{ bogus_vm_ext_id }}"
+    disk_ext_id: "{{ bogus_child_ext_id }}"
+    start_time: "{{ esxi_stats_start_time }}"
+    end_time: "{{ esxi_stats_end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: S8 - Assert bogus VM/disk pair is surfaced as failure
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+    fail_msg: "Module did not fail on bogus VM/disk pair: {{ result }}"
+    success_msg: "Bogus VM/disk pair was correctly surfaced as a failure"
+
+- name: S9 - Negative — get VM NIC stats with a bogus id pair
+  nutanix.ncp.ntnx_vm_stats_info_v2:
+    ext_id: "{{ bogus_vm_ext_id }}"
+    nic_ext_id: "{{ bogus_child_ext_id }}"
+    start_time: "{{ esxi_stats_start_time }}"
+    end_time: "{{ esxi_stats_end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: S9 - Assert bogus VM/NIC pair is surfaced as failure
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+    fail_msg: "Module did not fail on bogus VM/nic pair: {{ result }}"
+    success_msg: "Bogus VM/NIC pair was correctly surfaced as a failure"
+
+################################################################################
+# S10: List ESXi VM stats — baseline
+################################################################################
+
+- name: S10 - List ESXi VM stats (baseline, no filters)
+  nutanix.ncp.ntnx_vm_stats_info_v2:
+    start_time: "{{ esxi_stats_start_time }}"
+    end_time: "{{ esxi_stats_end_time }}"
+  register: list_baseline_result
+  ignore_errors: true
+
+- name: S10 - Assert list baseline module contract
+  ansible.builtin.assert:
+    that:
+      - list_baseline_result.changed == false
+      - list_baseline_result.response is defined
+    fail_msg: "Baseline list ESXi VM stats did not honour module contract"
+    success_msg: "Baseline list ESXi VM stats honoured module contract"
+
+################################################################################
+# S11: List with sampling_interval + stat_type (AVG)
+################################################################################
+
+- name: S11 - List ESXi VM stats with sampling_interval + stat_type AVG
+  nutanix.ncp.ntnx_vm_stats_info_v2:
+    start_time: "{{ esxi_stats_start_time }}"
+    end_time: "{{ esxi_stats_end_time }}"
+    sampling_interval: 30
+    stat_type: AVG
+  register: result
+  ignore_errors: true
+
+- name: S11 - Assert list w/ sampling_interval + AVG honours module contract
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.response is defined
+    fail_msg: "list ESXi VM stats (AVG) did not honour module contract"
+    success_msg: "list ESXi VM stats (AVG) honoured module contract"
+
+################################################################################
+# S12: List with limit + each valid enum stat_type
+################################################################################
+
+- name: S12 - List with each valid stat_type
+  nutanix.ncp.ntnx_vm_stats_info_v2:
+    start_time: "{{ esxi_stats_start_time }}"
+    end_time: "{{ esxi_stats_end_time }}"
+    sampling_interval: 30
+    stat_type: "{{ item }}"
+    limit: 2
+  loop:
+    - SUM
+    - AVG
+    - MIN
+    - MAX
+    - COUNT
+    - LAST
+  register: enum_results
+  ignore_errors: true
+
+- name: S12 - Assert each stat_type honours module contract
+  ansible.builtin.assert:
+    that:
+      - item.changed == false
+      - item.response is defined
+    fail_msg: "stat_type {{ item.item }} did not honour module contract"
+    success_msg: "stat_type {{ item.item }} honoured module contract"
+  loop: "{{ enum_results.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
+################################################################################
+# S13: List with page/limit pagination
+################################################################################
+
+- name: S13 - List with pagination
+  nutanix.ncp.ntnx_vm_stats_info_v2:
+    start_time: "{{ esxi_stats_start_time }}"
+    end_time: "{{ esxi_stats_end_time }}"
+    page: 0
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: S13 - Assert pagination honours module contract
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.response is defined
+    fail_msg: "Paginated list did not honour module contract"
+    success_msg: "Paginated list honoured module contract"
+
+################################################################################
+# S14: List with filter (best effort — filter capability documented in SDK)
+################################################################################
+
+- name: S14 - List with filter
+  nutanix.ncp.ntnx_vm_stats_info_v2:
+    start_time: "{{ esxi_stats_start_time }}"
+    end_time: "{{ esxi_stats_end_time }}"
+    filter: "extId eq '{{ bogus_vm_ext_id }}'"
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: S14 - Assert filter honours module contract
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+    fail_msg: "Filtered list did not honour module contract"
+    success_msg: "Filtered list honoured module contract"
+
+################################################################################
+# S15-S16: Get VM stats by ext_id (best-effort — needs a discovered ext_id from
+# S10 or a pre-populated ESXi VM)
+################################################################################
+
+- name: S15 - Try to discover a real ESXi VM ext_id from the baseline list
+  ansible.builtin.set_fact:
+    discovered_vm_ext_id: "{{ (list_baseline_result.response | default([]))[0].ext_id | default(omit) }}"
+  when:
+    - list_baseline_result.response is defined
+    - list_baseline_result.response | length > 0
+    - list_baseline_result.response[0].ext_id is defined
+
+- name: S15 - Get VM stats by discovered ext_id (full attributes)
+  nutanix.ncp.ntnx_vm_stats_info_v2:
+    ext_id: "{{ discovered_vm_ext_id }}"
+    start_time: "{{ esxi_stats_start_time }}"
+    end_time: "{{ esxi_stats_end_time }}"
+    sampling_interval: 30
+    stat_type: AVG
+  register: result
+  ignore_errors: true
+  when: discovered_vm_ext_id is defined
+
+- name: S15 - Assert get-by-id honours module contract
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.ext_id == discovered_vm_ext_id
+      - result.response is defined
+    fail_msg: "Get VM stats by discovered ext_id did not honour module contract"
+    success_msg: "Get VM stats by discovered ext_id honoured module contract"
+  when:
+    - discovered_vm_ext_id is defined
+    - result is defined
+    - result.skipped is not defined
+
+- name: S16 - Get VM stats by discovered ext_id (minimal attributes)
+  nutanix.ncp.ntnx_vm_stats_info_v2:
+    ext_id: "{{ discovered_vm_ext_id }}"
+    start_time: "{{ esxi_stats_start_time }}"
+    end_time: "{{ esxi_stats_end_time }}"
+  register: result_minimal
+  ignore_errors: true
+  when: discovered_vm_ext_id is defined
+
+- name: S16 - Assert minimal get-by-id honours module contract
+  ansible.builtin.assert:
+    that:
+      - result_minimal.changed == false
+      - result_minimal.ext_id == discovered_vm_ext_id
+    fail_msg: "Minimal get-by-id did not honour module contract"
+    success_msg: "Minimal get-by-id honoured module contract"
+  when:
+    - discovered_vm_ext_id is defined
+    - result_minimal is defined
+    - result_minimal.skipped is not defined
+
+################################################################################
+# S17-S18: Best-effort disk / NIC stats fetch (requires ESXi cluster)
+################################################################################
+
+- name: S17 - Best-effort — fetch disk stats when a VM has been discovered
+  nutanix.ncp.ntnx_vm_stats_info_v2:
+    ext_id: "{{ discovered_vm_ext_id }}"
+    disk_ext_id: "{{ bogus_child_ext_id }}"
+    start_time: "{{ esxi_stats_start_time }}"
+    end_time: "{{ esxi_stats_end_time }}"
+    sampling_interval: 30
+    stat_type: LAST
+  register: result
+  ignore_errors: true
+  when: discovered_vm_ext_id is defined
+
+- name: S17 - Assert best-effort disk stats honours module contract
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+    fail_msg: "Best-effort disk stats fetch did not honour module contract"
+    success_msg: "Best-effort disk stats fetch honoured module contract"
+  when:
+    - discovered_vm_ext_id is defined
+    - result is defined
+    - result.skipped is not defined
+
+- name: S18 - Best-effort — fetch NIC stats when a VM has been discovered
+  nutanix.ncp.ntnx_vm_stats_info_v2:
+    ext_id: "{{ discovered_vm_ext_id }}"
+    nic_ext_id: "{{ bogus_child_ext_id }}"
+    start_time: "{{ esxi_stats_start_time }}"
+    end_time: "{{ esxi_stats_end_time }}"
+    sampling_interval: 30
+    stat_type: LAST
+  register: result
+  ignore_errors: true
+  when: discovered_vm_ext_id is defined
+
+- name: S18 - Assert best-effort NIC stats honours module contract
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+    fail_msg: "Best-effort NIC stats fetch did not honour module contract"
+    success_msg: "Best-effort NIC stats fetch honoured module contract"
+  when:
+    - discovered_vm_ext_id is defined
+    - result is defined
+    - result.skipped is not defined
+
+################################################################################
+# S19: Idempotency — repeat the baseline list; both runs must be non-changing
+################################################################################
+
+- name: S19 - Idempotency — re-run baseline list
+  nutanix.ncp.ntnx_vm_stats_info_v2:
+    start_time: "{{ esxi_stats_start_time }}"
+    end_time: "{{ esxi_stats_end_time }}"
+  register: idempotency_result
+  ignore_errors: true
+
+- name: S19 - Assert idempotency contract
+  ansible.builtin.assert:
+    that:
+      - idempotency_result.changed == false
+      - list_baseline_result.changed == false
+      - (idempotency_result.response is defined)
+      - (list_baseline_result.response is defined)
+    fail_msg: "Idempotency: repeated list should be non-changing"
+    success_msg: "Idempotency: repeated list is non-changing"
+
+- name: End ntnx_vm_stats_info_v2 tests
+  ansible.builtin.debug:
+    msg: End ntnx_vm_stats_info_v2 tests

@@ -1,0 +1,82 @@
+---
+# Summary:
+# This playbook demonstrates fetching ESXi VM statistics from Nutanix Prism Central
+# using the ntnx_vm_stats_info_v2 module. It covers:
+# 1. List ESXi VM stats for all VMs during a time window
+# 2. List ESXi VM stats with sampling_interval, stat_type, limit and filter
+# 3. Fetch stats for a specific ESXi VM by ext_id
+# 4. Fetch stats for a specific VM disk by disk_ext_id
+# 5. Fetch stats for a specific VM NIC by nic_ext_id
+#
+# Prerequisites (fill in real values from your registered ESXi cluster on PC):
+#   - vm_ext_id: external ID of an ESXi VM on the registered cluster
+#   - disk_ext_id: external ID of a disk attached to that VM
+#   - nic_ext_id: external ID of a NIC attached to that VM
+#   - Start / end times must be in extended ISO-8601 format.
+
+- name: Nutanix ESXi VM Stats info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting variables for the run
+      ansible.builtin.set_fact:
+        vm_ext_id: "522670d7-e92d-45c5-9139-76ccff6813c2"
+        disk_ext_id: "839feff9-bac0-4a70-9523-82ea9e431517"
+        nic_ext_id: "1eb11972-dce6-40b9-8d1f-b878ef8410be"
+        start_time: "2024-07-31T12:41:56.955Z"
+        end_time: "2025-07-31T12:41:56.955Z"
+
+    - name: List ESXi VM stats for all VMs during a time window
+      nutanix.ncp.ntnx_vm_stats_info_v2:
+        start_time: "{{ start_time }}"
+        end_time: "{{ end_time }}"
+      register: result
+      ignore_errors: true
+
+    - name: List ESXi VM stats with sampling interval, stat type, limit and filter
+      nutanix.ncp.ntnx_vm_stats_info_v2:
+        start_time: "{{ start_time }}"
+        end_time: "{{ end_time }}"
+        sampling_interval: 30
+        stat_type: AVG
+        limit: 5
+      register: result
+      ignore_errors: true
+
+    - name: Fetch ESXi VM stats for a specific VM
+      nutanix.ncp.ntnx_vm_stats_info_v2:
+        ext_id: "{{ vm_ext_id }}"
+        start_time: "{{ start_time }}"
+        end_time: "{{ end_time }}"
+        sampling_interval: 30
+        stat_type: SUM
+      register: result
+      ignore_errors: true
+
+    - name: Fetch ESXi VM disk stats for a specific VM disk
+      nutanix.ncp.ntnx_vm_stats_info_v2:
+        ext_id: "{{ vm_ext_id }}"
+        disk_ext_id: "{{ disk_ext_id }}"
+        start_time: "{{ start_time }}"
+        end_time: "{{ end_time }}"
+        sampling_interval: 30
+        stat_type: AVG
+      register: result
+      ignore_errors: true
+
+    - name: Fetch ESXi VM NIC stats for a specific VM NIC
+      nutanix.ncp.ntnx_vm_stats_info_v2:
+        ext_id: "{{ vm_ext_id }}"
+        nic_ext_id: "{{ nic_ext_id }}"
+        start_time: "{{ start_time }}"
+        end_time: "{{ end_time }}"
+        sampling_interval: 30
+        stat_type: LAST
+      register: result
+      ignore_errors: true
