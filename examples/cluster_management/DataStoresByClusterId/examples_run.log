@@ -1,0 +1,84 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [DataStoresByClusterId (mount / unmount / info) playbook] *****************
+
+TASK [Set example variables] ***************************************************
+ok: [localhost] => {"ansible_facts": {"cluster_ext_id": "00061de6-4a87-6b06-185b-ac1f6b6f97e2", "container_name": "ansible_container", "datastore_name": "ansible_datastore", "node_ext_ids": ["f28e7475-f835-42ef-ac35-ecbc48d5421e"], "storage_container_ext_id": "547c01c4-19c2-4293-8a9c-43441c18d0c7"}, "changed": false}
+
+TASK [Mount a Storage Container as an NFS datastore on ESXi hosts (create)] ****
+[ERROR]: Task failed: Module failed: Api Exception raised while listing datastores for cluster with ext_id: 00061de6-4a87-6b06-185b-ac1f6b6f97e2
+Origin: /tmp/codegen/13a950b2faa6495da50ef8e6bf7a0018/repo/examples/cluster_management/DataStoresByClusterId/data_stores_by_cluster_id_v2.yml:43:7
+
+41           - "f28e7475-f835-42ef-ac35-ecbc48d5421e"
+42
+43     - name: Mount a Storage Container as an NFS datastore on ESXi hosts (create)
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "INTERNAL SERVER ERROR", "msg": "Api Exception raised while listing datastores for cluster with ext_id: 00061de6-4a87-6b06-185b-ac1f6b6f97e2", "response": {"$objectType": "clustermgmt.v4.config.ListDataStoresByClusterIdApiResponse", "$reserved": {"$fv": "v4.r3"}, "data": {"$objectType": "clustermgmt.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r3"}, "error": [{"$objectType": "clustermgmt.v4.error.AppMessage", "$reserved": {"$fv": "v4.r3"}, "code": "CLU-30601", "locale": "en_US", "message": "Failed to get the list of Datastores due to - Exception occurred while fetching from DB: Cluster with extId 00061de6-4a87-6b06-185b-ac1f6b6f97e2 not found", "severity": "ERROR"}]}}, "status": 500}
+...ignoring
+
+TASK [List all datastores of the cluster] **************************************
+[ERROR]: Task failed: Module failed: Api Exception raised while listing datastores for cluster with ext_id: 00061de6-4a87-6b06-185b-ac1f6b6f97e2
+Origin: /tmp/codegen/13a950b2faa6495da50ef8e6bf7a0018/repo/examples/cluster_management/DataStoresByClusterId/data_stores_by_cluster_id_v2.yml:56:7
+
+54       ignore_errors: true
+55
+56     - name: List all datastores of the cluster
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "INTERNAL SERVER ERROR", "msg": "Api Exception raised while listing datastores for cluster with ext_id: 00061de6-4a87-6b06-185b-ac1f6b6f97e2", "response": {"$objectType": "clustermgmt.v4.config.ListDataStoresByClusterIdApiResponse", "$reserved": {"$fv": "v4.r3"}, "data": {"$objectType": "clustermgmt.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r3"}, "error": [{"$objectType": "clustermgmt.v4.error.AppMessage", "$reserved": {"$fv": "v4.r3"}, "code": "CLU-30601", "locale": "en_US", "message": "Failed to get the list of Datastores due to - Exception occurred while fetching from DB: Cluster with extId 00061de6-4a87-6b06-185b-ac1f6b6f97e2 not found", "severity": "ERROR"}]}}, "status": 500}
+...ignoring
+
+TASK [List datastores of the cluster with an OData filter] *********************
+[ERROR]: Task failed: Module failed: Api Exception raised while listing datastores for cluster with ext_id: 00061de6-4a87-6b06-185b-ac1f6b6f97e2
+Origin: /tmp/codegen/13a950b2faa6495da50ef8e6bf7a0018/repo/examples/cluster_management/DataStoresByClusterId/data_stores_by_cluster_id_v2.yml:62:7
+
+60       ignore_errors: true
+61
+62     - name: List datastores of the cluster with an OData filter
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "INTERNAL SERVER ERROR", "msg": "Api Exception raised while listing datastores for cluster with ext_id: 00061de6-4a87-6b06-185b-ac1f6b6f97e2", "response": {"$objectType": "clustermgmt.v4.config.ListDataStoresByClusterIdApiResponse", "$reserved": {"$fv": "v4.r3"}, "data": {"$objectType": "clustermgmt.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r3"}, "error": [{"$objectType": "clustermgmt.v4.error.AppMessage", "$reserved": {"$fv": "v4.r3"}, "code": "CLU-30601", "locale": "en_US", "message": "Failed to get the list of Datastores due to - Exception occurred while fetching from DB: Cluster with extId 00061de6-4a87-6b06-185b-ac1f6b6f97e2 not found", "severity": "ERROR"}]}}, "status": 500}
+...ignoring
+
+TASK [List datastores of the cluster with a limit] *****************************
+[ERROR]: Task failed: Module failed: Api Exception raised while listing datastores for cluster with ext_id: 00061de6-4a87-6b06-185b-ac1f6b6f97e2
+Origin: /tmp/codegen/13a950b2faa6495da50ef8e6bf7a0018/repo/examples/cluster_management/DataStoresByClusterId/data_stores_by_cluster_id_v2.yml:69:7
+
+67       ignore_errors: true
+68
+69     - name: List datastores of the cluster with a limit
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "INTERNAL SERVER ERROR", "msg": "Api Exception raised while listing datastores for cluster with ext_id: 00061de6-4a87-6b06-185b-ac1f6b6f97e2", "response": {"$objectType": "clustermgmt.v4.config.ListDataStoresByClusterIdApiResponse", "$reserved": {"$fv": "v4.r3"}, "data": {"$objectType": "clustermgmt.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r3"}, "error": [{"$objectType": "clustermgmt.v4.error.AppMessage", "$reserved": {"$fv": "v4.r3"}, "code": "CLU-30601", "locale": "en_US", "message": "Failed to get the list of Datastores due to - Exception occurred while fetching from DB: Cluster with extId 00061de6-4a87-6b06-185b-ac1f6b6f97e2 not found", "severity": "ERROR"}]}}, "status": 500}
+...ignoring
+
+TASK [Fetch a datastore of the cluster by parent Storage Container ext_id] *****
+[ERROR]: Task failed: Module failed: Api Exception raised while listing datastores for cluster with ext_id: 00061de6-4a87-6b06-185b-ac1f6b6f97e2
+Origin: /tmp/codegen/13a950b2faa6495da50ef8e6bf7a0018/repo/examples/cluster_management/DataStoresByClusterId/data_stores_by_cluster_id_v2.yml:76:7
+
+74       ignore_errors: true
+75
+76     - name: Fetch a datastore of the cluster by parent Storage Container ext_id
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "INTERNAL SERVER ERROR", "msg": "Api Exception raised while listing datastores for cluster with ext_id: 00061de6-4a87-6b06-185b-ac1f6b6f97e2", "response": {"$objectType": "clustermgmt.v4.config.ListDataStoresByClusterIdApiResponse", "$reserved": {"$fv": "v4.r3"}, "data": {"$objectType": "clustermgmt.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r3"}, "error": [{"$objectType": "clustermgmt.v4.error.AppMessage", "$reserved": {"$fv": "v4.r3"}, "code": "CLU-30601", "locale": "en_US", "message": "Failed to get the list of Datastores due to - Exception occurred while fetching from DB: Cluster with extId 00061de6-4a87-6b06-185b-ac1f6b6f97e2 not found", "severity": "ERROR"}]}}, "status": 500}
+...ignoring
+
+TASK [Unmount the datastore from ESXi hosts (delete)] **************************
+[ERROR]: Task failed: Module failed: Api Exception raised while listing datastores for cluster with ext_id: 00061de6-4a87-6b06-185b-ac1f6b6f97e2
+Origin: /tmp/codegen/13a950b2faa6495da50ef8e6bf7a0018/repo/examples/cluster_management/DataStoresByClusterId/data_stores_by_cluster_id_v2.yml:83:7
+
+81       ignore_errors: true
+82
+83     - name: Unmount the datastore from ESXi hosts (delete)
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "INTERNAL SERVER ERROR", "msg": "Api Exception raised while listing datastores for cluster with ext_id: 00061de6-4a87-6b06-185b-ac1f6b6f97e2", "response": {"$objectType": "clustermgmt.v4.config.ListDataStoresByClusterIdApiResponse", "$reserved": {"$fv": "v4.r3"}, "data": {"$objectType": "clustermgmt.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r3"}, "error": [{"$objectType": "clustermgmt.v4.error.AppMessage", "$reserved": {"$fv": "v4.r3"}, "code": "CLU-30601", "locale": "en_US", "message": "Failed to get the list of Datastores due to - Exception occurred while fetching from DB: Cluster with extId 00061de6-4a87-6b06-185b-ac1f6b6f97e2 not found", "severity": "ERROR"}]}}, "status": 500}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=7    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=6   
+
