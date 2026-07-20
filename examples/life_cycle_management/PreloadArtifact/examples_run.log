@@ -1,0 +1,47 @@
+[DEPRECATION WARNING]: ANSIBLE_COLLECTIONS_PATHS option, does not fit var 
+naming standard, use the singular form ANSIBLE_COLLECTIONS_PATH instead. This 
+feature will be removed from ansible-core in version 2.19. Deprecation warnings
+ can be disabled by setting deprecation_warnings=False in ansible.cfg.
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [LCM PreloadArtifact playbook] ********************************************
+
+TASK [List all clusters to get prism central external ID] **********************
+ok: [localhost] => {"changed": false, "error": null, "response": [{"backup_eligibility_score": null, "categories": null, "cluster_profile_ext_id": null, "config": {"authorized_public_key_list": [{"key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCihNgP+ycnEAYBi6u2k7bQjqx22uK0eMIMfvp8YCSgfCZz/cT4P5706Lxy4Yqg8z3dinI08pnFW3bE+tr5pZxWQpnNcJ+zUnRYV3Ua2HaxUtL+ZxknwrkiWcn9zANmzpWqNrOzGVo/4jVE2piQ51urzenO9PvdbFhFT2bXByE6EYm0yf+TnNK7OgDTkE3kpEKISXQDOBEgHhn0HkIA96qcRPQbhjOSryNG7jVv3PCmfxDMRMRUZuqaoYuirebjVNjUH9kBwQqbDTAn9JBjN6g/sKIDlwratcfHqWY/n0pvvg7fMKXe/qLdsh/zAGRkB6JpAkCXMsdfLu0+IjCSu6NkWhMBYLnYXxAC7dxaxQI6SLvM6BoO9cmPXOL+Ubsh0jXuKpJmRACrJpwkxgjxi6Qmy2Jm21mYJwBoffoy6SSP+d6CvlBFJlD3Kfr8TviHLZWDSSEGtJ6tOqVEFgM/G8lJwemvC29qo5YnDlaKbGKVX8lpRXDsJg/fu2spcwEDaPs= nutanix@ntnx-10-44-76-28-a-pcvm", "name": "ccfabe63-8617-4b46-a031-fbedac147042"}], "build_info": {"build_type": "release", "commit_id": "b6042b29819bbcc0150cd9bd180c6552a5a56622", "full_version": "el9-release-ganges-7.6-stable-b6042b29819bbcc0150cd9bd180c6552a5a56622", "short_commit_id": "b6042b", "version": "7.6"}, "cluster_arch": "X86_64", "cluster_function": ["PRISM_CENTRAL"], "cluster_software_map": [{"software_type": "NCC", "version": "ncc-6.0.0"}, {"software_type": "PRISM_CENTRAL", "version": "el9-release-ganges-7.6-stable-b6042b29819bbcc0150cd9bd180c6552a5a56622"}], "cluster_type": null, "encryption_in_transit_status": null, "encryption_option": null, "encryption_scope": null, "fault_tolerance_state": {"current_cluster_fault_tolerance": "CFT_0N_AND_0D", "current_max_fault_tolerance": 0, "desired_cluster_fault_tolerance": "CFT_0N_AND_0D", "desired_max_fault_tolerance": 0, "domain_awareness_level": "NODE", "isStrictRackAwarenessEnabled": false, "redundancy_status": null}, "hypervisor_types": ["$UNKNOWN"], "incarnation_id": 5396537123792439134, "isDegradedNodeMonitoringDisabled": false, "is_available": true, "is_lts": null, "is_password_remote_login_enabled": true, "is_remote_support_enabled": false, "operation_mode": null, "pulse_status": {"is_enabled": true, "pii_scrubbing_level": null}, "redundancy_factor": 1, "timezone": "Atlantic/Reykjavik"}, "container_name": null, "ext_id": "cae459ec-08db-475e-a5e5-151e390c9484", "inefficient_vm_count": null, "links": null, "name": "PC_10.44.76.29", "network": {"backplane": {"is_segmentation_enabled": false, "netmask": null, "subnet": null, "vlan_tag": null}, "external_address": {"ipv4": {"prefix_length": 32, "value": "10.44.76.29"}, "ipv6": null}, "external_data_service_ip": {"ipv4": null, "ipv6": null}, "external_subnet": "10.44.76.0/255.255.252.0", "fqdn": null, "http_proxy_list": null, "http_proxy_white_list": null, "internal_subnet": "10.44.76.0/255.255.252.0", "key_management_server_type": null, "management_server": null, "masquerading_ip": null, "masquerading_port": null, "name_server_ip_list": [{"fqdn": null, "ipv4": {"prefix_length": 32, "value": "127.0.0.1"}, "ipv6": null}, {"fqdn": null, "ipv4": {"prefix_length": 32, "value": "10.40.64.15"}, "ipv6": null}, {"fqdn": null, "ipv4": {"prefix_length": 32, "value": "10.40.64.16"}, "ipv6": null}], "nfs_subnet_whitelist": null, "ntp_server_config_list": null, "ntp_server_ip_list": [{"fqdn": {"value": "0.centos.pool.ntp.org"}, "ipv4": null, "ipv6": null}, {"fqdn": {"value": "3.centos.pool.ntp.org"}, "ipv4": null, "ipv6": null}, {"fqdn": {"value": "1.centos.pool.ntp.org"}, "ipv4": null, "ipv6": null}, {"fqdn": {"value": "2.centos.pool.ntp.org"}, "ipv4": null, "ipv6": null}], "smtp_server": null}, "nodes": {"node_list": [{"controller_vm_ip": {"ipv4": {"prefix_length": 32, "value": "10.44.76.28"}, "ipv6": null}, "host_ip": null, "node_uuid": "ccfabe63-8617-4b46-a031-fbedac147042"}], "number_of_nodes": 1}, "tenant_id": null, "upgrade_status": null, "vm_count": null}], "total_available_results": 1}
+
+TASK [Get prism central external ID] *******************************************
+ok: [localhost] => {"ansible_facts": {"prism_central_external_id": "cae459ec-08db-475e-a5e5-151e390c9484"}, "changed": false}
+
+TASK [Perform inventory of LCM to populate LCM entities (best-effort)] *********
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "Task Failed", "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": ["cae459ec-08db-475e-a5e5-151e390c9484"], "completed_time": "2026-07-20T14:51:46.400086+00:00", "completion_details": null, "created_time": "2026-07-20T14:51:45.764347+00:00", "entities_affected": null, "error_messages": [{"arguments_map": null, "code": "TSKS-20801", "error_group": "LEGACY_ERROR", "locale": "en_US", "message": "Operation failed due to legacy error and 'legacyErrorMessage' should be referred to for details", "severity": "ERROR"}], "ext_id": "ZXJnb24=:e86ec47b-18a9-5cfd-9601-9850a5801947", "is_background_task": false, "is_cancelable": false, "last_updated_time": "2026-07-20T14:51:46.400085+00:00", "legacy_error_message": "Failed to perform the operation performInventory on cluster cae459ec-08db-475e-a5e5-151e390c9484 due to an ongoing operation Inventory and root task ef3c47f4-3675-48df-57b9-4e633125de91.", "number_of_entities_affected": 0, "number_of_subtasks": 0, "operation": "PerformInventory", "operation_description": "Perform Inventory", "owned_by": {"ext_id": "00000000-0000-0000-0000-000000000000", "name": "admin"}, "parent_task": null, "progress_percentage": 100, "projectExtId": "00000000-0000-0000-0000-000000000000", "resource_links": null, "root_task": null, "started_time": "2026-07-20T14:51:45.764347+00:00", "status": "FAILED", "sub_steps": null, "sub_tasks": null, "warnings": null}}
+...ignoring
+
+TASK [List up to 50 LCM entities so we have one with a target version] *********
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [Pick an LCM entity that has at least one available_version] **************
+ok: [localhost] => {"ansible_facts": {"lcm_entity_pick": []}, "changed": false}
+
+TASK [Set the LCM entity + version to preload] *********************************
+skipping: [localhost] => {"changed": false, "false_condition": "lcm_entity_pick | length > 0", "skip_reason": "Conditional result was False"}
+
+TASK [Preload LCM artifacts on Prism Central (default target)] *****************
+skipping: [localhost] => {"changed": false, "false_condition": "lcm_entity_pick | length > 0", "skip_reason": "Conditional result was False"}
+
+TASK [Preload LCM artifacts on a specific Prism Element cluster (via X-Cluster-Id header)] ***
+skipping: [localhost] => {"changed": false, "false_condition": "lcm_entity_pick | length > 0", "skip_reason": "Conditional result was False"}
+
+TASK [Note when no discoverable LCM entity is available] ***********************
+ok: [localhost] => {
+    "msg": "No LCM entity with an available target version was discoverable on the cluster. If a shared cluster is running an inventory, retry after it completes. Otherwise run the LCM inventory (ntnx_lcm_inventory_v2) first to populate the entities."
+}
+
+TASK [Show the preload responses] **********************************************
+skipping: [localhost] => {"false_condition": "lcm_entity_pick | length > 0"}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=6    changed=0    unreachable=0    failed=0    skipped=4    rescued=0    ignored=1   
+
