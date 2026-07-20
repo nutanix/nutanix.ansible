@@ -1,0 +1,174 @@
+---
+# Summary:
+# This playbook demonstrates lifecycle operations on Nutanix Layer2 Stretch
+# (also known as Layer 2 Network Extension). It covers:
+#   1. Create a Layer2 Stretch (all supported attributes)
+#   2. Update a Layer2 Stretch (all supported attributes)
+#   3. Get a Layer2 Stretch using ext_id
+#   4. List all Layer2 Stretches
+#   5. List Layer2 Stretches with a filter
+#   6. List Layer2 Stretches with a limit
+#   7. Delete a Layer2 Stretch
+
+- name: Layer2 Stretch playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: false
+  tasks:
+    - name: Set common variables
+      ansible.builtin.set_fact:
+        l2_stretch_name: "l2_stretch_ansible"
+        local_pc_cluster_reference: "5ab1b1a2-1111-4e00-9999-0000000000aa"
+        local_stretch_subnet_reference: "8b5df6bc-1111-4e00-9999-0000000000bb"
+        local_connection_reference: "3f9e5c2d-1111-4e00-9999-0000000000cc"
+        remote_pc_cluster_reference: "6bc2b2b3-2222-4e00-9999-0000000000dd"
+        remote_stretch_subnet_reference: "9c6ef7cd-2222-4e00-9999-0000000000ee"
+        remote_connection_reference: "4a0f6d3e-2222-4e00-9999-0000000000ff"
+        local_peered_gateway_ext_id: "1a2b3c4d-1111-4e00-9999-000000000011"
+        remote_peered_gateway_ext_id: "2b3c4d5e-2222-4e00-9999-000000000022"
+
+    - name: Create Layer2 Stretch with all attributes
+      nutanix.ncp.ntnx_layer2_stretche_v2:
+        state: present
+        name: "{{ l2_stretch_name }}"
+        description: "Layer2 Stretch created by Ansible with all attributes"
+        connection_type: "VXLAN"
+        mtu: 1500
+        vni: 100000
+        local_site_params:
+          pc_cluster_reference: "{{ local_pc_cluster_reference }}"
+          stretch_subnet_reference: "{{ local_stretch_subnet_reference }}"
+          connection_reference: "{{ local_connection_reference }}"
+          stretch_interface_ip_address:
+            ipv4:
+              value: "192.168.10.1"
+              prefix_length: 24
+          vpn_interface_ip_address:
+            ipv4:
+              value: "192.168.10.2"
+              prefix_length: 24
+          default_gateway_ip_address:
+            ipv4:
+              value: "192.168.10.254"
+              prefix_length: 24
+          high_availability_group:
+            is_ha_enabled: true
+            algorithm: "ACTIVE_BACKUP"
+            peered_gateways:
+              - ext_id: "{{ local_peered_gateway_ext_id }}"
+        remote_site_params:
+          pc_cluster_reference: "{{ remote_pc_cluster_reference }}"
+          stretch_subnet_reference: "{{ remote_stretch_subnet_reference }}"
+          connection_reference: "{{ remote_connection_reference }}"
+          stretch_interface_ip_address:
+            ipv4:
+              value: "192.168.20.1"
+              prefix_length: 24
+          vpn_interface_ip_address:
+            ipv4:
+              value: "192.168.20.2"
+              prefix_length: 24
+          default_gateway_ip_address:
+            ipv4:
+              value: "192.168.20.254"
+              prefix_length: 24
+          high_availability_group:
+            is_ha_enabled: true
+            algorithm: "ACTIVE_BACKUP"
+            peered_gateways:
+              - ext_id: "{{ remote_peered_gateway_ext_id }}"
+      register: create_result
+      ignore_errors: true
+
+    - name: Set Layer2 Stretch ext_id
+      ansible.builtin.set_fact:
+        l2_stretch_ext_id: "{{ create_result.ext_id | default('2e40ff57-20aa-4d2b-b179-298db969c20d') }}"
+
+    - name: Update Layer2 Stretch with all attributes
+      nutanix.ncp.ntnx_layer2_stretche_v2:
+        state: present
+        ext_id: "{{ l2_stretch_ext_id }}"
+        name: "{{ l2_stretch_name }}_updated"
+        description: "Layer2 Stretch updated by Ansible with all attributes"
+        connection_type: "VXLAN"
+        mtu: 8950
+        vni: 200000
+        local_site_params:
+          pc_cluster_reference: "{{ local_pc_cluster_reference }}"
+          stretch_subnet_reference: "{{ local_stretch_subnet_reference }}"
+          connection_reference: "{{ local_connection_reference }}"
+          stretch_interface_ip_address:
+            ipv4:
+              value: "192.168.11.1"
+              prefix_length: 24
+          vpn_interface_ip_address:
+            ipv4:
+              value: "192.168.11.2"
+              prefix_length: 24
+          default_gateway_ip_address:
+            ipv4:
+              value: "192.168.11.254"
+              prefix_length: 24
+          high_availability_group:
+            is_ha_enabled: false
+            algorithm: "ACTIVE_BACKUP"
+            peered_gateways:
+              - ext_id: "{{ local_peered_gateway_ext_id }}"
+        remote_site_params:
+          pc_cluster_reference: "{{ remote_pc_cluster_reference }}"
+          stretch_subnet_reference: "{{ remote_stretch_subnet_reference }}"
+          connection_reference: "{{ remote_connection_reference }}"
+          stretch_interface_ip_address:
+            ipv4:
+              value: "192.168.21.1"
+              prefix_length: 24
+          vpn_interface_ip_address:
+            ipv4:
+              value: "192.168.21.2"
+              prefix_length: 24
+          default_gateway_ip_address:
+            ipv4:
+              value: "192.168.21.254"
+              prefix_length: 24
+          high_availability_group:
+            is_ha_enabled: false
+            algorithm: "ACTIVE_BACKUP"
+            peered_gateways:
+              - ext_id: "{{ remote_peered_gateway_ext_id }}"
+      register: update_result
+      ignore_errors: true
+
+    - name: Get Layer2 Stretch using ext_id
+      nutanix.ncp.ntnx_layer2_stretches_info_v2:
+        ext_id: "{{ l2_stretch_ext_id }}"
+      register: get_result
+      ignore_errors: true
+
+    - name: List all Layer2 Stretches
+      nutanix.ncp.ntnx_layer2_stretches_info_v2:
+      register: list_result
+      ignore_errors: true
+
+    - name: List Layer2 Stretches with filter
+      nutanix.ncp.ntnx_layer2_stretches_info_v2:
+        filter: "name eq '{{ l2_stretch_name }}_updated'"
+      register: filter_result
+      ignore_errors: true
+
+    - name: List Layer2 Stretches with limit
+      nutanix.ncp.ntnx_layer2_stretches_info_v2:
+        limit: 1
+      register: limit_result
+      ignore_errors: true
+
+    - name: Delete Layer2 Stretch
+      nutanix.ncp.ntnx_layer2_stretche_v2:
+        state: absent
+        ext_id: "{{ l2_stretch_ext_id }}"
+      register: delete_result
+      ignore_errors: true

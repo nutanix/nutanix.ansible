@@ -1,0 +1,72 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Layer2 Stretch playbook] *************************************************
+
+TASK [Set common variables] ****************************************************
+ok: [localhost] => {"ansible_facts": {"l2_stretch_name": "l2_stretch_ansible", "local_connection_reference": "3f9e5c2d-1111-4e00-9999-0000000000cc", "local_pc_cluster_reference": "5ab1b1a2-1111-4e00-9999-0000000000aa", "local_peered_gateway_ext_id": "1a2b3c4d-1111-4e00-9999-000000000011", "local_stretch_subnet_reference": "8b5df6bc-1111-4e00-9999-0000000000bb", "remote_connection_reference": "4a0f6d3e-2222-4e00-9999-0000000000ff", "remote_pc_cluster_reference": "6bc2b2b3-2222-4e00-9999-0000000000dd", "remote_peered_gateway_ext_id": "2b3c4d5e-2222-4e00-9999-000000000022", "remote_stretch_subnet_reference": "9c6ef7cd-2222-4e00-9999-0000000000ee"}, "changed": false}
+
+TASK [Create Layer2 Stretch with all attributes] *******************************
+[ERROR]: Task failed: Module failed: Api Exception raised while creating Layer2 Stretch
+Origin: /tmp/codegen/afe28a6bb0854e4788cf5ac955b1dede/repo/examples/networking/Layer2Stretche/layer2_stretches_v2.yml:35:7
+
+33         remote_peered_gateway_ext_id: "2b3c4d5e-2222-4e00-9999-000000000022"
+34
+35     - name: Create Layer2 Stretch with all attributes
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "INTERNAL SERVER ERROR", "msg": "Api Exception raised while creating Layer2 Stretch", "response": {"error": "Internal Server Error", "message": "Request processing failed: com.nutanix.networking.atlas_common.exceptions.AtlasException: Application error kNotFound raised: Subnet with uuid 8b5df6bc-1111-4e00-9999-0000000000bb not found", "path": "/api/networking/v4.3/config/layer2-stretches", "status": 500, "timestamp": "2026-07-20T12:43:01.411+00:00"}, "status": 500}
+...ignoring
+
+TASK [Set Layer2 Stretch ext_id] ***********************************************
+ok: [localhost] => {"ansible_facts": {"l2_stretch_ext_id": "2e40ff57-20aa-4d2b-b179-298db969c20d"}, "changed": false}
+
+TASK [Update Layer2 Stretch with all attributes] *******************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching Layer2 Stretch info using ext_id
+Origin: /tmp/codegen/afe28a6bb0854e4788cf5ac955b1dede/repo/examples/networking/Layer2Stretche/layer2_stretches_v2.yml:92:7
+
+90         l2_stretch_ext_id: "{{ create_result.ext_id | default('2e40ff57-20aa-4d2b-b179-298db969c20d') }}"
+91
+92     - name: Update Layer2 Stretch with all attributes
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "INTERNAL SERVER ERROR", "msg": "Api Exception raised while fetching Layer2 Stretch info using ext_id", "response": {"error": "Internal Server Error", "message": "Request processing failed: com.nutanix.networking.atlas_common.exceptions.AtlasException: Layer2 stretch 2e40ff57-20aa-4d2b-b179-298db969c20d not found", "path": "/api/networking/v4.3/config/layer2-stretches/2e40ff57-20aa-4d2b-b179-298db969c20d", "status": 500, "timestamp": "2026-07-20T12:43:02.500+00:00"}, "status": 500}
+...ignoring
+
+TASK [Get Layer2 Stretch using ext_id] *****************************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching Layer2 Stretch info using ext_id
+Origin: /tmp/codegen/afe28a6bb0854e4788cf5ac955b1dede/repo/examples/networking/Layer2Stretche/layer2_stretches_v2.yml:146:7
+
+144       ignore_errors: true
+145
+146     - name: Get Layer2 Stretch using ext_id
+          ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "INTERNAL SERVER ERROR", "msg": "Api Exception raised while fetching Layer2 Stretch info using ext_id", "response": {"error": "Internal Server Error", "message": "Request processing failed: com.nutanix.networking.atlas_common.exceptions.AtlasException: Layer2 stretch 2e40ff57-20aa-4d2b-b179-298db969c20d not found", "path": "/api/networking/v4.3/config/layer2-stretches/2e40ff57-20aa-4d2b-b179-298db969c20d", "status": 500, "timestamp": "2026-07-20T12:43:03.428+00:00"}, "status": 500}
+...ignoring
+
+TASK [List all Layer2 Stretches] ***********************************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List Layer2 Stretches with filter] ***************************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List Layer2 Stretches with limit] ****************************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [Delete Layer2 Stretch] ***************************************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching Layer2 Stretch info using ext_id
+Origin: /tmp/codegen/afe28a6bb0854e4788cf5ac955b1dede/repo/examples/networking/Layer2Stretche/layer2_stretches_v2.yml:169:7
+
+167       ignore_errors: true
+168
+169     - name: Delete Layer2 Stretch
+          ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "INTERNAL SERVER ERROR", "msg": "Api Exception raised while fetching Layer2 Stretch info using ext_id", "response": {"error": "Internal Server Error", "message": "Request processing failed: com.nutanix.networking.atlas_common.exceptions.AtlasException: Layer2 stretch 2e40ff57-20aa-4d2b-b179-298db969c20d not found", "path": "/api/networking/v4.3/config/layer2-stretches/2e40ff57-20aa-4d2b-b179-298db969c20d", "status": 500, "timestamp": "2026-07-20T12:43:06.774+00:00"}, "status": 500}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=9    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=4   
+
