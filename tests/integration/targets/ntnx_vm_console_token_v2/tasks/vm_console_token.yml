@@ -1,0 +1,245 @@
+---
+# Integration tests for ntnx_vm_console_token_v2
+#
+# Test plan:
+# 1. Discover an AHV cluster on the target Prism Central so the test is
+#    portable across environments (no hard-coded cluster UUIDs).
+# 2. Create a minimal AHV VM on that cluster to act as the console-token
+#    target. The generate-console-token API only needs a VM external ID
+#    (no body), so the VM itself does not need networking or disks for
+#    the token request to be accepted.
+# 3. Check_mode test for Generate: verify no API call is made and the
+#    module reports changed==false with the target ext_id echoed back.
+# 4. Real generate call: run against the created VM and assert the
+#    module reports changed==true, failed==false, task_ext_id present
+#    and the underlying task reached SUCCEEDED status.
+# 5. Wait=false variant: verify the module returns the task reference
+#    immediately without waiting for completion.
+# 6. Negative test: attempt to generate a token for a non-existent VM
+#    external ID and verify the module fails with a descriptive error.
+# 7. Negative test: omit the required ext_id parameter and verify the
+#    Ansible argument spec rejects the call.
+# 8. Cleanup: delete the VM created for the test.
+
+- name: Start ntnx_vm_console_token_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_vm_console_token_v2 tests
+
+- name: Generate random suffix for VM name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set VM name for console token test
+  ansible.builtin.set_fact:
+    vm_name: "ansible_console_token_{{ random_name }}"
+
+########################################################################################
+# Discover an AHV cluster to host the test VM
+########################################################################################
+
+- name: Fetch AHV clusters on Prism Central
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(f:f eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: clusters_info
+  ignore_errors: true
+
+- name: Assert clusters were listed
+  ansible.builtin.assert:
+    that:
+      - clusters_info is defined
+      - clusters_info.failed == false
+      - clusters_info.response is defined
+      - clusters_info.response | length > 0
+    success_msg: "Clusters fetched successfully"
+    fail_msg: "Failed to fetch clusters from Prism Central"
+
+- name: Pick the first AHV cluster (skip PRISM_CENTRAL)
+  ansible.builtin.set_fact:
+    ahv_cluster_ext_id: >-
+      {{ (clusters_info.response
+          | selectattr('config', 'defined')
+          | selectattr('config.cluster_function', 'defined')
+          | rejectattr('config.cluster_function', 'contains', 'PRISM_CENTRAL')
+          | list
+          | first).ext_id }}
+
+- name: Show selected AHV cluster ext_id
+  ansible.builtin.debug:
+    var: ahv_cluster_ext_id
+
+########################################################################################
+# Create a test VM to act as the console-token target
+########################################################################################
+
+- name: Create test VM for console token generation
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    name: "{{ vm_name }}"
+    description: "VM created by ntnx_vm_console_token_v2 integration test"
+    cluster:
+      ext_id: "{{ ahv_cluster_ext_id }}"
+    memory_size_bytes: 1073741824
+    num_sockets: 1
+    num_cores_per_socket: 1
+  register: vm_result
+  ignore_errors: true
+
+- name: Assert VM created
+  ansible.builtin.assert:
+    that:
+      - vm_result is defined
+      - vm_result.changed == true
+      - vm_result.failed == false
+      - vm_result.response is defined
+      - vm_result.response.name == vm_name
+      - vm_result.ext_id is defined
+    success_msg: "Test VM created successfully"
+    fail_msg: "Failed to create test VM"
+
+- name: Set VM ext_id
+  ansible.builtin.set_fact:
+    vm_ext_id: "{{ vm_result.ext_id }}"
+
+########################################################################################
+# check_mode: generate console token (should NOT hit the API)
+########################################################################################
+
+- name: Generate console token in check mode
+  nutanix.ncp.ntnx_vm_console_token_v2:
+    state: present
+    ext_id: "{{ vm_ext_id }}"
+  register: check_result
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert check_mode generate response
+  ansible.builtin.assert:
+    that:
+      - check_result is defined
+      - check_result.changed == false
+      - check_result.failed == false
+      - check_result.ext_id == vm_ext_id
+      - check_result.response is defined
+      - check_result.response.ext_id == vm_ext_id
+      - check_result.response.operation == 'GenerateVmConsoleToken'
+      - check_result.task_ext_id is none or check_result.task_ext_id == None
+    success_msg: "check_mode generate console token behaved correctly"
+    fail_msg: "check_mode generate console token unexpected result"
+
+########################################################################################
+# Real generate console token call (default wait: true)
+########################################################################################
+
+- name: Generate console token for the test VM (wait for task completion)
+  nutanix.ncp.ntnx_vm_console_token_v2:
+    state: present
+    ext_id: "{{ vm_ext_id }}"
+  register: token_result
+  ignore_errors: true
+
+- name: Assert generate console token result
+  ansible.builtin.assert:
+    that:
+      - token_result is defined
+      - token_result.changed == true
+      - token_result.failed == false
+      - token_result.ext_id == vm_ext_id
+      - token_result.task_ext_id is defined
+      - token_result.task_ext_id | length > 0
+      - token_result.response is defined
+      - token_result.response.status == 'SUCCEEDED'
+      - token_result.response.operation == 'GenerateVmConsoleToken'
+      - token_result.response.entities_affected is defined
+      - token_result.response.entities_affected | length > 0
+      - (token_result.response.entities_affected
+           | selectattr('ext_id', 'equalto', vm_ext_id) | list | length) > 0
+    success_msg: "Generate console token succeeded and returned a task"
+    fail_msg: "Generate console token failed or returned unexpected data"
+
+########################################################################################
+# Generate console token with wait: false (return task reference immediately)
+########################################################################################
+
+- name: Generate console token without waiting for task completion
+  nutanix.ncp.ntnx_vm_console_token_v2:
+    state: present
+    ext_id: "{{ vm_ext_id }}"
+    wait: false
+  register: nowait_result
+  ignore_errors: true
+
+- name: Assert wait:false response
+  ansible.builtin.assert:
+    that:
+      - nowait_result is defined
+      - nowait_result.changed == true
+      - nowait_result.failed == false
+      - nowait_result.ext_id == vm_ext_id
+      - nowait_result.task_ext_id is defined
+      - nowait_result.task_ext_id | length > 0
+      - nowait_result.response is defined
+      - nowait_result.response.ext_id == nowait_result.task_ext_id
+    success_msg: "wait:false returned task reference immediately"
+    fail_msg: "wait:false did not return the expected task reference"
+
+########################################################################################
+# Negative test: non-existent VM external ID
+########################################################################################
+
+- name: Attempt to generate console token for a non-existent VM
+  nutanix.ncp.ntnx_vm_console_token_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: invalid_ext_id_result
+  ignore_errors: true
+
+- name: Assert non-existent VM failure
+  ansible.builtin.assert:
+    that:
+      - invalid_ext_id_result is defined
+      - invalid_ext_id_result.failed == true
+      - invalid_ext_id_result.msg is defined
+      - >-
+        'Api Exception raised while generating VM console token'
+        in invalid_ext_id_result.msg
+    success_msg: "Non-existent VM produced expected API failure"
+    fail_msg: "Non-existent VM did not fail as expected"
+
+########################################################################################
+# Negative test: missing required ext_id
+########################################################################################
+
+- name: Attempt to generate console token without ext_id
+  nutanix.ncp.ntnx_vm_console_token_v2:
+    state: present
+  register: missing_ext_id_result
+  ignore_errors: true
+
+- name: Assert missing ext_id validation error
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id_result is defined
+      - missing_ext_id_result.failed == true
+      - missing_ext_id_result.msg is defined
+      - "'ext_id' in missing_ext_id_result.msg"
+    success_msg: "Missing ext_id was rejected by argument spec validation"
+    fail_msg: "Missing ext_id was not rejected as expected"
+
+########################################################################################
+# Cleanup: delete the test VM
+########################################################################################
+
+- name: Delete the test VM
+  nutanix.ncp.ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ vm_ext_id }}"
+  register: cleanup_result
+  ignore_errors: true
+
+- name: Assert VM cleanup succeeded
+  ansible.builtin.assert:
+    that:
+      - cleanup_result is defined
+      - cleanup_result.failed == false
+    success_msg: "Test VM deleted successfully"
+    fail_msg: "Failed to delete test VM (manual cleanup may be required)"
