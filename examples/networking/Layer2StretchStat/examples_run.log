@@ -1,0 +1,216 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Layer2 Stretch stats playbook] *******************************************
+
+TASK [Set Layer2 Stretch ext_id] ***********************************************
+ok: [localhost] => {"ansible_facts": {"layer2_stretch_ext_id": "00000000-0000-0000-0000-000000000000"}, "changed": false}
+
+TASK [Compute end time (now) in ISO-8601 with milliseconds] ********************
+ok: [localhost] => {"changed": false, "changed_when_result": false, "cmd": ["date", "-u", "+%Y-%m-%dT%H:%M:%S.%3NZ"], "delta": "0:00:00.002906", "end": "2026-07-20 12:30:58.384582", "msg": "", "rc": 0, "start": "2026-07-20 12:30:58.381676", "stderr": "", "stderr_lines": [], "stdout": "2026-07-20T12:30:58.384Z", "stdout_lines": ["2026-07-20T12:30:58.384Z"]}
+
+TASK [Compute start time (5 minutes ago) in ISO-8601 with milliseconds] ********
+ok: [localhost] => {"changed": false, "changed_when_result": false, "cmd": ["date", "-u", "-d", "-300 seconds", "+%Y-%m-%dT%H:%M:%S.%3NZ"], "delta": "0:00:00.002865", "end": "2026-07-20 12:30:58.672581", "msg": "", "rc": 0, "start": "2026-07-20 12:30:58.669716", "stderr": "", "stderr_lines": [], "stdout": "2026-07-20T12:25:58.672Z", "stdout_lines": ["2026-07-20T12:25:58.672Z"]}
+
+TASK [Fetch Layer2 Stretch stats with required attributes only] ****************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching Layer2 Stretch stats
+Origin: /tmp/codegen/615e5c309f974e619c62d69dcfe2573f/repo/examples/networking/Layer2StretchStat/layer2_stretch_stats_info_v2.yml:41:7
+
+39       changed_when: false
+40
+41     - name: Fetch Layer2 Stretch stats with required attributes only
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching Layer2 Stretch stats", "response": {"$objectType": "networking.v4.stats.GetLayer2StretchStatsApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10060", "locale": "en_US", "message": "Failed to get Layer2 stretch 00000000-0000-0000-0000-000000000000 stats as a referenced resource was not found -  Statistics for: layer2_stretch [00000000-0000-0000-0000-000000000000] not found", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.3/stats/layer2-stretches/00000000-0000-0000-0000-000000000000", "rel": "self"}], "totalAvailableResults": 0}}, "status": 404}
+...ignoring
+
+TASK [Print Layer2 Stretch stats (minimal fetch)] ******************************
+ok: [localhost] => {
+    "layer2_stretch_stats_minimal": {
+        "changed": false,
+        "error": "NOT FOUND",
+        "exception": "(traceback unavailable)",
+        "failed": true,
+        "msg": "Api Exception raised while fetching Layer2 Stretch stats",
+        "response": {
+            "$objectType": "networking.v4.stats.GetLayer2StretchStatsApiResponse",
+            "$reserved": {
+                "$fv": "v4.r4"
+            },
+            "data": {
+                "$objectType": "networking.v4.error.ErrorResponse",
+                "$reserved": {
+                    "$fv": "v4.r4"
+                },
+                "error": [
+                    {
+                        "$objectType": "networking.v4.error.AppMessage",
+                        "$reserved": {
+                            "$fv": "v4.r4"
+                        },
+                        "code": "NETWORKING-10060",
+                        "locale": "en_US",
+                        "message": "Failed to get Layer2 stretch 00000000-0000-0000-0000-000000000000 stats as a referenced resource was not found -  Statistics for: layer2_stretch [00000000-0000-0000-0000-000000000000] not found",
+                        "severity": "ERROR"
+                    }
+                ]
+            },
+            "metadata": {
+                "$objectType": "common.v1.response.ApiResponseMetadata",
+                "$reserved": {
+                    "$fv": "v1.r0"
+                },
+                "flags": [
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "hasError",
+                        "value": true
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isPaginated",
+                        "value": false
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isTruncated",
+                        "value": false
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isExpandRestricted",
+                        "value": false
+                    }
+                ],
+                "links": [
+                    {
+                        "$objectType": "common.v1.response.ApiLink",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "href": "https://10.44.76.28:9440/api/networking/v4.3/stats/layer2-stretches/00000000-0000-0000-0000-000000000000",
+                        "rel": "self"
+                    }
+                ],
+                "totalAvailableResults": 0
+            }
+        },
+        "status": 404
+    }
+}
+
+TASK [Fetch Layer2 Stretch stats with ALL supported attributes] ****************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching Layer2 Stretch stats
+Origin: /tmp/codegen/615e5c309f974e619c62d69dcfe2573f/repo/examples/networking/Layer2StretchStat/layer2_stretch_stats_info_v2.yml:53:7
+
+51         var: layer2_stretch_stats_minimal
+52
+53     - name: Fetch Layer2 Stretch stats with ALL supported attributes
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching Layer2 Stretch stats", "response": {"$objectType": "networking.v4.stats.GetLayer2StretchStatsApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10060", "locale": "en_US", "message": "Failed to get Layer2 stretch 00000000-0000-0000-0000-000000000000 stats as a referenced resource was not found -  Statistics for: layer2_stretch [00000000-0000-0000-0000-000000000000] not found", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.3/stats/layer2-stretches/00000000-0000-0000-0000-000000000000", "rel": "self"}], "totalAvailableResults": 0}}, "status": 404}
+...ignoring
+
+TASK [Print Layer2 Stretch stats (full fetch)] *********************************
+ok: [localhost] => {
+    "layer2_stretch_stats_full": {
+        "changed": false,
+        "error": "NOT FOUND",
+        "exception": "(traceback unavailable)",
+        "failed": true,
+        "msg": "Api Exception raised while fetching Layer2 Stretch stats",
+        "response": {
+            "$objectType": "networking.v4.stats.GetLayer2StretchStatsApiResponse",
+            "$reserved": {
+                "$fv": "v4.r4"
+            },
+            "data": {
+                "$objectType": "networking.v4.error.ErrorResponse",
+                "$reserved": {
+                    "$fv": "v4.r4"
+                },
+                "error": [
+                    {
+                        "$objectType": "networking.v4.error.AppMessage",
+                        "$reserved": {
+                            "$fv": "v4.r4"
+                        },
+                        "code": "NETWORKING-10060",
+                        "locale": "en_US",
+                        "message": "Failed to get Layer2 stretch 00000000-0000-0000-0000-000000000000 stats as a referenced resource was not found -  Statistics for: layer2_stretch [00000000-0000-0000-0000-000000000000] not found",
+                        "severity": "ERROR"
+                    }
+                ]
+            },
+            "metadata": {
+                "$objectType": "common.v1.response.ApiResponseMetadata",
+                "$reserved": {
+                    "$fv": "v1.r0"
+                },
+                "flags": [
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "hasError",
+                        "value": true
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isPaginated",
+                        "value": false
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isTruncated",
+                        "value": false
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isExpandRestricted",
+                        "value": false
+                    }
+                ],
+                "links": [
+                    {
+                        "$objectType": "common.v1.response.ApiLink",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "href": "https://10.44.76.28:9440/api/networking/v4.3/stats/layer2-stretches/00000000-0000-0000-0000-000000000000",
+                        "rel": "self"
+                    }
+                ],
+                "totalAvailableResults": 0
+            }
+        },
+        "status": 404
+    }
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=7    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=2   
+
