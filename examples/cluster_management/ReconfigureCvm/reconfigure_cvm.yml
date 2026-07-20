@@ -1,0 +1,46 @@
+---
+# Summary:
+# This playbook demonstrates reconfiguring the Controller VMs (CVMs) of a
+# Nutanix cluster using the v4 clustermgmt API. The action drives a rolling
+# change across every CVM of the given cluster.
+#
+# The playbook contains three example tasks:
+#   1. Reconfigure CVMs with all supported fields (num_vcpus + memory_size_bytes)
+#   2. Reconfigure CVMs with only num_vcpus
+#   3. Reconfigure CVMs with only memory_size_bytes
+
+- name: Reconfigure CVM playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        cluster_ext_id: "0005f6f4-7b8c-11ee-8a0d-000000000000"
+
+    - name: Reconfigure CVMs — change both vCPU and memory (all fields)
+      nutanix.ncp.ntnx_reconfigure_cvm_v2:
+        ext_id: "{{ cluster_ext_id }}"
+        num_vcpus: 12
+        memory_size_bytes: 38654705664
+      register: reconfigure_all_result
+      ignore_errors: true
+
+    - name: Reconfigure CVMs — change vCPU only
+      nutanix.ncp.ntnx_reconfigure_cvm_v2:
+        ext_id: "{{ cluster_ext_id }}"
+        num_vcpus: 10
+      register: reconfigure_vcpus_result
+      ignore_errors: true
+
+    - name: Reconfigure CVMs — change memory only (32 GiB)
+      nutanix.ncp.ntnx_reconfigure_cvm_v2:
+        ext_id: "{{ cluster_ext_id }}"
+        memory_size_bytes: 34359738368
+      register: reconfigure_memory_result
+      ignore_errors: true
