@@ -1,0 +1,146 @@
+---
+# Summary:
+# This playbook demonstrates end-to-end usage of the Consistency Rule
+# sub-resource under a Protection Policy in Nutanix Prism Central using the
+# v4.2 data-policies APIs. It will:
+# 1. Create a Nutanix category (prerequisite for consistency-rule membership).
+# 2. Create a Protection Policy that owns the consistency rules.
+# 3. Create a Consistency Rule with all supported attributes.
+# 4. Fetch the Consistency Rule using its external ID.
+# 5. List all Consistency Rules under the Protection Policy.
+# 6. Update the Consistency Rule (rename + swap category).
+# 7. Delete the Consistency Rule.
+# 8. Clean up the Protection Policy and the Category created for the demo.
+
+- name: Consistency Rule playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        random_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=8)[0] }}"
+
+    - name: Fetch prism central external ID
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
+      register: pc_clusters
+      ignore_errors: true
+
+    - name: Set domain manager external ID
+      ansible.builtin.set_fact:
+        domain_manager_ext_id: "{{ pc_clusters.response[0].ext_id }}"
+
+    - name: Create category for consistency rule membership
+      nutanix.ncp.ntnx_categories_v2:
+        key: "consistency_rule_key_{{ random_suffix }}"
+        value: "cr_value_{{ random_suffix }}"
+        description: "Category created by consistency-rule playbook"
+      register: category_result
+
+    - name: Set category ext_id
+      ansible.builtin.set_fact:
+        category_ext_id: "{{ category_result.ext_id }}"
+
+    - name: Create a second category for update operation
+      nutanix.ncp.ntnx_categories_v2:
+        key: "consistency_rule_key2_{{ random_suffix }}"
+        value: "cr_value2_{{ random_suffix }}"
+        description: "Second category for consistency-rule update"
+      register: category_result_2
+
+    - name: Set second category ext_id
+      ansible.builtin.set_fact:
+        category_ext_id_2: "{{ category_result_2.ext_id }}"
+
+    - name: Create protection policy (parent for consistency rules)
+      nutanix.ncp.ntnx_protection_policies_v2:
+        name: "pp_cr_ansible_{{ random_suffix }}"
+        description: "Protection policy for consistency-rule playbook"
+        replication_locations:
+          - label: "local"
+            domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+            is_primary: true
+        replication_configurations:
+          - source_location_label: "local"
+            schedule:
+              recovery_point_type: "CRASH_CONSISTENT"
+              recovery_point_objective_time_seconds: 3600
+              retention:
+                linear_retention:
+                  local: 1
+        category_ids:
+          - "{{ category_ext_id }}"
+          - "{{ category_ext_id_2 }}"
+      register: protection_policy_result
+
+    - name: Set protection policy ext_id
+      ansible.builtin.set_fact:
+        protection_policy_ext_id: "{{ protection_policy_result.response.ext_id }}"
+
+    - name: Create a consistency rule with all supported attributes
+      nutanix.ncp.ntnx_consistency_rule_v2:
+        state: present
+        protection_policy_ext_id: "{{ protection_policy_ext_id }}"
+        name: "consistency_rule_ansible_{{ random_suffix }}"
+        category_ids:
+          - "{{ category_ext_id }}"
+      register: create_result
+
+    - name: Set consistency rule ext_id
+      ansible.builtin.set_fact:
+        consistency_rule_ext_id: "{{ create_result.ext_id }}"
+
+    - name: Fetch the consistency rule using external ID
+      nutanix.ncp.ntnx_consistency_rules_info_v2:
+        protection_policy_ext_id: "{{ protection_policy_ext_id }}"
+        ext_id: "{{ consistency_rule_ext_id }}"
+      register: get_result
+      ignore_errors: true
+
+    - name: List all consistency rules under the protection policy
+      nutanix.ncp.ntnx_consistency_rules_info_v2:
+        protection_policy_ext_id: "{{ protection_policy_ext_id }}"
+      register: list_result
+      ignore_errors: true
+
+    - name: Update the consistency rule (rename + swap category)
+      nutanix.ncp.ntnx_consistency_rule_v2:
+        state: present
+        protection_policy_ext_id: "{{ protection_policy_ext_id }}"
+        ext_id: "{{ consistency_rule_ext_id }}"
+        name: "consistency_rule_ansible_{{ random_suffix }}_updated"
+        category_ids:
+          - "{{ category_ext_id_2 }}"
+      register: update_result
+
+    - name: Delete the consistency rule
+      nutanix.ncp.ntnx_consistency_rule_v2:
+        state: absent
+        protection_policy_ext_id: "{{ protection_policy_ext_id }}"
+        ext_id: "{{ consistency_rule_ext_id }}"
+      register: delete_result
+
+    - name: Delete the protection policy
+      nutanix.ncp.ntnx_protection_policies_v2:
+        state: absent
+        ext_id: "{{ protection_policy_ext_id }}"
+      register: delete_pp_result
+      ignore_errors: true
+
+    - name: Delete the second category
+      nutanix.ncp.ntnx_categories_v2:
+        state: absent
+        ext_id: "{{ category_ext_id_2 }}"
+      failed_when: false
+
+    - name: Delete the first category
+      nutanix.ncp.ntnx_categories_v2:
+        state: absent
+        ext_id: "{{ category_ext_id }}"
+      failed_when: false

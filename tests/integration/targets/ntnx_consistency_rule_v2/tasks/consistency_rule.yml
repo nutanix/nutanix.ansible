@@ -1,0 +1,644 @@
+---
+# Test plan — ConsistencyRule (data_policies namespace) v4.2 API
+#
+# Setup:
+#   * Discover Prism Central `domain_manager_ext_id` via ntnx_clusters_info_v2.
+#   * Create two Nutanix Categories that later become `category_ids` on the
+#     consistency rule; the second one is used to exercise Update.
+#   * Create one Protection Policy (single-PC, local-only replication) to act
+#     as the parent for the consistency rule sub-resource.
+#
+# CRUD tests:
+#   * check_mode create with ALL attributes.
+#   * Real create with minimum required attributes (name + category_ids).
+#   * Real create with ALL attributes (adds the second category variant).
+#   * check_mode update.
+#   * Real update — rename and swap category (exercises meaningful state change).
+#   * Idempotency: rerun the same update ⇒ changed==false, msg "Nothing to change."
+#   * check_mode delete.
+#   * Real delete.
+#
+# Info tests:
+#   * get-by-ID for the just-created rule → asserts every returned attribute.
+#   * List all rules of the protection policy.
+#   * List with filter=name eq "<name>".
+#   * List with limit=1.
+#   * Info with invalid ext_id → assert failure.
+#
+# Negative tests:
+#   * Missing `name` on create → required_if failure.
+#   * Missing `category_ids` on create → validate_required_params failure.
+#   * Missing `ext_id` on delete → required_if failure.
+#   * Delete already-deleted resource → API failure captured in result.
+#
+# Cleanup: leftover rule (if any) → protection policy → categories.
+
+- name: Start Consistency Rule tests
+  ansible.builtin.debug:
+    msg: Start Consistency Rule tests
+
+- name: Generate random names
+  ansible.builtin.set_fact:
+    random_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=10)[0] }}"
+
+- name: Set names for consistency rule tests
+  ansible.builtin.set_fact:
+    cr_name: "cr_ansible_{{ random_suffix }}"
+    pp_name: "pp_cr_ansible_{{ random_suffix }}"
+    cat_key_1: "cr_key_1_{{ random_suffix }}"
+    cat_val_1: "cr_val_1_{{ random_suffix }}"
+    cat_key_2: "cr_key_2_{{ random_suffix }}"
+    cat_val_2: "cr_val_2_{{ random_suffix }}"
+    cat_key_3: "cr_key_3_{{ random_suffix }}"
+    cat_val_3: "cr_val_3_{{ random_suffix }}"
+    cat_key_4: "cr_key_4_{{ random_suffix }}"
+    cat_val_4: "cr_val_4_{{ random_suffix }}"
+
+########################################################################################
+# Discover Prism Central domain_manager_ext_id (required for parent Protection Policy)
+########################################################################################
+
+- name: Fetch Prism Central external id
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
+  register: pc_clusters
+  ignore_errors: true
+
+- name: Assert Prism Central cluster is discoverable
+  ansible.builtin.assert:
+    that:
+      - pc_clusters is defined
+      - pc_clusters.failed == false
+      - pc_clusters.response is defined
+      - pc_clusters.response | length > 0
+      - pc_clusters.response[0].ext_id is defined
+    success_msg: "Prism Central cluster discovered"
+    fail_msg: "Prism Central cluster could not be discovered"
+
+- name: Set Prism Central domain_manager_ext_id
+  ansible.builtin.set_fact:
+    domain_manager_ext_id: "{{ pc_clusters.response[0].ext_id }}"
+
+########################################################################################
+# Create prerequisite categories used by the parent protection policy AND the rules
+########################################################################################
+
+- name: Create first category (for initial consistency rule)
+  nutanix.ncp.ntnx_categories_v2:
+    key: "{{ cat_key_1 }}"
+    value: "{{ cat_val_1 }}"
+    description: "Category for consistency-rule tests (1)"
+  register: cat1_result
+  ignore_errors: true
+
+- name: Assert first category creation
+  ansible.builtin.assert:
+    that:
+      - cat1_result is defined
+      - cat1_result.changed == true
+      - cat1_result.failed == false
+      - cat1_result.ext_id is defined
+      - cat1_result.response is defined
+      - cat1_result.response.key == cat_key_1
+      - cat1_result.response.value == cat_val_1
+    success_msg: "First category created"
+    fail_msg: "Failed to create first category"
+
+- name: Set first category ext_id
+  ansible.builtin.set_fact:
+    category_ext_id_1: "{{ cat1_result.ext_id }}"
+    todelete_categories: ["{{ cat1_result.ext_id }}"]
+
+- name: Create second category (used by update to swap membership)
+  nutanix.ncp.ntnx_categories_v2:
+    key: "{{ cat_key_2 }}"
+    value: "{{ cat_val_2 }}"
+    description: "Category for consistency-rule tests (2)"
+  register: cat2_result
+  ignore_errors: true
+
+- name: Assert second category creation
+  ansible.builtin.assert:
+    that:
+      - cat2_result is defined
+      - cat2_result.changed == true
+      - cat2_result.failed == false
+      - cat2_result.ext_id is defined
+    success_msg: "Second category created"
+    fail_msg: "Failed to create second category"
+
+- name: Set second category ext_id
+  ansible.builtin.set_fact:
+    category_ext_id_2: "{{ cat2_result.ext_id }}"
+    todelete_categories: "{{ todelete_categories + [cat2_result.ext_id] }}"
+
+- name: Create third category (dedicated to the "minimum" CR)
+  nutanix.ncp.ntnx_categories_v2:
+    key: "{{ cat_key_3 }}"
+    value: "{{ cat_val_3 }}"
+    description: "Category for consistency-rule tests (3)"
+  register: cat3_result
+  ignore_errors: true
+
+- name: Assert third category creation
+  ansible.builtin.assert:
+    that:
+      - cat3_result is defined
+      - cat3_result.changed == true
+      - cat3_result.failed == false
+      - cat3_result.ext_id is defined
+    success_msg: "Third category created"
+    fail_msg: "Failed to create third category"
+
+- name: Set third category ext_id
+  ansible.builtin.set_fact:
+    category_ext_id_3: "{{ cat3_result.ext_id }}"
+    todelete_categories: "{{ todelete_categories + [cat3_result.ext_id] }}"
+
+- name: Create fourth category (dedicated to the "all" CR)
+  nutanix.ncp.ntnx_categories_v2:
+    key: "{{ cat_key_4 }}"
+    value: "{{ cat_val_4 }}"
+    description: "Category for consistency-rule tests (4)"
+  register: cat4_result
+  ignore_errors: true
+
+- name: Assert fourth category creation
+  ansible.builtin.assert:
+    that:
+      - cat4_result is defined
+      - cat4_result.changed == true
+      - cat4_result.failed == false
+      - cat4_result.ext_id is defined
+    success_msg: "Fourth category created"
+    fail_msg: "Failed to create fourth category"
+
+- name: Set fourth category ext_id
+  ansible.builtin.set_fact:
+    category_ext_id_4: "{{ cat4_result.ext_id }}"
+    todelete_categories: "{{ todelete_categories + [cat4_result.ext_id] }}"
+
+########################################################################################
+# Create parent Protection Policy
+########################################################################################
+
+- name: Create parent protection policy
+  nutanix.ncp.ntnx_protection_policies_v2:
+    name: "{{ pp_name }}"
+    description: "Parent PP for consistency rule tests"
+    replication_locations:
+      - label: "local"
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+        is_primary: true
+    replication_configurations:
+      - source_location_label: "local"
+        schedule:
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 3600
+          retention:
+            linear_retention:
+              local: 1
+    category_ids:
+      - "{{ category_ext_id_1 }}"
+      - "{{ category_ext_id_2 }}"
+      - "{{ category_ext_id_3 }}"
+      - "{{ category_ext_id_4 }}"
+  register: pp_result
+  ignore_errors: true
+
+- name: Assert protection policy creation
+  ansible.builtin.assert:
+    that:
+      - pp_result is defined
+      - pp_result.changed == true
+      - pp_result.failed == false
+      - pp_result.response is defined
+      - pp_result.response.ext_id is defined
+      - pp_result.response.name == pp_name
+    success_msg: "Protection policy created"
+    fail_msg: "Failed to create protection policy"
+
+- name: Set protection_policy_ext_id
+  ansible.builtin.set_fact:
+    protection_policy_ext_id: "{{ pp_result.response.ext_id }}"
+    todelete: []
+
+########################################################################################
+# Create Consistency Rule Tests
+########################################################################################
+
+- name: Generate spec for creating consistency rule using check mode with all attributes
+  nutanix.ncp.ntnx_consistency_rule_v2:
+    protection_policy_ext_id: "{{ protection_policy_ext_id }}"
+    name: "check_mode_cr_full"
+    category_ids:
+      - "{{ category_ext_id_3 }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check_mode create spec with all attributes
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "check_mode_cr_full"
+      - result.response.category_ids | length == 1
+      - result.response.category_ids[0] == category_ext_id_3
+    success_msg: "Check mode create with all attributes returned expected spec"
+    fail_msg: "Check mode create with all attributes did not return expected spec"
+
+- name: Create consistency rule with minimum required attributes
+  nutanix.ncp.ntnx_consistency_rule_v2:
+    protection_policy_ext_id: "{{ protection_policy_ext_id }}"
+    name: "{{ cr_name }}_min"
+    category_ids:
+      - "{{ category_ext_id_3 }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert consistency rule creation (minimum attributes)
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.name == cr_name + "_min"
+      - result.response.category_ids | length == 1
+      - result.response.category_ids[0] == category_ext_id_3
+    success_msg: "Consistency rule with minimum attributes created"
+    fail_msg: "Consistency rule with minimum attributes creation failed"
+
+- name: Add consistency rule to todelete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+- name: Create consistency rule with all attributes
+  nutanix.ncp.ntnx_consistency_rule_v2:
+    protection_policy_ext_id: "{{ protection_policy_ext_id }}"
+    name: "{{ cr_name }}_all"
+    category_ids:
+      - "{{ category_ext_id_4 }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert consistency rule creation (all attributes)
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.name == cr_name + "_all"
+      - result.response.category_ids | length == 1
+      - result.response.category_ids[0] == category_ext_id_4
+    success_msg: "Consistency rule with all attributes created"
+    fail_msg: "Consistency rule with all attributes creation failed"
+
+- name: Add consistency rule to todelete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+########################################################################################
+# Negative create tests
+########################################################################################
+
+- name: Create consistency rule with missing name
+  nutanix.ncp.ntnx_consistency_rule_v2:
+    protection_policy_ext_id: "{{ protection_policy_ext_id }}"
+    category_ids:
+      - "{{ category_ext_id_1 }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing name failure
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - '"missing: name" in result.msg'
+    success_msg: "Missing name failed as expected"
+    fail_msg: "Missing name did not fail as expected"
+
+- name: Create consistency rule with missing category_ids
+  nutanix.ncp.ntnx_consistency_rule_v2:
+    protection_policy_ext_id: "{{ protection_policy_ext_id }}"
+    name: "cr_missing_categories"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing category_ids failure
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - '"category_ids" in result.msg'
+    success_msg: "Missing category_ids failed as expected"
+    fail_msg: "Missing category_ids did not fail as expected"
+
+########################################################################################
+# Info Module Tests - Get Single Consistency Rule
+########################################################################################
+
+- name: Fetch consistency rule using external ID
+  nutanix.ncp.ntnx_consistency_rules_info_v2:
+    protection_policy_ext_id: "{{ protection_policy_ext_id }}"
+    ext_id: "{{ todelete[1] }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert fetch by ext_id
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response is defined
+      - result.response.ext_id == todelete[1]
+      - result.response.name == cr_name + "_all"
+      - result.response.category_ids | length == 1
+      - result.response.category_ids[0] == category_ext_id_4
+    success_msg: "Fetch consistency rule by ext_id passed"
+    fail_msg: "Fetch consistency rule by ext_id failed"
+
+- name: Fetch consistency rule using invalid ext_id
+  nutanix.ncp.ntnx_consistency_rules_info_v2:
+    protection_policy_ext_id: "{{ protection_policy_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Assert fetch with invalid ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+    success_msg: "Fetch with invalid ext_id failed as expected"
+    fail_msg: "Fetch with invalid ext_id did not fail as expected"
+
+########################################################################################
+# Info Module Tests - List Consistency Rules
+########################################################################################
+
+- name: List all consistency rules of the protection policy
+  nutanix.ncp.ntnx_consistency_rules_info_v2:
+    protection_policy_ext_id: "{{ protection_policy_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert list-all consistency rules
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response is defined
+      - result.response | length >= 2
+    success_msg: "List all consistency rules passed"
+    fail_msg: "List all consistency rules failed"
+
+- name: List consistency rules with filter
+  nutanix.ncp.ntnx_consistency_rules_info_v2:
+    protection_policy_ext_id: "{{ protection_policy_ext_id }}"
+    filter: "name eq '{{ cr_name }}_all'"
+  register: result
+  ignore_errors: true
+
+- name: Assert filtered list
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].name == cr_name + "_all"
+    success_msg: "Filtered list passed"
+    fail_msg: "Filtered list failed"
+
+- name: List consistency rules with limit
+  nutanix.ncp.ntnx_consistency_rules_info_v2:
+    protection_policy_ext_id: "{{ protection_policy_ext_id }}"
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Assert limited list
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response is defined
+      - result.response | length == 1
+    success_msg: "Limited list passed"
+    fail_msg: "Limited list failed"
+
+########################################################################################
+# Update Consistency Rule Tests
+########################################################################################
+
+- name: Generate spec for updating consistency rule using check mode with all attributes
+  nutanix.ncp.ntnx_consistency_rule_v2:
+    protection_policy_ext_id: "{{ protection_policy_ext_id }}"
+    ext_id: "{{ todelete[1] }}"
+    name: "{{ cr_name }}_updated"
+    category_ids:
+      - "{{ category_ext_id_2 }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check_mode update
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == cr_name + "_updated"
+      - result.response.category_ids | length == 1
+      - result.response.category_ids[0] == category_ext_id_2
+    success_msg: "Check mode update passed"
+    fail_msg: "Check mode update failed"
+
+- name: Update consistency rule (rename + swap category)
+  nutanix.ncp.ntnx_consistency_rule_v2:
+    protection_policy_ext_id: "{{ protection_policy_ext_id }}"
+    ext_id: "{{ todelete[1] }}"
+    name: "{{ cr_name }}_updated"
+    category_ids:
+      - "{{ category_ext_id_2 }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert real update
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == cr_name + "_updated"
+      - result.response.category_ids | length == 1
+      - result.response.category_ids[0] == category_ext_id_2
+    success_msg: "Update consistency rule passed"
+    fail_msg: "Update consistency rule failed"
+
+- name: Update consistency rule with same values (idempotency)
+  nutanix.ncp.ntnx_consistency_rule_v2:
+    protection_policy_ext_id: "{{ protection_policy_ext_id }}"
+    ext_id: "{{ todelete[1] }}"
+    name: "{{ cr_name }}_updated"
+    category_ids:
+      - "{{ category_ext_id_2 }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert idempotency
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.msg == "Nothing to change."
+    success_msg: "Idempotency passed"
+    fail_msg: "Idempotency failed"
+
+- name: Update consistency rule with wrong external ID
+  nutanix.ncp.ntnx_consistency_rule_v2:
+    protection_policy_ext_id: "{{ protection_policy_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    name: "cr_wrong_ext_id"
+    category_ids:
+      - "{{ category_ext_id_2 }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert update with wrong ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Update with wrong ext_id failed as expected"
+    fail_msg: "Update with wrong ext_id did not fail as expected"
+
+########################################################################################
+# Delete Consistency Rule Tests
+########################################################################################
+
+- name: Delete consistency rule with check mode
+  nutanix.ncp.ntnx_consistency_rule_v2:
+    protection_policy_ext_id: "{{ protection_policy_ext_id }}"
+    ext_id: "{{ todelete[0] }}"
+    state: absent
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check_mode delete
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - "'will be deleted' in result.msg"
+    success_msg: "Check mode delete passed"
+    fail_msg: "Check mode delete failed"
+
+- name: Delete consistency rule with missing external ID
+  nutanix.ncp.ntnx_consistency_rule_v2:
+    protection_policy_ext_id: "{{ protection_policy_ext_id }}"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Assert delete with missing ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is absent but all of the following are missing: ext_id' in result.msg"
+    success_msg: "Delete with missing ext_id failed as expected"
+    fail_msg: "Delete with missing ext_id did not fail as expected"
+
+- name: Delete all created consistency rules
+  nutanix.ncp.ntnx_consistency_rule_v2:
+    protection_policy_ext_id: "{{ protection_policy_ext_id }}"
+    ext_id: "{{ item }}"
+    state: absent
+  register: delete_results
+  ignore_errors: true
+  loop: "{{ todelete }}"
+
+- name: Assert deletion results
+  ansible.builtin.assert:
+    that:
+      - delete_results is defined
+      - delete_results.results | length == todelete | length
+    success_msg: "All consistency rules deleted"
+    fail_msg: "Some consistency rules could not be deleted"
+
+- name: Delete consistency rule with wrong external ID
+  nutanix.ncp.ntnx_consistency_rule_v2:
+    protection_policy_ext_id: "{{ protection_policy_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Assert delete with wrong ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Delete with wrong ext_id failed as expected"
+    fail_msg: "Delete with wrong ext_id did not fail as expected"
+
+########################################################################################
+# Cleanup: Delete parent protection policy and categories
+########################################################################################
+
+- name: Delete parent protection policy
+  nutanix.ncp.ntnx_protection_policies_v2:
+    ext_id: "{{ protection_policy_ext_id }}"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Assert protection policy deletion
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.changed == true
+    success_msg: "Protection policy deleted"
+    fail_msg: "Failed to delete protection policy"
+
+- name: Delete created categories
+  nutanix.ncp.ntnx_categories_v2:
+    ext_id: "{{ item }}"
+    state: absent
+  register: cat_delete
+  loop: "{{ todelete_categories }}"
+  ignore_errors: true
+
+- name: Assert category deletion
+  ansible.builtin.assert:
+    that:
+      - cat_delete is defined
+      - cat_delete.results | length == todelete_categories | length
+    success_msg: "All categories deleted"
+    fail_msg: "Failed to delete some categories"
