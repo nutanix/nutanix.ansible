@@ -1,0 +1,29 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [DataStore playbook] ******************************************************
+
+TASK [Set variables (edit for your environment)] *******************************
+ok: [localhost] => {"ansible_facts": {"cluster_ext_id": "0006197f-3d06-ce49-1fc3-ac1f6b6029c1", "datastore_name": "ansible_ds", "node_ext_id": "f28e7475-f835-42ef-ac35-ecbc48d5421e", "storage_container_ext_id": "57516342-7d8e-470f-91b8-ae310737ff8c", "storage_container_name": "ansible_storage_container"}, "changed": false}
+
+TASK [List all Data Stores on the cluster] *************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching Data Stores for cluster", "response": {"error": "Not Found", "message": "No static resource storage/v4.0.a4/config/clusters/0006197f-3d06-ce49-1fc3-ac1f6b6029c1/storage-containers/datastores.", "path": "/api/storage/v4.0.a4/config/clusters/0006197f-3d06-ce49-1fc3-ac1f6b6029c1/storage-containers/datastores", "status": 404, "timestamp": "2026-07-20T16:01:31.184928318Z"}, "status": 404}
+...ignoring
+
+TASK [Mount a Data Store on selected nodes] ************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while mounting Data Store", "response": {"error": "Not Found", "message": "No static resource storage/v4.0.a4/config/storage-containers/57516342-7d8e-470f-91b8-ae310737ff8c/$actions/mount.", "path": "/api/storage/v4.0.a4/config/storage-containers/57516342-7d8e-470f-91b8-ae310737ff8c/$actions/mount", "status": 404, "timestamp": "2026-07-20T16:01:32.406926512Z"}, "status": 404}
+...ignoring
+
+TASK [Fetch the newly mounted Data Store by Storage Container ext_id] **********
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching Data Stores for cluster", "response": {"error": "Not Found", "message": "No static resource storage/v4.0.a4/config/clusters/0006197f-3d06-ce49-1fc3-ac1f6b6029c1/storage-containers/datastores.", "path": "/api/storage/v4.0.a4/config/clusters/0006197f-3d06-ce49-1fc3-ac1f6b6029c1/storage-containers/datastores", "status": 404, "timestamp": "2026-07-20T16:01:33.109756955Z"}, "status": 404}
+...ignoring
+
+TASK [Unmount the Data Store] **************************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while unmounting Data Store", "response": {"error": "Not Found", "message": "No static resource storage/v4.0.a4/config/storage-containers/57516342-7d8e-470f-91b8-ae310737ff8c/$actions/unmount.", "path": "/api/storage/v4.0.a4/config/storage-containers/57516342-7d8e-470f-91b8-ae310737ff8c/$actions/unmount", "status": 404, "timestamp": "2026-07-20T16:01:33.801404432Z"}, "status": 404}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=5    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=4   
+
