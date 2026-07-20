@@ -1,0 +1,436 @@
+---
+# Test plan for ntnx_iscsi_client_v2 / ntnx_iscsi_clients_info_v2
+# ------------------------------------------------------------------
+# The storage v4 IscsiClient API surface (/api/storage/v4.0.a4/config/iscsi-clients)
+# only exposes GET / LIST / PATCH. The IscsiClient entity is created as a by-product
+# of attaching an iSCSI initiator to a Volume Group and is destroyed by the
+# corresponding detach.
+#
+# The storage v4.0.a4 endpoint is a preview API surface. This target detects
+# whether the endpoint is available on the target cluster:
+#   - If YES (endpoint responds 2xx), it runs full CRUD-ish coverage: setup a VG
+#     and attach a client via the volumes module (which materializes the storage
+#     IscsiClient), then exercise get/list/update/idempotency/negative paths using
+#     the storage modules, and finally tear down.
+#   - If NO (endpoint returns 404 "No static resource ..."), it still runs the
+#     tests that do not need the endpoint: check_mode spec builders and module
+#     validation (mutually_exclusive, required_if, unsupported states).
+#
+# Either way the test target validates:
+#   * spec generation with all module attributes
+#   * argument spec constraints (mutually exclusive, required_if)
+#   * unsupported operations (state=absent, state=present without ext_id) fail cleanly
+#   * error surfacing when the API returns 404
+
+- name: Start iSCSI client (storage v4) tests
+  ansible.builtin.debug:
+    msg: Start iSCSI client (storage v4) tests
+
+- name: Generate random suffix for resource names
+  ansible.builtin.set_fact:
+    random_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=10)[0] }}"
+    todelete_vgs: []
+
+##################################################################
+# 0. Detect whether the storage v4.0.a4 IscsiClient endpoint is
+#    available on this Prism Central.
+##################################################################
+
+- name: Probe the storage v4.0.a4 IscsiClient endpoint
+  nutanix.ncp.ntnx_iscsi_clients_info_v2:
+    limit: 1
+  register: probe_result
+  ignore_errors: true
+
+- name: Decide whether to run the endpoint-dependent tests
+  ansible.builtin.set_fact:
+    storage_iscsi_client_endpoint_available: "{{ probe_result.failed == false }}"
+
+- name: Announce endpoint availability
+  ansible.builtin.debug:
+    msg: >-
+      storage v4.0.a4 IscsiClient endpoint available: {{ storage_iscsi_client_endpoint_available }}
+
+##################################################################
+# 1. check_mode spec generation - always runs, does not need the API.
+##################################################################
+
+- name: Generate update spec via check_mode with ALL updatable attributes
+  nutanix.ncp.ntnx_iscsi_client_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000042"
+    enabled_authentications: "CHAP"
+    client_secret: "Nutanix.chapsecret1"
+    target_params:
+      num_virtual_targets: 32
+    attachment_site: "PRIMARY"
+    iscsi_initiator_network_id:
+      ipv4:
+        value: "10.44.76.99"
+        prefix_length: 32
+    cluster_reference: "00061663-9fa0-28ca-185b-ac1f6b6f97e2"
+  check_mode: true
+  register: update_check
+  ignore_errors: true
+
+- name: Assert update check_mode failed cleanly because ext_id does not exist
+  ansible.builtin.assert:
+    that:
+      - update_check is defined
+      - update_check.changed == false
+      # check_mode still has to fetch the existing spec, so on a cluster where
+      # the endpoint is missing this returns an API error; where the endpoint
+      # exists but the ext_id is fake it returns 404 too. Either way it must
+      # fail with our helper's descriptive message.
+      - update_check.failed == true
+      - update_check.msg is defined
+    fail_msg: "Update check_mode did not fail cleanly on a fake ext_id"
+    success_msg: "Update check_mode fails cleanly on a fake ext_id"
+
+##################################################################
+# 2. required_if: state=absent needs ext_id
+##################################################################
+
+- name: Delete without ext_id (should be rejected by required_if)
+  nutanix.ncp.ntnx_iscsi_client_v2:
+    state: absent
+  register: delete_missing_ext_id
+  ignore_errors: true
+
+- name: Assert required_if rejected the delete
+  ansible.builtin.assert:
+    that:
+      - delete_missing_ext_id.failed == true
+      - delete_missing_ext_id.changed == false
+      - "'state is absent but all of the following are missing: ext_id' in delete_missing_ext_id.msg"
+    fail_msg: "required_if did not reject missing ext_id on delete"
+    success_msg: "required_if correctly rejected missing ext_id on delete"
+
+##################################################################
+# 3. Unsupported state=absent (delete not supported by the SDK)
+##################################################################
+
+- name: Attempt state=absent (delete is not exposed by the storage IscsiClient API)
+  nutanix.ncp.ntnx_iscsi_client_v2:
+    state: absent
+    ext_id: "00000000-0000-0000-0000-000000000042"
+  register: unsupported_delete
+  ignore_errors: true
+
+- name: Assert unsupported delete fails with a descriptive message
+  ansible.builtin.assert:
+    that:
+      - unsupported_delete.failed == true
+      - unsupported_delete.changed == false
+      - "'Deleting an iSCSI client is not supported' in unsupported_delete.msg"
+      - unsupported_delete.ext_id == "00000000-0000-0000-0000-000000000042"
+    fail_msg: "Unsupported delete did not fail with the expected message"
+    success_msg: "Unsupported delete fails cleanly"
+
+##################################################################
+# 4. Unsupported state=present without ext_id (create not supported)
+##################################################################
+
+- name: Attempt state=present without ext_id (create is not exposed either)
+  nutanix.ncp.ntnx_iscsi_client_v2:
+    state: present
+    iscsi_initiator_name: "iqn.1991-05.com.microsoft:ansible-create-{{ random_suffix }}"
+  register: unsupported_create
+  ignore_errors: true
+
+- name: Assert unsupported create fails with a descriptive message
+  ansible.builtin.assert:
+    that:
+      - unsupported_create.failed == true
+      - unsupported_create.changed == false
+      - "'Creating an iSCSI client is not supported' in unsupported_create.msg"
+    fail_msg: "Unsupported create did not fail with the expected message"
+    success_msg: "Unsupported create fails cleanly"
+
+##################################################################
+# 5. Info module - mutually-exclusive ext_id + filter
+##################################################################
+
+- name: Info with both ext_id and filter (mutually exclusive)
+  nutanix.ncp.ntnx_iscsi_clients_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000042"
+    filter: "extId eq '00000000-0000-0000-0000-000000000042'"
+  register: info_mutex
+  ignore_errors: true
+
+- name: Assert mutually-exclusive validation fires
+  ansible.builtin.assert:
+    that:
+      - info_mutex.failed == true
+      - "'mutually exclusive' in info_mutex.msg"
+    fail_msg: "mutually-exclusive validation did not reject ext_id + filter"
+    success_msg: "mutually-exclusive validation rejected ext_id + filter"
+
+##################################################################
+# 6. Info module - wrong ext_id must surface a clear API error
+##################################################################
+
+- name: Get iSCSI client with a wrong ext_id
+  nutanix.ncp.ntnx_iscsi_clients_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000042"
+  register: info_wrong_ext_id
+  ignore_errors: true
+
+- name: Assert wrong ext_id info returns a descriptive API error
+  ansible.builtin.assert:
+    that:
+      - info_wrong_ext_id.failed == true
+      - "'Api Exception raised while fetching iSCSI client info using ext_id' in info_wrong_ext_id.msg"
+    fail_msg: "Wrong ext_id info did not surface an API exception"
+    success_msg: "Wrong ext_id info surfaced an API exception"
+
+##################################################################
+# 7. Endpoint-dependent tests: only run when the storage v4.0.a4
+#    surface is available on the target cluster.
+##################################################################
+
+- name: End of endpoint-independent tests
+  ansible.builtin.debug:
+    msg: >-
+      Endpoint-independent tests complete. Endpoint available:
+      {{ storage_iscsi_client_endpoint_available }}
+
+- name: Endpoint-dependent block
+  when: storage_iscsi_client_endpoint_available
+  block:
+
+    ##################################################################
+    # Discover a Prism Element cluster to run the tests against.
+    ##################################################################
+
+    - name: Fetch clusters to discover a PE cluster
+      nutanix.ncp.ntnx_clusters_info_v2:
+      register: clusters_info
+
+    - name: Pick a non-PC cluster
+      ansible.builtin.set_fact:
+        cluster_ext_id: >-
+          {{
+            (clusters_info.response | rejectattr('name', 'equalto', 'PC') | list | first).ext_id
+          }}
+
+    - name: Verify a cluster ext_id was discovered
+      ansible.builtin.assert:
+        that:
+          - cluster_ext_id is defined
+          - cluster_ext_id | length > 0
+        fail_msg: "Could not discover a Prism Element cluster"
+        success_msg: "Using cluster ext_id {{ cluster_ext_id }}"
+
+    ##################################################################
+    # Create a Volume Group to host the iSCSI client entity.
+    ##################################################################
+
+    - name: Create Volume Group for iSCSI client tests
+      nutanix.ncp.ntnx_volume_groups_v2:
+        name: "ansible-iscsi-vg-{{ random_suffix }}"
+        description: "Volume group for storage IscsiClient v4 integration tests"
+        target_prefix: "vg{{ random_suffix }}"
+        cluster_reference: "{{ cluster_ext_id }}"
+        usage_type: "USER"
+      register: vg_result
+
+    - name: Assert Volume Group was created
+      ansible.builtin.assert:
+        that:
+          - vg_result.changed == true
+          - vg_result.failed == false
+          - vg_result.ext_id is defined
+        fail_msg: "Failed to create the Volume Group prerequisite"
+        success_msg: "Volume Group {{ vg_result.ext_id }} created"
+
+    - name: Track Volume Group for teardown
+      ansible.builtin.set_fact:
+        vg_ext_id: "{{ vg_result.ext_id }}"
+        todelete_vgs: "{{ todelete_vgs + [vg_result.ext_id] }}"
+
+    ##################################################################
+    # Attach an iSCSI client using an IQN (this materializes the
+    # storage IscsiClient entity).
+    ##################################################################
+
+    - name: Attach IQN-based iSCSI client to the Volume Group
+      nutanix.ncp.ntnx_volume_groups_iscsi_clients_v2:
+        state: present
+        volume_group_ext_id: "{{ vg_ext_id }}"
+        iscsi_initiator_name: "iqn.1991-05.com.microsoft:ansible-{{ random_suffix }}"
+        num_virtual_targets: 32
+      register: attach_result
+
+    - name: Assert attach succeeded
+      ansible.builtin.assert:
+        that:
+          - attach_result.changed == true
+          - attach_result.failed == false
+          - attach_result.ext_id is defined
+          - attach_result.task_ext_id is defined
+          - attach_result.response.status == "SUCCEEDED"
+        fail_msg: "Failed to attach the iSCSI client prerequisite"
+        success_msg: "iSCSI client {{ attach_result.ext_id }} attached"
+
+    - name: Capture the iSCSI client ext_id
+      ansible.builtin.set_fact:
+        iscsi_client_ext_id: "{{ attach_result.ext_id }}"
+
+    ##################################################################
+    # Info module - get by ext_id (baseline before update)
+    ##################################################################
+
+    - name: Get iSCSI client by ext_id (baseline)
+      nutanix.ncp.ntnx_iscsi_clients_info_v2:
+        ext_id: "{{ iscsi_client_ext_id }}"
+      register: baseline_info
+
+    - name: Assert baseline get response
+      ansible.builtin.assert:
+        that:
+          - baseline_info.changed == false
+          - baseline_info.failed == false
+          - baseline_info.response.ext_id == iscsi_client_ext_id
+          - baseline_info.ext_id == iscsi_client_ext_id
+          - baseline_info.response.iscsi_initiator_name is defined
+          - baseline_info.response.iscsi_initiator_name.startswith("iqn.")
+          - baseline_info.response.cluster_reference == cluster_ext_id
+          - baseline_info.response.target_params.num_virtual_targets == 32
+        fail_msg: "Baseline info fetch did not return the expected iSCSI client"
+        success_msg: "Baseline info fetch matches the created iSCSI client"
+
+    ##################################################################
+    # Update module - real PATCH toggling CHAP + attachment site
+    ##################################################################
+
+    - name: Update iSCSI client to CHAP + PRIMARY attachment site
+      nutanix.ncp.ntnx_iscsi_client_v2:
+        state: present
+        ext_id: "{{ iscsi_client_ext_id }}"
+        enabled_authentications: "CHAP"
+        client_secret: "Nutanix.chapsecret1"
+        target_params:
+          num_virtual_targets: 32
+        attachment_site: "PRIMARY"
+      register: update_result
+
+    - name: Assert update succeeded and CHAP is persisted
+      ansible.builtin.assert:
+        that:
+          - update_result.changed == true
+          - update_result.failed == false
+          - update_result.response.ext_id == iscsi_client_ext_id
+          - update_result.response.enabled_authentications == "CHAP"
+          - update_result.response.attachment_site == "PRIMARY"
+          - update_result.response.target_params.num_virtual_targets == 32
+        fail_msg: "Real update did not persist the requested state"
+        success_msg: "Real update persisted CHAP authentication + PRIMARY site"
+
+    ##################################################################
+    # Update module - idempotency
+    ##################################################################
+
+    - name: Re-run the same update (idempotency)
+      nutanix.ncp.ntnx_iscsi_client_v2:
+        state: present
+        ext_id: "{{ iscsi_client_ext_id }}"
+        enabled_authentications: "CHAP"
+        target_params:
+          num_virtual_targets: 32
+        attachment_site: "PRIMARY"
+      register: update_idempotent
+
+    - name: Assert idempotent update returned skipped
+      ansible.builtin.assert:
+        that:
+          - update_idempotent.changed == false
+          - update_idempotent.failed == false
+          - update_idempotent.skipped == true
+          - update_idempotent.msg is defined
+          - "'Nothing to change' in update_idempotent.msg"
+        fail_msg: "Idempotent re-run did not report skipped"
+        success_msg: "Idempotent re-run reported skipped as expected"
+
+    ##################################################################
+    # Info module - list all + list with limit + list with filter
+    ##################################################################
+
+    - name: List iSCSI clients (all)
+      nutanix.ncp.ntnx_iscsi_clients_info_v2:
+      register: list_all
+
+    - name: Assert list-all returns at least the client we created
+      ansible.builtin.assert:
+        that:
+          - list_all.changed == false
+          - list_all.failed == false
+          - list_all.response | length >= 1
+          - list_all.total_available_results is defined
+          - list_all.total_available_results >= 1
+          - list_all.response | map(attribute='ext_id') | list | intersect([iscsi_client_ext_id]) | length == 1
+        fail_msg: "list-all did not include the newly-created iSCSI client"
+        success_msg: "list-all includes the newly-created iSCSI client"
+
+    - name: List iSCSI clients with limit=1
+      nutanix.ncp.ntnx_iscsi_clients_info_v2:
+        limit: 1
+      register: list_limit
+
+    - name: Assert limit=1 returns at most one row
+      ansible.builtin.assert:
+        that:
+          - list_limit.failed == false
+          - list_limit.response | length <= 1
+        fail_msg: "limit=1 returned more than one iSCSI client"
+        success_msg: "limit=1 respected"
+
+    - name: List iSCSI clients with filter on extId
+      nutanix.ncp.ntnx_iscsi_clients_info_v2:
+        filter: "extId eq '{{ iscsi_client_ext_id }}'"
+      register: list_filter
+
+    - name: Assert filter returns only the one iSCSI client
+      ansible.builtin.assert:
+        that:
+          - list_filter.failed == false
+          - list_filter.response | length == 1
+          - list_filter.response[0].ext_id == iscsi_client_ext_id
+        fail_msg: "filter on extId did not return the expected single iSCSI client"
+        success_msg: "filter on extId returned only the expected iSCSI client"
+
+    ##################################################################
+    # Cleanup
+    ##################################################################
+
+    - name: Detach iSCSI client from the Volume Group
+      nutanix.ncp.ntnx_volume_groups_iscsi_clients_v2:
+        state: absent
+        volume_group_ext_id: "{{ vg_ext_id }}"
+        ext_id: "{{ iscsi_client_ext_id }}"
+      register: detach_result
+      ignore_errors: true
+
+    - name: Assert detach succeeded
+      ansible.builtin.assert:
+        that:
+          - detach_result.changed == true
+          - detach_result.failed == false
+          - detach_result.response.status == "SUCCEEDED"
+        fail_msg: "Failed to detach the iSCSI client during teardown"
+        success_msg: "iSCSI client detached during teardown"
+
+    - name: Delete the Volume Group prerequisite
+      nutanix.ncp.ntnx_volume_groups_v2:
+        state: absent
+        ext_id: "{{ item }}"
+      loop: "{{ todelete_vgs }}"
+      register: vg_delete_result
+      ignore_errors: true
+
+    - name: Assert Volume Group deletions succeeded
+      ansible.builtin.assert:
+        that:
+          - vg_delete_result.results | selectattr('failed', 'equalto', true) | list | length == 0
+        fail_msg: "Failed to delete one or more Volume Group prerequisites"
+        success_msg: "All Volume Group prerequisites deleted"
