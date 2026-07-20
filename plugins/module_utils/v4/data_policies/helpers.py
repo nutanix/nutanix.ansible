@@ -46,3 +46,25 @@ def get_storage_policy(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching storage policy info using ext_id",
         )
+
+
+def get_entity_sync_policy(module, api_instance, ext_id):
+    """
+    This method will return entity sync policy info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: EntitySyncPoliciesApi instance from ntnx_datapolicies_py_client sdk
+        ext_id (str): Entity sync policy external ID
+    Returns:
+        entity_sync_policy_info (object): entity sync policy info
+    """
+    try:
+        return api_instance.get_entity_sync_policy_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching entity sync policy info using ext_id: {0}".format(
+                ext_id
+            ),
+        )
