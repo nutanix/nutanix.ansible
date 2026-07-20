@@ -1,0 +1,77 @@
+---
+# Summary:
+# VirtualNic is a READ-ONLY entity in the Nutanix Cluster Management V4 API.
+# The v4.2 clustermgmt SDK only exposes two operations for VirtualNic:
+#   * GET /api/clustermgmt/v4.2/config/clusters/{clusterExtId}/hosts/{hostExtId}/virtual-nics/{extId}
+#   * GET /api/clustermgmt/v4.2/config/clusters/{clusterExtId}/hosts/{hostExtId}/virtual-nics
+# There is no CRUD (create/update/delete) module for VirtualNic — an info
+# module is the only one that can be generated for this entity.
+#
+# This playbook demonstrates every option of `ntnx_virtual_nics_info_v2`:
+#   1. Discover an AOS cluster and a host on it.
+#   2. List all virtual NICs on that host.
+#   3. List with limit / page (pagination pass-through).
+#   4. List with orderby / select (query pass-through).
+#   5. List with filter (OData $filter pass-through).
+#   6. Fetch a specific virtual NIC by ext_id.
+
+- name: VirtualNic info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: List all AOS clusters registered to Prism Central
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+      register: clusters_info
+
+    - name: Remember the first AOS cluster ext_id
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ clusters_info.response[0].ext_id }}"
+
+    - name: List hosts on the selected AOS cluster
+      nutanix.ncp.ntnx_hosts_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: hosts_info
+
+    - name: Remember the first host ext_id
+      ansible.builtin.set_fact:
+        host_ext_id: "{{ hosts_info.response[0].ext_id }}"
+
+    - name: List all virtual NICs on the selected host
+      nutanix.ncp.ntnx_virtual_nics_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+      register: virtual_nics_list
+
+    - name: List virtual NICs with a limit and page (pagination)
+      nutanix.ncp.ntnx_virtual_nics_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        limit: 5
+        page: 0
+
+    - name: List virtual NICs sorted by name and returning only the name field
+      nutanix.ncp.ntnx_virtual_nics_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        orderby: "name"
+        select: "name"
+
+    - name: List virtual NICs filtered by name (OData $filter)
+      nutanix.ncp.ntnx_virtual_nics_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        filter: "name eq 'br0'"
+
+    - name: Fetch a specific virtual NIC by ext_id (only if at least one exists)
+      nutanix.ncp.ntnx_virtual_nics_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        ext_id: "{{ virtual_nics_list.response[0].ext_id }}"
+      when: (virtual_nics_list.response | length) > 0
