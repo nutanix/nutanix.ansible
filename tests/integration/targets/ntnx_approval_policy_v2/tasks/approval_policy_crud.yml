@@ -1,0 +1,599 @@
+---
+###############################################################################
+# Approval Policy v2 — Integration Test Plan
+#
+# Prerequisites (fetched from the live PC — do not hardcode):
+#   * At least 3 IAM users must exist. The Nutanix Approval Policies API
+#     enforces a minimum of 3 approvers per approver group. We call
+#     ntnx_users_info_v2 to fetch users and use them as approvers.
+#   * If any protection policy exists, use it to exercise
+#     associate_policies=true; otherwise skip that block gracefully.
+#   * The Nutanix "policy engine" (Secure Snap) MUST be enabled on the
+#     target cluster for live CRUD calls to succeed. Clusters that have
+#     not opted into the feature return HTTP 412 (SEC-80002) for every
+#     Approval Policies operation. We detect this once up front via a
+#     probe call and gate the live-API tests behind a
+#     `policy_engine_enabled` fact so the check_mode / arg-spec /
+#     negative tests still run on any cluster.
+#
+# Scenarios covered:
+#   1. check_mode create (all attributes)          — asserts spec generation
+#   2. Create with ALL attributes (real API)       — asserts response fields
+#   3. Create with only REQUIRED fields            — minimal happy-path create
+#   4. Negative create: missing name / approver_groups
+#   5. Negative create: invalid enum policy_type   — Ansible arg-spec rejects
+#   6. check_mode update                           — asserts spec generation
+#   7. Real update (rename + expiry change)        — asserts changed=true
+#   8. Idempotency: repeat the same update         — asserts skipped=true
+#   9. Negative update: invalid ext_id             — asserts fail_json
+#  10. associate_policies action (when protection
+#      policies exist)                             — asserts secured_policies
+#  11. Info: get by ext_id                         — asserts single entity
+#  12. Info: list all + filter + orderby           — asserts list variants
+#  12.5 Negative — state=absent is not supported by the ApprovalPolicy API
+#  13. Info: invalid ext_id                        — asserts error path
+###############################################################################
+
+- name: Start Approval Policy tests
+  ansible.builtin.debug:
+    msg: start approval policy v2 tests
+
+# ------------------------------------------------------------------
+# Detect whether the Nutanix "policy engine" (Secure Snap) is enabled
+# on this cluster.  The Approval Policies API returns HTTP 412 with
+# error code SEC-80002 ("policy engine is not enabled") on clusters
+# that have not opted into the feature.  Where the feature is off,
+# every real CRUD call will fail with this exact error, so we detect
+# it once up front and use `policy_engine_enabled` as a gate for the
+# subsequent live-API tests.  All check_mode / arg-spec validation
+# tests still run regardless.
+# ------------------------------------------------------------------
+
+- name: Probe the ApprovalPolicies API to check whether the policy engine is enabled
+  nutanix.ncp.ntnx_approval_policies_info_v2:
+  register: policy_engine_probe
+  ignore_errors: true
+
+- name: Compute policy_engine_disabled flag
+  ansible.builtin.set_fact:
+    policy_engine_disabled: >-
+      {{
+        (policy_engine_probe.failed | default(false))
+        and (
+          'policy engine is not enabled' in
+          (policy_engine_probe.response.data.error[0].message | default(''))
+        )
+      }}
+
+- name: Set policy_engine_enabled flag (inverse of the disabled probe)
+  ansible.builtin.set_fact:
+    policy_engine_enabled: "{{ not policy_engine_disabled }}"
+
+- name: Announce whether the policy engine is enabled
+  ansible.builtin.debug:
+    msg: "policy_engine_enabled = {{ policy_engine_enabled }}"
+
+- name: Generate random suffix for approval policy names
+  ansible.builtin.set_fact:
+    random_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=8)[0] }}"
+
+- name: Set approval policy names
+  ansible.builtin.set_fact:
+    ap_prefix: "ansible_ap_test"
+    ap_name: "ansible_ap_test_{{ random_suffix }}"
+    ap_name_min: "ansible_ap_test_min_{{ random_suffix }}"
+    ap_name_updated: "ansible_ap_test_upd_{{ random_suffix }}"
+
+- name: Fetch IAM users to act as approvers
+  nutanix.ncp.ntnx_users_info_v2:
+  register: users_result
+
+- name: Assert at least 3 IAM users are available
+  ansible.builtin.assert:
+    that:
+      - users_result.failed == false
+      - users_result.response is defined
+      - users_result.response | length >= 3
+    fail_msg: "At least 3 IAM users are required to build an approver group"
+    success_msg: "Fetched IAM users to use as approvers"
+
+- name: Set approver user variables
+  ansible.builtin.set_fact:
+    approver_users: "{{ users_result.response[0:3] }}"
+
+##############################################################################
+# 1. check_mode CREATE — all attributes  (runs on any cluster)
+##############################################################################
+
+- name: Generate create spec (check_mode) with all attributes
+  nutanix.ncp.ntnx_approval_policy_v2:
+    state: present
+    name: "{{ ap_name }}"
+    description: "created in check_mode with all attributes"
+    approver_groups:
+      - name: "primary_approvers"
+        expiry_hours: 48
+        approvers:
+          - ext_id: "{{ approver_users[0].ext_id }}"
+            username: "{{ approver_users[0].username }}"
+            user_type: "{{ approver_users[0].user_type }}"
+          - ext_id: "{{ approver_users[1].ext_id }}"
+            username: "{{ approver_users[1].username }}"
+            user_type: "{{ approver_users[1].user_type }}"
+          - ext_id: "{{ approver_users[2].ext_id }}"
+            username: "{{ approver_users[2].username }}"
+            user_type: "{{ approver_users[2].user_type }}"
+  check_mode: true
+  register: check_create_result
+  ignore_errors: true
+
+- name: Assert check_mode create spec
+  ansible.builtin.assert:
+    that:
+      - check_create_result.changed == false
+      - check_create_result.failed == false
+      - check_create_result.response is defined
+      - check_create_result.response.name == ap_name
+      - check_create_result.response.description == "created in check_mode with all attributes"
+      - check_create_result.response.approver_groups | length == 1
+      - check_create_result.response.approver_groups[0].name == "primary_approvers"
+      - check_create_result.response.approver_groups[0].expiry_hours == 48
+      - check_create_result.response.approver_groups[0].approvers | length == 3
+      - check_create_result.response.approver_groups[0].approvers[0].ext_id == approver_users[0].ext_id
+      - check_create_result.response.approver_groups[0].approvers[0].user_type == approver_users[0].user_type
+    fail_msg: "check_mode create did not produce the expected spec"
+    success_msg: "check_mode create produced the expected spec"
+
+##############################################################################
+# 4. Negative CREATE — missing required fields  (runs on any cluster)
+##############################################################################
+
+- name: Attempt create without name
+  nutanix.ncp.ntnx_approval_policy_v2:
+    state: present
+    approver_groups:
+      - name: "primary_approvers"
+        approvers:
+          - ext_id: "{{ approver_users[0].ext_id }}"
+            user_type: "{{ approver_users[0].user_type }}"
+  register: missing_name_result
+  ignore_errors: true
+
+- name: Assert missing name is rejected
+  ansible.builtin.assert:
+    that:
+      - missing_name_result.failed == true
+      - missing_name_result.changed == false
+    fail_msg: "Create without name should have failed"
+    success_msg: "Create without name failed as expected"
+
+- name: Attempt create without approver_groups
+  nutanix.ncp.ntnx_approval_policy_v2:
+    state: present
+    name: "{{ ap_name }}_no_groups"
+  register: missing_groups_result
+  ignore_errors: true
+
+- name: Assert missing approver_groups is rejected
+  ansible.builtin.assert:
+    that:
+      - missing_groups_result.failed == true
+      - missing_groups_result.changed == false
+    fail_msg: "Create without approver_groups should have failed"
+    success_msg: "Create without approver_groups failed as expected"
+
+##############################################################################
+# 5. Negative — invalid enum policy_type value (runs on any cluster)
+##############################################################################
+
+- name: Attempt create with invalid policy_type enum
+  nutanix.ncp.ntnx_approval_policy_v2:
+    state: present
+    name: "{{ ap_name }}_badenum"
+    approver_groups:
+      - name: "primary_approvers"
+        approvers:
+          - ext_id: "{{ approver_users[0].ext_id }}"
+            user_type: "{{ approver_users[0].user_type }}"
+    secured_policies:
+      - policy_ext_id: "00000000-0000-0000-0000-000000000000"
+        policy_type: "NOT_A_REAL_TYPE"
+  register: bad_enum_result
+  ignore_errors: true
+
+- name: Assert invalid enum is rejected by arg spec
+  ansible.builtin.assert:
+    that:
+      - bad_enum_result.failed == true
+      - bad_enum_result.changed == false
+    fail_msg: "Invalid enum value should have been rejected"
+    success_msg: "Invalid enum value rejected as expected"
+
+##############################################################################
+# 5.5 Negative — state=absent is not supported by the ApprovalPolicy API
+#                (runs on any cluster, no ext_id needed)
+##############################################################################
+
+- name: Attempt state=absent (not supported)
+  nutanix.ncp.ntnx_approval_policy_v2:
+    state: absent
+    ext_id: "11111111-2222-3333-4444-555555555555"
+  register: absent_result
+  ignore_errors: true
+
+- name: Assert state=absent fails with a descriptive error
+  ansible.builtin.assert:
+    that:
+      - absent_result.failed == true
+      - absent_result.changed == false
+      - "'does not support the delete operation' in absent_result.msg"
+    fail_msg: "state=absent should have failed with a not-supported error"
+    success_msg: "state=absent failed with the expected not-supported error"
+
+##############################################################################
+# Live-API tests — gated on `policy_engine_enabled` fact.
+##############################################################################
+
+- name: Live-API Approval Policy tests (require policy engine enabled)
+  when: policy_engine_enabled
+  block:
+
+    ##########################################################################
+    # 2. Real CREATE — all attributes populated
+    ##########################################################################
+
+    - name: Create approval policy with all attributes
+      nutanix.ncp.ntnx_approval_policy_v2:
+        state: present
+        name: "{{ ap_name }}"
+        description: "approval policy created by ansible integration test"
+        approver_groups:
+          - name: "primary_approvers"
+            expiry_hours: 48
+            approvers:
+              - ext_id: "{{ approver_users[0].ext_id }}"
+                username: "{{ approver_users[0].username }}"
+                user_type: "{{ approver_users[0].user_type }}"
+              - ext_id: "{{ approver_users[1].ext_id }}"
+                username: "{{ approver_users[1].username }}"
+                user_type: "{{ approver_users[1].user_type }}"
+              - ext_id: "{{ approver_users[2].ext_id }}"
+                username: "{{ approver_users[2].username }}"
+                user_type: "{{ approver_users[2].user_type }}"
+      register: create_result
+
+    - name: Assert approval policy created successfully
+      ansible.builtin.assert:
+        that:
+          - create_result.changed == true
+          - create_result.failed == false
+          - create_result.ext_id is defined
+          - create_result.task_ext_id is defined
+          - create_result.response is defined
+          - create_result.response.name == ap_name
+          - create_result.response.description == "approval policy created by ansible integration test"
+          - create_result.response.approver_groups | length == 1
+          - create_result.response.approver_groups[0].name == "primary_approvers"
+          - create_result.response.approver_groups[0].expiry_hours == 48
+          - create_result.response.approver_groups[0].approvers | length == 3
+        fail_msg: "Failed to create approval policy"
+        success_msg: "Successfully created approval policy"
+
+    - name: Set approval policy ext_id
+      ansible.builtin.set_fact:
+        ap_ext_id: "{{ create_result.ext_id }}"
+
+    ##########################################################################
+    # 3. Real CREATE — only required fields
+    ##########################################################################
+
+    - name: Create approval policy with only required fields
+      nutanix.ncp.ntnx_approval_policy_v2:
+        state: present
+        name: "{{ ap_name_min }}"
+        approver_groups:
+          - name: "min_group"
+            approvers:
+              - ext_id: "{{ approver_users[0].ext_id }}"
+                user_type: "{{ approver_users[0].user_type }}"
+              - ext_id: "{{ approver_users[1].ext_id }}"
+                user_type: "{{ approver_users[1].user_type }}"
+              - ext_id: "{{ approver_users[2].ext_id }}"
+                user_type: "{{ approver_users[2].user_type }}"
+      register: min_create_result
+
+    - name: Assert minimal approval policy created
+      ansible.builtin.assert:
+        that:
+          - min_create_result.changed == true
+          - min_create_result.failed == false
+          - min_create_result.ext_id is defined
+          - min_create_result.response.name == ap_name_min
+          - min_create_result.response.approver_groups | length == 1
+          - min_create_result.response.approver_groups[0].name == "min_group"
+        fail_msg: "Failed to create minimal approval policy"
+        success_msg: "Successfully created minimal approval policy"
+
+    - name: Set minimal approval policy ext_id
+      ansible.builtin.set_fact:
+        ap_ext_id_min: "{{ min_create_result.ext_id }}"
+
+    ##########################################################################
+    # 6. check_mode UPDATE
+    ##########################################################################
+
+    - name: Generate update spec (check_mode)
+      nutanix.ncp.ntnx_approval_policy_v2:
+        state: present
+        ext_id: "{{ ap_ext_id }}"
+        name: "{{ ap_name_updated }}"
+        description: "updated description in check_mode"
+        approver_groups:
+          - name: "primary_approvers"
+            expiry_hours: 24
+            approvers:
+              - ext_id: "{{ approver_users[0].ext_id }}"
+                username: "{{ approver_users[0].username }}"
+                user_type: "{{ approver_users[0].user_type }}"
+              - ext_id: "{{ approver_users[1].ext_id }}"
+                username: "{{ approver_users[1].username }}"
+                user_type: "{{ approver_users[1].user_type }}"
+              - ext_id: "{{ approver_users[2].ext_id }}"
+                username: "{{ approver_users[2].username }}"
+                user_type: "{{ approver_users[2].user_type }}"
+      check_mode: true
+      register: check_update_result
+
+    - name: Assert check_mode update spec
+      ansible.builtin.assert:
+        that:
+          - check_update_result.changed == false
+          - check_update_result.failed == false
+          - check_update_result.ext_id == ap_ext_id
+          - check_update_result.response.name == ap_name_updated
+          - check_update_result.response.description == "updated description in check_mode"
+          - check_update_result.response.approver_groups[0].expiry_hours == 24
+        fail_msg: "check_mode update did not produce the expected spec"
+        success_msg: "check_mode update produced the expected spec"
+
+    ##########################################################################
+    # 7. Real UPDATE
+    ##########################################################################
+
+    - name: Update approval policy (rename + expiry change)
+      nutanix.ncp.ntnx_approval_policy_v2:
+        state: present
+        ext_id: "{{ ap_ext_id }}"
+        name: "{{ ap_name_updated }}"
+        description: "approval policy updated by ansible integration test"
+        approver_groups:
+          - name: "primary_approvers"
+            expiry_hours: 24
+            approvers:
+              - ext_id: "{{ approver_users[0].ext_id }}"
+                username: "{{ approver_users[0].username }}"
+                user_type: "{{ approver_users[0].user_type }}"
+              - ext_id: "{{ approver_users[1].ext_id }}"
+                username: "{{ approver_users[1].username }}"
+                user_type: "{{ approver_users[1].user_type }}"
+              - ext_id: "{{ approver_users[2].ext_id }}"
+                username: "{{ approver_users[2].username }}"
+                user_type: "{{ approver_users[2].user_type }}"
+      register: update_result
+
+    - name: Assert approval policy updated successfully
+      ansible.builtin.assert:
+        that:
+          - update_result.changed == true
+          - update_result.failed == false
+          - update_result.ext_id == ap_ext_id
+          - update_result.task_ext_id is defined
+          - update_result.response.name == ap_name_updated
+          - update_result.response.description == "approval policy updated by ansible integration test"
+          - update_result.response.approver_groups[0].expiry_hours == 24
+        fail_msg: "Failed to update approval policy"
+        success_msg: "Successfully updated approval policy"
+
+    ##########################################################################
+    # 8. Idempotency
+    ##########################################################################
+
+    - name: Repeat the same update (idempotency check)
+      nutanix.ncp.ntnx_approval_policy_v2:
+        state: present
+        ext_id: "{{ ap_ext_id }}"
+        name: "{{ ap_name_updated }}"
+        description: "approval policy updated by ansible integration test"
+        approver_groups:
+          - name: "primary_approvers"
+            expiry_hours: 24
+            approvers:
+              - ext_id: "{{ approver_users[0].ext_id }}"
+                username: "{{ approver_users[0].username }}"
+                user_type: "{{ approver_users[0].user_type }}"
+              - ext_id: "{{ approver_users[1].ext_id }}"
+                username: "{{ approver_users[1].username }}"
+                user_type: "{{ approver_users[1].user_type }}"
+              - ext_id: "{{ approver_users[2].ext_id }}"
+                username: "{{ approver_users[2].username }}"
+                user_type: "{{ approver_users[2].user_type }}"
+      register: idempotent_result
+
+    - name: Assert idempotent update was skipped
+      ansible.builtin.assert:
+        that:
+          - idempotent_result.changed == false
+          - idempotent_result.failed == false
+          - idempotent_result.skipped == true
+          - '"Nothing to change" in idempotent_result.msg'
+        fail_msg: "Idempotency check for update did not skip as expected"
+        success_msg: "Idempotency check for update skipped as expected"
+
+    ##########################################################################
+    # 9. Negative UPDATE — invalid ext_id
+    ##########################################################################
+
+    - name: Attempt update with invalid ext_id
+      nutanix.ncp.ntnx_approval_policy_v2:
+        state: present
+        ext_id: "11111111-2222-3333-4444-555555555555"
+        name: "{{ ap_name }}_invalid_upd"
+        approver_groups:
+          - name: "primary_approvers"
+            expiry_hours: 12
+            approvers:
+              - ext_id: "{{ approver_users[0].ext_id }}"
+                user_type: "{{ approver_users[0].user_type }}"
+      register: invalid_update_result
+      ignore_errors: true
+
+    - name: Assert invalid update failed as expected
+      ansible.builtin.assert:
+        that:
+          - invalid_update_result.changed == false
+          - invalid_update_result.failed == true
+          - invalid_update_result.msg == "Api Exception raised while fetching Approval Policy info using ext_id"
+        fail_msg: "Update with invalid ext_id should have failed"
+        success_msg: "Update with invalid ext_id failed as expected"
+
+    ##########################################################################
+    # 10. associate_policies action (only if a protection policy exists)
+    ##########################################################################
+
+    - name: List protection policies to find one to associate
+      nutanix.ncp.ntnx_protection_policies_info_v2:
+        limit: 1
+      register: protection_policies_result
+      ignore_errors: true
+
+    - name: Associate a secured policy with the approval policy
+      nutanix.ncp.ntnx_approval_policy_v2:
+        state: present
+        ext_id: "{{ ap_ext_id }}"
+        associate_policies: true
+        secured_policies:
+          - policy_ext_id: "{{ protection_policies_result.response[0].ext_id }}"
+            policy_type: "PROTECTION_POLICY"
+      register: associate_result
+      ignore_errors: true
+      when:
+        - protection_policies_result is defined
+        - not protection_policies_result.failed
+        - protection_policies_result.response is defined
+        - protection_policies_result.response | length > 0
+
+    - name: Assert associate_policies action succeeded (when a protection policy was found)
+      ansible.builtin.assert:
+        that:
+          - associate_result.changed == true
+          - associate_result.failed == false
+          - associate_result.ext_id == ap_ext_id
+          - associate_result.task_ext_id is defined
+        fail_msg: "associate_policies action failed"
+        success_msg: "associate_policies action succeeded"
+      when:
+        - associate_result is defined
+        - associate_result.skipped is not defined or not associate_result.skipped
+        - protection_policies_result is defined
+        - protection_policies_result.response is defined
+        - protection_policies_result.response | length > 0
+
+    ##########################################################################
+    # 11. Info: get by ext_id
+    ##########################################################################
+
+    - name: Fetch approval policy by ext_id
+      nutanix.ncp.ntnx_approval_policies_info_v2:
+        ext_id: "{{ ap_ext_id }}"
+      register: fetch_result
+
+    - name: Assert fetch by ext_id
+      ansible.builtin.assert:
+        that:
+          - fetch_result.changed == false
+          - fetch_result.failed == false
+          - fetch_result.ext_id == ap_ext_id
+          - fetch_result.response is defined
+          - fetch_result.response.ext_id == ap_ext_id
+          - fetch_result.response.name == ap_name_updated
+          - fetch_result.response.approver_groups | length == 1
+        fail_msg: "Failed to fetch approval policy by ext_id"
+        success_msg: "Successfully fetched approval policy by ext_id"
+
+    ##########################################################################
+    # 12. Info: list variants
+    ##########################################################################
+
+    - name: List all approval policies
+      nutanix.ncp.ntnx_approval_policies_info_v2:
+      register: list_result
+
+    - name: Assert list all
+      ansible.builtin.assert:
+        that:
+          - list_result.changed == false
+          - list_result.failed == false
+          - list_result.response is defined
+          - list_result.response | length >= 2
+          - list_result.total_available_results >= 2
+        fail_msg: "Failed to list approval policies"
+        success_msg: "Successfully listed approval policies"
+
+    - name: List approval policies filtered by name
+      nutanix.ncp.ntnx_approval_policies_info_v2:
+        filter: "name eq '{{ ap_name_updated }}'"
+      register: filter_result
+
+    - name: Assert filter result
+      ansible.builtin.assert:
+        that:
+          - filter_result.changed == false
+          - filter_result.failed == false
+          - filter_result.response is defined
+          - filter_result.response | length == 1
+          - filter_result.response[0].name == ap_name_updated
+          - filter_result.response[0].ext_id == ap_ext_id
+        fail_msg: "Failed to filter approval policies by name"
+        success_msg: "Successfully filtered approval policies by name"
+
+    - name: List approval policies ordered by name asc
+      nutanix.ncp.ntnx_approval_policies_info_v2:
+        orderby: "name asc"
+      register: orderby_result
+
+    - name: Assert orderby result
+      ansible.builtin.assert:
+        that:
+          - orderby_result.changed == false
+          - orderby_result.failed == false
+          - orderby_result.response is defined
+          - orderby_result.response | length >= 2
+        fail_msg: "Failed to order approval policies by name"
+        success_msg: "Successfully ordered approval policies by name"
+
+    ##########################################################################
+    # 13. Info: invalid ext_id
+    ##########################################################################
+
+    - name: Fetch approval policy with invalid ext_id
+      nutanix.ncp.ntnx_approval_policies_info_v2:
+        ext_id: "99999999-8888-7777-6666-555555555555"
+      register: invalid_fetch_result
+      ignore_errors: true
+
+    - name: Assert invalid fetch failed as expected
+      ansible.builtin.assert:
+        that:
+          - invalid_fetch_result.changed == false
+          - invalid_fetch_result.failed == true
+          - invalid_fetch_result.msg == "Api Exception raised while fetching Approval Policy info using ext_id"
+        fail_msg: "Fetch with invalid ext_id should have failed"
+        success_msg: "Fetch with invalid ext_id failed as expected"
+
+- name: Announce policy-engine-disabled skip (informational)
+  ansible.builtin.debug:
+    msg: >-
+      Policy engine is disabled on the target cluster
+      (SEC-80002). Live-API CRUD tests were skipped.
+      Only check_mode + arg-spec + negative tests ran.
+  when: not policy_engine_enabled
