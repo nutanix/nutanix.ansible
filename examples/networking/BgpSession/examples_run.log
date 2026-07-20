@@ -1,0 +1,60 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [BGP Session playbook] ****************************************************
+
+TASK [Setting variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"bgp_session_name": "bgp_session_ansible", "local_gateway_ext_id": "6c1d75a9-38f1-4fb9-9c11-91d7dbde2a1e", "remote_gateway_ext_id": "8b8a20d0-e112-4cf7-9a3d-5ef2f2f5aaee"}, "changed": false}
+
+TASK [Create BGP session with minimum attributes] ******************************
+[ERROR]: Task failed: Module failed: Api Exception raised while creating BGP session
+Origin: /tmp/codegen/1e99b2dfc9384bf69a0cc1d751688a67/repo/examples/networking/BgpSession/bgp_session_v2.yml:30:7
+
+28         bgp_session_name: "bgp_session_ansible"
+29
+30     - name: Create BGP session with minimum attributes
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while creating BGP session", "response": {"$objectType": "networking.v4.config.GetBgpSessionApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10060", "locale": "en_US", "message": "Failed to create BGP session bgp_session_ansible_min as a referenced resource was not found - Application error kNotFound raised: VpnGateway 6c1d75a9-38f1-4fb9-9c11-91d7dbde2a1e not found", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.3/config/bgp-sessions", "rel": "self"}], "totalAvailableResults": 0}}, "status": 404}
+...ignoring
+
+TASK [Create BGP session with all attributes] **********************************
+[ERROR]: Task failed: Module failed: Api Exception raised while creating BGP session
+Origin: /tmp/codegen/1e99b2dfc9384bf69a0cc1d751688a67/repo/examples/networking/BgpSession/bgp_session_v2.yml:39:7
+
+37       ignore_errors: true
+38
+39     - name: Create BGP session with all attributes
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while creating BGP session", "response": {"$objectType": "networking.v4.config.GetBgpSessionApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10060", "locale": "en_US", "message": "Failed to create BGP session bgp_session_ansible_full as a referenced resource was not found - Application error kNotFound raised: VpnGateway 6c1d75a9-38f1-4fb9-9c11-91d7dbde2a1e not found", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.3/config/bgp-sessions", "rel": "self"}], "totalAvailableResults": 0}}, "status": 404}
+...ignoring
+
+TASK [Set BGP session ext_id] **************************************************
+skipping: [localhost] => {"changed": false, "false_condition": "(bgp_full.ext_id is defined and bgp_full.ext_id) or (bgp_min.ext_id is defined and bgp_min.ext_id)", "skip_reason": "Conditional result was False"}
+
+TASK [Update BGP session] ******************************************************
+skipping: [localhost] => {"changed": false, "false_condition": "bgp_session_ext_id is defined", "skip_reason": "Conditional result was False"}
+
+TASK [Get BGP session using ext_id] ********************************************
+skipping: [localhost] => {"changed": false, "false_condition": "bgp_session_ext_id is defined", "skip_reason": "Conditional result was False"}
+
+TASK [List all BGP sessions] ***************************************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List BGP sessions with filter] *******************************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List BGP sessions with limit] ********************************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [Delete BGP session] ******************************************************
+skipping: [localhost] => {"changed": false, "false_condition": "bgp_session_ext_id is defined", "skip_reason": "Conditional result was False"}
+
+TASK [Delete minimum BGP session] **********************************************
+skipping: [localhost] => {"changed": false, "false_condition": "bgp_min.ext_id is defined and bgp_min.ext_id and (bgp_full.ext_id is not defined or bgp_min.ext_id != bgp_full.ext_id)", "skip_reason": "Conditional result was False"}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=6    changed=0    unreachable=0    failed=0    skipped=5    rescued=0    ignored=2   
+
