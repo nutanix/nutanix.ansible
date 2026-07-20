@@ -1,0 +1,4 @@
+---
+# Rackable Units v4 info module is a self-contained, read-only test —
+# no shared fixtures required from prepare_env.
+dependencies: []
