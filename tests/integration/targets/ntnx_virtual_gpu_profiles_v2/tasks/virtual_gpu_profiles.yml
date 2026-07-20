@@ -1,0 +1,448 @@
+---
+# =====================================================================================
+# Test Plan — Virtual GPU Profile V4 Modules
+# =====================================================================================
+# The clustermgmt V4 SDK only exposes a read-only ListVirtualGpuProfiles endpoint
+# for the VirtualGpuProfile entity. There are no Create/Update/Delete APIs.
+# These tests therefore focus on:
+#   * Info module (ntnx_virtual_gpu_profiles_info_v2)
+#       - list-all on a cluster (metadata + pagination fields)
+#       - list-all with limit / filter
+#       - get-by-ext_id (client-side lookup)
+#       - negative: missing cluster_ext_id, unknown ext_id
+#       - domain: total_available_results + response shape sanity checks
+#   * CRUD shim (ntnx_virtual_gpu_profile_v2)
+#       - check_mode: create (all attrs), update (all attrs), delete
+#         -> module must return a spec snapshot and skipped=True
+#       - real run for create/update/delete
+#         -> module must fail with the "not supported by V4 SDK" message
+#       - required_if: state=absent without ext_id
+# The tests dynamically discover an eligible PE cluster and adapt when the
+# cluster does not expose any Virtual GPU profiles (which is expected in
+# many lab environments).
+
+- name: Start Virtual GPU Profiles tests
+  ansible.builtin.debug:
+    msg: Start Virtual GPU Profiles tests
+
+########################################################################################
+# Discover an eligible PE cluster to use as the test scope.
+########################################################################################
+
+- name: Fetch all registered clusters
+  nutanix.ncp.ntnx_clusters_info_v2: {}
+  register: clusters_info
+  ignore_errors: true
+
+- name: Assert we could enumerate clusters
+  ansible.builtin.assert:
+    that:
+      - clusters_info is defined
+      - clusters_info.failed == false
+      - clusters_info.response is defined
+    success_msg: "Clusters info fetched successfully"
+    fail_msg: "Failed to fetch clusters info"
+
+- name: Filter out Prism Central cluster (client-side; PE clusters only)
+  ansible.builtin.set_fact:
+    pe_clusters: >-
+      {{
+        clusters_info.response
+        | selectattr('config', 'defined')
+        | selectattr('config.cluster_function', 'defined')
+        | rejectattr('config.cluster_function', 'contains', 'PRISM_CENTRAL')
+        | list
+      }}
+  when:
+    - clusters_info.response is defined
+    - clusters_info.response | length > 0
+
+- name: Set target cluster_ext_id
+  ansible.builtin.set_fact:
+    target_cluster_ext_id: "{{ pe_clusters[0].ext_id }}"
+  when:
+    - pe_clusters is defined
+    - pe_clusters | length > 0
+
+- name: Bail out early if no PE cluster is registered
+  ansible.builtin.meta: end_play
+  when: target_cluster_ext_id is not defined
+
+########################################################################################
+# List all Virtual GPU profiles on the cluster
+########################################################################################
+
+- name: List all Virtual GPU profiles on the cluster
+  nutanix.ncp.ntnx_virtual_gpu_profiles_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+  register: list_all_result
+  ignore_errors: true
+
+- name: List all Virtual GPU profiles status
+  ansible.builtin.assert:
+    that:
+      - list_all_result is defined
+      - list_all_result.changed == false
+      - list_all_result.failed == false
+      - list_all_result.response is defined
+      - list_all_result.total_available_results is defined
+      - list_all_result.total_available_results >= 0
+    success_msg: "List all Virtual GPU profiles passed"
+    fail_msg: "List all Virtual GPU profiles failed"
+
+- name: Record whether the cluster reports any profiles
+  ansible.builtin.set_fact:
+    profiles_available: "{{ (list_all_result.response | default([])) | length > 0 }}"
+
+- name: Capture first profile ext_id for downstream tests
+  ansible.builtin.set_fact:
+    first_profile_ext_id: "{{ list_all_result.response[0].ext_id }}"
+  when: profiles_available
+
+########################################################################################
+# Domain-level assertions: shape of a returned profile
+########################################################################################
+
+- name: "Domain: assert profile shape matches VirtualGpuProfile struct"
+  ansible.builtin.assert:
+    that:
+      - "'ext_id' in list_all_result.response[0]"
+      - "'virtual_gpu_config' in list_all_result.response[0]"
+    success_msg: "Profile response shape looks correct"
+    fail_msg: "Profile response is missing expected top-level fields"
+  when: profiles_available
+
+- name: "Domain: assert virtual_gpu_config sub-struct fields exist"
+  ansible.builtin.assert:
+    that:
+      - "'type' in list_all_result.response[0].virtual_gpu_config"
+      - "'device_id' in list_all_result.response[0].virtual_gpu_config"
+      - "'device_name' in list_all_result.response[0].virtual_gpu_config"
+      - "'vendor_name' in list_all_result.response[0].virtual_gpu_config"
+      - "'frame_buffer_size_bytes' in list_all_result.response[0].virtual_gpu_config"
+      - "'number_of_virtual_display_heads' in list_all_result.response[0].virtual_gpu_config"
+      - "'max_resolution' in list_all_result.response[0].virtual_gpu_config"
+    success_msg: "virtual_gpu_config sub-struct fields present"
+    fail_msg: "virtual_gpu_config sub-struct is missing expected fields"
+  when: profiles_available
+
+- name: "Domain: VirtualGpuProfile type is one of the documented GpuType values"
+  ansible.builtin.assert:
+    that:
+      - list_all_result.response[0].virtual_gpu_config.type in ["VIRTUAL", "PASSTHROUGH_GRAPHICS", "PASSTHROUGH_COMPUTE"]
+    success_msg: "GpuType value looks valid"
+    fail_msg: "GpuType value is not one of the documented enum values"
+  when: profiles_available
+
+########################################################################################
+# List with limit (pagination)
+########################################################################################
+
+- name: List Virtual GPU profiles with limit=1
+  nutanix.ncp.ntnx_virtual_gpu_profiles_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    limit: 1
+  register: list_limit_result
+  ignore_errors: true
+
+- name: List Virtual GPU profiles with limit status
+  ansible.builtin.assert:
+    that:
+      - list_limit_result is defined
+      - list_limit_result.changed == false
+      - list_limit_result.failed == false
+      - list_limit_result.response is defined
+      - (list_limit_result.response | length) <= 1
+    success_msg: "List Virtual GPU profiles with limit passed"
+    fail_msg: "List Virtual GPU profiles with limit failed"
+
+########################################################################################
+# List with filter (OData) - only when we know a real device_name to match
+########################################################################################
+
+- name: List Virtual GPU profiles with filter (only when a profile exists)
+  nutanix.ncp.ntnx_virtual_gpu_profiles_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    filter: "virtualGpuConfig/deviceName eq '{{ list_all_result.response[0].virtual_gpu_config.device_name }}'"
+  register: list_filter_result
+  ignore_errors: true
+  when: profiles_available
+
+- name: List Virtual GPU profiles with filter status
+  ansible.builtin.assert:
+    that:
+      - list_filter_result is defined
+      - list_filter_result.changed == false
+      - list_filter_result.failed == false
+      - list_filter_result.response is defined
+    success_msg: "List Virtual GPU profiles with filter passed"
+    fail_msg: "List Virtual GPU profiles with filter failed"
+  when: profiles_available
+
+########################################################################################
+# Get a specific Virtual GPU profile by external ID (client-side lookup)
+########################################################################################
+
+- name: Get Virtual GPU profile by external ID
+  nutanix.ncp.ntnx_virtual_gpu_profiles_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    ext_id: "{{ first_profile_ext_id }}"
+  register: get_by_id_result
+  ignore_errors: true
+  when: profiles_available
+
+- name: Get Virtual GPU profile by external ID status
+  ansible.builtin.assert:
+    that:
+      - get_by_id_result is defined
+      - get_by_id_result.changed == false
+      - get_by_id_result.failed == false
+      - get_by_id_result.response is defined
+      - get_by_id_result.ext_id == first_profile_ext_id
+      - get_by_id_result.response.ext_id == first_profile_ext_id
+      - "'virtual_gpu_config' in get_by_id_result.response"
+    success_msg: "Get Virtual GPU profile by external ID passed"
+    fail_msg: "Get Virtual GPU profile by external ID failed"
+  when: profiles_available
+
+########################################################################################
+# Negative: unknown ext_id
+########################################################################################
+
+- name: Get Virtual GPU profile using non-existent external ID
+  nutanix.ncp.ntnx_virtual_gpu_profiles_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-deadbeefcafe"
+  register: get_missing_result
+  ignore_errors: true
+
+- name: Get Virtual GPU profile using non-existent external ID status
+  ansible.builtin.assert:
+    that:
+      - get_missing_result is defined
+      - get_missing_result.failed == true
+      - "'not found' in get_missing_result.msg"
+    success_msg: "Non-existent Virtual GPU profile lookup failed as expected"
+    fail_msg: "Non-existent Virtual GPU profile lookup did not fail as expected"
+
+########################################################################################
+# Negative: missing required cluster_ext_id
+########################################################################################
+
+- name: List Virtual GPU profiles without cluster_ext_id (should fail)
+  nutanix.ncp.ntnx_virtual_gpu_profiles_info_v2: {}  # noqa: args[module]
+  register: missing_cluster_result
+  ignore_errors: true
+
+- name: Missing cluster_ext_id status
+  ansible.builtin.assert:
+    that:
+      - missing_cluster_result is defined
+      - missing_cluster_result.failed == true
+      - "'cluster_ext_id' in missing_cluster_result.msg"
+    success_msg: "Missing cluster_ext_id was rejected as expected"
+    fail_msg: "Missing cluster_ext_id was not rejected as expected"
+
+########################################################################################
+# CRUD shim: check_mode Create
+########################################################################################
+
+- name: Create Virtual GPU profile in check mode (with all attributes)
+  nutanix.ncp.ntnx_virtual_gpu_profile_v2:
+    state: present
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+  check_mode: true
+  register: create_check_mode
+  ignore_errors: true
+
+- name: Create Virtual GPU profile in check mode status
+  ansible.builtin.assert:
+    that:
+      - create_check_mode is defined
+      - create_check_mode.changed == false
+      - create_check_mode.failed == false
+      - create_check_mode.skipped == true
+      - "'not supported' in create_check_mode.msg"
+      - create_check_mode.response is defined
+      - create_check_mode.response.cluster_ext_id == target_cluster_ext_id
+      - create_check_mode.response.state == "present"
+    success_msg: "Create check_mode returned a spec snapshot as expected"
+    fail_msg: "Create check_mode did not return the expected spec snapshot"
+
+########################################################################################
+# CRUD shim: check_mode Update
+########################################################################################
+
+- name: Update Virtual GPU profile in check mode (with all attributes)
+  nutanix.ncp.ntnx_virtual_gpu_profile_v2:
+    state: present
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    ext_id: "{{ first_profile_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+  check_mode: true
+  register: update_check_mode
+  ignore_errors: true
+
+- name: Update Virtual GPU profile in check mode status
+  ansible.builtin.assert:
+    that:
+      - update_check_mode is defined
+      - update_check_mode.changed == false
+      - update_check_mode.failed == false
+      - update_check_mode.skipped == true
+      - "'not supported' in update_check_mode.msg"
+      - update_check_mode.ext_id is defined
+    success_msg: "Update check_mode returned a spec snapshot as expected"
+    fail_msg: "Update check_mode did not return the expected spec snapshot"
+
+########################################################################################
+# CRUD shim: check_mode Delete
+########################################################################################
+
+- name: Delete Virtual GPU profile in check mode
+  nutanix.ncp.ntnx_virtual_gpu_profile_v2:
+    state: absent
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    ext_id: "{{ first_profile_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+  check_mode: true
+  register: delete_check_mode
+  ignore_errors: true
+
+- name: Delete Virtual GPU profile in check mode status
+  ansible.builtin.assert:
+    that:
+      - delete_check_mode is defined
+      - delete_check_mode.changed == false
+      - delete_check_mode.failed == false
+      - delete_check_mode.skipped == true
+      - "'not supported' in delete_check_mode.msg"
+      - delete_check_mode.ext_id is defined
+    success_msg: "Delete check_mode returned a spec snapshot as expected"
+    fail_msg: "Delete check_mode did not return the expected spec snapshot"
+
+########################################################################################
+# CRUD shim: real Create / Update / Delete (all must fail with unsupported)
+########################################################################################
+
+- name: Create Virtual GPU profile (real call, must fail unsupported)
+  nutanix.ncp.ntnx_virtual_gpu_profile_v2:
+    state: present
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+  register: create_real
+  ignore_errors: true
+
+- name: Create Virtual GPU profile (real call) status
+  ansible.builtin.assert:
+    that:
+      - create_real is defined
+      - create_real.changed == false
+      - create_real.failed == true
+      - "'create is not supported' in create_real.msg"
+      - "'ntnx_virtual_gpu_profiles_info_v2' in create_real.msg"
+    success_msg: "Create real call failed as expected (read-only entity)"
+    fail_msg: "Create real call did not fail as expected"
+
+- name: Update Virtual GPU profile (real call, must fail unsupported)
+  nutanix.ncp.ntnx_virtual_gpu_profile_v2:
+    state: present
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    ext_id: "{{ first_profile_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+  register: update_real
+  ignore_errors: true
+
+- name: Update Virtual GPU profile (real call) status
+  ansible.builtin.assert:
+    that:
+      - update_real is defined
+      - update_real.changed == false
+      - update_real.failed == true
+      - "'update is not supported' in update_real.msg"
+    success_msg: "Update real call failed as expected (read-only entity)"
+    fail_msg: "Update real call did not fail as expected"
+
+- name: Delete Virtual GPU profile (real call, must fail unsupported)
+  nutanix.ncp.ntnx_virtual_gpu_profile_v2:
+    state: absent
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    ext_id: "{{ first_profile_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+  register: delete_real
+  ignore_errors: true
+
+- name: Delete Virtual GPU profile (real call) status
+  ansible.builtin.assert:
+    that:
+      - delete_real is defined
+      - delete_real.changed == false
+      - delete_real.failed == true
+      - "'delete is not supported' in delete_real.msg"
+    success_msg: "Delete real call failed as expected (read-only entity)"
+    fail_msg: "Delete real call did not fail as expected"
+
+########################################################################################
+# CRUD shim: required_if — delete without ext_id
+########################################################################################
+
+- name: Delete Virtual GPU profile without ext_id (should fail required_if)
+  nutanix.ncp.ntnx_virtual_gpu_profile_v2:  # noqa: args[module]
+    state: absent
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+  register: delete_missing_ext_id
+  ignore_errors: true
+
+- name: Delete Virtual GPU profile without ext_id status
+  ansible.builtin.assert:
+    that:
+      - delete_missing_ext_id is defined
+      - delete_missing_ext_id.changed == false
+      - delete_missing_ext_id.failed == true
+      - "'state is absent but all of the following are missing: ext_id' in delete_missing_ext_id.msg"
+    success_msg: "Delete without ext_id was rejected as expected"
+    fail_msg: "Delete without ext_id was not rejected as expected"
+
+########################################################################################
+# Idempotency-style: fetching the same profile twice returns identical data.
+########################################################################################
+
+- name: Fetch the same Virtual GPU profile twice for idempotency comparison
+  nutanix.ncp.ntnx_virtual_gpu_profiles_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    ext_id: "{{ first_profile_ext_id }}"
+  register: idempotent_result_1
+  ignore_errors: true
+  when: profiles_available
+
+- name: Fetch the same Virtual GPU profile twice for idempotency comparison (2nd call)
+  nutanix.ncp.ntnx_virtual_gpu_profiles_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    ext_id: "{{ first_profile_ext_id }}"
+  register: idempotent_result_2
+  ignore_errors: true
+  when: profiles_available
+
+- name: Assert successive fetches are equivalent
+  ansible.builtin.assert:
+    that:
+      - idempotent_result_1.response.ext_id == idempotent_result_2.response.ext_id
+      - idempotent_result_1.response.virtual_gpu_config.device_id == idempotent_result_2.response.virtual_gpu_config.device_id
+      - idempotent_result_1.response.virtual_gpu_config.type == idempotent_result_2.response.virtual_gpu_config.type
+    success_msg: "Successive Virtual GPU profile fetches are stable"
+    fail_msg: "Successive Virtual GPU profile fetches diverged"
+  when: profiles_available
+
+########################################################################################
+# Negative: filter with malformed OData expression
+########################################################################################
+
+- name: List Virtual GPU profiles with an invalid filter (should surface API error)
+  nutanix.ncp.ntnx_virtual_gpu_profiles_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    filter: "not a real odata expression"
+  register: bad_filter_result
+  ignore_errors: true
+
+- name: Invalid filter status
+  ansible.builtin.assert:
+    that:
+      - bad_filter_result is defined
+      - bad_filter_result.failed == true
+    success_msg: "Invalid filter was rejected by the API as expected"
+    fail_msg: "Invalid filter was not rejected as expected"
