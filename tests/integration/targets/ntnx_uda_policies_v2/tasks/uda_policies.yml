@@ -1,0 +1,746 @@
+---
+###############################################################################
+# Test plan (Domain-Expert QA perspective) — Nutanix Monitoring / User-Defined
+# Alert (UDA) Policies v4 CRUD + Info modules.
+#
+# We combine SDK knowledge, module implementation, and domain context to cover:
+#   * create (min required fields + full attributes)
+#   * update (change scalar fields, change enum values to different valid
+#     values, replace list elements)
+#   * idempotent update (no-op when values match)
+#   * delete (check_mode + real)
+#   * info (single get by ext_id, list all, filter, limit, orderby)
+#   * negative paths (missing required fields, invalid enum, wrong ext_id)
+#   * ETag/if_match concurrency behavior (implicit via update)
+#   * conflict handling: is_expected_to_error_on_conflict=false
+###############################################################################
+
+- name: Start User-Defined Alert Policies (UdaPolicy) tests
+  ansible.builtin.debug:
+    msg: Start User-Defined Alert Policies tests
+
+- name: Generate random suffix / setup fact
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=10)[0] }}"
+    todelete: []
+
+- name: Compute per-run policy titles
+  ansible.builtin.set_fact:
+    policy_title_min: "uda_min_{{ random_name }}"
+    policy_title_full: "uda_full_{{ random_name }}"
+    policy_title_update: "uda_full_updated_{{ random_name }}"
+
+##############################################################################
+# Fetch a target cluster to scope group-filter based UDA policies
+##############################################################################
+
+- name: Fetch clusters (need one cluster UUID to scope UDA policies)
+  nutanix.ncp.ntnx_clusters_info_v2:
+  register: clusters_info
+  ignore_errors: true
+
+- name: Assert at least one cluster is available
+  ansible.builtin.assert:
+    that:
+      - clusters_info is defined
+      - clusters_info.failed == false
+      - clusters_info.response is defined
+      - clusters_info.response | length > 0
+    success_msg: "Cluster information fetched successfully"
+    fail_msg: "No clusters available on Prism Central — cannot run UDA policy tests"
+
+- name: Pick a Prism Element cluster (skip PC pseudo-cluster if present)
+  ansible.builtin.set_fact:
+    target_cluster_ext_id: >-
+      {{ (clusters_info.response
+          | rejectattr('config.cluster_function', 'contains', 'PRISM_CENTRAL')
+          | list
+          | default(clusters_info.response, true)
+          | first).ext_id }}
+
+- name: Print target cluster
+  ansible.builtin.debug:
+    var: target_cluster_ext_id
+
+##############################################################################
+# check_mode tests — one for Create (all attributes), Update, Delete
+##############################################################################
+
+- name: Generate spec for creating UDA policy using check_mode (all attributes)
+  nutanix.ncp.ntnx_uda_policy_v2:
+    state: present
+    title: "check_mode_uda_full"
+    description: "check_mode UDA policy with all attributes"
+    is_enabled: true
+    is_auto_resolved: true
+    is_expected_to_error_on_conflict: false
+    entity_type: "cluster"
+    trigger_wait_period: 600
+    impact_types:
+      - PERFORMANCE
+      - CPU_CAPACITY
+    filters:
+      group_filters:
+        - ext_id: "{{ target_cluster_ext_id }}"
+          type: CLUSTER
+    trigger_conditions:
+      - condition_type: STATIC_THRESHOLD
+        severity_level: CRITICAL
+        condition:
+          metric_name: "hypervisor_cpu_usage_ppm"
+          operator: GREATER_THAN
+          threshold_value:
+            int_value: 900000
+    policies_to_override: []
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert Create check_mode result
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.title == "check_mode_uda_full"
+      - result.response.description == "check_mode UDA policy with all attributes"
+      - result.response.is_enabled == true
+      - result.response.is_auto_resolved == true
+      - result.response.is_expected_to_error_on_conflict == false
+      - result.response.entity_type == "cluster"
+      - result.response.trigger_wait_period == 600
+      - result.response.impact_types | length == 2
+      - result.response.impact_types[0] == "PERFORMANCE"
+      - result.response.impact_types[1] == "CPU_CAPACITY"
+      - result.response.trigger_conditions | length == 1
+      - result.response.trigger_conditions[0].condition_type == "STATIC_THRESHOLD"
+      - result.response.trigger_conditions[0].severity_level == "CRITICAL"
+      - result.response.trigger_conditions[0].condition.metric_name == "hypervisor_cpu_usage_ppm"
+      - result.response.trigger_conditions[0].condition.operator == "GREATER_THAN"
+      - result.response.trigger_conditions[0].condition.threshold_value.int_value == 900000
+    success_msg: "check_mode create spec generated successfully"
+    fail_msg: "check_mode create spec generation failed"
+
+##############################################################################
+# Create — minimum required attributes only (title, entity_type, trigger_conditions)
+##############################################################################
+
+- name: Create UDA policy with minimum required attributes
+  nutanix.ncp.ntnx_uda_policy_v2:
+    state: present
+    title: "{{ policy_title_min }}"
+    entity_type: "cluster"
+    is_expected_to_error_on_conflict: false
+    filters:
+      group_filters:
+        - ext_id: "{{ target_cluster_ext_id }}"
+          type: CLUSTER
+    trigger_conditions:
+      - condition_type: STATIC_THRESHOLD
+        severity_level: WARNING
+        condition:
+          metric_name: "controller_avg_io_latency_usecs"
+          operator: GREATER_THAN
+          threshold_value:
+            int_value: 5000
+  register: result
+  ignore_errors: true
+
+- name: Assert Create with minimum attributes
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.response is defined
+      - result.response.title == "{{ policy_title_min }}"
+      - result.response.entity_type == "cluster"
+      - result.response.trigger_conditions | length == 1
+      - result.response.trigger_conditions[0].condition_type == "STATIC_THRESHOLD"
+      - result.response.trigger_conditions[0].severity_level == "WARNING"
+      - result.response.trigger_conditions[0].condition.metric_name == "controller_avg_io_latency_usecs"
+      - result.response.trigger_conditions[0].condition.operator == "GREATER_THAN"
+    success_msg: "UDA policy with minimum attributes created successfully"
+    fail_msg: "Minimum-attribute UDA policy creation failed"
+
+- name: Track policy for cleanup
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+##############################################################################
+# Create — full attributes
+##############################################################################
+
+- name: Create UDA policy with full attributes
+  nutanix.ncp.ntnx_uda_policy_v2:
+    state: present
+    title: "{{ policy_title_full }}"
+    description: "Full attributes UDA policy created by Ansible integration tests"
+    is_enabled: true
+    is_auto_resolved: true
+    is_expected_to_error_on_conflict: false
+    entity_type: "cluster"
+    trigger_wait_period: 600
+    impact_types:
+      - PERFORMANCE
+      - CPU_CAPACITY
+    filters:
+      group_filters:
+        - ext_id: "{{ target_cluster_ext_id }}"
+          type: CLUSTER
+    trigger_conditions:
+      - condition_type: STATIC_THRESHOLD
+        severity_level: CRITICAL
+        condition:
+          metric_name: "hypervisor_cpu_usage_ppm"
+          operator: GREATER_THAN
+          threshold_value:
+            int_value: 900000
+    policies_to_override: []
+  register: result
+  ignore_errors: true
+
+- name: Assert Create with full attributes
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.response is defined
+      - result.response.title == "{{ policy_title_full }}"
+      - result.response.description == "Full attributes UDA policy created by Ansible integration tests"
+      - result.response.is_enabled == true
+      - result.response.is_auto_resolved == true
+      - result.response.entity_type == "cluster"
+      - result.response.trigger_wait_period == 600
+      - result.response.impact_types | length == 2
+      - "'PERFORMANCE' in result.response.impact_types"
+      - "'CPU_CAPACITY' in result.response.impact_types"
+      - result.response.trigger_conditions | length == 1
+      - result.response.trigger_conditions[0].condition_type == "STATIC_THRESHOLD"
+      - result.response.trigger_conditions[0].severity_level == "CRITICAL"
+      - result.response.trigger_conditions[0].condition.metric_name == "hypervisor_cpu_usage_ppm"
+      - result.response.trigger_conditions[0].condition.operator == "GREATER_THAN"
+    success_msg: "Full-attribute UDA policy created successfully"
+    fail_msg: "Full-attribute UDA policy creation failed"
+
+- name: Track full policy for cleanup
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+    full_policy_ext_id: "{{ result.ext_id }}"
+
+##############################################################################
+# Negative — missing required fields
+##############################################################################
+
+- name: Create UDA policy with missing title (should fail)
+  nutanix.ncp.ntnx_uda_policy_v2:
+    state: present
+    entity_type: "cluster"
+    is_expected_to_error_on_conflict: false
+    filters:
+      group_filters:
+        - ext_id: "{{ target_cluster_ext_id }}"
+          type: CLUSTER
+    trigger_conditions:
+      - condition_type: STATIC_THRESHOLD
+        severity_level: WARNING
+        condition:
+          metric_name: "controller_avg_io_latency_usecs"
+          operator: GREATER_THAN
+          threshold_value:
+            int_value: 5000
+  register: result
+  ignore_errors: true
+
+- name: Assert missing title fails as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "state is present but any of the following are missing: title, ext_id"
+    success_msg: "Create with missing title failed as expected"
+    fail_msg: "Create with missing title did not fail as expected"
+
+- name: Create UDA policy with missing entity_type (should fail)
+  nutanix.ncp.ntnx_uda_policy_v2:
+    state: present
+    title: "no_entity_type_{{ random_name }}"
+    is_expected_to_error_on_conflict: false
+    filters:
+      group_filters:
+        - ext_id: "{{ target_cluster_ext_id }}"
+          type: CLUSTER
+    trigger_conditions:
+      - condition_type: STATIC_THRESHOLD
+        severity_level: WARNING
+        condition:
+          metric_name: "controller_avg_io_latency_usecs"
+          operator: GREATER_THAN
+          threshold_value:
+            int_value: 5000
+  register: result
+  ignore_errors: true
+
+- name: Assert missing entity_type fails as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Missing required parameter(s): entity_type, trigger_conditions"
+        or result.msg == "Missing required parameter(s): entity_type"
+    success_msg: "Create with missing entity_type failed as expected"
+    fail_msg: "Create with missing entity_type did not fail as expected"
+
+- name: Create UDA policy with missing trigger_conditions (should fail)
+  nutanix.ncp.ntnx_uda_policy_v2:
+    state: present
+    title: "no_trigger_{{ random_name }}"
+    entity_type: "cluster"
+    is_expected_to_error_on_conflict: false
+    filters:
+      group_filters:
+        - ext_id: "{{ target_cluster_ext_id }}"
+          type: CLUSTER
+  register: result
+  ignore_errors: true
+
+- name: Assert missing trigger_conditions fails as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Missing required parameter(s): trigger_conditions"
+    success_msg: "Create with missing trigger_conditions failed as expected"
+    fail_msg: "Create with missing trigger_conditions did not fail as expected"
+
+- name: Create UDA policy with invalid enum severity_level (should fail on validation)
+  nutanix.ncp.ntnx_uda_policy_v2:
+    state: present
+    title: "invalid_enum_{{ random_name }}"
+    entity_type: "cluster"
+    is_expected_to_error_on_conflict: false
+    filters:
+      group_filters:
+        - ext_id: "{{ target_cluster_ext_id }}"
+          type: CLUSTER
+    trigger_conditions:
+      - condition_type: STATIC_THRESHOLD
+        severity_level: "SUPER_CRITICAL"
+        condition:
+          metric_name: "controller_avg_io_latency_usecs"
+          operator: GREATER_THAN
+          threshold_value:
+            int_value: 5000
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid severity_level enum rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'SUPER_CRITICAL' in (result.msg | default(''))"
+    success_msg: "Invalid severity_level enum rejected as expected"
+    fail_msg: "Invalid severity_level enum was not rejected"
+
+- name: Create UDA policy with mutually-exclusive filter groups (should fail)
+  nutanix.ncp.ntnx_uda_policy_v2:
+    state: present
+    title: "both_filters_{{ random_name }}"
+    entity_type: "cluster"
+    is_expected_to_error_on_conflict: false
+    filters:
+      entity_filters:
+        - ext_id: "{{ target_cluster_ext_id }}"
+      group_filters:
+        - ext_id: "{{ target_cluster_ext_id }}"
+          type: CLUSTER
+    trigger_conditions:
+      - condition_type: STATIC_THRESHOLD
+        severity_level: WARNING
+        condition:
+          metric_name: "controller_avg_io_latency_usecs"
+          operator: GREATER_THAN
+          threshold_value:
+            int_value: 5000
+  register: result
+  ignore_errors: true
+
+- name: Assert mutually-exclusive filter groups rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'mutually exclusive' in (result.msg | default(''))"
+    success_msg: "Mutually-exclusive entity_filters and group_filters rejected as expected"
+    fail_msg: "Mutually-exclusive filter groups were not rejected"
+
+##############################################################################
+# Update — meaningful transitions
+#   1) Change scalar (title/description/trigger_wait_period)
+#   2) Change enum (severity_level CRITICAL -> WARNING)
+#   3) Add/remove list elements (impact_types)
+##############################################################################
+
+- name: Update UDA policy — change scalars, enum, list
+  nutanix.ncp.ntnx_uda_policy_v2:
+    state: present
+    ext_id: "{{ full_policy_ext_id }}"
+    title: "{{ policy_title_update }}"
+    description: "Updated by ansible integration test"
+    is_enabled: true
+    is_auto_resolved: false
+    is_expected_to_error_on_conflict: false
+    entity_type: "cluster"
+    trigger_wait_period: 900
+    impact_types:
+      - PERFORMANCE
+    filters:
+      group_filters:
+        - ext_id: "{{ target_cluster_ext_id }}"
+          type: CLUSTER
+    trigger_conditions:
+      - condition_type: STATIC_THRESHOLD
+        severity_level: WARNING
+        condition:
+          metric_name: "hypervisor_cpu_usage_ppm"
+          operator: GREATER_THAN
+          threshold_value:
+            int_value: 800000
+    policies_to_override: []
+  register: result
+  ignore_errors: true
+
+- name: Assert Update result
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == full_policy_ext_id
+      - result.response is defined
+      - result.response.title == "{{ policy_title_update }}"
+      - result.response.description == "Updated by ansible integration test"
+      - result.response.is_auto_resolved == false
+      - result.response.trigger_wait_period == 900
+      - result.response.impact_types | length == 1
+      - result.response.impact_types[0] == "PERFORMANCE"
+      - result.response.trigger_conditions | length == 1
+      - result.response.trigger_conditions[0].severity_level == "WARNING"
+      - result.response.trigger_conditions[0].condition.operator == "GREATER_THAN"
+      - result.response.trigger_conditions[0].condition.threshold_value.int_value == 800000
+    success_msg: "UDA policy updated successfully"
+    fail_msg: "UDA policy update failed"
+
+##############################################################################
+# Idempotent update — same body should be a no-op
+##############################################################################
+
+- name: Update UDA policy with same body (idempotency)
+  nutanix.ncp.ntnx_uda_policy_v2:
+    state: present
+    ext_id: "{{ full_policy_ext_id }}"
+    title: "{{ policy_title_update }}"
+    description: "Updated by ansible integration test"
+    is_enabled: true
+    is_auto_resolved: false
+    is_expected_to_error_on_conflict: false
+    entity_type: "cluster"
+    trigger_wait_period: 900
+    impact_types:
+      - PERFORMANCE
+    filters:
+      group_filters:
+        - ext_id: "{{ target_cluster_ext_id }}"
+          type: CLUSTER
+    trigger_conditions:
+      - condition_type: STATIC_THRESHOLD
+        severity_level: WARNING
+        condition:
+          metric_name: "hypervisor_cpu_usage_ppm"
+          operator: GREATER_THAN
+          threshold_value:
+            int_value: 800000
+    policies_to_override: []
+  register: result
+  ignore_errors: true
+
+- name: Assert idempotent update reports no change
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.msg == "Nothing to change."
+    success_msg: "Idempotent update reported no change as expected"
+    fail_msg: "Idempotent update did not report no change"
+
+##############################################################################
+# Update check_mode
+##############################################################################
+
+- name: Update UDA policy using check_mode (all attributes)
+  nutanix.ncp.ntnx_uda_policy_v2:
+    state: present
+    ext_id: "{{ full_policy_ext_id }}"
+    title: "check_mode_update_{{ random_name }}"
+    description: "check_mode update description"
+    is_enabled: false
+    is_auto_resolved: true
+    is_expected_to_error_on_conflict: false
+    entity_type: "cluster"
+    trigger_wait_period: 1200
+    impact_types:
+      - AVAILABILITY
+    filters:
+      group_filters:
+        - ext_id: "{{ target_cluster_ext_id }}"
+          type: CLUSTER
+    trigger_conditions:
+      - condition_type: STATIC_THRESHOLD
+        severity_level: CRITICAL
+        condition:
+          metric_name: "hypervisor_cpu_usage_ppm"
+          operator: GREATER_THAN_OR_EQUAL_TO
+          threshold_value:
+            int_value: 950000
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert Update check_mode result
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.title == "check_mode_update_{{ random_name }}"
+      - result.response.description == "check_mode update description"
+      - result.response.trigger_wait_period == 1200
+      - result.response.trigger_conditions[0].severity_level == "CRITICAL"
+      - result.response.trigger_conditions[0].condition.operator == "GREATER_THAN_OR_EQUAL_TO"
+      - result.response.trigger_conditions[0].condition.threshold_value.int_value == 950000
+    success_msg: "check_mode update spec generated successfully"
+    fail_msg: "check_mode update spec generation failed"
+
+##############################################################################
+# Update — wrong ext_id
+##############################################################################
+
+- name: Update UDA policy with wrong ext_id (should fail)
+  nutanix.ncp.ntnx_uda_policy_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    title: "bad_ext_id_{{ random_name }}"
+    entity_type: "cluster"
+    is_expected_to_error_on_conflict: false
+    filters:
+      group_filters:
+        - ext_id: "{{ target_cluster_ext_id }}"
+          type: CLUSTER
+    trigger_conditions:
+      - condition_type: STATIC_THRESHOLD
+        severity_level: WARNING
+        condition:
+          metric_name: "controller_avg_io_latency_usecs"
+          operator: GREATER_THAN
+          threshold_value:
+            int_value: 5000
+  register: result
+  ignore_errors: true
+
+- name: Assert Update with wrong ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+    success_msg: "Update with wrong ext_id failed as expected"
+    fail_msg: "Update with wrong ext_id did not fail as expected"
+
+##############################################################################
+# Info module tests
+##############################################################################
+
+- name: Info — Get UDA policy by ext_id
+  nutanix.ncp.ntnx_uda_policies_info_v2:
+    ext_id: "{{ full_policy_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert Get by ext_id
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == full_policy_ext_id
+      - result.response is defined
+      - result.response.title == "{{ policy_title_update }}"
+      - result.response.entity_type == "cluster"
+    success_msg: "Get UDA policy by ext_id passed"
+    fail_msg: "Get UDA policy by ext_id failed"
+
+- name: Info — Get UDA policy with invalid ext_id (should fail)
+  nutanix.ncp.ntnx_uda_policies_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Assert Get with invalid ext_id
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+    success_msg: "Get with invalid ext_id failed as expected"
+    fail_msg: "Get with invalid ext_id did not fail as expected"
+
+- name: Info — List all UDA policies
+  nutanix.ncp.ntnx_uda_policies_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Assert List all UDA policies
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length >= 2
+    success_msg: "List all UDA policies passed"
+    fail_msg: "List all UDA policies failed"
+
+- name: Info — List UDA policies with filter
+  nutanix.ncp.ntnx_uda_policies_info_v2:
+    filter: "title eq '{{ policy_title_update }}'"
+  register: result
+  ignore_errors: true
+
+- name: Assert List with filter returns the updated policy
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].title == "{{ policy_title_update }}"
+    success_msg: "List with filter returned expected policy"
+    fail_msg: "List with filter did not return expected policy"
+
+- name: Info — List UDA policies with limit
+  nutanix.ncp.ntnx_uda_policies_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Assert List with limit
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+    success_msg: "List with limit passed"
+    fail_msg: "List with limit failed"
+
+- name: Info — List UDA policies with orderby
+  nutanix.ncp.ntnx_uda_policies_info_v2:
+    orderby: "lastUpdatedTime desc"
+    limit: 5
+  register: result
+  ignore_errors: true
+
+- name: Assert List with orderby succeeded
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+    success_msg: "List with orderby passed"
+    fail_msg: "List with orderby failed"
+
+##############################################################################
+# Delete tests
+##############################################################################
+
+- name: Delete UDA policy in check_mode
+  nutanix.ncp.ntnx_uda_policy_v2:
+    state: absent
+    ext_id: "{{ todelete[0] }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert Delete check_mode
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - "'will be deleted' in result.msg"
+    success_msg: "Delete check_mode returned expected message"
+    fail_msg: "Delete check_mode did not return expected message"
+
+- name: Delete UDA policy with missing ext_id (should fail)
+  nutanix.ncp.ntnx_uda_policy_v2:
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Assert Delete with missing ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is absent but all of the following are missing: ext_id' in result.msg"
+    success_msg: "Delete with missing ext_id failed as expected"
+    fail_msg: "Delete with missing ext_id did not fail as expected"
+
+- name: Delete UDA policy with wrong ext_id (should fail)
+  nutanix.ncp.ntnx_uda_policy_v2:
+    state: absent
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Assert Delete with wrong ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+    success_msg: "Delete with wrong ext_id failed as expected"
+    fail_msg: "Delete with wrong ext_id did not fail as expected"
+
+- name: Delete all created UDA policies
+  nutanix.ncp.ntnx_uda_policy_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: delete_result
+  loop: "{{ todelete }}"
+  ignore_errors: true
+
+- name: Assert all UDA policies were deleted
+  ansible.builtin.assert:
+    that:
+      - delete_result is defined
+      - delete_result.results | length == todelete | length
+      - delete_result.results | selectattr('changed', 'equalto', true) | list | length == todelete | length
+      - delete_result.results | selectattr('failed', 'equalto', false) | list | length == todelete | length
+    success_msg: "All UDA policies deleted successfully"
+    fail_msg: "Not all UDA policies could be deleted"
