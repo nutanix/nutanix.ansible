@@ -1,0 +1,135 @@
+---
+# Summary:
+# This playbook demonstrates end-to-end usage of the LCM v4
+# compute-recommendations API from the nutanix.ncp collection.
+#
+# It will:
+#   1. Look up the Prism Central external ID and run an LCM inventory so the
+#      recommendation engine has fresh data to work with.
+#   2. Compute LCM recommendations for all SOFTWARE entities on the Prism
+#      Central and capture the recommendation resource ext_id from the task.
+#   3. Fetch the resulting recommendation resource via the info module.
+#   4. Compute recommendations again using an explicit entity_update_specs
+#      request pinned to the first inventoried entity.
+#   5. Compute recommendations using a target_entities descriptor.
+#
+# Notes:
+#   - The compute-recommendations action is asynchronous.  The module returns
+#     the initial task reference immediately when C(wait=false), or the final
+#     task object plus the recommendation resource C(ext_id) when
+#     C(wait=true) (the default).
+#   - The action requires an up-to-date LCM inventory on the target cluster
+#     — if the inventory or a previous compute-recommendations run fails
+#     because of environmental issues (blocked auto-upgrade prechecks, etc.),
+#     the recommendation task itself will surface a failure with a clear
+#     error message.
+#   - Prism Central endpoint credentials come from the play-level
+#     module_defaults block below (or the NUTANIX_* environment variables).
+
+- name: LCM ComputeRecommendation playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default('10.44.76.28') }}"
+      nutanix_username: "{{ nutanix_username | default('admin') }}"
+      nutanix_password: "{{ nutanix_password | default('Nutanix.123') }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+  tasks:
+    - name: List all clusters to get Prism Central external ID
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
+      register: clusters_result
+
+    - name: Store Prism Central external ID
+      ansible.builtin.set_fact:
+        prism_central_external_id: "{{ clusters_result.response[0].ext_id }}"
+
+    - name: Perform LCM inventory on Prism Central (fire and forget)
+      nutanix.ncp.ntnx_lcm_inventory_v2:
+        cluster_ext_id: "{{ prism_central_external_id }}"
+        # LCM only allows one long running operation at a time.  If another
+        # inventory / upgrade is already in flight, or a cluster-side
+        # precheck blocks it, we still want the example playbook to continue
+        # and demonstrate the recommendation API.  Using wait=false keeps the
+        # playbook responsive: the module returns the task ext_id immediately
+        # and the user can poll it separately if desired.
+        wait: false
+      register: lcm_inventory_result
+      ignore_errors: true
+
+    - name: List a single LCM entity (used to build the entity_update_specs example)
+      nutanix.ncp.ntnx_lcm_entities_info_v2:
+        limit: 1
+      register: lcm_entity_probe
+      ignore_errors: true
+
+    - name: Store sample LCM entity attributes when one is present
+      ansible.builtin.set_fact:
+        sample_entity_ext_id: "{{ lcm_entity_probe.response[0].ext_id }}"
+        sample_entity_version: "{{ lcm_entity_probe.response[0].entity_version }}"
+        sample_entity_model: "{{ lcm_entity_probe.response[0].entity_model }}"
+        sample_entity_type: "{{ lcm_entity_probe.response[0].entity_type }}"
+      when:
+        - lcm_entity_probe is defined
+        - lcm_entity_probe.response is defined
+        - lcm_entity_probe.response | length > 0
+
+    - name: Compute LCM recommendations for all SOFTWARE entities on Prism Central (Create)
+      nutanix.ncp.ntnx_lcm_compute_recommendation_v2:
+        cluster_ext_id: "{{ prism_central_external_id }}"
+        entity_types:
+          - SOFTWARE
+        # Use wait=true (the default) when the caller wants the recommendation
+        # resource ext_id back — the module will poll the async task until it
+        # terminates and extract resourceId from completion_details.
+        wait: true
+      register: recommendation_by_entity_types
+      ignore_errors: true
+
+    - name: Fetch the recommendation resource returned by the compute action
+      nutanix.ncp.ntnx_compute_recommendations_info_v2:
+        ext_id: "{{ recommendation_by_entity_types.ext_id }}"
+      register: recommendation_details
+      when:
+        - recommendation_by_entity_types is defined
+        - recommendation_by_entity_types.ext_id is defined
+        - recommendation_by_entity_types.ext_id != None
+      ignore_errors: true
+
+    - name: Compute LCM recommendations for a specific entity target version (Update)
+      nutanix.ncp.ntnx_lcm_compute_recommendation_v2:
+        cluster_ext_id: "{{ prism_central_external_id }}"
+        entity_update_specs:
+          - entity_uuid: "{{ sample_entity_ext_id }}"
+            to_version: "{{ sample_entity_version }}"
+        # Do not block waiting for the async task in the example — the caller
+        # can use ntnx_compute_recommendations_info_v2 to fetch the result
+        # once the task completes.
+        wait: false
+      register: recommendation_by_update_specs
+      when: sample_entity_ext_id is defined
+      ignore_errors: true
+
+    - name: Compute LCM recommendations for a target entity descriptor
+      nutanix.ncp.ntnx_lcm_compute_recommendation_v2:
+        cluster_ext_id: "{{ prism_central_external_id }}"
+        target_entities:
+          - entity_type: SOFTWARE
+            entity_model: "{{ sample_entity_model }}"
+            entity_version: "{{ sample_entity_version }}"
+            version: "{{ sample_entity_version }}"
+            ext_id: "{{ sample_entity_ext_id }}"
+            location_info:
+              location_type: PC
+              uuid: "{{ prism_central_external_id }}"
+        wait: false
+      register: recommendation_by_target_entities
+      when: sample_entity_ext_id is defined
+      ignore_errors: true
+
+    - name: Note that Delete is not supported for compute-recommendations (Delete)
+      ansible.builtin.debug:
+        msg: >-
+          The compute-recommendations action does not support a delete operation.
+          LCM manages the lifecycle of the recommendation resource internally.

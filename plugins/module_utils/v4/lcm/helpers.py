@@ -66,3 +66,23 @@ def get_lcm_entity(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching entity info using external identifier of the entity",
         )
+
+
+def get_lcm_recommendation(module, api_instance, ext_id):
+    """
+    This method will return LCM update recommendation info using its external identifier.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): LCM Recommendations api instance
+        ext_id (str): External id of the recommendation resource
+    Returns:
+        recommendation_info (object): LCM recommendation info
+    """
+    try:
+        return api_instance.get_recommendation_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching LCM recommendation using external identifier",
+        )
