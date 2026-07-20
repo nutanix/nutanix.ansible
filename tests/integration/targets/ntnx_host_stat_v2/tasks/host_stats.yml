@@ -1,0 +1,495 @@
+---
+# Test plan for ntnx_host_stat_v2 and ntnx_host_stats_info_v2
+#
+# End-to-end coverage combining SDK, module spec and domain (Prism Central
+# host performance stats) knowledge:
+#
+#   Prereq discovery (real cluster state)
+#     - Discover an AOS Prism Element cluster via ntnx_clusters_info_v2.
+#     - Discover a host under that cluster via ntnx_hosts_info_v2.
+#     - Compute a valid ISO-8601 time window (last hour, UTC).
+#
+#   ntnx_host_stat_v2 (single-host stats fetch)
+#     - Check-mode fetch with ALL attributes populated.
+#     - Fetch stats with only the required attributes.
+#     - Fetch stats with ALL optional attributes populated.
+#     - Fetch stats for each valid $statType enum value (SUM/MIN/MAX/AVG/COUNT/LAST).
+#     - Fetch stats using $select to restrict returned properties.
+#     - Negative: missing cluster_ext_id.
+#     - Negative: missing ext_id (host).
+#     - Negative: missing start_time.
+#     - Negative: missing end_time.
+#     - Negative: invalid stat_type enum value.
+#     - Negative: non-existent host ext_id.
+#     - Negative: non-existent cluster ext_id.
+#     - Domain: assert time-series values are TimeValuePair dicts (timestamp+value).
+#
+#   ntnx_host_stats_info_v2 (info-style fetch)
+#     - Fetch single host stats using ext_id with all attributes.
+#     - Fetch stats for every host in the cluster (no ext_id) with all attributes.
+#     - Negative: non-existent host ext_id.
+#     - Negative: missing cluster_ext_id.
+
+- name: Start HostStat tests
+  ansible.builtin.debug:
+    msg: Start HostStat tests
+
+########################################################################################
+# Discover cluster & host, compute stats window
+########################################################################################
+
+- name: Fetch an AOS Prism Element cluster registered to Prism Central
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+    limit: 1
+  register: clusters_info
+  ignore_errors: true
+
+- name: Assert AOS cluster is present
+  ansible.builtin.assert:
+    that:
+      - clusters_info is defined
+      - clusters_info.failed == false
+      - clusters_info.response is defined
+      - clusters_info.response | length >= 1
+      - clusters_info.response[0].ext_id is defined
+    success_msg: "AOS cluster discovered"
+    fail_msg: "Unable to discover any AOS cluster"
+
+- name: Set discovered cluster ext_id
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ clusters_info.response[0].ext_id }}"
+
+- name: Fetch hosts in the cluster
+  nutanix.ncp.ntnx_hosts_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: hosts_info
+  ignore_errors: true
+
+- name: Assert hosts are present
+  ansible.builtin.assert:
+    that:
+      - hosts_info is defined
+      - hosts_info.failed == false
+      - hosts_info.response is defined
+      - hosts_info.response | length >= 1
+      - hosts_info.response[0].ext_id is defined
+    success_msg: "Hosts discovered in cluster {{ cluster_ext_id }}"
+    fail_msg: "Unable to discover any host in cluster {{ cluster_ext_id }}"
+
+- name: Set discovered host ext_id and cluster host count
+  ansible.builtin.set_fact:
+    host_ext_id: "{{ hosts_info.response[0].ext_id }}"
+    cluster_host_count: "{{ hosts_info.response | length }}"
+
+- name: Compute the stats reporting window (last hour, ISO-8601 UTC)
+  ansible.builtin.set_fact:
+    stats_start_time: "{{ lookup('pipe', 'date -u -d \"1 hour ago\" +%Y-%m-%dT%H:%M:%SZ') }}"
+    stats_end_time: "{{ lookup('pipe', 'date -u +%Y-%m-%dT%H:%M:%SZ') }}"
+
+########################################################################################
+# ntnx_host_stat_v2 - Check mode with ALL attributes
+########################################################################################
+
+- name: Check mode fetch of host stats with all attributes
+  nutanix.ncp.ntnx_host_stat_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ host_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+    sampling_interval: 30
+    stat_type: "AVG"
+    select: "controllerNumIops,hypervisorCpuUsagePpm,overallMemoryUsagePpm"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Verify check mode fetch of host stats with all attributes
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.cluster_ext_id == cluster_ext_id
+      - result.ext_id == host_ext_id
+      - result.msg is defined
+      - "'would be fetched' in result.msg"
+    success_msg: "Check mode fetch of host stats with all attributes passed"
+    fail_msg: "Check mode fetch of host stats with all attributes failed"
+
+########################################################################################
+# ntnx_host_stat_v2 - Fetch with minimum required attributes
+########################################################################################
+
+- name: Fetch host stats with only required attributes
+  nutanix.ncp.ntnx_host_stat_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ host_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify fetch host stats with only required attributes
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response is mapping
+      - result.cluster_ext_id == cluster_ext_id
+      - result.ext_id == host_ext_id
+      - result.task_ext_id is none
+    success_msg: "Fetch host stats with only required attributes passed"
+    fail_msg: "Fetch host stats with only required attributes failed"
+
+########################################################################################
+# ntnx_host_stat_v2 - Fetch with ALL attributes populated
+########################################################################################
+
+- name: Fetch host stats with all optional attributes
+  nutanix.ncp.ntnx_host_stat_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ host_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+    sampling_interval: 30
+    stat_type: "AVG"
+    select: "controllerNumIops,hypervisorCpuUsagePpm,overallMemoryUsagePpm"
+  register: result
+  ignore_errors: true
+
+- name: Verify fetch host stats with all optional attributes
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response is mapping
+      - result.cluster_ext_id == cluster_ext_id
+      - result.ext_id == host_ext_id
+    success_msg: "Fetch host stats with all attributes passed"
+    fail_msg: "Fetch host stats with all attributes failed"
+
+- name: Save the response for domain-level validation
+  ansible.builtin.set_fact:
+    full_stats_response: "{{ result.response }}"
+
+- name: Verify response shape - projected metrics are lists of TimeValuePair entries
+  ansible.builtin.assert:
+    that:
+      - full_stats_response.controller_num_iops is defined
+      - full_stats_response.controller_num_iops is iterable
+      - >-
+        (full_stats_response.controller_num_iops | length == 0) or
+        (full_stats_response.controller_num_iops[0].timestamp is defined and
+         full_stats_response.controller_num_iops[0].value is defined)
+      - full_stats_response.hypervisor_cpu_usage_ppm is defined
+      - >-
+        (full_stats_response.hypervisor_cpu_usage_ppm | length == 0) or
+        (full_stats_response.hypervisor_cpu_usage_ppm[0].timestamp is defined and
+         full_stats_response.hypervisor_cpu_usage_ppm[0].value is defined)
+      - full_stats_response.overall_memory_usage_ppm is defined
+    success_msg: "Projected stats fields carry TimeValuePair entries as expected"
+    fail_msg: "Projected stats fields did NOT carry TimeValuePair entries"
+
+########################################################################################
+# ntnx_host_stat_v2 - Exercise every valid stat_type enum value
+########################################################################################
+
+- name: Fetch host stats for every valid stat_type enum
+  nutanix.ncp.ntnx_host_stat_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ host_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+    sampling_interval: 60
+    stat_type: "{{ item }}"
+  register: stat_type_results
+  ignore_errors: true
+  loop:
+    - "SUM"
+    - "MIN"
+    - "MAX"
+    - "AVG"
+    - "COUNT"
+    - "LAST"
+
+- name: Verify each stat_type enum value returned a stats response
+  ansible.builtin.assert:
+    that:
+      - item is defined
+      - item.failed == false
+      - item.changed == false
+      - item.response is defined
+      - item.response is mapping
+    success_msg: "stat_type {{ item.item }} accepted and returned data"
+    fail_msg: "stat_type {{ item.item }} did not return data as expected"
+  loop: "{{ stat_type_results.results }}"
+
+########################################################################################
+# ntnx_host_stat_v2 - Fetch with $select projection
+########################################################################################
+
+- name: Fetch host stats with only $select restricting properties
+  nutanix.ncp.ntnx_host_stat_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ host_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+    select: "controllerNumIops"
+  register: result
+  ignore_errors: true
+
+- name: Verify $select projection response includes projected field
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.response is defined
+      - result.response is mapping
+      - result.response.controller_num_iops is defined
+    success_msg: "$select projection succeeded"
+    fail_msg: "$select projection did not return expected field"
+
+########################################################################################
+# ntnx_host_stat_v2 - Negative: missing required parameters
+########################################################################################
+
+- name: Fetch host stats missing cluster_ext_id
+  nutanix.ncp.ntnx_host_stat_v2:
+    ext_id: "{{ host_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify missing cluster_ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'cluster_ext_id' in result.msg"
+    success_msg: "Missing cluster_ext_id rejected as expected"
+    fail_msg: "Missing cluster_ext_id was NOT rejected as expected"
+
+- name: Fetch host stats missing ext_id
+  nutanix.ncp.ntnx_host_stat_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify missing ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'ext_id' in result.msg"
+    success_msg: "Missing ext_id rejected as expected"
+    fail_msg: "Missing ext_id was NOT rejected as expected"
+
+- name: Fetch host stats missing start_time
+  nutanix.ncp.ntnx_host_stat_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ host_ext_id }}"
+    end_time: "{{ stats_end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify missing start_time is rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'start_time' in result.msg"
+    success_msg: "Missing start_time rejected as expected"
+    fail_msg: "Missing start_time was NOT rejected as expected"
+
+- name: Fetch host stats missing end_time
+  nutanix.ncp.ntnx_host_stat_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ host_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify missing end_time is rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'end_time' in result.msg"
+    success_msg: "Missing end_time rejected as expected"
+    fail_msg: "Missing end_time was NOT rejected as expected"
+
+########################################################################################
+# ntnx_host_stat_v2 - Negative: invalid enum value
+########################################################################################
+
+- name: Fetch host stats with invalid stat_type enum
+  nutanix.ncp.ntnx_host_stat_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ host_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+    stat_type: "NOT_A_VALID_OPERATOR"
+  register: result
+  ignore_errors: true
+
+- name: Verify invalid stat_type enum is rejected by the argument spec
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'value of stat_type must be one of' in result.msg"
+    success_msg: "Invalid stat_type enum rejected as expected"
+    fail_msg: "Invalid stat_type enum was NOT rejected as expected"
+
+########################################################################################
+# ntnx_host_stat_v2 - Negative: invalid references
+########################################################################################
+
+- name: Fetch host stats with non-existent host ext_id
+  nutanix.ncp.ntnx_host_stat_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify non-existent host ext_id returns an error
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+    success_msg: "Non-existent host ext_id rejected as expected"
+    fail_msg: "Non-existent host ext_id was NOT rejected as expected"
+
+- name: Fetch host stats with non-existent cluster ext_id
+  nutanix.ncp.ntnx_host_stat_v2:
+    cluster_ext_id: "00000000-0000-0000-0000-000000000000"
+    ext_id: "{{ host_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify non-existent cluster ext_id returns an error
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+    success_msg: "Non-existent cluster ext_id rejected as expected"
+    fail_msg: "Non-existent cluster ext_id was NOT rejected as expected"
+
+########################################################################################
+# ntnx_host_stats_info_v2 - Fetch stats for a single host by ext_id
+########################################################################################
+
+- name: Info module - fetch single host stats with all attributes
+  nutanix.ncp.ntnx_host_stats_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ host_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+    sampling_interval: 30
+    stat_type: "AVG"
+    select: "controllerNumIops,hypervisorCpuUsagePpm,overallMemoryUsagePpm"
+  register: result
+  ignore_errors: true
+
+- name: Verify info module single-host fetch with all attributes
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.cluster_ext_id == cluster_ext_id
+      - result.ext_id == host_ext_id
+      - result.response is defined
+      - result.response is mapping
+      - result.response.controller_num_iops is defined
+      - result.response.hypervisor_cpu_usage_ppm is defined
+      - result.response.overall_memory_usage_ppm is defined
+    success_msg: "Info module single-host fetch passed"
+    fail_msg: "Info module single-host fetch failed"
+
+########################################################################################
+# ntnx_host_stats_info_v2 - List all hosts in cluster and fetch stats
+########################################################################################
+
+- name: Info module - fetch stats for every host in the cluster
+  nutanix.ncp.ntnx_host_stats_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+    sampling_interval: 60
+    stat_type: "AVG"
+  register: result
+  ignore_errors: true
+
+- name: Verify info module bulk fetch returns one entry per host
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.cluster_ext_id == cluster_ext_id
+      - result.response is defined
+      - result.response is iterable
+      - result.response | length == (cluster_host_count | int)
+      - result.total_available_results is defined
+      - result.total_available_results | int == (cluster_host_count | int)
+    success_msg: "Info module bulk fetch returned {{ cluster_host_count }} host stats"
+    fail_msg: "Info module bulk fetch did not return the expected number of host stats"
+
+########################################################################################
+# ntnx_host_stats_info_v2 - Negative tests
+########################################################################################
+
+- name: Info module - non-existent host ext_id
+  nutanix.ncp.ntnx_host_stats_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify non-existent host ext_id fails in info module
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+    success_msg: "Info module non-existent host ext_id rejected as expected"
+    fail_msg: "Info module non-existent host ext_id was NOT rejected as expected"
+
+- name: Info module - missing cluster_ext_id
+  nutanix.ncp.ntnx_host_stats_info_v2:
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify info module rejects missing cluster_ext_id
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'cluster_ext_id' in result.msg"
+    success_msg: "Info module missing cluster_ext_id rejected as expected"
+    fail_msg: "Info module missing cluster_ext_id was NOT rejected as expected"
