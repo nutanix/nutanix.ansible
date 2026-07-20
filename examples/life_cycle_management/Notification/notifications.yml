@@ -1,0 +1,97 @@
+---
+# Summary:
+# This playbook demonstrates how to use the LCM (Life Cycle Manager) Notifications
+# v4 API modules against a live Nutanix Prism Central. It:
+#   1. Fetches the Prism Central external ID.
+#   2. Prints LCM framework status and (best-effort) runs an LCM inventory so
+#      that entities and available versions are up to date.
+#   3. Picks a target LCM entity dynamically (defaults to "Calm Policy Engine").
+#   4. Uses M(nutanix.ncp.ntnx_notification_v2) to compute the upgrade plan and
+#      notifications for that entity.
+#   5. Uses M(nutanix.ncp.ntnx_lcm_notifications_info_v2) to re-fetch the same
+#      notification resource by its external ID.
+#
+# Notes:
+#   - No `wait: True` is passed because it is the default.
+#   - `cluster_ext_id` targets the Prism Central; pass a PE cluster's ext_id to
+#     compute notifications for a Prism Element cluster instead.
+#   - The inventory step is intentionally guarded — on a busy cluster an LCM
+#     inventory may already be in progress; in that case we skip re-running it
+#     and continue with whatever inventory data is available.
+
+- name: LCM Notifications playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip | default('10.44.76.28') }}"
+      nutanix_username: "{{ username | default('admin') }}"
+      nutanix_password: "{{ password | default('Nutanix.123') }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+  tasks:
+    - name: Set defaults for the target LCM entity
+      ansible.builtin.set_fact:
+        lcm_entity_model: "{{ lcm_entity_model | default('Calm Policy Engine') }}"
+
+    - name: List all clusters to get prism central external ID
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
+      register: clusters_result
+
+    - name: Set prism central external ID
+      ansible.builtin.set_fact:
+        prism_central_external_id: "{{ clusters_result.response[0].ext_id }}"
+
+    - name: Get LCM framework status
+      nutanix.ncp.ntnx_lcm_status_info_v2:
+        cluster_ext_id: "{{ prism_central_external_id }}"
+      register: lcm_status_before
+
+    - name: Perform LCM inventory (best-effort, skipped if one is already running)
+      nutanix.ncp.ntnx_lcm_inventory_v2:
+        cluster_ext_id: "{{ prism_central_external_id }}"
+      register: lcm_inventory
+      when: lcm_status_before.response.in_progress_operation.operation_id in [None, '']
+      ignore_errors: true
+
+    - name: List LCM entities matching the target model
+      nutanix.ncp.ntnx_lcm_entities_info_v2:
+        filter: "entityModel eq '{{ lcm_entity_model }}'"
+      register: lcm_entities
+      ignore_errors: true
+
+    - name: Set LCM entity external ID and target version (when available)
+      ansible.builtin.set_fact:
+        lcm_entity_external_id: "{{ lcm_entities.response[0].ext_id }}"
+        lcm_entity_target_version: "{{ lcm_entities.response[0].available_versions[0].version }}"
+      when:
+        - lcm_entities.response is defined
+        - (lcm_entities.response | length) > 0
+        - lcm_entities.response[0].available_versions is defined
+        - (lcm_entities.response[0].available_versions | length) > 0
+
+    - name: Generate the compute-notifications spec using check_mode
+      nutanix.ncp.ntnx_notification_v2:
+        cluster_ext_id: "{{ prism_central_external_id }}"
+        notifications_spec:
+          - entity_uuid: "{{ lcm_entity_external_id | default('11111111-2222-3333-4444-555555555555') }}"
+            to_version: "{{ lcm_entity_target_version | default('1.0.0') }}"
+      check_mode: true
+      register: compute_notifications_check_mode
+
+    - name: Compute LCM upgrade notifications for the target entity
+      nutanix.ncp.ntnx_notification_v2:
+        cluster_ext_id: "{{ prism_central_external_id }}"
+        notifications_spec:
+          - entity_uuid: "{{ lcm_entity_external_id | default('11111111-2222-3333-4444-555555555555') }}"
+            to_version: "{{ lcm_entity_target_version | default('1.0.0') }}"
+      register: compute_notifications_result
+      ignore_errors: true
+
+    - name: Fetch the same LCM upgrade notification by external ID
+      nutanix.ncp.ntnx_lcm_notifications_info_v2:
+        ext_id: "{{ compute_notifications_result.ext_id }}"
+      register: notification_info
+      when:
+        - compute_notifications_result.ext_id is defined
+        - compute_notifications_result.ext_id | length > 0
