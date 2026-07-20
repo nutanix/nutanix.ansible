@@ -1,0 +1,70 @@
+---
+# Summary:
+# This playbook demonstrates end-to-end usage of the CVMs by Cluster ID modules:
+# 1. List all CVMs associated with a cluster.
+# 2. Fetch a specific CVM by external ID.
+# 3. List CVMs with a limit query parameter.
+# 4. List CVMs with a filter query parameter.
+# 5. Reconfigure the CVMs of a cluster (vCPUs + memory) using the action module.
+#
+# The reconfigure operation is a destructive/rolling operation on Controller VMs;
+# only run it against a lab / non-production cluster where the CVMs can be safely
+# reconfigured. The current CVM sizing is preserved by defaulting to the values
+# returned by the info module in this playbook.
+
+- name: CVMs by Cluster ID playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Set target cluster external ID
+      ansible.builtin.set_fact:
+        cluster_ext_id: "0006361b-6855-3644-7458-2268f8ffb2bd"
+
+    - name: List all CVMs of a cluster
+      nutanix.ncp.ntnx_cluster_cvms_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: cvms_list_result
+      ignore_errors: true
+
+    - name: Set first CVM ext_id for follow-up lookups
+      ansible.builtin.set_fact:
+        first_cvm_ext_id: "{{ cvms_list_result.response[0].ext_id }}"
+      when: cvms_list_result.response is defined and cvms_list_result.response | length > 0
+
+    - name: Fetch a specific CVM by external ID
+      nutanix.ncp.ntnx_cluster_cvms_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ first_cvm_ext_id }}"
+      register: cvm_get_result
+      ignore_errors: true
+      when: first_cvm_ext_id is defined
+
+    - name: List CVMs of a cluster with limit
+      nutanix.ncp.ntnx_cluster_cvms_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        limit: 1
+      register: cvms_limit_result
+      ignore_errors: true
+
+    - name: List CVMs of a cluster with filter (num_vcpus)
+      nutanix.ncp.ntnx_cluster_cvms_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        filter: "numVcpus eq 8"
+      register: cvms_filter_result
+      ignore_errors: true
+
+    - name: Reconfigure CVMs of a cluster (update vCPUs and memory)
+      nutanix.ncp.ntnx_cvmsby_cluster_id_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        num_vcpus: "{{ cvm_get_result.response.num_vcpus | default(8) }}"
+        memory_size_bytes: "{{ cvm_get_result.response.memory_size_bytes | default(34359738368) }}"
+      register: reconfigure_result
+      ignore_errors: true
+      when: first_cvm_ext_id is defined

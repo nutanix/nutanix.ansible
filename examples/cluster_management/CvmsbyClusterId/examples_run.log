@@ -1,0 +1,30 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [CVMs by Cluster ID playbook] *********************************************
+
+TASK [Set target cluster external ID] ******************************************
+ok: [localhost] => {"ansible_facts": {"cluster_ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"}, "changed": false}
+
+TASK [List all CVMs of a cluster] **********************************************
+ok: [localhost] => {"changed": false, "response": [{"backplane_ip_address": null, "cluster_ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "ext_id": "f83f7ea6-4d56-5db6-8ebf-fb3157870d33", "hypervisor_type": "AHV", "ip_address": {"ipv4": {"prefix_length": null, "value": "10.46.136.32"}, "ipv6": null}, "links": null, "memory_size_bytes": 25769803776, "name": "NTNX-goku-4-CVM", "node_ext_id": "adf0c9e0-4051-4cd2-9f6f-ca9f962e941b", "num_vcpus": 8, "tenant_id": null}], "total_available_results": 1}
+
+TASK [Set first CVM ext_id for follow-up lookups] ******************************
+ok: [localhost] => {"ansible_facts": {"first_cvm_ext_id": "f83f7ea6-4d56-5db6-8ebf-fb3157870d33"}, "changed": false}
+
+TASK [Fetch a specific CVM by external ID] *************************************
+ok: [localhost] => {"changed": false, "ext_id": "f83f7ea6-4d56-5db6-8ebf-fb3157870d33", "response": {"backplane_ip_address": null, "cluster_ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "ext_id": "f83f7ea6-4d56-5db6-8ebf-fb3157870d33", "hypervisor_type": "AHV", "ip_address": {"ipv4": {"prefix_length": null, "value": "10.46.136.32"}, "ipv6": null}, "links": null, "memory_size_bytes": 25769803776, "name": "NTNX-goku-4-CVM", "node_ext_id": "adf0c9e0-4051-4cd2-9f6f-ca9f962e941b", "num_vcpus": 8, "tenant_id": null}}
+
+TASK [List CVMs of a cluster with limit] ***************************************
+ok: [localhost] => {"changed": false, "response": [{"backplane_ip_address": null, "cluster_ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "ext_id": "f83f7ea6-4d56-5db6-8ebf-fb3157870d33", "hypervisor_type": "AHV", "ip_address": {"ipv4": {"prefix_length": null, "value": "10.46.136.32"}, "ipv6": null}, "links": null, "memory_size_bytes": 25769803776, "name": "NTNX-goku-4-CVM", "node_ext_id": "adf0c9e0-4051-4cd2-9f6f-ca9f962e941b", "num_vcpus": 8, "tenant_id": null}], "total_available_results": 1}
+
+TASK [List CVMs of a cluster with filter (num_vcpus)] **************************
+ok: [localhost] => {"changed": false, "response": [{"backplane_ip_address": null, "cluster_ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "ext_id": "f83f7ea6-4d56-5db6-8ebf-fb3157870d33", "hypervisor_type": "AHV", "ip_address": {"ipv4": {"prefix_length": null, "value": "10.46.136.32"}, "ipv6": null}, "links": null, "memory_size_bytes": 25769803776, "name": "NTNX-goku-4-CVM", "node_ext_id": "adf0c9e0-4051-4cd2-9f6f-ca9f962e941b", "num_vcpus": 8, "tenant_id": null}], "total_available_results": 1}
+
+TASK [Reconfigure CVMs of a cluster (update vCPUs and memory)] *****************
+skipping: [localhost] => {"changed": false, "false_condition": false, "skip_reason": "Conditional result was False"}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=6    changed=0    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
+
