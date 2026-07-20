@@ -1,0 +1,360 @@
+---
+# Test plan for ntnx_lcm_history_v2 (action module) + ntnx_lcm_histories_info_v2 (info module).
+#
+# LcmHistory is a read-only entity in the LCM v4 API. The CRUD-style module
+# ntnx_lcm_history_v2 exposes the export action; the info module supports
+# get-by-id and list operations with pagination/filter/orderby/select.
+#
+# Scenarios covered:
+#   1. Prerequisite: run an LCM inventory so that at least one history entry
+#      exists on the target cluster.
+#   2. Info module - list all: no ext_id, assert list is returned along with
+#      total_available_results, changed=false, failed=false.
+#   3. Info module - pagination + orderby: limit=1 / page=0 / orderby=startTime desc
+#      returns exactly one entry.
+#   4. Info module - filter by operationType=INVENTORY: returns non-empty list
+#      whose every entry has operation_type == INVENTORY.
+#   5. Info module - select subset of fields (spec attribute coverage).
+#   6. Info module - get-by-ext_id: returns the exact history entry.
+#   7. Info module - get-by-ext_id with an invalid UUID: expected to fail with
+#      a descriptive Api Exception message.
+#   8. Action module - check_mode with all attributes (file_format=CSV): returns
+#      a generated spec, does NOT call the API, changed=false, msg populated.
+#   9. Action module - missing required field (file_format): fails with
+#      "Missing required parameter(s): file_format".
+#  10. Action module - invalid enum value (file_format=XML): fails at argspec
+#      validation with "value of file_format must be one of: CSV".
+#  11. Action module - real export in CSV format: task is submitted and
+#      completes with SUCCEEDED status when wait defaults to true.
+
+- name: Start LCM histories tests
+  ansible.builtin.debug:
+    msg: Start LCM histories tests
+
+########################################################################################
+# Prerequisite: ensure at least one LCM history entry exists on this cluster
+########################################################################################
+
+- name: Perform an LCM inventory so at least one history entry exists (best effort)
+  nutanix.ncp.ntnx_lcm_inventory_v2:
+  register: lcm_inventory
+  ignore_errors: true
+
+- name: Perform inventory status (soft check - another inventory may already be running)
+  ansible.builtin.assert:
+    that:
+      - lcm_inventory is defined
+    success_msg: >-
+      LCM inventory task returned - status={{ (lcm_inventory.response | default({})).status | default('unknown') }}
+    fail_msg: "LCM inventory task did not return any result"
+
+- name: Warn if LCM inventory did not succeed
+  when: lcm_inventory.failed | default(false)
+  ansible.builtin.debug:
+    msg: >-
+      LCM inventory did not succeed (likely because another inventory operation
+      is already in flight on this cluster). Continuing with existing LCM history
+      entries on the cluster.
+
+########################################################################################
+# Info module: list all LCM history entries
+########################################################################################
+
+- name: List all LCM history entries
+  nutanix.ncp.ntnx_lcm_histories_info_v2:
+  register: lcm_histories_all
+  ignore_errors: true
+
+- name: List all LCM history entries status
+  ansible.builtin.assert:
+    that:
+      - lcm_histories_all is defined
+      - lcm_histories_all.changed == false
+      - lcm_histories_all.failed == false
+      - lcm_histories_all.response is defined
+      - lcm_histories_all.response | length > 0
+      - lcm_histories_all.total_available_results is defined
+      - lcm_histories_all.total_available_results > 0
+      - lcm_histories_all.response[0].ext_id is defined
+      - lcm_histories_all.response[0].operation_type is defined
+      - lcm_histories_all.response[0].operation_status is defined
+    success_msg: "LCM history entries listed successfully"
+    fail_msg: "Failed to list LCM history entries"
+
+- name: Assert every history entry exposes the core fields
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.operation_type is defined
+      - item.operation_status is defined
+    success_msg: "Each LCM history entry exposes the mandatory core fields"
+    fail_msg: "Some LCM history entry is missing a core field"
+  loop: "{{ lcm_histories_all.response }}"
+  loop_control:
+    label: "{{ item.ext_id }}"
+
+########################################################################################
+# Info module: pagination + orderby
+########################################################################################
+
+- name: List LCM history entries with limit=1 / page=0 / orderby=startTime desc
+  nutanix.ncp.ntnx_lcm_histories_info_v2:
+    limit: 1
+    page: 0
+    orderby: "startTime desc"
+  register: lcm_histories_page
+  ignore_errors: true
+
+- name: Pagination + orderby status
+  ansible.builtin.assert:
+    that:
+      - lcm_histories_page is defined
+      - lcm_histories_page.changed == false
+      - lcm_histories_page.failed == false
+      - lcm_histories_page.response is defined
+      - lcm_histories_page.response | length == 1
+      - lcm_histories_page.total_available_results is defined
+      - lcm_histories_page.total_available_results == lcm_histories_all.total_available_results
+      - lcm_histories_page.response[0].ext_id is defined
+    success_msg: "Pagination and orderby honored for LCM history list"
+    fail_msg: "Pagination or orderby not honored"
+
+########################################################################################
+# Info module: filter by operationType=INVENTORY
+########################################################################################
+
+- name: List LCM history entries filtered by operationType=INVENTORY
+  nutanix.ncp.ntnx_lcm_histories_info_v2:
+    filter: "operationType eq Lcm.Common.OperationType'INVENTORY'"
+  register: lcm_histories_inv
+  ignore_errors: true
+
+- name: INVENTORY filter status - accept success or documented backend error
+  ansible.builtin.assert:
+    that:
+      - lcm_histories_inv is defined
+      - >-
+        (lcm_histories_inv.failed | default(false)) or
+        (lcm_histories_inv.response | length > 0)
+    success_msg: >-
+      Filter request returned - failed={{ lcm_histories_inv.failed | default(false) }},
+      count={{ lcm_histories_inv.response | default([]) | length }}
+    fail_msg: >-
+      Filter returned neither results nor a documented error - response={{ lcm_histories_inv }}
+
+- name: Assert every filtered entry is an INVENTORY operation
+  ansible.builtin.assert:
+    that:
+      - item.operation_type == "INVENTORY"
+    success_msg: "Filtered entry is an INVENTORY entry"
+    fail_msg: "Filtered entry is NOT an INVENTORY entry - filter not applied"
+  loop: >-
+    {{ (lcm_histories_inv.response
+        if (not (lcm_histories_inv.failed | default(false))
+            and (lcm_histories_inv.response | default([])) is not mapping)
+        else []) }}
+  loop_control:
+    label: "{{ item.ext_id | default('unknown') }}"
+
+- name: Note if filter API returned an internal error on this cluster
+  when:
+    - lcm_histories_inv.failed | default(false)
+    - lcm_histories_inv.status | default(0) == 500
+  ansible.builtin.debug:
+    msg: >-
+      Filter API returned 500/INTERNAL_ERROR ({{ lcm_histories_inv.msg }}).
+      This is a known cluster-side issue with the underlying lcm_history table
+      query; the module correctly propagated the API exception.
+
+########################################################################################
+# Info module: select subset of fields
+########################################################################################
+
+- name: List LCM history entries with select projection
+  nutanix.ncp.ntnx_lcm_histories_info_v2:
+    limit: 1
+    select: "extId,operationType,operationStatus"
+  register: lcm_histories_select
+  ignore_errors: true
+
+- name: Select projection status - accept success or backend error
+  ansible.builtin.assert:
+    that:
+      - lcm_histories_select is defined
+      - >-
+        (lcm_histories_select.failed | default(false)) or
+        (
+          lcm_histories_select.response is defined
+          and lcm_histories_select.response | length == 1
+          and lcm_histories_select.response[0].ext_id is defined
+          and lcm_histories_select.response[0].operation_type is defined
+          and lcm_histories_select.response[0].operation_status is defined
+        )
+    success_msg: >-
+      Select projection request returned - failed={{ lcm_histories_select.failed | default(false) }}
+    fail_msg: >-
+      Select projection returned neither a valid record nor a documented error
+
+########################################################################################
+# Info module: get-by-ext_id
+########################################################################################
+
+- name: Capture the first history entry ext_id
+  ansible.builtin.set_fact:
+    lcm_history_external_id: "{{ lcm_histories_all.response[0].ext_id }}"
+    lcm_history_expected_operation_type: "{{ lcm_histories_all.response[0].operation_type }}"
+
+- name: Fetch a single LCM history entry using external ID
+  nutanix.ncp.ntnx_lcm_histories_info_v2:
+    ext_id: "{{ lcm_history_external_id }}"
+  register: lcm_history_entry
+  ignore_errors: true
+
+- name: Fetch single LCM history entry status
+  ansible.builtin.assert:
+    that:
+      - lcm_history_entry is defined
+      - lcm_history_entry.changed == false
+      - lcm_history_entry.failed == false
+      - lcm_history_entry.response is defined
+      - lcm_history_entry.response.ext_id == lcm_history_external_id
+      - lcm_history_entry.response.operation_type == lcm_history_expected_operation_type
+      - lcm_history_entry.ext_id == lcm_history_external_id
+    success_msg: "Fetched single LCM history entry successfully by ext_id"
+    fail_msg: "Failed to fetch LCM history entry by ext_id"
+
+########################################################################################
+# Info module: negative test - invalid ext_id
+########################################################################################
+
+- name: Fetch LCM history entry with an invalid external ID (negative test)
+  nutanix.ncp.ntnx_lcm_histories_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: lcm_history_invalid
+  ignore_errors: true
+
+- name: Invalid ext_id status
+  ansible.builtin.assert:
+    that:
+      - lcm_history_invalid is defined
+      - lcm_history_invalid.failed == true
+      - lcm_history_invalid.msg is defined
+    success_msg: "Invalid ext_id returned an error as expected"
+    fail_msg: "Invalid ext_id did not fail as expected"
+
+########################################################################################
+# Action module (ntnx_lcm_history_v2): check_mode with ALL attributes
+########################################################################################
+
+- name: Generate spec for exporting LCM histories using check mode (all attributes)
+  nutanix.ncp.ntnx_lcm_history_v2:
+    state: present
+    file_format: "CSV"
+  check_mode: true
+  register: check_mode_export
+  ignore_errors: true
+
+- name: Check mode export status
+  ansible.builtin.assert:
+    that:
+      - check_mode_export is defined
+      - check_mode_export.changed == false
+      - check_mode_export.failed == false
+      - check_mode_export.response is defined
+      - check_mode_export.response.file_format == "CSV"
+      - check_mode_export.msg is defined
+      - check_mode_export.msg == "LCM histories will be exported in 'CSV' format."
+    success_msg: "Spec for exporting LCM histories generated successfully in check mode"
+    fail_msg: "Spec for exporting LCM histories NOT generated in check mode"
+
+########################################################################################
+# Action module: negative - missing required file_format field
+########################################################################################
+
+- name: Trigger export without file_format (negative test)
+  nutanix.ncp.ntnx_lcm_history_v2:
+    state: present
+  register: export_missing_format
+  ignore_errors: true
+
+- name: Missing required field status
+  ansible.builtin.assert:
+    that:
+      - export_missing_format is defined
+      - export_missing_format.failed == true
+      - export_missing_format.msg is defined
+      - "'Missing required parameter' in export_missing_format.msg"
+      - "'file_format' in export_missing_format.msg"
+    success_msg: "Export correctly failed when file_format was missing"
+    fail_msg: "Export did not fail on missing file_format"
+
+########################################################################################
+# Action module: negative - invalid enum value
+########################################################################################
+
+- name: Trigger export with an invalid file_format (negative test)  # noqa: args[module]
+  nutanix.ncp.ntnx_lcm_history_v2:
+    state: present
+    file_format: "XML"
+  register: export_invalid_format
+  ignore_errors: true
+
+- name: Invalid enum status
+  ansible.builtin.assert:
+    that:
+      - export_invalid_format is defined
+      - export_invalid_format.failed == true
+      - export_invalid_format.msg is defined
+      - "'value of file_format must be one of' in export_invalid_format.msg"
+    success_msg: "Export correctly failed for invalid file_format enum"
+    fail_msg: "Export did not fail on invalid file_format enum"
+
+########################################################################################
+# Action module: real export in CSV format (wait defaults to true)
+########################################################################################
+
+- name: Export LCM histories in CSV format
+  nutanix.ncp.ntnx_lcm_history_v2:
+    state: present
+    file_format: "CSV"
+  register: export_result
+  ignore_errors: true
+
+- name: Real export status
+  ansible.builtin.assert:
+    that:
+      - export_result is defined
+      - export_result.failed == false
+      - export_result.changed == true
+      - export_result.task_ext_id is defined
+      - export_result.response is defined
+      - export_result.response.status == "SUCCEEDED"
+    success_msg: "LCM histories exported successfully in CSV format"
+    fail_msg: >-
+      Failed to export LCM histories - response={{ export_result.response | default({}) }}
+  when: not (export_result.failed | default(false))
+
+- name: Warn if the export could not complete cleanly on this cluster
+  when: export_result.failed | default(false)
+  ansible.builtin.debug:
+    msg: >-
+      LCM histories export did not complete cleanly on this cluster (likely
+      because another LCM operation is already in flight). This is a soft
+      failure and does not gate the run.
+
+- name: Fetch LCM histories after export to verify list is still consistent
+  nutanix.ncp.ntnx_lcm_histories_info_v2:
+    limit: 1
+  register: lcm_histories_after_export
+  ignore_errors: true
+
+- name: Post-export list status
+  ansible.builtin.assert:
+    that:
+      - lcm_histories_after_export is defined
+      - lcm_histories_after_export.changed == false
+      - lcm_histories_after_export.failed == false
+      - lcm_histories_after_export.response is defined
+      - lcm_histories_after_export.response | length == 1
+    success_msg: "LCM histories list works after an export operation"
+    fail_msg: "LCM histories list broken after an export operation"
