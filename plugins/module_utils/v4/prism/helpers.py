@@ -120,3 +120,35 @@ def get_pc_task(
             exception=e,
             msg="Api Exception raised while fetching pc task info using ext_id",
         )
+
+
+def get_external_storage(module, api_instance, ext_id):
+    """
+    This method will return external storage info using external ID.
+
+    Only a get-by-id is exposed by the Prism v4 SDK for ExternalStorage
+    (the full CRUD API was migrated to the ``clustermgmt`` namespace); this
+    helper wraps the single ``get_external_storage_by_id`` call in the
+    common error-handling pattern used by other v4 helpers.
+
+    Args:
+        module: Ansible module
+        api_instance: ExternalStoragesApi instance from ntnx_prism_py_client sdk
+        ext_id (str): external storage external ID
+
+    Returns:
+        external_storage_info (object): external storage info returned by the
+            SDK, or ``None`` on error (``raise_api_exception`` will already have
+            called ``module.fail_json`` in that case).
+    """
+    try:
+        return api_instance.get_external_storage_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg=(
+                "Api Exception raised while fetching external storage info "
+                "using ext_id"
+            ),
+        )
