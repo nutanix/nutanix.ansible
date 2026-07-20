@@ -195,3 +195,20 @@ def get_bridges_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_networking_py_client.BridgesApi(api_client=api_client)
+
+
+def get_aws_subnets_api_instance(module):
+    """
+    This method will return AwsSubnetsApi instance.
+
+    The v4.3 endpoint (``/api/networking/v4.3/aws/config/subnets``) is a
+    read-only list API that returns the AWS subnets currently mapped to an
+    NC2 on AWS cluster identified by the ``X-Cluster-Id`` header.
+
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): AwsSubnetsApi instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.AwsSubnetsApi(api_client=api_client)

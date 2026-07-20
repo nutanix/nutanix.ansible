@@ -1,0 +1,100 @@
+---
+# Summary:
+# This playbook demonstrates fetching AWS Subnet info from Nutanix Prism Central
+# on an NC2 on AWS (NC2A) cluster. The v4.3 API only exposes a list endpoint,
+# so this info module wraps that list call and additionally supports:
+#   1. Listing all AWS subnets available to a given NC2A cluster.
+#   2. Filtering by AWS VPC ID via OData $filter.
+#   3. Limiting the result set.
+#   4. Ordering the result set.
+#   5. Paging through results.
+#   6. Fetching a single AWS subnet by ext_id (internally implemented as a
+#      $filter=extId eq '...' on the list endpoint).
+#
+# There is no Create / Update / Delete API for AwsSubnet in the v4.3 Networking
+# SDK: NC2A subnets are provisioned in AWS (via the AWS console or
+# CloudFormation) and are only surfaced read-only through this endpoint. That
+# is why only an info module exists.
+#
+# Prerequisites: The target Prism Central must manage an NC2 on AWS cluster
+# whose extId is passed via `cluster_ext_id` (mapped to the X-Cluster-Id header).
+
+- name: AwsSubnet info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ nutanix_username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ nutanix_password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      nutanix_port: "{{ nutanix_port | default(lookup('env', 'NUTANIX_PORT') or 9440) }}"
+      validate_certs: false
+  tasks:
+    - name: Set NC2A cluster ext_id
+      ansible.builtin.set_fact:
+        # Replace with the extId of the NC2 on AWS Prism Element cluster you
+        # want to query. On a non-NC2A cluster the API will respond with a
+        # NETWORKING-20002/NETWORKING-20004 error — that means the cluster is
+        # not backed by AWS, not that the module is broken.
+        nc2a_cluster_ext_id: "{{ nc2a_cluster_ext_id | default('0006555e-4e63-4a5e-185b-ac1f6b6f97e2') }}"
+
+    - name: List all AWS subnets on the NC2A cluster
+      nutanix.ncp.ntnx_aws_subnets_info_v2:
+        cluster_ext_id: "{{ nc2a_cluster_ext_id }}"
+      register: all_aws_subnets
+      ignore_errors: true
+
+    - name: List AWS subnets filtered by AWS VPC ID
+      nutanix.ncp.ntnx_aws_subnets_info_v2:
+        cluster_ext_id: "{{ nc2a_cluster_ext_id }}"
+        filter: "vpcId eq 'vpc-0abc123def4567890'"
+      register: aws_subnets_by_vpc
+      ignore_errors: true
+
+    - name: List AWS subnets with limit
+      nutanix.ncp.ntnx_aws_subnets_info_v2:
+        cluster_ext_id: "{{ nc2a_cluster_ext_id }}"
+        limit: 1
+      register: aws_subnets_limited
+      ignore_errors: true
+
+    - name: List AWS subnets ordered by CIDR
+      nutanix.ncp.ntnx_aws_subnets_info_v2:
+        cluster_ext_id: "{{ nc2a_cluster_ext_id }}"
+        orderby: "cidr"
+      register: aws_subnets_ordered
+      ignore_errors: true
+
+    - name: List AWS subnets with page and select projection
+      nutanix.ncp.ntnx_aws_subnets_info_v2:
+        cluster_ext_id: "{{ nc2a_cluster_ext_id }}"
+        page: 0
+        limit: 10
+        select: "subnetId,cidr,availabilityZone,cloudType"
+      register: aws_subnets_projected
+      ignore_errors: true
+
+    - name: Compute a candidate ext_id when list-all produced rows
+      ansible.builtin.set_fact:
+        _list_all_ok: >-
+          {{ all_aws_subnets is defined
+             and (all_aws_subnets.failed | default(true)) == false
+             and (all_aws_subnets.response is iterable)
+             and (all_aws_subnets.response is not string) }}
+        _first_aws_subnet_ext_id: >-
+          {{ (all_aws_subnets.response | first).ext_id
+             if (all_aws_subnets is defined
+                 and (all_aws_subnets.failed | default(true)) == false
+                 and (all_aws_subnets.response is iterable)
+                 and (all_aws_subnets.response is not string)
+                 and ((all_aws_subnets.response | length) > 0))
+             else '' }}
+
+    - name: Fetch a single AWS subnet by ext_id (only when list-all produced rows)
+      nutanix.ncp.ntnx_aws_subnets_info_v2:
+        cluster_ext_id: "{{ nc2a_cluster_ext_id }}"
+        ext_id: "{{ _first_aws_subnet_ext_id }}"
+      register: aws_subnet_single
+      when:
+        - _first_aws_subnet_ext_id | length > 0
+      ignore_errors: true

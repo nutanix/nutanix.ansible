@@ -1,0 +1,361 @@
+---
+# Test plan for ntnx_aws_subnets_info_v2
+# ----------------------------------------------------------------------------
+# The AwsSubnetsApi.list_aws_subnets endpoint is a read-only listing of the
+# NC2A subnets currently mapped to a Nutanix Cloud Clusters on AWS (NC2A)
+# cluster. It requires the X-Cluster-Id header (module param: cluster_ext_id)
+# and supports OData $filter / $orderby / $select / $page / $limit.
+#
+# Domain-derived scenarios exercised below (see PR body / Glean context):
+#   * A plain (non-NC2A) PC returns a downstream service error
+#     ("Failed to reach network service on cluster ...") — the module MUST
+#     surface that as failed=true with a descriptive error, never a silent
+#     success.
+#   * `cluster_ext_id` is REQUIRED — omitting it MUST fail cleanly (Ansible
+#     argument-spec validation catches this before any HTTP call).
+#   * Info modules must never mutate state, so `changed` MUST always be False
+#     on every path (success and failure).
+#   * When the underlying SDK does not expose a Get-By-Id method, this module
+#     synthesises one by adding `$filter=extId eq '<ext_id>'` on top of the
+#     list call. On an NC2A cluster, a non-existent ext_id must return an
+#     empty response and a descriptive `msg` (not a 500 or a silent success).
+#     On a non-NC2A cluster the underlying list-with-filter fails cleanly.
+#   * OData paging (limit / page) and projection (select) must round-trip.
+#   * OData filters like `vpcId eq '<aws-vpc>'` must round-trip.
+#   * Every argument in `get_module_spec()` (`ext_id`, `cluster_ext_id`) plus
+#     every info-fragment param (`filter`, `page`, `limit`, `orderby`,
+#     `select`) is exercised at least once.
+#
+# The test harness fetches any cluster from the target PC to obtain a real
+# cluster_ext_id. The AWS subnets endpoint will either succeed (real NC2A)
+# or fail cleanly (non-NC2A) — both are asserted as "handled correctly" so
+# the same test target works against a plain PC and an NC2A PC.
+
+- name: Start ntnx_aws_subnets_info_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_aws_subnets_info_v2 tests
+
+########################################################################################
+# Discover a target cluster ext_id from the live PC (reuses existing info module).
+########################################################################################
+
+- name: Fetch clusters from the target Prism Central
+  nutanix.ncp.ntnx_clusters_info_v2:
+  register: pc_clusters
+  ignore_errors: true
+
+- name: Assert we could reach the PC clusters info endpoint
+  ansible.builtin.assert:
+    that:
+      - pc_clusters is defined
+      - pc_clusters.failed == false
+      - pc_clusters.changed == false
+      - pc_clusters.response is defined
+    success_msg: "Successfully fetched clusters from PC to seed AwsSubnet tests."
+    fail_msg: "Unable to fetch clusters from PC — AwsSubnet tests cannot proceed."
+
+- name: Pick a cluster ext_id for the X-Cluster-Id header
+  ansible.builtin.set_fact:
+    aws_target_cluster_ext_id: >-
+      {{
+        (pc_clusters.response
+          | selectattr('ext_id', 'defined')
+          | rejectattr('ext_id', 'equalto', None)
+          | selectattr('cluster_function', 'defined')
+          | rejectattr('cluster_function', 'equalto', None)
+          | rejectattr('cluster_function', 'contains', 'PRISM_CENTRAL')
+          | map(attribute='ext_id')
+          | list
+          | first)
+        | default(
+            pc_clusters.response
+              | selectattr('ext_id', 'defined')
+              | rejectattr('ext_id', 'equalto', None)
+              | map(attribute='ext_id')
+              | list
+              | first,
+            true)
+      }}
+    bogus_cluster_ext_id: "00000000-0000-0000-0000-000000000000"
+    bogus_subnet_ext_id: "deadbeef-dead-beef-dead-beefdeadbeef"
+
+- name: Assert a cluster ext_id was discovered
+  ansible.builtin.assert:
+    that:
+      - aws_target_cluster_ext_id | length > 0
+    success_msg: "Using cluster ext_id {{ aws_target_cluster_ext_id }} as X-Cluster-Id."
+    fail_msg: "No cluster ext_id available on the target PC — cannot exercise the AwsSubnet API."
+
+########################################################################################
+# 1) Missing required cluster_ext_id — argument-spec validation must catch it.
+########################################################################################
+
+- name: Negative — omit required cluster_ext_id
+  nutanix.ncp.ntnx_aws_subnets_info_v2: {}
+  register: missing_cluster_result
+  ignore_errors: true
+
+- name: Assert missing cluster_ext_id fails cleanly
+  ansible.builtin.assert:
+    that:
+      - missing_cluster_result.failed == true
+      - missing_cluster_result.changed == false
+      - >-
+        ('cluster_ext_id' in (missing_cluster_result.msg | default('')))
+        or ('missing required arguments' in (missing_cluster_result.msg | default('') | lower))
+    success_msg: "Argument-spec correctly rejected missing cluster_ext_id."
+    fail_msg: "Module did not reject the missing required cluster_ext_id."
+
+########################################################################################
+# 2) List all AWS subnets on the discovered cluster.
+#    Two valid outcomes:
+#      a) Real NC2A cluster -> failed=false, response is a list.
+#      b) Non-NC2A cluster  -> failed=true with descriptive "Api Exception raised
+#         while fetching AWS subnets info" msg from raise_api_exception.
+########################################################################################
+
+- name: List all AWS subnets on the discovered cluster
+  nutanix.ncp.ntnx_aws_subnets_info_v2:
+    cluster_ext_id: "{{ aws_target_cluster_ext_id }}"
+  register: list_all_result
+  ignore_errors: true
+
+- name: Determine whether the target cluster is NC2A-capable
+  ansible.builtin.set_fact:
+    is_nc2a_capable: "{{ (list_all_result.failed | default(true)) == false }}"
+
+- name: Assert list-all was either a clean success or a clean, descriptive failure
+  ansible.builtin.assert:
+    that:
+      - list_all_result is defined
+      - list_all_result.changed == false
+      - >-
+        (list_all_result.failed == false
+         and list_all_result.response is defined
+         and list_all_result.response is iterable)
+        or
+        (list_all_result.failed == true
+         and 'Api Exception raised while fetching AWS subnets info' in (list_all_result.msg | default('')))
+    success_msg: >-
+      list-all against AwsSubnetsApi was handled correctly
+      (NC2A-capable={{ is_nc2a_capable }}).
+    fail_msg: "list-all against AwsSubnetsApi produced neither a clean success nor a clean, descriptive failure."
+
+- name: Capture list-all count and first entity for downstream tests
+  ansible.builtin.set_fact:
+    aws_subnets_count: >-
+      {{ (list_all_result.response | default([])) | length
+         if is_nc2a_capable else 0 }}
+    first_aws_subnet: >-
+      {{ ((list_all_result.response | default([])) | first)
+         if (is_nc2a_capable and ((list_all_result.response | default([])) | length) > 0)
+         else {} }}
+
+########################################################################################
+# 3) List with limit — response length must be <= limit when successful.
+########################################################################################
+
+- name: List AWS subnets with limit=1
+  nutanix.ncp.ntnx_aws_subnets_info_v2:
+    cluster_ext_id: "{{ aws_target_cluster_ext_id }}"
+    limit: 1
+  register: list_limit_result
+  ignore_errors: true
+
+- name: Assert limit response shape (success OR clean failure)
+  ansible.builtin.assert:
+    that:
+      - list_limit_result is defined
+      - list_limit_result.changed == false
+      - >-
+        (list_limit_result.failed == false
+         and (list_limit_result.response | length) <= 1)
+        or
+        (list_limit_result.failed == true
+         and 'Api Exception raised while fetching AWS subnets info' in (list_limit_result.msg | default('')))
+    success_msg: "list_aws_subnets honored `limit=1` (or failed cleanly on a non-NC2A cluster)."
+    fail_msg: "list_aws_subnets did not honor `limit=1` and did not fail cleanly."
+
+########################################################################################
+# 4) List with page + limit + select projection — must round-trip cleanly.
+########################################################################################
+
+- name: List AWS subnets with page/limit/select projection
+  nutanix.ncp.ntnx_aws_subnets_info_v2:
+    cluster_ext_id: "{{ aws_target_cluster_ext_id }}"
+    page: 0
+    limit: 10
+    select: "subnetId,cidr,availabilityZone,cloudType"
+  register: list_projection_result
+  ignore_errors: true
+
+- name: Assert page/limit/select round-trips (success OR clean failure)
+  ansible.builtin.assert:
+    that:
+      - list_projection_result is defined
+      - list_projection_result.changed == false
+      - >-
+        (list_projection_result.failed == false
+         and (list_projection_result.response | length) <= 10)
+        or
+        (list_projection_result.failed == true
+         and 'Api Exception raised while fetching AWS subnets info' in (list_projection_result.msg | default('')))
+    success_msg: "list_aws_subnets accepted page/limit/select without error (or failed cleanly)."
+    fail_msg: "list_aws_subnets did not accept page/limit/select and did not fail cleanly."
+
+########################################################################################
+# 5) List with orderby — must not error silently (result order best-effort on empty sets).
+########################################################################################
+
+- name: List AWS subnets ordered by cidr ascending
+  nutanix.ncp.ntnx_aws_subnets_info_v2:
+    cluster_ext_id: "{{ aws_target_cluster_ext_id }}"
+    orderby: "cidr"
+  register: list_orderby_result
+  ignore_errors: true
+
+- name: Assert orderby is accepted (success OR clean failure)
+  ansible.builtin.assert:
+    that:
+      - list_orderby_result is defined
+      - list_orderby_result.changed == false
+      - >-
+        (list_orderby_result.failed == false and list_orderby_result.response is defined)
+        or
+        (list_orderby_result.failed == true
+         and 'Api Exception raised while fetching AWS subnets info' in (list_orderby_result.msg | default('')))
+    success_msg: "list_aws_subnets accepted orderby without a silent success (or failed cleanly)."
+    fail_msg: "list_aws_subnets did not accept orderby and did not fail cleanly."
+
+########################################################################################
+# 6) List with an OData filter that MUST match nothing.
+#    On an NC2A cluster: empty response.
+#    On non-NC2A cluster: clean failure.
+########################################################################################
+
+- name: List AWS subnets with a filter that matches nothing
+  nutanix.ncp.ntnx_aws_subnets_info_v2:
+    cluster_ext_id: "{{ aws_target_cluster_ext_id }}"
+    filter: "vpcId eq 'vpc-does-not-exist-000000000000000'"
+  register: list_empty_filter_result
+  ignore_errors: true
+
+- name: Assert filter returns empty set on NC2A OR clean failure on non-NC2A
+  ansible.builtin.assert:
+    that:
+      - list_empty_filter_result is defined
+      - list_empty_filter_result.changed == false
+      - >-
+        (list_empty_filter_result.failed == false
+         and (list_empty_filter_result.response | length) == 0)
+        or
+        (list_empty_filter_result.failed == true
+         and 'Api Exception raised while fetching AWS subnets info' in (list_empty_filter_result.msg | default('')))
+    success_msg: "OData filter for a non-existent VPC returned no rows (or failed cleanly)."
+    fail_msg: "OData filter for a non-existent VPC neither returned empty rows nor failed cleanly."
+
+########################################################################################
+# 7) Get-by-ext_id for a non-existent subnet.
+#    NC2A -> empty response + descriptive `No AWS subnet with ext_id ...` msg.
+#    Non-NC2A -> raise_api_exception (module surfaces the by-ext_id variant).
+########################################################################################
+
+- name: Fetch a bogus AWS subnet by ext_id
+  nutanix.ncp.ntnx_aws_subnets_info_v2:
+    cluster_ext_id: "{{ aws_target_cluster_ext_id }}"
+    ext_id: "{{ bogus_subnet_ext_id }}"
+  register: bogus_get_result
+  ignore_errors: true
+
+- name: Assert bogus ext_id is handled correctly
+  ansible.builtin.assert:
+    that:
+      - bogus_get_result is defined
+      - bogus_get_result.changed == false
+      - >-
+        (bogus_get_result.failed == false
+         and (bogus_get_result.ext_id | default('')) == bogus_subnet_ext_id
+         and (bogus_get_result.response | default({}) | length) == 0
+         and bogus_get_result.msg is defined
+         and 'No AWS subnet with ext_id' in bogus_get_result.msg)
+        or
+        (bogus_get_result.failed == true
+         and 'Api Exception raised while fetching AWS subnet info by ext_id' in (bogus_get_result.msg | default('')))
+    success_msg: "Bogus ext_id was handled with a descriptive not-found or clean api-exception message."
+    fail_msg: "Bogus ext_id did not surface a not-found or clean api-exception message."
+
+########################################################################################
+# 8) Get-by-ext_id using a real ext_id (only runs when the discovered cluster is NC2A).
+########################################################################################
+
+- name: Fetch the first real AWS subnet by ext_id (only on NC2A with rows)
+  nutanix.ncp.ntnx_aws_subnets_info_v2:
+    cluster_ext_id: "{{ aws_target_cluster_ext_id }}"
+    ext_id: "{{ first_aws_subnet.ext_id }}"
+  register: real_get_result
+  when:
+    - is_nc2a_capable | bool
+    - (aws_subnets_count | int) > 0
+    - first_aws_subnet.ext_id is defined
+  ignore_errors: true
+
+- name: Assert real-ext_id fetch returns exactly one entity
+  ansible.builtin.assert:
+    that:
+      - real_get_result is defined
+      - real_get_result.failed == false
+      - real_get_result.changed == false
+      - real_get_result.ext_id == first_aws_subnet.ext_id
+      - real_get_result.response is defined
+      - real_get_result.response.ext_id == first_aws_subnet.ext_id
+    success_msg: "Get-by-ext_id returned the expected single entity."
+    fail_msg: "Get-by-ext_id did not return the expected single entity."
+  when:
+    - is_nc2a_capable | bool
+    - (aws_subnets_count | int) > 0
+    - first_aws_subnet.ext_id is defined
+
+########################################################################################
+# 9) Negative — ext_id and filter must be mutually exclusive.
+########################################################################################
+
+- name: Negative — pass ext_id and filter together (mutually exclusive)
+  nutanix.ncp.ntnx_aws_subnets_info_v2:
+    cluster_ext_id: "{{ aws_target_cluster_ext_id }}"
+    ext_id: "{{ bogus_subnet_ext_id }}"
+    filter: "vpcId eq 'vpc-anything'"
+  register: mx_result
+  ignore_errors: true
+
+- name: Assert ext_id + filter combination is rejected
+  ansible.builtin.assert:
+    that:
+      - mx_result.failed == true
+      - mx_result.changed == false
+      - >-
+        ('mutually exclusive' in (mx_result.msg | default('') | lower))
+        or ('ext_id' in (mx_result.msg | default('')))
+    success_msg: "Argument-spec correctly rejected ext_id + filter together."
+    fail_msg: "Module accepted mutually-exclusive ext_id + filter."
+
+########################################################################################
+# 10) Negative — an invalid cluster_ext_id must produce a clean API failure.
+########################################################################################
+
+- name: List AWS subnets against a bogus cluster ext_id
+  nutanix.ncp.ntnx_aws_subnets_info_v2:
+    cluster_ext_id: "{{ bogus_cluster_ext_id }}"
+  register: bogus_cluster_result
+  ignore_errors: true
+
+- name: Assert bogus cluster ext_id surfaces a proper error, never a silent success
+  ansible.builtin.assert:
+    that:
+      - bogus_cluster_result is defined
+      - bogus_cluster_result.changed == false
+      - >-
+        (bogus_cluster_result.failed == true)
+        or
+        (bogus_cluster_result.failed == false and (bogus_cluster_result.response | default([]) | length) == 0)
+    success_msg: "Bogus cluster ext_id was handled either as a hard failure or an empty result — never a silent success."
+    fail_msg: "Bogus cluster ext_id produced a false-positive success with data."
