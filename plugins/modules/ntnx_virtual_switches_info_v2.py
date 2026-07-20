@@ -47,6 +47,7 @@ extends_documentation_fragment:
   - nutanix.ncp.ntnx_proxy_v2
 author:
   - George Ghawali (@george-ghawali)
+  - Abhinav Bansal (@abhinavbansal29)
 """
 EXAMPLES = r"""
 - name: Get virtual switch using ext_id
