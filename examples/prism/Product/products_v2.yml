@@ -1,0 +1,91 @@
+---
+# Summary:
+# This playbook demonstrates using the Nutanix Prism Central v4 Product APIs via
+# the nutanix.ncp.ntnx_product_v2 and nutanix.ncp.ntnx_products_info_v2 modules.
+# It performs the following:
+#   1. Discover the domain manager (PC) external ID.
+#   2. List all portfolio products on the PC.
+#   3. Get details of a single product using its external ID.
+#   4. Filter products (e.g. list disabled products only).
+#   5. Update (enable) a product using its external ID.
+#   6. Update (disable) a product using its external ID.
+#
+# Notes:
+# - The Product API only supports fetch (get, list) and update (enable/disable)
+#   operations. Portfolio products are pre-provisioned on Prism Central and cannot
+#   be created or deleted via this API.
+# - Some products (for example Nutanix Disaster Recovery) cannot be disabled once
+#   they have been enabled.
+# - Enabling a product on an X-Small / Starter Prism Central will fail with a
+#   412 PRECONDITION_FAILED error.
+
+- name: Nutanix Prism Central Product playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ pc_ip | default('10.44.76.28') }}"
+      nutanix_username: "{{ pc_username | default('admin') }}"
+      nutanix_password: "{{ pc_password | default('Nutanix.123') }}"
+      validate_certs: false
+  tasks:
+    - name: Fetch the domain manager (PC) config
+      nutanix.ncp.ntnx_pc_config_info_v2: {}
+      register: pc_config
+      ignore_errors: true
+
+    - name: Set domain_manager_ext_id
+      ansible.builtin.set_fact:
+        domain_manager_ext_id: "{{ pc_config.response[0].ext_id }}"
+
+    - name: List all portfolio products on the PC
+      nutanix.ncp.ntnx_products_info_v2:
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+      register: all_products
+      ignore_errors: true
+
+    - name: Pick a product for the update demo (Intelligent Operations)
+      ansible.builtin.set_fact:
+        demo_product: >-
+          {{ (all_products.response
+              | selectattr('name', 'equalto', 'INTELLIGENT_OPERATIONS')
+              | list
+              | first) }}
+
+    - name: Get a single product by ext_id
+      nutanix.ncp.ntnx_products_info_v2:
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+        ext_id: "{{ demo_product.ext_id }}"
+      register: product_by_id
+      ignore_errors: true
+
+    - name: List products with an OData filter expression
+      # Note: The Products list endpoint accepts $filter but the backend does
+      # not currently expose any filterable properties, so this call will
+      # return a 400 with a "not valid for query" error. Kept here to
+      # demonstrate the module option surface.
+      nutanix.ncp.ntnx_products_info_v2:
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+        filter: "name eq Prism.Config.ProductName'SELF_SERVICE'"
+      register: filtered_products
+      ignore_errors: true
+
+    - name: Enable the demo product
+      nutanix.ncp.ntnx_product_v2:
+        state: present
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+        ext_id: "{{ demo_product.ext_id }}"
+        name: "INTELLIGENT_OPERATIONS"
+        enablement_state: "ENABLED"
+      register: enable_result
+      ignore_errors: true
+
+    - name: Disable the demo product
+      nutanix.ncp.ntnx_product_v2:
+        state: present
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+        ext_id: "{{ demo_product.ext_id }}"
+        name: "INTELLIGENT_OPERATIONS"
+        enablement_state: "DISABLED"
+      register: disable_result
+      ignore_errors: true
