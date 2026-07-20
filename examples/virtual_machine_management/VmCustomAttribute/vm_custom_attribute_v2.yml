@@ -1,0 +1,54 @@
+---
+# Summary:
+# This playbook demonstrates managing VM custom attributes on AHV VMs
+# using the ntnx_vm_custom_attribute_v2 module. It shows how to:
+#   1. Add custom attributes (key:value pairs) to a VM.
+#   2. Add more custom attributes to the same VM (existing ones are preserved).
+#   3. Remove specific custom attributes from the VM.
+#
+# Pre-requisites:
+#   - An existing AHV VM whose external ID is provided in vm_ext_id below.
+#   - The user must have the Update_Virtual_Machine_Custom_Attributes permission
+#     (typically granted by Prism Admin, Super Admin, or Virtual Machine Admin).
+
+- name: VM Custom Attributes playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        vm_ext_id: "ac5aff0c-6c68-4948-9088-b903e2be0ce7"
+
+    - name: Add custom attributes to an AHV VM
+      nutanix.ncp.ntnx_vm_custom_attribute_v2:
+        state: present
+        ext_id: "{{ vm_ext_id }}"
+        custom_attributes:
+          - "environment:production"
+          - "owner:team-a"
+          - "tier:gold"
+      register: add_result
+
+    - name: Add more custom attributes to the same VM
+      nutanix.ncp.ntnx_vm_custom_attribute_v2:
+        state: present
+        ext_id: "{{ vm_ext_id }}"
+        custom_attributes:
+          - "cost_center:eng-42"
+          - "backup_policy:daily"
+      register: add_more_result
+
+    - name: Remove specific custom attributes from the VM
+      nutanix.ncp.ntnx_vm_custom_attribute_v2:
+        state: absent
+        ext_id: "{{ vm_ext_id }}"
+        custom_attributes:
+          - "environment:production"
+          - "backup_policy:daily"
+      register: remove_result

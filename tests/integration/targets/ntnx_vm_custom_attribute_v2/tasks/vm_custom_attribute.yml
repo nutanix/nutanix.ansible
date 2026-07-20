@@ -1,0 +1,364 @@
+---
+# Test plan for ntnx_vm_custom_attribute_v2
+# -----------------------------------------
+# Prerequisites: a fresh AHV VM is created at the start (mirrors the pattern
+# used by ntnx_vms_categories_v2 tests) so tests are hermetic and re-runnable.
+#
+# Coverage:
+#   1. Check-mode: add (all attributes) — spec built, no side effects
+#   2. Check-mode: remove (all attributes)
+#   3. Add required-only (single attribute) — real API call
+#   4. Add multiple attributes — real API call
+#   5. Add already-present attribute — idempotent skip
+#   6. Info round-trip: confirm attributes present on VM (uses ntnx_vms_info_v2)
+#   7. Remove a not-present attribute — idempotent skip
+#   8. Remove one attribute — real API call
+#   9. Remove multiple attributes at once — real API call
+#  10. Info round-trip: confirm attributes gone
+#  11. Negative: missing required parameter (custom_attributes)
+#  12. Negative: invalid ext_id (non-existent VM UUID)
+#  13. Cleanup: delete the test VM
+
+- name: Start testing ntnx_vm_custom_attribute_v2 module
+  ansible.builtin.debug:
+    msg: "Start testing ntnx_vm_custom_attribute_v2 module"
+
+- name: Generate a random suffix for the VM name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', upper=false, numbers=false, special=false)[0] }}"
+
+- name: Set VM name
+  ansible.builtin.set_fact:
+    vm_name: "ansible_ca_{{ random_name }}"
+
+- name: Create a test VM
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    name: "{{ vm_name }}"
+    description: "Test VM for ntnx_vm_custom_attribute_v2 integration tests"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+  register: vm_create_result
+
+- name: VM creation status
+  ansible.builtin.assert:
+    that:
+      - vm_create_result.response is defined
+      - vm_create_result.changed == true
+      - vm_create_result.failed == false
+      - vm_create_result.response.cluster.ext_id == "{{ cluster.uuid }}"
+    fail_msg: "Unable to create test VM"
+    success_msg: "Test VM created successfully"
+
+- name: Set VM ext_id
+  ansible.builtin.set_fact:
+    vm_uuid: "{{ vm_create_result['ext_id'] }}"
+
+########################################################################################
+# 1. Check-mode: add (all attributes) — must not touch the API
+########################################################################################
+
+- name: Add custom attributes to VM - check mode
+  nutanix.ncp.ntnx_vm_custom_attribute_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+    custom_attributes:
+      - "environment:production"
+      - "owner:team-a"
+      - "tier:gold"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Add custom attributes to VM - check mode status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.custom_attributes | sort == ["environment:production", "owner:team-a", "tier:gold"] | sort
+      - result.ext_id == vm_uuid
+      - "'Would add custom attributes' in result.msg"
+    fail_msg: "Add custom attributes to VM - check mode failed"
+    success_msg: "Add custom attributes to VM - check mode passed"
+
+########################################################################################
+# 2. Check-mode: remove (all attributes) — must not touch the API
+########################################################################################
+
+- name: Remove custom attributes from VM - check mode
+  nutanix.ncp.ntnx_vm_custom_attribute_v2:
+    state: absent
+    ext_id: "{{ vm_uuid }}"
+    custom_attributes:
+      - "environment:production"
+      - "owner:team-a"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Remove custom attributes from VM - check mode status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.custom_attributes | sort == ["environment:production", "owner:team-a"] | sort
+      - result.ext_id == vm_uuid
+      - "'Would remove custom attributes' in result.msg"
+    fail_msg: "Remove custom attributes from VM - check mode failed"
+    success_msg: "Remove custom attributes from VM - check mode passed"
+
+########################################################################################
+# 3. Add a single custom attribute — real API call
+########################################################################################
+
+- name: Add a single custom attribute to VM
+  nutanix.ncp.ntnx_vm_custom_attribute_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+    custom_attributes:
+      - "environment:production"
+  register: result
+  ignore_errors: true
+
+- name: Add single custom attribute status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == vm_uuid
+      - "'environment:production' in result.response"
+    fail_msg: "Add single custom attribute failed"
+    success_msg: "Add single custom attribute passed"
+
+########################################################################################
+# 4. Add multiple custom attributes at once — real API call
+########################################################################################
+
+- name: Add multiple custom attributes to VM
+  nutanix.ncp.ntnx_vm_custom_attribute_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+    custom_attributes:
+      - "owner:team-a"
+      - "tier:gold"
+  register: result
+  ignore_errors: true
+
+- name: Add multiple custom attributes status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == vm_uuid
+      - "'environment:production' in result.response"
+      - "'owner:team-a' in result.response"
+      - "'tier:gold' in result.response"
+    fail_msg: "Add multiple custom attributes failed"
+    success_msg: "Add multiple custom attributes passed"
+
+########################################################################################
+# 5. Add an attribute that is already present — must be an idempotent skip
+########################################################################################
+
+- name: Add an already-present custom attribute (idempotency)
+  nutanix.ncp.ntnx_vm_custom_attribute_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+    custom_attributes:
+      - "environment:production"
+  register: result
+  ignore_errors: true
+
+- name: Idempotent add status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - "'Nothing to change' in result.msg"
+    fail_msg: "Idempotent add failed"
+    success_msg: "Idempotent add passed"
+
+########################################################################################
+# 6. Info round-trip: attributes must be present on the VM per ntnx_vms_info_v2
+########################################################################################
+
+- name: Fetch VM info to confirm attributes present
+  nutanix.ncp.ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: info_result
+  ignore_errors: true
+
+- name: Info round-trip - attributes present
+  ansible.builtin.assert:
+    that:
+      - info_result.response is defined
+      - info_result.failed == false
+      - info_result.response.custom_attributes is not none
+      - "'environment:production' in info_result.response.custom_attributes"
+      - "'owner:team-a' in info_result.response.custom_attributes"
+      - "'tier:gold' in info_result.response.custom_attributes"
+    fail_msg: "Info round-trip (present) failed"
+    success_msg: "Info round-trip (present) passed"
+
+########################################################################################
+# 7. Remove an attribute that is NOT present — must be an idempotent skip
+########################################################################################
+
+- name: Remove a not-present custom attribute (idempotency)
+  nutanix.ncp.ntnx_vm_custom_attribute_v2:
+    state: absent
+    ext_id: "{{ vm_uuid }}"
+    custom_attributes:
+      - "does-not-exist:zzz"
+  register: result
+  ignore_errors: true
+
+- name: Idempotent remove status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - "'Nothing to change' in result.msg"
+    fail_msg: "Idempotent remove failed"
+    success_msg: "Idempotent remove passed"
+
+########################################################################################
+# 8. Remove a single custom attribute — real API call
+########################################################################################
+
+- name: Remove a single custom attribute from VM
+  nutanix.ncp.ntnx_vm_custom_attribute_v2:
+    state: absent
+    ext_id: "{{ vm_uuid }}"
+    custom_attributes:
+      - "environment:production"
+  register: result
+  ignore_errors: true
+
+- name: Remove single custom attribute status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == vm_uuid
+      - "'environment:production' not in result.response"
+      - "'owner:team-a' in result.response"
+      - "'tier:gold' in result.response"
+    fail_msg: "Remove single custom attribute failed"
+    success_msg: "Remove single custom attribute passed"
+
+########################################################################################
+# 9. Remove multiple custom attributes at once — real API call
+########################################################################################
+
+- name: Remove multiple custom attributes from VM
+  nutanix.ncp.ntnx_vm_custom_attribute_v2:
+    state: absent
+    ext_id: "{{ vm_uuid }}"
+    custom_attributes:
+      - "owner:team-a"
+      - "tier:gold"
+  register: result
+  ignore_errors: true
+
+- name: Remove multiple custom attributes status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == vm_uuid
+      - "'owner:team-a' not in (result.response or [])"
+      - "'tier:gold' not in (result.response or [])"
+    fail_msg: "Remove multiple custom attributes failed"
+    success_msg: "Remove multiple custom attributes passed"
+
+########################################################################################
+# 10. Info round-trip: attributes must be gone per ntnx_vms_info_v2
+########################################################################################
+
+- name: Fetch VM info to confirm attributes gone
+  nutanix.ncp.ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: info_result
+  ignore_errors: true
+
+- name: Info round-trip - attributes gone
+  ansible.builtin.assert:
+    that:
+      - info_result.response is defined
+      - info_result.failed == false
+      - >-
+        info_result.response.custom_attributes is none
+        or (info_result.response.custom_attributes | length) == 0
+    fail_msg: "Info round-trip (absent) failed"
+    success_msg: "Info round-trip (absent) passed"
+
+########################################################################################
+# 11. Negative: missing required parameter (custom_attributes)
+########################################################################################
+
+- name: Missing required parameter - custom_attributes  # noqa: args[module]
+  nutanix.ncp.ntnx_vm_custom_attribute_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Missing required parameter status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - "'custom_attributes' in result.msg"
+    fail_msg: "Missing required parameter test failed"
+    success_msg: "Missing required parameter test passed"
+
+########################################################################################
+# 12. Negative: invalid ext_id (non-existent VM UUID)
+########################################################################################
+
+- name: Invalid VM ext_id
+  nutanix.ncp.ntnx_vm_custom_attribute_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    custom_attributes:
+      - "invalid:test"
+  register: result
+  ignore_errors: true
+
+- name: Invalid VM ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: "Invalid VM ext_id test failed"
+    success_msg: "Invalid VM ext_id test passed"
+
+########################################################################################
+# 13. Cleanup: delete the test VM
+########################################################################################
+
+- name: Delete the test VM
+  nutanix.ncp.ntnx_vms:
+    state: absent
+    vm_uuid: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Test VM deletion status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+    fail_msg: "Unable to delete test VM"
+    success_msg: "Test VM deleted successfully"
