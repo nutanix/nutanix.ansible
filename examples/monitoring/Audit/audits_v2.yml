@@ -1,0 +1,68 @@
+---
+# Summary:
+# This playbook demonstrates all supported Audit info operations exposed by the
+# Nutanix Monitoring v4 API through the ntnx_audits_info_v2 module.
+#
+# Audit is a read-only entity in the Nutanix Monitoring namespace, so there is
+# no Create / Update / Delete workflow. The API surface is:
+#   - GET  /monitoring/v4.0/serviceability/audits          (list_audits)
+#   - GET  /monitoring/v4.0/serviceability/audits/{extId}  (get_audit_by_id)
+#
+# Steps:
+# 1. List all audits with a small limit (bootstrap and grab a valid ext_id).
+# 2. Get a specific audit by ext_id.
+# 3. List audits with an OData filter (userReference/name).
+# 4. List audits with limit + ordering (creationTime desc).
+# 5. List audits with $select to reduce payload.
+
+- name: Nutanix Monitoring - Audit info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ nutanix_username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ nutanix_password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: false
+  tasks:
+    - name: List all audits (small limit to bootstrap ext_id)
+      nutanix.ncp.ntnx_audits_info_v2:
+        limit: 5
+      register: audits_list
+      ignore_errors: true
+
+    - name: Pick a valid audit ext_id from the listing
+      ansible.builtin.set_fact:
+        audit_ext_id: "{{ audits_list.response[0].ext_id }}"
+      when:
+        - audits_list is defined
+        - audits_list.response is defined
+        - audits_list.response | length > 0
+
+    - name: Get audit using ext_id
+      nutanix.ncp.ntnx_audits_info_v2:
+        ext_id: "{{ audit_ext_id }}"
+      register: audit_by_id
+      ignore_errors: true
+      when: audit_ext_id is defined
+
+    - name: List audits filtered by userReference/name
+      nutanix.ncp.ntnx_audits_info_v2:
+        filter: "userReference/name eq 'admin'"
+        limit: 5
+      register: audits_filtered
+      ignore_errors: true
+
+    - name: List audits with limit and orderby (newest first)
+      nutanix.ncp.ntnx_audits_info_v2:
+        limit: 3
+        orderby: "creationTime desc"
+      register: audits_ordered
+      ignore_errors: true
+
+    - name: List audits selecting specific fields only
+      nutanix.ncp.ntnx_audits_info_v2:
+        limit: 3
+        select: "extId,auditType,operationType,creationTime,status"
+      register: audits_selected
+      ignore_errors: true

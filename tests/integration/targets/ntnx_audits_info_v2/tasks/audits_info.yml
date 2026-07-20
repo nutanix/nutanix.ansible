@@ -1,0 +1,368 @@
+---
+# ---------------------------------------------------------------------------
+# Test plan for ntnx_audits_info_v2
+# ---------------------------------------------------------------------------
+# Audit is a read-only entity in the Nutanix Monitoring v4 API. Only two SDK
+# methods are available (get_audit_by_id, list_audits), so this info module is
+# the entire surface. Coverage below exercises every option in the module spec
+# plus the OData query parameters exposed by the shared info doc fragment.
+#
+# 1. Sanity list  -> ensure the API responds and total_available_results is set.
+# 2. Limit = 1     -> tests the SDK _limit parameter.
+# 3. Bootstrap    -> list a few, cache the first ext_id + representative field
+#                     values for later assertions.
+# 4. Get by ext_id -> tests the get_audit_by_id SDK path and returns dict.
+# 5. Filter        -> OData $filter on operationType (enum-like domain value).
+# 6. Filter + name -> OData $filter on sourceEntity/type (extra coverage).
+# 7. Orderby       -> creationTime desc, verify dates are non-increasing.
+# 8. Select        -> $select limits the payload to requested attributes only.
+# 9. Pagination    -> page 0 and page 1 with matching limit should differ.
+# 10. Negative: bogus ext_id -> module fails with a descriptive error path.
+# 11. Negative: mutually-exclusive ext_id + filter -> AnsibleModule rejects.
+# 12. Domain check -> nested user_reference / source_entity / cluster_reference
+#                     shapes present in the response.
+# ---------------------------------------------------------------------------
+
+- name: Start testing ntnx_audits_info_v2
+  ansible.builtin.debug:
+    msg: start testing ntnx_audits_info_v2
+
+################################################################################
+# 1. Sanity list
+################################################################################
+
+- name: List all audits (default page/limit)
+  nutanix.ncp.ntnx_audits_info_v2: {}
+  register: result
+  ignore_errors: true
+
+- name: Assert list all audits succeeded and returned some data
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length > 0
+      - result.total_available_results is defined
+      - result.total_available_results >= (result.response | length)
+    fail_msg: "Unable to list audits: {{ result }}"
+    success_msg: Audits listed successfully
+
+################################################################################
+# 2. Limit = 1
+################################################################################
+
+- name: List audits with limit=1
+  nutanix.ncp.ntnx_audits_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Assert exactly one audit returned when limit=1
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+      - result.total_available_results is defined
+      - result.total_available_results >= 1
+      - result.response[0].ext_id is defined
+    fail_msg: "Limit=1 did not return exactly one record: {{ result }}"
+    success_msg: Limit works correctly
+
+################################################################################
+# 3. Bootstrap ext_id for later steps
+################################################################################
+
+- name: List a small batch of audits to bootstrap
+  nutanix.ncp.ntnx_audits_info_v2:
+    limit: 5
+  register: bootstrap
+  ignore_errors: true
+
+- name: Assert bootstrap listing succeeded
+  ansible.builtin.assert:
+    that:
+      - bootstrap.changed == false
+      - bootstrap.failed == false
+      - bootstrap.response is defined
+      - bootstrap.response | length > 0
+      - bootstrap.response | length <= 5
+    fail_msg: "Bootstrap listing failed: {{ bootstrap }}"
+    success_msg: Bootstrap listing OK
+
+- name: Capture first audit ext_id + operationType from bootstrap
+  ansible.builtin.set_fact:
+    audit_ext_id: "{{ bootstrap.response[0].ext_id }}"
+    audit_operation_type: "{{ bootstrap.response[0].operation_type }}"
+
+################################################################################
+# 4. Get by ext_id
+################################################################################
+
+- name: Get audit using ext_id
+  nutanix.ncp.ntnx_audits_info_v2:
+    ext_id: "{{ audit_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert get-by-ext_id returns the same audit
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response is mapping
+      - result.response.ext_id == audit_ext_id
+      - result.ext_id == audit_ext_id
+      - result.response.audit_type is defined
+      - result.response.creation_time is defined
+      - result.response.status is defined
+    fail_msg: "get-by-ext_id did not return expected record: {{ result }}"
+    success_msg: get_audit_by_id works
+
+################################################################################
+# 5. Filter on userReference/name (nested string field)
+################################################################################
+
+- name: List audits filtered by userReference/name eq 'admin'
+  nutanix.ncp.ntnx_audits_info_v2:
+    filter: "userReference/name eq 'admin'"
+    limit: 5
+  register: result
+  ignore_errors: true
+
+- name: Assert every returned audit has user_reference.name == admin
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - (result.response | length) == 0 or
+        (result.response
+          | map(attribute='user_reference.name')
+          | select('equalto', 'admin')
+          | list | length) == (result.response | length)
+    fail_msg: "Filter userReference/name eq 'admin' did not filter correctly: {{ result }}"
+    success_msg: OData filter on userReference/name works
+
+################################################################################
+# 6. Filter on sourceEntity/type
+################################################################################
+
+- name: Capture a source entity type value from bootstrap (if present)
+  ansible.builtin.set_fact:
+    audit_source_type: >-
+      {{
+        (bootstrap.response
+          | selectattr('source_entity', 'defined')
+          | selectattr('source_entity', 'ne', None)
+          | map(attribute='source_entity.type')
+          | select('string')
+          | list
+          | first) | default('')
+      }}
+
+- name: List audits filtered by sourceEntity/type
+  nutanix.ncp.ntnx_audits_info_v2:
+    filter: "sourceEntity/type eq '{{ audit_source_type }}'"
+    limit: 3
+  register: result
+  ignore_errors: true
+  when: audit_source_type | length > 0
+
+- name: Assert filter on sourceEntity/type is honored (when applicable)
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - (result.response | length) == 0 or
+        (result.response
+          | map(attribute='source_entity.type')
+          | select('equalto', audit_source_type)
+          | list | length) == (result.response | length)
+    fail_msg: "Filter on sourceEntity/type did not filter correctly: {{ result }}"
+    success_msg: OData filter on nested sourceEntity/type works
+  when: audit_source_type | length > 0
+
+################################################################################
+# 7. Orderby creationTime desc
+################################################################################
+
+- name: List audits ordered by creationTime desc
+  nutanix.ncp.ntnx_audits_info_v2:
+    limit: 5
+    orderby: "creationTime desc"
+  register: result
+  ignore_errors: true
+
+- name: Assert creation_time is non-increasing across the ordered list
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length > 0
+      - (result.response | length) < 2 or (result.response[0].creation_time >= result.response[-1].creation_time)
+    fail_msg: "orderby=creationTime desc failed: {{ result }}"
+    success_msg: OData orderby honored
+
+################################################################################
+# 8. Select
+################################################################################
+
+- name: List audits with select projecting specific fields
+  nutanix.ncp.ntnx_audits_info_v2:
+    limit: 3
+    select: "extId,auditType,operationType,creationTime,status"
+  register: result
+  ignore_errors: true
+
+- name: Assert every returned audit has the selected fields defined
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length > 0
+      - (result.response | selectattr('ext_id', 'defined') | list | length) == (result.response | length)
+      - (result.response | selectattr('audit_type', 'defined') | list | length) == (result.response | length)
+      - (result.response | selectattr('operation_type', 'defined') | list | length) == (result.response | length)
+      - (result.response | selectattr('creation_time', 'defined') | list | length) == (result.response | length)
+      - (result.response | selectattr('status', 'defined') | list | length) == (result.response | length)
+    fail_msg: "select projection failed: {{ result }}"
+    success_msg: OData select honored
+
+################################################################################
+# 9. Pagination
+################################################################################
+
+- name: Page 0 with limit=2
+  nutanix.ncp.ntnx_audits_info_v2:
+    page: 0
+    limit: 2
+    orderby: "creationTime desc"
+  register: page0
+  ignore_errors: true
+
+- name: Page 1 with limit=2
+  nutanix.ncp.ntnx_audits_info_v2:
+    page: 1
+    limit: 2
+    orderby: "creationTime desc"
+  register: page1
+  ignore_errors: true
+
+- name: Assert pagination returns disjoint pages (when enough data exists)
+  ansible.builtin.assert:
+    that:
+      - page0.failed == false
+      - page1.failed == false
+      - page0.response is defined
+      - page1.response is defined
+      - page0.total_available_results is defined
+      - page0.total_available_results >= 4
+      - (page0.response | map(attribute='ext_id') | list) != (page1.response | map(attribute='ext_id') | list)
+    fail_msg: "Pagination did not return distinct pages: page0={{ page0.response }} page1={{ page1.response }}"
+    success_msg: Pagination works
+  when: page0.total_available_results is defined and page0.total_available_results >= 4
+
+################################################################################
+# 10. Negative: bogus ext_id
+################################################################################
+
+- name: Get audit using a bogus ext_id
+  nutanix.ncp.ntnx_audits_info_v2:
+    ext_id: "00000000-0000-0000-0000-deadbeefdead"
+  register: result
+  ignore_errors: true
+
+- name: Assert bogus ext_id returns an error
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - "'Api Exception' in result.msg or 'not found' in (result.msg | lower) or result.status is defined"
+    fail_msg: "Bogus ext_id should have failed with a descriptive error: {{ result }}"
+    success_msg: Bogus ext_id correctly fails
+
+################################################################################
+# 11. Negative: mutually-exclusive ext_id + filter
+################################################################################
+
+- name: Attempt to combine ext_id and filter (mutually exclusive)
+  nutanix.ncp.ntnx_audits_info_v2:
+    ext_id: "{{ audit_ext_id }}"
+    filter: "operationType eq 'CREATE'"
+  register: result
+  ignore_errors: true
+
+- name: Assert AnsibleModule rejects mutually-exclusive options
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.msg is defined
+      - "'mutually exclusive' in (result.msg | lower) or 'parameters are mutually exclusive' in (result.msg | lower)"
+    fail_msg: "Mutually exclusive combination was not rejected: {{ result }}"
+    success_msg: Mutually exclusive validation works
+
+################################################################################
+# 12. Domain-level shape assertions
+################################################################################
+
+- name: Re-fetch the bootstrap audit to inspect nested shapes
+  nutanix.ncp.ntnx_audits_info_v2:
+    ext_id: "{{ audit_ext_id }}"
+  register: single_audit
+  ignore_errors: true
+
+- name: Assert the audit exposes the expected top-level fields
+  ansible.builtin.assert:
+    that:
+      - single_audit.failed == false
+      - single_audit.response is defined
+      - "'ext_id' in single_audit.response"
+      - "'audit_type' in single_audit.response"
+      - "'creation_time' in single_audit.response"
+      - "'operation_type' in single_audit.response"
+      - "'status' in single_audit.response"
+      - "'source_entity' in single_audit.response"
+      - "'user_reference' in single_audit.response"
+      - "'cluster_reference' in single_audit.response"
+    fail_msg: "Audit is missing expected top-level fields: {{ single_audit }}"
+    success_msg: Audit response exposes expected top-level fields
+
+- name: Assert source_entity has expected keys when present
+  ansible.builtin.assert:
+    that:
+      - single_audit.response.source_entity is mapping
+      - "'type' in single_audit.response.source_entity"
+      - "'name' in single_audit.response.source_entity"
+      - "'ext_id' in single_audit.response.source_entity"
+    fail_msg: "source_entity missing expected keys: {{ single_audit.response.source_entity }}"
+    success_msg: source_entity shape verified
+  when: single_audit.response.source_entity is not none
+
+- name: Assert user_reference has expected keys when present
+  ansible.builtin.assert:
+    that:
+      - single_audit.response.user_reference is mapping
+      - "'name' in single_audit.response.user_reference"
+      - "'ip_address' in single_audit.response.user_reference"
+      - "'ext_id' in single_audit.response.user_reference"
+    fail_msg: "user_reference missing expected keys: {{ single_audit.response.user_reference }}"
+    success_msg: user_reference shape verified
+  when: single_audit.response.user_reference is not none
+
+- name: Assert cluster_reference has expected keys when present
+  ansible.builtin.assert:
+    that:
+      - single_audit.response.cluster_reference is mapping
+      - "'name' in single_audit.response.cluster_reference"
+      - "'ext_id' in single_audit.response.cluster_reference"
+    fail_msg: "cluster_reference missing expected keys: {{ single_audit.response.cluster_reference }}"
+    success_msg: cluster_reference shape verified
+  when: single_audit.response.cluster_reference is not none
