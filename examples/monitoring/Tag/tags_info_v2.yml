@@ -1,0 +1,66 @@
+---
+# Summary:
+# This playbook demonstrates usage of the Logbay Tag info V4 module in Nutanix Prism Central.
+# The Tag entity is read-only (only a List API is exposed) and is scoped per Prism Element cluster.
+#
+# This playbook will:
+# 1. Discover a target PE cluster via ntnx_clusters_info_v2
+# 2. List all Logbay tags available for that cluster
+# 3. List tags with a filter (by name)
+# 4. List tags with pagination (page/limit/orderby)
+# 5. List tags with a select projection
+
+- name: Logbay Monitoring Tags playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('10.44.76.28', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('admin', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('Nutanix.123', true) }}"
+      validate_certs: false
+  tasks:
+    - name: Discover Prism Element clusters registered with this PC
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+      register: clusters_info
+      ignore_errors: true
+
+    - name: Pick a target cluster ext_id (first non-PC cluster)
+      ansible.builtin.set_fact:
+        cluster_ext_id: >-
+          {{
+            (clusters_info.response | default([]) |
+              rejectattr('config.cluster_function', 'contains', 'PRISM_CENTRAL') |
+              list | first).ext_id
+          }}
+      failed_when: cluster_ext_id is not defined or cluster_ext_id | length == 0
+
+    - name: List all Logbay tags for the cluster
+      nutanix.ncp.ntnx_monitoring_tags_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: tags_all
+      ignore_errors: true
+
+    - name: List Logbay tags filtered by name
+      nutanix.ncp.ntnx_monitoring_tags_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        filter: "name eq 'acropolis'"
+      register: tags_filtered
+      ignore_errors: true
+
+    - name: List Logbay tags with pagination and ordering
+      nutanix.ncp.ntnx_monitoring_tags_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        page: 0
+        limit: 5
+        orderby: "name asc"
+      register: tags_paginated
+      ignore_errors: true
+
+    - name: List Logbay tags with a select projection
+      nutanix.ncp.ntnx_monitoring_tags_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        select: "name"
+      register: tags_projected
+      ignore_errors: true
