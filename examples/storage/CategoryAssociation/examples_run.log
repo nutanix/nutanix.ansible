@@ -1,0 +1,16 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Volume Group CategoryAssociation playbook] *******************************
+
+TASK [Set variables for the playbook] ******************************************
+ok: [localhost] => {"ansible_facts": {"category_ext_id": "566b844b-d245-4894-a8b5-eeef1ec4b638", "vg_ext_id": "68e4c68e-1acf-4c05-7792-e062119acb68"}, "changed": false}
+
+TASK [Associate a category with the Volume Group] ******************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching category associations for Volume group", "response": {"error": "Not Found", "message": "No static resource storage/v4.0.a4/config/volume-groups/68e4c68e-1acf-4c05-7792-e062119acb68/category-associations.", "path": "/api/storage/v4.0.a4/config/volume-groups/68e4c68e-1acf-4c05-7792-e062119acb68/category-associations", "status": 404, "timestamp": "2026-07-20T15:58:47.647170607Z"}, "status": 404}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=1    changed=0    unreachable=0    failed=1    skipped=0    rescued=0    ignored=0   
+

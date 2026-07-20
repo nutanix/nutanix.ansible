@@ -1,0 +1,398 @@
+---
+# Test plan:
+# ---------------------------------------------------------------------------
+# CategoryAssociation is an action-style feature that ties a set of Categories
+# to a Volume Group in the storage v4 namespace. The tests here exercise:
+#
+#   1. Prerequisite creation - a Category (key/value) and a Volume Group.
+#   2. Positive lifecycle - check_mode associate, real associate (all fields),
+#      list info, get-by-ext_id info, idempotency (re-associate is a no-op),
+#      check_mode disassociate, real disassociate, idempotency of disassociate.
+#   3. Negative paths - invalid VG ext_id, invalid category ext_id, missing
+#      required arguments.
+#   4. Cleanup - disassociate any leftovers, delete the VG, delete the Category.
+#
+# Every task asserts ``changed`` and ``failed`` before checking any other
+# fields, per repository conventions.
+# ---------------------------------------------------------------------------
+
+- name: "Start Volume Group CategoryAssociation tests"
+  ansible.builtin.debug:
+    msg: "Start Volume Group CategoryAssociation tests"
+
+- name: Generate random suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set base names
+  ansible.builtin.set_fact:
+    suffix_name: "ansible-vgcat"
+
+- name: Set derived names
+  ansible.builtin.set_fact:
+    vg_name: "{{ suffix_name }}-{{ random_name }}-vg"
+    cat_key: "{{ suffix_name }}-{{ random_name }}-key"
+    cat_value: "{{ suffix_name }}-{{ random_name }}-value"
+
+# ---------------------------------------------------------------------------
+# Prerequisites
+# ---------------------------------------------------------------------------
+
+- name: Create a User category (prerequisite)
+  nutanix.ncp.ntnx_categories_v2:
+    key: "{{ cat_key }}"
+    value: "{{ cat_value }}"
+    description: "ansible category association test"
+  register: category_result
+  ignore_errors: true
+
+- name: Verify category creation succeeded
+  ansible.builtin.assert:
+    that:
+      - category_result.changed == true
+      - category_result.failed == false
+      - category_result.response.ext_id is defined
+      - category_result.response.key == "{{ cat_key }}"
+      - category_result.response.value == "{{ cat_value }}"
+    fail_msg: "Failed to create prerequisite category"
+    success_msg: "Prerequisite category created successfully"
+
+- name: Save category ext_id
+  ansible.builtin.set_fact:
+    category_ext_id: "{{ category_result.response.ext_id }}"
+
+- name: Create a Volume Group (prerequisite)
+  nutanix.ncp.ntnx_volume_groups_v2:
+    name: "{{ vg_name }}"
+    description: "Volume group for category association tests"
+    cluster_reference: "{{ cluster.uuid }}"
+  register: vg_result
+  ignore_errors: true
+
+- name: Verify VG creation succeeded
+  ansible.builtin.assert:
+    that:
+      - vg_result.changed == true
+      - vg_result.failed == false
+      - vg_result.ext_id is defined
+      - vg_result.response.name == "{{ vg_name }}"
+    fail_msg: "Failed to create prerequisite Volume Group"
+    success_msg: "Prerequisite Volume Group created successfully"
+
+- name: Save VG ext_id
+  ansible.builtin.set_fact:
+    vg_ext_id: "{{ vg_result.ext_id }}"
+
+# ---------------------------------------------------------------------------
+# Associate (create) - check_mode
+# ---------------------------------------------------------------------------
+
+- name: Associate category with VG (check_mode, all fields)
+  nutanix.ncp.ntnx_volume_group_category_v2:
+    state: present
+    ext_id: "{{ vg_ext_id }}"
+    categories:
+      - ext_id: "{{ category_ext_id }}"
+        entity_type: "CATEGORY"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Verify associate check_mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ vg_ext_id }}"
+      - result.response is defined
+      - result.response.categories is defined
+      - result.response.categories | length == 1
+      - result.response.categories[0].ext_id == "{{ category_ext_id }}"
+      - result.response.categories[0].entity_type == "CATEGORY"
+    fail_msg: "Associate check_mode did not produce the expected spec"
+    success_msg: "Associate check_mode produced the expected spec"
+
+# ---------------------------------------------------------------------------
+# Associate (create) - real
+# ---------------------------------------------------------------------------
+
+- name: Associate category with VG (real)
+  nutanix.ncp.ntnx_volume_group_category_v2:
+    state: present
+    ext_id: "{{ vg_ext_id }}"
+    categories:
+      - ext_id: "{{ category_ext_id }}"
+        entity_type: "CATEGORY"
+  register: result
+  ignore_errors: true
+
+- name: Verify associate real
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == "{{ vg_ext_id }}"
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Real associate failed"
+    success_msg: "Category associated with VG successfully"
+
+# ---------------------------------------------------------------------------
+# Info module - list
+# ---------------------------------------------------------------------------
+
+- name: List category associations for VG
+  nutanix.ncp.ntnx_category_associations_info_v2:
+    volume_group_ext_id: "{{ vg_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify list contains the associated category
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length >= 1
+      - result.total_available_results is defined
+      - result.total_available_results >= 1
+      - (result.response | selectattr('ext_id', 'equalto', category_ext_id) | list | length) == 1
+    fail_msg: "List did not include the associated category"
+    success_msg: "List includes the associated category"
+
+# ---------------------------------------------------------------------------
+# Info module - list with limit
+# ---------------------------------------------------------------------------
+
+- name: List category associations with limit=1
+  nutanix.ncp.ntnx_category_associations_info_v2:
+    volume_group_ext_id: "{{ vg_ext_id }}"
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Verify limit is honoured
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response | length == 1
+    fail_msg: "Limit was not honoured"
+    success_msg: "Limit honoured correctly"
+
+# ---------------------------------------------------------------------------
+# Info module - get single by ext_id
+# ---------------------------------------------------------------------------
+
+- name: Fetch specific category association by ext_id
+  nutanix.ncp.ntnx_category_associations_info_v2:
+    volume_group_ext_id: "{{ vg_ext_id }}"
+    ext_id: "{{ category_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify single-entity fetch
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ category_ext_id }}"
+      - result.response is defined
+      - result.response.ext_id == "{{ category_ext_id }}"
+    fail_msg: "Single-entity fetch failed"
+    success_msg: "Single-entity fetch succeeded"
+
+# ---------------------------------------------------------------------------
+# Idempotency - re-associate is a no-op
+# ---------------------------------------------------------------------------
+
+- name: Re-run associate (idempotency)
+  nutanix.ncp.ntnx_volume_group_category_v2:
+    state: present
+    ext_id: "{{ vg_ext_id }}"
+    categories:
+      - ext_id: "{{ category_ext_id }}"
+        entity_type: "CATEGORY"
+  register: result
+  ignore_errors: true
+
+- name: Verify idempotency of associate
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.msg is defined
+      - "'Skipping association' in result.msg"
+    fail_msg: "Idempotent associate did not skip"
+    success_msg: "Idempotent associate skipped as expected"
+
+# ---------------------------------------------------------------------------
+# Disassociate (delete) - check_mode
+# ---------------------------------------------------------------------------
+
+- name: Disassociate category from VG (check_mode)
+  nutanix.ncp.ntnx_volume_group_category_v2:
+    state: absent
+    ext_id: "{{ vg_ext_id }}"
+    categories:
+      - ext_id: "{{ category_ext_id }}"
+        entity_type: "CATEGORY"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Verify disassociate check_mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ vg_ext_id }}"
+      - result.msg is defined
+      - "'will be disassociated' in result.msg"
+    fail_msg: "Disassociate check_mode did not signal pending change"
+    success_msg: "Disassociate check_mode reported pending change"
+
+# ---------------------------------------------------------------------------
+# Disassociate (delete) - real
+# ---------------------------------------------------------------------------
+
+- name: Disassociate category from VG (real)
+  nutanix.ncp.ntnx_volume_group_category_v2:
+    state: absent
+    ext_id: "{{ vg_ext_id }}"
+    categories:
+      - ext_id: "{{ category_ext_id }}"
+        entity_type: "CATEGORY"
+  register: result
+  ignore_errors: true
+
+- name: Verify disassociate real
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == "{{ vg_ext_id }}"
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Real disassociate failed"
+    success_msg: "Category disassociated from VG successfully"
+
+# ---------------------------------------------------------------------------
+# Idempotency - re-disassociate is a no-op
+# ---------------------------------------------------------------------------
+
+- name: Re-run disassociate (idempotency)
+  nutanix.ncp.ntnx_volume_group_category_v2:
+    state: absent
+    ext_id: "{{ vg_ext_id }}"
+    categories:
+      - ext_id: "{{ category_ext_id }}"
+        entity_type: "CATEGORY"
+  register: result
+  ignore_errors: true
+
+- name: Verify idempotency of disassociate
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.msg is defined
+      - "'Skipping disassociation' in result.msg"
+    fail_msg: "Idempotent disassociate did not skip"
+    success_msg: "Idempotent disassociate skipped as expected"
+
+# ---------------------------------------------------------------------------
+# Negative - invalid Volume Group ext_id (list)
+# ---------------------------------------------------------------------------
+
+- name: Fetch associations for a non-existent VG
+  nutanix.ncp.ntnx_category_associations_info_v2:
+    volume_group_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Verify info negative path
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Fetching associations for a bogus VG should have failed"
+    success_msg: "Fetching associations for a bogus VG failed as expected"
+
+# ---------------------------------------------------------------------------
+# Negative - associate with an invalid category ext_id
+# ---------------------------------------------------------------------------
+
+- name: Associate with a bogus category ext_id
+  nutanix.ncp.ntnx_volume_group_category_v2:
+    state: present
+    ext_id: "{{ vg_ext_id }}"
+    categories:
+      - ext_id: "00000000-0000-0000-0000-000000000000"
+        entity_type: "CATEGORY"
+  register: result
+  ignore_errors: true
+
+- name: Verify associate negative path
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Associating a bogus category should have failed"
+    success_msg: "Associating a bogus category failed as expected"
+
+# ---------------------------------------------------------------------------
+# Negative - missing required "categories" argument
+# ---------------------------------------------------------------------------
+
+- name: Associate without required categories argument  # noqa: args
+  nutanix.ncp.ntnx_volume_group_category_v2:
+    state: present
+    ext_id: "{{ vg_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify missing-arg negative path
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Module should refuse to run without categories"
+    success_msg: "Module refused to run without categories, as expected"
+
+# ---------------------------------------------------------------------------
+# Cleanup
+# ---------------------------------------------------------------------------
+
+- name: Cleanup - delete Volume Group
+  nutanix.ncp.ntnx_volume_groups_v2:
+    state: absent
+    ext_id: "{{ vg_ext_id }}"
+  register: cleanup_vg
+  ignore_errors: true
+
+- name: Verify VG cleanup
+  ansible.builtin.assert:
+    that:
+      - cleanup_vg.failed == false
+      - cleanup_vg.changed == true
+    fail_msg: "Failed to delete VG during cleanup"
+    success_msg: "VG deleted during cleanup"
+
+- name: Cleanup - delete Category
+  nutanix.ncp.ntnx_categories_v2:
+    state: absent
+    ext_id: "{{ category_ext_id }}"
+  register: cleanup_cat
+  ignore_errors: true
+
+- name: Verify category cleanup
+  ansible.builtin.assert:
+    that:
+      - cleanup_cat.failed == false
+    fail_msg: "Failed to delete category during cleanup"
+    success_msg: "Category deleted during cleanup"
