@@ -1,0 +1,506 @@
+---
+##############################################################################
+# Test plan
+# -----------------------------------------------------------------------------
+# Coverage targets:
+# * ntnx_collect_logs_info_v2
+#     - list all tags on a cluster (happy path, asserts list shape)
+#     - list tags with limit (asserts page-size honored)
+#     - fetch a single tag by ext_id (asserts fields on a single Tag)
+#     - list tags with a wrong cluster_ext_id (asserts failure surface)
+#     - lookup a tag by non-existent ext_id (asserts descriptive error)
+#
+# * ntnx_monitoring_collect_log_v2
+#     - check_mode CREATE with ALL supported attributes
+#     - check_mode UPDATE (same shape, different values)
+#     - check_mode DELETE (unsupported "absent" state)
+#     - real CREATE with minimum required attributes (LOCAL upload)
+#     - real CREATE with all attributes (LOCAL upload, includes/excludes,
+#       description, msp tag opts) — asserts task fields
+#     - idempotency check: re-run the same create — collect-logs is an
+#       action so it should ALWAYS report changed=true (not a CRUD entity)
+#     - missing required parameters (start_time, end_time, archive_opts,
+#       cluster_ext_id) — asserts descriptive validation errors
+#     - invalid choice for protocol — asserts spec-level rejection
+#     - state=absent — asserts spec-level rejection because CollectLog
+#       is an action-only module (only choices=[present])
+#     - upload_params oneOf enforcement — asserts we reject multi-populated
+#       upload_params
+##############################################################################
+
+- name: Start CollectLog v4 tests
+  ansible.builtin.debug:
+    msg: Start CollectLog v4 tests
+
+- name: Generate random suffix for parallel-safe test data
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=8)[0] }}"
+    suffix_name: "ansible"
+
+- name: Compute time window for log collection (last 30 minutes)
+  ansible.builtin.set_fact:
+    end_time: "{{ '%Y-%m-%dT%H:%M:%SZ' | strftime((ansible_date_time.epoch | int)) }}"
+    start_time: "{{ '%Y-%m-%dT%H:%M:%SZ' | strftime((ansible_date_time.epoch | int) - 1800) }}"
+
+- name: Debug computed time window
+  ansible.builtin.debug:
+    msg: "start_time={{ start_time }} end_time={{ end_time }}"
+
+########################################################################################
+# Fetch a cluster (target for log collection)
+########################################################################################
+
+- name: List clusters registered with PC
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(f:f eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: clusters_info
+  ignore_errors: true
+
+- name: Fallback - list all clusters if the filter is unsupported
+  nutanix.ncp.ntnx_clusters_info_v2: {}
+  register: clusters_info_all
+  when: clusters_info.failed or (clusters_info.response | default([]) | length == 0)
+
+- name: Choose the first non-PC cluster ext_id
+  ansible.builtin.set_fact:
+    target_cluster_ext_id: >-
+      {{ (clusters_info.response if (clusters_info.response | default([]) | length > 0)
+          else clusters_info_all.response)
+         | selectattr('name', 'defined')
+         | rejectattr('name', 'search', '(?i)prism.central')
+         | map(attribute='ext_id') | first }}
+
+- name: Assert we resolved a target cluster
+  ansible.builtin.assert:
+    that:
+      - target_cluster_ext_id is defined
+      - target_cluster_ext_id | length > 0
+    success_msg: "Target cluster resolved: {{ target_cluster_ext_id }}"
+    fail_msg: "Could not resolve a target cluster ext_id"
+
+########################################################################################
+# Info module - list & get by ext_id
+########################################################################################
+
+- name: List all log-collection tags on the cluster
+  nutanix.ncp.ntnx_collect_logs_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: List all log-collection tags status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length > 0
+      - result.total_available_results is defined
+      - result.total_available_results | int >= result.response | length
+    success_msg: "Listing log-collection tags succeeded"
+    fail_msg: "Listing log-collection tags failed"
+
+- name: Loop-assert each tag has the required fields
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.name is defined
+    success_msg: "Tag entry has required ext_id/name fields"
+    fail_msg: "Tag entry missing ext_id/name"
+  loop: "{{ result.response }}"
+  loop_control:
+    label: "{{ item.ext_id }}"
+
+- name: Remember the first tag ext_id
+  ansible.builtin.set_fact:
+    first_tag_ext_id: "{{ result.response[0].ext_id }}"
+
+- name: List log-collection tags with limit=1
+  nutanix.ncp.ntnx_collect_logs_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List log-collection tags with limit status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+    success_msg: "Listing tags with limit=1 succeeded"
+    fail_msg: "Listing tags with limit=1 failed"
+
+- name: Fetch a single log-collection tag by ext_id
+  nutanix.ncp.ntnx_collect_logs_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    ext_id: "{{ first_tag_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch tag by ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == first_tag_ext_id
+      - result.response is defined
+      - result.response.ext_id == first_tag_ext_id
+      - result.response.name is defined
+    success_msg: "Fetch tag by ext_id succeeded"
+    fail_msg: "Fetch tag by ext_id failed"
+
+- name: Fetch a tag by non-existent ext_id
+  nutanix.ncp.ntnx_collect_logs_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    ext_id: "definitely-not-a-real-tag-{{ random_name }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch tag by non-existent ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'not found' in result.msg"
+    success_msg: "Fetch by non-existent ext_id failed as expected"
+    fail_msg: "Fetch by non-existent ext_id did not fail as expected"
+
+- name: List tags with a bogus cluster_ext_id
+  nutanix.ncp.ntnx_collect_logs_info_v2:
+    cluster_ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: List tags with a bogus cluster_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Listing tags with a bogus cluster_ext_id failed as expected"
+    fail_msg: "Listing tags with a bogus cluster_ext_id did not fail as expected"
+
+########################################################################################
+# CollectLog action - check_mode
+########################################################################################
+
+- name: Generate collect-logs spec in check mode with ALL attributes
+  nutanix.ncp.ntnx_monitoring_collect_log_v2:
+    state: present
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    start_time: "{{ start_time }}"
+    end_time: "{{ end_time }}"
+    include_tags:
+      - "{{ first_tag_ext_id }}"
+    exclude_tags: []
+    should_anonymize: true
+    should_collect_from_disabled_node: false
+    node_ip_list:
+      - value: "10.10.10.11"
+        prefix_length: 32
+    description: "Ansible check_mode create — {{ random_name }}"
+    archive_opts:
+      archive_name: "ansible_check_mode_bundle_{{ random_name }}"
+      upload_params:
+        local:
+          path: "/home/nutanix/data/logbay/bundles"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Check mode spec status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.start_time is defined
+      - result.response.end_time is defined
+      - result.response.include_tags | length == 1
+      - result.response.include_tags[0] == first_tag_ext_id
+      - result.response.should_anonymize == true
+      - result.response.should_collect_from_disabled_node == false
+      - result.response.archive_opts is defined
+      - result.response.archive_opts.archive_name == "ansible_check_mode_bundle_" ~ random_name
+      - result.response.archive_opts.upload_params is defined
+      - result.response.description == "Ansible check_mode create — " ~ random_name
+    success_msg: "Check_mode create spec generated successfully"
+    fail_msg: "Check_mode create spec generation failed"
+
+- name: Generate collect-logs spec in check mode - UPDATE-shaped
+  nutanix.ncp.ntnx_monitoring_collect_log_v2:
+    state: present
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    start_time: "{{ start_time }}"
+    end_time: "{{ end_time }}"
+    include_tags:
+      - "{{ first_tag_ext_id }}"
+    should_anonymize: false
+    archive_opts:
+      archive_name: "ansible_check_mode_update_{{ random_name }}"
+      upload_params:
+        local: {}
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Check_mode update status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.should_anonymize == false
+      - result.response.archive_opts.archive_name == "ansible_check_mode_update_" ~ random_name
+    success_msg: "Check_mode update spec succeeded"
+    fail_msg: "Check_mode update spec failed"
+
+- name: Check_mode delete - state=absent is not a valid choice
+  nutanix.ncp.ntnx_monitoring_collect_log_v2:
+    state: absent
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Check_mode delete status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'value of state must be one of' in result.msg"
+    success_msg: "Absent state correctly rejected"
+    fail_msg: "Absent state was not rejected"
+
+########################################################################################
+# CollectLog action - real invocations
+########################################################################################
+
+- name: Trigger collect-logs with MINIMUM required attributes
+  nutanix.ncp.ntnx_monitoring_collect_log_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    start_time: "{{ start_time }}"
+    end_time: "{{ end_time }}"
+    archive_opts:
+      upload_params:
+        local: {}
+  register: result
+  ignore_errors: true
+
+- name: Trigger collect-logs (min) status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.changed == true
+      - result.ext_id == target_cluster_ext_id
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    success_msg: "Minimum-attribute collect-logs succeeded"
+    fail_msg: "Minimum-attribute collect-logs failed"
+
+- name: Trigger collect-logs with ALL attributes
+  nutanix.ncp.ntnx_monitoring_collect_log_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    start_time: "{{ start_time }}"
+    end_time: "{{ end_time }}"
+    include_tags:
+      - "{{ first_tag_ext_id }}"
+    exclude_tags: []
+    should_anonymize: false
+    should_collect_from_disabled_node: false
+    description: "Ansible full-attributes collect-logs {{ random_name }}"
+    archive_opts:
+      archive_name: "ansible_all_bundle_{{ random_name }}"
+      upload_params:
+        local:
+          path: "/home/nutanix/data/logbay/bundles"
+  register: result
+  ignore_errors: true
+
+- name: Trigger collect-logs (all) status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.changed == true
+      - result.ext_id == target_cluster_ext_id
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+      - result.response.operation is defined
+    success_msg: "Full-attribute collect-logs succeeded"
+    fail_msg: "Full-attribute collect-logs failed"
+
+- name: Trigger collect-logs a second time (idempotency probe for an action)
+  nutanix.ncp.ntnx_monitoring_collect_log_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    start_time: "{{ start_time }}"
+    end_time: "{{ end_time }}"
+    archive_opts:
+      upload_params:
+        local: {}
+  register: result
+  ignore_errors: true
+
+- name: "Idempotency-probe status (action module - always changed=true)"
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.changed == true
+    success_msg: "Re-invoking the action reports changed=true as expected"
+    fail_msg: "Re-invoking the action did not report changed=true"
+
+########################################################################################
+# CollectLog action - negative / validation
+########################################################################################
+
+- name: Missing start_time should fail
+  nutanix.ncp.ntnx_monitoring_collect_log_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    end_time: "{{ end_time }}"
+    archive_opts:
+      upload_params:
+        local: {}
+  register: result
+  ignore_errors: true
+
+- name: Missing start_time status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'Missing required parameter' in result.msg"
+      - "'start_time' in result.msg"
+    success_msg: "Missing start_time rejected as expected"
+    fail_msg: "Missing start_time did not fail as expected"
+
+- name: Missing end_time should fail
+  nutanix.ncp.ntnx_monitoring_collect_log_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    start_time: "{{ start_time }}"
+    archive_opts:
+      upload_params:
+        local: {}
+  register: result
+  ignore_errors: true
+
+- name: Missing end_time status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'Missing required parameter' in result.msg"
+      - "'end_time' in result.msg"
+    success_msg: "Missing end_time rejected as expected"
+    fail_msg: "Missing end_time did not fail as expected"
+
+- name: Missing archive_opts should fail
+  nutanix.ncp.ntnx_monitoring_collect_log_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    start_time: "{{ start_time }}"
+    end_time: "{{ end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: Missing archive_opts status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'Missing required parameter' in result.msg"
+      - "'archive_opts' in result.msg"
+    success_msg: "Missing archive_opts rejected as expected"
+    fail_msg: "Missing archive_opts did not fail as expected"
+
+- name: Missing cluster_ext_id should fail via spec (required=True)
+  nutanix.ncp.ntnx_monitoring_collect_log_v2:
+    start_time: "{{ start_time }}"
+    end_time: "{{ end_time }}"
+    archive_opts:
+      upload_params:
+        local: {}
+  register: result
+  ignore_errors: true
+
+- name: Missing cluster_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'cluster_ext_id' in result.msg"
+    success_msg: "Missing cluster_ext_id rejected as expected"
+    fail_msg: "Missing cluster_ext_id did not fail as expected"
+
+- name: Invalid enum for ntnx_server.protocol
+  nutanix.ncp.ntnx_monitoring_collect_log_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    start_time: "{{ start_time }}"
+    end_time: "{{ end_time }}"
+    archive_opts:
+      upload_params:
+        ntnx_server:
+          case_number: 12345
+          protocol: HTTP
+  register: result
+  ignore_errors: true
+
+- name: Invalid enum status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'protocol' in result.msg"
+    success_msg: "Invalid enum choice rejected as expected"
+    fail_msg: "Invalid enum choice was not rejected"
+
+- name: Upload_params with two variants populated should fail
+  nutanix.ncp.ntnx_monitoring_collect_log_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    start_time: "{{ start_time }}"
+    end_time: "{{ end_time }}"
+    archive_opts:
+      upload_params:
+        local: {}
+        ntnx_server:
+          case_number: 12345
+          protocol: SFTP
+  register: result
+  ignore_errors: true
+
+- name: Upload_params multi-variant status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'exactly one of' in result.msg"
+    success_msg: "Multi-populated upload_params rejected as expected"
+    fail_msg: "Multi-populated upload_params was not rejected"
+
+- name: Invalid ext_id for collect-logs (bogus cluster)
+  nutanix.ncp.ntnx_monitoring_collect_log_v2:
+    cluster_ext_id: "00000000-0000-0000-0000-000000000001"
+    start_time: "{{ start_time }}"
+    end_time: "{{ end_time }}"
+    archive_opts:
+      upload_params:
+        local: {}
+  register: result
+  ignore_errors: true
+
+- name: Invalid ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+    success_msg: "Invalid cluster ext_id rejected as expected"
+    fail_msg: "Invalid cluster ext_id was not rejected"
