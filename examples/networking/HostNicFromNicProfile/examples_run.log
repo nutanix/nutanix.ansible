@@ -1,0 +1,157 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+
+PLAY [Host NIC to NIC Profile association playbook] ****************************
+
+TASK [Set NIC Profile and Host NIC external IDs] *******************************
+ok: [localhost]
+
+TASK [Associate a Host NIC to a NIC Profile] ***********************************
+[ERROR]: Task failed: Module failed: Task Failed
+Origin: /tmp/codegen/b746949682fb498e8becaa9881a7f558/repo/examples/networking/HostNicFromNicProfile/host_nic_from_nic_profile_v2.yml:35:7
+
+33         host_nic_ext_id: "f28e7475-f835-42ef-ac35-ecbc48d5421e"
+34
+35     - name: Associate a Host NIC to a NIC Profile
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "Task Failed", "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": null, "completed_time": "2026-07-20T13:11:31.759337+00:00", "completion_details": null, "created_time": "2026-07-20T13:11:31.702229+00:00", "entities_affected": [{"ext_id": "2e40ff57-20aa-4d2b-b179-298db969c20d", "name": null, "rel": "networking:config:nic_profile"}], "error_messages": [{"arguments_map": {"errorMessage": "AtlasNicProfile 2e40ff57-20aa-4d2b-b179-298db969c20d not found", "operation": "Update NIC Profile Association"}, "code": "NETWORKING-10060", "error_group": "BACKEND_SERVICE_ERROR", "locale": "en_US", "message": "Failed to Update NIC Profile Association as a referenced resource was not found - AtlasNicProfile 2e40ff57-20aa-4d2b-b179-298db969c20d not found", "severity": "ERROR"}], "ext_id": "ZXJnb24=:63460561-7e24-4da6-a868-77d2740cbb60", "is_background_task": false, "is_cancelable": false, "last_updated_time": "2026-07-20T13:11:31.759336+00:00", "legacy_error_message": null, "number_of_entities_affected": 1, "number_of_subtasks": 0, "operation": "kNicProfileUpdateAssociation", "operation_description": "NIC Profile Update Association", "owned_by": {"ext_id": "00000000-0000-0000-0000-000000000000", "name": "admin"}, "parent_task": null, "progress_percentage": 100, "projectExtId": "00000000-0000-0000-0000-000000000000", "resource_links": null, "root_task": null, "started_time": "2026-07-20T13:11:31.712349+00:00", "status": "FAILED", "sub_steps": null, "sub_tasks": null, "warnings": null}}
+...ignoring
+
+TASK [Show associate result] ***************************************************
+ok: [localhost] => {
+    "associate_result": {
+        "changed": false,
+        "exception": "(traceback unavailable)",
+        "failed": true,
+        "msg": "Task Failed",
+        "response": {
+            "app_name": null,
+            "batch_summary": null,
+            "cluster_ext_ids": null,
+            "completed_time": "2026-07-20T13:11:31.759337+00:00",
+            "completion_details": null,
+            "created_time": "2026-07-20T13:11:31.702229+00:00",
+            "entities_affected": [
+                {
+                    "ext_id": "2e40ff57-20aa-4d2b-b179-298db969c20d",
+                    "name": null,
+                    "rel": "networking:config:nic_profile"
+                }
+            ],
+            "error_messages": [
+                {
+                    "arguments_map": {
+                        "errorMessage": "AtlasNicProfile 2e40ff57-20aa-4d2b-b179-298db969c20d not found",
+                        "operation": "Update NIC Profile Association"
+                    },
+                    "code": "NETWORKING-10060",
+                    "error_group": "BACKEND_SERVICE_ERROR",
+                    "locale": "en_US",
+                    "message": "Failed to Update NIC Profile Association as a referenced resource was not found - AtlasNicProfile 2e40ff57-20aa-4d2b-b179-298db969c20d not found",
+                    "severity": "ERROR"
+                }
+            ],
+            "ext_id": "ZXJnb24=:63460561-7e24-4da6-a868-77d2740cbb60",
+            "is_background_task": false,
+            "is_cancelable": false,
+            "last_updated_time": "2026-07-20T13:11:31.759336+00:00",
+            "legacy_error_message": null,
+            "number_of_entities_affected": 1,
+            "number_of_subtasks": 0,
+            "operation": "kNicProfileUpdateAssociation",
+            "operation_description": "NIC Profile Update Association",
+            "owned_by": {
+                "ext_id": "00000000-0000-0000-0000-000000000000",
+                "name": "admin"
+            },
+            "parent_task": null,
+            "progress_percentage": 100,
+            "projectExtId": "00000000-0000-0000-0000-000000000000",
+            "resource_links": null,
+            "root_task": null,
+            "started_time": "2026-07-20T13:11:31.712349+00:00",
+            "status": "FAILED",
+            "sub_steps": null,
+            "sub_tasks": null,
+            "warnings": null
+        }
+    }
+}
+
+TASK [Disassociate the Host NIC from the NIC Profile] **************************
+[ERROR]: Task failed: Module failed: Task Failed
+Origin: /tmp/codegen/b746949682fb498e8becaa9881a7f558/repo/examples/networking/HostNicFromNicProfile/host_nic_from_nic_profile_v2.yml:47:7
+
+45         var: associate_result
+46
+47     - name: Disassociate the Host NIC from the NIC Profile
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "Task Failed", "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": null, "completed_time": "2026-07-20T13:11:33.067714+00:00", "completion_details": null, "created_time": "2026-07-20T13:11:32.997808+00:00", "entities_affected": [{"ext_id": "2e40ff57-20aa-4d2b-b179-298db969c20d", "name": null, "rel": "networking:config:nic_profile"}], "error_messages": [{"arguments_map": {"errorMessage": "AtlasNicProfile 2e40ff57-20aa-4d2b-b179-298db969c20d not found", "operation": "Update NIC Profile Association"}, "code": "NETWORKING-10060", "error_group": "BACKEND_SERVICE_ERROR", "locale": "en_US", "message": "Failed to Update NIC Profile Association as a referenced resource was not found - AtlasNicProfile 2e40ff57-20aa-4d2b-b179-298db969c20d not found", "severity": "ERROR"}], "ext_id": "ZXJnb24=:8e029d94-7b01-4197-a543-c0f9f9b1dfcf", "is_background_task": false, "is_cancelable": false, "last_updated_time": "2026-07-20T13:11:33.067713+00:00", "legacy_error_message": null, "number_of_entities_affected": 1, "number_of_subtasks": 0, "operation": "kNicProfileUpdateAssociation", "operation_description": "NIC Profile Update Association", "owned_by": {"ext_id": "00000000-0000-0000-0000-000000000000", "name": "admin"}, "parent_task": null, "progress_percentage": 100, "projectExtId": "00000000-0000-0000-0000-000000000000", "resource_links": null, "root_task": null, "started_time": "2026-07-20T13:11:33.012132+00:00", "status": "FAILED", "sub_steps": null, "sub_tasks": null, "warnings": null}}
+...ignoring
+
+TASK [Show disassociate result] ************************************************
+ok: [localhost] => {
+    "disassociate_result": {
+        "changed": false,
+        "exception": "(traceback unavailable)",
+        "failed": true,
+        "msg": "Task Failed",
+        "response": {
+            "app_name": null,
+            "batch_summary": null,
+            "cluster_ext_ids": null,
+            "completed_time": "2026-07-20T13:11:33.067714+00:00",
+            "completion_details": null,
+            "created_time": "2026-07-20T13:11:32.997808+00:00",
+            "entities_affected": [
+                {
+                    "ext_id": "2e40ff57-20aa-4d2b-b179-298db969c20d",
+                    "name": null,
+                    "rel": "networking:config:nic_profile"
+                }
+            ],
+            "error_messages": [
+                {
+                    "arguments_map": {
+                        "errorMessage": "AtlasNicProfile 2e40ff57-20aa-4d2b-b179-298db969c20d not found",
+                        "operation": "Update NIC Profile Association"
+                    },
+                    "code": "NETWORKING-10060",
+                    "error_group": "BACKEND_SERVICE_ERROR",
+                    "locale": "en_US",
+                    "message": "Failed to Update NIC Profile Association as a referenced resource was not found - AtlasNicProfile 2e40ff57-20aa-4d2b-b179-298db969c20d not found",
+                    "severity": "ERROR"
+                }
+            ],
+            "ext_id": "ZXJnb24=:8e029d94-7b01-4197-a543-c0f9f9b1dfcf",
+            "is_background_task": false,
+            "is_cancelable": false,
+            "last_updated_time": "2026-07-20T13:11:33.067713+00:00",
+            "legacy_error_message": null,
+            "number_of_entities_affected": 1,
+            "number_of_subtasks": 0,
+            "operation": "kNicProfileUpdateAssociation",
+            "operation_description": "NIC Profile Update Association",
+            "owned_by": {
+                "ext_id": "00000000-0000-0000-0000-000000000000",
+                "name": "admin"
+            },
+            "parent_task": null,
+            "progress_percentage": 100,
+            "projectExtId": "00000000-0000-0000-0000-000000000000",
+            "resource_links": null,
+            "root_task": null,
+            "started_time": "2026-07-20T13:11:33.012132+00:00",
+            "status": "FAILED",
+            "sub_steps": null,
+            "sub_tasks": null,
+            "warnings": null
+        }
+    }
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=5    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=2   
+

@@ -1,0 +1,57 @@
+---
+# Summary:
+# This playbook demonstrates the Host NIC to NIC Profile association/disassociation
+# actions on Nutanix Prism Central using the ntnx_host_nic_from_nic_profile_v2
+# Ansible module. It will:
+#   1. Associate a Host NIC to an existing NIC Profile (state=present).
+#   2. Disassociate the Host NIC from the NIC Profile (state=absent).
+#
+# Prerequisites:
+#   - A NIC Profile already exists on the target Prism Central cluster
+#     (its external ID is used below as nic_profile_ext_id).
+#   - The physical Host NIC that will be associated exists on a host managed
+#     by a Prism Element that is registered to this Prism Central and whose
+#     hardware/capability advertisement matches the profile (see the NIC
+#     Profile architectural guide for details).
+#   - The user running these tasks holds IAM permissions
+#     Associate_Host_Nic_Nic_Profile / Disassociate_Host_Nic_Nic_Profile,
+#     View_Nic_Profile, and Update_Nic_Profile.
+
+- name: Host NIC to NIC Profile association playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ nutanix_username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ nutanix_password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: false
+  tasks:
+    - name: Set NIC Profile and Host NIC external IDs
+      ansible.builtin.set_fact:
+        nic_profile_ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
+        host_nic_ext_id: "f28e7475-f835-42ef-ac35-ecbc48d5421e"
+
+    - name: Associate a Host NIC to a NIC Profile
+      nutanix.ncp.ntnx_host_nic_from_nic_profile_v2:
+        state: present
+        ext_id: "{{ nic_profile_ext_id }}"
+        host_nic_ext_id: "{{ host_nic_ext_id }}"
+      register: associate_result
+      ignore_errors: true
+
+    - name: Show associate result
+      ansible.builtin.debug:
+        var: associate_result
+
+    - name: Disassociate the Host NIC from the NIC Profile
+      nutanix.ncp.ntnx_host_nic_from_nic_profile_v2:
+        state: absent
+        ext_id: "{{ nic_profile_ext_id }}"
+        host_nic_ext_id: "{{ host_nic_ext_id }}"
+      register: disassociate_result
+      ignore_errors: true
+
+    - name: Show disassociate result
+      ansible.builtin.debug:
+        var: disassociate_result

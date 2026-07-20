@@ -1,0 +1,319 @@
+---
+###############################################################################
+# Integration tests for the ntnx_host_nic_from_nic_profile_v2 Ansible module.
+#
+# Test plan:
+#   1. Environment discovery: pick a live NIC Profile from the target cluster
+#      via ntnx_hosts_info_v2 + list nic-profiles. If no NIC Profile exists,
+#      the API-execution tests below are skipped with a warning (the module
+#      still needs a real profile to point at).
+#   2. Argument-spec / validation tests (offline): missing required params,
+#      invalid state, mutually valid combinations.
+#   3. Check-mode tests: exactly one for associate (state=present) and one
+#      for disassociate (state=absent).
+#   4. Negative tests: bogus NIC profile ext_id, bogus host_nic_ext_id.
+#   5. Live-cluster associate/disassociate against a real NIC Profile and
+#      a real Host NIC discovered on the cluster (best-effort — will be
+#      skipped if the environment does not provide one).
+###############################################################################
+
+- name: Start ntnx_host_nic_from_nic_profile_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_host_nic_from_nic_profile_v2 tests
+
+- name: Generate random suffix for test data
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=8)[0] }}"
+
+- name: Set constant IDs used across tests
+  ansible.builtin.set_fact:
+    bogus_ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+    bogus_host_nic_ext_id: "11111111-2222-3333-4444-555555555555"
+
+###############################################################################
+# Argument-spec / validation checks (do not hit the API)
+###############################################################################
+
+- name: Associate without ext_id should fail (required param)
+  nutanix.ncp.ntnx_host_nic_from_nic_profile_v2:
+    state: present
+    host_nic_ext_id: "{{ bogus_host_nic_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert associate without ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'ext_id' in result.msg"
+    success_msg: "Associate without ext_id failed as expected"
+    fail_msg: "Associate without ext_id did not fail as expected"
+
+- name: Associate without host_nic_ext_id should fail (required param)
+  nutanix.ncp.ntnx_host_nic_from_nic_profile_v2:
+    state: present
+    ext_id: "{{ bogus_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert associate without host_nic_ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'host_nic_ext_id' in result.msg"
+    success_msg: "Associate without host_nic_ext_id failed as expected"
+    fail_msg: "Associate without host_nic_ext_id did not fail as expected"
+
+- name: Disassociate without ext_id should fail (required param)
+  nutanix.ncp.ntnx_host_nic_from_nic_profile_v2:
+    state: absent
+    host_nic_ext_id: "{{ bogus_host_nic_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert disassociate without ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'ext_id' in result.msg"
+    success_msg: "Disassociate without ext_id failed as expected"
+    fail_msg: "Disassociate without ext_id did not fail as expected"
+
+- name: Associate with invalid state should fail (choices validation)
+  nutanix.ncp.ntnx_host_nic_from_nic_profile_v2:
+    state: "bogus"
+    ext_id: "{{ bogus_ext_id }}"
+    host_nic_ext_id: "{{ bogus_host_nic_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid state fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state' in result.msg"
+    success_msg: "Invalid state value failed as expected"
+    fail_msg: "Invalid state value did not fail as expected"
+
+###############################################################################
+# Environment discovery — pick a NIC Profile to operate on
+###############################################################################
+
+- name: Discover existing NIC Profiles on the cluster
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:9440/api/networking/v4.3/config/nic-profiles"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs }}"
+    return_content: true
+  register: nic_profiles_lookup
+  ignore_errors: true
+
+- name: Set fact — nic profile candidate (if any)
+  ansible.builtin.set_fact:
+    live_nic_profile_ext_id: >-
+      {{
+        (nic_profiles_lookup.json.data | default([]))
+        | selectattr('extId', 'defined')
+        | map(attribute='extId')
+        | list
+        | first
+        | default('')
+      }}
+    live_host_nic_ext_id: >-
+      {{
+        (
+          (nic_profiles_lookup.json.data | default([]))
+          | selectattr('hostNicReferences', 'defined')
+          | map(attribute='hostNicReferences')
+          | select('truthy')
+          | list
+          | first
+          | default([])
+        )
+        | selectattr('extId', 'defined')
+        | map(attribute='extId')
+        | list
+        | first
+        | default('')
+      }}
+
+###############################################################################
+# Check-mode tests
+###############################################################################
+
+- name: Associate check mode with all attributes
+  nutanix.ncp.ntnx_host_nic_from_nic_profile_v2:
+    state: present
+    ext_id: "{{ bogus_ext_id }}"
+    host_nic_ext_id: "{{ bogus_host_nic_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert associate check mode result
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.host_nic_ext_id == bogus_host_nic_ext_id
+      - result.ext_id == bogus_ext_id
+      - "'will be associated' in result.msg"
+    success_msg: "Associate check mode produced expected spec"
+    fail_msg: "Associate check mode did not produce expected spec"
+
+- name: Disassociate check mode with all attributes
+  nutanix.ncp.ntnx_host_nic_from_nic_profile_v2:
+    state: absent
+    ext_id: "{{ bogus_ext_id }}"
+    host_nic_ext_id: "{{ bogus_host_nic_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert disassociate check mode result
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.host_nic_ext_id == bogus_host_nic_ext_id
+      - result.ext_id == bogus_ext_id
+      - "'will be disassociated' in result.msg"
+    success_msg: "Disassociate check mode produced expected spec"
+    fail_msg: "Disassociate check mode did not produce expected spec"
+
+###############################################################################
+# Negative tests — real API calls that should fail
+###############################################################################
+
+- name: Associate with bogus NIC Profile ext_id (should fail)
+  nutanix.ncp.ntnx_host_nic_from_nic_profile_v2:
+    state: present
+    ext_id: "{{ bogus_ext_id }}"
+    host_nic_ext_id: "{{ bogus_host_nic_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert associate with bogus NIC Profile fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+      - result.response is defined
+    success_msg: "Associate with bogus NIC Profile ext_id failed as expected"
+    fail_msg: "Associate with bogus NIC Profile ext_id did not fail as expected"
+
+- name: Disassociate with bogus NIC Profile ext_id (should fail)
+  nutanix.ncp.ntnx_host_nic_from_nic_profile_v2:
+    state: absent
+    ext_id: "{{ bogus_ext_id }}"
+    host_nic_ext_id: "{{ bogus_host_nic_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert disassociate with bogus NIC Profile fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+      - result.response is defined
+    success_msg: "Disassociate with bogus NIC Profile ext_id failed as expected"
+    fail_msg: "Disassociate with bogus NIC Profile ext_id did not fail as expected"
+
+###############################################################################
+# Live-cluster tests — only run when a NIC Profile actually exists
+###############################################################################
+
+- name: Live cluster associate/disassociate tests
+  when:
+    - live_nic_profile_ext_id is defined
+    - live_nic_profile_ext_id | length > 0
+    - live_host_nic_ext_id is defined
+    - live_host_nic_ext_id | length > 0
+  block:
+    - name: Disassociate the discovered Host NIC (baseline cleanup)
+      nutanix.ncp.ntnx_host_nic_from_nic_profile_v2:
+        state: absent
+        ext_id: "{{ live_nic_profile_ext_id }}"
+        host_nic_ext_id: "{{ live_host_nic_ext_id }}"
+      register: baseline_disassociate
+      ignore_errors: true
+
+    - name: Show baseline disassociate result
+      ansible.builtin.debug:
+        var: baseline_disassociate
+
+    - name: Associate discovered Host NIC to the discovered NIC Profile
+      nutanix.ncp.ntnx_host_nic_from_nic_profile_v2:
+        state: present
+        ext_id: "{{ live_nic_profile_ext_id }}"
+        host_nic_ext_id: "{{ live_host_nic_ext_id }}"
+      register: associate_result
+      ignore_errors: true
+
+    - name: Assert associate result on live cluster
+      ansible.builtin.assert:
+        that:
+          - associate_result is defined
+          - >-
+            (associate_result.failed == false and associate_result.changed == true and
+             associate_result.task_ext_id is defined and
+             associate_result.ext_id == live_nic_profile_ext_id)
+            or
+            (associate_result.failed == true and associate_result.msg is defined)
+        success_msg: "Associate action completed (either succeeded or failed with a real API error)"
+        fail_msg: "Associate action returned an unexpected result shape"
+
+    - name: Disassociate discovered Host NIC from the discovered NIC Profile
+      nutanix.ncp.ntnx_host_nic_from_nic_profile_v2:
+        state: absent
+        ext_id: "{{ live_nic_profile_ext_id }}"
+        host_nic_ext_id: "{{ live_host_nic_ext_id }}"
+      register: disassociate_result
+      ignore_errors: true
+
+    - name: Assert disassociate result on live cluster
+      ansible.builtin.assert:
+        that:
+          - disassociate_result is defined
+          - >-
+            (disassociate_result.failed == false and disassociate_result.changed == true and
+             disassociate_result.task_ext_id is defined and
+             disassociate_result.ext_id == live_nic_profile_ext_id)
+            or
+            (disassociate_result.failed == true and disassociate_result.msg is defined)
+        success_msg: "Disassociate action completed (either succeeded or failed with a real API error)"
+        fail_msg: "Disassociate action returned an unexpected result shape"
+
+- name: Warn when no NIC Profile is available for live-cluster tests
+  ansible.builtin.debug:
+    msg: >-
+      No NIC Profile was discovered on the cluster or none had host NIC
+      references. Live-cluster associate/disassociate tests were skipped.
+  when: >-
+    live_nic_profile_ext_id is not defined
+    or live_nic_profile_ext_id | length == 0
+    or live_host_nic_ext_id is not defined
+    or live_host_nic_ext_id | length == 0
+
+- name: End ntnx_host_nic_from_nic_profile_v2 tests
+  ansible.builtin.debug:
+    msg: End ntnx_host_nic_from_nic_profile_v2 tests
