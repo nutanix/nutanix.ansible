@@ -1,0 +1,36 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Trigger a refresh of the security summaries in Prism Central.
+# 2. List all security summaries in Prism Central.
+# 3. List security summaries with a filter on clusterExtId.
+# 4. List security summaries with a limit.
+
+- name: SecuritySummary playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Trigger a refresh of security summaries
+      nutanix.ncp.ntnx_security_summary_v2:
+        state: present
+      register: refresh_result
+
+    - name: List all security summaries
+      nutanix.ncp.ntnx_security_summaries_info_v2:
+      register: list_result
+
+    - name: List security summaries with filter (clusterExtId eq <cluster_ext_id>)
+      nutanix.ncp.ntnx_security_summaries_info_v2:
+        filter: "clusterExtId eq '00000000-0000-0000-0000-000000000000'"
+      register: filter_result
+
+    - name: List security summaries with a limit
+      nutanix.ncp.ntnx_security_summaries_info_v2:
+        limit: 1
+      register: limit_result
