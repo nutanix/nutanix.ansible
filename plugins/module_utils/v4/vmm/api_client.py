@@ -131,3 +131,13 @@ def get_ova_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_vmm_py_client.OvasApi(api_client=api_client)
+
+
+def get_vm_recovery_points_api_instance(module):
+    """
+    This method will return AHV VM Recovery Points API instance
+    Args:
+        api_instance (obj): v4 VmRecoveryPoints api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.VmRecoveryPointsApi(api_client=api_client)

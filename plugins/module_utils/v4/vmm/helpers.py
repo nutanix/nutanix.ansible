@@ -191,3 +191,23 @@ def get_ova(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching OVA info using ext_id",
         )
+
+
+def get_vm_recovery_point(module, api_instance, ext_id):
+    """
+    Get AHV VM Recovery Point by ext_id
+    Args:
+        module: Ansible module
+        api_instance: VmRecoveryPointsApi instance from ntnx_vmm_py_client sdk
+        ext_id: ext_id of the AHV VM recovery point
+    Returns:
+        vm_recovery_point (obj): AHV VM Recovery Point info object (raw API response)
+    """
+    try:
+        return api_instance.get_vm_recovery_point_by_ext_id(extId=ext_id)
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching AHV VM recovery point info using ext_id",
+        )
