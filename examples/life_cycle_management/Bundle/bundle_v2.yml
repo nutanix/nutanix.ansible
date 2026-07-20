@@ -1,0 +1,99 @@
+---
+# Summary:
+# This playbook demonstrates end-to-end usage of the LCM Bundle v4 modules:
+# 1. Create an LCM bundle (with all supported attributes populated).
+# 2. Fetch the created bundle by its external ID.
+# 3. List all LCM bundles on the cluster.
+# 4. List LCM bundles filtered by name.
+# 5. List LCM bundles with a limit.
+# 6. Delete the LCM bundle.
+#
+# Notes:
+# - LCM bundles are packaged payloads used to run LCM operations on dark-site /
+#   direct-upload clusters. Uploading a Framework bundle (type=FRAMEWORK)
+#   before other bundle types is required for the cluster to be usable.
+# - The `checksum` field is a discriminated union: provide either `md5_sum`
+#   or `sha256_sum`, never both.
+
+- name: LCM Bundle playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: false
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        bundle_name: "lcm-bundle-ansible-example.tar.gz"
+
+    - name: Create an LCM bundle with all attributes
+      nutanix.ncp.ntnx_lcm_bundle_v2:
+        state: present
+        name: "{{ bundle_name }}"
+        size_bytes: 12345678
+        type: "SOFTWARE"
+        vendor: "NUTANIX"
+        checksum:
+          sha256_sum:
+            hex_digest: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        images:
+          - release_notes: "Example LCM image release notes"
+            spec_version: "1"
+            is_qualified: true
+            status: "RECOMMENDED"
+            entity_class: "AOS"
+            entity_model: "AOS"
+            entity_type: "SOFTWARE"
+            entity_version: "7.0.0"
+            hardware_family: "NX"
+            files:
+              - name: "image.bin"
+                size_bytes: 12345678
+                file_path: "aos/image.bin"
+                checksum_type: "SHASUM"
+                checksum: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      register: bundle_create
+      ignore_errors: true
+
+    - name: Set LCM bundle ext_id
+      ansible.builtin.set_fact:
+        bundle_ext_id: "{{ bundle_create.ext_id }}"
+      when:
+        - bundle_create is defined
+        - bundle_create.ext_id is defined
+        - bundle_create.ext_id | length > 0
+
+    - name: Fetch LCM bundle using ext_id
+      nutanix.ncp.ntnx_lcm_bundles_info_v2:
+        ext_id: "{{ bundle_ext_id }}"
+      register: bundle_by_ext_id
+      when: bundle_ext_id is defined
+      ignore_errors: true
+
+    - name: List all LCM bundles
+      nutanix.ncp.ntnx_lcm_bundles_info_v2: {}
+      register: bundles_all
+      ignore_errors: true
+
+    - name: List LCM bundles with filter
+      nutanix.ncp.ntnx_lcm_bundles_info_v2:
+        filter: "name eq '{{ bundle_name }}'"
+      register: bundles_filtered
+      ignore_errors: true
+
+    - name: List LCM bundles with limit
+      nutanix.ncp.ntnx_lcm_bundles_info_v2:
+        limit: 1
+      register: bundles_limited
+      ignore_errors: true
+
+    - name: Delete the LCM bundle
+      nutanix.ncp.ntnx_lcm_bundle_v2:
+        state: absent
+        ext_id: "{{ bundle_ext_id }}"
+      register: bundle_delete
+      when: bundle_ext_id is defined
+      ignore_errors: true
