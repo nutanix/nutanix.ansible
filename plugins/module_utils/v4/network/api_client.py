@@ -195,3 +195,15 @@ def get_bridges_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_networking_py_client.BridgesApi(api_client=api_client)
+
+
+def get_cluster_capabilities_api_instance(module):
+    """
+    This method will return ClusterCapabilitiesApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Cluster Capabilities Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.ClusterCapabilitiesApi(api_client=api_client)
