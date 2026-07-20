@@ -1,0 +1,48 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Recovery Stage playbook] *************************************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"category_ext_id": "bbc3555a-133b-5348-9764-bfff196e84e4", "recovery_plan_ext_id": "e7ae4b0d-726d-410d-87c2-af46f8bea264", "vm_ext_id": "9e9c7f6a-4b28-4d5f-a1d9-1f1b3a92aa11", "vm_name": "webserver-vm"}, "changed": false}
+
+TASK [Create a Recovery stage with all attributes] *****************************
+[ERROR]: Task failed: Module failed: Api Exception raised while creating recovery stage
+Origin: /tmp/codegen/8f6b9ecf07094f0395db5d36dbc43f03/repo/examples/data_policies/RecoveryStage/recovery_stage.yml:31:7
+
+29         category_ext_id: "bbc3555a-133b-5348-9764-bfff196e84e4"
+30
+31     - name: Create a Recovery stage with all attributes
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while creating recovery stage", "response": {"$dataItemDiscriminator": "datapolicies.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<datapolicies.v4.error.AppMessage>", "$objectType": "datapolicies.v4.error.ErrorResponse", "error": [{"$objectType": "datapolicies.v4.error.AppMessage", "argumentsMap": {"reason": "Recovery Plan with given external identifier e7ae4b0d-726d-410d-87c2-af46f8bea264 not found."}, "code": "DPO-10400", "errorGroup": "DATAPOLICIES_ENTITY_NON_EXISTENT_ERROR", "locale": "en-US", "message": "Request failed as one or more entities do not exist - Recovery Plan with given external identifier e7ae4b0d-726d-410d-87c2-af46f8bea264 not found..", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [Save created Recovery stage ext_id] **************************************
+ok: [localhost] => {"ansible_facts": {"recovery_stage_ext_id": ""}, "changed": false}
+
+TASK [Update the Recovery stage with all attributes] ***************************
+skipping: [localhost] => {"changed": false, "false_condition": "recovery_stage_ext_id | length > 0", "skip_reason": "Conditional result was False"}
+
+TASK [List all Recovery stages of the Recovery Plan] ***************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching recovery stages info
+Origin: /tmp/codegen/8f6b9ecf07094f0395db5d36dbc43f03/repo/examples/data_policies/RecoveryStage/recovery_stage.yml:73:7
+
+71       when: recovery_stage_ext_id | length > 0
+72
+73     - name: List all Recovery stages of the Recovery Plan
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching recovery stages info", "response": {"$dataItemDiscriminator": "datapolicies.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<datapolicies.v4.error.AppMessage>", "$objectType": "datapolicies.v4.error.ErrorResponse", "error": [{"$objectType": "datapolicies.v4.error.AppMessage", "argumentsMap": {"reason": "Recovery Plan with given external identifier e7ae4b0d-726d-410d-87c2-af46f8bea264 not found."}, "code": "DPO-10400", "errorGroup": "DATAPOLICIES_ENTITY_NON_EXISTENT_ERROR", "locale": "en-US", "message": "Request failed as one or more entities do not exist - Recovery Plan with given external identifier e7ae4b0d-726d-410d-87c2-af46f8bea264 not found..", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [Get a Recovery stage using ext_id] ***************************************
+skipping: [localhost] => {"changed": false, "false_condition": "recovery_stage_ext_id | length > 0", "skip_reason": "Conditional result was False"}
+
+TASK [Delete the Recovery stage] ***********************************************
+skipping: [localhost] => {"changed": false, "false_condition": "recovery_stage_ext_id | length > 0", "skip_reason": "Conditional result was False"}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=4    changed=0    unreachable=0    failed=0    skipped=3    rescued=0    ignored=2   
+
