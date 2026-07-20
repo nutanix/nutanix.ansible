@@ -1,0 +1,77 @@
+---
+# Summary:
+# This playbook demonstrates the Nutanix Monitoring v4 module for triggering
+# System-Defined Alert (SDA / NCC) health checks from Prism Central against a
+# registered Prism Element (PE) cluster.
+#
+# Steps:
+# 1. Discover a Prism Element cluster ext_id registered with Prism Central.
+# 2. Run every applicable System-Defined Check on that cluster.
+# 3. Run a targeted set of SDA checks by ext_id on the same cluster.
+# 4. Run targeted SDA checks on a specific subset of node IPs.
+
+- name: Run System-Defined Check playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Fetch registered PE clusters from Prism Central
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(f:f eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+        limit: 1
+      register: clusters_result
+
+    - name: Set cluster_ext_id fact from the first PE cluster
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ clusters_result.response[0].ext_id }}"
+
+    - name: Run every applicable System-Defined Check on the PE cluster
+      nutanix.ncp.ntnx_run_system_defined_check_v2:
+        state: present
+        wait: false
+        ext_id: "{{ cluster_ext_id }}"
+        should_run_all_checks: true
+        should_anonymize: true
+        should_send_report_to_configured_recipients: true
+        additional_recipients:
+          - "ncc-reports@example.com"
+      register: run_all_result
+
+    # NOTE on sda_ext_ids: the run-system-defined-checks API validates each
+    # entry against the regex ^\d+$, i.e. an SDA policy id is a decimal
+    # number (see the monitoring v4 SDK). Replace the placeholders below
+    # with real SDA ids returned by the /monitoring/v4.0/serviceability/
+    # alerts/system-defined-policies list endpoint, e.g. via ansible.builtin.uri.
+    - name: Run a targeted set of System-Defined Checks by SDA ext_id
+      nutanix.ncp.ntnx_run_system_defined_check_v2:
+        state: present
+        wait: false
+        ext_id: "{{ cluster_ext_id }}"
+        sda_ext_ids:
+          - "6217"
+          - "106439"
+        should_anonymize: false
+        should_send_report_to_configured_recipients: false
+        additional_recipients:
+          - "sre@example.com"
+      register: run_targeted_result
+      ignore_errors: true
+
+    - name: Run targeted System-Defined Checks scoped to specific node IPs
+      nutanix.ncp.ntnx_run_system_defined_check_v2:
+        state: present
+        wait: false
+        ext_id: "{{ cluster_ext_id }}"
+        sda_ext_ids:
+          - "6217"
+        node_ips:
+          - value: "10.46.136.28"
+        should_anonymize: true
+        should_send_report_to_configured_recipients: true
+      register: run_node_scope_result
+      ignore_errors: true

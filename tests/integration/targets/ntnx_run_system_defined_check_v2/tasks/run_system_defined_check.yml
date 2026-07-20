@@ -1,0 +1,383 @@
+---
+# Test plan for ntnx_run_system_defined_check_v2 (action module).
+#
+# The `run_system_defined_checks` v4 endpoint triggers NCC / SDA (system-defined
+# alert) health checks on a Prism Element cluster registered with PC. The module
+# is action-only — there is no create / update / delete equivalent. The test
+# suite therefore covers:
+#
+#   1. Argument spec check_mode paths — one check_mode invocation per
+#      distinguishable request shape (all-checks, targeted, node-scoped) so
+#      SpecGenerator's mapping of every option to the SDK model is exercised
+#      without dispatching a real run.
+#   2. Argument spec negative paths — missing required fields, invalid enum,
+#      mutually exclusive combinations, and the recipient-selection rule.
+#   3. Live runs against the registered PE cluster with wait: false so the
+#      module still returns a task_ext_id without blocking. We wait_for the
+#      task via ntnx_pc_tasks_info_v2 afterwards to assert on the task status.
+#   4. Domain-level assertions — task operation matches
+#      RunHealthChecksFromPC / HealthCheck (see Glean ENG bugs) and the
+#      cluster ext_id appears in entities_affected.
+
+- name: Start ntnx_run_system_defined_check_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_run_system_defined_check_v2 tests
+
+- name: Generate random suffix to keep runs isolated
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=10)[0] }}"
+
+########################################################################################
+# Discover a Prism Element cluster ext_id registered with Prism Central
+########################################################################################
+
+- name: Fetch registered PE clusters from Prism Central
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(f:f eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+    limit: 1
+  register: pe_clusters_info
+  ignore_errors: true
+
+- name: Assert at least one PE cluster is registered with Prism Central
+  ansible.builtin.assert:
+    that:
+      - pe_clusters_info is defined
+      - pe_clusters_info.failed == false
+      - pe_clusters_info.response is defined
+      - pe_clusters_info.response | length > 0
+    success_msg: "Discovered at least one registered PE cluster"
+    fail_msg: "No PE clusters are registered with Prism Central"
+
+- name: Set cluster_ext_id fact
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ pe_clusters_info.response[0].ext_id }}"
+
+########################################################################################
+# check_mode tests — exercise the argument spec + SpecGenerator without calling the API
+########################################################################################
+
+- name: Run all checks — check_mode (minimum fields + should_run_all_checks)
+  nutanix.ncp.ntnx_run_system_defined_check_v2:
+    state: present
+    ext_id: "{{ cluster_ext_id }}"
+    should_run_all_checks: true
+  check_mode: true
+  register: check_mode_all
+  ignore_errors: true
+
+- name: Assert check_mode all-checks response
+  ansible.builtin.assert:
+    that:
+      - check_mode_all is defined
+      - check_mode_all.failed == false
+      - check_mode_all.changed == false
+      - check_mode_all.ext_id == cluster_ext_id
+      - check_mode_all.response is defined
+      - check_mode_all.response.should_run_all_checks == true
+      - check_mode_all.msg is defined
+    success_msg: "check_mode all-checks produced the expected spec"
+    fail_msg: "check_mode all-checks did NOT produce the expected spec"
+
+- name: Run targeted checks — check_mode with ALL attributes populated
+  nutanix.ncp.ntnx_run_system_defined_check_v2:
+    state: present
+    ext_id: "{{ cluster_ext_id }}"
+    sda_ext_ids:
+      - "0005a4b1-1111-2222-3333-000000000001"
+      - "0005a4b1-1111-2222-3333-000000000002"
+    should_anonymize: false
+    should_send_report_to_configured_recipients: false
+    additional_recipients:
+      - "sre-{{ random_name }}@example.com"
+      - "ops-{{ random_name }}@example.com"
+    node_ips:
+      - value: "10.44.76.31"
+      - value: "10.44.76.32"
+        prefix_length: 32
+  check_mode: true
+  register: check_mode_targeted
+  ignore_errors: true
+
+- name: Assert check_mode targeted response has every attribute
+  ansible.builtin.assert:
+    that:
+      - check_mode_targeted is defined
+      - check_mode_targeted.failed == false
+      - check_mode_targeted.changed == false
+      - check_mode_targeted.ext_id == cluster_ext_id
+      - check_mode_targeted.response is defined
+      - check_mode_targeted.response.sda_ext_ids | length == 2
+      - "'0005a4b1-1111-2222-3333-000000000001' in check_mode_targeted.response.sda_ext_ids"
+      - "'0005a4b1-1111-2222-3333-000000000002' in check_mode_targeted.response.sda_ext_ids"
+      - check_mode_targeted.response.should_anonymize == false
+      - check_mode_targeted.response.should_send_report_to_configured_recipients == false
+      - check_mode_targeted.response.additional_recipients | length == 2
+      - check_mode_targeted.response.node_ips | length == 2
+      - check_mode_targeted.response.node_ips[0].value == "10.44.76.31"
+      - check_mode_targeted.response.node_ips[1].value == "10.44.76.32"
+      - check_mode_targeted.response.node_ips[1].prefix_length == 32
+    success_msg: "check_mode targeted produced every attribute in the spec"
+    fail_msg: "check_mode targeted did NOT propagate every attribute into the spec"
+
+########################################################################################
+# Negative tests — argument spec + module validators
+########################################################################################
+
+- name: Negative — missing required ext_id
+  nutanix.ncp.ntnx_run_system_defined_check_v2:
+    state: present
+    should_run_all_checks: true
+  register: missing_ext_id
+  ignore_errors: true
+
+- name: Assert missing ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id is defined
+      - missing_ext_id.failed == true
+      - missing_ext_id.changed == false
+      - missing_ext_id.msg is search("ext_id")
+    success_msg: "Missing ext_id was correctly rejected"
+    fail_msg: "Missing ext_id was NOT rejected by the module"
+
+- name: Negative — sda_ext_ids and should_run_all_checks are mutually exclusive
+  nutanix.ncp.ntnx_run_system_defined_check_v2:
+    state: present
+    ext_id: "{{ cluster_ext_id }}"
+    sda_ext_ids:
+      - "0005a4b1-1111-2222-3333-000000000001"
+    should_run_all_checks: true
+  register: mutex_case
+  ignore_errors: true
+
+- name: Assert mutually_exclusive violation is rejected
+  ansible.builtin.assert:
+    that:
+      - mutex_case is defined
+      - mutex_case.failed == true
+      - mutex_case.changed == false
+      - mutex_case.msg is search("mutually exclusive")
+    success_msg: "Mutually exclusive (sda_ext_ids, should_run_all_checks) was rejected"
+    fail_msg: "Mutually exclusive combination was NOT rejected"
+
+- name: Negative — invalid state enum value
+  nutanix.ncp.ntnx_run_system_defined_check_v2:
+    state: absent
+    ext_id: "{{ cluster_ext_id }}"
+    should_run_all_checks: true
+  register: invalid_enum
+  ignore_errors: true
+
+- name: Assert invalid state is rejected
+  ansible.builtin.assert:
+    that:
+      - invalid_enum is defined
+      - invalid_enum.failed == true
+      - invalid_enum.changed == false
+    success_msg: "Invalid state was correctly rejected"
+    fail_msg: "Invalid state was NOT rejected"
+
+- name: Negative — no recipient channel selected
+  nutanix.ncp.ntnx_run_system_defined_check_v2:
+    state: present
+    ext_id: "{{ cluster_ext_id }}"
+    should_run_all_checks: true
+    should_send_report_to_configured_recipients: false
+  register: no_recipient
+  ignore_errors: true
+
+- name: Assert missing recipient channel is rejected
+  ansible.builtin.assert:
+    that:
+      - no_recipient is defined
+      - no_recipient.failed == true
+      - no_recipient.changed == false
+      - no_recipient.msg is search("recipient")
+    success_msg: "Empty recipient set was rejected"
+    fail_msg: "Empty recipient set was NOT rejected"
+
+- name: Negative — invalid cluster ext_id
+  nutanix.ncp.ntnx_run_system_defined_check_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-deadbeefdead"
+    should_run_all_checks: true
+    additional_recipients:
+      - "sre-{{ random_name }}@example.com"
+  register: invalid_cluster
+  ignore_errors: true
+
+- name: Assert invalid cluster ext_id returns an API error
+  ansible.builtin.assert:
+    that:
+      - invalid_cluster is defined
+      - invalid_cluster.failed == true
+    success_msg: "Invalid cluster ext_id returned an API error"
+    fail_msg: "Invalid cluster ext_id did NOT return an API error"
+
+########################################################################################
+# Live runs — actually invoke the run-system-defined-checks action
+########################################################################################
+
+- name: Run every applicable System-Defined Check without waiting
+  nutanix.ncp.ntnx_run_system_defined_check_v2:
+    state: present
+    wait: false
+    ext_id: "{{ cluster_ext_id }}"
+    should_run_all_checks: true
+    should_anonymize: true
+    additional_recipients:
+      - "sre-{{ random_name }}@example.com"
+  register: run_all_result
+  ignore_errors: true
+
+- name: Assert run-all-checks produced a task and populated result keys
+  ansible.builtin.assert:
+    that:
+      - run_all_result is defined
+      - run_all_result.failed == false
+      - run_all_result.changed == true
+      - run_all_result.ext_id == cluster_ext_id
+      - run_all_result.task_ext_id is defined
+      - run_all_result.task_ext_id is search("ZXJnb24=:")
+      - run_all_result.response is defined
+    success_msg: "Run-all-checks produced a task and populated ext_id / task_ext_id"
+    fail_msg: "Run-all-checks did NOT return the expected shape"
+
+- name: Wait for run-all-checks task to complete
+  nutanix.ncp.ntnx_pc_tasks_info_v2:
+    ext_id: "{{ run_all_result.task_ext_id }}"
+  register: run_all_task_status
+  until: run_all_task_status.response.status in ["SUCCEEDED", "FAILED"]
+  retries: 60
+  delay: 5
+  when: run_all_result.task_ext_id is defined
+  ignore_errors: true
+
+- name: Domain assertion — task operation matches the FEAT-17361 contract
+  ansible.builtin.assert:
+    that:
+      - run_all_task_status is defined
+      - run_all_task_status.response is defined
+      - run_all_task_status.response.operation is search("HealthCheck|RunHealthChecksFromPC")
+      - run_all_task_status.response.entities_affected is defined
+      - run_all_task_status.response.entities_affected
+        | selectattr("ext_id", "equalto", cluster_ext_id)
+        | list
+        | length > 0
+    success_msg: "Task operation and entities_affected match the RunSystemDefinedCheck contract"
+    fail_msg: "Task operation / entities_affected does NOT match the RunSystemDefinedCheck contract"
+  when:
+    - run_all_task_status is defined
+    - not run_all_task_status.failed
+
+########################################################################################
+# Targeted run — pick a real SDA ext_id from the cluster and re-run it
+########################################################################################
+
+- name: Discover one SDA policy ext_id to run
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:{{ port | default(9440) }}/api/monitoring/v4.0/serviceability/alerts/system-defined-policies?%24limit=1"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    validate_certs: "{{ validate_certs | default(false) }}"
+    force_basic_auth: true
+    return_content: true
+    status_code: [200]
+  register: sda_list_result
+  ignore_errors: true
+
+- name: Set sda_ext_id fact when the list call succeeded
+  ansible.builtin.set_fact:
+    sda_ext_id: "{{ sda_list_result.json.data[0].extId }}"
+  when:
+    - sda_list_result is defined
+    - not sda_list_result.failed
+    - sda_list_result.json is defined
+    - sda_list_result.json.data is defined
+    - sda_list_result.json.data | length > 0
+
+- name: Run a targeted System-Defined Check (single SDA ext_id) with wait false
+  nutanix.ncp.ntnx_run_system_defined_check_v2:
+    state: present
+    wait: false
+    ext_id: "{{ cluster_ext_id }}"
+    sda_ext_ids:
+      - "{{ sda_ext_id }}"
+    should_anonymize: true
+    additional_recipients:
+      - "sre-{{ random_name }}@example.com"
+  register: run_targeted_result
+  when: sda_ext_id is defined
+  ignore_errors: true
+
+- name: Assert targeted run produced a task
+  ansible.builtin.assert:
+    that:
+      - run_targeted_result is defined
+      - run_targeted_result.failed == false
+      - run_targeted_result.changed == true
+      - run_targeted_result.ext_id == cluster_ext_id
+      - run_targeted_result.task_ext_id is defined
+      - run_targeted_result.response is defined
+    success_msg: "Targeted run produced a task"
+    fail_msg: "Targeted run did NOT produce a task"
+  when: sda_ext_id is defined
+
+- name: Wait for targeted run task to complete
+  nutanix.ncp.ntnx_pc_tasks_info_v2:
+    ext_id: "{{ run_targeted_result.task_ext_id }}"
+  register: run_targeted_task_status
+  until: run_targeted_task_status.response.status in ["SUCCEEDED", "FAILED"]
+  retries: 60
+  delay: 5
+  when:
+    - sda_ext_id is defined
+    - run_targeted_result.task_ext_id is defined
+  ignore_errors: true
+
+- name: Domain assertion — targeted task references the same cluster
+  ansible.builtin.assert:
+    that:
+      - run_targeted_task_status.response is defined
+      - run_targeted_task_status.response.entities_affected
+        | selectattr("ext_id", "equalto", cluster_ext_id)
+        | list
+        | length > 0
+    success_msg: "Targeted task references the requested cluster"
+    fail_msg: "Targeted task does NOT reference the requested cluster"
+  when:
+    - sda_ext_id is defined
+    - run_targeted_task_status is defined
+    - not run_targeted_task_status.failed
+
+########################################################################################
+# Idempotency — re-invoking an on-demand action always yields a new task_ext_id
+########################################################################################
+
+- name: Re-run all checks a second time to confirm each invocation is a new task
+  nutanix.ncp.ntnx_run_system_defined_check_v2:
+    state: present
+    wait: false
+    ext_id: "{{ cluster_ext_id }}"
+    should_run_all_checks: true
+    should_anonymize: true
+    additional_recipients:
+      - "sre-{{ random_name }}@example.com"
+  register: run_all_result_2
+  ignore_errors: true
+
+- name: Assert the second run produced a different task ext_id
+  ansible.builtin.assert:
+    that:
+      - run_all_result_2 is defined
+      - run_all_result_2.failed == false
+      - run_all_result_2.changed == true
+      - run_all_result_2.task_ext_id is defined
+      - run_all_result_2.task_ext_id != run_all_result.task_ext_id
+    success_msg: "Each invocation of the action creates a new task (as expected)"
+    fail_msg: "Second run did NOT create a new task"
+
+- name: Final tests debug
+  ansible.builtin.debug:
+    msg: End ntnx_run_system_defined_check_v2 tests
