@@ -142,3 +142,15 @@ def get_ssl_certificates_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_clustermgmt_py_client.SSLCertificateApi(client)
+
+
+def get_disks_api_instance(module):
+    """
+    This method will return disks api instance from sdk
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        DisksApi: DisksApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.DisksApi(client)
