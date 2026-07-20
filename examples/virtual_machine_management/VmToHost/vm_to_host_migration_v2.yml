@@ -1,0 +1,37 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Migrate an AHV VM from its current host to another host within the same cluster.
+#
+# Prerequisites:
+# - The VM must already exist (its ext_id is required).
+# - The destination host must belong to the same cluster as the VM's current host.
+# - The user MUST have one of the roles listed in the module documentation
+#   (Account Owner, Administrator, Virtual Machine Admin, etc.).
+
+- name: VM to Host migration v4 playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        vm_ext_id: "ac5aff0c-6c68-4948-9088-b903e2be0ce7"
+        target_host_ext_id: "3b6e2e77-f4a5-45f9-8fce-c11e04e4dd4b"
+
+    - name: Migrate the VM to a target host within the same cluster
+      nutanix.ncp.ntnx_vm_to_host_migration_v2:
+        ext_id: "{{ vm_ext_id }}"
+        host:
+          ext_id: "{{ target_host_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Show migration result
+      ansible.builtin.debug:
+        var: result
