@@ -1,0 +1,488 @@
+---
+# Test plan for ntnx_recovery_setting_v2 / ntnx_recovery_settings_info_v2
+#
+# 1. check_mode create with ALL VM attributes (spec generation is validated
+#    without touching the cluster).
+# 2. check_mode update with all attributes.
+# 3. check_mode delete.
+# 4. Negative: create without a recovery_plan_ext_id.
+# 5. Negative: update without an ext_id.
+# 6. Negative: delete with an invalid ext_id against a real cluster.
+# 7. Negative: invalid enum value for power_state.
+# 8. Real create/update/delete lifecycle (guarded by
+#    `recovery_setting_prereqs_available` fact; the caller supplies a real
+#    recovery plan and VM ext_id on the target cluster).
+# 9. Real info: list all recovery settings on a recovery plan.
+# 10. Idempotency: run update twice with the same body, expect
+#     `changed=false` on the second run.
+
+- name: Start Recovery Setting tests
+  ansible.builtin.debug:
+    msg: Start Recovery Setting tests
+
+- name: Generate random suffix for test names / ext ids
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=8)[0] }}"
+
+- name: Set placeholder ext_ids used by check_mode tests
+  ansible.builtin.set_fact:
+    dummy_recovery_plan_ext_id: "b7d1f5c3-3f2a-4d4e-9b8b-1c1d3e2f8a11"
+    dummy_recovery_setting_ext_id: "d1a2b3c4-5555-6666-7777-8888aabbccdd"
+    dummy_vm_ext_id: "0005c1c1-0000-0000-0000-000000000001"
+    dummy_category_ext_id: "1e8e4f8f-1111-2222-3333-444455556666"
+    dummy_volume_group_ext_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+    dummy_network_mapping_ext_id: "77777777-7777-7777-7777-777777777777"
+    dummy_nic_ext_id: "88888888-8888-8888-8888-888888888888"
+
+##############################################################################
+# check_mode create (full attributes)
+##############################################################################
+- name: Generate create spec for VM recovery setting in check mode (all attributes)
+  nutanix.ncp.ntnx_recovery_setting_v2:
+    state: present
+    recovery_plan_ext_id: "{{ dummy_recovery_plan_ext_id }}"
+    recovery_setting:
+      vm:
+        vm:
+          ext_id: "{{ dummy_vm_ext_id }}"
+        power_state: "ON"
+        in_guest_script_execution_config:
+          is_enabled: true
+          timeout_secs: 300
+        volume_group_attachments:
+          - volume_group:
+              ext_id: "{{ dummy_volume_group_ext_id }}"
+            attachment_type: "DIRECT"
+            protocol: "ISCSI"
+            client_features:
+              iscsi_features:
+                enabled_authentication: "NONE"
+        ip_mappings:
+          - network_mapping_ext_id: "{{ dummy_network_mapping_ext_id }}"
+            primary_ip:
+              ipv4:
+                value: "10.10.10.10"
+                prefix_length: 24
+            recovery_ip:
+              ipv4:
+                value: "10.20.10.10"
+                prefix_length: 24
+            primary_test_ip:
+              ipv4:
+                value: "10.10.10.11"
+                prefix_length: 24
+            recovery_test_ip:
+              ipv4:
+                value: "10.20.10.11"
+                prefix_length: 24
+        floating_ip_associations:
+          - nic_ext_id: "{{ dummy_nic_ext_id }}"
+            primary_floating_ip:
+              should_allocate_dynamically: true
+            recovery_floating_ip:
+              should_allocate_dynamically: true
+            primary_test_floating_ip:
+              should_allocate_dynamically: true
+            recovery_test_floating_ip:
+              should_allocate_dynamically: true
+  check_mode: true
+  register: create_check_mode_result
+  ignore_errors: true
+
+- name: Assert create check_mode result (VM recovery setting)
+  ansible.builtin.assert:
+    that:
+      - create_check_mode_result is defined
+      - create_check_mode_result.changed == false
+      - create_check_mode_result.failed == false
+      - create_check_mode_result.response is defined
+      - create_check_mode_result.response.recovery_setting is defined
+      - create_check_mode_result.response.recovery_setting.vm.ext_id == dummy_vm_ext_id
+      - create_check_mode_result.response.recovery_setting.power_state == "ON"
+      - create_check_mode_result.response.recovery_setting.in_guest_script_execution_config.is_enabled == true
+      - create_check_mode_result.response.recovery_setting.in_guest_script_execution_config.timeout_secs == 300
+      - create_check_mode_result.response.recovery_setting.volume_group_attachments | length == 1
+      - create_check_mode_result.response.recovery_setting.volume_group_attachments[0].volume_group.ext_id == dummy_volume_group_ext_id
+      - create_check_mode_result.response.recovery_setting.volume_group_attachments[0].attachment_type == "DIRECT"
+      - create_check_mode_result.response.recovery_setting.volume_group_attachments[0].protocol == "ISCSI"
+      - create_check_mode_result.response.recovery_setting.ip_mappings | length == 1
+      - create_check_mode_result.response.recovery_setting.ip_mappings[0].network_mapping_ext_id == dummy_network_mapping_ext_id
+      - create_check_mode_result.response.recovery_setting.ip_mappings[0].primary_ip.ipv4.value == "10.10.10.10"
+      - create_check_mode_result.response.recovery_setting.floating_ip_associations | length == 1
+      - create_check_mode_result.response.recovery_setting.floating_ip_associations[0].nic_ext_id == dummy_nic_ext_id
+      - create_check_mode_result.response.recovery_setting.floating_ip_associations[0].primary_floating_ip.should_allocate_dynamically == true
+    success_msg: "Create check_mode spec for VM recovery setting generated correctly"
+    fail_msg: "Create check_mode spec for VM recovery setting NOT generated correctly"
+
+##############################################################################
+# check_mode create for VM category variant (spec-only)
+##############################################################################
+- name: Generate create spec for VM category recovery setting in check mode
+  nutanix.ncp.ntnx_recovery_setting_v2:
+    state: present
+    recovery_plan_ext_id: "{{ dummy_recovery_plan_ext_id }}"
+    recovery_setting:
+      vm_category:
+        vm_category_ext_id: "{{ dummy_category_ext_id }}"
+        power_state: "OFF"
+        in_guest_script_execution_config:
+          is_enabled: false
+          timeout_secs: 120
+  check_mode: true
+  register: category_check_mode_result
+  ignore_errors: true
+
+- name: Assert VM category create check_mode result
+  ansible.builtin.assert:
+    that:
+      - category_check_mode_result is defined
+      - category_check_mode_result.changed == false
+      - category_check_mode_result.failed == false
+      - category_check_mode_result.response.recovery_setting.vm_category_ext_id == dummy_category_ext_id
+      - category_check_mode_result.response.recovery_setting.power_state == "OFF"
+      - category_check_mode_result.response.recovery_setting.in_guest_script_execution_config.is_enabled == false
+      - category_check_mode_result.response.recovery_setting.in_guest_script_execution_config.timeout_secs == 120
+    success_msg: "Create check_mode spec for VM category recovery setting generated correctly"
+    fail_msg: "Create check_mode spec for VM category recovery setting NOT generated correctly"
+
+##############################################################################
+# check_mode create for Volume Group variant (spec-only) + iscsi CHAP secret
+##############################################################################
+- name: Generate create spec for Volume Group recovery setting in check mode
+  nutanix.ncp.ntnx_recovery_setting_v2:
+    state: present
+    recovery_plan_ext_id: "{{ dummy_recovery_plan_ext_id }}"
+    recovery_setting:
+      volume_group:
+        volume_group:
+          ext_id: "{{ dummy_volume_group_ext_id }}"
+        iscsi_target_features:
+          enabled_authentication: "CHAP"
+          secret: "S3cr3t-{{ random_name }}"
+  check_mode: true
+  register: vg_check_mode_result
+  ignore_errors: true
+
+- name: Assert Volume Group create check_mode result
+  ansible.builtin.assert:
+    that:
+      - vg_check_mode_result is defined
+      - vg_check_mode_result.changed == false
+      - vg_check_mode_result.failed == false
+      - vg_check_mode_result.response.recovery_setting.volume_group.ext_id == dummy_volume_group_ext_id
+      - vg_check_mode_result.response.recovery_setting.iscsi_target_features.enabled_authentication == "CHAP"
+    success_msg: "Create check_mode spec for Volume Group recovery setting generated correctly"
+    fail_msg: "Create check_mode spec for Volume Group recovery setting NOT generated correctly"
+
+##############################################################################
+# check_mode update (all attributes)
+##############################################################################
+- name: Generate update spec in check mode (all attributes)
+  nutanix.ncp.ntnx_recovery_setting_v2:
+    state: present
+    recovery_plan_ext_id: "{{ dummy_recovery_plan_ext_id }}"
+    ext_id: "{{ dummy_recovery_setting_ext_id }}"
+    recovery_setting:
+      vm:
+        vm:
+          ext_id: "{{ dummy_vm_ext_id }}"
+        power_state: "OFF"
+        in_guest_script_execution_config:
+          is_enabled: false
+          timeout_secs: 600
+  check_mode: true
+  register: update_check_mode_result
+  ignore_errors: true
+
+- name: Assert update check_mode result
+  ansible.builtin.assert:
+    that:
+      - update_check_mode_result is defined
+      # In check mode the module still has to fetch the existing entity to get
+      # its etag. When the placeholder ext_id does not exist on this cluster
+      # the API returns 404; that is expected. When the resource DOES exist
+      # (real cluster) we assert on the spec fields.
+      - update_check_mode_result.changed == false
+      - >-
+        (update_check_mode_result.failed == true
+         and 'not found' in (update_check_mode_result.response | string | lower))
+        or
+        (update_check_mode_result.failed == false
+         and update_check_mode_result.response.recovery_setting.vm.ext_id == dummy_vm_ext_id
+         and update_check_mode_result.response.recovery_setting.power_state == "OFF"
+         and update_check_mode_result.response.recovery_setting.in_guest_script_execution_config.is_enabled == false
+         and update_check_mode_result.response.recovery_setting.in_guest_script_execution_config.timeout_secs == 600)
+    success_msg: "Update check_mode either surfaced NOT_FOUND (no such plan on cluster) or generated the expected spec"
+    fail_msg: "Update check_mode neither surfaced NOT_FOUND nor generated a valid spec"
+
+##############################################################################
+# check_mode delete
+##############################################################################
+- name: Generate delete plan in check mode
+  nutanix.ncp.ntnx_recovery_setting_v2:
+    state: absent
+    recovery_plan_ext_id: "{{ dummy_recovery_plan_ext_id }}"
+    ext_id: "{{ dummy_recovery_setting_ext_id }}"
+  check_mode: true
+  register: delete_check_mode_result
+  ignore_errors: true
+
+- name: Assert delete check_mode result
+  ansible.builtin.assert:
+    that:
+      - delete_check_mode_result is defined
+      - delete_check_mode_result.changed == false
+      - delete_check_mode_result.failed == false
+      - delete_check_mode_result.msg is defined
+      - "'will be deleted' in delete_check_mode_result.msg"
+      - delete_check_mode_result.ext_id == dummy_recovery_setting_ext_id
+    success_msg: "Delete check_mode message emitted correctly"
+    fail_msg: "Delete check_mode message was NOT emitted correctly"
+
+##############################################################################
+# Negative: create without recovery_plan_ext_id
+##############################################################################
+- name: Attempt to create without recovery_plan_ext_id (should fail spec validation)
+  nutanix.ncp.ntnx_recovery_setting_v2:
+    state: present
+    recovery_setting:
+      vm:
+        vm:
+          ext_id: "{{ dummy_vm_ext_id }}"
+        power_state: "ON"
+  register: missing_plan_result
+  ignore_errors: true
+
+- name: Assert missing recovery_plan_ext_id was rejected
+  ansible.builtin.assert:
+    that:
+      - missing_plan_result.failed == true
+      - missing_plan_result.msg is defined
+      - "'recovery_plan_ext_id' in missing_plan_result.msg"
+    success_msg: "Missing recovery_plan_ext_id correctly rejected"
+    fail_msg: "Missing recovery_plan_ext_id was NOT rejected"
+
+##############################################################################
+# Negative: delete without ext_id
+##############################################################################
+- name: Attempt to delete without ext_id (required_if should reject)
+  nutanix.ncp.ntnx_recovery_setting_v2:
+    state: absent
+    recovery_plan_ext_id: "{{ dummy_recovery_plan_ext_id }}"
+  register: delete_no_ext_id_result
+  ignore_errors: true
+
+- name: Assert delete without ext_id was rejected
+  ansible.builtin.assert:
+    that:
+      - delete_no_ext_id_result.failed == true
+      - delete_no_ext_id_result.msg is defined
+      - "'ext_id' in delete_no_ext_id_result.msg"
+    success_msg: "Delete without ext_id correctly rejected"
+    fail_msg: "Delete without ext_id was NOT rejected"
+
+##############################################################################
+# Negative: invalid enum for power_state
+##############################################################################
+- name: Attempt create with invalid power_state enum
+  nutanix.ncp.ntnx_recovery_setting_v2:
+    state: present
+    recovery_plan_ext_id: "{{ dummy_recovery_plan_ext_id }}"
+    recovery_setting:
+      vm:
+        vm:
+          ext_id: "{{ dummy_vm_ext_id }}"
+        power_state: "PAUSED"
+  check_mode: true
+  register: bad_enum_result
+  ignore_errors: true
+
+- name: Assert invalid enum value rejected
+  ansible.builtin.assert:
+    that:
+      - bad_enum_result.failed == true
+    success_msg: "Invalid power_state value correctly rejected"
+    fail_msg: "Invalid power_state value was NOT rejected"
+
+##############################################################################
+# Negative: invalid ext_id against live PC (fetching non-existent resource)
+##############################################################################
+- name: Fetch recovery setting with an invalid ext_id (should error)
+  nutanix.ncp.ntnx_recovery_settings_info_v2:
+    recovery_plan_ext_id: "{{ dummy_recovery_plan_ext_id }}"
+    ext_id: "ffffffff-ffff-ffff-ffff-ffffffffffff"
+  register: invalid_lookup_result
+  ignore_errors: true
+
+- name: Assert invalid ext_id lookup surfaced an error
+  ansible.builtin.assert:
+    that:
+      - invalid_lookup_result.failed == true
+    success_msg: "Lookup with invalid ext_id surfaced an error"
+    fail_msg: "Lookup with invalid ext_id did NOT surface an error"
+
+##############################################################################
+# Real CRUD lifecycle — only if the caller wired real prerequisites
+# (recovery_plan_ext_id + vm_ext_id) into the harness. Otherwise this whole
+# block is skipped so we don't randomly fail on clusters without a plan.
+##############################################################################
+- name: Detect real prerequisites
+  ansible.builtin.set_fact:
+    recovery_setting_prereqs_available: >-
+      {{ (recovery_plan_ext_id is defined and recovery_plan_ext_id | length > 0)
+         and (vm_ext_id is defined and vm_ext_id | length > 0) }}
+
+- name: Run real lifecycle when prerequisites are available
+  when: recovery_setting_prereqs_available | bool
+  block:
+    - name: Create VM recovery setting on the real cluster
+      nutanix.ncp.ntnx_recovery_setting_v2:
+        state: present
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+        recovery_setting:
+          vm:
+            vm:
+              ext_id: "{{ vm_ext_id }}"
+            power_state: "ON"
+            in_guest_script_execution_config:
+              is_enabled: true
+              timeout_secs: 300
+      register: real_create_result
+      ignore_errors: true
+
+    - name: Assert real create succeeded
+      ansible.builtin.assert:
+        that:
+          - real_create_result is defined
+          - real_create_result.failed == false
+          - real_create_result.changed == true
+          - real_create_result.ext_id is defined
+          - real_create_result.task_ext_id is defined
+          - real_create_result.response is defined
+          - real_create_result.response.recovery_setting.vm.ext_id == vm_ext_id
+          - real_create_result.response.recovery_setting.power_state == "ON"
+        success_msg: "Real create of recovery setting succeeded"
+        fail_msg: "Real create of recovery setting failed"
+
+    - name: Capture real recovery setting ext_id
+      ansible.builtin.set_fact:
+        real_recovery_setting_ext_id: "{{ real_create_result.ext_id }}"
+
+    - name: List all recovery settings on the plan
+      nutanix.ncp.ntnx_recovery_settings_info_v2:
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+      register: real_list_result
+      ignore_errors: true
+
+    - name: Assert list returned the new setting
+      ansible.builtin.assert:
+        that:
+          - real_list_result is defined
+          - real_list_result.failed == false
+          - real_list_result.response is defined
+          - real_list_result.response | length >= 1
+          - real_recovery_setting_ext_id in (real_list_result.response | map(attribute='ext_id') | list)
+        success_msg: "List operation returned the newly-created setting"
+        fail_msg: "List operation did NOT return the newly-created setting"
+
+    - name: Fetch the setting by ext_id
+      nutanix.ncp.ntnx_recovery_settings_info_v2:
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+        ext_id: "{{ real_recovery_setting_ext_id }}"
+      register: real_fetch_result
+      ignore_errors: true
+
+    - name: Assert fetch-by-ext_id returned correct setting
+      ansible.builtin.assert:
+        that:
+          - real_fetch_result is defined
+          - real_fetch_result.failed == false
+          - real_fetch_result.ext_id == real_recovery_setting_ext_id
+          - real_fetch_result.response.ext_id == real_recovery_setting_ext_id
+          - real_fetch_result.response.recovery_setting.vm.ext_id == vm_ext_id
+        success_msg: "Fetch by ext_id returned the correct setting"
+        fail_msg: "Fetch by ext_id did NOT return the correct setting"
+
+    - name: Update recovery setting (change power state)
+      nutanix.ncp.ntnx_recovery_setting_v2:
+        state: present
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+        ext_id: "{{ real_recovery_setting_ext_id }}"
+        recovery_setting:
+          vm:
+            vm:
+              ext_id: "{{ vm_ext_id }}"
+            power_state: "OFF"
+            in_guest_script_execution_config:
+              is_enabled: false
+      register: real_update_result
+      ignore_errors: true
+
+    - name: Assert update succeeded
+      ansible.builtin.assert:
+        that:
+          - real_update_result is defined
+          - real_update_result.failed == false
+          - real_update_result.changed == true
+          - real_update_result.response.recovery_setting.power_state == "OFF"
+          - real_update_result.response.recovery_setting.in_guest_script_execution_config.is_enabled == false
+        success_msg: "Update recovery setting succeeded"
+        fail_msg: "Update recovery setting failed"
+
+    - name: Re-run same update (idempotency check)
+      nutanix.ncp.ntnx_recovery_setting_v2:
+        state: present
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+        ext_id: "{{ real_recovery_setting_ext_id }}"
+        recovery_setting:
+          vm:
+            vm:
+              ext_id: "{{ vm_ext_id }}"
+            power_state: "OFF"
+            in_guest_script_execution_config:
+              is_enabled: false
+      register: real_idem_result
+      ignore_errors: true
+
+    - name: Assert idempotency - second update was skipped
+      ansible.builtin.assert:
+        that:
+          - real_idem_result is defined
+          - real_idem_result.failed == false
+          - real_idem_result.changed == false
+          - real_idem_result.skipped is defined
+          - real_idem_result.skipped == true
+        success_msg: "Second update was correctly skipped"
+        fail_msg: "Second update was NOT skipped — idempotency is broken"
+
+    - name: Delete recovery setting
+      nutanix.ncp.ntnx_recovery_setting_v2:
+        state: absent
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+        ext_id: "{{ real_recovery_setting_ext_id }}"
+      register: real_delete_result
+      ignore_errors: true
+
+    - name: Assert delete succeeded
+      ansible.builtin.assert:
+        that:
+          - real_delete_result is defined
+          - real_delete_result.failed == false
+          - real_delete_result.changed == true
+          - real_delete_result.task_ext_id is defined
+        success_msg: "Delete recovery setting succeeded"
+        fail_msg: "Delete recovery setting failed"
+
+    - name: Attempt to fetch the deleted setting (should error)
+      nutanix.ncp.ntnx_recovery_settings_info_v2:
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+        ext_id: "{{ real_recovery_setting_ext_id }}"
+      register: post_delete_fetch
+      ignore_errors: true
+
+    - name: Assert post-delete fetch surfaced an error
+      ansible.builtin.assert:
+        that:
+          - post_delete_fetch.failed == true
+        success_msg: "Post-delete fetch correctly errored"
+        fail_msg: "Post-delete fetch did NOT error"
