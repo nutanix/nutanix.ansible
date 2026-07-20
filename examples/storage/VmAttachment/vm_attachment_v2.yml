@@ -1,0 +1,111 @@
+---
+# Summary:
+# This playbook demonstrates the full lifecycle of a VmAttachment
+# (hypervisor attachment of a Volume Group to an AHV VM) using the storage v4
+# API. It creates the prerequisite VG + VM, then exercises the modules:
+#   1. Attach a VM to a Volume Group.
+#   2. List all VmAttachments of a Volume Group.
+#   3. Get a specific VmAttachment by VM ext_id.
+#   4. Detach the VM from the Volume Group.
+#   5. Delete the VM and Volume Group at the end (cleanup).
+#
+# Replace the values under "Set inputs" with the ext_ids that exist on your
+# Prism Central / Prism Element clusters.
+
+- name: VmAttachment storage v4 playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default('10.44.76.28') }}"
+      nutanix_username: "{{ nutanix_username | default('admin') }}"
+      nutanix_password: "{{ nutanix_password | default('Nutanix.123') }}"
+      nutanix_port: "{{ nutanix_port | default(9440) }}"
+      validate_certs: false
+  tasks:
+    - name: Set inputs (replace with real ext_ids on your cluster)
+      ansible.builtin.set_fact:
+        cluster_ext_id: "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+        subnet_ext_id: "e2a93f8a-35b5-4201-8efa-fd147b1251ad"
+        random_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=6)[0] | lower }}"
+
+    - name: Create a Volume Group to attach to
+      nutanix.ncp.ntnx_volume_groups_v2:
+        name: "ansible-example-vga-{{ random_suffix }}"
+        description: "VG for VmAttachment example"
+        should_load_balance_vm_attachments: true
+        sharing_status: "SHARED"
+        target_prefix: "exvma"
+        cluster_reference: "{{ cluster_ext_id }}"
+        usage_type: "USER"
+      register: vg_create
+
+    - name: Set the Volume Group ext_id
+      ansible.builtin.set_fact:
+        volume_group_ext_id: "{{ vg_create.ext_id }}"
+
+    - name: Create a VM that will consume the Volume Group
+      nutanix.ncp.ntnx_vms_v2:
+        name: "ansible-example-vm-vga-{{ random_suffix }}"
+        num_sockets: 2
+        num_cores_per_socket: 2
+        memory_size_bytes: 4294967296
+        cluster:
+          ext_id: "{{ cluster_ext_id }}"
+        nics:
+          - network_info:
+              nic_type: "NORMAL_NIC"
+              vlan_mode: "ACCESS"
+              subnet:
+                ext_id: "{{ subnet_ext_id }}"
+              ipv4_config:
+                should_assign_ip: true
+      register: vm_create
+
+    - name: Set the VM ext_id
+      ansible.builtin.set_fact:
+        vm_ext_id: "{{ vm_create.ext_id }}"
+
+    - name: Attach the VM to the Volume Group
+      nutanix.ncp.ntnx_vm_attachment_v2:
+        state: present
+        volume_group_ext_id: "{{ volume_group_ext_id }}"
+        ext_id: "{{ vm_ext_id }}"
+        index: 1
+      register: attach_result
+      ignore_errors: true
+
+    - name: List all VM attachments for the Volume Group
+      nutanix.ncp.ntnx_volume_group_vm_attachments_info_v2:
+        volume_group_ext_id: "{{ volume_group_ext_id }}"
+      register: list_result
+      ignore_errors: true
+
+    - name: Get a specific VmAttachment by VM ext_id
+      nutanix.ncp.ntnx_volume_group_vm_attachments_info_v2:
+        volume_group_ext_id: "{{ volume_group_ext_id }}"
+        ext_id: "{{ vm_ext_id }}"
+      register: single_result
+      ignore_errors: true
+
+    - name: Detach the VM from the Volume Group
+      nutanix.ncp.ntnx_vm_attachment_v2:
+        state: absent
+        volume_group_ext_id: "{{ volume_group_ext_id }}"
+        ext_id: "{{ vm_ext_id }}"
+      register: detach_result
+      ignore_errors: true
+
+    - name: Cleanup — delete the VM
+      nutanix.ncp.ntnx_vms_v2:
+        state: absent
+        ext_id: "{{ vm_ext_id }}"
+      register: vm_cleanup
+      ignore_errors: true
+
+    - name: Cleanup — delete the Volume Group
+      nutanix.ncp.ntnx_volume_groups_v2:
+        state: absent
+        ext_id: "{{ volume_group_ext_id }}"
+      register: vg_cleanup
+      ignore_errors: true
