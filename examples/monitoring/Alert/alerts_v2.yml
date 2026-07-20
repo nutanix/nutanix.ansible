@@ -1,0 +1,80 @@
+---
+# Summary:
+# This playbook demonstrates all supported operations for the Alert entity
+# in the Nutanix Prism Central v4 Monitoring namespace:
+#   1. List all Alerts
+#   2. List Alerts with filter, orderby, limit, select
+#   3. Fetch a single Alert using its external ID
+#   4. Acknowledge an Alert
+#   5. Resolve an Alert
+
+- name: Alerts playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+  tasks:
+    - name: List all Alerts on Prism Central
+      nutanix.ncp.ntnx_alerts_info_v2:
+      register: all_alerts
+      ignore_errors: true
+
+    - name: List Alerts filtered by severity (critical only)
+      nutanix.ncp.ntnx_alerts_info_v2:
+        filter: "severity eq Monitoring.Serviceability.Severity'CRITICAL'"
+      register: critical_alerts
+      ignore_errors: true
+
+    - name: List Alerts ordered by creationTime desc, first 5 records
+      nutanix.ncp.ntnx_alerts_info_v2:
+        orderby: "creationTime desc"
+        limit: 5
+        page: 0
+      register: recent_alerts
+      ignore_errors: true
+
+    - name: List Alerts selecting only a subset of fields
+      nutanix.ncp.ntnx_alerts_info_v2:
+        select: "extId,severity,title,isResolved"
+        limit: 5
+      register: projected_alerts
+      ignore_errors: true
+
+    - name: Set target alert ext_id (first alert returned by the list, if any)
+      ansible.builtin.set_fact:
+        target_alert_ext_id: >-
+          {{
+            (all_alerts.response | selectattr('is_resolved', 'equalto', false) | list | first).ext_id
+            if (all_alerts.response is defined and all_alerts.response | length > 0
+                and (all_alerts.response | selectattr('is_resolved', 'equalto', false) | list | length) > 0)
+            else ''
+          }}
+
+    - name: Fetch a single Alert using its external ID
+      nutanix.ncp.ntnx_alerts_info_v2:
+        ext_id: "{{ target_alert_ext_id }}"
+      register: single_alert
+      when: target_alert_ext_id | length > 0
+      ignore_errors: true
+
+    - name: Acknowledge the target Alert
+      nutanix.ncp.ntnx_alert_v2:
+        state: present
+        ext_id: "{{ target_alert_ext_id }}"
+        action_type: ACKNOWLEDGE
+      register: ack_result
+      when: target_alert_ext_id | length > 0
+      ignore_errors: true
+
+    - name: Resolve the target Alert
+      nutanix.ncp.ntnx_alert_v2:
+        state: present
+        ext_id: "{{ target_alert_ext_id }}"
+        action_type: RESOLVE
+      register: resolve_result
+      when: target_alert_ext_id | length > 0
+      ignore_errors: true
