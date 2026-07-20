@@ -304,5 +304,11 @@ def strip_read_only_fields(spec, fields=None):
 
     for field in fields:
         if hasattr(spec, field):
-            delattr(spec, field)
+            try:
+                delattr(spec, field)
+            except AttributeError:
+                # Some v4 SDK models expose fields as @property without a
+                # deleter (e.g. ClusterConfig). Fall back to nulling the value
+                # so the field is still stripped from the request body.
+                setattr(spec, field, None)
     return spec
