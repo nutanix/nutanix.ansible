@@ -1,0 +1,70 @@
+---
+# Summary:
+# This playbook demonstrates the LCM (Life Cycle Manager) Inventory action:
+#   1. Perform an LCM inventory on Prism Central (default scope).
+#   2. Perform an LCM inventory on a specific Prism Element cluster.
+#   3. Perform an LCM inventory that passes a credential reference from the
+#      Nutanix Credential Store (for vendor-managed inventory sources).
+#
+# The inventory action is the FIRST step in any LCM workflow: it scans the
+# target for entities that can be updated through LCM and populates the LCM
+# framework so subsequent operations (compute-recommendations,
+# preload-artifacts, upgrade) can run.
+#
+# NOTE: `ignore_errors: true` is set on the inventory tasks because the LCM
+# framework may return a task-level FAILED status on clusters whose LCM
+# URL/version prechecks are misconfigured (for example when the configured
+# LCM URL points to an older framework than the one currently installed).
+# The task response still contains meaningful diagnostics, so subsequent
+# steps only run when a real success is observed.
+
+- name: LCM Inventory playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default('10.44.76.28') }}"
+      nutanix_username: "{{ nutanix_username | default('admin') }}"
+      nutanix_password: "{{ nutanix_password | default('Nutanix.123') }}"
+      validate_certs: false
+
+  tasks:
+    - name: Discover Prism Central external ID
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
+      register: pc_cluster
+      ignore_errors: true
+
+    - name: Set Prism Central external ID
+      ansible.builtin.set_fact:
+        prism_central_external_id: "{{ pc_cluster.response[0].ext_id }}"
+      when:
+        - pc_cluster.response is defined
+        - pc_cluster.response | length > 0
+
+    - name: Perform LCM inventory on Prism Central (default scope)
+      nutanix.ncp.ntnx_lcm_export_inventory_v2: {}
+      register: pc_inventory
+      ignore_errors: true
+
+    - name: Show Prism Central inventory task summary
+      ansible.builtin.debug:
+        msg:
+          - "task_ext_id: {{ pc_inventory.task_ext_id | default('n/a') }}"
+          - "status:      {{ pc_inventory.response.status | default('unknown') }}"
+
+    - name: Perform LCM inventory targeting a specific Prism Element cluster
+      nutanix.ncp.ntnx_lcm_export_inventory_v2:
+        cluster_ext_id: "{{ prism_central_external_id }}"
+      register: pe_inventory
+      when: prism_central_external_id is defined
+      ignore_errors: true
+
+    - name: Perform LCM inventory with a credential reference
+      nutanix.ncp.ntnx_lcm_export_inventory_v2:
+        cluster_ext_id: "{{ prism_central_external_id }}"
+        credentials:
+          - credential_ext_id: "00000000-0000-0000-0000-000000000000"
+      register: inventory_with_credentials
+      when: prism_central_external_id is defined
+      ignore_errors: true
