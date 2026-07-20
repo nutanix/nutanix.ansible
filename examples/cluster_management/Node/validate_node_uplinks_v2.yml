@@ -1,0 +1,100 @@
+---
+# Summary:
+# This playbook demonstrates how to use the ntnx_validate_node_uplinks_v2 module.
+# The validate-node action is a pre-check for cluster expansion. It can either
+# validate hypervisor bundle compatibility for a list of target nodes, or
+# validate the network uplink configuration for a target node.
+#
+# 1. Validate the uplink configuration of a single target node.
+# 2. Validate hypervisor bundle compatibility for a list of unconfigured nodes.
+
+- name: Validate node uplinks / hypervisor bundle playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('<pc_ip>', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('<user>', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('<pass>', true) }}"
+      validate_certs: false
+  tasks:
+    - name: Setting default variables
+      ansible.builtin.set_fact:
+        cluster_uuid: "0005b289-8340-119a-0000-00000000a31f"
+        virtual_switch_uuid: "2e40ff57-20aa-4d2b-b179-298db969c20d"
+        hypervisor_bundle_name: "AHV-20220304.242.iso"
+
+    - name: Discover an AOS Prism Element cluster via Prism Central
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+      register: clusters_info
+      ignore_errors: true
+
+    - name: Override cluster_uuid with a real cluster ext_id when discovered
+      ansible.builtin.set_fact:
+        cluster_uuid: >-
+          {{ (clusters_info.response | selectattr('ext_id', 'defined') | list | first).ext_id
+            if (clusters_info.response is defined and clusters_info.response | length > 0)
+            else cluster_uuid }}
+
+    - name: Validate node uplinks for one or more target nodes
+      nutanix.ncp.ntnx_validate_node_uplinks_v2:
+        cluster_ext_id: "{{ cluster_uuid }}"
+        uplink_nodes:
+          - cvm_ip:
+              ipv4:
+                value: "10.44.76.31"
+                prefix_length: 24
+            hypervisor_ip:
+              ipv4:
+                value: "10.44.76.32"
+                prefix_length: 24
+            networks:
+              - name: "br0"
+                vswitch_ext_id: "{{ virtual_switch_uuid }}"
+                networks:
+                  - "Management"
+                uplinks:
+                  active:
+                    - mac: "1c:f4:7b:5f:a9:2a"
+                      name: "eth1"
+                      value: "eth1"
+                  standby:
+                    - mac: "12:ee:23:33:2f:43"
+                      name: "eth2"
+                      value: "eth2"
+      register: uplinks_validation
+      ignore_errors: true
+
+    - name: Validate hypervisor bundle compatibility for a list of unconfigured nodes
+      nutanix.ncp.ntnx_validate_node_uplinks_v2:
+        cluster_ext_id: "{{ cluster_uuid }}"
+        bundle_param:
+          bundle_info:
+            name: "{{ hypervisor_bundle_name }}"
+          node_list:
+            - node_uuid: "54b7581b-2e35-413e-8608-0531b065a5d8"
+              block_id: "18SM8B010159"
+              node_position: "B"
+              hypervisor_type: "AHV"
+              hypervisor_hostname: "unconfigured-node-1"
+              hypervisor_version: "10.0-793"
+              nos_version: "7.0"
+              model: "NX-3060-G5"
+              is_light_compute: false
+              is_robo_mixed_hypervisor: false
+              current_network_interface: "eth1"
+              cvm_ip:
+                ipv4:
+                  value: "10.44.76.31"
+                  prefix_length: 24
+              hypervisor_ip:
+                ipv4:
+                  value: "10.44.76.32"
+                  prefix_length: 24
+              ipmi_ip:
+                ipv4:
+                  value: "10.44.76.33"
+                  prefix_length: 24
+      register: bundle_validation
+      ignore_errors: true
