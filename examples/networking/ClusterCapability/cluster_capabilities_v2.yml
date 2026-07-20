@@ -1,0 +1,91 @@
+---
+# Summary:
+# This playbook demonstrates the read-only Networking Cluster Capabilities API.
+# The Nutanix Networking API exposes a single endpoint for this entity
+# (GET /api/networking/v4.3/config/capabilities), so this playbook covers:
+# 1. List all cluster capabilities registered against Prism Central
+# 2. List cluster capabilities with a page limit
+# 3. List cluster capabilities with an OData filter (clusterId based)
+# 4. List cluster capabilities sorted by clusterId (asc and desc)
+# 5. Fetch a single cluster capability entity by external ID
+#    (which resolves to the Prism Element cluster UUID)
+
+- name: Cluster Capabilities info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ nutanix_username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ nutanix_password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: false
+  tasks:
+    - name: List all cluster capabilities registered against Prism Central
+      nutanix.ncp.ntnx_cluster_capabilities_info_v2: {}
+      register: all_capabilities
+      ignore_errors: true
+
+    - name: Show list-all response
+      ansible.builtin.debug:
+        msg: "{{ all_capabilities }}"
+
+    - name: List cluster capabilities with a page limit
+      nutanix.ncp.ntnx_cluster_capabilities_info_v2:
+        limit: 1
+      register: limited_capabilities
+      ignore_errors: true
+
+    - name: Show limited-list response
+      ansible.builtin.debug:
+        msg: "{{ limited_capabilities }}"
+
+    - name: Capture the first cluster_id (used as ext_id for follow-up tasks)
+      ansible.builtin.set_fact:
+        first_cluster_id: "{{ all_capabilities.response[0].cluster_id }}"
+      when:
+        - all_capabilities.response is defined
+        - (all_capabilities.response | length) > 0
+
+    - name: List cluster capabilities filtered by clusterId
+      nutanix.ncp.ntnx_cluster_capabilities_info_v2:
+        filter: "clusterId eq '{{ first_cluster_id }}'"
+      register: filtered_capabilities
+      when: first_cluster_id is defined
+      ignore_errors: true
+
+    - name: Show filtered-list response
+      ansible.builtin.debug:
+        msg: "{{ filtered_capabilities }}"
+      when: first_cluster_id is defined
+
+    - name: List cluster capabilities sorted by clusterId ascending
+      nutanix.ncp.ntnx_cluster_capabilities_info_v2:
+        orderby: "clusterId asc"
+      register: asc_capabilities
+      ignore_errors: true
+
+    - name: Show asc-ordered response
+      ansible.builtin.debug:
+        msg: "{{ asc_capabilities }}"
+
+    - name: List cluster capabilities sorted by clusterId descending
+      nutanix.ncp.ntnx_cluster_capabilities_info_v2:
+        orderby: "clusterId desc"
+      register: desc_capabilities
+      ignore_errors: true
+
+    - name: Show desc-ordered response
+      ansible.builtin.debug:
+        msg: "{{ desc_capabilities }}"
+
+    - name: Fetch a single cluster capability entity by external ID
+      nutanix.ncp.ntnx_cluster_capabilities_info_v2:
+        ext_id: "{{ first_cluster_id }}"
+      register: single_capability
+      when: first_cluster_id is defined
+      ignore_errors: true
+
+    - name: Show get-by-ext_id response
+      ansible.builtin.debug:
+        msg: "{{ single_capability }}"
+      when: first_cluster_id is defined

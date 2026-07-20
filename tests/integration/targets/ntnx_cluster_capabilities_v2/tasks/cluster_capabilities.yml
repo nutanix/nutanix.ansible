@@ -1,0 +1,261 @@
+---
+# Test plan for ntnx_cluster_capabilities_info_v2
+# ============================================================================
+# The Networking Cluster Capabilities entity only exposes a single API method
+# in the SDK (`ClusterCapabilitiesApi.list_cluster_capabilities`) that maps to
+# GET /api/networking/v4.3/config/capabilities. There is no create/update/
+# delete method, so the tests focus on the info module and its argument spec:
+#
+# 1. List all cluster capabilities and validate response shape - a list of
+#    dicts where each entry exposes a cluster_id and a non-empty
+#    `capabilities` array of {capability_name, is_supported} entries.
+# 2. Exercise `limit` and verify the response length matches the request.
+# 3. Exercise `page` combined with `limit` and verify pagination.
+# 4. Exercise `filter` with clusterId equality (the only filter field the
+#    API accepts) and verify the returned entity matches the request.
+# 5. Exercise `orderby` in both asc and desc directions on clusterId (the
+#    only orderby field the API accepts).
+# 6. Exercise the module's synthetic get-by-ext_id path: pass the cluster
+#    UUID as ext_id and verify a single entity is returned matching the
+#    supplied cluster_id.
+# 7. Negative: pass an invalid ext_id (a UUID that is not a registered
+#    PE cluster) - the module MUST fail with a descriptive "not found"
+#    error.
+# 8. Negative: pass ext_id AND filter together - the module MUST reject
+#    the mutually exclusive combination via the standard AnsibleModule
+#    validator.
+# 9. Negative: pass an invalid OData filter expression - the SDK MUST
+#    report failure and the module MUST surface it via the standard
+#    error path.
+# 10. Coverage - every attribute in `get_module_spec()` is exercised at
+#     least once (ext_id in step 6, filter in step 4, page in step 3,
+#     limit in step 2, orderby in step 5; the `select` option inherited
+#     from the info doc fragment is intentionally stripped before the
+#     SDK call, so it is exercised implicitly by every list task).
+# ============================================================================
+
+- name: Start Cluster Capabilities info tests
+  ansible.builtin.debug:
+    msg: Start Cluster Capabilities info tests
+
+##############################################################################
+# 1. List all cluster capabilities
+##############################################################################
+
+- name: List all cluster capabilities
+  nutanix.ncp.ntnx_cluster_capabilities_info_v2: {}
+  register: all_capabilities
+  ignore_errors: true
+
+- name: List all cluster capabilities status
+  ansible.builtin.assert:
+    that:
+      - all_capabilities is defined
+      - all_capabilities.changed == false
+      - all_capabilities.failed == false
+      - all_capabilities.response is defined
+      - all_capabilities.response | length > 0
+      - all_capabilities.response[0].cluster_id is defined
+      - all_capabilities.response[0].cluster_id | length > 0
+      - all_capabilities.response[0].capabilities is defined
+      - all_capabilities.response[0].capabilities | length > 0
+      - all_capabilities.response[0].capabilities[0].capability_name is defined
+      - all_capabilities.response[0].capabilities[0].is_supported in [true, false]
+      - all_capabilities.total_available_results is defined
+    success_msg: "List all cluster capabilities passed"
+    fail_msg: "List all cluster capabilities failed"
+
+- name: Capture the first cluster capability entry for follow-up tasks
+  ansible.builtin.set_fact:
+    first_capability: "{{ all_capabilities.response[0] }}"
+
+##############################################################################
+# 2. List cluster capabilities with limit
+##############################################################################
+
+- name: List cluster capabilities with limit=1
+  nutanix.ncp.ntnx_cluster_capabilities_info_v2:
+    limit: 1
+  register: limited_capabilities
+  ignore_errors: true
+
+- name: List cluster capabilities with limit=1 status
+  ansible.builtin.assert:
+    that:
+      - limited_capabilities is defined
+      - limited_capabilities.changed == false
+      - limited_capabilities.failed == false
+      - limited_capabilities.response is defined
+      - (limited_capabilities.response | length) == 1
+      - limited_capabilities.response[0].cluster_id is defined
+    success_msg: "List cluster capabilities with limit=1 passed"
+    fail_msg: "List cluster capabilities with limit=1 failed"
+
+##############################################################################
+# 3. List cluster capabilities with page pagination
+##############################################################################
+
+- name: List cluster capabilities with page=0 and limit=1
+  nutanix.ncp.ntnx_cluster_capabilities_info_v2:
+    page: 0
+    limit: 1
+  register: page_zero_capabilities
+  ignore_errors: true
+
+- name: List cluster capabilities with page=0 and limit=1 status
+  ansible.builtin.assert:
+    that:
+      - page_zero_capabilities is defined
+      - page_zero_capabilities.changed == false
+      - page_zero_capabilities.failed == false
+      - page_zero_capabilities.response is defined
+      - (page_zero_capabilities.response | length) == 1
+    success_msg: "List cluster capabilities with page pagination passed"
+    fail_msg: "List cluster capabilities with page pagination failed"
+
+##############################################################################
+# 4. List cluster capabilities with filter (clusterId equality)
+##############################################################################
+
+- name: List cluster capabilities filtered by clusterId
+  nutanix.ncp.ntnx_cluster_capabilities_info_v2:
+    filter: "clusterId eq '{{ first_capability.cluster_id }}'"
+  register: filtered_capabilities
+  ignore_errors: true
+
+- name: List cluster capabilities filtered by clusterId status
+  ansible.builtin.assert:
+    that:
+      - filtered_capabilities is defined
+      - filtered_capabilities.changed == false
+      - filtered_capabilities.failed == false
+      - filtered_capabilities.response is defined
+      - (filtered_capabilities.response | length) == 1
+      - filtered_capabilities.response[0].cluster_id == first_capability.cluster_id
+      - filtered_capabilities.response[0].capabilities | length > 0
+    success_msg: "List cluster capabilities filtered by clusterId passed"
+    fail_msg: "List cluster capabilities filtered by clusterId failed"
+
+##############################################################################
+# 5. List cluster capabilities with orderby ascending / descending
+##############################################################################
+
+- name: List cluster capabilities ordered by clusterId ascending
+  nutanix.ncp.ntnx_cluster_capabilities_info_v2:
+    orderby: "clusterId asc"
+  register: asc_capabilities
+  ignore_errors: true
+
+- name: List cluster capabilities ordered by clusterId ascending status
+  ansible.builtin.assert:
+    that:
+      - asc_capabilities is defined
+      - asc_capabilities.changed == false
+      - asc_capabilities.failed == false
+      - asc_capabilities.response is defined
+      - asc_capabilities.response | length > 0
+    success_msg: "List cluster capabilities orderby asc passed"
+    fail_msg: "List cluster capabilities orderby asc failed"
+
+- name: List cluster capabilities ordered by clusterId descending
+  nutanix.ncp.ntnx_cluster_capabilities_info_v2:
+    orderby: "clusterId desc"
+  register: desc_capabilities
+  ignore_errors: true
+
+- name: List cluster capabilities ordered by clusterId descending status
+  ansible.builtin.assert:
+    that:
+      - desc_capabilities is defined
+      - desc_capabilities.changed == false
+      - desc_capabilities.failed == false
+      - desc_capabilities.response is defined
+      - desc_capabilities.response | length > 0
+    success_msg: "List cluster capabilities orderby desc passed"
+    fail_msg: "List cluster capabilities orderby desc failed"
+
+##############################################################################
+# 6. Fetch a single cluster capability entity by external ID (cluster UUID)
+##############################################################################
+
+- name: Fetch cluster capability using external ID (cluster UUID)
+  nutanix.ncp.ntnx_cluster_capabilities_info_v2:
+    ext_id: "{{ first_capability.cluster_id }}"
+  register: single_capability
+  ignore_errors: true
+
+- name: Fetch cluster capability using external ID status
+  ansible.builtin.assert:
+    that:
+      - single_capability is defined
+      - single_capability.changed == false
+      - single_capability.failed == false
+      - single_capability.ext_id == first_capability.cluster_id
+      - single_capability.response is defined
+      - single_capability.response.cluster_id == first_capability.cluster_id
+      - single_capability.response.capabilities is defined
+      - single_capability.response.capabilities | length > 0
+      - single_capability.response.capabilities[0].capability_name is defined
+      - single_capability.response.capabilities[0].is_supported in [true, false]
+    success_msg: "Fetch cluster capability using external ID passed"
+    fail_msg: "Fetch cluster capability using external ID failed"
+
+##############################################################################
+# 7. Negative — unknown ext_id (cluster UUID that does not exist)
+##############################################################################
+
+- name: Fetch cluster capability using a non-existent ext_id
+  nutanix.ncp.ntnx_cluster_capabilities_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: missing_capability
+  ignore_errors: true
+
+- name: Fetch cluster capability using a non-existent ext_id status
+  ansible.builtin.assert:
+    that:
+      - missing_capability is defined
+      - missing_capability.changed == false
+      - missing_capability.failed == true
+      - "'not found' in missing_capability.msg"
+    success_msg: "Fetch cluster capability using unknown ext_id failed as expected"
+    fail_msg: "Fetch cluster capability using unknown ext_id did not fail as expected"
+
+##############################################################################
+# 8. Negative — mutually exclusive ext_id + filter
+##############################################################################
+
+- name: Reject mutually exclusive ext_id + filter
+  nutanix.ncp.ntnx_cluster_capabilities_info_v2:
+    ext_id: "{{ first_capability.cluster_id }}"
+    filter: "clusterId eq '{{ first_capability.cluster_id }}'"
+  register: mutually_exclusive_result
+  ignore_errors: true
+
+- name: Reject mutually exclusive ext_id + filter status
+  ansible.builtin.assert:
+    that:
+      - mutually_exclusive_result is defined
+      - mutually_exclusive_result.changed == false
+      - mutually_exclusive_result.failed == true
+      - "'mutually exclusive' in mutually_exclusive_result.msg"
+    success_msg: "ext_id + filter rejected as expected"
+    fail_msg: "ext_id + filter combination was NOT rejected"
+
+##############################################################################
+# 9. Negative — invalid filter value (unsupported field)
+##############################################################################
+
+- name: List cluster capabilities with an invalid filter expression
+  nutanix.ncp.ntnx_cluster_capabilities_info_v2:
+    filter: "not_a_real_field eq 'x'"
+  register: invalid_filter_result
+  ignore_errors: true
+
+- name: List cluster capabilities with an invalid filter expression status
+  ansible.builtin.assert:
+    that:
+      - invalid_filter_result is defined
+      - invalid_filter_result.changed == false
+      - invalid_filter_result.failed == true
+    success_msg: "Invalid filter rejected as expected"
+    fail_msg: "Invalid filter was NOT rejected"
