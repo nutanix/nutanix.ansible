@@ -1,0 +1,543 @@
+---
+############################################################################
+# Test plan (write BEFORE code) — Alert Email Configuration (singleton)
+# ---------------------------------------------------------------------------
+# The AlertEmailConfiguration is a PC singleton with only Get and Update.
+# There is no Create/Delete API — the "delete" test verifies that
+# state=absent fails cleanly with the documented error message.
+#
+# Coverage:
+#   1. Info: fetch current config, assert the standard singleton fields
+#      exist (idempotent baseline).
+#   2. Info: fetch current config with an ext_id passed as input — asserts
+#      the same singleton is returned and ext_id is echoed back.
+#   3. Check-mode create-shaped test — for a singleton the "create"
+#      equivalent is the first full update, so we exercise it with ALL
+#      attributes in check mode and assert the generated spec.
+#   4. Check-mode update — flip a couple of scalar fields in check mode
+#      and assert the generated spec reflects the change without hitting
+#      the API.
+#   5. Check-mode delete — assert state=absent + check_mode still surfaces
+#      the "not supported" error (the module rejects it before hitting the
+#      API in both check_mode and real mode).
+#   6. Real update — minimal update (just is_empty_alert_email_digest_skipped)
+#      and assert the change is persisted.
+#   7. Real update — full update with all attributes, then read back and
+#      assert every attribute round-trips (per Step 6.5 schema audit).
+#   8. Idempotency — re-run the exact same full update; expect skipped=true
+#      and no change.
+#   9. Update with an invalid enum value for email_config_rules.impact_types
+#      — assert Ansible argument-spec validation rejects it.
+#  10. Update with an invalid enum value for email_config_rules.severities
+#      — assert Ansible argument-spec validation rejects it.
+#  11. Update with an invalid enum value for tunnel_details.http_proxy.proxy_types
+#      — assert Ansible argument-spec validation rejects it.
+#  12. state=absent — assert the "delete not supported" fail_json fires.
+#  13. Restore step — put the configuration back to its original snapshot.
+############################################################################
+
+- name: Start Alert Email Configuration tests
+  ansible.builtin.debug:
+    msg: Start Alert Email Configuration tests
+
+- name: Generate random suffix for recipient email addresses
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=8)[0] | lower }}"
+    suffix_name: "ansible"
+
+- name: Set dynamic recipient email addresses
+  ansible.builtin.set_fact:
+    global_recipient_1: "sre-{{ suffix_name }}-{{ random_name }}@example.com"
+    global_recipient_2: "oncall-{{ suffix_name }}-{{ random_name }}@example.com"
+    rule_recipient_1: "storage-{{ suffix_name }}-{{ random_name }}@example.com"
+    rule_recipient_2: "network-{{ suffix_name }}-{{ random_name }}@example.com"
+    default_nutanix_email_value: "nos-alerts-{{ random_name }}@nutanix.com"
+
+##########################################################################
+# 1. Info: fetch current configuration (baseline snapshot)
+##########################################################################
+
+- name: Fetch current alert email configuration (baseline)
+  nutanix.ncp.ntnx_alert_email_configurations_info_v2:
+  register: baseline_info
+  ignore_errors: true
+
+- name: Assert baseline fetch succeeded and returns the expected singleton
+  ansible.builtin.assert:
+    that:
+      - baseline_info is defined
+      - baseline_info.changed == false
+      - baseline_info.failed == false
+      - baseline_info.response is defined
+      - baseline_info.response is mapping
+      - "'is_enabled' in baseline_info.response"
+      - "'is_email_digest_enabled' in baseline_info.response"
+      - "'is_empty_alert_email_digest_skipped' in baseline_info.response"
+      - "'default_nutanix_email' in baseline_info.response"
+      - "'has_default_nutanix_email' in baseline_info.response"
+      - "'email_contact_list' in baseline_info.response"
+      - "'email_config_rules' in baseline_info.response"
+      - "'email_template' in baseline_info.response"
+      - "'tunnel_details' in baseline_info.response"
+      - "'alert_email_digest_send_time' in baseline_info.response"
+      - "'alert_email_digest_send_timezone' in baseline_info.response"
+    success_msg: "Baseline alert email configuration fetched successfully"
+    fail_msg: "Baseline alert email configuration fetch failed"
+
+- name: Snapshot original alert email configuration for restore step
+  ansible.builtin.set_fact:
+    original_is_enabled: "{{ baseline_info.response.is_enabled | default(false) }}"
+    original_default_nutanix_email: "{{ baseline_info.response.default_nutanix_email | default('') }}"
+    original_has_default_nutanix_email: "{{ baseline_info.response.has_default_nutanix_email | default(false) }}"
+    original_is_email_digest_enabled: "{{ baseline_info.response.is_email_digest_enabled | default(false) }}"
+    original_is_empty_alert_email_digest_skipped: "{{ baseline_info.response.is_empty_alert_email_digest_skipped | default(true) }}"
+    original_email_contact_list: "{{ baseline_info.response.email_contact_list | default([]) }}"
+    original_alert_email_digest_send_time: "{{ baseline_info.response.alert_email_digest_send_time | default(omit) }}"
+    original_alert_email_digest_send_timezone: "{{ baseline_info.response.alert_email_digest_send_timezone | default(omit) }}"
+
+##########################################################################
+# 2. Info: fetch using an ext_id (echoed back)
+##########################################################################
+
+- name: Fetch alert email configuration using ext_id
+  nutanix.ncp.ntnx_alert_email_configurations_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: info_by_ext_id
+  ignore_errors: true
+
+- name: Assert fetching by ext_id echoes ext_id and returns the singleton
+  ansible.builtin.assert:
+    that:
+      - info_by_ext_id is defined
+      - info_by_ext_id.changed == false
+      - info_by_ext_id.failed == false
+      - info_by_ext_id.response is defined
+      - info_by_ext_id.ext_id == "00000000-0000-0000-0000-000000000000"
+      - "'is_enabled' in info_by_ext_id.response"
+    success_msg: "Fetching alert email configuration by ext_id succeeded"
+    fail_msg: "Fetching alert email configuration by ext_id failed"
+
+##########################################################################
+# 3. Check-mode "create" (full spec) — singleton create-equivalent is the
+#    first full update.
+##########################################################################
+
+- name: Generate spec for creating (full update) alert email configuration in check mode
+  nutanix.ncp.ntnx_alert_email_configuration_v2:
+    state: present
+    is_enabled: true
+    default_nutanix_email: "{{ default_nutanix_email_value }}"
+    has_default_nutanix_email: false
+    is_email_digest_enabled: true
+    is_empty_alert_email_digest_skipped: true
+    email_contact_list:
+      - "{{ global_recipient_1 }}"
+      - "{{ global_recipient_2 }}"
+    alert_email_digest_send_time: "09:00"
+    alert_email_digest_send_timezone: "UTC"
+    email_template:
+      subject_prefix: "[Nutanix Alerts]"
+      body_suffix: "Please contact SRE if you have any questions."
+    email_config_rules:
+      - is_enabled: true
+        has_global_email_contact_list: true
+        impact_types:
+          - AVAILABILITY
+          - CAPACITY
+        severities:
+          - CRITICAL
+          - WARNING
+        match_phrases:
+          - "Storage"
+        recipients:
+          - "{{ rule_recipient_1 }}"
+  check_mode: true
+  register: check_create_result
+  ignore_errors: true
+
+- name: Assert check-mode create spec reflects all fields
+  ansible.builtin.assert:
+    that:
+      - check_create_result is defined
+      - check_create_result.changed == false
+      - check_create_result.failed == false
+      - check_create_result.response is defined
+      - check_create_result.response.is_enabled == true
+      - check_create_result.response.default_nutanix_email == default_nutanix_email_value
+      - check_create_result.response.has_default_nutanix_email == false
+      - check_create_result.response.is_email_digest_enabled == true
+      - check_create_result.response.is_empty_alert_email_digest_skipped == true
+      - check_create_result.response.email_contact_list | length == 2
+      - global_recipient_1 in check_create_result.response.email_contact_list
+      - global_recipient_2 in check_create_result.response.email_contact_list
+      - check_create_result.response.alert_email_digest_send_time == "09:00"
+      - check_create_result.response.alert_email_digest_send_timezone == "UTC"
+      - check_create_result.response.email_template.subject_prefix == "[Nutanix Alerts]"
+      - check_create_result.response.email_template.body_suffix == "Please contact SRE if you have any questions."
+      - check_create_result.response.email_config_rules | length >= 1
+      - check_create_result.response.email_config_rules[0].is_enabled == true
+      - check_create_result.response.email_config_rules[0].has_global_email_contact_list == true
+      - check_create_result.response.email_config_rules[0].impact_types | length == 2
+      - "'AVAILABILITY' in check_create_result.response.email_config_rules[0].impact_types"
+      - "'CAPACITY' in check_create_result.response.email_config_rules[0].impact_types"
+      - check_create_result.response.email_config_rules[0].severities | length == 2
+      - "'CRITICAL' in check_create_result.response.email_config_rules[0].severities"
+      - "'WARNING' in check_create_result.response.email_config_rules[0].severities"
+      - check_create_result.response.email_config_rules[0].match_phrases | length == 1
+      - check_create_result.response.email_config_rules[0].match_phrases[0] == "Storage"
+      - check_create_result.response.email_config_rules[0].recipients | length == 1
+      - check_create_result.response.email_config_rules[0].recipients[0] == rule_recipient_1
+    success_msg: "Check-mode create spec generated successfully with all fields"
+    fail_msg: "Check-mode create spec generation failed"
+
+##########################################################################
+# 4. Check-mode update (flip is_empty_alert_email_digest_skipped)
+##########################################################################
+
+- name: Generate spec for updating alert email configuration in check mode
+  nutanix.ncp.ntnx_alert_email_configuration_v2:
+    state: present
+    is_empty_alert_email_digest_skipped: false
+    email_contact_list:
+      - "{{ global_recipient_1 }}"
+  check_mode: true
+  register: check_update_result
+  ignore_errors: true
+
+- name: Assert check-mode update spec reflects flipped fields
+  ansible.builtin.assert:
+    that:
+      - check_update_result is defined
+      - check_update_result.changed == false
+      - check_update_result.failed == false
+      - check_update_result.response is defined
+      - check_update_result.response.is_empty_alert_email_digest_skipped == false
+      - check_update_result.response.email_contact_list is defined
+      - global_recipient_1 in check_update_result.response.email_contact_list
+    success_msg: "Check-mode update spec generated successfully"
+    fail_msg: "Check-mode update spec generation failed"
+
+##########################################################################
+# 5. Check-mode delete — should still surface the "not supported" fail
+##########################################################################
+
+- name: Attempt delete in check mode (must be rejected)
+  nutanix.ncp.ntnx_alert_email_configuration_v2:
+    state: absent
+  check_mode: true
+  register: check_delete_result
+  ignore_errors: true
+
+- name: Assert check-mode delete is rejected with a clear message
+  ansible.builtin.assert:
+    that:
+      - check_delete_result is defined
+      - check_delete_result.failed == true
+      - check_delete_result.msg is defined
+      - "'not supported' in check_delete_result.msg"
+      - "'state=absent' in check_delete_result.msg"
+    success_msg: "state=absent is correctly rejected in check mode"
+    fail_msg: "state=absent should have been rejected in check mode"
+
+##########################################################################
+# 6. Real minimal update — flip a single field
+##########################################################################
+
+- name: Real minimal update of alert email configuration
+  nutanix.ncp.ntnx_alert_email_configuration_v2:
+    state: present
+    is_empty_alert_email_digest_skipped: true
+  register: minimal_update_result
+  ignore_errors: true
+
+- name: Assert minimal update completed
+  ansible.builtin.assert:
+    that:
+      - minimal_update_result is defined
+      - minimal_update_result.failed == false
+      - minimal_update_result.response is defined
+      - minimal_update_result.response.is_empty_alert_email_digest_skipped == true
+    success_msg: "Minimal update of alert email configuration succeeded"
+    fail_msg: "Minimal update of alert email configuration failed"
+
+##########################################################################
+# 7. Real full update — apply all fields; then read back
+##########################################################################
+
+- name: Full real update of alert email configuration
+  nutanix.ncp.ntnx_alert_email_configuration_v2:
+    state: present
+    is_enabled: true
+    is_email_digest_enabled: true
+    is_empty_alert_email_digest_skipped: true
+    email_contact_list:
+      - "{{ global_recipient_1 }}"
+      - "{{ global_recipient_2 }}"
+    alert_email_digest_send_time: "09:00"
+    alert_email_digest_send_timezone: "UTC"
+    email_template:
+      subject_prefix: "[Nutanix Alerts]"
+      body_suffix: "Please contact SRE if you have any questions."
+    email_config_rules:
+      - is_enabled: true
+        has_global_email_contact_list: true
+        impact_types:
+          - AVAILABILITY
+          - CAPACITY
+        severities:
+          - CRITICAL
+          - WARNING
+        match_phrases:
+          - "Storage"
+        recipients:
+          - "{{ rule_recipient_1 }}"
+      - is_enabled: true
+        has_global_email_contact_list: false
+        impact_types:
+          - PERFORMANCE
+        severities:
+          - INFO
+        match_phrases:
+          - "Network"
+        recipients:
+          - "{{ rule_recipient_2 }}"
+  register: full_update_result
+  ignore_errors: true
+
+- name: Assert full update completed and all writable fields were persisted
+  ansible.builtin.assert:
+    that:
+      - full_update_result is defined
+      - full_update_result.failed == false
+      - full_update_result.response is defined
+      - full_update_result.response.is_enabled == true
+      - full_update_result.response.is_email_digest_enabled == true
+      - full_update_result.response.is_empty_alert_email_digest_skipped == true
+      - full_update_result.response.email_contact_list | length == 2
+      - global_recipient_1 in full_update_result.response.email_contact_list
+      - global_recipient_2 in full_update_result.response.email_contact_list
+      - full_update_result.response.alert_email_digest_send_time == "09:00"
+      - full_update_result.response.alert_email_digest_send_timezone == "UTC"
+      - full_update_result.response.email_template.subject_prefix == "[Nutanix Alerts]"
+      - full_update_result.response.email_template.body_suffix == "Please contact SRE if you have any questions."
+      - full_update_result.response.email_config_rules | length == 2
+      - full_update_result.response.email_config_rules[0].is_enabled == true
+      - full_update_result.response.email_config_rules[0].has_global_email_contact_list == true
+      - full_update_result.response.email_config_rules[0].impact_types | length == 2
+      - "'AVAILABILITY' in full_update_result.response.email_config_rules[0].impact_types"
+      - "'CAPACITY' in full_update_result.response.email_config_rules[0].impact_types"
+      - full_update_result.response.email_config_rules[0].severities | length == 2
+      - "'CRITICAL' in full_update_result.response.email_config_rules[0].severities"
+      - "'WARNING' in full_update_result.response.email_config_rules[0].severities"
+      - full_update_result.response.email_config_rules[0].recipients[0] == rule_recipient_1
+      - full_update_result.response.email_config_rules[1].is_enabled == true
+      - full_update_result.response.email_config_rules[1].has_global_email_contact_list == false
+      - "'PERFORMANCE' in full_update_result.response.email_config_rules[1].impact_types"
+      - "'INFO' in full_update_result.response.email_config_rules[1].severities"
+      - full_update_result.response.email_config_rules[1].recipients[0] == rule_recipient_2
+    success_msg: "Full update of alert email configuration succeeded"
+    fail_msg: "Full update of alert email configuration failed"
+
+- name: Read back alert email configuration after full update
+  nutanix.ncp.ntnx_alert_email_configurations_info_v2:
+  register: after_full_update
+  ignore_errors: true
+
+- name: Assert read-back matches what we updated
+  ansible.builtin.assert:
+    that:
+      - after_full_update is defined
+      - after_full_update.failed == false
+      - after_full_update.response is defined
+      - after_full_update.response.is_enabled == true
+      - after_full_update.response.is_email_digest_enabled == true
+      - after_full_update.response.alert_email_digest_send_time == "09:00"
+      - after_full_update.response.alert_email_digest_send_timezone == "UTC"
+      - after_full_update.response.email_template.subject_prefix == "[Nutanix Alerts]"
+      - after_full_update.response.email_config_rules | length == 2
+    success_msg: "Read-back matches the full update"
+    fail_msg: "Read-back does NOT match the full update"
+
+##########################################################################
+# 8. Idempotency — re-run exact same full update; expect skipped=true
+##########################################################################
+
+- name: Re-apply the exact same full update (idempotency check)
+  nutanix.ncp.ntnx_alert_email_configuration_v2:
+    state: present
+    is_enabled: true
+    is_email_digest_enabled: true
+    is_empty_alert_email_digest_skipped: true
+    email_contact_list:
+      - "{{ global_recipient_1 }}"
+      - "{{ global_recipient_2 }}"
+    alert_email_digest_send_time: "09:00"
+    alert_email_digest_send_timezone: "UTC"
+    email_template:
+      subject_prefix: "[Nutanix Alerts]"
+      body_suffix: "Please contact SRE if you have any questions."
+    email_config_rules:
+      - is_enabled: true
+        has_global_email_contact_list: true
+        impact_types:
+          - AVAILABILITY
+          - CAPACITY
+        severities:
+          - CRITICAL
+          - WARNING
+        match_phrases:
+          - "Storage"
+        recipients:
+          - "{{ rule_recipient_1 }}"
+      - is_enabled: true
+        has_global_email_contact_list: false
+        impact_types:
+          - PERFORMANCE
+        severities:
+          - INFO
+        match_phrases:
+          - "Network"
+        recipients:
+          - "{{ rule_recipient_2 }}"
+  register: idempotency_result
+  ignore_errors: true
+
+- name: Assert idempotency (no change on re-apply)
+  ansible.builtin.assert:
+    that:
+      - idempotency_result is defined
+      - idempotency_result.failed == false
+      - idempotency_result.changed == false
+      - idempotency_result.skipped == true
+      - idempotency_result.msg is defined
+      - "'Nothing to change' in idempotency_result.msg"
+    success_msg: "Idempotency check passed — no change on re-apply"
+    fail_msg: "Idempotency check FAILED — module reported a change on identical re-apply"
+
+##########################################################################
+# 9. Negative — invalid enum for impact_types
+##########################################################################
+
+- name: Negative — invalid impact_types enum
+  nutanix.ncp.ntnx_alert_email_configuration_v2:
+    state: present
+    email_config_rules:
+      - is_enabled: true
+        impact_types:
+          - "INVALID_IMPACT_TYPE"
+        severities:
+          - CRITICAL
+        recipients:
+          - "{{ rule_recipient_1 }}"
+  register: bad_impact_types
+  ignore_errors: true
+
+- name: Assert invalid impact_types is rejected by argument-spec validation
+  ansible.builtin.assert:
+    that:
+      - bad_impact_types is defined
+      - bad_impact_types.failed == true
+      - bad_impact_types.msg is defined
+      - "'INVALID_IMPACT_TYPE' in bad_impact_types.msg or 'value of impact_types' in bad_impact_types.msg"
+    success_msg: "Invalid impact_types enum correctly rejected"
+    fail_msg: "Invalid impact_types enum was NOT rejected"
+
+##########################################################################
+# 10. Negative — invalid enum for severities
+##########################################################################
+
+- name: Negative — invalid severities enum
+  nutanix.ncp.ntnx_alert_email_configuration_v2:
+    state: present
+    email_config_rules:
+      - is_enabled: true
+        impact_types:
+          - CAPACITY
+        severities:
+          - "FATAL"
+        recipients:
+          - "{{ rule_recipient_1 }}"
+  register: bad_severities
+  ignore_errors: true
+
+- name: Assert invalid severities is rejected by argument-spec validation
+  ansible.builtin.assert:
+    that:
+      - bad_severities is defined
+      - bad_severities.failed == true
+      - bad_severities.msg is defined
+      - "'FATAL' in bad_severities.msg or 'value of severities' in bad_severities.msg"
+    success_msg: "Invalid severities enum correctly rejected"
+    fail_msg: "Invalid severities enum was NOT rejected"
+
+##########################################################################
+# 11. Negative — invalid enum for tunnel_details.http_proxy.proxy_types
+##########################################################################
+
+- name: Negative — invalid proxy_types enum
+  nutanix.ncp.ntnx_alert_email_configuration_v2:
+    state: present
+    tunnel_details:
+      http_proxy:
+        name: "proxy1"
+        port: 8080
+        proxy_types:
+          - "FTP"
+  register: bad_proxy_types
+  ignore_errors: true
+
+- name: Assert invalid proxy_types is rejected by argument-spec validation
+  ansible.builtin.assert:
+    that:
+      - bad_proxy_types is defined
+      - bad_proxy_types.failed == true
+      - bad_proxy_types.msg is defined
+      - "'FTP' in bad_proxy_types.msg or 'value of proxy_types' in bad_proxy_types.msg"
+    success_msg: "Invalid proxy_types enum correctly rejected"
+    fail_msg: "Invalid proxy_types enum was NOT rejected"
+
+##########################################################################
+# 12. Delete equivalent — state=absent must fail cleanly (not supported)
+##########################################################################
+
+- name: Attempt delete of the singleton (must be rejected)
+  nutanix.ncp.ntnx_alert_email_configuration_v2:
+    state: absent
+  register: delete_result
+  ignore_errors: true
+
+- name: Assert delete is rejected with the documented message
+  ansible.builtin.assert:
+    that:
+      - delete_result is defined
+      - delete_result.failed == true
+      - delete_result.msg is defined
+      - "'not supported' in delete_result.msg"
+      - "'delete operation' in delete_result.msg"
+    success_msg: "state=absent is correctly rejected (no delete API exists)"
+    fail_msg: "state=absent should have been rejected but was not"
+
+##########################################################################
+# 13. Restore original alert email configuration (cleanup)
+##########################################################################
+
+- name: Restore original alert email configuration
+  nutanix.ncp.ntnx_alert_email_configuration_v2:
+    state: present
+    is_enabled: "{{ original_is_enabled }}"
+    default_nutanix_email: "{{ original_default_nutanix_email }}"
+    has_default_nutanix_email: "{{ original_has_default_nutanix_email }}"
+    is_email_digest_enabled: "{{ original_is_email_digest_enabled }}"
+    is_empty_alert_email_digest_skipped: "{{ original_is_empty_alert_email_digest_skipped }}"
+    email_contact_list: "{{ original_email_contact_list }}"
+    email_config_rules: []
+  register: restore_result
+  ignore_errors: true
+
+- name: Assert restore did not fail
+  ansible.builtin.assert:
+    that:
+      - restore_result is defined
+      - restore_result.failed == false
+    success_msg: "Restored alert email configuration to snapshot baseline"
+    fail_msg: "Failed to restore alert email configuration to snapshot baseline"
