@@ -1,0 +1,439 @@
+---
+# Test plan for ntnx_volume_group_v2 / ntnx_volume_groups_info_v2:
+# 1. Fetch a real Prism Element cluster (AHV) to use as cluster_reference.
+# 2. Check-mode CREATE (all attributes) — assert generated spec, no API call.
+# 3. Real CREATE (minimum required fields) — assert defaults and returned data.
+# 4. Real CREATE (all attributes with CHAP) — assert every argument-spec field.
+# 5. Check-mode UPDATE (all supported update attributes) — assert generated spec.
+# 6. Real UPDATE — assert state transitions (name, description, sharing,
+#    load-balancing, hidden flag).
+# 7. Idempotency — re-run UPDATE with same params, assert skipped/no-change.
+# 8. Info-by-ext_id — assert the specific VG is returned.
+# 9. Info-list-with-filter — assert filter narrows to our VGs.
+# 10. Info-list-with-limit — assert exactly 1 entity returned.
+# 11. Info negative — invalid ext_id → module fails.
+# 12. Negative CREATE — omit required cluster_reference → module fails.
+# 13. Check-mode DELETE — assert descriptive message, no API call.
+# 14. Real DELETE — asserts task succeeded.
+
+- name: "Start Volume Group tests"
+  ansible.builtin.debug:
+    msg: "Start Volume Group v2 tests"
+
+- name: Generate random suffix for VG names
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set VG names
+  ansible.builtin.set_fact:
+    vg1_name: "ansible-vg-{{ random_name }}-1"
+    vg2_name: "ansible-vg-{{ random_name }}-2"
+
+########################################################################################
+# Prerequisite: fetch a real cluster to use as cluster_reference
+########################################################################################
+
+- name: Fetch clusters (AHV) available on this Prism Central
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: clusters_info
+  ignore_errors: true
+
+- name: Assert clusters fetched
+  ansible.builtin.assert:
+    that:
+      - clusters_info is defined
+      - clusters_info.failed == false
+      - clusters_info.response is defined
+      - clusters_info.response | length > 0
+    fail_msg: "Failed to fetch AOS clusters"
+    success_msg: "AOS clusters fetched"
+
+- name: Set cluster reference for VG create
+  ansible.builtin.set_fact:
+    cluster_uuid: "{{ clusters_info.response[0].ext_id }}"
+
+########################################################################################
+# 1) Check-mode CREATE — VG with ALL attributes
+########################################################################################
+
+- name: Check-mode create Volume Group with all attributes
+  nutanix.ncp.ntnx_volume_group_v2:
+    state: present
+    name: "{{ vg1_name }}"
+    description: "check-mode VG"
+    cluster_reference: "{{ cluster_uuid }}"
+    should_load_balance_vm_attachments: true
+    sharing_status: "SHARED"
+    target_prefix: "vgprefix"
+    usage_type: "USER"
+    is_hidden: true
+    storage_features:
+      flash_mode:
+        is_enabled: true
+    iscsi_features:
+      target_secret: "Secret1234567"
+      enabled_authentications: "CHAP"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert check-mode create spec
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == vg1_name
+      - result.response.description == "check-mode VG"
+      - result.response.cluster_reference == cluster_uuid
+      - result.response.should_load_balance_vm_attachments == true
+      - result.response.sharing_status == "SHARED"
+      - result.response.target_prefix == "vgprefix"
+      - result.response.usage_type == "USER"
+      - result.response.is_hidden == true
+      - result.response.storage_features.flash_mode.is_enabled == true
+      - result.response.iscsi_features.enabled_authentications == "CHAP"
+    fail_msg: "Check-mode CREATE spec generation failed"
+    success_msg: "Check-mode CREATE spec generated"
+
+########################################################################################
+# 2) Real CREATE — minimum required fields
+########################################################################################
+
+- name: Create Volume Group with minimal required fields
+  nutanix.ncp.ntnx_volume_group_v2:
+    state: present
+    name: "{{ vg1_name }}"
+    description: "Volume Group minimal"
+    cluster_reference: "{{ cluster_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert minimal Volume Group created
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.ext_id == result.ext_id
+      - result.response.name == vg1_name
+      - result.response.description == "Volume Group minimal"
+      - result.response.cluster_reference == cluster_uuid
+    fail_msg: "Volume Group minimal create failed"
+    success_msg: "Volume Group minimal created"
+
+- name: Save VG1 ext_id
+  ansible.builtin.set_fact:
+    vg1_ext_id: "{{ result.ext_id }}"
+
+########################################################################################
+# 3) Real CREATE — VG with ALL attributes and CHAP auth
+########################################################################################
+
+- name: Create Volume Group with all attributes and CHAP auth
+  nutanix.ncp.ntnx_volume_group_v2:
+    state: present
+    name: "{{ vg2_name }}"
+    description: "Volume Group full"
+    cluster_reference: "{{ cluster_uuid }}"
+    should_load_balance_vm_attachments: true
+    sharing_status: "SHARED"
+    target_prefix: "vgfull"
+    usage_type: "USER"
+    is_hidden: false
+    storage_features:
+      flash_mode:
+        is_enabled: true
+    iscsi_features:
+      target_secret: "Secret1234567"
+      enabled_authentications: "CHAP"
+  register: result
+  ignore_errors: true
+
+- name: Assert full Volume Group created
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.name == vg2_name
+      - result.response.description == "Volume Group full"
+      - result.response.cluster_reference == cluster_uuid
+      - result.response.should_load_balance_vm_attachments == true
+      - result.response.sharing_status == "SHARED"
+      - "'vgfull' in result.response.target_name"
+      - result.response.usage_type == "USER"
+      - result.response.storage_features.flash_mode.is_enabled == true
+      - result.response.iscsi_features.enabled_authentications == "CHAP"
+      - result.response.iscsi_features.target_secret == None
+    fail_msg: "Volume Group full create failed"
+    success_msg: "Volume Group full created"
+
+- name: Save VG2 ext_id
+  ansible.builtin.set_fact:
+    vg2_ext_id: "{{ result.ext_id }}"
+
+########################################################################################
+# 4) Check-mode UPDATE
+########################################################################################
+
+- name: Check-mode update Volume Group
+  nutanix.ncp.ntnx_volume_group_v2:
+    state: present
+    ext_id: "{{ vg1_ext_id }}"
+    name: "{{ vg1_name }}-updated"
+    description: "Volume Group updated"
+    should_load_balance_vm_attachments: true
+    sharing_status: "NOT_SHARED"
+    is_hidden: true
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert check-mode update spec
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == vg1_ext_id
+      - result.response is defined
+      - result.response.name == vg1_name ~ "-updated"
+      - result.response.description == "Volume Group updated"
+      - result.response.should_load_balance_vm_attachments == true
+      - result.response.sharing_status == "NOT_SHARED"
+      - result.response.is_hidden == true
+    fail_msg: "Check-mode UPDATE spec generation failed"
+    success_msg: "Check-mode UPDATE spec generated"
+
+########################################################################################
+# 5) Real UPDATE
+########################################################################################
+
+- name: Update Volume Group
+  nutanix.ncp.ntnx_volume_group_v2:
+    state: present
+    ext_id: "{{ vg1_ext_id }}"
+    name: "{{ vg1_name }}-updated"
+    description: "Volume Group updated"
+    should_load_balance_vm_attachments: true
+    sharing_status: "NOT_SHARED"
+    is_hidden: true
+  register: result
+  ignore_errors: true
+
+- name: Assert Volume Group updated
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == vg1_ext_id
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.ext_id == vg1_ext_id
+      - result.response.name == vg1_name ~ "-updated"
+      - result.response.description == "Volume Group updated"
+      - result.response.should_load_balance_vm_attachments == true
+      - result.response.sharing_status == "NOT_SHARED"
+      - result.response.is_hidden == true
+    fail_msg: "Volume Group update failed"
+    success_msg: "Volume Group updated"
+
+########################################################################################
+# 6) Idempotency check — same UPDATE payload should be a no-op
+########################################################################################
+
+- name: Idempotency — re-run same update
+  nutanix.ncp.ntnx_volume_group_v2:
+    state: present
+    ext_id: "{{ vg1_ext_id }}"
+    name: "{{ vg1_name }}-updated"
+    description: "Volume Group updated"
+    should_load_balance_vm_attachments: true
+    sharing_status: "NOT_SHARED"
+    is_hidden: true
+  register: result
+  ignore_errors: true
+
+- name: Assert update idempotent
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.skipped is defined
+      - result.skipped == true
+      - result.msg is defined
+      - result.msg == "Nothing to change."
+    fail_msg: "Volume Group update idempotency failed"
+    success_msg: "Volume Group update idempotent"
+
+########################################################################################
+# 7) Info — get by ext_id
+########################################################################################
+
+- name: Info — get VG by ext_id
+  nutanix.ncp.ntnx_volume_groups_info_v2:
+    ext_id: "{{ vg1_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert info-by-ext_id
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == vg1_ext_id
+      - result.response.ext_id == vg1_ext_id
+      - result.response.name == vg1_name ~ "-updated"
+      - result.response.cluster_reference == cluster_uuid
+    fail_msg: "Info-by-ext_id failed"
+    success_msg: "Info-by-ext_id passed"
+
+########################################################################################
+# 8) Info — list with filter
+########################################################################################
+
+- name: Info — list VGs matching random suffix
+  nutanix.ncp.ntnx_volume_groups_info_v2:
+    filter: "startswith(name, 'ansible-vg-{{ random_name }}')"
+  register: result
+  ignore_errors: true
+
+- name: Assert filtered list contains both VGs
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 2
+      - result.total_available_results is defined
+      - result.total_available_results == 2
+      - (result.response | map(attribute='ext_id') | list) | length == 2
+      - vg1_ext_id in (result.response | map(attribute='ext_id') | list)
+      - vg2_ext_id in (result.response | map(attribute='ext_id') | list)
+    fail_msg: "Info list-with-filter failed"
+    success_msg: "Info list-with-filter passed"
+
+########################################################################################
+# 9) Info — list with limit
+########################################################################################
+
+- name: Info — list with limit=1
+  nutanix.ncp.ntnx_volume_groups_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Assert limited list
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+    fail_msg: "Info list-with-limit failed"
+    success_msg: "Info list-with-limit passed"
+
+########################################################################################
+# 10) Info — invalid ext_id must fail
+########################################################################################
+
+- name: Info — get VG with invalid ext_id
+  nutanix.ncp.ntnx_volume_groups_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Assert info returns failure for missing VG
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: "Info with invalid ext_id did not fail"
+    success_msg: "Info with invalid ext_id failed as expected"
+
+########################################################################################
+# 11) Negative create — missing required cluster_reference
+########################################################################################
+
+- name: Negative create — omit cluster_reference
+  nutanix.ncp.ntnx_volume_group_v2:
+    state: present
+    name: "should-not-create-{{ random_name }}"
+    description: "missing cluster ref"
+  register: result
+  ignore_errors: true
+
+- name: Assert create fails without cluster_reference
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: "Create should have failed without cluster_reference"
+    success_msg: "Create correctly failed without cluster_reference"
+
+########################################################################################
+# 12) Check-mode DELETE
+########################################################################################
+
+- name: Check-mode delete VG1
+  nutanix.ncp.ntnx_volume_group_v2:
+    state: absent
+    ext_id: "{{ vg1_ext_id }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert check-mode delete message
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == vg1_ext_id
+      - result.msg is defined
+      - result.msg == ("Volume Group with ext_id:" ~ vg1_ext_id ~ " will be deleted.")
+    fail_msg: "Check-mode DELETE failed"
+    success_msg: "Check-mode DELETE passed"
+
+########################################################################################
+# 13) Real DELETE
+########################################################################################
+
+- name: Delete VG1
+  nutanix.ncp.ntnx_volume_group_v2:
+    state: absent
+    ext_id: "{{ vg1_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert VG1 deleted
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == vg1_ext_id
+      - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "VG1 delete failed"
+    success_msg: "VG1 deleted"
+
+- name: Delete VG2
+  nutanix.ncp.ntnx_volume_group_v2:
+    state: absent
+    ext_id: "{{ vg2_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert VG2 deleted
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == vg2_ext_id
+      - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "VG2 delete failed"
+    success_msg: "VG2 deleted"

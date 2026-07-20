@@ -1,0 +1,205 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create Volume Group (with all attributes)
+# 2. Update Volume Group (with all supported update attributes)
+# 3. Get Volume Group using ext_id
+# 4. List all Volume Groups
+# 5. List Volume Groups with filter
+# 6. List Volume Groups with limit
+# 7. Delete Volume Group
+
+- name: Volume Group playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting variables
+      ansible.builtin.set_fact:
+        cluster_uuid: "0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b35"
+        volume_group_name: "volume_group_ansible"
+
+    - name: Create Volume Group with all attributes
+      nutanix.ncp.ntnx_volume_group_v2:
+        state: present
+        name: "{{ volume_group_name }}"
+        description: "Volume Group created by Ansible"
+        cluster_reference: "{{ cluster_uuid }}"
+        should_load_balance_vm_attachments: true
+        sharing_status: "SHARED"
+        target_prefix: "vgprefix"
+        usage_type: "USER"
+        is_hidden: false
+        storage_features:
+          flash_mode:
+            is_enabled: true
+        iscsi_features:
+          target_secret: "Secret1234567"
+          enabled_authentications: "CHAP"
+      register: result
+      ignore_errors: true
+    # sample:
+    #   changed: true
+    #   ext_id: "1ca76f4b-6e7c-4c7c-66a6-8ac8bbd52b90"
+    #   task_ext_id: "ZXJnb24=:53b43344-c210-49be-b382-1d1d518f7d61"
+    #   response:
+    #     attachment_type: "NONE"
+    #     attachments: null
+    #     cluster_reference: "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+    #     created_by: null
+    #     description: "Volume Group created by Ansible"
+    #     disks: null
+    #     enabled_authentications: null
+    #     ext_id: "1ca76f4b-6e7c-4c7c-66a6-8ac8bbd52b90"
+    #     hydration_status: null
+    #     is_hidden: false
+    #     iscsi_features:
+    #       enabled_authentications: "CHAP"
+    #       target_secret: null
+    #     links: null
+    #     name: "vg_example_ansible"
+    #     protocol: "NOT_ASSIGNED"
+    #     sharing_status: "SHARED"
+    #     should_load_balance_vm_attachments: true
+    #     storage_features:
+    #       flash_mode:
+    #         is_enabled: true
+    #     target_name: "vgprefix-1ca76f4b-6e7c-4c7c-66a6-8ac8bbd52b90"
+    #     target_prefix: null
+    #     tenant_id: null
+    #     usage_type: "USER"
+
+    - name: Set Volume Group ext_id
+      ansible.builtin.set_fact:
+        volume_group_ext_id: "{{ result.ext_id }}"
+
+    - name: Update Volume Group (all supported update attributes)
+      nutanix.ncp.ntnx_volume_group_v2:
+        state: present
+        ext_id: "{{ volume_group_ext_id }}"
+        name: "{{ volume_group_name }}_updated"
+        description: "Volume Group updated by Ansible"
+        should_load_balance_vm_attachments: false
+        sharing_status: "NOT_SHARED"
+        is_hidden: true
+      register: result
+      ignore_errors: true
+    # sample:
+    #   changed: true
+    #   ext_id: "1ca76f4b-6e7c-4c7c-66a6-8ac8bbd52b90"
+    #   task_ext_id: "ZXJnb24=:0a562df6-ed5f-494e-a3d1-2740304954e3"
+    #   response:
+    #     attachment_type: "NONE"
+    #     cluster_reference: "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+    #     description: "Volume Group updated by Ansible"
+    #     ext_id: "1ca76f4b-6e7c-4c7c-66a6-8ac8bbd52b90"
+    #     is_hidden: true
+    #     iscsi_features:
+    #       enabled_authentications: "CHAP"
+    #       target_secret: null
+    #     name: "vg_example_ansible_updated"
+    #     protocol: "NOT_ASSIGNED"
+    #     sharing_status: "NOT_SHARED"
+    #     should_load_balance_vm_attachments: false
+    #     storage_features:
+    #       flash_mode:
+    #         is_enabled: true
+    #     target_name: "vgprefix-1ca76f4b-6e7c-4c7c-66a6-8ac8bbd52b90"
+    #     usage_type: "USER"
+
+    - name: Get Volume Group using ext_id
+      nutanix.ncp.ntnx_volume_groups_info_v2:
+        ext_id: "{{ volume_group_ext_id }}"
+      register: result
+      ignore_errors: true
+    # sample:
+    #   changed: false
+    #   ext_id: "1ca76f4b-6e7c-4c7c-66a6-8ac8bbd52b90"
+    #   response:
+    #     attachment_type: "NONE"
+    #     cluster_reference: "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+    #     description: "Volume Group updated by Ansible"
+    #     ext_id: "1ca76f4b-6e7c-4c7c-66a6-8ac8bbd52b90"
+    #     is_hidden: true
+    #     iscsi_features:
+    #       enabled_authentications: "CHAP"
+    #     name: "vg_example_ansible_updated"
+    #     protocol: "NOT_ASSIGNED"
+    #     sharing_status: "NOT_SHARED"
+    #     should_load_balance_vm_attachments: false
+    #     storage_features:
+    #       flash_mode:
+    #         is_enabled: true
+    #     target_name: "vgprefix-1ca76f4b-6e7c-4c7c-66a6-8ac8bbd52b90"
+    #     usage_type: "USER"
+
+    - name: List all Volume Groups
+      nutanix.ncp.ntnx_volume_groups_info_v2:
+      register: result
+      ignore_errors: true
+    # sample:
+    #   changed: false
+    #   response:
+    #     - ext_id: "1ca76f4b-6e7c-4c7c-66a6-8ac8bbd52b90"
+    #       name: "vg_example_ansible_updated"
+    #       cluster_reference: "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+    #       # ... more volume groups omitted for brevity
+    #   total_available_results: 109
+
+    - name: List Volume Groups with filter
+      nutanix.ncp.ntnx_volume_groups_info_v2:
+        filter: "startswith(name, '{{ volume_group_name }}')"
+      register: result
+      ignore_errors: true
+    # sample:
+    #   changed: false
+    #   total_available_results: 1
+    #   response:
+    #     - attachment_type: "NONE"
+    #       cluster_reference: "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+    #       description: "Volume Group updated by Ansible"
+    #       ext_id: "1ca76f4b-6e7c-4c7c-66a6-8ac8bbd52b90"
+    #       is_hidden: true
+    #       name: "vg_example_ansible_updated"
+    #       sharing_status: "NOT_SHARED"
+    #       should_load_balance_vm_attachments: false
+    #       target_name: "vgprefix-1ca76f4b-6e7c-4c7c-66a6-8ac8bbd52b90"
+    #       usage_type: "USER"
+
+    - name: List Volume Groups with limit
+      nutanix.ncp.ntnx_volume_groups_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+    # sample:
+    #   changed: false
+    #   total_available_results: 109
+    #   response:
+    #     - ext_id: "94f36661-3188-3ab6-8adb-d84dbbce2f6b"
+    #       name: "pvc-d62e1188-b27c-40f7-9e95-05b01dc8a1ec"
+    #       cluster_reference: "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+    #       usage_type: "INTERNAL"
+
+    - name: Delete Volume Group
+      nutanix.ncp.ntnx_volume_group_v2:
+        state: absent
+        ext_id: "{{ volume_group_ext_id }}"
+      register: result
+      ignore_errors: true
+    # sample:
+    #   changed: true
+    #   ext_id: "1ca76f4b-6e7c-4c7c-66a6-8ac8bbd52b90"
+    #   task_ext_id: "ZXJnb24=:405c780e-34dd-4947-a02d-a76a1593ff27"
+    #   response:
+    #     status: "SUCCEEDED"
+    #     operation: "VolumeGroupDelete"
+    #     operation_description: "Delete Volume Group"
+    #     entities_affected:
+    #       - ext_id: "1ca76f4b-6e7c-4c7c-66a6-8ac8bbd52b90"
+    #         name: "vg_example_ansible_updated"
+    #         rel: "volumes:config:volume-group"
