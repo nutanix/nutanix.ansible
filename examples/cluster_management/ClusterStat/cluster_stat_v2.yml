@@ -1,0 +1,60 @@
+---
+# Summary:
+# This playbook demonstrates how to fetch cluster performance and capacity
+# statistics using the Nutanix v4 cluster_management APIs. It covers:
+#
+#   1. Fetching a target cluster's ext_id via the clusters info module.
+#   2. Fetching cluster stats via ntnx_cluster_stat_v2 (with all supported
+#      OData query parameters set).
+#   3. Fetching the same stats via the ntnx_cluster_stats_info_v2 info
+#      module (equivalent, but shaped as an info-style task).
+#
+# ClusterStat is a read-only entity in the v4 cluster_management API — the
+# SDK only exposes GET /api/clustermgmt/v4.2/stats/clusters/{extId}, so
+# there is no "create", "update" or "delete" example. The examples below
+# therefore only cover the fetch/read use-case.
+
+- name: ClusterStat playbook
+  hosts: localhost
+  gather_facts: true
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('ansible.builtin.env', 'NUTANIX_HOST') | default('<pc_ip>', true) }}"
+      nutanix_username: "{{ lookup('ansible.builtin.env', 'NUTANIX_USERNAME') | default('<user>', true) }}"
+      nutanix_password: "{{ lookup('ansible.builtin.env', 'NUTANIX_PASSWORD') | default('<pass>', true) }}"
+      validate_certs: false
+  tasks:
+    - name: Fetch a cluster to use for the stats calls
+      nutanix.ncp.ntnx_clusters_info_v2:
+        limit: 1
+      register: clusters_result
+
+    - name: Set cluster_ext_id fact
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ clusters_result.response[0].ext_id }}"
+
+    - name: Compute stat window (last 1 hour, minute-resolution)
+      ansible.builtin.set_fact:
+        stats_end_time: "{{ ('%Y-%m-%dT%H:%M:%SZ' | strftime(ansible_date_time.epoch | int)) }}"
+        stats_start_time: "{{ ('%Y-%m-%dT%H:%M:%SZ' | strftime((ansible_date_time.epoch | int) - 3600)) }}"
+
+    - name: Fetch cluster statistics with the action-style module (all options)
+      nutanix.ncp.ntnx_cluster_stat_v2:
+        state: present
+        ext_id: "{{ cluster_ext_id }}"
+        start_time: "{{ stats_start_time }}"
+        end_time: "{{ stats_end_time }}"
+        sampling_interval: 60
+        stat_type: "AVG"
+        select: "hypervisorCpuUsagePpm,aggregateHypervisorMemoryUsagePpm,ioBandwidthKbps"
+      register: cluster_stat_result
+
+    - name: Fetch cluster statistics via the info module (equivalent read)
+      nutanix.ncp.ntnx_cluster_stats_info_v2:
+        ext_id: "{{ cluster_ext_id }}"
+        start_time: "{{ stats_start_time }}"
+        end_time: "{{ stats_end_time }}"
+        sampling_interval: 60
+        stat_type: "LAST"
+        select: "*"
+      register: cluster_stats_info_result

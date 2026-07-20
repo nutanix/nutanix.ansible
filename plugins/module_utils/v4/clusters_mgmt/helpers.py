@@ -109,3 +109,30 @@ def get_cluster_profile(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching cluster profile info using ext_id",
         )
+
+
+def get_cluster_stats(module, api_instance, ext_id, kwargs):
+    """
+    Fetch cluster performance/capacity statistics for the given cluster
+    external ID via the v4 ClustersApi.get_cluster_stats endpoint.
+
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        ext_id (str): cluster external ID
+        kwargs (dict): the SDK query parameters
+            (_startTime, _endTime, _samplingInterval, _statType, _select).
+
+    Returns:
+        The full SDK response object (ClusterStatsApiResponse) — callers
+        typically only need ``.data`` from it, but the raw response is
+        returned so tests can also assert on the response ``metadata``.
+    """
+    try:
+        return api_instance.get_cluster_stats(extId=ext_id, **kwargs)
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching cluster stats using ext_id",
+        )

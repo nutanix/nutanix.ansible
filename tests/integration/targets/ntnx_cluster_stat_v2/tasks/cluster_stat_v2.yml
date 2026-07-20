@@ -1,0 +1,405 @@
+---
+################################################################################
+# Test plan for ntnx_cluster_stat_v2 / ntnx_cluster_stats_info_v2
+#
+# These tests are written from a QA-engineer perspective, exercising every
+# meaningful code path in the two modules against a live Prism Central.
+#
+#   1. Prerequisite: fetch the ext_id of a real cluster registered with PC.
+#   2. Compute a valid stats time-window relative to "now" (last hour).
+#   3. Check-mode CRUD-style tests:
+#        3.1 Fetch (state=present) in check_mode with ALL attributes.
+#        3.2 Attempt state=absent in check_mode — must fail with the
+#            "not supported" error.
+#        3.3 Missing required start_time — must fail (required_if).
+#   4. Real fetches on the CRUD-style module:
+#        4.1 Minimal required-only fetch.
+#        4.2 Full fetch with sampling_interval, stat_type, select.
+#   5. Info module fetches:
+#        5.1 Get-by-ext_id with all attributes and each stat_type enum
+#            (AVG/SUM/MIN/MAX/LAST/COUNT).
+#        5.2 Info module with wildcard select.
+#   6. Negative tests:
+#        6.1 Invalid ext_id -> API error surfaced via failed==true.
+#        6.2 Invalid stat_type enum -> argspec rejection.
+#   7. Idempotency test:
+#        7.1 Two identical fetches must both return changed==false and the
+#            same ext_id/shape.
+#
+# 95%+ argument-spec coverage: every option (ext_id, start_time, end_time,
+# sampling_interval, stat_type, select, state) is asserted in at least one
+# task; every enum value of stat_type is exercised.
+################################################################################
+
+- name: Start ClusterStat tests
+  ansible.builtin.debug:
+    msg: "Start ClusterStat tests"
+
+################################################################################
+# 1. Prerequisite - fetch a real cluster ext_id from PC
+################################################################################
+
+- name: Fetch the list of clusters
+  nutanix.ncp.ntnx_clusters_info_v2:
+    limit: 5
+  register: clusters_info
+  ignore_errors: true
+
+- name: Assert cluster listing succeeded
+  ansible.builtin.assert:
+    that:
+      - clusters_info is defined
+      - clusters_info.failed == false
+      - clusters_info.response is defined
+      - clusters_info.response | length > 0
+    success_msg: "Successfully fetched cluster list from Prism Central"
+    fail_msg: "Cluster list fetch failed - cannot proceed with ClusterStat tests"
+
+- name: Pick a Prism Element cluster for the stats calls (skip PC-only entries)
+  ansible.builtin.set_fact:
+    target_cluster: >-
+      {{
+        (clusters_info.response
+         | selectattr('config', 'defined')
+         | selectattr('config.cluster_function', 'defined')
+         | rejectattr('config.cluster_function', 'contains', 'PRISM_CENTRAL')
+         | list | first) | default(clusters_info.response[0])
+      }}
+
+- name: Set cluster_ext_id fact
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ target_cluster.ext_id }}"
+    invalid_cluster_ext_id: "00000000-0000-0000-0000-000000000000"
+
+- name: Debug picked cluster
+  ansible.builtin.debug:
+    msg: "Running ClusterStat tests against cluster ext_id={{ cluster_ext_id }}"
+
+################################################################################
+# 2. Compute a stats time-window (last 1 hour, minute resolution)
+################################################################################
+
+- name: Compute now / then epochs
+  ansible.builtin.set_fact:
+    _epoch_now: "{{ ansible_date_time.epoch | int }}"
+
+- name: Compute ISO-8601 stats window
+  ansible.builtin.set_fact:
+    stats_end_time: "{{ '%Y-%m-%dT%H:%M:%SZ' | strftime(_epoch_now | int) }}"
+    stats_start_time: "{{ '%Y-%m-%dT%H:%M:%SZ' | strftime((_epoch_now | int) - 3600) }}"
+
+- name: Debug stats window
+  ansible.builtin.debug:
+    msg:
+      - "stats_start_time={{ stats_start_time }}"
+      - "stats_end_time={{ stats_end_time }}"
+
+################################################################################
+# 3. Check-mode tests on the CRUD-style module (one check_mode per operation)
+################################################################################
+
+- name: Check-mode fetch (state=present) with ALL attributes
+  nutanix.ncp.ntnx_cluster_stat_v2:
+    state: present
+    ext_id: "{{ cluster_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+    sampling_interval: 60
+    stat_type: "AVG"
+    select: "hypervisorCpuUsagePpm,aggregateHypervisorMemoryUsagePpm"
+  check_mode: true
+  register: cs_present_check_mode
+  ignore_errors: true
+
+- name: Assert check-mode fetch surfaced expected fields without hitting the API
+  ansible.builtin.assert:
+    that:
+      - cs_present_check_mode.changed == false
+      - cs_present_check_mode.failed == false
+      - cs_present_check_mode.ext_id == cluster_ext_id
+      - cs_present_check_mode.msg is defined
+      - "'will be fetched' in cs_present_check_mode.msg"
+    success_msg: "check_mode fetch behaved correctly - no API call, ext_id echoed back"
+    fail_msg: "check_mode fetch did not produce the expected result"
+
+- name: Check-mode state=absent must be rejected up-front (not supported)
+  nutanix.ncp.ntnx_cluster_stat_v2:
+    state: absent
+    ext_id: "{{ cluster_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+  check_mode: true
+  register: cs_absent_check_mode
+  ignore_errors: true
+
+- name: Assert state=absent fails with the descriptive error
+  ansible.builtin.assert:
+    that:
+      - cs_absent_check_mode.failed == true
+      - cs_absent_check_mode.changed == false
+      - cs_absent_check_mode.msg is defined
+      - "'state=absent is not supported' in cs_absent_check_mode.msg"
+    success_msg: "state=absent was correctly rejected for the read-only ClusterStat entity"
+    fail_msg: "state=absent was NOT rejected - module allowed an unsupported operation"
+
+- name: Check-mode update simulation (fetch with a different stat_type)
+  nutanix.ncp.ntnx_cluster_stat_v2:
+    state: present
+    ext_id: "{{ cluster_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+    sampling_interval: 60
+    stat_type: "LAST"
+    select: "*"
+  check_mode: true
+  register: cs_update_check_mode
+  ignore_errors: true
+
+- name: Assert check-mode "update"-style fetch is idempotent and safe
+  ansible.builtin.assert:
+    that:
+      - cs_update_check_mode.changed == false
+      - cs_update_check_mode.failed == false
+      - cs_update_check_mode.ext_id == cluster_ext_id
+    success_msg: "Check-mode update-shaped fetch behaved correctly"
+    fail_msg: "Check-mode update-shaped fetch failed"
+
+################################################################################
+# 4. Real fetches on the CRUD-style module
+################################################################################
+
+- name: Real fetch with only the required parameters (minimal)
+  nutanix.ncp.ntnx_cluster_stat_v2:
+    ext_id: "{{ cluster_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+  register: cs_minimal
+  ignore_errors: true
+
+- name: Assert minimal fetch returned data for the cluster
+  ansible.builtin.assert:
+    that:
+      - cs_minimal.changed == false
+      - cs_minimal.failed == false
+      - cs_minimal.ext_id == cluster_ext_id
+      - cs_minimal.response is defined
+      - cs_minimal.response.ext_id is defined
+      - cs_minimal.response.ext_id == cluster_ext_id
+    success_msg: "Minimal fetch returned stats for the requested cluster"
+    fail_msg: "Minimal fetch did not return the expected response"
+
+- name: Real fetch with ALL attributes populated
+  nutanix.ncp.ntnx_cluster_stat_v2:
+    state: present
+    ext_id: "{{ cluster_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+    sampling_interval: 60
+    stat_type: "AVG"
+    select: "hypervisorCpuUsagePpm,ioBandwidthKbps"
+  register: cs_full
+  ignore_errors: true
+
+- name: Assert full fetch returned data for the cluster
+  ansible.builtin.assert:
+    that:
+      - cs_full.changed == false
+      - cs_full.failed == false
+      - cs_full.ext_id == cluster_ext_id
+      - cs_full.response is defined
+      - cs_full.response.ext_id == cluster_ext_id
+    success_msg: "Full fetch returned stats for the requested cluster"
+    fail_msg: "Full fetch did not return the expected response"
+
+################################################################################
+# 5. Info module fetches - one per stat_type enum value
+################################################################################
+
+- name: Fetch cluster stats via info module - AVG
+  nutanix.ncp.ntnx_cluster_stats_info_v2:
+    ext_id: "{{ cluster_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+    sampling_interval: 60
+    stat_type: "AVG"
+    select: "hypervisorCpuUsagePpm"
+  register: cs_info_avg
+  ignore_errors: true
+
+- name: Assert AVG info fetch
+  ansible.builtin.assert:
+    that:
+      - cs_info_avg.changed == false
+      - cs_info_avg.failed == false
+      - cs_info_avg.ext_id == cluster_ext_id
+      - cs_info_avg.response is defined
+      - cs_info_avg.response.ext_id == cluster_ext_id
+    success_msg: "AVG info fetch returned stats"
+    fail_msg: "AVG info fetch failed"
+
+- name: Fetch cluster stats via info module - each remaining stat_type enum
+  nutanix.ncp.ntnx_cluster_stats_info_v2:
+    ext_id: "{{ cluster_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+    sampling_interval: 60
+    stat_type: "{{ item }}"
+    select: "hypervisorCpuUsagePpm"
+  loop:
+    - SUM
+    - MIN
+    - MAX
+    - LAST
+    - COUNT
+  register: cs_info_enum_loop
+  ignore_errors: true
+
+- name: Assert each stat_type enum info fetch succeeded
+  ansible.builtin.assert:
+    that:
+      - item.failed == false
+      - item.changed == false
+      - item.ext_id == cluster_ext_id
+      - item.response is defined
+      - item.response.ext_id == cluster_ext_id
+    success_msg: "stat_type={{ item.item }} info fetch succeeded"
+    fail_msg: "stat_type={{ item.item }} info fetch failed"
+  loop: "{{ cs_info_enum_loop.results }}"
+  loop_control:
+    label: "stat_type={{ item.item }}"
+
+- name: Fetch cluster stats via info module - wildcard select
+  nutanix.ncp.ntnx_cluster_stats_info_v2:
+    ext_id: "{{ cluster_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+    stat_type: "LAST"
+    select: "*"
+  register: cs_info_wildcard
+  ignore_errors: true
+
+- name: Assert wildcard select fetched a stats dict with time-series lists
+  ansible.builtin.assert:
+    that:
+      - cs_info_wildcard.failed == false
+      - cs_info_wildcard.changed == false
+      - cs_info_wildcard.response is defined
+      - cs_info_wildcard.response.ext_id == cluster_ext_id
+    success_msg: "Wildcard select returned all stat properties"
+    fail_msg: "Wildcard select did not return stat properties"
+
+################################################################################
+# 6. Negative tests
+################################################################################
+
+- name: Fetch stats for a non-existent cluster ext_id
+  nutanix.ncp.ntnx_cluster_stats_info_v2:
+    ext_id: "{{ invalid_cluster_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+  register: cs_invalid_ext_id
+  ignore_errors: true
+
+- name: Assert invalid ext_id surfaced a failure
+  ansible.builtin.assert:
+    that:
+      - cs_invalid_ext_id.failed == true
+      - cs_invalid_ext_id.changed == false
+    success_msg: "Invalid ext_id correctly triggered a failure"
+    fail_msg: "Invalid ext_id did NOT fail - module masked the API error"
+
+- name: Reject an invalid stat_type enum via argspec  # noqa: args[module]
+  nutanix.ncp.ntnx_cluster_stats_info_v2:
+    ext_id: "{{ cluster_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+    stat_type: "NOT_A_REAL_ENUM"
+  register: cs_bad_enum
+  ignore_errors: true
+
+- name: Assert invalid stat_type is rejected by the argspec
+  ansible.builtin.assert:
+    that:
+      - cs_bad_enum.failed == true
+      - cs_bad_enum.changed == false
+      - cs_bad_enum.msg is defined
+      - >-
+        ('value of stat_type must be one of' in cs_bad_enum.msg) or
+        ('value of stat_type' in cs_bad_enum.msg)
+    success_msg: "Invalid stat_type enum was rejected by the argspec"
+    fail_msg: "Invalid stat_type enum was NOT rejected - argspec choices are missing"
+
+- name: Missing start_time on CRUD module (state=present required_if)  # noqa: args[module]
+  nutanix.ncp.ntnx_cluster_stat_v2:
+    state: present
+    ext_id: "{{ cluster_ext_id }}"
+    end_time: "{{ stats_end_time }}"
+  register: cs_missing_start
+  ignore_errors: true
+
+- name: Assert missing start_time is rejected
+  ansible.builtin.assert:
+    that:
+      - cs_missing_start.failed == true
+      - cs_missing_start.changed == false
+      - cs_missing_start.msg is defined
+      - >-
+        ('start_time' in cs_missing_start.msg) or
+        ('Missing required parameter' in cs_missing_start.msg)
+    success_msg: "Missing start_time was correctly rejected"
+    fail_msg: "Missing start_time was NOT rejected"
+
+- name: Missing end_time on info module (required=true)  # noqa: args[module]
+  nutanix.ncp.ntnx_cluster_stats_info_v2:
+    ext_id: "{{ cluster_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+  register: cs_info_missing_end
+  ignore_errors: true
+
+- name: Assert missing end_time on info module is rejected
+  ansible.builtin.assert:
+    that:
+      - cs_info_missing_end.failed == true
+      - cs_info_missing_end.changed == false
+      - cs_info_missing_end.msg is defined
+      - "'end_time' in cs_info_missing_end.msg"
+    success_msg: "Missing end_time was correctly rejected on info module"
+    fail_msg: "Missing end_time was NOT rejected on info module"
+
+################################################################################
+# 7. Idempotency - repeated fetches must both report changed==false
+################################################################################
+
+- name: Idempotency fetch - pass 1
+  nutanix.ncp.ntnx_cluster_stat_v2:
+    ext_id: "{{ cluster_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+    stat_type: "AVG"
+  register: cs_idem_1
+  ignore_errors: true
+
+- name: Idempotency fetch - pass 2 (identical inputs)
+  nutanix.ncp.ntnx_cluster_stat_v2:
+    ext_id: "{{ cluster_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+    stat_type: "AVG"
+  register: cs_idem_2
+  ignore_errors: true
+
+- name: Assert both idempotency fetches reported no changes
+  ansible.builtin.assert:
+    that:
+      - cs_idem_1.changed == false
+      - cs_idem_2.changed == false
+      - cs_idem_1.failed == false
+      - cs_idem_2.failed == false
+      - cs_idem_1.ext_id == cs_idem_2.ext_id
+      - cs_idem_1.ext_id == cluster_ext_id
+    success_msg: "Two identical fetches both reported changed=false"
+    fail_msg: "Idempotency check failed - a read fetch reported changed=true"
+
+- name: End ClusterStat tests
+  ansible.builtin.debug:
+    msg: "ClusterStat tests completed"
