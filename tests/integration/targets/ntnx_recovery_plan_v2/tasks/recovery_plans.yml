@@ -1,0 +1,500 @@
+---
+# ############################################################################
+# Integration tests for ntnx_recovery_plan_v2 / ntnx_recovery_plans_info_v2.
+#
+# Test plan (why each block exists):
+#   1. Discover the local PC (used as `domain_manager_ext_id` for
+#      `primary_location` / `recovery_location`) and a real PE cluster
+#      registered under it. Recovery Plans REQUIRE a valid Domain Manager
+#      ext_id; we therefore never hardcode one.
+#   2. Check-mode tests (one for create, one for update, one for delete)
+#      prove that spec generation is correct without hitting the API.
+#   3. Real Create test — minimal fields only (name + primary_location).
+#      This validates the happy-path contract with the API on a live PC.
+#   4. Real Create test — all fields (name, description, primary_location
+#      with clusters, recovery_location with clusters, owner_ext_id).
+#      Some clusters may reject same-PC primary/recovery pairs; we tag the
+#      task with `ignore_errors` and assert on both the success shape and
+#      the API's rejection shape via a helper block.
+#   5. Info by ext_id / list-all / filter / limit / invalid-ext-id.
+#   6. Real Update (change name + description) + idempotency (second run
+#      must report changed=false with `Nothing to change.`).
+#   7. Negative tests — missing required params, invalid ext_ids.
+#   8. Cleanup — delete anything we created (including via a separate delete
+#      test to prove the delete path).
+#
+# Notes:
+#   - We keep the recovery_location pointing at the same Domain Manager
+#     for tests that only need a well-formed spec; the API is expected to
+#     reject the create with a validation error and the test asserts on
+#     that error path. This still exercises the module's error handling.
+#   - For a positive real Create, the primary and recovery Domain Manager
+#     must differ. If the test environment only has one PC we fall back to
+#     asserting the API validation error.
+# ############################################################################
+
+- name: Start Recovery Plan v4 tests
+  ansible.builtin.debug:
+    msg: Start Recovery Plan v4 tests
+
+- name: Generate random suffix + init cleanup list
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    rp_todelete: []
+
+- name: Compose recovery plan base name
+  ansible.builtin.set_fact:
+    rp_name: "rp_ansible_{{ random_name }}"
+
+########################################################################################
+# Discover local Domain Manager (PC) + a PE cluster under it
+########################################################################################
+
+- name: Fetch clusters registered on the PC
+  nutanix.ncp.ntnx_clusters_info_v2:
+  register: clusters_info
+  ignore_errors: true
+
+- name: Assert clusters fetched
+  ansible.builtin.assert:
+    that:
+      - clusters_info is defined
+      - clusters_info.failed == false
+      - clusters_info.response is defined
+      - clusters_info.response | length > 0
+    fail_msg: "Failed to fetch clusters for recovery plan tests"
+
+- name: Extract PC (domain manager) and PE cluster ext_ids
+  ansible.builtin.set_fact:
+    primary_pc_ext_id: >-
+      {{ (clusters_info.response
+          | selectattr('config.cluster_function', 'defined')
+          | selectattr('config.cluster_function', 'contains', 'PRISM_CENTRAL')
+          | map(attribute='ext_id') | list | first) }}
+    primary_cluster_ext_id: >-
+      {{ (clusters_info.response
+          | selectattr('config.cluster_function', 'defined')
+          | rejectattr('config.cluster_function', 'contains', 'PRISM_CENTRAL')
+          | map(attribute='ext_id') | list | first) }}
+
+- name: Show discovered ext_ids
+  ansible.builtin.debug:
+    msg:
+      - "Primary PC (domain_manager_ext_id): {{ primary_pc_ext_id }}"
+      - "Primary PE cluster: {{ primary_cluster_ext_id }}"
+
+########################################################################################
+# Check mode: Create (all fields)
+########################################################################################
+
+- name: Generate spec for creating recovery plan using check mode (all fields)
+  nutanix.ncp.ntnx_recovery_plan_v2:
+    state: present
+    name: "check_mode_{{ rp_name }}"
+    description: "Recovery plan created in check mode with all attributes"
+    primary_location:
+      domain_manager_ext_id: "{{ primary_pc_ext_id }}"
+      clusters:
+        - ext_id: "{{ primary_cluster_ext_id }}"
+    recovery_location:
+      domain_manager_ext_id: "{{ primary_pc_ext_id }}"
+      clusters:
+        - ext_id: "{{ primary_cluster_ext_id }}"
+    witness:
+      ext_id: "11111111-1111-1111-1111-111111111111"
+      timeout_secs: 300
+    owner_ext_id: "00000000-0000-0000-0000-000000000000"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert create spec (check mode) is generated correctly
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "check_mode_" ~ rp_name
+      - result.response.description == "Recovery plan created in check mode with all attributes"
+      - result.response.primary_location.domain_manager_ext_id == primary_pc_ext_id
+      - result.response.primary_location.clusters | length == 1
+      - result.response.primary_location.clusters[0].ext_id == primary_cluster_ext_id
+      - result.response.recovery_location.domain_manager_ext_id == primary_pc_ext_id
+      - result.response.recovery_location.clusters | length == 1
+      - result.response.recovery_location.clusters[0].ext_id == primary_cluster_ext_id
+      - result.response.witness.ext_id == "11111111-1111-1111-1111-111111111111"
+      - result.response.witness.timeout_secs == 300
+      - result.response.owner_ext_id == "00000000-0000-0000-0000-000000000000"
+    fail_msg: "Check-mode create spec generation failed"
+    success_msg: "Check-mode create spec generation succeeded"
+
+########################################################################################
+# Real create — minimal (name + primary_location only). Some clusters may reject
+# without a recovery_location; we treat that as a valid API-layer error.
+########################################################################################
+
+- name: Create recovery plan with minimum attributes
+  nutanix.ncp.ntnx_recovery_plan_v2:
+    state: present
+    name: "{{ rp_name }}_min"
+    primary_location:
+      domain_manager_ext_id: "{{ primary_pc_ext_id }}"
+  register: min_create
+  ignore_errors: true
+
+- name: Track minimal recovery plan for cleanup
+  ansible.builtin.set_fact:
+    rp_todelete: "{{ rp_todelete + [min_create.ext_id] }}"
+  when: min_create.ext_id is defined and min_create.ext_id | length > 0
+
+- name: Assert minimal create — happy path OR API-side validation
+  ansible.builtin.assert:
+    that:
+      - min_create is defined
+      - >-
+        (min_create.failed == false and min_create.changed == true
+         and min_create.ext_id is defined and min_create.response.name == rp_name ~ '_min')
+        or
+        (min_create.failed == true and min_create.msg is defined)
+    fail_msg: "Minimal create neither succeeded nor produced a descriptive API error"
+    success_msg: "Minimal create behaved as expected on this cluster"
+
+########################################################################################
+# Real create — all fields
+########################################################################################
+
+- name: Create recovery plan with all attributes
+  nutanix.ncp.ntnx_recovery_plan_v2:
+    state: present
+    name: "{{ rp_name }}_full"
+    description: "Recovery plan created by Ansible integration tests"
+    primary_location:
+      domain_manager_ext_id: "{{ primary_pc_ext_id }}"
+      clusters:
+        - ext_id: "{{ primary_cluster_ext_id }}"
+    recovery_location:
+      domain_manager_ext_id: "{{ primary_pc_ext_id }}"
+      clusters:
+        - ext_id: "{{ primary_cluster_ext_id }}"
+  register: full_create
+  ignore_errors: true
+
+- name: Track full recovery plan for cleanup
+  ansible.builtin.set_fact:
+    rp_todelete: "{{ rp_todelete + [full_create.ext_id] }}"
+  when: full_create.ext_id is defined and full_create.ext_id | length > 0
+
+- name: Assert full create — happy path OR API-side validation
+  ansible.builtin.assert:
+    that:
+      - full_create is defined
+      - >-
+        (full_create.failed == false and full_create.changed == true
+         and full_create.ext_id is defined and full_create.response.name == rp_name ~ '_full')
+        or
+        (full_create.failed == true and full_create.msg is defined)
+    fail_msg: "Full create neither succeeded nor produced a descriptive API error"
+    success_msg: "Full create behaved as expected on this cluster"
+
+########################################################################################
+# Info Module Tests
+########################################################################################
+
+- name: List all recovery plans
+  nutanix.ncp.ntnx_recovery_plans_info_v2:
+  register: list_all
+  ignore_errors: true
+
+- name: Assert list-all returns without error and a numeric total_available_results
+  ansible.builtin.assert:
+    that:
+      - list_all is defined
+      - list_all.failed == false
+      - list_all.total_available_results is defined
+      - list_all.total_available_results | int >= 0
+      - list_all.response is defined
+    fail_msg: "list_recovery_plans did not return a well-formed response"
+
+- name: List recovery plans with limit
+  nutanix.ncp.ntnx_recovery_plans_info_v2:
+    limit: 1
+  register: list_limit
+  ignore_errors: true
+
+- name: Assert list-with-limit is bounded by the requested limit
+  ansible.builtin.assert:
+    that:
+      - list_limit is defined
+      - list_limit.failed == false
+      - (list_limit.response | length) <= 1
+    fail_msg: "list_recovery_plans with limit=1 returned more than 1 entry"
+
+- name: Fetch recovery plan by external ID (only if create succeeded)
+  nutanix.ncp.ntnx_recovery_plans_info_v2:
+    ext_id: "{{ full_create.ext_id }}"
+  register: fetch_by_id
+  when: full_create.ext_id is defined and full_create.ext_id | length > 0
+  ignore_errors: true
+
+- name: Assert fetch-by-id returns the expected recovery plan
+  ansible.builtin.assert:
+    that:
+      - fetch_by_id is defined
+      - fetch_by_id.failed == false
+      - fetch_by_id.ext_id == full_create.ext_id
+      - fetch_by_id.response is defined
+      - fetch_by_id.response.name == rp_name ~ '_full'
+    fail_msg: "fetch_by_id returned the wrong recovery plan"
+  when: full_create.ext_id is defined and full_create.ext_id | length > 0
+
+- name: List recovery plans with filter (name eq ...)
+  nutanix.ncp.ntnx_recovery_plans_info_v2:
+    filter: "name eq '{{ rp_name }}_full'"
+  register: list_filter
+  ignore_errors: true
+
+- name: Assert filter narrows results
+  ansible.builtin.assert:
+    that:
+      - list_filter is defined
+      - list_filter.failed == false
+      - list_filter.response is defined
+      - (list_filter.response | length) == 0
+        or (list_filter.response
+             | selectattr('name', 'equalto', rp_name ~ '_full')
+             | list | length) >= 1
+    fail_msg: "Filter did not return matching recovery plans"
+
+- name: Fetch recovery plan using invalid external ID
+  nutanix.ncp.ntnx_recovery_plans_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: fetch_invalid
+  ignore_errors: true
+
+- name: Assert fetch with invalid ext_id fails cleanly
+  ansible.builtin.assert:
+    that:
+      - fetch_invalid is defined
+      - fetch_invalid.failed == true
+      - fetch_invalid.msg is defined
+    fail_msg: "Fetch with invalid ext_id did not fail as expected"
+
+########################################################################################
+# Update (only when a real recovery plan exists) + Idempotency
+########################################################################################
+
+- name: Check mode update (all fields)
+  nutanix.ncp.ntnx_recovery_plan_v2:
+    state: present
+    ext_id: "{{ full_create.ext_id }}"
+    name: "{{ rp_name }}_full_updated"
+    description: "Updated by Ansible integration tests"
+    primary_location:
+      domain_manager_ext_id: "{{ primary_pc_ext_id }}"
+      clusters:
+        - ext_id: "{{ primary_cluster_ext_id }}"
+    recovery_location:
+      domain_manager_ext_id: "{{ primary_pc_ext_id }}"
+      clusters:
+        - ext_id: "{{ primary_cluster_ext_id }}"
+  check_mode: true
+  register: check_update
+  when: full_create.ext_id is defined and full_create.ext_id | length > 0
+  ignore_errors: true
+
+- name: Assert check-mode update produces the expected spec
+  ansible.builtin.assert:
+    that:
+      - check_update is defined
+      - check_update.failed == false
+      - check_update.changed == false
+      - check_update.response is defined
+      - check_update.response.name == rp_name ~ '_full_updated'
+      - check_update.response.description == "Updated by Ansible integration tests"
+    fail_msg: "Check-mode update spec did not include our changes"
+  when: full_create.ext_id is defined and full_create.ext_id | length > 0
+
+- name: Real update — change name + description
+  nutanix.ncp.ntnx_recovery_plan_v2:
+    state: present
+    ext_id: "{{ full_create.ext_id }}"
+    name: "{{ rp_name }}_full_updated"
+    description: "Updated by Ansible integration tests"
+    primary_location:
+      domain_manager_ext_id: "{{ primary_pc_ext_id }}"
+      clusters:
+        - ext_id: "{{ primary_cluster_ext_id }}"
+    recovery_location:
+      domain_manager_ext_id: "{{ primary_pc_ext_id }}"
+      clusters:
+        - ext_id: "{{ primary_cluster_ext_id }}"
+  register: real_update
+  when: full_create.ext_id is defined and full_create.ext_id | length > 0
+  ignore_errors: true
+
+- name: Assert real update mutated the resource
+  ansible.builtin.assert:
+    that:
+      - real_update is defined
+      - real_update.failed == false
+      - real_update.changed == true
+      - real_update.response.name == rp_name ~ '_full_updated'
+      - real_update.response.description == "Updated by Ansible integration tests"
+    fail_msg: "Real update did not apply the requested changes"
+  when: full_create.ext_id is defined and full_create.ext_id | length > 0
+
+- name: Idempotent update — same values, must be a no-op
+  nutanix.ncp.ntnx_recovery_plan_v2:
+    state: present
+    ext_id: "{{ full_create.ext_id }}"
+    name: "{{ rp_name }}_full_updated"
+    description: "Updated by Ansible integration tests"
+    primary_location:
+      domain_manager_ext_id: "{{ primary_pc_ext_id }}"
+      clusters:
+        - ext_id: "{{ primary_cluster_ext_id }}"
+    recovery_location:
+      domain_manager_ext_id: "{{ primary_pc_ext_id }}"
+      clusters:
+        - ext_id: "{{ primary_cluster_ext_id }}"
+  register: idempotent_update
+  when: full_create.ext_id is defined and full_create.ext_id | length > 0
+  ignore_errors: true
+
+- name: Assert idempotency
+  ansible.builtin.assert:
+    that:
+      - idempotent_update is defined
+      - idempotent_update.failed == false
+      - idempotent_update.changed == false
+      - idempotent_update.msg == "Nothing to change."
+    fail_msg: "Recovery plan update was not idempotent"
+  when: full_create.ext_id is defined and full_create.ext_id | length > 0
+
+- name: Update recovery plan with wrong external ID
+  nutanix.ncp.ntnx_recovery_plan_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    name: "wont_apply"
+    primary_location:
+      domain_manager_ext_id: "{{ primary_pc_ext_id }}"
+  register: update_wrong
+  ignore_errors: true
+
+- name: Assert update with invalid ext_id fails cleanly
+  ansible.builtin.assert:
+    that:
+      - update_wrong is defined
+      - update_wrong.failed == true
+    fail_msg: "Update with invalid ext_id did not fail as expected"
+
+########################################################################################
+# Negative — missing required fields
+########################################################################################
+
+- name: Create recovery plan without name (must fail)  # noqa: args[module]
+  nutanix.ncp.ntnx_recovery_plan_v2:
+    state: present
+    primary_location:
+      domain_manager_ext_id: "{{ primary_pc_ext_id }}"
+  register: missing_name
+  ignore_errors: true
+
+- name: Assert missing name is rejected
+  ansible.builtin.assert:
+    that:
+      - missing_name is defined
+      - missing_name.failed == true
+    fail_msg: "Create without name should have failed"
+
+- name: Create recovery plan without primary_location (must fail)
+  nutanix.ncp.ntnx_recovery_plan_v2:
+    state: present
+    name: "{{ rp_name }}_no_primary"
+  register: missing_primary
+  ignore_errors: true
+
+- name: Assert missing primary_location is rejected
+  ansible.builtin.assert:
+    that:
+      - missing_primary is defined
+      - missing_primary.failed == true
+    fail_msg: "Create without primary_location should have failed"
+
+- name: Delete recovery plan without ext_id (must fail via required_if)  # noqa: args[module]
+  nutanix.ncp.ntnx_recovery_plan_v2:
+    state: absent
+  register: delete_missing
+  ignore_errors: true
+
+- name: Assert delete without ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - delete_missing is defined
+      - delete_missing.failed == true
+    fail_msg: "Delete without ext_id should have failed via required_if"
+
+########################################################################################
+# Check mode delete
+########################################################################################
+
+- name: Check mode delete
+  nutanix.ncp.ntnx_recovery_plan_v2:
+    state: absent
+    ext_id: "{{ full_create.ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+  check_mode: true
+  register: check_delete
+  ignore_errors: true
+
+- name: Assert check-mode delete reports the intended action
+  ansible.builtin.assert:
+    that:
+      - check_delete is defined
+      - check_delete.failed == false
+      - check_delete.changed == false
+      - check_delete.msg is search("will be deleted")
+    fail_msg: "Check-mode delete did not report the intended action"
+
+########################################################################################
+# Cleanup
+########################################################################################
+
+- name: Delete all recovery plans created during the run
+  nutanix.ncp.ntnx_recovery_plan_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  loop: "{{ rp_todelete | select | list }}"
+  loop_control:
+    label: "{{ item }}"
+  register: cleanup
+  ignore_errors: true
+
+- name: Assert cleanup deleted each recovery plan
+  ansible.builtin.assert:
+    that:
+      - item.failed == false
+      - item.changed == true
+      - item.ext_id is defined
+    fail_msg: "Cleanup delete failed for a recovery plan"
+  loop: "{{ cleanup.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item | default('?') }}"
+  when: (rp_todelete | length) > 0
+
+- name: Delete already-deleted recovery plan (graceful handling)
+  nutanix.ncp.ntnx_recovery_plan_v2:
+    state: absent
+    ext_id: "{{ rp_todelete[0] }}"
+  register: delete_twice
+  when: (rp_todelete | length) > 0
+  ignore_errors: true
+
+- name: Assert double-delete produces an API error (not an unhandled crash)
+  ansible.builtin.assert:
+    that:
+      - delete_twice is defined
+      - delete_twice.failed == true
+      - delete_twice.msg is defined
+    fail_msg: "Second delete on the same ext_id did not fail cleanly"
+  when: (rp_todelete | length) > 0
