@@ -292,6 +292,10 @@ def strip_read_only_fields(spec, fields=None):
 
     The spec is mutated in place; it is also returned so callers can chain.
 
+    SDK model properties may or may not expose a deleter, so this helper
+    first tries ``delattr`` and, if the property has no deleter, falls back
+    to ``setattr(spec, field, None)``.
+
     Args:
         spec (object): SDK model object to mutate.
         fields (Iterable[str] | None): Attribute names to remove.
@@ -304,5 +308,8 @@ def strip_read_only_fields(spec, fields=None):
 
     for field in fields:
         if hasattr(spec, field):
-            delattr(spec, field)
+            try:
+                delattr(spec, field)
+            except AttributeError:
+                setattr(spec, field, None)
     return spec

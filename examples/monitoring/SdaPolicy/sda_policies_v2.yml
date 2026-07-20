@@ -1,0 +1,112 @@
+---
+# Summary:
+# This playbook demonstrates how to interact with System-Defined Alert (SDA)
+# Policies in Nutanix Prism Central using the monitoring v4 modules.
+#
+# System-Defined Alert Policies are shipped by Nutanix and cannot be created
+# or deleted; only their per-cluster configuration can be updated.
+#
+# It will do:
+#   1. List all SDA policies (with a small page size).
+#   2. Fetch a specific SDA policy by ext_id.
+#   3. List all cluster-specific configurations for that policy.
+#   4. Fetch a specific cluster-specific configuration for that policy.
+#   5. Update the cluster-specific configuration for that policy (is_enabled +
+#      schedule + alert_config demonstrating ALL supported fields).
+#
+# Prerequisites:
+#   - Prism Central 2024.x (or newer) with the monitoring v4 GA APIs enabled.
+#   - The referenced cluster (cluster_ext_id) must be registered to the PC.
+#   - The user credentials must carry the "View / Update System-Defined Alert
+#     Policy Cluster Configs" permissions.
+#
+# Notes on picking a policy for the update step:
+#   Not every SDA policy is per-cluster updatable (some are Prism-Central-only
+#   and some severities are shipped as NOT_SUPPORTED). This playbook picks a
+#   SCHEDULED policy which is always cluster-scoped and updatable, and only
+#   sends severity_config entries whose current state is not NOT_SUPPORTED --
+#   the module itself also drops NOT_SUPPORTED severities from update bodies.
+
+- name: SDA policies playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: false
+  tasks:
+    - name: List all SDA policies (limit=5)
+      nutanix.ncp.ntnx_sda_policies_info_v2:
+        limit: 5
+      register: policies_result
+
+    - name: Pick a SCHEDULED (cluster-scoped, updatable) SDA policy
+      ansible.builtin.set_fact:
+        _scheduled_policies: "{{ policies_result.response | selectattr('sub_type', 'equalto', 'SCHEDULED') | list }}"
+
+    - name: Save the SDA policy ext_id used by later steps
+      ansible.builtin.set_fact:
+        sda_policy_ext_id: "{{ (_scheduled_policies | first).ext_id if _scheduled_policies | length > 0 else policies_result.response[0].ext_id }}"
+
+    - name: Fetch a specific SDA policy by ext_id
+      nutanix.ncp.ntnx_sda_policies_info_v2:
+        ext_id: "{{ sda_policy_ext_id }}"
+      register: policy_result
+
+    - name: List all cluster-specific configurations for the SDA policy
+      nutanix.ncp.ntnx_sda_policies_info_v2:
+        sda_policy_ext_id: "{{ sda_policy_ext_id }}"
+        limit: 5
+      register: cluster_configs_result
+
+    - name: Save cluster_ext_id for later steps
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ cluster_configs_result.response[0].ext_id }}"
+
+    - name: Fetch the cluster-specific configuration of the SDA policy on the cluster
+      nutanix.ncp.ntnx_sda_policies_info_v2:
+        sda_policy_ext_id: "{{ sda_policy_ext_id }}"
+        ext_id: "{{ cluster_ext_id }}"
+      register: cluster_config_result
+
+    - name: Update the SDA policy cluster configuration (toggle is_enabled)
+      nutanix.ncp.ntnx_sda_policy_v2:
+        state: present
+        sda_policy_ext_id: "{{ sda_policy_ext_id }}"
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        is_enabled: "{{ not cluster_config_result.response.is_enabled }}"
+        schedule_interval_seconds: 600
+      register: update_result
+
+    - name: Update the SDA policy cluster configuration (restore is_enabled)
+      nutanix.ncp.ntnx_sda_policy_v2:
+        state: present
+        sda_policy_ext_id: "{{ sda_policy_ext_id }}"
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        is_enabled: "{{ cluster_config_result.response.is_enabled }}"
+        schedule_interval_seconds: 600
+      register: restore_result
+
+    # Full-spec update (illustrative): the monitoring service only accepts
+    # severity_config entries whose current state is not NOT_SUPPORTED. The
+    # module strips those automatically, so it is safe to pass ALL severities
+    # explicitly; the server-recognised ones will be sent through.
+    - name: Update the SDA policy cluster configuration (all fields, illustrative)
+      nutanix.ncp.ntnx_sda_policy_v2:
+        state: present
+        sda_policy_ext_id: "{{ sda_policy_ext_id }}"
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        is_enabled: true
+        schedule_interval_seconds: 600
+        alert_config:
+          auto_resolve: ENABLED
+          critical_severity:
+            state: ENABLED
+          warning_severity:
+            state: ENABLED
+          info_severity:
+            state: DISABLED
+      register: update_full_result
+      ignore_errors: true  # per-cluster policies may reject unsupported severities

@@ -1,0 +1,488 @@
+---
+# Test Plan
+# =========
+# Scope: end-to-end coverage of the two SDA policy v4 modules using the
+# monitoring v4 APIs on a live Prism Central.
+#
+# Info module (ntnx_sda_policies_info_v2):
+#   1. List all SDA policies (defaults).
+#   2. List with limit.
+#   3. List with $filter (name starts-with) and orderby.
+#   4. Get by ext_id.
+#   5. Get with invalid ext_id (negative).
+#   6. Mutually exclusive ext_id + filter (negative).
+#   7. List cluster-configs for a given sda_policy_ext_id.
+#   8. Get single cluster-config for (sda_policy_ext_id, cluster_ext_id).
+#   9. Get cluster-config with invalid cluster ext_id (negative).
+#
+# CRUD module (ntnx_sda_policy_v2):
+#  10. Check-mode update of the cluster config with ALL fields.
+#  11. Real update toggling is_enabled to the opposite of the current value.
+#  12. Real update flipping is_enabled back to the original value (state transition).
+#  13. Idempotent update (rerun step 12 with same values -> skipped).
+#  14. Update with missing sda_policy_ext_id (negative).
+#  15. Update with invalid enum value for auto_resolve (negative -> spec validation).
+#  16. Update with state=absent (negative -> not supported).
+#  17. Restore cluster config to the pre-test state to leave the cluster clean.
+
+- name: Start SDA policy v4 tests
+  ansible.builtin.debug:
+    msg: Start SDA policy v4 tests
+
+########################################################################################
+# 1. Discover an SDA policy + one cluster to run per-cluster updates against
+########################################################################################
+
+- name: List all SDA policies (default)
+  nutanix.ncp.ntnx_sda_policies_info_v2: {}
+  register: policies_all
+  ignore_errors: true
+
+- name: Assert list-all SDA policies succeeded
+  ansible.builtin.assert:
+    that:
+      - policies_all is defined
+      - policies_all.changed == false
+      - policies_all.failed == false
+      - policies_all.response is defined
+      - policies_all.response | length > 0
+      - policies_all.total_available_results is defined
+      - policies_all.total_available_results | int > 0
+    success_msg: "Listed SDA policies successfully"
+    fail_msg: "Failed to list SDA policies"
+
+- name: Pick a cluster-scoped, updatable SDA policy for the CRUD tests
+  ansible.builtin.set_fact:
+    _updatable_policies: >-
+      {{
+        policies_all.response
+        | selectattr('sub_type', 'defined')
+        | selectattr('sub_type', 'equalto', 'SCHEDULED')
+        | list
+      }}
+
+- name: Save the SDA policy ext_id used by CRUD tests
+  ansible.builtin.set_fact:
+    sda_policy_ext_id: "{{ (_updatable_policies | first).ext_id if _updatable_policies | length > 0 else policies_all.response[0].ext_id }}"
+    sda_policy_name: "{{ (_updatable_policies | first).name if _updatable_policies | length > 0 else policies_all.response[0].name }}"
+
+########################################################################################
+# 2. List with limit
+########################################################################################
+
+- name: List SDA policies with limit=1
+  nutanix.ncp.ntnx_sda_policies_info_v2:
+    limit: 1
+  register: policies_limit
+  ignore_errors: true
+
+- name: Assert list SDA policies with limit succeeded
+  ansible.builtin.assert:
+    that:
+      - policies_limit is defined
+      - policies_limit.changed == false
+      - policies_limit.failed == false
+      - policies_limit.response is defined
+      - policies_limit.response | length == 1
+      - policies_limit.total_available_results is defined
+    success_msg: "Listed SDA policies with limit=1 successfully"
+    fail_msg: "Failed to list SDA policies with limit=1"
+
+########################################################################################
+# 3. List with $filter (extId eq)
+########################################################################################
+
+- name: List SDA policies with filter on extId
+  nutanix.ncp.ntnx_sda_policies_info_v2:
+    filter: "extId eq '{{ sda_policy_ext_id }}'"
+  register: policies_filter
+  ignore_errors: true
+
+- name: Assert list SDA policies with filter succeeded
+  ansible.builtin.assert:
+    that:
+      - policies_filter is defined
+      - policies_filter.changed == false
+      - policies_filter.failed == false
+      - policies_filter.response is defined
+      - policies_filter.response | length >= 1
+      - (policies_filter.response | selectattr('ext_id', 'equalto', sda_policy_ext_id) | list | length) >= 1
+    success_msg: "Filtered SDA policies list succeeded"
+    fail_msg: "Filtered SDA policies list failed"
+
+########################################################################################
+# 4. Get SDA policy by ext_id (assert every top-level attribute is present)
+########################################################################################
+
+- name: Get SDA policy by ext_id
+  nutanix.ncp.ntnx_sda_policies_info_v2:
+    ext_id: "{{ sda_policy_ext_id }}"
+  register: policy_by_id
+  ignore_errors: true
+
+- name: Assert get SDA policy by ext_id succeeded
+  ansible.builtin.assert:
+    that:
+      - policy_by_id is defined
+      - policy_by_id.changed == false
+      - policy_by_id.failed == false
+      - policy_by_id.ext_id == sda_policy_ext_id
+      - policy_by_id.response is defined
+      - policy_by_id.response.ext_id == sda_policy_ext_id
+      - policy_by_id.response.name == sda_policy_name
+      - policy_by_id.response.policy_id is defined
+      - policy_by_id.response.title is defined
+      - policy_by_id.response.type is defined
+      - policy_by_id.response.sub_type is defined
+      - policy_by_id.response.scope is defined
+      - policy_by_id.response.entity_type is defined
+      - policy_by_id.response.impact_types is defined
+      - policy_by_id.response.publisher is defined
+    success_msg: "Get SDA policy by ext_id succeeded"
+    fail_msg: "Get SDA policy by ext_id failed"
+
+########################################################################################
+# 5. Get SDA policy with invalid ext_id (negative)
+########################################################################################
+
+- name: Get SDA policy with invalid ext_id
+  nutanix.ncp.ntnx_sda_policies_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: policy_bad
+  ignore_errors: true
+
+- name: Assert get SDA policy with invalid ext_id fails cleanly
+  ansible.builtin.assert:
+    that:
+      - policy_bad is defined
+      - policy_bad.failed == true
+      - policy_bad.changed == false
+      - policy_bad.msg is defined
+    success_msg: "Invalid SDA policy ext_id rejected correctly"
+    fail_msg: "Invalid SDA policy ext_id was not rejected"
+
+########################################################################################
+# 6. Mutually exclusive ext_id + filter (negative)
+########################################################################################
+
+- name: Info module with ext_id + filter (mutually exclusive)
+  nutanix.ncp.ntnx_sda_policies_info_v2:
+    ext_id: "{{ sda_policy_ext_id }}"
+    filter: "name eq '{{ sda_policy_name }}'"
+  register: info_mutex
+  ignore_errors: true
+
+- name: Assert mutually exclusive params rejected
+  ansible.builtin.assert:
+    that:
+      - info_mutex is defined
+      - info_mutex.failed == true
+      - info_mutex.changed == false
+      - info_mutex.msg is defined
+      - "'mutually exclusive' in info_mutex.msg | lower or 'parameters are mutually exclusive' in info_mutex.msg | lower"
+    success_msg: "ext_id + filter rejected as mutually exclusive"
+    fail_msg: "ext_id + filter combination was not rejected"
+
+########################################################################################
+# 7. List cluster configs for the SDA policy
+########################################################################################
+
+- name: List cluster configs for the SDA policy
+  nutanix.ncp.ntnx_sda_policies_info_v2:
+    sda_policy_ext_id: "{{ sda_policy_ext_id }}"
+  register: cluster_configs
+  ignore_errors: true
+
+- name: Assert list cluster configs succeeded
+  ansible.builtin.assert:
+    that:
+      - cluster_configs is defined
+      - cluster_configs.changed == false
+      - cluster_configs.failed == false
+      - cluster_configs.sda_policy_ext_id == sda_policy_ext_id
+      - cluster_configs.response is defined
+      - cluster_configs.response | length > 0
+      - cluster_configs.total_available_results is defined
+    success_msg: "Listed cluster configs successfully"
+    fail_msg: "Failed to list cluster configs"
+
+- name: Save the first cluster_ext_id
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ cluster_configs.response[0].ext_id }}"
+
+- name: Assert every cluster config in the list has the required fields
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.is_enabled is defined
+    success_msg: "Cluster config list element has required fields"
+    fail_msg: "Cluster config list element missing required fields"
+  loop: "{{ cluster_configs.response }}"
+
+########################################################################################
+# 8. Get single cluster config (sda_policy_ext_id + cluster_ext_id)
+########################################################################################
+
+- name: Get single cluster config
+  nutanix.ncp.ntnx_sda_policies_info_v2:
+    sda_policy_ext_id: "{{ sda_policy_ext_id }}"
+    ext_id: "{{ cluster_ext_id }}"
+  register: cluster_config
+  ignore_errors: true
+
+- name: Assert get single cluster config succeeded
+  ansible.builtin.assert:
+    that:
+      - cluster_config is defined
+      - cluster_config.changed == false
+      - cluster_config.failed == false
+      - cluster_config.ext_id == cluster_ext_id
+      - cluster_config.sda_policy_ext_id == sda_policy_ext_id
+      - cluster_config.response is defined
+      - cluster_config.response.ext_id == cluster_ext_id
+      - cluster_config.response.is_enabled is defined
+    success_msg: "Get cluster config succeeded"
+    fail_msg: "Get cluster config failed"
+
+- name: Save original values for restore step
+  ansible.builtin.set_fact:
+    original_is_enabled: "{{ cluster_config.response.is_enabled }}"
+    original_schedule_interval_seconds: "{{ cluster_config.response.schedule_interval_seconds | default(omit) }}"
+    original_alert_config: "{{ cluster_config.response.alert_config | default(omit) }}"
+    toggled_is_enabled: "{{ not cluster_config.response.is_enabled }}"
+
+########################################################################################
+# 9. Get cluster config with invalid cluster ext_id (negative)
+########################################################################################
+
+- name: Get cluster config with invalid cluster ext_id
+  nutanix.ncp.ntnx_sda_policies_info_v2:
+    sda_policy_ext_id: "{{ sda_policy_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: cluster_config_bad
+  ignore_errors: true
+
+- name: Assert invalid cluster ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - cluster_config_bad is defined
+      - cluster_config_bad.failed == true
+      - cluster_config_bad.changed == false
+      - cluster_config_bad.msg is defined
+    success_msg: "Invalid cluster ext_id rejected correctly"
+    fail_msg: "Invalid cluster ext_id was not rejected"
+
+########################################################################################
+# 10. check_mode update of the cluster config with ALL supported fields
+########################################################################################
+
+- name: Update cluster config in check mode with ALL fields
+  nutanix.ncp.ntnx_sda_policy_v2:
+    state: present
+    sda_policy_ext_id: "{{ sda_policy_ext_id }}"
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    is_enabled: true
+    schedule_interval_seconds: 600
+    alert_config:
+      auto_resolve: ENABLED
+      critical_severity:
+        state: ENABLED
+      warning_severity:
+        state: ENABLED
+      info_severity:
+        state: DISABLED
+  check_mode: true
+  register: check_mode_update
+  ignore_errors: true
+
+- name: Assert check_mode update returns a spec without changing the cluster
+  ansible.builtin.assert:
+    that:
+      - check_mode_update is defined
+      - check_mode_update.changed == false
+      - check_mode_update.failed == false
+      - check_mode_update.ext_id == cluster_ext_id
+      - check_mode_update.sda_policy_ext_id == sda_policy_ext_id
+      - check_mode_update.response is defined
+      - check_mode_update.response.is_enabled == true
+      - check_mode_update.response.schedule_interval_seconds == 600
+      - check_mode_update.response.alert_config.auto_resolve == "ENABLED"
+      - check_mode_update.response.alert_config.critical_severity.state == "ENABLED"
+      - check_mode_update.response.alert_config.warning_severity.state == "ENABLED"
+      - check_mode_update.response.alert_config.info_severity.state == "DISABLED"
+    success_msg: "check_mode update generated the correct spec"
+    fail_msg: "check_mode update did not generate the expected spec"
+
+########################################################################################
+# 11. Real update: flip the policy is_enabled to the opposite of the current value
+########################################################################################
+
+- name: Update cluster config -> toggle is_enabled to the opposite value
+  nutanix.ncp.ntnx_sda_policy_v2:
+    state: present
+    sda_policy_ext_id: "{{ sda_policy_ext_id }}"
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    is_enabled: "{{ toggled_is_enabled }}"
+  register: update_toggle
+  ignore_errors: true
+
+- name: Assert toggle update succeeded
+  ansible.builtin.assert:
+    that:
+      - update_toggle is defined
+      - update_toggle.failed == false
+      - update_toggle.changed == true
+      - update_toggle.ext_id == cluster_ext_id
+      - update_toggle.sda_policy_ext_id == sda_policy_ext_id
+      - update_toggle.task_ext_id is defined
+      - update_toggle.response is defined
+      - update_toggle.response.is_enabled == (toggled_is_enabled | bool)
+    success_msg: "Toggle update succeeded"
+    fail_msg: "Toggle update failed"
+
+########################################################################################
+# 12. Real update: flip it back to the original value (state transition)
+########################################################################################
+
+- name: Update cluster config -> restore is_enabled to original value
+  nutanix.ncp.ntnx_sda_policy_v2:
+    state: present
+    sda_policy_ext_id: "{{ sda_policy_ext_id }}"
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    is_enabled: "{{ original_is_enabled }}"
+  register: update_restore_enabled
+  ignore_errors: true
+
+- name: Assert restore-enabled update succeeded
+  ansible.builtin.assert:
+    that:
+      - update_restore_enabled is defined
+      - update_restore_enabled.failed == false
+      - update_restore_enabled.changed == true
+      - update_restore_enabled.ext_id == cluster_ext_id
+      - update_restore_enabled.sda_policy_ext_id == sda_policy_ext_id
+      - update_restore_enabled.task_ext_id is defined
+      - update_restore_enabled.response is defined
+      - update_restore_enabled.response.is_enabled == (original_is_enabled | bool)
+    success_msg: "Restore-enabled update succeeded"
+    fail_msg: "Restore-enabled update failed"
+
+########################################################################################
+# 13. Idempotent update: rerun step 12 -> should be skipped
+########################################################################################
+
+- name: Idempotent update
+  nutanix.ncp.ntnx_sda_policy_v2:
+    state: present
+    sda_policy_ext_id: "{{ sda_policy_ext_id }}"
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    is_enabled: "{{ original_is_enabled }}"
+  register: update_idempotent
+  ignore_errors: true
+
+- name: Assert idempotent update is skipped
+  ansible.builtin.assert:
+    that:
+      - update_idempotent is defined
+      - update_idempotent.failed == false
+      - update_idempotent.changed == false
+      - update_idempotent.skipped == true
+      - update_idempotent.msg is defined
+      - "'already in the desired state' in update_idempotent.msg"
+    success_msg: "Idempotent update correctly skipped"
+    fail_msg: "Idempotent update was NOT skipped"
+
+########################################################################################
+# 14. Update with missing sda_policy_ext_id (negative)
+########################################################################################
+
+- name: Update with missing sda_policy_ext_id
+  nutanix.ncp.ntnx_sda_policy_v2:
+    state: present
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    is_enabled: true
+  register: update_missing
+  ignore_errors: true
+
+- name: Assert missing sda_policy_ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - update_missing is defined
+      - update_missing.failed == true
+      - update_missing.changed == false
+      - update_missing.msg is defined
+      - "'sda_policy_ext_id' in update_missing.msg"
+    success_msg: "Missing sda_policy_ext_id rejected correctly"
+    fail_msg: "Missing sda_policy_ext_id was not rejected"
+
+########################################################################################
+# 15. Invalid enum value for auto_resolve (negative -> ansible spec validation)
+########################################################################################
+
+- name: Update with invalid auto_resolve enum value
+  nutanix.ncp.ntnx_sda_policy_v2:
+    state: present
+    sda_policy_ext_id: "{{ sda_policy_ext_id }}"
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    is_enabled: true
+    alert_config:
+      auto_resolve: INVALID_STATE
+  register: update_invalid_enum
+  ignore_errors: true
+
+- name: Assert invalid enum is rejected
+  ansible.builtin.assert:
+    that:
+      - update_invalid_enum is defined
+      - update_invalid_enum.failed == true
+      - update_invalid_enum.changed == false
+      - update_invalid_enum.msg is defined
+    success_msg: "Invalid enum value rejected correctly"
+    fail_msg: "Invalid enum value was not rejected"
+
+########################################################################################
+# 16. state=absent is not supported (negative)
+########################################################################################
+
+- name: Delete SDA policy (unsupported)
+  nutanix.ncp.ntnx_sda_policy_v2:
+    state: absent
+    sda_policy_ext_id: "{{ sda_policy_ext_id }}"
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: delete_unsupported
+  ignore_errors: true
+
+- name: Assert delete fails with 'not supported'
+  ansible.builtin.assert:
+    that:
+      - delete_unsupported is defined
+      - delete_unsupported.failed == true
+      - delete_unsupported.changed == false
+      - delete_unsupported.msg is defined
+      - "'not supported' in delete_unsupported.msg | lower or 'cannot be deleted' in delete_unsupported.msg | lower"
+    success_msg: "state=absent correctly rejected"
+    fail_msg: "state=absent was not rejected"
+
+########################################################################################
+# 17. Restore the cluster config to its pre-test state
+########################################################################################
+
+- name: Restore original cluster config values
+  nutanix.ncp.ntnx_sda_policy_v2:
+    state: present
+    sda_policy_ext_id: "{{ sda_policy_ext_id }}"
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    is_enabled: "{{ original_is_enabled }}"
+    schedule_interval_seconds: "{{ (original_schedule_interval_seconds | int) if (original_schedule_interval_seconds not in [None, '', omit]) else omit }}"
+    alert_config: "{{ original_alert_config if (original_alert_config is mapping and original_alert_config | length > 0) else omit }}"
+  register: restore
+  ignore_errors: true
+
+- name: Assert restore did not fail
+  ansible.builtin.assert:
+    that:
+      - restore is defined
+      - restore.failed == false
+      - restore.ext_id == cluster_ext_id
+    success_msg: "Cluster config restored"
+    fail_msg: "Cluster config restore failed"
