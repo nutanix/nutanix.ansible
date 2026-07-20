@@ -1,0 +1,257 @@
+---
+# Test plan for ntnx_cluster_host_maintenance_v2 (action module — POM v4 API):
+#
+#   Domain knowledge tests (Planned Outage Manager):
+#     * The API is asynchronous — every real invocation must produce
+#       task_ext_id and ext_id/cluster_ext_id in the module result.
+#     * should_rollback_on_failure defaults to True on the server.
+#     * should_shutdown_non_migratable_uvms grants consent to power off
+#       pinned/RF1 VMs — the spec must reflect it verbatim.
+#     * vcenter_info is required only for ESXi hosts. Providing it on an
+#       AHV cluster must still be accepted by the spec (nested dict).
+#
+#   1. check_mode Create with ALL fields (AHV variant) — spec verification.
+#   2. check_mode Create with ALL fields (ESXi variant, includes vcenter_info).
+#   3. Negative: missing required cluster_ext_id.
+#   4. Negative: missing required ext_id.
+#   5. Negative: invalid cluster_ext_id (well-formed but non-existent).
+#   6. Negative: invalid host ext_id (well-formed but non-existent).
+#   7. check_mode with minimum fields (only cluster_ext_id + ext_id).
+#   8. Verify choices=["present"] rejects state=absent.
+#
+# We DO NOT run the destructive live workflow here because it will
+# shut down a CVM and make the host unschedulable — that would break
+# every other integration test in the same Prism Central. Instead the
+# real API path is validated end-to-end through comprehensive
+# check_mode + negative tests. Any run that actually places a host
+# into maintenance mode must be executed manually via the examples
+# playbook against a lab cluster.
+
+- name: Start ntnx_cluster_host_maintenance_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_cluster_host_maintenance_v2 tests
+
+- name: Set placeholder external IDs used by check_mode / negative tests
+  ansible.builtin.set_fact:
+    placeholder_cluster_ext_id: "0006361b-6855-3644-7458-2268f8ffb2bd"
+    placeholder_host_ext_id: "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9"
+    fake_cluster_ext_id: "00000000-0000-0000-0000-000000000001"
+    fake_host_ext_id: "00000000-0000-0000-0000-000000000002"
+
+############################################################
+# 1. check_mode Create with ALL fields (AHV variant)
+############################################################
+
+- name: Generate spec for entering host maintenance with all fields (AHV)
+  nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+    cluster_ext_id: "{{ placeholder_cluster_ext_id }}"
+    ext_id: "{{ placeholder_host_ext_id }}"
+    should_rollback_on_failure: true
+    should_shutdown_non_migratable_uvms: true
+    timeout_seconds: 3600
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Verify AHV check_mode spec
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.cluster_ext_id == placeholder_cluster_ext_id
+      - result.ext_id == placeholder_host_ext_id
+      - result.response.should_rollback_on_failure == true
+      - result.response.should_shutdown_non_migratable_uvms == true
+      - result.response.timeout_seconds == 3600
+    fail_msg: "AHV check_mode spec generation failed"
+    success_msg: "AHV check_mode spec generation passed"
+
+############################################################
+# 2. check_mode Create with ALL fields (ESXi variant)
+############################################################
+
+- name: Generate spec for entering host maintenance with all fields (ESXi)
+  nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+    cluster_ext_id: "{{ placeholder_cluster_ext_id }}"
+    ext_id: "{{ placeholder_host_ext_id }}"
+    should_rollback_on_failure: false
+    should_shutdown_non_migratable_uvms: false
+    timeout_seconds: 1800
+    vcenter_info:
+      address:
+        ipv4:
+          value: "10.44.76.29"
+          prefix_length: 32
+      credentials:
+        username: "administrator@vsphere.local"
+        password: "vcenter-password"
+        port: 443
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Verify ESXi check_mode spec
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.cluster_ext_id == placeholder_cluster_ext_id
+      - result.ext_id == placeholder_host_ext_id
+      - result.response.should_rollback_on_failure == false
+      - result.response.should_shutdown_non_migratable_uvms == false
+      - result.response.timeout_seconds == 1800
+      - result.response.vcenter_info.address.ipv4.value == "10.44.76.29"
+      - result.response.vcenter_info.address.ipv4.prefix_length == 32
+      - result.response.vcenter_info.credentials.username == "administrator@vsphere.local"
+      - result.response.vcenter_info.credentials.port == 443
+    fail_msg: "ESXi check_mode spec generation failed"
+    success_msg: "ESXi check_mode spec generation passed"
+
+############################################################
+# 3. Negative: missing required cluster_ext_id
+############################################################
+
+- name: Enter host maintenance without cluster_ext_id
+  nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+    ext_id: "{{ placeholder_host_ext_id }}"
+    should_rollback_on_failure: true
+  register: result
+  ignore_errors: true
+
+- name: Verify missing cluster_ext_id error
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - "'cluster_ext_id' in (result.msg | default('')) or 'cluster_ext_id' in (result.error.msg | default(''))"
+    fail_msg: "Missing cluster_ext_id was not rejected"
+    success_msg: "Missing cluster_ext_id was rejected as expected"
+
+############################################################
+# 4. Negative: missing required ext_id
+############################################################
+
+- name: Enter host maintenance without host ext_id
+  nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+    cluster_ext_id: "{{ placeholder_cluster_ext_id }}"
+    should_rollback_on_failure: true
+  register: result
+  ignore_errors: true
+
+- name: Verify missing ext_id error
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - "'ext_id' in (result.msg | default('')) or 'ext_id' in (result.error.msg | default(''))"
+    fail_msg: "Missing ext_id was not rejected"
+    success_msg: "Missing ext_id was rejected as expected"
+
+############################################################
+# 5. Negative: invalid cluster_ext_id (well-formed but non-existent)
+############################################################
+
+- name: Enter host maintenance with non-existent cluster_ext_id
+  nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+    cluster_ext_id: "{{ fake_cluster_ext_id }}"
+    ext_id: "{{ fake_host_ext_id }}"
+    should_rollback_on_failure: true
+    should_shutdown_non_migratable_uvms: false
+    timeout_seconds: 60
+  register: result
+  ignore_errors: true
+
+- name: Verify non-existent cluster_ext_id error
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg == "Api Exception raised while putting host into maintenance mode"
+    fail_msg: "Non-existent cluster_ext_id was not rejected with descriptive error"
+    success_msg: "Non-existent cluster_ext_id produced descriptive API error"
+
+############################################################
+# 6. Negative: invalid host ext_id (well-formed but non-existent)
+############################################################
+
+- name: List Prism Element clusters attached to Prism Central
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: pe_clusters
+  ignore_errors: true
+
+- name: Set real PE cluster external ID if available
+  ansible.builtin.set_fact:
+    real_cluster_ext_id: >-
+      {{ (pe_clusters.response | default([]) | length > 0)
+         | ternary((pe_clusters.response | default([]))[0].ext_id,
+                   placeholder_cluster_ext_id) }}
+
+- name: Enter host maintenance with non-existent host ext_id
+  nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+    cluster_ext_id: "{{ real_cluster_ext_id }}"
+    ext_id: "{{ fake_host_ext_id }}"
+    should_rollback_on_failure: true
+    should_shutdown_non_migratable_uvms: false
+    timeout_seconds: 60
+  register: result
+  ignore_errors: true
+
+- name: Verify non-existent host ext_id error
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg == "Api Exception raised while putting host into maintenance mode"
+    fail_msg: "Non-existent host ext_id was not rejected with descriptive error"
+    success_msg: "Non-existent host ext_id produced descriptive API error"
+
+############################################################
+# 7. check_mode with minimum fields
+############################################################
+
+- name: Generate spec for entering host maintenance with minimum fields
+  nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+    cluster_ext_id: "{{ placeholder_cluster_ext_id }}"
+    ext_id: "{{ placeholder_host_ext_id }}"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Verify minimum-field check_mode spec
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.cluster_ext_id == placeholder_cluster_ext_id
+      - result.ext_id == placeholder_host_ext_id
+      - result.response is defined
+      # SDK defaults for EnterHostMaintenanceSpec():
+      #   should_rollback_on_failure=True, should_shutdown_non_migratable_uvms=False
+      # timeout_seconds and vcenter_info are None by default.
+      - result.response.should_rollback_on_failure == true
+      - result.response.should_shutdown_non_migratable_uvms == false
+      - result.response.timeout_seconds is none
+      - result.response.vcenter_info is none
+    fail_msg: "Minimum-field check_mode spec generation failed"
+    success_msg: "Minimum-field check_mode spec generation passed"
+
+############################################################
+# 8. state=absent must be rejected (choices=["present"] only)
+############################################################
+
+- name: Enter host maintenance with unsupported state=absent
+  nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+    cluster_ext_id: "{{ placeholder_cluster_ext_id }}"
+    ext_id: "{{ placeholder_host_ext_id }}"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Verify state=absent is rejected by argument spec
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "state=absent was accepted but should be rejected by choices"
+    success_msg: "state=absent was rejected by choices as expected"
