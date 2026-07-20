@@ -1,0 +1,130 @@
+---
+# Summary:
+# This playbook demonstrates managing Approval Policies (Nutanix PC v4
+# security namespace) using the ntnx.ncp collection. It covers:
+#   1. Create an approval policy with all supported attributes
+#   2. Fetch the approval policy using ext_id
+#   3. List all approval policies
+#   4. List approval policies with an OData filter
+#   5. Update the approval policy (change description, approver expiry)
+#   6. Attempt delete — the v4 SDK does not expose a delete operation for
+#      approval policies, so the module fails-fast with a descriptive error.
+#
+# Prerequisites (see Prism Central docs and the Approval Policy design
+# documents):
+#   * Prism Central 2024.1+, AOS 6.8+
+#   * Policy Engine service enabled in PC
+#   * SMTP server configured for approver notifications
+#   * Super Admin role for the user running these tasks
+
+- name: Approval Policies (Security Policy v2) playbook
+  hosts: localhost
+  gather_facts: false
+  vars:
+    # Prefer values passed via `-e pc_ip=... pc_user=... pc_pass=...` on the
+    # command line, otherwise fall back to environment variables
+    # (NUTANIX_HOST/NUTANIX_USERNAME/NUTANIX_PASSWORD). Leave the defaults as
+    # placeholders so the file is safe to commit.
+    pc_ip: "{{ lookup('env', 'NUTANIX_HOST') | default('<pc_ip>', true) }}"
+    pc_user: "{{ lookup('env', 'NUTANIX_USERNAME') | default('<user>', true) }}"
+    pc_pass: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('<pass>', true) }}"
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ pc_ip }}"
+      nutanix_username: "{{ pc_user }}"
+      nutanix_password: "{{ pc_pass }}"
+      validate_certs: false
+  tasks:
+    - name: Set variables for the run
+      ansible.builtin.set_fact:
+        approval_policy_name: "ansible-approval-policy"
+        approver_user_ext_id: "00000000-0000-0000-0000-000000000000"
+        protection_policy_ext_id: "11111111-1111-1111-1111-111111111111"
+
+    - name: Create an approval policy with all supported attributes
+      # API constraint - at least 3 approvers are required per approver_group.
+      nutanix.ncp.ntnx_security_policy_v2:
+        state: present
+        name: "{{ approval_policy_name }}"
+        description: "Approval policy created by Ansible"
+        approver_groups:
+          - name: "admin-approvers"
+            expiry_hours: 24
+            approvers:
+              - ext_id: "{{ approver_user_ext_id }}"
+                username: "admin"
+                user_type: "LOCAL"
+                display_name: "Admin User"
+                email_id: "admin@example.com"
+                first_name: "Admin"
+                last_name: "User"
+              - ext_id: "33333333-3333-3333-3333-333333333333"
+                username: "approver-two"
+                user_type: "LOCAL"
+              - ext_id: "44444444-4444-4444-4444-444444444444"
+                username: "approver-three"
+                user_type: "LOCAL"
+        secured_policies:
+          - policy_ext_id: "{{ protection_policy_ext_id }}"
+            policy_type: "PROTECTION_POLICY"
+      register: created_policy
+      ignore_errors: true
+
+    - name: Capture the ext_id of the newly created approval policy
+      ansible.builtin.set_fact:
+        approval_policy_ext_id: "{{ created_policy.ext_id | default('') }}"
+
+    - name: Get the approval policy using ext_id (only when create succeeded)
+      nutanix.ncp.ntnx_policies_info_v2:
+        ext_id: "{{ approval_policy_ext_id }}"
+      register: single_policy
+      when: approval_policy_ext_id | length > 0
+      ignore_errors: true
+
+    - name: List all approval policies
+      nutanix.ncp.ntnx_policies_info_v2:
+      register: all_policies
+      ignore_errors: true
+
+    - name: List approval policies with an OData filter on name
+      nutanix.ncp.ntnx_policies_info_v2:
+        filter: "name eq '{{ approval_policy_name }}'"
+      register: filtered_policies
+      ignore_errors: true
+
+    - name: Update the approval policy with all supported attributes
+      nutanix.ncp.ntnx_security_policy_v2:
+        state: present
+        ext_id: "{{ approval_policy_ext_id }}"
+        name: "{{ approval_policy_name }}-updated"
+        description: "Approval policy updated by Ansible"
+        approver_groups:
+          - name: "admin-approvers"
+            expiry_hours: 48
+            approvers:
+              - ext_id: "{{ approver_user_ext_id }}"
+                username: "admin"
+                user_type: "LOCAL"
+                display_name: "Admin User"
+                email_id: "admin@example.com"
+                first_name: "Admin"
+                last_name: "User"
+              - ext_id: "33333333-3333-3333-3333-333333333333"
+                username: "approver-two"
+                user_type: "LOCAL"
+              - ext_id: "44444444-4444-4444-4444-444444444444"
+                username: "approver-three"
+                user_type: "LOCAL"
+        secured_policies:
+          - policy_ext_id: "{{ protection_policy_ext_id }}"
+            policy_type: "PROTECTION_POLICY"
+      register: updated_policy
+      when: approval_policy_ext_id | length > 0
+      ignore_errors: true
+
+    - name: Attempt to delete the approval policy (unsupported by SDK)
+      nutanix.ncp.ntnx_security_policy_v2:
+        state: absent
+        ext_id: "{{ approval_policy_ext_id if (approval_policy_ext_id | length > 0) else protection_policy_ext_id }}"
+      register: delete_result
+      ignore_errors: true
