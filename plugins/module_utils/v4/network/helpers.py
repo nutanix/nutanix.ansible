@@ -170,3 +170,50 @@ def get_virtual_switch(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching virtual switch info using ext_id",
         )
+
+
+def get_layer2_stretch(module, api_instance, ext_id):
+    """
+    This method will return Layer2Stretch info using its ext_id.
+    Args:
+        module: Ansible module
+        api_instance: Layer2StretchesApi instance from ntnx_networking_py_client sdk
+        ext_id (str): Layer2Stretch external ID
+    return:
+        info (object): Layer2Stretch info
+    """
+    try:
+        return api_instance.get_layer2_stretch_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching Layer2Stretch info using ext_id",
+        )
+
+
+def get_layer2_stretch_by_name(module, api_instance, name):
+    """
+    This method will lookup a Layer2Stretch by name using the list API + $filter.
+    Returns the SDK object matching ``name`` or None if no match.
+    Args:
+        module: Ansible module
+        api_instance: Layer2StretchesApi instance from ntnx_networking_py_client sdk
+        name (str): Layer2Stretch configuration name
+    return:
+        info (object|None): Layer2Stretch info or None
+    """
+    try:
+        resp = api_instance.list_layer2_stretches(_filter="name eq '{0}'".format(name))
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching Layer2Stretch info using name",
+        )
+
+    entries = getattr(resp, "data", None) or []
+    for entry in entries:
+        if getattr(entry, "name", None) == name:
+            return entry
+    return None

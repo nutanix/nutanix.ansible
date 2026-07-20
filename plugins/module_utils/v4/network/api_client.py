@@ -195,3 +195,15 @@ def get_bridges_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_networking_py_client.BridgesApi(api_client=api_client)
+
+
+def get_layer2_stretches_api_instance(module):
+    """
+    This method will return Layer2StretchesApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Layer2 Stretches Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.Layer2StretchesApi(api_client=api_client)

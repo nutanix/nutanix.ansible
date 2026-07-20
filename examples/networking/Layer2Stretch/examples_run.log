@@ -1,0 +1,63 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Layer2Stretch playbook] **************************************************
+
+TASK [Set stretch inputs] ******************************************************
+ok: [localhost] => {"ansible_facts": {"layer2_stretch_name": "layer2_stretch_ansible", "local_connection_uuid": "a4f3f04f-1222-8544-7896-28b62bcc3e3e", "local_pc_cluster_uuid": "18553f0f-7ce0-4c33-a697-0eecfb27fc10", "local_subnet_uuid": "b0cce620-3654-8522-9876-a91e2c037862", "remote_connection_uuid": "e7f3f04f-2222-3333-4444-28b62bcc3e3f", "remote_pc_cluster_uuid": "78e0d3ac-9e08-4d0c-8f1c-3d90ac2a55f0", "remote_subnet_uuid": "b7c94b93-2222-3333-4444-91e2c0378621"}, "changed": false}
+
+TASK [Create Layer2Stretch (VPN) with all fields] ******************************
+[ERROR]: Task failed: Module failed: Api Exception raised while creating Layer2Stretch
+Origin: /tmp/codegen/2873fb631711401c806f7fac1bd08d8a/repo/examples/networking/Layer2Stretch/layer2_stretch.yml:32:7
+
+30         remote_connection_uuid: "e7f3f04f-2222-3333-4444-28b62bcc3e3f"
+31
+32     - name: Create Layer2Stretch (VPN) with all fields
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "INTERNAL SERVER ERROR", "msg": "Api Exception raised while creating Layer2Stretch", "response": {"error": "Internal Server Error", "message": "Request processing failed: com.nutanix.networking.atlas_common.exceptions.AtlasException: Application error kNotFound raised: Subnet with uuid b0cce620-3654-8522-9876-a91e2c037862 not found", "path": "/api/networking/v4.3/config/layer2-stretches", "status": 500, "timestamp": "2026-07-20T12:41:57.569+00:00"}, "status": 500}
+...ignoring
+
+TASK [Capture Layer2Stretch ext_id] ********************************************
+ok: [localhost] => {"ansible_facts": {"layer2_stretch_ext_id": ""}, "changed": false}
+
+TASK [Update Layer2Stretch with all fields] ************************************
+[ERROR]: Task failed: Module failed: Invalid value for `ext_id`, must be a follow pattern or equal to `/^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$/`
+Origin: /tmp/codegen/2873fb631711401c806f7fac1bd08d8a/repo/examples/networking/Layer2Stretch/layer2_stretch.yml:84:7
+
+82         layer2_stretch_ext_id: "{{ create_result.ext_id | default('') }}"
+83
+84     - name: Update Layer2Stretch with all fields
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "Task failed: Module failed: Invalid value for `ext_id`, must be a follow pattern or equal to `/^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$/`"}
+...ignoring
+
+TASK [Get Layer2Stretch using ext_id] ******************************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List all Layer2Stretch configurations] ***********************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List Layer2Stretch configurations with filter] ***************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List Layer2Stretch configurations with limit] ****************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [Delete Layer2Stretch] ****************************************************
+[ERROR]: Task failed: Module failed: Api Exception raised while deleting Layer2Stretch
+Origin: /tmp/codegen/2873fb631711401c806f7fac1bd08d8a/repo/examples/networking/Layer2Stretch/layer2_stretch.yml:156:7
+
+154       ignore_errors: true
+155
+156     - name: Delete Layer2Stretch
+          ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "METHOD NOT ALLOWED", "msg": "Api Exception raised while deleting Layer2Stretch", "response": {"error": "Method Not Allowed", "message": "Method 'DELETE' is not supported.", "path": "/api/networking/v4.3/config/layer2-stretches", "status": 405, "timestamp": "2026-07-20T12:42:03.122502628Z"}, "status": 405}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=9    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=3   
+
