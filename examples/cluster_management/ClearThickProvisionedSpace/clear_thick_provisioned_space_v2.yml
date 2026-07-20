@@ -1,0 +1,41 @@
+---
+# Summary:
+# This playbook exercises the ntnx_clear_thick_provisioned_space_v2 module.
+# It shows how to release the thick provisioned space (implicit vDisk reservations)
+# on a Storage Container in Nutanix Prism Central.
+#
+# Steps:
+# 1. Trigger the clear thick provisioned space action against an existing
+#    Storage Container identified by its external ID.
+# 2. Trigger the same action against a Storage Container hosted on a specific
+#    remote Prism Element by supplying the X-Cluster-Id header via x_cluster_id.
+
+- name: Clear Thick Provisioned Space playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting variables
+      ansible.builtin.set_fact:
+        storage_container_ext_id: "44481f83-d0a1-47b3-b9b8-32b5465c622e"
+        remote_cluster_ext_id: "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+
+    - name: Clear thick provisioned space for a storage container
+      nutanix.ncp.ntnx_clear_thick_provisioned_space_v2:
+        state: present
+        ext_id: "{{ storage_container_ext_id }}"
+      register: clear_result
+      ignore_errors: true
+
+    - name: Clear thick provisioned space and route through a specific remote cluster
+      nutanix.ncp.ntnx_clear_thick_provisioned_space_v2:
+        state: present
+        ext_id: "{{ storage_container_ext_id }}"
+        x_cluster_id: "{{ remote_cluster_ext_id }}"
+      register: clear_result_with_cluster
+      ignore_errors: true
