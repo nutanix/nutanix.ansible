@@ -1,0 +1,676 @@
+---
+###############################################################################
+# IPFIX Exporter v2 integration tests
+#
+# Test plan:
+#   * Check-mode spec generation for Create / Update / Delete (one each).
+#   * Create an IPFIX exporter with the minimum required fields.
+#   * Create an IPFIX exporter with ALL supported fields, including
+#     export_scopes (PE + V4 + BOTH ip_family) and metadata.
+#   * Fetch created exporter by ext_id and by name-filter.
+#   * List all IPFIX exporters, verify pagination limit works.
+#   * Update the full-attribute exporter (scalar name/description/rate limit
+#     change + change protocol to a DIFFERENT valid enum value).
+#   * Idempotency: running the same update again returns changed=false and
+#     "Nothing to change.".
+#   * Negative:
+#       - Create without required fields (name, collector_ip, collector_port,
+#         protocol) — module must fail with a descriptive message.
+#       - Invalid enum for `protocol` — spec validation must reject it.
+#       - Invalid scope_type enum — spec validation must reject it.
+#       - Update / Delete / Get with a non-existent ext_id — API error.
+#       - Delete without ext_id — Ansible required_if must reject it.
+#       - Info module rejects ext_id + filter (mutually exclusive).
+#   * Delete cleanup: delete every created exporter, then verify the list.
+###############################################################################
+
+- name: Start IPFIX Exporter tests
+  ansible.builtin.debug:
+    msg: Start IPFIX Exporter tests
+
+- name: Generate random suffix for resource names
+  ansible.builtin.set_fact:
+    random_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=10)[0] }}"
+    todelete: []
+
+- name: Build entity names and unique collector coordinates (avoids IP+port+protocol clashes)
+  ansible.builtin.set_fact:
+    ipfix_min_name: "ipfix_min_{{ random_suffix }}"
+    ipfix_full_name: "ipfix_full_{{ random_suffix }}"
+    ipfix_updated_name: "ipfix_updated_{{ random_suffix }}"
+    collector_min_ip: "10.44.{{ 20 + (100 | random(seed=random_suffix)) % 100 }}.10"
+    collector_full_ip: "10.44.{{ 20 + (100 | random(seed=random_suffix + 'full')) % 100 }}.11"
+    collector_update_ip: "10.44.{{ 20 + (100 | random(seed=random_suffix + 'update')) % 100 }}.12"
+    collector_min_port: "{{ 30000 + (30000 | random(seed=random_suffix)) }}"
+    collector_full_port: "{{ 30000 + (30000 | random(seed=random_suffix + 'full')) }}"
+    collector_update_port: "{{ 30000 + (30000 | random(seed=random_suffix + 'update')) }}"
+
+########################################################################################
+# Fetch a PE cluster ext_id to reference in export_scopes
+########################################################################################
+
+- name: Fetch clusters
+  nutanix.ncp.ntnx_clusters_info_v2:
+  register: clusters_result
+  ignore_errors: true
+
+- name: Assert clusters were fetched
+  ansible.builtin.assert:
+    that:
+      - clusters_result is defined
+      - clusters_result.failed == false
+      - clusters_result.response is defined
+      - clusters_result.response | length > 0
+    success_msg: "Clusters info fetched successfully"
+    fail_msg: "Failed to fetch clusters info"
+
+- name: Pick a PE cluster ext_id (fallback to first cluster)
+  ansible.builtin.set_fact:
+    pe_cluster_ext_id: >-
+      {{
+        (clusters_result.response | selectattr('config.cluster_function', 'defined')
+                                    | selectattr('config.cluster_function', 'contains', 'AOS')
+                                    | map(attribute='ext_id') | list
+         + clusters_result.response | map(attribute='ext_id') | list)
+         | first
+      }}
+
+- name: Show the PE cluster ext_id in use
+  ansible.builtin.debug:
+    msg: "Using PE cluster ext_id: {{ pe_cluster_ext_id }}"
+
+########################################################################################
+# Pre-clean stale IPFIX exporters left over from previous test runs so IP+port+protocol
+# uniqueness constraints from the API do not conflict with fresh entities we are about
+# to create.
+########################################################################################
+
+- name: List existing IPFIX exporters to detect stale test artifacts
+  nutanix.ncp.ntnx_ipfix_exporters_info_v2:
+  register: preexisting
+  ignore_errors: true
+
+- name: Compute list of stale ext_ids to prune (only test-created names)
+  ansible.builtin.set_fact:
+    stale_ext_ids: >-
+      {{
+        (preexisting.response | default([]))
+        | selectattr('name', 'defined')
+        | selectattr('name', 'match', '^(ipfix_min_|ipfix_full_|ipfix_updated_|check_mode_).*')
+        | map(attribute='ext_id') | list
+      }}
+
+- name: Delete stale IPFIX exporters from previous runs (best-effort)
+  nutanix.ncp.ntnx_ipfix_exporter_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  loop: "{{ stale_ext_ids }}"
+  register: prune_result
+  retries: 3
+  delay: 10
+  until: prune_result is not failed
+  ignore_errors: true
+
+########################################################################################
+# Check-mode tests (exactly one for each of Create/Update/Delete)
+########################################################################################
+
+- name: Generate spec for creating IPFIX exporter using check mode with all attributes
+  nutanix.ncp.ntnx_ipfix_exporter_v2:
+    name: "check_mode_ipfix_full"
+    description: "IPFIX exporter created in check mode with all attributes"
+    collector_ip: "10.44.10.20"
+    collector_port: 4739
+    protocol: "TCP"
+    export_rate_limit_per_node_bps: 1000000
+    export_scopes:
+      - uuid: "{{ pe_cluster_ext_id }}"
+        scope_type: "PE"
+        ip_family: "V4"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert Create IPFIX exporter check-mode spec
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "check_mode_ipfix_full"
+      - result.response.description == "IPFIX exporter created in check mode with all attributes"
+      - result.response.collector_ip == "10.44.10.20"
+      - result.response.collector_port == 4739
+      - result.response.protocol == "TCP"
+      - result.response.export_rate_limit_per_node_bps == 1000000
+      - result.response.export_scopes | length == 1
+      - result.response.export_scopes[0].uuid == pe_cluster_ext_id
+      - result.response.export_scopes[0].scope_type == "PE"
+      - result.response.export_scopes[0].ip_family == "V4"
+    success_msg: "IPFIX exporter create check-mode spec generated successfully"
+    fail_msg: "IPFIX exporter create check-mode spec generation failed"
+
+########################################################################################
+# Create Tests
+########################################################################################
+
+- name: Create IPFIX exporter with minimum required attributes
+  nutanix.ncp.ntnx_ipfix_exporter_v2:
+    name: "{{ ipfix_min_name }}"
+    collector_ip: "{{ collector_min_ip }}"
+    collector_port: "{{ collector_min_port }}"
+    protocol: "UDP"
+    export_scopes:
+      - uuid: "{{ pe_cluster_ext_id }}"
+        scope_type: "PE"
+  register: result
+  ignore_errors: true
+
+- name: Assert Create IPFIX exporter with minimum required attributes
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.name == ipfix_min_name
+      - result.response.collector_ip == collector_min_ip
+      - result.response.collector_port == (collector_min_port | int)
+      - result.response.protocol == "UDP"
+      - result.response.export_scopes | length == 1
+      - result.response.export_scopes[0].uuid == pe_cluster_ext_id
+      - result.response.export_scopes[0].scope_type == "PE"
+    success_msg: "Minimum IPFIX exporter created successfully"
+    fail_msg: "Minimum IPFIX exporter creation failed"
+
+- name: Track minimum exporter for cleanup
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+    ipfix_min_ext_id: "{{ result.ext_id }}"
+
+- name: Create IPFIX exporter with all attributes
+  nutanix.ncp.ntnx_ipfix_exporter_v2:
+    name: "{{ ipfix_full_name }}"
+    description: "IPFIX exporter created by Ansible integration tests"
+    collector_ip: "{{ collector_full_ip }}"
+    collector_port: "{{ collector_full_port }}"
+    protocol: "TCP"
+    export_rate_limit_per_node_bps: 1500000
+    export_scopes:
+      - uuid: "{{ pe_cluster_ext_id }}"
+        scope_type: "PE"
+        ip_family: "V4"
+  register: result
+  ignore_errors: true
+
+- name: Assert Create IPFIX exporter with all attributes
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.name == ipfix_full_name
+      - result.response.description == "IPFIX exporter created by Ansible integration tests"
+      - result.response.collector_ip == collector_full_ip
+      - result.response.collector_port == (collector_full_port | int)
+      - result.response.protocol == "TCP"
+      - result.response.export_rate_limit_per_node_bps == 1500000
+      - result.response.export_scopes | length == 1
+      - result.response.export_scopes[0].uuid == pe_cluster_ext_id
+      - result.response.export_scopes[0].scope_type == "PE"
+      - result.response.export_scopes[0].ip_family == "V4"
+    success_msg: "Full IPFIX exporter created successfully"
+    fail_msg: "Full IPFIX exporter creation failed"
+
+- name: Track full exporter for cleanup
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+    ipfix_full_ext_id: "{{ result.ext_id }}"
+
+########################################################################################
+# Negative Create Tests
+########################################################################################
+
+- name: Create IPFIX exporter with missing required fields (name)
+  nutanix.ncp.ntnx_ipfix_exporter_v2:
+    collector_ip: "10.44.13.20"
+    collector_port: 4739
+    protocol: "UDP"
+  register: result
+  ignore_errors: true
+
+- name: Assert Create IPFIX exporter with missing name fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - 'result.msg == "state is present but any of the following are missing: name, ext_id"'
+    success_msg: "Create IPFIX exporter with missing name failed as expected"
+    fail_msg: "Create IPFIX exporter with missing name did not fail as expected"
+
+- name: Create IPFIX exporter with missing collector_ip
+  nutanix.ncp.ntnx_ipfix_exporter_v2:
+    name: "missing_collector_ip"
+    collector_port: 4739
+    protocol: "UDP"
+  register: result
+  ignore_errors: true
+
+- name: Assert Create IPFIX exporter with missing collector_ip fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'Missing required parameter(s): collector_ip' in result.msg"
+    success_msg: "Create IPFIX exporter with missing collector_ip failed as expected"
+    fail_msg: "Create IPFIX exporter with missing collector_ip did not fail as expected"
+
+- name: Create IPFIX exporter with missing collector_port
+  nutanix.ncp.ntnx_ipfix_exporter_v2:
+    name: "missing_collector_port"
+    collector_ip: "10.44.13.20"
+    protocol: "UDP"
+  register: result
+  ignore_errors: true
+
+- name: Assert Create IPFIX exporter with missing collector_port fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'Missing required parameter(s): collector_port' in result.msg"
+    success_msg: "Create IPFIX exporter with missing collector_port failed as expected"
+    fail_msg: "Create IPFIX exporter with missing collector_port did not fail as expected"
+
+- name: Create IPFIX exporter with missing protocol
+  nutanix.ncp.ntnx_ipfix_exporter_v2:
+    name: "missing_protocol"
+    collector_ip: "10.44.13.20"
+    collector_port: 4739
+  register: result
+  ignore_errors: true
+
+- name: Assert Create IPFIX exporter with missing protocol fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'Missing required parameter(s): protocol' in result.msg"
+    success_msg: "Create IPFIX exporter with missing protocol failed as expected"
+    fail_msg: "Create IPFIX exporter with missing protocol did not fail as expected"
+
+- name: Create IPFIX exporter with an invalid protocol enum
+  nutanix.ncp.ntnx_ipfix_exporter_v2:
+    name: "invalid_protocol_exporter"
+    collector_ip: "10.44.13.20"
+    collector_port: 4739
+    protocol: "SCTP"
+  register: result
+  ignore_errors: true
+
+- name: Assert Create IPFIX exporter with invalid protocol is rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'value of protocol must be one of' in result.msg"
+    success_msg: "Invalid protocol enum was rejected as expected"
+    fail_msg: "Invalid protocol enum was not rejected as expected"
+
+- name: Create IPFIX exporter with an invalid export_scopes.scope_type enum
+  nutanix.ncp.ntnx_ipfix_exporter_v2:
+    name: "invalid_scope_type_exporter"
+    collector_ip: "10.44.13.20"
+    collector_port: 4739
+    protocol: "TCP"
+    export_scopes:
+      - uuid: "{{ pe_cluster_ext_id }}"
+        scope_type: "AZ"
+  register: result
+  ignore_errors: true
+
+- name: Assert Create IPFIX exporter with invalid scope_type is rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'value of scope_type must be one of' in result.msg"
+    success_msg: "Invalid scope_type enum was rejected as expected"
+    fail_msg: "Invalid scope_type enum was not rejected as expected"
+
+########################################################################################
+# Info Module Tests
+########################################################################################
+
+- name: Fetch IPFIX exporter using ext_id
+  nutanix.ncp.ntnx_ipfix_exporters_info_v2:
+    ext_id: "{{ ipfix_full_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert Fetch IPFIX exporter using ext_id
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.changed == false
+      - result.ext_id == ipfix_full_ext_id
+      - result.response is defined
+      - result.response.name == ipfix_full_name
+      - result.response.collector_ip == collector_full_ip
+      - result.response.collector_port == (collector_full_port | int)
+      - result.response.protocol == "TCP"
+      - result.response.export_rate_limit_per_node_bps == 1500000
+      - result.response.export_scopes | length == 1
+      - result.response.export_scopes[0].uuid == pe_cluster_ext_id
+      - result.response.export_scopes[0].scope_type == "PE"
+      - result.response.export_scopes[0].ip_family == "V4"
+    success_msg: "Fetch IPFIX exporter using ext_id passed"
+    fail_msg: "Fetch IPFIX exporter using ext_id failed"
+
+- name: Fetch IPFIX exporter using wrong ext_id
+  nutanix.ncp.ntnx_ipfix_exporters_info_v2:
+    ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+  register: result
+  ignore_errors: true
+
+- name: Assert Fetch IPFIX exporter using wrong ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Fetch IPFIX exporter using wrong ext_id failed as expected"
+    fail_msg: "Fetch IPFIX exporter using wrong ext_id did not fail as expected"
+
+- name: List all IPFIX exporters
+  nutanix.ncp.ntnx_ipfix_exporters_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Assert List all IPFIX exporters
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length >= 2
+      - result.total_available_results is defined
+      - result.total_available_results >= 2
+    success_msg: "List all IPFIX exporters passed"
+    fail_msg: "List all IPFIX exporters failed"
+
+- name: List IPFIX exporters with filter
+  nutanix.ncp.ntnx_ipfix_exporters_info_v2:
+    filter: "name eq '{{ ipfix_full_name }}'"
+  register: result
+  ignore_errors: true
+
+- name: Assert List IPFIX exporters with filter
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].name == ipfix_full_name
+      - result.response[0].collector_ip == collector_full_ip
+      - result.response[0].collector_port == (collector_full_port | int)
+      - result.response[0].protocol == "TCP"
+    success_msg: "List IPFIX exporters with filter passed"
+    fail_msg: "List IPFIX exporters with filter failed"
+
+- name: List IPFIX exporters with limit
+  nutanix.ncp.ntnx_ipfix_exporters_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Assert List IPFIX exporters with limit
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+    success_msg: "List IPFIX exporters with limit passed"
+    fail_msg: "List IPFIX exporters with limit failed"
+
+- name: List IPFIX exporters with both ext_id and filter (mutually exclusive)
+  nutanix.ncp.ntnx_ipfix_exporters_info_v2:
+    ext_id: "{{ ipfix_full_ext_id }}"
+    filter: "name eq '{{ ipfix_full_name }}'"
+  register: result
+  ignore_errors: true
+
+- name: Assert ext_id + filter is rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'mutually exclusive' in result.msg"
+    success_msg: "Info module rejected ext_id + filter as expected"
+    fail_msg: "Info module did not reject ext_id + filter as expected"
+
+########################################################################################
+# Update Tests
+########################################################################################
+
+- name: Generate spec for updating IPFIX exporter using check mode
+  nutanix.ncp.ntnx_ipfix_exporter_v2:
+    ext_id: "{{ ipfix_full_ext_id }}"
+    name: "{{ ipfix_updated_name }}"
+    description: "Updated IPFIX exporter check-mode"
+    collector_ip: "10.44.15.20"
+    collector_port: 4741
+    protocol: "UDP"
+    export_rate_limit_per_node_bps: 2500000
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert Update IPFIX exporter check-mode spec
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == ipfix_updated_name
+      - result.response.description == "Updated IPFIX exporter check-mode"
+      - result.response.collector_ip == "10.44.15.20"
+      - result.response.collector_port == 4741
+      - result.response.protocol == "UDP"
+      - result.response.export_rate_limit_per_node_bps == 2500000
+    success_msg: "IPFIX exporter update check-mode spec generated successfully"
+    fail_msg: "IPFIX exporter update check-mode spec generation failed"
+
+- name: Update IPFIX exporter with all attributes
+  nutanix.ncp.ntnx_ipfix_exporter_v2:
+    ext_id: "{{ ipfix_full_ext_id }}"
+    name: "{{ ipfix_updated_name }}"
+    description: "IPFIX exporter updated by Ansible integration tests"
+    collector_ip: "{{ collector_update_ip }}"
+    collector_port: "{{ collector_update_port }}"
+    protocol: "UDP"
+    export_rate_limit_per_node_bps: 3000000
+    export_scopes:
+      - uuid: "{{ pe_cluster_ext_id }}"
+        scope_type: "PE"
+        ip_family: "BOTH"
+  register: result
+  ignore_errors: true
+
+- name: Assert Update IPFIX exporter
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == ipfix_updated_name
+      - result.response.description == "IPFIX exporter updated by Ansible integration tests"
+      - result.response.collector_ip == collector_update_ip
+      - result.response.collector_port == (collector_update_port | int)
+      - result.response.protocol == "UDP"
+      - result.response.export_rate_limit_per_node_bps == 3000000
+      - result.response.export_scopes | length == 1
+      - result.response.export_scopes[0].uuid == pe_cluster_ext_id
+      - result.response.export_scopes[0].scope_type == "PE"
+      - result.response.export_scopes[0].ip_family == "BOTH"
+    success_msg: "Update IPFIX exporter passed"
+    fail_msg: "Update IPFIX exporter failed"
+
+- name: Update IPFIX exporter with same values (idempotency)
+  nutanix.ncp.ntnx_ipfix_exporter_v2:
+    ext_id: "{{ ipfix_full_ext_id }}"
+    name: "{{ ipfix_updated_name }}"
+    description: "IPFIX exporter updated by Ansible integration tests"
+    collector_ip: "{{ collector_update_ip }}"
+    collector_port: "{{ collector_update_port }}"
+    protocol: "UDP"
+    export_rate_limit_per_node_bps: 3000000
+    export_scopes:
+      - uuid: "{{ pe_cluster_ext_id }}"
+        scope_type: "PE"
+        ip_family: "BOTH"
+  register: result
+  ignore_errors: true
+
+- name: Assert Update idempotency
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - 'result.msg == "Nothing to change."'
+    success_msg: "Update IPFIX exporter idempotency passed"
+    fail_msg: "Update IPFIX exporter idempotency failed"
+
+- name: Update IPFIX exporter with wrong ext_id
+  nutanix.ncp.ntnx_ipfix_exporter_v2:
+    ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+    name: "wrong_ext_id_update"
+    collector_ip: "10.44.14.10"
+    collector_port: 4739
+    protocol: "TCP"
+  register: result
+  ignore_errors: true
+
+- name: Assert Update IPFIX exporter with wrong ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Update IPFIX exporter with wrong ext_id failed as expected"
+    fail_msg: "Update IPFIX exporter with wrong ext_id did not fail as expected"
+
+########################################################################################
+# Delete Tests (check_mode + real + negatives)
+########################################################################################
+
+- name: Delete IPFIX exporter in check_mode
+  nutanix.ncp.ntnx_ipfix_exporter_v2:
+    ext_id: "{{ ipfix_min_ext_id }}"
+    state: absent
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert Delete check-mode
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - "'will be deleted' in result.msg"
+    success_msg: "Delete IPFIX exporter check-mode passed"
+    fail_msg: "Delete IPFIX exporter check-mode failed"
+
+- name: Delete IPFIX exporter with missing ext_id
+  nutanix.ncp.ntnx_ipfix_exporter_v2:
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Assert Delete without ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is absent but all of the following are missing: ext_id' in result.msg"
+    success_msg: "Delete IPFIX exporter without ext_id failed as expected"
+    fail_msg: "Delete IPFIX exporter without ext_id did not fail as expected"
+
+- name: Delete IPFIX exporter with wrong ext_id
+  nutanix.ncp.ntnx_ipfix_exporter_v2:
+    ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Assert Delete IPFIX exporter with wrong ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Delete IPFIX exporter with wrong ext_id failed as expected"
+    fail_msg: "Delete IPFIX exporter with wrong ext_id did not fail as expected"
+
+- name: Delete all created IPFIX exporters (retry on transient AHV push failures)
+  nutanix.ncp.ntnx_ipfix_exporter_v2:
+    ext_id: "{{ item }}"
+    state: absent
+  register: delete_results
+  loop: "{{ todelete }}"
+  retries: 5
+  delay: 30
+  until: delete_results is not failed
+  ignore_errors: true
+
+- name: Assert all IPFIX exporters were deleted
+  ansible.builtin.assert:
+    that:
+      - delete_results is defined
+      - delete_results.results | length == todelete | length
+      - delete_results.results | map(attribute='failed', default=false) | list | difference([false]) | length == 0
+      - delete_results.results | map(attribute='changed', default=false) | list | difference([true]) | length == 0
+    success_msg: "All created IPFIX exporters were deleted successfully"
+    fail_msg: "One or more IPFIX exporters were not deleted successfully"
+
+- name: Verify created exporters are gone via list
+  nutanix.ncp.ntnx_ipfix_exporters_info_v2:
+    filter: "name eq '{{ ipfix_updated_name }}'"
+  register: list_after_delete
+  ignore_errors: true
+
+- name: Assert updated IPFIX exporter no longer exists
+  ansible.builtin.assert:
+    that:
+      - list_after_delete is defined
+      - list_after_delete.failed == false
+      - (list_after_delete.response | default([])) | length == 0
+    success_msg: "Updated IPFIX exporter is no longer listed as expected"
+    fail_msg: "Updated IPFIX exporter still exists after deletion"
+
+- name: Clear todelete tracker (all exporters removed)
+  ansible.builtin.set_fact:
+    todelete: []

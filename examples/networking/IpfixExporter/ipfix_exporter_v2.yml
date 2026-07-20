@@ -1,0 +1,95 @@
+---
+# Summary:
+# This playbook demonstrates end-to-end usage of the IPFIX Exporter v4 API modules:
+# 1. Create an IPFIX exporter (with all supported fields)
+# 2. Get the IPFIX exporter by external ID
+# 3. List IPFIX exporters (all / filtered / limited)
+# 4. Update the IPFIX exporter (with all supported fields)
+# 5. Delete the IPFIX exporter
+
+- name: IPFIX Exporter v4 playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('10.44.76.28', True) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('admin', True) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('Nutanix.123', True) }}"
+      validate_certs: false
+  tasks:
+    - name: Set common variables for this playbook
+      ansible.builtin.set_fact:
+        ipfix_exporter_name: "ipfix_exporter_ansible_example"
+        collector_ip: "10.44.10.20"
+        collector_port: 4739
+        pe_cluster_uuid: "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+
+    - name: Create IPFIX exporter (all fields)
+      nutanix.ncp.ntnx_ipfix_exporter_v2:
+        state: present
+        name: "{{ ipfix_exporter_name }}"
+        description: "IPFIX exporter created by Ansible example playbook"
+        collector_ip: "{{ collector_ip }}"
+        collector_port: "{{ collector_port }}"
+        protocol: "TCP"
+        export_rate_limit_per_node_bps: 1000000
+        export_scopes:
+          - uuid: "{{ pe_cluster_uuid }}"
+            scope_type: "PE"
+            ip_family: "V4"
+      register: create_result
+      ignore_errors: true
+
+    - name: Save the created IPFIX exporter external ID (if create succeeded)
+      ansible.builtin.set_fact:
+        ipfix_ext_id: "{{ create_result.ext_id | default('') }}"
+
+    - name: List all IPFIX exporters
+      nutanix.ncp.ntnx_ipfix_exporters_info_v2:
+      register: list_all_result
+      ignore_errors: true
+
+    - name: List IPFIX exporters with filter
+      nutanix.ncp.ntnx_ipfix_exporters_info_v2:
+        filter: "name eq '{{ ipfix_exporter_name }}'"
+      register: list_filter_result
+      ignore_errors: true
+
+    - name: List IPFIX exporters with limit
+      nutanix.ncp.ntnx_ipfix_exporters_info_v2:
+        limit: 1
+      register: list_limit_result
+      ignore_errors: true
+
+    - name: Get IPFIX exporter using ext_id (only if create succeeded)
+      nutanix.ncp.ntnx_ipfix_exporters_info_v2:
+        ext_id: "{{ ipfix_ext_id }}"
+      register: get_result
+      when: ipfix_ext_id | length > 0
+      ignore_errors: true
+
+    - name: Update IPFIX exporter (all fields) (only if create succeeded)
+      nutanix.ncp.ntnx_ipfix_exporter_v2:
+        state: present
+        ext_id: "{{ ipfix_ext_id }}"
+        name: "{{ ipfix_exporter_name }}_updated"
+        description: "IPFIX exporter updated by Ansible example playbook"
+        collector_ip: "10.44.10.30"
+        collector_port: 4740
+        protocol: "UDP"
+        export_rate_limit_per_node_bps: 2000000
+        export_scopes:
+          - uuid: "{{ pe_cluster_uuid }}"
+            scope_type: "PE"
+            ip_family: "BOTH"
+      register: update_result
+      when: ipfix_ext_id | length > 0
+      ignore_errors: true
+
+    - name: Delete IPFIX exporter (only if create succeeded)
+      nutanix.ncp.ntnx_ipfix_exporter_v2:
+        state: absent
+        ext_id: "{{ ipfix_ext_id }}"
+      register: delete_result
+      when: ipfix_ext_id | length > 0
+      ignore_errors: true
