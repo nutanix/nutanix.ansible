@@ -170,3 +170,27 @@ def get_virtual_switch(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching virtual switch info using ext_id",
         )
+
+
+def get_learned_mac_address(module, api_instance, ext_id, layer2_stretch_ext_id):
+    """
+    This method will return a specific learned MAC address for a Layer2Stretch
+    using the MAC address external ID and its parent Layer2Stretch external ID.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): MacAddressesApi instance from ntnx_networking_py_client sdk
+        ext_id (str): learned MAC address external ID
+        layer2_stretch_ext_id (str): Layer2Stretch external ID that owns this MAC address
+    return:
+        info (object): learned MAC address info
+    """
+    try:
+        return api_instance.get_learned_mac_address_for_layer2_stretch_by_id(
+            extId=ext_id, layer2StretchExtId=layer2_stretch_ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching learned MAC address info using ext_id and layer2_stretch_ext_id",
+        )
