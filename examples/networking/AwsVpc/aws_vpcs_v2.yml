@@ -1,0 +1,70 @@
+---
+# Summary:
+# This playbook demonstrates how to use the AwsVpc info module against an
+# NC2A (Nutanix Cloud Clusters on AWS) enabled Prism Central deployment.
+# The playbook will:
+#   1. Discover a target NC2A Prism Element cluster via ntnx_clusters_info_v2.
+#   2. List all AWS VPCs exposed by that cluster (ntnx_aws_vpcs_info_v2).
+#   3. Fetch a specific AWS VPC by external ID (client-side filter on the list).
+#
+# Notes:
+#   - AwsVpc is a READ-ONLY entity in the v4 networking SDK — only the
+#     ListAwsVpcs API is exposed. No create/update/delete APIs exist.
+#   - `cluster_ext_id` is REQUIRED because the underlying list API needs the
+#     X-Cluster-Id header to identify which NC2A cluster to query.
+
+- name: NC2A AWS VPC info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Discover an NC2A Prism Element cluster
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(f:f eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+      register: clusters_result
+      ignore_errors: true
+
+    - name: Set cluster_ext_id from first NC2A cluster (if available)
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ clusters_result.response[0].ext_id }}"
+      when:
+        - clusters_result is defined
+        - clusters_result.response is defined
+        - clusters_result.response | length > 0
+
+    - name: List all AWS VPCs discovered by the NC2A cluster
+      nutanix.ncp.ntnx_aws_vpcs_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: aws_vpcs_list
+      ignore_errors: true
+
+    - name: Show AWS VPC listing
+      ansible.builtin.debug:
+        var: aws_vpcs_list
+
+    - name: Fetch a specific AWS VPC by external ID
+      nutanix.ncp.ntnx_aws_vpcs_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ (aws_vpcs_list.response | first).ext_id }}"
+      register: aws_vpc_by_id
+      when:
+        - aws_vpcs_list is defined
+        - not (aws_vpcs_list.failed | default(false) | bool)
+        - aws_vpcs_list.response is defined
+        - aws_vpcs_list.response is iterable
+        - aws_vpcs_list.response is not string
+        - aws_vpcs_list.response is not mapping
+        - (aws_vpcs_list.response | default([])) | length > 0
+      ignore_errors: true
+
+    - name: Show single AWS VPC lookup
+      ansible.builtin.debug:
+        var: aws_vpc_by_id
+      when:
+        - aws_vpc_by_id is defined
+        - not (aws_vpc_by_id.skipped | default(false) | bool)
