@@ -1,0 +1,98 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+
+PLAY [Data Services IP Mapping playbook] ***************************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost]
+
+TASK [Create Data Services IP Mapping with all attributes] *********************
+[ERROR]: Task failed: Module failed: Api Exception raised while creating Data Services IP Mapping
+Origin: /tmp/codegen-artifacts.aMnyLl/example_run.yml:36:7
+
+34         recovery_cluster_ext_id: "000647b8-ddb3-6bbb-0000-000000028f57"
+35
+36     - name: Create Data Services IP Mapping with all attributes
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while creating Data Services IP Mapping", "response": {"$dataItemDiscriminator": "datapolicies.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<datapolicies.v4.error.AppMessage>", "$objectType": "datapolicies.v4.error.ErrorResponse", "error": [{"$objectType": "datapolicies.v4.error.AppMessage", "argumentsMap": {"reason": "Recovery Plan with given external identifier b3a6932b-f64e-49ee-924d-c5a5b8ce2f3f not found."}, "code": "DPO-10400", "errorGroup": "DATAPOLICIES_ENTITY_NON_EXISTENT_ERROR", "locale": "en-US", "message": "Request failed as one or more entities do not exist - Recovery Plan with given external identifier b3a6932b-f64e-49ee-924d-c5a5b8ce2f3f not found..", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [Set Data Services IP Mapping ext_id] *************************************
+ok: [localhost]
+
+TASK [Fetch Data Services IP Mapping using ext_id] *****************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching Data Services IP Mappings info
+Origin: /tmp/codegen-artifacts.aMnyLl/example_run.yml:67:7
+
+65         data_services_ip_mapping_ext_id: "{{ result.ext_id | default('') }}"
+66
+67     - name: Fetch Data Services IP Mapping using ext_id
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching Data Services IP Mappings info", "response": {"$dataItemDiscriminator": "datapolicies.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<datapolicies.v4.error.AppMessage>", "$objectType": "datapolicies.v4.error.ErrorResponse", "error": [{"$objectType": "datapolicies.v4.error.AppMessage", "argumentsMap": {"reason": "Recovery Plan with given external identifier b3a6932b-f64e-49ee-924d-c5a5b8ce2f3f not found."}, "code": "DPO-10400", "errorGroup": "DATAPOLICIES_ENTITY_NON_EXISTENT_ERROR", "locale": "en-US", "message": "Request failed as one or more entities do not exist - Recovery Plan with given external identifier b3a6932b-f64e-49ee-924d-c5a5b8ce2f3f not found..", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [List all Data Services IP Mappings for the Recovery Plan] ****************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching Data Services IP Mappings info
+Origin: /tmp/codegen-artifacts.aMnyLl/example_run.yml:74:7
+
+72       ignore_errors: true
+73
+74     - name: List all Data Services IP Mappings for the Recovery Plan
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching Data Services IP Mappings info", "response": {"$dataItemDiscriminator": "datapolicies.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<datapolicies.v4.error.AppMessage>", "$objectType": "datapolicies.v4.error.ErrorResponse", "error": [{"$objectType": "datapolicies.v4.error.AppMessage", "argumentsMap": {"reason": "Recovery Plan with given external identifier b3a6932b-f64e-49ee-924d-c5a5b8ce2f3f not found."}, "code": "DPO-10400", "errorGroup": "DATAPOLICIES_ENTITY_NON_EXISTENT_ERROR", "locale": "en-US", "message": "Request failed as one or more entities do not exist - Recovery Plan with given external identifier b3a6932b-f64e-49ee-924d-c5a5b8ce2f3f not found..", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [List Data Services IP Mappings with filter] ******************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching Data Services IP Mappings info
+Origin: /tmp/codegen-artifacts.aMnyLl/example_run.yml:80:7
+
+78       ignore_errors: true
+79
+80     - name: List Data Services IP Mappings with filter
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching Data Services IP Mappings info", "response": {"$dataItemDiscriminator": "datapolicies.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<datapolicies.v4.error.AppMessage>", "$objectType": "datapolicies.v4.error.ErrorResponse", "error": [{"$objectType": "datapolicies.v4.error.AppMessage", "argumentsMap": {"reason": "Recovery Plan with given external identifier b3a6932b-f64e-49ee-924d-c5a5b8ce2f3f not found."}, "code": "DPO-10400", "errorGroup": "DATAPOLICIES_ENTITY_NON_EXISTENT_ERROR", "locale": "en-US", "message": "Request failed as one or more entities do not exist - Recovery Plan with given external identifier b3a6932b-f64e-49ee-924d-c5a5b8ce2f3f not found..", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [List Data Services IP Mappings with limit] *******************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching Data Services IP Mappings info
+Origin: /tmp/codegen-artifacts.aMnyLl/example_run.yml:87:7
+
+85       ignore_errors: true
+86
+87     - name: List Data Services IP Mappings with limit
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching Data Services IP Mappings info", "response": {"$dataItemDiscriminator": "datapolicies.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<datapolicies.v4.error.AppMessage>", "$objectType": "datapolicies.v4.error.ErrorResponse", "error": [{"$objectType": "datapolicies.v4.error.AppMessage", "argumentsMap": {"reason": "Recovery Plan with given external identifier b3a6932b-f64e-49ee-924d-c5a5b8ce2f3f not found."}, "code": "DPO-10400", "errorGroup": "DATAPOLICIES_ENTITY_NON_EXISTENT_ERROR", "locale": "en-US", "message": "Request failed as one or more entities do not exist - Recovery Plan with given external identifier b3a6932b-f64e-49ee-924d-c5a5b8ce2f3f not found..", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [Update Data Services IP Mapping with all attributes] *********************
+[ERROR]: Task failed: Module failed: Invalid value for `ext_id`, must be a follow pattern or equal to `/^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$/`
+Origin: /tmp/codegen-artifacts.aMnyLl/example_run.yml:94:7
+
+92       ignore_errors: true
+93
+94     - name: Update Data Services IP Mapping with all attributes
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "Task failed: Module failed: Invalid value for `ext_id`, must be a follow pattern or equal to `/^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$/`"}
+...ignoring
+
+TASK [Delete Data Services IP Mapping] *****************************************
+[ERROR]: Task failed: Module failed: Api Exception raised while deleting Data Services IP Mapping
+Origin: /tmp/codegen-artifacts.aMnyLl/example_run.yml:122:7
+
+120       ignore_errors: true
+121
+122     - name: Delete Data Services IP Mapping
+          ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "METHOD NOT ALLOWED", "msg": "Api Exception raised while deleting Data Services IP Mapping", "response": {"error": "Method Not Allowed", "message": "Method 'DELETE' is not supported.", "path": "/api/datapolicies/v4.3/config/recovery-plans/b3a6932b-f64e-49ee-924d-c5a5b8ce2f3f/data-services-ip-mappings", "status": 405, "timestamp": "2026-07-20T13:59:23.450272573Z"}, "status": 405}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=9    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=7   
+

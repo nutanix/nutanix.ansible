@@ -48,6 +48,9 @@ class Tasks:
         NETWORK_FUNCTION = "Networking:config:network-function"
         VIRTUAL_SWITCH = "networking:config:virtual-switch"
         ENTITY_GROUP = "microseg:config:entity-group"
+        DATA_SERVICES_IP_MAPPING = (
+            "datapolicies:config:recovery-plan:data-services-ip-mapping"
+        )
 
     class CompletetionDetailsName:
         """Completion details name for the task entities affected"""

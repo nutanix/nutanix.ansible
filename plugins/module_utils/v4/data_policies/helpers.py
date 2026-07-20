@@ -46,3 +46,26 @@ def get_storage_policy(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching storage policy info using ext_id",
         )
+
+
+def get_data_services_ip_mapping(module, api_instance, recovery_plan_ext_id, ext_id):
+    """
+    This method will return data services IP mapping info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: RecoveryPlansApi instance from ntnx_datapolicies_py_client sdk
+        recovery_plan_ext_id (str): Recovery plan external ID
+        ext_id (str): Data services IP mapping external ID
+    Returns:
+        data_services_ip_mapping_info (object): data services IP mapping info
+    """
+    try:
+        return api_instance.get_data_services_ip_mapping_by_id(
+            recoveryPlanExtId=recovery_plan_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching data services IP mapping info using ext_id",
+        )

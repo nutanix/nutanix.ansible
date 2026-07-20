@@ -1,0 +1,128 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create a Data Services IP Mapping under a Recovery Plan
+# 2. Fetch that Data Services IP Mapping by ext_id
+# 3. List all Data Services IP Mappings for the Recovery Plan
+# 4. List Data Services IP Mappings with a filter
+# 5. List Data Services IP Mappings with a limit
+# 6. Update the Data Services IP Mapping
+# 7. Delete the Data Services IP Mapping
+#
+# Pre-requisites:
+# - A Recovery Plan must already exist that maps two clusters registered to the
+#   same or different domain managers. Its ext_id is passed via
+#   recovery_plan_ext_id (or precreated in this playbook if desired).
+# - Both Prism Element clusters must have Data Services IPs configured and
+#   network segmentation enabled so that the mapping can be used to route iSCSI
+#   traffic to recovered Volume Groups during failover/failback.
+
+- name: Data Services IP Mapping playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        recovery_plan_ext_id: "b3a6932b-f64e-49ee-924d-c5a5b8ce2f3f"
+        primary_cluster_ext_id: "0005f7bf-3e2b-4a41-0000-000000029d0e"
+        recovery_cluster_ext_id: "000647b8-ddb3-6bbb-0000-000000028f57"
+
+    - name: Create Data Services IP Mapping with all attributes
+      nutanix.ncp.ntnx_data_services_ip_mapping_v2:
+        state: present
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+        primary_cluster:
+          ext_id: "{{ primary_cluster_ext_id }}"
+        recovery_cluster:
+          ext_id: "{{ recovery_cluster_ext_id }}"
+        primary_data_services_ip:
+          ipv4:
+            value: "10.44.76.55"
+            prefix_length: 32
+        recovery_data_services_ip:
+          ipv4:
+            value: "10.44.77.55"
+            prefix_length: 32
+        primary_test_data_services_ip:
+          ipv4:
+            value: "10.44.76.56"
+            prefix_length: 32
+        recovery_test_data_services_ip:
+          ipv4:
+            value: "10.44.77.56"
+            prefix_length: 32
+      register: result
+      ignore_errors: true
+
+    - name: Set Data Services IP Mapping ext_id
+      ansible.builtin.set_fact:
+        data_services_ip_mapping_ext_id: "{{ result.ext_id | default('') }}"
+
+    - name: Fetch Data Services IP Mapping using ext_id
+      nutanix.ncp.ntnx_data_services_ip_mappings_info_v2:
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+        ext_id: "{{ data_services_ip_mapping_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all Data Services IP Mappings for the Recovery Plan
+      nutanix.ncp.ntnx_data_services_ip_mappings_info_v2:
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List Data Services IP Mappings with filter
+      nutanix.ncp.ntnx_data_services_ip_mappings_info_v2:
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+        filter: "primaryCluster/extId eq '{{ primary_cluster_ext_id }}'"
+      register: result
+      ignore_errors: true
+
+    - name: List Data Services IP Mappings with limit
+      nutanix.ncp.ntnx_data_services_ip_mappings_info_v2:
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: Update Data Services IP Mapping with all attributes
+      nutanix.ncp.ntnx_data_services_ip_mapping_v2:
+        state: present
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+        ext_id: "{{ data_services_ip_mapping_ext_id }}"
+        primary_cluster:
+          ext_id: "{{ primary_cluster_ext_id }}"
+        recovery_cluster:
+          ext_id: "{{ recovery_cluster_ext_id }}"
+        primary_data_services_ip:
+          ipv4:
+            value: "10.44.76.65"
+            prefix_length: 32
+        recovery_data_services_ip:
+          ipv4:
+            value: "10.44.77.65"
+            prefix_length: 32
+        primary_test_data_services_ip:
+          ipv4:
+            value: "10.44.76.66"
+            prefix_length: 32
+        recovery_test_data_services_ip:
+          ipv4:
+            value: "10.44.77.66"
+            prefix_length: 32
+      register: result
+      ignore_errors: true
+
+    - name: Delete Data Services IP Mapping
+      nutanix.ncp.ntnx_data_services_ip_mapping_v2:
+        state: absent
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+        ext_id: "{{ data_services_ip_mapping_ext_id }}"
+      register: result
+      ignore_errors: true
