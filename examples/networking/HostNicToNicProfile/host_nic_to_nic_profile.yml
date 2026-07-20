@@ -1,0 +1,116 @@
+---
+# Summary:
+# This playbook covers the full HostNicToNicProfile workflow against Nutanix Prism Central:
+# 1. List NIC Profiles (baseline).
+# 2. Get a specific NIC Profile by ext_id (including its host_nic_references).
+# 3. Associate a Host NIC with a NIC Profile.
+# 4. Verify the association by fetching the NIC Profile by ext_id.
+# 5. Disassociate the Host NIC from the NIC Profile.
+# 6. Verify the disassociation by listing NIC Profiles with a filter.
+#
+# Prerequisites:
+#   - A NIC Profile must already exist on the target Prism Central (SR-IOV or DP_OFFLOAD capability).
+#   - A physical Host NIC (identified by its ext_id) on an AHV host with compatible SmartNIC
+#     hardware (e.g. Mellanox CX-6/CX-7) is required.
+#   - Software: AOS 7.3+, PC 7.3+, AHV 10.3+.
+
+- name: HostNicToNicProfile playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('<pc_ip>', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('<user>', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('<pass>', true) }}"
+      validate_certs: "{{ lookup('env', 'VALIDATE_CERTS') | default('false', true) | bool }}"
+  vars:
+    nic_profile_ext_id: "68e4c68e-1acf-4c05-7792-e062119acb68"
+    host_nic_ext_id: "c1f27ed6-e6dd-4c34-9fda-1acdb1234567"
+
+  tasks:
+    - name: List all NIC Profiles
+      nutanix.ncp.ntnx_host_nic_to_nic_profiles_info_v2:
+      register: nic_profiles_before
+      ignore_errors: true
+      # sample:
+      #   changed: false
+      #   failed: false
+      #   response: []
+      #   total_available_results: 0
+
+    - name: Get NIC Profile using ext_id (before association)
+      nutanix.ncp.ntnx_host_nic_to_nic_profiles_info_v2:
+        ext_id: "{{ nic_profile_ext_id }}"
+      register: nic_profile_before
+      ignore_errors: true
+      # sample:
+      #   changed: false
+      #   failed: false
+      #   ext_id: "68e4c68e-1acf-4c05-7792-e062119acb68"
+      #   response:
+      #     capability_config:
+      #       capability_type: SRIOV
+      #     description: SR-IOV NIC profile created by Ansible
+      #     ext_id: 68e4c68e-1acf-4c05-7792-e062119acb68
+      #     host_nic_references: []
+      #     name: nic_profile_ansible
+      #     nic_family: MELLANOX_CX6
+
+    - name: Associate Host NIC to NIC Profile
+      nutanix.ncp.ntnx_associate_host_nic_to_nic_profile_v2:
+        state: present
+        ext_id: "{{ nic_profile_ext_id }}"
+        host_nic_ext_id: "{{ host_nic_ext_id }}"
+      register: associate_result
+      ignore_errors: true
+      # sample:
+      #   changed: true
+      #   ext_id: "68e4c68e-1acf-4c05-7792-e062119acb68"
+      #   task_ext_id: "ZXJnb24=:2bf53fdd-309b-5971-9f4b-436c86e8f92f"
+      #   response:
+      #     status: SUCCEEDED
+      #     operation: AssociateHostNicToNicProfile
+      #     entities_affected:
+      #       - ext_id: 68e4c68e-1acf-4c05-7792-e062119acb68
+      #         rel: networking:config:nic-profile
+
+    - name: Get NIC Profile using ext_id (after association)
+      nutanix.ncp.ntnx_host_nic_to_nic_profiles_info_v2:
+        ext_id: "{{ nic_profile_ext_id }}"
+      register: nic_profile_after_associate
+      ignore_errors: true
+      # sample:
+      #   changed: false
+      #   failed: false
+      #   response:
+      #     ext_id: 68e4c68e-1acf-4c05-7792-e062119acb68
+      #     host_nic_references:
+      #       - ext_id: c1f27ed6-e6dd-4c34-9fda-1acdb1234567
+      #         compliance_status: SUCCESS
+      #         num_v_fs: 8
+
+    - name: Disassociate Host NIC from NIC Profile
+      nutanix.ncp.ntnx_associate_host_nic_to_nic_profile_v2:
+        state: absent
+        ext_id: "{{ nic_profile_ext_id }}"
+        host_nic_ext_id: "{{ host_nic_ext_id }}"
+      register: disassociate_result
+      ignore_errors: true
+      # sample:
+      #   changed: true
+      #   ext_id: "68e4c68e-1acf-4c05-7792-e062119acb68"
+      #   task_ext_id: "ZXJnb24=:3f89aa42-11cd-4de5-b09a-42a3c4f0aa9c"
+      #   response:
+      #     status: SUCCEEDED
+      #     operation: DisassociateHostNicFromNicProfile
+
+    - name: List NIC Profiles with filter (after disassociation)
+      nutanix.ncp.ntnx_host_nic_to_nic_profiles_info_v2:
+        filter: "name eq 'nic_profile_ansible'"
+      register: nic_profiles_filtered
+      ignore_errors: true
+      # sample:
+      #   changed: false
+      #   failed: false
+      #   response: []
+      #   total_available_results: 0
