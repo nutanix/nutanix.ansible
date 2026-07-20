@@ -1,0 +1,82 @@
+---
+# Argument-spec / negative tests. These do not require the storage v4 API to
+# be reachable and validate that the module rejects bad input BEFORE any SDK
+# call is made.
+
+- name: Negative — Delete without ext_id must be rejected by required_if
+  nutanix.ncp.ntnx_volume_disk_v2:
+    state: absent
+    volume_group_ext_id: "00000000-0000-0000-0000-000000000001"
+  register: neg_delete_missing_extid
+  ignore_errors: true
+
+- name: Verify Delete without ext_id was rejected
+  ansible.builtin.assert:
+    that:
+      - neg_delete_missing_extid.failed == true
+      - "'ext_id' in (neg_delete_missing_extid.msg | default(''))"
+    fail_msg: "Delete without ext_id was NOT rejected"
+    success_msg: "Delete without ext_id was rejected as expected"
+
+- name: Negative — omit volume_group_ext_id (required) must be rejected
+  nutanix.ncp.ntnx_volume_disk_v2:
+    state: present
+    disk_size_bytes: 1073741824
+  register: neg_missing_vg_id
+  ignore_errors: true
+
+- name: Verify missing volume_group_ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - neg_missing_vg_id.failed == true
+      - "'volume_group_ext_id' in (neg_missing_vg_id.msg | default(''))"
+    fail_msg: "Missing volume_group_ext_id was NOT rejected"
+    success_msg: "Missing volume_group_ext_id was rejected"
+
+- name: Negative — invalid entity_type enum must be rejected by choices
+  nutanix.ncp.ntnx_volume_disk_v2:
+    state: present
+    volume_group_ext_id: "00000000-0000-0000-0000-000000000001"
+    disk_size_bytes: 1073741824
+    disk_data_source_reference:
+      entity_type: "NOT_A_VALID_ENUM"
+      ext_id: "00000000-0000-0000-0000-000000000002"
+  register: neg_enum
+  ignore_errors: true
+
+- name: Verify invalid entity_type enum is rejected
+  ansible.builtin.assert:
+    that:
+      - neg_enum.failed == true
+      - "'NOT_A_VALID_ENUM' in (neg_enum.msg | default(''))"
+    fail_msg: "Invalid enum value was NOT rejected"
+    success_msg: "Invalid enum value was rejected"
+
+- name: Negative — info module also requires volume_group_ext_id
+  nutanix.ncp.ntnx_volume_disks_info_v2: {}
+  register: neg_info_missing_vg
+  ignore_errors: true
+
+- name: Verify info module rejects missing volume_group_ext_id
+  ansible.builtin.assert:
+    that:
+      - neg_info_missing_vg.failed == true
+      - "'volume_group_ext_id' in (neg_info_missing_vg.msg | default(''))"
+    fail_msg: "Info module did NOT reject missing volume_group_ext_id"
+    success_msg: "Info module rejected missing volume_group_ext_id"
+
+- name: Negative — info module rejects ext_id + filter (mutually exclusive)
+  nutanix.ncp.ntnx_volume_disks_info_v2:
+    volume_group_ext_id: "00000000-0000-0000-0000-000000000001"
+    ext_id: "00000000-0000-0000-0000-000000000002"
+    filter: "storageContainerId eq 'x'"
+  register: neg_info_mutex
+  ignore_errors: true
+
+- name: Verify info module rejects ext_id + filter combo
+  ansible.builtin.assert:
+    that:
+      - neg_info_mutex.failed == true
+      - "'mutually exclusive' in (neg_info_mutex.msg | default('')) or 'exclusive' in (neg_info_mutex.msg | default(''))"
+    fail_msg: "Info module did NOT reject ext_id + filter"
+    success_msg: "Info module rejected ext_id + filter as expected"

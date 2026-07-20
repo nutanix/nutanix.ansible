@@ -148,6 +148,8 @@ action_groups:
     - ntnx_volume_groups_info_v2
     - ntnx_volume_groups_disks_v2
     - ntnx_volume_groups_disks_info_v2
+    - ntnx_volume_disk_v2
+    - ntnx_volume_disks_info_v2
     - ntnx_volume_groups_vms_v2
     - ntnx_volume_groups_iscsi_clients_v2
     - ntnx_volume_groups_iscsi_clients_info_v2

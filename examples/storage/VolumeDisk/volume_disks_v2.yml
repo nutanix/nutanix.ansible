@@ -1,0 +1,89 @@
+---
+# Summary:
+# This playbook demonstrates the full VolumeDisk lifecycle using the storage v4 APIs:
+# 1. Create a Volume Disk with all supported attributes.
+# 2. Fetch the newly created Volume Disk by ext_id.
+# 3. List all Volume Disks under the parent Volume Group (with limit + filter).
+# 4. Update the Volume Disk description and flash mode setting.
+# 5. Delete the Volume Disk.
+#
+# Configure once at the play level with module_defaults so no task repeats
+# nutanix_host / nutanix_username / nutanix_password. Values come from the
+# NUTANIX_HOST / NUTANIX_USERNAME / NUTANIX_PASSWORD env vars, or from the
+# vars block if you prefer to hardcode.
+
+- name: Volume Disk v4 playbook
+  hosts: localhost
+  gather_facts: false
+  vars:
+    nutanix_pc_ip: "{{ lookup('env', 'NUTANIX_HOST') | default('<pc_ip>', true) }}"
+    nutanix_pc_user: "{{ lookup('env', 'NUTANIX_USERNAME') | default('admin', true) }}"
+    nutanix_pc_pass: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('<pass>', true) }}"
+    volume_group_ext_id: "{{ lookup('env', 'NUTANIX_VOLUME_GROUP_EXT_ID') | default('<volume_group_ext_id>', true) }}"
+    storage_container_ext_id: "{{ lookup('env', 'NUTANIX_STORAGE_CONTAINER_EXT_ID') | default('<storage_container_ext_id>', true) }}"
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_pc_ip }}"
+      nutanix_username: "{{ nutanix_pc_user }}"
+      nutanix_password: "{{ nutanix_pc_pass }}"
+      validate_certs: false
+  tasks:
+    - name: Create Volume Disk with all attributes
+      nutanix.ncp.ntnx_volume_disk_v2:
+        state: present
+        volume_group_ext_id: "{{ volume_group_ext_id }}"
+        index: 0
+        disk_size_bytes: 21474836480
+        description: "ansible-created-volume-disk"
+        disk_storage_features:
+          flash_mode:
+            is_enabled: true
+        disk_data_source_reference:
+          entity_type: "STORAGE_CONTAINER"
+          ext_id: "{{ storage_container_ext_id }}"
+      register: create_result
+
+    - name: Capture the created Volume Disk ext_id
+      ansible.builtin.set_fact:
+        volume_disk_ext_id: "{{ create_result.ext_id }}"
+
+    - name: Fetch the Volume Disk by ext_id
+      nutanix.ncp.ntnx_volume_disks_info_v2:
+        volume_group_ext_id: "{{ volume_group_ext_id }}"
+        ext_id: "{{ volume_disk_ext_id }}"
+      register: fetch_result
+
+    - name: List all Volume Disks in the Volume Group
+      nutanix.ncp.ntnx_volume_disks_info_v2:
+        volume_group_ext_id: "{{ volume_group_ext_id }}"
+      register: list_result
+
+    - name: List Volume Disks with a limit
+      nutanix.ncp.ntnx_volume_disks_info_v2:
+        volume_group_ext_id: "{{ volume_group_ext_id }}"
+        limit: 1
+      register: limit_result
+
+    - name: List Volume Disks filtered by storage container
+      nutanix.ncp.ntnx_volume_disks_info_v2:
+        volume_group_ext_id: "{{ volume_group_ext_id }}"
+        filter: "storageContainerId eq '{{ storage_container_ext_id }}'"
+      register: filter_result
+
+    - name: Update Volume Disk with all attributes
+      nutanix.ncp.ntnx_volume_disk_v2:
+        state: present
+        volume_group_ext_id: "{{ volume_group_ext_id }}"
+        ext_id: "{{ volume_disk_ext_id }}"
+        description: "ansible-updated-volume-disk"
+        disk_storage_features:
+          flash_mode:
+            is_enabled: false
+      register: update_result
+
+    - name: Delete the Volume Disk
+      nutanix.ncp.ntnx_volume_disk_v2:
+        state: absent
+        volume_group_ext_id: "{{ volume_group_ext_id }}"
+        ext_id: "{{ volume_disk_ext_id }}"
+      register: delete_result
