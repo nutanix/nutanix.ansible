@@ -186,6 +186,8 @@ action_groups:
     - ntnx_pc_registration_v2
     - ntnx_discover_unconfigured_nodes_v2
     - ntnx_storage_containers_stats_v2
+    - ntnx_disk_stat_v2
+    - ntnx_cluster_disk_stats_info_v2
     - ntnx_storage_containers_info_v2
     - ntnx_storage_containers_v2
     - ntnx_pc_unregistration_v2

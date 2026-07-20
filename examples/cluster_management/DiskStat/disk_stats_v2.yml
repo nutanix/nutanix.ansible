@@ -1,0 +1,63 @@
+---
+- name: DiskStat v4 module examples
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+  tasks:
+    - name: List disks in the cluster via v4 REST API to discover a disk external ID
+      ansible.builtin.uri:
+        url: "https://{{ ip }}:9440/api/clustermgmt/v4.2/config/disks?$limit=1"
+        method: GET
+        url_username: "{{ username }}"
+        url_password: "{{ password }}"
+        force_basic_auth: true
+        validate_certs: false
+        return_content: true
+        status_code: 200
+      register: disks_list
+
+    - name: Pick the first available disk ext_id
+      ansible.builtin.set_fact:
+        disk_ext_id: "{{ (disks_list.json.data | default([]))[0].extId }}"
+
+    - name: Set start_time and end_time for the stats query (last 24 hours, ISO-8601)
+      ansible.builtin.set_fact:
+        start_time_iso: "{{ lookup('pipe', 'date -u -d \"1 day ago\" +%Y-%m-%dT%H:%M:%S.000Z') }}"
+        end_time_iso: "{{ lookup('pipe', 'date -u +%Y-%m-%dT%H:%M:%S.000Z') }}"
+
+    - name: Fetch disk stats for a specific disk (minimum required attributes)
+      nutanix.ncp.ntnx_disk_stat_v2:
+        ext_id: "{{ disk_ext_id }}"
+        start_time: "{{ start_time_iso }}"
+        end_time: "{{ end_time_iso }}"
+      register: disk_stats_min
+
+    - name: Fetch disk stats with all attributes (sampling_interval + stat_type)
+      nutanix.ncp.ntnx_disk_stat_v2:
+        ext_id: "{{ disk_ext_id }}"
+        start_time: "{{ start_time_iso }}"
+        end_time: "{{ end_time_iso }}"
+        sampling_interval: 30
+        stat_type: "AVG"
+      register: disk_stats_full
+
+    - name: Fetch disk stats using the info module (get-by-ID, minimum attributes)
+      nutanix.ncp.ntnx_cluster_disk_stats_info_v2:
+        ext_id: "{{ disk_ext_id }}"
+        start_time: "{{ start_time_iso }}"
+        end_time: "{{ end_time_iso }}"
+      register: disk_stats_info_min
+
+    - name: Fetch disk stats info with all attributes
+      nutanix.ncp.ntnx_cluster_disk_stats_info_v2:
+        ext_id: "{{ disk_ext_id }}"
+        start_time: "{{ start_time_iso }}"
+        end_time: "{{ end_time_iso }}"
+        sampling_interval: 60
+        stat_type: "MAX"
+      register: disk_stats_info_full
