@@ -1,0 +1,281 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Batch playbook (Nutanix Prism Central v4)] *******************************
+
+TASK [Set batch demo variables] ************************************************
+ok: [localhost] => {"ansible_facts": {"batch_category_key": "ansible-batch-demo", "batch_name": "ansible-batch-demo-create-categories", "batch_target_uri": "/api/prism/v4.1/config/categories"}, "changed": false}
+
+TASK [Submit a batch to bulk create Categories (wait=false; poll separately)] ***
+changed: [localhost] => {"changed": true, "ext_id": null, "response": {"ext_id": "ZXJnb24=:233e2451-7a33-4ea4-692c-d03eed7cbc57"}, "task_ext_id": "ZXJnb24=:233e2451-7a33-4ea4-692c-d03eed7cbc57"}
+
+TASK [Show the submit response] ************************************************
+ok: [localhost] => {
+    "submit_result": {
+        "changed": true,
+        "ext_id": null,
+        "failed": false,
+        "response": {
+            "ext_id": "ZXJnb24=:233e2451-7a33-4ea4-692c-d03eed7cbc57"
+        },
+        "task_ext_id": "ZXJnb24=:233e2451-7a33-4ea4-692c-d03eed7cbc57"
+    }
+}
+
+TASK [Store batch task ext_id] *************************************************
+ok: [localhost] => {"ansible_facts": {"batch_task_ext_id": "ZXJnb24=:233e2451-7a33-4ea4-692c-d03eed7cbc57"}, "changed": false}
+
+TASK [Poll the batch parent task until it reaches a terminal state] ************
+FAILED - RETRYING: [localhost]: Poll the batch parent task until it reaches a terminal state (60 retries left).
+FAILED - RETRYING: [localhost]: Poll the batch parent task until it reaches a terminal state (59 retries left).
+ok: [localhost] => {"attempts": 3, "changed": false, "ext_id": "ZXJnb24=:233e2451-7a33-4ea4-692c-d03eed7cbc57", "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": null, "completed_time": "2026-07-20T15:33:23.664387+00:00", "completion_details": [{"name": "BatchId", "value": "e0903c46-a923-41af-49fb-e9910d168c95"}], "created_time": "2026-07-20T15:33:13.499252+00:00", "entities_affected": null, "error_messages": [{"arguments_map": {"message": "2"}, "code": "BATCH-70010", "error_group": "PROCESS_BATCH_GENERIC_ERROR", "locale": "en_US", "message": "Batch task failed as 2 subtasks failed", "severity": "ERROR"}], "ext_id": "ZXJnb24=:233e2451-7a33-4ea4-692c-d03eed7cbc57", "is_background_task": false, "is_cancelable": false, "last_updated_time": "2026-07-20T15:33:23.664386+00:00", "legacy_error_message": null, "number_of_entities_affected": 0, "number_of_subtasks": 2, "operation": "BATCH-CREATE", "operation_description": "ansible-batch-demo-create-categories", "owned_by": {"ext_id": "00000000-0000-0000-0000-000000000000", "name": "admin"}, "parent_task": null, "progress_percentage": 100, "projectExtId": "00000000-0000-0000-0000-000000000000", "resource_links": null, "root_task": null, "started_time": "2026-07-20T15:33:13.517433+00:00", "status": "FAILED", "sub_steps": null, "sub_tasks": [{"ext_id": "ZXJnb24=:1ea61678-aa1f-49a7-4a59-cda8f858cba9", "href": "https://10.44.76.28:9440/api/prism/v4.3/config/tasks/ZXJnb24=:1ea61678-aa1f-49a7-4a59-cda8f858cba9", "rel": "subtask"}, {"ext_id": "ZXJnb24=:c430863e-a0e6-4b1f-731a-13d8dff13ead", "href": "https://10.44.76.28:9440/api/prism/v4.3/config/tasks/ZXJnb24=:c430863e-a0e6-4b1f-731a-13d8dff13ead", "rel": "subtask"}], "warnings": null}}
+
+TASK [Show batch task terminal state] ******************************************
+ok: [localhost] => {
+    "msg": [
+        "operation: BATCH-CREATE",
+        "status: FAILED",
+        "sub_tasks: 2"
+    ]
+}
+
+TASK [List Batches (default pagination)] ***************************************
+ok: [localhost] => {"changed": false, "response": [{"completion_status": "FAILED", "end_time": "2026-07-20T15:33:23+00:00", "execution_status": "COMPLETED", "ext_id": "e0903c46-a923-41af-49fb-e9910d168c95", "failed_count": 2, "links": null, "name": "ansible-batch-demo-create-categories", "ownerUuid": "00000000-0000-0000-0000-000000000000", "should_stop_on_error": null, "size": 2, "start_time": "2026-07-20T15:33:13+00:00", "success_count": 0, "tenant_id": null}, {"completion_status": "FAILED", "end_time": "2026-07-20T15:32:54+00:00", "execution_status": "COMPLETED", "ext_id": "6d2e2c85-92a8-40cb-5915-f045b5a653ea", "failed_count": 2, "links": null, "name": "ansible_batch_create_ag_avy5jbhv", "ownerUuid": "00000000-0000-0000-0000-000000000000", "should_stop_on_error": null, "size": 2, "start_time": "2026-07-20T15:32:44+00:00", "success_count": 0, "tenant_id": null}, {"completion_status": "FAILED", "end_time": "2026-07-20T15:32:11+00:00", "execution_status": "COMPLETED", "ext_id": "4ad85d1c-3c3e-4b3a-411f-3a6c2643457f", "failed_count": 2, "links": null, "name": "ansible-batch-demo-create-categories", "ownerUuid": "00000000-0000-0000-0000-000000000000", "should_stop_on_error": null, "size": 2, "start_time": "2026-07-20T15:32:01+00:00", "success_count": 0, "tenant_id": null}, {"completion_status": "FAILED", "end_time": "2026-07-20T15:31:43+00:00", "execution_status": "COMPLETED", "ext_id": "29ac178e-60a7-4a9f-778a-cda420447456", "failed_count": 2, "links": null, "name": "ansible-batch-demo-create-categories", "ownerUuid": "00000000-0000-0000-0000-000000000000", "should_stop_on_error": null, "size": 2, "start_time": "2026-07-20T15:31:33+00:00", "success_count": 0, "tenant_id": null}, {"completion_status": "FAILED", "end_time": "2026-07-20T15:30:42+00:00", "execution_status": "COMPLETED", "ext_id": "b5956f68-8d5e-4c68-7fad-969eb00ba763", "failed_count": 2, "links": null, "name": "ansible_batch_create_ag_jm487pgz", "ownerUuid": "00000000-0000-0000-0000-000000000000", "should_stop_on_error": null, "size": 2, "start_time": "2026-07-20T15:30:32+00:00", "success_count": 0, "tenant_id": null}, {"completion_status": "FAILED", "end_time": "2026-07-20T15:29:23+00:00", "execution_status": "COMPLETED", "ext_id": "987702c7-5212-4794-4110-d7c7473d6614", "failed_count": 2, "links": null, "name": "ansible_batch_create_ag_2qaqh5xl", "ownerUuid": "00000000-0000-0000-0000-000000000000", "should_stop_on_error": null, "size": 2, "start_time": "2026-07-20T15:29:13+00:00", "success_count": 0, "tenant_id": null}, {"completion_status": "FAILED", "end_time": "2026-07-20T15:29:06+00:00", "execution_status": "COMPLETED", "ext_id": "33ceb86b-f288-4d59-4252-34dcb34ccc3e", "failed_count": 1, "links": null, "name": "smoke-with-object-type", "ownerUuid": "00000000-0000-0000-0000-000000000000", "should_stop_on_error": null, "size": 1, "start_time": "2026-07-20T15:28:56+00:00", "success_count": 0, "tenant_id": null}, {"completion_status": "FAILED", "end_time": "2026-07-20T15:28:45+00:00", "execution_status": "COMPLETED", "ext_id": "066a98c1-69a6-48cf-5361-0fb3b23db517", "failed_count": 1, "links": null, "name": "smoke-test-uri", "ownerUuid": "00000000-0000-0000-0000-000000000000", "should_stop_on_error": null, "size": 1, "start_time": "2026-07-20T15:28:35+00:00", "success_count": 0, "tenant_id": null}, {"completion_status": "FAILED", "end_time": "2026-07-20T15:28:35+00:00", "execution_status": "COMPLETED", "ext_id": "2bccfbe6-9c7b-47e1-428a-99824a5796b2", "failed_count": 1, "links": null, "name": "smoke-test-uri", "ownerUuid": "00000000-0000-0000-0000-000000000000", "should_stop_on_error": null, "size": 1, "start_time": "2026-07-20T15:28:24+00:00", "success_count": 0, "tenant_id": null}, {"completion_status": "FAILED", "end_time": "2026-07-20T15:27:35+00:00", "execution_status": "COMPLETED", "ext_id": "a3f1b7db-1865-4b24-678d-9370fb6a3023", "failed_count": 2, "links": null, "name": "ansible-batch-demo-create-categories", "ownerUuid": "00000000-0000-0000-0000-000000000000", "should_stop_on_error": null, "size": 2, "start_time": "2026-07-20T15:27:25+00:00", "success_count": 0, "tenant_id": null}, {"completion_status": "SUCCEEDED", "end_time": "2026-07-20T03:25:43+00:00", "execution_status": "COMPLETED", "ext_id": "7e475455-333f-41c6-5640-7732d387b5f9", "failed_count": 0, "links": null, "name": "Create Images", "ownerUuid": "00000000-0000-0000-0000-000000000000", "should_stop_on_error": null, "size": 1, "start_time": "2026-07-20T03:17:53+00:00", "success_count": 1, "tenant_id": null}], "total_available_results": 11}
+
+TASK [Show list result] ********************************************************
+ok: [localhost] => {
+    "list_result": {
+        "changed": false,
+        "failed": false,
+        "response": [
+            {
+                "completion_status": "FAILED",
+                "end_time": "2026-07-20T15:33:23+00:00",
+                "execution_status": "COMPLETED",
+                "ext_id": "e0903c46-a923-41af-49fb-e9910d168c95",
+                "failed_count": 2,
+                "links": null,
+                "name": "ansible-batch-demo-create-categories",
+                "ownerUuid": "00000000-0000-0000-0000-000000000000",
+                "should_stop_on_error": null,
+                "size": 2,
+                "start_time": "2026-07-20T15:33:13+00:00",
+                "success_count": 0,
+                "tenant_id": null
+            },
+            {
+                "completion_status": "FAILED",
+                "end_time": "2026-07-20T15:32:54+00:00",
+                "execution_status": "COMPLETED",
+                "ext_id": "6d2e2c85-92a8-40cb-5915-f045b5a653ea",
+                "failed_count": 2,
+                "links": null,
+                "name": "ansible_batch_create_ag_avy5jbhv",
+                "ownerUuid": "00000000-0000-0000-0000-000000000000",
+                "should_stop_on_error": null,
+                "size": 2,
+                "start_time": "2026-07-20T15:32:44+00:00",
+                "success_count": 0,
+                "tenant_id": null
+            },
+            {
+                "completion_status": "FAILED",
+                "end_time": "2026-07-20T15:32:11+00:00",
+                "execution_status": "COMPLETED",
+                "ext_id": "4ad85d1c-3c3e-4b3a-411f-3a6c2643457f",
+                "failed_count": 2,
+                "links": null,
+                "name": "ansible-batch-demo-create-categories",
+                "ownerUuid": "00000000-0000-0000-0000-000000000000",
+                "should_stop_on_error": null,
+                "size": 2,
+                "start_time": "2026-07-20T15:32:01+00:00",
+                "success_count": 0,
+                "tenant_id": null
+            },
+            {
+                "completion_status": "FAILED",
+                "end_time": "2026-07-20T15:31:43+00:00",
+                "execution_status": "COMPLETED",
+                "ext_id": "29ac178e-60a7-4a9f-778a-cda420447456",
+                "failed_count": 2,
+                "links": null,
+                "name": "ansible-batch-demo-create-categories",
+                "ownerUuid": "00000000-0000-0000-0000-000000000000",
+                "should_stop_on_error": null,
+                "size": 2,
+                "start_time": "2026-07-20T15:31:33+00:00",
+                "success_count": 0,
+                "tenant_id": null
+            },
+            {
+                "completion_status": "FAILED",
+                "end_time": "2026-07-20T15:30:42+00:00",
+                "execution_status": "COMPLETED",
+                "ext_id": "b5956f68-8d5e-4c68-7fad-969eb00ba763",
+                "failed_count": 2,
+                "links": null,
+                "name": "ansible_batch_create_ag_jm487pgz",
+                "ownerUuid": "00000000-0000-0000-0000-000000000000",
+                "should_stop_on_error": null,
+                "size": 2,
+                "start_time": "2026-07-20T15:30:32+00:00",
+                "success_count": 0,
+                "tenant_id": null
+            },
+            {
+                "completion_status": "FAILED",
+                "end_time": "2026-07-20T15:29:23+00:00",
+                "execution_status": "COMPLETED",
+                "ext_id": "987702c7-5212-4794-4110-d7c7473d6614",
+                "failed_count": 2,
+                "links": null,
+                "name": "ansible_batch_create_ag_2qaqh5xl",
+                "ownerUuid": "00000000-0000-0000-0000-000000000000",
+                "should_stop_on_error": null,
+                "size": 2,
+                "start_time": "2026-07-20T15:29:13+00:00",
+                "success_count": 0,
+                "tenant_id": null
+            },
+            {
+                "completion_status": "FAILED",
+                "end_time": "2026-07-20T15:29:06+00:00",
+                "execution_status": "COMPLETED",
+                "ext_id": "33ceb86b-f288-4d59-4252-34dcb34ccc3e",
+                "failed_count": 1,
+                "links": null,
+                "name": "smoke-with-object-type",
+                "ownerUuid": "00000000-0000-0000-0000-000000000000",
+                "should_stop_on_error": null,
+                "size": 1,
+                "start_time": "2026-07-20T15:28:56+00:00",
+                "success_count": 0,
+                "tenant_id": null
+            },
+            {
+                "completion_status": "FAILED",
+                "end_time": "2026-07-20T15:28:45+00:00",
+                "execution_status": "COMPLETED",
+                "ext_id": "066a98c1-69a6-48cf-5361-0fb3b23db517",
+                "failed_count": 1,
+                "links": null,
+                "name": "smoke-test-uri",
+                "ownerUuid": "00000000-0000-0000-0000-000000000000",
+                "should_stop_on_error": null,
+                "size": 1,
+                "start_time": "2026-07-20T15:28:35+00:00",
+                "success_count": 0,
+                "tenant_id": null
+            },
+            {
+                "completion_status": "FAILED",
+                "end_time": "2026-07-20T15:28:35+00:00",
+                "execution_status": "COMPLETED",
+                "ext_id": "2bccfbe6-9c7b-47e1-428a-99824a5796b2",
+                "failed_count": 1,
+                "links": null,
+                "name": "smoke-test-uri",
+                "ownerUuid": "00000000-0000-0000-0000-000000000000",
+                "should_stop_on_error": null,
+                "size": 1,
+                "start_time": "2026-07-20T15:28:24+00:00",
+                "success_count": 0,
+                "tenant_id": null
+            },
+            {
+                "completion_status": "FAILED",
+                "end_time": "2026-07-20T15:27:35+00:00",
+                "execution_status": "COMPLETED",
+                "ext_id": "a3f1b7db-1865-4b24-678d-9370fb6a3023",
+                "failed_count": 2,
+                "links": null,
+                "name": "ansible-batch-demo-create-categories",
+                "ownerUuid": "00000000-0000-0000-0000-000000000000",
+                "should_stop_on_error": null,
+                "size": 2,
+                "start_time": "2026-07-20T15:27:25+00:00",
+                "success_count": 0,
+                "tenant_id": null
+            },
+            {
+                "completion_status": "SUCCEEDED",
+                "end_time": "2026-07-20T03:25:43+00:00",
+                "execution_status": "COMPLETED",
+                "ext_id": "7e475455-333f-41c6-5640-7732d387b5f9",
+                "failed_count": 0,
+                "links": null,
+                "name": "Create Images",
+                "ownerUuid": "00000000-0000-0000-0000-000000000000",
+                "should_stop_on_error": null,
+                "size": 1,
+                "start_time": "2026-07-20T03:17:53+00:00",
+                "success_count": 1,
+                "tenant_id": null
+            }
+        ],
+        "total_available_results": 11
+    }
+}
+
+TASK [Get the newly-created Batch using its ext_id] ****************************
+ok: [localhost] => {"changed": false, "ext_id": "e0903c46-a923-41af-49fb-e9910d168c95", "response": {"completion_status": "FAILED", "end_time": "2026-07-20T15:33:23+00:00", "execution_status": "COMPLETED", "ext_id": "e0903c46-a923-41af-49fb-e9910d168c95", "failed_count": 2, "links": null, "name": "ansible-batch-demo-create-categories", "ownerUuid": "00000000-0000-0000-0000-000000000000", "should_stop_on_error": false, "size": 2, "start_time": "2026-07-20T15:33:13+00:00", "success_count": 0, "tenant_id": null}}
+
+TASK [Show single Batch fetch result] ******************************************
+ok: [localhost] => {
+    "get_result": {
+        "changed": false,
+        "ext_id": "e0903c46-a923-41af-49fb-e9910d168c95",
+        "failed": false,
+        "response": {
+            "completion_status": "FAILED",
+            "end_time": "2026-07-20T15:33:23+00:00",
+            "execution_status": "COMPLETED",
+            "ext_id": "e0903c46-a923-41af-49fb-e9910d168c95",
+            "failed_count": 2,
+            "links": null,
+            "name": "ansible-batch-demo-create-categories",
+            "ownerUuid": "00000000-0000-0000-0000-000000000000",
+            "should_stop_on_error": false,
+            "size": 2,
+            "start_time": "2026-07-20T15:33:13+00:00",
+            "success_count": 0,
+            "tenant_id": null
+        }
+    }
+}
+
+TASK [List Batches with a filter and limit] ************************************
+ok: [localhost] => {"changed": false, "response": [{"completion_status": "FAILED", "end_time": "2026-07-20T15:33:23+00:00", "execution_status": "COMPLETED", "ext_id": "e0903c46-a923-41af-49fb-e9910d168c95", "failed_count": 2, "links": null, "name": "ansible-batch-demo-create-categories", "ownerUuid": "00000000-0000-0000-0000-000000000000", "should_stop_on_error": null, "size": 2, "start_time": "2026-07-20T15:33:13+00:00", "success_count": 0, "tenant_id": null}], "total_available_results": 4}
+
+TASK [Show filtered list result] ***********************************************
+ok: [localhost] => {
+    "filter_result": {
+        "changed": false,
+        "failed": false,
+        "response": [
+            {
+                "completion_status": "FAILED",
+                "end_time": "2026-07-20T15:33:23+00:00",
+                "execution_status": "COMPLETED",
+                "ext_id": "e0903c46-a923-41af-49fb-e9910d168c95",
+                "failed_count": 2,
+                "links": null,
+                "name": "ansible-batch-demo-create-categories",
+                "ownerUuid": "00000000-0000-0000-0000-000000000000",
+                "should_stop_on_error": null,
+                "size": 2,
+                "start_time": "2026-07-20T15:33:13+00:00",
+                "success_count": 0,
+                "tenant_id": null
+            }
+        ],
+        "total_available_results": 4
+    }
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=12   changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+

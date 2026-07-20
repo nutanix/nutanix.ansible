@@ -1,0 +1,110 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Submit a batch to bulk create Categories.
+# 2. Wait for the batch task to finish and inspect the parent task response.
+# 3. Fetch the created Batch entity by ext_id.
+# 4. List Batches with pagination and filter.
+
+- name: Batch playbook (Nutanix Prism Central v4)
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "10.44.76.28"
+      nutanix_username: "admin"
+      nutanix_password: "Nutanix.123"
+      validate_certs: false
+  tasks:
+    - name: Set batch demo variables
+      ansible.builtin.set_fact:
+        batch_category_key: "ansible-batch-demo"
+        batch_name: "ansible-batch-demo-create-categories"
+        batch_target_uri: "/api/prism/v4.1/config/categories"
+
+    - name: Submit a batch to bulk create Categories (wait=false; poll separately)
+      nutanix.ncp.ntnx_batch_v2:
+        state: present
+        wait: false
+        metadata:
+          action: CREATE
+          name: "{{ batch_name }}"
+          uri: "{{ batch_target_uri }}"
+          should_stop_on_error: false
+          chunk_size: 2
+        payload:
+          - metadata:
+              headers:
+                - name: "Content-Type"
+                  value: "application/json"
+            data:
+              key: "{{ batch_category_key }}"
+              value: "one"
+              description: "First category created via ansible batch"
+          - metadata:
+              headers:
+                - name: "Content-Type"
+                  value: "application/json"
+            data:
+              key: "{{ batch_category_key }}"
+              value: "two"
+              description: "Second category created via ansible batch"
+      register: submit_result
+      ignore_errors: true
+
+    - name: Show the submit response
+      ansible.builtin.debug:
+        var: submit_result
+
+    - name: Store batch task ext_id
+      ansible.builtin.set_fact:
+        batch_task_ext_id: "{{ submit_result.task_ext_id }}"
+      when: submit_result.task_ext_id is defined and submit_result.task_ext_id
+
+    - name: Poll the batch parent task until it reaches a terminal state
+      nutanix.ncp.ntnx_pc_tasks_info_v2:
+        ext_id: "{{ batch_task_ext_id }}"
+      register: batch_task_result
+      until: batch_task_result.response.status in ['SUCCEEDED', 'FAILED']
+      retries: 60
+      delay: 5
+      when: batch_task_ext_id is defined
+
+    - name: Show batch task terminal state
+      ansible.builtin.debug:
+        msg:
+          - "operation: {{ batch_task_result.response.operation | default('n/a') }}"
+          - "status: {{ batch_task_result.response.status | default('n/a') }}"
+          - "sub_tasks: {{ batch_task_result.response.sub_tasks | default([]) | length }}"
+      when: batch_task_result is defined
+
+    - name: List Batches (default pagination)
+      nutanix.ncp.ntnx_batches_info_v2:
+      register: list_result
+      ignore_errors: true
+
+    - name: Show list result
+      ansible.builtin.debug:
+        var: list_result
+
+    - name: Get the newly-created Batch using its ext_id
+      nutanix.ncp.ntnx_batches_info_v2:
+        ext_id: "{{ list_result.response[0].ext_id }}"
+      when: list_result.response is defined and list_result.response | length > 0
+      register: get_result
+      ignore_errors: true
+
+    - name: Show single Batch fetch result
+      ansible.builtin.debug:
+        var: get_result
+
+    - name: List Batches with a filter and limit
+      nutanix.ncp.ntnx_batches_info_v2:
+        filter: "name eq '{{ batch_name }}'"
+        limit: 1
+      register: filter_result
+      ignore_errors: true
+
+    - name: Show filtered list result
+      ansible.builtin.debug:
+        var: filter_result
