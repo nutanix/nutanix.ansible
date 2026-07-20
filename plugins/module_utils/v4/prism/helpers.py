@@ -120,3 +120,30 @@ def get_pc_task(
             exception=e,
             msg="Api Exception raised while fetching pc task info using ext_id",
         )
+
+
+def get_task_job(
+    module,
+    api_instance,
+    task_ext_id,
+    ext_id,
+):
+    """
+    Fetch a single job that belongs to a Prism Central task.
+
+    Args:
+        module: Ansible module
+        api_instance: TasksApi instance from ntnx_prism_py_client sdk
+        task_ext_id (str): external ID of the parent task
+        ext_id (str): external ID of the job to fetch
+    return:
+        task_job_info (object): task job info
+    """
+    try:
+        return api_instance.get_task_job_by_id(taskExtId=task_ext_id, extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching task job info using ext_id",
+        )
