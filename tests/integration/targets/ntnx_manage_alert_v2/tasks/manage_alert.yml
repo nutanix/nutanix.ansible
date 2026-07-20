@@ -1,0 +1,278 @@
+---
+# Test plan for nutanix.ncp.ntnx_manage_alert_v2
+# ---------------------------------------------------------------------------
+# The ManageAlert API is an action-only endpoint that acknowledges or
+# resolves an existing alert. Because we cannot create alerts synthetically
+# on a running Prism Central, we discover live alerts via the v4 monitoring
+# REST endpoint and drive the tests off those ext_ids.
+#
+# Scenarios covered:
+#   1. Argument spec / parameter validation (negative)
+#       a. Missing required ext_id
+#       b. Missing required action_type
+#       c. Invalid action_type value
+#   2. Check-mode spec generation (positive) for ACKNOWLEDGE and RESOLVE
+#   3. Live ACKNOWLEDGE action against a real alert on the cluster
+#   4. Live RESOLVE action against a real alert on the cluster
+#   5. Idempotency-adjacent: ACKNOWLEDGE on an already-acknowledged alert
+#      (still returns changed=true because the backend accepts the request
+#       and completes a task; this documents the current server behaviour).
+#   6. Negative: run against a non-existent alert ext_id, expect the API to
+#      raise and the module to fail cleanly with a descriptive message.
+
+- name: Start ntnx_manage_alert_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_manage_alert_v2 tests
+
+########################################################################################
+# Argument validation (no live API calls needed)
+########################################################################################
+
+- name: Try to acknowledge with missing ext_id (should fail)
+  nutanix.ncp.ntnx_manage_alert_v2:
+    action_type: "ACKNOWLEDGE"
+  register: result
+  ignore_errors: true
+
+- name: Try to acknowledge with missing ext_id (should fail) status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'ext_id' in result.msg"
+    success_msg: "Missing ext_id failed argument validation as expected"
+    fail_msg: "Missing ext_id did not fail argument validation as expected"
+
+- name: Try to acknowledge with missing action_type (should fail)
+  nutanix.ncp.ntnx_manage_alert_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Try to acknowledge with missing action_type (should fail) status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'action_type' in result.msg"
+    success_msg: "Missing action_type failed argument validation as expected"
+    fail_msg: "Missing action_type did not fail argument validation as expected"
+
+- name: Try to acknowledge with invalid action_type (should fail)
+  nutanix.ncp.ntnx_manage_alert_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    action_type: "IGNORE"
+  register: result
+  ignore_errors: true
+
+- name: Try to acknowledge with invalid action_type (should fail) status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'action_type' in result.msg"
+    success_msg: "Invalid action_type value was rejected by argument validation as expected"
+    fail_msg: "Invalid action_type value was NOT rejected by argument validation"
+
+########################################################################################
+# Discover live alerts to drive the positive tests
+########################################################################################
+
+- name: Fetch unacknowledged alerts from Prism Central (via REST)
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:9440/api/monitoring/v4.0/serviceability/alerts?$filter=isAcknowledged%20eq%20false%20and%20isResolved%20eq%20false&$limit=5"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs }}"
+    return_content: true
+    status_code: [200]
+  register: unack_alerts
+  ignore_errors: true
+
+- name: Set unacknowledged alert ext_id
+  ansible.builtin.set_fact:
+    unack_alert_ext_id: >-
+      {{ unack_alerts.json.data[0].extId
+         if (unack_alerts is succeeded and unack_alerts.json.data | default([]) | length > 0)
+         else '' }}
+
+- name: Fetch unresolved alerts from Prism Central (via REST)
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:9440/api/monitoring/v4.0/serviceability/alerts?$filter=isResolved%20eq%20false&$limit=5"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs }}"
+    return_content: true
+    status_code: [200]
+  register: unresolved_alerts
+  ignore_errors: true
+
+- name: Set unresolved alert ext_id
+  ansible.builtin.set_fact:
+    unresolved_alert_ext_id: >-
+      {{ unresolved_alerts.json.data[0].extId
+         if (unresolved_alerts is succeeded and unresolved_alerts.json.data | default([]) | length > 0)
+         else '' }}
+
+########################################################################################
+# Check-mode: ACKNOWLEDGE spec generation with all attributes
+########################################################################################
+
+- name: Generate spec for ACKNOWLEDGE using check mode with all attributes
+  nutanix.ncp.ntnx_manage_alert_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    action_type: "ACKNOWLEDGE"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for ACKNOWLEDGE using check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.action_type == "ACKNOWLEDGE"
+      - result.ext_id == "00000000-0000-0000-0000-000000000000"
+    success_msg: "Spec for ACKNOWLEDGE was generated correctly in check mode"
+    fail_msg: "Spec for ACKNOWLEDGE was NOT generated correctly in check mode"
+
+########################################################################################
+# Check-mode: RESOLVE spec generation with all attributes
+########################################################################################
+
+- name: Generate spec for RESOLVE using check mode with all attributes
+  nutanix.ncp.ntnx_manage_alert_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    action_type: "RESOLVE"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for RESOLVE using check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.action_type == "RESOLVE"
+      - result.ext_id == "00000000-0000-0000-0000-000000000000"
+    success_msg: "Spec for RESOLVE was generated correctly in check mode"
+    fail_msg: "Spec for RESOLVE was NOT generated correctly in check mode"
+
+########################################################################################
+# Real ACKNOWLEDGE (only if the cluster has an unacknowledged alert)
+########################################################################################
+
+- name: Acknowledge a real alert
+  when: unack_alert_ext_id | length > 0
+  block:
+    - name: Acknowledge alert
+      nutanix.ncp.ntnx_manage_alert_v2:
+        ext_id: "{{ unack_alert_ext_id }}"
+        action_type: "ACKNOWLEDGE"
+      register: ack_result
+      ignore_errors: true
+
+    - name: Acknowledge alert status
+      ansible.builtin.assert:
+        that:
+          - ack_result is defined
+          - ack_result.changed == true
+          - ack_result.failed == false
+          - ack_result.ext_id == unack_alert_ext_id
+          - ack_result.task_ext_id is defined
+          - ack_result.response is defined
+          - ack_result.response.status == "SUCCEEDED"
+        success_msg: "Alert {{ unack_alert_ext_id }} acknowledged successfully"
+        fail_msg: "Failed to acknowledge alert {{ unack_alert_ext_id }}"
+
+    - name: Re-acknowledge the same alert (backend accepts and succeeds)
+      nutanix.ncp.ntnx_manage_alert_v2:
+        ext_id: "{{ unack_alert_ext_id }}"
+        action_type: "ACKNOWLEDGE"
+      register: reack_result
+      ignore_errors: true
+
+    - name: Re-acknowledge the same alert status
+      ansible.builtin.assert:
+        that:
+          - reack_result is defined
+          - reack_result.failed == false
+          - reack_result.response is defined
+          - reack_result.response.status == "SUCCEEDED"
+        success_msg: "Re-acknowledging an already-acknowledged alert completed successfully"
+        fail_msg: "Re-acknowledging an already-acknowledged alert did not complete successfully"
+
+- name: Skip real ACKNOWLEDGE (no eligible alerts on the cluster)
+  when: unack_alert_ext_id | length == 0
+  ansible.builtin.debug:
+    msg: >-
+      Skipping live ACKNOWLEDGE tests: no unacknowledged & unresolved alert
+      was found on the cluster at test time.
+
+########################################################################################
+# Real RESOLVE (only if the cluster has an unresolved alert)
+########################################################################################
+
+- name: Resolve a real alert
+  when: unresolved_alert_ext_id | length > 0
+  block:
+    - name: Resolve alert
+      nutanix.ncp.ntnx_manage_alert_v2:
+        ext_id: "{{ unresolved_alert_ext_id }}"
+        action_type: "RESOLVE"
+      register: resolve_result
+      ignore_errors: true
+
+    - name: Resolve alert status
+      ansible.builtin.assert:
+        that:
+          - resolve_result is defined
+          - resolve_result.changed == true
+          - resolve_result.failed == false
+          - resolve_result.ext_id == unresolved_alert_ext_id
+          - resolve_result.task_ext_id is defined
+          - resolve_result.response is defined
+          - resolve_result.response.status == "SUCCEEDED"
+        success_msg: "Alert {{ unresolved_alert_ext_id }} resolved successfully"
+        fail_msg: "Failed to resolve alert {{ unresolved_alert_ext_id }}"
+
+- name: Skip real RESOLVE (no eligible alerts on the cluster)
+  when: unresolved_alert_ext_id | length == 0
+  ansible.builtin.debug:
+    msg: >-
+      Skipping live RESOLVE tests: no unresolved alert was found on the
+      cluster at test time.
+
+########################################################################################
+# Negative: non-existent alert ext_id
+########################################################################################
+
+- name: Try to acknowledge a non-existent alert (should fail)
+  nutanix.ncp.ntnx_manage_alert_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    action_type: "ACKNOWLEDGE"
+  register: result
+  ignore_errors: true
+
+- name: Try to acknowledge a non-existent alert (should fail) status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+    success_msg: "Acknowledging a non-existent alert failed as expected"
+    fail_msg: "Acknowledging a non-existent alert did NOT fail as expected"
