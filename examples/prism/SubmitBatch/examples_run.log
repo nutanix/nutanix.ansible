@@ -1,0 +1,111 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+
+PLAY [SubmitBatch example playbook] ********************************************
+
+TASK [Generate a run suffix + per-item and per-batch NTNX-Request-Ids] *********
+[WARNING]: Collection community.general does not support Ansible version 2.16.0
+ok: [localhost]
+
+TASK [Submit a batch to CREATE multiple address groups] ************************
+changed: [localhost]
+
+TASK [Show completed CREATE batch task (subtask outcomes included)] ************
+ok: [localhost] => {
+    "create_batch.response": {
+        "app_name": null,
+        "batch_summary": null,
+        "cluster_ext_ids": null,
+        "completed_time": "2026-07-20T15:47:33.523077+00:00",
+        "completion_details": [
+            {
+                "name": "BatchId",
+                "value": "de03f1af-5d77-4eb6-6da0-e75b22adb6b0"
+            }
+        ],
+        "created_time": "2026-07-20T15:47:23.307485+00:00",
+        "entities_affected": null,
+        "error_messages": [
+            {
+                "arguments_map": {
+                    "message": "2"
+                },
+                "code": "BATCH-70010",
+                "error_group": "PROCESS_BATCH_GENERIC_ERROR",
+                "locale": "en_US",
+                "message": "Batch task failed as 2 subtasks failed",
+                "severity": "ERROR"
+            }
+        ],
+        "ext_id": "ZXJnb24=:3afa195b-c800-4f55-53e8-82c35b62936e",
+        "is_background_task": false,
+        "is_cancelable": false,
+        "last_updated_time": "2026-07-20T15:47:33.523075+00:00",
+        "legacy_error_message": null,
+        "number_of_entities_affected": 0,
+        "number_of_subtasks": 2,
+        "operation": "BATCH-CREATE",
+        "operation_description": "ansible_batch_create_ag_xsou1ij4",
+        "owned_by": {
+            "ext_id": "00000000-0000-0000-0000-000000000000",
+            "name": "admin"
+        },
+        "parent_task": null,
+        "progress_percentage": 100,
+        "projectExtId": "00000000-0000-0000-0000-000000000000",
+        "resource_links": null,
+        "root_task": null,
+        "started_time": "2026-07-20T15:47:23.325015+00:00",
+        "status": "FAILED",
+        "sub_steps": null,
+        "sub_tasks": [
+            {
+                "ext_id": "ZXJnb24=:8831a92a-1aae-48e2-69e8-280ebcd96764",
+                "href": "https://10.44.76.28:9440/api/prism/v4.3/config/tasks/ZXJnb24=:8831a92a-1aae-48e2-69e8-280ebcd96764",
+                "rel": "subtask"
+            },
+            {
+                "ext_id": "ZXJnb24=:d5e678c9-ce97-4d2c-4c6e-3583cba3240e",
+                "href": "https://10.44.76.28:9440/api/prism/v4.3/config/tasks/ZXJnb24=:d5e678c9-ce97-4d2c-4c6e-3583cba3240e",
+                "rel": "subtask"
+            }
+        ],
+        "warnings": null
+    }
+}
+
+TASK [Ensure test address group 1 exists (best-effort direct create)] **********
+changed: [localhost]
+
+TASK [Ensure test address group 2 exists (best-effort direct create)] **********
+changed: [localhost]
+
+TASK [Look up the ext_ids of the two example address groups] *******************
+ok: [localhost]
+
+TASK [Capture ext_ids of the example address groups] ***************************
+ok: [localhost]
+
+TASK [List the most recent 5 batches submitted on the cluster] *****************
+ok: [localhost]
+
+TASK [Find our submitted batch by filter (by name)] ****************************
+ok: [localhost]
+
+TASK [Get single batch details using the discovered batch ext_id] **************
+ok: [localhost]
+
+TASK [Submit a batch to MODIFY the address groups we just prepared] ************
+changed: [localhost]
+
+TASK [Submit a batch to DELETE the example address groups] *********************
+changed: [localhost]
+
+TASK [Best-effort cleanup — delete any leftover example address groups] ********
+ok: [localhost] => (item=0cc3fd27-28a7-4a98-8fd8-e639585b7d2c)
+ok: [localhost] => (item=a56df7c5-2e46-4aef-bd77-7c9847fc2956)
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=13   changed=5    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+

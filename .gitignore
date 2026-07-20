@@ -1,3 +1,6 @@
 nutanix-ncp-*
 .ansible/
 py3.12_virt
+
+# Integration test runtime configuration (contains PC credentials)
+tests/integration/integration_config.yml
