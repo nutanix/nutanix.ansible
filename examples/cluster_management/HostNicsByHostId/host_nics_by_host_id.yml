@@ -1,0 +1,92 @@
+---
+# Summary:
+# This playbook demonstrates how to use the HostNicsByHostId info module.
+# It covers the following scenarios:
+#   1. Discover cluster external ID from Prism Central
+#   2. Discover host external ID for the cluster
+#   3. List all host NICs for a specific host in a cluster
+#   4. Fetch a specific host NIC by its external ID
+#   5. List host NICs with an OData filter
+#   6. List host NICs with pagination (limit)
+
+- name: HostNicsByHostId info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('<pc_ip>', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('<user>', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('<pass>', true) }}"
+      validate_certs: false
+  tasks:
+    #############################################################################
+    # Discover a cluster and host to run the info calls against
+    #############################################################################
+
+    - name: List all clusters and pick the first PE cluster
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+        limit: 1
+      register: clusters_result
+
+    - name: Set cluster external ID
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ clusters_result.response[0].ext_id }}"
+
+    - name: List hosts on the discovered cluster
+      nutanix.ncp.ntnx_hosts_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: hosts_result
+
+    - name: Set host external ID
+      ansible.builtin.set_fact:
+        host_ext_id: "{{ hosts_result.response[0].ext_id }}"
+
+    #############################################################################
+    # List host NICs on the discovered host
+    #############################################################################
+
+    - name: List all host NICs for the host
+      nutanix.ncp.ntnx_host_nics_by_host_ids_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+      register: nics_result
+
+    - name: Set host NIC external ID for further lookups
+      ansible.builtin.set_fact:
+        host_nic_ext_id: "{{ nics_result.response[0].ext_id }}"
+        host_nic_name: "{{ nics_result.response[0].name }}"
+
+    #############################################################################
+    # Fetch a specific host NIC by its external ID
+    #############################################################################
+
+    - name: Fetch a specific host NIC by external ID
+      nutanix.ncp.ntnx_host_nics_by_host_ids_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        ext_id: "{{ host_nic_ext_id }}"
+      register: nic_get_result
+
+    #############################################################################
+    # List host NICs with an OData filter
+    #############################################################################
+
+    - name: List host NICs filtered by name
+      nutanix.ncp.ntnx_host_nics_by_host_ids_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        filter: "name eq '{{ host_nic_name }}'"
+      register: nic_filter_result
+
+    #############################################################################
+    # List host NICs with pagination
+    #############################################################################
+
+    - name: List host NICs with limit and orderby
+      nutanix.ncp.ntnx_host_nics_by_host_ids_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        limit: 1
+        orderby: "name asc"
+      register: nic_paginated_result
