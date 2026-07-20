@@ -1,0 +1,142 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Run ClearRoutingPolicyCounter example against live PC] *******************
+
+TASK [Generate random suffix] **************************************************
+ok: [localhost] => {"ansible_facts": {"random_name": "jvAPLlaxee"}, "changed": false}
+
+TASK [Create VPC for example run] **********************************************
+changed: [localhost] => {"changed": true, "ext_id": "a5a905ce-15ed-43a5-bda2-70db2ea24f02", "response": {"common_dhcp_options": {"domain_name_servers": null}, "description": "VPC for ClearRoutingPolicyCounter example run", "ext_id": "a5a905ce-15ed-43a5-bda2-70db2ea24f02", "external_routing_domain_reference": null, "external_subnets": null, "externally_routable_prefixes": null, "kubernetes_clusters": null, "links": null, "metadata": {"category_ids": null, "owner_reference_id": "00000000-0000-0000-0000-000000000000", "owner_user_name": "admin", "project_name": "_internal", "project_reference_id": "00000000-0000-0000-0000-000000000000"}, "name": "example_crpc_jvAPLlaxee", "projectExtId": "00000000-0000-0000-0000-000000000000", "scope": "VMS", "snat_ips": null, "supportedMultipleExternalSubnetType": "ONLY_NONAT", "tenant_id": null, "vpc_type": "REGULAR"}, "task_ext_id": "ZXJnb24=:be678d53-c5ed-4be0-aba6-25a5e3c461eb"}
+
+TASK [Fail early if VPC not created] *******************************************
+skipping: [localhost] => {"changed": false, "false_condition": "vpc_result.failed or vpc_result.ext_id is not defined", "skip_reason": "Conditional result was False"}
+
+TASK [Create overlay subnet in VPC] ********************************************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "3fb4809e-c2ac-4b8b-b45c-a002f01cfd12", "response": {"bridge_name": null, "cluster_name": null, "cluster_name_list": null, "cluster_reference": null, "cluster_reference_list": null, "description": null, "dhcp_options": null, "dynamic_ip_addresses": null, "ext_id": "3fb4809e-c2ac-4b8b-b45c-a002f01cfd12", "external_dhcp_servers": null, "hypervisor_type": "acropolis", "ip_config": [{"ipv4": {"default_gateway_ip": {"prefix_length": 32, "value": "192.168.180.1"}, "dhcp_server_address": null, "ip_subnet": {"ip": {"prefix_length": 32, "value": "192.168.180.0"}, "prefix_length": 24}, "pool_list": null}, "ipv6": null}], "ip_prefix": null, "ip_usage": {"ip_pool_usages": null, "num_assigned_i_ps": 3, "num_free_i_ps": 253, "num_macs": 0}, "isConnected": true, "is_advanced_networking": true, "is_external": false, "is_nat_enabled": null, "layer2_stretch_reference": null, "links": null, "metadata": {"category_ids": null, "owner_reference_id": "00000000-0000-0000-0000-000000000000", "owner_user_name": "admin", "project_name": "_internal", "project_reference_id": "00000000-0000-0000-0000-000000000000"}, "migration_state": null, "name": "example_crpc_jvAPLlaxee_subnet", "network_function_chain_reference": null, "network_id": null, "projectExtId": "00000000-0000-0000-0000-000000000000", "reserved_ip_addresses": null, "subnet_type": "OVERLAY", "tenant_id": null, "virtual_switch": null, "virtual_switch_reference": null, "vpc": null, "vpc_reference": "a5a905ce-15ed-43a5-bda2-70db2ea24f02"}, "task_ext_id": "ZXJnb24=:5b261ebd-94ac-463d-8cfd-5bb1478abff5"}
+
+TASK [Create routing policy inside VPC] ****************************************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "6eb8658e-1d92-4755-b969-56e2ecaa5953", "response": {"description": "Routing policy for ClearRoutingPolicyCounter example run", "ext_id": "6eb8658e-1d92-4755-b969-56e2ecaa5953", "links": null, "metadata": {"category_ids": null, "owner_reference_id": "00000000-0000-0000-0000-000000000000", "owner_user_name": "admin", "project_name": "_internal", "project_reference_id": "00000000-0000-0000-0000-000000000000"}, "name": "example_crpc_jvAPLlaxee_rp", "policies": [{"is_bidirectional": false, "policy_action": {"action_type": "PERMIT", "nexthop_ip_address": null, "reroute_params": null}, "policy_match": {"destination": {"address_type": "EXTERNAL", "subnet_prefix": null}, "protocol_parameters": null, "protocol_type": "ANY", "source": {"address_type": "ANY", "subnet_prefix": null}}}], "priority": 22, "projectExtId": "00000000-0000-0000-0000-000000000000", "tenant_id": null, "vpc": null, "vpc_ext_id": "a5a905ce-15ed-43a5-bda2-70db2ea24f02"}, "task_ext_id": "ZXJnb24=:985db3e6-36bc-4f4c-9b50-fb50e322e0a6"}
+
+TASK [Set example variables for the two demo tasks] ****************************
+ok: [localhost] => {"ansible_facts": {"routing_policy_ext_id": "6eb8658e-1d92-4755-b969-56e2ecaa5953", "vpc_ext_id": "a5a905ce-15ed-43a5-bda2-70db2ea24f02"}, "changed": false}
+
+TASK [Clear counters for ALL routing policies in the VPC] **********************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "a5a905ce-15ed-43a5-bda2-70db2ea24f02", "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": null, "completed_time": "2026-07-20T13:07:18.876274+00:00", "completion_details": null, "created_time": "2026-07-20T13:07:18.797385+00:00", "entities_affected": [{"ext_id": "a5a905ce-15ed-43a5-bda2-70db2ea24f02", "name": null, "rel": "networking:config:vpc"}], "error_messages": null, "ext_id": "ZXJnb24=:d6b4dc49-5313-4732-935f-706af6dc60f1", "is_background_task": false, "is_cancelable": false, "last_updated_time": "2026-07-20T13:07:18.876274+00:00", "legacy_error_message": null, "number_of_entities_affected": 1, "number_of_subtasks": 0, "operation": "kRoutingPolicyResetAllCountersAsync", "operation_description": "Routing Policy Reset All Counters", "owned_by": {"ext_id": "00000000-0000-0000-0000-000000000000", "name": "admin"}, "parent_task": null, "progress_percentage": 100, "projectExtId": "00000000-0000-0000-0000-000000000000", "resource_links": null, "root_task": null, "started_time": "2026-07-20T13:07:18.814969+00:00", "status": "SUCCEEDED", "sub_steps": null, "sub_tasks": null, "warnings": null}, "task_ext_id": "ZXJnb24=:d6b4dc49-5313-4732-935f-706af6dc60f1"}
+
+TASK [Show clear-all result] ***************************************************
+ok: [localhost] => {
+    "result_all": {
+        "changed": true,
+        "error": null,
+        "ext_id": "a5a905ce-15ed-43a5-bda2-70db2ea24f02",
+        "failed": false,
+        "response": {
+            "app_name": null,
+            "batch_summary": null,
+            "cluster_ext_ids": null,
+            "completed_time": "2026-07-20T13:07:18.876274+00:00",
+            "completion_details": null,
+            "created_time": "2026-07-20T13:07:18.797385+00:00",
+            "entities_affected": [
+                {
+                    "ext_id": "a5a905ce-15ed-43a5-bda2-70db2ea24f02",
+                    "name": null,
+                    "rel": "networking:config:vpc"
+                }
+            ],
+            "error_messages": null,
+            "ext_id": "ZXJnb24=:d6b4dc49-5313-4732-935f-706af6dc60f1",
+            "is_background_task": false,
+            "is_cancelable": false,
+            "last_updated_time": "2026-07-20T13:07:18.876274+00:00",
+            "legacy_error_message": null,
+            "number_of_entities_affected": 1,
+            "number_of_subtasks": 0,
+            "operation": "kRoutingPolicyResetAllCountersAsync",
+            "operation_description": "Routing Policy Reset All Counters",
+            "owned_by": {
+                "ext_id": "00000000-0000-0000-0000-000000000000",
+                "name": "admin"
+            },
+            "parent_task": null,
+            "progress_percentage": 100,
+            "projectExtId": "00000000-0000-0000-0000-000000000000",
+            "resource_links": null,
+            "root_task": null,
+            "started_time": "2026-07-20T13:07:18.814969+00:00",
+            "status": "SUCCEEDED",
+            "sub_steps": null,
+            "sub_tasks": null,
+            "warnings": null
+        },
+        "task_ext_id": "ZXJnb24=:d6b4dc49-5313-4732-935f-706af6dc60f1"
+    }
+}
+
+TASK [Clear counters for a SPECIFIC routing policy in the VPC] *****************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "6eb8658e-1d92-4755-b969-56e2ecaa5953", "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": null, "completed_time": "2026-07-20T13:07:22.114308+00:00", "completion_details": null, "created_time": "2026-07-20T13:07:22.056881+00:00", "entities_affected": [{"ext_id": "6eb8658e-1d92-4755-b969-56e2ecaa5953", "name": null, "rel": "networking:config:routing-policy"}], "error_messages": null, "ext_id": "ZXJnb24=:16ba14e7-0279-4a22-8696-6cdde437fef7", "is_background_task": false, "is_cancelable": false, "last_updated_time": "2026-07-20T13:07:22.114307+00:00", "legacy_error_message": null, "number_of_entities_affected": 1, "number_of_subtasks": 0, "operation": "kRoutingPolicyResetCountersAsync", "operation_description": "Routing Policy Reset Counters", "owned_by": {"ext_id": "00000000-0000-0000-0000-000000000000", "name": "admin"}, "parent_task": null, "progress_percentage": 100, "projectExtId": "00000000-0000-0000-0000-000000000000", "resource_links": null, "root_task": null, "started_time": "2026-07-20T13:07:22.070090+00:00", "status": "SUCCEEDED", "sub_steps": null, "sub_tasks": null, "warnings": null}, "task_ext_id": "ZXJnb24=:16ba14e7-0279-4a22-8696-6cdde437fef7"}
+
+TASK [Show clear-specific result] **********************************************
+ok: [localhost] => {
+    "result_specific": {
+        "changed": true,
+        "error": null,
+        "ext_id": "6eb8658e-1d92-4755-b969-56e2ecaa5953",
+        "failed": false,
+        "response": {
+            "app_name": null,
+            "batch_summary": null,
+            "cluster_ext_ids": null,
+            "completed_time": "2026-07-20T13:07:22.114308+00:00",
+            "completion_details": null,
+            "created_time": "2026-07-20T13:07:22.056881+00:00",
+            "entities_affected": [
+                {
+                    "ext_id": "6eb8658e-1d92-4755-b969-56e2ecaa5953",
+                    "name": null,
+                    "rel": "networking:config:routing-policy"
+                }
+            ],
+            "error_messages": null,
+            "ext_id": "ZXJnb24=:16ba14e7-0279-4a22-8696-6cdde437fef7",
+            "is_background_task": false,
+            "is_cancelable": false,
+            "last_updated_time": "2026-07-20T13:07:22.114307+00:00",
+            "legacy_error_message": null,
+            "number_of_entities_affected": 1,
+            "number_of_subtasks": 0,
+            "operation": "kRoutingPolicyResetCountersAsync",
+            "operation_description": "Routing Policy Reset Counters",
+            "owned_by": {
+                "ext_id": "00000000-0000-0000-0000-000000000000",
+                "name": "admin"
+            },
+            "parent_task": null,
+            "progress_percentage": 100,
+            "projectExtId": "00000000-0000-0000-0000-000000000000",
+            "resource_links": null,
+            "root_task": null,
+            "started_time": "2026-07-20T13:07:22.070090+00:00",
+            "status": "SUCCEEDED",
+            "sub_steps": null,
+            "sub_tasks": null,
+            "warnings": null
+        },
+        "task_ext_id": "ZXJnb24=:16ba14e7-0279-4a22-8696-6cdde437fef7"
+    }
+}
+
+TASK [Delete routing policy] ***************************************************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "6eb8658e-1d92-4755-b969-56e2ecaa5953", "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": null, "completed_time": "2026-07-20T13:07:25.527275+00:00", "completion_details": null, "created_time": "2026-07-20T13:07:25.326882+00:00", "entities_affected": [{"ext_id": "6eb8658e-1d92-4755-b969-56e2ecaa5953", "name": "example_crpc_jvAPLlaxee_rp", "rel": "networking:config:routing-policy"}], "error_messages": null, "ext_id": "ZXJnb24=:85c83afb-970a-4978-a2b4-4ffeea6412ba", "is_background_task": false, "is_cancelable": false, "last_updated_time": "2026-07-20T13:07:25.527274+00:00", "legacy_error_message": null, "number_of_entities_affected": 1, "number_of_subtasks": 0, "operation": "kRoutingPolicyDelete", "operation_description": "Routing Policy Delete", "owned_by": {"ext_id": "00000000-0000-0000-0000-000000000000", "name": "admin"}, "parent_task": null, "progress_percentage": 100, "projectExtId": "00000000-0000-0000-0000-000000000000", "resource_links": null, "root_task": null, "started_time": "2026-07-20T13:07:25.338290+00:00", "status": "SUCCEEDED", "sub_steps": null, "sub_tasks": null, "warnings": null}, "task_ext_id": "ZXJnb24=:85c83afb-970a-4978-a2b4-4ffeea6412ba"}
+
+TASK [Delete overlay subnet] ***************************************************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "3fb4809e-c2ac-4b8b-b45c-a002f01cfd12", "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": null, "completed_time": "2026-07-20T13:07:28.797360+00:00", "completion_details": null, "created_time": "2026-07-20T13:07:28.597494+00:00", "entities_affected": [{"ext_id": "3fb4809e-c2ac-4b8b-b45c-a002f01cfd12", "name": "example_crpc_jvAPLlaxee_subnet", "rel": "networking:config:subnet"}], "error_messages": null, "ext_id": "ZXJnb24=:bae9f03b-3455-46e6-aaee-efbaee49a3f1", "is_background_task": false, "is_cancelable": false, "last_updated_time": "2026-07-20T13:07:28.797359+00:00", "legacy_error_message": null, "number_of_entities_affected": 1, "number_of_subtasks": 0, "operation": "kSubnetDelete", "operation_description": "Subnet Delete", "owned_by": {"ext_id": "00000000-0000-0000-0000-000000000000", "name": "admin"}, "parent_task": null, "progress_percentage": 100, "projectExtId": "00000000-0000-0000-0000-000000000000", "resource_links": null, "root_task": null, "started_time": "2026-07-20T13:07:28.609020+00:00", "status": "SUCCEEDED", "sub_steps": null, "sub_tasks": null, "warnings": null}, "task_ext_id": "ZXJnb24=:bae9f03b-3455-46e6-aaee-efbaee49a3f1"}
+
+TASK [Delete VPC] **************************************************************
+changed: [localhost] => {"changed": true, "ext_id": "a5a905ce-15ed-43a5-bda2-70db2ea24f02", "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": null, "completed_time": "2026-07-20T13:07:32.230038+00:00", "completion_details": null, "created_time": "2026-07-20T13:07:31.864757+00:00", "entities_affected": [{"ext_id": "a5a905ce-15ed-43a5-bda2-70db2ea24f02", "name": "example_crpc_jvAPLlaxee", "rel": "networking:config:vpc"}, {"ext_id": "1f82b113-d86c-4e44-9ae9-ba390e92dce1", "name": null, "rel": "networking:config:routing-policy"}, {"ext_id": "ea989611-7a4c-4b33-bb24-1d42eccdea45", "name": null, "rel": "networking:config:routing-policy"}], "error_messages": null, "ext_id": "ZXJnb24=:8b6b2fba-42db-4630-9519-23b84099cceb", "is_background_task": false, "is_cancelable": false, "last_updated_time": "2026-07-20T13:07:32.230037+00:00", "legacy_error_message": null, "number_of_entities_affected": 3, "number_of_subtasks": 0, "operation": "kVpcDelete", "operation_description": "VPC Delete", "owned_by": {"ext_id": "00000000-0000-0000-0000-000000000000", "name": "admin"}, "parent_task": null, "progress_percentage": 100, "projectExtId": "00000000-0000-0000-0000-000000000000", "resource_links": null, "root_task": null, "started_time": "2026-07-20T13:07:31.876161+00:00", "status": "SUCCEEDED", "sub_steps": null, "sub_tasks": null, "warnings": null}, "task_ext_id": "ZXJnb24=:8b6b2fba-42db-4630-9519-23b84099cceb"}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=12   changed=8    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
+
