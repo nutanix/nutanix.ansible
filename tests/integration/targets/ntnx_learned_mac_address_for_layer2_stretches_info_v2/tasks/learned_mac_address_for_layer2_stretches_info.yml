@@ -1,0 +1,275 @@
+---
+###############################################################################
+# Test plan — ntnx_learned_mac_address_for_layer2_stretches_info_v2
+#
+# The learned MAC address feature is a read-only view exposed by the VTEPs of
+# a Layer2Stretch. Because there is NO CRUD API for these entries (only GET
+# and LIST), all coverage below is oriented around the info module's argument
+# spec, mutually_exclusive rules, error paths, and successful pagination /
+# filter behavior.
+#
+# Coverage
+#   1. Missing required layer2_stretch_ext_id  →  spec validation must fail.
+#   2. Mutually exclusive ext_id + filter      →  spec validation must fail.
+#   3. Prerequisite discovery — pick a real Layer2Stretch if one exists on
+#      the cluster; otherwise fall back to a well-formed but non-existent
+#      ext_id so the API-error and empty-list paths are still exercised.
+#   4. List all learned MAC addresses           →  changed=false, response is
+#      a list, total_available_results is an int.
+#   5. List with a filter on macType            →  every returned entry has
+#      the expected macType.
+#   6. List with limit=1                        →  at most 1 entry returned.
+#   7. Get by ext_id happy path                 →  when at least one entry
+#      exists, the returned ext_id matches the one requested.
+#   8. Get by invalid (all-zero UUID) ext_id    →  module fails with an API
+#      exception; error message mentions "not found" or matching diagnostic.
+###############################################################################
+
+- name: Start testing ntnx_learned_mac_address_for_layer2_stretches_info_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_learned_mac_address_for_layer2_stretches_info_v2
+
+################################################################################
+# 1. Negative spec-validation — missing required layer2_stretch_ext_id
+################################################################################
+
+- name: Attempt to fetch learned MAC addresses without required layer2_stretch_ext_id
+  nutanix.ncp.ntnx_learned_mac_address_for_layer2_stretches_info_v2: {}
+  register: missing_required_result
+  ignore_errors: true
+
+- name: Verify module rejects call when layer2_stretch_ext_id is missing
+  ansible.builtin.assert:
+    that:
+      - missing_required_result.failed == true
+      - missing_required_result.changed == false
+      - "'layer2_stretch_ext_id' in missing_required_result.msg"
+    fail_msg: "Module should have failed because layer2_stretch_ext_id is required"
+    success_msg: "Module correctly rejected missing required layer2_stretch_ext_id"
+
+################################################################################
+# 2. Negative spec-validation — ext_id and filter are mutually exclusive
+################################################################################
+
+- name: Attempt to fetch learned MAC addresses with both ext_id and filter
+  nutanix.ncp.ntnx_learned_mac_address_for_layer2_stretches_info_v2:
+    layer2_stretch_ext_id: "00000000-0000-0000-0000-000000000000"
+    ext_id: "00000000-0000-0000-0000-000000000001"
+    filter: "macType eq Networking.Config.MacType'LEARNED'"
+  register: mutually_exclusive_result
+  ignore_errors: true
+
+- name: Verify module rejects ext_id + filter combination
+  ansible.builtin.assert:
+    that:
+      - mutually_exclusive_result.failed == true
+      - mutually_exclusive_result.changed == false
+      - "'mutually exclusive' in mutually_exclusive_result.msg"
+    fail_msg: "Module should have failed because ext_id and filter are mutually exclusive"
+    success_msg: "Module correctly rejected mutually exclusive ext_id + filter"
+
+################################################################################
+# 3. Prerequisite discovery — try to locate a real Layer2Stretch on the cluster
+################################################################################
+
+- name: Discover any existing Layer2Stretch on the cluster
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:{{ port | default(9440) }}/api/networking/v4.3/config/layer2-stretches?$limit=1"
+    method: GET
+    validate_certs: "{{ validate_certs | default(false) }}"
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    return_content: true
+    status_code: [200, 404]
+  register: layer2_stretch_lookup
+  ignore_errors: true
+
+- name: Set fallback (non-existent) Layer2Stretch external ID
+  ansible.builtin.set_fact:
+    layer2_stretch_ext_id: "00000000-0000-0000-0000-000000000000"
+    has_real_layer2_stretch: false
+
+- name: Override with a real Layer2Stretch external ID when discovered
+  ansible.builtin.set_fact:
+    layer2_stretch_ext_id: "{{ layer2_stretch_lookup.json.data[0].extId }}"
+    has_real_layer2_stretch: true
+  when:
+    - layer2_stretch_lookup is defined
+    - layer2_stretch_lookup.status is defined
+    - layer2_stretch_lookup.status == 200
+    - layer2_stretch_lookup.json.data is defined
+    - layer2_stretch_lookup.json.data | length > 0
+
+- name: Report Layer2Stretch prerequisite state
+  ansible.builtin.debug:
+    msg: >-
+      Using layer2_stretch_ext_id={{ layer2_stretch_ext_id }}
+      (real={{ has_real_layer2_stretch }}). When no Layer2Stretch exists on
+      the cluster, the list API still returns 200 with an empty data set,
+      so the list-side coverage remains valid.
+
+################################################################################
+# 4. List all learned MAC addresses for the chosen Layer2Stretch
+################################################################################
+
+- name: List all learned MAC addresses for the Layer2Stretch
+  nutanix.ncp.ntnx_learned_mac_address_for_layer2_stretches_info_v2:
+    layer2_stretch_ext_id: "{{ layer2_stretch_ext_id }}"
+  register: all_learned_macs
+  ignore_errors: true
+
+- name: Verify list-all response shape
+  ansible.builtin.assert:
+    that:
+      - all_learned_macs.failed == false
+      - all_learned_macs.changed == false
+      - all_learned_macs.response is defined
+      - all_learned_macs.response is iterable
+      - all_learned_macs.layer2_stretch_ext_id == layer2_stretch_ext_id
+      - all_learned_macs.total_available_results is defined
+      - all_learned_macs.total_available_results | int >= 0
+    fail_msg: "List-all did not return the expected shape"
+    success_msg: "List-all returned the expected shape"
+
+- name: Verify each returned learned MAC address entry (if any)
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.mac_type is defined
+      - item.mac_type in ['LEARNED', 'AUTO_ASSIGNED', 'USER_ASSIGNED']
+      - item.value is defined
+    fail_msg: "Returned learned MAC address entry {{ item }} is malformed"
+    success_msg: "Learned MAC address entry {{ item.ext_id }} is well-formed"
+  loop: "{{ all_learned_macs.response }}"
+  when: all_learned_macs.response | length > 0
+
+################################################################################
+# 5. List with a filter on macType == LEARNED
+#
+# NOTE: The upstream API filter parser is known to reject OData filters on this
+# endpoint on some PC releases (Glean reference: ENG-891953 — "Mac address
+# filtering api failing"). The test therefore accepts EITHER a well-shaped
+# success OR the documented BAD_REQUEST failure, and asserts the module surfaced
+# the failure correctly in the second case.
+################################################################################
+
+- name: List learned MAC addresses filtered by macType
+  nutanix.ncp.ntnx_learned_mac_address_for_layer2_stretches_info_v2:
+    layer2_stretch_ext_id: "{{ layer2_stretch_ext_id }}"
+    filter: "macType eq Networking.Config.MacType'LEARNED'"
+  register: filtered_learned_macs
+  ignore_errors: true
+
+- name: Verify filtered response shape or documented BAD_REQUEST
+  ansible.builtin.assert:
+    that:
+      - filtered_learned_macs.changed == false
+      - >-
+        (filtered_learned_macs.failed == false
+         and filtered_learned_macs.response is defined
+         and filtered_learned_macs.response is iterable
+         and filtered_learned_macs.layer2_stretch_ext_id == layer2_stretch_ext_id)
+        or
+        (filtered_learned_macs.failed == true
+         and filtered_learned_macs.status | default(0) | int == 400
+         and ('bad request' in (filtered_learned_macs.msg | default('') | lower)
+              or 'bad request' in (filtered_learned_macs.error | default('') | lower)))
+    fail_msg: >-
+      Filter API returned neither a valid shape nor the documented BAD_REQUEST:
+      {{ filtered_learned_macs }}
+    success_msg: "Filtered list behaved as expected (success or documented BAD_REQUEST)"
+
+- name: Verify that every filtered entry has macType == LEARNED
+  ansible.builtin.assert:
+    that:
+      - item.mac_type == "LEARNED"
+    fail_msg: "Filtered entry {{ item.ext_id }} has unexpected macType {{ item.mac_type }}"
+    success_msg: "Filtered entry {{ item.ext_id }} correctly has macType LEARNED"
+  loop: >-
+    {{ filtered_learned_macs.response
+       if (filtered_learned_macs.failed | default(false) == false
+           and filtered_learned_macs.response is defined
+           and filtered_learned_macs.response is sequence
+           and filtered_learned_macs.response is not string)
+       else [] }}
+
+################################################################################
+# 6. List with limit=1 — must return at most one entry
+################################################################################
+
+- name: List learned MAC addresses with limit=1
+  nutanix.ncp.ntnx_learned_mac_address_for_layer2_stretches_info_v2:
+    layer2_stretch_ext_id: "{{ layer2_stretch_ext_id }}"
+    limit: 1
+  register: limited_learned_macs
+  ignore_errors: true
+
+- name: Verify limited response respects the limit
+  ansible.builtin.assert:
+    that:
+      - limited_learned_macs.failed == false
+      - limited_learned_macs.changed == false
+      - limited_learned_macs.response is defined
+      - limited_learned_macs.response is iterable
+      - limited_learned_macs.response | length <= 1
+      - limited_learned_macs.layer2_stretch_ext_id == layer2_stretch_ext_id
+    fail_msg: "Limited list should have returned at most 1 entry"
+    success_msg: "Limited list correctly returned at most 1 entry"
+
+################################################################################
+# 7. Get-by-ext_id happy path — only meaningful when the cluster has real data
+################################################################################
+
+- name: Get a specific learned MAC address by ext_id when data is available
+  when:
+    - has_real_layer2_stretch | bool
+    - all_learned_macs.response | length > 0
+  block:
+    - name: Set target learned MAC ext_id
+      ansible.builtin.set_fact:
+        target_learned_mac_ext_id: "{{ all_learned_macs.response[0].ext_id }}"
+
+    - name: Fetch that learned MAC address by ext_id
+      nutanix.ncp.ntnx_learned_mac_address_for_layer2_stretches_info_v2:
+        layer2_stretch_ext_id: "{{ layer2_stretch_ext_id }}"
+        ext_id: "{{ target_learned_mac_ext_id }}"
+      register: get_single_result
+      ignore_errors: true
+
+    - name: Verify get-by-ext_id returned the right entry
+      ansible.builtin.assert:
+        that:
+          - get_single_result.failed == false
+          - get_single_result.changed == false
+          - get_single_result.response is defined
+          - get_single_result.response.ext_id == target_learned_mac_ext_id
+          - get_single_result.ext_id == target_learned_mac_ext_id
+          - get_single_result.layer2_stretch_ext_id == layer2_stretch_ext_id
+        fail_msg: "Get by ext_id did not return the requested learned MAC address"
+        success_msg: "Get by ext_id returned the requested learned MAC address"
+
+################################################################################
+# 8. Get-by-ext_id negative path — non-existent (all-zero) UUID
+################################################################################
+
+- name: Attempt to fetch a non-existent learned MAC address
+  nutanix.ncp.ntnx_learned_mac_address_for_layer2_stretches_info_v2:
+    layer2_stretch_ext_id: "{{ layer2_stretch_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: get_missing_result
+  ignore_errors: true
+
+- name: Verify module surfaces the API error for a non-existent ext_id
+  ansible.builtin.assert:
+    that:
+      - get_missing_result.failed == true
+      - get_missing_result.changed == false
+      - >-
+        ('not found' in (get_missing_result.msg | default('') | lower))
+        or ('not found' in (get_missing_result.response | string | lower))
+        or (get_missing_result.status | default(0) | int in [400, 404, 500])
+    fail_msg: >-
+      Expected a not-found style failure for a non-existent learned MAC
+      address, got: {{ get_missing_result }}
+    success_msg: "Module surfaced the expected error for a non-existent learned MAC address"

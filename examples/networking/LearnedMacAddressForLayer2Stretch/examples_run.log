@@ -1,0 +1,42 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Learned MAC addresses for Layer2Stretch info playbook] *******************
+
+TASK [Set target Layer2Stretch external ID] ************************************
+ok: [localhost] => {"ansible_facts": {"layer2_stretch_ext_id": "b6b7f96d-5a5f-4d1a-8b57-8a4c56d1abcd"}, "changed": false}
+
+TASK [List all learned MAC addresses for a Layer2Stretch] **********************
+ok: [localhost] => {"changed": false, "layer2_stretch_ext_id": "b6b7f96d-5a5f-4d1a-8b57-8a4c56d1abcd", "response": [], "total_available_results": 0}
+
+TASK [Get a specific learned MAC address of a Layer2Stretch using ext_id] ******
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching learned MAC address info for Layer2Stretch using ext_id
+Origin: /tmp/codegen/7c04b31fcce84f93bac3b8e22fa9b3a7/repo/examples/networking/LearnedMacAddressForLayer2Stretch/learned_mac_address_for_layer2_stretches_info_v2.yml:35:7
+
+33       ignore_errors: true
+34
+35     - name: Get a specific learned MAC address of a Layer2Stretch using ext_id
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "INTERNAL SERVER ERROR", "msg": "Api Exception raised while fetching learned MAC address info for Layer2Stretch using ext_id", "response": {"$objectType": "networking.v4.config.GetLayer2StretchApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10060", "locale": "en_US", "message": "Failed to get l2stretch b6b7f96d-5a5f-4d1a-8b57-8a4c56d1abcd learned MAC addr 8c3f01f2-7d1c-46b8-91e6-4c1e2d47aaaa as a referenced resource was not found - Mac Address 8c3f01f2-7d1c-46b8-91e6-4c1e2d47aaaa not found on Prism Central cluster b6b7f96d-5a5f-4d1a-8b57-8a4c56d1abcd", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.3/config/layer2-stretches/b6b7f96d-5a5f-4d1a-8b57-8a4c56d1abcd/learned-mac-addresses/8c3f01f2-7d1c-46b8-91e6-4c1e2d47aaaa", "rel": "self"}], "totalAvailableResults": 0}}, "status": 500}
+...ignoring
+
+TASK [List learned MAC addresses of a Layer2Stretch with a filter] *************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching learned MAC addresses info for Layer2Stretch
+Origin: /tmp/codegen/7c04b31fcce84f93bac3b8e22fa9b3a7/repo/examples/networking/LearnedMacAddressForLayer2Stretch/learned_mac_address_for_layer2_stretches_info_v2.yml:42:7
+
+40       ignore_errors: true
+41
+42     - name: List learned MAC addresses of a Layer2Stretch with a filter
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "BAD REQUEST", "msg": "Api Exception raised while fetching learned MAC addresses info for Layer2Stretch", "response": {"$objectType": "networking.v4.config.GetLayer2StretchApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10002", "locale": "en_US", "message": "Failed to list l2stretch learned MAC addrs b6b7f96d-5a5f-4d1a-8b57-8a4c56d1abcd due to a bad request - Odata Error: Error while parsing URI", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.3/config/layer2-stretches/b6b7f96d-5a5f-4d1a-8b57-8a4c56d1abcd/learned-mac-addresses", "rel": "self"}], "totalAvailableResults": 0}}, "status": 400}
+...ignoring
+
+TASK [List learned MAC addresses of a Layer2Stretch with a limit] **************
+ok: [localhost] => {"changed": false, "layer2_stretch_ext_id": "b6b7f96d-5a5f-4d1a-8b57-8a4c56d1abcd", "response": [], "total_available_results": 0}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=5    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=2   
+

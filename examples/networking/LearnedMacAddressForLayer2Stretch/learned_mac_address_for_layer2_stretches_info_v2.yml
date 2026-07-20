@@ -1,0 +1,54 @@
+---
+# Summary:
+# This playbook demonstrates how to use the
+# ntnx_learned_mac_address_for_layer2_stretches_info_v2 module to fetch
+# information about learned MAC addresses seen on the VTEP of a Layer2Stretch.
+# The learned MAC addresses are a read-only, dynamically populated view; the
+# API only exposes GET operations (there is no CRUD for these entries).
+#
+# 1. List all learned MAC addresses for a given Layer2Stretch
+# 2. Get a specific learned MAC address of a Layer2Stretch using ext_id
+# 3. List learned MAC addresses of a Layer2Stretch with a filter
+# 4. List learned MAC addresses of a Layer2Stretch with a limit
+
+- name: Learned MAC addresses for Layer2Stretch info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('10.44.76.28', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('admin', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('Nutanix.123', true) }}"
+      nutanix_port: "{{ lookup('env', 'NUTANIX_PORT') | default(9440, true) }}"
+      validate_certs: false
+  tasks:
+    - name: Set target Layer2Stretch external ID
+      ansible.builtin.set_fact:
+        layer2_stretch_ext_id: "b6b7f96d-5a5f-4d1a-8b57-8a4c56d1abcd"
+
+    - name: List all learned MAC addresses for a Layer2Stretch
+      nutanix.ncp.ntnx_learned_mac_address_for_layer2_stretches_info_v2:
+        layer2_stretch_ext_id: "{{ layer2_stretch_ext_id }}"
+      register: all_learned_macs
+      ignore_errors: true
+
+    - name: Get a specific learned MAC address of a Layer2Stretch using ext_id
+      nutanix.ncp.ntnx_learned_mac_address_for_layer2_stretches_info_v2:
+        layer2_stretch_ext_id: "{{ layer2_stretch_ext_id }}"
+        ext_id: "8c3f01f2-7d1c-46b8-91e6-4c1e2d47aaaa"
+      register: single_learned_mac
+      ignore_errors: true
+
+    - name: List learned MAC addresses of a Layer2Stretch with a filter
+      nutanix.ncp.ntnx_learned_mac_address_for_layer2_stretches_info_v2:
+        layer2_stretch_ext_id: "{{ layer2_stretch_ext_id }}"
+        filter: "macType eq Networking.Config.MacType'LEARNED'"
+      register: filtered_learned_macs
+      ignore_errors: true
+
+    - name: List learned MAC addresses of a Layer2Stretch with a limit
+      nutanix.ncp.ntnx_learned_mac_address_for_layer2_stretches_info_v2:
+        layer2_stretch_ext_id: "{{ layer2_stretch_ext_id }}"
+        limit: 1
+      register: limited_learned_macs
+      ignore_errors: true
