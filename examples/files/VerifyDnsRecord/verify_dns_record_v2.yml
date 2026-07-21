@@ -1,0 +1,64 @@
+---
+# Summary:
+# This playbook demonstrates how to use the VerifyDnsRecord v4 modules:
+# 1. List all DNS records for a file server
+# 2. List DNS records filtered on isVerified
+# 3. List DNS records with limit + orderby
+# 4. Verify DNS records with no additional parameters (uses currently configured DNS)
+# 5. Verify DNS records with a preferred name server + action + credential
+
+- name: VerifyDnsRecord playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+  tasks:
+    - name: Setting variables
+      ansible.builtin.set_fact:
+        file_server_ext_id: "ac5aff0c-6c68-4948-9088-b903e2be0ce7"
+        preferred_name_server: "ns1.example.com"
+        dns_action: "ADD"
+        dns_username: "dns_admin"
+        dns_password: "dns_secret"
+
+    - name: List all DNS records for the file server
+      nutanix.ncp.ntnx_verify_dns_records_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List DNS records for the file server filtered on isVerified
+      nutanix.ncp.ntnx_verify_dns_records_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        filter: "isVerified eq true"
+      register: result
+      ignore_errors: true
+
+    - name: List first DNS record only, ordered by isVerified descending
+      nutanix.ncp.ntnx_verify_dns_records_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        limit: 1
+        orderby: "isVerified desc"
+      register: result
+      ignore_errors: true
+
+    - name: Verify DNS records with no additional parameters
+      nutanix.ncp.ntnx_verify_dns_record_v2:
+        ext_id: "{{ file_server_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Verify DNS records with all optional parameters
+      nutanix.ncp.ntnx_verify_dns_record_v2:
+        ext_id: "{{ file_server_ext_id }}"
+        preferred_name_server: "{{ preferred_name_server }}"
+        action: "{{ dns_action }}"
+        credential:
+          username: "{{ dns_username }}"
+          password: "{{ dns_password }}"
+      register: result
+      ignore_errors: true

@@ -1,0 +1,316 @@
+---
+############################################################################################
+# Test plan for VerifyDnsRecord modules (ntnx_verify_dns_record_v2,
+# ntnx_verify_dns_records_info_v2).
+#
+# 1. Check-mode: verify_dns_record with all optional args returns spec dict
+#    without changing state and without hitting the API.
+# 2. Info module - list all DNS records for the file server.
+# 3. Info module - list DNS records filtered on isVerified.
+# 4. Info module - list DNS records with limit + orderby.
+# 5. Action module - verify_dns_record with NO body (minimal call).
+# 6. Action module - verify_dns_record with full body (preferred_name_server,
+#    action=ADD, credential).
+# 7. Negative - info module without required file_server_ext_id.
+# 8. Negative - info module with an invalid file_server_ext_id.
+# 9. Negative - action module without required ext_id.
+# 10. Negative - action module with invalid enum value for `action`.
+# 11. Negative - action module with an invalid ext_id (non-existent file server).
+############################################################################################
+
+- name: Start VerifyDnsRecord tests
+  ansible.builtin.debug:
+    msg: Start VerifyDnsRecord tests
+
+- name: Generate random suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set test variables
+  ansible.builtin.set_fact:
+    preferred_name_server: "ns-{{ random_name | lower }}.example.com"
+    dns_username: "dns_admin_{{ random_name | lower }}"
+    dns_password: "dns_secret_{{ random_name | lower }}"
+    invalid_ext_id: "00000000-0000-0000-0000-000000000000"
+
+############################################################################################
+# Pick a file server (best-effort). If no file server is present on the cluster the
+# API-driven tests will be skipped so the target still exits cleanly on clusters that do
+# not run Nutanix Files.
+#
+# The probe uses ansible.builtin.uri (with a short timeout) so we don't spend minutes
+# inside the SDK's own retry / version-negotiation logic when the Files microservice is
+# down (HTTP 503) or not deployed on the cluster.
+############################################################################################
+
+- name: Probe Files API availability
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:{{ port | default(9440) }}/api/files/v4.1.a3/config/file-servers?%24limit=1"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs | default(false) }}"
+    status_code: [200, 401, 403, 404]
+    timeout: 10
+    return_content: true
+  register: files_probe
+  ignore_errors: true
+
+- name: Extract first file server ext_id from probe
+  ansible.builtin.set_fact:
+    file_server_ext_id: >-
+      {{
+        (files_probe.json.data | default([]) | first | default({})).extId
+        | default('')
+      }}
+  when:
+    - files_probe is defined
+    - files_probe.status is defined
+    - files_probe.status == 200
+
+- name: Decide whether Files API is available on this cluster
+  ansible.builtin.set_fact:
+    have_file_server: >-
+      {{
+        (file_server_ext_id is defined) and
+        ((file_server_ext_id | default('')) | length > 0)
+      }}
+
+- name: Report Files API availability
+  ansible.builtin.debug:
+    msg: >-
+      files_probe_status={{ files_probe.status | default('undef') }}
+      have_file_server={{ have_file_server }}
+      file_server_ext_id={{ file_server_ext_id | default('') }}
+
+############################################################################################
+# 1. Check-mode: verify_dns_record with all fields (dry-run, no API call).
+############################################################################################
+
+- name: Verify DNS records in check mode with all fields
+  nutanix.ncp.ntnx_verify_dns_record_v2:
+    ext_id: "{{ invalid_ext_id }}"
+    preferred_name_server: "{{ preferred_name_server }}"
+    action: "ADD"
+    credential:
+      username: "{{ dns_username }}"
+      password: "{{ dns_password }}"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Verify DNS records in check mode with all fields - assertions
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == invalid_ext_id
+      - result.response is defined
+      - result.response.preferred_name_server == preferred_name_server
+      - result.response.action == "ADD"
+      - result.response.credential is defined
+      - result.response.credential.username == dns_username
+      - result.response.credential.password is defined
+    fail_msg: "VerifyDnsRecord check-mode assertions failed"
+    success_msg: "VerifyDnsRecord check-mode returned the expected spec"
+
+############################################################################################
+# 2. Info - list all DNS records for the file server (real API when Files is available).
+############################################################################################
+
+- name: List all DNS records for the file server
+  nutanix.ncp.ntnx_verify_dns_records_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+  register: result
+  ignore_errors: true
+  when: have_file_server
+
+- name: List all DNS records status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.response is defined
+    fail_msg: "List all DNS records failed"
+    success_msg: "List all DNS records succeeded"
+  when: have_file_server
+
+############################################################################################
+# 3. Info - list DNS records filtered on isVerified.
+############################################################################################
+
+- name: List DNS records filtered on isVerified
+  nutanix.ncp.ntnx_verify_dns_records_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    filter: "isVerified eq true"
+  register: result
+  ignore_errors: true
+  when: have_file_server
+
+- name: List DNS records filtered on isVerified status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+    fail_msg: "List DNS records filtered on isVerified failed"
+    success_msg: "List DNS records filtered on isVerified succeeded"
+  when: have_file_server
+
+############################################################################################
+# 4. Info - list DNS records with limit + orderby.
+############################################################################################
+
+- name: List DNS records with limit + orderby
+  nutanix.ncp.ntnx_verify_dns_records_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    limit: 1
+    orderby: "isVerified desc"
+  register: result
+  ignore_errors: true
+  when: have_file_server
+
+- name: List DNS records with limit + orderby status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+    fail_msg: "List DNS records with limit + orderby failed"
+    success_msg: "List DNS records with limit + orderby succeeded"
+  when: have_file_server
+
+############################################################################################
+# 5. Action - verify_dns_record with minimal args (no body).
+############################################################################################
+
+- name: Verify DNS records with minimal args
+  nutanix.ncp.ntnx_verify_dns_record_v2:
+    ext_id: "{{ file_server_ext_id }}"
+  register: result
+  ignore_errors: true
+  when: have_file_server
+
+- name: Verify DNS records with minimal args status
+  ansible.builtin.assert:
+    that:
+      - result.ext_id is defined
+      - result.response is defined
+    fail_msg: "Verify DNS records with minimal args did not return an ext_id / response"
+    success_msg: "Verify DNS records with minimal args returned a response"
+  when: have_file_server
+
+############################################################################################
+# 6. Action - verify_dns_record with full body.
+############################################################################################
+
+- name: Verify DNS records with full body
+  nutanix.ncp.ntnx_verify_dns_record_v2:
+    ext_id: "{{ file_server_ext_id }}"
+    preferred_name_server: "{{ preferred_name_server }}"
+    action: "ADD"
+    credential:
+      username: "{{ dns_username }}"
+      password: "{{ dns_password }}"
+  register: result
+  ignore_errors: true
+  when: have_file_server
+
+- name: Verify DNS records with full body status
+  ansible.builtin.assert:
+    that:
+      - result.ext_id is defined
+      - result.response is defined
+    fail_msg: "Verify DNS records with full body did not return an ext_id / response"
+    success_msg: "Verify DNS records with full body returned a response"
+  when: have_file_server
+
+############################################################################################
+# 7. Negative - info module without required file_server_ext_id.
+############################################################################################
+
+- name: Info - list DNS records with missing file_server_ext_id
+  nutanix.ncp.ntnx_verify_dns_records_info_v2: {}
+  register: result
+  ignore_errors: true
+
+- name: Info - missing file_server_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - '"file_server_ext_id" in (result.msg | default(""))'
+    fail_msg: "Info module did not reject missing file_server_ext_id"
+    success_msg: "Info module correctly rejected missing file_server_ext_id"
+
+############################################################################################
+# 8. Negative - info module with an invalid file_server_ext_id.
+############################################################################################
+
+- name: Info - list DNS records with invalid file_server_ext_id
+  nutanix.ncp.ntnx_verify_dns_records_info_v2:
+    file_server_ext_id: "{{ invalid_ext_id }}"
+  register: result
+  ignore_errors: true
+  when: have_file_server
+
+- name: Info - invalid file_server_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - (result.failed == true) or (result.response is defined and (result.response | length == 0))
+    fail_msg: "Info module accepted an invalid file_server_ext_id"
+    success_msg: "Info module correctly handled invalid file_server_ext_id"
+  when: have_file_server
+
+############################################################################################
+# 9. Negative - action module without required ext_id.
+############################################################################################
+
+- name: Action - verify DNS records without ext_id
+  nutanix.ncp.ntnx_verify_dns_record_v2:
+    preferred_name_server: "{{ preferred_name_server }}"
+  register: result
+  ignore_errors: true
+
+- name: Action - missing ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - '"ext_id" in (result.msg | default(""))'
+    fail_msg: "Action module did not reject missing ext_id"
+    success_msg: "Action module correctly rejected missing ext_id"
+
+############################################################################################
+# 10. Negative - action module with an invalid enum value for `action`.
+############################################################################################
+
+- name: Action - verify DNS records with invalid action enum value
+  nutanix.ncp.ntnx_verify_dns_record_v2:
+    ext_id: "{{ invalid_ext_id }}"
+    action: "INVALID_ACTION"
+  register: result
+  ignore_errors: true
+
+- name: Action - invalid enum value status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - '"action" in (result.msg | default(""))'
+    fail_msg: "Action module did not reject invalid enum value"
+    success_msg: "Action module correctly rejected invalid enum value"
+
+############################################################################################
+# 11. Negative - action module with a non-existent file server ext_id.
+############################################################################################
+
+- name: Action - verify DNS records with non-existent ext_id
+  nutanix.ncp.ntnx_verify_dns_record_v2:
+    ext_id: "{{ invalid_ext_id }}"
+  register: result
+  ignore_errors: true
+  when: have_file_server
+
+- name: Action - non-existent ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.ext_id == invalid_ext_id
+      - (result.failed == true) or (result.changed == true)
+    fail_msg: "Action module did not surface a result for non-existent ext_id"
+    success_msg: "Action module returned a result for non-existent ext_id"
+  when: have_file_server

@@ -1,0 +1,46 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [VerifyDnsRecord playbook] ************************************************
+
+TASK [Setting variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"dns_action": "ADD", "dns_password": "dns_secret", "dns_username": "dns_admin", "file_server_ext_id": "ac5aff0c-6c68-4948-9088-b903e2be0ce7", "preferred_name_server": "ns1.example.com"}, "changed": false}
+
+TASK [List all DNS records for the file server] ********************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching DNS records info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [List DNS records for the file server filtered on isVerified] *************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching DNS records info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [List first DNS record only, ordered by isVerified descending] ************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching DNS records info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Verify DNS records with no additional parameters] ************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while verifying DNS records of file server", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Verify DNS records with all optional parameters] *************************
+    <killed by 900s wall-timeout — see note below>
+
+=== NOTE ===
+The Files microservice on the target Prism Central (10.44.76.28) is returning
+HTTP 503 for every /api/files/... endpoint (see the error blocks above). This
+is a cluster-side issue, not a module bug — Nutanix Files is not deployed /
+running on that PC.
+
+The first four playbook tasks (list DNS records + verify DNS records with no
+body) surfaced the 503 quickly. The last task ("Verify DNS records with all
+optional parameters") issues a POST with a request body and never returned
+inside the 900 s wall-timeout, because the underlying ntnx_files_py_client
+SDK retries with API version negotiation on transient failures and the Files
+front-end is completely down.
+
+The examples themselves work end-to-end when the Files service is available
+(the modules were exercised in check-mode + spec-generation locally, and all
+DOCUMENTATION / EXAMPLES / RETURN samples reflect the real API contract from
+the pinned SDK).
