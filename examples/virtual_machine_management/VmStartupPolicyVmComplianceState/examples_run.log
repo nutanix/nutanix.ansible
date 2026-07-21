@@ -1,0 +1,55 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [VM Startup Policy VM compliance states info v4 examples] *****************
+
+TASK [List all VM compliance states of a VM startup policy] ********************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0, "vm_startup_policy_ext_id": "9b1a818d-0d1a-4c4e-4bd2-094e27cae1d5"}
+
+TASK [Print list-all result] ***************************************************
+ok: [localhost] => {
+    "list_all_result": {
+        "changed": false,
+        "failed": false,
+        "response": [],
+        "total_available_results": 0,
+        "vm_startup_policy_ext_id": "9b1a818d-0d1a-4c4e-4bd2-094e27cae1d5"
+    }
+}
+
+TASK [List VM compliance states of a VM startup policy with pagination] ********
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0, "vm_startup_policy_ext_id": "9b1a818d-0d1a-4c4e-4bd2-094e27cae1d5"}
+
+TASK [Print paginated result] **************************************************
+ok: [localhost] => {
+    "paginated_result": {
+        "changed": false,
+        "failed": false,
+        "response": [],
+        "total_available_results": 0,
+        "vm_startup_policy_ext_id": "9b1a818d-0d1a-4c4e-4bd2-094e27cae1d5"
+    }
+}
+
+TASK [Compute a candidate ext_id for the get-by-id example] ********************
+ok: [localhost] => {"ansible_facts": {"candidate_ext_id": "00000000-0000-0000-0000-000000000000"}, "changed": false}
+
+TASK [Fetch a specific VM compliance state by ext_id] **************************
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "No VM compliance state with ext_id '00000000-0000-0000-0000-000000000000' was found for VM startup policy '9b1a818d-0d1a-4c4e-4bd2-094e27cae1d5'.", "response": null}
+...ignoring
+
+TASK [Print single result] *****************************************************
+ok: [localhost] => {
+    "single_result": {
+        "changed": false,
+        "failed": true,
+        "msg": "No VM compliance state with ext_id '00000000-0000-0000-0000-000000000000' was found for VM startup policy '9b1a818d-0d1a-4c4e-4bd2-094e27cae1d5'.",
+        "response": null
+    }
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=7    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=1   
+

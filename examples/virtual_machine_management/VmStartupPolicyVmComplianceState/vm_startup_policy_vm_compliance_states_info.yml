@@ -1,0 +1,58 @@
+---
+- name: VM Startup Policy VM compliance states info v4 examples
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') }}"
+      nutanix_port: "{{ lookup('env', 'NUTANIX_PORT') | default('9440', true) }}"
+      validate_certs: false
+  vars:
+    # A real VM startup policy ext_id. Users should override with the ext_id
+    # of a policy that already exists on their Prism Central.
+    policy_ext_id: "{{ startup_policy_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+
+  tasks:
+    - name: List all VM compliance states of a VM startup policy
+      nutanix.ncp.ntnx_vm_startup_policy_vm_compliance_states_info_v2:
+        vm_startup_policy_ext_id: "{{ policy_ext_id }}"
+      register: list_all_result
+      ignore_errors: true
+
+    - name: Print list-all result
+      ansible.builtin.debug:
+        var: list_all_result
+
+    - name: List VM compliance states of a VM startup policy with pagination
+      nutanix.ncp.ntnx_vm_startup_policy_vm_compliance_states_info_v2:
+        vm_startup_policy_ext_id: "{{ policy_ext_id }}"
+        page: 0
+        limit: 10
+      register: paginated_result
+      ignore_errors: true
+
+    - name: Print paginated result
+      ansible.builtin.debug:
+        var: paginated_result
+
+    - name: Compute a candidate ext_id for the get-by-id example
+      ansible.builtin.set_fact:
+        candidate_ext_id: >-
+          {{ (list_all_result.response | first).ext_id
+             if (list_all_result.response is defined
+                 and list_all_result.response is iterable
+                 and (list_all_result.response | length) > 0)
+             else '00000000-0000-0000-0000-000000000000' }}
+
+    - name: Fetch a specific VM compliance state by ext_id
+      nutanix.ncp.ntnx_vm_startup_policy_vm_compliance_states_info_v2:
+        vm_startup_policy_ext_id: "{{ policy_ext_id }}"
+        ext_id: "{{ candidate_ext_id }}"
+      register: single_result
+      ignore_errors: true
+
+    - name: Print single result
+      ansible.builtin.debug:
+        var: single_result
