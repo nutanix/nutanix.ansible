@@ -1,0 +1,123 @@
+---
+# Summary:
+# This playbook demonstrates management of VM Custom Attributes (V4 VMM API)
+# using the Nutanix Ansible collection. VM Custom Attributes are user-defined
+# key/value string tags (format "key:value") attached to a VM or to a specific
+# VM disk (Volume Group backed disks and CD-ROMs are not eligible for disk
+# custom attributes).
+#
+# The playbook does the following operations:
+# 1. Create a VM (prerequisite for attaching custom attributes)
+# 2. Add custom attributes to the VM
+# 3. Update / extend custom attributes on the VM (add another attribute)
+# 4. Add custom attributes to a specific VM disk
+# 5. Remove custom attributes from the VM disk
+# 6. Remove custom attributes from the VM
+# 7. Delete the VM (cleanup)
+
+- name: VM Custom Attribute playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        cluster_uuid: "<cluster_uuid>"
+        storage_container_uuid: "<storage_container_uuid>"
+        vm_name: "vm_custom_attribute_ansible"
+
+    - name: Create a test VM (prerequisite)
+      nutanix.ncp.ntnx_vms_v2:
+        state: present
+        name: "{{ vm_name }}"
+        description: "VM used to demonstrate custom attribute operations"
+        cluster:
+          ext_id: "{{ cluster_uuid }}"
+      register: create_vm
+      ignore_errors: true
+
+    - name: Set VM ext_id
+      ansible.builtin.set_fact:
+        vm_uuid: "{{ create_vm.ext_id }}"
+
+    - name: Attach a disk to the VM (for demonstrating disk-level custom attributes)
+      nutanix.ncp.ntnx_vms_disks_v2:
+        state: present
+        vm_ext_id: "{{ vm_uuid }}"
+        backing_info:
+          vm_disk:
+            disk_size_bytes: 1073741824
+            storage_container:
+              ext_id: "{{ storage_container_uuid }}"
+        disk_address:
+          bus_type: "SCSI"
+          index: 0
+      register: create_disk
+      ignore_errors: true
+
+    - name: Set disk ext_id
+      ansible.builtin.set_fact:
+        disk_uuid: "{{ create_disk.ext_id }}"
+
+    - name: Add custom attributes to the VM
+      nutanix.ncp.ntnx_vm_custom_attribute_v2:
+        state: present
+        vm_ext_id: "{{ vm_uuid }}"
+        custom_attributes:
+          - "environment:production"
+          - "owner:engineering"
+          - "backup:daily"
+      register: add_vm_attrs
+      ignore_errors: true
+
+    - name: Add another custom attribute to the VM
+      nutanix.ncp.ntnx_vm_custom_attribute_v2:
+        state: present
+        vm_ext_id: "{{ vm_uuid }}"
+        custom_attributes:
+          - "criticality:high"
+      register: add_vm_attrs_2
+      ignore_errors: true
+
+    - name: Add custom attributes to a specific VM disk
+      nutanix.ncp.ntnx_vm_custom_attribute_v2:
+        state: present
+        vm_ext_id: "{{ vm_uuid }}"
+        disk_ext_id: "{{ disk_uuid }}"
+        custom_attributes:
+          - "storageclass:premium"
+          - "encryption:aes256"
+      register: add_disk_attrs
+      ignore_errors: true
+
+    - name: Remove one custom attribute from the VM disk
+      nutanix.ncp.ntnx_vm_custom_attribute_v2:
+        state: absent
+        vm_ext_id: "{{ vm_uuid }}"
+        disk_ext_id: "{{ disk_uuid }}"
+        custom_attributes:
+          - "encryption:aes256"
+      register: remove_disk_attrs
+      ignore_errors: true
+
+    - name: Remove custom attributes from the VM
+      nutanix.ncp.ntnx_vm_custom_attribute_v2:
+        state: absent
+        vm_ext_id: "{{ vm_uuid }}"
+        custom_attributes:
+          - "environment:production"
+          - "backup:daily"
+      register: remove_vm_attrs
+      ignore_errors: true
+
+    - name: Delete the test VM (cleanup)
+      nutanix.ncp.ntnx_vms:
+        state: absent
+        vm_uuid: "{{ vm_uuid }}"
+      register: delete_vm
+      ignore_errors: true
