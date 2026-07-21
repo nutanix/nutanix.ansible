@@ -1,0 +1,31 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [AIOps EntityMetricsV4 playbook] ******************************************
+
+TASK [Set example variables (source id, entity type id)] ***********************
+ok: [localhost] => {"ansible_facts": {"entity_type_ext_id": "06b2d4b9-1b5c-9eaa-8c20-a1c270f95b3c", "source_ext_id": "db293e8a-5770-c3c7-4213-85dbbc1d3679"}, "changed": false}
+
+TASK [Compute reporting window start (now minus 15 minutes)] *******************
+ok: [localhost] => {"changed": false, "cmd": ["date", "-u", "-d", "-900 seconds", "+%Y-%m-%dT%H:%M:%S.%3NZ"], "delta": "0:00:01.003439", "end": "2026-07-21 09:31:22.107114", "msg": "", "rc": 0, "start": "2026-07-21 09:31:21.103675", "stderr": "", "stderr_lines": [], "stdout": "2026-07-21T09:16:21.106Z", "stdout_lines": ["2026-07-21T09:16:21.106Z"]}
+
+TASK [Compute reporting window end (now)] **************************************
+ok: [localhost] => {"changed": false, "cmd": ["date", "-u", "+%Y-%m-%dT%H:%M:%S.%3NZ"], "delta": "0:00:00.002893", "end": "2026-07-21 09:31:22.332746", "msg": "", "rc": 0, "start": "2026-07-21 09:31:22.329853", "stderr": "", "stderr_lines": [], "stdout": "2026-07-21T09:31:22.332Z", "stdout_lines": ["2026-07-21T09:31:22.332Z"]}
+
+TASK [Fetch VM entity metrics (all attributes populated) — Create/Get equivalent] ***
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "06b2d4b9-1b5c-9eaa-8c20-a1c270f95b3c", "response": [{"entity_type": "cluster", "ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "links": null, "metrics": [{"name": "extId", "time_series": {"sampling_interval_secs": null, "values": [{"$valueItemDiscriminator": "aiops.v4.stats.StrVal", "timestamp": "2026-06-30T16:42:01+00:00", "value": {"str_value": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"}}]}}], "parents": null, "source": "nutanix", "tenant_id": null}], "source_ext_id": "db293e8a-5770-c3c7-4213-85dbbc1d3679", "total_available_results": 1}
+
+TASK [Fetch VM entity metrics (minimal required attributes) — Update-equivalent refresh] ***
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "06b2d4b9-1b5c-9eaa-8c20-a1c270f95b3c", "response": [{"entity_type": "cluster", "ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "links": null, "metrics": [{"name": "extId", "time_series": {"sampling_interval_secs": null, "values": [{"$valueItemDiscriminator": "aiops.v4.stats.StrVal", "timestamp": "2026-06-30T16:42:01+00:00", "value": {"str_value": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"}}]}}], "parents": null, "source": "nutanix", "tenant_id": null}], "source_ext_id": "db293e8a-5770-c3c7-4213-85dbbc1d3679", "total_available_results": 1}
+
+TASK [Fetch entity metrics info (all attributes populated)] ********************
+ok: [localhost] => {"changed": false, "ext_id": "06b2d4b9-1b5c-9eaa-8c20-a1c270f95b3c", "response": [{"entity_type": "cluster", "ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "links": null, "metrics": [{"name": "extId", "time_series": {"sampling_interval_secs": null, "values": [{"$valueItemDiscriminator": "aiops.v4.stats.StrVal", "timestamp": "2026-06-30T16:42:01+00:00", "value": {"str_value": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"}}]}}], "parents": null, "source": "nutanix", "tenant_id": null}], "source_ext_id": "db293e8a-5770-c3c7-4213-85dbbc1d3679", "total_available_results": 1}
+
+TASK [Fetch entity metrics info (minimal) — Delete/Get equivalent] *************
+ok: [localhost] => {"changed": false, "ext_id": "06b2d4b9-1b5c-9eaa-8c20-a1c270f95b3c", "response": [{"entity_type": "cluster", "ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "links": null, "metrics": [{"name": "extId", "time_series": {"sampling_interval_secs": null, "values": [{"$valueItemDiscriminator": "aiops.v4.stats.StrVal", "timestamp": "2026-06-30T16:42:01+00:00", "value": {"str_value": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"}}]}}], "parents": null, "source": "nutanix", "tenant_id": null}], "source_ext_id": "db293e8a-5770-c3c7-4213-85dbbc1d3679", "total_available_results": 1}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=7    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
