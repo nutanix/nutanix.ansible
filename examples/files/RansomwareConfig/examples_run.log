@@ -1,0 +1,85 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Ransomware Config playbook] **********************************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"excluded_mount_target_ext_id": "5f0d1c2b-3a4e-4d5c-8b7a-9e0f1a2b3c4d", "file_server_ext_id": "b1c2d3e4-f5a6-4789-90ab-cdef01234567"}, "changed": false}
+
+TASK [Create ransomware config for a file server] ******************************
+[ERROR]: Task failed: Module failed: Api Exception raised while creating ransomware config
+Origin: /tmp/codegen/8472d763379c496e889d6fac1ea76f70/repo/examples/files/RansomwareConfig/ransomware_config.yml:27:7
+
+25         excluded_mount_target_ext_id: "5f0d1c2b-3a4e-4d5c-8b7a-9e0f1a2b3c4d"
+26
+27     - name: Create ransomware config for a file server
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while creating ransomware config", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Set ransomware config ext_id] ********************************************
+ok: [localhost] => {"ansible_facts": {"ransomware_config_ext_id": "b1c2d3e4-f5a6-4789-90ab-cdef01234567"}, "changed": false}
+
+TASK [Update ransomware config for a file server] ******************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching ransomware config info using ext_id
+Origin: /tmp/codegen/8472d763379c496e889d6fac1ea76f70/repo/examples/files/RansomwareConfig/ransomware_config.yml:44:7
+
+42         ransomware_config_ext_id: "{{ result.ext_id | default(file_server_ext_id) }}"
+43
+44     - name: Update ransomware config for a file server
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching ransomware config info using ext_id", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Get ransomware config using ext_id] **************************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching ransomware config info using ext_id
+Origin: /tmp/codegen/8472d763379c496e889d6fac1ea76f70/repo/examples/files/RansomwareConfig/ransomware_config.yml:58:7
+
+56       ignore_errors: true
+57
+58     - name: Get ransomware config using ext_id
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching ransomware config info using ext_id", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [List all ransomware configs of a file server] ****************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching ransomware configs info
+Origin: /tmp/codegen/8472d763379c496e889d6fac1ea76f70/repo/examples/files/RansomwareConfig/ransomware_config.yml:65:7
+
+63       ignore_errors: true
+64
+65     - name: List all ransomware configs of a file server
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching ransomware configs info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [List ransomware configs with filter] *************************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching ransomware configs info
+Origin: /tmp/codegen/8472d763379c496e889d6fac1ea76f70/repo/examples/files/RansomwareConfig/ransomware_config.yml:71:7
+
+69       ignore_errors: true
+70
+71     - name: List ransomware configs with filter
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching ransomware configs info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [List ransomware configs with limit] **************************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching ransomware configs info
+Origin: /tmp/codegen/8472d763379c496e889d6fac1ea76f70/repo/examples/files/RansomwareConfig/ransomware_config.yml:78:7
+
+76       ignore_errors: true
+77
+78     - name: List ransomware configs with limit
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching ransomware configs info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Delete ransomware config of a file server] *******************************
