@@ -1,0 +1,111 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create an object store profile (tiering profile) for a file server
+# 2. Update the object store profile
+# 3. Get the object store profile using ext_id
+# 4. List all object store profiles for the file server
+# 5. List object store profiles with a filter
+# 6. List object store profiles with a limit
+#
+# Note: The Nutanix Files v4 API does not expose a delete operation for object
+# store profiles, so this playbook does not include a delete example.
+
+- name: Object Store Profiles playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        file_server_ext_id: "0006abcd-1111-2222-3333-444455556666"
+        mount_target_ext_id: "b0df3e22-a3a3-4b86-8f09-ec9e1f3e8dc2"
+        profile_name: "tiering_profile_ansible"
+        object_store_profile_ext_id: ""
+
+    - name: Create AWS object store profile
+      nutanix.ncp.ntnx_files_object_store_profile_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        name: "{{ profile_name }}"
+        object_store_type: "AWS"
+        mount_targets_enablement_type: "ALL_CURRENT_MOUNT_TARGETS"
+        mount_target_ext_ids:
+          - "{{ mount_target_ext_id }}"
+        retention_period_days: 1825
+        is_ssl_peer_verfication_enabled: true
+        object_store_config:
+          base_url: "https://s3.us-east-1.amazonaws.com/"
+          ca_cert_content: "-----BEGIN CERTIFICATE-----\nMIIC...\n-----END CERTIFICATE-----"
+          proxy_server:
+            url: "http://proxy.example.com:8080/"
+            credential:
+              username: "proxy_user"
+              password: "proxy_password"
+          configuration:
+            aws:
+              access_key: "AKIAEXAMPLEACCESSKEY"
+              secret_key: "wJalrXUtnFEMIEXAMPLESECRETKEY"
+              bucket_name: "files-tiering-bucket"
+              bucket_location: "us-east-1"
+      register: result
+      ignore_errors: true
+
+    - name: Set object store profile ext_id
+      ansible.builtin.set_fact:
+        object_store_profile_ext_id: "{{ result.ext_id | default(object_store_profile_ext_id) }}"
+
+    - name: Update object store profile
+      nutanix.ncp.ntnx_files_object_store_profile_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ object_store_profile_ext_id }}"
+        name: "{{ profile_name }}_updated"
+        object_store_type: "AWS"
+        mount_targets_enablement_type: "ALL_CURRENT_FUTURE_MOUNT_TARGETS"
+        mount_target_ext_ids:
+          - "{{ mount_target_ext_id }}"
+        retention_period_days: 3650
+        is_ssl_peer_verfication_enabled: false
+        object_store_config:
+          base_url: "https://s3.us-east-1.amazonaws.com/"
+          configuration:
+            aws:
+              access_key: "AKIAEXAMPLEACCESSKEY"
+              secret_key: "wJalrXUtnFEMIEXAMPLESECRETKEY"
+              bucket_name: "files-tiering-bucket"
+              bucket_location: "us-east-1"
+      register: result
+      ignore_errors: true
+
+    - name: Get object store profile using ext_id
+      nutanix.ncp.ntnx_files_object_store_profiles_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ object_store_profile_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all object store profiles for the file server
+      nutanix.ncp.ntnx_files_object_store_profiles_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List object store profiles with filter
+      nutanix.ncp.ntnx_files_object_store_profiles_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        filter: "name eq '{{ profile_name }}_updated'"
+      register: result
+      ignore_errors: true
+
+    - name: List object store profiles with limit
+      nutanix.ncp.ntnx_files_object_store_profiles_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        limit: 1
+      register: result
+      ignore_errors: true
