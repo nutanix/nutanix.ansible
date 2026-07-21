@@ -1,0 +1,148 @@
+---
+# Summary:
+# This playbook demonstrates the full lifecycle of a Nutanix Files
+# replication policy (Smart DR / Data Sync / VDI Sync) using the v4
+# API-based Ansible modules.
+#
+# 1. Create a Smart DR replication policy with a daily schedule.
+# 2. Update the policy description and schedule.
+# 3. Fetch the policy by external ID.
+# 4. List all replication policies with optional filter / limit.
+# 5. Delete the replication policy.
+# 6. Show the accompanying action modules (Failover, AD-DNS Failover and
+#    Resume Replication) as tasks with C(ignore_errors: true). These will
+#    only succeed on a cluster with a valid AZ pair.
+
+- name: Nutanix Files ReplicationPolicy playbook
+  hosts: localhost
+  gather_facts: false
+  vars:
+    nutanix_host: "<pc_ip>"
+    nutanix_username: "<user>"
+    nutanix_password: "<pass>"
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host }}"
+      nutanix_username: "{{ nutanix_username }}"
+      nutanix_password: "{{ nutanix_password }}"
+      validate_certs: false
+  tasks:
+    - name: Set replication policy variables
+      ansible.builtin.set_fact:
+        primary_file_server_ext_id: "a4b02ea9-6a56-4c1b-9d0b-6bdf7bf67e11"
+        secondary_file_server_ext_id: "b7d84e21-3a45-47dc-a1c8-4bcf6a24fa19"
+        primary_domain_manager_ext_id: "1c2d3e4f-1234-4c1b-9d0b-6bdf7bf67e11"
+        secondary_domain_manager_ext_id: "2b3c4d5e-5678-4c1b-9d0b-6bdf7bf67e11"
+        primary_mount_target_ext_id: "aaaa1111-6a56-4c1b-9d0b-6bdf7bf67e11"
+        secondary_mount_target_ext_id: "bbbb2222-3a45-47dc-a1c8-4bcf6a24fa19"
+        rp_name: "smartdr_policy_ansible"
+
+    - name: Create Smart DR replication policy
+      nutanix.ncp.ntnx_replication_policy_v2:
+        state: present
+        name: "{{ rp_name }}"
+        description: "Smart DR replication policy created by Ansible"
+        type: "SMART_DR"
+        should_include_new_mount_targets: true
+        is_reverse: false
+        replication_configurations:
+          - primary_file_server_ext_id: "{{ primary_file_server_ext_id }}"
+            secondary_file_server_ext_id: "{{ secondary_file_server_ext_id }}"
+            primary_domain_manager_ext_id: "{{ primary_domain_manager_ext_id }}"
+            secondary_domain_manager_ext_id: "{{ secondary_domain_manager_ext_id }}"
+            schedule:
+              frequency: 1
+              schedule_interval:
+                daily:
+                  frequency: 1
+      register: create_result
+      ignore_errors: true
+
+    - name: Capture replication policy ext_id
+      ansible.builtin.set_fact:
+        replication_policy_ext_id: "{{ create_result.ext_id | default('') }}"
+
+    - name: Update replication policy
+      nutanix.ncp.ntnx_replication_policy_v2:
+        state: present
+        ext_id: "{{ replication_policy_ext_id }}"
+        name: "{{ rp_name }}"
+        description: "Updated Smart DR policy description"
+        type: "SMART_DR"
+        should_include_new_mount_targets: true
+        is_reverse: false
+        replication_configurations:
+          - primary_file_server_ext_id: "{{ primary_file_server_ext_id }}"
+            secondary_file_server_ext_id: "{{ secondary_file_server_ext_id }}"
+            primary_domain_manager_ext_id: "{{ primary_domain_manager_ext_id }}"
+            secondary_domain_manager_ext_id: "{{ secondary_domain_manager_ext_id }}"
+            schedule:
+              frequency: 2
+              schedule_interval:
+                daily:
+                  frequency: 1
+      register: update_result
+      ignore_errors: true
+      when: replication_policy_ext_id | length > 0
+
+    - name: Get replication policy by external ID
+      nutanix.ncp.ntnx_replication_policies_info_v2:
+        ext_id: "{{ replication_policy_ext_id }}"
+      register: get_result
+      ignore_errors: true
+      when: replication_policy_ext_id | length > 0
+
+    - name: List all replication policies
+      nutanix.ncp.ntnx_replication_policies_info_v2:
+      register: list_result
+      ignore_errors: true
+
+    - name: List replication policies with limit
+      nutanix.ncp.ntnx_replication_policies_info_v2:
+        limit: 5
+      register: list_limit_result
+      ignore_errors: true
+
+    - name: Perform a planned failover (requires valid file server pair)
+      nutanix.ncp.ntnx_files_failover_v2:
+        primary_file_server_ext_id: "{{ primary_file_server_ext_id }}"
+        secondary_file_server_ext_id: "{{ secondary_file_server_ext_id }}"
+        type: PLANNED
+      register: failover_result
+      ignore_errors: true
+
+    - name: Perform an AD-DNS failover (requires valid file server pair)
+      nutanix.ncp.ntnx_files_ad_dns_failover_v2:
+        primary_file_server_ext_id: "{{ primary_file_server_ext_id }}"
+        secondary_file_server_ext_id: "{{ secondary_file_server_ext_id }}"
+        type: PLANNED
+        dns:
+          preferred_name_server: "10.1.1.10"
+          action: ADD
+      register: ad_dns_failover_result
+      ignore_errors: true
+
+    - name: Resume replication back to primary (requires valid file server pair)
+      nutanix.ncp.ntnx_files_resume_replication_v2:
+        primary_file_server_ext_id: "{{ primary_file_server_ext_id }}"
+        secondary_file_server_ext_id: "{{ secondary_file_server_ext_id }}"
+        replication_direction: SECONDARY_TO_PRIMARY
+        type: FAILBACK
+      register: resume_result
+      ignore_errors: true
+
+    - name: List VDI user sessions for a VDI-sync policy (info-only sample)
+      nutanix.ncp.ntnx_vdi_user_sessions_info_v2:
+        file_server_ext_id: "{{ primary_file_server_ext_id }}"
+        replication_policy_ext_id: "{{ replication_policy_ext_id }}"
+      register: vdi_sessions
+      ignore_errors: true
+      when: replication_policy_ext_id | length > 0
+
+    - name: Delete replication policy
+      nutanix.ncp.ntnx_replication_policy_v2:
+        state: absent
+        ext_id: "{{ replication_policy_ext_id }}"
+      register: delete_result
+      ignore_errors: true
+      when: replication_policy_ext_id | length > 0

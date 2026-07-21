@@ -1,0 +1,52 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Nutanix Files ReplicationPolicy playbook] ********************************
+
+TASK [Set replication policy variables] ****************************************
+ok: [localhost] => {"ansible_facts": {"primary_domain_manager_ext_id": "1c2d3e4f-1234-4c1b-9d0b-6bdf7bf67e11", "primary_file_server_ext_id": "a4b02ea9-6a56-4c1b-9d0b-6bdf7bf67e11", "primary_mount_target_ext_id": "aaaa1111-6a56-4c1b-9d0b-6bdf7bf67e11", "rp_name": "smartdr_policy_ansible", "secondary_domain_manager_ext_id": "2b3c4d5e-5678-4c1b-9d0b-6bdf7bf67e11", "secondary_file_server_ext_id": "b7d84e21-3a45-47dc-a1c8-4bcf6a24fa19", "secondary_mount_target_ext_id": "bbbb2222-3a45-47dc-a1c8-4bcf6a24fa19"}, "changed": false}
+
+TASK [Create Smart DR replication policy] **************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while creating replication policy", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Capture replication policy ext_id] ***************************************
+ok: [localhost] => {"ansible_facts": {"replication_policy_ext_id": ""}, "changed": false}
+
+TASK [Update replication policy] ***********************************************
+skipping: [localhost] => {"changed": false, "false_condition": "replication_policy_ext_id | length > 0", "skip_reason": "Conditional result was False"}
+
+TASK [Get replication policy by external ID] ***********************************
+skipping: [localhost] => {"changed": false, "false_condition": "replication_policy_ext_id | length > 0", "skip_reason": "Conditional result was False"}
+
+TASK [List all replication policies] *******************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching replication policies info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [List replication policies with limit] ************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching replication policies info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Perform a planned failover (requires valid file server pair)] ************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while performing files failover", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Perform an AD-DNS failover (requires valid file server pair)] ************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while performing AD-DNS failover", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Resume replication back to primary (requires valid file server pair)] ****
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while resuming files replication", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [List VDI user sessions for a VDI-sync policy (info-only sample)] *********
+skipping: [localhost] => {"changed": false, "false_condition": "replication_policy_ext_id | length > 0", "skip_reason": "Conditional result was False"}
+
+TASK [Delete replication policy] ***********************************************
+skipping: [localhost] => {"changed": false, "false_condition": "replication_policy_ext_id | length > 0", "skip_reason": "Conditional result was False"}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=8    changed=0    unreachable=0    failed=0    skipped=4    rescued=0    ignored=6   
+
