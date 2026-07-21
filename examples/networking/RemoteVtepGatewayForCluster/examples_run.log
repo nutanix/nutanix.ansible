@@ -1,0 +1,24 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Remote VTEP Gateway for Cluster info playbook] ***************************
+
+TASK [Set variables for the playbook] ******************************************
+ok: [localhost] => {"ansible_facts": {"cluster_ext_id": "cae459ec-08db-475e-a5e5-151e390c9484"}, "changed": false}
+
+TASK [List all remote VTEP gateways for the cluster] ***************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List remote VTEP gateways with a filter] *********************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List remote VTEP gateways with a limit] **********************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [Fetch a specific remote VTEP gateway by ext_id (only when one exists)] ***
+skipping: [localhost] => {"changed": false, "false_condition": "all_gateways.response | default([]) | length > 0", "skip_reason": "Conditional result was False"}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=4    changed=0    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
+
