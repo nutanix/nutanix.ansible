@@ -1,0 +1,38 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Reports playbook (opsmgmt v4 - ncm_operation_base_platform / Report)] ****
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"report_config_ext_id": "aaaaaaaa-1111-2222-3333-444444444444", "report_end_time": "2026-01-31T23:59:59Z", "report_name": "ansible_example_report", "report_start_time": "2026-01-01T00:00:00Z"}, "changed": false}
+
+TASK [Generate a Report with all attributes (async, waits for task)] ***********
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while creating report", "response": {"message": "The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again."}, "status": 404}
+...ignoring
+
+TASK [Set generated report ext_id] *********************************************
+skipping: [localhost] => {"changed": false, "false_condition": "create_result.ext_id is defined or (create_result.response is defined and create_result.response.ext_id is defined)", "skip_reason": "Conditional result was False"}
+
+TASK [Fetch the generated report using ext_id] *********************************
+skipping: [localhost] => {"changed": false, "false_condition": "report_ext_id is defined and report_ext_id | length > 0", "skip_reason": "Conditional result was False"}
+
+TASK [List all reports] ********************************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching reports info", "response": {"message": "The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again."}, "status": 404}
+...ignoring
+
+TASK [List reports with filter] ************************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching reports info", "response": {"message": "The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again."}, "status": 404}
+...ignoring
+
+TASK [List reports with limit] *************************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching reports info", "response": {"message": "The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again."}, "status": 404}
+...ignoring
+
+TASK [Delete generated report] *************************************************
+skipping: [localhost] => {"changed": false, "false_condition": "report_ext_id is defined and report_ext_id | length > 0", "skip_reason": "Conditional result was False"}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=5    changed=0    unreachable=0    failed=0    skipped=3    rescued=0    ignored=4   
+
