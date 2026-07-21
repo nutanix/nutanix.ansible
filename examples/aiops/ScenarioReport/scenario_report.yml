@@ -1,0 +1,87 @@
+---
+- name: Nutanix AIOps ScenarioReport examples (generate + download)
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ nutanix_username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ nutanix_password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      nutanix_port: "{{ nutanix_port | default(lookup('env', 'NUTANIX_PORT') or 9440) }}"
+      validate_certs: false
+
+  vars:
+    # Replace this with a real capacity planning scenario ext_id from your Prism Central.
+    # The demo playbook auto-discovers one via the raw /scenarios API and falls back to
+    # this placeholder if none is found.
+    scenario_ext_id_default: "b1d6e7cc-1234-4b56-8ce0-8c19d7c8f0a1"
+    report_download_dest: "/tmp/scenario_report_example.pdf"
+
+  tasks:
+    - name: Auto-discover an existing capacity planning scenario
+      ansible.builtin.uri:
+        url: >-
+          https://{{ lookup('env', 'NUTANIX_HOST') }}:{{ lookup('env', 'NUTANIX_PORT') | default(9440) }}/api/aiops/v4.0/config/scenarios?$limit=1
+        method: GET
+        user: "{{ lookup('env', 'NUTANIX_USERNAME') }}"
+        password: "{{ lookup('env', 'NUTANIX_PASSWORD') }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [200, 401, 403, 404, 500]
+        return_content: true
+        body_format: json
+      register: scenarios_probe
+      ignore_errors: true
+
+    - name: Pick discovered scenario ext_id when the cluster has one
+      ansible.builtin.set_fact:
+        scenario_ext_id: >-
+          {{ (scenarios_probe.json.data | first).extId
+             | default((scenarios_probe.json.data | first).ext_id | default(scenario_ext_id_default), true) }}
+      when:
+        - scenarios_probe is defined
+        - scenarios_probe.status | default(0) == 200
+        - scenarios_probe.json is defined
+        - scenarios_probe.json.data is defined
+        - scenarios_probe.json.data | length > 0
+
+    - name: Fall back to the placeholder scenario ext_id when none was discovered
+      ansible.builtin.set_fact:
+        scenario_ext_id: "{{ scenario_ext_id_default }}"
+      when: scenario_ext_id is not defined
+
+    - name: Show which scenario ext_id will be used
+      ansible.builtin.debug:
+        msg: "Using scenario_ext_id={{ scenario_ext_id }}"
+
+    - name: Generate capacity planning report for a scenario
+      nutanix.ncp.ntnx_scenario_report_v2:
+        state: present
+        scenario_ext_id: "{{ scenario_ext_id }}"
+      register: generate_result
+      ignore_errors: true
+
+    - name: Show generate report result
+      ansible.builtin.debug:
+        var: generate_result
+
+    - name: Fetch the generated report (no dest - keep at SDK temp path)
+      nutanix.ncp.ntnx_scenario_reports_info_v2:
+        scenario_ext_id: "{{ scenario_ext_id }}"
+      register: fetch_result
+      ignore_errors: true
+
+    - name: Show fetched report result
+      ansible.builtin.debug:
+        var: fetch_result
+
+    - name: Fetch the generated report and copy it to a stable destination
+      nutanix.ncp.ntnx_scenario_reports_info_v2:
+        scenario_ext_id: "{{ scenario_ext_id }}"
+        dest: "{{ report_download_dest }}"
+      register: fetch_dest_result
+      ignore_errors: true
+
+    - name: Show fetched-with-dest result
+      ansible.builtin.debug:
+        var: fetch_dest_result
