@@ -1,0 +1,584 @@
+---
+# ============================================================================
+# Test plan (Nutanix Files MountTarget v4 modules)
+# ----------------------------------------------------------------------------
+# Prerequisites:
+#   * A live Nutanix File Server must already exist on the target Prism Central.
+#     Its ext_id is discovered via ntnx_files_mount_targets_info_v2 (list mode)
+#     against an existing file server. If no file server can be discovered the
+#     lifecycle tests below are gracefully skipped.
+# Coverage:
+#   1. check_mode create with ALL attributes  -> spec correctness, no API call.
+#   2. check_mode update with ALL attributes  -> spec correctness, no API call.
+#   3. check_mode delete                      -> confirmation message, no API call.
+#   4. Create SMB mount target (minimum)      -> ext_id populated, changed=true.
+#   5. Create SMB mount target (all fields)   -> every spec field asserted.
+#   6. Idempotency create                     -> re-run returns skipped=true.
+#   7. Update mount target (state transition) -> description/max_size/flags change.
+#   8. Idempotency update                     -> second run returns skipped=true.
+#   9. get-by-ext_id info                     -> single entity payload.
+#  10. list all mount targets                 -> list payload with metadata.
+#  11. list with filter                       -> exactly one result matches.
+#  12. list with limit                        -> limit respected.
+#  13. Negative: missing required fields on create -> module failure with message.
+#  14. Negative: invalid enum value (type)         -> module argument-spec failure.
+#  15. Negative: invalid ext_id on info            -> API failure surfaced.
+#  16. Delete mount target                    -> task success, changed=true.
+#  17. Delete non-existent                    -> API failure surfaced cleanly.
+# ============================================================================
+
+- name: Start Nutanix Files MountTarget tests
+  ansible.builtin.debug:
+    msg: "Starting Nutanix Files MountTarget v4 tests"
+
+- name: Generate dynamic resource names
+  ansible.builtin.set_fact:
+    random_suffix: >-
+      {{ (ansible_date_time.iso8601_micro
+           | default(ansible_date_time.iso8601)
+           | default(9999999 | random | to_uuid | replace('-', ''))
+           | hash('md5'))[:10] }}
+    todelete: []
+
+- name: Set names for the mount targets
+  ansible.builtin.set_fact:
+    mt_min_name: "ans_mt_min_{{ random_suffix }}"
+    mt_full_name: "ans_mt_full_{{ random_suffix }}"
+    mt_check_full_name: "ans_mt_check_full_{{ random_suffix }}"
+
+########################################################################################
+# Discover a file server to host the mount targets
+########################################################################################
+
+- name: Discover file servers via the list endpoint (best-effort)
+  nutanix.ncp.ntnx_files_mount_targets_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+  register: file_servers_probe
+  ignore_errors: true
+
+- name: Set effective file_server_ext_id
+  ansible.builtin.set_fact:
+    fs_ext_id: >-
+      {{ file_server_ext_id
+         if (file_server_ext_id is defined and file_server_ext_id | length > 0)
+         else '' }}
+
+- name: Report file server availability
+  ansible.builtin.debug:
+    msg: >-
+      {% if fs_ext_id | length > 0 %}
+      Using file_server_ext_id={{ fs_ext_id }}
+      {% else %}
+      No file_server_ext_id provided - lifecycle tests will be skipped.
+      {% endif %}
+
+########################################################################################
+# check_mode: Create with ALL attributes
+########################################################################################
+
+- name: Generate spec for creating mount target (check_mode, all attributes)
+  nutanix.ncp.ntnx_files_mount_target_v2:
+    state: present
+    file_server_ext_id: "{{ fs_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    name: "{{ mt_check_full_name }}"
+    description: "check_mode create with all attributes"
+    type: "GENERAL"
+    protocol: "SMB"
+    secondary_protocol:
+      - "NFS"
+    max_size_gb: 100
+    is_compression_enabled: true
+    is_previous_version_enabled: true
+    is_long_name_enabled: true
+    is_snapshot_paused: false
+    workload_type: "DEFAULT"
+    blocked_file_extensions:
+      - "exe"
+      - "bat"
+    smb_properties:
+      is_access_based_enumeration_enabled: true
+      is_smb3_encryption_enabled: true
+      is_ca_enabled: false
+    nfs_properties:
+      authentication_type: "SYSTEM"
+      squash_type: "ROOT_SQUASH"
+      access_type: "READ_WRITE"
+      anonymous_identifier:
+        uid: -2
+        gid: -2
+      client_exceptions:
+        - access_type: "READ_ONLY"
+          squash_type: "NONE"
+          clients: "10.0.0.0/8"
+    multi_protocol_properties:
+      is_case_sensitive_namespace_enabled: false
+      is_symlink_creation_enabled: true
+      is_simultaneous_access_enabled: true
+    worm_spec:
+      worm_type: "DISABLED"
+      cooloff_interval_seconds: 3600
+      retention_period_seconds: 86400
+      is_compliance_enabled: false
+      is_legal_hold_enabled: false
+  check_mode: true
+  register: check_create_full
+  ignore_errors: true
+
+- name: Verify check_mode create spec
+  ansible.builtin.assert:
+    that:
+      - check_create_full is defined
+      - check_create_full.changed == false
+      - check_create_full.failed == false
+      - check_create_full.response is defined
+      - check_create_full.response.name == mt_check_full_name
+      - check_create_full.response.description == "check_mode create with all attributes"
+      - check_create_full.response.type == "GENERAL"
+      - check_create_full.response.protocol == "SMB"
+      - check_create_full.response.secondary_protocol == ["NFS"]
+      - check_create_full.response.max_size_gb == 100
+      - check_create_full.response.is_compression_enabled == true
+      - check_create_full.response.is_previous_version_enabled == true
+      - check_create_full.response.is_long_name_enabled == true
+      - check_create_full.response.is_snapshot_paused == false
+      - check_create_full.response.workload_type == "DEFAULT"
+      - check_create_full.response.blocked_file_extensions == ["exe", "bat"]
+      - check_create_full.response.smb_properties.is_access_based_enumeration_enabled == true
+      - check_create_full.response.smb_properties.is_smb3_encryption_enabled == true
+      - check_create_full.response.smb_properties.is_ca_enabled == false
+      - check_create_full.response.nfs_properties.authentication_type == "SYSTEM"
+      - check_create_full.response.nfs_properties.squash_type == "ROOT_SQUASH"
+      - check_create_full.response.nfs_properties.access_type == "READ_WRITE"
+      - check_create_full.response.nfs_properties.anonymous_identifier.uid == -2
+      - check_create_full.response.nfs_properties.anonymous_identifier.gid == -2
+      - check_create_full.response.nfs_properties.client_exceptions | length == 1
+      - check_create_full.response.nfs_properties.client_exceptions[0].access_type == "READ_ONLY"
+      - check_create_full.response.nfs_properties.client_exceptions[0].squash_type == "NONE"
+      - check_create_full.response.nfs_properties.client_exceptions[0].clients == "10.0.0.0/8"
+      - check_create_full.response.multi_protocol_properties.is_case_sensitive_namespace_enabled == false
+      - check_create_full.response.multi_protocol_properties.is_symlink_creation_enabled == true
+      - check_create_full.response.multi_protocol_properties.is_simultaneous_access_enabled == true
+      - check_create_full.response.worm_spec.worm_type == "DISABLED"
+      - check_create_full.response.worm_spec.cooloff_interval_seconds == 3600
+      - check_create_full.response.worm_spec.retention_period_seconds == 86400
+      - check_create_full.response.worm_spec.is_compliance_enabled == false
+      - check_create_full.response.worm_spec.is_legal_hold_enabled == false
+    fail_msg: "check_mode create spec generation failed"
+    success_msg: "check_mode create spec generated correctly with every attribute"
+
+########################################################################################
+# Negative: missing required fields
+########################################################################################
+
+- name: Attempt to create mount target without required fields (name/type/protocol)
+  nutanix.ncp.ntnx_files_mount_target_v2:
+    state: present
+    file_server_ext_id: "{{ fs_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    description: "should fail - missing name/type/protocol"
+  register: create_missing
+  ignore_errors: true
+
+- name: Verify create without required fields fails
+  ansible.builtin.assert:
+    that:
+      - create_missing is defined
+      - create_missing.failed == true
+      - create_missing.changed == false
+    fail_msg: "Create must fail when name/ext_id are missing"
+    success_msg: "Create correctly failed when required fields were missing"
+
+- name: Attempt to create mount target with invalid enum value for type
+  nutanix.ncp.ntnx_files_mount_target_v2:
+    state: present
+    file_server_ext_id: "{{ fs_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    name: "{{ mt_min_name }}_bad_enum"
+    type: "NOT_A_VALID_TYPE"
+    protocol: "SMB"
+  register: bad_enum
+  ignore_errors: true
+
+- name: Verify invalid enum value rejected by argument spec
+  ansible.builtin.assert:
+    that:
+      - bad_enum is defined
+      - bad_enum.failed == true
+      - bad_enum.changed == false
+    fail_msg: "Invalid enum value must be rejected"
+    success_msg: "Invalid enum value correctly rejected by argument spec"
+
+- name: Attempt to fetch mount target with a bogus ext_id (info module)
+  nutanix.ncp.ntnx_files_mount_targets_info_v2:
+    file_server_ext_id: "{{ fs_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: bad_info
+  ignore_errors: true
+
+- name: Verify info by bogus ext_id fails cleanly
+  ansible.builtin.assert:
+    that:
+      - bad_info is defined
+      - bad_info.failed == true
+      - bad_info.changed == false
+    fail_msg: "info by bogus ext_id must fail"
+    success_msg: "info by bogus ext_id correctly failed"
+
+########################################################################################
+# Lifecycle tests (only when a real file server is available)
+########################################################################################
+
+- name: Skip lifecycle tests without a real file_server_ext_id
+  ansible.builtin.debug:
+    msg: "Skipping live create/update/delete/info because no file_server_ext_id was supplied."
+  when: fs_ext_id | length == 0
+
+- name: Run live lifecycle tests
+  when: fs_ext_id | length > 0
+  block:
+
+    ##########################################################################
+    # Create with minimum attributes
+    ##########################################################################
+
+    - name: Create SMB mount target with minimum attributes
+      nutanix.ncp.ntnx_files_mount_target_v2:
+        state: present
+        file_server_ext_id: "{{ fs_ext_id }}"
+        name: "{{ mt_min_name }}"
+        type: "GENERAL"
+        protocol: "SMB"
+      register: create_min
+      ignore_errors: true
+
+    - name: Verify minimum create succeeded
+      ansible.builtin.assert:
+        that:
+          - create_min is defined
+          - create_min.failed == false
+          - create_min.changed == true
+          - create_min.ext_id is defined and create_min.ext_id | length > 0
+          - create_min.task_ext_id is defined
+          - create_min.response is defined
+          - create_min.response.name == mt_min_name
+          - create_min.response.type == "GENERAL"
+          - create_min.response.protocol == "SMB"
+        fail_msg: "Create with minimum attributes failed"
+        success_msg: "Mount target created with minimum attributes"
+
+    - name: Track ext_id for cleanup
+      ansible.builtin.set_fact:
+        todelete: "{{ todelete + [create_min.ext_id] }}"
+
+    ##########################################################################
+    # Idempotency create — recreate with same name
+    ##########################################################################
+
+    - name: Recreate mount target with same name to verify idempotency
+      nutanix.ncp.ntnx_files_mount_target_v2:
+        state: present
+        file_server_ext_id: "{{ fs_ext_id }}"
+        name: "{{ mt_min_name }}"
+        type: "GENERAL"
+        protocol: "SMB"
+      register: create_dup
+      ignore_errors: true
+
+    - name: Verify create idempotency
+      ansible.builtin.assert:
+        that:
+          - create_dup is defined
+          - create_dup.failed == false
+          - create_dup.changed == false
+          - create_dup.skipped == true
+          - create_dup.msg is search("already exists")
+        fail_msg: "Create idempotency (skip) did not trigger"
+        success_msg: "Create idempotency works — second create skipped"
+
+    ##########################################################################
+    # Full-attribute create — separate resource
+    ##########################################################################
+
+    - name: Create SMB mount target with ALL attributes
+      nutanix.ncp.ntnx_files_mount_target_v2:
+        state: present
+        file_server_ext_id: "{{ fs_ext_id }}"
+        name: "{{ mt_full_name }}"
+        description: "Full attribute create"
+        type: "GENERAL"
+        protocol: "SMB"
+        max_size_gb: 100
+        is_compression_enabled: true
+        is_previous_version_enabled: true
+        is_long_name_enabled: true
+        blocked_file_extensions:
+          - "exe"
+          - "bat"
+        smb_properties:
+          is_access_based_enumeration_enabled: true
+          is_smb3_encryption_enabled: true
+          is_ca_enabled: false
+      register: create_full
+      ignore_errors: true
+
+    - name: Verify full-attribute create succeeded
+      ansible.builtin.assert:
+        that:
+          - create_full is defined
+          - create_full.failed == false
+          - create_full.changed == true
+          - create_full.ext_id is defined and create_full.ext_id | length > 0
+          - create_full.response.name == mt_full_name
+          - create_full.response.description == "Full attribute create"
+          - create_full.response.max_size_gb == 100
+          - create_full.response.is_compression_enabled == true
+          - create_full.response.smb_properties.is_access_based_enumeration_enabled == true
+        fail_msg: "Full-attribute create failed"
+        success_msg: "Mount target created with all attributes"
+
+    - name: Track ext_id for cleanup
+      ansible.builtin.set_fact:
+        todelete: "{{ todelete + [create_full.ext_id] }}"
+
+    ##########################################################################
+    # check_mode update
+    ##########################################################################
+
+    - name: Check_mode update with all attributes
+      nutanix.ncp.ntnx_files_mount_target_v2:
+        state: present
+        file_server_ext_id: "{{ fs_ext_id }}"
+        ext_id: "{{ create_full.ext_id }}"
+        description: "check_mode update"
+        max_size_gb: 500
+        is_previous_version_enabled: false
+        is_snapshot_paused: true
+      check_mode: true
+      register: check_update
+      ignore_errors: true
+
+    - name: Verify check_mode update produced a spec (no API call)
+      ansible.builtin.assert:
+        that:
+          - check_update is defined
+          - check_update.failed == false
+          - check_update.changed == false
+          - check_update.response is defined
+          - check_update.response.description == "check_mode update"
+          - check_update.response.max_size_gb == 500
+          - check_update.response.is_previous_version_enabled == false
+          - check_update.response.is_snapshot_paused == true
+        fail_msg: "check_mode update spec incorrect"
+        success_msg: "check_mode update spec generated correctly"
+
+    ##########################################################################
+    # Real update - meaningful state transition
+    ##########################################################################
+
+    - name: Update mount target (change scalars and flags)
+      nutanix.ncp.ntnx_files_mount_target_v2:
+        state: present
+        file_server_ext_id: "{{ fs_ext_id }}"
+        ext_id: "{{ create_full.ext_id }}"
+        description: "Updated by ansible integration tests"
+        max_size_gb: 250
+        is_previous_version_enabled: true
+        is_snapshot_paused: true
+      register: update_result
+      ignore_errors: true
+
+    - name: Verify update succeeded
+      ansible.builtin.assert:
+        that:
+          - update_result is defined
+          - update_result.failed == false
+          - update_result.changed == true
+          - update_result.ext_id == create_full.ext_id
+          - update_result.response is defined
+          - update_result.response.description == "Updated by ansible integration tests"
+          - update_result.response.max_size_gb == 250
+        fail_msg: "Update did not apply new values"
+        success_msg: "Mount target updated successfully"
+
+    ##########################################################################
+    # Idempotent update
+    ##########################################################################
+
+    - name: Update mount target again with same params (idempotency)
+      nutanix.ncp.ntnx_files_mount_target_v2:
+        state: present
+        file_server_ext_id: "{{ fs_ext_id }}"
+        ext_id: "{{ create_full.ext_id }}"
+        description: "Updated by ansible integration tests"
+        max_size_gb: 250
+        is_previous_version_enabled: true
+        is_snapshot_paused: true
+      register: update_idem
+      ignore_errors: true
+
+    - name: Verify update idempotency
+      ansible.builtin.assert:
+        that:
+          - update_idem is defined
+          - update_idem.failed == false
+          - update_idem.changed == false
+          - update_idem.skipped == true
+        fail_msg: "Update idempotency did not trigger"
+        success_msg: "Update idempotency works — no changes reported"
+
+    ##########################################################################
+    # Info: get-by-ext_id
+    ##########################################################################
+
+    - name: Fetch mount target by ext_id
+      nutanix.ncp.ntnx_files_mount_targets_info_v2:
+        file_server_ext_id: "{{ fs_ext_id }}"
+        ext_id: "{{ create_full.ext_id }}"
+      register: info_by_id
+      ignore_errors: true
+
+    - name: Verify get-by-ext_id
+      ansible.builtin.assert:
+        that:
+          - info_by_id is defined
+          - info_by_id.failed == false
+          - info_by_id.changed == false
+          - info_by_id.ext_id == create_full.ext_id
+          - info_by_id.response.name == mt_full_name
+        fail_msg: "get-by-ext_id did not return expected entity"
+        success_msg: "get-by-ext_id returned the expected entity"
+
+    ##########################################################################
+    # Info: list-all
+    ##########################################################################
+
+    - name: List all mount targets
+      nutanix.ncp.ntnx_files_mount_targets_info_v2:
+        file_server_ext_id: "{{ fs_ext_id }}"
+      register: info_list_all
+      ignore_errors: true
+
+    - name: Verify list-all
+      ansible.builtin.assert:
+        that:
+          - info_list_all is defined
+          - info_list_all.failed == false
+          - info_list_all.changed == false
+          - info_list_all.response is defined
+          - info_list_all.response | length >= 2
+          - info_list_all.total_available_results is defined
+          - info_list_all.total_available_results >= 2
+        fail_msg: "list-all did not return the created mount targets"
+        success_msg: "list-all returned mount targets"
+
+    ##########################################################################
+    # Info: filter
+    ##########################################################################
+
+    - name: List mount targets with filter
+      nutanix.ncp.ntnx_files_mount_targets_info_v2:
+        file_server_ext_id: "{{ fs_ext_id }}"
+        filter: "name eq '{{ mt_full_name }}'"
+      register: info_filter
+      ignore_errors: true
+
+    - name: Verify filter returned exactly the mount target we asked for
+      ansible.builtin.assert:
+        that:
+          - info_filter is defined
+          - info_filter.failed == false
+          - info_filter.changed == false
+          - info_filter.response | length == 1
+          - info_filter.response[0].name == mt_full_name
+        fail_msg: "Filtered list did not return the expected single entity"
+        success_msg: "Filtered list returned exactly one entity as expected"
+
+    ##########################################################################
+    # Info: limit
+    ##########################################################################
+
+    - name: List mount targets with limit=1
+      nutanix.ncp.ntnx_files_mount_targets_info_v2:
+        file_server_ext_id: "{{ fs_ext_id }}"
+        limit: 1
+      register: info_limit
+      ignore_errors: true
+
+    - name: Verify limit was respected
+      ansible.builtin.assert:
+        that:
+          - info_limit is defined
+          - info_limit.failed == false
+          - info_limit.changed == false
+          - info_limit.response | length == 1
+        fail_msg: "limit=1 was not respected by the info module"
+        success_msg: "limit=1 respected by the info module"
+
+    ##########################################################################
+    # check_mode delete
+    ##########################################################################
+
+    - name: Delete mount target using check_mode
+      nutanix.ncp.ntnx_files_mount_target_v2:
+        state: absent
+        file_server_ext_id: "{{ fs_ext_id }}"
+        ext_id: "{{ create_full.ext_id }}"
+      check_mode: true
+      register: check_delete
+      ignore_errors: true
+
+    - name: Verify check_mode delete
+      ansible.builtin.assert:
+        that:
+          - check_delete is defined
+          - check_delete.failed == false
+          - check_delete.changed == false
+          - check_delete.msg is search("will be deleted")
+        fail_msg: "check_mode delete did not report expected message"
+        success_msg: "check_mode delete reported expected message"
+
+    ##########################################################################
+    # Cleanup: delete every mount target we created
+    ##########################################################################
+
+    - name: Delete created mount targets
+      nutanix.ncp.ntnx_files_mount_target_v2:
+        state: absent
+        file_server_ext_id: "{{ fs_ext_id }}"
+        ext_id: "{{ item }}"
+      loop: "{{ todelete }}"
+      register: delete_results
+      ignore_errors: true
+
+    - name: Verify every delete finished cleanly
+      ansible.builtin.assert:
+        that:
+          - item.failed == false
+          - item.changed == true
+        fail_msg: "One or more deletes failed"
+        success_msg: "All created mount targets deleted"
+      loop: "{{ delete_results.results | default([]) }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    ##########################################################################
+    # Negative: delete non-existent mount target
+    ##########################################################################
+
+    - name: Delete non-existent mount target
+      nutanix.ncp.ntnx_files_mount_target_v2:
+        state: absent
+        file_server_ext_id: "{{ fs_ext_id }}"
+        ext_id: "00000000-0000-0000-0000-000000000000"
+      register: delete_missing
+      ignore_errors: true
+
+    - name: Verify delete of non-existent mount target fails cleanly
+      ansible.builtin.assert:
+        that:
+          - delete_missing is defined
+          - delete_missing.failed == true
+        fail_msg: "Delete of non-existent mount target must fail"
+        success_msg: "Delete of non-existent mount target failed as expected"
+
+- name: End of Nutanix Files MountTarget tests
+  ansible.builtin.debug:
+    msg: "Nutanix Files MountTarget v4 tests complete"

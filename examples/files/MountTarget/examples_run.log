@@ -1,0 +1,39 @@
+[WARNING]: Unable to parse /tmp/ncp-sanity/ansible_collections/nutanix/ncp/tests/output/.tmp/integration/ntnx_files_mount_target_v2-occzg3_2-ÅÑŚÌβŁÈ/tests/integration/inventory as an inventory source
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Nutanix Files MountTarget playbook] **************************************
+
+TASK [Set variables] ***********************************************************
+ok: [localhost] => {"ansible_facts": {"mount_target_name": "ansible_mt_example", "mount_target_updated_desc": "Mount target updated by Ansible example"}, "changed": false}
+
+TASK [List file servers to discover file_server_ext_id] ************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching mount targets info
+Origin: /tmp/codegen/bb87be2143d642b99cc33a33ca661906/repo/examples/files/MountTarget/mount_targets_v2.yml:28:7
+
+26         mount_target_updated_desc: "Mount target updated by Ansible example"
+27
+28     - name: List file servers to discover file_server_ext_id
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching mount targets info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Set file_server_ext_id fact (edit for your environment)] *****************
+ok: [localhost] => {"ansible_facts": {"file_server_ext_id": "9c1e537d-6777-4c22-5d41-ddd0c3337aa9"}, "changed": false}
+
+TASK [Create an SMB mount target with all attributes] **************************
+[ERROR]: Task failed: Module failed: Api Exception raised while checking for existing mount target
+Origin: /tmp/codegen/bb87be2143d642b99cc33a33ca661906/repo/examples/files/MountTarget/mount_targets_v2.yml:38:7
+
+36         file_server_ext_id: "9c1e537d-6777-4c22-5d41-ddd0c3337aa9"
+37
+38     - name: Create an SMB mount target with all attributes
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while checking for existing mount target", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=3    changed=0    unreachable=0    failed=1    skipped=0    rescued=0    ignored=1   
+
