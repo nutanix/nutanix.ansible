@@ -1,0 +1,25 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [AntivirusServerStat playbook] ********************************************
+
+TASK [Set the file server and antivirus server identifiers] ********************
+ok: [localhost] => {"ansible_facts": {"antivirus_server_ext_id": "18f78959-14a6-4c47-b5db-920460c4b668", "file_server_ext_id": "b2c3d4e5-6f78-4a90-b1c2-d3e4f5a6b7c8"}, "changed": false}
+
+TASK [Fetch antivirus server stats with the required fields only] **************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching antivirus server stats", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Fetch antivirus server stats with all the optional query parameters] *****
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching antivirus server stats", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Fetch antivirus server stats using the info module] **********************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching antivirus server stats", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=4    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=3   
+
