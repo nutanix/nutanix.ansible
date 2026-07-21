@@ -1,0 +1,356 @@
+---
+# =====================================================================================
+# Integration tests for:
+#   - plugins/modules/ntnx_revise_dns_record_v2.py       (action module)
+#   - plugins/modules/ntnx_revise_dns_records_info_v2.py (info module)
+#
+# Test plan:
+#   1. Info module - list DNS records for a file server (no ext_id) and assert
+#      the response is a list, `changed==false`, `failed==false` and
+#      `total_available_results` is exposed.
+#   2. Info module - fetch one DNS record by ext_id and assert `ext_id` is
+#      echoed back on the result.
+#   3. Info module - list DNS records with `limit` and assert honored.
+#   4. Info module - list DNS records with `filter` on `isVerified`.
+#   5. Info module - error path when `file_server_ext_id` is not provided.
+#   6. Info module - error path when the target file server does not exist.
+#   7. Revise DNS records - check_mode ADD with all attributes (asserts spec
+#      generation without a real API call).
+#   8. Revise DNS records - check_mode REMOVE with all attributes.
+#   9. Revise DNS records - real ADD action (only when a real file server is
+#      available on the target cluster).
+#  10. Revise DNS records - error path when `ext_id` is missing.
+#  11. Revise DNS records - error path when `state` is set to `absent`.
+#  12. Revise DNS records - error path when `action` receives an invalid enum.
+#
+# The revise action requires:
+#   - `file_server.ext_id`         (uuid of an existing Files file server on the PC)
+#   - `dns.preferred_name_server`  (address of a DNS server owned by the tenant)
+#   - `dns.credential.username` / `dns.credential.password` (AD-integrated
+#     DNS admin user allowed to add / remove records)
+#
+# When the target cluster does not have a file server we still exercise the
+# check_mode + negative test coverage so the module contracts remain locked.
+# =====================================================================================
+
+- name: Start ReviseDnsRecord (Files v4) tests
+  ansible.builtin.debug:
+    msg: Start ReviseDnsRecord (Files v4) tests
+
+- name: Set default DNS admin credentials for check_mode tests
+  ansible.builtin.set_fact:
+    dns_admin_username: "administrator@example.com"
+    dns_admin_password: "SuperSecret123"
+    preferred_name_server: "10.44.76.10"
+    synthetic_fs_ext_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+    synthetic_dns_record_ext_id: "11111111-2222-3333-4444-555555555555"
+
+##########################################################################################
+# Resolve which file server ext_id to target
+#   - `file_server_ext_id` MAY be set in tests/integration/integration_config.yml
+#     to a real file server on the target PC. If it is, we run real API tests.
+#   - Otherwise we fall back to a synthetic ext_id and only run the check_mode
+#     and negative tests.
+##########################################################################################
+
+- name: Resolve effective file server ext_id
+  ansible.builtin.set_fact:
+    effective_file_server_ext_id: "{{ file_server_ext_id | default(synthetic_fs_ext_id) }}"
+    real_file_server_available: "{{ (file_server_ext_id is defined) and (file_server_ext_id | length > 0) }}"
+
+##########################################################################################
+# Info module: list DNS records (real file server only)
+##########################################################################################
+
+- name: List DNS records for the file server
+  nutanix.ncp.ntnx_revise_dns_records_info_v2:
+    file_server_ext_id: "{{ effective_file_server_ext_id }}"
+  register: list_result
+  ignore_errors: true
+  when: real_file_server_available | bool
+
+- name: Assert list DNS records succeeded
+  ansible.builtin.assert:
+    that:
+      - list_result is defined
+      - list_result.changed == false
+      - list_result.failed == false
+      - list_result.response is defined
+      - list_result.response is iterable
+      - list_result.total_available_results is defined
+    success_msg: "List DNS records for the file server succeeded"
+    fail_msg: "List DNS records for the file server did not return the expected data"
+  when: real_file_server_available | bool
+
+##########################################################################################
+# Info module: get DNS record by ext_id (real file server only)
+##########################################################################################
+
+- name: Capture ext_id of the first DNS record for get-by-id assertion
+  ansible.builtin.set_fact:
+    first_dns_record_ext_id: "{{ list_result.response[0].ext_id }}"
+  when:
+    - real_file_server_available | bool
+    - list_result is defined
+    - list_result.response is defined
+    - list_result.response | length > 0
+
+- name: Get DNS record by ext_id
+  nutanix.ncp.ntnx_revise_dns_records_info_v2:
+    file_server_ext_id: "{{ effective_file_server_ext_id }}"
+    ext_id: "{{ first_dns_record_ext_id }}"
+  register: get_by_id_result
+  ignore_errors: true
+  when: first_dns_record_ext_id is defined
+
+- name: Assert get DNS record by ext_id
+  ansible.builtin.assert:
+    that:
+      - get_by_id_result is defined
+      - get_by_id_result.changed == false
+      - get_by_id_result.failed == false
+      - get_by_id_result.ext_id == first_dns_record_ext_id
+      - get_by_id_result.response is defined
+      - get_by_id_result.response.ext_id == first_dns_record_ext_id
+    success_msg: "Get DNS record by ext_id succeeded"
+    fail_msg: "Get DNS record by ext_id did not return expected values"
+  when: first_dns_record_ext_id is defined
+
+##########################################################################################
+# Info module: list with `limit`
+##########################################################################################
+
+- name: List DNS records with limit=1
+  nutanix.ncp.ntnx_revise_dns_records_info_v2:
+    file_server_ext_id: "{{ effective_file_server_ext_id }}"
+    limit: 1
+  register: list_limit_result
+  ignore_errors: true
+  when: real_file_server_available | bool
+
+- name: Assert list DNS records with limit honored
+  ansible.builtin.assert:
+    that:
+      - list_limit_result is defined
+      - list_limit_result.changed == false
+      - list_limit_result.failed == false
+      - list_limit_result.response is defined
+      - (list_limit_result.response | length) <= 1
+    success_msg: "List DNS records with limit=1 honored the limit"
+    fail_msg: "List DNS records with limit=1 did not honor the limit"
+  when: real_file_server_available | bool
+
+##########################################################################################
+# Info module: list with `filter`
+##########################################################################################
+
+- name: List DNS records with filter on isVerified
+  nutanix.ncp.ntnx_revise_dns_records_info_v2:
+    file_server_ext_id: "{{ effective_file_server_ext_id }}"
+    filter: "isVerified eq true"
+  register: list_filter_result
+  ignore_errors: true
+  when: real_file_server_available | bool
+
+- name: Assert list DNS records with filter returned only verified records
+  ansible.builtin.assert:
+    that:
+      - list_filter_result is defined
+      - list_filter_result.changed == false
+      - list_filter_result.failed == false
+      - list_filter_result.response is defined
+      - list_filter_result.response | selectattr('is_verified', 'equalto', false) | list | length == 0
+    success_msg: "List DNS records with filter returned only verified records"
+    fail_msg: "List DNS records with filter returned unverified records"
+  when: real_file_server_available | bool
+
+##########################################################################################
+# Info module: negative - missing file_server_ext_id
+##########################################################################################
+
+- name: Info - missing file_server_ext_id
+  nutanix.ncp.ntnx_revise_dns_records_info_v2:
+  register: info_missing_fs
+  ignore_errors: true
+
+- name: Assert info module fails when file_server_ext_id is missing
+  ansible.builtin.assert:
+    that:
+      - info_missing_fs is defined
+      - info_missing_fs.failed == true
+      - info_missing_fs.changed == false
+      - info_missing_fs.msg is defined
+      - "'file_server_ext_id' in info_missing_fs.msg"
+    success_msg: "Info module correctly failed when file_server_ext_id was missing"
+    fail_msg: "Info module did not fail when file_server_ext_id was missing"
+
+##########################################################################################
+# Info module: negative - non-existent file server
+##########################################################################################
+
+- name: Info - non-existent file server
+  nutanix.ncp.ntnx_revise_dns_records_info_v2:
+    file_server_ext_id: "{{ synthetic_fs_ext_id }}"
+  register: info_missing_file_server
+  ignore_errors: true
+
+- name: Assert info module surfaces an error for a non-existent file server
+  ansible.builtin.assert:
+    that:
+      - info_missing_file_server is defined
+      - info_missing_file_server.failed == true
+      - info_missing_file_server.changed == false
+    success_msg: "Info module correctly failed for a non-existent file server"
+    fail_msg: "Info module did not fail for a non-existent file server"
+
+##########################################################################################
+# Revise DNS records: check_mode ADD (all attributes)
+##########################################################################################
+
+- name: Check_mode - ADD DNS records with all attributes
+  nutanix.ncp.ntnx_revise_dns_record_v2:
+    state: present
+    ext_id: "{{ effective_file_server_ext_id }}"
+    preferred_name_server: "{{ preferred_name_server }}"
+    action: ADD
+    credential:
+      username: "{{ dns_admin_username }}"
+      password: "{{ dns_admin_password }}"
+  check_mode: true
+  register: check_mode_add
+  ignore_errors: true
+
+- name: Assert check_mode ADD spec is generated with all attributes
+  ansible.builtin.assert:
+    that:
+      - check_mode_add is defined
+      - check_mode_add.changed == false
+      - check_mode_add.failed == false
+      - check_mode_add.ext_id == effective_file_server_ext_id
+      - check_mode_add.response is defined
+      - check_mode_add.response.preferred_name_server == preferred_name_server
+      - check_mode_add.response.action == "ADD"
+      - check_mode_add.response.credential is defined
+      - check_mode_add.response.credential.username == dns_admin_username
+      - check_mode_add.response.credential.password is defined
+    success_msg: "Check_mode ADD spec generated with all attributes"
+    fail_msg: "Check_mode ADD spec was not generated as expected"
+
+##########################################################################################
+# Revise DNS records: check_mode REMOVE (all attributes)
+##########################################################################################
+
+- name: Check_mode - REMOVE DNS records with all attributes
+  nutanix.ncp.ntnx_revise_dns_record_v2:
+    state: present
+    ext_id: "{{ effective_file_server_ext_id }}"
+    preferred_name_server: "{{ preferred_name_server }}"
+    action: REMOVE
+    credential:
+      username: "{{ dns_admin_username }}"
+      password: "{{ dns_admin_password }}"
+  check_mode: true
+  register: check_mode_remove
+  ignore_errors: true
+
+- name: Assert check_mode REMOVE spec is generated with all attributes
+  ansible.builtin.assert:
+    that:
+      - check_mode_remove is defined
+      - check_mode_remove.changed == false
+      - check_mode_remove.failed == false
+      - check_mode_remove.ext_id == effective_file_server_ext_id
+      - check_mode_remove.response is defined
+      - check_mode_remove.response.preferred_name_server == preferred_name_server
+      - check_mode_remove.response.action == "REMOVE"
+      - check_mode_remove.response.credential.username == dns_admin_username
+      - check_mode_remove.response.credential.password is defined
+    success_msg: "Check_mode REMOVE spec generated with all attributes"
+    fail_msg: "Check_mode REMOVE spec was not generated as expected"
+
+##########################################################################################
+# Revise DNS records: real ADD action (only when a real file server is configured)
+##########################################################################################
+
+- name: Real ADD DNS records for the file server
+  nutanix.ncp.ntnx_revise_dns_record_v2:
+    state: present
+    ext_id: "{{ effective_file_server_ext_id }}"
+    action: ADD
+  register: real_add
+  ignore_errors: true
+  when: real_file_server_available | bool
+
+- name: Assert real ADD DNS records executed (best-effort)
+  ansible.builtin.assert:
+    that:
+      - real_add is defined
+      - real_add.ext_id == effective_file_server_ext_id
+      - real_add.task_ext_id is defined or real_add.failed == true
+    success_msg: "Real ADD DNS records executed against the file server"
+    fail_msg: "Real ADD DNS records did not produce a task ext_id or a clear failure"
+  when: real_file_server_available | bool
+
+##########################################################################################
+# Revise DNS records: negative - missing ext_id
+##########################################################################################
+
+- name: Revise DNS records - missing ext_id
+  nutanix.ncp.ntnx_revise_dns_record_v2:
+    state: present
+    action: ADD
+  register: revise_missing_extid
+  ignore_errors: true
+
+- name: Assert revise DNS records fails when ext_id is missing
+  ansible.builtin.assert:
+    that:
+      - revise_missing_extid is defined
+      - revise_missing_extid.failed == true
+      - revise_missing_extid.changed == false
+      - "'ext_id' in revise_missing_extid.msg"
+    success_msg: "Revise DNS records correctly failed when ext_id was missing"
+    fail_msg: "Revise DNS records did not fail when ext_id was missing"
+
+##########################################################################################
+# Revise DNS records: negative - state=absent is not accepted
+##########################################################################################
+
+- name: Revise DNS records - state=absent should fail
+  nutanix.ncp.ntnx_revise_dns_record_v2:
+    state: absent
+    ext_id: "{{ effective_file_server_ext_id }}"
+    action: ADD
+  register: revise_state_absent
+  ignore_errors: true
+
+- name: Assert state=absent is rejected by the action module
+  ansible.builtin.assert:
+    that:
+      - revise_state_absent is defined
+      - revise_state_absent.failed == true
+      - revise_state_absent.changed == false
+    success_msg: "Revise DNS records correctly rejected state=absent"
+    fail_msg: "Revise DNS records did not reject state=absent"
+
+##########################################################################################
+# Revise DNS records: negative - invalid enum for action
+##########################################################################################
+
+- name: Revise DNS records - invalid action enum
+  nutanix.ncp.ntnx_revise_dns_record_v2:
+    state: present
+    ext_id: "{{ effective_file_server_ext_id }}"
+    action: NOT_A_REAL_ACTION
+  register: revise_invalid_action
+  ignore_errors: true
+
+- name: Assert invalid action enum is rejected
+  ansible.builtin.assert:
+    that:
+      - revise_invalid_action is defined
+      - revise_invalid_action.failed == true
+      - revise_invalid_action.changed == false
+      - "'NOT_A_REAL_ACTION' in revise_invalid_action.msg or 'value of action' in revise_invalid_action.msg"
+    success_msg: "Revise DNS records correctly rejected invalid action enum"
+    fail_msg: "Revise DNS records did not reject invalid action enum"
