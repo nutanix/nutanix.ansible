@@ -1,0 +1,120 @@
+---
+# Summary:
+# This playbook demonstrates managing infected files detected by ICAP
+# antivirus scanning on a Nutanix Files file server via the v4 API:
+#
+#   1. Get an infected file by ext_id (info)
+#   2. List all infected files on a file server (info)
+#   3. List infected files with an OData filter (info)
+#   4. List infected files with a limit (info)
+#   5. Quarantine an infected file (fix action)
+#   6. Rescan an infected file (fix action)
+#   7. Unquarantine an infected file (fix action - false-positive workflow)
+#   8. Reset AV metadata on an infected file (fix action)
+#   9. Delete an infected file record
+#
+# Notes on prerequisites (read the Domain knowledge section of the PR body
+# for the full context):
+#   - Antivirus scanning is only supported on SMB shares.
+#   - The file server MUST be configured with at least two ICAP partner
+#     servers and an active virus-scan policy.
+#   - Infected file entries are created by the ICAP daemon; this playbook
+#     only *manages* existing infected file records — it cannot create them.
+
+- name: Nutanix Files - InfectedFile v2 playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        file_server_ext_id: "<file_server_ext_id>"
+        infected_file_ext_id: "<infected_file_ext_id>"
+
+    ########################################################################
+    # Info: get / list
+    ########################################################################
+
+    - name: Get infected file by ext_id
+      nutanix.ncp.ntnx_files_infected_files_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ infected_file_ext_id }}"
+      register: single_infected
+      ignore_errors: true
+
+    - name: List all infected files on the file server
+      nutanix.ncp.ntnx_files_infected_files_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+      register: all_infected
+      ignore_errors: true
+
+    - name: List quarantined infected files (OData filter)
+      nutanix.ncp.ntnx_files_infected_files_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        filter: "isQuarantined eq true"
+      register: quarantined_infected
+      ignore_errors: true
+
+    - name: List up to 5 infected files (limit)
+      nutanix.ncp.ntnx_files_infected_files_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        limit: 5
+      register: limited_infected
+      ignore_errors: true
+
+    ########################################################################
+    # Fix actions
+    ########################################################################
+
+    - name: Quarantine an infected file
+      nutanix.ncp.ntnx_files_nfected_file_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ infected_file_ext_id }}"
+        action: QUARANTINE
+      register: quarantine_result
+      ignore_errors: true
+
+    - name: Trigger a rescan of an infected file
+      nutanix.ncp.ntnx_files_nfected_file_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ infected_file_ext_id }}"
+        action: RESCAN
+      register: rescan_result
+      ignore_errors: true
+
+    - name: Unquarantine an infected file (false positive)
+      nutanix.ncp.ntnx_files_nfected_file_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ infected_file_ext_id }}"
+        action: UNQUARANTINE
+      register: unquarantine_result
+      ignore_errors: true
+
+    - name: Reset AV metadata on an infected file
+      nutanix.ncp.ntnx_files_nfected_file_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ infected_file_ext_id }}"
+        action: RESET
+      register: reset_result
+      ignore_errors: true
+
+    ########################################################################
+    # Delete
+    ########################################################################
+
+    - name: Delete an infected file record
+      nutanix.ncp.ntnx_files_nfected_file_v2:
+        state: absent
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ infected_file_ext_id }}"
+      register: delete_result
+      ignore_errors: true
