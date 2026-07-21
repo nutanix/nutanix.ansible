@@ -1,0 +1,37 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [AIOps VM Simulation playbook] ********************************************
+
+TASK [Set common variables] ****************************************************
+ok: [localhost] => {"ansible_facts": {"simulation_name": "vdi_medium_workload"}, "changed": false}
+
+TASK [Create a VM simulation] **************************************************
+changed: [localhost] => {"changed": true, "ext_id": "2be9c6fd-638d-4401-b88e-c6c962e7c477", "response": {"ext_id": "2be9c6fd-638d-4401-b88e-c6c962e7c477", "links": null, "name": "vdi_medium_workload", "simulation_spec": {"hdd_gb": 100.0, "ram_gb": 8.0, "ssd_gb": 200.0, "vcpu_count": 4}, "tenant_id": null}, "task_ext_id": null}
+
+TASK [Capture created simulation ext_id] ***************************************
+ok: [localhost] => {"ansible_facts": {"simulation_ext_id": "2be9c6fd-638d-4401-b88e-c6c962e7c477"}, "changed": false}
+
+TASK [Get VM simulation using ext_id] ******************************************
+ok: [localhost] => {"changed": false, "ext_id": "2be9c6fd-638d-4401-b88e-c6c962e7c477", "response": {"ext_id": "2be9c6fd-638d-4401-b88e-c6c962e7c477", "links": null, "name": "vdi_medium_workload", "simulation_spec": {"hdd_gb": 100.0, "ram_gb": 8.0, "ssd_gb": 200.0, "vcpu_count": 4}, "tenant_id": null}}
+
+TASK [List all VM simulations] *************************************************
+ok: [localhost] => {"changed": false, "response": [{"ext_id": "2be9c6fd-638d-4401-b88e-c6c962e7c477", "links": null, "name": "vdi_medium_workload", "simulation_spec": {"hdd_gb": 100.0, "ram_gb": 8.0, "ssd_gb": 200.0, "vcpu_count": 4}, "tenant_id": null}], "total_available_results": 1}
+
+TASK [List VM simulations with filter] *****************************************
+ok: [localhost] => {"changed": false, "response": [{"ext_id": "2be9c6fd-638d-4401-b88e-c6c962e7c477", "links": null, "name": "vdi_medium_workload", "simulation_spec": {"hdd_gb": 100.0, "ram_gb": 8.0, "ssd_gb": 200.0, "vcpu_count": 4}, "tenant_id": null}], "total_available_results": 1}
+
+TASK [List VM simulations with limit] ******************************************
+ok: [localhost] => {"changed": false, "response": [{"ext_id": "2be9c6fd-638d-4401-b88e-c6c962e7c477", "links": null, "name": "vdi_medium_workload", "simulation_spec": {"hdd_gb": 100.0, "ram_gb": 8.0, "ssd_gb": 200.0, "vcpu_count": 4}, "tenant_id": null}], "total_available_results": 1}
+
+TASK [Update the VM simulation] ************************************************
+changed: [localhost] => {"changed": true, "ext_id": "2be9c6fd-638d-4401-b88e-c6c962e7c477", "response": {"ext_id": "2be9c6fd-638d-4401-b88e-c6c962e7c477", "links": null, "name": "vdi_medium_workload_updated", "simulation_spec": {"hdd_gb": 200.0, "ram_gb": 16.0, "ssd_gb": 400.0, "vcpu_count": 8}, "tenant_id": null}, "task_ext_id": null}
+
+TASK [Delete the VM simulation] ************************************************
+changed: [localhost] => {"changed": true, "ext_id": "2be9c6fd-638d-4401-b88e-c6c962e7c477", "response": {"message": "Simulation with ext_id:2be9c6fd-638d-4401-b88e-c6c962e7c477 deleted successfully.", "status": "SUCCEEDED"}, "task_ext_id": null}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=9    changed=3    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
