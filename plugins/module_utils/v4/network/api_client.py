@@ -195,3 +195,30 @@ def get_bridges_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_networking_py_client.BridgesApi(api_client=api_client)
+
+
+def get_bgp_sessions_api_instance(module):
+    """
+    This method will return BgpSessionsApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): BGP sessions api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.BgpSessionsApi(api_client=api_client)
+
+
+def get_bgp_routes_api_instance(module):
+    """
+    This method will return BgpRoutesApi instance.
+    The BGP routes API is read-only: it exposes only the
+    ``get_route_for_bgp_session_by_id`` and ``list_routes_by_bgp_session_id``
+    operations for routes advertised or received on a BGP session.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): BGP routes api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.BgpRoutesApi(api_client=api_client)

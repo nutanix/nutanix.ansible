@@ -142,6 +142,9 @@ action_groups:
     - ntnx_routes_v2
     - ntnx_routes_info_v2
     - ntnx_route_tables_info_v2
+    - ntnx_route_for_bgp_sessions_info_v2
+    - ntnx_routes_by_bgp_session_id_v2
+    - ntnx_routes_by_bgp_session_ids_info_v2
     - ntnx_categories_v2
     - ntnx_categories_info_v2
     - ntnx_volume_groups_v2

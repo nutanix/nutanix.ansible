@@ -1,0 +1,38 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [BGP Routes by BGP Session ID playbook] ***********************************
+
+TASK [Setting variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"bgp_session_ext_id": "8a3cf052-1234-4222-8d60-143a33c77e9f"}, "changed": false}
+
+TASK [List all BGP routes for the BGP session] *********************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching BGP routes info", "response": {"$objectType": "networking.v4.config.GetBgpRouteApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10060", "locale": "en_US", "message": "Failed to list BGP routes as a referenced resource was not found - Application error kNotFound raised: BGP session not found", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.4/config/bgp-sessions/8a3cf052-1234-4222-8d60-143a33c77e9f/bgp-routes", "rel": "self"}], "totalAvailableResults": 0}}, "status": 404}
+...ignoring
+
+TASK [Set BGP route ext_id from the first returned route (if any)] *************
+skipping: [localhost] => {"changed": false, "false_condition": "not bgp_routes_list.failed", "skip_reason": "Conditional result was False"}
+
+TASK [Fetch a specific BGP route by ext_id (info module)] **********************
+skipping: [localhost] => {"changed": false, "false_condition": "bgp_route_ext_id is defined", "skip_reason": "Conditional result was False"}
+
+TASK [Fetch a specific BGP route by ext_id (CRUD-shaped module)] ***************
+skipping: [localhost] => {"changed": false, "false_condition": "bgp_route_ext_id is defined", "skip_reason": "Conditional result was False"}
+
+TASK [List BGP routes for the BGP session with pagination] *********************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching BGP routes info", "response": {"$objectType": "networking.v4.config.GetBgpRouteApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10060", "locale": "en_US", "message": "Failed to list BGP routes as a referenced resource was not found - Application error kNotFound raised: BGP session not found", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.4/config/bgp-sessions/8a3cf052-1234-4222-8d60-143a33c77e9f/bgp-routes", "rel": "self"}], "totalAvailableResults": 0}}, "status": 404}
+...ignoring
+
+TASK [List BGP routes for the BGP session sorted by name ascending] ************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching BGP routes info", "response": {"$objectType": "networking.v4.config.GetBgpRouteApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10060", "locale": "en_US", "message": "Failed to list BGP routes as a referenced resource was not found - Application error kNotFound raised: BGP session not found", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.4/config/bgp-sessions/8a3cf052-1234-4222-8d60-143a33c77e9f/bgp-routes", "rel": "self"}], "totalAvailableResults": 0}}, "status": 404}
+...ignoring
+
+TASK [List BGP routes for the BGP session filtered to ADVERTISED routes only] ***
+fatal: [localhost]: FAILED! => {"changed": false, "error": "INTERNAL SERVER ERROR", "msg": "Api Exception raised while fetching BGP routes info", "response": {"$objectType": "networking.v4.config.GetBgpRouteApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10002", "locale": "en_US", "message": "Failed to list BGP routes due to a bad request - Odata Error: Error while parsing URI", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.4/config/bgp-sessions/8a3cf052-1234-4222-8d60-143a33c77e9f/bgp-routes", "rel": "self"}], "totalAvailableResults": 0}}, "status": 500}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=5    changed=0    unreachable=0    failed=0    skipped=3    rescued=0    ignored=4   
+
