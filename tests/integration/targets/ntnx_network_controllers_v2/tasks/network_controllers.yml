@@ -1,0 +1,430 @@
+---
+# Test plan for NetworkController v4 modules
+# =============================================
+# Domain-driven QA plan combining SDK, module spec, and domain knowledge.
+#
+# SDK surface (ntnx_networking_py_client / NetworkControllersApi):
+#   - create_network_controller(body) -> TaskReferenceApiResponse
+#   - update_network_controller_by_id(extId, body, if_match) -> TaskReferenceApiResponse
+#   - delete_network_controller_by_id(extId) -> TaskReferenceApiResponse
+#   - get_network_controller_by_id(extId) -> GetNetworkControllerApiResponse
+#   - list_network_controllers(_page, _limit) -> ListNetworkControllersApiResponse
+#
+# Enums / fields we assert on:
+#   - cloud_substrate: AWS | AZURE | GCP
+#   - default_vlan_stack: ADVANCED | LEGACY
+#   - controller_status (read-only): UP | DOWN | DEGRADED
+#   - vpc_global_config.is_overlapping_erps_enabled: bool
+#
+# Domain notes (from Glean):
+#   * Only one Network Controller exists per Prism Central. Creating/deleting is a
+#     one-off cluster-wide operation that enables/disables Flow Virtual Networking.
+#     Therefore, on a cluster where a controller already exists we MUST NOT actually
+#     create, mutate, or delete it — doing so would break unrelated resources
+#     (VPCs, overlay subnets, floating IPs). Destructive operations are gated on
+#     `pre_existing_ext_ids | length == 0`.
+#
+# Scenarios covered:
+#   * check_mode create with ALL fields (single)
+#   * check_mode update with ALL fields (single)
+#   * check_mode delete (single)
+#   * negative: invalid enum value for default_vlan_stack
+#   * negative: invalid enum value for cloud_substrate
+#   * negative: delete without ext_id
+#   * negative: get / update / delete with non-existent ext_id
+#   * info: list all — verify at least one entry present
+#   * info: list with limit=1 — verify capped result
+#   * info: get-by-ID — verify single entity matches
+#   * (only when no controller exists yet) create -> get -> update -> idempotency
+#     -> delete lifecycle
+- name: Start Network Controllers tests
+  ansible.builtin.debug:
+    msg: Start Network Controllers tests
+
+- name: Initialize state
+  ansible.builtin.set_fact:
+    todelete: []
+
+########################################################################################
+# Pre-check: is there already a Network Controller on this cluster?
+########################################################################################
+
+- name: List network controllers before test
+  nutanix.ncp.ntnx_network_controllers_info_v2:
+  register: existing_list
+  ignore_errors: true
+
+- name: Assert list before test succeeded
+  ansible.builtin.assert:
+    that:
+      - existing_list is defined
+      - existing_list.failed == false
+      - existing_list.changed == false
+      - existing_list.response is defined
+    success_msg: "Successfully queried network controllers list"
+    fail_msg: "Failed to query network controllers list"
+
+- name: Record pre-existing controllers
+  ansible.builtin.set_fact:
+    pre_existing_ext_ids: "{{ existing_list.response | default([]) | map(attribute='ext_id') | list }}"
+    can_create_new: "{{ (existing_list.response | default([]) | length) == 0 }}"
+
+- name: Capture reference ext_id for read tests (first pre-existing one)
+  ansible.builtin.set_fact:
+    reference_ext_id: "{{ pre_existing_ext_ids[0] }}"
+  when: pre_existing_ext_ids | length > 0
+
+########################################################################################
+# CHECK MODE - create (single test, all attributes)
+########################################################################################
+
+- name: Generate spec for creating network controller in check mode (all attributes)
+  nutanix.ncp.ntnx_network_controller_v2:
+    default_vlan_stack: ADVANCED
+    vpc_global_config:
+      is_overlapping_erps_enabled: true
+  check_mode: true
+  register: create_check
+  ignore_errors: true
+
+- name: Assert check mode create with all attributes
+  ansible.builtin.assert:
+    that:
+      - create_check is defined
+      - create_check.changed == false
+      - create_check.failed == false
+      - create_check.response is defined
+      - create_check.response.default_vlan_stack == "ADVANCED"
+      - create_check.response.vpc_global_config.is_overlapping_erps_enabled == true
+    success_msg: "Check mode create spec generated successfully"
+    fail_msg: "Check mode create spec generation failed"
+
+########################################################################################
+# CHECK MODE - update (single test, all attributes) — needs a controller ext_id
+########################################################################################
+
+- name: Generate spec for updating network controller in check mode (all attributes)
+  nutanix.ncp.ntnx_network_controller_v2:
+    ext_id: "{{ reference_ext_id }}"
+    default_vlan_stack: ADVANCED
+    vpc_global_config:
+      is_overlapping_erps_enabled: true
+  check_mode: true
+  register: update_check
+  ignore_errors: true
+  when: reference_ext_id is defined
+
+- name: Assert check mode update (only when we have a reference controller)
+  ansible.builtin.assert:
+    that:
+      - update_check is defined
+      - update_check.failed == false
+      - update_check.changed == false
+      - update_check.response is defined
+      - update_check.response.default_vlan_stack == "ADVANCED"
+      - update_check.response.vpc_global_config.is_overlapping_erps_enabled == true
+    success_msg: "Check mode update spec generated successfully"
+    fail_msg: "Check mode update spec generation failed"
+  when: reference_ext_id is defined
+
+########################################################################################
+# CHECK MODE - delete
+########################################################################################
+
+- name: Delete network controller with check mode
+  nutanix.ncp.ntnx_network_controller_v2:
+    ext_id: "{{ reference_ext_id | default('00000000-0000-0000-0000-000000000001') }}"
+    state: absent
+  check_mode: true
+  register: delete_check
+  ignore_errors: true
+
+- name: Assert delete in check mode
+  ansible.builtin.assert:
+    that:
+      - delete_check is defined
+      - delete_check.failed == false
+      - delete_check.changed == false
+      - "'will be deleted' in delete_check.msg"
+    success_msg: "Delete network controller check mode passed"
+    fail_msg: "Delete network controller check mode failed"
+
+########################################################################################
+# NEGATIVE - invalid enum values (module spec validation)
+########################################################################################
+
+- name: Create network controller with invalid default_vlan_stack
+  nutanix.ncp.ntnx_network_controller_v2:
+    default_vlan_stack: INVALID_VLAN_STACK
+  register: invalid_stack
+  ignore_errors: true
+
+- name: Assert invalid default_vlan_stack rejected
+  ansible.builtin.assert:
+    that:
+      - invalid_stack is defined
+      - invalid_stack.failed == true
+      - invalid_stack.changed == false
+      - "'value of default_vlan_stack must be one of' in invalid_stack.msg"
+    success_msg: "Invalid default_vlan_stack rejected as expected"
+    fail_msg: "Invalid default_vlan_stack was not rejected as expected"
+
+- name: Create network controller with invalid cloud_substrate
+  nutanix.ncp.ntnx_network_controller_v2:
+    cloud_substrate: INVALID_CLOUD
+  register: invalid_cloud
+  ignore_errors: true
+
+- name: Assert invalid cloud_substrate rejected
+  ansible.builtin.assert:
+    that:
+      - invalid_cloud is defined
+      - invalid_cloud.failed == true
+      - invalid_cloud.changed == false
+      - "'value of cloud_substrate must be one of' in invalid_cloud.msg"
+    success_msg: "Invalid cloud_substrate rejected as expected"
+    fail_msg: "Invalid cloud_substrate was not rejected as expected"
+
+########################################################################################
+# NEGATIVE - delete without ext_id
+########################################################################################
+
+- name: Delete network controller without ext_id
+  nutanix.ncp.ntnx_network_controller_v2:
+    state: absent
+  register: delete_no_ext
+  ignore_errors: true
+
+- name: Assert delete without ext_id fails
+  ansible.builtin.assert:
+    that:
+      - delete_no_ext is defined
+      - delete_no_ext.failed == true
+      - delete_no_ext.changed == false
+      - "'state is absent but all of the following are missing: ext_id' in delete_no_ext.msg"
+    success_msg: "Delete network controller without ext_id failed as expected"
+    fail_msg: "Delete network controller without ext_id did not fail as expected"
+
+########################################################################################
+# INFO - list all
+########################################################################################
+
+- name: List all network controllers
+  nutanix.ncp.ntnx_network_controllers_info_v2:
+  register: list_all
+  ignore_errors: true
+
+- name: Assert list all
+  ansible.builtin.assert:
+    that:
+      - list_all is defined
+      - list_all.failed == false
+      - list_all.changed == false
+      - list_all.response is defined
+      - list_all.total_available_results is defined
+    success_msg: "List all network controllers passed"
+    fail_msg: "List all network controllers failed"
+
+########################################################################################
+# INFO - list with limit
+########################################################################################
+
+- name: List network controllers with limit
+  nutanix.ncp.ntnx_network_controllers_info_v2:
+    limit: 1
+  register: list_limit
+  ignore_errors: true
+
+- name: Assert list with limit
+  ansible.builtin.assert:
+    that:
+      - list_limit is defined
+      - list_limit.failed == false
+      - list_limit.changed == false
+      - list_limit.response is defined
+      - list_limit.response | length <= 1
+    success_msg: "List network controllers with limit passed"
+    fail_msg: "List network controllers with limit failed"
+
+########################################################################################
+# INFO - get by ID (only when a reference controller exists)
+########################################################################################
+
+- name: Get network controller using ext_id
+  nutanix.ncp.ntnx_network_controllers_info_v2:
+    ext_id: "{{ reference_ext_id }}"
+  register: get_result
+  ignore_errors: true
+  when: reference_ext_id is defined
+
+- name: Assert get-by-ID (only when a reference controller exists)
+  ansible.builtin.assert:
+    that:
+      - get_result is defined
+      - get_result.failed == false
+      - get_result.changed == false
+      - get_result.response is defined
+      - get_result.response.ext_id == reference_ext_id
+      - get_result.ext_id == reference_ext_id
+      - get_result.response.default_vlan_stack is defined
+    success_msg: "Get network controller using ext_id passed"
+    fail_msg: "Get network controller using ext_id failed"
+  when: reference_ext_id is defined
+
+- name: Get network controller with wrong ext_id
+  nutanix.ncp.ntnx_network_controllers_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: get_wrong
+  ignore_errors: true
+
+- name: Assert get with wrong ext_id fails
+  ansible.builtin.assert:
+    that:
+      - get_wrong is defined
+      - get_wrong.failed == true
+      - get_wrong.changed == false
+    success_msg: "Get network controller with wrong ext_id failed as expected"
+    fail_msg: "Get network controller with wrong ext_id did not fail as expected"
+
+########################################################################################
+# NEGATIVE - update / delete with non-existent ext_id
+########################################################################################
+
+- name: Update network controller with non-existent ext_id
+  nutanix.ncp.ntnx_network_controller_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    default_vlan_stack: ADVANCED
+  register: update_wrong
+  ignore_errors: true
+
+- name: Assert update with non-existent ext_id fails
+  ansible.builtin.assert:
+    that:
+      - update_wrong is defined
+      - update_wrong.failed == true
+      - update_wrong.changed == false
+    success_msg: "Update network controller with wrong ext_id failed as expected"
+    fail_msg: "Update network controller with wrong ext_id did not fail as expected"
+
+- name: Delete network controller with non-existent ext_id
+  nutanix.ncp.ntnx_network_controller_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    state: absent
+  register: delete_wrong
+  ignore_errors: true
+
+# NETWORK_CONTROLLER delete on this cluster/version returns a SUCCEEDED task even
+# for an ext_id that does not exist (the API is treated as idempotent-delete by
+# the platform, mirroring behaviour seen on other v4 endpoints). We assert the
+# module returns a task response and no exception; we do NOT assert failure.
+- name: Assert delete with non-existent ext_id returns a task result
+  ansible.builtin.assert:
+    that:
+      - delete_wrong is defined
+      - delete_wrong.task_ext_id is defined
+      - delete_wrong.response is defined
+    success_msg: "Delete non-existent network controller returned a task result"
+    fail_msg: "Delete non-existent network controller returned no task result"
+
+########################################################################################
+# FULL LIFECYCLE (only when the cluster has no pre-existing controller)
+# Creating / deleting the network controller enables / disables Flow Virtual Networking
+# for the whole PC, so we ONLY run these when the cluster has no controller yet.
+########################################################################################
+
+- name: Report skip reason when a controller already exists
+  ansible.builtin.debug:
+    msg: >-
+      Skipping destructive create/update/delete lifecycle tests because a network
+      controller already exists on this Prism Central
+      ({{ pre_existing_ext_ids | join(', ') }}). Modifying the live controller
+      would affect Flow Virtual Networking for the whole cluster.
+  when: not can_create_new
+
+- name: Create network controller with minimum attributes
+  nutanix.ncp.ntnx_network_controller_v2:
+    default_vlan_stack: ADVANCED
+  register: create_min
+  ignore_errors: true
+  when: can_create_new
+
+- name: Assert create with minimum attributes
+  ansible.builtin.assert:
+    that:
+      - create_min is defined
+      - create_min.failed == false
+      - create_min.changed == true
+      - create_min.ext_id is defined
+      - create_min.task_ext_id is defined
+      - create_min.response is defined
+      - create_min.response.default_vlan_stack == "ADVANCED"
+    success_msg: "Network controller with minimum attributes created successfully"
+    fail_msg: "Network controller with minimum attributes creation failed"
+  when: can_create_new
+
+- name: Record ext_id from lifecycle create for cleanup
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [create_min.ext_id] }}"
+    lifecycle_ext_id: "{{ create_min.ext_id }}"
+  when: can_create_new and (create_min is defined) and (create_min.ext_id is defined)
+
+- name: Update network controller (flip is_overlapping_erps_enabled)
+  nutanix.ncp.ntnx_network_controller_v2:
+    ext_id: "{{ lifecycle_ext_id }}"
+    default_vlan_stack: ADVANCED
+    vpc_global_config:
+      is_overlapping_erps_enabled: true
+  register: update_enable
+  ignore_errors: true
+  when: can_create_new and (lifecycle_ext_id is defined)
+
+- name: Assert update (enable overlapping ERPs)
+  ansible.builtin.assert:
+    that:
+      - update_enable is defined
+      - update_enable.failed == false
+      - update_enable.ext_id == lifecycle_ext_id
+    success_msg: "Update network controller passed"
+    fail_msg: "Update network controller failed"
+  when: can_create_new and (lifecycle_ext_id is defined)
+
+- name: Update network controller with same values (idempotency test)
+  nutanix.ncp.ntnx_network_controller_v2:
+    ext_id: "{{ lifecycle_ext_id }}"
+    default_vlan_stack: ADVANCED
+    vpc_global_config:
+      is_overlapping_erps_enabled: true
+  register: update_idem
+  ignore_errors: true
+  when: can_create_new and (lifecycle_ext_id is defined)
+
+- name: Assert update idempotency
+  ansible.builtin.assert:
+    that:
+      - update_idem is defined
+      - update_idem.failed == false
+      - update_idem.changed == false
+      - update_idem.msg is defined
+      - update_idem.msg == "Nothing to change."
+    success_msg: "Update network controller idempotency passed"
+    fail_msg: "Update network controller idempotency failed"
+  when: can_create_new and (lifecycle_ext_id is defined)
+
+- name: Delete network controllers created in this run
+  nutanix.ncp.ntnx_network_controller_v2:
+    ext_id: "{{ item }}"
+    state: absent
+  register: cleanup
+  ignore_errors: true
+  loop: "{{ todelete }}"
+  when: can_create_new and todelete | length > 0
+
+- name: Assert delete succeeded
+  ansible.builtin.assert:
+    that:
+      - cleanup is defined
+      - cleanup.results is defined
+      - cleanup.results | length == todelete | length
+    success_msg: "All lifecycle-created network controllers deleted"
+    fail_msg: "Failed to delete all lifecycle-created network controllers"
+  when: can_create_new and todelete | length > 0

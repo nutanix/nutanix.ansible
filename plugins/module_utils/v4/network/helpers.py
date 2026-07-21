@@ -170,3 +170,23 @@ def get_virtual_switch(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching virtual switch info using ext_id",
         )
+
+
+def get_network_controller(module, api_instance, ext_id):
+    """
+    This method will return network controller info using its ext_id
+    Args:
+        module: Ansible module
+        api_instance: NetworkControllersApi instance from ntnx_networking_py_client sdk
+        ext_id (str): network controller external ID
+    return:
+        info (object): network controller info
+    """
+    try:
+        return api_instance.get_network_controller_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching network controller info using ext_id",
+        )
