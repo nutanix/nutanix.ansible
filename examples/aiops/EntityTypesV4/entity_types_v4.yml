@@ -1,0 +1,86 @@
+---
+# Summary:
+# This playbook demonstrates the AIOps EntityTypesV4 workflow:
+# 1. Fail-fast preflight if the required aiops SDK is not installed.
+# 2. Discover the built-in AIOps stats source (nutanix) via a live REST call
+#    against Prism Central and capture its external ID.
+# 3. Fetch the list of entity types supported by that source using the
+#    ntnx_entity_types_info_v2 module.
+# 4. Show the entity types plus a quick "vm" lookup.
+#
+# Notes:
+# - EntityTypesV4 is a read-only discovery API. There is no Create / Update /
+#   Delete for entity types, so this playbook covers only the "info" module
+#   that ships in this PR.
+# - Connection parameters are provided once via a play-level module_defaults
+#   block so individual tasks do not repeat host/username/password.
+
+- name: AIOps EntityTypesV4 playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "10.44.76.28"
+      nutanix_username: "admin"
+      nutanix_password: "Nutanix.123"
+      validate_certs: false
+  tasks:
+    - name: Preflight - ensure ntnx-aiops-py-client is installed
+      ansible.builtin.command: "{{ ansible_python_interpreter | default('python3') }} -c 'import ntnx_aiops_py_client'"
+      register: aiops_sdk_check
+      changed_when: false
+      ignore_errors: true
+
+    - name: Fail if aiops SDK is missing
+      ansible.builtin.fail:
+        msg: >-
+          ntnx-aiops-py-client is required for AIOps EntityTypesV4 modules.
+          Install it via `pip install ntnx-aiops-py-client`.
+      when: aiops_sdk_check.rc != 0
+
+    - name: Discover AIOps sources on PC (built-in nutanix source)
+      ansible.builtin.uri:
+        url: "https://10.44.76.28:9440/api/aiops/v4.2.b1/config/sources"
+        method: GET
+        user: "admin"
+        password: "Nutanix.123"
+        force_basic_auth: true
+        validate_certs: false
+        return_content: true
+        status_code: 200
+      register: sources_resp
+
+    - name: Extract source_ext_id for the nutanix source
+      ansible.builtin.set_fact:
+        source_ext_id: >-
+          {{
+            (sources_resp.json.data
+              | selectattr('sourceName', 'equalto', 'nutanix')
+              | map(attribute='extId')
+              | list
+              | first)
+          }}
+
+    - name: List all entity types for the source
+      nutanix.ncp.ntnx_entity_types_info_v2:
+        source_ext_id: "{{ source_ext_id }}"
+      register: entity_types_info
+
+    - name: Show fetched AIOps entity types
+      ansible.builtin.debug:
+        var: entity_types_info
+
+    - name: Extract the entity_type_name for VM
+      ansible.builtin.set_fact:
+        vm_entity_type: >-
+          {{
+            (entity_types_info.response
+              | selectattr('entity_type_name', 'equalto', 'vm')
+              | list
+              | first)
+            | default({})
+          }}
+
+    - name: Show VM entity type ext_id
+      ansible.builtin.debug:
+        msg: "VM entity type ext_id: {{ vm_entity_type.ext_id | default('not found') }}"

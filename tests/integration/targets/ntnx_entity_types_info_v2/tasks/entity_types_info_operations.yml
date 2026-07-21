@@ -1,0 +1,222 @@
+---
+# Test plan for ntnx_entity_types_info_v2
+# ---------------------------------------
+# EntityTypesV4 exposes only a read-only listing API. On any Prism Central
+# there is always at least one built-in source ("nutanix"). We use the AIOps
+# sources REST API to discover the source_ext_id at runtime and then exercise
+# the info module against it. Test scenarios:
+#
+#   1. Preflight: aiops SDK is importable.
+#   2. Discover the "nutanix" AIOps source via a live REST call.
+#   3. Call ntnx_entity_types_info_v2 with the real source_ext_id and assert
+#      the response is a non-empty list containing well-known entity types
+#      (vm, cluster, node, container) each with an entity_type_name + ext_id.
+#   4. Assert every returned dict has the four documented keys.
+#   5. Assert total_available_results matches len(response).
+#   6. Negative: call the module without source_ext_id and assert the module
+#      fails with the expected "missing required arguments" message.
+#   7. Negative: call the module with a well-formed but non-existent
+#      source_ext_id and assert an API error is returned (module failed=True).
+#   8. Iterate the entity types with a loop and assert each element has an
+#      ext_id and entity_type_name.
+
+- name: Start ntnx_entity_types_info_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_entity_types_info_v2 tests
+
+###################################################################################################
+# Preflight
+###################################################################################################
+
+- name: Preflight - ensure ntnx-aiops-py-client is installed
+  ansible.builtin.command: "{{ ansible_python_interpreter | default('python3') }} -c 'import ntnx_aiops_py_client'"
+  register: aiops_sdk_check
+  changed_when: false
+  ignore_errors: true
+
+- name: Assert aiops SDK is present
+  ansible.builtin.assert:
+    that:
+      - aiops_sdk_check.rc == 0
+    fail_msg: "ntnx-aiops-py-client SDK is required for these tests"
+    success_msg: "ntnx-aiops-py-client SDK is installed"
+
+###################################################################################################
+# Discover the built-in "nutanix" AIOps stats source
+###################################################################################################
+
+- name: Discover AIOps sources on PC
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:9440/api/aiops/v4.2.b1/config/sources"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs }}"
+    return_content: true
+    status_code: 200
+  register: sources_resp
+
+- name: Extract source_ext_id for the built-in nutanix source
+  ansible.builtin.set_fact:
+    source_ext_id: >-
+      {{
+        (sources_resp.json.data
+          | selectattr('sourceName', 'equalto', 'nutanix')
+          | map(attribute='extId')
+          | list
+          | first)
+      }}
+
+- name: Assert source_ext_id discovery
+  ansible.builtin.assert:
+    that:
+      - source_ext_id is defined
+      - source_ext_id | length > 0
+    fail_msg: "Failed to discover source_ext_id for the nutanix AIOps source"
+    success_msg: "Discovered nutanix source_ext_id: {{ source_ext_id }}"
+
+###################################################################################################
+# Happy path - list entity types
+###################################################################################################
+
+- name: List all entity types for the nutanix source
+  nutanix.ncp.ntnx_entity_types_info_v2:
+    source_ext_id: "{{ source_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert list entity types result shape
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.source_ext_id == source_ext_id
+      - result.response is defined
+      - result.response is iterable
+      - result.response | length > 0
+      - result.total_available_results is defined
+      - result.total_available_results == (result.response | length)
+    fail_msg: "List entity types response shape assertion failed"
+    success_msg: "List entity types response shape looks correct"
+
+- name: Store fetched entity types
+  ansible.builtin.set_fact:
+    fetched_entity_types: "{{ result.response }}"
+    fetched_entity_type_names: "{{ result.response | map(attribute='entity_type_name') | list }}"
+
+- name: Assert well-known entity types are present
+  ansible.builtin.assert:
+    that:
+      - "'vm' in fetched_entity_type_names"
+      - "'cluster' in fetched_entity_type_names"
+      - "'node' in fetched_entity_type_names"
+      - "'container' in fetched_entity_type_names"
+    fail_msg: "Expected core entity types (vm, cluster, node, container) not found in {{ fetched_entity_type_names }}"
+    success_msg: "Core entity types (vm, cluster, node, container) are present"
+
+- name: Assert every fetched entity type carries the documented keys
+  ansible.builtin.assert:
+    that:
+      - item.entity_type_name is defined
+      - item.entity_type_name | length > 0
+      - item.ext_id is defined
+      - item.ext_id | length > 0
+      - "'links' in item"
+      - "'tenant_id' in item"
+    fail_msg: "Entity type entry {{ item }} is missing a documented key"
+    success_msg: "Entity type entry {{ item.entity_type_name }} carries all documented keys"
+  loop: "{{ fetched_entity_types }}"
+  loop_control:
+    label: "{{ item.entity_type_name | default('?') }}"
+
+###################################################################################################
+# Focused lookup - fetch the VM entity type
+###################################################################################################
+
+- name: Extract the vm entity type entry from the returned list
+  ansible.builtin.set_fact:
+    vm_entity_type: "{{ (fetched_entity_types | selectattr('entity_type_name', 'equalto', 'vm') | list | first) | default({}) }}"
+
+- name: Assert vm entity type is well-formed
+  ansible.builtin.assert:
+    that:
+      - vm_entity_type.entity_type_name == "vm"
+      - vm_entity_type.ext_id is defined
+      - vm_entity_type.ext_id | length > 0
+    fail_msg: "vm entity type entry is missing or malformed"
+    success_msg: "vm entity type has ext_id {{ vm_entity_type.ext_id }}"
+
+###################################################################################################
+# Negative - missing required parameter
+###################################################################################################
+
+- name: List entity types without source_ext_id (should fail)  # noqa: args
+  nutanix.ncp.ntnx_entity_types_info_v2: {}
+  register: missing_param_result
+  ignore_errors: true
+
+- name: Assert missing source_ext_id triggers required-parameter error
+  ansible.builtin.assert:
+    that:
+      - missing_param_result.changed == false
+      - missing_param_result.failed == true
+      - missing_param_result.msg is defined
+      - "'source_ext_id' in missing_param_result.msg"
+    fail_msg: "Missing source_ext_id did not raise the expected required-parameter error: {{ missing_param_result }}"
+    success_msg: "Missing source_ext_id raised the expected required-parameter error"
+
+###################################################################################################
+# Negative - non-existent source_ext_id
+###################################################################################################
+
+- name: List entity types with a well-formed but bogus source_ext_id
+  nutanix.ncp.ntnx_entity_types_info_v2:
+    source_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: bad_source_result
+  ignore_errors: true
+
+- name: Compute lowercased bogus-source error message
+  ansible.builtin.set_fact:
+    bad_source_msg_lower: "{{ bad_source_result.msg | default('') | lower }}"
+
+- name: Assert bogus source_ext_id fails cleanly with an API error
+  ansible.builtin.assert:
+    that:
+      - bad_source_result.failed == true
+      - bad_source_result.changed == false
+      - bad_source_result.msg is defined
+      - >
+        ('entity types' in bad_source_msg_lower)
+        or ('source' in bad_source_msg_lower)
+        or ('not found' in bad_source_msg_lower)
+        or ('api exception' in bad_source_msg_lower)
+    fail_msg: "Bogus source_ext_id did not fail with the expected API error: {{ bad_source_result }}"
+    success_msg: "Bogus source_ext_id failed with a descriptive API error"
+
+###################################################################################################
+# Idempotency - two consecutive info calls return the same shape
+###################################################################################################
+
+- name: Second list entity types call (must not change state)
+  nutanix.ncp.ntnx_entity_types_info_v2:
+    source_ext_id: "{{ source_ext_id }}"
+  register: second_result
+
+- name: Assert repeat call is idempotent and returns identical entity_type_names
+  ansible.builtin.assert:
+    that:
+      - second_result.changed == false
+      - second_result.failed == false
+      - (second_result.response | map(attribute='entity_type_name') | list | sort) == (fetched_entity_type_names | sort)
+      - second_result.total_available_results == result.total_available_results
+    fail_msg: "Second info call diverged from the first call: {{ second_result }}"
+    success_msg: "Info module is idempotent - both calls returned the same entity types"
+
+###################################################################################################
+# End
+###################################################################################################
+
+- name: End of ntnx_entity_types_info_v2 tests
+  ansible.builtin.debug:
+    msg: End of ntnx_entity_types_info_v2 tests

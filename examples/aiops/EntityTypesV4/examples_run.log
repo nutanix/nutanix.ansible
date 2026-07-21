@@ -1,0 +1,93 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [AIOps EntityTypesV4 playbook] ********************************************
+
+TASK [Preflight - ensure ntnx-aiops-py-client is installed] ********************
+ok: [localhost] => {"changed": false, "cmd": ["/bin/python3.12", "-c", "import ntnx_aiops_py_client"], "delta": "0:00:00.163389", "end": "2026-07-21 09:33:08.222238", "msg": "", "rc": 0, "start": "2026-07-21 09:33:08.058849", "stderr": "", "stderr_lines": [], "stdout": "", "stdout_lines": []}
+
+TASK [Fail if aiops SDK is missing] ********************************************
+skipping: [localhost] => {"changed": false, "false_condition": "aiops_sdk_check.rc != 0", "skip_reason": "Conditional result was False"}
+
+TASK [Discover AIOps sources on PC (built-in nutanix source)] ******************
+ok: [localhost] => {"cache_control": "no-cache, no-store, max-age=0, must-revalidate,no-cache, no-store", "changed": false, "connection": "close", "content": "{\"$dataItemDiscriminator\":\"List\\u003caiops.v4.config.Source\\u003e\",\"$objectType\":\"aiops.v4.config.SourceListApiResponse\",\"$reserved\":{\"$fv\":\"v4.r2.b1\"},\"data\":[{\"$objectType\":\"aiops.v4.config.Source\",\"$reserved\":{\"$fv\":\"v4.r2.b1\"},\"extId\":\"db293e8a-5770-c3c7-4213-85dbbc1d3679\",\"sourceName\":\"nutanix\"}],\"metadata\":{\"$objectType\":\"common.v1.response.ApiResponseMetadata\",\"$reserved\":{\"$fv\":\"v1.r0\"},\"flags\":[{\"$objectType\":\"common.v1.config.Flag\",\"$reserved\":{\"$fv\":\"v1.r0\"},\"name\":\"hasError\",\"value\":false},{\"$objectType\":\"common.v1.config.Flag\",\"$reserved\":{\"$fv\":\"v1.r0\"},\"name\":\"isPaginated\",\"value\":true}],\"links\":[{\"$objectType\":\"common.v1.response.ApiLink\",\"$reserved\":{\"$fv\":\"v1.r0\"},\"href\":\"https://:9440/api/aiops/v4.2.b1/config/sources?$page=0\\u0026$limit=50\",\"rel\":\"first\"},{\"$objectType\":\"common.v1.response.ApiLink\",\"$reserved\":{\"$fv\":\"v1.r0\"},\"href\":\"https://:9440/api/aiops/v4.2.b1/config/sources?$page=0\\u0026$limit=50\",\"rel\":\"self\"},{\"$objectType\":\"common.v1.response.ApiLink\",\"$reserved\":{\"$fv\":\"v1.r0\"},\"href\":\"https://:9440/api/aiops/v4.2.b1/config/sources?$page=0\\u0026$limit=50\",\"rel\":\"last\"}],\"totalAvailableResults\":1}}", "content_encoding": "identity", "content_length": "1143", "content_security_policy": "connect-src 'self' wss: https://downloads.frame.nutanix.com https://downloads.frame.nutanix.us; default-src 'self' https://*.nutanix.com; frame-ancestors 'self' https://*.nutanix.com; frame-src 'self' https://*.nutanix.com blob: data:; img-src 'self' blob: data:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'", "content_type": "application/json;charset=utf-8", "cookies": {"NTNX_SESSION_ID": "9ab0eb96-dd13-46f6-9c6a-e69cccfa47b4"}, "cookies_string": "NTNX_SESSION_ID=9ab0eb96-dd13-46f6-9c6a-e69cccfa47b4", "date": "Tue, 21 Jul 2026 09:33:09 GMT", "elapsed": 0, "expires": "0,0", "json": {"$dataItemDiscriminator": "List<aiops.v4.config.Source>", "$objectType": "aiops.v4.config.SourceListApiResponse", "$reserved": {"$fv": "v4.r2.b1"}, "data": [{"$objectType": "aiops.v4.config.Source", "$reserved": {"$fv": "v4.r2.b1"}, "extId": "db293e8a-5770-c3c7-4213-85dbbc1d3679", "sourceName": "nutanix"}], "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": true}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://:9440/api/aiops/v4.2.b1/config/sources?$page=0&$limit=50", "rel": "first"}, {"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://:9440/api/aiops/v4.2.b1/config/sources?$page=0&$limit=50", "rel": "self"}, {"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://:9440/api/aiops/v4.2.b1/config/sources?$page=0&$limit=50", "rel": "last"}], "totalAvailableResults": 1}}, "msg": "OK (1143 bytes)", "pragma": "no-cache, no-cache", "redirected": false, "set_cookie": "NTNX_SESSION_ID=9ab0eb96-dd13-46f6-9c6a-e69cccfa47b4;Max-Age=29700;Path=/;Secure;HttpOnly;SameSite=Lax", "status": 200, "strict_transport_security": "max-age=31536000 ; includeSubDomains, max-age=63072000; includeSubdomains; preload", "url": "https://10.44.76.28:9440/api/aiops/v4.2.b1/config/sources", "vary": "Origin", "x_api_ratelimit_limit": "30", "x_api_ratelimit_refresh_period_seconds": "1", "x_api_ratelimit_remaining": "29", "x_api_ratelimit_reset": "0", "x_content_type_options": "nosniff, nosniff", "x_dns_prefetch_control": "off", "x_envoy_upstream_service_time": "9", "x_frame_options": "DENY, SAMEORIGIN", "x_ntnx_env": "pc", "x_ntnx_product": "pc.7.6", "x_permitted_cross_domain_policies": "master-only", "x_ratelimit_limit": "40", "x_ratelimit_remaining": "39", "x_ratelimit_reset": "0", "x_xss_protection": "0, 1; mode=block"}
+
+TASK [Extract source_ext_id for the nutanix source] ****************************
+ok: [localhost] => {"ansible_facts": {"source_ext_id": "db293e8a-5770-c3c7-4213-85dbbc1d3679"}, "changed": false}
+
+TASK [List all entity types for the source] ************************************
+ok: [localhost] => {"changed": false, "response": [{"entity_type_name": "container", "ext_id": "5f0b6ebc-4bea-1028-5ba2-b8a6ce78b863", "links": null, "tenant_id": null}, {"entity_type_name": "vm", "ext_id": "686c821a-8091-4aef-8224-65b48019cd34", "links": null, "tenant_id": null}, {"entity_type_name": "virtual_disk", "ext_id": "d9eb3ca3-5e7b-4d02-8327-5ba58e9cd407", "links": null, "tenant_id": null}, {"entity_type_name": "cluster", "ext_id": "06b2d4b9-1b5c-9eaa-8c20-a1c270f95b3c", "links": null, "tenant_id": null}, {"entity_type_name": "storagecontainerstats", "ext_id": "3f06ebab-4d62-a2ca-7e83-2592f9e8051e", "links": null, "tenant_id": null}, {"entity_type_name": "virtual_nic", "ext_id": "45ef8942-694d-6cf5-8333-a711c0be4b2b", "links": null, "tenant_id": null}, {"entity_type_name": "volume_group_config", "ext_id": "f149d727-ae8b-1abe-1656-2ff59fe06c13", "links": null, "tenant_id": null}, {"entity_type_name": "node", "ext_id": "36c45369-96ca-5615-dcf9-911f068786dc", "links": null, "tenant_id": null}], "source_ext_id": "db293e8a-5770-c3c7-4213-85dbbc1d3679", "total_available_results": 8}
+
+TASK [Show fetched AIOps entity types] *****************************************
+ok: [localhost] => {
+    "entity_types_info": {
+        "changed": false,
+        "failed": false,
+        "response": [
+            {
+                "entity_type_name": "container",
+                "ext_id": "5f0b6ebc-4bea-1028-5ba2-b8a6ce78b863",
+                "links": null,
+                "tenant_id": null
+            },
+            {
+                "entity_type_name": "vm",
+                "ext_id": "686c821a-8091-4aef-8224-65b48019cd34",
+                "links": null,
+                "tenant_id": null
+            },
+            {
+                "entity_type_name": "virtual_disk",
+                "ext_id": "d9eb3ca3-5e7b-4d02-8327-5ba58e9cd407",
+                "links": null,
+                "tenant_id": null
+            },
+            {
+                "entity_type_name": "cluster",
+                "ext_id": "06b2d4b9-1b5c-9eaa-8c20-a1c270f95b3c",
+                "links": null,
+                "tenant_id": null
+            },
+            {
+                "entity_type_name": "storagecontainerstats",
+                "ext_id": "3f06ebab-4d62-a2ca-7e83-2592f9e8051e",
+                "links": null,
+                "tenant_id": null
+            },
+            {
+                "entity_type_name": "virtual_nic",
+                "ext_id": "45ef8942-694d-6cf5-8333-a711c0be4b2b",
+                "links": null,
+                "tenant_id": null
+            },
+            {
+                "entity_type_name": "volume_group_config",
+                "ext_id": "f149d727-ae8b-1abe-1656-2ff59fe06c13",
+                "links": null,
+                "tenant_id": null
+            },
+            {
+                "entity_type_name": "node",
+                "ext_id": "36c45369-96ca-5615-dcf9-911f068786dc",
+                "links": null,
+                "tenant_id": null
+            }
+        ],
+        "source_ext_id": "db293e8a-5770-c3c7-4213-85dbbc1d3679",
+        "total_available_results": 8
+    }
+}
+
+TASK [Extract the entity_type_name for VM] *************************************
+ok: [localhost] => {"ansible_facts": {"vm_entity_type": {"entity_type_name": "vm", "ext_id": "686c821a-8091-4aef-8224-65b48019cd34", "links": null, "tenant_id": null}}, "changed": false}
+
+TASK [Show VM entity type ext_id] **********************************************
+ok: [localhost] => {
+    "msg": "VM entity type ext_id: 686c821a-8091-4aef-8224-65b48019cd34"
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=7    changed=0    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
+
