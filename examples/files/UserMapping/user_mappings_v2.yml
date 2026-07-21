@@ -1,0 +1,45 @@
+---
+# Summary:
+# This playbook demonstrates how to use the Nutanix Files v4 UserMapping
+# modules against a Nutanix Files file server:
+# 1. Upload the NFS/SMB user-mapping configuration to a file server
+# 2. Download (fetch) the currently installed user-mapping configuration
+# 3. Re-upload (replace) the user-mapping configuration with a new file
+
+- name: UserMapping playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+  tasks:
+    - name: Setting variables
+      ansible.builtin.set_fact:
+        file_server_ext_id: "0005d0f6-1c3f-4e15-1155-ac1f6b6d0e3c"
+        user_mappings_file: "/tmp/user_mappings.json"
+        replacement_user_mappings_file: "/tmp/user_mappings_replacement.json"
+
+    - name: Upload user mappings for a file server (initial upload)
+      nutanix.ncp.ntnx_user_mapping_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        path: "{{ user_mappings_file }}"
+      register: upload_result
+      ignore_errors: true
+
+    - name: Download user mappings for a file server
+      nutanix.ncp.ntnx_user_mappings_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+      register: download_result
+      ignore_errors: true
+
+    - name: Replace the user mappings by uploading a new file
+      nutanix.ncp.ntnx_user_mapping_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        path: "{{ replacement_user_mappings_file }}"
+      register: replace_result
+      ignore_errors: true

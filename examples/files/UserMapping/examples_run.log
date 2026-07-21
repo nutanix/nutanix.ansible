@@ -1,0 +1,25 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [UserMapping playbook] ****************************************************
+
+TASK [Setting variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"file_server_ext_id": "0005d0f6-1c3f-4e15-1155-ac1f6b6d0e3c", "replacement_user_mappings_file": "/tmp/user_mappings_replacement.json", "user_mappings_file": "/tmp/user_mappings.json"}, "changed": false}
+
+TASK [Upload user mappings for a file server (initial upload)] *****************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while uploading user mappings for file server", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Download user mappings for a file server] ********************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while downloading user mappings for file server", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Replace the user mappings by uploading a new file] ***********************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while uploading user mappings for file server", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=4    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=3   
+
