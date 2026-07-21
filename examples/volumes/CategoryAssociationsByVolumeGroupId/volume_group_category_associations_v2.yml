@@ -1,0 +1,81 @@
+---
+# Summary:
+# This playbook demonstrates how to manage category associations for a Volume Group in
+# Nutanix Prism Central using the following v4 modules:
+#   1. Associate categories with a Volume Group (Create)
+#   2. Associate additional categories (Update — idempotent associate)
+#   3. List all category associations for a Volume Group
+#   4. Fetch a specific category association by ext_id
+#   5. List category associations with pagination (page + limit)
+#   6. Disassociate categories from a Volume Group (Delete)
+#
+# Prerequisites:
+#   - Prism Central endpoint reachable at nutanix_host
+#   - An existing Volume Group with the ext_id supplied in `volume_group_ext_id`
+#   - Two existing categories with the ext_ids supplied in `category_ext_id_1` and
+#     `category_ext_id_2` (create them via the ntnx_categories_v2 module if needed)
+
+- name: Volume Group Category Associations playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ nutanix_username | default(lookup('env', 'NUTANIX_USERNAME') | default('admin', true)) }}"
+      nutanix_password: "{{ nutanix_password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: false
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        volume_group_ext_id: "{{ volume_group_ext_id | default('<vg_ext_id>') }}"
+        category_ext_id_1: "{{ category_ext_id_1 | default('<category_ext_id_1>') }}"
+        category_ext_id_2: "{{ category_ext_id_2 | default('<category_ext_id_2>') }}"
+
+    - name: Associate categories with Volume Group
+      nutanix.ncp.ntnx_volume_group_category_v2:
+        state: present
+        ext_id: "{{ volume_group_ext_id }}"
+        categories:
+          - ext_id: "{{ category_ext_id_1 }}"
+            entity_type: "CATEGORY"
+      register: associate_result
+
+    - name: Update category associations by associating an additional category
+      nutanix.ncp.ntnx_volume_group_category_v2:
+        state: present
+        ext_id: "{{ volume_group_ext_id }}"
+        categories:
+          - ext_id: "{{ category_ext_id_1 }}"
+            entity_type: "CATEGORY"
+          - ext_id: "{{ category_ext_id_2 }}"
+            entity_type: "CATEGORY"
+      register: update_result
+
+    - name: List all category associations for the Volume Group
+      nutanix.ncp.ntnx_category_associations_by_volume_group_ids_info_v2:
+        volume_group_ext_id: "{{ volume_group_ext_id }}"
+      register: list_result
+
+    - name: Fetch a specific associated category by ext_id
+      nutanix.ncp.ntnx_category_associations_by_volume_group_ids_info_v2:
+        volume_group_ext_id: "{{ volume_group_ext_id }}"
+        ext_id: "{{ category_ext_id_1 }}"
+      register: get_result
+
+    - name: List category associations with pagination
+      nutanix.ncp.ntnx_category_associations_by_volume_group_ids_info_v2:
+        volume_group_ext_id: "{{ volume_group_ext_id }}"
+        page: 0
+        limit: 25
+      register: paginated_result
+
+    - name: Disassociate categories from the Volume Group
+      nutanix.ncp.ntnx_volume_group_category_v2:
+        state: absent
+        ext_id: "{{ volume_group_ext_id }}"
+        categories:
+          - ext_id: "{{ category_ext_id_1 }}"
+            entity_type: "CATEGORY"
+          - ext_id: "{{ category_ext_id_2 }}"
+            entity_type: "CATEGORY"
+      register: disassociate_result
