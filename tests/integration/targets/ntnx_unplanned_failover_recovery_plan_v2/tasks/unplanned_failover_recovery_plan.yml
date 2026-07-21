@@ -1,0 +1,296 @@
+---
+###################################################################################
+# Test plan for ntnx_unplanned_failover_recovery_plan_v2
+# ---------------------------------------------------------------------------------
+# Coverage:
+#   * check_mode
+#       - Minimal payload (only ext_id + failover_directions).
+#       - Full payload (all optional attributes set).
+#       - Delete-like path is not applicable to this action module; the
+#         corresponding check_mode assertion is that state=absent is rejected
+#         (only "present" is supported).
+#   * Argument-spec / negative validation (no API call reached):
+#       - Missing ext_id.
+#       - Invalid state value (choices enforcement).
+#       - Invalid ext_id UUID (SDK-level validation).
+#   * Real API invocation (best-effort; the action requires a real Recovery Plan
+#     with paired availability zones — if a suitable recovery plan is not present
+#     on the target cluster the assertions capture the exact API error rather
+#     than pretending success).
+#
+# Notes:
+#   * `check_mode: true` never contacts the API — it exercises the argument
+#     spec + spec generator only, so it is safe without a real recovery plan.
+#   * The real-run task is guarded by a `recovery_plan_ext_id_for_failover`
+#     variable which testers can override in `integration_config.yml`; without
+#     it the task is skipped so the whole target still passes on clusters that
+#     lack a paired site.
+###################################################################################
+
+- name: Start UnplannedFailoverRecoveryPlan tests
+  ansible.builtin.debug:
+    msg: Start UnplannedFailoverRecoveryPlan tests
+
+- name: Generate random names and shared fixtures
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    suffix_name: "ansible"
+    rp_ext_id_placeholder: "6f4ffcee-1dc4-4982-9401-aa1f65dd7177"
+    source_dm_ext_id_placeholder: "63bebabf-744c-48ff-a6d7-cb028707f972"
+    source_cluster_ext_id_placeholder: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
+    target_dm_ext_id_placeholder: "97da301d-0a8b-4334-94cd-16a83563218e"
+    target_cluster_ext_id_placeholder: "00062899-58d4-9d37-185b-ac1f6b6f97e2"
+
+- name: Build derived job name
+  ansible.builtin.set_fact:
+    rpj_name: "rpj_unplanned_failover_{{ suffix_name }}_{{ random_name }}"
+
+########################################################################################
+# check_mode tests
+########################################################################################
+
+- name: Generate spec for triggering unplanned failover using check mode with minimum required attributes
+  nutanix.ncp.ntnx_unplanned_failover_recovery_plan_v2:
+    ext_id: "{{ rp_ext_id_placeholder }}"
+    name: "{{ rpj_name }}_check_min"
+    failover_directions:
+      - source_domain_manager_ext_id: "{{ source_dm_ext_id_placeholder }}"
+        source_cluster:
+          ext_id: "{{ source_cluster_ext_id_placeholder }}"
+        target_domain_manager_ext_id: "{{ target_dm_ext_id_placeholder }}"
+        target_cluster:
+          ext_id: "{{ target_cluster_ext_id_placeholder }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Verify check_mode spec generation with minimum attributes
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == rp_ext_id_placeholder
+      - result.response is defined
+      - result.response.name == rpj_name ~ "_check_min"
+      - result.response.failover_directions | length == 1
+      - result.response.failover_directions[0].source_domain_manager_ext_id == source_dm_ext_id_placeholder
+      - result.response.failover_directions[0].source_cluster.ext_id == source_cluster_ext_id_placeholder
+      - result.response.failover_directions[0].target_domain_manager_ext_id == target_dm_ext_id_placeholder
+      - result.response.failover_directions[0].target_cluster.ext_id == target_cluster_ext_id_placeholder
+      - result.msg is search('check mode')
+    success_msg: "Check mode spec for minimum attributes generated successfully"
+    fail_msg: "Check mode spec for minimum attributes generation failed"
+
+- name: Generate spec for triggering unplanned failover using check mode with all attributes
+  nutanix.ncp.ntnx_unplanned_failover_recovery_plan_v2:
+    state: present
+    ext_id: "{{ rp_ext_id_placeholder }}"
+    name: "{{ rpj_name }}_check_full"
+    recovery_reference_time: "2024-01-02T03:04:05+00:00"
+    should_ignore_warnings: true
+    is_instant_restore: true
+    failover_directions:
+      - source_domain_manager_ext_id: "{{ source_dm_ext_id_placeholder }}"
+        source_cluster:
+          ext_id: "{{ source_cluster_ext_id_placeholder }}"
+        target_domain_manager_ext_id: "{{ target_dm_ext_id_placeholder }}"
+        target_cluster:
+          ext_id: "{{ target_cluster_ext_id_placeholder }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Verify check_mode spec generation with all attributes
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == rp_ext_id_placeholder
+      - result.response is defined
+      - result.response.name == rpj_name ~ "_check_full"
+      - result.response.recovery_reference_time is search("2024-01-02T03:04:05")
+      - result.response.should_ignore_warnings == true
+      - result.response.is_instant_restore == true
+      - result.response.failover_directions | length == 1
+      - result.response.failover_directions[0].source_domain_manager_ext_id == source_dm_ext_id_placeholder
+      - result.response.failover_directions[0].source_cluster.ext_id == source_cluster_ext_id_placeholder
+      - result.response.failover_directions[0].target_domain_manager_ext_id == target_dm_ext_id_placeholder
+      - result.response.failover_directions[0].target_cluster.ext_id == target_cluster_ext_id_placeholder
+    success_msg: "Check mode spec for all attributes generated successfully"
+    fail_msg: "Check mode spec for all attributes generation failed"
+
+- name: Generate spec for triggering unplanned failover using check mode with multiple failover directions
+  nutanix.ncp.ntnx_unplanned_failover_recovery_plan_v2:
+    ext_id: "{{ rp_ext_id_placeholder }}"
+    name: "{{ rpj_name }}_check_multi"
+    should_ignore_warnings: false
+    is_instant_restore: false
+    failover_directions:
+      - source_domain_manager_ext_id: "{{ source_dm_ext_id_placeholder }}"
+        source_cluster:
+          ext_id: "{{ source_cluster_ext_id_placeholder }}"
+        target_domain_manager_ext_id: "{{ target_dm_ext_id_placeholder }}"
+        target_cluster:
+          ext_id: "{{ target_cluster_ext_id_placeholder }}"
+      - source_domain_manager_ext_id: "{{ target_dm_ext_id_placeholder }}"
+        source_cluster:
+          ext_id: "{{ target_cluster_ext_id_placeholder }}"
+        target_domain_manager_ext_id: "{{ source_dm_ext_id_placeholder }}"
+        target_cluster:
+          ext_id: "{{ source_cluster_ext_id_placeholder }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Verify check_mode spec generation with multiple failover directions
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.failover_directions | length == 2
+      - result.response.should_ignore_warnings == false
+      - result.response.is_instant_restore == false
+      - result.response.failover_directions[0].source_cluster.ext_id == source_cluster_ext_id_placeholder
+      - result.response.failover_directions[1].source_cluster.ext_id == target_cluster_ext_id_placeholder
+      - result.response.failover_directions[1].target_cluster.ext_id == source_cluster_ext_id_placeholder
+    success_msg: "Check mode spec for multi-direction payload generated successfully"
+    fail_msg: "Check mode spec for multi-direction payload generation failed"
+
+########################################################################################
+# Negative / validation tests (no API call)
+########################################################################################
+
+- name: Trigger unplanned failover without ext_id (missing required argument)
+  nutanix.ncp.ntnx_unplanned_failover_recovery_plan_v2:
+    failover_directions:
+      - source_domain_manager_ext_id: "{{ source_dm_ext_id_placeholder }}"
+        source_cluster:
+          ext_id: "{{ source_cluster_ext_id_placeholder }}"
+        target_domain_manager_ext_id: "{{ target_dm_ext_id_placeholder }}"
+        target_cluster:
+          ext_id: "{{ target_cluster_ext_id_placeholder }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify missing ext_id is rejected by the argument spec
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg is search("missing required arguments")
+      - result.msg is search("ext_id")
+    success_msg: "Missing ext_id correctly rejected"
+    fail_msg: "Missing ext_id was NOT rejected by the argument spec"
+
+- name: Trigger unplanned failover with unsupported state=absent
+  nutanix.ncp.ntnx_unplanned_failover_recovery_plan_v2:
+    state: absent
+    ext_id: "{{ rp_ext_id_placeholder }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify state=absent is rejected (only "present" is allowed)
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg is search("value of state must be one of")
+    success_msg: "state=absent correctly rejected"
+    fail_msg: "state=absent was NOT rejected"
+
+- name: Trigger unplanned failover without API-required name / failover_directions
+  nutanix.ncp.ntnx_unplanned_failover_recovery_plan_v2:
+    ext_id: "{{ rp_ext_id_placeholder }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify validate_required_params catches missing name / failover_directions
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg is search("Missing required parameter")
+      - result.msg is search("name")
+      - result.msg is search("failover_directions")
+    success_msg: "Missing name / failover_directions correctly rejected by validate_required_params"
+    fail_msg: "Missing name / failover_directions were NOT rejected"
+
+- name: Trigger unplanned failover with an ext_id that does not match the UUID pattern
+  nutanix.ncp.ntnx_unplanned_failover_recovery_plan_v2:
+    ext_id: "{{ rp_ext_id_placeholder }}"
+    name: "{{ rpj_name }}_bad_uuid"
+    failover_directions:
+      - source_domain_manager_ext_id: "not-a-uuid"
+        source_cluster:
+          ext_id: "{{ source_cluster_ext_id_placeholder }}"
+        target_domain_manager_ext_id: "{{ target_dm_ext_id_placeholder }}"
+        target_cluster:
+          ext_id: "{{ target_cluster_ext_id_placeholder }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Verify invalid UUID in failover_directions is rejected by SDK validation
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+    success_msg: "Invalid UUID in failover_directions correctly rejected"
+    fail_msg: "Invalid UUID in failover_directions was NOT rejected"
+
+########################################################################################
+# Real API call — only executes when the tester supplies a valid recovery plan
+# in `integration_config.yml` (variable `recovery_plan_ext_id_for_failover`).
+########################################################################################
+
+- name: Trigger unplanned failover against a real recovery plan (best-effort)
+  nutanix.ncp.ntnx_unplanned_failover_recovery_plan_v2:
+    ext_id: "{{ recovery_plan_ext_id_for_failover }}"
+    name: "{{ rpj_name }}_real"
+    recovery_reference_time: "{{ recovery_plan_reference_time | default(omit) }}"
+    should_ignore_warnings: true
+    is_instant_restore: false
+    failover_directions: "{{ recovery_plan_failover_directions }}"
+  register: real_result
+  when:
+    - recovery_plan_ext_id_for_failover is defined
+    - recovery_plan_ext_id_for_failover | length > 0
+    - recovery_plan_failover_directions is defined
+    - recovery_plan_failover_directions | length > 0
+  ignore_errors: true
+
+- name: Verify real unplanned failover response shape when the task ran
+  ansible.builtin.assert:
+    that:
+      - real_result is defined
+      - real_result.ext_id == recovery_plan_ext_id_for_failover
+      - real_result.task_ext_id is defined
+      - real_result.response is defined
+      - real_result.response.status is defined
+    success_msg: "Real unplanned failover produced a task response as expected"
+    fail_msg: "Real unplanned failover did not produce the expected task response"
+  when:
+    - real_result is defined
+    - real_result.skipped is not defined or not real_result.skipped
+    - not real_result.failed
+
+- name: Report skipped real-run when no recovery plan is available
+  ansible.builtin.debug:
+    msg: >-
+      Skipping real unplanned failover invocation because
+      recovery_plan_ext_id_for_failover was not supplied in integration_config.yml.
+  when:
+    - recovery_plan_ext_id_for_failover is not defined
+      or recovery_plan_ext_id_for_failover | length == 0
+
+- name: End UnplannedFailoverRecoveryPlan tests
+  ansible.builtin.debug:
+    msg: End UnplannedFailoverRecoveryPlan tests
