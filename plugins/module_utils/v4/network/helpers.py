@@ -170,3 +170,23 @@ def get_virtual_switch(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching virtual switch info using ext_id",
         )
+
+
+def get_uplink_bond(module, api_instance, ext_id):
+    """
+    This method will return uplink bond info using its ext_id
+    Args:
+        module: Ansible module
+        api_instance: UplinkBondsApi instance from ntnx_networking_py_client sdk
+        ext_id (str): uplink bond external ID
+    return:
+        info (object): uplink bond info
+    """
+    try:
+        return api_instance.get_uplink_bond_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching uplink bond info using ext_id",
+        )
