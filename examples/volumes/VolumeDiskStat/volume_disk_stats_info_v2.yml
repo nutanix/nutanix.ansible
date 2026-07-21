@@ -1,0 +1,128 @@
+---
+# Summary:
+# This playbook demonstrates how to fetch statistics (time-series performance
+# data) for a Volume Disk that belongs to a Volume Group using the
+# ntnx_volume_disk_stats_info_v2 module.
+#
+# Prerequisites created inline:
+# 1. A Volume Group.
+# 2. A Volume Disk (backed by a storage container) attached to that Volume Group.
+#
+# It then:
+# 3. Fetches disk stats for a fixed time window (minimal spec).
+# 4. Fetches disk stats with sampling_interval, stat_type and $select (all spec).
+# 5. Cleans up the disk and the Volume Group.
+
+- name: Volume Disk stats info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default(lookup('env', 'NUTANIX_HOST') | default('10.44.76.28', true)) }}"
+      nutanix_username: "{{ nutanix_username | default(lookup('env', 'NUTANIX_USERNAME') | default('admin', true)) }}"
+      nutanix_password: "{{ nutanix_password | default(lookup('env', 'NUTANIX_PASSWORD') | default('Nutanix.123', true)) }}"
+      validate_certs: false
+  tasks:
+    - name: Generate a random suffix for the Volume Group name
+      ansible.builtin.set_fact:
+        random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=10)[0] }}"
+
+    - name: Discover a cluster to host the Volume Group
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(f:f eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+      register: clusters_result
+
+    - name: Set target cluster ext_id
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ (clusters_result.response | selectattr('name', 'ne', 'Unnamed') | list)[0].ext_id }}"
+
+    - name: Discover a storage container on the target cluster
+      nutanix.ncp.ntnx_storage_containers_info_v2:
+        filter: "clusterExtId eq '{{ cluster_ext_id }}'"
+      register: storage_containers_result
+
+    - name: Set storage container ext_id
+      ansible.builtin.set_fact:
+        storage_container_ext_id: "{{ storage_containers_result.response[0].container_ext_id }}"
+
+    - name: Create Volume Group to host the disk under test
+      nutanix.ncp.ntnx_volume_groups_v2:
+        state: present
+        name: "ansible-vds-{{ random_name }}"
+        description: "VG created by ntnx_volume_disk_stats_info_v2 example"
+        cluster_reference: "{{ cluster_ext_id }}"
+        sharing_status: "SHARED"
+        target_prefix: "vg1"
+        usage_type: "USER"
+        storage_features:
+          flash_mode:
+            is_enabled: true
+      register: vg_result
+
+    - name: Set Volume Group ext_id
+      ansible.builtin.set_fact:
+        vg_ext_id: "{{ vg_result.ext_id }}"
+
+    - name: Create Volume Disk of 1 GiB
+      nutanix.ncp.ntnx_volume_groups_disks_v2:
+        state: present
+        volume_group_ext_id: "{{ vg_ext_id }}"
+        disk_size_bytes: 1073741824
+        disk_data_source_reference:
+          entity_type: "STORAGE_CONTAINER"
+          ext_id: "{{ storage_container_ext_id }}"
+      register: disk_result
+
+    - name: Set Volume Disk ext_id
+      ansible.builtin.set_fact:
+        disk_ext_id: "{{ disk_result.ext_id }}"
+
+    - name: Compute start_time (5 minutes ago) in ISO-8601 UTC
+      ansible.builtin.command: date -u -d "-300 seconds" +"%Y-%m-%dT%H:%M:%S.%3NZ"
+      register: start_time
+      changed_when: false
+
+    - name: Compute end_time (now) in ISO-8601 UTC
+      ansible.builtin.command: date -u +"%Y-%m-%dT%H:%M:%S.%3NZ"
+      register: end_time
+      changed_when: false
+
+    - name: Fetch volume disk stats (minimal spec)
+      nutanix.ncp.ntnx_volume_disk_stats_info_v2:
+        volume_group_ext_id: "{{ vg_ext_id }}"
+        ext_id: "{{ disk_ext_id }}"
+        start_time: "{{ start_time.stdout }}"
+        end_time: "{{ end_time.stdout }}"
+      register: stats_min
+
+    - name: Show minimal stats result
+      ansible.builtin.debug:
+        var: stats_min
+
+    - name: Fetch volume disk stats with sampling_interval, stat_type and $select
+      nutanix.ncp.ntnx_volume_disk_stats_info_v2:
+        volume_group_ext_id: "{{ vg_ext_id }}"
+        ext_id: "{{ disk_ext_id }}"
+        start_time: "{{ start_time.stdout }}"
+        end_time: "{{ end_time.stdout }}"
+        sampling_interval: 30
+        stat_type: "AVG"
+        select: "*"
+      register: stats_full
+
+    - name: Show full stats result
+      ansible.builtin.debug:
+        var: stats_full
+
+    - name: Delete the Volume Disk created for the stats fetch
+      nutanix.ncp.ntnx_volume_groups_disks_v2:
+        state: absent
+        volume_group_ext_id: "{{ vg_ext_id }}"
+        ext_id: "{{ disk_ext_id }}"
+      register: disk_delete
+
+    - name: Delete the Volume Group used for the stats fetch
+      nutanix.ncp.ntnx_volume_groups_v2:
+        state: absent
+        ext_id: "{{ vg_ext_id }}"
+      register: vg_delete
