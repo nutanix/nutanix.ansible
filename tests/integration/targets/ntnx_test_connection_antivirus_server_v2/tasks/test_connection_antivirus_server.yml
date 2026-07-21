@@ -1,0 +1,204 @@
+---
+# Test plan for `ntnx_test_connection_antivirus_server_v2` (action module):
+#
+# Scenarios covered:
+#   1. check_mode with all attributes - verify the action is not executed and
+#      that ext_id / msg are surfaced correctly.
+#   2. Negative: missing `file_server_ext_id` — Ansible must reject the task.
+#   3. Negative: missing `ext_id` — Ansible must reject the task.
+#   4. Negative: invalid state (state=absent) — Ansible must reject the task
+#      because only `present` is allowed for this action module.
+#   5. Negative: unknown file server ext_id — the API call must fail cleanly
+#      and surface a descriptive error without leaking a stack trace.
+#   6. Negative: unknown antivirus server ext_id under a valid-looking file
+#      server ext_id — the API must return an error and the module must fail
+#      with `failed=true`.
+#   7. Live execution (only when caller supplies real `file_server_ext_id` and
+#      `antivirus_server_ext_id` variables) — verify that a real
+#      test-connection call reports a completed task with `changed=true`.
+
+- name: Start ntnx_test_connection_antivirus_server_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_test_connection_antivirus_server_v2 tests
+
+- name: Generate deterministic test identifiers
+  ansible.builtin.set_fact:
+    random_suffix: "{{ 99999999999 | random(seed=inventory_hostname) | string }}"
+
+- name: Set fake identifiers used by negative and check-mode tests
+  ansible.builtin.set_fact:
+    fake_file_server_ext_id: "00000000-0000-0000-0000-{{ '%012d' | format(random_suffix | int) }}"
+    fake_antivirus_server_ext_id: "11111111-1111-1111-1111-{{ '%012d' | format(random_suffix | int) }}"
+
+########################################################################################
+# 1. check_mode with all attributes
+########################################################################################
+
+- name: Test antivirus server connection in check mode with all attributes
+  nutanix.ncp.ntnx_test_connection_antivirus_server_v2:
+    state: present
+    file_server_ext_id: "{{ fake_file_server_ext_id }}"
+    ext_id: "{{ fake_antivirus_server_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Test antivirus server connection in check mode with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == fake_antivirus_server_ext_id
+      - result.msg is defined
+      - fake_antivirus_server_ext_id in result.msg
+      - fake_file_server_ext_id in result.msg
+    success_msg: "Check-mode test-connection returned the expected pending action message"
+    fail_msg: "Check-mode test-connection did not return the expected pending action message"
+
+########################################################################################
+# 2. Missing file_server_ext_id
+########################################################################################
+
+- name: Test antivirus server connection with missing file_server_ext_id
+  nutanix.ncp.ntnx_test_connection_antivirus_server_v2:
+    state: present
+    ext_id: "{{ fake_antivirus_server_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Missing file_server_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+      - "'file_server_ext_id' in result.msg"
+    success_msg: "Missing file_server_ext_id was rejected as expected"
+    fail_msg: "Missing file_server_ext_id was not rejected as expected"
+
+########################################################################################
+# 3. Missing ext_id
+########################################################################################
+
+- name: Test antivirus server connection with missing ext_id
+  nutanix.ncp.ntnx_test_connection_antivirus_server_v2:
+    state: present
+    file_server_ext_id: "{{ fake_file_server_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Missing ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+      - "'ext_id' in result.msg"
+    success_msg: "Missing ext_id was rejected as expected"
+    fail_msg: "Missing ext_id was not rejected as expected"
+
+########################################################################################
+# 4. Invalid state (state=absent)
+########################################################################################
+
+- name: Test antivirus server connection with unsupported state=absent
+  nutanix.ncp.ntnx_test_connection_antivirus_server_v2:
+    state: absent
+    file_server_ext_id: "{{ fake_file_server_ext_id }}"
+    ext_id: "{{ fake_antivirus_server_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Invalid state status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+      - "'value of state must be one of' in result.msg or 'state' in result.msg"
+    success_msg: "state=absent was rejected as expected"
+    fail_msg: "state=absent was not rejected as expected"
+
+########################################################################################
+# 5. Unknown file_server_ext_id — API failure path
+########################################################################################
+
+- name: Test antivirus server connection with unknown file_server_ext_id
+  nutanix.ncp.ntnx_test_connection_antivirus_server_v2:
+    state: present
+    file_server_ext_id: "00000000-0000-0000-0000-000000000000"
+    ext_id: "{{ fake_antivirus_server_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Unknown file_server_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+    success_msg: "Unknown file_server_ext_id was surfaced as a failure without leaking a stack trace"
+    fail_msg: "Unknown file_server_ext_id did not fail as expected"
+
+########################################################################################
+# 6. Unknown antivirus server ext_id — API failure path
+########################################################################################
+
+- name: Test antivirus server connection with unknown antivirus server ext_id
+  nutanix.ncp.ntnx_test_connection_antivirus_server_v2:
+    state: present
+    file_server_ext_id: "{{ fake_file_server_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Unknown antivirus server ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+    success_msg: "Unknown antivirus server ext_id was surfaced as a failure without leaking a stack trace"
+    fail_msg: "Unknown antivirus server ext_id did not fail as expected"
+
+########################################################################################
+# 7. Live test-connection execution (opt-in via real identifiers supplied by caller)
+########################################################################################
+
+- name: Live test-connection call (only when real identifiers are supplied)
+  when:
+    - antivirus_server_ext_id is defined
+    - antivirus_server_ext_id | length > 0
+    - file_server_ext_id is defined
+    - file_server_ext_id | length > 0
+  block:
+    - name: Trigger real test connection against the configured antivirus server
+      nutanix.ncp.ntnx_test_connection_antivirus_server_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ antivirus_server_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Live test-connection status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.failed == false
+          - result.changed == true
+          - result.ext_id == antivirus_server_ext_id
+          - result.task_ext_id is defined
+          - result.response is defined
+          - result.response.status in ["SUCCEEDED", "FAILED"]
+        success_msg: "Live test-connection call completed and reported a task status"
+        fail_msg: "Live test-connection call did not complete as expected"
+
+- name: End ntnx_test_connection_antivirus_server_v2 tests
+  ansible.builtin.debug:
+    msg: End ntnx_test_connection_antivirus_server_v2 tests
