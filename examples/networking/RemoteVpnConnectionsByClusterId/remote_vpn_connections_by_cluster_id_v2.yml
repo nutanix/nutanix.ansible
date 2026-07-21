@@ -1,0 +1,89 @@
+---
+# Summary:
+# This playbook shows how to consume the read-only remote VPN connections V4 APIs
+# scoped to a specific Prism Central cluster. The underlying V4 API is read-only
+# (only GET single and LIST are exposed), so no create / update / delete tasks
+# are included.
+#
+# It demonstrates:
+# 1. Discovering the Prism Central cluster external ID (via ntnx_clusters_info_v2)
+# 2. Listing all remote VPN connections for that cluster
+# 3. Listing with a limit
+# 4. Listing with a filter (best-effort — no results is a valid outcome)
+# 5. Fetching a single remote VPN connection by (cluster_ext_id, ext_id) via the
+#    ntnx_remote_vpn_connections_by_cluster_id_v2 module — only if at least one
+#    connection exists on the cluster.
+
+- name: Remote VPN Connections By Cluster Id playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default(omit) }}"
+      nutanix_username: "{{ nutanix_username | default(omit) }}"
+      nutanix_password: "{{ nutanix_password | default(omit) }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+  tasks:
+    - name: Discover a Prism Central managed cluster external ID
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
+      register: pc_cluster
+      ignore_errors: true
+
+    - name: Set cluster_ext_id fact from the discovered PC cluster
+      ansible.builtin.set_fact:
+        cluster_ext_id: >-
+          {{ (pc_cluster.response | default([]))[0].ext_id
+             if (pc_cluster.response | default([])) | length > 0
+             else '' }}
+
+    - name: List all remote VPN connections for the cluster
+      nutanix.ncp.ntnx_remote_vpn_connections_by_cluster_ids_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: list_result
+      when: cluster_ext_id | length > 0
+      ignore_errors: true
+
+    - name: List remote VPN connections for the cluster with a limit
+      nutanix.ncp.ntnx_remote_vpn_connections_by_cluster_ids_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        limit: 1
+      register: list_limited_result
+      when: cluster_ext_id | length > 0
+      ignore_errors: true
+
+    - name: List remote VPN connections for the cluster with a filter
+      nutanix.ncp.ntnx_remote_vpn_connections_by_cluster_ids_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        filter: "startswith(name, 'remote-')"
+      register: list_filtered_result
+      when: cluster_ext_id | length > 0
+      ignore_errors: true
+
+    - name: Set first_ext_id fact when at least one remote VPN connection exists
+      ansible.builtin.set_fact:
+        first_ext_id: >-
+          {{ (list_result.response | default([]))[0].ext_id
+             if (list_result.response | default([])) | length > 0
+             else '' }}
+      when: list_result is defined
+
+    - name: Get a specific remote VPN connection via the info module
+      nutanix.ncp.ntnx_remote_vpn_connections_by_cluster_ids_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ first_ext_id }}"
+      register: single_info_result
+      when:
+        - cluster_ext_id | length > 0
+        - first_ext_id | default('') | length > 0
+      ignore_errors: true
+
+    - name: Get a specific remote VPN connection via the direct get-by-id module
+      nutanix.ncp.ntnx_remote_vpn_connections_by_cluster_id_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ first_ext_id }}"
+      register: single_get_result
+      when:
+        - cluster_ext_id | length > 0
+        - first_ext_id | default('') | length > 0
+      ignore_errors: true
