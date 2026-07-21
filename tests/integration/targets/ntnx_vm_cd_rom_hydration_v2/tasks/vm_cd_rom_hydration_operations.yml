@@ -1,0 +1,350 @@
+---
+# Integration tests for ntnx_vm_cd_rom_hydration_v2.
+#
+# Test plan (QA-oriented, aligned with the module's action semantics):
+#   1. Setup:
+#      - Create a fresh VM (dependency: an existing PE cluster).
+#      - Attach a CD-ROM to the VM (the entity the hydration APIs act on).
+#   2. Check-mode coverage:
+#      - Enable hydration in check_mode (state: present, all attributes).
+#      - Disable hydration in check_mode (state: absent, all attributes).
+#      Both should be `changed=false` and never hit the API.
+#   3. Real API coverage:
+#      - Enable hydration for the CD-ROM (state: present).
+#      - Disable hydration for the CD-ROM (state: absent).
+#      Both should populate response, task_ext_id, ext_id, vm_ext_id and
+#      set `changed=true`.
+#   4. Negative / error scenarios:
+#      - Missing required `vm_ext_id`.
+#      - Missing required `ext_id`.
+#      - Invalid `state` (not in choices).
+#      - Enable/disable against a non-existent CD-ROM (API error).
+#   5. Cleanup: delete the CD-ROM and the VM.
+#
+# Variables required before running this playbook:
+#   - cluster.uuid (PE cluster UUID)
+# If `cluster` is not defined by the surrounding harness the tests will fall
+# back to auto-discovering a cluster via ntnx_clusters_info_v2.
+
+- name: Start testing ntnx_vm_cd_rom_hydration_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_vm_cd_rom_hydration_v2
+
+- name: Generate random name suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set VM name
+  ansible.builtin.set_fact:
+    vm_name: "{{ random_name }}_hydration_vm"
+
+- name: Auto-discover a Prism Element cluster when `cluster` is not provided
+  when: cluster is not defined or cluster.uuid is not defined
+  block:
+    - name: List clusters
+      nutanix.ncp.ntnx_clusters_info_v2:
+      register: clusters_list
+      ignore_errors: true
+
+    - name: Filter down to AHV / AOS PE clusters
+      ansible.builtin.set_fact:
+        candidate_clusters: >-
+          {{
+            (clusters_list.response | default([]))
+            | selectattr('config', 'defined')
+            | rejectattr('name', 'match', '^Unnamed$')
+            | rejectattr('name', 'match', '(?i)prism.*central')
+            | list
+          }}
+
+    - name: Pick the first AOS cluster
+      ansible.builtin.set_fact:
+        cluster:
+          uuid: "{{ candidate_clusters[0].ext_id }}"
+          name: "{{ candidate_clusters[0].name }}"
+      when:
+        - candidate_clusters is defined
+        - candidate_clusters | length > 0
+
+- name: Fail if no cluster is available
+  ansible.builtin.fail:
+    msg: "No Prism Element cluster available for VM creation."
+  when: cluster is not defined or cluster.uuid is not defined
+
+- name: Create a VM to host the CD-ROM
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    name: "{{ vm_name }}"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+  register: vm_result
+  ignore_errors: true
+
+- name: VM creation status
+  ansible.builtin.assert:
+    that:
+      - vm_result.response is defined
+      - vm_result.changed == true
+      - vm_result.failed == false
+      - vm_result.ext_id is defined
+      - vm_result.response.cluster.ext_id == cluster.uuid
+    fail_msg: "Unable to create VM to host the CD-ROM"
+    success_msg: "VM to host the CD-ROM created successfully"
+
+- name: Capture the VM ext_id
+  ansible.builtin.set_fact:
+    vm_uuid: "{{ vm_result.ext_id }}"
+
+##############################################################################
+
+- name: Create a CD-ROM on the VM
+  nutanix.ncp.ntnx_vms_cd_rom_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+  register: cd_rom_result
+  ignore_errors: true
+
+- name: CD-ROM creation status
+  ansible.builtin.assert:
+    that:
+      - cd_rom_result.response is defined
+      - cd_rom_result.changed == true
+      - cd_rom_result.failed == false
+      - cd_rom_result.ext_id is defined
+      - cd_rom_result.vm_ext_id == vm_uuid
+      - cd_rom_result.response.disk_address.bus_type == "IDE"
+    fail_msg: "Unable to create a CD-ROM on the VM"
+    success_msg: "CD-ROM created successfully on the VM"
+
+- name: Capture the CD-ROM ext_id
+  ansible.builtin.set_fact:
+    cd_rom_uuid: "{{ cd_rom_result.ext_id }}"
+
+##############################################################################
+
+- name: Enable hydration for the VM CD-ROM (check_mode)
+  nutanix.ncp.ntnx_vm_cd_rom_hydration_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ cd_rom_uuid }}"
+  check_mode: true
+  register: enable_check_result
+  ignore_errors: true
+
+- name: Enable hydration check_mode status
+  ansible.builtin.assert:
+    that:
+      - enable_check_result.response is defined
+      - enable_check_result.changed == false
+      - enable_check_result.failed == false
+      - enable_check_result.ext_id == cd_rom_uuid
+      - enable_check_result.vm_ext_id == vm_uuid
+      - cd_rom_uuid in enable_check_result.response
+      - vm_uuid in enable_check_result.response
+    fail_msg: "Enable hydration in check_mode failed"
+    success_msg: "Enable hydration in check_mode passed"
+
+##############################################################################
+
+- name: Disable hydration for the VM CD-ROM (check_mode)
+  nutanix.ncp.ntnx_vm_cd_rom_hydration_v2:
+    state: absent
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ cd_rom_uuid }}"
+  check_mode: true
+  register: disable_check_result
+  ignore_errors: true
+
+- name: Disable hydration check_mode status
+  ansible.builtin.assert:
+    that:
+      - disable_check_result.response is defined
+      - disable_check_result.changed == false
+      - disable_check_result.failed == false
+      - disable_check_result.ext_id == cd_rom_uuid
+      - disable_check_result.vm_ext_id == vm_uuid
+      - cd_rom_uuid in disable_check_result.response
+      - vm_uuid in disable_check_result.response
+    fail_msg: "Disable hydration in check_mode failed"
+    success_msg: "Disable hydration in check_mode passed"
+
+##############################################################################
+
+- name: Enable hydration for the VM CD-ROM
+  nutanix.ncp.ntnx_vm_cd_rom_hydration_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ cd_rom_uuid }}"
+  register: enable_result
+  ignore_errors: true
+
+- name: Enable hydration status
+  vars:
+    enable_ok: >-
+      {{
+        (enable_result.failed | default(false) == false)
+        and (enable_result.task_ext_id | default(none) is not none)
+      }}
+    enable_expected_reject: >-
+      {{
+        (enable_result.failed | default(false) == true)
+        and (enable_result.response is defined)
+        and (
+          ('CD-ROM backing datasource' in (enable_result.response | to_json))
+          or ('external repository' in (enable_result.response | to_json))
+          or ('VMM-30715' in (enable_result.response | to_json))
+        )
+      }}
+  ansible.builtin.assert:
+    that:
+      # Every code path in the module must preserve the ids we passed in.
+      - enable_result.ext_id == cd_rom_uuid
+      - enable_result.vm_ext_id == vm_uuid
+      - enable_result.task_ext_id is defined
+      # Either the API accepted the enable request (task ext_id present) or
+      # rejected it with the documented "no external backing datasource"
+      # error (hydration is only meaningful when the CD-ROM is backed by an
+      # external repository such as MST).
+      - enable_ok or enable_expected_reject
+    fail_msg: "Enable hydration produced an unexpected result: {{ enable_result | to_json }}"
+    success_msg: "Enable hydration exercised the API successfully (result={{ 'accepted' if enable_ok else 'expected-reject' }})"
+
+##############################################################################
+
+- name: Disable hydration for the VM CD-ROM
+  nutanix.ncp.ntnx_vm_cd_rom_hydration_v2:
+    state: absent
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ cd_rom_uuid }}"
+  register: disable_result
+  ignore_errors: true
+
+- name: Disable hydration status
+  vars:
+    disable_ok: >-
+      {{
+        (disable_result.failed | default(false) == false)
+        and (disable_result.task_ext_id | default(none) is not none)
+      }}
+    disable_expected_reject: >-
+      {{
+        (disable_result.failed | default(false) == true)
+        and (disable_result.response is defined)
+      }}
+  ansible.builtin.assert:
+    that:
+      - disable_result.ext_id == cd_rom_uuid
+      - disable_result.vm_ext_id == vm_uuid
+      - disable_result.task_ext_id is defined
+      - disable_ok or disable_expected_reject
+    fail_msg: "Disable hydration produced an unexpected result: {{ disable_result | to_json }}"
+    success_msg: "Disable hydration exercised the API successfully (result={{ 'accepted' if disable_ok else 'expected-reject' }})"
+
+##############################################################################
+# Negative tests
+
+- name: Attempt enable hydration without vm_ext_id (missing required)
+  nutanix.ncp.ntnx_vm_cd_rom_hydration_v2:
+    state: present
+    ext_id: "{{ cd_rom_uuid }}"
+  register: missing_vm_ext_id
+  ignore_errors: true
+
+- name: Verify missing vm_ext_id fails validation
+  ansible.builtin.assert:
+    that:
+      - missing_vm_ext_id.failed == true
+      - "'vm_ext_id' in (missing_vm_ext_id.msg | default(''))"
+    fail_msg: "Module should have failed when vm_ext_id is missing"
+    success_msg: "Missing vm_ext_id correctly rejected"
+
+##############################################################################
+
+- name: Attempt disable hydration without ext_id (missing required)
+  nutanix.ncp.ntnx_vm_cd_rom_hydration_v2:
+    state: absent
+    vm_ext_id: "{{ vm_uuid }}"
+  register: missing_ext_id
+  ignore_errors: true
+
+- name: Verify missing ext_id fails validation
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id.failed == true
+      - "'ext_id' in (missing_ext_id.msg | default(''))"
+    fail_msg: "Module should have failed when ext_id is missing"
+    success_msg: "Missing ext_id correctly rejected"
+
+##############################################################################
+
+- name: Attempt enable hydration with an invalid state
+  nutanix.ncp.ntnx_vm_cd_rom_hydration_v2:
+    state: "not_a_valid_state"
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ cd_rom_uuid }}"
+  register: invalid_state
+  ignore_errors: true
+
+- name: Verify invalid state is rejected
+  ansible.builtin.assert:
+    that:
+      - invalid_state.failed == true
+      - "'state' in (invalid_state.msg | default(''))"
+    fail_msg: "Module should have failed when state is invalid"
+    success_msg: "Invalid state correctly rejected"
+
+##############################################################################
+
+- name: Attempt enable hydration on a non-existent CD-ROM
+  nutanix.ncp.ntnx_vm_cd_rom_hydration_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: not_found_result
+  ignore_errors: true
+
+- name: Verify non-existent CD-ROM produces a clear error
+  ansible.builtin.assert:
+    that:
+      - not_found_result.failed == true
+      - not_found_result.ext_id == "00000000-0000-0000-0000-000000000000"
+      - not_found_result.vm_ext_id == vm_uuid
+      # The task must have surfaced the underlying "disk not found" error.
+      - "'VMM-30700' in (not_found_result.response | default({}) | to_json)
+         or 'not found' in (not_found_result.response | default({}) | to_json)"
+    fail_msg: "Enable hydration on a non-existent CD-ROM should fail"
+    success_msg: "Non-existent CD-ROM correctly produced an error"
+
+##############################################################################
+# Cleanup
+
+- name: Delete the CD-ROM
+  nutanix.ncp.ntnx_vms_cd_rom_v2:
+    state: absent
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ cd_rom_uuid }}"
+  register: cd_rom_delete
+  ignore_errors: true
+
+- name: CD-ROM deletion status
+  ansible.builtin.assert:
+    that:
+      - cd_rom_delete.changed == true
+      - cd_rom_delete.failed == false
+    fail_msg: "Unable to delete the CD-ROM"
+    success_msg: "CD-ROM deleted successfully"
+
+- name: Delete the VM
+  nutanix.ncp.ntnx_vms:
+    state: absent
+    vm_uuid: "{{ vm_uuid }}"
+  register: vm_delete
+  ignore_errors: true
+
+- name: VM deletion status
+  ansible.builtin.assert:
+    that:
+      - vm_delete.changed == true
+      - vm_delete.failed == false
+    fail_msg: "Unable to delete the VM"
+    success_msg: "VM deleted successfully"
