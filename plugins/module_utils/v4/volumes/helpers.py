@@ -26,3 +26,24 @@ def get_volume_group(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching Volume group info using ext_id",
         )
+
+
+def get_iscsi_client(module, api_instance, ext_id):
+    """
+    Get iSCSI client by ext_id.
+
+    Args:
+        module: Ansible module
+        api_instance: IscsiClientsApi instance from ntnx_volumes_py_client sdk
+        ext_id: ext_id of the iSCSI client
+    Returns:
+        iscsi_client (obj): IscsiClient info object
+    """
+    try:
+        return api_instance.get_iscsi_client_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching iSCSI client info using ext_id",
+        )
