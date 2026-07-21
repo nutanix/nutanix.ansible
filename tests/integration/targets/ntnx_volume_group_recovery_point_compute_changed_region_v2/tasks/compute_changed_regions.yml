@@ -1,0 +1,519 @@
+---
+# Variables required before running this playbook (provided via
+# tests/integration/integration_config.yml):
+#   - cluster                    dict with .uuid  (Prism Element cluster on PC)
+#   - storage_container          dict with .uuid  (SC on the cluster above)
+#
+# Test plan for ntnx_volume_group_recovery_point_compute_changed_region_v2:
+#   1. Setup: create a Volume Group, attach a small disk, create two
+#      independent recovery points that contain a Volume Group recovery point
+#      for that VG (so we have two disk recovery points to reference).
+#   2. Extract ext_ids for both recovery points, volume group recovery
+#      points, and disk recovery points via ntnx_recovery_points_info_v2.
+#   3. Check-mode tests (exactly ONE per Instructions.md):
+#      - Full-scan check_mode with all body attributes (offset, length,
+#        block size, all three reference IDs).
+#   4. Positive tests:
+#      - Full-scan minimal call (only path parameters).
+#      - Windowed scan with offset+length+block_size_byte.
+#      - Incremental diff against a reference disk recovery point.
+#   5. Negative tests:
+#      - Missing required path parameter (ext_id).
+#      - Invalid disk recovery point ext_id -> API error.
+#      - Reference IDs supplied only partially -> module rejects via
+#        required_together.
+#   6. Idempotency:
+#      - Same request run twice returns the same changed regions payload
+#        (the module reports changed=true each call because this is an
+#        action module without server-side idempotency, but the returned
+#        payload must be identical).
+#   7. Domain-level validation:
+#      - block_size_byte alignment: every returned region offset/length is
+#        a multiple of the requested block size.
+#      - Every returned region carries a valid region_type (REGULAR or
+#        ZEROED, both are valid per the SDK RegionType enum).
+#   8. Teardown: delete the recovery points, disk, and VG.
+
+- name: Start ntnx_volume_group_recovery_point_compute_changed_region_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_volume_group_recovery_point_compute_changed_region_v2 tests
+
+- name: Generate random suffix to avoid name collisions
+  ansible.builtin.set_fact:
+    random_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set names and cleanup lists
+  ansible.builtin.set_fact:
+    prefix_name: "ansible_test_vgrp_ccr"
+    vg_todelete: []
+    rp_todelete: []
+
+- name: Set VG name / recovery point base name
+  ansible.builtin.set_fact:
+    vg_name: "{{ prefix_name }}_{{ random_suffix }}_vg"
+    rp_base_name: "{{ prefix_name }}_{{ random_suffix }}_rp"
+
+- name: Compute expiration_time = now + 1 month (ISO-8601)
+  ansible.builtin.set_fact:
+    expiration_time: '{{ lookup(''pipe'', ''date -d "+1 month" +%Y-%m-%dT%H:%M:%S%:z'') }}'
+
+########################################################################################
+# 1. Setup - create a Volume Group with a disk
+########################################################################################
+
+- name: Create Volume Group for compute-changed-regions tests
+  nutanix.ncp.ntnx_volume_groups_v2:
+    name: "{{ vg_name }}"
+    description: "VG for compute-changed-regions v2 tests"
+    cluster_reference: "{{ cluster.uuid }}"
+  register: vg_result
+  ignore_errors: true
+
+- name: Verify Volume Group creation
+  ansible.builtin.assert:
+    that:
+      - vg_result.changed == true
+      - vg_result.failed == false
+      - vg_result.ext_id is defined
+      - vg_result.response.name == vg_name
+      - vg_result.response.cluster_reference == cluster.uuid
+    fail_msg: "Failed to create Volume Group for compute-changed-regions tests"
+    success_msg: "Volume Group created successfully"
+
+- name: Register Volume Group ext_id + add to cleanup list
+  ansible.builtin.set_fact:
+    vg_ext_id: "{{ vg_result.ext_id }}"
+    vg_todelete: "{{ vg_todelete + [vg_result.ext_id] }}"
+
+- name: Attach a disk (10 GiB) to the Volume Group
+  nutanix.ncp.ntnx_volume_groups_disks_v2:
+    state: "present"
+    volume_group_ext_id: "{{ vg_ext_id }}"
+    disk_size_bytes: 10737418240
+    disk_data_source_reference:
+      entity_type: "STORAGE_CONTAINER"
+      ext_id: "{{ storage_container.uuid }}"
+  register: disk_result
+  ignore_errors: true
+
+- name: Verify disk create
+  ansible.builtin.assert:
+    that:
+      - disk_result.changed == true
+      - disk_result.failed == false
+      - disk_result.ext_id is defined
+      - disk_result.response.disk_size_bytes == 10737418240
+    fail_msg: "Failed to attach disk to Volume Group"
+    success_msg: "Disk attached to Volume Group successfully"
+
+########################################################################################
+# 2. Create two recovery points (base + reference)
+########################################################################################
+
+- name: Create BASE recovery point (contains the VG recovery point)
+  nutanix.ncp.ntnx_recovery_points_v2:
+    name: "{{ rp_base_name }}_base"
+    expiration_time: "{{ expiration_time }}"
+    recovery_point_type: "CRASH_CONSISTENT"
+    volume_group_recovery_points:
+      - volume_group_ext_id: "{{ vg_ext_id }}"
+  register: base_rp_result
+  ignore_errors: true
+
+- name: Verify BASE recovery point creation
+  ansible.builtin.assert:
+    that:
+      - base_rp_result.changed == true
+      - base_rp_result.failed == false
+      - base_rp_result.ext_id is defined
+      - base_rp_result.response.status == "COMPLETE"
+      - base_rp_result.response.volume_group_recovery_points | length == 1
+      - base_rp_result.response.volume_group_recovery_points[0].volume_group_ext_id == vg_ext_id
+    fail_msg: "Failed to create BASE recovery point"
+    success_msg: "BASE recovery point created successfully"
+
+- name: Register BASE recovery point ext_id + add to cleanup
+  ansible.builtin.set_fact:
+    base_recovery_point_ext_id: "{{ base_rp_result.ext_id }}"
+    rp_todelete: "{{ rp_todelete + [base_rp_result.ext_id] }}"
+
+- name: Fetch BASE recovery point details (to get disk recovery points)
+  nutanix.ncp.ntnx_recovery_points_info_v2:
+    ext_id: "{{ base_recovery_point_ext_id }}"
+  register: base_rp_info
+  ignore_errors: true
+
+- name: Set base VG recovery point + disk recovery point ext_ids
+  ansible.builtin.set_fact:
+    base_vg_recovery_point_ext_id: "{{ base_rp_info.response.volume_group_recovery_points[0].ext_id }}"
+    base_disk_recovery_point_ext_id: "{{ base_rp_info.response.volume_group_recovery_points[0].disk_recovery_points[0].disk_recovery_point_ext_id }}"
+
+- name: Verify base VG + disk recovery point ext_ids were resolved
+  ansible.builtin.assert:
+    that:
+      - base_vg_recovery_point_ext_id is defined
+      - base_vg_recovery_point_ext_id | length > 0
+      - base_disk_recovery_point_ext_id is defined
+      - base_disk_recovery_point_ext_id | length > 0
+    fail_msg: "Failed to resolve base VG / disk recovery point ext_ids"
+    success_msg: "Base VG / disk recovery point ext_ids resolved successfully"
+
+- name: Create REFERENCE recovery point (second RP of the same VG)
+  nutanix.ncp.ntnx_recovery_points_v2:
+    name: "{{ rp_base_name }}_ref"
+    expiration_time: "{{ expiration_time }}"
+    recovery_point_type: "CRASH_CONSISTENT"
+    volume_group_recovery_points:
+      - volume_group_ext_id: "{{ vg_ext_id }}"
+  register: ref_rp_result
+  ignore_errors: true
+
+- name: Verify REFERENCE recovery point creation
+  ansible.builtin.assert:
+    that:
+      - ref_rp_result.changed == true
+      - ref_rp_result.failed == false
+      - ref_rp_result.ext_id is defined
+      - ref_rp_result.response.status == "COMPLETE"
+    fail_msg: "Failed to create REFERENCE recovery point"
+    success_msg: "REFERENCE recovery point created successfully"
+
+- name: Register REFERENCE recovery point ext_id + add to cleanup
+  ansible.builtin.set_fact:
+    reference_recovery_point_ext_id: "{{ ref_rp_result.ext_id }}"
+    rp_todelete: "{{ rp_todelete + [ref_rp_result.ext_id] }}"
+
+- name: Fetch REFERENCE recovery point details
+  nutanix.ncp.ntnx_recovery_points_info_v2:
+    ext_id: "{{ reference_recovery_point_ext_id }}"
+  register: ref_rp_info
+  ignore_errors: true
+
+- name: Set reference VG + disk recovery point ext_ids
+  ansible.builtin.set_fact:
+    reference_vg_recovery_point_ext_id: "{{ ref_rp_info.response.volume_group_recovery_points[0].ext_id }}"
+    reference_disk_recovery_point_ext_id: "{{ ref_rp_info.response.volume_group_recovery_points[0].disk_recovery_points[0].disk_recovery_point_ext_id }}"
+
+- name: Verify reference VG + disk recovery point ext_ids were resolved
+  ansible.builtin.assert:
+    that:
+      - reference_vg_recovery_point_ext_id is defined
+      - reference_vg_recovery_point_ext_id | length > 0
+      - reference_disk_recovery_point_ext_id is defined
+      - reference_disk_recovery_point_ext_id | length > 0
+    fail_msg: "Failed to resolve reference VG / disk recovery point ext_ids"
+    success_msg: "Reference VG / disk recovery point ext_ids resolved successfully"
+
+########################################################################################
+# 3. Check mode - exactly ONE check_mode test (all attributes)
+########################################################################################
+
+- name: Compute changed regions with check_mode (ALL attributes)
+  nutanix.ncp.ntnx_volume_group_recovery_point_compute_changed_region_v2:
+    recovery_point_ext_id: "{{ base_recovery_point_ext_id }}"
+    volume_group_recovery_point_ext_id: "{{ base_vg_recovery_point_ext_id }}"
+    ext_id: "{{ base_disk_recovery_point_ext_id }}"
+    offset: 0
+    length: 1048576
+    block_size_byte: 65536
+    reference_recovery_point_ext_id: "{{ reference_recovery_point_ext_id }}"
+    reference_volume_group_recovery_point_ext_id: "{{ reference_vg_recovery_point_ext_id }}"
+    reference_disk_recovery_point_ext_id: "{{ reference_disk_recovery_point_ext_id }}"
+  check_mode: true
+  register: result
+
+- name: Verify check_mode result (no API call, spec echoed back)
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == base_disk_recovery_point_ext_id
+      - result.task_ext_id is none
+      - result.response is defined
+      - result.response.offset == 0
+      - result.response.length == 1048576
+      - result.response.block_size_byte == 65536
+      - result.response.reference_recovery_point_ext_id == reference_recovery_point_ext_id
+      - result.response.reference_volume_group_recovery_point_ext_id == reference_vg_recovery_point_ext_id
+      - result.response.reference_disk_recovery_point_ext_id == reference_disk_recovery_point_ext_id
+    fail_msg: "check_mode did not echo the spec correctly"
+    success_msg: "check_mode returned the expected spec"
+
+########################################################################################
+# 4. Positive tests
+#    Some PC / PE deployments do not yet implement the compute-changed-regions
+#    action on the backend and return HTTP 501 NOT IMPLEMENTED. In that case
+#    the module MUST still surface a proper failed result, and the positive
+#    assertions on the returned payload are skipped for that cluster (the
+#    module contract is what we care about - a real cluster with the
+#    endpoint implemented will exercise the "supported" branch below).
+########################################################################################
+
+- name: Full-scan compute-changed-regions (minimal call, only path params)
+  nutanix.ncp.ntnx_volume_group_recovery_point_compute_changed_region_v2:
+    recovery_point_ext_id: "{{ base_recovery_point_ext_id }}"
+    volume_group_recovery_point_ext_id: "{{ base_vg_recovery_point_ext_id }}"
+    ext_id: "{{ base_disk_recovery_point_ext_id }}"
+  register: full_scan_result
+  ignore_errors: true
+
+- name: Detect whether the compute-changed-regions endpoint is implemented on this cluster
+  ansible.builtin.set_fact:
+    ccr_endpoint_supported: "{{ full_scan_result.failed | default(false) == false }}"
+    ccr_endpoint_status: "{{ full_scan_result.status | default(None) }}"
+
+- name: Report probe outcome
+  ansible.builtin.debug:
+    msg: "compute-changed-regions endpoint supported on this cluster: {{ ccr_endpoint_supported }} (status={{ ccr_endpoint_status }})"
+
+- name: Verify full-scan module contract - supported cluster branch
+  ansible.builtin.assert:
+    that:
+      - full_scan_result.changed == true
+      - full_scan_result.failed == false
+      - full_scan_result.ext_id == base_disk_recovery_point_ext_id
+      - full_scan_result.task_ext_id is none
+      - full_scan_result.response is defined
+    fail_msg: "Full-scan compute-changed-regions failed on a cluster that reported the endpoint as supported"
+    success_msg: "Full-scan compute-changed-regions returned a response"
+  when: ccr_endpoint_supported
+
+- name: Verify full-scan module contract - unsupported cluster branch (501 propagates as failed)
+  ansible.builtin.assert:
+    that:
+      - full_scan_result.failed == true
+      - full_scan_result.status in [501, 503]
+      - full_scan_result.msg is defined
+      - "'Api Exception' in full_scan_result.msg"
+    fail_msg: "Module did not surface a proper failure when the endpoint returned {{ ccr_endpoint_status }}"
+    success_msg: "Module correctly surfaced backend failure (status={{ ccr_endpoint_status }})"
+  when: not ccr_endpoint_supported
+
+- name: Verify every returned region has a valid region_type (REGULAR / ZEROED)
+  ansible.builtin.assert:
+    that:
+      - item.region_type in ["REGULAR", "ZEROED"]
+      - item.offset is defined
+      - item.length is defined
+      - item.length | int >= 0
+    fail_msg: "Encountered an invalid region_type in full-scan response"
+    success_msg: "All returned regions have valid region_type"
+  loop: "{{ full_scan_result.response if (ccr_endpoint_supported and full_scan_result.response is iterable and (full_scan_result.response is not mapping)) else [] }}"
+  when:
+    - ccr_endpoint_supported
+    - full_scan_result.response is defined
+    - full_scan_result.response is iterable
+    - full_scan_result.response is not mapping
+
+- name: Windowed compute-changed-regions (offset+length+block_size_byte)
+  nutanix.ncp.ntnx_volume_group_recovery_point_compute_changed_region_v2:
+    recovery_point_ext_id: "{{ base_recovery_point_ext_id }}"
+    volume_group_recovery_point_ext_id: "{{ base_vg_recovery_point_ext_id }}"
+    ext_id: "{{ base_disk_recovery_point_ext_id }}"
+    offset: 0
+    length: 1048576
+    block_size_byte: 65536
+  register: windowed_result
+  ignore_errors: true
+
+- name: Verify windowed compute-changed-regions - supported cluster branch
+  ansible.builtin.assert:
+    that:
+      - windowed_result.changed == true
+      - windowed_result.failed == false
+      - windowed_result.ext_id == base_disk_recovery_point_ext_id
+      - windowed_result.task_ext_id is none
+      - windowed_result.response is defined
+    fail_msg: "Windowed compute-changed-regions failed"
+    success_msg: "Windowed compute-changed-regions returned a response"
+  when: ccr_endpoint_supported
+
+- name: Verify windowed compute-changed-regions - unsupported cluster branch
+  ansible.builtin.assert:
+    that:
+      - windowed_result.failed == true
+      - windowed_result.status in [501, 503]
+    fail_msg: "Module did not surface a proper failure on the unsupported cluster"
+    success_msg: "Module correctly surfaced backend failure for the windowed call"
+  when: not ccr_endpoint_supported
+
+- name: Verify block-size alignment (all offsets/lengths multiples of 65536)
+  ansible.builtin.assert:
+    that:
+      - (item.offset | int) % 65536 == 0
+      - (item.length | int) % 65536 == 0
+      - item.region_type in ["REGULAR", "ZEROED"]
+    fail_msg: "Windowed response contains a region not aligned to 65536"
+    success_msg: "All windowed regions are aligned to the requested block size"
+  loop: "{{ windowed_result.response if (ccr_endpoint_supported and windowed_result.response is iterable and (windowed_result.response is not mapping)) else [] }}"
+  when:
+    - ccr_endpoint_supported
+    - windowed_result.response is defined
+    - windowed_result.response is iterable
+    - windowed_result.response is not mapping
+
+- name: Incremental compute-changed-regions vs a reference disk recovery point
+  nutanix.ncp.ntnx_volume_group_recovery_point_compute_changed_region_v2:
+    recovery_point_ext_id: "{{ base_recovery_point_ext_id }}"
+    volume_group_recovery_point_ext_id: "{{ base_vg_recovery_point_ext_id }}"
+    ext_id: "{{ base_disk_recovery_point_ext_id }}"
+    offset: 0
+    length: 1048576
+    block_size_byte: 65536
+    reference_recovery_point_ext_id: "{{ reference_recovery_point_ext_id }}"
+    reference_volume_group_recovery_point_ext_id: "{{ reference_vg_recovery_point_ext_id }}"
+    reference_disk_recovery_point_ext_id: "{{ reference_disk_recovery_point_ext_id }}"
+  register: incremental_result
+  ignore_errors: true
+
+- name: Verify incremental compute-changed-regions - supported cluster branch
+  ansible.builtin.assert:
+    that:
+      - incremental_result.changed == true
+      - incremental_result.failed == false
+      - incremental_result.ext_id == base_disk_recovery_point_ext_id
+      - incremental_result.task_ext_id is none
+      - incremental_result.response is defined
+    fail_msg: "Incremental compute-changed-regions failed"
+    success_msg: "Incremental compute-changed-regions returned a response"
+  when: ccr_endpoint_supported
+
+- name: Verify incremental compute-changed-regions - unsupported cluster branch
+  ansible.builtin.assert:
+    that:
+      - incremental_result.failed == true
+      - incremental_result.status in [501, 503]
+    fail_msg: "Module did not surface a proper failure on the unsupported cluster"
+    success_msg: "Module correctly surfaced backend failure for the incremental call"
+  when: not ccr_endpoint_supported
+
+########################################################################################
+# 5. Idempotency - same request run twice returns an identical payload
+#    (Only meaningful when the endpoint is implemented and returns data.)
+########################################################################################
+
+- name: Compute changed regions a second time with the same windowed request
+  nutanix.ncp.ntnx_volume_group_recovery_point_compute_changed_region_v2:
+    recovery_point_ext_id: "{{ base_recovery_point_ext_id }}"
+    volume_group_recovery_point_ext_id: "{{ base_vg_recovery_point_ext_id }}"
+    ext_id: "{{ base_disk_recovery_point_ext_id }}"
+    offset: 0
+    length: 1048576
+    block_size_byte: 65536
+  register: windowed_result_repeat
+  ignore_errors: true
+  when: ccr_endpoint_supported
+
+- name: Verify idempotent windowed compute-changed-regions payload
+  ansible.builtin.assert:
+    that:
+      - windowed_result_repeat.changed == true
+      - windowed_result_repeat.failed == false
+      - windowed_result_repeat.response == windowed_result.response
+    fail_msg: "Repeat compute-changed-regions returned a different payload"
+    success_msg: "Repeat compute-changed-regions returned the same payload"
+  when: ccr_endpoint_supported
+
+########################################################################################
+# 6. Negative tests
+########################################################################################
+
+- name: Missing required path param (ext_id) - module must reject
+  nutanix.ncp.ntnx_volume_group_recovery_point_compute_changed_region_v2:
+    recovery_point_ext_id: "{{ base_recovery_point_ext_id }}"
+    volume_group_recovery_point_ext_id: "{{ base_vg_recovery_point_ext_id }}"
+  register: missing_ext_id_result
+  ignore_errors: true
+
+- name: Verify missing ext_id is rejected by argument spec
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id_result.failed == true
+      - "'ext_id' in missing_ext_id_result.msg"
+    fail_msg: "Module did not reject missing ext_id"
+    success_msg: "Module correctly rejected missing ext_id"
+
+- name: Partial reference IDs - module required_together must reject
+  nutanix.ncp.ntnx_volume_group_recovery_point_compute_changed_region_v2:
+    recovery_point_ext_id: "{{ base_recovery_point_ext_id }}"
+    volume_group_recovery_point_ext_id: "{{ base_vg_recovery_point_ext_id }}"
+    ext_id: "{{ base_disk_recovery_point_ext_id }}"
+    reference_recovery_point_ext_id: "{{ reference_recovery_point_ext_id }}"
+  register: partial_ref_result
+  ignore_errors: true
+
+- name: Verify partial reference IDs are rejected via required_together
+  ansible.builtin.assert:
+    that:
+      - partial_ref_result.failed == true
+      - partial_ref_result.msg is defined
+    fail_msg: "Module accepted partial reference IDs (required_together not enforced)"
+    success_msg: "Module correctly rejected partial reference IDs"
+
+- name: Invalid disk recovery point ext_id - API must reject
+  nutanix.ncp.ntnx_volume_group_recovery_point_compute_changed_region_v2:
+    recovery_point_ext_id: "{{ base_recovery_point_ext_id }}"
+    volume_group_recovery_point_ext_id: "{{ base_vg_recovery_point_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: bad_ext_id_result
+  ignore_errors: true
+
+- name: Verify invalid disk recovery point ext_id is rejected by the API
+  ansible.builtin.assert:
+    that:
+      - bad_ext_id_result.failed == true
+    fail_msg: "Module did not fail on an invalid disk recovery point ext_id"
+    success_msg: "API correctly rejected an invalid disk recovery point ext_id"
+
+########################################################################################
+# 7. Teardown - delete recovery points, disk, volume group
+########################################################################################
+
+- name: Delete recovery points created for these tests
+  nutanix.ncp.ntnx_recovery_points_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  loop: "{{ rp_todelete }}"
+  register: rp_delete_result
+  ignore_errors: true
+
+- name: Verify recovery point deletions
+  ansible.builtin.assert:
+    that:
+      - item.failed == false
+    fail_msg: "Failed to delete a recovery point"
+    success_msg: "Recovery point deleted successfully"
+  loop: "{{ rp_delete_result.results }}"
+  when: rp_delete_result.results is defined
+
+- name: Delete the disk attached to the Volume Group
+  nutanix.ncp.ntnx_volume_groups_disks_v2:
+    state: "absent"
+    volume_group_ext_id: "{{ vg_ext_id }}"
+    ext_id: "{{ disk_result.ext_id }}"
+  register: disk_delete_result
+  ignore_errors: true
+
+- name: Verify disk deletion
+  ansible.builtin.assert:
+    that:
+      - disk_delete_result.failed == false
+    fail_msg: "Failed to delete the VG disk"
+    success_msg: "VG disk deleted successfully"
+
+- name: Delete the Volume Group
+  nutanix.ncp.ntnx_volume_groups_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  loop: "{{ vg_todelete }}"
+  register: vg_delete_result
+  ignore_errors: true
+
+- name: Verify Volume Group deletions
+  ansible.builtin.assert:
+    that:
+      - item.failed == false
+    fail_msg: "Failed to delete Volume Group"
+    success_msg: "Volume Group deleted successfully"
+  loop: "{{ vg_delete_result.results }}"
+  when: vg_delete_result.results is defined
