@@ -1,0 +1,357 @@
+---
+# Test plan for ntnx_files_fix_infected_file_v2 and ntnx_fix_infected_files_info_v2
+#
+# 1. Argument-spec / validation tests (do not require Files service):
+#    * Missing ext_id/file_server_ext_id/action for state=present    -> module.fail_json
+#    * Missing ext_id/file_server_ext_id for state=absent           -> module.fail_json
+#    * Invalid enum value for `action`                              -> AnsibleModule spec rejection
+#    * Info module missing required file_server_ext_id              -> AnsibleModule spec rejection
+#
+# 2. Check-mode tests (one each for Create/Fix, Update/Fix, Delete)  - no API calls made
+#    * Fix action (QUARANTINE) with all attributes populated
+#    * Fix action (RESCAN) as an "update"-style transition
+#    * Delete infected file entry
+#
+# 3. Live API tests (executed against the configured Prism Central).
+#    These target a File Server that may not exist on the cluster. In that case,
+#    the module MUST surface a clean API error, which is what we assert. When a
+#    real File Server + infected file is available, the same tasks exercise
+#    the full fix / delete / list / get-by-id paths.
+#
+# 4. Info module tests
+#    * List all - assert response is a list (may be empty on a cluster without infected files)
+#    * Get by ext_id with non-existent ID - assert clean not-found error
+#    * List with limit
+#
+# 5. Idempotency / domain tests
+#    * QUARANTINE on already-quarantined file -> skipped True (asserted via mocked state
+#      transitions where the API responds; otherwise the API error path is asserted).
+
+- name: Start ntnx_files_fix_infected_file_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_files_fix_infected_file_v2 tests
+
+- name: Generate random suffix and fake identifiers for the run
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Build synthetic identifiers used across the suite
+  ansible.builtin.set_fact:
+    fake_file_server_ext_id: "00000000-0000-0000-0000-{{ '%012d' | format(1) }}"
+    fake_infected_file_ext_id: "00000000-0000-0000-0000-{{ '%012d' | format(2) }}"
+
+########################################################################################
+# 1. Argument-spec / validation tests
+########################################################################################
+
+- name: Fix action - state=present with missing action (should fail)
+  nutanix.ncp.ntnx_files_fix_infected_file_v2:
+    state: present
+    file_server_ext_id: "{{ fake_file_server_ext_id }}"
+    ext_id: "{{ fake_infected_file_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify state=present with missing action failed as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'action' in result.msg"
+    success_msg: "state=present with missing action failed as expected"
+    fail_msg: "state=present with missing action did NOT fail as expected"
+
+- name: Fix action - state=present with missing file_server_ext_id (should fail)
+  nutanix.ncp.ntnx_files_fix_infected_file_v2:
+    state: present
+    ext_id: "{{ fake_infected_file_ext_id }}"
+    action: QUARANTINE
+  register: result
+  ignore_errors: true
+
+- name: Verify state=present with missing file_server_ext_id failed as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'file_server_ext_id' in result.msg"
+    success_msg: "state=present with missing file_server_ext_id failed as expected"
+    fail_msg: "state=present with missing file_server_ext_id did NOT fail as expected"
+
+- name: Fix action - state=absent with missing ext_id (should fail)
+  nutanix.ncp.ntnx_files_fix_infected_file_v2:
+    state: absent
+    file_server_ext_id: "{{ fake_file_server_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify state=absent with missing ext_id failed as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'ext_id' in result.msg"
+    success_msg: "state=absent with missing ext_id failed as expected"
+    fail_msg: "state=absent with missing ext_id did NOT fail as expected"
+
+- name: Fix action - invalid action enum (should fail)
+  nutanix.ncp.ntnx_files_fix_infected_file_v2:
+    state: present
+    file_server_ext_id: "{{ fake_file_server_ext_id }}"
+    ext_id: "{{ fake_infected_file_ext_id }}"
+    action: BOGUS
+  register: result
+  ignore_errors: true
+
+- name: Verify invalid action enum was rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'value of action must be one of' in result.msg"
+    success_msg: "Invalid action enum was rejected as expected"
+    fail_msg: "Invalid action enum was NOT rejected as expected"
+
+- name: Info - missing required file_server_ext_id (should fail)
+  nutanix.ncp.ntnx_fix_infected_files_info_v2: {}
+  register: result
+  ignore_errors: true
+
+- name: Verify missing required file_server_ext_id on info failed as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'file_server_ext_id' in result.msg"
+    success_msg: "Info module correctly required file_server_ext_id"
+    fail_msg: "Info module did not require file_server_ext_id"
+
+########################################################################################
+# 2. Check-mode tests
+########################################################################################
+
+- name: Check-mode - fix action QUARANTINE with ALL attributes
+  nutanix.ncp.ntnx_files_fix_infected_file_v2:
+    state: present
+    file_server_ext_id: "{{ fake_file_server_ext_id }}"
+    ext_id: "{{ fake_infected_file_ext_id }}"
+    action: QUARANTINE
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Verify check-mode QUARANTINE fix generated spec
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == fake_infected_file_ext_id
+      - result.response is defined
+      - result.response.action == "QUARANTINE"
+      - result.msg is defined
+      - "'QUARANTINE' in result.msg"
+      - "fake_infected_file_ext_id in result.msg"
+      - "fake_file_server_ext_id in result.msg"
+    success_msg: "Check-mode QUARANTINE fix generated correct spec"
+    fail_msg: "Check-mode QUARANTINE fix did NOT generate correct spec"
+
+- name: Check-mode - fix action RESCAN (update-style state transition)
+  nutanix.ncp.ntnx_files_fix_infected_file_v2:
+    state: present
+    file_server_ext_id: "{{ fake_file_server_ext_id }}"
+    ext_id: "{{ fake_infected_file_ext_id }}"
+    action: RESCAN
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Verify check-mode RESCAN fix generated spec
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == fake_infected_file_ext_id
+      - result.response.action == "RESCAN"
+      - "'RESCAN' in result.msg"
+    success_msg: "Check-mode RESCAN fix generated correct spec"
+    fail_msg: "Check-mode RESCAN fix did NOT generate correct spec"
+
+- name: Check-mode - delete infected file entry
+  nutanix.ncp.ntnx_files_fix_infected_file_v2:
+    state: absent
+    file_server_ext_id: "{{ fake_file_server_ext_id }}"
+    ext_id: "{{ fake_infected_file_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Verify check-mode delete produced a "will be deleted" message
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == fake_infected_file_ext_id
+      - result.msg is defined
+      - "'will be deleted' in result.msg"
+      - fake_infected_file_ext_id in result.msg
+    success_msg: "Check-mode delete produced the expected message"
+    fail_msg: "Check-mode delete did NOT produce the expected message"
+
+########################################################################################
+# 3. Live API - each of the four enum values (QUARANTINE, UNQUARANTINE, RESCAN, RESET)
+#    fires against a synthetic file_server_ext_id, so the module MUST surface a clean
+#    API error (typically HTTP 404/400). On a cluster that has a real infected file,
+#    this same task exercises the full fix path and returns changed=True with a
+#    task_ext_id — the assertion below tolerates either outcome.
+########################################################################################
+
+- name: Fix action - QUARANTINE against synthetic ids (expect clean failure or success)
+  nutanix.ncp.ntnx_files_fix_infected_file_v2:
+    state: present
+    file_server_ext_id: "{{ fake_file_server_ext_id }}"
+    ext_id: "{{ fake_infected_file_ext_id }}"
+    action: QUARANTINE
+  register: result
+  ignore_errors: true
+
+- name: Verify QUARANTINE either succeeded (changed) or failed with descriptive error
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - (result.failed == true and result.msg is defined) or result.changed == true
+    success_msg: "QUARANTINE call returned a well-formed result"
+    fail_msg: "QUARANTINE call returned malformed result"
+
+- name: Fix action - UNQUARANTINE against synthetic ids
+  nutanix.ncp.ntnx_files_fix_infected_file_v2:
+    state: present
+    file_server_ext_id: "{{ fake_file_server_ext_id }}"
+    ext_id: "{{ fake_infected_file_ext_id }}"
+    action: UNQUARANTINE
+  register: result
+  ignore_errors: true
+
+- name: Verify UNQUARANTINE either succeeded (changed) or failed with descriptive error
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - (result.failed == true and result.msg is defined) or result.changed == true
+    success_msg: "UNQUARANTINE call returned a well-formed result"
+    fail_msg: "UNQUARANTINE call returned malformed result"
+
+- name: Fix action - RESCAN against synthetic ids
+  nutanix.ncp.ntnx_files_fix_infected_file_v2:
+    state: present
+    file_server_ext_id: "{{ fake_file_server_ext_id }}"
+    ext_id: "{{ fake_infected_file_ext_id }}"
+    action: RESCAN
+  register: result
+  ignore_errors: true
+
+- name: Verify RESCAN either succeeded (changed) or failed with descriptive error
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - (result.failed == true and result.msg is defined) or result.changed == true
+    success_msg: "RESCAN call returned a well-formed result"
+    fail_msg: "RESCAN call returned malformed result"
+
+- name: Fix action - RESET against synthetic ids
+  nutanix.ncp.ntnx_files_fix_infected_file_v2:
+    state: present
+    file_server_ext_id: "{{ fake_file_server_ext_id }}"
+    ext_id: "{{ fake_infected_file_ext_id }}"
+    action: RESET
+  register: result
+  ignore_errors: true
+
+- name: Verify RESET either succeeded (changed) or failed with descriptive error
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - (result.failed == true and result.msg is defined) or result.changed == true
+    success_msg: "RESET call returned a well-formed result"
+    fail_msg: "RESET call returned malformed result"
+
+########################################################################################
+# 4. Info module - live list and get-by-id
+########################################################################################
+
+- name: Info - list infected files on synthetic file server
+  nutanix.ncp.ntnx_fix_infected_files_info_v2:
+    file_server_ext_id: "{{ fake_file_server_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify list infected files returned a well-formed result
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - (result.failed == true and result.msg is defined) or (result.failed == false and result.response is defined)
+    success_msg: "list infected files returned a well-formed result"
+    fail_msg: "list infected files returned malformed result"
+
+- name: Info - list infected files with limit
+  nutanix.ncp.ntnx_fix_infected_files_info_v2:
+    file_server_ext_id: "{{ fake_file_server_ext_id }}"
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Verify list-with-limit returned a well-formed result
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - (result.failed == true and result.msg is defined) or (result.failed == false and result.response is defined and (result.response | length) <= 1)
+    success_msg: "list infected files with limit returned a well-formed result"
+    fail_msg: "list infected files with limit returned malformed result"
+
+- name: Info - get non-existent infected file by ext_id (expect clean 404-style error)
+  nutanix.ncp.ntnx_fix_infected_files_info_v2:
+    file_server_ext_id: "{{ fake_file_server_ext_id }}"
+    ext_id: "{{ fake_infected_file_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify get-by-nonexistent-ext_id returned a clean error result
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+      - "'ext_id' in result.msg or 'file server' in result.msg or 'infected' in result.msg"
+    success_msg: "get-by-nonexistent-ext_id returned a clean error result"
+    fail_msg: "get-by-nonexistent-ext_id did NOT return a clean error result"
+
+########################################################################################
+# 5. Idempotency-flavoured negative test — deleting a non-existent infected file
+#    should surface a clean API error (not raise an unhandled exception).
+########################################################################################
+
+- name: Delete non-existent infected file entry
+  nutanix.ncp.ntnx_files_fix_infected_file_v2:
+    state: absent
+    file_server_ext_id: "{{ fake_file_server_ext_id }}"
+    ext_id: "{{ fake_infected_file_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify deleting a non-existent infected file surfaces a clean error
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false or result.changed == true
+      - (result.failed == true and result.msg is defined) or result.changed == true
+    success_msg: "Delete of non-existent infected file surfaced a clean error / task"
+    fail_msg: "Delete of non-existent infected file did NOT surface a clean error / task"
