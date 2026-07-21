@@ -1,0 +1,292 @@
+---
+# Test plan for ntnx_vm_startup_policy_dependency_conflicts_info_v2
+# =================================================================
+# Coverage areas:
+#   1. Argument spec validation
+#      - vm_startup_policy_ext_id is required
+#      - fetch_type must be one of ['dependee_vms', 'dependent_vms']
+#      - fetch_type requires ext_id
+#      - ext_id and filter are mutually exclusive
+#   2. List operation
+#      - List conflicts against a non-existent VM startup policy
+#      - List conflicts with pagination against a non-existent VM startup policy
+#      - Discover any existing VM startup policies on the cluster and list their
+#        dependency conflicts (best-effort domain-level validation).
+#   3. Get-by-id operation
+#      - Get a non-existent dependency conflict → verify API error propagation
+#   4. Sub-resource fetches
+#      - fetch_type=dependee_vms with a bogus conflict ext_id → API error
+#      - fetch_type=dependent_vms with a bogus conflict ext_id → API error
+#
+# Because the target Prism Central used for CI does not typically host VM
+# startup policies with actual dependency conflicts (the entity is derived and
+# only appears when circular category ordering exists), most tests exercise the
+# error/validation paths, which are just as important for module quality.
+
+- name: Start ntnx_vm_startup_policy_dependency_conflicts_info_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_vm_startup_policy_dependency_conflicts_info_v2 tests
+
+- name: Generate random values for the test run
+  ansible.builtin.set_fact:
+    random_uuid_policy: "{{ query('community.general.random_string', numbers=false, special=false, length=32)[0] | lower }}"
+    random_uuid_conflict: "{{ query('community.general.random_string', numbers=false, special=false, length=32)[0] | lower }}"
+
+- name: Build bogus UUIDs for negative tests
+  ansible.builtin.set_fact:
+    bogus_policy_ext_id: "00000000-0000-0000-0000-{{ random_uuid_policy[0:12] }}"
+    bogus_conflict_ext_id: "00000000-0000-0000-0000-{{ random_uuid_conflict[0:12] }}"
+
+########################################################################################
+# Argument spec validation - vm_startup_policy_ext_id is required
+########################################################################################
+
+- name: Call info module without required vm_startup_policy_ext_id
+  nutanix.ncp.ntnx_vm_startup_policy_dependency_conflicts_info_v2: {}
+  register: result
+  ignore_errors: true
+
+- name: Missing vm_startup_policy_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'vm_startup_policy_ext_id' in result.msg"
+    success_msg: "Missing vm_startup_policy_ext_id correctly rejected"
+    fail_msg: "Info module accepted call without required vm_startup_policy_ext_id"
+
+########################################################################################
+# Argument spec validation - fetch_type choices
+########################################################################################
+
+- name: Call info module with invalid fetch_type value
+  nutanix.ncp.ntnx_vm_startup_policy_dependency_conflicts_info_v2:
+    vm_startup_policy_ext_id: "{{ bogus_policy_ext_id }}"
+    ext_id: "{{ bogus_conflict_ext_id }}"
+    fetch_type: "invalid_value"
+  register: result
+  ignore_errors: true
+
+- name: Invalid fetch_type status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'fetch_type' in result.msg"
+    success_msg: "Invalid fetch_type value correctly rejected"
+    fail_msg: "Info module accepted invalid fetch_type value"
+
+########################################################################################
+# Argument spec validation - fetch_type requires ext_id
+########################################################################################
+
+- name: Call info module with fetch_type=dependee_vms but no ext_id
+  nutanix.ncp.ntnx_vm_startup_policy_dependency_conflicts_info_v2:
+    vm_startup_policy_ext_id: "{{ bogus_policy_ext_id }}"
+    fetch_type: dependee_vms
+  register: result
+  ignore_errors: true
+
+- name: Assert fetch_type=dependee_vms without ext_id was rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'ext_id' in result.msg"
+    success_msg: "fetch_type=dependee_vms without ext_id correctly rejected"
+    fail_msg: "Info module accepted fetch_type=dependee_vms without ext_id"
+
+- name: Call info module with fetch_type=dependent_vms but no ext_id
+  nutanix.ncp.ntnx_vm_startup_policy_dependency_conflicts_info_v2:
+    vm_startup_policy_ext_id: "{{ bogus_policy_ext_id }}"
+    fetch_type: dependent_vms
+  register: result
+  ignore_errors: true
+
+- name: Assert fetch_type=dependent_vms without ext_id was rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'ext_id' in result.msg"
+    success_msg: "fetch_type=dependent_vms without ext_id correctly rejected"
+    fail_msg: "Info module accepted fetch_type=dependent_vms without ext_id"
+
+########################################################################################
+# Argument spec validation - ext_id and filter are mutually exclusive
+########################################################################################
+
+- name: Call info module with both ext_id and filter (mutually exclusive)
+  nutanix.ncp.ntnx_vm_startup_policy_dependency_conflicts_info_v2:
+    vm_startup_policy_ext_id: "{{ bogus_policy_ext_id }}"
+    ext_id: "{{ bogus_conflict_ext_id }}"
+    filter: "name eq 'x'"
+  register: result
+  ignore_errors: true
+
+- name: Assert ext_id and filter were flagged as mutually exclusive
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'mutually exclusive' in result.msg"
+    success_msg: "ext_id and filter correctly flagged as mutually exclusive"
+    fail_msg: "Info module accepted both ext_id and filter"
+
+########################################################################################
+# Negative API tests - list with non-existent policy
+########################################################################################
+
+- name: List dependency conflicts for a non-existent VM startup policy
+  nutanix.ncp.ntnx_vm_startup_policy_dependency_conflicts_info_v2:
+    vm_startup_policy_ext_id: "{{ bogus_policy_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: List conflicts for non-existent policy status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'Api Exception raised while fetching VM startup policy dependency conflicts info' in result.msg"
+    success_msg: "List conflicts for non-existent policy correctly surfaced API exception"
+    fail_msg: "List conflicts for non-existent policy did not surface API exception"
+
+- name: List dependency conflicts with pagination for a non-existent VM startup policy
+  nutanix.ncp.ntnx_vm_startup_policy_dependency_conflicts_info_v2:
+    vm_startup_policy_ext_id: "{{ bogus_policy_ext_id }}"
+    page: 0
+    limit: 5
+  register: result
+  ignore_errors: true
+
+- name: Paginated list for non-existent policy status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'Api Exception raised while fetching VM startup policy dependency conflicts info' in result.msg"
+    success_msg: "Paginated list for non-existent policy correctly surfaced API exception"
+    fail_msg: "Paginated list for non-existent policy did not surface API exception"
+
+########################################################################################
+# Negative API tests - get by id with non-existent policy/conflict
+########################################################################################
+
+- name: Get non-existent dependency conflict
+  nutanix.ncp.ntnx_vm_startup_policy_dependency_conflicts_info_v2:
+    vm_startup_policy_ext_id: "{{ bogus_policy_ext_id }}"
+    ext_id: "{{ bogus_conflict_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Get non-existent conflict status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'Api Exception raised while fetching VM startup policy dependency conflict info using ext_id' in result.msg"
+    success_msg: "Get non-existent dependency conflict correctly surfaced API exception"
+    fail_msg: "Get non-existent dependency conflict did not surface API exception"
+
+########################################################################################
+# Negative API tests - fetch dependee/dependent VMs with non-existent conflict
+########################################################################################
+
+- name: List dependee VMs for a non-existent dependency conflict
+  nutanix.ncp.ntnx_vm_startup_policy_dependency_conflicts_info_v2:
+    vm_startup_policy_ext_id: "{{ bogus_policy_ext_id }}"
+    ext_id: "{{ bogus_conflict_ext_id }}"
+    fetch_type: dependee_vms
+  register: result
+  ignore_errors: true
+
+- name: Dependee VMs for non-existent conflict status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'Api Exception raised while fetching dependee VMs of VM startup policy dependency conflict' in result.msg"
+    success_msg: "Dependee VMs listing for non-existent conflict correctly surfaced API exception"
+    fail_msg: "Dependee VMs listing for non-existent conflict did not surface API exception"
+
+- name: List dependent VMs for a non-existent dependency conflict
+  nutanix.ncp.ntnx_vm_startup_policy_dependency_conflicts_info_v2:
+    vm_startup_policy_ext_id: "{{ bogus_policy_ext_id }}"
+    ext_id: "{{ bogus_conflict_ext_id }}"
+    fetch_type: dependent_vms
+  register: result
+  ignore_errors: true
+
+- name: Dependent VMs for non-existent conflict status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'Api Exception raised while fetching dependent VMs of VM startup policy dependency conflict' in result.msg"
+    success_msg: "Dependent VMs listing for non-existent conflict correctly surfaced API exception"
+    fail_msg: "Dependent VMs listing for non-existent conflict did not surface API exception"
+
+########################################################################################
+# Domain-level validation against live cluster (best-effort)
+########################################################################################
+# The VM startup policy dependency conflict resource only exists when the cluster has
+# categories with circular ordering. If any policies exist we exercise the list path
+# against them; otherwise the whole discovery block is skipped without failing the run.
+
+- name: Discover existing VM startup policies via raw API call
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:{{ port | default(9440) }}/api/vmm/v4.2/ahv/policies/vm-startup-policies?_limit=1"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs | default(false) }}"
+    return_content: true
+    status_code: [200, 404]
+  register: policies_discovery
+  ignore_errors: true
+
+- name: Extract existing policy ext_id (if any)
+  ansible.builtin.set_fact:
+    existing_policy_ext_id: "{{ policies_discovery.json.data[0].extId }}"
+  when:
+    - policies_discovery is defined
+    - policies_discovery.status == 200
+    - policies_discovery.json is defined
+    - policies_discovery.json.data is defined
+    - policies_discovery.json.data | length > 0
+
+- name: List dependency conflicts for an existing VM startup policy (real cluster)
+  nutanix.ncp.ntnx_vm_startup_policy_dependency_conflicts_info_v2:
+    vm_startup_policy_ext_id: "{{ existing_policy_ext_id }}"
+  register: real_conflicts_result
+  ignore_errors: true
+  when: existing_policy_ext_id is defined
+
+- name: Assert list conflicts against real policy succeeded
+  ansible.builtin.assert:
+    that:
+      - real_conflicts_result is defined
+      - real_conflicts_result.changed == false
+      - real_conflicts_result.failed == false
+      - real_conflicts_result.vm_startup_policy_ext_id == existing_policy_ext_id
+      - real_conflicts_result.response is defined
+      - real_conflicts_result.response is iterable
+      - real_conflicts_result.total_available_results is defined
+      - real_conflicts_result.total_available_results >= 0
+    success_msg: "List conflicts for real policy succeeded"
+    fail_msg: "List conflicts for real policy failed"
+  when:
+    - existing_policy_ext_id is defined
+    - real_conflicts_result is defined

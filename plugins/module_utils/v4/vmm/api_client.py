@@ -131,3 +131,15 @@ def get_ova_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_vmm_py_client.OvasApi(api_client=api_client)
+
+
+def get_vm_startup_policies_api_instance(module):
+    """
+    This method will return VM Startup Policies API instance.
+    Args:
+        module (AnsibleModule): the Ansible module
+    Returns:
+        VmStartupPoliciesApi: v4 VM Startup Policies API instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.VmStartupPoliciesApi(api_client=api_client)
