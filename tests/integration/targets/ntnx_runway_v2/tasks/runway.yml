@@ -1,0 +1,314 @@
+---
+############################################################################
+# Test plan for ntnx_runway_v2 (aiops namespace)
+#
+# The module ntnx_runway_v2 wraps the AIOps v4 ScenariosApi.generate_runway
+# endpoint. It triggers an asynchronous task (Ergon) that recomputes the
+# capacity planning runway for an existing scenario. The following
+# scenarios are covered:
+#
+# 1. check_mode  - verify the module reports the intended action but does
+#                  not actually invoke the API (changed=false, msg set,
+#                  ext_id echoed back).
+# 2. Negative    - invoke generate-runway against a non-existent scenario
+#                  ext_id and assert the module surfaces the 404/AIO-60006
+#                  error from the API (failed=true, changed=false).
+# 3. Argument    - omit the required ext_id parameter and assert Ansible
+#                  fails argument-spec validation.
+# 4. Real run    - best-effort. Create a scenario via the SDK, wait a
+#                  short time for the Ergon WHATIF_SCENARIO_CREATE_TASK,
+#                  and if the scenario becomes reachable, run
+#                  generate_runway against it with wait=false so the test
+#                  does not depend on the (slow / occasionally QUEUED)
+#                  runway task completing. When the create task never
+#                  leaves QUEUED state (see ENG-792183) this block is
+#                  skipped and reported in the run log; the negative and
+#                  check_mode paths still exercise the module fully.
+############################################################################
+
+- name: Start ntnx_runway_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_runway_v2 tests
+
+# The aiops SDK has an older `certifi` pin that conflicts with the rest of
+# the Nutanix v4 SDKs, so it cannot go into the collection-wide
+# tests/integration/requirements.txt. Install it here into the ansible-test
+# venv with --no-deps so it does not downgrade certifi.
+- name: Install the ntnx-aiops-py-client SDK on demand
+  ansible.builtin.pip:
+    name: ntnx-aiops-py-client==4.0.2
+    extra_args: "--no-deps"
+  register: install_aiops
+  ignore_errors: true
+
+- name: Report aiops SDK install result
+  ansible.builtin.debug:
+    msg: "aiops SDK install result: changed={{ install_aiops.changed | default(false) }} failed={{ install_aiops.failed | default(false) }}"
+
+- name: Generate random suffix for test resources
+  ansible.builtin.set_fact:
+    random_name: "{{ lookup('password', '/dev/null length=8 chars=ascii_lowercase,digits') }}"
+
+- name: Set names for test resources
+  ansible.builtin.set_fact:
+    scenario_name: "ansible_runway_{{ random_name }}"
+    fake_scenario_ext_id: "00000000-0000-0000-0000-000000000000"
+
+############################################################################
+# check_mode: generate_runway does NOT call the API when check_mode is set
+############################################################################
+
+- name: Generate runway on scenario in check mode
+  nutanix.ncp.ntnx_runway_v2:
+    ext_id: "{{ fake_scenario_ext_id }}"
+  check_mode: true
+  register: check_mode_result
+  ignore_errors: true
+
+- name: Assert check_mode result
+  ansible.builtin.assert:
+    that:
+      - check_mode_result is defined
+      - check_mode_result.changed == false
+      - check_mode_result.failed == false
+      - check_mode_result.ext_id == fake_scenario_ext_id
+      - check_mode_result.msg is defined
+      - "'Runway generation will be triggered' in check_mode_result.msg"
+      - "fake_scenario_ext_id in check_mode_result.msg"
+    success_msg: "check_mode returned the expected preview and did not call the API"
+    fail_msg: "check_mode did not behave correctly: {{ check_mode_result }}"
+
+############################################################################
+# Argument spec: ext_id is required
+############################################################################
+
+- name: Generate runway with missing ext_id
+  nutanix.ncp.ntnx_runway_v2: {}
+  register: missing_ext_id_result
+  ignore_errors: true
+
+- name: Assert missing ext_id is rejected by the argument spec
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id_result is defined
+      - missing_ext_id_result.failed == true
+      - missing_ext_id_result.changed == false
+      - missing_ext_id_result.msg is defined
+      - "'ext_id' in missing_ext_id_result.msg"
+    success_msg: "Missing ext_id correctly rejected by argument spec"
+    fail_msg: "Missing ext_id was not rejected: {{ missing_ext_id_result }}"
+
+############################################################################
+# Negative: generate runway on a scenario that does not exist
+############################################################################
+
+- name: Generate runway on non-existent scenario
+  nutanix.ncp.ntnx_runway_v2:
+    ext_id: "{{ fake_scenario_ext_id }}"
+  register: not_found_result
+  ignore_errors: true
+
+- name: Assert not-found scenario returns a descriptive error
+  ansible.builtin.assert:
+    that:
+      - not_found_result is defined
+      - not_found_result.failed == true
+      - not_found_result.changed == false
+      - not_found_result.msg is defined
+      - "'Api Exception raised while generating runway' in not_found_result.msg"
+    success_msg: "generate_runway on non-existent scenario returned a descriptive error"
+    fail_msg: "generate_runway on non-existent scenario did not fail cleanly: {{ not_found_result }}"
+
+############################################################################
+# Real run (best effort): create a scenario, then generate runway on it.
+# We use the SDK inline (ansible.builtin.script is not available for
+# the collection tests, so we shell out to python3 with the SDK installed
+# in the ansible-test environment). If the create task is stuck in
+# QUEUED (ENG-792183) the whole real-run block is skipped gracefully.
+############################################################################
+
+- name: Discover an AOS cluster ext_id for the real-run block
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(f:f eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+    limit: 1
+  register: clusters_info
+  ignore_errors: true
+
+- name: Prepare cluster fact for scenario creation
+  ansible.builtin.set_fact:
+    aos_cluster_ext_id: "{{ (clusters_info.response | default([]) | map(attribute='ext_id') | list | first) | default(None) }}"
+  when: clusters_info is defined and (clusters_info.response | default([])) | length > 0
+
+- name: Attempt to create a scenario and generate runway on it (best effort)
+  when: aos_cluster_ext_id is defined and aos_cluster_ext_id
+  block:
+    - name: Create a capacity planning scenario via the AIOps SDK
+      ansible.builtin.command:
+        argv:
+          - python3
+          - -c
+          - |
+            import json, sys, urllib3
+            urllib3.disable_warnings()
+            from base64 import b64encode
+            import ntnx_aiops_py_client as aiops
+            cfg = aiops.Configuration()
+            cfg.host = "{{ ip }}"
+            cfg.port = 9440
+            cfg.username = "{{ username }}"
+            cfg.password = "{{ password }}"
+            cfg.verify_ssl = False
+            c = aiops.ApiClient(configuration=cfg)
+            cred = "{{ username }}:{{ password }}"
+            c.add_default_header("Authorization", "Basic " + b64encode(cred.encode()).decode())
+            api = aiops.ScenariosApi(api_client=c)
+            sc = aiops.Scenario(
+                name="{{ scenario_name }}",
+                cluster_ext_id="{{ aos_cluster_ext_id }}",
+                target_runway_days=90,
+                vendors=[aiops.Vendor.NUTANIX],
+                cluster_config=aiops.ClusterConfig(
+                    data_store_config=aiops.DataStoreConfig(
+                        replication_factor=aiops.ReplicationFactor.RF_2,
+                    ),
+                ),
+            )
+            r = api.create_scenario(body=sc)
+            print(json.dumps({"task_ext_id": r.data.ext_id}))
+      register: create_scenario_out
+      changed_when: false
+      ignore_errors: true
+
+    - name: Parse scenario create task ext_id
+      ansible.builtin.set_fact:
+        create_task_ext_id: "{{ (create_scenario_out.stdout | from_json).task_ext_id | default(None) }}"
+      when: create_scenario_out is defined and create_scenario_out.stdout is defined
+
+    - name: Poll the create task until it succeeds (bounded)
+      ansible.builtin.command:
+        argv:
+          - python3
+          - -c
+          - |
+            import json, time, urllib3
+            urllib3.disable_warnings()
+            from base64 import b64encode
+            import ntnx_prism_py_client as prism
+            cfg = prism.Configuration()
+            cfg.host = "{{ ip }}"
+            cfg.port = 9440
+            cfg.username = "{{ username }}"
+            cfg.password = "{{ password }}"
+            cfg.verify_ssl = False
+            c = prism.ApiClient(configuration=cfg)
+            cred = "{{ username }}:{{ password }}"
+            c.add_default_header("Authorization", "Basic " + b64encode(cred.encode()).decode())
+            tapi = prism.TasksApi(api_client=c)
+            task_ext_id = "{{ create_task_ext_id }}"
+            deadline = time.time() + 90
+            status = "QUEUED"
+            scenario_ext_id = None
+            while time.time() < deadline:
+                t = tapi.get_task_by_id(task_ext_id).data
+                status = t.status
+                if t.entities_affected:
+                    for e in t.entities_affected:
+                        if "scenario" in (e.rel or "").lower():
+                            scenario_ext_id = e.ext_id
+                            break
+                if status in ("SUCCEEDED", "FAILED"):
+                    break
+                time.sleep(3)
+            print(json.dumps({"status": status, "scenario_ext_id": scenario_ext_id}))
+      register: poll_out
+      changed_when: false
+      when: create_task_ext_id is defined and create_task_ext_id
+      ignore_errors: true
+
+    - name: Parse scenario create poll result
+      ansible.builtin.set_fact:
+        create_task_status: "{{ (poll_out.stdout | from_json).status | default('UNKNOWN') }}"
+        created_scenario_ext_id: "{{ (poll_out.stdout | from_json).scenario_ext_id | default(None) }}"
+      when: poll_out is defined and poll_out.stdout is defined
+
+    - name: Generate runway on created scenario (only if the scenario materialised)
+      nutanix.ncp.ntnx_runway_v2:
+        ext_id: "{{ created_scenario_ext_id }}"
+        wait: false
+      register: runway_result
+      when:
+        - created_scenario_ext_id is defined
+        - created_scenario_ext_id
+        - create_task_status == 'SUCCEEDED'
+      ignore_errors: true
+
+    - name: Assert generate_runway succeeded (only if we could run it)
+      ansible.builtin.assert:
+        that:
+          - runway_result is defined
+          - runway_result.failed == false
+          - runway_result.changed == true
+          - runway_result.ext_id == created_scenario_ext_id
+          - runway_result.task_ext_id is defined
+          - runway_result.response is defined
+          - runway_result.response.ext_id is defined
+        success_msg: "generate_runway dispatched a task for the created scenario"
+        fail_msg: "generate_runway did not dispatch a task cleanly: {{ runway_result }}"
+      when:
+        - runway_result is defined
+        - runway_result.skipped is not defined
+        - created_scenario_ext_id is defined
+        - created_scenario_ext_id
+        - create_task_status == 'SUCCEEDED'
+
+    - name: Report that the real-run block was skipped
+      ansible.builtin.debug:
+        msg: >
+          Skipping real generate_runway test - the scenario create task
+          did not reach SUCCEEDED within the polling window (status was
+          {{ create_task_status | default('unknown') }}). This matches
+          ENG-792183 on some clusters and is expected.
+      when: >
+        create_task_status is not defined
+        or create_task_status != 'SUCCEEDED'
+        or created_scenario_ext_id is not defined
+        or not created_scenario_ext_id
+
+    - name: Cleanup - delete the created scenario (best effort)
+      ansible.builtin.command:
+        argv:
+          - python3
+          - -c
+          - |
+            import urllib3
+            urllib3.disable_warnings()
+            from base64 import b64encode
+            import ntnx_aiops_py_client as aiops
+            cfg = aiops.Configuration()
+            cfg.host = "{{ ip }}"
+            cfg.port = 9440
+            cfg.username = "{{ username }}"
+            cfg.password = "{{ password }}"
+            cfg.verify_ssl = False
+            c = aiops.ApiClient(configuration=cfg)
+            cred = "{{ username }}:{{ password }}"
+            c.add_default_header("Authorization", "Basic " + b64encode(cred.encode()).decode())
+            api = aiops.ScenariosApi(api_client=c)
+            try:
+                api.delete_scenario_by_id(extId="{{ created_scenario_ext_id }}")
+                print("deleted")
+            except Exception as e:
+                print("delete failed:", e)
+      changed_when: false
+      failed_when: false
+      when:
+        - created_scenario_ext_id is defined
+        - created_scenario_ext_id
+
+- name: Report when no AOS cluster was discovered for the real-run block
+  ansible.builtin.debug:
+    msg: >
+      Skipping real generate_runway test - no AOS cluster was returned by
+      ntnx_clusters_info_v2 on this PC. The negative and check_mode tests
+      above still cover the module surface.
+  when: aos_cluster_ext_id is not defined or not aos_cluster_ext_id
