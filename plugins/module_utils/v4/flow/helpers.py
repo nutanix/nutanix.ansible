@@ -102,3 +102,25 @@ def strip_service_group_extra_attributes(obj):
         setattr(obj, field, None)
 
     return obj
+
+
+def get_ds_category_mapping(module, api_instance, ext_id):
+    """
+    This method will return the AD group to category mapping (DsCategoryMapping)
+    identified by the provided external ID.
+    Args:
+        module: Ansible module
+        api_instance: DirectoryServerConfigsApi instance from
+            ntnx_microseg_py_client sdk
+        ext_id (str): DsCategoryMapping external ID
+    return:
+        ds_category_mapping (object): DsCategoryMapping info
+    """
+    try:
+        return api_instance.get_ds_category_mapping_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching DsCategoryMapping info using ext_id",
+        )

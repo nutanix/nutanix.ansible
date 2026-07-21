@@ -1,0 +1,543 @@
+---
+##############################################################################################
+# Test plan for DsCategoryMapping (AD Group ↔ Category mapping) - ntnx_ds_category_mapping_v2
+#
+# Coverage matrix:
+#   1. check_mode:
+#        * create (all attributes)
+#        * update (all attributes)
+#        * delete
+#   2. negative create:
+#        * missing name, category_name, category_value, ad_info
+#        * invalid ad_info.status enum value
+#   3. info module:
+#        * list all
+#        * list with limit
+#        * list with filter (only when live-CRUD enabled)
+#        * get by non-existent ext_id
+#   4. live-CRUD lifecycle (only when
+#        ds_category_mapping.enable_live_crud | default(false) is true and a real
+#        AD group objectGUID is supplied):
+#        * create minimal, create full
+#        * fetch by ext_id, list with filter
+#        * update scalar + ad_info.object_path
+#        * idempotency: update with same values -> 'Nothing to change.'
+#        * update with wrong ext_id (negative)
+#        * delete happy path (loop over all created), delete with wrong ext_id,
+#          delete missing ext_id.
+#
+# Prerequisites for the live-CRUD block:
+#   * A microseg Directory Server Config (see /api/microseg/v4.2/config/directory-server-configs)
+#     configured for the target Prism Central (one per PC is sufficient) referencing an
+#     Active-Directory backed IAM directory service.
+#   * A real AD group objectGUID (the raw AD-side GUID, NOT the Nutanix IAM user-group extId)
+#     supplied via ds_category_mapping.ad_group_object_identifier in
+#     integration_config.yml.
+#   * ds_category_mapping.enable_live_crud must be set to true to opt into these calls.
+##############################################################################################
+
+- name: Start DsCategoryMapping tests
+  ansible.builtin.debug:
+    msg: Start DsCategoryMapping tests
+
+- name: Generate random names
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    suffix_name: "ansible"
+    todelete: []
+
+- name: Set names for DsCategoryMapping
+  ansible.builtin.set_fact:
+    ds_map_name: "ds_cm_{{ suffix_name }}_{{ random_name }}"
+
+- name: Set DsCategoryMapping prerequisites
+  ansible.builtin.set_fact:
+    directory_service_ext_id: "{{ ds_category_mapping.directory_service_ext_id }}"
+    ad_group_object_identifier: "{{ ds_category_mapping.ad_group_object_identifier }}"
+    ad_group_object_identifier_2: "{{ ds_category_mapping.ad_group_object_identifier_2 | default(ds_category_mapping.ad_group_object_identifier) }}"
+    category_name: "{{ ds_category_mapping.category_name }}"
+    category_value: "{{ ds_category_mapping.category_value }}"
+    category_value_updated: "{{ ds_category_mapping.category_value_updated | default('Engineering') }}"
+    enable_live_crud: "{{ ds_category_mapping.enable_live_crud | default(false) | bool }}"
+
+########################################################################################
+# 1. check_mode - Create DsCategoryMapping with ALL attributes
+########################################################################################
+
+- name: Generate spec for creating DsCategoryMapping using check mode with all attributes
+  nutanix.ncp.ntnx_ds_category_mapping_v2:
+    name: "check_mode_ds_cm_full"
+    category_name: "{{ category_name }}"
+    category_value: "{{ category_value }}"
+    ad_info:
+      directory_service_reference: "{{ directory_service_ext_id }}"
+      object_identifier: "{{ ad_group_object_identifier }}"
+      object_path: "CN=CheckMode,OU=Groups,DC=example,DC=com"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for creating DsCategoryMapping using check mode with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "check_mode_ds_cm_full"
+      - result.response.category_name == "{{ category_name }}"
+      - result.response.category_value == "{{ category_value }}"
+      - result.response.ad_info is defined
+      - result.response.ad_info.directory_service_reference == "{{ directory_service_ext_id }}"
+      - result.response.ad_info.object_identifier == "{{ ad_group_object_identifier }}"
+      - result.response.ad_info.object_path == "CN=CheckMode,OU=Groups,DC=example,DC=com"
+    success_msg: "Spec for creating DsCategoryMapping using check mode with all attributes is generated successfully"
+    fail_msg: "Spec for creating DsCategoryMapping using check mode with all attributes is not generated successfully"
+
+########################################################################################
+# 2. Negative create tests (do not need a real AD group)
+########################################################################################
+
+- name: Create DsCategoryMapping with missing name
+  nutanix.ncp.ntnx_ds_category_mapping_v2:
+    category_name: "{{ category_name }}"
+    category_value: "{{ category_value }}"
+    ad_info:
+      directory_service_reference: "{{ directory_service_ext_id }}"
+      object_identifier: "{{ ad_group_object_identifier }}"
+  register: result
+  ignore_errors: true
+
+- name: Create DsCategoryMapping with missing name status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "state is present but any of the following are missing: name, ext_id"
+    success_msg: "Create DsCategoryMapping with missing name failed as expected"
+    fail_msg: "Create DsCategoryMapping with missing name did not fail as expected"
+
+- name: Create DsCategoryMapping with missing category_name
+  nutanix.ncp.ntnx_ds_category_mapping_v2:
+    name: "missing_category_name"
+    category_value: "{{ category_value }}"
+    ad_info:
+      directory_service_reference: "{{ directory_service_ext_id }}"
+      object_identifier: "{{ ad_group_object_identifier }}"
+  register: result
+  ignore_errors: true
+
+- name: Create DsCategoryMapping with missing category_name status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Missing required parameter(s): category_name"
+    success_msg: "Create DsCategoryMapping with missing category_name failed as expected"
+    fail_msg: "Create DsCategoryMapping with missing category_name did not fail as expected"
+
+- name: Create DsCategoryMapping with missing category_value
+  nutanix.ncp.ntnx_ds_category_mapping_v2:
+    name: "missing_category_value"
+    category_name: "{{ category_name }}"
+    ad_info:
+      directory_service_reference: "{{ directory_service_ext_id }}"
+      object_identifier: "{{ ad_group_object_identifier }}"
+  register: result
+  ignore_errors: true
+
+- name: Create DsCategoryMapping with missing category_value status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Missing required parameter(s): category_value"
+    success_msg: "Create DsCategoryMapping with missing category_value failed as expected"
+    fail_msg: "Create DsCategoryMapping with missing category_value did not fail as expected"
+
+- name: Create DsCategoryMapping with missing ad_info
+  nutanix.ncp.ntnx_ds_category_mapping_v2:
+    name: "missing_ad_info"
+    category_name: "{{ category_name }}"
+    category_value: "{{ category_value }}"
+  register: result
+  ignore_errors: true
+
+- name: Create DsCategoryMapping with missing ad_info status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Missing required parameter(s): ad_info"
+    success_msg: "Create DsCategoryMapping with missing ad_info failed as expected"
+    fail_msg: "Create DsCategoryMapping with missing ad_info did not fail as expected"
+
+- name: Create DsCategoryMapping with invalid ad_info.status enum value
+  nutanix.ncp.ntnx_ds_category_mapping_v2:
+    name: "invalid_status"
+    category_name: "{{ category_name }}"
+    category_value: "{{ category_value }}"
+    ad_info:
+      directory_service_reference: "{{ directory_service_ext_id }}"
+      object_identifier: "{{ ad_group_object_identifier }}"
+      status: "INVALID_STATUS_VALUE"
+  register: result
+  ignore_errors: true
+
+- name: Create DsCategoryMapping with invalid ad_info.status enum value status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'value of status must be one of' in result.msg"
+    success_msg: "Create DsCategoryMapping with invalid ad_info.status failed as expected"
+    fail_msg: "Create DsCategoryMapping with invalid ad_info.status did not fail as expected"
+
+########################################################################################
+# 3. Info Module Tests
+########################################################################################
+
+- name: List all DsCategoryMappings
+  nutanix.ncp.ntnx_ds_category_mappings_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: List all DsCategoryMappings status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length >= 0
+      - result.total_available_results is defined
+    success_msg: "List all DsCategoryMappings passed"
+    fail_msg: "List all DsCategoryMappings failed"
+
+- name: List DsCategoryMappings with limit
+  nutanix.ncp.ntnx_ds_category_mappings_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List DsCategoryMappings with limit status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length <= 1
+    success_msg: "List DsCategoryMappings with limit passed"
+    fail_msg: "List DsCategoryMappings with limit failed"
+
+- name: Fetch DsCategoryMapping using wrong external ID
+  nutanix.ncp.ntnx_ds_category_mappings_info_v2:
+    ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+  register: result
+  ignore_errors: true
+
+- name: Fetch DsCategoryMapping using wrong external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Fetch DsCategoryMapping using wrong external ID failed as expected"
+    fail_msg: "Fetch DsCategoryMapping using wrong external ID did not fail as expected"
+
+########################################################################################
+# 4. Delete negatives (do not need a real AD group)
+########################################################################################
+
+- name: Delete DsCategoryMapping with wrong external ID
+  nutanix.ncp.ntnx_ds_category_mapping_v2:
+    ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Delete DsCategoryMapping with wrong external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Delete DsCategoryMapping with wrong external ID failed as expected"
+    fail_msg: "Delete DsCategoryMapping with wrong external ID did not fail as expected"
+
+- name: Delete DsCategoryMapping with missing external ID
+  nutanix.ncp.ntnx_ds_category_mapping_v2:
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Delete DsCategoryMapping with missing external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is absent but all of the following are missing: ext_id' in result.msg"
+    success_msg: "Delete DsCategoryMapping with missing external ID failed as expected"
+    fail_msg: "Delete DsCategoryMapping with missing external ID did not fail as expected"
+
+- name: Delete DsCategoryMapping with check mode using a fake ext_id
+  nutanix.ncp.ntnx_ds_category_mapping_v2:
+    ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+    state: absent
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Delete DsCategoryMapping with check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - "'will be deleted' in result.msg"
+    success_msg: "Delete DsCategoryMapping with check mode passed"
+    fail_msg: "Delete DsCategoryMapping with check mode failed"
+
+########################################################################################
+# 5. Live CRUD lifecycle (skipped unless enable_live_crud is set)
+#
+# This block requires a REAL AD group objectGUID and a configured directory
+# server config on the target PC. When those are unavailable, we still exercise
+# the create+task path via a "well formed but rejected" call and confirm the
+# module reports the API failure gracefully.
+########################################################################################
+
+- name: Create DsCategoryMapping with a well-formed (but unresolvable) AD group GUID to exercise the task error path
+  nutanix.ncp.ntnx_ds_category_mapping_v2:
+    name: "{{ ds_map_name }}_task_err"
+    category_name: "{{ category_name }}"
+    category_value: "{{ category_value }}"
+    ad_info:
+      directory_service_reference: "{{ directory_service_ext_id }}"
+      object_identifier: "{{ ad_group_object_identifier }}"
+  register: task_err
+  ignore_errors: true
+  when: not enable_live_crud
+
+- name: Assert task error path is surfaced correctly (create -> task -> FAILED)
+  ansible.builtin.assert:
+    that:
+      - task_err is defined
+      - task_err.skipped is defined or task_err.failed is defined
+      - (task_err.skipped | default(false)) or (task_err.failed == true)
+    success_msg: "Create with unresolvable AD group GUID surfaced the task failure cleanly"
+    fail_msg: "Create with unresolvable AD group GUID did not surface the task failure correctly"
+  when: not enable_live_crud
+
+- name: Live CRUD block
+  when: enable_live_crud
+  block:
+    - name: Create DsCategoryMapping with minimum attributes (live)
+      nutanix.ncp.ntnx_ds_category_mapping_v2:
+        name: "{{ ds_map_name }}_min"
+        category_name: "{{ category_name }}"
+        category_value: "{{ category_value }}"
+        ad_info:
+          directory_service_reference: "{{ directory_service_ext_id }}"
+          object_identifier: "{{ ad_group_object_identifier }}"
+      register: result
+
+    - name: Create DsCategoryMapping with minimum attributes status (live)
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == true
+          - result.failed == false
+          - result.ext_id is defined
+          - result.task_ext_id is defined
+          - result.response is defined
+          - result.response.name == "{{ ds_map_name }}_min"
+          - result.response.category_name == "{{ category_name }}"
+          - result.response.category_value == "{{ category_value }}"
+          - result.response.ad_info.directory_service_reference == "{{ directory_service_ext_id }}"
+          - result.response.ad_info.object_identifier == "{{ ad_group_object_identifier }}"
+        success_msg: "Live: DsCategoryMapping (min) created successfully"
+        fail_msg: "Live: DsCategoryMapping (min) creation failed"
+
+    - name: Add DsCategoryMapping to todelete list
+      ansible.builtin.set_fact:
+        todelete: "{{ todelete + [result.ext_id] }}"
+
+    - name: Create DsCategoryMapping with all attributes (live)
+      nutanix.ncp.ntnx_ds_category_mapping_v2:
+        name: "{{ ds_map_name }}_full"
+        category_name: "{{ category_name }}"
+        category_value: "{{ category_value }}"
+        ad_info:
+          directory_service_reference: "{{ directory_service_ext_id }}"
+          object_identifier: "{{ ad_group_object_identifier_2 }}"
+          object_path: "CN=Full,OU=Groups,DC=example,DC=com"
+      register: result
+
+    - name: Create DsCategoryMapping with all attributes status (live)
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == true
+          - result.failed == false
+          - result.ext_id is defined
+          - result.task_ext_id is defined
+          - result.response is defined
+          - result.response.name == "{{ ds_map_name }}_full"
+          - result.response.category_name == "{{ category_name }}"
+          - result.response.category_value == "{{ category_value }}"
+          - result.response.ad_info.object_identifier == "{{ ad_group_object_identifier_2 }}"
+          - result.response.ad_info.object_path == "CN=Full,OU=Groups,DC=example,DC=com"
+        success_msg: "Live: DsCategoryMapping (full) created successfully"
+        fail_msg: "Live: DsCategoryMapping (full) creation failed"
+
+    - name: Add DsCategoryMapping to todelete list
+      ansible.builtin.set_fact:
+        todelete: "{{ todelete + [result.ext_id] }}"
+
+    - name: Fetch DsCategoryMapping using external ID (live)
+      nutanix.ncp.ntnx_ds_category_mappings_info_v2:
+        ext_id: "{{ todelete[0] }}"
+      register: result
+
+    - name: Fetch DsCategoryMapping using external ID status (live)
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.failed == false
+          - result.ext_id == todelete[0]
+          - result.response.name == "{{ ds_map_name }}_min"
+          - result.response.category_name == "{{ category_name }}"
+        success_msg: "Live: Fetch DsCategoryMapping by ext_id passed"
+        fail_msg: "Live: Fetch DsCategoryMapping by ext_id failed"
+
+    - name: List DsCategoryMappings with filter (live)
+      nutanix.ncp.ntnx_ds_category_mappings_info_v2:
+        filter: "name eq '{{ ds_map_name }}_min'"
+      register: result
+
+    - name: List DsCategoryMappings with filter status (live)
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.failed == false
+          - result.response | length == 1
+          - result.response[0].name == "{{ ds_map_name }}_min"
+        success_msg: "Live: List DsCategoryMappings with filter passed"
+        fail_msg: "Live: List DsCategoryMappings with filter failed"
+
+    - name: Generate spec for updating DsCategoryMapping using check mode with all attributes (live)
+      nutanix.ncp.ntnx_ds_category_mapping_v2:
+        ext_id: "{{ todelete[0] }}"
+        name: "{{ ds_map_name }}_updated"
+        category_name: "{{ category_name }}"
+        category_value: "{{ category_value_updated }}"
+        ad_info:
+          directory_service_reference: "{{ directory_service_ext_id }}"
+          object_identifier: "{{ ad_group_object_identifier }}"
+          object_path: "CN=Updated,OU=Groups,DC=example,DC=com"
+      check_mode: true
+      register: result
+
+    - name: Generate spec for updating DsCategoryMapping using check mode status (live)
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.failed == false
+          - result.response is defined
+          - result.response.name == "{{ ds_map_name }}_updated"
+          - result.response.category_value == "{{ category_value_updated }}"
+          - result.response.ad_info.object_path == "CN=Updated,OU=Groups,DC=example,DC=com"
+        success_msg: "Live: Update DsCategoryMapping check mode spec generated"
+        fail_msg: "Live: Update DsCategoryMapping check mode spec generation failed"
+
+    - name: Update DsCategoryMapping with all attributes (live)
+      nutanix.ncp.ntnx_ds_category_mapping_v2:
+        ext_id: "{{ todelete[0] }}"
+        name: "{{ ds_map_name }}_updated"
+        category_name: "{{ category_name }}"
+        category_value: "{{ category_value_updated }}"
+        ad_info:
+          directory_service_reference: "{{ directory_service_ext_id }}"
+          object_identifier: "{{ ad_group_object_identifier }}"
+          object_path: "CN=Updated,OU=Groups,DC=example,DC=com"
+      register: result
+
+    - name: Update DsCategoryMapping with all attributes status (live)
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == true
+          - result.failed == false
+          - result.response.name == "{{ ds_map_name }}_updated"
+          - result.response.category_value == "{{ category_value_updated }}"
+          - result.response.ad_info.object_path == "CN=Updated,OU=Groups,DC=example,DC=com"
+        success_msg: "Live: Update DsCategoryMapping with all attributes passed"
+        fail_msg: "Live: Update DsCategoryMapping with all attributes failed"
+
+    - name: Update DsCategoryMapping with same values (idempotency) (live)
+      nutanix.ncp.ntnx_ds_category_mapping_v2:
+        ext_id: "{{ todelete[0] }}"
+        name: "{{ ds_map_name }}_updated"
+        category_name: "{{ category_name }}"
+        category_value: "{{ category_value_updated }}"
+        ad_info:
+          directory_service_reference: "{{ directory_service_ext_id }}"
+          object_identifier: "{{ ad_group_object_identifier }}"
+          object_path: "CN=Updated,OU=Groups,DC=example,DC=com"
+      register: result
+
+    - name: Update DsCategoryMapping with same values status (live)
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.msg == "Nothing to change."
+        success_msg: "Live: Update DsCategoryMapping idempotency passed"
+        fail_msg: "Live: Update DsCategoryMapping idempotency failed"
+
+    - name: Update DsCategoryMapping with wrong external ID (live)
+      nutanix.ncp.ntnx_ds_category_mapping_v2:
+        ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+        name: "test_wrong_ext_id"
+        category_name: "{{ category_name }}"
+        category_value: "{{ category_value }}"
+        ad_info:
+          directory_service_reference: "{{ directory_service_ext_id }}"
+          object_identifier: "{{ ad_group_object_identifier }}"
+      register: result
+      ignore_errors: true
+
+    - name: Update DsCategoryMapping with wrong external ID status (live)
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == true
+        success_msg: "Live: Update DsCategoryMapping with wrong external ID failed as expected"
+        fail_msg: "Live: Update DsCategoryMapping with wrong external ID did not fail as expected"
+
+    - name: Delete all created DsCategoryMappings (live)
+      nutanix.ncp.ntnx_ds_category_mapping_v2:
+        ext_id: "{{ item }}"
+        state: absent
+      register: result
+      loop: "{{ todelete }}"
+
+    - name: Deletion status (live)
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == true
+          - result.results | length == todelete | length
+          - result.msg == "All items completed"
+        fail_msg: "Live: Unable to delete all DsCategoryMappings"
+        success_msg: "Live: All DsCategoryMappings are deleted successfully"

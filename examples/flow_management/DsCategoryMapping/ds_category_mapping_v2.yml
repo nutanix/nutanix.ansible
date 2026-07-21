@@ -1,0 +1,91 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create AD Group to Category mapping (DsCategoryMapping)
+# 2. Get a DsCategoryMapping using ext_id
+# 3. List all DsCategoryMappings
+# 4. List DsCategoryMappings with filter
+# 5. List DsCategoryMappings with limit
+# 6. Update DsCategoryMapping
+# 7. Delete DsCategoryMapping
+
+- name: DsCategoryMapping playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        directory_service_ext_id: "6863c60b-ae9d-5c32-b8c1-2d45b9ba343a"
+        ad_group_object_identifier: "b1a1e59d-6f9a-4bde-8f0f-2b6f8c9f6a11"
+        ds_category_mapping_name: "ansible_ds_category_mapping"
+
+    - name: Create AD Group to Category mapping with all attributes
+      nutanix.ncp.ntnx_ds_category_mapping_v2:
+        state: present
+        name: "{{ ds_category_mapping_name }}"
+        category_name: "AppType"
+        category_value: "Finance"
+        ad_info:
+          directory_service_reference: "{{ directory_service_ext_id }}"
+          object_identifier: "{{ ad_group_object_identifier }}"
+          object_path: "CN=Finance,OU=Groups,DC=example,DC=com"
+      register: created_mapping
+      ignore_errors: true
+
+    - name: Save DsCategoryMapping ext_id (when the create succeeded)
+      ansible.builtin.set_fact:
+        ds_category_mapping_ext_id: "{{ created_mapping.ext_id }}"
+      when: created_mapping is defined and created_mapping.ext_id is defined
+
+    - name: Get DsCategoryMapping using ext_id
+      nutanix.ncp.ntnx_ds_category_mappings_info_v2:
+        ext_id: "{{ ds_category_mapping_ext_id }}"
+      register: result
+      ignore_errors: true
+      when: ds_category_mapping_ext_id is defined
+
+    - name: List all DsCategoryMappings
+      nutanix.ncp.ntnx_ds_category_mappings_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List DsCategoryMappings with filter
+      nutanix.ncp.ntnx_ds_category_mappings_info_v2:
+        filter: "name eq '{{ ds_category_mapping_name }}'"
+      register: result
+      ignore_errors: true
+
+    - name: List DsCategoryMappings with limit
+      nutanix.ncp.ntnx_ds_category_mappings_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: Update DsCategoryMapping with all attributes
+      nutanix.ncp.ntnx_ds_category_mapping_v2:
+        state: present
+        ext_id: "{{ ds_category_mapping_ext_id }}"
+        name: "{{ ds_category_mapping_name }}_updated"
+        category_name: "AppType"
+        category_value: "Engineering"
+        ad_info:
+          directory_service_reference: "{{ directory_service_ext_id }}"
+          object_identifier: "{{ ad_group_object_identifier }}"
+          object_path: "CN=Engineering,OU=Groups,DC=example,DC=com"
+      register: result
+      ignore_errors: true
+      when: ds_category_mapping_ext_id is defined
+
+    - name: Delete DsCategoryMapping
+      nutanix.ncp.ntnx_ds_category_mapping_v2:
+        state: absent
+        ext_id: "{{ ds_category_mapping_ext_id }}"
+      register: result
+      ignore_errors: true
+      when: ds_category_mapping_ext_id is defined

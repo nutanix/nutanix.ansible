@@ -131,3 +131,17 @@ def get_entity_groups_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_microseg_py_client.EntityGroupsApi(client)
+
+
+def get_directory_server_configs_api_instance(module):
+    """
+    This method will return DirectoryServerConfigsApi instance.
+    This API is used for managing Directory Server Configurations and the
+    associated AD Group to Category Mappings (DsCategoryMapping).
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): directory server configs api instance
+    """
+    client = get_api_client(module)
+    return ntnx_microseg_py_client.DirectoryServerConfigsApi(client)
