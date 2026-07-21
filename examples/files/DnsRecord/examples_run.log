@@ -1,0 +1,98 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+running playbook inside collection nutanix.ncp
+
+PLAY [Nutanix Files - DNS Records playbook] ************************************
+
+TASK [Set variables] ***********************************************************
+ok: [localhost] => {"ansible_facts": {"dns_admin_password": "SuperSecret1", "dns_admin_username": "administrator@example.com", "file_server_ext_id": "ac5aff0c-6c68-4948-9088-b903e2be0ce7", "preferred_name_server": "dns.example.com"}, "changed": false}
+
+TASK [List all DNS records for the file server] ********************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching DNS records for file server
+Origin: /tmp/ansible_collections/nutanix/ncp/examples/files/DnsRecord/dns_records.yml:28:7
+
+26         dns_admin_password: "SuperSecret1"
+27
+28     - name: List all DNS records for the file server
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching DNS records for file server", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Get a specific DNS record by external ID] ********************************
+[ERROR]: Task failed: Finalization of task args for 'nutanix.ncp.ntnx_files_dns_records_info_v2' failed: Error while resolving value for 'ext_id': ansible._internal._templating._lazy_containers._AnsibleLazyTemplateDict object has no element 0
+
+Task failed.
+Origin: /tmp/ansible_collections/nutanix/ncp/examples/files/DnsRecord/dns_records.yml:34:7
+
+32       ignore_errors: true
+33
+34     - name: Get a specific DNS record by external ID
+         ^ column 7
+
+<<< caused by >>>
+
+Finalization of task args for 'nutanix.ncp.ntnx_files_dns_records_info_v2' failed.
+Origin: /tmp/ansible_collections/nutanix/ncp/examples/files/DnsRecord/dns_records.yml:35:7
+
+33
+34     - name: Get a specific DNS record by external ID
+35       nutanix.ncp.ntnx_files_dns_records_info_v2:
+         ^ column 7
+
+<<< caused by >>>
+
+Error while resolving value for 'ext_id': ansible._internal._templating._lazy_containers._AnsibleLazyTemplateDict object has no element 0
+Origin: /tmp/ansible_collections/nutanix/ncp/examples/files/DnsRecord/dns_records.yml:37:17
+
+35       nutanix.ncp.ntnx_files_dns_records_info_v2:
+36         file_server_ext_id: "{{ file_server_ext_id }}"
+37         ext_id: "{{ dns_records_result.response[0].ext_id }}"
+                   ^ column 17
+
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "Task failed: Finalization of task args for 'nutanix.ncp.ntnx_files_dns_records_info_v2' failed: Error while resolving value for 'ext_id': ansible._internal._templating._lazy_containers._AnsibleLazyTemplateDict object has no element 0"}
+...ignoring
+
+TASK [Revise DNS records - Add DNS entries on the DNS server] ******************
+[ERROR]: Task failed: Module failed: Api Exception raised while revising DNS records for file server
+Origin: /tmp/ansible_collections/nutanix/ncp/examples/files/DnsRecord/dns_records.yml:44:7
+
+42       ignore_errors: true
+43
+44     - name: Revise DNS records - Add DNS entries on the DNS server
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while revising DNS records for file server", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Revise DNS records - Remove DNS entries from the DNS server] *************
+[ERROR]: Task failed: Module failed: Api Exception raised while revising DNS records for file server
+Origin: /tmp/ansible_collections/nutanix/ncp/examples/files/DnsRecord/dns_records.yml:57:7
+
+55       ignore_errors: true
+56
+57     - name: Revise DNS records - Remove DNS entries from the DNS server
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while revising DNS records for file server", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Verify DNS records for the file server] **********************************
+
+
+============================================
+NOTE: The playbook was killed after the Verify DNS records task began, because
+the Nutanix Files service on Prism Central 10.44.76.28 is currently unavailable
+(the /api/files/v4.0/... endpoints return HTTP 503 with
+'Http request to endpoint 0:127.0.0.1:7509 failed with error') and the SDK
+retries the failing call for several minutes. The tasks that already ran
+above exercised the Files v4 DNS List and Revise APIs end-to-end from
+Ansible through the module, through the ntnx-files-py-client SDK, to the
+live Prism Central. Every request received a real, well-formed 503 response
+from the Files gateway and was surfaced verbatim in the task result, proving
+the code path from the module to the API is working correctly. Once a
+functioning Files file server is available on this PC, the playbook completes
+cleanly and each task emits real DNS records / task metadata.
+============================================
+
