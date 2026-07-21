@@ -1,0 +1,275 @@
+---
+# Test plan for the Nutanix Files EmailConfig v4 modules
+# (ntnx_files_email_config_v2 and ntnx_files_email_configs_info_v2).
+#
+# The email configuration is a singleton per file server, identified by
+# file_server_ext_id. It only supports read (info) and update operations, it
+# cannot be created or deleted independently. The tests below therefore focus
+# on the update and info workflows, idempotency, check mode, and negative
+# scenarios.
+#
+# 1. Argument-spec validation (no cluster needed):
+#    - Missing required file_server_ext_id -> module fails with a descriptive error.
+#    - Invalid state value -> rejected by choices.
+# 2. Info module:
+#    - Fetch the current email configuration of the file server.
+#    - Fetch using an invalid file_server_ext_id -> proper error.
+# 3. Update module:
+#    - check_mode update with all attributes -> spec is generated, no change made.
+#    - Update with all attributes (subject + content).
+#    - Update with only the subject (partial update).
+#    - Idempotency: repeat the same update -> changed false and "Nothing to change.".
+#    - Update using an invalid file_server_ext_id -> proper error.
+# 4. Restore the original email configuration at the end.
+
+- name: Start Nutanix Files EmailConfig tests
+  ansible.builtin.debug:
+    msg: Start Nutanix Files EmailConfig tests
+
+- name: Generate random suffix for test data
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set test data
+  ansible.builtin.set_fact:
+    test_subject: "Ansible quota notification {{ random_name }}"
+    test_content: "Your share {{ random_name }} has exceeded its configured storage quota. Please free up space."
+    updated_subject: "Ansible quota notification updated {{ random_name }}"
+    invalid_file_server_ext_id: "00000000-0000-0000-0000-000000000000"
+
+########################################################################################
+# Argument-spec validation tests (do not require a reachable Files service)
+########################################################################################
+
+- name: Update email configuration with missing file_server_ext_id
+  nutanix.ncp.ntnx_files_email_config_v2:
+    subject: "{{ test_subject }}"
+    content: "{{ test_content }}"
+  register: result
+  ignore_errors: true
+
+- name: Update email configuration with missing file_server_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'missing required arguments: file_server_ext_id' in result.msg"
+    success_msg: "Update email configuration with missing file_server_ext_id failed as expected"
+    fail_msg: "Update email configuration with missing file_server_ext_id did not fail as expected"
+
+- name: Update email configuration with invalid state
+  nutanix.ncp.ntnx_files_email_config_v2:
+    state: absent
+    file_server_ext_id: "{{ email_config_file_server_ext_id }}"
+    subject: "{{ test_subject }}"
+  register: result
+  ignore_errors: true
+
+- name: Update email configuration with invalid state status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'value of state must be one of' in result.msg"
+    success_msg: "Update email configuration with invalid state failed as expected"
+    fail_msg: "Update email configuration with invalid state did not fail as expected"
+
+- name: Fetch email configuration with missing file_server_ext_id
+  nutanix.ncp.ntnx_files_email_configs_info_v2: {}
+  register: result
+  ignore_errors: true
+
+- name: Fetch email configuration with missing file_server_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'missing required arguments: file_server_ext_id' in result.msg"
+    success_msg: "Fetch email configuration with missing file_server_ext_id failed as expected"
+    fail_msg: "Fetch email configuration with missing file_server_ext_id did not fail as expected"
+
+########################################################################################
+# Info module tests
+########################################################################################
+
+- name: Fetch the current email configuration of the file server
+  nutanix.ncp.ntnx_files_email_configs_info_v2:
+    file_server_ext_id: "{{ email_config_file_server_ext_id }}"
+  register: current_email_config
+  ignore_errors: true
+
+- name: Fetch the current email configuration of the file server status
+  ansible.builtin.assert:
+    that:
+      - current_email_config is defined
+      - current_email_config.changed == false
+      - current_email_config.failed == false
+      - current_email_config.response is defined
+      - current_email_config.ext_id is defined
+    success_msg: "Fetched the current email configuration of the file server successfully"
+    fail_msg: "Failed to fetch the current email configuration of the file server"
+
+- name: Save original email configuration for restore
+  ansible.builtin.set_fact:
+    original_subject: "{{ current_email_config.response.subject | default(omit) }}"
+    original_content: "{{ current_email_config.response.content | default(omit) }}"
+
+- name: Fetch email configuration using an invalid file_server_ext_id
+  nutanix.ncp.ntnx_files_email_configs_info_v2:
+    file_server_ext_id: "{{ invalid_file_server_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch email configuration using an invalid file_server_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Fetch email configuration using an invalid file_server_ext_id failed as expected"
+    fail_msg: "Fetch email configuration using an invalid file_server_ext_id did not fail as expected"
+
+########################################################################################
+# Update module tests
+########################################################################################
+
+- name: Generate spec for updating email configuration using check mode with all attributes
+  nutanix.ncp.ntnx_files_email_config_v2:
+    state: present
+    file_server_ext_id: "{{ email_config_file_server_ext_id }}"
+    subject: "{{ test_subject }}"
+    content: "{{ test_content }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for updating email configuration using check mode with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.subject == test_subject
+      - result.response.content == test_content
+    success_msg: "Spec for updating email configuration using check mode with all attributes generated successfully"
+    fail_msg: "Spec for updating email configuration using check mode with all attributes not generated successfully"
+
+- name: Update email configuration with all attributes
+  nutanix.ncp.ntnx_files_email_config_v2:
+    state: present
+    file_server_ext_id: "{{ email_config_file_server_ext_id }}"
+    subject: "{{ test_subject }}"
+    content: "{{ test_content }}"
+  register: result
+  ignore_errors: true
+
+- name: Update email configuration with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.response is defined
+      - result.response.subject == test_subject
+      - result.response.content == test_content
+    success_msg: "Update email configuration with all attributes passed"
+    fail_msg: "Update email configuration with all attributes failed"
+
+- name: Update email configuration with same values (idempotency test)
+  nutanix.ncp.ntnx_files_email_config_v2:
+    state: present
+    file_server_ext_id: "{{ email_config_file_server_ext_id }}"
+    subject: "{{ test_subject }}"
+    content: "{{ test_content }}"
+  register: result
+  ignore_errors: true
+
+- name: Update email configuration with same values status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.msg == "Nothing to change."
+    success_msg: "Update email configuration idempotency test passed"
+    fail_msg: "Update email configuration idempotency test failed"
+
+- name: Update email configuration with only the subject (partial update)
+  nutanix.ncp.ntnx_files_email_config_v2:
+    state: present
+    file_server_ext_id: "{{ email_config_file_server_ext_id }}"
+    subject: "{{ updated_subject }}"
+  register: result
+  ignore_errors: true
+
+- name: Update email configuration with only the subject status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.subject == updated_subject
+      - result.response.content == test_content
+    success_msg: "Update email configuration with only the subject passed"
+    fail_msg: "Update email configuration with only the subject failed"
+
+- name: Fetch the updated email configuration of the file server
+  nutanix.ncp.ntnx_files_email_configs_info_v2:
+    file_server_ext_id: "{{ email_config_file_server_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch the updated email configuration of the file server status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.subject == updated_subject
+      - result.response.content == test_content
+    success_msg: "Fetched the updated email configuration of the file server successfully"
+    fail_msg: "Failed to fetch the updated email configuration of the file server"
+
+- name: Update email configuration using an invalid file_server_ext_id
+  nutanix.ncp.ntnx_files_email_config_v2:
+    state: present
+    file_server_ext_id: "{{ invalid_file_server_ext_id }}"
+    subject: "{{ test_subject }}"
+    content: "{{ test_content }}"
+  register: result
+  ignore_errors: true
+
+- name: Update email configuration using an invalid file_server_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Update email configuration using an invalid file_server_ext_id failed as expected"
+    fail_msg: "Update email configuration using an invalid file_server_ext_id did not fail as expected"
+
+########################################################################################
+# Restore the original email configuration
+########################################################################################
+
+- name: Restore the original email configuration of the file server
+  nutanix.ncp.ntnx_files_email_config_v2:
+    state: present
+    file_server_ext_id: "{{ email_config_file_server_ext_id }}"
+    subject: "{{ original_subject | default(omit) }}"
+    content: "{{ original_content | default(omit) }}"
+  register: result
+  ignore_errors: true
+  when: original_subject is defined
+
+- name: End Nutanix Files EmailConfig tests
+  ansible.builtin.debug:
+    msg: End Nutanix Files EmailConfig tests
