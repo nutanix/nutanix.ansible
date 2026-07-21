@@ -8,7 +8,7 @@ ntnx-networking-py-client==4.3.1
 ntnx-prism-py-client==4.3.1
 ntnx-vmm-py-client==4.2.2
 ntnx-volumes-py-client==4.2.2
-ntnx-dataprotection-py-client==4.3.1
+ntnx-dataprotection-py-client==latest
 ntnx-datapolicies-py-client==4.2.2
 ntnx-lifecycle-py-client==4.2.2
 ntnx-objects-py-client==4.0.3
