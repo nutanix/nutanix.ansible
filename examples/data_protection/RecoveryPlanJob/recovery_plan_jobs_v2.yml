@@ -1,0 +1,79 @@
+---
+# Summary:
+# This playbook exercises the Recovery Plan Job v4 modules end-to-end:
+# 1. List all Recovery Plan Jobs (info)
+# 2. List Recovery Plan Jobs with limit (info)
+# 3. Get a Recovery Plan Job using ext_id (info)
+# 4. List execution steps of a Recovery Plan Job (info)
+# 5. List validation errors of a Recovery Plan Job (info)
+# 6. Delete a Recovery Plan Job (CRUD)
+#
+# Recovery Plan Jobs are produced as a side-effect of running a Recovery Plan
+# action (VALIDATE, MIGRATE, FAILOVER, TEST_FAILOVER, LIVE_MIGRATE, CLEANUP).
+# The v4 SDK only exposes list / get / delete operations for them, so this
+# playbook picks up the first existing job on the cluster to demonstrate the
+# read paths, and only deletes when a job ext_id is supplied via -e.
+
+- name: Recovery Plan Jobs v4 playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('10.44.76.28', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('admin', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('Nutanix.123', true) }}"
+      validate_certs: false
+  vars:
+    delete_job_ext_id: "{{ lookup('env', 'RECOVERY_PLAN_JOB_EXT_ID') | default('', true) }}"
+
+  tasks:
+    - name: List all Recovery Plan Jobs
+      nutanix.ncp.ntnx_recovery_plan_jobs_info_v2:
+      register: all_jobs
+      ignore_errors: true
+
+    - name: List Recovery Plan Jobs with limit
+      nutanix.ncp.ntnx_recovery_plan_jobs_info_v2:
+        limit: 1
+      register: one_job
+      ignore_errors: true
+
+    - name: Capture first Recovery Plan Job ext_id for the read demos
+      ansible.builtin.set_fact:
+        first_job_ext_id: >-
+          {{
+            (all_jobs.response | default([]) | first).ext_id
+            if (all_jobs.response is defined and (all_jobs.response | length) > 0)
+            else ''
+          }}
+
+    - name: Get a specific Recovery Plan Job using ext_id
+      nutanix.ncp.ntnx_recovery_plan_jobs_info_v2:
+        ext_id: "{{ first_job_ext_id }}"
+      register: get_job
+      when: first_job_ext_id | length > 0
+      ignore_errors: true
+
+    - name: List execution steps of a Recovery Plan Job
+      nutanix.ncp.ntnx_recovery_plan_jobs_info_v2:
+        ext_id: "{{ first_job_ext_id }}"
+        fetch_execution_steps: true
+      register: exec_steps
+      when: first_job_ext_id | length > 0
+      ignore_errors: true
+
+    - name: List validation errors of a Recovery Plan Job
+      nutanix.ncp.ntnx_recovery_plan_jobs_info_v2:
+        ext_id: "{{ first_job_ext_id }}"
+        fetch_validation_errors: true
+      register: validation_errors
+      when: first_job_ext_id | length > 0
+      ignore_errors: true
+
+    - name: Delete a Recovery Plan Job
+      nutanix.ncp.ntnx_recovery_plan_job_v2:
+        state: absent
+        ext_id: "{{ delete_job_ext_id }}"
+      register: delete_result
+      when: delete_job_ext_id | length > 0
+      ignore_errors: true

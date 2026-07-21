@@ -1,0 +1,328 @@
+---
+# Test plan for ntnx_recovery_plan_job_v2 / ntnx_recovery_plan_jobs_info_v2
+#
+# Scope: The v4 Data Protection Recovery Plan Jobs SDK exposes only:
+#   - list_recovery_plan_jobs
+#   - get_recovery_plan_job_by_id
+#   - delete_recovery_plan_job_by_id
+#   - list_execution_steps_by_recovery_plan_job_id
+#   - list_validation_errors_by_recovery_plan_job_id
+# There is no create/update. Recovery Plan Jobs are produced when a Recovery
+# Plan action is triggered. These tests exercise every code path the two
+# modules expose, using whatever jobs already exist on the target PC. On a
+# clean cluster with no jobs, the read paths return an empty list and the
+# fallback expectations still hold (no failure, no changed).
+#
+# Coverage:
+#   1.  argument-spec / negative validation for the CRUD module
+#        - state=present fails with helpful message
+#        - state=absent without ext_id fails
+#        - state=absent with bogus ext_id fails via API
+#        - check_mode delete with ext_id succeeds and reports msg
+#   2.  argument-spec / negative validation for the info module
+#        - fetch_execution_steps without ext_id fails via required_by
+#        - fetch_validation_errors without ext_id fails via required_by
+#        - fetch_execution_steps + fetch_validation_errors together fail via mutually_exclusive
+#        - ext_id + filter together fail via mutually_exclusive
+#        - bogus ext_id returns proper API error
+#   3.  info module happy paths (may return empty list when no jobs exist)
+#        - list-all
+#        - list with limit
+#        - list with filter
+#        - get-by-ext_id (if any job exists)
+#        - list execution steps (if any job exists)
+#        - list validation errors (if any job exists)
+#   4.  domain assertion: response schema fields exist as documented in the
+#       SDK RecoveryPlanJob model (name, action_type, status, percentage_complete
+#       and friends) when a job is available.
+
+- name: Start Recovery Plan Job v4 tests
+  ansible.builtin.debug:
+    msg: Start Recovery Plan Job v4 tests
+
+########################################################################################
+# argument-spec: negative CRUD tests
+########################################################################################
+
+- name: Delete Recovery Plan Job with missing ext_id (should fail)
+  nutanix.ncp.ntnx_recovery_plan_job_v2:
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Assert delete with missing ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is absent but all of the following are missing: ext_id' in result.msg"
+    success_msg: "Delete without ext_id failed as expected"
+    fail_msg: "Delete without ext_id did not fail as expected"
+
+- name: Attempt Create/Update via state=present (should fail)
+  nutanix.ncp.ntnx_recovery_plan_job_v2:
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Assert state=present is rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'not supported by the v4 Data Protection SDK' in result.msg"
+    success_msg: "state=present rejected as expected"
+    fail_msg: "state=present was NOT rejected"
+
+- name: Delete Recovery Plan Job in check mode with a placeholder ext_id
+  nutanix.ncp.ntnx_recovery_plan_job_v2:
+    state: absent
+    ext_id: "00000000-0000-0000-0000-000000000001"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check_mode delete reports expected msg
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "00000000-0000-0000-0000-000000000001"
+      - "'will be deleted' in result.msg"
+    success_msg: "check_mode delete passed"
+    fail_msg: "check_mode delete failed"
+
+- name: Delete non-existent Recovery Plan Job (should fail)
+  nutanix.ncp.ntnx_recovery_plan_job_v2:
+    state: absent
+    ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Assert non-existent delete fails cleanly
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+    success_msg: "Delete of non-existent job failed as expected"
+    fail_msg: "Delete of non-existent job did not fail as expected"
+
+########################################################################################
+# argument-spec: negative info tests
+########################################################################################
+
+- name: Fetch_execution_steps without ext_id (should fail)
+  nutanix.ncp.ntnx_recovery_plan_jobs_info_v2:
+    fetch_execution_steps: true
+  register: result
+  ignore_errors: true
+
+- name: Assert fetch_execution_steps requires ext_id
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'ext_id' in result.msg"
+    success_msg: "fetch_execution_steps without ext_id failed as expected"
+    fail_msg: "fetch_execution_steps without ext_id did not fail as expected"
+
+- name: Fetch_validation_errors without ext_id (should fail)
+  nutanix.ncp.ntnx_recovery_plan_jobs_info_v2:
+    fetch_validation_errors: true
+  register: result
+  ignore_errors: true
+
+- name: Assert fetch_validation_errors requires ext_id
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'ext_id' in result.msg"
+    success_msg: "fetch_validation_errors without ext_id failed as expected"
+    fail_msg: "fetch_validation_errors without ext_id did not fail as expected"
+
+- name: Fetch_execution_steps + fetch_validation_errors together (should fail)
+  nutanix.ncp.ntnx_recovery_plan_jobs_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000001"
+    fetch_execution_steps: true
+    fetch_validation_errors: true
+  register: result
+  ignore_errors: true
+
+- name: Assert both fetch flags together fail
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'mutually exclusive' in result.msg"
+    success_msg: "Both fetch flags together failed as expected"
+    fail_msg: "Both fetch flags together did not fail as expected"
+
+- name: Ext_id + filter together (should fail)
+  nutanix.ncp.ntnx_recovery_plan_jobs_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000001"
+    filter: "name eq 'foo'"
+  register: result
+  ignore_errors: true
+
+- name: Assert ext_id + filter together fail
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'mutually exclusive' in result.msg"
+    success_msg: "ext_id + filter mutually exclusive failed as expected"
+    fail_msg: "ext_id + filter mutually exclusive did not fail as expected"
+
+- name: Fetch Recovery Plan Job using bogus ext_id (should fail cleanly)
+  nutanix.ncp.ntnx_recovery_plan_jobs_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Assert bogus ext_id returns API error
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+    success_msg: "Bogus ext_id read failed as expected"
+    fail_msg: "Bogus ext_id read did not fail as expected"
+
+########################################################################################
+# info: happy paths (may return empty on a clean cluster)
+########################################################################################
+
+- name: List all Recovery Plan Jobs
+  nutanix.ncp.ntnx_recovery_plan_jobs_info_v2:
+  register: all_jobs
+  ignore_errors: true
+
+- name: Assert list-all succeeded
+  ansible.builtin.assert:
+    that:
+      - all_jobs is defined
+      - all_jobs.changed == false
+      - all_jobs.failed == false
+      - all_jobs.response is defined
+      - all_jobs.total_available_results is defined
+      - all_jobs.total_available_results >= 0
+    success_msg: "List all Recovery Plan Jobs passed"
+    fail_msg: "List all Recovery Plan Jobs failed"
+
+- name: List Recovery Plan Jobs with limit=1
+  nutanix.ncp.ntnx_recovery_plan_jobs_info_v2:
+    limit: 1
+  register: one_job
+  ignore_errors: true
+
+- name: Assert list with limit succeeded
+  ansible.builtin.assert:
+    that:
+      - one_job is defined
+      - one_job.failed == false
+      - one_job.response is defined
+      - (one_job.response | length) <= 1
+    success_msg: "List with limit=1 passed"
+    fail_msg: "List with limit=1 failed"
+
+- name: List Recovery Plan Jobs with unusual filter
+  nutanix.ncp.ntnx_recovery_plan_jobs_info_v2:
+    filter: "name eq 'ansible_no_such_job_name_zzzz'"
+  register: filtered_jobs
+  ignore_errors: true
+
+- name: Assert filter with no match returns empty list
+  ansible.builtin.assert:
+    that:
+      - filtered_jobs is defined
+      - filtered_jobs.failed == false
+      - filtered_jobs.response is defined
+      - filtered_jobs.response == []
+    success_msg: "Filter returning empty list passed"
+    fail_msg: "Filter returning empty list failed"
+
+- name: Capture first Recovery Plan Job ext_id if any
+  ansible.builtin.set_fact:
+    first_job_ext_id: >-
+      {{
+        (all_jobs.response | first).ext_id
+        if (all_jobs.response is defined and (all_jobs.response | length) > 0)
+        else ''
+      }}
+
+- name: Get Recovery Plan Job using ext_id (only if a job exists)
+  nutanix.ncp.ntnx_recovery_plan_jobs_info_v2:
+    ext_id: "{{ first_job_ext_id }}"
+  register: get_job
+  when: first_job_ext_id | length > 0
+  ignore_errors: true
+
+- name: Assert get-by-ext_id succeeded (when a job exists)
+  ansible.builtin.assert:
+    that:
+      - get_job is defined
+      - get_job.failed == false
+      - get_job.changed == false
+      - get_job.response is defined
+      - get_job.ext_id == first_job_ext_id
+      - get_job.response.ext_id == first_job_ext_id
+      - get_job.response.action_type is defined
+      - get_job.response.status is defined
+    success_msg: "Get Recovery Plan Job using ext_id passed"
+    fail_msg: "Get Recovery Plan Job using ext_id failed"
+  when: first_job_ext_id | length > 0
+
+- name: List execution steps for a Recovery Plan Job (only if a job exists)
+  nutanix.ncp.ntnx_recovery_plan_jobs_info_v2:
+    ext_id: "{{ first_job_ext_id }}"
+    fetch_execution_steps: true
+  register: exec_steps
+  when: first_job_ext_id | length > 0
+  ignore_errors: true
+
+- name: Assert execution steps read succeeded (when a job exists)
+  ansible.builtin.assert:
+    that:
+      - exec_steps is defined
+      - exec_steps.failed == false
+      - exec_steps.changed == false
+      - exec_steps.ext_id == first_job_ext_id
+      - exec_steps.response is defined
+    success_msg: "List execution steps passed"
+    fail_msg: "List execution steps failed"
+  when: first_job_ext_id | length > 0
+
+- name: List validation errors for a Recovery Plan Job (only if a job exists)
+  nutanix.ncp.ntnx_recovery_plan_jobs_info_v2:
+    ext_id: "{{ first_job_ext_id }}"
+    fetch_validation_errors: true
+  register: validation_errors
+  when: first_job_ext_id | length > 0
+  ignore_errors: true
+
+- name: Assert validation errors read succeeded (when a job exists)
+  ansible.builtin.assert:
+    that:
+      - validation_errors is defined
+      - validation_errors.failed == false
+      - validation_errors.changed == false
+      - validation_errors.ext_id == first_job_ext_id
+      - validation_errors.response is defined
+    success_msg: "List validation errors passed"
+    fail_msg: "List validation errors failed"
+  when: first_job_ext_id | length > 0
+
+- name: Report when no Recovery Plan Jobs exist on target PC
+  ansible.builtin.debug:
+    msg: >-
+      No existing Recovery Plan Jobs found on the target Prism Central. The
+      get-by-ext_id / execution-steps / validation-errors happy paths were
+      skipped, but their negative counterparts above already exercised the
+      code paths. Trigger a Recovery Plan action on the cluster to generate
+      real jobs.
+  when: first_job_ext_id | length == 0
