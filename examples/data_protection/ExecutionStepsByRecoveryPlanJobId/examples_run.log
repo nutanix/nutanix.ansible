@@ -1,0 +1,364 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [ExecutionStepsByRecoveryPlanJobId playbook] ******************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"recovery_plan_job_ext_id": "8c80727e-8fd7-4c00-83c7-ef0e55b7b236"}, "changed": false}
+
+TASK [List all execution steps of a recovery plan job] *************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching execution steps of recovery plan job
+Origin: /tmp/codegen/702dd9923ad748c6870e82eded70cb80/repo/examples/data_protection/ExecutionStepsByRecoveryPlanJobId/execution_steps_by_recovery_plan_job_id.yml:30:7
+
+28         recovery_plan_job_ext_id: "{{ recovery_plan_job_ext_id | default('8c80727e-8fd7-4c00-83c7-ef0e55b7b236') }}"
+29
+30     - name: List all execution steps of a recovery plan job
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching execution steps of recovery plan job", "response": {"data": {"$objectType": "dataprotection.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "dataprotection.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "argumentsMap": {"reason": "RPJ with UUID 8c80727e-8fd7-4c00-83c7-ef0e55b7b236 not found."}, "code": "DP-10400", "errorGroup": "DATAPROTECTION_ENTITY_NON_EXISTENT_ERROR", "locale": "en_US", "message": "The request failed as one or more entities do not exist - RPJ with UUID 8c80727e-8fd7-4c00-83c7-ef0e55b7b236 not found..", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}]}}, "status": 404}
+...ignoring
+
+TASK [Print all execution steps] ***********************************************
+ok: [localhost] => {
+    "all_steps": {
+        "changed": false,
+        "error": "NOT FOUND",
+        "exception": "(traceback unavailable)",
+        "failed": true,
+        "msg": "Api Exception raised while fetching execution steps of recovery plan job",
+        "response": {
+            "data": {
+                "$objectType": "dataprotection.v4.error.ErrorResponse",
+                "$reserved": {
+                    "$fv": "v4.r4"
+                },
+                "error": [
+                    {
+                        "$objectType": "dataprotection.v4.error.AppMessage",
+                        "$reserved": {
+                            "$fv": "v4.r4"
+                        },
+                        "argumentsMap": {
+                            "reason": "RPJ with UUID 8c80727e-8fd7-4c00-83c7-ef0e55b7b236 not found."
+                        },
+                        "code": "DP-10400",
+                        "errorGroup": "DATAPROTECTION_ENTITY_NON_EXISTENT_ERROR",
+                        "locale": "en_US",
+                        "message": "The request failed as one or more entities do not exist - RPJ with UUID 8c80727e-8fd7-4c00-83c7-ef0e55b7b236 not found..",
+                        "severity": "ERROR"
+                    }
+                ]
+            },
+            "metadata": {
+                "$objectType": "common.v1.response.ApiResponseMetadata",
+                "$reserved": {
+                    "$fv": "v1.r0"
+                },
+                "flags": [
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "hasError",
+                        "value": true
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isPaginated",
+                        "value": false
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isTruncated",
+                        "value": false
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isExpandRestricted",
+                        "value": false
+                    }
+                ]
+            }
+        },
+        "status": 404
+    }
+}
+
+TASK [List execution steps of a recovery plan job with limit] ******************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching execution steps of recovery plan job
+Origin: /tmp/codegen/702dd9923ad748c6870e82eded70cb80/repo/examples/data_protection/ExecutionStepsByRecoveryPlanJobId/execution_steps_by_recovery_plan_job_id.yml:40:7
+
+38         var: all_steps
+39
+40     - name: List execution steps of a recovery plan job with limit
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching execution steps of recovery plan job", "response": {"data": {"$objectType": "dataprotection.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "dataprotection.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "argumentsMap": {"reason": "RPJ with UUID 8c80727e-8fd7-4c00-83c7-ef0e55b7b236 not found."}, "code": "DP-10400", "errorGroup": "DATAPROTECTION_ENTITY_NON_EXISTENT_ERROR", "locale": "en_US", "message": "The request failed as one or more entities do not exist - RPJ with UUID 8c80727e-8fd7-4c00-83c7-ef0e55b7b236 not found..", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}]}}, "status": 404}
+...ignoring
+
+TASK [Print limited execution steps] *******************************************
+ok: [localhost] => {
+    "limited_steps": {
+        "changed": false,
+        "error": "NOT FOUND",
+        "exception": "(traceback unavailable)",
+        "failed": true,
+        "msg": "Api Exception raised while fetching execution steps of recovery plan job",
+        "response": {
+            "data": {
+                "$objectType": "dataprotection.v4.error.ErrorResponse",
+                "$reserved": {
+                    "$fv": "v4.r4"
+                },
+                "error": [
+                    {
+                        "$objectType": "dataprotection.v4.error.AppMessage",
+                        "$reserved": {
+                            "$fv": "v4.r4"
+                        },
+                        "argumentsMap": {
+                            "reason": "RPJ with UUID 8c80727e-8fd7-4c00-83c7-ef0e55b7b236 not found."
+                        },
+                        "code": "DP-10400",
+                        "errorGroup": "DATAPROTECTION_ENTITY_NON_EXISTENT_ERROR",
+                        "locale": "en_US",
+                        "message": "The request failed as one or more entities do not exist - RPJ with UUID 8c80727e-8fd7-4c00-83c7-ef0e55b7b236 not found..",
+                        "severity": "ERROR"
+                    }
+                ]
+            },
+            "metadata": {
+                "$objectType": "common.v1.response.ApiResponseMetadata",
+                "$reserved": {
+                    "$fv": "v1.r0"
+                },
+                "flags": [
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "hasError",
+                        "value": true
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isPaginated",
+                        "value": false
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isTruncated",
+                        "value": false
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isExpandRestricted",
+                        "value": false
+                    }
+                ]
+            }
+        },
+        "status": 404
+    }
+}
+
+TASK [List execution steps of a recovery plan job ordered by start time descending] ***
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching execution steps of recovery plan job
+Origin: /tmp/codegen/702dd9923ad748c6870e82eded70cb80/repo/examples/data_protection/ExecutionStepsByRecoveryPlanJobId/execution_steps_by_recovery_plan_job_id.yml:51:7
+
+49         var: limited_steps
+50
+51     - name: List execution steps of a recovery plan job ordered by start time descending
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching execution steps of recovery plan job", "response": {"data": {"$objectType": "dataprotection.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "dataprotection.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "argumentsMap": {"reason": "RPJ with UUID 8c80727e-8fd7-4c00-83c7-ef0e55b7b236 not found."}, "code": "DP-10400", "errorGroup": "DATAPROTECTION_ENTITY_NON_EXISTENT_ERROR", "locale": "en_US", "message": "The request failed as one or more entities do not exist - RPJ with UUID 8c80727e-8fd7-4c00-83c7-ef0e55b7b236 not found..", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}]}}, "status": 404}
+...ignoring
+
+TASK [Print ordered execution steps] *******************************************
+ok: [localhost] => {
+    "ordered_steps": {
+        "changed": false,
+        "error": "NOT FOUND",
+        "exception": "(traceback unavailable)",
+        "failed": true,
+        "msg": "Api Exception raised while fetching execution steps of recovery plan job",
+        "response": {
+            "data": {
+                "$objectType": "dataprotection.v4.error.ErrorResponse",
+                "$reserved": {
+                    "$fv": "v4.r4"
+                },
+                "error": [
+                    {
+                        "$objectType": "dataprotection.v4.error.AppMessage",
+                        "$reserved": {
+                            "$fv": "v4.r4"
+                        },
+                        "argumentsMap": {
+                            "reason": "RPJ with UUID 8c80727e-8fd7-4c00-83c7-ef0e55b7b236 not found."
+                        },
+                        "code": "DP-10400",
+                        "errorGroup": "DATAPROTECTION_ENTITY_NON_EXISTENT_ERROR",
+                        "locale": "en_US",
+                        "message": "The request failed as one or more entities do not exist - RPJ with UUID 8c80727e-8fd7-4c00-83c7-ef0e55b7b236 not found..",
+                        "severity": "ERROR"
+                    }
+                ]
+            },
+            "metadata": {
+                "$objectType": "common.v1.response.ApiResponseMetadata",
+                "$reserved": {
+                    "$fv": "v1.r0"
+                },
+                "flags": [
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "hasError",
+                        "value": true
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isPaginated",
+                        "value": false
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isTruncated",
+                        "value": false
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isExpandRestricted",
+                        "value": false
+                    }
+                ]
+            }
+        },
+        "status": 404
+    }
+}
+
+TASK [List execution steps of a recovery plan job with page and limit] *********
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching execution steps of recovery plan job
+Origin: /tmp/codegen/702dd9923ad748c6870e82eded70cb80/repo/examples/data_protection/ExecutionStepsByRecoveryPlanJobId/execution_steps_by_recovery_plan_job_id.yml:62:7
+
+60         var: ordered_steps
+61
+62     - name: List execution steps of a recovery plan job with page and limit
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching execution steps of recovery plan job", "response": {"data": {"$objectType": "dataprotection.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "dataprotection.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "argumentsMap": {"reason": "RPJ with UUID 8c80727e-8fd7-4c00-83c7-ef0e55b7b236 not found."}, "code": "DP-10400", "errorGroup": "DATAPROTECTION_ENTITY_NON_EXISTENT_ERROR", "locale": "en_US", "message": "The request failed as one or more entities do not exist - RPJ with UUID 8c80727e-8fd7-4c00-83c7-ef0e55b7b236 not found..", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}]}}, "status": 404}
+...ignoring
+
+TASK [Print paged execution steps] *********************************************
+ok: [localhost] => {
+    "paged_steps": {
+        "changed": false,
+        "error": "NOT FOUND",
+        "exception": "(traceback unavailable)",
+        "failed": true,
+        "msg": "Api Exception raised while fetching execution steps of recovery plan job",
+        "response": {
+            "data": {
+                "$objectType": "dataprotection.v4.error.ErrorResponse",
+                "$reserved": {
+                    "$fv": "v4.r4"
+                },
+                "error": [
+                    {
+                        "$objectType": "dataprotection.v4.error.AppMessage",
+                        "$reserved": {
+                            "$fv": "v4.r4"
+                        },
+                        "argumentsMap": {
+                            "reason": "RPJ with UUID 8c80727e-8fd7-4c00-83c7-ef0e55b7b236 not found."
+                        },
+                        "code": "DP-10400",
+                        "errorGroup": "DATAPROTECTION_ENTITY_NON_EXISTENT_ERROR",
+                        "locale": "en_US",
+                        "message": "The request failed as one or more entities do not exist - RPJ with UUID 8c80727e-8fd7-4c00-83c7-ef0e55b7b236 not found..",
+                        "severity": "ERROR"
+                    }
+                ]
+            },
+            "metadata": {
+                "$objectType": "common.v1.response.ApiResponseMetadata",
+                "$reserved": {
+                    "$fv": "v1.r0"
+                },
+                "flags": [
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "hasError",
+                        "value": true
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isPaginated",
+                        "value": false
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isTruncated",
+                        "value": false
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isExpandRestricted",
+                        "value": false
+                    }
+                ]
+            }
+        },
+        "status": 404
+    }
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=9    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=4   
+
