@@ -1,0 +1,97 @@
+---
+# Summary:
+# This playbook demonstrates managing category associations for a Volume Group
+# using the Nutanix v4 Volumes API. It shows:
+#   1. Create a Volume Group (prerequisite)
+#   2. Create a category key/value pair (prerequisite)
+#   3. Associate the category with the Volume Group
+#   4. List all categories associated with the Volume Group
+#   5. Get a specific category association by ext_id
+#   6. Disassociate the category from the Volume Group
+#   7. Cleanup: delete the Volume Group and the category
+
+- name: CategoryAssociationsByVolumeGroupId playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "10.44.76.28"
+      nutanix_username: "admin"
+      nutanix_password: "Nutanix.123"
+      validate_certs: false
+  tasks:
+    - name: Setting variables
+      ansible.builtin.set_fact:
+        cluster_uuid: "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+        random_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=10)[0] }}"
+
+    - name: Set names using random suffix
+      ansible.builtin.set_fact:
+        volume_group_name: "vg-cat-assoc-example-{{ random_suffix }}"
+        category_key: "ansible-cat-assoc-key-{{ random_suffix }}"
+        category_value: "ansible-cat-assoc-value-{{ random_suffix }}"
+
+    - name: Create the prerequisite Volume Group
+      nutanix.ncp.ntnx_volume_groups_v2:
+        state: present
+        name: "{{ volume_group_name }}"
+        description: "Volume group used by CategoryAssociationsByVolumeGroupId example"
+        cluster_reference: "{{ cluster_uuid }}"
+      register: vg_result
+
+    - name: Set Volume Group ext_id
+      ansible.builtin.set_fact:
+        volume_group_ext_id: "{{ vg_result.response.ext_id }}"
+
+    - name: Create the prerequisite Category
+      nutanix.ncp.ntnx_categories_v2:
+        state: present
+        key: "{{ category_key }}"
+        value: "{{ category_value }}"
+        description: "Category used by CategoryAssociationsByVolumeGroupId example"
+      register: category_result
+
+    - name: Set Category ext_id
+      ansible.builtin.set_fact:
+        category_ext_id: "{{ category_result.response.ext_id }}"
+
+    - name: Associate a category with a Volume Group
+      nutanix.ncp.ntnx_category_associations_by_volume_group_id_v2:
+        state: present
+        ext_id: "{{ volume_group_ext_id }}"
+        categories:
+          - ext_id: "{{ category_ext_id }}"
+            entity_type: "CATEGORY"
+      register: associate_result
+
+    - name: List all categories associated with the Volume Group
+      nutanix.ncp.ntnx_volume_group_category_info_v2:
+        volume_group_ext_id: "{{ volume_group_ext_id }}"
+      register: list_result
+
+    - name: Get a specific category association by ext_id
+      nutanix.ncp.ntnx_volume_group_category_info_v2:
+        volume_group_ext_id: "{{ volume_group_ext_id }}"
+        ext_id: "{{ category_ext_id }}"
+      register: get_by_id_result
+
+    - name: Disassociate the category from the Volume Group
+      nutanix.ncp.ntnx_category_associations_by_volume_group_id_v2:
+        state: absent
+        ext_id: "{{ volume_group_ext_id }}"
+        categories:
+          - ext_id: "{{ category_ext_id }}"
+            entity_type: "CATEGORY"
+      register: disassociate_result
+
+    - name: Cleanup - delete the Volume Group
+      nutanix.ncp.ntnx_volume_groups_v2:
+        state: absent
+        ext_id: "{{ volume_group_ext_id }}"
+      register: vg_delete_result
+
+    - name: Cleanup - delete the Category
+      nutanix.ncp.ntnx_categories_v2:
+        state: absent
+        ext_id: "{{ category_ext_id }}"
+      register: category_delete_result
