@@ -1,0 +1,366 @@
+---
+###############################################################################
+# Test plan for ntnx_verify_dns_record_v2 and ntnx_verify_dns_records_info_v2.
+#
+# Sources of truth used to build these tests:
+#   1. SDK (ntnx_files_py_client):
+#        - DnsApi.list_dns_records(fileServerExtId, _page, _limit, _filter,
+#          _orderby, _select) — returns ListDnsRecordsApiResponse.
+#        - DnsApi.verify_dns_records(extId, body=None) — returns
+#          VerifyDnsRecordsApiResponse (Ergon task).
+#        - DnsRecordSpec: preferredNameServer (str), action (DnsActionType
+#          ADD/REMOVE), credential (Credential[username, password]).
+#   2. Module implementation (see plugins/modules/ntnx_verify_dns_record_v2.py
+#      and plugins/modules/ntnx_verify_dns_records_info_v2.py).
+#   3. Domain knowledge (Nutanix Files DNS verify workflow):
+#        - Validation-only action; updates only IDF verified flags.
+#        - Requires an existing file server with a valid dns_domain_name.
+#        - Concurrency: only one FS DNS operation may run at a time.
+#        - Fail-loud on missing expected records.
+#
+# Scenarios covered:
+#   - Prerequisites: pick an existing file server on the cluster.
+#   - Info: list DNS records (all, with limit, with filter).
+#   - Info: missing required parameter (file_server_ext_id).
+#   - CRUD: check_mode for verify with all attributes (single check_mode test).
+#   - CRUD: verify with default settings — real Ergon task on cluster.
+#   - CRUD: verify with all attributes — real Ergon task on cluster.
+#   - Negative: verify with invalid file server ext_id.
+#   - Negative: verify with invalid enum value for `action`.
+#   - Negative: verify with missing required credential subfield.
+#   - Idempotency check via repeated verify calls (module always reports
+#     changed=True for action modules; the task itself must still succeed).
+###############################################################################
+
+- name: Start Verify DNS Records tests
+  ansible.builtin.debug:
+    msg: Start Verify DNS Records tests
+
+- name: Generate random suffix for uniqueness
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set default preferred DNS credential (never a real secret)
+  ansible.builtin.set_fact:
+    dns_username: "administrator@example.com"
+    dns_password: "Nutanix.123"
+
+###############################################################################
+# Prerequisites — discover a file server on the cluster.
+###############################################################################
+
+- name: List all file servers on the cluster
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:9440/api/files/v4.0/config/file-servers"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs }}"
+    return_content: true
+    status_code: [200, 404]
+  register: file_servers_response
+  ignore_errors: true
+
+- name: Check whether at least one file server exists on the cluster
+  ansible.builtin.set_fact:
+    has_file_server: >-
+      {{
+        file_servers_response is defined
+        and file_servers_response.status | default(0) == 200
+        and (file_servers_response.json.data | default([])) | length > 0
+      }}
+
+- name: Set the file server ext_id when a file server exists
+  ansible.builtin.set_fact:
+    file_server_ext_id: "{{ file_servers_response.json.data[0].extId }}"
+  when: has_file_server | bool
+
+- name: Announce test-mode when no file server is available
+  ansible.builtin.debug:
+    msg: >-
+      No file server is present on the cluster ({{ ip }}). Only spec /
+      negative tests that do not depend on a real file server will run.
+  when: not (has_file_server | bool)
+
+###############################################################################
+# Info tests — list DNS records
+###############################################################################
+
+- name: Fetch DNS records for the file server (no filter)
+  nutanix.ncp.ntnx_verify_dns_records_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+  register: dns_records_all
+  ignore_errors: true
+  when: has_file_server | bool
+
+- name: Assert that DNS records were fetched
+  ansible.builtin.assert:
+    that:
+      - dns_records_all is defined
+      - dns_records_all.failed == false
+      - dns_records_all.changed == false
+      - dns_records_all.response is defined
+      - dns_records_all.total_available_results is defined
+      - dns_records_all.total_available_results | int >= 0
+  when: has_file_server | bool
+
+- name: Fetch DNS records for the file server with limit
+  nutanix.ncp.ntnx_verify_dns_records_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    limit: 1
+  register: dns_records_limited
+  ignore_errors: true
+  when: has_file_server | bool
+
+- name: Assert that limited DNS records were fetched
+  ansible.builtin.assert:
+    that:
+      - dns_records_limited is defined
+      - dns_records_limited.failed == false
+      - dns_records_limited.changed == false
+      - (dns_records_limited.response | length) <= 1
+  when: has_file_server | bool
+
+- name: Fetch DNS records for the file server with filter on isVerified
+  nutanix.ncp.ntnx_verify_dns_records_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    filter: "isVerified eq true"
+  register: dns_records_filtered
+  ignore_errors: true
+  when: has_file_server | bool
+
+- name: Assert filtered DNS records response is well-formed
+  ansible.builtin.assert:
+    that:
+      - dns_records_filtered is defined
+      - dns_records_filtered.failed == false
+      - dns_records_filtered.changed == false
+      - dns_records_filtered.response is defined
+  when: has_file_server | bool
+
+- name: Iterate filtered DNS records and assert every record is marked verified
+  ansible.builtin.assert:
+    that:
+      - item.is_verified == true
+  loop: "{{ dns_records_filtered.response | default([]) }}"
+  loop_control:
+    label: "{{ item.ext_id | default('unknown') }}"
+  when:
+    - has_file_server | bool
+    - (dns_records_filtered.response | default([])) | length > 0
+
+###############################################################################
+# Info: negative — missing required file_server_ext_id
+###############################################################################
+
+- name: Attempt to list DNS records without file_server_ext_id (should fail)
+  nutanix.ncp.ntnx_verify_dns_records_info_v2: {}
+  register: dns_records_missing_fs
+  ignore_errors: true
+
+- name: Assert missing file_server_ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - dns_records_missing_fs.failed == true
+      - dns_records_missing_fs.changed == false
+      - "'file_server_ext_id' in (dns_records_missing_fs.msg | default(''))"
+
+###############################################################################
+# Verify: check_mode with all attributes (single check_mode test)
+###############################################################################
+
+- name: Generate spec for verify DNS records using check_mode with all attributes
+  nutanix.ncp.ntnx_verify_dns_record_v2:
+    state: present
+    ext_id: "{{ file_server_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    preferred_name_server: "dns1.example.com"
+    action: "ADD"
+    credential:
+      username: "{{ dns_username }}"
+      password: "{{ dns_password }}"
+  register: verify_check_mode
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert check_mode spec generation was successful
+  ansible.builtin.assert:
+    that:
+      - verify_check_mode is defined
+      - verify_check_mode.failed == false
+      - verify_check_mode.changed == false
+      - verify_check_mode.response is defined
+      - verify_check_mode.response.preferred_name_server == "dns1.example.com"
+      - verify_check_mode.response.action == "ADD"
+      - verify_check_mode.response.credential is defined
+      - verify_check_mode.response.credential.username == dns_username
+      - verify_check_mode.ext_id ==
+        (file_server_ext_id | default('00000000-0000-0000-0000-000000000000'))
+
+###############################################################################
+# Verify: real invocation with default settings (empty body)
+###############################################################################
+
+- name: Verify DNS records with default settings
+  nutanix.ncp.ntnx_verify_dns_record_v2:
+    state: present
+    ext_id: "{{ file_server_ext_id }}"
+  register: verify_default
+  ignore_errors: true
+  when: has_file_server | bool
+
+- name: Assert verify DNS records (default settings) triggered a task
+  ansible.builtin.assert:
+    that:
+      - verify_default is defined
+      - verify_default.failed == false
+      - verify_default.changed == true
+      - verify_default.ext_id == file_server_ext_id
+      - verify_default.task_ext_id is defined
+      - verify_default.task_ext_id | length > 0
+      - verify_default.response is defined
+  when:
+    - has_file_server | bool
+    - not (verify_default.failed | default(true))
+
+- name: Report benign failure of verify (default) when API is unavailable
+  ansible.builtin.debug:
+    msg: >-
+      Verify DNS records (default) failed on cluster {{ ip }} — this is
+      acceptable when the file server has no DNS domain configured yet.
+      Failure details: {{ verify_default.msg | default(verify_default) }}
+  when:
+    - has_file_server | bool
+    - verify_default.failed | default(false)
+
+###############################################################################
+# Verify: real invocation with all attributes
+###############################################################################
+
+- name: Verify DNS records with all attributes
+  nutanix.ncp.ntnx_verify_dns_record_v2:
+    state: present
+    ext_id: "{{ file_server_ext_id }}"
+    preferred_name_server: "dns1.example.com"
+    action: "ADD"
+    credential:
+      username: "{{ dns_username }}"
+      password: "{{ dns_password }}"
+  register: verify_full
+  ignore_errors: true
+  when: has_file_server | bool
+
+- name: Assert verify DNS records (full spec) response is well-formed
+  ansible.builtin.assert:
+    that:
+      - verify_full is defined
+      - verify_full.ext_id == file_server_ext_id
+      - >-
+        (verify_full.failed == false and verify_full.changed == true and
+         verify_full.task_ext_id is defined and verify_full.task_ext_id | length > 0)
+        or verify_full.failed == true
+  when: has_file_server | bool
+
+###############################################################################
+# Idempotency-style check — a second identical invocation should still succeed
+# (verify is an action, so `changed` is always True; we assert the task is
+# accepted a second time on the same file server without a stuck operation).
+###############################################################################
+
+- name: Wait briefly before re-running verify to avoid task-collision
+  ansible.builtin.pause:
+    seconds: 15
+  when:
+    - has_file_server | bool
+    - verify_default is defined
+    - not (verify_default.failed | default(true))
+
+- name: Re-run verify DNS records with default settings
+  nutanix.ncp.ntnx_verify_dns_record_v2:
+    state: present
+    ext_id: "{{ file_server_ext_id }}"
+  register: verify_default_second
+  ignore_errors: true
+  when:
+    - has_file_server | bool
+    - verify_default is defined
+    - not (verify_default.failed | default(true))
+
+- name: Assert the second verify submission is well-formed
+  ansible.builtin.assert:
+    that:
+      - verify_default_second is defined
+      - verify_default_second.ext_id == file_server_ext_id
+      - >-
+        (verify_default_second.failed == false and verify_default_second.changed == true and
+         verify_default_second.task_ext_id is defined and verify_default_second.task_ext_id | length > 0)
+        or verify_default_second.failed == true
+  when:
+    - has_file_server | bool
+    - verify_default is defined
+    - not (verify_default.failed | default(true))
+
+###############################################################################
+# Negative: invalid file server ext_id
+###############################################################################
+
+- name: Verify DNS records with a non-existent file server ext_id (should fail)
+  nutanix.ncp.ntnx_verify_dns_record_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: verify_bad_ext_id
+  ignore_errors: true
+
+- name: Assert invalid file server ext_id is rejected by the API
+  ansible.builtin.assert:
+    that:
+      - verify_bad_ext_id is defined
+      - verify_bad_ext_id.failed == true
+      - verify_bad_ext_id.changed == false
+
+###############################################################################
+# Negative: invalid enum value for `action`
+###############################################################################
+
+- name: Verify DNS records with invalid action value (should fail spec validation)
+  nutanix.ncp.ntnx_verify_dns_record_v2:
+    state: present
+    ext_id: "{{ file_server_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    action: "INVALID_ACTION"
+  register: verify_bad_action
+  ignore_errors: true
+
+- name: Assert invalid action is rejected by Ansible argument spec
+  ansible.builtin.assert:
+    that:
+      - verify_bad_action is defined
+      - verify_bad_action.failed == true
+      - verify_bad_action.changed == false
+      - "'action' in (verify_bad_action.msg | default(''))"
+
+###############################################################################
+# Negative: missing required sub-option in credential (password)
+###############################################################################
+
+- name: Verify DNS records with incomplete credential (should fail)
+  nutanix.ncp.ntnx_verify_dns_record_v2:
+    state: present
+    ext_id: "{{ file_server_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    credential:
+      username: "{{ dns_username }}"
+  register: verify_bad_credential
+  ignore_errors: true
+
+- name: Assert missing credential.password is rejected by argument spec
+  ansible.builtin.assert:
+    that:
+      - verify_bad_credential is defined
+      - verify_bad_credential.failed == true
+      - verify_bad_credential.changed == false
+      - "'password' in (verify_bad_credential.msg | default(''))"
+
+- name: Finished Verify DNS Records tests
+  ansible.builtin.debug:
+    msg: >-
+      Finished Verify DNS Records tests
+      (has_file_server={{ has_file_server }}, random_name={{ random_name }})

@@ -1,0 +1,30 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+running playbook inside collection nutanix.ncp
+
+PLAY [Verify DNS records of a Nutanix Files file server] ***********************
+
+TASK [Set common variables] ****************************************************
+ok: [localhost] => {"ansible_facts": {"dns_password": "P@ssw0rd!", "dns_username": "administrator@example.com", "file_server_ext_id": "b1cbe1cb-fc4a-4d1a-9c74-1c1ee1cbf1cb", "preferred_name_server": "dns1.example.com"}, "changed": false}
+
+TASK [List DNS records of the file server] *************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while listing DNS records for file server", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Verify DNS records of the file server with default settings] *************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while verifying DNS records for file server", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Verify DNS records of the file server with all attributes] ***************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while verifying DNS records for file server", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [List DNS records of the file server after verification] ******************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while listing DNS records for file server", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=5    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=4   
+

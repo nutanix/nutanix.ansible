@@ -246,5 +246,7 @@ action_groups:
     - ntnx_iam_entities_info_v2
     - ntnx_virtual_switch_v2
     - ntnx_virtual_switches_info_v2
+    - ntnx_verify_dns_record_v2
+    - ntnx_verify_dns_records_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2

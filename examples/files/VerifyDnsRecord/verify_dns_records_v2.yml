@@ -1,0 +1,57 @@
+---
+# Summary:
+# This playbook demonstrates the following operations on Nutanix Files DNS records:
+# 1. List existing DNS records for a file server.
+# 2. Verify DNS records of a file server using the default DNS servers.
+# 3. Verify DNS records of a file server with all supported attributes
+#    (preferred name server, action, credential).
+# 4. List DNS records again to check the updated verification state.
+
+- name: Verify DNS records of a Nutanix Files file server
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('<pc_ip>', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('<user>', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('<pass>', true) }}"
+      validate_certs: false
+  tasks:
+    - name: Set common variables
+      ansible.builtin.set_fact:
+        file_server_ext_id: "b1cbe1cb-fc4a-4d1a-9c74-1c1ee1cbf1cb"
+        preferred_name_server: "dns1.example.com"
+        dns_username: "administrator@example.com"
+        dns_password: "P@ssw0rd!"
+
+    - name: List DNS records of the file server
+      nutanix.ncp.ntnx_verify_dns_records_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+      register: dns_records_before
+      ignore_errors: true
+
+    - name: Verify DNS records of the file server with default settings
+      nutanix.ncp.ntnx_verify_dns_record_v2:
+        state: present
+        ext_id: "{{ file_server_ext_id }}"
+      register: verify_default
+      ignore_errors: true
+
+    - name: Verify DNS records of the file server with all attributes
+      nutanix.ncp.ntnx_verify_dns_record_v2:
+        state: present
+        ext_id: "{{ file_server_ext_id }}"
+        preferred_name_server: "{{ preferred_name_server }}"
+        action: "ADD"
+        credential:
+          username: "{{ dns_username }}"
+          password: "{{ dns_password }}"
+      register: verify_full
+      ignore_errors: true
+
+    - name: List DNS records of the file server after verification
+      nutanix.ncp.ntnx_verify_dns_records_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        filter: "isVerified eq true"
+      register: dns_records_after
+      ignore_errors: true
