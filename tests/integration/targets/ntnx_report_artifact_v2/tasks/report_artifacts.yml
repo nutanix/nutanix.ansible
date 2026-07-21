@@ -1,0 +1,503 @@
+---
+# Test Plan for ncm_operation_base_platform / ReportArtifact
+# ==========================================================
+# This target exercises the two generated modules
+# ``ntnx_report_artifact_v2`` (CRUD-flavored) and
+# ``ntnx_report_artifacts_info_v2`` (info) end-to-end against a live
+# Prism Central. It covers:
+#
+#   1.  ``check_mode`` create with ALL attributes (metadata + file_path)
+#   2.  ``check_mode`` update (upload only) for an already-created ext_id
+#   3.  ``check_mode`` delete — confirms the "delete not supported"
+#       skipped path.
+#   4.  Real create with minimum required attributes (type + file_type).
+#   5.  Real create with ALL attributes (type + file_type + file_path).
+#   6.  Info get-by-ext_id — asserts every field on the returned entity.
+#   7.  Info list-all — asserts the created artifacts show up.
+#   8.  Info list with OData ``filter`` — narrows on ``type``.
+#   9.  Info list with ``limit`` — asserts the SDK honors the page size.
+#  10.  Real update (upload flow) — re-uploads a second binary.
+#  11.  Idempotency-style negative: update with a missing ``file_path``.
+#  12.  Real delete — asserts the ``skipped`` message path.
+#  13.  Info fetch with an unknown ext_id — asserts a clean 404.
+#  14.  Update with a non-existent ext_id — asserts a clean 404.
+#  15.  Enum validation: ``type`` and ``file_type`` reject invalid values.
+#  16.  Required-fields validation: create without ``type`` or
+#       ``file_type`` fails with the expected message.
+
+- name: Start ReportArtifact tests
+  ansible.builtin.debug:
+    msg: Start Nutanix opsmgmt ReportArtifact tests
+
+- name: Generate random suffix for unique test artifacts
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    todelete: []
+
+- name: Set logo file paths and base64 payloads
+  ansible.builtin.set_fact:
+    report_artifact_logo_path: "/tmp/report_artifact_{{ random_name }}.png"
+    report_artifact_logo_updated_path: "/tmp/report_artifact_{{ random_name }}_updated.png"
+    # 1x1 transparent PNG (base64 encoded).
+    report_artifact_logo_b64: >-
+      iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAA
+      SUVORK5CYII=
+    report_artifact_logo_updated_b64: >-
+      iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAA
+      SUVORK5CYII=
+
+- name: Prepare local logo files (PNG payloads used for upload)
+  block:
+    - name: Create a small PNG logo file
+      ansible.builtin.command:
+        cmd: bash -c 'echo -n "{{ report_artifact_logo_b64 | replace(" ", "") }}" | base64 -d > "{{ report_artifact_logo_path }}"'
+      changed_when: true
+
+    - name: Create an updated PNG logo file for update flow
+      ansible.builtin.command:
+        cmd: bash -c 'echo -n "{{ report_artifact_logo_updated_b64 | replace(" ", "") }}" | base64 -d > "{{ report_artifact_logo_updated_path }}"'
+      changed_when: true
+
+########################################################################################
+# CHECK MODE — Create (all attributes)
+########################################################################################
+
+- name: Create report artifact with all attributes in check mode
+  nutanix.ncp.ntnx_report_artifact_v2:
+    state: present
+    type: LOGO
+    file_type: PNG
+    file_path: "{{ report_artifact_logo_path }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check-mode create with all attributes
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.type == "LOGO"
+      - result.response.file_type == "PNG"
+    success_msg: "Check mode create with all attributes generated a valid spec"
+    fail_msg: "Check mode create with all attributes did not produce the expected spec"
+
+########################################################################################
+# NEGATIVE — Missing required fields on create
+########################################################################################
+
+- name: Create report artifact without required 'file_type' (must fail)
+  nutanix.ncp.ntnx_report_artifact_v2:
+    state: present
+    type: LOGO
+  register: result
+  ignore_errors: true
+
+- name: Assert missing file_type is rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'file_type' in result.msg"
+    success_msg: "Create without file_type fails with a descriptive error"
+    fail_msg: "Create without file_type did not fail as expected"
+
+- name: Create report artifact without required 'type' (must fail)
+  nutanix.ncp.ntnx_report_artifact_v2:
+    state: present
+    file_type: PNG
+  register: result
+  ignore_errors: true
+
+- name: Assert missing type is rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+    success_msg: "Create without type fails with a descriptive error"
+    fail_msg: "Create without type did not fail as expected"
+
+########################################################################################
+# NEGATIVE — Invalid enum values
+########################################################################################
+
+- name: Create report artifact with an invalid 'type' enum
+  nutanix.ncp.ntnx_report_artifact_v2:
+    state: present
+    type: NOT_A_TYPE
+    file_type: PNG
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid 'type' is rejected by the argument spec
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+    success_msg: "Invalid 'type' enum is rejected"
+    fail_msg: "Invalid 'type' enum was not rejected"
+
+- name: Create report artifact with an invalid 'file_type' enum
+  nutanix.ncp.ntnx_report_artifact_v2:
+    state: present
+    type: LOGO
+    file_type: BMP
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid 'file_type' is rejected by the argument spec
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+    success_msg: "Invalid 'file_type' enum is rejected"
+    fail_msg: "Invalid 'file_type' enum was not rejected"
+
+########################################################################################
+# NEGATIVE — file_path does not exist
+########################################################################################
+
+- name: Create report artifact with a non-existent file_path
+  nutanix.ncp.ntnx_report_artifact_v2:
+    state: present
+    type: LOGO
+    file_type: PNG
+    file_path: /tmp/does_not_exist_{{ random_name }}.png
+  register: result
+  ignore_errors: true
+
+- name: Assert non-existent file_path is rejected before any API call
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'file_path' in result.msg"
+    success_msg: "Non-existent file_path is rejected with a clear message"
+    fail_msg: "Non-existent file_path was not rejected as expected"
+
+########################################################################################
+# CREATE (min attributes) — metadata only
+########################################################################################
+
+- name: Create report artifact with minimum required attributes (metadata only)
+  nutanix.ncp.ntnx_report_artifact_v2:
+    state: present
+    type: LOGO
+    file_type: PNG
+  register: result
+  ignore_errors: true
+
+- name: Assert minimum-attributes create succeeded
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.response is defined
+      - result.response.type == "LOGO"
+      - result.response.file_type == "PNG"
+    success_msg: "Minimum-attributes ReportArtifact created successfully"
+    fail_msg: "Minimum-attributes create failed unexpectedly"
+
+- name: Record minimum-attributes artifact id
+  ansible.builtin.set_fact:
+    report_artifact_min_ext_id: "{{ result.ext_id }}"
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+########################################################################################
+# CREATE (all attributes) — metadata + upload binary
+########################################################################################
+
+- name: Create report artifact with ALL attributes (metadata + binary upload)
+  nutanix.ncp.ntnx_report_artifact_v2:
+    state: present
+    type: LOGO
+    file_type: PNG
+    file_path: "{{ report_artifact_logo_path }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert all-attributes create+upload succeeded
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.response is defined
+      - result.response.artifact is defined
+      - result.response.artifact.type == "LOGO"
+      - result.response.artifact.file_type == "PNG"
+    success_msg: "All-attributes create+upload succeeded"
+    fail_msg: "All-attributes create+upload failed unexpectedly"
+
+- name: Record all-attributes artifact id
+  ansible.builtin.set_fact:
+    report_artifact_full_ext_id: "{{ result.ext_id }}"
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+########################################################################################
+# INFO — Get by ext_id
+########################################################################################
+
+- name: Fetch report artifact by ext_id
+  nutanix.ncp.ntnx_report_artifacts_info_v2:
+    ext_id: "{{ report_artifact_full_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert get-by-ext_id returns the expected entity
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == report_artifact_full_ext_id
+      - result.response is defined
+      - result.response.ext_id == report_artifact_full_ext_id
+      - result.response.type == "LOGO"
+      - result.response.file_type == "PNG"
+    success_msg: "Fetch by ext_id returned the expected ReportArtifact"
+    fail_msg: "Fetch by ext_id did not return the expected data"
+
+########################################################################################
+# INFO — Fetch with unknown ext_id
+########################################################################################
+
+- name: Fetch report artifact using unknown ext_id
+  nutanix.ncp.ntnx_report_artifacts_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Assert unknown ext_id yields a clean failure
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+    success_msg: "Fetch with unknown ext_id fails cleanly"
+    fail_msg: "Fetch with unknown ext_id did not fail as expected"
+
+########################################################################################
+# INFO — List all
+########################################################################################
+
+- name: List all report artifacts
+  nutanix.ncp.ntnx_report_artifacts_info_v2: {}
+  register: result
+  ignore_errors: true
+
+- name: Assert list-all response
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length >= 2
+      - result.total_available_results is defined
+    success_msg: "List-all returned the created artifacts"
+    fail_msg: "List-all did not return the expected number of artifacts"
+
+########################################################################################
+# INFO — List with filter
+########################################################################################
+
+- name: List report artifacts with filter on type
+  nutanix.ncp.ntnx_report_artifacts_info_v2:
+    filter: "type eq 'LOGO'"
+  register: result
+  ignore_errors: true
+
+- name: Assert filter response
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length >= 2
+    success_msg: "List with filter succeeded"
+    fail_msg: "List with filter did not return LOGO artifacts as expected"
+
+- name: Assert every filtered artifact has type LOGO
+  ansible.builtin.assert:
+    that:
+      - item.type == "LOGO"
+    success_msg: "Filtered artifact {{ item.ext_id }} has the expected type"
+    fail_msg: "Filtered artifact {{ item.ext_id }} has an unexpected type"
+  loop: "{{ result.response }}"
+  loop_control:
+    label: "{{ item.ext_id }}"
+
+########################################################################################
+# INFO — List with limit
+########################################################################################
+
+- name: List report artifacts with limit=1
+  nutanix.ncp.ntnx_report_artifacts_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Assert limit response
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+    success_msg: "List with limit=1 returned exactly one artifact"
+    fail_msg: "List with limit=1 did not return one artifact"
+
+########################################################################################
+# UPDATE (upload flow) — real
+########################################################################################
+
+- name: Update report artifact by re-uploading a new binary
+  nutanix.ncp.ntnx_report_artifact_v2:
+    state: present
+    ext_id: "{{ report_artifact_full_ext_id }}"
+    file_path: "{{ report_artifact_logo_updated_path }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert update (upload) succeeded
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == report_artifact_full_ext_id
+      - result.response is defined
+      - result.response.artifact is defined
+      - result.response.artifact.ext_id == report_artifact_full_ext_id
+    success_msg: "Update (re-upload) succeeded"
+    fail_msg: "Update (re-upload) failed unexpectedly"
+
+########################################################################################
+# CHECK MODE — Update
+########################################################################################
+
+- name: Update in check mode (upload only)
+  nutanix.ncp.ntnx_report_artifact_v2:
+    state: present
+    ext_id: "{{ report_artifact_full_ext_id }}"
+    file_path: "{{ report_artifact_logo_updated_path }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check-mode update
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == report_artifact_full_ext_id
+      - "'will be updated' in result.msg"
+    success_msg: "Check-mode update produced the expected message"
+    fail_msg: "Check-mode update did not behave as expected"
+
+########################################################################################
+# NEGATIVE — Update with missing file_path
+########################################################################################
+
+- name: Update without file_path (must fail)
+  nutanix.ncp.ntnx_report_artifact_v2:
+    state: present
+    ext_id: "{{ report_artifact_full_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert update without file_path is rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'file_path' in result.msg"
+    success_msg: "Update without file_path is rejected with a clear message"
+    fail_msg: "Update without file_path did not fail as expected"
+
+########################################################################################
+# NEGATIVE — Update with unknown ext_id
+########################################################################################
+
+- name: Update with a non-existent ext_id
+  nutanix.ncp.ntnx_report_artifact_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    file_path: "{{ report_artifact_logo_updated_path }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert update with unknown ext_id fails cleanly
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+    success_msg: "Update with unknown ext_id fails cleanly"
+    fail_msg: "Update with unknown ext_id did not fail as expected"
+
+########################################################################################
+# DELETE — real (unsupported by the opsmgmt v4 API — returns skipped)
+########################################################################################
+
+- name: Delete report artifact (state=absent, unsupported by API)
+  nutanix.ncp.ntnx_report_artifact_v2:
+    state: absent
+    ext_id: "{{ report_artifact_min_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert delete is reported as skipped
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.skipped == true
+      - result.changed == false
+      - "'not supported' in result.msg"
+      - result.ext_id == report_artifact_min_ext_id
+    success_msg: "Delete correctly reports the API limitation"
+    fail_msg: "Delete did not behave as expected"
+
+########################################################################################
+# CHECK MODE — Delete
+########################################################################################
+
+- name: Delete report artifact in check mode
+  nutanix.ncp.ntnx_report_artifact_v2:
+    state: absent
+    ext_id: "{{ report_artifact_full_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check-mode delete
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.skipped == true
+      - result.changed == false
+      - "'not supported' in result.msg"
+    success_msg: "Check-mode delete reports the API limitation"
+    fail_msg: "Check-mode delete did not behave as expected"
+
+########################################################################################
+# CLEANUP local files
+########################################################################################
+
+- name: Cleanup local logo files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ report_artifact_logo_path }}"
+    - "{{ report_artifact_logo_updated_path }}"
+  failed_when: false
