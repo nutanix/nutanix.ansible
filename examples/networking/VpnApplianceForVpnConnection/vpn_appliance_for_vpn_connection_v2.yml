@@ -1,0 +1,81 @@
+---
+# Summary:
+# This playbook demonstrates how to use the
+# ntnx_vpn_appliance_for_vpn_connection_v2 and
+# ntnx_vpn_appliance_for_vpn_connections_info_v2 modules to inspect and
+# download third-party VPN appliance configuration templates for a Nutanix
+# Prism Central VPN connection.
+#
+# The Nutanix networking v4 API generates a vendor-specific, text/plain CLI
+# configuration snippet that the network administrator can apply directly on
+# the on-premises third-party VPN gateway to align its IPSec and BGP settings
+# with the Nutanix side of the tunnel.
+#
+# Steps performed:
+# 1. List every supported third-party VPN appliance for a VPN connection.
+# 2. List with a server-side name filter (e.g. only Cisco ASA).
+# 3. List with paging / limit.
+# 4. Fetch a specific appliance configuration text via ext_id using the info module.
+# 5. Download the appliance configuration text via the dedicated download module.
+
+- name: VPN Appliance for VPN Connection playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default('<pc_ip>') }}"
+      nutanix_username: "{{ nutanix_username | default('<user>') }}"
+      nutanix_password: "{{ nutanix_password | default('<pass>') }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+  tasks:
+    - name: Set VPN connection external ID
+      ansible.builtin.set_fact:
+        vpn_connection_ext_id: "{{ vpn_connection_ext_id | default('8a938cf5-2c9a-4c9b-8f01-8c9f8e40e6c0') }}"
+
+    - name: List all supported third-party VPN appliances for the VPN connection
+      nutanix.ncp.ntnx_vpn_appliance_for_vpn_connections_info_v2:
+        vpn_connection_ext_id: "{{ vpn_connection_ext_id }}"
+      register: appliances
+      ignore_errors: true
+
+    - name: List third-party VPN appliances filtered by name (Cisco ASA)
+      nutanix.ncp.ntnx_vpn_appliance_for_vpn_connections_info_v2:
+        vpn_connection_ext_id: "{{ vpn_connection_ext_id }}"
+        filter: "name eq 'Cisco ASA'"
+      register: cisco_appliance
+      ignore_errors: true
+
+    - name: List third-party VPN appliances with a page size limit
+      nutanix.ncp.ntnx_vpn_appliance_for_vpn_connections_info_v2:
+        vpn_connection_ext_id: "{{ vpn_connection_ext_id }}"
+        limit: 3
+      register: appliances_paginated
+      ignore_errors: true
+
+    - name: Set appliance ext_id from list response
+      ansible.builtin.set_fact:
+        appliance_ext_id: "{{ appliances.response[0].ext_id }}"
+      when:
+        - appliances is defined
+        - appliances.failed is defined
+        - appliances.failed == false
+        - appliances.response is defined
+        - appliances.response is iterable
+        - (appliances.response | length) > 0
+
+    - name: Fetch third-party VPN appliance configuration text via info module
+      nutanix.ncp.ntnx_vpn_appliance_for_vpn_connections_info_v2:
+        vpn_connection_ext_id: "{{ vpn_connection_ext_id }}"
+        ext_id: "{{ appliance_ext_id }}"
+      register: appliance_config_info
+      when: appliance_ext_id is defined
+      ignore_errors: true
+
+    - name: Download third-party VPN appliance configuration text
+      nutanix.ncp.ntnx_vpn_appliance_for_vpn_connection_v2:
+        state: present
+        vpn_connection_ext_id: "{{ vpn_connection_ext_id }}"
+        ext_id: "{{ appliance_ext_id }}"
+      register: appliance_config_download
+      when: appliance_ext_id is defined
+      ignore_errors: true
