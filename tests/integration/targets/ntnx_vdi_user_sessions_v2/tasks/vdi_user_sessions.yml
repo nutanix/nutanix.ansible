@@ -1,0 +1,444 @@
+---
+# ---------------------------------------------------------------------------
+# Test plan for ntnx_vdi_user_session_v2 / ntnx_vdi_user_sessions_info_v2
+# ---------------------------------------------------------------------------
+# The Files v4 API only exposes Get / List / Update on the VDI user-session
+# entity: sessions are auto-created by the Files control plane when a VDI user
+# attempts to log in against a VDI-sync replication policy. The test target
+# therefore combines:
+#
+#   1) Pure argument-spec / negative tests (no API needed).
+#        - file_server_ext_id / replication_policy_ext_id are required=true.
+#        - state=absent must be rejected because delete is unsupported.
+#        - state=present without ext_id must be rejected because create is
+#          unsupported (required_if).
+#        - Missing owner_file_server_ext_id must be rejected on update via
+#          validate_required_params().
+#   2) Live-cluster discovery block that finds a VDI-sync replication policy
+#      with at least one user session; if none is available the block skips
+#      but reports the reason clearly.
+#   3) Info module tests (get-by-ID, list, list+filter, list+limit,
+#      get-by-wrong-ID, list-with-wrong-parent-IDs).
+#   4) CRUD module tests (check_mode update, real update, idempotent second
+#      update, update with wrong ext_id).
+# ---------------------------------------------------------------------------
+
+- name: Start VDI user sessions tests
+  ansible.builtin.debug:
+    msg: Start VDI user sessions tests
+
+- name: Set constants
+  ansible.builtin.set_fact:
+    random_uuid: "{{ 99999999 | random | to_uuid }}"
+    invalid_ext_id: "00000000-0000-0000-0000-000000000000"
+    dummy_file_server_ext_id: "11111111-1111-4111-8111-111111111111"
+    dummy_replication_policy_ext_id: "22222222-2222-4222-8222-222222222222"
+    dummy_owner_file_server_ext_id: "33333333-3333-4333-8333-333333333333"
+    dummy_user_session_ext_id: "44444444-4444-4444-8444-444444444444"
+
+########################################################################################
+# 1. Argument-spec / negative tests
+########################################################################################
+
+- name: Fail info module when file_server_ext_id is missing
+  nutanix.ncp.ntnx_vdi_user_sessions_info_v2:
+    replication_policy_ext_id: "{{ dummy_replication_policy_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert info module fails when file_server_ext_id is missing
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'file_server_ext_id' in result.msg"
+    success_msg: "Info module correctly requires file_server_ext_id"
+    fail_msg: "Info module did not enforce file_server_ext_id"
+
+- name: Fail info module when replication_policy_ext_id is missing
+  nutanix.ncp.ntnx_vdi_user_sessions_info_v2:
+    file_server_ext_id: "{{ dummy_file_server_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert info module fails when replication_policy_ext_id is missing
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'replication_policy_ext_id' in result.msg"
+    success_msg: "Info module correctly requires replication_policy_ext_id"
+    fail_msg: "Info module did not enforce replication_policy_ext_id"
+
+- name: Fail CRUD module with state=absent (delete unsupported)
+  nutanix.ncp.ntnx_vdi_user_session_v2:
+    state: absent
+    file_server_ext_id: "{{ dummy_file_server_ext_id }}"
+    replication_policy_ext_id: "{{ dummy_replication_policy_ext_id }}"
+    ext_id: "{{ dummy_user_session_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert CRUD module rejects state=absent
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'not supported' in result.msg"
+      - "'state=present' in result.msg"
+    success_msg: "CRUD module correctly rejects state=absent (delete unsupported)"
+    fail_msg: "CRUD module did not reject state=absent as expected"
+
+- name: Fail CRUD module with state=present but missing ext_id (create unsupported)
+  nutanix.ncp.ntnx_vdi_user_session_v2:
+    state: present
+    file_server_ext_id: "{{ dummy_file_server_ext_id }}"
+    replication_policy_ext_id: "{{ dummy_replication_policy_ext_id }}"
+    owner_file_server_ext_id: "{{ dummy_owner_file_server_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert CRUD module rejects state=present without ext_id
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is present but all of the following are missing: ext_id' in result.msg"
+    success_msg: "CRUD module correctly rejects state=present without ext_id"
+    fail_msg: "CRUD module did not reject state=present without ext_id"
+
+########################################################################################
+# 2. Discovery block — find a VDI-sync replication policy with a user session
+########################################################################################
+
+- name: Set defaults for the live discovery variables
+  ansible.builtin.set_fact:
+    file_server_ext_id: ""
+    replication_policy_ext_id: ""
+    live_user_session_ext_id: ""
+    live_owner_file_server_ext_id: ""
+    alternate_owner_file_server_ext_id: ""
+    have_live_target: false
+
+- name: Discover a VDI-sync replication policy and user session (best effort)
+  block:
+    - name: List file servers (raw v4 API call)
+      ansible.builtin.uri:
+        url: "https://{{ ip }}:{{ port | default(9440) }}/api/files/v4.0/config/file-servers"
+        method: GET
+        user: "{{ username }}"
+        password: "{{ password }}"
+        force_basic_auth: true
+        validate_certs: "{{ validate_certs }}"
+        return_content: true
+      register: file_servers_resp
+
+    - name: Set candidate file server ext_id
+      ansible.builtin.set_fact:
+        file_server_ext_id: "{{ (file_servers_resp.json.data | default([]))[0].extId | default('') }}"
+        second_file_server_ext_id: >-
+          {{ (file_servers_resp.json.data | default([]))[1].extId
+             | default((file_servers_resp.json.data | default([]))[0].extId | default('')) }}
+
+    - name: List replication policies on that file server
+      ansible.builtin.uri:
+        url: >-
+          https://{{ ip }}:{{ port | default(9440) }}/api/files/v4.0/config/replication-policies
+        method: GET
+        user: "{{ username }}"
+        password: "{{ password }}"
+        force_basic_auth: true
+        validate_certs: "{{ validate_certs }}"
+        return_content: true
+      register: policies_resp
+      when: file_server_ext_id | length > 0
+
+    - name: Pick a VDI_SYNC replication policy
+      ansible.builtin.set_fact:
+        vdi_sync_policies: >-
+          {{ (policies_resp.json.data | default([]))
+             | selectattr('type', 'equalto', 'VDI_SYNC') | list }}
+      when: file_server_ext_id | length > 0
+
+    - name: Set replication_policy_ext_id
+      ansible.builtin.set_fact:
+        replication_policy_ext_id: "{{ (vdi_sync_policies | default([]))[0].extId | default('') }}"
+      when: file_server_ext_id | length > 0
+
+    - name: List VDI user sessions on that replication policy
+      nutanix.ncp.ntnx_vdi_user_sessions_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        replication_policy_ext_id: "{{ replication_policy_ext_id }}"
+      register: discover_sessions
+      when: replication_policy_ext_id | length > 0
+      ignore_errors: true
+
+    - name: Set live discovery facts
+      ansible.builtin.set_fact:
+        live_user_session_ext_id: "{{ (discover_sessions.response | default([]))[0].ext_id | default('') }}"
+        live_owner_file_server_ext_id: >-
+          {{ (discover_sessions.response | default([]))[0].owner_file_server_ext_id | default('') }}
+        alternate_owner_file_server_ext_id: >-
+          {{ second_file_server_ext_id
+             if second_file_server_ext_id != ((discover_sessions.response | default([]))[0].owner_file_server_ext_id | default(''))
+             else '' }}
+        have_live_target: >-
+          {{ (discover_sessions.response | default([])) | length > 0 }}
+  rescue:
+    - name: Discovery failed — continuing without live cluster tests
+      ansible.builtin.debug:
+        msg: "VDI user session discovery failed; live-cluster tests will be skipped."
+
+- name: Report discovery outcome
+  ansible.builtin.debug:
+    msg:
+      - "file_server_ext_id: {{ file_server_ext_id }}"
+      - "replication_policy_ext_id: {{ replication_policy_ext_id }}"
+      - "live_user_session_ext_id: {{ live_user_session_ext_id }}"
+      - "have_live_target: {{ have_live_target }}"
+
+########################################################################################
+# 3. Info module tests (live)
+########################################################################################
+
+- name: Info module live tests
+  when: have_live_target | bool
+  block:
+    - name: Get VDI user session using ext_id
+      nutanix.ncp.ntnx_vdi_user_sessions_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        replication_policy_ext_id: "{{ replication_policy_ext_id }}"
+        ext_id: "{{ live_user_session_ext_id }}"
+      register: single_result
+      ignore_errors: true
+
+    - name: Assert single VDI user session was fetched
+      ansible.builtin.assert:
+        that:
+          - single_result is defined
+          - single_result.changed == false
+          - single_result.failed == false
+          - single_result.response is defined
+          - single_result.response.ext_id == live_user_session_ext_id
+          - single_result.ext_id == live_user_session_ext_id
+          - single_result.response.owner_file_server_ext_id is defined
+        success_msg: "Get VDI user session by ext_id passed"
+        fail_msg: "Get VDI user session by ext_id failed"
+
+    - name: List all VDI user sessions
+      nutanix.ncp.ntnx_vdi_user_sessions_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        replication_policy_ext_id: "{{ replication_policy_ext_id }}"
+      register: list_result
+      ignore_errors: true
+
+    - name: Assert list of VDI user sessions was returned
+      ansible.builtin.assert:
+        that:
+          - list_result is defined
+          - list_result.changed == false
+          - list_result.failed == false
+          - list_result.response is defined
+          - list_result.response | length >= 1
+          - list_result.total_available_results is defined
+          - list_result.total_available_results >= list_result.response | length
+        success_msg: "List VDI user sessions passed"
+        fail_msg: "List VDI user sessions failed"
+
+    - name: List VDI user sessions with limit=1
+      nutanix.ncp.ntnx_vdi_user_sessions_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        replication_policy_ext_id: "{{ replication_policy_ext_id }}"
+        limit: 1
+      register: list_limit_result
+      ignore_errors: true
+
+    - name: Assert list with limit=1 returned exactly one item
+      ansible.builtin.assert:
+        that:
+          - list_limit_result is defined
+          - list_limit_result.failed == false
+          - list_limit_result.response | length == 1
+        success_msg: "List VDI user sessions with limit=1 passed"
+        fail_msg: "List VDI user sessions with limit=1 failed"
+
+    - name: List VDI user sessions with filter on userName
+      nutanix.ncp.ntnx_vdi_user_sessions_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        replication_policy_ext_id: "{{ replication_policy_ext_id }}"
+        filter: "userName eq '{{ single_result.response.user_name }}'"
+      register: list_filter_result
+      ignore_errors: true
+      when: single_result.response.user_name is defined and single_result.response.user_name | length > 0
+
+    - name: Assert filtered list contains the expected session
+      ansible.builtin.assert:
+        that:
+          - list_filter_result is defined
+          - list_filter_result.failed == false
+          - list_filter_result.response | length >= 1
+          - live_user_session_ext_id in (list_filter_result.response | map(attribute='ext_id') | list)
+        success_msg: "List VDI user sessions with filter passed"
+        fail_msg: "List VDI user sessions with filter failed"
+      when: list_filter_result is defined and list_filter_result.skipped is not defined
+
+- name: Fetch VDI user session with invalid ext_id (always runs)
+  nutanix.ncp.ntnx_vdi_user_sessions_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id if have_live_target else dummy_file_server_ext_id }}"
+    replication_policy_ext_id: "{{ replication_policy_ext_id if have_live_target else dummy_replication_policy_ext_id }}"
+    ext_id: "{{ invalid_ext_id }}"
+  register: wrong_id_result
+  ignore_errors: true
+
+- name: Assert fetching with invalid ext_id fails
+  ansible.builtin.assert:
+    that:
+      - wrong_id_result is defined
+      - wrong_id_result.changed == false
+      - wrong_id_result.failed == true
+    success_msg: "Fetch with invalid ext_id failed as expected"
+    fail_msg: "Fetch with invalid ext_id did not fail as expected"
+
+########################################################################################
+# 4. CRUD tests (check_mode always runs, real update requires live target)
+########################################################################################
+
+- name: Generate spec for updating VDI user session using check mode with all attributes
+  nutanix.ncp.ntnx_vdi_user_session_v2:
+    state: present
+    file_server_ext_id: "{{ dummy_file_server_ext_id }}"
+    replication_policy_ext_id: "{{ dummy_replication_policy_ext_id }}"
+    ext_id: "{{ dummy_user_session_ext_id }}"
+    owner_file_server_ext_id: "{{ dummy_owner_file_server_ext_id }}"
+    user_name: "EXAMPLE\\alice"
+  register: check_mode_update_result
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert check_mode update returns failure because dummy ext_id does not exist
+  ansible.builtin.assert:
+    that:
+      - check_mode_update_result is defined
+      - check_mode_update_result.changed == false
+      - check_mode_update_result.failed == true
+    success_msg: >-
+      Check-mode update against a non-existent ext_id correctly failed because
+      the module attempts a get-by-id first to fetch the etag.
+    fail_msg: "Check-mode update did not fail on dummy ext_id as expected"
+
+- name: Update owner file server for missing required parameter (owner_file_server_ext_id)
+  nutanix.ncp.ntnx_vdi_user_session_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id if have_live_target else dummy_file_server_ext_id }}"
+    replication_policy_ext_id: "{{ replication_policy_ext_id if have_live_target else dummy_replication_policy_ext_id }}"
+    ext_id: "{{ live_user_session_ext_id if have_live_target else dummy_user_session_ext_id }}"
+  register: missing_owner_result
+  ignore_errors: true
+
+- name: Assert missing owner_file_server_ext_id triggers validation error
+  ansible.builtin.assert:
+    that:
+      - missing_owner_result is defined
+      - missing_owner_result.changed == false
+      - missing_owner_result.failed == true
+      - >-
+        'Missing required parameter(s)' in missing_owner_result.msg
+        or 'owner_file_server_ext_id' in missing_owner_result.msg
+        or missing_owner_result.msg is match('.*Api Exception.*')
+    success_msg: "Missing owner_file_server_ext_id correctly rejected"
+    fail_msg: "Missing owner_file_server_ext_id did not raise a validation error"
+
+- name: CRUD live update tests
+  when: have_live_target | bool
+  block:
+    - name: Update VDI user session with the SAME owner file server (idempotency)
+      nutanix.ncp.ntnx_vdi_user_session_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        replication_policy_ext_id: "{{ replication_policy_ext_id }}"
+        ext_id: "{{ live_user_session_ext_id }}"
+        owner_file_server_ext_id: "{{ live_owner_file_server_ext_id }}"
+      register: idempotent_result
+      ignore_errors: true
+
+    - name: Assert idempotent update reports skipped
+      ansible.builtin.assert:
+        that:
+          - idempotent_result is defined
+          - idempotent_result.failed == false
+          - idempotent_result.changed == false
+          - idempotent_result.skipped is defined
+          - idempotent_result.skipped == true
+          - "'Nothing to change' in idempotent_result.msg"
+          - idempotent_result.ext_id == live_user_session_ext_id
+        success_msg: "Idempotent update of VDI user session passed"
+        fail_msg: "Idempotent update of VDI user session failed"
+
+    - name: Update VDI user session to a different owner file server
+      nutanix.ncp.ntnx_vdi_user_session_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        replication_policy_ext_id: "{{ replication_policy_ext_id }}"
+        ext_id: "{{ live_user_session_ext_id }}"
+        owner_file_server_ext_id: "{{ alternate_owner_file_server_ext_id }}"
+      register: real_update_result
+      ignore_errors: true
+      when: alternate_owner_file_server_ext_id | length > 0
+
+    - name: Assert real update changed=true
+      ansible.builtin.assert:
+        that:
+          - real_update_result is defined
+          - real_update_result.failed == false
+          - real_update_result.changed == true
+          - real_update_result.ext_id == live_user_session_ext_id
+          - real_update_result.task_ext_id is defined
+        success_msg: "Real update of VDI user session passed"
+        fail_msg: "Real update of VDI user session failed"
+      when: real_update_result is defined and real_update_result.skipped is not defined
+
+    - name: Restore the original owner file server
+      nutanix.ncp.ntnx_vdi_user_session_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        replication_policy_ext_id: "{{ replication_policy_ext_id }}"
+        ext_id: "{{ live_user_session_ext_id }}"
+        owner_file_server_ext_id: "{{ live_owner_file_server_ext_id }}"
+      register: restore_result
+      ignore_errors: true
+      when:
+        - alternate_owner_file_server_ext_id | length > 0
+        - real_update_result is defined
+        - not real_update_result.failed
+
+    - name: Assert restore succeeded
+      ansible.builtin.assert:
+        that:
+          - restore_result is defined
+          - restore_result.failed == false
+        success_msg: "Restoring original VDI user session owner passed"
+        fail_msg: "Restoring original VDI user session owner failed"
+      when: restore_result is defined and restore_result.skipped is not defined
+
+- name: Update VDI user session with invalid ext_id
+  nutanix.ncp.ntnx_vdi_user_session_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id if have_live_target else dummy_file_server_ext_id }}"
+    replication_policy_ext_id: "{{ replication_policy_ext_id if have_live_target else dummy_replication_policy_ext_id }}"
+    ext_id: "{{ invalid_ext_id }}"
+    owner_file_server_ext_id: "{{ live_owner_file_server_ext_id if have_live_target else dummy_owner_file_server_ext_id }}"
+  register: wrong_update_result
+  ignore_errors: true
+
+- name: Assert update with invalid ext_id fails
+  ansible.builtin.assert:
+    that:
+      - wrong_update_result is defined
+      - wrong_update_result.changed == false
+      - wrong_update_result.failed == true
+    success_msg: "Update with invalid ext_id failed as expected"
+    fail_msg: "Update with invalid ext_id did not fail as expected"

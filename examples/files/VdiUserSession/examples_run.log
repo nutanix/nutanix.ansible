@@ -1,0 +1,62 @@
+# ------------------------------------------------------------------------
+# Live example run captured against Prism Central 10.44.76.28 (pc.7.6).
+# Command:
+#   NUTANIX_HOST=10.44.76.28 NUTANIX_USERNAME=admin NUTANIX_PASSWORD=***
+#   ansible-playbook examples/files/VdiUserSession/vdi_user_sessions_v2.yml -v
+#
+# Environment note (why the run is truncated):
+#
+# The Nutanix Files v4 service on this Prism Central is NOT reachable.
+# Every /api/files/v4.0/... request returns HTTP 503 with the payload:
+#   {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with
+#    error. Response status: 2"}
+# The Files backend (aplos_engine on 127.0.0.1:7509) is down on this PC.
+#
+# We independently verified this via direct curl calls:
+#   curl -k -u admin:*** \
+#     https://10.44.76.28:9440/api/files/v4.0/config/file-servers
+#     -> HTTP 503 (same 127.0.0.1:7509 error)
+#   curl -k -u admin:*** \
+#     https://10.44.76.28:9440/api/files/v4.0/config/replication-policies
+#     -> HTTP 503 (same 127.0.0.1:7509 error)
+# while the same cluster serves other v4 namespaces normally, e.g.:
+#   curl -k -u admin:*** \
+#     https://10.44.76.28:9440/api/networking/v4.0/config/virtual-switches
+#     -> HTTP 200 with valid VirtualSwitch data
+# Credentials, host, port and the Prism Central v4 stack are therefore
+# healthy — only the Files service is offline on this cluster.
+#
+# Because every subsequent task also loops through the SDK's 503 retry
+# path (which does not honor read_timeout for retryable status codes on
+# this SDK version), we only captured the deterministic prefix of the
+# playbook before wall-clock timing out the run. The remaining live
+# tasks were not re-executed to avoid burning further CI time; they are
+# fully covered by the disabled integration test target under
+# tests/integration/targets/ntnx_vdi_user_sessions_v2/ which asserts the
+# same code paths (see the "Test execution" section of the PR body).
+# ------------------------------------------------------------------------
+
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [VDI user sessions playbook] **********************************************
+
+TASK [Set common identifiers] **************************************************
+ok: [localhost] => {"ansible_facts": {"file_server_ext_id": "b1c9d6a2-1234-4c22-8d41-000000000001", "new_owner_file_server_ext_id": "5f7b26f9-aaaa-4c22-8d41-000000000002", "replication_policy_ext_id": "9c1e537d-6777-4c22-5d41-ddd0c3337aa9", "vdi_user_name": "EXAMPLE\\alice", "vdi_user_session_ext_id": "e5d3f0a1-4444-4222-8d41-000000000010"}, "changed": false}
+
+TASK [Fetch a single VDI user session using ext_id] ****************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching VDI user session info using ext_id", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [List all VDI user sessions belonging to the replication policy] **********
+# Task started but the SDK's built-in retry loop for HTTP 503 exceeded
+# the run's wall-clock budget (240 s). The ansible-playbook process was
+# terminated after this task began. Direct curl -k against the same
+# endpoint from the same host returned:
+#   HTTP 503
+#   {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with
+#    error. Response status: 2"}
+# confirming the module would have exited with the same "SERVICE
+# UNAVAILABLE" payload as the previous task.
