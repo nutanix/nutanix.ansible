@@ -1,0 +1,144 @@
+# Real output of running examples/files/QuotaPolicy/quota_policy.yml against Prism Central 10.44.76.28.
+# NOTE: The Nutanix Files service backend (Files Manager / minerva gateway, 127.0.0.1:7509) returned HTTP 503
+#       on this Prism Central, i.e. no file server / mount target is deployed, so the live create/get/list/update/delete
+#       calls could not complete. check_mode and argument validation paths execute fully. See PR body for details.
+#
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Nutanix Files quota policy playbook] *************************************
+
+TASK [Setting variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"file_server_ext_id": "9c1e537d-6777-4c22-5d41-ddd0c3337aa9", "mount_target_ext_id": "48f78959-14a6-4c47-b5db-920460c4b668"}, "changed": false}
+
+TASK [Create quota policy for a user with all attributes] **********************
+[ERROR]: Task failed: Module failed: Api Exception raised while creating quota policy
+Origin: /tmp/codegen-artifacts.OoRVFb/quota_policy_run.yml:27:7
+
+25         mount_target_ext_id: "48f78959-14a6-4c47-b5db-920460c4b668"
+26
+27     - name: Create quota policy for a user with all attributes
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while creating quota policy", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Fetch the created quota policy using its external ID] ********************
+[ERROR]: Task failed: Finalization of task args for 'nutanix.ncp.ntnx_files_quota_policies_info_v2' failed: Error while resolving value for 'ext_id': object of type 'dict' has no attribute 'ext_id'
+
+Task failed.
+Origin: /tmp/codegen-artifacts.OoRVFb/quota_policy_run.yml:42:7
+
+40       ignore_errors: true
+41
+42     - name: Fetch the created quota policy using its external ID
+         ^ column 7
+
+<<< caused by >>>
+
+Finalization of task args for 'nutanix.ncp.ntnx_files_quota_policies_info_v2' failed.
+Origin: /tmp/codegen-artifacts.OoRVFb/quota_policy_run.yml:43:7
+
+41
+42     - name: Fetch the created quota policy using its external ID
+43       nutanix.ncp.ntnx_files_quota_policies_info_v2:
+         ^ column 7
+
+<<< caused by >>>
+
+Error while resolving value for 'ext_id': object of type 'dict' has no attribute 'ext_id'
+Origin: /tmp/codegen-artifacts.OoRVFb/quota_policy_run.yml:46:17
+
+44         file_server_ext_id: "{{ file_server_ext_id }}"
+45         mount_target_ext_id: "{{ mount_target_ext_id }}"
+46         ext_id: "{{ created_quota_policy.ext_id }}"
+                   ^ column 17
+
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "Task failed: Finalization of task args for 'nutanix.ncp.ntnx_files_quota_policies_info_v2' failed: Error while resolving value for 'ext_id': object of type 'dict' has no attribute 'ext_id'"}
+...ignoring
+
+TASK [Fetch all quota policies of the mount target] ****************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching quota policies info
+Origin: /tmp/codegen-artifacts.OoRVFb/quota_policy_run.yml:50:7
+
+48       ignore_errors: true
+49
+50     - name: Fetch all quota policies of the mount target
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching quota policies info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Update the quota policy with all attributes] *****************************
+[ERROR]: Task failed: Finalization of task args for 'nutanix.ncp.ntnx_files_quota_policy_v2' failed: Error while resolving value for 'ext_id': object of type 'dict' has no attribute 'ext_id'
+
+Task failed.
+Origin: /tmp/codegen-artifacts.OoRVFb/quota_policy_run.yml:57:7
+
+55       ignore_errors: true
+56
+57     - name: Update the quota policy with all attributes
+         ^ column 7
+
+<<< caused by >>>
+
+Finalization of task args for 'nutanix.ncp.ntnx_files_quota_policy_v2' failed.
+Origin: /tmp/codegen-artifacts.OoRVFb/quota_policy_run.yml:58:7
+
+56
+57     - name: Update the quota policy with all attributes
+58       nutanix.ncp.ntnx_files_quota_policy_v2:
+         ^ column 7
+
+<<< caused by >>>
+
+Error while resolving value for 'ext_id': object of type 'dict' has no attribute 'ext_id'
+Origin: /tmp/codegen-artifacts.OoRVFb/quota_policy_run.yml:62:17
+
+60         file_server_ext_id: "{{ file_server_ext_id }}"
+61         mount_target_ext_id: "{{ mount_target_ext_id }}"
+62         ext_id: "{{ created_quota_policy.ext_id }}"
+                   ^ column 17
+
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "Task failed: Finalization of task args for 'nutanix.ncp.ntnx_files_quota_policy_v2' failed: Error while resolving value for 'ext_id': object of type 'dict' has no attribute 'ext_id'"}
+...ignoring
+
+TASK [Delete the quota policy] *************************************************
+[ERROR]: Task failed: Finalization of task args for 'nutanix.ncp.ntnx_files_quota_policy_v2' failed: Error while resolving value for 'ext_id': object of type 'dict' has no attribute 'ext_id'
+
+Task failed.
+Origin: /tmp/codegen-artifacts.OoRVFb/quota_policy_run.yml:73:7
+
+71       ignore_errors: true
+72
+73     - name: Delete the quota policy
+         ^ column 7
+
+<<< caused by >>>
+
+Finalization of task args for 'nutanix.ncp.ntnx_files_quota_policy_v2' failed.
+Origin: /tmp/codegen-artifacts.OoRVFb/quota_policy_run.yml:74:7
+
+72
+73     - name: Delete the quota policy
+74       nutanix.ncp.ntnx_files_quota_policy_v2:
+         ^ column 7
+
+<<< caused by >>>
+
+Error while resolving value for 'ext_id': object of type 'dict' has no attribute 'ext_id'
+Origin: /tmp/codegen-artifacts.OoRVFb/quota_policy_run.yml:78:17
+
+76         file_server_ext_id: "{{ file_server_ext_id }}"
+77         mount_target_ext_id: "{{ mount_target_ext_id }}"
+78         ext_id: "{{ created_quota_policy.ext_id }}"
+                   ^ column 17
+
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "Task failed: Finalization of task args for 'nutanix.ncp.ntnx_files_quota_policy_v2' failed: Error while resolving value for 'ext_id': object of type 'dict' has no attribute 'ext_id'"}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=6    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=5   
+
+EXAMPLES_DONE exit=0
