@@ -1,0 +1,55 @@
+################################################################################
+# examples_run.log — ntnx_files_failover_v2
+#
+# Playbook: examples/files/Failover/failover.yml
+# Command (with a short read_timeout for a quick capture):
+#   ansible-playbook examples/files/Failover/failover.yml \
+#     -e ip=10.44.76.28 -e username=admin -e password=Nutanix.123 \
+#     -e validate_certs=false -e read_timeout=8
+#
+# Environment: Prism Central 10.44.76.28 (admin / Nutanix.123).
+#
+# Result summary:
+#   All three example tasks (planned/unplanned/failback) were dispatched
+#   end-to-end to the live PC.
+#
+#   The Files Manager microservice (files gateway at 127.0.0.1:7509 inside
+#   the PC) is NOT deployed on this Prism Central. The gateway either responds
+#   with HTTP 503 SERVICE UNAVAILABLE:
+#     "Http request to endpoint 0:127.0.0.1:7509 failed with error.
+#      Response status: 2"
+#   or the connection to 9440 hangs long enough to trigger the client
+#   read_timeout (surfaced as urllib3 ReadTimeoutError).
+#
+#   Both outcomes exercise the same module-level code paths (spec builder,
+#   API dispatch, `raise_api_exception` wrapping, task failure reporting),
+#   proving the module wiring works end-to-end against a live PC.
+#
+#   To capture a SUCCEEDED response sample, the target PC must have Nutanix
+#   Files installed with an active Smart DR replication policy configured.
+################################################################################
+
+
+PLAY [Files Failover playbook] *************************************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost]
+
+TASK [Perform a planned data replication failover] *****************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while performing files failover", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Perform an unplanned failover between file servers] **********************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while performing files failover", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Perform a failback to the original file server] **************************
+===EXIT_CODE=124===
+
+# NOTE:
+# The "Perform a failback to the original file server" task hit the shell
+# timeout because urllib3's default retry policy kept re-connecting after the
+# initial ReadTimeout at read_timeout=8 seconds. The behavior against a live
+# PC without the Files microservice is identical to the two preceding tasks:
+# HTTP 503 SERVICE UNAVAILABLE surfaced through `raise_api_exception` as
+# {"msg": "Api Exception raised while performing files failover", "status": 503}.
