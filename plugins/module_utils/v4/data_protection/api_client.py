@@ -108,3 +108,22 @@ def get_protected_resource_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_dataprotection_py_client.ProtectedResourcesApi(client)
+
+
+def get_recovery_plan_actions_api_instance(module):
+    """
+    This method will return a Recovery Plan Actions api instance.
+
+    The Recovery Plan Actions API exposes the recovery plan action endpoints
+    such as planned failover, unplanned failover, test failover, validate and
+    cleanup. It is reused by every module that triggers a recovery plan
+    action; keeping it here avoids duplicating the boiler-plate in each
+    module.
+
+    Args:
+        module (object): Ansible module object
+    Returns:
+        api_instance (object): RecoveryPlanActionsApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_dataprotection_py_client.RecoveryPlanActionsApi(client)

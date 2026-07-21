@@ -1,0 +1,227 @@
+---
+# Integration tests for ntnx_planned_failover_recovery_plan_v2
+#
+# Test plan
+# =========
+# The Planned Failover action requires a fully-configured Data Protection
+# environment: a Recovery Plan, protected entities, replication between the
+# source and recovery clusters, and (for live migration) a stretch cluster
+# setup. That infrastructure cannot be created on a single-PC test cluster
+# by an Ansible playbook. To still get real coverage on every code path we
+# exercise the module in three complementary ways:
+#
+#   1. check_mode - one exhaustive check_mode test for the create/action
+#      flow (Step 4.1 in INSTRUCTIONS: exactly ONE check_mode Create test
+#      with all attributes). Validates that get_module_spec() + the SDK
+#      spec generator wire every field through correctly without any API
+#      call.
+#   2. Negative tests - missing required ext_id, invalid enum on state,
+#      invalid ext_id UUID format (rejected by SDK validation), and a
+#      well-formed but non-existent ext_id (rejected by the API). These
+#      cover every failure path a caller can hit.
+#   3. Live end-to-end - when a real recovery plan is supplied via
+#      `planned_failover_recovery_plan_ext_id` in integration_config.yml
+#      this block triggers a real failover, asserts task success, and
+#      records the response. When the variable is missing the block is
+#      skipped so the target still passes on clusters without DR set up.
+
+- name: Start Planned Failover Recovery Plan tests
+  ansible.builtin.debug:
+    msg: Start Planned Failover Recovery Plan tests
+
+- name: Generate a random job name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=10)[0] }}"
+
+- name: Set fixture UUIDs used by check_mode / negative tests
+  ansible.builtin.set_fact:
+    job_name: "ansible_pf_{{ random_name }}"
+    fake_recovery_plan_ext_id: "11111111-1111-1111-1111-111111111111"
+    fake_source_pc_ext_id: "22222222-2222-2222-2222-222222222222"
+    fake_source_cluster_ext_id: "33333333-3333-3333-3333-333333333333"
+    fake_target_pc_ext_id: "44444444-4444-4444-4444-444444444444"
+    fake_target_cluster_ext_id: "55555555-5555-5555-5555-555555555555"
+    non_existent_recovery_plan_ext_id: "deadbeef-dead-dead-dead-deadbeefdead"
+
+########################################################################################
+# check_mode: single exhaustive test covering ALL module attributes
+########################################################################################
+
+- name: Generate spec for planned failover in check mode with all attributes
+  nutanix.ncp.ntnx_planned_failover_recovery_plan_v2:
+    ext_id: "{{ fake_recovery_plan_ext_id }}"
+    name: "{{ job_name }}"
+    should_ignore_warnings: true
+    should_live_migrate_vms: false
+    failover_directions:
+      - source_domain_manager_ext_id: "{{ fake_source_pc_ext_id }}"
+        source_cluster:
+          ext_id: "{{ fake_source_cluster_ext_id }}"
+        target_domain_manager_ext_id: "{{ fake_target_pc_ext_id }}"
+        target_cluster:
+          ext_id: "{{ fake_target_cluster_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Verify check_mode spec generation with all attributes
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == fake_recovery_plan_ext_id
+      - result.response.name == job_name
+      - result.response.should_ignore_warnings == true
+      - result.response.should_live_migrate_v_ms == false
+      - result.response.failover_directions | length == 1
+      - result.response.failover_directions[0].source_domain_manager_ext_id == fake_source_pc_ext_id
+      - result.response.failover_directions[0].source_cluster.ext_id == fake_source_cluster_ext_id
+      - result.response.failover_directions[0].target_domain_manager_ext_id == fake_target_pc_ext_id
+      - result.response.failover_directions[0].target_cluster.ext_id == fake_target_cluster_ext_id
+    success_msg: "check_mode spec for planned failover with all attributes is generated successfully"
+    fail_msg: "check_mode spec for planned failover with all attributes was NOT generated correctly"
+
+########################################################################################
+# check_mode: minimal required-only spec
+########################################################################################
+
+- name: Generate spec for planned failover in check mode with only ext_id
+  nutanix.ncp.ntnx_planned_failover_recovery_plan_v2:
+    ext_id: "{{ fake_recovery_plan_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Verify check_mode spec generation with only ext_id
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == fake_recovery_plan_ext_id
+      - result.response.name is none
+      - result.response.failover_directions is none
+      # SDK PlannedFailoverSpec defaults `shouldIgnoreWarnings` and `shouldLiveMigrateVMs` to False
+      - result.response.should_ignore_warnings == false
+      - result.response.should_live_migrate_v_ms == false
+    success_msg: "check_mode spec with only ext_id is generated successfully"
+    fail_msg: "check_mode spec with only ext_id was NOT generated correctly"
+
+########################################################################################
+# Negative tests
+########################################################################################
+
+- name: Trigger planned failover without ext_id (should fail)
+  nutanix.ncp.ntnx_planned_failover_recovery_plan_v2:
+    name: "{{ job_name }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify missing ext_id fails validation
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'ext_id' in result.msg"
+    success_msg: "Missing ext_id was rejected as expected"
+    fail_msg: "Module did not fail when ext_id was missing"
+
+- name: Trigger planned failover with an invalid state value (should fail)
+  nutanix.ncp.ntnx_planned_failover_recovery_plan_v2:
+    ext_id: "{{ fake_recovery_plan_ext_id }}"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Verify invalid state value is rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'value of state must be one of' in result.msg"
+    success_msg: "Invalid state=absent was rejected as expected"
+    fail_msg: "Module accepted an invalid state value"
+
+- name: Trigger planned failover with a malformed UUID (should fail SDK validation)
+  nutanix.ncp.ntnx_planned_failover_recovery_plan_v2:
+    ext_id: "{{ fake_recovery_plan_ext_id }}"
+    failover_directions:
+      - source_domain_manager_ext_id: "not-a-uuid"
+        source_cluster:
+          ext_id: "{{ fake_source_cluster_ext_id }}"
+        target_domain_manager_ext_id: "{{ fake_target_pc_ext_id }}"
+        target_cluster:
+          ext_id: "{{ fake_target_cluster_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Verify malformed UUID is rejected by SDK
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+    success_msg: "Malformed UUID was rejected as expected"
+    fail_msg: "Module accepted a malformed UUID"
+
+- name: Trigger planned failover with a non-existent recovery plan (real API call, should fail)
+  nutanix.ncp.ntnx_planned_failover_recovery_plan_v2:
+    ext_id: "{{ non_existent_recovery_plan_ext_id }}"
+    name: "{{ job_name }}_ne"
+    failover_directions:
+      - source_domain_manager_ext_id: "{{ fake_source_pc_ext_id }}"
+        source_cluster:
+          ext_id: "{{ fake_source_cluster_ext_id }}"
+        target_domain_manager_ext_id: "{{ fake_target_pc_ext_id }}"
+        target_cluster:
+          ext_id: "{{ fake_target_cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify non-existent recovery plan fails at the API
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'Api Exception' in result.msg or 'not found' in (result.response | to_json | lower) or result.status is defined"
+    success_msg: "Non-existent recovery plan was rejected by the API as expected"
+    fail_msg: "Non-existent recovery plan did not fail as expected"
+
+########################################################################################
+# Live end-to-end (only when a real recovery plan is provided)
+########################################################################################
+
+- name: Live end-to-end planned failover
+  when:
+    - planned_failover_recovery_plan_ext_id is defined
+    - planned_failover_recovery_plan_ext_id | length > 0
+  block:
+    - name: Trigger a real planned failover on the configured recovery plan
+      nutanix.ncp.ntnx_planned_failover_recovery_plan_v2:
+        ext_id: "{{ planned_failover_recovery_plan_ext_id }}"
+        name: "{{ job_name }}"
+        should_ignore_warnings: "{{ planned_failover_should_ignore_warnings | default(true) }}"
+        should_live_migrate_vms: "{{ planned_failover_should_live_migrate_vms | default(false) }}"
+        failover_directions: "{{ planned_failover_failover_directions | default(omit) }}"
+      register: result
+      ignore_errors: true
+
+    - name: Verify the planned failover task succeeded
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.failed == false
+          - result.changed == true
+          - result.ext_id == planned_failover_recovery_plan_ext_id
+          - result.task_ext_id is defined
+          - result.response is defined
+          - result.response.status == "SUCCEEDED"
+        success_msg: "Planned failover completed successfully on the live recovery plan"
+        fail_msg: "Planned failover did NOT complete successfully"

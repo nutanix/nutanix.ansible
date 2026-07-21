@@ -1,0 +1,62 @@
+---
+# Summary:
+# This playbook demonstrates the full argument surface of the
+# ntnx_planned_failover_recovery_plan_v2 module - a Nutanix Data Protection
+# v4 action module used to trigger a Planned Failover on a Recovery Plan.
+#
+# The playbook covers:
+#   1. Triggering a Planned Failover with ALL supported attributes
+#      (name, should_ignore_warnings, should_live_migrate_vms and the
+#      full failover_directions topology).
+#   2. Triggering a Planned Failover with only the minimum required
+#      attributes (just ext_id).
+#
+# Prerequisites (must exist on the cluster before running this playbook):
+#   - A configured Recovery Plan (provide its external ID in
+#     `recovery_plan_ext_id`).
+#   - The source / target Prism Central and Prism Element cluster IDs
+#     referenced by the Recovery Plan.
+#   - Protected entities that are actively replicating between source and
+#     target clusters. For should_live_migrate_vms=true they MUST be
+#     stretch-protected via synchronous replication (Metro Availability).
+
+- name: Planned Failover Recovery Plan actions
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('10.44.76.28', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('admin', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('Nutanix.123', true) }}"
+      validate_certs: false
+
+  tasks:
+    - name: Set variables for planned failover
+      ansible.builtin.set_fact:
+        recovery_plan_ext_id: "6f4ffcee-1dc4-4982-9401-aa1f65dd7177"
+        source_pc_ext_id: "63bebabf-744c-48ff-a6d7-cb028707f972"
+        source_cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
+        target_pc_ext_id: "63bebabf-744c-48ff-a6d7-cb028707f972"
+        target_cluster_ext_id: "00062411-a2b3-4dd8-185b-ac1f6b6f97e2"
+
+    - name: Trigger a Planned Failover with all attributes
+      nutanix.ncp.ntnx_planned_failover_recovery_plan_v2:
+        ext_id: "{{ recovery_plan_ext_id }}"
+        name: "planned_failover_job_ansible"
+        should_ignore_warnings: false
+        should_live_migrate_vms: false
+        failover_directions:
+          - source_domain_manager_ext_id: "{{ source_pc_ext_id }}"
+            source_cluster:
+              ext_id: "{{ source_cluster_ext_id }}"
+            target_domain_manager_ext_id: "{{ target_pc_ext_id }}"
+            target_cluster:
+              ext_id: "{{ target_cluster_ext_id }}"
+      register: planned_failover_full
+      ignore_errors: true
+
+    - name: Trigger a Planned Failover with only required parameters
+      nutanix.ncp.ntnx_planned_failover_recovery_plan_v2:
+        ext_id: "{{ recovery_plan_ext_id }}"
+      register: planned_failover_minimal
+      ignore_errors: true
