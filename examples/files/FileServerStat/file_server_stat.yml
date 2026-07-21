@@ -1,0 +1,88 @@
+---
+# Examples for the Nutanix Files FileServerStat v4 modules.
+#
+# This playbook demonstrates how to fetch statistics for:
+#   * a File Server (ntnx_file_server_stat_v2)
+#   * an Antivirus Server attached to a File Server (info module)
+#   * a Mount Target attached to a File Server (info module)
+#
+# Set the following variables from the command line or an inventory file:
+#   ip                       Prism Central endpoint
+#   username / password      PC admin credentials
+#   file_server_ext_id       ext_id of a File Server managed by PC
+#   antivirus_server_ext_id  ext_id of an Antivirus Server (optional)
+#   mount_target_ext_id      ext_id of a Mount Target (optional)
+
+- name: Nutanix Files - FileServerStat example playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+  vars:
+    ip: "10.44.76.28"
+    username: "admin"
+    password: "Nutanix.123"
+    validate_certs: false
+    file_server_ext_id: "6ca5de7e-a9a8-4318-4a62-68b8d5833af7"
+    antivirus_server_ext_id: "18f78959-14a6-4c47-b5db-920460c4b668"
+    mount_target_ext_id: "9c1e537d-6777-4c22-5d41-ddd0c3337aa9"
+    stats_start_time: "2026-07-20T00:00:00.000Z"
+    stats_end_time: "2026-07-21T00:00:00.000Z"
+
+  tasks:
+    - name: Fetch File Server stats using the stat module
+      nutanix.ncp.ntnx_file_server_stat_v2:
+        ext_id: "{{ file_server_ext_id }}"
+        start_time: "{{ stats_start_time }}"
+        end_time: "{{ stats_end_time }}"
+      register: fs_stats
+      ignore_errors: true
+      # sample: <Need to add sample>
+
+    - name: Fetch File Server stats with sampling_interval, stat_type, and select
+      nutanix.ncp.ntnx_file_server_stat_v2:
+        ext_id: "{{ file_server_ext_id }}"
+        start_time: "{{ stats_start_time }}"
+        end_time: "{{ stats_end_time }}"
+        sampling_interval: 300
+        stat_type: "AVG"
+        select: "averageIops,averageLatencyUs,averageThroughputBps"
+      register: fs_stats_full
+      ignore_errors: true
+      # sample: <Need to add sample>
+
+    - name: Fetch File Server stats info via the info module
+      nutanix.ncp.ntnx_files_file_server_stats_info_v2:
+        ext_id: "{{ file_server_ext_id }}"
+        start_time: "{{ stats_start_time }}"
+        end_time: "{{ stats_end_time }}"
+      register: fs_stats_info
+      ignore_errors: true
+      # sample: <Need to add sample>
+
+    - name: Fetch Antivirus Server stats for the File Server
+      nutanix.ncp.ntnx_files_file_server_stats_info_v2:
+        ext_id: "{{ file_server_ext_id }}"
+        antivirus_server_ext_id: "{{ antivirus_server_ext_id }}"
+        start_time: "{{ stats_start_time }}"
+        end_time: "{{ stats_end_time }}"
+        sampling_interval: 300
+        stat_type: "AVG"
+      register: av_stats_info
+      ignore_errors: true
+      # sample: <Need to add sample>
+
+    - name: Fetch Mount Target stats for the File Server
+      nutanix.ncp.ntnx_files_file_server_stats_info_v2:
+        ext_id: "{{ file_server_ext_id }}"
+        mount_target_ext_id: "{{ mount_target_ext_id }}"
+        start_time: "{{ stats_start_time }}"
+        end_time: "{{ stats_end_time }}"
+        select: "averageIops,averageLatencyUs,averageThroughputBps"
+      register: mt_stats_info
+      ignore_errors: true
+      # sample: <Need to add sample>
