@@ -1,0 +1,642 @@
+---
+# ---------------------------------------------------------------------------
+# End-to-end integration tests for the AHV VM Recovery Point v4 modules:
+#   - nutanix.ncp.ntnx_vm_recovery_point_v2         (Create/Delete + noop update)
+#   - nutanix.ncp.ntnx_vm_recovery_points_info_v2   (Get/List)
+#   - nutanix.ncp.ntnx_vm_recovery_point_restore_v2 (Restore action)
+#
+# Test plan (covers every attribute in `get_module_spec()` and every
+# documented failure path):
+#   Prerequisites (setup):
+#     - Discover a live AHV cluster via ntnx_clusters_info_v2.
+#     - Create one source AHV VM via ntnx_vms_v2 to snapshot.
+#   Create module:
+#     - check_mode + all attributes (spec assembly, no API call)
+#     - real create with only required fields (name, vm_ext_id)
+#     - real create with ALL supported fields (crash consistent)
+#     - negative: missing `name`
+#     - negative: missing `vm_ext_id`
+#     - negative: invalid `recovery_point_type` enum
+#   Update (no-op, API doesn't support update):
+#     - present + valid ext_id -> `skipped=True` and message
+#     - present + wrong ext_id -> failed=True (not-found)
+#   Info module:
+#     - get by ext_id
+#     - list all
+#     - list with OData filter
+#     - list with limit
+#     - get with wrong ext_id -> failed=True
+#     - mutually exclusive: ext_id + filter
+#   Restore action:
+#     - check_mode + full override spec
+#     - real restore without overrides
+#     - real restore with vm_config_override_spec (name, description, is_strict_mode=False)
+#     - negative: missing required ext_id
+#   Delete module:
+#     - check_mode delete
+#     - real delete by ext_id
+#     - negative: wrong ext_id
+#     - negative: missing ext_id
+#
+# All resources created here (VMs, recovery points, restored VMs) are captured
+# in *_todelete lists and cleaned up at the end.
+# ---------------------------------------------------------------------------
+
+- name: Start AHV VM Recovery Points v2 tests
+  ansible.builtin.debug:
+    msg: Start AHV VM Recovery Points v2 tests
+
+- name: Generate random suffix so parallel test runs never collide
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    suffix_name: "ansible"
+    vm_todelete: []
+    vm_rp_todelete: []
+
+- name: Set VM name and recovery point name
+  ansible.builtin.set_fact:
+    source_vm_name: "src_vm_{{ suffix_name }}_{{ random_name }}"
+    vm_rp_name: "vm_rp_{{ suffix_name }}_{{ random_name }}"
+
+- name: Compute an expiration time 7 days in the future (UTC, ISO-8601)
+  ansible.builtin.set_fact:
+    expiration_time: "{{ lookup('pipe', 'date -u -d \"+7 days\" +%Y-%m-%dT%H:%M:%S%z') }}"
+
+########################################################################################
+# Prerequisites: discover a cluster and create a source VM
+########################################################################################
+
+- name: List available AHV PE clusters
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: clusters_info
+  ignore_errors: true
+
+- name: Fallback if the OData clusterFunction filter is not supported
+  nutanix.ncp.ntnx_clusters_info_v2:
+  register: clusters_info_all
+  when: clusters_info.failed | default(false) or (clusters_info.response | default([]) | length) == 0
+
+- name: Choose an AHV cluster (skip PC pseudo-cluster where config.cluster_function is null)
+  ansible.builtin.set_fact:
+    ahv_cluster_ext_id: >-
+      {{
+        (
+          ((clusters_info.response | default([])) if (clusters_info.response | default([]) | length) > 0
+           else (clusters_info_all.response | default([])))
+          | selectattr('config', 'defined')
+          | selectattr('config.cluster_function', 'defined')
+          | selectattr('config.cluster_function', 'contains', 'AOS')
+          | list
+          | first
+        ).ext_id
+      }}
+
+- name: Verify a usable AHV cluster was discovered
+  ansible.builtin.assert:
+    that:
+      - ahv_cluster_ext_id is defined
+      - ahv_cluster_ext_id | length > 0
+    fail_msg: "No AHV cluster found on this PC; cannot run VM recovery point tests"
+    success_msg: "Using AHV cluster {{ ahv_cluster_ext_id }}"
+
+- name: Create the source AHV VM (minimal, unpowered) used for all recovery point tests
+  nutanix.ncp.ntnx_vms_v2:
+    name: "{{ source_vm_name }}"
+    description: "Source VM for ntnx_vm_recovery_point_v2 integration tests"
+    cluster:
+      ext_id: "{{ ahv_cluster_ext_id }}"
+    memory_size_bytes: 1073741824
+    num_sockets: 1
+    num_cores_per_socket: 1
+  register: source_vm_result
+
+- name: Verify source VM was created
+  ansible.builtin.assert:
+    that:
+      - source_vm_result is defined
+      - source_vm_result.changed == true
+      - source_vm_result.failed == false
+      - source_vm_result.ext_id is defined
+      - source_vm_result.response.name == source_vm_name
+    fail_msg: "Failed to create source VM for recovery point tests"
+    success_msg: "Source VM {{ source_vm_name }} created successfully"
+
+- name: Capture source VM ext_id
+  ansible.builtin.set_fact:
+    source_vm_ext_id: "{{ source_vm_result.ext_id }}"
+    vm_todelete: "{{ vm_todelete + [source_vm_result.ext_id] }}"
+
+########################################################################################
+# Create tests
+########################################################################################
+
+- name: Generate spec for creating AHV VM recovery point using check mode with all attributes
+  nutanix.ncp.ntnx_vm_recovery_point_v2:
+    state: present
+    name: "check_mode_full_{{ vm_rp_name }}"
+    expiration_time: "{{ expiration_time }}"
+    recovery_point_type: "APPLICATION_CONSISTENT"
+    vm_ext_id: "{{ source_vm_ext_id }}"
+    consistency_group_ext_id: "aaaaaaaa-1111-2222-3333-444444444444"
+    application_consistent_properties:
+      backup_type: "FULL_BACKUP"
+      should_include_writers: true
+      writers:
+        - "0f95b402-67aa-431c-9eab-bf0907a99345"
+      should_store_vss_metadata: true
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check mode create spec matches all input attributes
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "check_mode_full_{{ vm_rp_name }}"
+      - result.response.recovery_point_type == "APPLICATION_CONSISTENT"
+      - result.response.vm_ext_id == source_vm_ext_id
+      - result.response.consistency_group_ext_id == "aaaaaaaa-1111-2222-3333-444444444444"
+      - result.response.application_consistent_properties.backup_type == "FULL_BACKUP"
+      - result.response.application_consistent_properties.should_include_writers == true
+      - result.response.application_consistent_properties.writers | length == 1
+      - result.response.application_consistent_properties.writers[0] == "0f95b402-67aa-431c-9eab-bf0907a99345"
+      - result.response.application_consistent_properties.should_store_vss_metadata == true
+    fail_msg: "Check mode create spec did not match input"
+    success_msg: "Check mode create spec generated successfully with all attributes"
+
+- name: Create AHV VM recovery point with only required fields (name + vm_ext_id)
+  nutanix.ncp.ntnx_vm_recovery_point_v2:
+    state: present
+    name: "{{ vm_rp_name }}_min"
+    vm_ext_id: "{{ source_vm_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert minimal create succeeded
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.name == "{{ vm_rp_name }}_min"
+      - result.response.vm_ext_id == source_vm_ext_id
+    fail_msg: "AHV VM recovery point (minimal) create failed"
+    success_msg: "AHV VM recovery point (minimal) created successfully"
+
+- name: Track minimal recovery point for cleanup
+  ansible.builtin.set_fact:
+    vm_rp_todelete: "{{ vm_rp_todelete + [result.ext_id] }}"
+    min_vm_rp_ext_id: "{{ result.ext_id }}"
+
+- name: Create AHV VM recovery point with all supported fields (crash consistent)
+  nutanix.ncp.ntnx_vm_recovery_point_v2:
+    state: present
+    name: "{{ vm_rp_name }}_full"
+    expiration_time: "{{ expiration_time }}"
+    recovery_point_type: "CRASH_CONSISTENT"
+    vm_ext_id: "{{ source_vm_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert full create succeeded
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.name == "{{ vm_rp_name }}_full"
+      - result.response.vm_ext_id == source_vm_ext_id
+      - result.response.recovery_point_type == "CRASH_CONSISTENT"
+      - result.response.status == "COMPLETE"
+    fail_msg: "AHV VM recovery point (full) create failed"
+    success_msg: "AHV VM recovery point (full) created successfully"
+
+- name: Track full recovery point for cleanup / restore
+  ansible.builtin.set_fact:
+    vm_rp_todelete: "{{ vm_rp_todelete + [result.ext_id] }}"
+    full_vm_rp_ext_id: "{{ result.ext_id }}"
+
+- name: Attempt to create AHV VM recovery point with missing name (should fail)
+  nutanix.ncp.ntnx_vm_recovery_point_v2:
+    state: present
+    vm_ext_id: "{{ source_vm_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing-name failed as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'Missing required parameter(s): name' in result.msg"
+    fail_msg: "Create without name did not fail"
+    success_msg: "Create without name failed as expected"
+
+- name: Attempt to create AHV VM recovery point with missing vm_ext_id (should fail)
+  nutanix.ncp.ntnx_vm_recovery_point_v2:
+    state: present
+    name: "{{ vm_rp_name }}_no_vm"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing-vm_ext_id failed as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'Missing required parameter(s): vm_ext_id' in result.msg"
+    fail_msg: "Create without vm_ext_id did not fail"
+    success_msg: "Create without vm_ext_id failed as expected"
+
+- name: Attempt to create AHV VM recovery point with invalid recovery_point_type
+  nutanix.ncp.ntnx_vm_recovery_point_v2:
+    state: present
+    name: "{{ vm_rp_name }}_bad_type"
+    vm_ext_id: "{{ source_vm_ext_id }}"
+    recovery_point_type: "NOT_A_TYPE"
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid enum was rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'value of recovery_point_type must be one of' in result.msg"
+    fail_msg: "Invalid recovery_point_type enum was accepted"
+    success_msg: "Invalid recovery_point_type enum rejected as expected"
+
+########################################################################################
+# Update (no-op) tests
+########################################################################################
+
+- name: Update a valid recovery point (API has no update -> expect skipped no-op)
+  nutanix.ncp.ntnx_vm_recovery_point_v2:
+    state: present
+    ext_id: "{{ min_vm_rp_ext_id }}"
+    name: "irrelevant_will_not_change"
+  register: result
+  ignore_errors: true
+
+- name: Assert update was a no-op skipped
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - "'does not support update' in result.msg"
+      - result.response.ext_id == min_vm_rp_ext_id
+    fail_msg: "Update no-op did not behave as expected"
+    success_msg: "Update no-op returned skipped=True as expected"
+
+- name: Update with a wrong external ID (should fail)
+  nutanix.ncp.ntnx_vm_recovery_point_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    name: "irrelevant"
+  register: result
+  ignore_errors: true
+
+- name: Assert wrong-ext_id update failed
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    fail_msg: "Update with wrong ext_id did not fail"
+    success_msg: "Update with wrong ext_id failed as expected"
+
+########################################################################################
+# Info module tests
+########################################################################################
+
+- name: Fetch AHV VM recovery point by ext_id
+  nutanix.ncp.ntnx_vm_recovery_points_info_v2:
+    ext_id: "{{ full_vm_rp_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert get-by-ID returns single entity
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == full_vm_rp_ext_id
+      - result.response is defined
+      - result.response.ext_id == full_vm_rp_ext_id
+      - result.response.name == "{{ vm_rp_name }}_full"
+      - result.response.vm_ext_id == source_vm_ext_id
+      - result.response.recovery_point_type == "CRASH_CONSISTENT"
+      - result.response.status == "COMPLETE"
+    fail_msg: "Get by ext_id did not return the expected entity"
+    success_msg: "Get by ext_id returned the expected entity"
+
+- name: List all AHV VM recovery points
+  nutanix.ncp.ntnx_vm_recovery_points_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Assert list returned at least the two recovery points we created
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length >= 2
+      - result.total_available_results is defined
+      - result.total_available_results >= 2
+      - full_vm_rp_ext_id in (result.response | map(attribute='ext_id') | list)
+      - min_vm_rp_ext_id in (result.response | map(attribute='ext_id') | list)
+    fail_msg: "List all did not return the created recovery points"
+    success_msg: "List all returned the created recovery points"
+
+- name: List AHV VM recovery points with an OData filter on vmExtId
+  nutanix.ncp.ntnx_vm_recovery_points_info_v2:
+    filter: "vmExtId eq '{{ source_vm_ext_id }}'"
+  register: result
+  ignore_errors: true
+
+- name: Assert filter returned only recovery points for our source VM
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length >= 2
+      - (result.response | map(attribute='vm_ext_id') | unique | list) == [source_vm_ext_id]
+      - full_vm_rp_ext_id in (result.response | map(attribute='ext_id') | list)
+      - min_vm_rp_ext_id in (result.response | map(attribute='ext_id') | list)
+    fail_msg: "Filtered list did not return the expected recovery points"
+    success_msg: "Filtered list returned only the recovery points for our source VM"
+
+- name: List AHV VM recovery points with limit=1
+  nutanix.ncp.ntnx_vm_recovery_points_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Assert limit was honored
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+    fail_msg: "Limit=1 was not honored"
+    success_msg: "Limit=1 was honored"
+
+- name: Fetch with a non-existent ext_id (should fail)
+  nutanix.ncp.ntnx_vm_recovery_points_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Assert non-existent fetch failed
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    fail_msg: "Non-existent fetch did not fail"
+    success_msg: "Non-existent fetch failed as expected"
+
+- name: Call info module with mutually exclusive ext_id + filter
+  nutanix.ncp.ntnx_vm_recovery_points_info_v2:
+    ext_id: "{{ full_vm_rp_ext_id }}"
+    filter: "name eq 'foo'"
+  register: result
+  ignore_errors: true
+
+- name: Assert mutually exclusive params were rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'parameters are mutually exclusive' in result.msg"
+    fail_msg: "Mutually exclusive params were not rejected"
+    success_msg: "Mutually exclusive params rejected as expected"
+
+########################################################################################
+# Restore action tests
+########################################################################################
+
+- name: Restore in check mode with full override spec
+  nutanix.ncp.ntnx_vm_recovery_point_restore_v2:
+    ext_id: "{{ full_vm_rp_ext_id }}"
+    is_strict_mode: false
+    vm_config_override_spec:
+      name: "check_mode_restored_{{ vm_rp_name }}"
+      description: "Restored (check mode) from full recovery point"
+      guest_tools_spec:
+        should_clear_in_guest_volume_group_attachments: true
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check_mode restore spec matches input
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.is_strict_mode == false
+      - result.response.vm_config_override_spec.name == "check_mode_restored_{{ vm_rp_name }}"
+      - result.response.vm_config_override_spec.description == "Restored (check mode) from full recovery point"
+      - result.response.vm_config_override_spec.guest_tools_spec.should_clear_in_guest_volume_group_attachments == true
+    fail_msg: "Check_mode restore spec was not generated correctly"
+    success_msg: "Check_mode restore spec generated correctly"
+
+- name: Restore a new VM from the recovery point using defaults
+  nutanix.ncp.ntnx_vm_recovery_point_restore_v2:
+    ext_id: "{{ full_vm_rp_ext_id }}"
+  register: restore_default_result
+  ignore_errors: true
+
+- name: Assert default restore succeeded
+  ansible.builtin.assert:
+    that:
+      - restore_default_result is defined
+      - restore_default_result.changed == true
+      - restore_default_result.failed == false
+      - restore_default_result.ext_id == full_vm_rp_ext_id
+      - restore_default_result.task_ext_id is defined
+      - restore_default_result.response is defined
+      - restore_default_result.response.status == "SUCCEEDED"
+      - restore_default_result.vm_ext_id is defined
+      - restore_default_result.vm_ext_id | length > 0
+    fail_msg: "Default restore did not succeed"
+    success_msg: "Default restore succeeded and returned the restored vm_ext_id"
+
+- name: Track restored VM for cleanup
+  ansible.builtin.set_fact:
+    vm_todelete: "{{ vm_todelete + [restore_default_result.vm_ext_id] }}"
+
+- name: Restore with vm_config_override_spec (name + description + non-strict)
+  nutanix.ncp.ntnx_vm_recovery_point_restore_v2:
+    ext_id: "{{ full_vm_rp_ext_id }}"
+    is_strict_mode: false
+    vm_config_override_spec:
+      name: "restored_{{ vm_rp_name }}"
+      description: "Restored from AHV VM recovery point by Ansible"
+  register: restore_override_result
+  ignore_errors: true
+
+- name: Assert override restore succeeded
+  ansible.builtin.assert:
+    that:
+      - restore_override_result is defined
+      - restore_override_result.changed == true
+      - restore_override_result.failed == false
+      - restore_override_result.ext_id == full_vm_rp_ext_id
+      - restore_override_result.task_ext_id is defined
+      - restore_override_result.response is defined
+      - restore_override_result.response.status == "SUCCEEDED"
+      - restore_override_result.vm_ext_id is defined
+      - restore_override_result.vm_ext_id | length > 0
+    fail_msg: "Override restore did not succeed"
+    success_msg: "Override restore succeeded and returned the restored vm_ext_id"
+
+- name: Verify restored VM has the overridden name
+  nutanix.ncp.ntnx_vms_info_v2:
+    ext_id: "{{ restore_override_result.vm_ext_id }}"
+  register: restored_vm
+  ignore_errors: true
+
+- name: Assert restored VM name was overridden
+  ansible.builtin.assert:
+    that:
+      - restored_vm is defined
+      - restored_vm.failed == false
+      - restored_vm.response is defined
+      - restored_vm.response.name == "restored_{{ vm_rp_name }}"
+      - restored_vm.response.description == "Restored from AHV VM recovery point by Ansible"
+    fail_msg: "Restored VM did not carry the override name/description"
+    success_msg: "Restored VM carries the override name/description"
+
+- name: Track second restored VM for cleanup
+  ansible.builtin.set_fact:
+    vm_todelete: "{{ vm_todelete + [restore_override_result.vm_ext_id] }}"
+
+- name: Restore without ext_id (should fail because ext_id is required)
+  nutanix.ncp.ntnx_vm_recovery_point_restore_v2: {}
+  register: result
+  ignore_errors: true
+
+- name: Assert restore-without-ext_id failed
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'missing required arguments: ext_id' in result.msg"
+    fail_msg: "Restore without ext_id was accepted"
+    success_msg: "Restore without ext_id was rejected as expected"
+
+########################################################################################
+# Delete tests
+########################################################################################
+
+- name: Delete AHV VM recovery point in check mode
+  nutanix.ncp.ntnx_vm_recovery_point_v2:
+    state: absent
+    ext_id: "{{ min_vm_rp_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check_mode delete reports intent
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - "'will be deleted' in result.msg"
+    fail_msg: "Check_mode delete did not report intent"
+    success_msg: "Check_mode delete reported intent as expected"
+
+- name: Delete AHV VM recovery point with wrong ext_id (should fail)
+  nutanix.ncp.ntnx_vm_recovery_point_v2:
+    state: absent
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Assert wrong-ext_id delete failed
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    fail_msg: "Delete with wrong ext_id did not fail"
+    success_msg: "Delete with wrong ext_id failed as expected"
+
+- name: Delete AHV VM recovery point without ext_id (should fail)
+  nutanix.ncp.ntnx_vm_recovery_point_v2:
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Assert delete-without-ext_id failed
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is absent but all of the following are missing: ext_id' in result.msg"
+    fail_msg: "Delete without ext_id was accepted"
+    success_msg: "Delete without ext_id was rejected as expected"
+
+- name: Delete all created AHV VM recovery points
+  nutanix.ncp.ntnx_vm_recovery_point_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  ignore_errors: true
+  loop: "{{ vm_rp_todelete }}"
+
+- name: Assert every recovery point was deleted
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.results | length == vm_rp_todelete | length
+      - result.results | selectattr('changed', 'equalto', true) | list | length == vm_rp_todelete | length
+    fail_msg: "One or more recovery points failed to delete"
+    success_msg: "All recovery points deleted successfully"
+
+########################################################################################
+# Cleanup: delete any source / restored VMs we created
+########################################################################################
+
+- name: Delete all VMs created by this test target
+  nutanix.ncp.ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: vm_delete_result
+  ignore_errors: true
+  loop: "{{ vm_todelete }}"
+
+- name: Report VM cleanup summary (non-fatal)
+  ansible.builtin.debug:
+    msg: >-
+      Cleaned up {{ vm_delete_result.results | selectattr('failed', 'equalto', false) | list | length }} of
+      {{ vm_todelete | length }} test VMs.

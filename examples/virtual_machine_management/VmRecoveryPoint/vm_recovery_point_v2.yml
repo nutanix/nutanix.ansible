@@ -1,0 +1,122 @@
+---
+# Summary:
+# End-to-end example playbook for AHV VM recovery points (Nutanix PC v4 - VMM).
+# This playbook demonstrates:
+#   1. Setup: create a source AHV VM on an AOS cluster to snapshot
+#   2. Create an AHV VM recovery point for the VM
+#   3. Get a specific AHV VM recovery point by external ID
+#   4. List all AHV VM recovery points
+#   5. List AHV VM recovery points with a filter and a limit
+#   6. Restore a new VM from the AHV VM recovery point (with override spec)
+#   7. Delete the AHV VM recovery point
+#   8. Cleanup: delete the source and restored VMs
+
+- name: AHV VM recovery points playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('ansible.builtin.env', 'NUTANIX_HOST') | default('10.44.76.28', true) }}"
+      nutanix_username: "{{ lookup('ansible.builtin.env', 'NUTANIX_USERNAME') | default('admin', true) }}"
+      nutanix_password: "{{ lookup('ansible.builtin.env', 'NUTANIX_PASSWORD') | default('Nutanix.123', true) }}"
+      validate_certs: false
+
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        vm_recovery_point_name: "ansible_vm_rp_example"
+        source_vm_name: "src_vm_ansible_rp_example"
+        vms_to_cleanup: []
+        expiration_time: "{{ lookup('pipe', 'date -u -d \"+7 days\" +%Y-%m-%dT%H:%M:%S%z') }}"
+
+    - name: Discover an AHV (AOS) cluster to host the source VM
+      nutanix.ncp.ntnx_clusters_info_v2:
+      register: all_clusters_result
+
+    - name: Choose the first AOS cluster
+      ansible.builtin.set_fact:
+        cluster_ext_id: >-
+          {{
+            (all_clusters_result.response
+             | selectattr('config', 'defined')
+             | selectattr('config.cluster_function', 'defined')
+             | selectattr('config.cluster_function', 'contains', 'AOS')
+             | list
+             | first
+            ).ext_id
+          }}
+
+    - name: Create the source AHV VM to snapshot (minimal, unpowered)
+      nutanix.ncp.ntnx_vms_v2:
+        name: "{{ source_vm_name }}"
+        description: "Source VM for VM Recovery Point example"
+        cluster:
+          ext_id: "{{ cluster_ext_id }}"
+        memory_size_bytes: 1073741824
+        num_sockets: 1
+        num_cores_per_socket: 1
+      register: source_vm_result
+
+    - name: Track source VM for cleanup
+      ansible.builtin.set_fact:
+        source_vm_ext_id: "{{ source_vm_result.ext_id }}"
+        vms_to_cleanup: "{{ vms_to_cleanup + [source_vm_result.ext_id] }}"
+
+    - name: Create a crash-consistent AHV VM recovery point (all supported fields)
+      nutanix.ncp.ntnx_vm_recovery_point_v2:
+        state: present
+        name: "{{ vm_recovery_point_name }}"
+        expiration_time: "{{ expiration_time }}"
+        recovery_point_type: "CRASH_CONSISTENT"
+        vm_ext_id: "{{ source_vm_ext_id }}"
+      register: created_rp
+
+    - name: Capture created AHV VM recovery point external ID
+      ansible.builtin.set_fact:
+        vm_recovery_point_ext_id: "{{ created_rp.ext_id }}"
+
+    - name: Fetch the AHV VM recovery point by external ID
+      nutanix.ncp.ntnx_vm_recovery_points_info_v2:
+        ext_id: "{{ vm_recovery_point_ext_id }}"
+      register: single_rp
+
+    - name: List all AHV VM recovery points
+      nutanix.ncp.ntnx_vm_recovery_points_info_v2:
+      register: all_rps
+
+    - name: List AHV VM recovery points with an OData filter on vmExtId
+      nutanix.ncp.ntnx_vm_recovery_points_info_v2:
+        filter: "vmExtId eq '{{ source_vm_ext_id }}'"
+      register: filtered_rps
+
+    - name: List AHV VM recovery points with a limit
+      nutanix.ncp.ntnx_vm_recovery_points_info_v2:
+        limit: 1
+      register: limited_rps
+
+    - name: Restore a new AHV VM from the created recovery point with overrides
+      nutanix.ncp.ntnx_vm_recovery_point_restore_v2:
+        ext_id: "{{ vm_recovery_point_ext_id }}"
+        is_strict_mode: false
+        vm_config_override_spec:
+          name: "restored_from_{{ vm_recovery_point_name }}"
+          description: "VM restored from AHV VM recovery point by Ansible"
+      register: restore_result
+
+    - name: Track restored VM for cleanup
+      ansible.builtin.set_fact:
+        vms_to_cleanup: "{{ vms_to_cleanup + [restore_result.vm_ext_id] }}"
+      when: restore_result.vm_ext_id is defined
+
+    - name: Delete the AHV VM recovery point
+      nutanix.ncp.ntnx_vm_recovery_point_v2:
+        state: absent
+        ext_id: "{{ vm_recovery_point_ext_id }}"
+      register: delete_result
+
+    - name: Cleanup - delete source and restored VMs
+      nutanix.ncp.ntnx_vms_v2:
+        state: absent
+        ext_id: "{{ item }}"
+      loop: "{{ vms_to_cleanup }}"
+      failed_when: false
