@@ -1,0 +1,100 @@
+---
+# Summary:
+# This playbook demonstrates the FindConflictingUdaPolicy v4 action module.
+# It performs a pre-flight check for the User-Defined Alert (UDA) policy
+# APIs, returning the list of existing policies whose criteria overlap
+# with the input policy body.
+#
+# Steps covered:
+# 1. Find conflicts for a proposed CPU-usage policy with all attributes
+#    populated (group filters, impact types, related policies,
+#    trigger_wait_period, etc.).
+# 2. Find conflicts for a proposed memory-usage policy that uses
+#    explicit entity filters and a double threshold value.
+# 3. Find conflicts for a minimal proposed policy that only supplies the
+#    server-required attributes (title + one static-threshold trigger).
+
+- name: FindConflictingUdaPolicy V4 playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+  tasks:
+    - name: Find conflicting UDA policies (group filters, all attributes)
+      nutanix.ncp.ntnx_find_conflicting_uda_policy_v2:
+        title: "High CPU Usage - Conflict Check"
+        description: "Alert when VM CPU usage crosses 90% for 5 minutes"
+        entity_type: "vm"
+        is_enabled: true
+        is_auto_resolved: true
+        is_expected_to_error_on_conflict: false
+        trigger_wait_period: 300
+        impact_types:
+          - PERFORMANCE
+          - CPU_CAPACITY
+        policies_to_override: []
+        group_filters:
+          - ext_id: "eb8b62cc-1111-2222-3333-1234567890ab"
+            type: CATEGORY
+        related_policies:
+          - entity_uuid: "eb8b62cc-1111-2222-3333-1234567890ab"
+            policy_ids:
+              - "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+        trigger_conditions:
+          - condition_type: STATIC_THRESHOLD
+            severity_level: CRITICAL
+            condition:
+              metric_name: "hypervisor_cpu_usage_ppm"
+              operator: GREATER_THAN_OR_EQUAL_TO
+              threshold_value:
+                int_value: 900000
+      register: full_result
+      ignore_errors: true
+
+    - name: Find conflicting UDA policies (category filter + double threshold)
+      nutanix.ncp.ntnx_find_conflicting_uda_policy_v2:
+        title: "CPU Usage - Conflict Check"
+        description: "Warn when VM CPU usage crosses a given threshold"
+        entity_type: "vm"
+        is_enabled: true
+        is_auto_resolved: true
+        is_expected_to_error_on_conflict: false
+        trigger_wait_period: 300
+        group_filters:
+          - ext_id: "eb8b62cc-2222-3333-4444-1234567890ab"
+            type: CATEGORY
+        impact_types:
+          - PERFORMANCE
+        trigger_conditions:
+          - condition_type: STATIC_THRESHOLD
+            severity_level: WARNING
+            condition:
+              metric_name: "hypervisor_cpu_usage_ppm"
+              operator: GREATER_THAN_OR_EQUAL_TO
+              threshold_value:
+                double_value: 850000.0
+      register: entity_result
+      ignore_errors: true
+
+    - name: Find conflicting UDA policies (minimal body — required fields + category filter)
+      nutanix.ncp.ntnx_find_conflicting_uda_policy_v2:
+        title: "Minimal Conflict Check"
+        entity_type: "vm"
+        is_expected_to_error_on_conflict: false
+        group_filters:
+          - ext_id: "eb8b62cc-3333-4444-5555-1234567890ab"
+            type: CATEGORY
+        trigger_conditions:
+          - condition_type: STATIC_THRESHOLD
+            severity_level: WARNING
+            condition:
+              metric_name: "hypervisor_cpu_usage_ppm"
+              operator: LESS_THAN
+              threshold_value:
+                int_value: 100000
+      register: minimal_result
+      ignore_errors: true
