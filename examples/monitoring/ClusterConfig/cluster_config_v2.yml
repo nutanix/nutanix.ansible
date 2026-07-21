@@ -1,0 +1,101 @@
+---
+# Summary:
+# This playbook will do:
+# 1. List all ClusterConfig entries for a chosen SDA policy
+# 2. Get a specific ClusterConfig by (system_defined_policy_ext_id, cluster ext_id)
+# 3. Update a ClusterConfig - toggle isEnabled + adjust scheduleIntervalSeconds
+# 4. Update a ClusterConfig - full spec including alert_config severity overrides
+# 5. Delete a ClusterConfig - the Monitoring v4 API does NOT support delete;
+#    the module fails with a descriptive message. Kept as documentation.
+#
+# Pass real IDs via -e sda_policy_ext_id=<...> -e cluster_config_ext_id=<...>
+# The defaults are placeholders and WILL be rejected by the API.
+
+- name: ClusterConfig playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('10.44.76.28', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('admin', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('Nutanix.123', true) }}"
+      validate_certs: false
+  tasks:
+    - name: List all ClusterConfigs for the SDA policy
+      nutanix.ncp.ntnx_cluster_configs_info_v2:
+        system_defined_policy_ext_id: "{{ sda_policy_ext_id | default('6c3f96e8-4d63-4a91-a2b4-4f6ce7de7f22') }}"
+      register: cluster_configs_list
+      ignore_errors: true
+
+    - name: Get a specific ClusterConfig by (SDA policy ext_id, cluster ext_id)
+      nutanix.ncp.ntnx_cluster_configs_info_v2:
+        system_defined_policy_ext_id: "{{ sda_policy_ext_id | default('6c3f96e8-4d63-4a91-a2b4-4f6ce7de7f22') }}"
+        ext_id: "{{ cluster_config_ext_id | default('0005f36a-b46f-8d0e-0000-000000000000') }}"
+      register: cluster_config_single
+      ignore_errors: true
+
+    - name: Update ClusterConfig - toggle isEnabled and adjust schedule interval
+      nutanix.ncp.ntnx_cluster_config_v2:
+        state: present
+        system_defined_policy_ext_id: "{{ sda_policy_ext_id | default('6c3f96e8-4d63-4a91-a2b4-4f6ce7de7f22') }}"
+        ext_id: "{{ cluster_config_ext_id | default('0005f36a-b46f-8d0e-0000-000000000000') }}"
+        is_enabled: true
+        schedule_interval_seconds: 600
+      register: cluster_config_update_min
+      ignore_errors: true
+
+    # NOTE: The exact shape of alert_config that a specific SDA policy accepts is
+    # policy-dependent. Not every policy exposes critical/warning/info severity
+    # overrides or configurable_parameters - the API rejects severities that the
+    # underlying NCC check does not define. The block below shows the FULL
+    # module surface for reference. When running against your cluster, use only
+    # the fields your target policy actually supports.
+    - name: Update ClusterConfig - full spec (shape-of-all-attrs reference)
+      nutanix.ncp.ntnx_cluster_config_v2:
+        state: present
+        system_defined_policy_ext_id: "{{ sda_policy_ext_id | default('6c3f96e8-4d63-4a91-a2b4-4f6ce7de7f22') }}"
+        ext_id: "{{ cluster_config_ext_id | default('0005f36a-b46f-8d0e-0000-000000000000') }}"
+        is_enabled: true
+        schedule_interval_seconds: 600
+        configurable_parameters:
+          - name: "sample_param"
+            display_name: "Sample Param"
+            unit: "seconds"
+            param_value:
+              int_value:
+                default_int_value: 60
+                current_int_value: 120
+        alert_config:
+          auto_resolve: ENABLED
+          critical_severity:
+            state: ENABLED
+            threshold_parameters:
+              - name: "critical_threshold"
+                display_name: "Critical Threshold"
+                unit: "%"
+                param_value:
+                  int_value:
+                    default_int_value: 90
+                    current_int_value: 95
+          warning_severity:
+            state: ENABLED
+            threshold_parameters:
+              - name: "warning_threshold"
+                display_name: "Warning Threshold"
+                unit: "%"
+                param_value:
+                  int_value:
+                    default_int_value: 75
+                    current_int_value: 80
+          info_severity:
+            state: DISABLED
+      register: cluster_config_update_full
+      ignore_errors: true
+
+    - name: Delete ClusterConfig (API does NOT support delete - documented failure)
+      nutanix.ncp.ntnx_cluster_config_v2:
+        state: absent
+        system_defined_policy_ext_id: "{{ sda_policy_ext_id | default('6c3f96e8-4d63-4a91-a2b4-4f6ce7de7f22') }}"
+        ext_id: "{{ cluster_config_ext_id | default('0005f36a-b46f-8d0e-0000-000000000000') }}"
+      register: cluster_config_delete
+      ignore_errors: true

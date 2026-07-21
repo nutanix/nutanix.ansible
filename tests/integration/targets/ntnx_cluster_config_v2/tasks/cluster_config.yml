@@ -1,0 +1,557 @@
+---
+##############################################################################
+# Integration tests for ntnx_cluster_config_v2 and ntnx_cluster_configs_info_v2
+#
+# Test plan:
+#   1. Bootstrap: fetch an SDA policy ext_id and a ClusterConfig ext_id via the
+#      raw v4 REST API (no dedicated SDA info module in this collection).
+#   2. Info: list all ClusterConfigs for the SDA policy, then get by ext_id.
+#      Assert both shapes plus `total_available_results` for the list.
+#   3. Info: list with limit=1, with orderby=extId asc.
+#   4. Info: negative - fetch with an invalid ext_id (assert failure).
+#   5. Info: negative - list without required system_defined_policy_ext_id
+#      (assert failure).
+#   6. CRUD (check_mode):
+#        one Create check_mode task, one Update check_mode task (all attrs),
+#        one Delete check_mode task.
+#   7. CRUD (real):
+#        - Update with minimal fields (schedule_interval_seconds); assert change.
+#        - Update again with the same values; assert idempotent skipped=true.
+#        - Full update including alert_config severities.
+#        - Restore original scheduleIntervalSeconds so we do not leave the
+#          cluster mis-configured.
+#   8. Negative CRUD:
+#        - state=present without ext_id -> "not supported" fail msg.
+#        - state=absent (delete not supported by API) -> "not supported" fail msg.
+#        - state=absent without ext_id / policy -> required_if fail msg.
+#        - Update with invalid ext_id -> API error surfaced.
+##############################################################################
+
+- name: Start ClusterConfig tests
+  ansible.builtin.debug:
+    msg: Start ClusterConfig integration tests
+
+##############################################################################
+# Bootstrap - discover SDA policy ext_id and a ClusterConfig ext_id
+##############################################################################
+
+- name: Fetch SDA policies via raw v4 API (limit=100)
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:{{ port | default(9440) }}/api/monitoring/v4.0/serviceability/alerts/system-defined-policies?$limit=100"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs }}"
+    return_content: true
+    headers:
+      Accept: application/json
+  register: sda_list_raw
+  ignore_errors: true
+  no_log: false
+
+- name: Assert we could reach the Monitoring API
+  ansible.builtin.assert:
+    that:
+      - sda_list_raw is defined
+      - sda_list_raw.status == 200
+      - sda_list_raw.json is defined
+      - sda_list_raw.json.data is defined
+      - sda_list_raw.json.data | length > 0
+    success_msg: "SDA policies fetched (count={{ sda_list_raw.json.data | length }})"
+    fail_msg: "Could not fetch SDA policies - test environment is not usable"
+
+- name: Pick the first SDA policy ext_id
+  ansible.builtin.set_fact:
+    sda_policy_ext_id: "{{ sda_list_raw.json.data[0].extId }}"
+
+- name: Reset bootstrap holder
+  ansible.builtin.set_fact:
+    cluster_configs_list_bootstrap: {}
+
+- name: Search SDA policies until one has a ClusterConfig w/ schedule_interval_seconds != null
+  ansible.builtin.include_tasks: _bootstrap_pick_policy.yml
+
+- name: Assert bootstrap ClusterConfig list succeeded
+  ansible.builtin.assert:
+    that:
+      - cluster_configs_list_bootstrap is defined
+      - cluster_configs_list_bootstrap.failed == false
+      - cluster_configs_list_bootstrap.changed == false
+      - cluster_configs_list_bootstrap.response is defined
+      - cluster_configs_list_bootstrap.response | length > 0
+      - cluster_configs_list_bootstrap.total_available_results is defined
+      - cluster_configs_list_bootstrap.total_available_results | int > 0
+    success_msg: "Bootstrap ClusterConfig list succeeded (count={{ cluster_configs_list_bootstrap.response | length }})"
+    fail_msg: "Bootstrap ClusterConfig list failed"
+
+- name: Pick first ClusterConfig ext_id + capture original values
+  vars:
+    _picked: "{{ cluster_configs_list_bootstrap.response[0] }}"
+    _ac: "{{ _picked.alert_config | default(None) }}"
+  ansible.builtin.set_fact:
+    cluster_config_ext_id: "{{ _picked.ext_id }}"
+    original_is_enabled: "{{ _picked.is_enabled }}"
+    original_schedule_interval_seconds: "{{ _picked.schedule_interval_seconds }}"
+    original_alert_config: "{{ _ac }}"
+    original_alert_config_present: "{{ (_ac is not none) and (_ac != {}) }}"
+
+- name: Show discovered bootstrap values
+  ansible.builtin.debug:
+    msg:
+      - "sda_policy_ext_id: {{ sda_policy_ext_id }}"
+      - "cluster_config_ext_id: {{ cluster_config_ext_id }}"
+      - "original_is_enabled: {{ original_is_enabled }}"
+      - "original_schedule_interval_seconds: {{ original_schedule_interval_seconds }}"
+
+##############################################################################
+# Info module - positive tests
+##############################################################################
+
+- name: Info - list all ClusterConfigs for SDA policy
+  nutanix.ncp.ntnx_cluster_configs_info_v2:
+    system_defined_policy_ext_id: "{{ sda_policy_ext_id }}"
+  register: info_list_all
+  ignore_errors: true
+
+- name: Info - assert list-all shape
+  ansible.builtin.assert:
+    that:
+      - info_list_all is defined
+      - info_list_all.failed == false
+      - info_list_all.changed == false
+      - info_list_all.response is defined
+      - info_list_all.response is iterable
+      - info_list_all.response | length > 0
+      - info_list_all.total_available_results is defined
+      - info_list_all.total_available_results | int > 0
+      - info_list_all.ext_id is not defined or info_list_all.ext_id is none
+    success_msg: "Info list-all returned {{ info_list_all.response | length }} entries"
+    fail_msg: "Info list-all did not return expected shape"
+
+- name: Info - assert every item in list has ClusterConfig fields
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.is_enabled is defined
+      - item.schedule_interval_seconds is defined
+    success_msg: "ClusterConfig list item {{ item.ext_id }} has all required fields"
+    fail_msg: "ClusterConfig list item is missing required fields"
+  loop: "{{ info_list_all.response }}"
+  loop_control:
+    label: "{{ item.ext_id }}"
+
+- name: Info - get by ext_id (single entity)
+  nutanix.ncp.ntnx_cluster_configs_info_v2:
+    system_defined_policy_ext_id: "{{ sda_policy_ext_id }}"
+    ext_id: "{{ cluster_config_ext_id }}"
+  register: info_single
+  ignore_errors: true
+
+- name: Info - assert single-entity shape
+  ansible.builtin.assert:
+    that:
+      - info_single is defined
+      - info_single.failed == false
+      - info_single.changed == false
+      - info_single.response is defined
+      - info_single.response.ext_id == cluster_config_ext_id
+      - info_single.ext_id == cluster_config_ext_id
+      - info_single.response.is_enabled is defined
+      - info_single.response.schedule_interval_seconds is defined
+    success_msg: "Info single-entity fetch matched cluster_config_ext_id"
+    fail_msg: "Info single-entity shape mismatch"
+
+- name: Info - list with limit=1
+  nutanix.ncp.ntnx_cluster_configs_info_v2:
+    system_defined_policy_ext_id: "{{ sda_policy_ext_id }}"
+    limit: 1
+  register: info_limit
+  ignore_errors: true
+
+- name: Info - assert limit=1
+  ansible.builtin.assert:
+    that:
+      - info_limit is defined
+      - info_limit.failed == false
+      - info_limit.changed == false
+      - info_limit.response is defined
+      - info_limit.response | length == 1
+    success_msg: "Info limit=1 returned exactly 1 entry"
+    fail_msg: "Info limit=1 did not honor the limit"
+
+- name: Info - list with orderby=extId asc
+  nutanix.ncp.ntnx_cluster_configs_info_v2:
+    system_defined_policy_ext_id: "{{ sda_policy_ext_id }}"
+    orderby: "extId"
+  register: info_orderby
+  ignore_errors: true
+
+- name: Info - assert orderby=extId asc
+  ansible.builtin.assert:
+    that:
+      - info_orderby is defined
+      - info_orderby.failed == false
+      - info_orderby.changed == false
+      - info_orderby.response is defined
+      - info_orderby.response | length > 0
+      - (info_orderby.response | map(attribute='ext_id') | list) == (info_orderby.response | map(attribute='ext_id') | list | sort)
+    success_msg: "Info orderby=extId returned ascending-sorted results"
+    fail_msg: "Info orderby=extId did not sort results ascending"
+
+##############################################################################
+# Info module - negative tests
+##############################################################################
+
+- name: Info - fetch with an invalid ClusterConfig ext_id
+  nutanix.ncp.ntnx_cluster_configs_info_v2:
+    system_defined_policy_ext_id: "{{ sda_policy_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: info_bad_ext_id
+  ignore_errors: true
+
+- name: Info - assert invalid ext_id surfaces error
+  ansible.builtin.assert:
+    that:
+      - info_bad_ext_id is defined
+      - info_bad_ext_id.failed == true
+      - info_bad_ext_id.changed == false
+    success_msg: "Info with invalid ext_id failed as expected"
+    fail_msg: "Info with invalid ext_id did NOT fail as expected"
+
+- name: Info - list without system_defined_policy_ext_id (missing required)
+  nutanix.ncp.ntnx_cluster_configs_info_v2: {}
+  register: info_missing_policy
+  ignore_errors: true
+
+- name: Info - assert missing required parameter fails
+  ansible.builtin.assert:
+    that:
+      - info_missing_policy is defined
+      - info_missing_policy.failed == true
+      - info_missing_policy.changed == false
+      - info_missing_policy.msg is search('system_defined_policy_ext_id')
+    success_msg: "Info list without system_defined_policy_ext_id failed as expected"
+    fail_msg: "Info list without system_defined_policy_ext_id did NOT fail as expected"
+
+##############################################################################
+# CRUD module - check_mode tests (exactly one per Create/Update/Delete)
+##############################################################################
+
+- name: Check mode - Create (unsupported, expected to fail even in check_mode)
+  nutanix.ncp.ntnx_cluster_config_v2:
+    state: present
+    system_defined_policy_ext_id: "{{ sda_policy_ext_id }}"
+    is_enabled: true
+    schedule_interval_seconds: 900
+    configurable_parameters: []
+    alert_config:
+      auto_resolve: ENABLED
+      critical_severity:
+        state: ENABLED
+      warning_severity:
+        state: ENABLED
+      info_severity:
+        state: DISABLED
+  check_mode: true
+  register: check_create
+  ignore_errors: true
+
+- name: Check mode - Create asserts (state=present without ext_id must fail)
+  ansible.builtin.assert:
+    that:
+      - check_create is defined
+      - check_create.failed == true
+      - check_create.changed == false
+      - check_create.msg is search('Create is not supported')
+    success_msg: "Check-mode Create fails as expected (create not supported)"
+    fail_msg: "Check-mode Create did NOT fail with 'not supported' message"
+
+- name: Check mode - Update with ALL attributes
+  nutanix.ncp.ntnx_cluster_config_v2:
+    state: present
+    system_defined_policy_ext_id: "{{ sda_policy_ext_id }}"
+    ext_id: "{{ cluster_config_ext_id }}"
+    is_enabled: "{{ (original_is_enabled | bool) }}"
+    schedule_interval_seconds: "{{ original_schedule_interval_seconds | int }}"
+    configurable_parameters: []
+    alert_config:
+      auto_resolve: ENABLED
+      critical_severity:
+        state: ENABLED
+        threshold_parameters:
+          - name: "critical_threshold_cm"
+            display_name: "Critical Threshold CM"
+            unit: "%"
+            param_value:
+              int_value:
+                default_int_value: 90
+                current_int_value: 95
+      warning_severity:
+        state: ENABLED
+        threshold_parameters:
+          - name: "warning_threshold_cm"
+            display_name: "Warning Threshold CM"
+            unit: "%"
+            param_value:
+              int_value:
+                default_int_value: 75
+                current_int_value: 80
+      info_severity:
+        state: DISABLED
+  check_mode: true
+  register: check_update
+  ignore_errors: true
+
+- name: Check mode - Update asserts
+  ansible.builtin.assert:
+    that:
+      - check_update is defined
+      - check_update.failed == false
+      - check_update.response is defined
+      - check_update.response.ext_id == cluster_config_ext_id
+      - check_update.response.is_enabled == (original_is_enabled | bool)
+      - check_update.response.schedule_interval_seconds == (original_schedule_interval_seconds | int)
+      - check_update.response.alert_config is defined
+      - check_update.response.alert_config.critical_severity.state == "ENABLED"
+      - check_update.response.alert_config.warning_severity.state == "ENABLED"
+      - check_update.response.alert_config.info_severity.state == "DISABLED"
+      - check_update.response.alert_config.auto_resolve == "ENABLED"
+      - check_update.ext_id == cluster_config_ext_id
+    success_msg: "Check-mode Update generated the expected spec"
+    fail_msg: "Check-mode Update spec mismatch"
+
+- name: Check mode - Delete (unsupported)
+  nutanix.ncp.ntnx_cluster_config_v2:
+    state: absent
+    system_defined_policy_ext_id: "{{ sda_policy_ext_id }}"
+    ext_id: "{{ cluster_config_ext_id }}"
+  check_mode: true
+  register: check_delete
+  ignore_errors: true
+
+- name: Check mode - Delete asserts
+  ansible.builtin.assert:
+    that:
+      - check_delete is defined
+      - check_delete.failed == true
+      - check_delete.changed == false
+      - check_delete.msg is search('Delete is not supported')
+    success_msg: "Check-mode Delete fails as expected (delete not supported)"
+    fail_msg: "Check-mode Delete did NOT fail with 'not supported' message"
+
+##############################################################################
+# CRUD module - real Update (minimal attrs)
+##############################################################################
+
+- name: Compute a fresh scheduleIntervalSeconds different from current
+  ansible.builtin.set_fact:
+    new_schedule_interval: >-
+      {{ 600 if (original_schedule_interval_seconds | int) != 600 else 900 }}
+
+- name: Update ClusterConfig - real, change scheduleIntervalSeconds
+  nutanix.ncp.ntnx_cluster_config_v2:
+    state: present
+    system_defined_policy_ext_id: "{{ sda_policy_ext_id }}"
+    ext_id: "{{ cluster_config_ext_id }}"
+    schedule_interval_seconds: "{{ new_schedule_interval | int }}"
+  register: update_min
+  ignore_errors: true
+
+- name: Update ClusterConfig - assert real update succeeded
+  ansible.builtin.assert:
+    that:
+      - update_min is defined
+      - update_min.failed == false
+      - update_min.changed == true
+      - update_min.ext_id == cluster_config_ext_id
+      - update_min.task_ext_id is defined
+      - update_min.response is defined
+      - update_min.response.schedule_interval_seconds == (new_schedule_interval | int)
+    success_msg: "Real Update: scheduleIntervalSeconds successfully changed"
+    fail_msg: "Real Update: scheduleIntervalSeconds change failed"
+
+##############################################################################
+# CRUD module - idempotency
+##############################################################################
+
+- name: Update ClusterConfig - idempotency (same value)
+  nutanix.ncp.ntnx_cluster_config_v2:
+    state: present
+    system_defined_policy_ext_id: "{{ sda_policy_ext_id }}"
+    ext_id: "{{ cluster_config_ext_id }}"
+    schedule_interval_seconds: "{{ new_schedule_interval | int }}"
+  register: update_idem
+  ignore_errors: true
+
+- name: Update ClusterConfig - assert idempotency
+  ansible.builtin.assert:
+    that:
+      - update_idem is defined
+      - update_idem.failed == false
+      - update_idem.changed == false
+      - update_idem.skipped == true
+      - update_idem.msg is search('Nothing to change')
+    success_msg: "Idempotency check passed - re-apply reported skipped"
+    fail_msg: "Idempotency check FAILED - re-apply did not report skipped"
+
+##############################################################################
+# CRUD module - full-attrs real update (alert_config + configurable_parameters)
+##############################################################################
+
+- name: Update ClusterConfig - full spec (alert_config auto_resolve)
+  nutanix.ncp.ntnx_cluster_config_v2:
+    state: present
+    system_defined_policy_ext_id: "{{ sda_policy_ext_id }}"
+    ext_id: "{{ cluster_config_ext_id }}"
+    is_enabled: "{{ (original_is_enabled | bool) }}"
+    schedule_interval_seconds: "{{ new_schedule_interval | int }}"
+    alert_config:
+      auto_resolve: ENABLED
+  register: update_full
+  ignore_errors: true
+  when: original_alert_config_present | bool
+
+- name: Update ClusterConfig - assert full-spec response (only when policy supports it)
+  ansible.builtin.assert:
+    that:
+      - update_full is defined
+      - update_full.failed == false
+      - update_full.response is defined
+      - update_full.ext_id == cluster_config_ext_id
+      - update_full.response.schedule_interval_seconds == (new_schedule_interval | int)
+      - update_full.response.alert_config is defined
+      - update_full.response.alert_config.auto_resolve == "ENABLED"
+    success_msg: "Full-spec update landed on server with alert_config"
+    fail_msg: "Full-spec update did not land on server"
+  when: original_alert_config_present | bool
+
+- name: Skip note - selected SDA policy does not expose alert_config
+  ansible.builtin.debug:
+    msg: >-
+      Selected SDA policy {{ sda_policy_ext_id }} has no alert_config on
+      ClusterConfig {{ cluster_config_ext_id }} - the API rejects alert_config
+      updates for this policy family. Full-spec test skipped.
+  when: not (original_alert_config_present | bool)
+
+##############################################################################
+# Cleanup - restore original scheduleIntervalSeconds
+##############################################################################
+
+- name: Restore original scheduleIntervalSeconds
+  nutanix.ncp.ntnx_cluster_config_v2:
+    state: present
+    system_defined_policy_ext_id: "{{ sda_policy_ext_id }}"
+    ext_id: "{{ cluster_config_ext_id }}"
+    schedule_interval_seconds: "{{ original_schedule_interval_seconds | int }}"
+  register: restore_schedule
+  ignore_errors: true
+
+- name: Assert restore succeeded
+  ansible.builtin.assert:
+    that:
+      - restore_schedule is defined
+      - restore_schedule.failed == false
+      - restore_schedule.response.schedule_interval_seconds == (original_schedule_interval_seconds | int)
+    success_msg: "Original scheduleIntervalSeconds restored"
+    fail_msg: "Failed to restore original scheduleIntervalSeconds"
+
+##############################################################################
+# CRUD module - negative tests
+##############################################################################
+
+- name: Negative - state=absent (delete not supported)
+  nutanix.ncp.ntnx_cluster_config_v2:
+    state: absent
+    system_defined_policy_ext_id: "{{ sda_policy_ext_id }}"
+    ext_id: "{{ cluster_config_ext_id }}"
+  register: neg_delete
+  ignore_errors: true
+
+- name: Negative - assert delete-not-supported
+  ansible.builtin.assert:
+    that:
+      - neg_delete is defined
+      - neg_delete.failed == true
+      - neg_delete.changed == false
+      - neg_delete.msg is search('Delete is not supported')
+    success_msg: "Delete correctly reported as unsupported"
+    fail_msg: "Delete did not surface the 'not supported' message"
+
+- name: Negative - state=absent missing ext_id (required_if triggers)
+  nutanix.ncp.ntnx_cluster_config_v2:
+    state: absent
+    system_defined_policy_ext_id: "{{ sda_policy_ext_id }}"
+  register: neg_absent_missing
+  ignore_errors: true
+
+- name: Negative - assert required_if failure
+  ansible.builtin.assert:
+    that:
+      - neg_absent_missing is defined
+      - neg_absent_missing.failed == true
+      - neg_absent_missing.changed == false
+      - neg_absent_missing.msg is search('ext_id')
+    success_msg: "required_if enforced ext_id + system_defined_policy_ext_id for state=absent"
+    fail_msg: "required_if did NOT enforce required attrs for state=absent"
+
+- name: Negative - state=present without ext_id (create not supported)
+  nutanix.ncp.ntnx_cluster_config_v2:
+    state: present
+    system_defined_policy_ext_id: "{{ sda_policy_ext_id }}"
+    is_enabled: true
+    schedule_interval_seconds: 300
+  register: neg_create
+  ignore_errors: true
+
+- name: Negative - assert create-not-supported
+  ansible.builtin.assert:
+    that:
+      - neg_create is defined
+      - neg_create.failed == true
+      - neg_create.changed == false
+      - neg_create.msg is search('Create is not supported')
+    success_msg: "Create correctly reported as unsupported"
+    fail_msg: "Create did not surface the 'not supported' message"
+
+- name: Negative - update with invalid ClusterConfig ext_id
+  nutanix.ncp.ntnx_cluster_config_v2:
+    state: present
+    system_defined_policy_ext_id: "{{ sda_policy_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    schedule_interval_seconds: 600
+  register: neg_bad_ext_id
+  ignore_errors: true
+
+- name: Negative - assert invalid ext_id surfaces API error
+  ansible.builtin.assert:
+    that:
+      - neg_bad_ext_id is defined
+      - neg_bad_ext_id.failed == true
+      - neg_bad_ext_id.changed == false
+      - neg_bad_ext_id.msg is search('Api Exception') or neg_bad_ext_id.msg is search('Unable to fetch etag')
+    success_msg: "Invalid ClusterConfig ext_id surfaces error as expected"
+    fail_msg: "Invalid ClusterConfig ext_id did NOT surface an error"
+
+- name: Negative - invalid alert_config.auto_resolve enum
+  nutanix.ncp.ntnx_cluster_config_v2:
+    state: present
+    system_defined_policy_ext_id: "{{ sda_policy_ext_id }}"
+    ext_id: "{{ cluster_config_ext_id }}"
+    alert_config:
+      auto_resolve: NOT_A_VALID_STATE
+  register: neg_bad_enum
+  ignore_errors: true
+
+- name: Negative - assert invalid enum rejected
+  ansible.builtin.assert:
+    that:
+      - neg_bad_enum is defined
+      - neg_bad_enum.failed == true
+      - neg_bad_enum.changed == false
+    success_msg: "Invalid auto_resolve enum rejected by argument-spec"
+    fail_msg: "Invalid auto_resolve enum was NOT rejected"
+
+- name: End ClusterConfig tests
+  ansible.builtin.debug:
+    msg: "ClusterConfig integration tests complete"

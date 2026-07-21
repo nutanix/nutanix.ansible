@@ -1,0 +1,39 @@
+---
+# Probe one SDA policy candidate for ClusterConfig entries with a non-null
+# schedule_interval_seconds. If one is found, adopt it as sda_policy_ext_id
+# and stash the filtered list in cluster_configs_list_bootstrap.
+
+- name: Compute already-adopted flag
+  ansible.builtin.set_fact:
+    already_adopted: >-
+      {{ cluster_configs_list_bootstrap.response is defined
+         and (cluster_configs_list_bootstrap.response
+              | selectattr('schedule_interval_seconds', 'defined')
+              | selectattr('schedule_interval_seconds', 'ne', None)
+              | list | length) > 0 }}
+
+- name: Query ClusterConfigs for candidate SDA policy {{ candidate_sda.extId }}
+  nutanix.ncp.ntnx_cluster_configs_info_v2:
+    system_defined_policy_ext_id: "{{ candidate_sda.extId }}"
+  register: candidate_list
+  ignore_errors: true
+  when: not (already_adopted | bool)
+
+- name: Compute scheduled entries for this candidate
+  ansible.builtin.set_fact:
+    candidate_scheduled_entries: >-
+      {{ (candidate_list.response | default([]))
+         | selectattr('schedule_interval_seconds', 'defined')
+         | selectattr('schedule_interval_seconds', 'ne', None)
+         | list }}
+  when: not (already_adopted | bool)
+
+- name: Adopt candidate if it has scheduled entries
+  ansible.builtin.set_fact:
+    sda_policy_ext_id: "{{ candidate_sda.extId }}"
+    cluster_configs_list_bootstrap:
+      response: "{{ candidate_scheduled_entries }}"
+      total_available_results: "{{ candidate_list.total_available_results | default(candidate_scheduled_entries | length) }}"
+      failed: false
+      changed: false
+  when: not (already_adopted | bool) and (candidate_scheduled_entries | default([]) | length) > 0

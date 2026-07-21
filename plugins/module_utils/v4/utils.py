@@ -292,6 +292,13 @@ def strip_read_only_fields(spec, fields=None):
 
     The spec is mutated in place; it is also returned so callers can chain.
 
+    Some SDK-generated model classes expose read-only attributes as
+    ``@property`` descriptors without a deleter (e.g. monitoring.ClusterConfig
+    ``last_modified_by_user``). In that case ``delattr`` raises
+    ``AttributeError``; we fall back to setting the attribute to ``None``,
+    which mirrors ``delattr`` from the serializer's perspective (the field is
+    omitted / null on the wire).
+
     Args:
         spec (object): SDK model object to mutate.
         fields (Iterable[str] | None): Attribute names to remove.
@@ -304,5 +311,11 @@ def strip_read_only_fields(spec, fields=None):
 
     for field in fields:
         if hasattr(spec, field):
-            delattr(spec, field)
+            try:
+                delattr(spec, field)
+            except AttributeError:
+                try:
+                    setattr(spec, field, None)
+                except AttributeError:
+                    pass
     return spec
