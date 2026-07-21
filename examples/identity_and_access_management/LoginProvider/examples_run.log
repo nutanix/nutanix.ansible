@@ -1,0 +1,401 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [LoginProvider info playbook] *********************************************
+
+TASK [List all login providers] ************************************************
+ok: [localhost] => {"changed": false, "response": [{"created_time": "2026-06-29T07:18:36.283028+00:00", "ext_id": "d607d664-cc19-559f-a95c-4e8b4b7f6606", "isSharedWithAllProjects": true, "is_browser_login_supported": true, "last_updated_time": "2026-06-29T07:18:36.283028+00:00", "links": null, "name": "local", "projectExtId": "00000000-0000-0000-0000-000000000000", "tenant_id": null, "type": "local"}, {"created_time": "2026-06-29T07:18:36.285213+00:00", "ext_id": "0572e531-4c2c-57ef-92a6-b33aabe61806", "isSharedWithAllProjects": true, "is_browser_login_supported": false, "last_updated_time": "2026-06-29T07:18:36.285213+00:00", "links": null, "name": "defaultserviceaccount", "projectExtId": "00000000-0000-0000-0000-000000000000", "tenant_id": null, "type": "service_account"}, {"created_time": "2026-06-29T12:09:24.415342+00:00", "ext_id": "fb45ca3c-2e8e-5503-b09b-680effd9cb9f", "isSharedWithAllProjects": false, "is_browser_login_supported": true, "last_updated_time": "2026-07-02T08:25:26.057867+00:00", "links": null, "name": "open_ldap", "projectExtId": "00000000-0000-0000-0000-000000000000", "sharedWithProjects": ["447de02d-aace-42a7-9370-70c27afe40eb", "81b830aa-df69-4291-b414-bb14ccc059b7", "200e3247-a20d-457e-9bbc-5655c1d7a8f3", "765e9079-9ba6-433d-b797-415a8b5b7343", "2de2c23e-8549-4e78-8993-e8335df25c61", "0333a53c-686c-4841-a70d-e3420ac4610a", "fefb6595-7de1-4c3e-9146-7ea88681bf1e", "a044fc11-8139-434d-81ac-50ff8cbb0653", "12f49431-5082-4d5b-a46f-16996331f1fe", "43fb3bc1-fb6c-40ff-88ef-3a0b9a8ae60a", "440def4d-a8b7-450f-9f95-cf560b992b32"], "tenant_id": null, "type": "ldap"}, {"created_time": "2026-06-29T12:09:31.560249+00:00", "ext_id": "368169cc-5293-543e-901d-4ba26874967a", "isSharedWithAllProjects": false, "is_browser_login_supported": true, "last_updated_time": "2026-06-29T12:09:31.560249+00:00", "links": null, "name": "adfs19", "projectExtId": "00000000-0000-0000-0000-000000000000", "tenant_id": null, "type": "saml"}, {"created_time": "2026-06-30T06:10:07.782189+00:00", "ext_id": "7e9749f3-e3ee-5f9b-ade8-e359777f681a", "isSharedWithAllProjects": false, "is_browser_login_supported": true, "last_updated_time": "2026-07-02T08:22:17.084787+00:00", "links": null, "name": "adfs192", "projectExtId": "00000000-0000-0000-0000-000000000000", "sharedWithProjects": ["2de2c23e-8549-4e78-8993-e8335df25c61", "0333a53c-686c-4841-a70d-e3420ac4610a", "fefb6595-7de1-4c3e-9146-7ea88681bf1e"], "tenant_id": null, "type": "ldap"}, {"created_time": "2026-07-02T06:35:18.579867+00:00", "ext_id": "d711f713-cdf5-5ee9-9936-4e67373eb842", "isSharedWithAllProjects": false, "is_browser_login_supported": true, "last_updated_time": "2026-07-02T06:35:52.298279+00:00", "links": null, "name": "qa_nucalm_io", "projectExtId": "00000000-0000-0000-0000-000000000000", "sharedWithProjects": ["27962990-9430-4682-abe5-df6f9e5ce34d"], "tenant_id": null, "type": "ldap"}, {"created_time": "2026-07-21T06:32:49.900568+00:00", "ext_id": "b420b281-f576-57c4-98ba-65c4f2c22735", "isSharedWithAllProjects": false, "is_browser_login_supported": true, "last_updated_time": "2026-07-21T06:32:49.900568+00:00", "links": null, "name": "ansible-spmd-test-bnlwscbv", "projectExtId": "00000000-0000-0000-0000-000000000000", "tenant_id": null, "type": "saml"}], "total_available_results": 7}
+
+TASK [Show all login providers] ************************************************
+ok: [localhost] => {
+    "all_providers": {
+        "changed": false,
+        "failed": false,
+        "response": [
+            {
+                "created_time": "2026-06-29T07:18:36.283028+00:00",
+                "ext_id": "d607d664-cc19-559f-a95c-4e8b4b7f6606",
+                "isSharedWithAllProjects": true,
+                "is_browser_login_supported": true,
+                "last_updated_time": "2026-06-29T07:18:36.283028+00:00",
+                "links": null,
+                "name": "local",
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "tenant_id": null,
+                "type": "local"
+            },
+            {
+                "created_time": "2026-06-29T07:18:36.285213+00:00",
+                "ext_id": "0572e531-4c2c-57ef-92a6-b33aabe61806",
+                "isSharedWithAllProjects": true,
+                "is_browser_login_supported": false,
+                "last_updated_time": "2026-06-29T07:18:36.285213+00:00",
+                "links": null,
+                "name": "defaultserviceaccount",
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "tenant_id": null,
+                "type": "service_account"
+            },
+            {
+                "created_time": "2026-06-29T12:09:24.415342+00:00",
+                "ext_id": "fb45ca3c-2e8e-5503-b09b-680effd9cb9f",
+                "isSharedWithAllProjects": false,
+                "is_browser_login_supported": true,
+                "last_updated_time": "2026-07-02T08:25:26.057867+00:00",
+                "links": null,
+                "name": "open_ldap",
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "sharedWithProjects": [
+                    "447de02d-aace-42a7-9370-70c27afe40eb",
+                    "81b830aa-df69-4291-b414-bb14ccc059b7",
+                    "200e3247-a20d-457e-9bbc-5655c1d7a8f3",
+                    "765e9079-9ba6-433d-b797-415a8b5b7343",
+                    "2de2c23e-8549-4e78-8993-e8335df25c61",
+                    "0333a53c-686c-4841-a70d-e3420ac4610a",
+                    "fefb6595-7de1-4c3e-9146-7ea88681bf1e",
+                    "a044fc11-8139-434d-81ac-50ff8cbb0653",
+                    "12f49431-5082-4d5b-a46f-16996331f1fe",
+                    "43fb3bc1-fb6c-40ff-88ef-3a0b9a8ae60a",
+                    "440def4d-a8b7-450f-9f95-cf560b992b32"
+                ],
+                "tenant_id": null,
+                "type": "ldap"
+            },
+            {
+                "created_time": "2026-06-29T12:09:31.560249+00:00",
+                "ext_id": "368169cc-5293-543e-901d-4ba26874967a",
+                "isSharedWithAllProjects": false,
+                "is_browser_login_supported": true,
+                "last_updated_time": "2026-06-29T12:09:31.560249+00:00",
+                "links": null,
+                "name": "adfs19",
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "tenant_id": null,
+                "type": "saml"
+            },
+            {
+                "created_time": "2026-06-30T06:10:07.782189+00:00",
+                "ext_id": "7e9749f3-e3ee-5f9b-ade8-e359777f681a",
+                "isSharedWithAllProjects": false,
+                "is_browser_login_supported": true,
+                "last_updated_time": "2026-07-02T08:22:17.084787+00:00",
+                "links": null,
+                "name": "adfs192",
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "sharedWithProjects": [
+                    "2de2c23e-8549-4e78-8993-e8335df25c61",
+                    "0333a53c-686c-4841-a70d-e3420ac4610a",
+                    "fefb6595-7de1-4c3e-9146-7ea88681bf1e"
+                ],
+                "tenant_id": null,
+                "type": "ldap"
+            },
+            {
+                "created_time": "2026-07-02T06:35:18.579867+00:00",
+                "ext_id": "d711f713-cdf5-5ee9-9936-4e67373eb842",
+                "isSharedWithAllProjects": false,
+                "is_browser_login_supported": true,
+                "last_updated_time": "2026-07-02T06:35:52.298279+00:00",
+                "links": null,
+                "name": "qa_nucalm_io",
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "sharedWithProjects": [
+                    "27962990-9430-4682-abe5-df6f9e5ce34d"
+                ],
+                "tenant_id": null,
+                "type": "ldap"
+            },
+            {
+                "created_time": "2026-07-21T06:32:49.900568+00:00",
+                "ext_id": "b420b281-f576-57c4-98ba-65c4f2c22735",
+                "isSharedWithAllProjects": false,
+                "is_browser_login_supported": true,
+                "last_updated_time": "2026-07-21T06:32:49.900568+00:00",
+                "links": null,
+                "name": "ansible-spmd-test-bnlwscbv",
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "tenant_id": null,
+                "type": "saml"
+            }
+        ],
+        "total_available_results": 7
+    }
+}
+
+TASK [Capture ext_id of the first provider (used for get-by-ext_id demo)] ******
+ok: [localhost] => {"ansible_facts": {"first_provider_ext_id": "d607d664-cc19-559f-a95c-4e8b4b7f6606"}, "changed": false}
+
+TASK [Get a single login provider by ext_id] ***********************************
+ok: [localhost] => {"changed": false, "ext_id": "d607d664-cc19-559f-a95c-4e8b4b7f6606", "response": {"created_time": "2026-06-29T07:18:36.283028+00:00", "ext_id": "d607d664-cc19-559f-a95c-4e8b4b7f6606", "isSharedWithAllProjects": true, "is_browser_login_supported": true, "last_updated_time": "2026-06-29T07:18:36.283028+00:00", "links": null, "name": "local", "projectExtId": "00000000-0000-0000-0000-000000000000", "tenant_id": null, "type": "local"}}
+
+TASK [Show single login provider result] ***************************************
+ok: [localhost] => {
+    "single_provider": {
+        "changed": false,
+        "ext_id": "d607d664-cc19-559f-a95c-4e8b4b7f6606",
+        "failed": false,
+        "response": {
+            "created_time": "2026-06-29T07:18:36.283028+00:00",
+            "ext_id": "d607d664-cc19-559f-a95c-4e8b4b7f6606",
+            "isSharedWithAllProjects": true,
+            "is_browser_login_supported": true,
+            "last_updated_time": "2026-06-29T07:18:36.283028+00:00",
+            "links": null,
+            "name": "local",
+            "projectExtId": "00000000-0000-0000-0000-000000000000",
+            "tenant_id": null,
+            "type": "local"
+        }
+    }
+}
+
+TASK [Filter login providers by name (fetch the built-in 'local' provider)] ****
+ok: [localhost] => {"changed": false, "response": [{"created_time": "2026-06-29T07:18:36.283028+00:00", "ext_id": "d607d664-cc19-559f-a95c-4e8b4b7f6606", "isSharedWithAllProjects": true, "is_browser_login_supported": true, "last_updated_time": "2026-06-29T07:18:36.283028+00:00", "links": null, "name": "local", "projectExtId": "00000000-0000-0000-0000-000000000000", "tenant_id": null, "type": "local"}], "total_available_results": 1}
+
+TASK [Show LOCAL login provider] ***********************************************
+ok: [localhost] => {
+    "local_providers": {
+        "changed": false,
+        "failed": false,
+        "response": [
+            {
+                "created_time": "2026-06-29T07:18:36.283028+00:00",
+                "ext_id": "d607d664-cc19-559f-a95c-4e8b4b7f6606",
+                "isSharedWithAllProjects": true,
+                "is_browser_login_supported": true,
+                "last_updated_time": "2026-06-29T07:18:36.283028+00:00",
+                "links": null,
+                "name": "local",
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "tenant_id": null,
+                "type": "local"
+            }
+        ],
+        "total_available_results": 1
+    }
+}
+
+TASK [List login providers with pagination (limit=2)] **************************
+ok: [localhost] => {"changed": false, "response": [{"created_time": "2026-06-29T07:18:36.283028+00:00", "ext_id": "d607d664-cc19-559f-a95c-4e8b4b7f6606", "isSharedWithAllProjects": true, "is_browser_login_supported": true, "last_updated_time": "2026-06-29T07:18:36.283028+00:00", "links": null, "name": "local", "projectExtId": "00000000-0000-0000-0000-000000000000", "tenant_id": null, "type": "local"}, {"created_time": "2026-06-29T07:18:36.285213+00:00", "ext_id": "0572e531-4c2c-57ef-92a6-b33aabe61806", "isSharedWithAllProjects": true, "is_browser_login_supported": false, "last_updated_time": "2026-06-29T07:18:36.285213+00:00", "links": null, "name": "defaultserviceaccount", "projectExtId": "00000000-0000-0000-0000-000000000000", "tenant_id": null, "type": "service_account"}], "total_available_results": 2}
+
+TASK [Show paginated login providers] ******************************************
+ok: [localhost] => {
+    "limited_providers": {
+        "changed": false,
+        "failed": false,
+        "response": [
+            {
+                "created_time": "2026-06-29T07:18:36.283028+00:00",
+                "ext_id": "d607d664-cc19-559f-a95c-4e8b4b7f6606",
+                "isSharedWithAllProjects": true,
+                "is_browser_login_supported": true,
+                "last_updated_time": "2026-06-29T07:18:36.283028+00:00",
+                "links": null,
+                "name": "local",
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "tenant_id": null,
+                "type": "local"
+            },
+            {
+                "created_time": "2026-06-29T07:18:36.285213+00:00",
+                "ext_id": "0572e531-4c2c-57ef-92a6-b33aabe61806",
+                "isSharedWithAllProjects": true,
+                "is_browser_login_supported": false,
+                "last_updated_time": "2026-06-29T07:18:36.285213+00:00",
+                "links": null,
+                "name": "defaultserviceaccount",
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "tenant_id": null,
+                "type": "service_account"
+            }
+        ],
+        "total_available_results": 2
+    }
+}
+
+TASK [List login providers sorted by createdTime ascending] ********************
+ok: [localhost] => {"changed": false, "response": [{"created_time": "2026-06-29T07:18:36.283028+00:00", "ext_id": "d607d664-cc19-559f-a95c-4e8b4b7f6606", "isSharedWithAllProjects": true, "is_browser_login_supported": true, "last_updated_time": "2026-06-29T07:18:36.283028+00:00", "links": null, "name": "local", "projectExtId": "00000000-0000-0000-0000-000000000000", "tenant_id": null, "type": "local"}, {"created_time": "2026-06-29T07:18:36.285213+00:00", "ext_id": "0572e531-4c2c-57ef-92a6-b33aabe61806", "isSharedWithAllProjects": true, "is_browser_login_supported": false, "last_updated_time": "2026-06-29T07:18:36.285213+00:00", "links": null, "name": "defaultserviceaccount", "projectExtId": "00000000-0000-0000-0000-000000000000", "tenant_id": null, "type": "service_account"}, {"created_time": "2026-06-29T12:09:24.415342+00:00", "ext_id": "fb45ca3c-2e8e-5503-b09b-680effd9cb9f", "isSharedWithAllProjects": false, "is_browser_login_supported": true, "last_updated_time": "2026-07-02T08:25:26.057867+00:00", "links": null, "name": "open_ldap", "projectExtId": "00000000-0000-0000-0000-000000000000", "sharedWithProjects": ["447de02d-aace-42a7-9370-70c27afe40eb", "81b830aa-df69-4291-b414-bb14ccc059b7", "200e3247-a20d-457e-9bbc-5655c1d7a8f3", "765e9079-9ba6-433d-b797-415a8b5b7343", "2de2c23e-8549-4e78-8993-e8335df25c61", "0333a53c-686c-4841-a70d-e3420ac4610a", "fefb6595-7de1-4c3e-9146-7ea88681bf1e", "a044fc11-8139-434d-81ac-50ff8cbb0653", "12f49431-5082-4d5b-a46f-16996331f1fe", "43fb3bc1-fb6c-40ff-88ef-3a0b9a8ae60a", "440def4d-a8b7-450f-9f95-cf560b992b32"], "tenant_id": null, "type": "ldap"}, {"created_time": "2026-06-29T12:09:31.560249+00:00", "ext_id": "368169cc-5293-543e-901d-4ba26874967a", "isSharedWithAllProjects": false, "is_browser_login_supported": true, "last_updated_time": "2026-06-29T12:09:31.560249+00:00", "links": null, "name": "adfs19", "projectExtId": "00000000-0000-0000-0000-000000000000", "tenant_id": null, "type": "saml"}, {"created_time": "2026-06-30T06:10:07.782189+00:00", "ext_id": "7e9749f3-e3ee-5f9b-ade8-e359777f681a", "isSharedWithAllProjects": false, "is_browser_login_supported": true, "last_updated_time": "2026-07-02T08:22:17.084787+00:00", "links": null, "name": "adfs192", "projectExtId": "00000000-0000-0000-0000-000000000000", "sharedWithProjects": ["2de2c23e-8549-4e78-8993-e8335df25c61", "0333a53c-686c-4841-a70d-e3420ac4610a", "fefb6595-7de1-4c3e-9146-7ea88681bf1e"], "tenant_id": null, "type": "ldap"}, {"created_time": "2026-07-02T06:35:18.579867+00:00", "ext_id": "d711f713-cdf5-5ee9-9936-4e67373eb842", "isSharedWithAllProjects": false, "is_browser_login_supported": true, "last_updated_time": "2026-07-02T06:35:52.298279+00:00", "links": null, "name": "qa_nucalm_io", "projectExtId": "00000000-0000-0000-0000-000000000000", "sharedWithProjects": ["27962990-9430-4682-abe5-df6f9e5ce34d"], "tenant_id": null, "type": "ldap"}], "total_available_results": 6}
+
+TASK [Show sorted login providers] *********************************************
+ok: [localhost] => {
+    "sorted_providers": {
+        "changed": false,
+        "failed": false,
+        "response": [
+            {
+                "created_time": "2026-06-29T07:18:36.283028+00:00",
+                "ext_id": "d607d664-cc19-559f-a95c-4e8b4b7f6606",
+                "isSharedWithAllProjects": true,
+                "is_browser_login_supported": true,
+                "last_updated_time": "2026-06-29T07:18:36.283028+00:00",
+                "links": null,
+                "name": "local",
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "tenant_id": null,
+                "type": "local"
+            },
+            {
+                "created_time": "2026-06-29T07:18:36.285213+00:00",
+                "ext_id": "0572e531-4c2c-57ef-92a6-b33aabe61806",
+                "isSharedWithAllProjects": true,
+                "is_browser_login_supported": false,
+                "last_updated_time": "2026-06-29T07:18:36.285213+00:00",
+                "links": null,
+                "name": "defaultserviceaccount",
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "tenant_id": null,
+                "type": "service_account"
+            },
+            {
+                "created_time": "2026-06-29T12:09:24.415342+00:00",
+                "ext_id": "fb45ca3c-2e8e-5503-b09b-680effd9cb9f",
+                "isSharedWithAllProjects": false,
+                "is_browser_login_supported": true,
+                "last_updated_time": "2026-07-02T08:25:26.057867+00:00",
+                "links": null,
+                "name": "open_ldap",
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "sharedWithProjects": [
+                    "447de02d-aace-42a7-9370-70c27afe40eb",
+                    "81b830aa-df69-4291-b414-bb14ccc059b7",
+                    "200e3247-a20d-457e-9bbc-5655c1d7a8f3",
+                    "765e9079-9ba6-433d-b797-415a8b5b7343",
+                    "2de2c23e-8549-4e78-8993-e8335df25c61",
+                    "0333a53c-686c-4841-a70d-e3420ac4610a",
+                    "fefb6595-7de1-4c3e-9146-7ea88681bf1e",
+                    "a044fc11-8139-434d-81ac-50ff8cbb0653",
+                    "12f49431-5082-4d5b-a46f-16996331f1fe",
+                    "43fb3bc1-fb6c-40ff-88ef-3a0b9a8ae60a",
+                    "440def4d-a8b7-450f-9f95-cf560b992b32"
+                ],
+                "tenant_id": null,
+                "type": "ldap"
+            },
+            {
+                "created_time": "2026-06-29T12:09:31.560249+00:00",
+                "ext_id": "368169cc-5293-543e-901d-4ba26874967a",
+                "isSharedWithAllProjects": false,
+                "is_browser_login_supported": true,
+                "last_updated_time": "2026-06-29T12:09:31.560249+00:00",
+                "links": null,
+                "name": "adfs19",
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "tenant_id": null,
+                "type": "saml"
+            },
+            {
+                "created_time": "2026-06-30T06:10:07.782189+00:00",
+                "ext_id": "7e9749f3-e3ee-5f9b-ade8-e359777f681a",
+                "isSharedWithAllProjects": false,
+                "is_browser_login_supported": true,
+                "last_updated_time": "2026-07-02T08:22:17.084787+00:00",
+                "links": null,
+                "name": "adfs192",
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "sharedWithProjects": [
+                    "2de2c23e-8549-4e78-8993-e8335df25c61",
+                    "0333a53c-686c-4841-a70d-e3420ac4610a",
+                    "fefb6595-7de1-4c3e-9146-7ea88681bf1e"
+                ],
+                "tenant_id": null,
+                "type": "ldap"
+            },
+            {
+                "created_time": "2026-07-02T06:35:18.579867+00:00",
+                "ext_id": "d711f713-cdf5-5ee9-9936-4e67373eb842",
+                "isSharedWithAllProjects": false,
+                "is_browser_login_supported": true,
+                "last_updated_time": "2026-07-02T06:35:52.298279+00:00",
+                "links": null,
+                "name": "qa_nucalm_io",
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "sharedWithProjects": [
+                    "27962990-9430-4682-abe5-df6f9e5ce34d"
+                ],
+                "tenant_id": null,
+                "type": "ldap"
+            }
+        ],
+        "total_available_results": 6
+    }
+}
+
+TASK [List login providers with select projection (name,type,extId only)] ******
+ok: [localhost] => {"changed": false, "response": [{"created_time": null, "ext_id": "d607d664-cc19-559f-a95c-4e8b4b7f6606", "is_browser_login_supported": null, "last_updated_time": null, "links": null, "name": "local", "tenant_id": null, "type": "local"}, {"created_time": null, "ext_id": "0572e531-4c2c-57ef-92a6-b33aabe61806", "is_browser_login_supported": null, "last_updated_time": null, "links": null, "name": "defaultserviceaccount", "tenant_id": null, "type": "service_account"}, {"created_time": null, "ext_id": "fb45ca3c-2e8e-5503-b09b-680effd9cb9f", "is_browser_login_supported": null, "last_updated_time": null, "links": null, "name": "open_ldap", "tenant_id": null, "type": "ldap"}, {"created_time": null, "ext_id": "368169cc-5293-543e-901d-4ba26874967a", "is_browser_login_supported": null, "last_updated_time": null, "links": null, "name": "adfs19", "tenant_id": null, "type": "saml"}, {"created_time": null, "ext_id": "7e9749f3-e3ee-5f9b-ade8-e359777f681a", "is_browser_login_supported": null, "last_updated_time": null, "links": null, "name": "adfs192", "tenant_id": null, "type": "ldap"}, {"created_time": null, "ext_id": "d711f713-cdf5-5ee9-9936-4e67373eb842", "is_browser_login_supported": null, "last_updated_time": null, "links": null, "name": "qa_nucalm_io", "tenant_id": null, "type": "ldap"}], "total_available_results": 6}
+
+TASK [Show projected login providers] ******************************************
+ok: [localhost] => {
+    "partial_providers": {
+        "changed": false,
+        "failed": false,
+        "response": [
+            {
+                "created_time": null,
+                "ext_id": "d607d664-cc19-559f-a95c-4e8b4b7f6606",
+                "is_browser_login_supported": null,
+                "last_updated_time": null,
+                "links": null,
+                "name": "local",
+                "tenant_id": null,
+                "type": "local"
+            },
+            {
+                "created_time": null,
+                "ext_id": "0572e531-4c2c-57ef-92a6-b33aabe61806",
+                "is_browser_login_supported": null,
+                "last_updated_time": null,
+                "links": null,
+                "name": "defaultserviceaccount",
+                "tenant_id": null,
+                "type": "service_account"
+            },
+            {
+                "created_time": null,
+                "ext_id": "fb45ca3c-2e8e-5503-b09b-680effd9cb9f",
+                "is_browser_login_supported": null,
+                "last_updated_time": null,
+                "links": null,
+                "name": "open_ldap",
+                "tenant_id": null,
+                "type": "ldap"
+            },
+            {
+                "created_time": null,
+                "ext_id": "368169cc-5293-543e-901d-4ba26874967a",
+                "is_browser_login_supported": null,
+                "last_updated_time": null,
+                "links": null,
+                "name": "adfs19",
+                "tenant_id": null,
+                "type": "saml"
+            },
+            {
+                "created_time": null,
+                "ext_id": "7e9749f3-e3ee-5f9b-ade8-e359777f681a",
+                "is_browser_login_supported": null,
+                "last_updated_time": null,
+                "links": null,
+                "name": "adfs192",
+                "tenant_id": null,
+                "type": "ldap"
+            },
+            {
+                "created_time": null,
+                "ext_id": "d711f713-cdf5-5ee9-9936-4e67373eb842",
+                "is_browser_login_supported": null,
+                "last_updated_time": null,
+                "links": null,
+                "name": "qa_nucalm_io",
+                "tenant_id": null,
+                "type": "ldap"
+            }
+        ],
+        "total_available_results": 6
+    }
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=13   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
