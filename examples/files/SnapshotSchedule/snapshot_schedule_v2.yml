@@ -1,0 +1,69 @@
+---
+# Summary:
+# This playbook demonstrates the lifecycle of snapshot schedules on a Nutanix
+# Files file server using the v4 modules:
+#   1. Create a DAILY snapshot schedule on a file server
+#   2. Update the created schedule (retention and frequency)
+#   3. Fetch the schedule details using its external ID
+#   4. List all snapshot schedules on the file server
+#   5. Delete the snapshot schedule
+
+- name: Nutanix Files - Snapshot Schedule playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ pc_ip | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ pc_username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ pc_password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: false
+  tasks:
+    - name: Set input variables
+      ansible.builtin.set_fact:
+        file_server_ext_id: "{{ file_server_ext_id | default('d1234567-89ab-cdef-0123-456789abcdef') }}"
+
+    - name: Create daily snapshot schedule with all fields
+      nutanix.ncp.ntnx_snapshot_schedule_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        type: "DAILY"
+        max_retention_count: 7
+        schedule:
+          daily_schedule:
+            frequency: 1
+      register: created_schedule
+      ignore_errors: true
+
+    - name: Update snapshot schedule with all fields
+      nutanix.ncp.ntnx_snapshot_schedule_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ created_schedule.ext_id }}"
+        type: "DAILY"
+        max_retention_count: 14
+        schedule:
+          daily_schedule:
+            frequency: 2
+      register: updated_schedule
+      ignore_errors: true
+
+    - name: Get snapshot schedule using ext_id
+      nutanix.ncp.ntnx_snapshot_schedules_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ created_schedule.ext_id }}"
+      register: fetched_schedule
+      ignore_errors: true
+
+    - name: List all snapshot schedules for the file server
+      nutanix.ncp.ntnx_snapshot_schedules_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+      register: all_schedules
+      ignore_errors: true
+
+    - name: Delete snapshot schedule
+      nutanix.ncp.ntnx_snapshot_schedule_v2:
+        state: absent
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ created_schedule.ext_id }}"
+      register: deleted_schedule
+      ignore_errors: true
