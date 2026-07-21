@@ -1,0 +1,25 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [VM Startup Policy Dependency Conflict Dependent VMs info playbook] *******
+
+TASK [Set common variables for the playbook] ***********************************
+ok: [localhost] => {"ansible_facts": {"dependency_conflict_ext_id": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d", "target_dependent_vm_ext_id": "aabbccdd-1111-2222-3333-444455556666", "vm_startup_policy_ext_id": "b32c4b09-4b40-4d3f-8f97-2f81b06ba6ea"}, "changed": false}
+
+TASK [List all dependent VMs of a Dependency conflict of a VM startup policy] ***
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching VmStartupPolicyDependencyConflictDependentVms info", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "argumentsMap": {"policy_uuid": "b32c4b09-4b40-4d3f-8f97-2f81b06ba6ea"}, "code": "VMM-34060", "errorGroup": "POLICY_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the policy with UUID 'b32c4b09-4b40-4d3f-8f97-2f81b06ba6ea', because it is not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [List dependent VMs with pagination (page/limit)] *************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching VmStartupPolicyDependencyConflictDependentVms info", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "argumentsMap": {"policy_uuid": "b32c4b09-4b40-4d3f-8f97-2f81b06ba6ea"}, "code": "VMM-34060", "errorGroup": "POLICY_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the policy with UUID 'b32c4b09-4b40-4d3f-8f97-2f81b06ba6ea', because it is not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [Fetch a specific dependent VM using ext_id (client-side filter)] *********
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching VmStartupPolicyDependencyConflictDependentVms info", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "argumentsMap": {"policy_uuid": "b32c4b09-4b40-4d3f-8f97-2f81b06ba6ea"}, "code": "VMM-34060", "errorGroup": "POLICY_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the policy with UUID 'b32c4b09-4b40-4d3f-8f97-2f81b06ba6ea', because it is not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=4    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=3   
+

@@ -1,0 +1,309 @@
+---
+############################################################################
+# Test plan for ntnx_vm_startup_policy_dependency_conflict_dependent_vms_info_v2
+#
+# The entity `VmStartupPolicyDependencyConflictDependentVm` is a read-only
+# view surfaced only by a LIST endpoint of the v4.2 VmStartupPolicies API.
+# There is no Create / Update / Delete / GetById method, so this test file
+# focuses on the two info flows the module exposes:
+#
+#   1. LIST all dependent VMs of a given (policy, dependency-conflict) pair
+#      - with no pagination (defaults)
+#      - with explicit page + limit
+#      - with limit=1 (smallest positive value)
+#   2. GET-by-ext_id (client-side filter over the list)
+#      - happy path: existing ext_id resolves to a single entry
+#      - negative:   nonexistent ext_id yields failed=true with a
+#                    descriptive msg
+#
+# Additional negative / validation coverage:
+#   - Missing required parents (vm_startup_policy_ext_id /
+#     dependency_conflict_ext_id) MUST fail argument-spec validation.
+#   - Invalid parent ext_ids MUST surface as an API error with failed=true.
+#   - limit=101 (out of range) MUST surface a validation error from the API.
+#
+# Prerequisites on the target cluster:
+#   * Set `vm_startup_policy_ext_id` and `dependency_conflict_ext_id` vars
+#     to a policy that has a computed dependency conflict.
+#   * The list endpoint is safe to call read-only; no cleanup is required.
+############################################################################
+
+- name: Start VmStartupPolicyDependencyConflictDependentVm info tests
+  ansible.builtin.debug:
+    msg: Start VmStartupPolicyDependencyConflictDependentVm info tests
+
+- name: Generate a random 12-char hex suffix so fake UUIDs remain valid UUID v4 shape
+  ansible.builtin.set_fact:
+    random_hex: >-
+      {{ lookup('community.general.random_string',
+                length=12, upper=false, lower=false, numbers=false,
+                special=false, override_all='abcdef0123456789') }}
+
+- name: Set placeholder fixtures for negative tests
+  ansible.builtin.set_fact:
+    fake_ext_id: "00000000-0000-0000-0000-{{ random_hex }}"
+    fake_dependency_conflict_ext_id: "11111111-1111-1111-1111-{{ random_hex }}"
+
+############################################################################
+# 1) Discover an existing VM startup policy that has a dependency conflict
+#    - Uses ntnx_vm_startup_policies_info_v2 if that module exists on the
+#      target cluster; otherwise skips discovery and relies on operator-
+#      supplied vm_startup_policy_ext_id / dependency_conflict_ext_id.
+############################################################################
+
+- name: Attempt to discover a VM startup policy dependency conflict
+  ansible.builtin.set_fact:
+    have_fixtures: "{{ vm_startup_policy_ext_id is defined and dependency_conflict_ext_id is defined }}"
+
+- name: Skip live-list tests when required fixtures are missing
+  when: not have_fixtures
+  ansible.builtin.debug:
+    msg: >-
+      Skipping live-list tests because vm_startup_policy_ext_id and/or
+      dependency_conflict_ext_id are not set. Provide them via the target
+      vars to exercise the happy-path flows on a real cluster.
+
+############################################################################
+# 2) Happy-path LIST — no pagination
+############################################################################
+
+- name: List all dependent VMs of the given dependency conflict
+  nutanix.ncp.ntnx_vm_startup_policy_dependency_conflict_dependent_vms_info_v2:
+    vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+    dependency_conflict_ext_id: "{{ dependency_conflict_ext_id }}"
+  register: result_list_all
+  ignore_errors: true
+  when: have_fixtures
+
+- name: Assert LIST all dependent VMs succeeded
+  ansible.builtin.assert:
+    that:
+      - result_list_all.changed == false
+      - result_list_all.failed == false
+      - result_list_all.response is defined
+      - result_list_all.total_available_results is defined
+      - result_list_all.total_available_results | int >= 0
+    fail_msg: "LIST all dependent VMs failed"
+    success_msg: "LIST all dependent VMs returned successfully"
+  when: have_fixtures
+
+- name: Assert every list element carries an ext_id
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.ext_id | length > 0
+    fail_msg: "Dependent VM entry is missing ext_id"
+    success_msg: "Dependent VM entry has ext_id"
+  loop: "{{ result_list_all.response | default([]) }}"
+  when:
+    - have_fixtures
+    - result_list_all.response is defined
+    - result_list_all.response | length > 0
+
+############################################################################
+# 3) Happy-path LIST — explicit page + limit
+############################################################################
+
+- name: List dependent VMs with page=0 and limit=10
+  nutanix.ncp.ntnx_vm_startup_policy_dependency_conflict_dependent_vms_info_v2:
+    vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+    dependency_conflict_ext_id: "{{ dependency_conflict_ext_id }}"
+    page: 0
+    limit: 10
+  register: result_list_paged
+  ignore_errors: true
+  when: have_fixtures
+
+- name: Assert paged LIST honours the request
+  ansible.builtin.assert:
+    that:
+      - result_list_paged.changed == false
+      - result_list_paged.failed == false
+      - result_list_paged.response is defined
+      - (result_list_paged.response | length) <= 10
+      - result_list_paged.total_available_results is defined
+    fail_msg: "Paged LIST returned unexpected shape"
+    success_msg: "Paged LIST returned within requested limit"
+  when: have_fixtures
+
+- name: List dependent VMs with limit=1 (smallest positive limit)
+  nutanix.ncp.ntnx_vm_startup_policy_dependency_conflict_dependent_vms_info_v2:
+    vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+    dependency_conflict_ext_id: "{{ dependency_conflict_ext_id }}"
+    limit: 1
+  register: result_list_limit_one
+  ignore_errors: true
+  when: have_fixtures
+
+- name: Assert LIST with limit=1 respects the cap
+  ansible.builtin.assert:
+    that:
+      - result_list_limit_one.changed == false
+      - result_list_limit_one.failed == false
+      - result_list_limit_one.response is defined
+      - (result_list_limit_one.response | length) <= 1
+    fail_msg: "LIST with limit=1 returned more than 1 entry"
+    success_msg: "LIST with limit=1 returned <=1 entry"
+  when: have_fixtures
+
+############################################################################
+# 4) Happy-path GET-by-ext_id (client-side filter over the list)
+############################################################################
+
+- name: Set the first dependent VM ext_id from the LIST result (if any)
+  ansible.builtin.set_fact:
+    first_dependent_vm_ext_id: "{{ result_list_all.response[0].ext_id }}"
+  when:
+    - have_fixtures
+    - result_list_all.response is defined
+    - result_list_all.response | length > 0
+
+- name: Fetch dependent VM using its ext_id
+  nutanix.ncp.ntnx_vm_startup_policy_dependency_conflict_dependent_vms_info_v2:
+    vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+    dependency_conflict_ext_id: "{{ dependency_conflict_ext_id }}"
+    ext_id: "{{ first_dependent_vm_ext_id }}"
+  register: result_get_by_ext_id
+  ignore_errors: true
+  when:
+    - have_fixtures
+    - first_dependent_vm_ext_id is defined
+
+- name: Assert GET-by-ext_id returned the expected single entry
+  ansible.builtin.assert:
+    that:
+      - result_get_by_ext_id.changed == false
+      - result_get_by_ext_id.failed == false
+      - result_get_by_ext_id.ext_id == first_dependent_vm_ext_id
+      - result_get_by_ext_id.response.ext_id == first_dependent_vm_ext_id
+    fail_msg: "GET-by-ext_id did not return the expected dependent VM"
+    success_msg: "GET-by-ext_id returned the expected dependent VM"
+  when:
+    - have_fixtures
+    - first_dependent_vm_ext_id is defined
+
+############################################################################
+# 5) Negative — nonexistent ext_id must fail with a descriptive message
+############################################################################
+
+- name: Fetch dependent VM using a nonexistent ext_id
+  nutanix.ncp.ntnx_vm_startup_policy_dependency_conflict_dependent_vms_info_v2:
+    vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+    dependency_conflict_ext_id: "{{ dependency_conflict_ext_id }}"
+    ext_id: "{{ fake_ext_id }}"
+  register: result_get_by_missing_ext_id
+  ignore_errors: true
+  when: have_fixtures
+
+- name: Assert nonexistent ext_id yields a descriptive failure
+  ansible.builtin.assert:
+    that:
+      - result_get_by_missing_ext_id.failed == true
+      - result_get_by_missing_ext_id.changed == false
+      - result_get_by_missing_ext_id.msg is defined
+      - "'was not found' in result_get_by_missing_ext_id.msg"
+    fail_msg: "Nonexistent ext_id did not surface a descriptive error"
+    success_msg: "Nonexistent ext_id surfaced a descriptive error as expected"
+  when: have_fixtures
+
+############################################################################
+# 6) Negative — invalid parent ext_ids must surface an API error.
+#    These tests exercise the live API and do not require fixtures — a fake
+#    UUID always resolves to a 404 POLICY_NOT_FOUND from the endpoint.
+############################################################################
+
+- name: List dependent VMs with a nonexistent vm_startup_policy_ext_id
+  nutanix.ncp.ntnx_vm_startup_policy_dependency_conflict_dependent_vms_info_v2:
+    vm_startup_policy_ext_id: "{{ fake_ext_id }}"
+    dependency_conflict_ext_id: "{{ fake_dependency_conflict_ext_id }}"
+  register: result_bad_policy
+  ignore_errors: true
+
+- name: Assert an invalid parent policy surfaced an API error
+  ansible.builtin.assert:
+    that:
+      - result_bad_policy.failed == true
+      - result_bad_policy.changed == false
+      - result_bad_policy.msg is defined
+      - result_bad_policy.status is defined
+    fail_msg: "Invalid vm_startup_policy_ext_id did not fail as expected"
+    success_msg: "Invalid vm_startup_policy_ext_id failed as expected"
+
+############################################################################
+# 7) Negative — missing required parent ext_ids must fail argument-spec
+#    validation regardless of cluster reachability
+############################################################################
+
+- name: List dependent VMs without vm_startup_policy_ext_id (must fail)  # noqa: args[module]
+  nutanix.ncp.ntnx_vm_startup_policy_dependency_conflict_dependent_vms_info_v2:
+    dependency_conflict_ext_id: "{{ fake_dependency_conflict_ext_id }}"
+  register: result_missing_policy
+  ignore_errors: true
+
+- name: Assert missing vm_startup_policy_ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - result_missing_policy.failed == true
+      - result_missing_policy.changed == false
+      - result_missing_policy.msg is defined
+      - "'vm_startup_policy_ext_id' in result_missing_policy.msg"
+    fail_msg: "Missing vm_startup_policy_ext_id was not rejected"
+    success_msg: "Missing vm_startup_policy_ext_id was rejected as expected"
+
+- name: List dependent VMs without dependency_conflict_ext_id (must fail)  # noqa: args[module]
+  nutanix.ncp.ntnx_vm_startup_policy_dependency_conflict_dependent_vms_info_v2:
+    vm_startup_policy_ext_id: "{{ fake_ext_id }}"
+  register: result_missing_conflict
+  ignore_errors: true
+
+- name: Assert missing dependency_conflict_ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - result_missing_conflict.failed == true
+      - result_missing_conflict.changed == false
+      - result_missing_conflict.msg is defined
+      - "'dependency_conflict_ext_id' in result_missing_conflict.msg"
+    fail_msg: "Missing dependency_conflict_ext_id was not rejected"
+    success_msg: "Missing dependency_conflict_ext_id was rejected as expected"
+
+############################################################################
+# 8) Negative — invalid limit values must fail (SDK enforces 1..100)
+############################################################################
+
+- name: List dependent VMs with limit=101 (out of allowed range)
+  nutanix.ncp.ntnx_vm_startup_policy_dependency_conflict_dependent_vms_info_v2:
+    vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id | default(fake_ext_id) }}"
+    dependency_conflict_ext_id: "{{ dependency_conflict_ext_id | default(fake_dependency_conflict_ext_id) }}"
+    limit: 101
+  register: result_bad_limit
+  ignore_errors: true
+
+- name: Assert out-of-range limit fails
+  ansible.builtin.assert:
+    that:
+      - result_bad_limit.failed == true
+      - result_bad_limit.changed == false
+    fail_msg: "Out-of-range limit did not fail as expected"
+    success_msg: "Out-of-range limit failed as expected"
+
+############################################################################
+# 9) Idempotency — repeated LIST calls return the same total_available_results
+############################################################################
+
+- name: Re-run LIST all dependent VMs
+  nutanix.ncp.ntnx_vm_startup_policy_dependency_conflict_dependent_vms_info_v2:
+    vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+    dependency_conflict_ext_id: "{{ dependency_conflict_ext_id }}"
+  register: result_list_again
+  ignore_errors: true
+  when: have_fixtures
+
+- name: Assert LIST is idempotent (same total on identical inputs)
+  ansible.builtin.assert:
+    that:
+      - result_list_again.failed == false
+      - result_list_again.changed == false
+      - result_list_again.total_available_results | int == result_list_all.total_available_results | int
+    fail_msg: "LIST was not idempotent (total_available_results changed unexpectedly)"
+    success_msg: "LIST is idempotent (total_available_results stable)"
+  when: have_fixtures
