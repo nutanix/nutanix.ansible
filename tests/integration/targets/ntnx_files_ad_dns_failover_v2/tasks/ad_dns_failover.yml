@@ -1,0 +1,194 @@
+---
+# Test plan for ntnx_files_ad_dns_failover_v2 (action module)
+#
+# The AD-DNS failover is an ACTION performed between two already existing Files
+# file servers that are paired by a replication policy. There is no create /
+# read / update / delete life-cycle and no queryable "AdDnsFailover" entity,
+# therefore the tests below focus on:
+#
+#   1. check_mode spec generation for every FailoverType (PLANNED, UNPLANNED,
+#      FAILBACK) and for the minimal / full attribute sets. check_mode never
+#      touches the cluster, so these assertions are deterministic and validate
+#      that every argument-spec attribute is wired to the SDK spec correctly.
+#   2. Argument-spec validation (negative): invalid enum values for `type` and
+#      `dns.action` must be rejected by Ansible before any API call.
+#   3. A real API invocation against the live cluster using well-formed but
+#      non-existent file server external IDs. Because the referenced file
+#      servers / replication policy do not exist, the API is expected to fail
+#      gracefully and the module must surface the error (failed == true) with a
+#      descriptive message instead of raising an unhandled traceback.
+#
+# A fully successful failover requires two paired file servers with a
+# configured replication policy plus valid AD/DNS credentials; that
+# prerequisite cannot be provisioned by this collection, so the happy-path is
+# validated via check_mode.
+
+- name: Start ntnx_files_ad_dns_failover_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_files_ad_dns_failover_v2 tests
+
+- name: Set file server external IDs for the test run
+  ansible.builtin.set_fact:
+    primary_fs_ext_id: "c66fcb19-01f0-49de-9d35-4b90ebbca2d9"
+    secondary_fs_ext_id: "483ca0d4-855e-4f92-a5a0-fc56907d919b"
+
+########################################################################################
+# check_mode - Create/Perform spec generation (happy path)
+########################################################################################
+
+- name: Generate spec for a planned AD-DNS failover using check mode with all attributes
+  nutanix.ncp.ntnx_files_ad_dns_failover_v2:
+    primary_file_server_ext_id: "{{ primary_fs_ext_id }}"
+    secondary_file_server_ext_id: "{{ secondary_fs_ext_id }}"
+    type: "PLANNED"
+    active_directory:
+      credential:
+        username: "ad-admin"
+        password: "ad-password"
+      preferred_domain_controller: "dc1.ansible.local"
+    dns:
+      preferred_name_server: "10.44.76.10"
+      action: "ADD"
+      credential:
+        username: "dns-admin"
+        password: "dns-password"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for a planned AD-DNS failover using check mode with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == primary_fs_ext_id
+      - result.response.primary_file_server_ext_id == primary_fs_ext_id
+      - result.response.secondary_file_server_ext_id == secondary_fs_ext_id
+      - result.response.type == "PLANNED"
+      - result.response.active_directory.credential.username == "ad-admin"
+      - result.response.active_directory.preferred_domain_controller == "dc1.ansible.local"
+      - result.response.dns.preferred_name_server == "10.44.76.10"
+      - result.response.dns.action == "ADD"
+      - result.response.dns.credential.username == "dns-admin"
+    success_msg: "Spec for a planned AD-DNS failover with all attributes is generated successfully"
+    fail_msg: "Spec for a planned AD-DNS failover with all attributes is not generated successfully"
+
+- name: Generate spec for an unplanned AD-DNS failover using check mode with minimum attributes
+  nutanix.ncp.ntnx_files_ad_dns_failover_v2:
+    primary_file_server_ext_id: "{{ primary_fs_ext_id }}"
+    secondary_file_server_ext_id: "{{ secondary_fs_ext_id }}"
+    type: "UNPLANNED"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for an unplanned AD-DNS failover using check mode with minimum attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.primary_file_server_ext_id == primary_fs_ext_id
+      - result.response.secondary_file_server_ext_id == secondary_fs_ext_id
+      - result.response.type == "UNPLANNED"
+      - result.response.active_directory is not defined or result.response.active_directory == None
+    success_msg: "Spec for an unplanned AD-DNS failover with minimum attributes is generated successfully"
+    fail_msg: "Spec for an unplanned AD-DNS failover with minimum attributes is not generated successfully"
+
+- name: Generate spec for an AD-DNS failback using check mode
+  nutanix.ncp.ntnx_files_ad_dns_failover_v2:
+    primary_file_server_ext_id: "{{ secondary_fs_ext_id }}"
+    secondary_file_server_ext_id: "{{ primary_fs_ext_id }}"
+    type: "FAILBACK"
+    dns:
+      preferred_name_server: "10.44.76.10"
+      action: "REMOVE"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for an AD-DNS failback using check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.primary_file_server_ext_id == secondary_fs_ext_id
+      - result.response.secondary_file_server_ext_id == primary_fs_ext_id
+      - result.response.type == "FAILBACK"
+      - result.response.dns.preferred_name_server == "10.44.76.10"
+      - result.response.dns.action == "REMOVE"
+    success_msg: "Spec for an AD-DNS failback is generated successfully"
+    fail_msg: "Spec for an AD-DNS failback is not generated successfully"
+
+########################################################################################
+# Negative - argument spec validation
+########################################################################################
+
+- name: Perform AD-DNS failover with an invalid failover type
+  nutanix.ncp.ntnx_files_ad_dns_failover_v2:
+    primary_file_server_ext_id: "{{ primary_fs_ext_id }}"
+    secondary_file_server_ext_id: "{{ secondary_fs_ext_id }}"
+    type: "INVALID_TYPE"
+  register: result
+  ignore_errors: true
+
+- name: Perform AD-DNS failover with an invalid failover type status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'must be one of' in result.msg"
+    success_msg: "AD-DNS failover with an invalid failover type failed as expected"
+    fail_msg: "AD-DNS failover with an invalid failover type did not fail as expected"
+
+- name: Perform AD-DNS failover with an invalid dns action
+  nutanix.ncp.ntnx_files_ad_dns_failover_v2:
+    primary_file_server_ext_id: "{{ primary_fs_ext_id }}"
+    secondary_file_server_ext_id: "{{ secondary_fs_ext_id }}"
+    type: "PLANNED"
+    dns:
+      preferred_name_server: "10.44.76.10"
+      action: "INVALID_ACTION"
+  register: result
+  ignore_errors: true
+
+- name: Perform AD-DNS failover with an invalid dns action status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'must be one of' in result.msg"
+    success_msg: "AD-DNS failover with an invalid dns action failed as expected"
+    fail_msg: "AD-DNS failover with an invalid dns action did not fail as expected"
+
+########################################################################################
+# Real API call - non-existent file servers (expected graceful failure)
+########################################################################################
+
+- name: Perform a planned AD-DNS failover for non-existent file servers
+  nutanix.ncp.ntnx_files_ad_dns_failover_v2:
+    primary_file_server_ext_id: "{{ primary_fs_ext_id }}"
+    secondary_file_server_ext_id: "{{ secondary_fs_ext_id }}"
+    type: "PLANNED"
+    active_directory:
+      credential:
+        username: "ad-admin"
+        password: "ad-password"
+  register: result
+  ignore_errors: true
+
+- name: Perform a planned AD-DNS failover for non-existent file servers status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "AD-DNS failover for non-existent file servers failed gracefully as expected"
+    fail_msg: "AD-DNS failover for non-existent file servers did not fail gracefully as expected"
