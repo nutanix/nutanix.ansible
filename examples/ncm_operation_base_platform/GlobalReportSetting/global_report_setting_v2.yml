@@ -1,0 +1,72 @@
+---
+# Summary:
+# This playbook demonstrates the ncm_operation_base_platform GlobalReportSetting v4 modules:
+# 1. Discover the calling user's ext_id (used as the userExtId path parameter).
+# 2. Fetch the current GlobalReportSetting for that user.
+# 3. Update the GlobalReportSetting with retention, notification, and customization fields.
+# 4. Fetch the updated GlobalReportSetting to verify changes.
+# 5. Update the GlobalReportSetting to a minimal configuration.
+#
+# Notes:
+#  - GlobalReportSetting is a per-user singleton. There is no create / delete API — only
+#    Get and Update (PUT) are available. The module supports state=present only.
+
+- name: GlobalReportSetting playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+  tasks:
+    - name: Discover the admin user's ext_id
+      nutanix.ncp.ntnx_users_info_v2:
+        filter: "username eq 'admin'"
+      register: users_result
+
+    - name: Set the user_ext_id used by GlobalReportSetting
+      ansible.builtin.set_fact:
+        admin_user_ext_id: "{{ users_result.response[0].ext_id }}"
+
+    - name: Get the current global report setting for the admin user
+      nutanix.ncp.ntnx_global_report_settings_info_v2:
+        user_ext_id: "{{ admin_user_ext_id }}"
+      register: current_setting
+
+    - name: Update the global report setting with full configuration
+      nutanix.ncp.ntnx_global_report_setting_v2:
+        state: present
+        user_ext_id: "{{ admin_user_ext_id }}"
+        name: "global_report_setting_ansible"
+        retention_config:
+          retention_count: 5
+        notification_policy:
+          recipients:
+            - email_address: "reports@example.com"
+              recipient_name: "Reports Owner"
+          recipient_formats:
+            - PDF
+            - CSV
+          email_subject: "Your Nutanix reports"
+          email_body: "Please find the attached reports."
+        report_customization:
+          header_html: "<h1>Nutanix reports</h1>"
+          footer_html: "<p>Copyright Nutanix</p>"
+          css_style_sheet: "body { font-family: Arial; }"
+      register: full_update
+
+    - name: Fetch the updated global report setting
+      nutanix.ncp.ntnx_global_report_settings_info_v2:
+        user_ext_id: "{{ admin_user_ext_id }}"
+      register: after_full_update
+
+    - name: Update the global report setting to a minimal configuration
+      nutanix.ncp.ntnx_global_report_setting_v2:
+        state: present
+        user_ext_id: "{{ admin_user_ext_id }}"
+        name: "global_report_setting_min"
+        retention_config:
+          retention_period_seconds: 604800
+      register: min_update
