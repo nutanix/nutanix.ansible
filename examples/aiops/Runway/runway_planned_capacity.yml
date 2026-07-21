@@ -1,0 +1,118 @@
+---
+# Summary:
+# This playbook demonstrates one example each of the operations supported by
+# the aiops Runway modules:
+#   1. Create capacity planning (Runway) scenario (with all fields).
+#   2. Update capacity planning scenario (with all fields).
+#   3. Get capacity planning scenario using ext_id.
+#   4. List all capacity planning scenarios.
+#   5. List capacity planning scenarios with limit.
+#   6. Delete capacity planning scenario.
+#
+# NOTE: The capacity-planning "WHATIF_SCENARIO_CREATE_TASK" is asynchronous
+# and requires historical stats data on the target cluster. On clusters
+# without enough historical data the task may stay QUEUED, so this example
+# uses wait=false. Update and Delete take a real scenario ext_id (see the
+# Update example) once the create task has completed on your cluster.
+
+- name: Capacity planning (Runway) playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        cluster_uuid: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
+        scenario_name: "runway_scenario_ansible"
+        scenario_ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
+
+    - name: Create capacity planning scenario (Runway) with all attributes
+      nutanix.ncp.ntnx_runway_planned_capacity_v2:
+        state: present
+        name: "{{ scenario_name }}"
+        cluster_ext_id: "{{ cluster_uuid }}"
+        target_runway_days: 90
+        vendors:
+          - NUTANIX
+        cluster_config:
+          data_store_config:
+            replication_factor: "RF_2"
+            compression_saving_percent: 25.81
+            dedup_saving_percent: 35.86
+            erasure_coding_saving_percent: 15.17
+            overall_saving_percent: 59.64
+            cpu_over_commit_ratio: 1.0
+            ram_over_commit_ratio: 1.0
+            cpu_reservation_percentage: 0.0
+            ram_reservation_percentage: 0.0
+            storage_reservation_percentage: 0.0
+          node_configs:
+            - model: "NX-1000"
+              node_count: 2
+              is_enabled: true
+              node_source: "USER_ADDED"
+              node_resource_capacity:
+                cpu_ghz: 60.0
+                ram_gb: 512.0
+                hdd_gb: 0.0
+                ssd_gb: 8000.0
+                nvme_gb: 0.0
+        wait: false
+      register: created_scenario
+      ignore_errors: true
+
+    - name: Update capacity planning scenario with all attributes
+      nutanix.ncp.ntnx_runway_planned_capacity_v2:
+        state: present
+        ext_id: "{{ scenario_ext_id }}"
+        name: "{{ scenario_name }}_updated"
+        cluster_ext_id: "{{ cluster_uuid }}"
+        target_runway_days: 180
+        vendors:
+          - NUTANIX
+          - DELL
+        cluster_config:
+          data_store_config:
+            replication_factor: "RF_3"
+            compression_saving_percent: 20.0
+            dedup_saving_percent: 30.0
+            erasure_coding_saving_percent: 15.0
+            overall_saving_percent: 50.0
+            cpu_over_commit_ratio: 1.5
+            ram_over_commit_ratio: 1.0
+            cpu_reservation_percentage: 10.0
+            ram_reservation_percentage: 10.0
+            storage_reservation_percentage: 5.0
+        wait: false
+      register: updated_scenario
+      ignore_errors: true
+
+    - name: Get capacity planning scenario using ext_id
+      nutanix.ncp.ntnx_runways_info_v2:
+        ext_id: "{{ scenario_ext_id }}"
+      register: scenario_by_id
+      ignore_errors: true
+
+    - name: List all capacity planning scenarios
+      nutanix.ncp.ntnx_runways_info_v2:
+      register: all_scenarios
+      ignore_errors: true
+
+    - name: List capacity planning scenarios with limit
+      nutanix.ncp.ntnx_runways_info_v2:
+        limit: 1
+      register: scenarios_limited
+      ignore_errors: true
+
+    - name: Delete capacity planning scenario
+      nutanix.ncp.ntnx_runway_planned_capacity_v2:
+        state: absent
+        ext_id: "{{ scenario_ext_id }}"
+        wait: false
+      register: deleted_scenario
+      ignore_errors: true

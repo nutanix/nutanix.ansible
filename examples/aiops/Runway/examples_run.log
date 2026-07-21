@@ -1,0 +1,38 @@
+[DEPRECATION WARNING]: ANSIBLE_COLLECTIONS_PATHS option, does not fit var 
+naming standard, use the singular form ANSIBLE_COLLECTIONS_PATH instead. This 
+feature will be removed from ansible-core in version 2.19. Deprecation warnings
+ can be disabled by setting deprecation_warnings=False in ansible.cfg.
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Capacity planning (Runway) playbook] *************************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"cluster_uuid": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "scenario_ext_id": "2e40ff57-20aa-4d2b-b179-298db969c20d", "scenario_name": "runway_scenario_ansible"}, "changed": false}
+
+TASK [Create capacity planning scenario (Runway) with all attributes] **********
+changed: [localhost] => {"changed": true, "error": null, "ext_id": null, "response": {"ext_id": "ZXJnb24=:0da6919b-93e4-416d-6460-ce55adeb5733"}, "task_ext_id": "ZXJnb24=:0da6919b-93e4-416d-6460-ce55adeb5733"}
+
+TASK [Update capacity planning scenario with all attributes] *******************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching capacity planning scenario info using ext_id", "response": {"$objectType": "aiops.v4.config.GetScenarioApiResponse", "$reserved": {"$fv": "v4.r2.b1"}, "data": {"$objectType": "aiops.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r2.b1"}, "error": [{"$objectType": "aiops.v4.error.AppMessage", "$reserved": {"$fv": "v4.r2.b1"}, "code": "AIO-60006", "locale": "en_US", "message": "Failed to perform the request because the resource identified by the provided external identifier 2e40ff57-20aa-4d2b-b179-298db969c20d was not found.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}]}}, "status": 404}
+...ignoring
+
+TASK [Get capacity planning scenario using ext_id] *****************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching capacity planning scenario info using ext_id", "response": {"$objectType": "aiops.v4.config.GetScenarioApiResponse", "$reserved": {"$fv": "v4.r2.b1"}, "data": {"$objectType": "aiops.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r2.b1"}, "error": [{"$objectType": "aiops.v4.error.AppMessage", "$reserved": {"$fv": "v4.r2.b1"}, "code": "AIO-60006", "locale": "en_US", "message": "Failed to perform the request because the resource identified by the provided external identifier 2e40ff57-20aa-4d2b-b179-298db969c20d was not found.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}]}}, "status": 404}
+...ignoring
+
+TASK [List all capacity planning scenarios] ************************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List capacity planning scenarios with limit] *****************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [Delete capacity planning scenario] ***************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "BAD REQUEST", "msg": "Api Exception raised while deleting capacity planning scenario", "response": {"$objectType": "aiops.v4.config.DeleteScenarioApiResponse", "$reserved": {"$fv": "v4.r2.b1"}, "data": {"$objectType": "aiops.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r2.b1"}, "error": [{"$objectType": "aiops.v4.error.AppMessage", "$reserved": {"$fv": "v4.r2.b1"}, "code": "AIO-60008", "locale": "en_US", "message": "Failed to perform the request because the provided external identifier 2e40ff57-20aa-4d2b-b179-298db969c20d is incorrect.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}]}}, "status": 400}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=7    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=3   
+
