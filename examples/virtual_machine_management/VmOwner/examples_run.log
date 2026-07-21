@@ -1,0 +1,48 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [VmOwner playbook] ********************************************************
+
+TASK [Set variables for the VmOwner playbook] **********************************
+ok: [localhost] => {"ansible_facts": {"owner_ext_id": "00000000-0000-0000-0000-000000000000", "vm_ext_id": "ac5aff0c-6c68-4948-9088-b903e2be0ce7"}, "changed": false}
+
+TASK [Assign owner to an ESXi VM with all attributes] **************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching ESXi VM info using ext_id", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "argumentsMap": {"vm_uuid": "ac5aff0c-6c68-4948-9088-b903e2be0ce7"}, "code": "VMM-30100", "errorGroup": "VM_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the VM with UUID 'ac5aff0c-6c68-4948-9088-b903e2be0ce7', because it is not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [Show the module response] ************************************************
+ok: [localhost] => {
+    "assign_owner_result": {
+        "changed": false,
+        "error": "NOT FOUND",
+        "failed": true,
+        "msg": "Api Exception raised while fetching ESXi VM info using ext_id",
+        "response": {
+            "$dataItemDiscriminator": "vmm.v4.error.ErrorResponse",
+            "data": {
+                "$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>",
+                "$objectType": "vmm.v4.error.ErrorResponse",
+                "error": [
+                    {
+                        "$objectType": "vmm.v4.error.AppMessage",
+                        "argumentsMap": {
+                            "vm_uuid": "ac5aff0c-6c68-4948-9088-b903e2be0ce7"
+                        },
+                        "code": "VMM-30100",
+                        "errorGroup": "VM_NOT_FOUND",
+                        "locale": "en-US",
+                        "message": "Failed to perform the operation on the VM with UUID 'ac5aff0c-6c68-4948-9088-b903e2be0ce7', because it is not found.",
+                        "severity": "ERROR"
+                    }
+                ]
+            }
+        },
+        "status": 404
+    }
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=1   
+
