@@ -1,0 +1,90 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Files compute-snapshot-change playbook] **********************************
+
+TASK [Set feature-specific variables] ******************************************
+ok: [localhost] => {"ansible_facts": {"base_snapshot_ext_id": "3e2d5fbb-0000-0000-0000-000000000001", "file_server_ext_id": "6c6f6f6b-1234-4321-9abc-abcdef012345", "mount_target_ext_id": "9c1e537d-6777-4c22-5d41-ddd0c3337aa9", "snapshot_ext_id": "3e2d5fbb-0000-0000-0000-000000000002"}, "changed": false}
+
+TASK [Compute snapshot change between two mount-target snapshots] **************
+[ERROR]: Task failed: Module failed: Api Exception raised while triggering compute snapshot change on mount target '9c1e537d-6777-4c22-5d41-ddd0c3337aa9' of file server '6c6f6f6b-1234-4321-9abc-abcdef012345'
+Origin: /tmp/codegen/c0b39ca49a774114b877f18fa97afb53/repo/examples/files/ComputeSnapshotChange/compute_snapshot_change_v2.yml:29:7
+
+27         base_snapshot_ext_id: "{{ base_snapshot_ext_id | default('3e2d5fbb-0000-0000-0000-000000000001') }}"
+28
+29     - name: Compute snapshot change between two mount-target snapshots
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while triggering compute snapshot change on mount target '9c1e537d-6777-4c22-5d41-ddd0c3337aa9' of file server '6c6f6f6b-1234-4321-9abc-abcdef012345'", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Set compute snapshot change ext_id] **************************************
+ok: [localhost] => {"ansible_facts": {"compute_snapshot_change_ext_id": "<Need to add sample>"}, "changed": false}
+
+TASK [Idempotent fetch of the same snapshot changed content (state=present + ext_id)] ***
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching snapshot changed content with ext_id '<Need to add sample>' on file server '6c6f6f6b-1234-4321-9abc-abcdef012345' and mount target '9c1e537d-6777-4c22-5d41-ddd0c3337aa9'
+Origin: /tmp/codegen/c0b39ca49a774114b877f18fa97afb53/repo/examples/files/ComputeSnapshotChange/compute_snapshot_change_v2.yml:45:7
+
+43         compute_snapshot_change_ext_id: "{{ compute_result.ext_id | default('<Need to add sample>') }}"
+44
+45     - name: Idempotent fetch of the same snapshot changed content (state=present + ext_id)
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching snapshot changed content with ext_id '<Need to add sample>' on file server '6c6f6f6b-1234-4321-9abc-abcdef012345' and mount target '9c1e537d-6777-4c22-5d41-ddd0c3337aa9'", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Get snapshot changed content using ext_id via info module] ***************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching snapshot changed content with ext_id '<Need to add sample>' on file server '6c6f6f6b-1234-4321-9abc-abcdef012345' and mount target '9c1e537d-6777-4c22-5d41-ddd0c3337aa9'
+Origin: /tmp/codegen/c0b39ca49a774114b877f18fa97afb53/repo/examples/files/ComputeSnapshotChange/compute_snapshot_change_v2.yml:54:7
+
+52       ignore_errors: true
+53
+54     - name: Get snapshot changed content using ext_id via info module
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching snapshot changed content with ext_id '<Need to add sample>' on file server '6c6f6f6b-1234-4321-9abc-abcdef012345' and mount target '9c1e537d-6777-4c22-5d41-ddd0c3337aa9'", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [List snapshot changed contents on the mount target] **********************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching compute snapshot changes info for mount target '9c1e537d-6777-4c22-5d41-ddd0c3337aa9' on file server '6c6f6f6b-1234-4321-9abc-abcdef012345'
+Origin: /tmp/codegen/c0b39ca49a774114b877f18fa97afb53/repo/examples/files/ComputeSnapshotChange/compute_snapshot_change_v2.yml:62:7
+
+60       ignore_errors: true
+61
+62     - name: List snapshot changed contents on the mount target
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching compute snapshot changes info for mount target '9c1e537d-6777-4c22-5d41-ddd0c3337aa9' on file server '6c6f6f6b-1234-4321-9abc-abcdef012345'", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [List snapshot changed contents filtered by snapshot ext_id] **************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching compute snapshot changes info for mount target '9c1e537d-6777-4c22-5d41-ddd0c3337aa9' on file server '6c6f6f6b-1234-4321-9abc-abcdef012345'
+Origin: /tmp/codegen/c0b39ca49a774114b877f18fa97afb53/repo/examples/files/ComputeSnapshotChange/compute_snapshot_change_v2.yml:69:7
+
+67       ignore_errors: true
+68
+69     - name: List snapshot changed contents filtered by snapshot ext_id
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching compute snapshot changes info for mount target '9c1e537d-6777-4c22-5d41-ddd0c3337aa9' on file server '6c6f6f6b-1234-4321-9abc-abcdef012345'", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [List snapshot changed contents with limit] *******************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching compute snapshot changes info for mount target '9c1e537d-6777-4c22-5d41-ddd0c3337aa9' on file server '6c6f6f6b-1234-4321-9abc-abcdef012345'
+Origin: /tmp/codegen/c0b39ca49a774114b877f18fa97afb53/repo/examples/files/ComputeSnapshotChange/compute_snapshot_change_v2.yml:77:7
+
+75       ignore_errors: true
+76
+77     - name: List snapshot changed contents with limit
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching compute snapshot changes info for mount target '9c1e537d-6777-4c22-5d41-ddd0c3337aa9' on file server '6c6f6f6b-1234-4321-9abc-abcdef012345'", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [State=absent is a no-op because the API does not support delete] *********
+skipping: [localhost] => {"changed": false, "ext_id": "<Need to add sample>", "msg": "Delete is not supported by the Files v4 API for a compute snapshot change resource. Skipping delete for ext_id '<Need to add sample>'.", "response": null, "task_ext_id": null}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=8    changed=0    unreachable=0    failed=0    skipped=1    rescued=0    ignored=6   
+
