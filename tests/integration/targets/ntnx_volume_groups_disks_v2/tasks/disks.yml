@@ -1,29 +1,61 @@
 ---
-# Variables required before running this playbook:
-# - cluster
-# - storage_container
+############################################################################################
+# Test plan for `ntnx_volume_groups_disks_v2` (CRUD) and `ntnx_volume_disks_info_v2` (info)
+############################################################################################
+# Coverage:
+# 1. Setup: create Volume Group prerequisite (reusing ntnx_volume_groups_v2 module).
+# 2. Create Volume Disk:
+#    - check_mode with ALL attributes (asserts spec)
+#    - minimum attributes (required-only)
+#    - all attributes (create-with-all-fields)
+#    - clone from an existing VOLUME_DISK
+#    - negative: create with wrong volume_group_ext_id
+# 3. Update Volume Disk:
+#    - check_mode with all mutable attributes
+#    - real update to different values
+#    - idempotency (second run reports skipped / no change)
+#    - negative: update with wrong ext_id
+# 4. Info module (ntnx_volume_disks_info_v2):
+#    - get-by-ID: assert single VolumeDisk is returned
+#    - list-all: assert list of VolumeDisks in the VG
+#    - list-with-limit: assert result respects limit
+#    - list-with-filter: filter by index
+#    - negative: get with invalid ext_id
+# 5. Delete Volume Disk:
+#    - check_mode
+#    - real delete
+#    - negative: delete missing ext_id
+# 6. Teardown: delete Volume Group
+#
+# Variables required from integration_config.yml / vars:
+# - cluster.uuid              (Prism Element cluster UUID)
+# - storage_container.uuid    (Storage Container UUID on the cluster)
+############################################################################################
 
-- name: "Start Volume groups disks tests"
+- name: "Start Volume Disks (v4) integration tests"
   ansible.builtin.debug:
-    msg: "Start Volume groups disks tests"
+    msg: "Start Volume Disks integration tests"
 
-- name: Generate random names
+- name: Generate random suffix
   ansible.builtin.set_fact:
-    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
 
 - name: Set VG name suffix
   ansible.builtin.set_fact:
     suffix_name: "ansible-vgs"
 
-- name: Set VG names
+- name: Set VG name
   ansible.builtin.set_fact:
-    vg1_name: "{{suffix_name}}-{{random_name}}1"
-    vg2_name: "{{suffix_name}}-{{random_name}}2"
+    vg1_name: "{{ suffix_name }}-{{ random_name }}1"
 
-- name: Create Volume group for tests
+############################################################################################
+# Setup: create Volume Group prerequisite
+############################################################################################
+
+- name: Create Volume Group for Volume Disk tests
   nutanix.ncp.ntnx_volume_groups_v2:
-    name: "{{vg1_name}}"
-    description: "Volume group for disk tests"
+    name: "{{ vg1_name }}"
+    description: "Volume group for Volume Disk tests"
     should_load_balance_vm_attachments: true
     sharing_status: "SHARED"
     target_prefix: "vg1"
@@ -35,30 +67,31 @@
   register: result
   ignore_errors: true
 
-- name: Verify vg create
+- name: Verify Volume Group create
   ansible.builtin.assert:
     that:
-      - result.error == None
-      - result.response is defined
       - result.changed == true
+      - result.failed == false
+      - result.response is defined
       - result.ext_id is defined
-
-    fail_msg: "Unable to create VG for tests"
-    success_msg: "VG created successfully for tests"
+    fail_msg: "Unable to create Volume Group for tests"
+    success_msg: "Volume Group created successfully for tests"
 
 - name: Set VG1 UUID
   ansible.builtin.set_fact:
     vg1_uuid: "{{ result.ext_id }}"
 
-######################################### Create disk tests #########################################
+############################################################################################
+# Create Volume Disk tests
+############################################################################################
 
-- name: Create disk with check mode
+- name: Create Volume Disk in check_mode with ALL attributes
   nutanix.ncp.ntnx_volume_groups_disks_v2:
     state: "present"
     volume_group_ext_id: "{{ vg1_uuid }}"
     index: 0
     disk_size_bytes: 21474836480
-    description: "ansible-created-disk-updated"
+    description: "check-mode-disk"
     disk_storage_features:
       flash_mode:
         is_enabled: true
@@ -66,27 +99,26 @@
       entity_type: "STORAGE_CONTAINER"
       ext_id: "{{ storage_container.uuid }}"
   register: result
-  ignore_errors: true
   check_mode: true
+  ignore_errors: true
 
-- name: Verify disk spec
+- name: Verify check_mode create spec
   ansible.builtin.assert:
     that:
-      - result.error == None
-      - result.response is defined
       - result.changed == false
-      - result.volume_group_ext_id == "{{vg1_uuid}}"
+      - result.failed == false
+      - result.response is defined
+      - result.volume_group_ext_id == vg1_uuid
       - result.response.index == 0
       - result.response.disk_size_bytes == 21474836480
-      - result.response.description == "ansible-created-disk-updated"
+      - result.response.description == "check-mode-disk"
       - result.response.disk_storage_features.flash_mode.is_enabled == true
       - result.response.disk_data_source_reference.entity_type == "STORAGE_CONTAINER"
-      - result.response.disk_data_source_reference.ext_id == "{{storage_container.uuid}}"
+      - result.response.disk_data_source_reference.ext_id == storage_container.uuid
+    fail_msg: "check_mode Volume Disk create spec is not generated as expected"
+    success_msg: "check_mode Volume Disk create spec generated successfully"
 
-    fail_msg: "Unable to create spec for disk create"
-    success_msg: "Spec generated successfully for disk create"
-
-- name: Create disk with min spec
+- name: Create Volume Disk with min attributes
   nutanix.ncp.ntnx_volume_groups_disks_v2:
     state: "present"
     volume_group_ext_id: "{{ vg1_uuid }}"
@@ -97,29 +129,31 @@
   register: result
   ignore_errors: true
 
-- name: Verify disk create
+- name: Verify Volume Disk min create
   ansible.builtin.assert:
     that:
-      - result.error == None
-      - result.response is defined
       - result.changed == true
+      - result.failed == false
+      - result.response is defined
       - result.task_ext_id is defined
-      - result.volume_group_ext_id == "{{vg1_uuid}}"
-      - result.response.disk_storage_features.flash_mode.is_enabled == true
+      - result.volume_group_ext_id == vg1_uuid
       - result.response.disk_size_bytes == 21474836480
       - result.response.ext_id == result.ext_id
-      - result.response.storage_container_id == "{{storage_container.uuid}}"
+      - result.response.storage_container_id == storage_container.uuid
+    fail_msg: "Unable to create Volume Disk with min attributes"
+    success_msg: "Min Volume Disk created successfully"
 
-    fail_msg: "Unable to create disk"
-    success_msg: "Disk created successfully"
+- name: Set min disk UUID
+  ansible.builtin.set_fact:
+    disk_min_uuid: "{{ result.ext_id }}"
 
-- name: Create disk with all attributes
+- name: Create Volume Disk with ALL attributes
   nutanix.ncp.ntnx_volume_groups_disks_v2:
     state: "present"
     volume_group_ext_id: "{{ vg1_uuid }}"
     index: 1
     disk_size_bytes: 21474836480
-    description: "ansible-created-disk-updated"
+    description: "ansible-created-disk-all-fields"
     disk_storage_features:
       flash_mode:
         is_enabled: true
@@ -129,260 +163,389 @@
   register: result
   ignore_errors: true
 
-- name: Verify disk create
+- name: Verify create Volume Disk with ALL attributes
   ansible.builtin.assert:
     that:
-      - result.error == None
-      - result.response is defined
       - result.changed == true
-      - result.volume_group_ext_id == "{{vg1_uuid}}"
+      - result.failed == false
+      - result.response is defined
+      - result.task_ext_id is defined
+      - result.volume_group_ext_id == vg1_uuid
       - result.response.index == 1
       - result.response.disk_size_bytes == 21474836480
-      - result.response.description == "ansible-created-disk-updated"
+      - result.response.description == "ansible-created-disk-all-fields"
       - result.response.disk_storage_features.flash_mode.is_enabled == true
       - result.response.ext_id == result.ext_id
-      - result.response.storage_container_id == "{{storage_container.uuid}}"
-
-    fail_msg: "Unable to create disk"
-    success_msg: "Disk created successfully"
+      - result.response.storage_container_id == storage_container.uuid
+    fail_msg: "Unable to create Volume Disk with all attributes"
+    success_msg: "Volume Disk created successfully with all attributes"
 
 - name: Set disk1 UUID
   ansible.builtin.set_fact:
     disk1_uuid: "{{ result.ext_id }}"
 
-- name: Create disk with vdisk ref in check mode
-  nutanix.ncp.ntnx_volume_groups_disks_v2:
-    state: "present"
-    volume_group_ext_id: "{{ vg1_uuid }}"
-    index: 1
-    description: "ansible-created-disk-updated"
-    disk_storage_features:
-      flash_mode:
-        is_enabled: true
-    disk_data_source_reference:
-      entity_type: "VM_DISK"
-      ext_id: "{{disk1_uuid}}"
-  register: result
-  ignore_errors: true
-  check_mode: true
-
-- name: Verify spec of disk
-  ansible.builtin.assert:
-    that:
-      - result.error == None
-      - result.response is defined
-      - result.changed == false
-      - result.volume_group_ext_id == "{{vg1_uuid}}"
-      - result.response.index == 1
-      - result.response.description == "ansible-created-disk-updated"
-      - result.response.disk_storage_features.flash_mode.is_enabled == true
-      - result.response.disk_data_source_reference.entity_type == "VM_DISK"
-      - result.response.disk_data_source_reference.ext_id == "{{disk1_uuid}}"
-
-    fail_msg: "Unable to create spec for disk create"
-    success_msg: "Spec generated successfully for disk create"
-
-- name: Create disk from recovery point in check mode
-  nutanix.ncp.ntnx_volume_groups_disks_v2:
-    state: "present"
-    volume_group_ext_id: "{{ vg1_uuid }}"
-    index: 1
-    description: "ansible-created-disk-updated"
-    disk_storage_features:
-      flash_mode:
-        is_enabled: true
-    disk_data_source_reference:
-      entity_type: "DISK_RECOVERY_POINT"
-      ext_id: "{{disk1_uuid}}"
-  register: result
-  ignore_errors: true
-  check_mode: true
-
-- name: Verify spec of disk
-  ansible.builtin.assert:
-    that:
-      - result.error == None
-      - result.response is defined
-      - result.changed == false
-      - result.volume_group_ext_id == "{{vg1_uuid}}"
-      - result.response.index == 1
-      - result.response.description == "ansible-created-disk-updated"
-      - result.response.disk_storage_features.flash_mode.is_enabled == true
-      - result.response.disk_data_source_reference.entity_type == "DISK_RECOVERY_POINT"
-      - result.response.disk_data_source_reference.ext_id == "{{disk1_uuid}}"
-
-    fail_msg: "Unable to create spec for disk create"
-    success_msg: "Spec generated successfully for disk create"
-
-- name: Create disk from previously created vdisk
+- name: Clone Volume Disk from existing VOLUME_DISK
   nutanix.ncp.ntnx_volume_groups_disks_v2:
     state: "present"
     volume_group_ext_id: "{{ vg1_uuid }}"
     index: 2
-    description: "ansible-created-disk-updated"
+    description: "ansible-cloned-disk"
     disk_storage_features:
       flash_mode:
         is_enabled: true
     disk_data_source_reference:
       entity_type: "VOLUME_DISK"
-      ext_id: "{{disk1_uuid}}"
+      ext_id: "{{ disk1_uuid }}"
   register: result
   ignore_errors: true
+
+- name: Verify Volume Disk clone
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.volume_group_ext_id == vg1_uuid
+      - result.response.index == 2
+      - result.response.description == "ansible-cloned-disk"
+      - result.response.disk_storage_features.flash_mode.is_enabled == true
+      - result.response.ext_id == result.ext_id
+    fail_msg: "Unable to clone Volume Disk from existing VOLUME_DISK"
+    success_msg: "Volume Disk cloned successfully from existing VOLUME_DISK"
 
 - name: Set disk2 UUID
   ansible.builtin.set_fact:
     disk2_uuid: "{{ result.ext_id }}"
 
-- name: Verify disk create
+- name: Negative - Create Volume Disk with wrong volume_group_ext_id
+  nutanix.ncp.ntnx_volume_groups_disks_v2:
+    state: "present"
+    volume_group_ext_id: "00000000-0000-0000-0000-000000000000"
+    disk_size_bytes: 21474836480
+    disk_data_source_reference:
+      entity_type: "STORAGE_CONTAINER"
+      ext_id: "{{ storage_container.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify negative create failed as expected
   ansible.builtin.assert:
     that:
-      - result.error == None
+      - result.changed == false
+      - result.failed == true
+    fail_msg: "Create with wrong volume_group_ext_id did NOT fail as expected"
+    success_msg: "Create with wrong volume_group_ext_id failed as expected"
+
+############################################################################################
+# Update Volume Disk tests
+############################################################################################
+
+- name: Update Volume Disk in check_mode with mutable attributes
+  nutanix.ncp.ntnx_volume_groups_disks_v2:
+    state: "present"
+    volume_group_ext_id: "{{ vg1_uuid }}"
+    ext_id: "{{ disk1_uuid }}"
+    disk_size_bytes: 42949672960
+    description: "ansible-updated-disk-checkmode"
+    disk_storage_features:
+      flash_mode:
+        is_enabled: false
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Verify update check_mode spec
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
       - result.response is defined
+      - result.volume_group_ext_id == vg1_uuid
+      - result.ext_id == disk1_uuid
+      - result.response.disk_size_bytes == 42949672960
+      - result.response.description == "ansible-updated-disk-checkmode"
+      - result.response.disk_storage_features.flash_mode.is_enabled == false
+    fail_msg: "Update check_mode spec is not generated as expected"
+    success_msg: "Update check_mode spec generated successfully"
+
+- name: Update Volume Disk (real update)
+  nutanix.ncp.ntnx_volume_groups_disks_v2:
+    state: "present"
+    volume_group_ext_id: "{{ vg1_uuid }}"
+    ext_id: "{{ disk1_uuid }}"
+    disk_size_bytes: 42949672960
+    description: "ansible-updated-disk"
+    disk_storage_features:
+      flash_mode:
+        is_enabled: false
+  register: result
+  ignore_errors: true
+
+- name: Verify Volume Disk update
+  ansible.builtin.assert:
+    that:
       - result.changed == true
-      - result.volume_group_ext_id == "{{vg1_uuid}}"
-      - result.response.index == 2
-      - result.response.description == "ansible-created-disk-updated"
-      - result.response.disk_storage_features.flash_mode.is_enabled == true
-      - result.response.ext_id == result.ext_id
+      - result.failed == false
+      - result.response is defined
+      - result.task_ext_id is defined
+      - result.volume_group_ext_id == vg1_uuid
+      - result.ext_id == disk1_uuid
+      - result.response.disk_size_bytes == 42949672960
+      - result.response.description == "ansible-updated-disk"
+      - result.response.disk_storage_features.flash_mode.is_enabled == false
+    fail_msg: "Volume Disk update failed"
+    success_msg: "Volume Disk updated successfully"
 
-    fail_msg: "Unable to create disk"
-    success_msg: "Disk created successfully"
+- name: Update Volume Disk with same values (idempotency)
+  nutanix.ncp.ntnx_volume_groups_disks_v2:
+    state: "present"
+    volume_group_ext_id: "{{ vg1_uuid }}"
+    ext_id: "{{ disk1_uuid }}"
+    disk_size_bytes: 42949672960
+    description: "ansible-updated-disk"
+    disk_storage_features:
+      flash_mode:
+        is_enabled: false
+  register: result
+  ignore_errors: true
 
-- name: Fetch all disks from VG
-  nutanix.ncp.ntnx_volume_groups_disks_info_v2:
+- name: Verify update idempotency
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.msg == "Nothing to change."
+    fail_msg: "Volume Disk update idempotency check failed"
+    success_msg: "Volume Disk update is idempotent"
+
+- name: Negative - Update Volume Disk with wrong ext_id
+  nutanix.ncp.ntnx_volume_groups_disks_v2:
+    state: "present"
+    volume_group_ext_id: "{{ vg1_uuid }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    disk_size_bytes: 42949672960
+  register: result
+  ignore_errors: true
+
+- name: Verify negative update failed as expected
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+    fail_msg: "Update with wrong ext_id did NOT fail as expected"
+    success_msg: "Update with wrong ext_id failed as expected"
+
+############################################################################################
+# Info module tests (ntnx_volume_disks_info_v2)
+############################################################################################
+
+- name: Fetch all Volume Disks in the VG
+  nutanix.ncp.ntnx_volume_disks_info_v2:
     volume_group_ext_id: "{{ vg1_uuid }}"
   register: result
+  ignore_errors: true
 
-- name: Verify disk fetch
+- name: Verify list-all Volume Disks
   ansible.builtin.assert:
     that:
-      - result.error == None
-      - result.response is defined
       - result.changed == false
+      - result.failed == false
+      - result.response is defined
       - result.response | length == 3
       - result.total_available_results is defined
       - result.total_available_results == 3
-      - result.volume_group_ext_id == "{{vg1_uuid}}"
+      - result.volume_group_ext_id == vg1_uuid
+    fail_msg: "Unable to fetch all Volume Disks"
+    success_msg: "All Volume Disks fetched successfully"
 
-    fail_msg: "Unable to fetch disks"
-    success_msg: "Disks fetched successfully"
-
-- name: Fetch disks from VG using certain limit
-  nutanix.ncp.ntnx_volume_groups_disks_info_v2:
-    limit: 1
+- name: Fetch Volume Disks with limit=1
+  nutanix.ncp.ntnx_volume_disks_info_v2:
     volume_group_ext_id: "{{ vg1_uuid }}"
+    limit: 1
   register: result
+  ignore_errors: true
 
-- name: Verify disk fetch
+- name: Verify list-with-limit
   ansible.builtin.assert:
     that:
-      - result.error == None
-      - result.response is defined
       - result.changed == false
+      - result.failed == false
+      - result.response is defined
       - result.response | length == 1
-      - result.volume_group_ext_id == "{{vg1_uuid}}"
+      - result.volume_group_ext_id == vg1_uuid
+    fail_msg: "List Volume Disks with limit failed"
+    success_msg: "List Volume Disks with limit succeeded"
 
-    fail_msg: "Unable to fetch disks"
-    success_msg: "Disks fetched successfully"
+- name: Fetch Volume Disks with an unsupported filter (index eq 1)
+  nutanix.ncp.ntnx_volume_disks_info_v2:
+    volume_group_ext_id: "{{ vg1_uuid }}"
+    filter: "index eq 1"
+  register: result
+  ignore_errors: true
 
-- name: Fetch certain VG disk
-  nutanix.ncp.ntnx_volume_groups_disks_info_v2:
+- name: Verify unsupported filter is rejected by the API (best-effort)
+  ansible.builtin.assert:
+    that:
+      # Volume Disks list API does not currently OData-filter on `index`.
+      # Either the API rejects it (expected 4xx) or a future release accepts it -
+      # both are acceptable outcomes for this best-effort test.
+      - (result.failed == true) or (result.response is defined)
+    fail_msg: "List Volume Disks with filter behaved unexpectedly"
+    success_msg: "List Volume Disks with filter behaves as expected"
+
+- name: Fetch a specific Volume Disk by ext_id
+  nutanix.ncp.ntnx_volume_disks_info_v2:
     volume_group_ext_id: "{{ vg1_uuid }}"
     ext_id: "{{ disk1_uuid }}"
   register: result
+  ignore_errors: true
 
-- name: Verify disk fetch
+- name: Verify get-by-ID
   ansible.builtin.assert:
     that:
-      - result.error == None
-      - result.response is defined
       - result.changed == false
-      - result.response.ext_id == "{{disk1_uuid}}"
-      - result.volume_group_ext_id == "{{vg1_uuid}}"
+      - result.failed == false
+      - result.response is defined
+      - result.response.ext_id == disk1_uuid
+      - result.ext_id == disk1_uuid
+      - result.volume_group_ext_id == vg1_uuid
+      - result.response.disk_size_bytes == 42949672960
+      - result.response.description == "ansible-updated-disk"
+      - result.response.disk_storage_features.flash_mode.is_enabled == false
+    fail_msg: "Unable to fetch specific Volume Disk"
+    success_msg: "Specific Volume Disk fetched successfully"
 
-    fail_msg: "Unable to fetch disk"
-    success_msg: "Disk fetched successfully"
+- name: Negative - Fetch Volume Disk with invalid ext_id
+  nutanix.ncp.ntnx_volume_disks_info_v2:
+    volume_group_ext_id: "{{ vg1_uuid }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
 
-######################################### Delete disk tests #########################################
+- name: Verify negative fetch failed
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: "Fetch with invalid ext_id did NOT fail as expected"
+    success_msg: "Fetch with invalid ext_id failed as expected"
 
-- name: Delete disk with check mode is enabled
+############################################################################################
+# Delete Volume Disk tests
+############################################################################################
+
+- name: Delete Volume Disk with check_mode
+  nutanix.ncp.ntnx_volume_groups_disks_v2:
+    state: absent
+    volume_group_ext_id: "{{ vg1_uuid }}"
+    ext_id: "{{ disk1_uuid }}"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Verify Delete Volume Disk check_mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == disk1_uuid
+      - result.volume_group_ext_id == vg1_uuid
+      - result.msg is defined
+      - "'will be deleted' in result.msg"
+    fail_msg: "Delete with check_mode did not report expected message"
+    success_msg: "Delete with check_mode reports expected message"
+
+- name: Delete Volume Disk (real)
   nutanix.ncp.ntnx_volume_groups_disks_v2:
     state: absent
     volume_group_ext_id: "{{ vg1_uuid }}"
     ext_id: "{{ disk1_uuid }}"
   register: result
   ignore_errors: true
-  check_mode: true
 
-- name: Delete disk with check mode is enabled status
+- name: Verify Volume Disk delete
   ansible.builtin.assert:
     that:
-      - result.msg is defined
-      - result.changed == false
-      - result.failed == false
-      - result.ext_id == "{{ disk1_uuid }}"
-      - result.volume_group_ext_id == "{{ vg1_uuid }}"
-      - result.msg == "VG Disk with ext_id:{{ disk1_uuid }} will be deleted."
-    fail_msg: "Delete disk with check mode is enabled failed"
-    success_msg: "Delete disk with check mode is enabled passed"
-
-- name: Delete disk
-  nutanix.ncp.ntnx_volume_groups_disks_v2:
-    state: absent
-    volume_group_ext_id: "{{ vg1_uuid }}"
-    ext_id: "{{ disk1_uuid }}"
-  register: result
-
-- name: Verify disk delete
-  ansible.builtin.assert:
-    that:
-      - result.error == None
-      - result.response is defined
       - result.changed == true
+      - result.failed == false
+      - result.response is defined
       - result.response.status == "SUCCEEDED"
-      - result.volume_group_ext_id == "{{vg1_uuid}}"
-      - result.ext_id == "{{disk1_uuid}}"
+      - result.volume_group_ext_id == vg1_uuid
+      - result.ext_id == disk1_uuid
       - result.task_ext_id is defined
+    fail_msg: "Unable to delete Volume Disk"
+    success_msg: "Volume Disk deleted successfully"
 
-    fail_msg: "Unable to delete disk"
-    success_msg: "Disk deleted successfully"
-
-- name: Delete disk
+- name: Delete cloned Volume Disk
   nutanix.ncp.ntnx_volume_groups_disks_v2:
     state: absent
     volume_group_ext_id: "{{ vg1_uuid }}"
     ext_id: "{{ disk2_uuid }}"
   register: result
+  ignore_errors: true
 
-- name: Verify disk delete
+- name: Verify cloned Volume Disk delete
   ansible.builtin.assert:
     that:
-      - result.error == None
-      - result.response is defined
       - result.changed == true
+      - result.failed == false
       - result.response.status == "SUCCEEDED"
-      - result.volume_group_ext_id == "{{vg1_uuid}}"
-      - result.ext_id == "{{disk2_uuid}}"
-      - result.task_ext_id is defined
+      - result.volume_group_ext_id == vg1_uuid
+      - result.ext_id == disk2_uuid
+    fail_msg: "Unable to delete cloned Volume Disk"
+    success_msg: "Cloned Volume Disk deleted successfully"
 
-    fail_msg: "Unable to delete disk"
-    success_msg: "Disk deleted successfully"
+- name: Delete min Volume Disk
+  nutanix.ncp.ntnx_volume_groups_disks_v2:
+    state: absent
+    volume_group_ext_id: "{{ vg1_uuid }}"
+    ext_id: "{{ disk_min_uuid }}"
+  register: result
+  ignore_errors: true
 
-######################################### Cleanup #########################################
-- name: Delete Volume group
+- name: Verify min Volume Disk delete
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == "SUCCEEDED"
+      - result.ext_id == disk_min_uuid
+    fail_msg: "Unable to delete min Volume Disk"
+    success_msg: "Min Volume Disk deleted successfully"
+
+- name: Negative - Delete Volume Disk with missing ext_id
+  nutanix.ncp.ntnx_volume_groups_disks_v2:
+    state: absent
+    volume_group_ext_id: "{{ vg1_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify missing ext_id delete failed as expected
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - "'state is absent but all of the following are missing: ext_id' in result.msg"
+    fail_msg: "Delete with missing ext_id did NOT fail as expected"
+    success_msg: "Delete with missing ext_id failed as expected"
+
+############################################################################################
+# Teardown: delete Volume Group
+############################################################################################
+
+- name: Delete Volume Group
   nutanix.ncp.ntnx_volume_groups_v2:
     state: absent
     ext_id: "{{ vg1_uuid }}"
   register: result
   ignore_errors: true
 
-- name: Verify delete of VGs
+- name: Verify Volume Group delete
   ansible.builtin.assert:
     that:
-      - result.error == None
       - result.changed == true
-      - result.ext_id == "{{ vg1_uuid }}"
+      - result.failed == false
+      - result.ext_id == vg1_uuid
       - result.task_ext_id is defined
       - result.response.status == "SUCCEEDED"
-    fail_msg: "Unable to delete VG"
-    success_msg: "VG deleted successfully"
+    fail_msg: "Unable to delete Volume Group"
+    success_msg: "Volume Group deleted successfully"

@@ -1,0 +1,60 @@
+[DEPRECATION WARNING]: ANSIBLE_COLLECTIONS_PATHS option, does not fit var 
+naming standard, use the singular form ANSIBLE_COLLECTIONS_PATH instead. This 
+feature will be removed from ansible-core in version 2.19. Deprecation warnings
+ can be disabled by setting deprecation_warnings=False in ansible.cfg.
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+running playbook inside collection nutanix.ncp
+
+PLAY [Volume Disks playbook] ***************************************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"cluster_uuid": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "storage_container_uuid": "44481f83-d0a1-47b3-b9b8-32b5465c622e", "vg_name": "ansible-vg-for-volume-disks"}, "changed": false}
+
+TASK [Discover a cluster if cluster_uuid was not provided] *********************
+skipping: [localhost] => {"changed": false, "false_condition": "cluster_uuid | length == 0", "skip_reason": "Conditional result was False"}
+
+TASK [Set cluster_uuid from discovery] *****************************************
+skipping: [localhost] => {"changed": false, "false_condition": "cluster_uuid | length == 0", "skip_reason": "Conditional result was False"}
+
+TASK [Discover a storage container if not provided] ****************************
+skipping: [localhost] => {"changed": false, "false_condition": "storage_container_uuid | length == 0", "skip_reason": "Conditional result was False"}
+
+TASK [Set storage_container_uuid from discovery] *******************************
+skipping: [localhost] => {"changed": false, "false_condition": "storage_container_uuid | length == 0", "skip_reason": "Conditional result was False"}
+
+TASK [Create Volume Group to host the Volume Disks] ****************************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "d32862d3-5218-4970-61e2-da2a2ce8df50", "response": {"attachment_type": "NONE", "attachments": null, "cluster_reference": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "created_by": null, "description": "Volume Group for Volume Disk examples", "disks": null, "enabled_authentications": null, "ext_id": "d32862d3-5218-4970-61e2-da2a2ce8df50", "hydration_status": null, "is_hidden": false, "iscsi_features": null, "links": null, "name": "ansible-vg-for-volume-disks", "protocol": "NOT_ASSIGNED", "sharing_status": "SHARED", "should_load_balance_vm_attachments": true, "storage_features": {"flash_mode": {"is_enabled": true}}, "target_name": "vgexvd-d32862d3-5218-4970-61e2-da2a2ce8df50", "target_prefix": null, "tenant_id": null, "usage_type": "USER"}, "task_ext_id": "ZXJnb24=:e6c1ac00-0837-48f1-bc70-62a7bcba8056"}
+
+TASK [Set VG ext_id] ***********************************************************
+ok: [localhost] => {"ansible_facts": {"vg_ext_id": "d32862d3-5218-4970-61e2-da2a2ce8df50"}, "changed": false}
+
+TASK [Create Volume Disk with all attributes] **********************************
+changed: [localhost] => {"changed": true, "ext_id": "046020bf-e7e0-419e-854c-e971967eca5c", "response": {"description": "ansible-created-disk", "disk_data_source_reference": null, "disk_size_bytes": 21474836480, "disk_storage_features": {"flash_mode": {"is_enabled": true}}, "ext_id": "046020bf-e7e0-419e-854c-e971967eca5c", "index": 1, "links": null, "storage_container_id": "44481f83-d0a1-47b3-b9b8-32b5465c622e", "tenant_id": null}, "task_ext_id": "ZXJnb24=:b6ef13cc-99a7-4905-b12c-c313dbd57df0", "volume_group_ext_id": "d32862d3-5218-4970-61e2-da2a2ce8df50"}
+
+TASK [Set Volume Disk ext_id] **************************************************
+ok: [localhost] => {"ansible_facts": {"disk_ext_id": "046020bf-e7e0-419e-854c-e971967eca5c"}, "changed": false}
+
+TASK [Update Volume Disk with all mutable attributes] **************************
+changed: [localhost] => {"changed": true, "ext_id": "046020bf-e7e0-419e-854c-e971967eca5c", "response": {"description": "ansible-updated-disk", "disk_data_source_reference": null, "disk_size_bytes": 42949672960, "disk_storage_features": {"flash_mode": {"is_enabled": false}}, "ext_id": "046020bf-e7e0-419e-854c-e971967eca5c", "index": 1, "links": null, "storage_container_id": "44481f83-d0a1-47b3-b9b8-32b5465c622e", "tenant_id": null}, "task_ext_id": "ZXJnb24=:08c2b1c4-a8fa-4d9a-80f0-8b94829f890c", "volume_group_ext_id": "d32862d3-5218-4970-61e2-da2a2ce8df50"}
+
+TASK [Fetch a specific Volume Disk using ext_id] *******************************
+ok: [localhost] => {"changed": false, "ext_id": "046020bf-e7e0-419e-854c-e971967eca5c", "response": {"description": "ansible-updated-disk", "disk_data_source_reference": null, "disk_size_bytes": 42949672960, "disk_storage_features": {"flash_mode": {"is_enabled": false}}, "ext_id": "046020bf-e7e0-419e-854c-e971967eca5c", "index": 1, "links": null, "storage_container_id": "44481f83-d0a1-47b3-b9b8-32b5465c622e", "tenant_id": null}, "volume_group_ext_id": "d32862d3-5218-4970-61e2-da2a2ce8df50"}
+
+TASK [List all Volume Disks in the Volume Group] *******************************
+ok: [localhost] => {"changed": false, "response": [{"description": "ansible-updated-disk", "disk_data_source_reference": null, "disk_size_bytes": 42949672960, "disk_storage_features": {"flash_mode": {"is_enabled": false}}, "ext_id": "046020bf-e7e0-419e-854c-e971967eca5c", "index": 1, "links": [{"href": "https://10.44.76.28:9440/api/volumes/v4.2/config/volume-groups/d32862d3-5218-4970-61e2-da2a2ce8df50/disks/046020bf-e7e0-419e-854c-e971967eca5c", "rel": "disk"}], "storage_container_id": "44481f83-d0a1-47b3-b9b8-32b5465c622e", "tenant_id": null}], "total_available_results": 1, "volume_group_ext_id": "d32862d3-5218-4970-61e2-da2a2ce8df50"}
+
+TASK [List Volume Disks with limit] ********************************************
+ok: [localhost] => {"changed": false, "response": [{"description": "ansible-updated-disk", "disk_data_source_reference": null, "disk_size_bytes": 42949672960, "disk_storage_features": {"flash_mode": {"is_enabled": false}}, "ext_id": "046020bf-e7e0-419e-854c-e971967eca5c", "index": 1, "links": [{"href": "https://10.44.76.28:9440/api/volumes/v4.2/config/volume-groups/d32862d3-5218-4970-61e2-da2a2ce8df50/disks/046020bf-e7e0-419e-854c-e971967eca5c", "rel": "disk"}], "storage_container_id": "44481f83-d0a1-47b3-b9b8-32b5465c622e", "tenant_id": null}], "total_available_results": 1, "volume_group_ext_id": "d32862d3-5218-4970-61e2-da2a2ce8df50"}
+
+TASK [Delete the Volume Disk] **************************************************
+changed: [localhost] => {"changed": true, "ext_id": "046020bf-e7e0-419e-854c-e971967eca5c", "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "completed_time": "2026-07-21T06:39:49.694975+00:00", "completion_details": null, "created_time": "2026-07-21T06:39:49.453461+00:00", "entities_affected": [{"ext_id": "d32862d3-5218-4970-61e2-da2a2ce8df50", "name": "ansible-vg-for-volume-disks", "rel": "volumes:config:volume-group"}, {"ext_id": "046020bf-e7e0-419e-854c-e971967eca5c", "name": null, "rel": "volumes:config:volume-group:disk"}], "error_messages": null, "ext_id": "ZXJnb24=:b2095bad-67f4-409b-81e5-8429326bcbf2", "is_background_task": false, "is_cancelable": false, "last_updated_time": "2026-07-21T06:39:49.694682+00:00", "legacy_error_message": null, "number_of_entities_affected": 2, "number_of_subtasks": 1, "operation": "VolumeDiskDelete", "operation_description": "Delete Volume Disks", "owned_by": {"ext_id": "00000000-0000-0000-0000-000000000000", "name": "admin"}, "parent_task": null, "progress_percentage": 100, "projectExtId": "00000000-0000-0000-0000-000000000000", "resource_links": null, "root_task": null, "started_time": "2026-07-21T06:39:49.453461+00:00", "status": "SUCCEEDED", "sub_steps": null, "sub_tasks": [{"ext_id": "ZXJnb24=:93f5394b-b786-4ae6-abae-bb629ae0bc44", "href": "https://10.44.76.28:9440/api/prism/v4.3/config/tasks/ZXJnb24=:93f5394b-b786-4ae6-abae-bb629ae0bc44", "rel": "subtask"}], "warnings": null}, "task_ext_id": "ZXJnb24=:b2095bad-67f4-409b-81e5-8429326bcbf2", "volume_group_ext_id": "d32862d3-5218-4970-61e2-da2a2ce8df50"}
+
+TASK [Delete the Volume Group] *************************************************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "d32862d3-5218-4970-61e2-da2a2ce8df50", "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "completed_time": "2026-07-21T06:39:52.804095+00:00", "completion_details": null, "created_time": "2026-07-21T06:39:52.552700+00:00", "entities_affected": [{"ext_id": "d32862d3-5218-4970-61e2-da2a2ce8df50", "name": "ansible-vg-for-volume-disks", "rel": "volumes:config:volume-group"}], "error_messages": null, "ext_id": "ZXJnb24=:47ebf218-098d-409c-804f-f0a9d0cc7c1a", "is_background_task": false, "is_cancelable": false, "last_updated_time": "2026-07-21T06:39:52.804094+00:00", "legacy_error_message": null, "number_of_entities_affected": 1, "number_of_subtasks": 1, "operation": "VolumeGroupDelete", "operation_description": "Delete Volume Group", "owned_by": {"ext_id": "00000000-0000-0000-0000-000000000000", "name": "admin"}, "parent_task": null, "progress_percentage": 100, "projectExtId": "00000000-0000-0000-0000-000000000000", "resource_links": null, "root_task": null, "started_time": "2026-07-21T06:39:52.552700+00:00", "status": "SUCCEEDED", "sub_steps": null, "sub_tasks": [{"ext_id": "ZXJnb24=:eeca7ab5-17ea-4701-ab9c-971df5e8cfbb", "href": "https://10.44.76.28:9440/api/prism/v4.3/config/tasks/ZXJnb24=:eeca7ab5-17ea-4701-ab9c-971df5e8cfbb", "rel": "subtask"}], "warnings": null}, "task_ext_id": "ZXJnb24=:47ebf218-098d-409c-804f-f0a9d0cc7c1a"}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=11   changed=5    unreachable=0    failed=0    skipped=4    rescued=0    ignored=0   
+
