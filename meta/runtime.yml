@@ -151,6 +151,8 @@ action_groups:
     - ntnx_volume_groups_vms_v2
     - ntnx_volume_groups_iscsi_clients_v2
     - ntnx_volume_groups_iscsi_clients_info_v2
+    - ntnx_vm_attachments_by_volume_group_id_v2
+    - ntnx_volume_group_vm_attachment_info_v2
     - ntnx_roles_v2
     - ntnx_roles_info_v2
     - ntnx_directory_services_v2

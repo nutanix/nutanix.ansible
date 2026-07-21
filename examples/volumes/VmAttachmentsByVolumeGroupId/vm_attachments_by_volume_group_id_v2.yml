@@ -1,0 +1,111 @@
+---
+# Summary:
+# This playbook exercises the ntnx_vm_attachments_by_volume_group_id_v2 module and
+# the companion ntnx_volume_group_vm_attachment_info_v2 module. It:
+# 1. Prepares a fresh Volume Group and an AHV VM to attach.
+# 2. Attaches the VM to the Volume Group at a specific SCSI index.
+# 3. Fetches the newly created VmAttachment via the info module (get-by-ext_id).
+# 4. Lists all VM attachments for the Volume Group (unfiltered).
+# 5. Lists VM attachments with a limit (paginated).
+# 6. Detaches the VM from the Volume Group.
+# 7. Cleans up the VM and the Volume Group.
+
+- name: VmAttachmentsByVolumeGroupId playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting variables
+      ansible.builtin.set_fact:
+        cluster_uuid: "<cluster_ext_id>"
+        subnet_uuid: "<subnet_ext_id>"
+        vg_name: "ansible-vg-vm-attach-example"
+        vm_name: "ansible-vm-vm-attach-example"
+
+    - name: Create Volume Group for VM attachment example
+      nutanix.ncp.ntnx_volume_groups_v2:
+        state: present
+        name: "{{ vg_name }}"
+        description: "Volume group used by the VmAttachmentsByVolumeGroupId example"
+        should_load_balance_vm_attachments: true
+        sharing_status: "SHARED"
+        target_prefix: "vgvmex"
+        cluster_reference: "{{ cluster_uuid }}"
+        usage_type: "USER"
+      register: vg_result
+
+    - name: Store Volume Group ext_id
+      ansible.builtin.set_fact:
+        volume_group_ext_id: "{{ vg_result.ext_id }}"
+
+    - name: Create AHV VM used for the attachment
+      nutanix.ncp.ntnx_vms_v2:
+        state: present
+        name: "{{ vm_name }}"
+        num_sockets: 1
+        num_cores_per_socket: 1
+        memory_size_bytes: 1073741824
+        cluster:
+          ext_id: "{{ cluster_uuid }}"
+        nics:
+          - network_info:
+              nic_type: "NORMAL_NIC"
+              vlan_mode: "ACCESS"
+              subnet:
+                ext_id: "{{ subnet_uuid }}"
+              ipv4_config:
+                should_assign_ip: true
+      register: vm_result
+
+    - name: Store VM ext_id
+      ansible.builtin.set_fact:
+        vm_ext_id: "{{ vm_result.ext_id }}"
+
+    - name: Attach VM to Volume Group at SCSI index 1
+      nutanix.ncp.ntnx_vm_attachments_by_volume_group_id_v2:
+        state: present
+        volume_group_ext_id: "{{ volume_group_ext_id }}"
+        ext_id: "{{ vm_ext_id }}"
+        index: 1
+      register: attach_result
+
+    - name: Fetch specific VM attachment on the Volume Group by ext_id
+      nutanix.ncp.ntnx_volume_group_vm_attachment_info_v2:
+        volume_group_ext_id: "{{ volume_group_ext_id }}"
+        ext_id: "{{ vm_ext_id }}"
+      register: get_result
+
+    - name: List all VM attachments for the Volume Group
+      nutanix.ncp.ntnx_volume_group_vm_attachment_info_v2:
+        volume_group_ext_id: "{{ volume_group_ext_id }}"
+      register: list_result
+
+    - name: List VM attachments with a limit
+      nutanix.ncp.ntnx_volume_group_vm_attachment_info_v2:
+        volume_group_ext_id: "{{ volume_group_ext_id }}"
+        limit: 5
+      register: list_limit_result
+
+    - name: Detach VM from Volume Group
+      nutanix.ncp.ntnx_vm_attachments_by_volume_group_id_v2:
+        state: absent
+        volume_group_ext_id: "{{ volume_group_ext_id }}"
+        ext_id: "{{ vm_ext_id }}"
+      register: detach_result
+
+    - name: Delete VM used for the example
+      nutanix.ncp.ntnx_vms_v2:
+        state: absent
+        ext_id: "{{ vm_ext_id }}"
+      register: vm_delete_result
+
+    - name: Delete Volume Group used for the example
+      nutanix.ncp.ntnx_volume_groups_v2:
+        state: absent
+        ext_id: "{{ volume_group_ext_id }}"
+      register: vg_delete_result
