@@ -1,0 +1,20 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Nutanix Files - MountTargetSnapshot examples] ****************************
+
+TASK [Create mount target snapshot] ********************************************
+[ERROR]: Task failed: Module failed: Api Exception raised while checking existing mount target snapshots
+Origin: /tmp/codegen/c8d97026a0e346a1994d3adf3ab6b404/repo/examples/files/MountTargetSnapshot/mount_target_snapshot.yml:27:7
+
+25       validate_certs: false
+26   tasks:
+27     - name: Create mount target snapshot
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while checking existing mount target snapshots", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=0    changed=0    unreachable=0    failed=1    skipped=0    rescued=0    ignored=0   
+

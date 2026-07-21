@@ -1,0 +1,532 @@
+---
+# =============================================================================
+# Test plan for nutanix.ncp.ntnx_files_mount_target_snapshot_v2 and
+# nutanix.ncp.ntnx_files_mount_target_snapshots_info_v2
+# =============================================================================
+# A mount target snapshot is a point-in-time copy of a mount target (share /
+# export) that belongs to a Nutanix Files file server. The snapshot entity
+# supports Create, Read (get/list), Delete and a Restore action. There is no
+# Update API for a snapshot, so C(state=present) + C(ext_id) restores the mount
+# target from the snapshot.
+#
+# Prerequisites (a file server + a mount target) are discovered from the live
+# cluster when `file_server_ext_id` / `mount_target_ext_id` are not supplied via
+# integration_config.yml.
+#
+# Scenarios covered:
+#   1.  Prerequisite discovery (file server + mount target).
+#   2.  Negative: missing required path params (file_server_ext_id).
+#   3.  check_mode create (all attributes).
+#   4.  Create with required attributes only (name).
+#   5.  Create with all attributes (name + type).
+#   6.  Idempotency: create again with same name -> skipped.
+#   7.  Negative: missing name on create.
+#   8.  Negative: invalid enum value for type.
+#   9.  Info: get snapshot by ext_id.
+#   10. Info: list all snapshots (+ total_available_results).
+#   11. Info: list with filter.
+#   12. Info: list with limit.
+#   13. Negative info: get with invalid ext_id.
+#   14. check_mode restore.
+#   15. Restore mount target from snapshot.
+#   16. check_mode delete.
+#   17. Delete snapshot.
+#   18. Negative: delete with wrong ext_id.
+#   19. Negative: delete with missing ext_id.
+#   20. Cleanup of any leftover snapshots created by the tests.
+# =============================================================================
+
+- name: Start Mount Target Snapshot tests
+  ansible.builtin.debug:
+    msg: Start Mount Target Snapshot tests
+
+- name: Generate random names
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    suffix_name: "ansible"
+    todelete: []
+
+- name: Set snapshot names
+  ansible.builtin.set_fact:
+    snapshot_name_min: "mts_{{ suffix_name }}_{{ random_name }}_min"
+    snapshot_name_full: "mts_{{ suffix_name }}_{{ random_name }}_full"
+
+########################################################################################
+# Discover prerequisites (file server + mount target) from the live cluster
+########################################################################################
+
+- name: Discover a file server when file_server_ext_id is not provided
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:{{ port | default(9440) }}/api/files/v4.0/config/file-servers?$limit=1"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs | default(false) }}"
+    return_content: true
+  register: fs_list
+  ignore_errors: true
+  when: file_server_ext_id is not defined
+
+- name: Set file_server_ext_id from discovery
+  ansible.builtin.set_fact:
+    file_server_ext_id: "{{ fs_list.json.data[0].extId }}"
+  when:
+    - file_server_ext_id is not defined
+    - fs_list is defined
+    - fs_list.json is defined
+    - fs_list.json.data is defined
+    - fs_list.json.data | length > 0
+
+- name: Discover a mount target when mount_target_ext_id is not provided
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:{{ port | default(9440) }}/api/files/v4.0/config/file-servers/{{ file_server_ext_id }}/mount-targets?$limit=1"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs | default(false) }}"
+    return_content: true
+  register: mt_list
+  ignore_errors: true
+  when:
+    - mount_target_ext_id is not defined
+    - file_server_ext_id is defined
+
+- name: Set mount_target_ext_id from discovery
+  ansible.builtin.set_fact:
+    mount_target_ext_id: "{{ mt_list.json.data[0].extId }}"
+  when:
+    - mount_target_ext_id is not defined
+    - mt_list is defined
+    - mt_list.json is defined
+    - mt_list.json.data is defined
+    - mt_list.json.data | length > 0
+
+- name: Assert prerequisites are available
+  ansible.builtin.assert:
+    that:
+      - file_server_ext_id is defined
+      - mount_target_ext_id is defined
+    success_msg: "A file server and mount target are available to run the tests"
+    fail_msg: >-
+      A file server and mount target are required to run these tests. Provide
+      file_server_ext_id and mount_target_ext_id in integration_config.yml or
+      ensure the Nutanix Files service has at least one file server + mount target.
+
+########################################################################################
+# Negative test - missing required path parameter
+########################################################################################
+
+- name: Create snapshot without file_server_ext_id (should fail)
+  nutanix.ncp.ntnx_files_mount_target_snapshot_v2:
+    state: present
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    name: "{{ snapshot_name_min }}"
+  register: result
+  ignore_errors: true
+
+- name: Create snapshot without file_server_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'missing required arguments: file_server_ext_id' in result.msg"
+    success_msg: "Create snapshot without file_server_ext_id failed as expected"
+    fail_msg: "Create snapshot without file_server_ext_id did not fail as expected"
+
+########################################################################################
+# check_mode create with all attributes
+########################################################################################
+
+- name: Generate spec for creating snapshot using check mode with all attributes
+  nutanix.ncp.ntnx_files_mount_target_snapshot_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    name: "check_mode_mts_full"
+    type: "USER_SNAPSHOT"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for creating snapshot using check mode with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "check_mode_mts_full"
+      - result.response.type == "USER_SNAPSHOT"
+    success_msg: "Spec for creating snapshot using check mode with all attributes is generated successfully"
+    fail_msg: "Spec for creating snapshot using check mode with all attributes is not generated successfully"
+
+########################################################################################
+# Create snapshot with minimum attributes
+########################################################################################
+
+- name: Create snapshot with minimum attributes
+  nutanix.ncp.ntnx_files_mount_target_snapshot_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    name: "{{ snapshot_name_min }}"
+  register: result
+  ignore_errors: true
+
+- name: Create snapshot with minimum attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.name == "{{ snapshot_name_min }}"
+    success_msg: "Snapshot with minimum attributes created successfully"
+    fail_msg: "Snapshot with minimum attributes creation failed"
+
+- name: Add snapshot to todelete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+########################################################################################
+# Create snapshot with all attributes
+########################################################################################
+
+- name: Create snapshot with all attributes
+  nutanix.ncp.ntnx_files_mount_target_snapshot_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    name: "{{ snapshot_name_full }}"
+    type: "USER_SNAPSHOT"
+  register: result
+  ignore_errors: true
+
+- name: Create snapshot with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.name == "{{ snapshot_name_full }}"
+      - result.response.type == "USER_SNAPSHOT"
+    success_msg: "Snapshot with all attributes created successfully"
+    fail_msg: "Snapshot with all attributes creation failed"
+
+- name: Set full snapshot ext_id
+  ansible.builtin.set_fact:
+    full_snapshot_ext_id: "{{ result.ext_id }}"
+
+- name: Add snapshot to todelete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+########################################################################################
+# Idempotency - create snapshot with an existing name
+########################################################################################
+
+- name: Create snapshot with an existing name (idempotency)
+  nutanix.ncp.ntnx_files_mount_target_snapshot_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    name: "{{ snapshot_name_full }}"
+    type: "USER_SNAPSHOT"
+  register: result
+  ignore_errors: true
+
+- name: Create snapshot with an existing name status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - "'already exists' in result.msg"
+    success_msg: "Create snapshot with an existing name is idempotent as expected"
+    fail_msg: "Create snapshot with an existing name is not idempotent"
+
+########################################################################################
+# Negative tests - create
+########################################################################################
+
+- name: Create snapshot with missing name (should fail)
+  nutanix.ncp.ntnx_files_mount_target_snapshot_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Create snapshot with missing name status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Missing required parameter(s): name"
+    success_msg: "Create snapshot with missing name failed as expected"
+    fail_msg: "Create snapshot with missing name did not fail as expected"
+
+- name: Create snapshot with invalid type value (should fail)
+  nutanix.ncp.ntnx_files_mount_target_snapshot_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    name: "invalid_type_snapshot"
+    type: "INVALID_SNAPSHOT_TYPE"
+  register: result
+  ignore_errors: true
+
+- name: Create snapshot with invalid type value status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'value of type must be one of' in result.msg"
+    success_msg: "Create snapshot with invalid type value failed as expected"
+    fail_msg: "Create snapshot with invalid type value did not fail as expected"
+
+########################################################################################
+# Info module - get single snapshot
+########################################################################################
+
+- name: Fetch snapshot using external ID
+  nutanix.ncp.ntnx_files_mount_target_snapshots_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    ext_id: "{{ full_snapshot_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch snapshot using external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ full_snapshot_ext_id }}"
+      - result.response is defined
+      - result.response.ext_id == "{{ full_snapshot_ext_id }}"
+      - result.response.name == "{{ snapshot_name_full }}"
+      - result.response.type == "USER_SNAPSHOT"
+    success_msg: "Fetch snapshot using external ID passed"
+    fail_msg: "Fetch snapshot using external ID failed"
+
+########################################################################################
+# Info module - list snapshots
+########################################################################################
+
+- name: List all snapshots
+  nutanix.ncp.ntnx_files_mount_target_snapshots_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: List all snapshots status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length >= 2
+      - result.total_available_results is defined
+    success_msg: "List all snapshots passed"
+    fail_msg: "List all snapshots failed"
+
+- name: List snapshots with filter
+  nutanix.ncp.ntnx_files_mount_target_snapshots_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    filter: "name eq '{{ snapshot_name_full }}'"
+  register: result
+  ignore_errors: true
+
+- name: List snapshots with filter status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].name == "{{ snapshot_name_full }}"
+    success_msg: "List snapshots with filter passed"
+    fail_msg: "List snapshots with filter failed"
+
+- name: List snapshots with limit
+  nutanix.ncp.ntnx_files_mount_target_snapshots_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List snapshots with limit status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+    success_msg: "List snapshots with limit passed"
+    fail_msg: "List snapshots with limit failed"
+
+- name: Fetch snapshot using wrong external ID (should fail)
+  nutanix.ncp.ntnx_files_mount_target_snapshots_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Fetch snapshot using wrong external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Fetch snapshot using wrong external ID failed as expected"
+    fail_msg: "Fetch snapshot using wrong external ID did not fail as expected"
+
+########################################################################################
+# Restore mount target from snapshot
+########################################################################################
+
+- name: Restore mount target from snapshot with check mode
+  nutanix.ncp.ntnx_files_mount_target_snapshot_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    ext_id: "{{ full_snapshot_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Restore mount target from snapshot with check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - "'will be restored' in result.msg"
+    success_msg: "Restore mount target from snapshot with check mode passed"
+    fail_msg: "Restore mount target from snapshot with check mode failed"
+
+- name: Restore mount target from snapshot
+  nutanix.ncp.ntnx_files_mount_target_snapshot_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    ext_id: "{{ full_snapshot_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Restore mount target from snapshot status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == "{{ full_snapshot_ext_id }}"
+      - result.task_ext_id is defined
+    success_msg: "Restore mount target from snapshot passed"
+    fail_msg: "Restore mount target from snapshot failed"
+
+########################################################################################
+# Delete snapshot
+########################################################################################
+
+- name: Delete snapshot with check mode
+  nutanix.ncp.ntnx_files_mount_target_snapshot_v2:
+    state: absent
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    ext_id: "{{ full_snapshot_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Delete snapshot with check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - "'will be deleted' in result.msg"
+    success_msg: "Delete snapshot with check mode passed"
+    fail_msg: "Delete snapshot with check mode failed"
+
+- name: Delete snapshot with wrong external ID (should fail)
+  nutanix.ncp.ntnx_files_mount_target_snapshot_v2:
+    state: absent
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Delete snapshot with wrong external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Delete snapshot with wrong external ID failed as expected"
+    fail_msg: "Delete snapshot with wrong external ID did not fail as expected"
+
+- name: Delete snapshot with missing external ID (should fail)
+  nutanix.ncp.ntnx_files_mount_target_snapshot_v2:
+    state: absent
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete snapshot with missing external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is absent but all of the following are missing: ext_id' in result.msg"
+    success_msg: "Delete snapshot with missing external ID failed as expected"
+    fail_msg: "Delete snapshot with missing external ID did not fail as expected"
+
+########################################################################################
+# Cleanup
+########################################################################################
+
+- name: Delete all created snapshots
+  nutanix.ncp.ntnx_files_mount_target_snapshot_v2:
+    state: absent
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    ext_id: "{{ item }}"
+  register: result
+  ignore_errors: true
+  loop: "{{ todelete }}"
+
+- name: Deletion status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.results | length == todelete | length
+    success_msg: "All created snapshots are deleted successfully"
+    fail_msg: "Unable to delete all created snapshots"
+
+- name: Reset todelete list
+  ansible.builtin.set_fact:
+    todelete: []
