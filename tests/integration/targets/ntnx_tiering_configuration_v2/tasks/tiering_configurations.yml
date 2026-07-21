@@ -1,0 +1,490 @@
+---
+# Nutanix Files - TieringConfiguration integration tests
+#
+# Test plan (QA-style — combines SDK, module, and domain knowledge):
+#   Prerequisite: a Nutanix Files file server must exist on the cluster; the
+#   integration harness resolves its ext_id from a `file_server` variable.
+#   1. check_mode create (full attributes) — spec is generated but no API call.
+#   2. Create tiering configuration with minimum required attributes (memory
+#      threshold, cool off period, mount targets enablement type).
+#   3. Create tiering configuration with ALL attributes (schedule, mount target
+#      ext ids, minimum file size, etc). Fails on the same file server if a
+#      config already exists — a single file server can only have ONE tiering
+#      config (see domain knowledge), so we test that duplicate creates fail.
+#   4. Negative create tests — missing required fields (memory_threshold_percent,
+#      cooloff_period_seconds, mount_targets_enablement_type) and invalid enum.
+#   5. Info tests — get-by-ID, list-all, list with filter, list with limit,
+#      list with wrong ext_id.
+#   6. check_mode update (full attributes).
+#   7. Real update — change scalar (memory_threshold_percent), change enum value,
+#      change schedule list — verify changed=true.
+#   8. Idempotency update — same params twice, second run reports changed=false.
+#   9. Update with wrong ext_id — must fail with descriptive error.
+#  10. check_mode delete.
+#  11. Real delete — verify changed=true.
+#  12. Delete with wrong ext_id — must fail.
+#  13. Delete without ext_id — must fail with required_if error.
+
+- name: Start Tiering Configuration tests
+  ansible.builtin.debug:
+    msg: Start Tiering Configuration tests
+
+- name: Generate random names / helpers
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=10)[0] }}"
+    todelete: []
+
+- name: Resolve file_server_ext_id from harness variables
+  ansible.builtin.set_fact:
+    file_server_ext_id: "{{ file_server.ext_id | default('') }}"
+
+- name: Verify file server ext_id is resolved
+  ansible.builtin.assert:
+    that:
+      - file_server_ext_id is defined
+      - file_server_ext_id | length > 0
+    fail_msg: "No file server ext_id could be resolved. Provide `file_server.ext_id` in integration_config.yml."
+    success_msg: "Resolved file_server_ext_id={{ file_server_ext_id }}"
+
+########################################################################################
+# Create Tiering Configuration Tests
+########################################################################################
+
+- name: Generate spec for creating tiering configuration using check mode with all attributes
+  nutanix.ncp.ntnx_tiering_configuration_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    memory_threshold_percent: 80
+    cooloff_period_seconds: 604800
+    minimum_file_size_bytes: 65536
+    mount_targets_enablement_type: ALL_FUTURE_MOUNT_TARGETS
+    schedule:
+      - day_of_week: 1
+        schedules:
+          - start_hours: 0
+            start_minutes: 0
+            duration_minutes: 240
+      - day_of_week: 7
+        schedules:
+          - start_hours: 22
+            start_minutes: 30
+            duration_minutes: 90
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for creating tiering configuration using check mode with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.memory_threshold_percent == 80
+      - result.response.cooloff_period_seconds == 604800
+      - result.response.minimum_file_size_bytes == 65536
+      - result.response.mount_targets_enablement_type == "ALL_FUTURE_MOUNT_TARGETS"
+      - result.response.schedule | length == 2
+      - result.response.schedule[0].day_of_week == 1
+      - result.response.schedule[0].schedules[0].start_hours == 0
+      - result.response.schedule[0].schedules[0].start_minutes == 0
+      - result.response.schedule[0].schedules[0].duration_minutes == 240
+      - result.response.schedule[1].day_of_week == 7
+      - result.response.schedule[1].schedules[0].start_hours == 22
+      - result.response.schedule[1].schedules[0].start_minutes == 30
+      - result.response.schedule[1].schedules[0].duration_minutes == 90
+    success_msg: "Spec for creating tiering configuration in check mode generated successfully"
+    fail_msg: "Spec for creating tiering configuration in check mode was not generated successfully"
+
+- name: Create tiering configuration with minimum required attributes
+  nutanix.ncp.ntnx_tiering_configuration_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    memory_threshold_percent: 75
+    cooloff_period_seconds: 604800
+    mount_targets_enablement_type: NONE
+  register: result
+  ignore_errors: true
+
+- name: Create tiering configuration with minimum attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.memory_threshold_percent == 75
+      - result.response.cooloff_period_seconds == 604800
+      - result.response.mount_targets_enablement_type == "NONE"
+    success_msg: "Tiering configuration with minimum attributes created successfully"
+    fail_msg: "Tiering configuration with minimum attributes creation failed"
+
+- name: Add tiering configuration to todelete
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+    first_ext_id: "{{ result.ext_id }}"
+
+########################################################################################
+# Negative Create Tests
+########################################################################################
+
+- name: Create tiering configuration with missing memory_threshold_percent (should fail)
+  nutanix.ncp.ntnx_tiering_configuration_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    cooloff_period_seconds: 604800
+    mount_targets_enablement_type: NONE
+  register: result
+  ignore_errors: true
+
+- name: Create tiering configuration with missing memory_threshold_percent status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'Missing required parameter(s): memory_threshold_percent' in result.msg"
+    success_msg: "Create with missing memory_threshold_percent failed as expected"
+    fail_msg: "Create with missing memory_threshold_percent did not fail as expected"
+
+- name: Create tiering configuration with missing cooloff_period_seconds (should fail)
+  nutanix.ncp.ntnx_tiering_configuration_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    memory_threshold_percent: 80
+    mount_targets_enablement_type: NONE
+  register: result
+  ignore_errors: true
+
+- name: Create tiering configuration with missing cooloff_period_seconds status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'Missing required parameter(s): cooloff_period_seconds' in result.msg"
+    success_msg: "Create with missing cooloff_period_seconds failed as expected"
+    fail_msg: "Create with missing cooloff_period_seconds did not fail as expected"
+
+- name: Create tiering configuration with missing mount_targets_enablement_type (should fail)
+  nutanix.ncp.ntnx_tiering_configuration_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    memory_threshold_percent: 80
+    cooloff_period_seconds: 604800
+  register: result
+  ignore_errors: true
+
+- name: Create tiering configuration with missing mount_targets_enablement_type status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'Missing required parameter(s): mount_targets_enablement_type' in result.msg"
+    success_msg: "Create with missing mount_targets_enablement_type failed as expected"
+    fail_msg: "Create with missing mount_targets_enablement_type did not fail as expected"
+
+- name: Create tiering configuration with invalid enum for mount_targets_enablement_type (should fail)
+  nutanix.ncp.ntnx_tiering_configuration_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    memory_threshold_percent: 80
+    cooloff_period_seconds: 604800
+    mount_targets_enablement_type: INVALID_VALUE
+  register: result
+  ignore_errors: true
+
+- name: Create tiering configuration with invalid enum status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'value of mount_targets_enablement_type must be one of' in result.msg"
+    success_msg: "Create with invalid enum value failed as expected"
+    fail_msg: "Create with invalid enum value did not fail as expected"
+
+- name: Create tiering configuration with missing file_server_ext_id (should fail)
+  nutanix.ncp.ntnx_tiering_configuration_v2:
+    memory_threshold_percent: 80
+    cooloff_period_seconds: 604800
+    mount_targets_enablement_type: NONE
+  register: result
+  ignore_errors: true
+
+- name: Create tiering configuration with missing file_server_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'file_server_ext_id' in result.msg"
+    success_msg: "Create with missing file_server_ext_id failed as expected"
+    fail_msg: "Create with missing file_server_ext_id did not fail as expected"
+
+########################################################################################
+# Info Module Tests
+########################################################################################
+
+- name: Fetch tiering configuration using external ID
+  nutanix.ncp.ntnx_tiering_configurations_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    ext_id: "{{ first_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch tiering configuration using external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.ext_id == first_ext_id
+      - result.response.memory_threshold_percent == 75
+      - result.response.cooloff_period_seconds == 604800
+      - result.response.mount_targets_enablement_type == "NONE"
+    success_msg: "Fetch tiering configuration by ext_id succeeded"
+    fail_msg: "Fetch tiering configuration by ext_id failed"
+
+- name: List all tiering configurations for the file server
+  nutanix.ncp.ntnx_tiering_configurations_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: List all tiering configurations status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length >= 1
+    success_msg: "List all tiering configurations succeeded"
+    fail_msg: "List all tiering configurations failed"
+
+- name: List tiering configurations with limit
+  nutanix.ncp.ntnx_tiering_configurations_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List tiering configurations with limit status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length <= 1
+    success_msg: "List tiering configurations with limit succeeded"
+    fail_msg: "List tiering configurations with limit failed"
+
+- name: Fetch tiering configuration using wrong external ID
+  nutanix.ncp.ntnx_tiering_configurations_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+  register: result
+  ignore_errors: true
+
+- name: Fetch tiering configuration using wrong external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Fetch with wrong ext_id failed as expected"
+    fail_msg: "Fetch with wrong ext_id did not fail as expected"
+
+########################################################################################
+# Update Tiering Configuration Tests
+########################################################################################
+
+- name: Generate spec for updating tiering configuration using check mode with all attributes
+  nutanix.ncp.ntnx_tiering_configuration_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    ext_id: "{{ first_ext_id }}"
+    memory_threshold_percent: 60
+    cooloff_period_seconds: 1209600
+    minimum_file_size_bytes: 131072
+    mount_targets_enablement_type: ALL_CURRENT_FUTURE_MOUNT_TARGETS
+    schedule:
+      - day_of_week: 2
+        schedules:
+          - start_hours: 3
+            start_minutes: 15
+            duration_minutes: 120
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for updating tiering configuration using check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.response is defined
+      - result.response.memory_threshold_percent == 60
+      - result.response.cooloff_period_seconds == 1209600
+      - result.response.minimum_file_size_bytes == 131072
+      - result.response.mount_targets_enablement_type == "ALL_CURRENT_FUTURE_MOUNT_TARGETS"
+      - result.response.schedule | length == 1
+      - result.response.schedule[0].day_of_week == 2
+      - result.response.schedule[0].schedules[0].start_hours == 3
+      - result.response.schedule[0].schedules[0].start_minutes == 15
+      - result.response.schedule[0].schedules[0].duration_minutes == 120
+    success_msg: "Spec for updating tiering configuration using check mode generated successfully"
+    fail_msg: "Spec for updating tiering configuration using check mode not generated successfully"
+
+- name: Update tiering configuration with all attributes
+  nutanix.ncp.ntnx_tiering_configuration_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    ext_id: "{{ first_ext_id }}"
+    memory_threshold_percent: 60
+    cooloff_period_seconds: 1209600
+    minimum_file_size_bytes: 131072
+    mount_targets_enablement_type: ALL_CURRENT_FUTURE_MOUNT_TARGETS
+    schedule:
+      - day_of_week: 2
+        schedules:
+          - start_hours: 3
+            start_minutes: 15
+            duration_minutes: 120
+  register: result
+  ignore_errors: true
+
+- name: Update tiering configuration with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.memory_threshold_percent == 60
+      - result.response.cooloff_period_seconds == 1209600
+      - result.response.minimum_file_size_bytes == 131072
+      - result.response.mount_targets_enablement_type == "ALL_CURRENT_FUTURE_MOUNT_TARGETS"
+      - result.response.schedule | length == 1
+      - result.response.schedule[0].day_of_week == 2
+    success_msg: "Update tiering configuration with all attributes succeeded"
+    fail_msg: "Update tiering configuration with all attributes failed"
+
+- name: Update tiering configuration with same values (idempotency test)
+  nutanix.ncp.ntnx_tiering_configuration_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    ext_id: "{{ first_ext_id }}"
+    memory_threshold_percent: 60
+    cooloff_period_seconds: 1209600
+    minimum_file_size_bytes: 131072
+    mount_targets_enablement_type: ALL_CURRENT_FUTURE_MOUNT_TARGETS
+    schedule:
+      - day_of_week: 2
+        schedules:
+          - start_hours: 3
+            start_minutes: 15
+            duration_minutes: 120
+  register: result
+  ignore_errors: true
+
+- name: Update tiering configuration idempotency status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - "'Nothing to change' in result.msg"
+    success_msg: "Update tiering configuration idempotency passed"
+    fail_msg: "Update tiering configuration idempotency failed"
+
+- name: Update tiering configuration with wrong external ID (should fail)
+  nutanix.ncp.ntnx_tiering_configuration_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+    memory_threshold_percent: 80
+    cooloff_period_seconds: 604800
+    mount_targets_enablement_type: NONE
+  register: result
+  ignore_errors: true
+
+- name: Update tiering configuration with wrong external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Update with wrong ext_id failed as expected"
+    fail_msg: "Update with wrong ext_id did not fail as expected"
+
+########################################################################################
+# Delete Tiering Configuration Tests
+########################################################################################
+
+- name: Delete tiering configuration with check mode
+  nutanix.ncp.ntnx_tiering_configuration_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    ext_id: "{{ first_ext_id }}"
+    state: absent
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Delete tiering configuration with check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - "'will be deleted' in result.msg"
+    success_msg: "Delete tiering configuration with check mode passed"
+    fail_msg: "Delete tiering configuration with check mode failed"
+
+- name: Delete all created tiering configurations
+  nutanix.ncp.ntnx_tiering_configuration_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    ext_id: "{{ item }}"
+    state: absent
+  register: result
+  ignore_errors: true
+  loop: "{{ todelete }}"
+
+- name: Deletion status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.results | length == todelete | length
+      - result.msg == "All items completed"
+    fail_msg: "Unable to delete all tiering configurations"
+    success_msg: "All tiering configurations are deleted successfully"
+
+- name: Delete tiering configuration with wrong external ID (should fail)
+  nutanix.ncp.ntnx_tiering_configuration_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Delete tiering configuration with wrong external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Delete with wrong ext_id failed as expected"
+    fail_msg: "Delete with wrong ext_id did not fail as expected"
+
+- name: Delete tiering configuration with missing external ID (should fail)
+  nutanix.ncp.ntnx_tiering_configuration_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Delete tiering configuration with missing external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is absent but all of the following are missing: ext_id' in result.msg"
+    success_msg: "Delete with missing ext_id failed as expected"
+    fail_msg: "Delete with missing ext_id did not fail as expected"

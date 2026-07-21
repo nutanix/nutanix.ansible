@@ -1,0 +1,95 @@
+---
+# Summary:
+# This playbook demonstrates the following operations for Nutanix Files
+# TieringConfiguration in Prism Central:
+#   1. Create a tiering configuration for a file server
+#   2. Fetch a tiering configuration by ext_id
+#   3. List all tiering configurations for a file server (also with filter/limit)
+#   4. Update a tiering configuration
+#   5. Delete a tiering configuration
+
+- name: Nutanix Files - Tiering Configuration playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting variables
+      ansible.builtin.set_fact:
+        file_server_ext_id: "3ec0fb37-8c1e-40b3-9d7f-3cc45f0e1234"
+
+    - name: Create tiering configuration with all fields
+      nutanix.ncp.ntnx_tiering_configuration_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        memory_threshold_percent: 80
+        cooloff_period_seconds: 604800
+        minimum_file_size_bytes: 65536
+        mount_targets_enablement_type: ALL_FUTURE_MOUNT_TARGETS
+        schedule:
+          - day_of_week: 1
+            schedules:
+              - start_hours: 0
+                start_minutes: 0
+                duration_minutes: 240
+          - day_of_week: 7
+            schedules:
+              - start_hours: 22
+                start_minutes: 30
+                duration_minutes: 90
+      register: create_result
+      ignore_errors: true
+
+    - name: Set tiering configuration ext_id
+      ansible.builtin.set_fact:
+        tiering_configuration_ext_id: "{{ create_result.ext_id }}"
+
+    - name: Fetch tiering configuration using external ID
+      nutanix.ncp.ntnx_tiering_configurations_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ tiering_configuration_ext_id }}"
+      register: get_result
+      ignore_errors: true
+
+    - name: List all tiering configurations for a file server
+      nutanix.ncp.ntnx_tiering_configurations_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+      register: list_result
+      ignore_errors: true
+
+    - name: List tiering configurations with limit
+      nutanix.ncp.ntnx_tiering_configurations_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        limit: 1
+      register: list_limit_result
+      ignore_errors: true
+
+    - name: Update tiering configuration with all fields
+      nutanix.ncp.ntnx_tiering_configuration_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ tiering_configuration_ext_id }}"
+        memory_threshold_percent: 70
+        cooloff_period_seconds: 1209600
+        minimum_file_size_bytes: 131072
+        mount_targets_enablement_type: ALL_CURRENT_FUTURE_MOUNT_TARGETS
+        schedule:
+          - day_of_week: 1
+            schedules:
+              - start_hours: 1
+                start_minutes: 0
+                duration_minutes: 300
+      register: update_result
+      ignore_errors: true
+
+    - name: Delete tiering configuration
+      nutanix.ncp.ntnx_tiering_configuration_v2:
+        state: absent
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ tiering_configuration_ext_id }}"
+      register: delete_result
+      ignore_errors: true
