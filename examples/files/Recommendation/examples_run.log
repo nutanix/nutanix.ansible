@@ -1,0 +1,72 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Files Recommendation playbook] *******************************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"file_server_ext_id": "38dc16f4-90b6-4b1c-8b8c-1f0fdc7b3a2e", "recommendation_ext_id": "b1c2d3e4-90b6-4b1c-8b8c-1f0fdc7b3a2e"}, "changed": false}
+
+TASK [Get a specific file server recommendation using ext_id] ******************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching recommendation info using ext_id
+Origin: /tmp/example_run.yml:30:7
+
+28         recommendation_ext_id: "b1c2d3e4-90b6-4b1c-8b8c-1f0fdc7b3a2e"
+29
+30     - name: Get a specific file server recommendation using ext_id
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching recommendation info using ext_id", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [List all recommendations for a file server] ******************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching recommendations info
+Origin: /tmp/example_run.yml:37:7
+
+35       ignore_errors: true
+36
+37     - name: List all recommendations for a file server
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching recommendations info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [List recommendations for a file server with a filter] ********************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching recommendations info
+Origin: /tmp/example_run.yml:43:7
+
+41       ignore_errors: true
+42
+43     - name: List recommendations for a file server with a filter
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching recommendations info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [List recommendations for a file server with a limit] *********************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching recommendations info
+Origin: /tmp/example_run.yml:50:7
+
+48       ignore_errors: true
+49
+50     - name: List recommendations for a file server with a limit
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching recommendations info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Delete a file server recommendation] *************************************
+[ERROR]: Task failed: Module failed: Api Exception raised while deleting recommendation
+Origin: /tmp/example_run.yml:57:7
+
+55       ignore_errors: true
+56
+57     - name: Delete a file server recommendation
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while deleting recommendation", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=6    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=5   
+
