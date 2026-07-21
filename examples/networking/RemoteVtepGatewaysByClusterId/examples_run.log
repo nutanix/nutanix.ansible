@@ -1,0 +1,87 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [localhost] ***************************************************************
+
+TASK [ansible.builtin.include_tasks] *******************************************
+included: /tmp/example_tasks.yml for localhost
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"cluster_uuid": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "remote_vtep_gateway_ext_id": "7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0", "remote_vtep_gateway_name": "remote-vtep-gw-ansible"}, "changed": false}
+
+TASK [List all remote VTEP gateways discovered on the Prism Element cluster] ***
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching remote VTEP gateways info
+Origin: /tmp/example_tasks.yml:7:5
+
+5       remote_vtep_gateway_name: "remote-vtep-gw-ansible"
+6
+7   - name: List all remote VTEP gateways discovered on the Prism Element cluster
+      ^ column 5
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "INTERNAL SERVER ERROR", "msg": "Api Exception raised while fetching remote VTEP gateways info", "response": {"$objectType": "networking.v4.config.RemoteVtepGatewayApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10055", "locale": "en_US", "message": "Failed to list remote vtep gateways 0006555e-4e63-4a5e-185b-ac1f6b6f97e2 due to an internal server error - Application error kUncaughtException raised: Connection was refused. Kindly retry the operation.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.3/config/clusters/0006555e-4e63-4a5e-185b-ac1f6b6f97e2/remote-vtep-gateways", "rel": "self"}], "totalAvailableResults": 0}}, "status": 500}
+...ignoring
+
+TASK [List remote VTEP gateways filtered by name] ******************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching remote VTEP gateways info
+Origin: /tmp/example_tasks.yml:13:5
+
+11     ignore_errors: true
+12
+13   - name: List remote VTEP gateways filtered by name
+       ^ column 5
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "INTERNAL SERVER ERROR", "msg": "Api Exception raised while fetching remote VTEP gateways info", "response": {"$objectType": "networking.v4.config.RemoteVtepGatewayApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10055", "locale": "en_US", "message": "Failed to list remote vtep gateways 0006555e-4e63-4a5e-185b-ac1f6b6f97e2 due to an internal server error - Application error kUncaughtException raised: Connection was refused. Kindly retry the operation.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.3/config/clusters/0006555e-4e63-4a5e-185b-ac1f6b6f97e2/remote-vtep-gateways", "rel": "self"}], "totalAvailableResults": 0}}, "status": 500}
+...ignoring
+
+TASK [List remote VTEP gateways with pagination] *******************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching remote VTEP gateways info
+Origin: /tmp/example_tasks.yml:20:5
+
+18     ignore_errors: true
+19
+20   - name: List remote VTEP gateways with pagination
+       ^ column 5
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "INTERNAL SERVER ERROR", "msg": "Api Exception raised while fetching remote VTEP gateways info", "response": {"$objectType": "networking.v4.config.RemoteVtepGatewayApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10055", "locale": "en_US", "message": "Failed to list remote vtep gateways 0006555e-4e63-4a5e-185b-ac1f6b6f97e2 due to an internal server error - Application error kUncaughtException raised: Connection was refused. Kindly retry the operation.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.3/config/clusters/0006555e-4e63-4a5e-185b-ac1f6b6f97e2/remote-vtep-gateways", "rel": "self"}], "totalAvailableResults": 0}}, "status": 500}
+...ignoring
+
+TASK [List remote VTEP gateways sorted by name descending] *********************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching remote VTEP gateways info
+Origin: /tmp/example_tasks.yml:28:5
+
+26     ignore_errors: true
+27
+28   - name: List remote VTEP gateways sorted by name descending
+       ^ column 5
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "INTERNAL SERVER ERROR", "msg": "Api Exception raised while fetching remote VTEP gateways info", "response": {"$objectType": "networking.v4.config.RemoteVtepGatewayApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10055", "locale": "en_US", "message": "Failed to list remote vtep gateways 0006555e-4e63-4a5e-185b-ac1f6b6f97e2 due to an internal server error - Application error kUncaughtException raised: Connection was refused. Kindly retry the operation.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.3/config/clusters/0006555e-4e63-4a5e-185b-ac1f6b6f97e2/remote-vtep-gateways", "rel": "self"}], "totalAvailableResults": 0}}, "status": 500}
+...ignoring
+
+TASK [Fetch a specific remote VTEP gateway using external ID via info module] ***
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching remote VTEP gateway info using cluster ext_id and ext_id
+Origin: /tmp/example_tasks.yml:35:5
+
+33     ignore_errors: true
+34
+35   - name: Fetch a specific remote VTEP gateway using external ID via info module
+       ^ column 5
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "INTERNAL SERVER ERROR", "msg": "Api Exception raised while fetching remote VTEP gateway info using cluster ext_id and ext_id", "response": {"$objectType": "networking.v4.config.RemoteVtepGatewayApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10055", "locale": "en_US", "message": "Failed to list remote vtep gateway 7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0 (on cluster 0006555e-4e63-4a5e-185b-ac1f6b6f97e2) due to an internal server error - Application error kUncaughtException raised: Connection was refused. Kindly retry the operation.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.3/config/clusters/0006555e-4e63-4a5e-185b-ac1f6b6f97e2/remote-vtep-gateways/7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0", "rel": "self"}], "totalAvailableResults": 0}}, "status": 500}
+...ignoring
+
+TASK [Fetch a specific remote VTEP gateway using external ID (dedicated get-by-id module)] ***
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching remote VTEP gateway info using cluster ext_id and ext_id
+Origin: /tmp/example_tasks.yml:42:5
+
+40     ignore_errors: true
+41
+42   - name: Fetch a specific remote VTEP gateway using external ID (dedicated get-by-id module)
+       ^ column 5
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "INTERNAL SERVER ERROR", "msg": "Api Exception raised while fetching remote VTEP gateway info using cluster ext_id and ext_id", "response": {"$objectType": "networking.v4.config.RemoteVtepGatewayApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10055", "locale": "en_US", "message": "Failed to list remote vtep gateway 7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0 (on cluster 0006555e-4e63-4a5e-185b-ac1f6b6f97e2) due to an internal server error - Application error kUncaughtException raised: Connection was refused. Kindly retry the operation.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.3/config/clusters/0006555e-4e63-4a5e-185b-ac1f6b6f97e2/remote-vtep-gateways/7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0", "rel": "self"}], "totalAvailableResults": 0}}, "status": 500}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=8    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=6   
+
