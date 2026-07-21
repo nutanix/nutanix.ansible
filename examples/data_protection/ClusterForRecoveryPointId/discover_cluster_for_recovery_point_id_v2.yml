@@ -1,0 +1,84 @@
+---
+# Summary:
+# This playbook demonstrates using the
+# `ntnx_discover_cluster_for_recovery_point_id_v2` action module. The
+# discover-cluster API returns the redirect cluster IP and a JWT token to be
+# used as a session cookie while invoking either the compute-changed-regions
+# (CBT) or the get-VSS-metadata endpoints on that cluster.
+#
+# Prerequisites (already created on the cluster):
+#   - A top-level recovery point (referenced by `recovery_point_ext_id`).
+#   - A VM recovery point inside that top-level recovery point (referenced by
+#     `vm_recovery_point_ext_id`).
+#   - The disk recovery point identifier (`disk_recovery_point_ext_id`).
+#
+# Workflow:
+#   1. Discover the cluster using `operation=GET_VSS_METADATA` before pulling
+#      VSS metadata for a VM recovery point.
+#   2. Discover the cluster using `operation=COMPUTE_CHANGED_REGIONS` before
+#      computing changed regions for a VM disk recovery point.
+#   3. Discover the cluster using `operation=COMPUTE_CHANGED_REGIONS` with a
+#      `reference_disk_recovery_point` for incremental CBT workflows.
+
+- name: Discover cluster for recovery point playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip | default('10.44.76.28') }}"
+      nutanix_username: "{{ username | default('admin') }}"
+      nutanix_password: "{{ password | default('Nutanix.123') }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+
+  tasks:
+    - name: Set the recovery point identifiers used across the plays
+      ansible.builtin.set_fact:
+        recovery_point_ext_id: "1ca2963d-77b6-453a-ae23-2c19e7a954a3"
+        vm_recovery_point_ext_id: "522670d7-e92d-45c5-9139-76ccff6813c2"
+        disk_recovery_point_ext_id: "94e61902-1954-4d54-917a-a28205454fce"
+        reference_recovery_point_ext_id: "aa2963d1-77b6-453a-ae23-2c19e7a95400"
+        reference_vm_recovery_point_ext_id: "6f2d4f89-cba1-4a45-b3b3-3ec8b71ac13f"
+        reference_disk_recovery_point_ext_id: "1b96075e-4786-4409-82bd-764e23d877a6"
+
+    - name: Discover cluster for a recovery point - GET_VSS_METADATA operation
+      nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+        ext_id: "{{ recovery_point_ext_id }}"
+        operation: "GET_VSS_METADATA"
+        spec:
+          get_vss_metadata:
+            vm_recovery_point_ext_id: "{{ vm_recovery_point_ext_id }}"
+      register: vss_result
+      ignore_errors: true
+
+    - name: Discover cluster for a recovery point - COMPUTE_CHANGED_REGIONS full workflow
+      nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+        ext_id: "{{ recovery_point_ext_id }}"
+        operation: "COMPUTE_CHANGED_REGIONS"
+        spec:
+          compute_changed_regions:
+            disk_recovery_point:
+              vm_disk_recovery_point:
+                vm_recovery_point_ext_id: "{{ vm_recovery_point_ext_id }}"
+                recovery_point_ext_id: "{{ recovery_point_ext_id }}"
+                disk_recovery_point_ext_id: "{{ disk_recovery_point_ext_id }}"
+            reference_disk_recovery_point:
+              vm_disk_recovery_point:
+                vm_recovery_point_ext_id: "{{ reference_vm_recovery_point_ext_id }}"
+                recovery_point_ext_id: "{{ reference_recovery_point_ext_id }}"
+                disk_recovery_point_ext_id: "{{ reference_disk_recovery_point_ext_id }}"
+      register: cbt_result
+      ignore_errors: true
+
+    - name: Discover cluster for a recovery point - COMPUTE_CHANGED_REGIONS without reference
+      nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+        ext_id: "{{ recovery_point_ext_id }}"
+        operation: "COMPUTE_CHANGED_REGIONS"
+        spec:
+          compute_changed_regions:
+            disk_recovery_point:
+              vm_disk_recovery_point:
+                vm_recovery_point_ext_id: "{{ vm_recovery_point_ext_id }}"
+                recovery_point_ext_id: "{{ recovery_point_ext_id }}"
+                disk_recovery_point_ext_id: "{{ disk_recovery_point_ext_id }}"
+      register: cbt_no_ref_result
+      ignore_errors: true
