@@ -1,0 +1,103 @@
+---
+# Summary:
+# This playbook exercises the Nutanix Prism Central "Unreserve IPs on a subnet"
+# v4 action. It:
+#   1. Lists the IPs that are currently reserved on the target subnet
+#      via the info module (ntnx_unreserve_ips_by_subnet_ids_info_v2).
+#   2. Unreserves a specific list of IPs via unreserve_type=IP_ADDRESS_LIST.
+#   3. Unreserves a range of IPs via unreserve_type=IP_ADDRESS_RANGE.
+#   4. Unreserves every IP tagged with a client_context via unreserve_type=CONTEXT.
+#   5. Re-lists to confirm the subnet is clean.
+#
+# NOTE: This playbook assumes IPs have already been reserved on the target
+# subnet (for example via the Prism Central UI or via a direct
+# /subnets/{extId}/addresses/$actions/reserve v4 REST call). The unreserve
+# action is a one-shot POST that always reports changed=True on success.
+#
+# Every task uses the module_defaults block for connection parameters — do NOT
+# repeat nutanix_host/username/password/validate_certs on individual tasks.
+
+- name: Unreserve IPs by Subnet ID playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+  tasks:
+    - name: Setting variables
+      ansible.builtin.set_fact:
+        subnet_ext_id: "61959708-6efc-4d80-8c86-92c01f080672"
+
+    - name: List reserved IPs before unreserving (all attributes)
+      nutanix.ncp.ntnx_unreserve_ips_by_subnet_ids_info_v2:
+        subnet_ext_id: "{{ subnet_ext_id }}"
+        limit: 100
+        filter: "clientContext ne null"
+        orderby: "ipv4Address asc"
+      register: reserved_before
+      ignore_errors: true
+
+    ###################################################################
+    # Unreserve a specific list of IPs (IP_ADDRESS_LIST)
+    # If the IPs were originally reserved with a client_context tag, the
+    # same tag must be supplied here — the underlying legacy reservation
+    # engine matches the cookie to authorise the release.
+    ###################################################################
+    - name: Unreserve a specific list of IPs from the subnet
+      nutanix.ncp.ntnx_unreserve_ips_by_subnet_id_v2:
+        state: present
+        ext_id: "{{ subnet_ext_id }}"
+        unreserve_type: IP_ADDRESS_LIST
+        ip_addresses:
+          - ipv4:
+              value: "10.30.30.70"
+              prefix_length: 32
+          - ipv4:
+              value: "10.30.30.71"
+              prefix_length: 32
+        client_context: "example-list-setup"
+      register: unreserve_list_result
+      ignore_errors: true
+
+    ###################################################################
+    # Unreserve a range of IPs (IP_ADDRESS_RANGE)
+    # As with IP_ADDRESS_LIST, pass the matching client_context if the
+    # original reservation was tagged.
+    ###################################################################
+    - name: Unreserve a range of IPs from the subnet
+      nutanix.ncp.ntnx_unreserve_ips_by_subnet_id_v2:
+        state: present
+        ext_id: "{{ subnet_ext_id }}"
+        unreserve_type: IP_ADDRESS_RANGE
+        start_ip_address:
+          ipv4:
+            value: "10.30.30.60"
+            prefix_length: 32
+        count: 3
+        client_context: "example-range-setup"
+      register: unreserve_range_result
+      ignore_errors: true
+
+    ###################################################################
+    # Unreserve every IP owned by a client_context (CONTEXT)
+    ###################################################################
+    - name: Unreserve every IP owned by a client_context
+      nutanix.ncp.ntnx_unreserve_ips_by_subnet_id_v2:
+        state: present
+        ext_id: "{{ subnet_ext_id }}"
+        unreserve_type: CONTEXT
+        client_context: "ansible-unreserve-example-context"
+      register: unreserve_context_result
+      ignore_errors: true
+
+    ###################################################################
+    # Re-list to confirm the subnet is clean.
+    ###################################################################
+    - name: List reserved IPs after unreserve actions
+      nutanix.ncp.ntnx_unreserve_ips_by_subnet_ids_info_v2:
+        subnet_ext_id: "{{ subnet_ext_id }}"
+      register: reserved_after
+      ignore_errors: true
