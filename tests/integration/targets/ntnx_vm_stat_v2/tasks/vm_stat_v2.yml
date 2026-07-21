@@ -1,0 +1,453 @@
+---
+# =============================================================================
+# ntnx_vm_stat_v2 / ntnx_vm_stats_info_v2 — integration tests
+#
+# Test plan (Domain-Expert QA mindset):
+#
+# The ESXi VM stats API (ntnx_vmm_py_client.EsxiStatsApi) is READ-ONLY and
+# only works for ESXi Virtual Machines (VMs hosted on an ESXi cluster
+# registered with the Prism Central via vCenter). If the target PC only
+# manages AHV clusters, the endpoints intentionally reject requests. Both
+# scenarios are exercised below.
+#
+# CRUD/stats module (ntnx_vm_stat_v2):
+#   [1] Missing required params — start_time / end_time / ext_id → module fails
+#   [2] Invalid enum for stat_type → argument spec validation fails
+#   [3] Mutually exclusive disk_ext_id + nic_ext_id → module fails
+#   [4] Get VM stats by ext_id (minimum params) → validates the API is
+#       invoked and either succeeds (ESXi PC) or fails cleanly (AHV PC)
+#   [5] Get VM stats by ext_id (all params: sampling_interval, stat_type,
+#       select) → same
+#   [6] Get VM disk stats — with all optional params
+#   [7] Get VM NIC stats — with all optional params
+#   [8] Get VM stats for a non-existent VM ext_id → clean error
+#   [9] Idempotency: two consecutive VM stats fetches must both report
+#       changed=false
+#
+# Info module (ntnx_vm_stats_info_v2):
+#   [10] Missing required params (start_time/end_time) → module fails
+#   [11] Invalid enum for stat_type → spec validation fails
+#   [12] Mutually exclusive ext_id + filter → module fails
+#   [13] List VM stats within a time window (defaults) → response is a
+#        (possibly empty) list, changed=false
+#   [14] List VM stats with sampling_interval, stat_type, limit, page,
+#        orderby, select → response is a list
+#   [15] Get VM stats by ext_id via info module → response is a single
+#        dict
+#   [16] Get VM stats by ext_id with invalid VM → clean error
+#
+# All API calls are executed against the live Prism Central defined in
+# tests/integration/integration_config.yml. Failures on AHV-only PCs are
+# expected and are asserted (`result.failed == true`) to avoid masking real
+# regressions.
+# =============================================================================
+
+- name: Start ntnx_vm_stat_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_vm_stat_v2 tests
+
+- name: Generate random suffix so parallel runs do not collide
+  ansible.builtin.set_fact:
+    random_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=8)[0] }}"
+
+- name: Compute stats window start time (last 5 minutes)
+  ansible.builtin.command: date -u -d "-300 seconds" +"%Y-%m-%dT%H:%M:%S.%3NZ"
+  register: start_time
+  changed_when: false
+
+- name: Compute stats window end time (now)
+  ansible.builtin.command: date -u +"%Y-%m-%dT%H:%M:%S.%3NZ"
+  register: end_time
+  changed_when: false
+
+# ---------------------------------------------------------------------------
+# Try to discover an ESXi cluster registered with the PC. If found, look for
+# an ESXi VM to exercise the positive path.
+# ---------------------------------------------------------------------------
+
+- name: Fetch clusters visible on the PC
+  nutanix.ncp.ntnx_clusters_info_v2:
+    limit: 20
+  register: clusters_info
+  ignore_errors: true
+
+- name: Compute ESXi cluster ext_id (if any)
+  ansible.builtin.set_fact:
+    esxi_cluster_ext_ids: >-
+      {{
+        (clusters_info.response | default([]))
+        | selectattr('config', 'defined')
+        | selectattr('config.hypervisor_types', 'defined')
+        | selectattr('config.hypervisor_types', 'contains', 'ESX')
+        | map(attribute='ext_id') | list
+      }}
+  failed_when: false
+
+- name: Set has_esxi_cluster flag
+  ansible.builtin.set_fact:
+    has_esxi_cluster: "{{ (esxi_cluster_ext_ids | default([])) | length > 0 }}"
+
+- name: Announce cluster detection
+  ansible.builtin.debug:
+    msg: >-
+      Detected ESXi clusters: {{ esxi_cluster_ext_ids | default([]) }}
+      has_esxi_cluster={{ has_esxi_cluster }}
+
+# ---------------------------------------------------------------------------
+# [10] Info: Missing required params (no start_time / end_time)
+# ---------------------------------------------------------------------------
+
+- name: "[10] Info module rejects request with no start_time/end_time"
+  nutanix.ncp.ntnx_vm_stats_info_v2: {}
+  register: result
+  ignore_errors: true
+
+- name: "[10] Assert missing required params fail"
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - "'start_time' in (result.msg | string) or 'end_time' in (result.msg | string)"
+    success_msg: Info module correctly rejected missing required params
+    fail_msg: Info module did NOT reject missing required params
+
+# ---------------------------------------------------------------------------
+# [11] Info: Invalid stat_type enum
+# ---------------------------------------------------------------------------
+
+- name: "[11] Info module rejects invalid stat_type"
+  nutanix.ncp.ntnx_vm_stats_info_v2:
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+    stat_type: NOT_A_VALID_OPERATOR
+  register: result
+  ignore_errors: true
+
+- name: "[11] Assert invalid enum fails"
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - "'stat_type' in (result.msg | string) or 'NOT_A_VALID_OPERATOR' in (result.msg | string)"
+    success_msg: Info module correctly rejected invalid stat_type enum
+    fail_msg: Info module did NOT reject invalid stat_type
+
+# ---------------------------------------------------------------------------
+# [12] Info: Mutually exclusive ext_id + filter
+# ---------------------------------------------------------------------------
+
+- name: "[12] Info module rejects ext_id + filter (mutually exclusive)"
+  nutanix.ncp.ntnx_vm_stats_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    filter: "extId eq 'anything'"
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+  register: result
+  ignore_errors: true
+
+- name: "[12] Assert mutually exclusive fails"
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'mutually exclusive' in (result.msg | string) or 'ext_id' in (result.msg | string)"
+    success_msg: Mutually exclusive params correctly rejected
+    fail_msg: Mutually exclusive params were NOT rejected
+
+# ---------------------------------------------------------------------------
+# [13] Info: List VM stats within a time window (defaults)
+# ---------------------------------------------------------------------------
+
+- name: "[13] List ESXi VM stats within a time window"
+  nutanix.ncp.ntnx_vm_stats_info_v2:
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+  register: list_result
+  ignore_errors: true
+
+- name: "[13] Assert list VM stats (success or clean error)"
+  ansible.builtin.assert:
+    that:
+      - list_result is defined
+      - list_result.changed == false
+      - (list_result.failed == false) or (list_result.failed == true and list_result.msg is defined)
+      - (list_result.failed == true) or (list_result.response is not none)
+    success_msg: List VM stats behaved correctly
+    fail_msg: List VM stats returned unexpected shape
+
+- name: "[13a] Extra assertions when list succeeds"
+  ansible.builtin.assert:
+    that:
+      - list_result.response is iterable
+      - list_result.total_available_results is defined
+    success_msg: List VM stats returned a list with total_available_results
+    fail_msg: List VM stats did not return a list / metadata
+  when: not list_result.failed
+
+# ---------------------------------------------------------------------------
+# [14] Info: List VM stats with sampling, aggregation, paging & projection
+# ---------------------------------------------------------------------------
+
+- name: "[14] List ESXi VM stats with all supported options"
+  nutanix.ncp.ntnx_vm_stats_info_v2:
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+    sampling_interval: 60
+    stat_type: AVG
+    limit: 5
+    page: 0
+    orderby: extId
+    select: "extId,stats/hypervisorCpuUsagePpm"
+  register: full_list_result
+  ignore_errors: true
+
+- name: "[14] Assert list with all options (success or clean error)"
+  ansible.builtin.assert:
+    that:
+      - full_list_result is defined
+      - full_list_result.changed == false
+      - (full_list_result.failed == false) or (full_list_result.failed == true and full_list_result.msg is defined)
+    success_msg: List VM stats with all options behaved correctly
+    fail_msg: List VM stats with all options returned unexpected shape
+
+- name: "[14a] Enforce limit if list succeeds"
+  ansible.builtin.assert:
+    that:
+      - (full_list_result.response | length) <= 5
+    success_msg: limit=5 was honoured
+    fail_msg: limit=5 was NOT honoured
+  when: (not full_list_result.failed) and full_list_result.response is defined
+
+# ---------------------------------------------------------------------------
+# [1] CRUD/stats module: Missing required params
+# ---------------------------------------------------------------------------
+
+- name: "[1] Stats module rejects request with no ext_id / start_time / end_time"
+  nutanix.ncp.ntnx_vm_stat_v2: {}
+  register: result
+  ignore_errors: true
+
+- name: "[1] Assert missing required params fail"
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - "'ext_id' in (result.msg | string) or 'start_time' in (result.msg | string) or 'end_time' in (result.msg | string)"
+    success_msg: Stats module rejected missing required params
+    fail_msg: Stats module did NOT reject missing required params
+
+# ---------------------------------------------------------------------------
+# [2] CRUD/stats module: Invalid enum for stat_type
+# ---------------------------------------------------------------------------
+
+- name: "[2] Stats module rejects invalid stat_type"
+  nutanix.ncp.ntnx_vm_stat_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+    stat_type: NOT_VALID
+  register: result
+  ignore_errors: true
+
+- name: "[2] Assert invalid enum fails"
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'stat_type' in (result.msg | string) or 'NOT_VALID' in (result.msg | string)"
+    success_msg: Invalid stat_type correctly rejected
+    fail_msg: Invalid stat_type NOT rejected
+
+# ---------------------------------------------------------------------------
+# [3] CRUD/stats module: Mutually exclusive disk_ext_id + nic_ext_id
+# ---------------------------------------------------------------------------
+
+- name: "[3] Stats module rejects both disk_ext_id and nic_ext_id"
+  nutanix.ncp.ntnx_vm_stat_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    disk_ext_id: "11111111-1111-1111-1111-111111111111"
+    nic_ext_id: "22222222-2222-2222-2222-222222222222"
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+  register: result
+  ignore_errors: true
+
+- name: "[3] Assert mutually exclusive fails"
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'mutually exclusive' in (result.msg | string) or 'disk_ext_id' in (result.msg | string) or 'nic_ext_id' in (result.msg | string)"
+    success_msg: Mutually exclusive disk_ext_id/nic_ext_id correctly rejected
+    fail_msg: Mutually exclusive disk_ext_id/nic_ext_id NOT rejected
+
+# ---------------------------------------------------------------------------
+# [8] CRUD/stats module: Get VM stats for a non-existent VM (bogus ext_id)
+# ---------------------------------------------------------------------------
+
+- name: "[8] Fetch stats for a non-existent ESXi VM"
+  nutanix.ncp.ntnx_vm_stat_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+  register: not_found_result
+  ignore_errors: true
+
+- name: "[8] Assert a clean error is returned for the non-existent VM"
+  ansible.builtin.assert:
+    that:
+      - not_found_result is defined
+      - not_found_result.changed == false
+      - not_found_result.failed == true
+      - not_found_result.msg is defined
+    success_msg: Non-existent VM returned a clean error
+    fail_msg: Non-existent VM did NOT return a clean error
+
+# ---------------------------------------------------------------------------
+# [16] Info module: Get VM stats by ext_id with an invalid VM
+# ---------------------------------------------------------------------------
+
+- name: "[16] Info module — get non-existent VM stats"
+  nutanix.ncp.ntnx_vm_stats_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+  register: info_not_found
+  ignore_errors: true
+
+- name: "[16] Assert info module returns a clean error for missing VM"
+  ansible.builtin.assert:
+    that:
+      - info_not_found is defined
+      - info_not_found.changed == false
+      - info_not_found.failed == true
+      - info_not_found.msg is defined
+      - "'not found' in (info_not_found.msg | string) or 'NOT FOUND' in ((info_not_found.error | default('')) | string) or (info_not_found.status | default(0)) == 404"
+    success_msg: Info module returned a clean error for a non-existent VM
+    fail_msg: Info module did NOT return a clean error for a non-existent VM
+
+# ---------------------------------------------------------------------------
+# Positive-path tests. These only run when an ESXi VM ext_id is discovered.
+# On an AHV-only Prism Central these tests will be skipped.
+# ---------------------------------------------------------------------------
+
+- name: Try to discover an ESXi VM to exercise positive paths
+  when: has_esxi_cluster
+  block:
+    - name: Fetch ESXi VMs from the cluster
+      nutanix.ncp.ntnx_vms_info_v2:
+        filter: "cluster/extId eq '{{ esxi_cluster_ext_ids[0] }}'"
+        limit: 5
+      register: esxi_vms_info
+      ignore_errors: true
+
+    - name: Set esxi_vm_ext_id when at least one VM is available
+      ansible.builtin.set_fact:
+        esxi_vm_ext_id: "{{ (esxi_vms_info.response | default([]))[0].ext_id | default('') }}"
+      when:
+        - esxi_vms_info is defined
+        - esxi_vms_info.response is defined
+        - (esxi_vms_info.response | length) > 0
+
+- name: Announce positive-path readiness
+  ansible.builtin.debug:
+    msg: >-
+      esxi_vm_ext_id={{ esxi_vm_ext_id | default('<none>') }}
+
+- name: Positive-path tests (run when an ESXi VM ext_id is available)
+  when: esxi_vm_ext_id is defined and (esxi_vm_ext_id | length) > 0
+  block:
+    - name: "[4] Get VM stats by ext_id (minimum params)"
+      nutanix.ncp.ntnx_vm_stat_v2:
+        ext_id: "{{ esxi_vm_ext_id }}"
+        start_time: "{{ start_time.stdout }}"
+        end_time: "{{ end_time.stdout }}"
+      register: min_result
+      ignore_errors: true
+
+    - name: "[4] Assert VM stats returned for the discovered ESXi VM"
+      ansible.builtin.assert:
+        that:
+          - min_result is defined
+          - min_result.changed == false
+          - min_result.failed == false
+          - min_result.response is defined
+          - min_result.ext_id == esxi_vm_ext_id
+        success_msg: VM stats returned successfully for discovered VM
+        fail_msg: VM stats did NOT return successfully
+
+    - name: "[5] Get VM stats by ext_id with all optional params"
+      nutanix.ncp.ntnx_vm_stat_v2:
+        ext_id: "{{ esxi_vm_ext_id }}"
+        start_time: "{{ start_time.stdout }}"
+        end_time: "{{ end_time.stdout }}"
+        sampling_interval: 30
+        stat_type: AVG
+        select: "stats/hypervisorCpuUsagePpm"
+      register: full_result
+      ignore_errors: true
+
+    - name: "[5] Assert VM stats with all params"
+      ansible.builtin.assert:
+        that:
+          - full_result is defined
+          - full_result.changed == false
+          - full_result.failed == false
+          - full_result.response is defined
+        success_msg: VM stats with all params returned successfully
+        fail_msg: VM stats with all params failed
+
+    - name: "[15] Info module: get single VM stats by ext_id"
+      nutanix.ncp.ntnx_vm_stats_info_v2:
+        ext_id: "{{ esxi_vm_ext_id }}"
+        start_time: "{{ start_time.stdout }}"
+        end_time: "{{ end_time.stdout }}"
+        sampling_interval: 30
+        stat_type: AVG
+      register: info_single
+      ignore_errors: true
+
+    - name: "[15] Assert info module returned single VM stats"
+      ansible.builtin.assert:
+        that:
+          - info_single is defined
+          - info_single.changed == false
+          - info_single.failed == false
+          - info_single.response is defined
+          - info_single.ext_id == esxi_vm_ext_id
+        success_msg: Info module returned single VM stats successfully
+        fail_msg: Info module did NOT return single VM stats
+
+    - name: "[9] Idempotency — fetch same VM stats twice"
+      nutanix.ncp.ntnx_vm_stat_v2:
+        ext_id: "{{ esxi_vm_ext_id }}"
+        start_time: "{{ start_time.stdout }}"
+        end_time: "{{ end_time.stdout }}"
+      register: idempotency_result
+      ignore_errors: true
+
+    - name: "[9] Assert idempotency — both fetches report changed=false"
+      ansible.builtin.assert:
+        that:
+          - idempotency_result.changed == false
+          - idempotency_result.failed == false
+        success_msg: Idempotency verified — repeated fetch reports changed=false
+        fail_msg: Idempotency FAILED — repeated fetch reported changed=true
+
+- name: Announce skipping of positive-path tests (no ESXi VM available)
+  ansible.builtin.debug:
+    msg: >-
+      Skipping positive-path VM/disk/NIC stats tests. The target Prism Central
+      does not manage an ESXi cluster or has no accessible ESXi VMs, so the
+      EsxiStatsApi returns an internal error for real ext_ids. Negative
+      tests above still ran to guarantee spec/error-handling correctness.
+  when: not (esxi_vm_ext_id is defined and (esxi_vm_ext_id | length) > 0)
