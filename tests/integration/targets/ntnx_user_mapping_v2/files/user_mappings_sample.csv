@@ -1,0 +1,4 @@
+DOMAIN\smbuser1,1001,User,OneToOne
+DOMAIN\smbuser2,1002,User,OneToOne
+DOMAIN\smbgroup1,2001,Group,OneToOne
+*,-1,User,Default

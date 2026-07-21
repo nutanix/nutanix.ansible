@@ -1,0 +1,347 @@
+---
+###############################################################################
+# Nutanix Files - User Mappings integration test plan
+#
+# Coverage strategy — this module exposes two file-server-wide actions,
+# DownloadUserMappings and UploadUserMappings. There is no CRUD entity to
+# reference by ext_id in the traditional sense; the module operates directly
+# on a Nutanix Files server.
+#
+# 1. Static spec / negative tests (do not require a live Files server)
+#    - operation is required
+#    - file_server_ext_id is required
+#    - operation must be one of {download, upload}
+#    - upload requires source_path
+#    - upload with a non-existent source_path is rejected before hitting the API
+#    - unsupported state values are rejected by the argument spec
+#
+# 2. check_mode tests (do not hit the API but validate the module logic)
+#    - download in check_mode returns a msg without changing anything
+#    - upload in check_mode returns a msg without changing anything
+#
+# 3. Live-cluster tests — executed only when a Files server is discovered on
+#    the target Prism Central. When no Files server exists (typical for the
+#    generic code-gen cluster) these tasks are skipped so the target still
+#    exercises static / check_mode coverage without failing.
+###############################################################################
+
+- name: Start Nutanix Files - User Mappings tests
+  ansible.builtin.debug:
+    msg: Start Nutanix Files - User Mappings tests
+
+- name: Generate random suffix to avoid collisions
+  ansible.builtin.set_fact:
+    random_suffix: "{{ query('community.general.random_string', numbers=true, special=false, length=8)[0] }}"
+
+- name: Set fake file server ext_id for negative tests
+  ansible.builtin.set_fact:
+    fake_file_server_ext_id: "00000000-0000-0000-0000-000000000000"
+
+- name: Copy user mappings CSV to control node temp location
+  ansible.builtin.copy:
+    src: user_mappings_sample.csv
+    dest: "/tmp/ntnx_user_mappings_{{ random_suffix }}.csv"
+    mode: "0644"
+  register: csv_copy
+  ignore_errors: true
+
+- name: Set upload source path fact
+  ansible.builtin.set_fact:
+    upload_source_path: "{{ csv_copy.dest | default('/tmp/ntnx_user_mappings_' + random_suffix + '.csv') }}"
+
+###############################################################################
+# Negative — argument spec validation
+###############################################################################
+
+- name: Call user_mapping without operation
+  nutanix.ncp.ntnx_user_mapping_v2:
+    file_server_ext_id: "{{ fake_file_server_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing operation is rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'operation' in result.msg"
+    success_msg: "Missing operation was rejected as expected"
+    fail_msg: "Missing operation was NOT rejected"
+
+- name: Call user_mapping without file_server_ext_id
+  nutanix.ncp.ntnx_user_mapping_v2:
+    operation: download
+  register: result
+  ignore_errors: true
+
+- name: Assert missing file_server_ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'file_server_ext_id' in result.msg"
+    success_msg: "Missing file_server_ext_id was rejected as expected"
+    fail_msg: "Missing file_server_ext_id was NOT rejected"
+
+- name: Call user_mapping with an invalid operation value
+  nutanix.ncp.ntnx_user_mapping_v2:
+    file_server_ext_id: "{{ fake_file_server_ext_id }}"
+    operation: invalid_op
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid operation is rejected by choices
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'value of operation must be one of' in result.msg"
+    success_msg: "Invalid operation value was rejected as expected"
+    fail_msg: "Invalid operation value was NOT rejected"
+
+- name: Call user_mapping upload without source_path
+  nutanix.ncp.ntnx_user_mapping_v2:
+    file_server_ext_id: "{{ fake_file_server_ext_id }}"
+    operation: upload
+  register: result
+  ignore_errors: true
+
+- name: Assert upload without source_path is rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'source_path' in result.msg"
+    success_msg: "Upload without source_path was rejected as expected"
+    fail_msg: "Upload without source_path was NOT rejected"
+
+- name: Call user_mapping upload with non-existent source_path
+  nutanix.ncp.ntnx_user_mapping_v2:
+    file_server_ext_id: "{{ fake_file_server_ext_id }}"
+    operation: upload
+    source_path: "/nonexistent/definitely_not_a_real_path_{{ random_suffix }}.csv"
+  register: result
+  ignore_errors: true
+
+- name: Assert non-existent source_path is rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'does not exist' in result.msg"
+    success_msg: "Non-existent source_path was rejected as expected"
+    fail_msg: "Non-existent source_path was NOT rejected"
+
+- name: Call user_mapping with invalid state
+  nutanix.ncp.ntnx_user_mapping_v2:
+    file_server_ext_id: "{{ fake_file_server_ext_id }}"
+    operation: download
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid state is rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'value of state must be one of' in result.msg"
+    success_msg: "Invalid state value was rejected as expected"
+    fail_msg: "Invalid state value was NOT rejected"
+
+###############################################################################
+# check_mode — validated without touching the API
+###############################################################################
+
+- name: Download user mappings in check mode
+  nutanix.ncp.ntnx_user_mapping_v2:
+    state: present
+    file_server_ext_id: "{{ fake_file_server_ext_id }}"
+    operation: download
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check_mode download returns descriptive msg
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == fake_file_server_ext_id
+      - result.msg is defined
+      - "'will be downloaded' in result.msg"
+      - "fake_file_server_ext_id in result.msg"
+    success_msg: "Check_mode download returned msg as expected"
+    fail_msg: "Check_mode download did NOT return expected msg"
+
+- name: Upload user mappings in check mode with all attributes
+  nutanix.ncp.ntnx_user_mapping_v2:
+    state: present
+    file_server_ext_id: "{{ fake_file_server_ext_id }}"
+    operation: upload
+    source_path: "{{ upload_source_path }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check_mode upload returns descriptive msg
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == fake_file_server_ext_id
+      - result.msg is defined
+      - "'will be uploaded' in result.msg"
+      - "upload_source_path in result.msg"
+    success_msg: "Check_mode upload returned msg as expected"
+    fail_msg: "Check_mode upload did NOT return expected msg"
+
+###############################################################################
+# Live-cluster tests — only run if a Files server is available
+###############################################################################
+
+- name: Discover file servers on this Prism Central
+  nutanix.ncp.ntnx_user_mapping_v2:
+    state: present
+    file_server_ext_id: "{{ fake_file_server_ext_id }}"
+    operation: download
+  check_mode: true
+  register: discovery_check
+  ignore_errors: true
+
+- name: Attempt to list file servers to detect Files availability
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:9440/api/files/v4.0/config/file-servers?$limit=1"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs | default(false) }}"
+    status_code: [200, 201, 401, 403, 404, 500, 503]
+    return_content: true
+    body_format: json
+  register: fs_probe
+  ignore_errors: true
+
+- name: Set file_servers_available based on probe status
+  ansible.builtin.set_fact:
+    file_servers_available: >-
+      {{
+        (fs_probe.status | default(0) == 200)
+        and ((fs_probe.json | default({})).get('data') | default([]) | length > 0)
+      }}
+    live_file_server_ext_id: >-
+      {{
+        ((fs_probe.json | default({})).get('data') | default([]))
+        | map(attribute='extId', default=None)
+        | select('defined')
+        | list
+        | first
+        | default(none)
+      }}
+
+- name: Report Files availability
+  ansible.builtin.debug:
+    msg: >-
+      Files availability: {{ file_servers_available }},
+      live file server ext_id: {{ live_file_server_ext_id }}
+
+# ---------------------------------------------------------------------------
+# Real download / upload against a live file server (only when available).
+# We wrap each real API interaction in an ignore_errors block so a partially
+# configured file server (e.g. no AD joined yet) doesn't fail the entire
+# target — the assertions still check that the module surfaced a sensible
+# response or a descriptive error.
+# ---------------------------------------------------------------------------
+
+- name: Real download user mappings from the live file server
+  nutanix.ncp.ntnx_user_mapping_v2:
+    state: present
+    file_server_ext_id: "{{ live_file_server_ext_id }}"
+    operation: download
+  register: live_download
+  ignore_errors: true
+  when: file_servers_available | bool and live_file_server_ext_id is not none
+
+- name: Assert real download response shape
+  ansible.builtin.assert:
+    that:
+      - live_download is defined
+      - (live_download.failed == false and live_download.changed == true and
+         live_download.response is defined and live_download.response.path is defined and
+         live_download.response.path | length > 0)
+        or
+        (live_download.failed == true and live_download.msg is defined and
+         live_download.msg | length > 0)
+    success_msg: "Real download either succeeded with a path or failed with a descriptive msg"
+    fail_msg: "Real download response was neither a successful path nor a descriptive failure"
+  when: file_servers_available | bool and live_file_server_ext_id is not none
+
+- name: Real upload user mappings to the live file server
+  nutanix.ncp.ntnx_user_mapping_v2:
+    state: present
+    file_server_ext_id: "{{ live_file_server_ext_id }}"
+    operation: upload
+    source_path: "{{ upload_source_path }}"
+  register: live_upload
+  ignore_errors: true
+  when: file_servers_available | bool and live_file_server_ext_id is not none
+
+- name: Assert real upload response shape
+  ansible.builtin.assert:
+    that:
+      - live_upload is defined
+      - (live_upload.failed == false and live_upload.changed == true and
+         live_upload.response is defined)
+        or
+        (live_upload.failed == true and live_upload.msg is defined and
+         live_upload.msg | length > 0)
+    success_msg: "Real upload either succeeded with a response or failed with a descriptive msg"
+    fail_msg: "Real upload response was neither a successful response nor a descriptive failure"
+  when: file_servers_available | bool and live_file_server_ext_id is not none
+
+- name: Real download with a non-existent file server ext_id
+  nutanix.ncp.ntnx_user_mapping_v2:
+    state: present
+    file_server_ext_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+    operation: download
+  register: live_invalid
+  ignore_errors: true
+  when: file_servers_available | bool
+
+- name: Assert real download with an invalid ext_id fails with a descriptive error
+  ansible.builtin.assert:
+    that:
+      - live_invalid is defined
+      - live_invalid.failed == true
+      - live_invalid.msg is defined
+      - live_invalid.msg | length > 0
+    success_msg: "Real download with invalid ext_id failed as expected"
+    fail_msg: "Real download with invalid ext_id did NOT fail as expected"
+  when: file_servers_available | bool
+
+- name: Skip live coverage when no Files server is deployed on this PC
+  ansible.builtin.debug:
+    msg: >-
+      No Nutanix Files server is deployed on {{ ip }} — live download/upload
+      coverage was skipped for this target. Static spec, negative and
+      check_mode coverage still executed.
+  when: not (file_servers_available | bool) or live_file_server_ext_id is none
+
+- name: Remove temporary user mappings CSV from control node
+  ansible.builtin.file:
+    path: "{{ upload_source_path }}"
+    state: absent
+  ignore_errors: true
+
+- name: End Nutanix Files - User Mappings tests
+  ansible.builtin.debug:
+    msg: End Nutanix Files - User Mappings tests

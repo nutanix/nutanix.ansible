@@ -1,0 +1,39 @@
+---
+# Summary:
+# This playbook demonstrates how to manage the file-server-wide user
+# mappings of a Nutanix Files server.
+# It shows:
+# 1. Download the current user mappings CSV from a file server
+# 2. Upload a new user mappings CSV to a file server
+
+- name: Nutanix Files - User Mappings playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        file_server_uuid: "6f6cbb1c-3f6f-46bf-9c9a-9c1234567890"
+        user_mappings_upload_path: "/tmp/user_mappings.csv"
+
+    - name: Download user mappings from the file server
+      nutanix.ncp.ntnx_user_mapping_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_uuid }}"
+        operation: download
+      register: download_result
+      ignore_errors: true
+
+    - name: Upload user mappings CSV to the file server
+      nutanix.ncp.ntnx_user_mapping_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_uuid }}"
+        operation: upload
+        source_path: "{{ user_mappings_upload_path }}"
+      register: upload_result
+      ignore_errors: true

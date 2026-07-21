@@ -1,0 +1,21 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Nutanix Files - User Mappings playbook] **********************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"file_server_uuid": "6f6cbb1c-3f6f-46bf-9c9a-9c1234567890", "user_mappings_upload_path": "/tmp/user_mappings.csv"}, "changed": false}
+
+TASK [Download user mappings from the file server] *****************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while downloading user mappings for file server ext_id:6f6cbb1c-3f6f-46bf-9c9a-9c1234567890", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Upload user mappings CSV to the file server] *****************************
+fatal: [localhost]: FAILED! => {"changed": false, "ext_id": "6f6cbb1c-3f6f-46bf-9c9a-9c1234567890", "msg": "source_path '/tmp/user_mappings.csv' does not exist or is not a regular file.", "response": null, "task_ext_id": null}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=2   
+
