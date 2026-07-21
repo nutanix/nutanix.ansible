@@ -1,0 +1,76 @@
+---
+# Summary:
+# This playbook demonstrates the AIOps capacity planning Simulation modules:
+# 1. Create a simulation (VM workload resource spec used by capacity planning scenarios)
+# 2. Fetch the simulation using ext_id
+# 3. List all simulations
+# 4. List simulations with a filter
+# 5. List simulations with a limit
+# 6. Update a simulation
+# 7. Delete a simulation
+
+- name: AIOps Simulation playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting variables
+      ansible.builtin.set_fact:
+        simulation_name: "simulation_ansible"
+
+    - name: Create simulation with all attributes
+      nutanix.ncp.ntnx_simulation_v2:
+        state: present
+        name: "{{ simulation_name }}"
+        simulation_spec:
+          vcpu_count: 4
+          ram_gb: 16.0
+          hdd_gb: 200.0
+          ssd_gb: 100.0
+      register: create_result
+
+    - name: Capture the simulation ext_id
+      ansible.builtin.set_fact:
+        simulation_ext_id: "{{ create_result.ext_id }}"
+
+    - name: Fetch simulation using ext_id
+      nutanix.ncp.ntnx_simulations_info_v2:
+        ext_id: "{{ simulation_ext_id }}"
+      register: get_result
+
+    - name: List all simulations
+      nutanix.ncp.ntnx_simulations_info_v2:
+      register: list_all_result
+
+    - name: List simulations with filter
+      nutanix.ncp.ntnx_simulations_info_v2:
+        filter: "name eq '{{ simulation_name }}'"
+      register: list_filter_result
+
+    - name: List simulations with limit
+      nutanix.ncp.ntnx_simulations_info_v2:
+        limit: 1
+      register: list_limit_result
+
+    - name: Update simulation with all attributes
+      nutanix.ncp.ntnx_simulation_v2:
+        state: present
+        ext_id: "{{ simulation_ext_id }}"
+        name: "{{ simulation_name }}_updated"
+        simulation_spec:
+          vcpu_count: 8
+          ram_gb: 32.0
+          hdd_gb: 400.0
+          ssd_gb: 200.0
+      register: update_result
+
+    - name: Delete simulation
+      nutanix.ncp.ntnx_simulation_v2:
+        state: absent
+        ext_id: "{{ simulation_ext_id }}"
+      register: delete_result
