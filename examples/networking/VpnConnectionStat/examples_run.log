@@ -1,0 +1,55 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+running playbook inside collection nutanix.ncp
+
+PLAY [VPN Connection Stats playbook] *******************************************
+
+TASK [Set VPN connection ext_id] ***********************************************
+ok: [localhost] => {"ansible_facts": {"vpn_connection_ext_id": "5482651f-f898-4964-9c30-3549033d6d92"}, "changed": false}
+
+TASK [Get start time (now - 5 minutes) in ISO-8601 format] *********************
+ok: [localhost] => {"changed": false, "changed_when_result": false, "cmd": ["date", "-u", "-d", "-300 seconds", "+%Y-%m-%dT%H:%M:%S.%3NZ"], "delta": "0:00:00.003294", "end": "2026-07-21 06:29:31.580713", "msg": "", "rc": 0, "start": "2026-07-21 06:29:31.577419", "stderr": "", "stderr_lines": [], "stdout": "2026-07-21T06:24:31.580Z", "stdout_lines": ["2026-07-21T06:24:31.580Z"]}
+
+TASK [Get end time (now) in ISO-8601 format] ***********************************
+ok: [localhost] => {"changed": false, "changed_when_result": false, "cmd": ["date", "-u", "+%Y-%m-%dT%H:%M:%S.%3NZ"], "delta": "0:00:00.003409", "end": "2026-07-21 06:29:31.882425", "msg": "", "rc": 0, "start": "2026-07-21 06:29:31.879016", "stderr": "", "stderr_lines": [], "stdout": "2026-07-21T06:29:31.882Z", "stdout_lines": ["2026-07-21T06:29:31.882Z"]}
+
+TASK [Fetch VPN connection stats with minimal parameters] **********************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching VPN connection stats
+Origin: /tmp/codegen-sanity.0XCmoV/ansible_collections/nutanix/ncp/examples/networking/VpnConnectionStat/vpn_connection_stat_v2.yml:35:7
+
+33       changed_when: false
+34
+35     - name: Fetch VPN connection stats with minimal parameters
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching VPN connection stats", "response": {"$objectType": "networking.v4.stats.GetVpnConnectionStatsApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10060", "locale": "en_US", "message": "Failed to get stats of VPN connection 5482651f-f898-4964-9c30-3549033d6d92 as a referenced resource was not found -  Statistics for: vpn_connection [5482651f-f898-4964-9c30-3549033d6d92] not found", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.3/stats/vpn-connections/5482651f-f898-4964-9c30-3549033d6d92", "rel": "self"}], "totalAvailableResults": 0}}, "status": 404}
+...ignoring
+
+TASK [Fetch VPN connection stats with all supported parameters] ****************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching VPN connection stats
+Origin: /tmp/codegen-sanity.0XCmoV/ansible_collections/nutanix/ncp/examples/networking/VpnConnectionStat/vpn_connection_stat_v2.yml:43:7
+
+41       ignore_errors: true
+42
+43     - name: Fetch VPN connection stats with all supported parameters
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching VPN connection stats", "response": {"$objectType": "networking.v4.stats.GetVpnConnectionStatsApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10060", "locale": "en_US", "message": "Failed to get stats of VPN connection 5482651f-f898-4964-9c30-3549033d6d92 as a referenced resource was not found -  Statistics for: vpn_connection [5482651f-f898-4964-9c30-3549033d6d92] not found", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.3/stats/vpn-connections/5482651f-f898-4964-9c30-3549033d6d92", "rel": "self"}], "totalAvailableResults": 0}}, "status": 404}
+...ignoring
+
+TASK [Fetch downsampled VPN connection stats using SUM aggregation] ************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching VPN connection stats
+Origin: /tmp/codegen-sanity.0XCmoV/ansible_collections/nutanix/ncp/examples/networking/VpnConnectionStat/vpn_connection_stat_v2.yml:56:7
+
+54       ignore_errors: true
+55
+56     - name: Fetch downsampled VPN connection stats using SUM aggregation
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching VPN connection stats", "response": {"$objectType": "networking.v4.stats.GetVpnConnectionStatsApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10060", "locale": "en_US", "message": "Failed to get stats of VPN connection 5482651f-f898-4964-9c30-3549033d6d92 as a referenced resource was not found -  Statistics for: vpn_connection [5482651f-f898-4964-9c30-3549033d6d92] not found", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.3/stats/vpn-connections/5482651f-f898-4964-9c30-3549033d6d92", "rel": "self"}], "totalAvailableResults": 0}}, "status": 404}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=6    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=3   
+
