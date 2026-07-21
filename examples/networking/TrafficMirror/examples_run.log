@@ -1,0 +1,99 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+
+PLAY [Provision VMs then run Traffic Mirror example] ***************************
+
+TASK [Fetch hosts in cluster] **************************************************
+ok: [localhost]
+
+TASK [Set host ext_id] *********************************************************
+ok: [localhost]
+
+TASK [Get a VLAN subnet] *******************************************************
+ok: [localhost]
+
+TASK [Set subnet id] ***********************************************************
+ok: [localhost]
+
+TASK [Create source VM] ********************************************************
+changed: [localhost]
+
+TASK [Create destination VM (no NIC)] ******************************************
+changed: [localhost]
+
+TASK [Add SPAN destination NIC] ************************************************
+changed: [localhost]
+
+TASK [Get destination VM to find NIC uuid] *************************************
+ok: [localhost]
+
+TASK [Power on VMs] ************************************************************
+changed: [localhost] => (item=3e7ab9eb-00e2-4c2e-521a-dca2f35c87ab)
+changed: [localhost] => (item=8f0d75c7-4e1f-487e-5c96-ef804e4de138)
+
+TASK [Wait for VMs to be hosted] ***********************************************
+ok: [localhost] => (item=3e7ab9eb-00e2-4c2e-521a-dca2f35c87ab)
+ok: [localhost] => (item=8f0d75c7-4e1f-487e-5c96-ef804e4de138)
+
+TASK [Set example variables] ***************************************************
+ok: [localhost]
+
+TASK [Debug UUIDs] *************************************************************
+ok: [localhost] => {
+    "msg": {
+        "cluster": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2",
+        "dst_nic": "f99c8903-1aaa-4795-4a0c-2b8c9ce47068",
+        "host": "adf0c9e0-4051-4cd2-9f6f-ca9f962e941b",
+        "src_nic": "831a2eb6-11dd-480f-715f-23e8a594b919"
+    }
+}
+
+TASK [Create traffic mirror session with all attributes] ***********************
+changed: [localhost]
+
+TASK [Save traffic mirror ext_id] **********************************************
+ok: [localhost]
+
+TASK [Get a specific traffic mirror session by ext_id] *************************
+ok: [localhost]
+
+TASK [List all traffic mirror sessions] ****************************************
+ok: [localhost]
+
+TASK [List traffic mirror sessions with filter] ********************************
+ok: [localhost]
+
+TASK [List traffic mirror sessions with limit] *********************************
+ok: [localhost]
+
+TASK [Update traffic mirror session with all attributes] ***********************
+changed: [localhost]
+
+TASK [Delete traffic mirror session] *******************************************
+changed: [localhost]
+
+TASK [Show final results] ******************************************************
+ok: [localhost] => {
+    "msg": {
+        "created": "tm_ansible_example_live",
+        "deleted_task": "ZXJnb24=:e328375a-e389-4e33-bb9d-9481c460681d",
+        "filter_count": "1",
+        "got": "tm_ansible_example_live",
+        "limit_count": "1",
+        "list_count": "1",
+        "updated": "tm_ansible_example_live_updated"
+    }
+}
+
+TASK [Power off VMs] ***********************************************************
+changed: [localhost] => (item=3e7ab9eb-00e2-4c2e-521a-dca2f35c87ab)
+changed: [localhost] => (item=8f0d75c7-4e1f-487e-5c96-ef804e4de138)
+
+TASK [Delete VMs] **************************************************************
+changed: [localhost] => (item=3e7ab9eb-00e2-4c2e-521a-dca2f35c87ab)
+changed: [localhost] => (item=8f0d75c7-4e1f-487e-5c96-ef804e4de138)
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=23   changed=9    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
