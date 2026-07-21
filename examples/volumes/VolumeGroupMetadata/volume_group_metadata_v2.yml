@@ -1,0 +1,73 @@
+---
+# Summary:
+# This playbook demonstrates how to fetch VolumeGroupMetadata for a Volume Group
+# in Nutanix Prism Central using the v4 Volumes API.
+#
+# VolumeGroupMetadata is a singleton subresource of a Volume Group. It exposes
+# the read-only "owner_reference" (populated at Volume Group creation time
+# from the authenticated principal) and the list of "category_ids" attached
+# to the Volume Group. It does NOT have its own external ID and is addressed
+# through the parent Volume Group's ext_id.
+#
+# The underlying API (GetVolumeGroupMetadataById) is deprecated upstream. New
+# integrations should prefer `ntnx_volume_groups_info_v2` which reads the same
+# information through `GetVolumeGroupById` with `$expand=metadata`, but this
+# module remains available for backward-compatible callers.
+#
+# Prerequisites:
+#   * A Volume Group already exists in Prism Central. This playbook creates
+#     one on the fly, mutates its metadata via `ntnx_volume_groups_categories_v2`
+#     (the only way to change VolumeGroupMetadata fields — the metadata endpoint
+#     itself is read-only), reads the metadata, then cleans up.
+
+- name: VolumeGroupMetadata playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default('10.44.76.28') }}"
+      nutanix_username: "{{ nutanix_username | default('admin') }}"
+      nutanix_password: "{{ nutanix_password | default('Nutanix.123') }}"
+      validate_certs: false
+  tasks:
+    - name: Set example variables
+      ansible.builtin.set_fact:
+        vg_name: "vg_metadata_example_{{ 999999 | random }}"
+
+    - name: Discover a PE cluster to host the example Volume Group
+      nutanix.ncp.ntnx_clusters_info_v2:
+      register: cluster_lookup
+
+    - name: Set cluster_uuid from the first AOS PE cluster returned
+      ansible.builtin.set_fact:
+        cluster_uuid: >-
+          {{ (cluster_lookup.response
+              | selectattr('config.cluster_function', 'defined')
+              | selectattr('config.cluster_function', 'contains', 'AOS')
+              | list
+              | first).ext_id }}
+
+    - name: Create a Volume Group to hold the metadata subresource
+      nutanix.ncp.ntnx_volume_groups_v2:
+        state: present
+        name: "{{ vg_name }}"
+        description: "Example VG for VolumeGroupMetadata info module"
+        cluster_reference: "{{ cluster_uuid }}"
+        sharing_status: "SHARED"
+        should_load_balance_vm_attachments: false
+      register: created_vg
+
+    - name: Fetch VolumeGroupMetadata for the newly created Volume Group
+      nutanix.ncp.ntnx_volume_group_metadata_info_v2:
+        volume_group_ext_id: "{{ created_vg.ext_id }}"
+      register: metadata_before
+
+    - name: Show the raw metadata payload
+      ansible.builtin.debug:
+        var: metadata_before.response
+
+    - name: Delete the example Volume Group
+      nutanix.ncp.ntnx_volume_groups_v2:
+        state: absent
+        ext_id: "{{ created_vg.ext_id }}"
+      register: deleted_vg
