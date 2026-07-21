@@ -1,0 +1,33 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [WORM legal hold playbook] ************************************************
+
+TASK [Enable WORM legal hold on a mount target] ********************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching mount target info using ext_id
+Origin: /tmp/codegen/2834ed65b4274abc98f9cfc97aea5405/repo/examples/files/WormLegalHold/worm_legal_hold.yml:25:7
+
+23       validate_certs: false
+24   tasks:
+25     - name: Enable WORM legal hold on a mount target
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching mount target info using ext_id", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Disable WORM legal hold on a mount target] *******************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching mount target info using ext_id
+Origin: /tmp/codegen/2834ed65b4274abc98f9cfc97aea5405/repo/examples/files/WormLegalHold/worm_legal_hold.yml:33:7
+
+31       ignore_errors: true
+32
+33     - name: Disable WORM legal hold on a mount target
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching mount target info using ext_id", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=2   
+

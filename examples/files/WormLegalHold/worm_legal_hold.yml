@@ -1,0 +1,39 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Enable WORM legal hold on a Nutanix Files mount target
+# 2. Disable WORM legal hold on a Nutanix Files mount target
+#
+# WORM (Write Once Read Many) legal hold can be enabled or disabled on a
+# Nutanix Files mount target (share). Legal hold is applicable only for WORM
+# compliant mount targets, so the referenced mount target must already have
+# WORM compliance enabled.
+#
+# Variables:
+# file_server_ext_id: External ID of the file server that owns the mount target
+# ext_id: External ID of the WORM compliant mount target
+- name: WORM legal hold playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+  tasks:
+    - name: Enable WORM legal hold on a mount target
+      nutanix.ncp.ntnx_files_worm_legal_hold_v2:
+        state: present
+        file_server_ext_id: "d1e2f3a4-b5c6-4d7e-8f90-1a2b3c4d5e6f"
+        ext_id: "9c1e537d-6777-4c22-5d41-ddd0c3337aa9"
+      register: enable_result
+      ignore_errors: true
+
+    - name: Disable WORM legal hold on a mount target
+      nutanix.ncp.ntnx_files_worm_legal_hold_v2:
+        state: absent
+        file_server_ext_id: "d1e2f3a4-b5c6-4d7e-8f90-1a2b3c4d5e6f"
+        ext_id: "9c1e537d-6777-4c22-5d41-ddd0c3337aa9"
+      register: disable_result
+      ignore_errors: true

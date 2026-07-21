@@ -1,0 +1,269 @@
+---
+# Test plan for nutanix.ncp.ntnx_files_worm_legal_hold_v2
+#
+# WORM legal hold is an ACTION on a Nutanix Files mount target (share):
+#   - state=present  -> EnableWormLegalHold  (/$actions/enable-worm-legal-hold)
+#   - state=absent   -> DisableWormLegalHold (/$actions/disable-worm-legal-hold)
+# Legal hold is applicable ONLY to WORM compliant mount targets. A mount target
+# must be created with WORM support and have WORM compliance enabled before
+# legal hold can be toggled (server error FIL-40263 / FIL-40265 otherwise).
+#
+# Scenarios covered:
+#   1.  check_mode enable  -> no API call, changed=false, "will be enabled" msg.
+#   2.  check_mode disable -> no API call, changed=false, "will be disabled" msg.
+#   3.  Negative: enable with missing file_server_ext_id -> arg-spec failure.
+#   4.  Negative: enable with missing ext_id            -> arg-spec failure.
+#   5.  Negative: disable with missing ext_id           -> arg-spec failure.
+#   6.  Negative: invalid state value                   -> choices validation failure.
+#   7.  Negative: enable on a non-existent mount target -> API not-found failure
+#       (only when a real file_server_ext_id is supplied).
+#   8.  Full lifecycle against a real WORM compliant mount target (only when
+#       worm_compliant_mount_target_ext_id is supplied):
+#         a. Enable legal hold          -> changed=true, task SUCCEEDED.
+#         b. Enable legal hold again    -> changed=false, skipped, "already enabled".
+#         c. Disable legal hold         -> changed=true, task SUCCEEDED.
+#         d. Disable legal hold again   -> changed=false, skipped, "already disabled".
+
+- name: Start WORM legal hold tests
+  ansible.builtin.debug:
+    msg: Start WORM legal hold tests
+
+- name: Set identifiers used by the check_mode and negative scenarios
+  ansible.builtin.set_fact:
+    dummy_file_server_ext_id: "d1e2f3a4-b5c6-4d7e-8f90-1a2b3c4d5e6f"
+    non_existent_ext_id: "00000000-0000-0000-0000-000000000000"
+
+########################################################################################
+# check_mode tests
+########################################################################################
+
+- name: Enable WORM legal hold using check mode
+  nutanix.ncp.ntnx_files_worm_legal_hold_v2:
+    state: present
+    file_server_ext_id: "{{ dummy_file_server_ext_id }}"
+    ext_id: "{{ non_existent_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Enable WORM legal hold using check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == non_existent_ext_id
+      - "'will be enabled' in result.msg"
+    success_msg: "Enable WORM legal hold check mode generated the expected result"
+    fail_msg: "Enable WORM legal hold check mode did not generate the expected result"
+
+- name: Disable WORM legal hold using check mode
+  nutanix.ncp.ntnx_files_worm_legal_hold_v2:
+    state: absent
+    file_server_ext_id: "{{ dummy_file_server_ext_id }}"
+    ext_id: "{{ non_existent_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Disable WORM legal hold using check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == non_existent_ext_id
+      - "'will be disabled' in result.msg"
+    success_msg: "Disable WORM legal hold check mode generated the expected result"
+    fail_msg: "Disable WORM legal hold check mode did not generate the expected result"
+
+########################################################################################
+# Negative tests - argument validation
+########################################################################################
+
+- name: Enable WORM legal hold with missing file_server_ext_id
+  nutanix.ncp.ntnx_files_worm_legal_hold_v2:
+    state: present
+    ext_id: "{{ non_existent_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Enable WORM legal hold with missing file_server_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'missing required arguments: file_server_ext_id' in result.msg"
+    success_msg: "Enable WORM legal hold with missing file_server_ext_id failed as expected"
+    fail_msg: "Enable WORM legal hold with missing file_server_ext_id did not fail as expected"
+
+- name: Enable WORM legal hold with missing ext_id
+  nutanix.ncp.ntnx_files_worm_legal_hold_v2:
+    state: present
+    file_server_ext_id: "{{ dummy_file_server_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Enable WORM legal hold with missing ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'missing required arguments: ext_id' in result.msg"
+    success_msg: "Enable WORM legal hold with missing ext_id failed as expected"
+    fail_msg: "Enable WORM legal hold with missing ext_id did not fail as expected"
+
+- name: Disable WORM legal hold with missing ext_id
+  nutanix.ncp.ntnx_files_worm_legal_hold_v2:
+    state: absent
+    file_server_ext_id: "{{ dummy_file_server_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Disable WORM legal hold with missing ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'missing required arguments: ext_id' in result.msg"
+    success_msg: "Disable WORM legal hold with missing ext_id failed as expected"
+    fail_msg: "Disable WORM legal hold with missing ext_id did not fail as expected"
+
+- name: Enable WORM legal hold with an invalid state value
+  nutanix.ncp.ntnx_files_worm_legal_hold_v2:
+    state: invalid_state
+    file_server_ext_id: "{{ dummy_file_server_ext_id }}"
+    ext_id: "{{ non_existent_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Enable WORM legal hold with an invalid state value status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'value of state must be one of' in result.msg"
+    success_msg: "WORM legal hold with an invalid state value failed as expected"
+    fail_msg: "WORM legal hold with an invalid state value did not fail as expected"
+
+########################################################################################
+# Negative test - non-existent mount target on a real file server
+########################################################################################
+
+- name: Enable WORM legal hold on a non-existent mount target
+  nutanix.ncp.ntnx_files_worm_legal_hold_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    ext_id: "{{ non_existent_ext_id }}"
+  register: result
+  ignore_errors: true
+  when:
+    - file_server_ext_id is defined
+    - file_server_ext_id | length > 0
+
+- name: Enable WORM legal hold on a non-existent mount target status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Enable WORM legal hold on a non-existent mount target failed as expected"
+    fail_msg: "Enable WORM legal hold on a non-existent mount target did not fail as expected"
+  when:
+    - file_server_ext_id is defined
+    - file_server_ext_id | length > 0
+
+########################################################################################
+# Full lifecycle against a real WORM compliant mount target
+########################################################################################
+
+- name: WORM legal hold lifecycle
+  when:
+    - file_server_ext_id is defined
+    - file_server_ext_id | length > 0
+    - worm_compliant_mount_target_ext_id is defined
+    - worm_compliant_mount_target_ext_id | length > 0
+  block:
+    - name: Enable WORM legal hold on a WORM compliant mount target
+      nutanix.ncp.ntnx_files_worm_legal_hold_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ worm_compliant_mount_target_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Enable WORM legal hold on a WORM compliant mount target status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == true
+          - result.failed == false
+          - result.ext_id == worm_compliant_mount_target_ext_id
+          - result.task_ext_id is defined
+          - result.response is defined
+          - result.response.status == "SUCCEEDED"
+        success_msg: "WORM legal hold enabled successfully"
+        fail_msg: "WORM legal hold enable failed"
+
+    - name: Enable WORM legal hold again to test idempotency
+      nutanix.ncp.ntnx_files_worm_legal_hold_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ worm_compliant_mount_target_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Enable WORM legal hold again to test idempotency status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.skipped == true
+          - "'already enabled' in result.msg"
+        success_msg: "WORM legal hold enable idempotency passed"
+        fail_msg: "WORM legal hold enable idempotency failed"
+
+    - name: Disable WORM legal hold on a WORM compliant mount target
+      nutanix.ncp.ntnx_files_worm_legal_hold_v2:
+        state: absent
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ worm_compliant_mount_target_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Disable WORM legal hold on a WORM compliant mount target status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == true
+          - result.failed == false
+          - result.ext_id == worm_compliant_mount_target_ext_id
+          - result.task_ext_id is defined
+          - result.response is defined
+          - result.response.status == "SUCCEEDED"
+        success_msg: "WORM legal hold disabled successfully"
+        fail_msg: "WORM legal hold disable failed"
+
+    - name: Disable WORM legal hold again to test idempotency
+      nutanix.ncp.ntnx_files_worm_legal_hold_v2:
+        state: absent
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ worm_compliant_mount_target_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Disable WORM legal hold again to test idempotency status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.skipped == true
+          - "'already disabled' in result.msg"
+        success_msg: "WORM legal hold disable idempotency passed"
+        fail_msg: "WORM legal hold disable idempotency failed"
