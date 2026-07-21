@@ -131,3 +131,21 @@ def get_ova_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_vmm_py_client.OvasApi(api_client=api_client)
+
+
+def get_vm_host_affinity_policies_api_instance(module):
+    """
+    This method will return VM-Host Affinity Policies API instance.
+
+    The same API receiver is used for both VM-Host Affinity Policy CRUD calls
+    and for listing the derived VmHostAffinityPolicyVmComplianceState entries
+    scoped under a policy.
+
+    Args:
+        module: Ansible module
+
+    Returns:
+        obj: v4 VmHostAffinityPoliciesApi instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.VmHostAffinityPoliciesApi(api_client=api_client)

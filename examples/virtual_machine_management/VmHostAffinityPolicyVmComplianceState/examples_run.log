@@ -1,0 +1,49 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [VM host affinity policy VM compliance state playbook] ********************
+
+TASK [Set input variables (policy ext_id will be discovered below)] ************
+ok: [localhost] => {"ansible_facts": {"vm_host_affinity_policy_ext_id": ""}, "changed": false}
+
+TASK [List existing VM-host affinity policies to discover a policy ext_id] *****
+ok: [localhost] => {"cache_control": "no-cache, no-store, max-age=0, must-revalidate,no-cache, no-store", "changed": false, "connection": "close", "content_encoding": "identity", "content_length": "2158", "content_security_policy": "connect-src 'self' wss: https://downloads.frame.nutanix.com https://downloads.frame.nutanix.us; default-src 'self' https://*.nutanix.com; frame-ancestors 'self' https://*.nutanix.com; frame-src 'self' https://*.nutanix.com blob: data:; img-src 'self' blob: data:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'", "content_type": "application/json", "cookies": {"NTNX_SESSION_ID": "13e84013-f9a0-417d-b161-128d3a9fbf3a"}, "cookies_string": "NTNX_SESSION_ID=13e84013-f9a0-417d-b161-128d3a9fbf3a", "date": "Tue, 21 Jul 2026 08:55:05 GMT", "elapsed": 0, "expires": "0,0", "json": {"$objectType": "vmm.v4.ahv.policies.ListVmHostAffinityPoliciesApiResponse", "$reserved": {"$fv": "v4.r3"}, "data": [{"$objectType": "vmm.v4.ahv.policies.VmHostAffinityPolicy", "$reserved": {"$fv": "v4.r3"}, "createTime": "2026-07-21T05:11:15.1717Z", "createdBy": {"$objectType": "vmm.v4.ahv.policies.UserReference", "$reserved": {"$fv": "v4.r3"}, "extId": "00000000-0000-0000-0000-000000000000"}, "description": "Policy created by ntnx_re_enforce_vm_host_affinity_policy_v2 integration tests", "extId": "d8cf7870-6162-474b-4e62-dfa249096ffe", "hostCategories": [{"$objectType": "vmm.v4.ahv.policies.CategoryReference", "$reserved": {"$fv": "v4.r3"}, "extId": "80f9bfaa-2435-4811-5528-1346ad1b844b"}], "lastUpdatedBy": {"$objectType": "vmm.v4.ahv.policies.UserReference", "$reserved": {"$fv": "v4.r3"}, "extId": "00000000-0000-0000-0000-000000000000"}, "name": "ansible_reenforce_vmhap_mrJbSeKTuMUl", "numHosts": 0, "updateTime": "2026-07-21T05:11:15.1717Z", "vmCategories": [{"$objectType": "vmm.v4.ahv.policies.CategoryReference", "$reserved": {"$fv": "v4.r3"}, "extId": "46756273-f4f7-42b6-7376-30e1fda536cb"}]}], "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "extraInfo": [{"$objectType": "common.v1.config.KVPair", "$reserved": {"$fv": "v1.r0"}, "name": "truncatedIndexes"}], "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/vmm/v4.2/ahv/policies/vm-host-affinity-policies?$page=0&$limit=50", "rel": "first"}, {"href": "https://10.44.76.28:9440/api/vmm/v4.2/ahv/policies/vm-host-affinity-policies?$page=0&$limit=50", "rel": "self"}, {"href": "https://10.44.76.28:9440/api/vmm/v4.2/ahv/policies/vm-host-affinity-policies?$page=0&$limit=50", "rel": "last"}], "totalAvailableResults": 1}}, "msg": "OK (2158 bytes)", "pragma": "no-cache, no-cache", "redirected": false, "set_cookie": "NTNX_SESSION_ID=13e84013-f9a0-417d-b161-128d3a9fbf3a;Max-Age=29700;Path=/;Secure;HttpOnly;SameSite=Lax", "status": 200, "strict_transport_security": "max-age=31536000 ; includeSubDomains, max-age=63072000; includeSubdomains; preload", "url": "https://10.44.76.28:9440/api/vmm/v4.2/ahv/policies/vm-host-affinity-policies", "vary": "Origin", "x_api_ratelimit_limit": "2", "x_api_ratelimit_refresh_period_seconds": "1", "x_api_ratelimit_remaining": "1", "x_api_ratelimit_reset": "0", "x_content_type_options": "nosniff, nosniff", "x_dns_prefetch_control": "off", "x_envoy_upstream_service_time": "15", "x_frame_options": "DENY, SAMEORIGIN", "x_ntnx_env": "pc", "x_ntnx_product": "pc.7.6", "x_permitted_cross_domain_policies": "master-only", "x_ratelimit_limit": "40", "x_ratelimit_remaining": "37", "x_ratelimit_reset": "0", "x_xss_protection": "0, 1; mode=block"}
+
+TASK [Pick the first available VM-host affinity policy ext_id (if any)] ********
+ok: [localhost] => {"ansible_facts": {"vm_host_affinity_policy_ext_id": "d8cf7870-6162-474b-4e62-dfa249096ffe"}, "changed": false}
+
+TASK [Fetch all VM compliance state entries for the policy (management module)] ***
+ok: [localhost] => {"changed": false, "ext_id": null, "msg": "Fetched 0 VM compliance state entries for VM-host affinity policy 'd8cf7870-6162-474b-4e62-dfa249096ffe'.", "response": [], "task_ext_id": null, "total_available_results": 0}
+
+TASK [List all VM compliance state entries for the policy (info module)] *******
+ok: [localhost] => {"changed": false, "ext_id": null, "response": [], "total_available_results": 0}
+
+TASK [Remember first compliance state ext_id (if any)] *************************
+ok: [localhost] => {"ansible_facts": {"compliance_state_ext_id": ""}, "changed": false}
+
+TASK [Fetch a specific compliance state entry by ext_id (management module)] ***
+skipping: [localhost] => {"changed": false, "false_condition": "compliance_state_ext_id | default('') | length > 0", "skip_reason": "Conditional result was False"}
+
+TASK [Fetch a specific compliance state entry by ext_id (info module)] *********
+skipping: [localhost] => {"changed": false, "false_condition": "compliance_state_ext_id | default('') | length > 0", "skip_reason": "Conditional result was False"}
+
+TASK [Attempt to delete a compliance state entry (expected to fail — read-only entity)] ***
+fatal: [localhost]: FAILED! => {"changed": false, "ext_id": "", "msg": "state=absent is not supported for VM host affinity policy VM compliance state entries: they are derived read-only data. Delete the parent VM-host affinity policy 'd8cf7870-6162-474b-4e62-dfa249096ffe' instead.", "response": null, "task_ext_id": null}
+...ignoring
+
+TASK [Show the outputs] ********************************************************
+ok: [localhost] => {
+    "msg": {
+        "delete_failure_msg": "state=absent is not supported for VM host affinity policy VM compliance state entries: they are derived read-only data. Delete the parent VM-host affinity policy 'd8cf7870-6162-474b-4e62-dfa249096ffe' instead.",
+        "fetched_all": "0",
+        "listed_all": "0",
+        "policy_ext_id": "d8cf7870-6162-474b-4e62-dfa249096ffe",
+        "single_ext_id": ""
+    }
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=8    changed=0    unreachable=0    failed=0    skipped=2    rescued=0    ignored=1   
+

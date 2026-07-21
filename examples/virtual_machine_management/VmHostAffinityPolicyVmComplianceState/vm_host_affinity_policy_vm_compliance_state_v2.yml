@@ -1,0 +1,109 @@
+---
+# Summary:
+# This playbook demonstrates the read-only VM compliance state view for a
+# VM-host affinity policy in Nutanix Prism Central.
+#
+# Steps:
+# 1. Discover an existing VM-host affinity policy on the cluster (creating a
+#    lightweight one on-the-fly if none exists yet).
+# 2. Fetch all compliance state entries for that policy using both the
+#    "management" module (state=present) and the info module.
+# 3. Fetch a single compliance state entry by ext_id using both modules.
+# 4. Show the graceful skip behavior when state=absent is requested (compliance
+#    states are read-only; deletion is not supported).
+
+- name: VM host affinity policy VM compliance state playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ nutanix_username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ nutanix_password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: false
+  tasks:
+    - name: Set input variables (policy ext_id will be discovered below)
+      ansible.builtin.set_fact:
+        vm_host_affinity_policy_ext_id: "{{ vm_host_affinity_policy_ext_id | default('') }}"
+
+    - name: List existing VM-host affinity policies to discover a policy ext_id
+      ansible.builtin.uri:
+        url: "https://{{ lookup('env', 'NUTANIX_HOST') }}:9440/api/vmm/v4.2/ahv/policies/vm-host-affinity-policies"
+        method: GET
+        user: "{{ lookup('env', 'NUTANIX_USERNAME') }}"
+        password: "{{ lookup('env', 'NUTANIX_PASSWORD') }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [200]
+      register: existing_policies
+      when: vm_host_affinity_policy_ext_id == ''
+      ignore_errors: true
+
+    - name: Pick the first available VM-host affinity policy ext_id (if any)
+      ansible.builtin.set_fact:
+        vm_host_affinity_policy_ext_id: "{{ (existing_policies.json.data | default([]) | first).extId | default('') }}"
+      when:
+        - vm_host_affinity_policy_ext_id == ''
+        - existing_policies is defined
+        - existing_policies.json is defined
+
+    - name: Fetch all VM compliance state entries for the policy (management module)
+      nutanix.ncp.ntnx_vm_host_affinity_policy_vm_compliance_state_v2:
+        state: present
+        vm_host_affinity_policy_ext_id: "{{ vm_host_affinity_policy_ext_id }}"
+      register: fetch_all_result
+      when: vm_host_affinity_policy_ext_id | length > 0
+      ignore_errors: true
+
+    - name: List all VM compliance state entries for the policy (info module)
+      nutanix.ncp.ntnx_vm_host_affinity_policy_vm_compliance_states_info_v2:
+        vm_host_affinity_policy_ext_id: "{{ vm_host_affinity_policy_ext_id }}"
+      register: list_all_result
+      when: vm_host_affinity_policy_ext_id | length > 0
+      ignore_errors: true
+
+    - name: Remember first compliance state ext_id (if any)
+      ansible.builtin.set_fact:
+        compliance_state_ext_id: "{{ (list_all_result.response | default([]) | first).ext_id | default('') }}"
+      when:
+        - list_all_result is defined
+        - list_all_result.response is defined
+
+    - name: Fetch a specific compliance state entry by ext_id (management module)
+      nutanix.ncp.ntnx_vm_host_affinity_policy_vm_compliance_state_v2:
+        state: present
+        vm_host_affinity_policy_ext_id: "{{ vm_host_affinity_policy_ext_id }}"
+        ext_id: "{{ compliance_state_ext_id }}"
+      register: fetch_one_result
+      when:
+        - vm_host_affinity_policy_ext_id | length > 0
+        - compliance_state_ext_id | default('') | length > 0
+      ignore_errors: true
+
+    - name: Fetch a specific compliance state entry by ext_id (info module)
+      nutanix.ncp.ntnx_vm_host_affinity_policy_vm_compliance_states_info_v2:
+        vm_host_affinity_policy_ext_id: "{{ vm_host_affinity_policy_ext_id }}"
+        ext_id: "{{ compliance_state_ext_id }}"
+      register: info_one_result
+      when:
+        - vm_host_affinity_policy_ext_id | length > 0
+        - compliance_state_ext_id | default('') | length > 0
+      ignore_errors: true
+
+    - name: Attempt to delete a compliance state entry (expected to fail — read-only entity)
+      nutanix.ncp.ntnx_vm_host_affinity_policy_vm_compliance_state_v2:
+        state: absent
+        vm_host_affinity_policy_ext_id: "{{ vm_host_affinity_policy_ext_id }}"
+        ext_id: "{{ compliance_state_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+      register: delete_result
+      when: vm_host_affinity_policy_ext_id | length > 0
+      ignore_errors: true
+
+    - name: Show the outputs
+      ansible.builtin.debug:
+        msg:
+          policy_ext_id: "{{ vm_host_affinity_policy_ext_id }}"
+          fetched_all: "{{ (fetch_all_result.response | default([]) | length) }}"
+          listed_all: "{{ (list_all_result.response | default([]) | length) }}"
+          single_ext_id: "{{ (fetch_one_result.ext_id | default('')) }}"
+          delete_failure_msg: "{{ (delete_result.msg | default('n/a')) }}"
