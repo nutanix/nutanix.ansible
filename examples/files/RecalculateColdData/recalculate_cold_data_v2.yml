@@ -1,0 +1,29 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Recalculate cold data eligible for tiering on a Nutanix Files file server
+
+- name: RecalculateColdData playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        file_server_ext_id: "b2c3d4e5-6789-4abc-9def-0123456789ab"
+
+    - name: Recalculate cold data for a file server
+      nutanix.ncp.ntnx_files_recalculate_cold_data_v2:
+        ext_id: "{{ file_server_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    # Response sample:
+    # <Need to add sample - the Nutanix Files service (minerva, port 7509) was
+    #  unavailable on the target Prism Central during the run, so a live sample
+    #  could not be captured. See the PR body for details.>
