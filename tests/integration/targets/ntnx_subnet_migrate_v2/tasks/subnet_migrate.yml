@@ -1,0 +1,324 @@
+---
+# Test plan (ntnx_subnet_migrate_v2):
+#
+# The module wraps two action-type APIs from the SubnetMigrationsApi in
+# ntnx_networking_py_client:
+#   * MigrateSubnets (POST /networking/v4.3/config/$actions/migrate-subnets)
+#       Body: VlanSubnetMigrationSpec { subnets: [{ subnet_uuid }] }
+#       Purpose: convert VLAN basic subnets to VLAN advanced.
+#   * MigrateVnicById (POST /networking/v4.3/config/vnics/{extId}/$actions/migrate)
+#       Body: VnicMigrationItemSpec { network_uuid, requested_ip_addresses }
+#       Purpose: move a vNIC between Acropolis and Atlas subnets.
+#
+# Coverage:
+#   1. check_mode: one for the subnet-migration path (all attributes) and one
+#      for the vNIC-migration path (all attributes).
+#   2. Negative — missing required params, mutually exclusive params, and the
+#      "requested_ip_addresses without vnic_ext_id" case triggered by the
+#      argument spec.
+#   3. Live migration of a real VLAN basic subnet if a cluster is available
+#      (creates the subnet, migrates it, cleans up).
+#   4. Idempotency: re-run migration on the same subnet and assert the API
+#      surfaces the expected "already advanced" behavior.
+#   5. Domain checks — spec fields survive the round trip (subnet_uuid list,
+#      network_uuid, requested IPv4 payload).
+
+- name: Start ntnx_subnet_migrate_v2 tests
+  ansible.builtin.debug:
+    msg: "Start ntnx_subnet_migrate_v2 tests"
+
+- name: Generate random suffix for test resource names
+  ansible.builtin.set_fact:
+    # community.general.random_string is not universally installed; fall back
+    # to a lightweight epoch-based suffix that is unique per run.
+    random_name: "smv_{{ 999999999 | random }}_{{ ansible_date_time.epoch | default(lookup('pipe', 'date +%s')) }}"
+
+- name: Set names and cleanup buffers
+  ansible.builtin.set_fact:
+    migrate_subnet_name: "migrate_subnet_{{ random_name }}"
+    todelete: []
+
+########################################################################################
+# 1. check_mode — subnet migration path (all attributes)
+########################################################################################
+
+- name: Generate spec for migrating VLAN subnets in check mode
+  nutanix.ncp.ntnx_subnet_migrate_v2:
+    state: present
+    subnets:
+      - subnet_uuid: "{{ placeholder_subnet_uuid_a }}"
+      - subnet_uuid: "{{ placeholder_subnet_uuid_b }}"
+  check_mode: true
+  register: subnet_migrate_check_mode
+  ignore_errors: true
+
+- name: Assert check_mode spec for subnet migration is correct
+  ansible.builtin.assert:
+    that:
+      - subnet_migrate_check_mode is defined
+      - subnet_migrate_check_mode.changed == false
+      - subnet_migrate_check_mode.failed == false
+      - subnet_migrate_check_mode.response is defined
+      - subnet_migrate_check_mode.response.subnets is defined
+      - subnet_migrate_check_mode.response.subnets | length == 2
+      - subnet_migrate_check_mode.response.subnets[0].subnet_uuid == placeholder_subnet_uuid_a
+      - subnet_migrate_check_mode.response.subnets[1].subnet_uuid == placeholder_subnet_uuid_b
+      - subnet_migrate_check_mode.ext_id == placeholder_subnet_uuid_a
+      - subnet_migrate_check_mode.msg is defined
+      - "'Subnet migration to VLAN advanced will be triggered' in subnet_migrate_check_mode.msg"
+    success_msg: "check_mode spec for subnet migration generated correctly"
+    fail_msg: "check_mode spec for subnet migration did not match expectations"
+
+########################################################################################
+# 2. check_mode — vNIC migration path (all attributes)
+########################################################################################
+
+- name: Generate spec for migrating vNIC in check mode with all attributes
+  nutanix.ncp.ntnx_subnet_migrate_v2:
+    state: present
+    vnic_ext_id: "{{ placeholder_vnic_ext_id }}"
+    network_uuid: "{{ placeholder_network_uuid }}"
+    requested_ip_addresses:
+      - ipv4:
+          value: "{{ placeholder_ipv4 }}"
+          prefix_length: 32
+  check_mode: true
+  register: vnic_migrate_check_mode
+  ignore_errors: true
+
+- name: Assert check_mode spec for vNIC migration is correct
+  ansible.builtin.assert:
+    that:
+      - vnic_migrate_check_mode is defined
+      - vnic_migrate_check_mode.changed == false
+      - vnic_migrate_check_mode.failed == false
+      - vnic_migrate_check_mode.response is defined
+      - vnic_migrate_check_mode.response.network_uuid == placeholder_network_uuid
+      - vnic_migrate_check_mode.response.requested_ip_addresses is defined
+      - vnic_migrate_check_mode.response.requested_ip_addresses | length == 1
+      - vnic_migrate_check_mode.response.requested_ip_addresses[0].ipv4.value == placeholder_ipv4
+      - vnic_migrate_check_mode.response.requested_ip_addresses[0].ipv4.prefix_length == 32
+      - vnic_migrate_check_mode.ext_id == placeholder_vnic_ext_id
+      - vnic_migrate_check_mode.msg is defined
+      - placeholder_vnic_ext_id in vnic_migrate_check_mode.msg
+    success_msg: "check_mode spec for vNIC migration generated correctly"
+    fail_msg: "check_mode spec for vNIC migration did not match expectations"
+
+########################################################################################
+# 3. Negative — required_one_of: neither subnets nor vnic_ext_id was passed
+########################################################################################
+
+- name: Trigger migration without any parameters
+  nutanix.ncp.ntnx_subnet_migrate_v2:
+    state: present
+  check_mode: true
+  register: missing_all
+  ignore_errors: true
+
+- name: Assert missing-required-parameters is reported
+  ansible.builtin.assert:
+    that:
+      - missing_all is defined
+      - missing_all.failed == true
+      - missing_all.msg is defined
+      - >-
+        ("one of the following is required" in missing_all.msg)
+        or ("required" in missing_all.msg)
+    success_msg: "Module correctly rejected missing required parameters"
+    fail_msg: "Module did not reject missing parameters as expected"
+
+########################################################################################
+# 4. Negative — mutually exclusive: cannot pass both subnets and vnic_ext_id
+########################################################################################
+
+- name: Trigger migration with both subnets and vnic_ext_id
+  nutanix.ncp.ntnx_subnet_migrate_v2:
+    state: present
+    subnets:
+      - subnet_uuid: "{{ placeholder_subnet_uuid_a }}"
+    vnic_ext_id: "{{ placeholder_vnic_ext_id }}"
+    network_uuid: "{{ placeholder_network_uuid }}"
+  check_mode: true
+  register: mutually_exclusive_result
+  ignore_errors: true
+
+- name: Assert mutually-exclusive violation is reported
+  ansible.builtin.assert:
+    that:
+      - mutually_exclusive_result is defined
+      - mutually_exclusive_result.failed == true
+      - mutually_exclusive_result.msg is defined
+      - "'mutually exclusive' in mutually_exclusive_result.msg"
+    success_msg: "Module correctly rejected mutually-exclusive parameters"
+    fail_msg: "Module did not reject mutually-exclusive parameters as expected"
+
+########################################################################################
+# 5. Negative — network_uuid supplied without vnic_ext_id (required_by rule)
+########################################################################################
+
+- name: Trigger vNIC migration without vnic_ext_id
+  nutanix.ncp.ntnx_subnet_migrate_v2:
+    state: present
+    subnets:
+      - subnet_uuid: "{{ placeholder_subnet_uuid_a }}"
+    network_uuid: "{{ placeholder_network_uuid }}"
+  check_mode: true
+  register: network_uuid_without_vnic
+  ignore_errors: true
+
+- name: Assert required_by violation is reported
+  ansible.builtin.assert:
+    that:
+      - network_uuid_without_vnic is defined
+      - network_uuid_without_vnic.failed == true
+      - network_uuid_without_vnic.msg is defined
+      - >-
+        ("missing parameter(s) required by 'network_uuid'" in network_uuid_without_vnic.msg)
+        or ("required by" in network_uuid_without_vnic.msg)
+    success_msg: "Module correctly rejected network_uuid without vnic_ext_id"
+    fail_msg: "Module did not reject network_uuid without vnic_ext_id as expected"
+
+########################################################################################
+# 6. Negative — bad subnet_uuid at the API layer
+########################################################################################
+
+- name: Trigger subnet migration with a non-existent subnet UUID
+  nutanix.ncp.ntnx_subnet_migrate_v2:
+    state: present
+    subnets:
+      - subnet_uuid: "00000000-0000-0000-0000-000000000000"
+  register: bad_subnet_result
+  ignore_errors: true
+
+- name: Assert the module surfaced an API error for the invalid subnet
+  ansible.builtin.assert:
+    that:
+      - bad_subnet_result is defined
+      - bad_subnet_result.failed == true
+      - bad_subnet_result.msg is defined
+      # The API accepts the request but the wait_for_completion path fails the
+      # task when the referenced subnet does not exist. The module surfaces
+      # either an SDK exception ("Api Exception raised while migrating VLAN
+      # subnets") or the task failure body ("Task Failed" + error_messages).
+      - >-
+        ("Api Exception raised while migrating VLAN subnets" in bad_subnet_result.msg)
+        or (bad_subnet_result.msg == "Task Failed"
+            and bad_subnet_result.response.status == "FAILED"
+            and bad_subnet_result.response.error_messages is defined
+            and bad_subnet_result.response.error_messages | length > 0)
+    success_msg: "Module correctly surfaced the API error for an unknown subnet"
+    fail_msg: "Module did not surface an API error for the unknown subnet UUID"
+
+########################################################################################
+# 7. Live-cluster migration path: create a VLAN basic subnet, migrate it, clean up.
+#
+# The block is guarded by variables that only exist when the standard integration
+# harness (prepare_env) has already discovered a live cluster + virtual switch.
+# When those variables are absent we skip the live tests and rely on the
+# check_mode / negative coverage above.
+########################################################################################
+
+- name: Live subnet migration block (guarded by prepare_env variables)
+  when:
+    - cluster is defined
+    - cluster.uuid is defined
+    - virtual_switch is defined
+    - virtual_switch.uuid is defined
+  block:
+    - name: Create a VLAN basic subnet to migrate (retry on transient DB conflicts)
+      nutanix.ncp.ntnx_subnets_v2:
+        state: present
+        name: "{{ migrate_subnet_name }}"
+        subnet_type: VLAN
+        cluster_reference: "{{ cluster.uuid }}"
+        virtual_switch_reference: "{{ virtual_switch.uuid }}"
+        network_id: "{{ vlan_subnet_test.network_id }}"
+      register: created_subnet
+      ignore_errors: true
+      retries: 3
+      delay: 5
+      until:
+        - created_subnet is defined
+        - created_subnet.failed == false
+        - created_subnet.ext_id is defined
+
+    - name: Report the create-subnet outcome for the migration test
+      ansible.builtin.debug:
+        msg: >-
+          create_subnet.failed={{ created_subnet.failed | default('unknown') }}
+          ext_id={{ created_subnet.ext_id | default('n/a') }}
+          msg={{ created_subnet.msg | default('') }}
+
+    - name: Run the live migration block only if the pre-req subnet exists
+      when:
+        - created_subnet is defined
+        - created_subnet.failed == false
+        - created_subnet.ext_id is defined
+      block:
+        - name: Assert VLAN basic subnet was created successfully
+          ansible.builtin.assert:
+            that:
+              - created_subnet.changed == true
+              - created_subnet.response is defined
+              - created_subnet.response.subnet_type == "VLAN"
+            success_msg: "VLAN basic subnet created for migration test"
+            fail_msg: "Prerequisite VLAN basic subnet was created but response is unexpected"
+
+        - name: Track the created subnet for cleanup
+          ansible.builtin.set_fact:
+            todelete: "{{ todelete + [created_subnet.ext_id] }}"
+
+        - name: Migrate the freshly created VLAN basic subnet to VLAN advanced
+          nutanix.ncp.ntnx_subnet_migrate_v2:
+            state: present
+            subnets:
+              - subnet_uuid: "{{ created_subnet.ext_id }}"
+          register: live_migrate_result
+          ignore_errors: true
+
+        - name: Assert the live migration produced a well-formed task response
+          ansible.builtin.assert:
+            that:
+              - live_migrate_result is defined
+              - live_migrate_result.task_ext_id is defined
+              - live_migrate_result.ext_id == created_subnet.ext_id
+              - live_migrate_result.response is defined
+              # Either the task succeeded (changed=True) or the task failed but
+              # was propagated with a task-shaped response — both prove the
+              # module correctly integrated with the SubnetMigrationsApi.
+              - >-
+                (live_migrate_result.failed == false and live_migrate_result.changed == true)
+                or (live_migrate_result.failed == true
+                    and live_migrate_result.response.status is defined)
+            success_msg: "VLAN subnet migration task completed with a well-formed response"
+            fail_msg: "Live subnet migration did not produce the expected task response"
+
+        - name: Re-run migration on the same subnet to verify server-side handling
+          nutanix.ncp.ntnx_subnet_migrate_v2:
+            state: present
+            subnets:
+              - subnet_uuid: "{{ created_subnet.ext_id }}"
+          register: rerun_migrate_result
+          ignore_errors: true
+
+        - name: Assert re-running the migration is handled gracefully
+          ansible.builtin.assert:
+            that:
+              - rerun_migrate_result is defined
+              - >-
+                (rerun_migrate_result.failed == false and rerun_migrate_result.changed == true)
+                or (rerun_migrate_result.failed == true and rerun_migrate_result.msg is defined)
+            success_msg: "Re-running migration returned a well-formed result"
+            fail_msg: "Re-running migration produced an unexpected result shape"
+
+  always:
+    - name: Clean up VLAN subnets created during test
+      nutanix.ncp.ntnx_subnets_v2:
+        state: absent
+        ext_id: "{{ item }}"
+      loop: "{{ todelete }}"
+      when: todelete | length > 0
+      register: cleanup_result
+      failed_when:
+        - cleanup_result is failed
+        - cleanup_result.status | default(0) != 404

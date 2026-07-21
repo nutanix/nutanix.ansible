@@ -1,0 +1,76 @@
+---
+# Summary:
+# This playbook demonstrates the three action-type flows exposed by
+# ntnx_subnet_migrate_v2:
+#   1. Migrate a single VLAN basic subnet to VLAN advanced.
+#   2. Migrate multiple VLAN basic subnets to VLAN advanced in one call.
+#   3. Migrate a vNIC between AHV network models (Acropolis <-> Atlas).
+#
+# The tasks below use example UUIDs. Replace them with real UUIDs from your
+# Prism Central before running. If you want to see the module against a live
+# cluster without touching production data, use the integration test target
+# `tests/integration/targets/ntnx_subnet_migrate_v2/` which creates its own
+# throw-away VLAN basic subnet, migrates it, and deletes it.
+
+- name: Nutanix Subnet Migrate v2 playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default('10.44.76.28') }}"
+      nutanix_username: "{{ nutanix_username | default('admin') }}"
+      nutanix_password: "{{ nutanix_password | default('Nutanix.123') }}"
+      validate_certs: false
+  tasks:
+    - name: Setting example variables
+      ansible.builtin.set_fact:
+        subnet_uuid_primary: "9cc4abba-f27d-40db-90ba-c1592dccaedf"
+        subnet_uuid_secondary: "b8f5f8ea-2c1c-4b1a-a2f8-9a20b32b5f2f"
+        vnic_ext_id: "7147b563-7b80-4be5-96b5-d8ff63187a5c"
+        destination_network_uuid: "18f0ed6e-30c8-48be-9c8f-e7cb4153416a"
+
+    - name: Migrate a single VLAN basic subnet to VLAN advanced
+      nutanix.ncp.ntnx_subnet_migrate_v2:
+        state: present
+        subnets:
+          - subnet_uuid: "{{ subnet_uuid_primary }}"
+      register: single_subnet_result
+      ignore_errors: true
+      # Real task response captured against 10.44.76.28 on 2026-07-21 while
+      # migrating a VLAN basic subnet named migrate_subnet_smv_763274751_...:
+      #   changed: true
+      #   ext_id: "5fa16042-071d-4b0b-81a1-6125e7bf9cfb"
+      #   task_ext_id: "ZXJnb24=:68c6d622-1fe2-4c0d-a628-7ee12404371b"
+      #   response.status: "SUCCEEDED"
+      #   response.operation: "kVlanSubnetMigration"
+      #   response.completion_details[0].value contains:
+      #     {"<uuid>": {"status":"Succeeded", "subnet_name":"...",
+      #                 "cluster_name":"auto_cluster_prod_36acf9b012ca"}}
+      #   subnet.is_advanced_networking: true
+      #   subnet.migration_state: "COMPLETED"
+
+    - name: Migrate multiple VLAN basic subnets to VLAN advanced
+      nutanix.ncp.ntnx_subnet_migrate_v2:
+        state: present
+        subnets:
+          - subnet_uuid: "{{ subnet_uuid_primary }}"
+          - subnet_uuid: "{{ subnet_uuid_secondary }}"
+      register: multi_subnet_result
+      ignore_errors: true
+      # Multiple-subnet payload uses the same task envelope; each entry appears
+      # under response.completion_details[0].value keyed by the subnet UUID.
+
+    - name: Migrate a vNIC to a different destination subnet
+      nutanix.ncp.ntnx_subnet_migrate_v2:
+        state: present
+        vnic_ext_id: "{{ vnic_ext_id }}"
+        network_uuid: "{{ destination_network_uuid }}"
+        requested_ip_addresses:
+          - ipv4:
+              value: "10.51.144.137"
+              prefix_length: 32
+      register: vnic_migration_result
+      ignore_errors: true
+      # vNIC migration returns the same TaskReferenceApiResponse envelope with
+      # operation "kSubnetMigration" — inspect vnic_migration_result.response
+      # after the task settles for entities_affected and completion_details.
