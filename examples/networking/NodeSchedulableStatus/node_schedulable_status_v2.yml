@@ -1,0 +1,97 @@
+---
+# Summary:
+# This playbook demonstrates the read-only Node Schedulable Status API.
+#
+# The underlying SDK exposes ONLY a list API
+# (GET /networking/v4/config/node-schedulable-statuses). There is no
+# Create/Update/Delete/Get-by-id for NodeSchedulableStatus, so a CRUD
+# (ntnx_node_schedulable_status_v2) companion module is intentionally NOT
+# provided.
+#
+# On a PC that manages a single PE cluster the API requires the X-Cluster-Id
+# header (SDK X_Cluster_Id / module param `cluster_ext_id`), so this playbook
+# discovers a PE cluster first and always scopes the calls with `cluster_ext_id`.
+#
+# Steps:
+# 1. Discover a PE cluster (needed for X-Cluster-Id).
+# 2. List all node schedulable statuses (cluster-scoped).
+# 3. Filter storage-only (never-schedulable) nodes only.
+# 4. Filter regular (schedulable) nodes only.
+# 5. List with a page size limit.
+# 6. Sort by isNeverSchedulable ascending.
+# 7. Sort by isNeverSchedulable descending.
+# 8. Fetch a single node's schedulable status by node ext_id.
+
+- name: Node Schedulable Status playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: false
+  tasks:
+    - name: Discover a PE cluster (needed for the X-Cluster-Id header)
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+      register: clusters_info
+
+    - name: Set PE cluster ext_id
+      ansible.builtin.set_fact:
+        pe_cluster_ext_id: "{{ clusters_info.response[0].ext_id }}"
+
+    - name: List all node schedulable statuses for the PE cluster
+      nutanix.ncp.ntnx_node_schedulable_status_info_v2:
+        cluster_ext_id: "{{ pe_cluster_ext_id }}"
+      register: all_statuses
+
+    - name: Show total nodes reported
+      ansible.builtin.debug:
+        msg: >-
+          Total available results: {{ all_statuses.total_available_results | default('n/a') }};
+          entries returned: {{ all_statuses.response | length }}
+
+    - name: List only never-schedulable (storage-only) nodes
+      nutanix.ncp.ntnx_node_schedulable_status_info_v2:
+        cluster_ext_id: "{{ pe_cluster_ext_id }}"
+        filter: "isNeverSchedulable eq true"
+      register: never_schedulable
+
+    - name: List only regular (schedulable) nodes
+      nutanix.ncp.ntnx_node_schedulable_status_info_v2:
+        cluster_ext_id: "{{ pe_cluster_ext_id }}"
+        filter: "isNeverSchedulable eq false"
+      register: schedulable
+
+    - name: List node schedulable statuses with a limit
+      nutanix.ncp.ntnx_node_schedulable_status_info_v2:
+        cluster_ext_id: "{{ pe_cluster_ext_id }}"
+        limit: 1
+      register: limited
+
+    - name: Sort node schedulable statuses in ascending order of isNeverSchedulable
+      nutanix.ncp.ntnx_node_schedulable_status_info_v2:
+        cluster_ext_id: "{{ pe_cluster_ext_id }}"
+        orderby: "isNeverSchedulable asc"
+      register: sorted_asc
+
+    - name: Sort node schedulable statuses in descending order of isNeverSchedulable
+      nutanix.ncp.ntnx_node_schedulable_status_info_v2:
+        cluster_ext_id: "{{ pe_cluster_ext_id }}"
+        orderby: "isNeverSchedulable desc"
+      register: sorted_desc
+
+    - name: Set a node ext_id to fetch (from the earlier full listing)
+      ansible.builtin.set_fact:
+        first_node_ext_id: "{{ all_statuses.response[0].ext_id }}"
+      when:
+        - all_statuses.response is defined
+        - (all_statuses.response | length) > 0
+
+    - name: Fetch a specific node's schedulable status by node ext_id
+      nutanix.ncp.ntnx_node_schedulable_status_info_v2:
+        cluster_ext_id: "{{ pe_cluster_ext_id }}"
+        ext_id: "{{ first_node_ext_id }}"
+      register: by_ext_id
+      when: first_node_ext_id is defined

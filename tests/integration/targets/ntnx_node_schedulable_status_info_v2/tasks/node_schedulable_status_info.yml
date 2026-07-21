@@ -1,0 +1,332 @@
+---
+# Test plan for ntnx_node_schedulable_status_info_v2 module
+#
+# The NodeSchedulableStatus SDK only exposes a list endpoint
+# (GET /networking/v4/config/node-schedulable-statuses). There is no
+# Create/Update/Delete/Get-by-id, so the tests below focus on:
+#   1. Listing all node schedulable statuses (with cluster scoping).
+#   2. Filtering with $filter=isNeverSchedulable eq true|false (see
+#      NET-19823 for the schema rename from neverSchedulable to
+#      isNeverSchedulable).
+#   3. Paging / limiting.
+#   4. Sorting with $orderby.
+#   5. Fetching a single node by ext_id (client-side match on listed data).
+#   6. Negative test: unknown ext_id -> module fails cleanly.
+#   7. Negative test: mutually exclusive ext_id + filter.
+#   8. Schema assertions on every listed entry: ext_id + is_never_schedulable.
+#
+# Note: on Prism Central deployments that manage a single PE cluster, the
+# underlying API requires the X-Cluster-Id header (SDK param
+# X_Cluster_Id -> module arg cluster_ext_id). If a PE cluster is not
+# supplied by prepare_env, we discover one dynamically via
+# ntnx_clusters_info_v2 and pass it into every call.
+
+- name: Start Node Schedulable Status info tests
+  ansible.builtin.debug:
+    msg: Start Node Schedulable Status info tests
+
+########################################################################################
+# Discover a PE cluster to scope the list calls against
+########################################################################################
+
+- name: Discover PE clusters
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: clusters_info
+  ignore_errors: true
+
+- name: Assert at least one PE cluster is present
+  ansible.builtin.assert:
+    that:
+      - clusters_info is defined
+      - clusters_info.failed == false
+      - clusters_info.response is defined
+      - clusters_info.response | length >= 1
+    success_msg: "Discovered at least one PE cluster"
+    fail_msg: "No PE cluster found — Node Schedulable Status tests cannot proceed"
+
+- name: Set PE cluster ext_id
+  ansible.builtin.set_fact:
+    pe_cluster_ext_id: >-
+      {{
+        (cluster.uuid
+         if (cluster is defined and cluster.uuid is defined)
+         else clusters_info.response[0].ext_id)
+      }}
+
+- name: Show PE cluster ext_id being used
+  ansible.builtin.debug:
+    msg: "Using PE cluster ext_id: {{ pe_cluster_ext_id }}"
+
+########################################################################################
+# 1. List node schedulable statuses scoped by cluster_ext_id (baseline)
+########################################################################################
+
+- name: List all node schedulable statuses (cluster-scoped)
+  nutanix.ncp.ntnx_node_schedulable_status_info_v2:
+    cluster_ext_id: "{{ pe_cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Baseline list status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length >= 1
+      - result.total_available_results is defined
+      - result.total_available_results >= (result.response | length)
+    success_msg: "Baseline list succeeded"
+    fail_msg: "Baseline list failed"
+
+- name: Assert every listed entry has ext_id and is_never_schedulable
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.ext_id | length > 0
+      - item.is_never_schedulable is defined
+      - item.is_never_schedulable in [true, false]
+    success_msg: "Entry {{ item.ext_id }} has the expected schema"
+    fail_msg: "Entry missing ext_id or is_never_schedulable: {{ item }}"
+  loop: "{{ result.response }}"
+  loop_control:
+    label: "{{ item.ext_id | default('unknown') }}"
+
+- name: Capture baseline listing for downstream tests
+  ansible.builtin.set_fact:
+    all_statuses: "{{ result.response }}"
+    total_statuses: "{{ result.total_available_results }}"
+    first_node_ext_id: "{{ result.response[0].ext_id }}"
+
+########################################################################################
+# 2. Filter with isNeverSchedulable eq true / false
+########################################################################################
+
+- name: List only never-schedulable (storage-only) nodes
+  nutanix.ncp.ntnx_node_schedulable_status_info_v2:
+    cluster_ext_id: "{{ pe_cluster_ext_id }}"
+    filter: "isNeverSchedulable eq true"
+  register: result_never
+  ignore_errors: true
+
+- name: List only never-schedulable nodes status
+  ansible.builtin.assert:
+    that:
+      - result_never is defined
+      - result_never.changed == false
+      - result_never.failed == false
+      - result_never.response is defined
+    success_msg: "Filter isNeverSchedulable eq true returned successfully"
+    fail_msg: "Filter isNeverSchedulable eq true failed"
+
+- name: Assert every never-schedulable entry has is_never_schedulable == true
+  ansible.builtin.assert:
+    that:
+      - item.is_never_schedulable == true
+    success_msg: "Entry {{ item.ext_id }} is correctly never-schedulable"
+    fail_msg: "Filter returned wrong entry: {{ item }}"
+  loop: "{{ result_never.response }}"
+  loop_control:
+    label: "{{ item.ext_id | default('unknown') }}"
+  when: result_never.response | length > 0
+
+- name: List only regular (schedulable) nodes
+  nutanix.ncp.ntnx_node_schedulable_status_info_v2:
+    cluster_ext_id: "{{ pe_cluster_ext_id }}"
+    filter: "isNeverSchedulable eq false"
+  register: result_schedulable
+  ignore_errors: true
+
+- name: List only regular nodes status
+  ansible.builtin.assert:
+    that:
+      - result_schedulable is defined
+      - result_schedulable.changed == false
+      - result_schedulable.failed == false
+      - result_schedulable.response is defined
+    success_msg: "Filter isNeverSchedulable eq false returned successfully"
+    fail_msg: "Filter isNeverSchedulable eq false failed"
+
+- name: Assert every schedulable entry has is_never_schedulable == false
+  ansible.builtin.assert:
+    that:
+      - item.is_never_schedulable == false
+    success_msg: "Entry {{ item.ext_id }} is correctly schedulable"
+    fail_msg: "Filter returned wrong entry: {{ item }}"
+  loop: "{{ result_schedulable.response }}"
+  loop_control:
+    label: "{{ item.ext_id | default('unknown') }}"
+  when: result_schedulable.response | length > 0
+
+- name: Assert the filtered subsets partition the full list correctly
+  ansible.builtin.assert:
+    that:
+      - (result_never.response | length) + (result_schedulable.response | length) == (all_statuses | length)
+    success_msg: "Filtered subsets partition the full list correctly"
+    fail_msg: >-
+      Filtered subsets do not partition the full list:
+      never={{ result_never.response | length }},
+      schedulable={{ result_schedulable.response | length }},
+      total={{ all_statuses | length }}
+
+########################################################################################
+# 3. Pagination / limit
+########################################################################################
+
+- name: List node schedulable statuses with limit=1
+  nutanix.ncp.ntnx_node_schedulable_status_info_v2:
+    cluster_ext_id: "{{ pe_cluster_ext_id }}"
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List with limit=1 status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+    success_msg: "Limit=1 returned exactly one entry"
+    fail_msg: "Limit=1 did not return exactly one entry"
+
+- name: List node schedulable statuses with page=0
+  nutanix.ncp.ntnx_node_schedulable_status_info_v2:
+    cluster_ext_id: "{{ pe_cluster_ext_id }}"
+    page: 0
+    limit: 5
+  register: result
+  ignore_errors: true
+
+- name: List with page=0 status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length <= 5
+    success_msg: "Paged listing returned <=5 entries"
+    fail_msg: "Paged listing returned more than 5 entries"
+
+########################################################################################
+# 4. Sorting with orderby
+########################################################################################
+
+- name: Sort node schedulable statuses in ascending order of isNeverSchedulable
+  nutanix.ncp.ntnx_node_schedulable_status_info_v2:
+    cluster_ext_id: "{{ pe_cluster_ext_id }}"
+    orderby: "isNeverSchedulable asc"
+  register: result_asc
+  ignore_errors: true
+
+- name: Sort ascending status
+  ansible.builtin.assert:
+    that:
+      - result_asc is defined
+      - result_asc.changed == false
+      - result_asc.failed == false
+      - result_asc.response is defined
+    success_msg: "orderby asc returned successfully"
+    fail_msg: "orderby asc failed"
+
+- name: Assert ascending sort order (false <= true)
+  ansible.builtin.assert:
+    that:
+      - (result_asc.response[idx].is_never_schedulable | ternary(1, 0))
+        <= (result_asc.response[idx + 1].is_never_schedulable | ternary(1, 0))
+    success_msg: "Ascending order preserved between {{ idx }} and {{ idx + 1 }}"
+    fail_msg: "Ascending order violated between {{ idx }} and {{ idx + 1 }}"
+  loop: "{{ range(0, (result_asc.response | length) - 1) | list }}"
+  loop_control:
+    loop_var: idx
+  when: result_asc.response | length > 1
+
+- name: Sort node schedulable statuses in descending order of isNeverSchedulable
+  nutanix.ncp.ntnx_node_schedulable_status_info_v2:
+    cluster_ext_id: "{{ pe_cluster_ext_id }}"
+    orderby: "isNeverSchedulable desc"
+  register: result_desc
+  ignore_errors: true
+
+- name: Sort descending status
+  ansible.builtin.assert:
+    that:
+      - result_desc is defined
+      - result_desc.changed == false
+      - result_desc.failed == false
+      - result_desc.response is defined
+    success_msg: "orderby desc returned successfully"
+    fail_msg: "orderby desc failed"
+
+########################################################################################
+# 5. Fetch a specific node by ext_id (client-side match on the listed data)
+########################################################################################
+
+- name: Fetch node schedulable status by ext_id
+  nutanix.ncp.ntnx_node_schedulable_status_info_v2:
+    cluster_ext_id: "{{ pe_cluster_ext_id }}"
+    ext_id: "{{ first_node_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch by ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.ext_id == first_node_ext_id
+      - result.response.is_never_schedulable in [true, false]
+      - result.ext_id == first_node_ext_id
+    success_msg: "Fetch by ext_id returned the correct node"
+    fail_msg: "Fetch by ext_id returned wrong or missing data"
+
+########################################################################################
+# 6. Negative — unknown ext_id
+########################################################################################
+
+- name: Fetch node schedulable status with a non-existent ext_id
+  nutanix.ncp.ntnx_node_schedulable_status_info_v2:
+    cluster_ext_id: "{{ pe_cluster_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Non-existent ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+      - "'not found' in result.msg"
+      - result.ext_id == "00000000-0000-0000-0000-000000000000"
+    success_msg: "Non-existent ext_id failed as expected"
+    fail_msg: "Non-existent ext_id did not fail as expected"
+
+########################################################################################
+# 7. Negative — mutually exclusive ext_id + filter
+########################################################################################
+
+- name: Fetch with both ext_id and filter (should be rejected)
+  nutanix.ncp.ntnx_node_schedulable_status_info_v2:
+    cluster_ext_id: "{{ pe_cluster_ext_id }}"
+    ext_id: "{{ first_node_ext_id }}"
+    filter: "isNeverSchedulable eq true"
+  register: result
+  ignore_errors: true
+
+- name: Mutually exclusive params status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'mutually exclusive' in result.msg"
+    success_msg: "ext_id + filter correctly rejected as mutually exclusive"
+    fail_msg: "ext_id + filter was NOT rejected as mutually exclusive"

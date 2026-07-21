@@ -195,3 +195,20 @@ def get_bridges_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_networking_py_client.BridgesApi(api_client=api_client)
+
+
+def get_virtual_switch_nodes_info_api_instance(module):
+    """
+    This method will return VirtualSwitchNodesInfoApi instance.
+
+    The VirtualSwitchNodesInfoApi exposes the node-schedulable-status listing
+    endpoint (GET /networking/v4/config/node-schedulable-statuses), which is
+    used to determine whether each AHV node in a cluster is a storage-only
+    ("never schedulable") node or a regular schedulable node.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Virtual Switch Nodes Info Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.VirtualSwitchNodesInfoApi(api_client=api_client)
