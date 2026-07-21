@@ -1,0 +1,76 @@
+---
+# Summary:
+# This playbook demonstrates all supported operations of the
+# nutanix.ncp.ntnx_replication_jobs_info_v2 info module for Nutanix Files
+# Smart DR ReplicationJob entities.
+#
+# NOTE: ReplicationJob is a read-only entity in the Files v4 API — only GET
+# (list + get-by-id) operations are supported by the SDK, so there is no
+# create / update / delete companion module for this entity.
+#
+# 1. List all replication jobs
+# 2. List replication jobs with a limit (pagination)
+# 3. List replication jobs sorted by startTime desc
+# 4. List replication jobs restricted with $select
+# 5. List replication jobs with an OData $filter on status
+# 6. Get a single replication job by ext_id (from step 1)
+# 7. Negative case: fetch with a non-existent ext_id
+
+- name: Nutanix Files Smart DR ReplicationJob info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+  tasks:
+    - name: List all replication jobs
+      nutanix.ncp.ntnx_replication_jobs_info_v2:
+      register: all_jobs
+      ignore_errors: true
+
+    - name: List replication jobs with a limit of 1
+      nutanix.ncp.ntnx_replication_jobs_info_v2:
+        limit: 1
+      register: limited_jobs
+      ignore_errors: true
+
+    - name: List replication jobs ordered by startTime descending
+      nutanix.ncp.ntnx_replication_jobs_info_v2:
+        orderby: "startTime desc"
+        limit: 5
+      register: ordered_jobs
+      ignore_errors: true
+
+    - name: List replication jobs selecting only a subset of fields
+      nutanix.ncp.ntnx_replication_jobs_info_v2:
+        select: "extId,status,policyExtId,startTime,endTime"
+        limit: 5
+      register: projected_jobs
+      ignore_errors: true
+
+    - name: List replication jobs filtered by status
+      nutanix.ncp.ntnx_replication_jobs_info_v2:
+        filter: "status eq Files.Config.JobStatus'SUCCEEDED'"
+      register: filtered_jobs
+      ignore_errors: true
+
+    - name: Capture the first replication job ext_id if any exist
+      ansible.builtin.set_fact:
+        first_job_ext_id: "{{ (all_jobs.response | default([]))[0].ext_id | default('') }}"
+      when: (all_jobs.response | default([])) | length > 0
+
+    - name: Get a single replication job by ext_id
+      nutanix.ncp.ntnx_replication_jobs_info_v2:
+        ext_id: "{{ first_job_ext_id }}"
+      when: first_job_ext_id | default('') | length > 0
+      register: single_job
+      ignore_errors: true
+
+    - name: Fetch a replication job with a non-existent ext_id (negative case)
+      nutanix.ncp.ntnx_replication_jobs_info_v2:
+        ext_id: "00000000-0000-0000-0000-000000000000"
+      register: missing_job
+      ignore_errors: true
