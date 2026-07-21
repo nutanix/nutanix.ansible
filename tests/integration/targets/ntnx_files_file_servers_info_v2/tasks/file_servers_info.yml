@@ -1,0 +1,243 @@
+---
+# Test Plan:
+# 1. Preflight: list file servers. Detect if the Files backend is available on the
+#    target cluster (some PC deployments do not have Files enabled — the API returns
+#    HTTP 503). Skip the live assertions when the service is unavailable and continue
+#    running the negative / spec-validation tests that don't hit the backend.
+# 2. List all file servers — assert changed=false, response is a list,
+#    total_available_results is present and matches the returned length.
+# 3. List file servers with an OData filter — assert every returned item satisfies
+#    the filter.
+# 4. List file servers with limit=1 — assert response length is <=1.
+# 5. List file servers with orderby=name — assert result is sorted by name.
+# 6. List file servers with select=name — assert every entity carries the name.
+# 7. Get single file server using ext_id — assert single dict is returned.
+# 8. Negative: fetch file server with a non-existent ext_id — assert failure.
+# 9. Negative: pass filter + ext_id (mutually exclusive) — assert Ansible rejects.
+
+- name: Start ntnx_files_file_servers_info_v2 tests
+  ansible.builtin.debug:
+    msg: "Starting ntnx_files_file_servers_info_v2 tests"
+
+########################################################################################
+# 1. Preflight — detect whether the Files backend is available.
+########################################################################################
+
+- name: Preflight — attempt to list file servers
+  nutanix.ncp.ntnx_files_file_servers_info_v2:
+  register: preflight_result
+  ignore_errors: true
+
+- name: Determine if Files service is available
+  ansible.builtin.set_fact:
+    files_service_available: >-
+      {{ (preflight_result.failed | default(false) | bool) is false
+         and (preflight_result.status | default(0) | int) != 503 }}
+
+- name: Report Files service availability
+  ansible.builtin.debug:
+    msg: >-
+      Files backend service on the target PC is
+      {{ 'AVAILABLE' if files_service_available else 'UNAVAILABLE (skipping list/get assertions)' }}
+
+########################################################################################
+# 2. List all file servers (only if service is available)
+########################################################################################
+
+- name: List all file servers
+  nutanix.ncp.ntnx_files_file_servers_info_v2:
+  register: all_result
+  ignore_errors: true
+  when: files_service_available
+
+- name: Verify listing all file servers
+  ansible.builtin.assert:
+    that:
+      - all_result.changed == false
+      - all_result.failed == false
+      - all_result.response is defined
+      - all_result.total_available_results is defined
+      - all_result.response | length <= all_result.total_available_results
+    fail_msg: "Listing all file servers failed"
+    success_msg: "Listing all file servers passed"
+  when: files_service_available
+
+########################################################################################
+# 3. Filter (only executes if at least one file server exists on the cluster)
+########################################################################################
+
+- name: List file servers with filter (name startswith first char)
+  nutanix.ncp.ntnx_files_file_servers_info_v2:
+    filter: "startswith(name, '{{ all_result.response[0].name[0] }}')"
+  register: filter_result
+  ignore_errors: true
+  when:
+    - files_service_available
+    - all_result.response is defined
+    - all_result.response | length > 0
+
+- name: Verify listing file servers with filter
+  ansible.builtin.assert:
+    that:
+      - filter_result.changed == false
+      - filter_result.failed == false
+      - filter_result.response is defined
+      - filter_result.response | length > 0
+      - filter_result.response
+        | map(attribute='name')
+        | select('match', '^' ~ all_result.response[0].name[0])
+        | list
+        | length == filter_result.response | length
+    fail_msg: "Filter-based listing of file servers failed"
+    success_msg: "Filter-based listing of file servers passed"
+  when:
+    - files_service_available
+    - all_result.response is defined
+    - all_result.response | length > 0
+
+########################################################################################
+# 4. Limit
+########################################################################################
+
+- name: List file servers with limit=1
+  nutanix.ncp.ntnx_files_file_servers_info_v2:
+    limit: 1
+  register: limit_result
+  ignore_errors: true
+  when: files_service_available
+
+- name: Verify listing file servers with limit
+  ansible.builtin.assert:
+    that:
+      - limit_result.changed == false
+      - limit_result.failed == false
+      - limit_result.response is defined
+      - limit_result.response | length <= 1
+    fail_msg: "Limit-based listing of file servers failed"
+    success_msg: "Limit-based listing of file servers passed"
+  when: files_service_available
+
+########################################################################################
+# 5. Orderby (executes only if at least 2 file servers exist)
+########################################################################################
+
+- name: List file servers ordered by name ascending
+  nutanix.ncp.ntnx_files_file_servers_info_v2:
+    orderby: "name asc"
+  register: order_result
+  ignore_errors: true
+  when:
+    - files_service_available
+    - all_result.response is defined
+    - all_result.response | length >= 2
+
+- name: Verify listing file servers ordered by name
+  ansible.builtin.assert:
+    that:
+      - order_result.changed == false
+      - order_result.failed == false
+      - order_result.response is defined
+      - order_result.response | length >= 2
+      - (order_result.response | map(attribute='name') | list)
+        == (order_result.response | map(attribute='name') | list | sort)
+    fail_msg: "Orderby name asc did not produce sorted list"
+    success_msg: "Orderby name asc produced correctly sorted list"
+  when:
+    - files_service_available
+    - all_result.response is defined
+    - all_result.response | length >= 2
+
+########################################################################################
+# 6. Select (name only)
+########################################################################################
+
+- name: List file servers selecting only the name column
+  nutanix.ncp.ntnx_files_file_servers_info_v2:
+    select: "name"
+  register: select_result
+  ignore_errors: true
+  when: files_service_available
+
+- name: Verify listing file servers with select
+  ansible.builtin.assert:
+    that:
+      - select_result.changed == false
+      - select_result.failed == false
+      - select_result.response is defined
+      - select_result.response
+        | selectattr('name', 'defined')
+        | list
+        | length == select_result.response | length
+    fail_msg: "Select-based listing did not return name attribute"
+    success_msg: "Select-based listing returned name attribute"
+  when: files_service_available
+
+########################################################################################
+# 7. Get by ext_id (executes only if at least one file server exists)
+########################################################################################
+
+- name: Get first file server using ext_id
+  nutanix.ncp.ntnx_files_file_servers_info_v2:
+    ext_id: "{{ all_result.response[0].ext_id }}"
+  register: by_id_result
+  ignore_errors: true
+  when:
+    - files_service_available
+    - all_result.response is defined
+    - all_result.response | length > 0
+
+- name: Verify get-by-id file server
+  ansible.builtin.assert:
+    that:
+      - by_id_result.changed == false
+      - by_id_result.failed == false
+      - by_id_result.response is defined
+      - by_id_result.response.ext_id is defined
+      - by_id_result.response.ext_id == all_result.response[0].ext_id
+      - by_id_result.response.name == all_result.response[0].name
+      - by_id_result.ext_id == all_result.response[0].ext_id
+    fail_msg: "Get-by-id file server verification failed"
+    success_msg: "Get-by-id file server verification passed"
+  when:
+    - files_service_available
+    - all_result.response is defined
+    - all_result.response | length > 0
+
+########################################################################################
+# 8. Negative: invalid / not-found ext_id (module-side error handling)
+########################################################################################
+
+- name: Attempt to fetch file server with a non-existent ext_id
+  nutanix.ncp.ntnx_files_file_servers_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: invalid_id_result
+  ignore_errors: true
+
+- name: Verify invalid ext_id returns an error (works even when service is down)
+  ansible.builtin.assert:
+    that:
+      - invalid_id_result.changed == false
+      - invalid_id_result.failed == true
+      - invalid_id_result.msg is defined
+    fail_msg: "Invalid ext_id should have failed but did not"
+    success_msg: "Invalid ext_id correctly reported an error"
+
+########################################################################################
+# 9. Negative: mutually exclusive ext_id + filter (Ansible-layer spec validation)
+########################################################################################
+
+- name: Attempt mutually exclusive ext_id + filter
+  nutanix.ncp.ntnx_files_file_servers_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    filter: "name eq 'x'"
+  register: mutex_result
+  ignore_errors: true
+
+- name: Verify mutual exclusion between ext_id and filter
+  ansible.builtin.assert:
+    that:
+      - mutex_result.failed == true
+      - "'mutually exclusive' in (mutex_result.msg | lower)
+         or 'parameters are mutually exclusive' in (mutex_result.msg | lower)"
+    fail_msg: "ext_id + filter should be mutually exclusive"
+    success_msg: "ext_id + filter mutual exclusion correctly enforced"

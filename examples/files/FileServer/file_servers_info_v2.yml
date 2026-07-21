@@ -1,0 +1,58 @@
+---
+# Summary:
+# This playbook will demonstrate FileServer info operations:
+# 1. List all file servers
+# 2. List file servers with filter
+# 3. List file servers with limit
+# 4. List file servers with orderby
+# 5. List file servers with select
+# 6. Get file server using ext_id
+
+- name: File Servers info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip | default(lookup('ansible.builtin.env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ username | default(lookup('ansible.builtin.env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ password | default(lookup('ansible.builtin.env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+  tasks:
+    - name: List all file servers
+      nutanix.ncp.ntnx_files_file_servers_info_v2:
+      register: file_servers_result
+      ignore_errors: true
+
+    - name: List file servers with a name filter
+      nutanix.ncp.ntnx_files_file_servers_info_v2:
+        filter: "startswith(name, 'F')"
+      register: filtered_file_servers
+      ignore_errors: true
+
+    - name: List file servers with limit
+      nutanix.ncp.ntnx_files_file_servers_info_v2:
+        limit: 1
+      register: limited_file_servers
+      ignore_errors: true
+
+    - name: List file servers ordered by name asc
+      nutanix.ncp.ntnx_files_file_servers_info_v2:
+        orderby: "name asc"
+      register: ordered_file_servers
+      ignore_errors: true
+
+    - name: List file servers selecting the name column only
+      nutanix.ncp.ntnx_files_file_servers_info_v2:
+        select: "name"
+      register: selected_file_servers
+      ignore_errors: true
+
+    - name: Get first file server using ext_id (if present)
+      nutanix.ncp.ntnx_files_file_servers_info_v2:
+        ext_id: "{{ (file_servers_result.response | default([]))[0].ext_id }}"
+      register: single_file_server
+      ignore_errors: true
+      when:
+        - file_servers_result is defined
+        - (file_servers_result.response | default([]) | length) > 0
+        - file_servers_result.failed | default(false) == false
