@@ -1,0 +1,41 @@
+---
+# Example playbook demonstrating how to generate and fetch a report for
+# a capacity planning scenario in Nutanix Prism Central.
+#
+# The scenario referenced by scenario_ext_id must exist beforehand. You can
+# create one via the AIOps Capacity Planning UI (Prism Central) or the
+# create-scenario v4 API (POST /api/aiops/v4.0/config/scenarios).
+
+- name: Report v2 examples
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ nutanix_username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ nutanix_password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      nutanix_port: "{{ nutanix_port | default(lookup('env', 'NUTANIX_PORT') | default(9440, true)) }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+  vars:
+    scenario_ext_id: "32459cae-43ca-4b6f-9bab-857895c1f867"
+  tasks:
+    - name: Generate a report for a planned capacity scenario
+      nutanix.ncp.ntnx_report_planned_capacity_v2:
+        state: present
+        ext_id: "{{ scenario_ext_id }}"
+      register: generate_result
+      ignore_errors: true
+
+    - name: Show generate report result
+      ansible.builtin.debug:
+        var: generate_result
+
+    - name: Fetch the generated report for a capacity planning scenario
+      nutanix.ncp.ntnx_reports_info_v2:
+        ext_id: "{{ scenario_ext_id }}"
+      register: report_info
+      ignore_errors: true
+
+    - name: Show fetched report
+      ansible.builtin.debug:
+        var: report_info
