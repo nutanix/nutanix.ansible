@@ -1,0 +1,96 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [VM-to-Host live migration (v4)] ******************************************
+
+TASK [Set variables] ***********************************************************
+ok: [localhost] => {"ansible_facts": {"cluster_uuid": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"}, "changed": false}
+
+TASK [List hosts in the cluster] ***********************************************
+ok: [localhost] => {"changed": false, "error": null, "response": [{"block_model": "NX-1065-G5", "block_serial": "18FM6G460083", "boot_time_usecs": 1782712672107027, "cluster": {"name": "auto_cluster_prod_36acf9b012ca", "uuid": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"}, "controller_vm": {"backplane_address": {"ipv4": {"prefix_length": 32, "value": "10.46.136.32"}, "ipv6": null}, "external_address": {"ipv4": {"prefix_length": 32, "value": "10.46.136.32"}, "ipv6": null}, "is_in_maintenance_mode": null, "nat_ip": null, "nat_port": null, "rdma_backplane_address": null}, "cpu_capacity_hz": null, "cpu_frequency_hz": 2100000000, "cpu_model": "Intel(R) Xeon(R) CPU E5-2620 v4 @ 2.10GHz", "default_vhd_container_uuid": null, "default_vhd_location": null, "default_vm_container_uuid": null, "default_vm_location": null, "disk": [{"mount_path": "/home/nutanix/data/stargate-storage/disks/ZC227WAH", "serial_id": "ZC227WAH", "size_in_bytes": 1900344164352, "storage_tier": "HDD", "uuid": "dc67dca8-7ae0-494d-9a57-717241656e93"}, {"mount_path": "/home/nutanix/data/stargate-storage/disks/S3F3NX0K903432", "serial_id": "S3F3NX0K903432", "size_in_bytes": 604114121598, "storage_tier": "SATA_SSD", "uuid": "4542a93c-f79a-43fc-a515-ec8c066000a0"}, {"mount_path": "/home/nutanix/data/stargate-storage/disks/ZC22LTPL", "serial_id": "ZC22LTPL", "size_in_bytes": 1900344164352, "storage_tier": "HDD", "uuid": "52fb3d86-a773-4608-8666-af3667816231"}], "ext_id": "adf0c9e0-4051-4cd2-9f6f-ca9f962e941b", "failover_cluster_fqdn": null, "failover_cluster_node_status": null, "gpu_driver_version": null, "gpu_list": [""], "has_csr": false, "host_name": "goku-4", "host_type": "HYPER_CONVERGED", "hypervisor": {"acropolis_connection_state": "CONNECTED", "external_address": {"ipv4": {"prefix_length": 32, "value": "10.46.136.28"}, "ipv6": null}, "full_name": "AHV 11.2", "number_of_vms": 7, "state": "ACROPOLIS_NORMAL", "type": "AHV", "user_name": "root"}, "ipmi": {"ip": {"ipv4": {"prefix_length": 32, "value": "10.49.49.176"}, "ipv6": null}, "username": "ADMIN"}, "is_degraded": null, "is_hardware_virtualized": false, "is_reboot_pending": null, "is_secure_booted": false, "key_management_device_to_cert_status": null, "links": null, "maintenance_state": "normal", "memory_size_bytes": 269809303552, "node_serial": "ZM185S042341", "node_status": "NORMAL", "number_of_cpu_cores": 16, "number_of_cpu_sockets": 2, "number_of_cpu_threads": 32, "rackable_unit_uuid": "5879195f-5101-4d41-8e6d-af4a6aa52472", "tenant_id": null}], "total_available_results": 1}
+
+TASK [Show discovered hosts] ***************************************************
+ok: [localhost] => {
+    "msg": "Hosts on cluster 0006555e-4e63-4a5e-185b-ac1f6b6f97e2: ['adf0c9e0-4051-4cd2-9f6f-ca9f962e941b']"
+}
+
+TASK [Create a small VM to migrate] ********************************************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "16023bcc-c1e2-4131-76eb-6bad6e0ddb66", "response": {"apc_config": {"cpu_model": null, "is_apc_enabled": false}, "availability_zone": null, "bios_uuid": "16023bcc-c1e2-4131-76eb-6bad6e0ddb66", "boot_config": {"boot_device": null, "boot_order": ["CDROM", "DISK", "NETWORK"]}, "categories": null, "cd_roms": null, "cluster": {"ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"}, "create_time": "2026-07-21T05:31:30.736116+00:00", "custom_attributes": null, "description": "Example VM for VM-to-Host migration", "disks": null, "enabled_cpu_features": null, "ext_id": "16023bcc-c1e2-4131-76eb-6bad6e0ddb66", "generation_uuid": "d8ca5b53-a3fb-4ec0-4e75-98cef3ffd8d1", "gpus": null, "guest_customization": null, "guest_tools": null, "hardware_clock_timezone": "UTC", "host": null, "is_agent_vm": false, "is_branding_enabled": true, "is_cpu_hotplug_enabled": true, "is_cpu_passthrough_enabled": false, "is_cross_cluster_migration_in_progress": false, "is_gpu_console_enabled": false, "is_live_migrate_capable": true, "is_memory_overcommit_enabled": false, "is_scsi_controller_enabled": true, "is_vcpu_hard_pinning_enabled": false, "is_vga_console_enabled": true, "links": null, "machine_type": "PC", "memory_size_bytes": 1073741824, "name": "ansible-example-vm-to-host", "nics": null, "num_cores_per_socket": 1, "num_numa_nodes": 0, "num_sockets": 1, "num_threads_per_core": 1, "ownership_info": {"owner": {"ext_id": "00000000-0000-0000-0000-000000000000"}}, "pcie_devices": null, "power_state": "OFF", "project": {"ext_id": "00000000-0000-0000-0000-000000000000"}, "projectExtId": "00000000-0000-0000-0000-000000000000", "protection_policy_state": null, "protection_type": "UNPROTECTED", "serial_ports": null, "source": null, "storage_config": null, "tenant_id": null, "update_time": "2026-07-21T05:31:30.736116+00:00", "vm_guest_customization_status": null, "vtpm_config": {"is_vtpm_enabled": false, "version": null, "vtpm_device": null}}, "task_ext_id": "ZXJnb24=:b42165d8-ff75-5beb-ad8b-5e5ffb7cf193"}
+
+TASK [Power on the VM (required for live migration)] ***************************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "16023bcc-c1e2-4131-76eb-6bad6e0ddb66", "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "completed_time": "2026-07-21T05:31:38.811698+00:00", "completion_details": null, "created_time": "2026-07-21T05:31:36.079400+00:00", "entities_affected": [{"ext_id": "16023bcc-c1e2-4131-76eb-6bad6e0ddb66", "name": "ansible-example-vm-to-host", "rel": "vmm:ahv:config:vm"}, {"ext_id": "adf0c9e0-4051-4cd2-9f6f-ca9f962e941b", "name": "goku-4", "rel": "clustermgmt:config:host"}], "error_messages": null, "ext_id": "ZXJnb24=:b2606a44-d31b-5675-a123-d4d969ded0b4", "is_background_task": false, "is_cancelable": false, "last_updated_time": "2026-07-21T05:31:38.811697+00:00", "legacy_error_message": null, "number_of_entities_affected": 2, "number_of_subtasks": 0, "operation": "PowerOnVm", "operation_description": "Power on VM", "owned_by": {"ext_id": "00000000-0000-0000-0000-000000000000", "name": "admin"}, "parent_task": null, "progress_percentage": 100, "projectExtId": "00000000-0000-0000-0000-000000000000", "resource_links": null, "root_task": null, "started_time": "2026-07-21T05:31:36.098229+00:00", "status": "SUCCEEDED", "sub_steps": null, "sub_tasks": null, "warnings": null}, "task_ext_id": "ZXJnb24=:b2606a44-d31b-5675-a123-d4d969ded0b4"}
+
+TASK [Fetch VM to learn current host] ******************************************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "16023bcc-c1e2-4131-76eb-6bad6e0ddb66", "response": {"apc_config": {"cpu_model": null, "is_apc_enabled": false}, "availability_zone": null, "bios_uuid": "16023bcc-c1e2-4131-76eb-6bad6e0ddb66", "boot_config": {"boot_device": null, "boot_order": ["CDROM", "DISK", "NETWORK"]}, "categories": null, "cd_roms": null, "cluster": {"ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"}, "create_time": "2026-07-21T05:31:30.736116+00:00", "custom_attributes": null, "description": "Example VM for VM-to-Host migration", "disks": null, "enabled_cpu_features": null, "ext_id": "16023bcc-c1e2-4131-76eb-6bad6e0ddb66", "generation_uuid": "d8ca5b53-a3fb-4ec0-4e75-98cef3ffd8d1", "gpus": null, "guest_customization": null, "guest_tools": null, "hardware_clock_timezone": "UTC", "host": {"ext_id": "adf0c9e0-4051-4cd2-9f6f-ca9f962e941b"}, "is_agent_vm": false, "is_branding_enabled": true, "is_cpu_hotplug_enabled": true, "is_cpu_passthrough_enabled": false, "is_cross_cluster_migration_in_progress": false, "is_gpu_console_enabled": false, "is_live_migrate_capable": true, "is_memory_overcommit_enabled": false, "is_scsi_controller_enabled": true, "is_vcpu_hard_pinning_enabled": false, "is_vga_console_enabled": true, "links": null, "machine_type": "PC", "memory_size_bytes": 1073741824, "name": "ansible-example-vm-to-host", "nics": null, "num_cores_per_socket": 1, "num_numa_nodes": 0, "num_sockets": 1, "num_threads_per_core": 1, "ownership_info": {"owner": {"ext_id": "00000000-0000-0000-0000-000000000000"}}, "pcie_devices": null, "power_state": "ON", "project": {"ext_id": "00000000-0000-0000-0000-000000000000"}, "projectExtId": "00000000-0000-0000-0000-000000000000", "protection_policy_state": null, "protection_type": "UNPROTECTED", "serial_ports": null, "source": null, "storage_config": null, "tenant_id": null, "update_time": "2026-07-21T05:31:38.540656+00:00", "vm_guest_customization_status": null, "vtpm_config": {"is_vtpm_enabled": false, "version": null, "vtpm_device": null}}}
+
+TASK [Migrate the VM to the first available host on the cluster] ***************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "16023bcc-c1e2-4131-76eb-6bad6e0ddb66", "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "completed_time": "2026-07-21T05:31:44.875612+00:00", "completion_details": null, "created_time": "2026-07-21T05:31:44.382175+00:00", "entities_affected": [{"ext_id": "16023bcc-c1e2-4131-76eb-6bad6e0ddb66", "name": "ansible-example-vm-to-host", "rel": "vmm:ahv:config:vm"}, {"ext_id": "adf0c9e0-4051-4cd2-9f6f-ca9f962e941b", "name": "goku-4", "rel": "clustermgmt:config:host"}], "error_messages": null, "ext_id": "ZXJnb24=:f1e19e35-8c51-53f5-a699-70dd11f8724d", "is_background_task": false, "is_cancelable": false, "last_updated_time": "2026-07-21T05:31:44.875611+00:00", "legacy_error_message": null, "number_of_entities_affected": 2, "number_of_subtasks": 0, "operation": "VmMigrateToHost", "operation_description": "VM migrate to host", "owned_by": {"ext_id": "00000000-0000-0000-0000-000000000000", "name": "admin"}, "parent_task": null, "progress_percentage": 100, "projectExtId": "00000000-0000-0000-0000-000000000000", "resource_links": null, "root_task": null, "started_time": "2026-07-21T05:31:44.389846+00:00", "status": "SUCCEEDED", "sub_steps": null, "sub_tasks": null, "warnings": null}, "task_ext_id": "ZXJnb24=:f1e19e35-8c51-53f5-a699-70dd11f8724d"}
+
+TASK [Show migration result] ***************************************************
+ok: [localhost] => {
+    "migration_result": {
+        "changed": true,
+        "error": null,
+        "ext_id": "16023bcc-c1e2-4131-76eb-6bad6e0ddb66",
+        "failed": false,
+        "response": {
+            "app_name": null,
+            "batch_summary": null,
+            "cluster_ext_ids": [
+                "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+            ],
+            "completed_time": "2026-07-21T05:31:44.875612+00:00",
+            "completion_details": null,
+            "created_time": "2026-07-21T05:31:44.382175+00:00",
+            "entities_affected": [
+                {
+                    "ext_id": "16023bcc-c1e2-4131-76eb-6bad6e0ddb66",
+                    "name": "ansible-example-vm-to-host",
+                    "rel": "vmm:ahv:config:vm"
+                },
+                {
+                    "ext_id": "adf0c9e0-4051-4cd2-9f6f-ca9f962e941b",
+                    "name": "goku-4",
+                    "rel": "clustermgmt:config:host"
+                }
+            ],
+            "error_messages": null,
+            "ext_id": "ZXJnb24=:f1e19e35-8c51-53f5-a699-70dd11f8724d",
+            "is_background_task": false,
+            "is_cancelable": false,
+            "last_updated_time": "2026-07-21T05:31:44.875611+00:00",
+            "legacy_error_message": null,
+            "number_of_entities_affected": 2,
+            "number_of_subtasks": 0,
+            "operation": "VmMigrateToHost",
+            "operation_description": "VM migrate to host",
+            "owned_by": {
+                "ext_id": "00000000-0000-0000-0000-000000000000",
+                "name": "admin"
+            },
+            "parent_task": null,
+            "progress_percentage": 100,
+            "projectExtId": "00000000-0000-0000-0000-000000000000",
+            "resource_links": null,
+            "root_task": null,
+            "started_time": "2026-07-21T05:31:44.389846+00:00",
+            "status": "SUCCEEDED",
+            "sub_steps": null,
+            "sub_tasks": null,
+            "warnings": null
+        },
+        "task_ext_id": "ZXJnb24=:f1e19e35-8c51-53f5-a699-70dd11f8724d"
+    }
+}
+
+TASK [Cleanup — power off VM] **************************************************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "16023bcc-c1e2-4131-76eb-6bad6e0ddb66", "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "completed_time": "2026-07-21T05:31:50.923919+00:00", "completion_details": null, "created_time": "2026-07-21T05:31:49.693858+00:00", "entities_affected": [{"ext_id": "16023bcc-c1e2-4131-76eb-6bad6e0ddb66", "name": "ansible-example-vm-to-host", "rel": "vmm:ahv:config:vm"}, {"ext_id": "adf0c9e0-4051-4cd2-9f6f-ca9f962e941b", "name": "goku-4", "rel": "clustermgmt:config:host"}], "error_messages": null, "ext_id": "ZXJnb24=:a2f372ac-2a38-5288-b322-d2de4bd5676c", "is_background_task": false, "is_cancelable": false, "last_updated_time": "2026-07-21T05:31:50.923918+00:00", "legacy_error_message": null, "number_of_entities_affected": 2, "number_of_subtasks": 0, "operation": "PowerOffVm", "operation_description": "Power off VM", "owned_by": {"ext_id": "00000000-0000-0000-0000-000000000000", "name": "admin"}, "parent_task": null, "progress_percentage": 100, "projectExtId": "00000000-0000-0000-0000-000000000000", "resource_links": null, "root_task": null, "started_time": "2026-07-21T05:31:49.701037+00:00", "status": "SUCCEEDED", "sub_steps": null, "sub_tasks": null, "warnings": null}, "task_ext_id": "ZXJnb24=:a2f372ac-2a38-5288-b322-d2de4bd5676c"}
+
+TASK [Cleanup — delete VM] *****************************************************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "16023bcc-c1e2-4131-76eb-6bad6e0ddb66", "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "completed_time": "2026-07-21T05:31:55.540396+00:00", "completion_details": null, "created_time": "2026-07-21T05:31:54.985212+00:00", "entities_affected": [{"ext_id": "16023bcc-c1e2-4131-76eb-6bad6e0ddb66", "name": null, "rel": "vmm:ahv:config:vm"}], "error_messages": null, "ext_id": "ZXJnb24=:5cd82688-78b4-5c86-a63d-73d1f98cf06b", "is_background_task": false, "is_cancelable": false, "last_updated_time": "2026-07-21T05:31:55.540395+00:00", "legacy_error_message": null, "number_of_entities_affected": 1, "number_of_subtasks": 0, "operation": "DeleteVm", "operation_description": "Delete VM", "owned_by": {"ext_id": "00000000-0000-0000-0000-000000000000", "name": "admin"}, "parent_task": null, "progress_percentage": 100, "projectExtId": "00000000-0000-0000-0000-000000000000", "resource_links": null, "root_task": null, "started_time": "2026-07-21T05:31:54.992417+00:00", "status": "SUCCEEDED", "sub_steps": null, "sub_tasks": null, "warnings": null}, "task_ext_id": "ZXJnb24=:5cd82688-78b4-5c86-a63d-73d1f98cf06b"}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=10   changed=5    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+

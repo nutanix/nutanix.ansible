@@ -1,0 +1,81 @@
+---
+# Summary:
+# This playbook demonstrates live migrating an AHV VM to a specific host
+# within the same Prism Element cluster using the VMM v4 action endpoint.
+#
+# The operation is asynchronous. The module returns a task_ext_id and,
+# with wait=true (the default), waits until the task completes and returns
+# the final task payload.
+#
+# NOTE: Live migration REQUIRES the VM to be powered ON and a DIFFERENT
+# destination host with enough resources to accommodate the VM. On a
+# single-host cluster the VMM API returns error VMM-30128 (no host has
+# enough resources).
+
+- name: VM-to-Host live migration (v4)
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('<pc_ip>', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('<user>', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('<pass>', true) }}"
+      validate_certs: false
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        cluster_uuid: "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+
+    - name: List hosts in the cluster
+      nutanix.ncp.ntnx_hosts_info_v2:
+        cluster_ext_id: "{{ cluster_uuid }}"
+      register: hosts_result
+
+    - name: Show discovered hosts
+      ansible.builtin.debug:
+        msg: "Hosts on cluster {{ cluster_uuid }}: {{ hosts_result.response | map(attribute='ext_id') | list }}"
+
+    - name: Create a small VM to migrate
+      nutanix.ncp.ntnx_vms_v2:
+        name: "ansible-example-vm-to-host"
+        description: "Example VM for VM-to-Host migration"
+        cluster:
+          ext_id: "{{ cluster_uuid }}"
+        memory_size_bytes: 1073741824
+        num_sockets: 1
+        num_cores_per_socket: 1
+      register: vm_result
+
+    - name: Power on the VM (required for live migration)
+      nutanix.ncp.ntnx_vms_power_actions_v2:
+        ext_id: "{{ vm_result.ext_id }}"
+        state: power_on
+
+    - name: Fetch VM to learn current host
+      nutanix.ncp.ntnx_vms_info_v2:
+        ext_id: "{{ vm_result.ext_id }}"
+      register: vm_info
+
+    - name: Migrate the VM to the first available host on the cluster
+      nutanix.ncp.ntnx_vm_to_host_migration_v2:
+        ext_id: "{{ vm_result.ext_id }}"
+        host:
+          ext_id: "{{ hosts_result.response[0].ext_id }}"
+      register: migration_result
+      ignore_errors: true
+
+    - name: Show migration result
+      ansible.builtin.debug:
+        var: migration_result
+
+    - name: Cleanup — power off VM
+      nutanix.ncp.ntnx_vms_power_actions_v2:
+        ext_id: "{{ vm_result.ext_id }}"
+        state: power_off
+      ignore_errors: true
+
+    - name: Cleanup — delete VM
+      nutanix.ncp.ntnx_vms_v2:
+        state: absent
+        ext_id: "{{ vm_result.ext_id }}"
+      ignore_errors: true
