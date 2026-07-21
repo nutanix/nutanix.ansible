@@ -3,7 +3,7 @@ setuptools>=65.0
 requests>=2.31.0
 ntnx-clustermgmt-py-client==4.2.2
 ntnx-iam-py-client==4.1.2b2
-ntnx-microseg-py-client==4.2.2
+ntnx-microseg-py-client==latest
 ntnx-networking-py-client==4.3.1
 ntnx-prism-py-client==4.3.1
 ntnx-vmm-py-client==4.2.2
