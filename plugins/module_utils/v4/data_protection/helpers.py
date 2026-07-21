@@ -71,3 +71,29 @@ def get_protected_resource(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching protected resource info using ext_id",
         )
+
+
+def list_recovery_plan_job_validation_errors(
+    module, api_instance, recovery_plan_job_ext_id, **kwargs
+):
+    """
+    List validation errors for a given recovery plan job.
+    Args:
+        module: Ansible module
+        api_instance: RecoveryPlanJobsApi instance from ntnx_dataprotection_py_client sdk
+        recovery_plan_job_ext_id (str): external identifier of the parent recovery plan job
+        kwargs: optional query parameters supported by the SDK method
+                (_page, _limit, _filter, _orderby)
+    Returns:
+        api_response (object): the raw ListRecoveryPlanJobValidationErrorsApiResponse
+    """
+    try:
+        return api_instance.list_validation_errors_by_recovery_plan_job_id(
+            recoveryPlanJobExtId=recovery_plan_job_ext_id, **kwargs
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching recovery plan job validation errors info",
+        )

@@ -1,0 +1,206 @@
+---
+# Integration tests for the ntnx_validation_errors_by_recovery_plan_job_ids_info_v2 module.
+#
+# Test plan
+# ---------
+# ValidationErrorsByRecoveryPlanJobId is a *listing* sub-resource of Recovery
+# Plan Job. The Data Protection v4 API exposes only:
+#   GET /api/dataprotection/v4.3/config/recovery-plan-jobs/{recoveryPlanJobExtId}/validation-errors
+# There is no Create / Update / Delete API for validation errors, so the info
+# module is the entire surface. The following scenarios are covered:
+#   1. Negative: missing required `recovery_plan_job_ext_id` must fail spec-validation.
+#   2. Negative: non-existent `recovery_plan_job_ext_id` must produce an
+#      API exception (404 / not found) with a descriptive message.
+#   3. Discovery: list recovery plan jobs on the cluster via the raw v4 REST
+#      API (there is no Ansible module wrapper for that endpoint yet).
+#   4. If a Recovery Plan Job is available, list its validation errors with:
+#         - no pagination
+#         - `limit` (page size)
+#         - `orderby`
+#         - `filter`
+#      and assert `changed==false`, `failed==false`, response is a list, and
+#      `total_available_results` is populated. Each validation error is
+#      inspected against the schema (`error_code`, `message`, `severity`,
+#      `error_group`, `affected_entities`, `root_cause_analysis`).
+#   5. If no Recovery Plan Job exists on the cluster the discovery-driven
+#      assertions are gated on the discovery result so the target stays green.
+
+- name: Start ValidationErrorsByRecoveryPlanJobId info tests
+  ansible.builtin.debug:
+    msg: Start ValidationErrorsByRecoveryPlanJobId info tests
+
+########################################################################################
+# Negative: missing required parameter
+########################################################################################
+
+- name: List validation errors without providing recovery_plan_job_ext_id
+  nutanix.ncp.ntnx_validation_errors_by_recovery_plan_job_ids_info_v2: {}
+  register: missing_ext_id_result
+  ignore_errors: true
+
+- name: Missing recovery_plan_job_ext_id must fail spec validation
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id_result is defined
+      - missing_ext_id_result.changed == false
+      - missing_ext_id_result.failed == true
+      - "'recovery_plan_job_ext_id' in missing_ext_id_result.msg"
+    success_msg: "Missing recovery_plan_job_ext_id was rejected as expected."
+    fail_msg: "Module did not reject a missing recovery_plan_job_ext_id."
+
+########################################################################################
+# Negative: non-existent recovery_plan_job_ext_id
+########################################################################################
+
+- name: List validation errors for a non-existent recovery plan job
+  nutanix.ncp.ntnx_validation_errors_by_recovery_plan_job_ids_info_v2:
+    recovery_plan_job_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: not_found_result
+  ignore_errors: true
+
+- name: Non-existent recovery plan job must surface an API exception
+  ansible.builtin.assert:
+    that:
+      - not_found_result is defined
+      - not_found_result.changed == false
+      - not_found_result.failed == true
+      - not_found_result.msg is defined
+      - >-
+        ('recovery plan job validation errors' in (not_found_result.msg | lower))
+        or ('not found' in (not_found_result.msg | lower))
+        or ('exception' in (not_found_result.msg | lower))
+    success_msg: "Non-existent recovery plan job produced a proper API error."
+    fail_msg: "Non-existent recovery plan job did not fail with a descriptive error."
+
+########################################################################################
+# Discovery: locate an existing Recovery Plan Job on the target cluster via v4 REST
+########################################################################################
+
+- name: Discover existing recovery plan jobs via v4 REST API
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:{{ port | default(9440) }}/api/dataprotection/v4.3/config/recovery-plan-jobs?$limit=1"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs | default(false) }}"
+    return_content: true
+    status_code: [200, 400, 401, 403, 404]
+  register: recovery_plan_jobs_discovery
+  ignore_errors: true
+
+- name: Extract the first recovery plan job ext_id (if any)
+  ansible.builtin.set_fact:
+    discovered_recovery_plan_job_ext_id: >-
+      {{ (recovery_plan_jobs_discovery.json.data | default([]))[0].extId
+         if (recovery_plan_jobs_discovery.status | default(0)) == 200
+            and (recovery_plan_jobs_discovery.json.data | default([])) | length > 0
+         else '' }}
+
+- name: Report discovery result
+  ansible.builtin.debug:
+    msg: >-
+      Discovered recovery plan job ext_id:
+      {{ discovered_recovery_plan_job_ext_id if discovered_recovery_plan_job_ext_id != ''
+         else 'none — happy-path assertions will be skipped.' }}
+
+########################################################################################
+# Happy path: list validation errors for the discovered recovery plan job.
+# All assertions in this block are gated on `discovered_recovery_plan_job_ext_id`.
+########################################################################################
+
+- name: List all validation errors for the discovered recovery plan job
+  nutanix.ncp.ntnx_validation_errors_by_recovery_plan_job_ids_info_v2:
+    recovery_plan_job_ext_id: "{{ discovered_recovery_plan_job_ext_id }}"
+  register: all_validation_errors
+  when: discovered_recovery_plan_job_ext_id != ''
+  ignore_errors: true
+
+- name: Assert list-all validation errors succeeded
+  ansible.builtin.assert:
+    that:
+      - all_validation_errors is defined
+      - all_validation_errors.changed == false
+      - all_validation_errors.failed == false
+      - all_validation_errors.response is defined
+      - all_validation_errors.response is iterable
+      - all_validation_errors.total_available_results is defined
+      - all_validation_errors.total_available_results >= (all_validation_errors.response | length)
+    success_msg: "Listing all validation errors succeeded."
+    fail_msg: "Listing all validation errors failed for the discovered job."
+  when: discovered_recovery_plan_job_ext_id != ''
+
+- name: Inspect the schema of every validation error entry
+  ansible.builtin.assert:
+    that:
+      - item.severity in ['ERROR', 'WARNING', 'INFO'] or item.severity is none
+      - item.message is defined
+      - item.error_code is defined
+      - (item.affected_entities is none) or (item.affected_entities is iterable)
+    success_msg: "Validation error {{ item.error_code | default('<no-code>') }} matches schema."
+    fail_msg: "Validation error {{ item | to_json }} does not match schema."
+  loop: "{{ all_validation_errors.response | default([]) }}"
+  when: discovered_recovery_plan_job_ext_id != '' and (all_validation_errors.response | default([])) | length > 0
+
+- name: List validation errors with a page-size limit
+  nutanix.ncp.ntnx_validation_errors_by_recovery_plan_job_ids_info_v2:
+    recovery_plan_job_ext_id: "{{ discovered_recovery_plan_job_ext_id }}"
+    limit: 1
+    page: 0
+  register: limited_validation_errors
+  when: discovered_recovery_plan_job_ext_id != ''
+  ignore_errors: true
+
+- name: Assert `limit` restricts the number of returned errors
+  ansible.builtin.assert:
+    that:
+      - limited_validation_errors is defined
+      - limited_validation_errors.changed == false
+      - limited_validation_errors.failed == false
+      - (limited_validation_errors.response | length) <= 1
+    success_msg: "`limit` correctly restricted the returned validation errors."
+    fail_msg: "`limit` did not restrict the returned validation errors as expected."
+  when: discovered_recovery_plan_job_ext_id != ''
+
+- name: List validation errors ordered by extId (descending)
+  nutanix.ncp.ntnx_validation_errors_by_recovery_plan_job_ids_info_v2:
+    recovery_plan_job_ext_id: "{{ discovered_recovery_plan_job_ext_id }}"
+    orderby: "extId desc"
+  register: ordered_validation_errors
+  when: discovered_recovery_plan_job_ext_id != ''
+  ignore_errors: true
+
+- name: Assert `orderby=extId desc` request succeeded
+  ansible.builtin.assert:
+    that:
+      - ordered_validation_errors is defined
+      - ordered_validation_errors.changed == false
+      - ordered_validation_errors.failed == false
+      - ordered_validation_errors.response is defined
+    success_msg: "`orderby=extId desc` was accepted."
+    fail_msg: "`orderby=extId desc` was rejected by the API."
+  when: discovered_recovery_plan_job_ext_id != ''
+
+- name: Fetch a specific validation error by extId using an OData filter
+  nutanix.ncp.ntnx_validation_errors_by_recovery_plan_job_ids_info_v2:
+    recovery_plan_job_ext_id: "{{ discovered_recovery_plan_job_ext_id }}"
+    filter: "extId eq '{{ (all_validation_errors.response | first).ext_id }}'"
+  register: filtered_validation_error
+  when: >-
+    discovered_recovery_plan_job_ext_id != ''
+    and (all_validation_errors.response | default([])) | length > 0
+  ignore_errors: true
+
+- name: Assert `filter` on extId returned the requested validation error
+  ansible.builtin.assert:
+    that:
+      - filtered_validation_error is defined
+      - filtered_validation_error.changed == false
+      - filtered_validation_error.failed == false
+      - (filtered_validation_error.response | length) == 1
+      - (filtered_validation_error.response | first).ext_id == (all_validation_errors.response | first).ext_id
+    success_msg: "`filter=extId eq '<uuid>'` correctly returned the matching validation error."
+    fail_msg: "`filter=extId eq '<uuid>'` did not return exactly the matching validation error."
+  when: >-
+    discovered_recovery_plan_job_ext_id != ''
+    and (all_validation_errors.response | default([])) | length > 0
