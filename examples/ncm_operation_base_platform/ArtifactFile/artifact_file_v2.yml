@@ -1,0 +1,90 @@
+---
+# Summary:
+# This playbook demonstrates end-to-end usage of the Nutanix opsmgmt
+# (NCM Reports) v4 ArtifactFile modules.
+#
+# 1. Create a report artifact (LOGO/PNG) and upload its file contents in a
+#    single call.
+# 2. Fetch the created report artifact by its external ID.
+# 3. Re-upload (replace) the file contents of the existing report
+#    artifact.
+# 4. Download the stored file contents of the report artifact back to
+#    disk.
+# 5. List every report artifact on the Prism Central endpoint.
+
+- name: ArtifactFile v2 playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        artifact_file_path: "/tmp/company_logo.png"
+        artifact_file_path_updated: "/tmp/company_logo_updated.png"
+        artifact_download_path: "/tmp/company_logo_downloaded.png"
+
+    - name: Ensure a tiny PNG exists for the upload examples
+      ansible.builtin.shell: >-
+        set -o pipefail;
+        printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAAA1BMVEX///+nxBvIAAAAC0lEQVR42mNkAAIAAAoAAv/lxKUAAAAASUVORK5CYII='
+        | base64 --decode > "{{ artifact_file_path }}"
+      args:
+        executable: /bin/bash
+        creates: "{{ artifact_file_path }}"
+
+    - name: Ensure a second tiny PNG exists for the replace example
+      ansible.builtin.shell: >-
+        set -o pipefail;
+        printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAAA1BMVEX/AAAZ4gk3AAAAC0lEQVR42mNgAAIAAAUAAeImBZsAAAAASUVORK5CYII='
+        | base64 --decode > "{{ artifact_file_path_updated }}"
+      args:
+        executable: /bin/bash
+        creates: "{{ artifact_file_path_updated }}"
+
+    - name: Create report artifact and upload the file in a single call
+      nutanix.ncp.ntnx_artifact_file_v2:
+        state: present
+        type: LOGO
+        file_type: PNG
+        file_path: "{{ artifact_file_path }}"
+      register: create_result
+      ignore_errors: true
+
+    - name: Fetch report artifact info using the newly assigned ext_id
+      nutanix.ncp.ntnx_artifact_files_info_v2:
+        ext_id: "{{ create_result.ext_id }}"
+      register: fetch_result
+      ignore_errors: true
+
+    - name: Re-upload / replace the file contents of the existing artifact
+      nutanix.ncp.ntnx_artifact_file_v2:
+        state: present
+        ext_id: "{{ create_result.ext_id }}"
+        file_path: "{{ artifact_file_path_updated }}"
+      register: update_result
+      ignore_errors: true
+
+    - name: Download the file contents of the report artifact to disk
+      nutanix.ncp.ntnx_artifact_file_v2:
+        state: present
+        ext_id: "{{ create_result.ext_id }}"
+        download_path: "{{ artifact_download_path }}"
+      register: download_result
+      ignore_errors: true
+
+    - name: List all report artifacts on this Prism Central
+      nutanix.ncp.ntnx_artifact_files_info_v2:
+      register: list_result
+      ignore_errors: true
+
+    - name: Delete report artifact (not supported by the opsmgmt v4 API)
+      nutanix.ncp.ntnx_artifact_file_v2:
+        state: absent
+        ext_id: "{{ create_result.ext_id }}"
+      register: delete_result
+      ignore_errors: true

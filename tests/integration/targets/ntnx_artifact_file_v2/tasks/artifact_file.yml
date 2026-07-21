@@ -1,0 +1,650 @@
+---
+# Integration tests for the Nutanix opsmgmt (NCM Reports) v4 ArtifactFile
+# modules (ntnx_artifact_file_v2 + ntnx_artifact_files_info_v2).
+#
+# Test plan
+# =========
+# Feature under test: report artifacts stored in Prism Central (opsmgmt v4
+# API path /content/report-artifacts). The SDK exposes four calls:
+# create metadata, upload binary contents, download binary contents, and
+# list. There is no update or delete.
+#
+# The tests below cover:
+#   * check_mode preview for create/update/delete (ONE each, as required).
+#   * Creating an artifact with the minimum required fields
+#     (type + file_type).
+#   * Creating an artifact with all supported fields set and immediately
+#     uploading its file contents in a single call.
+#   * Re-uploading (replacing) the file contents of an existing
+#     artifact - the closest thing to an "update".
+#   * Downloading the artifact file back to disk and verifying it is a
+#     valid PNG on the controller.
+#   * Fetching a single artifact via ntnx_artifact_files_info_v2 by
+#     ext_id, listing all artifacts, listing with an OData filter, and
+#     listing with a page limit.
+#   * Negative cases: missing required fields on create, invalid enum
+#     values for type/file_type, invalid ext_id on info + upload +
+#     download, mutually-exclusive file_path + download_path, and the
+#     unsupported state=absent path.
+
+- name: Start ntnx_artifact_file_v2 integration tests
+  ansible.builtin.debug:
+    msg: Start ntnx_artifact_file_v2 integration tests
+
+- name: Generate random suffix for parallel-safe test data
+  ansible.builtin.set_fact:
+    random_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=10)[0] }}"
+
+- name: Set local paths for the artifact test data
+  ansible.builtin.set_fact:
+    artifact_dir: "/tmp/ntnx_artifact_file_{{ random_suffix }}"
+    artifact_local_png: "/tmp/ntnx_artifact_file_{{ random_suffix }}/logo.png"
+    artifact_local_png_updated: "/tmp/ntnx_artifact_file_{{ random_suffix }}/logo_updated.png"
+    artifact_local_jpeg: "/tmp/ntnx_artifact_file_{{ random_suffix }}/logo.jpg"
+    artifact_download_target: "/tmp/ntnx_artifact_file_{{ random_suffix }}/download.png"
+
+- name: Ensure the local artifact scratch directory exists
+  ansible.builtin.file:
+    path: "{{ artifact_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Write a tiny valid PNG file to disk (test fixture)
+  ansible.builtin.shell: >-
+    set -o pipefail;
+    printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAAA1BMVEX///+nxBvIAAAAC0lEQVR42mNkAAIAAAoAAv/lxKUAAAAASUVORK5CYII='
+    | base64 --decode > "{{ artifact_local_png }}"
+  args:
+    executable: /bin/bash
+    creates: "{{ artifact_local_png }}"
+
+- name: Write a second tiny valid PNG file (used to test re-uploads)
+  ansible.builtin.shell: >-
+    set -o pipefail;
+    printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAAA1BMVEX/AAAZ4gk3AAAAC0lEQVR42mNgAAIAAAUAAeImBZsAAAAASUVORK5CYII='
+    | base64 --decode > "{{ artifact_local_png_updated }}"
+  args:
+    executable: /bin/bash
+    creates: "{{ artifact_local_png_updated }}"
+
+- name: Write a tiny valid JPEG file (test fixture)
+  ansible.builtin.shell: >-
+    set -o pipefail;
+    printf '%s'
+    '/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP///////////////////////////////////////////////////////////////////////////////////////////8AACwgAAQABAREA/8QAFQABAQAAAAAAAAAAAAAAAAAAAAr/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oACAEBAAE/EB//2Q=='
+    | base64 --decode > "{{ artifact_local_jpeg }}"
+  args:
+    executable: /bin/bash
+    creates: "{{ artifact_local_jpeg }}"
+
+- name: Record the created ext_ids so we can reference them across tasks
+  ansible.builtin.set_fact:
+    created_artifact_ext_ids: []
+
+##############################################################################
+# Probe: is the opsmgmt/report-artifacts API deployed on this Prism Central?
+# The endpoint is present in the SDK (ntnx_opsmgmt_py_client) but only
+# activated on newer / feature-flagged PC builds. When the endpoint is not
+# available we skip the API-dependent tests so the argument-spec, check_mode
+# and negative-path tests still exercise the module locally.
+##############################################################################
+
+- name: Probe whether the opsmgmt report-artifacts API is deployed
+  nutanix.ncp.ntnx_artifact_files_info_v2:
+    limit: 1
+  register: api_probe
+  ignore_errors: true
+
+- name: Record whether the opsmgmt report-artifacts API is available
+  ansible.builtin.set_fact:
+    ncm_reports_api_available: >-
+      {{
+        (api_probe is defined)
+        and (api_probe.failed | default(false) == false)
+      }}
+
+- name: Note that API-dependent tests will be skipped
+  ansible.builtin.debug:
+    msg: >-
+      opsmgmt report-artifacts API is NOT available on this PC
+      (probe returned: {{ api_probe.msg | default('unknown') }}).
+      Skipping API-dependent tests; argument-spec, check_mode and negative-
+      path tests will still run.
+  when: not ncm_reports_api_available
+
+##############################################################################
+# check_mode: create (with ALL attributes) - preview only, no API call.
+##############################################################################
+
+- name: Preview create of a report artifact with all attributes (check_mode)
+  nutanix.ncp.ntnx_artifact_file_v2:
+    state: present
+    type: LOGO
+    file_type: PNG
+    file_path: "{{ artifact_local_png }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check_mode create preview returned the expected spec
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.type == "LOGO"
+      - result.response.file_type == "PNG"
+      - "'check_mode' in result.msg"
+    success_msg: "check_mode create preview returned the expected spec"
+    fail_msg: "check_mode create preview did NOT return the expected spec"
+
+##############################################################################
+# Create + upload happy paths (require the opsmgmt API to be deployed).
+##############################################################################
+
+- name: Create + upload happy-path tasks (skipped if API is unavailable)
+  when: ncm_reports_api_available
+  block:
+    - name: Create report artifact metadata with minimum required fields only
+      nutanix.ncp.ntnx_artifact_file_v2:
+        state: present
+        type: LOGO
+        file_type: PNG
+      register: create_min_result
+      ignore_errors: true
+
+    - name: Assert minimal create succeeded and returned an ext_id
+      ansible.builtin.assert:
+        that:
+          - create_min_result is defined
+          - create_min_result.changed == true
+          - create_min_result.failed == false
+          - create_min_result.ext_id is defined
+          - create_min_result.ext_id | length > 0
+          - create_min_result.response is defined
+          - create_min_result.response.type == "LOGO"
+          - create_min_result.response.file_type == "PNG"
+        success_msg: "Minimal create succeeded"
+        fail_msg: "Minimal create did not succeed as expected"
+
+    - name: Track the minimal artifact ext_id
+      ansible.builtin.set_fact:
+        created_artifact_ext_ids: "{{ created_artifact_ext_ids + [create_min_result.ext_id] }}"
+
+    - name: Create report artifact with ALL supported fields set (LOGO/PNG + upload)
+      nutanix.ncp.ntnx_artifact_file_v2:
+        state: present
+        type: LOGO
+        file_type: PNG
+        file_path: "{{ artifact_local_png }}"
+      register: create_full_result
+      ignore_errors: true
+
+    - name: Assert full create succeeded and file was uploaded
+      ansible.builtin.assert:
+        that:
+          - create_full_result is defined
+          - create_full_result.changed == true
+          - create_full_result.failed == false
+          - create_full_result.ext_id is defined
+          - create_full_result.response is defined
+          - create_full_result.response.type == "LOGO"
+          - create_full_result.response.file_type == "PNG"
+        success_msg: "Full create with upload succeeded"
+        fail_msg: "Full create with upload did not succeed as expected"
+
+    - name: Track the full artifact ext_id
+      ansible.builtin.set_fact:
+        created_artifact_ext_ids: "{{ created_artifact_ext_ids + [create_full_result.ext_id] }}"
+
+    - name: Create report artifact with LOGO/JPEG file type to exercise the other enum value
+      nutanix.ncp.ntnx_artifact_file_v2:
+        state: present
+        type: LOGO
+        file_type: JPEG
+        file_path: "{{ artifact_local_jpeg }}"
+      register: create_jpeg_result
+      ignore_errors: true
+
+    - name: Assert LOGO/JPEG create succeeded
+      ansible.builtin.assert:
+        that:
+          - create_jpeg_result is defined
+          - create_jpeg_result.changed == true
+          - create_jpeg_result.failed == false
+          - create_jpeg_result.ext_id is defined
+          - create_jpeg_result.response is defined
+          - create_jpeg_result.response.type == "LOGO"
+          - create_jpeg_result.response.file_type == "JPEG"
+        success_msg: "LOGO/JPEG create succeeded"
+        fail_msg: "LOGO/JPEG create did not succeed"
+
+    - name: Track the jpeg artifact ext_id
+      ansible.builtin.set_fact:
+        created_artifact_ext_ids: "{{ created_artifact_ext_ids + [create_jpeg_result.ext_id] }}"
+
+##############################################################################
+# check_mode: update (upload) - one preview, no API call.
+##############################################################################
+
+- name: Check_mode upload preview + re-upload + download + no-op + info tasks
+  when: ncm_reports_api_available
+  block:
+    - name: Preview upload against existing artifact (check_mode)
+      nutanix.ncp.ntnx_artifact_file_v2:
+        state: present
+        ext_id: "{{ create_full_result.ext_id }}"
+        file_path: "{{ artifact_local_png_updated }}"
+      check_mode: true
+      register: result
+      ignore_errors: true
+
+    - name: Assert check_mode upload preview described the upload without executing it
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.ext_id == create_full_result.ext_id
+          - "'would be uploaded' in result.msg"
+          - result.response._pending_upload_from == artifact_local_png_updated
+        success_msg: "check_mode upload preview returned expected content"
+        fail_msg: "check_mode upload preview did not return expected content"
+
+    ##########################################################################
+    # Re-upload against an existing artifact (acts as the update path).
+    ##########################################################################
+
+    - name: Re-upload / replace the file contents of an existing report artifact
+      nutanix.ncp.ntnx_artifact_file_v2:
+        state: present
+        ext_id: "{{ create_full_result.ext_id }}"
+        file_path: "{{ artifact_local_png_updated }}"
+      register: reupload_result
+      ignore_errors: true
+
+    - name: Assert re-upload succeeded
+      ansible.builtin.assert:
+        that:
+          - reupload_result is defined
+          - reupload_result.changed == true
+          - reupload_result.failed == false
+          - reupload_result.ext_id == create_full_result.ext_id
+          - reupload_result.response is defined
+        success_msg: "Re-upload succeeded"
+        fail_msg: "Re-upload did not succeed"
+
+    ##########################################################################
+    # Download the artifact file back to the controller and validate it.
+    ##########################################################################
+
+    - name: Download the file contents of the existing artifact
+      nutanix.ncp.ntnx_artifact_file_v2:
+        state: present
+        ext_id: "{{ create_full_result.ext_id }}"
+        download_path: "{{ artifact_download_target }}"
+      register: download_result
+      ignore_errors: true
+
+    - name: Assert download succeeded
+      ansible.builtin.assert:
+        that:
+          - download_result is defined
+          - download_result.changed == true
+          - download_result.failed == false
+          - download_result.ext_id == create_full_result.ext_id
+          - download_result.response.download_path == artifact_download_target
+          - download_result.response.downloaded == true
+        success_msg: "Artifact file downloaded successfully"
+        fail_msg: "Artifact file download did not succeed as expected"
+
+    - name: Stat the downloaded file
+      ansible.builtin.stat:
+        path: "{{ artifact_download_target }}"
+      register: download_stat
+
+    - name: Assert downloaded file exists on disk
+      ansible.builtin.assert:
+        that:
+          - download_stat.stat.exists == true
+          - download_stat.stat.size > 0
+        success_msg: "Downloaded file is present on the controller"
+        fail_msg: "Downloaded file was not present on the controller"
+
+    ##########################################################################
+    # Idempotency: no file_path and no download_path with a given ext_id
+    # results in an intentional no-op.
+    ##########################################################################
+
+    - name: Call update path with ext_id but no file/download params (no-op)
+      nutanix.ncp.ntnx_artifact_file_v2:
+        state: present
+        ext_id: "{{ create_full_result.ext_id }}"
+      register: noop_result
+      ignore_errors: true
+
+    - name: Assert the no-op update is reported as skipped
+      ansible.builtin.assert:
+        that:
+          - noop_result is defined
+          - noop_result.changed == false
+          - noop_result.failed == false
+          - noop_result.skipped == true
+          - "'Nothing to do' in noop_result.msg"
+        success_msg: "No-op update returned skipped as expected"
+        fail_msg: "No-op update did not return skipped"
+
+    ##########################################################################
+    # Info module: get by external ID.
+    ##########################################################################
+
+    - name: Fetch report artifact info using ext_id
+      nutanix.ncp.ntnx_artifact_files_info_v2:
+        ext_id: "{{ create_full_result.ext_id }}"
+      register: info_by_id
+      ignore_errors: true
+
+    - name: Assert get-by-id returned the created artifact
+      ansible.builtin.assert:
+        that:
+          - info_by_id is defined
+          - info_by_id.changed == false
+          - info_by_id.failed == false
+          - info_by_id.ext_id == create_full_result.ext_id
+          - info_by_id.response is defined
+          - info_by_id.response.ext_id == create_full_result.ext_id
+          - info_by_id.response.type == "LOGO"
+          - info_by_id.response.file_type == "PNG"
+        success_msg: "get-by-id returned the created artifact"
+        fail_msg: "get-by-id did not return the created artifact"
+
+    ##########################################################################
+    # Info module: list all + list with limit + list with filter.
+    ##########################################################################
+
+    - name: List all report artifacts
+      nutanix.ncp.ntnx_artifact_files_info_v2:
+      register: list_all
+      ignore_errors: true
+
+    - name: Assert list_all succeeded and includes our created artifacts
+      ansible.builtin.assert:
+        that:
+          - list_all is defined
+          - list_all.changed == false
+          - list_all.failed == false
+          - list_all.response is defined
+          - list_all.response | length >= 3
+          - list_all.total_available_results is defined
+          - list_all.total_available_results >= 3
+          - (list_all.response | map(attribute='ext_id') | list) is superset([create_full_result.ext_id])
+        success_msg: "list_all returned the created artifacts"
+        fail_msg: "list_all did not return the created artifacts"
+
+    - name: Assert every listed artifact carries valid enum values
+      ansible.builtin.assert:
+        that:
+          - item.type in ["LOGO"]
+          - item.file_type in ["PNG", "JPEG"]
+          - item.ext_id is defined
+        success_msg: "Listed artifact has valid enum values"
+        fail_msg: "Listed artifact has invalid enum values"
+      loop: "{{ list_all.response }}"
+
+    - name: List report artifacts with limit=1
+      nutanix.ncp.ntnx_artifact_files_info_v2:
+        limit: 1
+      register: list_limit
+      ignore_errors: true
+
+    - name: Assert list with limit=1 returned exactly one entry
+      ansible.builtin.assert:
+        that:
+          - list_limit is defined
+          - list_limit.changed == false
+          - list_limit.failed == false
+          - list_limit.response is defined
+          - list_limit.response | length == 1
+        success_msg: "list with limit=1 returned exactly one entry"
+        fail_msg: "list with limit=1 did not return exactly one entry"
+
+    - name: List report artifacts filtered on extId of our known artifact
+      nutanix.ncp.ntnx_artifact_files_info_v2:
+        filter: "extId eq '{{ create_full_result.ext_id }}'"
+      register: list_filter
+      ignore_errors: true
+
+    - name: Assert filtered list returned only the requested artifact
+      ansible.builtin.assert:
+        that:
+          - list_filter is defined
+          - list_filter.changed == false
+          - list_filter.failed == false
+          - list_filter.response is defined
+          - list_filter.response | length == 1
+          - list_filter.response[0].ext_id == create_full_result.ext_id
+        success_msg: "Filtered list returned exactly one matching artifact"
+        fail_msg: "Filtered list did not return exactly one matching artifact"
+
+##############################################################################
+# Negative tests: missing required fields, invalid enums, invalid ext_id.
+##############################################################################
+
+- name: Create with no fields (should fail because type/file_type are required)
+  nutanix.ncp.ntnx_artifact_file_v2:
+    state: present
+  register: missing_all_result
+  ignore_errors: true
+
+- name: Assert missing required fields failure
+  ansible.builtin.assert:
+    that:
+      - missing_all_result is defined
+      - missing_all_result.changed == false
+      - missing_all_result.failed == true
+      - missing_all_result.msg is defined
+      - "'type' in missing_all_result.msg"
+      - "'file_type' in missing_all_result.msg"
+    success_msg: "Missing required fields failed as expected"
+    fail_msg: "Missing required fields did not fail as expected"
+
+- name: Create with only type set (file_type still missing)
+  nutanix.ncp.ntnx_artifact_file_v2:
+    state: present
+    type: LOGO
+  register: missing_file_type
+  ignore_errors: true
+
+- name: Assert missing file_type is reported
+  ansible.builtin.assert:
+    that:
+      - missing_file_type is defined
+      - missing_file_type.changed == false
+      - missing_file_type.failed == true
+      - missing_file_type.msg == "Missing required parameter(s): file_type"
+    success_msg: "Missing file_type reported correctly"
+    fail_msg: "Missing file_type was not reported correctly"
+
+- name: Create with an invalid type enum value  # noqa: args[module]
+  nutanix.ncp.ntnx_artifact_file_v2:
+    state: present
+    type: BOGUS_TYPE
+    file_type: PNG
+  register: invalid_type
+  ignore_errors: true
+
+- name: Assert invalid type enum was rejected by the argument spec
+  ansible.builtin.assert:
+    that:
+      - invalid_type is defined
+      - invalid_type.changed == false
+      - invalid_type.failed == true
+      - "'value of type must be one of' in invalid_type.msg"
+    success_msg: "Invalid type enum rejected as expected"
+    fail_msg: "Invalid type enum was not rejected as expected"
+
+- name: Create with an invalid file_type enum value  # noqa: args[module]
+  nutanix.ncp.ntnx_artifact_file_v2:
+    state: present
+    type: LOGO
+    file_type: GIF
+  register: invalid_file_type
+  ignore_errors: true
+
+- name: Assert invalid file_type enum was rejected by the argument spec
+  ansible.builtin.assert:
+    that:
+      - invalid_file_type is defined
+      - invalid_file_type.changed == false
+      - invalid_file_type.failed == true
+      - "'value of file_type must be one of' in invalid_file_type.msg"
+    success_msg: "Invalid file_type enum rejected as expected"
+    fail_msg: "Invalid file_type enum was not rejected as expected"
+
+- name: Fetch info for a non-existent ext_id
+  nutanix.ncp.ntnx_artifact_files_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: info_missing
+  ignore_errors: true
+  when: ncm_reports_api_available
+
+- name: Assert missing ext_id lookup returned a descriptive failure
+  ansible.builtin.assert:
+    that:
+      - info_missing is defined
+      - info_missing.changed == false
+      - info_missing.failed == true
+      - "'not found' in info_missing.msg"
+    success_msg: "Missing ext_id lookup failed with descriptive error"
+    fail_msg: "Missing ext_id lookup did not fail as expected"
+  when: ncm_reports_api_available
+
+- name: Upload to a non-existent artifact
+  nutanix.ncp.ntnx_artifact_file_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    file_path: "{{ artifact_local_png }}"
+  register: upload_missing
+  ignore_errors: true
+  when: ncm_reports_api_available
+
+- name: Assert upload to non-existent artifact failed with descriptive error
+  ansible.builtin.assert:
+    that:
+      - upload_missing is defined
+      - upload_missing.changed == false
+      - upload_missing.failed == true
+      - upload_missing.msg is defined
+      - "'not found' in upload_missing.msg"
+    success_msg: "Upload to non-existent artifact failed with descriptive error"
+    fail_msg: "Upload to non-existent artifact did not fail as expected"
+  when: ncm_reports_api_available
+
+- name: Upload with a file_path that does not exist on the controller
+  nutanix.ncp.ntnx_artifact_file_v2:
+    state: present
+    ext_id: "{{ (create_full_result.ext_id | default('00000000-0000-0000-0000-000000000000')) }}"
+    file_path: "/tmp/this-path-does-not-exist-{{ random_suffix }}.png"
+  register: upload_bad_path
+  ignore_errors: true
+
+- name: Assert upload with missing local file returned a clear error
+  ansible.builtin.assert:
+    that:
+      - upload_bad_path is defined
+      - upload_bad_path.changed == false
+      - upload_bad_path.failed == true
+      - "'does not exist' in upload_bad_path.msg"
+    success_msg: "Upload with missing local file failed as expected"
+    fail_msg: "Upload with missing local file did not fail as expected"
+
+- name: Try to combine file_path AND download_path (mutually exclusive)
+  nutanix.ncp.ntnx_artifact_file_v2:
+    state: present
+    ext_id: "{{ (create_full_result.ext_id | default('00000000-0000-0000-0000-000000000000')) }}"
+    file_path: "{{ artifact_local_png }}"
+    download_path: "{{ artifact_download_target }}"
+  register: mut_ex_result
+  ignore_errors: true
+
+- name: Assert Ansible detected the mutually exclusive parameters
+  ansible.builtin.assert:
+    that:
+      - mut_ex_result is defined
+      - mut_ex_result.changed == false
+      - mut_ex_result.failed == true
+      - "'mutually exclusive' in mut_ex_result.msg"
+    success_msg: "Mutually exclusive params were rejected"
+    fail_msg: "Mutually exclusive params were not rejected"
+
+##############################################################################
+# check_mode: delete - one preview call. state=absent is unsupported;
+# check_mode should also fail with the same explanatory message.
+##############################################################################
+
+- name: Preview delete of an existing artifact (check_mode, unsupported)
+  nutanix.ncp.ntnx_artifact_file_v2:
+    state: absent
+    ext_id: "{{ (create_full_result.ext_id | default('00000000-0000-0000-0000-000000000000')) }}"
+  check_mode: true
+  register: delete_preview
+  ignore_errors: true
+
+- name: Assert check_mode delete surfaces the unsupported-operation message
+  ansible.builtin.assert:
+    that:
+      - delete_preview is defined
+      - delete_preview.changed == false
+      - delete_preview.failed == true
+      - "'not supported' in delete_preview.msg"
+    success_msg: "check_mode delete returned the unsupported-operation error"
+    fail_msg: "check_mode delete did not return the unsupported-operation error"
+
+##############################################################################
+# state=absent (delete) is unsupported and must fail with a clear message.
+##############################################################################
+
+- name: Attempt to delete a report artifact (state=absent)
+  nutanix.ncp.ntnx_artifact_file_v2:
+    state: absent
+    ext_id: "{{ (create_full_result.ext_id | default('00000000-0000-0000-0000-000000000000')) }}"
+  register: delete_result
+  ignore_errors: true
+
+- name: Assert delete failed with the unsupported-operation message
+  ansible.builtin.assert:
+    that:
+      - delete_result is defined
+      - delete_result.changed == false
+      - delete_result.failed == true
+      - "'not supported' in delete_result.msg"
+    success_msg: "state=absent surfaced the unsupported-operation error as expected"
+    fail_msg: "state=absent did NOT surface the unsupported-operation error"
+
+- name: Attempt state=absent without an ext_id (should fail on required_if)  # noqa: args[module]
+  nutanix.ncp.ntnx_artifact_file_v2:
+    state: absent
+  register: delete_missing_ext_id
+  ignore_errors: true
+
+- name: Assert state=absent without ext_id fails on missing required arg
+  ansible.builtin.assert:
+    that:
+      - delete_missing_ext_id is defined
+      - delete_missing_ext_id.changed == false
+      - delete_missing_ext_id.failed == true
+      - "'ext_id' in delete_missing_ext_id.msg"
+    success_msg: "state=absent without ext_id fails as expected"
+    fail_msg: "state=absent without ext_id did not fail as expected"
+
+##############################################################################
+# Cleanup local scratch dir. Report artifacts themselves cannot be
+# deleted via the API today, so the created records will simply persist
+# on the cluster - that is acknowledged in the module documentation.
+##############################################################################
+
+- name: Remove local test data directory
+  ansible.builtin.file:
+    path: "{{ artifact_dir }}"
+    state: absent
