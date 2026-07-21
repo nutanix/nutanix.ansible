@@ -1,0 +1,57 @@
+---
+# Summary:
+# This playbook demonstrates the use of ntnx_user_state_v2 to:
+# 1. Set up a fresh local user (via ntnx_users_v2) that will be state-flipped.
+# 2. Deactivate that user (status: INACTIVE).
+# 3. Re-activate that user (status: ACTIVE).
+# 4. Cleanup the user via the v3 users delete API (v4 delete is not exposed).
+
+- name: UserState action playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('<pc_ip>', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('<user>', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('<pass>', true) }}"
+      nutanix_port: "{{ lookup('env', 'NUTANIX_PORT') | default('9440', true) }}"
+      validate_certs: false
+  tasks:
+    - name: Generate a random suffix for the demo user
+      ansible.builtin.set_fact:
+        random_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=10) | first | regex_replace('[^a-zA-Z0-9]', '') }}"
+
+    - name: Set demo user variables
+      ansible.builtin.set_fact:
+        demo_username: "user_state_demo_{{ random_suffix }}"
+
+    - name: Create a local user to be state-flipped
+      nutanix.ncp.ntnx_users_v2:
+        state: present
+        user_type: LOCAL
+        username: "{{ demo_username }}"
+        first_name: "state_demo"
+        last_name: "user"
+        display_name: "state_demo_user"
+        password: "test.Password.123"
+        email_id: "{{ demo_username }}@example.com"
+        status: ACTIVE
+      register: created_user
+
+    - name: Deactivate the user
+      nutanix.ncp.ntnx_user_state_v2:
+        ext_id: "{{ created_user.ext_id }}"
+        status: INACTIVE
+      register: deactivate_result
+
+    - name: Re-activate the user
+      nutanix.ncp.ntnx_user_state_v2:
+        ext_id: "{{ created_user.ext_id }}"
+        status: ACTIVE
+      register: activate_result
+
+    - name: Clean up the demo user (v3 delete API)
+      nutanix.ncp.ntnx_users:
+        state: absent
+        user_uuid: "{{ created_user.ext_id }}"
+      register: cleanup_result

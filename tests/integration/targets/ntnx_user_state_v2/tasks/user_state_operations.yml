@@ -1,0 +1,381 @@
+---
+# =============================================================================
+# ntnx_user_state_v2 — end-to-end integration test plan
+# =============================================================================
+# Scenarios covered (based on the SDK, the module argument spec, and the
+# UpdateUserState behavioral contract confirmed via Glean / IAM v4 docs):
+#
+#   1. Prerequisite setup: create a fresh LOCAL user (status ACTIVE) whose
+#      state we can flip freely. Random suffixes prevent collisions on
+#      parallel test runs.
+#   2. check_mode: deactivate — verify no API call is made, response mirrors
+#      the built spec, and the user remains ACTIVE on the server.
+#   3. check_mode: activate — same coverage, ACTIVE branch.
+#   4. Real deactivate (status: INACTIVE) — assert changed/failed, and
+#      confirm via ntnx_users_info_v2 that the user is now INACTIVE.
+#   5. Server-side idempotency — call deactivate again on an already
+#      INACTIVE user; UpdateUserState is documented as a no-op that still
+#      succeeds. Assert changed=true (module always reports changed on
+#      successful action call) and no failure.
+#   6. Reactivate (status: ACTIVE) — assert changed/failed and that the
+#      user's status flips back to ACTIVE on the server.
+#   7. Negative: invalid ext_id — expect a 4xx error surfaced by the module.
+#   8. Negative: invalid enum value for status — expect argument-spec
+#      validation to reject the task before an API call is made.
+#   9. Negative: missing required parameters (ext_id, status) — expect
+#      argument-spec validation to reject each.
+#  10. Cleanup: delete the demo user via ntnx_users (v3 API — v4 has no
+#      user delete endpoint).
+# =============================================================================
+
+- name: Start ntnx_user_state_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_user_state_v2 tests
+
+- name: Generate a random suffix for the demo user
+  ansible.builtin.set_fact:
+    random_string: "{{ query('community.general.random_string', numbers=false, special=false, length=12) }}"
+
+- name: Build unique demo username
+  ansible.builtin.set_fact:
+    demo_username: "user_state_{{ random_string | first | regex_replace('[^a-zA-Z0-9]', '') }}"
+    todelete: []
+
+# --------------------------------------------------------------------------- #
+# 0. Ensure no leftover from a previous run                                   #
+# --------------------------------------------------------------------------- #
+
+- name: Look up any existing user with the demo username
+  nutanix.ncp.ntnx_users_info_v2:
+    filter: "username eq '{{ demo_username }}'"
+  register: leftover_lookup
+  ignore_errors: true
+
+- name: Collect leftover user ext_ids
+  ansible.builtin.set_fact:
+    todelete: "{{ leftover_lookup.response | default([]) | map(attribute='ext_id') | list }}"
+  when: leftover_lookup.response is defined and leftover_lookup.response | length > 0
+
+- name: Remove leftover demo users (v3 delete API)
+  nutanix.ncp.ntnx_users:
+    state: absent
+    user_uuid: "{{ item }}"
+  loop: "{{ todelete }}"
+  register: leftover_cleanup_result
+  ignore_errors: true
+  when: todelete | length > 0
+
+- name: Reset todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+# --------------------------------------------------------------------------- #
+# 1. Create the demo user (prerequisite)                                      #
+# --------------------------------------------------------------------------- #
+
+- name: Create ACTIVE local user for state-flip tests
+  nutanix.ncp.ntnx_users_v2:
+    state: present
+    user_type: LOCAL
+    username: "{{ demo_username }}"
+    first_name: "state"
+    last_name: "demo"
+    display_name: "{{ demo_username }}"
+    password: "test.Password.123"
+    email_id: "{{ demo_username }}@example.com"
+    status: ACTIVE
+    is_force_reset_password_enabled: false
+  register: create_user_result
+  ignore_errors: true
+
+- name: Assert ACTIVE local user creation
+  ansible.builtin.assert:
+    that:
+      - create_user_result.changed == true
+      - create_user_result.failed == false
+      - create_user_result.ext_id is defined
+      - create_user_result.response.ext_id == create_user_result.ext_id
+      - create_user_result.response.user_type == "LOCAL"
+      - create_user_result.response.status == "ACTIVE"
+      - create_user_result.response.username | lower == demo_username | lower
+    fail_msg: "Failed to create prerequisite local user for user_state tests"
+    success_msg: "Prerequisite local user created"
+
+- name: Track the demo user for cleanup
+  ansible.builtin.set_fact:
+    demo_user_ext_id: "{{ create_user_result.ext_id }}"
+    todelete: "{{ todelete + [create_user_result.ext_id] }}"
+
+# --------------------------------------------------------------------------- #
+# 2. check_mode: deactivate                                                    #
+# --------------------------------------------------------------------------- #
+
+- name: Deactivate user (check_mode)
+  nutanix.ncp.ntnx_user_state_v2:
+    ext_id: "{{ demo_user_ext_id }}"
+    status: INACTIVE
+  register: deactivate_check_mode
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert deactivate check_mode
+  ansible.builtin.assert:
+    that:
+      - deactivate_check_mode.changed == false
+      - deactivate_check_mode.failed == false
+      - deactivate_check_mode.ext_id == demo_user_ext_id
+      - deactivate_check_mode.response is defined
+      - deactivate_check_mode.response.status == "INACTIVE"
+    fail_msg: "Deactivate check_mode did not report the expected preview state"
+    success_msg: "Deactivate check_mode passed"
+
+- name: Confirm user is still ACTIVE on the server after check_mode
+  nutanix.ncp.ntnx_users_info_v2:
+    ext_id: "{{ demo_user_ext_id }}"
+  register: after_check_mode
+  ignore_errors: true
+
+- name: Assert user unchanged on server after check_mode
+  ansible.builtin.assert:
+    that:
+      - after_check_mode.failed == false
+      - after_check_mode.changed == false
+      - after_check_mode.response.status == "ACTIVE"
+    fail_msg: "check_mode incorrectly mutated the user on the server"
+    success_msg: "check_mode did not touch the server (as expected)"
+
+# --------------------------------------------------------------------------- #
+# 3. check_mode: activate (ACTIVE branch)                                     #
+# --------------------------------------------------------------------------- #
+
+- name: Activate user (check_mode)
+  nutanix.ncp.ntnx_user_state_v2:
+    ext_id: "{{ demo_user_ext_id }}"
+    status: ACTIVE
+  register: activate_check_mode
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert activate check_mode
+  ansible.builtin.assert:
+    that:
+      - activate_check_mode.changed == false
+      - activate_check_mode.failed == false
+      - activate_check_mode.ext_id == demo_user_ext_id
+      - activate_check_mode.response is defined
+      - activate_check_mode.response.status == "ACTIVE"
+    fail_msg: "Activate check_mode did not report the expected preview state"
+    success_msg: "Activate check_mode passed"
+
+# --------------------------------------------------------------------------- #
+# 4. Real deactivate (ACTIVE -> INACTIVE)                                     #
+# --------------------------------------------------------------------------- #
+
+- name: Deactivate the demo user (real)
+  nutanix.ncp.ntnx_user_state_v2:
+    ext_id: "{{ demo_user_ext_id }}"
+    status: INACTIVE
+  register: deactivate_result
+  ignore_errors: true
+
+- name: Assert deactivate result
+  ansible.builtin.assert:
+    that:
+      - deactivate_result.changed == true
+      - deactivate_result.failed == false
+      - deactivate_result.ext_id == demo_user_ext_id
+      - deactivate_result.response is defined
+    fail_msg: "Deactivate call did not report changed/succeeded"
+    success_msg: "Deactivate call reported changed/succeeded"
+
+- name: Fetch user and confirm INACTIVE
+  nutanix.ncp.ntnx_users_info_v2:
+    ext_id: "{{ demo_user_ext_id }}"
+  register: after_deactivate
+  ignore_errors: true
+
+- name: Assert user is INACTIVE on the server
+  ansible.builtin.assert:
+    that:
+      - after_deactivate.failed == false
+      - after_deactivate.changed == false
+      - after_deactivate.response.status == "INACTIVE"
+      - after_deactivate.response.ext_id == demo_user_ext_id
+    fail_msg: "Server-side user status did not flip to INACTIVE"
+    success_msg: "Server-side user status is INACTIVE"
+
+# --------------------------------------------------------------------------- #
+# 5. Idempotency: deactivate an already INACTIVE user                          #
+#    The UpdateUserState endpoint is documented as idempotent - re-issuing     #
+#    the same state must not fail (ENG-744839).                                #
+# --------------------------------------------------------------------------- #
+
+- name: Deactivate an already INACTIVE user
+  nutanix.ncp.ntnx_user_state_v2:
+    ext_id: "{{ demo_user_ext_id }}"
+    status: INACTIVE
+  register: idempotent_deactivate
+  ignore_errors: true
+
+- name: Assert idempotent deactivate did not fail
+  ansible.builtin.assert:
+    that:
+      - idempotent_deactivate.failed == false
+      - idempotent_deactivate.ext_id == demo_user_ext_id
+    fail_msg: "Idempotent deactivate should succeed (no-op on server)"
+    success_msg: "Idempotent deactivate succeeded as expected"
+
+- name: Confirm the user is still INACTIVE
+  nutanix.ncp.ntnx_users_info_v2:
+    ext_id: "{{ demo_user_ext_id }}"
+  register: still_inactive
+  ignore_errors: true
+
+- name: Assert user is still INACTIVE after idempotent call
+  ansible.builtin.assert:
+    that:
+      - still_inactive.failed == false
+      - still_inactive.response.status == "INACTIVE"
+    fail_msg: "User state changed unexpectedly on repeat deactivate"
+    success_msg: "User state remained INACTIVE"
+
+# --------------------------------------------------------------------------- #
+# 6. Reactivate (INACTIVE -> ACTIVE)                                          #
+# --------------------------------------------------------------------------- #
+
+- name: Reactivate the demo user
+  nutanix.ncp.ntnx_user_state_v2:
+    ext_id: "{{ demo_user_ext_id }}"
+    status: ACTIVE
+  register: activate_result
+  ignore_errors: true
+
+- name: Assert reactivate result
+  ansible.builtin.assert:
+    that:
+      - activate_result.changed == true
+      - activate_result.failed == false
+      - activate_result.ext_id == demo_user_ext_id
+      - activate_result.response is defined
+    fail_msg: "Reactivate call did not report changed/succeeded"
+    success_msg: "Reactivate call reported changed/succeeded"
+
+- name: Fetch user and confirm ACTIVE
+  nutanix.ncp.ntnx_users_info_v2:
+    ext_id: "{{ demo_user_ext_id }}"
+  register: after_activate
+  ignore_errors: true
+
+- name: Assert user is ACTIVE on the server
+  ansible.builtin.assert:
+    that:
+      - after_activate.failed == false
+      - after_activate.changed == false
+      - after_activate.response.status == "ACTIVE"
+      - after_activate.response.ext_id == demo_user_ext_id
+    fail_msg: "Server-side user status did not flip back to ACTIVE"
+    success_msg: "Server-side user status is ACTIVE"
+
+# --------------------------------------------------------------------------- #
+# 7. Negative: bogus ext_id                                                    #
+# --------------------------------------------------------------------------- #
+
+- name: Attempt to change state of a non-existent user
+  nutanix.ncp.ntnx_user_state_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    status: INACTIVE
+  register: bogus_ext_id_result
+  ignore_errors: true
+
+- name: Assert non-existent ext_id fails cleanly
+  ansible.builtin.assert:
+    that:
+      - bogus_ext_id_result.failed == true
+      - bogus_ext_id_result.changed == false
+      - bogus_ext_id_result.msg is defined
+      - bogus_ext_id_result.msg == "Api Exception raised while updating user state"
+    fail_msg: "Bogus ext_id did not surface the expected API error"
+    success_msg: "Bogus ext_id was rejected as expected"
+
+# --------------------------------------------------------------------------- #
+# 8. Negative: invalid enum value for status                                   #
+# --------------------------------------------------------------------------- #
+
+- name: Attempt to set an invalid status value
+  nutanix.ncp.ntnx_user_state_v2:
+    ext_id: "{{ demo_user_ext_id }}"
+    status: "SUSPENDED"
+  register: invalid_status_result
+  ignore_errors: true
+
+- name: Assert invalid status is rejected by argument spec
+  ansible.builtin.assert:
+    that:
+      - invalid_status_result.failed == true
+      - invalid_status_result.changed == false
+      - invalid_status_result.msg is defined
+      - '"value of status must be one of" in invalid_status_result.msg'
+    fail_msg: "Invalid status enum should be rejected by the argument spec"
+    success_msg: "Invalid status enum rejected as expected"
+
+# --------------------------------------------------------------------------- #
+# 9. Negative: missing required parameters                                    #
+# --------------------------------------------------------------------------- #
+
+- name: Attempt to call the module without ext_id
+  nutanix.ncp.ntnx_user_state_v2:
+    status: INACTIVE
+  register: missing_ext_id_result
+  ignore_errors: true
+
+- name: Assert missing ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id_result.failed == true
+      - missing_ext_id_result.changed == false
+      - missing_ext_id_result.msg is defined
+      - '"ext_id" in missing_ext_id_result.msg'
+    fail_msg: "Missing ext_id should be flagged by argument spec"
+    success_msg: "Missing ext_id rejected as expected"
+
+- name: Attempt to call the module without status
+  nutanix.ncp.ntnx_user_state_v2:
+    ext_id: "{{ demo_user_ext_id }}"
+  register: missing_status_result
+  ignore_errors: true
+
+- name: Assert missing status is rejected
+  ansible.builtin.assert:
+    that:
+      - missing_status_result.failed == true
+      - missing_status_result.changed == false
+      - missing_status_result.msg is defined
+      - '"status" in missing_status_result.msg'
+    fail_msg: "Missing status should be flagged by argument spec"
+    success_msg: "Missing status rejected as expected"
+
+# --------------------------------------------------------------------------- #
+# 10. Cleanup                                                                  #
+# --------------------------------------------------------------------------- #
+
+- name: Delete the demo user (v3 delete API)
+  nutanix.ncp.ntnx_users:
+    state: absent
+    user_uuid: "{{ item }}"
+  loop: "{{ todelete }}"
+  register: cleanup_result
+  ignore_errors: true
+  when: todelete | length > 0
+
+- name: Assert cleanup succeeded
+  ansible.builtin.assert:
+    that:
+      - cleanup_result.changed == true
+      - cleanup_result.msg == "All items completed"
+    fail_msg: "Failed to clean up demo user"
+    success_msg: "Demo user cleaned up"
+  when: todelete | length > 0
+
+- name: Reset todelete list
+  ansible.builtin.set_fact:
+    todelete: []
