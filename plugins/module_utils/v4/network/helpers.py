@@ -170,3 +170,36 @@ def get_virtual_switch(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching virtual switch info using ext_id",
         )
+
+
+def get_vpn_appliance_config(module, api_instance, vpn_connection_ext_id, ext_id):
+    """
+    Fetch third-party VPN appliance configuration for a given VPN connection.
+
+    The API returns the vendor configuration as a plain-text string that a
+    user would apply on their on-premise VPN gateway (e.g. Palo Alto,
+    Checkpoint, Juniper) to peer with the Nutanix VPN service.
+
+    Args:
+        module: Ansible module
+        api_instance: VpnConnectionsApi instance from ntnx_networking_py_client sdk
+        vpn_connection_ext_id (str): VPN connection external ID
+        ext_id (str): third-party VPN appliance external ID
+    return:
+        config (str): vendor configuration payload
+    """
+    try:
+        return api_instance.get_vpn_appliance_for_vpn_connection_by_id(
+            vpnConnectionExtId=vpn_connection_ext_id, extId=ext_id
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg=(
+                "Api Exception raised while fetching third-party VPN appliance "
+                "configuration for vpn_connection_ext_id={0} and ext_id={1}".format(
+                    vpn_connection_ext_id, ext_id
+                )
+            ),
+        )
