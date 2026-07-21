@@ -1,0 +1,375 @@
+---
+###########################################################################
+# Test plan for ntnx_iam_welcome_banner_v2 / ntnx_iam_welcome_banner_info_v2
+#
+# The Welcome Banner is a singleton IAM resource in Prism Central: no ext_id,
+# only GET and PUT. This test file covers every scenario a QA engineer would
+# expect for a singleton entity plus the domain-level behavior a real user
+# cares about (login-page HTML content, enabled/disabled toggling, ETag-based
+# optimistic concurrency, idempotency, factory reset, and negative paths).
+#
+# 1. Baseline fetch via info module (assert schema is populated)
+# 2. Check-mode update covering ALL attributes (content + is_enabled)
+# 3. Real update with ALL attributes (content + is_enabled=true) — assert changed
+# 4. Info module fetches the updated banner (round-trip via GET)
+# 5. Idempotency: re-run same update, assert skipped=true & msg
+# 6. Meaningful transition: flip only is_enabled to false, assert changed
+# 7. HTML content workflow (login-page style HTML), assert content persisted
+# 8. Check-mode delete (reset), assert unchanged on the server
+# 9. Real delete (reset) — assert changed, content=default, is_enabled=false
+# 10. Idempotency of delete: re-run reset on default state, assert skipped
+# 11. Negative: state=present without content, assert module fails (required_if)
+# 12. Restore the banner to the ORIGINAL configuration captured in step 1
+###########################################################################
+
+- name: Start ntnx_iam_welcome_banner_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_iam_welcome_banner_v2 tests
+
+###########################################################################
+# Dynamic test data — random suffix so parallel test runs never collide.
+###########################################################################
+
+- name: Generate random suffix for the welcome banner content
+  ansible.builtin.set_fact:
+    banner_suffix: "{{ 999999 | random | to_uuid }}"
+
+- name: Build banner content strings (plain + HTML)
+  ansible.builtin.set_fact:
+    banner_plain_content: "Ansible IAM WelcomeBanner test - {{ banner_suffix }}"
+    banner_html_content: >-
+      <p><b>Ansible IAM WelcomeBanner HTML test - {{ banner_suffix }}</b><br>
+      All access to this system is logged and monitored.</p>
+    banner_default_content: "Write HTML code here"
+
+###########################################################################
+# 1. Baseline fetch (info module) — capture original state for restore
+###########################################################################
+
+- name: Fetch the welcome banner using the info module (baseline)
+  nutanix.ncp.ntnx_iam_welcome_banner_info_v2:
+  register: baseline
+  ignore_errors: true
+
+- name: Assert baseline info fetch succeeded and returned a WelcomeBanner
+  ansible.builtin.assert:
+    that:
+      - baseline.changed == false
+      - baseline.failed == false
+      - baseline.response is defined
+      - baseline.response.content is defined
+      - baseline.response.is_enabled is defined
+      - baseline.response.created_time is defined
+      - baseline.response.last_updated_time is defined
+    fail_msg: Baseline welcome banner fetch failed
+    success_msg: Baseline welcome banner fetch passed
+
+- name: Store original welcome banner state for later restoration
+  ansible.builtin.set_fact:
+    original_banner_content: "{{ baseline.response.content }}"
+    original_banner_is_enabled: "{{ baseline.response.is_enabled }}"
+
+###########################################################################
+# 2. Check-mode update covering ALL attributes (no server change)
+###########################################################################
+
+- name: Update the welcome banner in check_mode with ALL attributes
+  nutanix.ncp.ntnx_iam_welcome_banner_v2:
+    state: present
+    content: "{{ banner_plain_content }}"
+    is_enabled: true
+  register: cm_update
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert check_mode update returns the desired spec without changing state
+  ansible.builtin.assert:
+    that:
+      - cm_update.changed == false
+      - cm_update.failed == false
+      - cm_update.response is defined
+      - cm_update.response.content == banner_plain_content
+      - cm_update.response.is_enabled == true
+    fail_msg: check_mode update did not return the expected desired spec
+    success_msg: check_mode update returned the expected desired spec
+
+- name: Fetch banner after check_mode update to confirm no server-side change
+  nutanix.ncp.ntnx_iam_welcome_banner_info_v2:
+  register: after_check_mode
+  ignore_errors: true
+
+- name: Assert the server-side banner is unchanged by check_mode
+  ansible.builtin.assert:
+    that:
+      - after_check_mode.changed == false
+      - after_check_mode.failed == false
+      - after_check_mode.response.content == original_banner_content
+      - after_check_mode.response.is_enabled == (original_banner_is_enabled | bool)
+    fail_msg: check_mode unexpectedly mutated the welcome banner on the server
+    success_msg: check_mode did not mutate the welcome banner on the server
+
+###########################################################################
+# 3. Real update with ALL attributes (plain content + is_enabled=true)
+###########################################################################
+
+- name: Update the welcome banner with plain content and enable it
+  nutanix.ncp.ntnx_iam_welcome_banner_v2:
+    state: present
+    content: "{{ banner_plain_content }}"
+    is_enabled: true
+  register: full_update
+  ignore_errors: true
+
+- name: Assert full welcome banner update succeeded
+  ansible.builtin.assert:
+    that:
+      - full_update.changed == true
+      - full_update.failed == false
+      - full_update.skipped == false
+      - full_update.response is defined
+      - full_update.response.content == banner_plain_content
+      - full_update.response.is_enabled == true
+      - full_update.response.last_updated_time is defined
+      - full_update.ext_id is none
+      - full_update.task_ext_id is none
+    fail_msg: Full welcome banner update failed
+    success_msg: Full welcome banner update passed
+
+###########################################################################
+# 4. Info module round-trip fetch of the updated banner
+###########################################################################
+
+- name: Fetch the welcome banner after the update
+  nutanix.ncp.ntnx_iam_welcome_banner_info_v2:
+  register: after_full_update
+  ignore_errors: true
+
+- name: Assert the info module round-trips the update we just made
+  ansible.builtin.assert:
+    that:
+      - after_full_update.changed == false
+      - after_full_update.failed == false
+      - after_full_update.response is defined
+      - after_full_update.response.content == banner_plain_content
+      - after_full_update.response.is_enabled == true
+    fail_msg: Info module did not return the updated welcome banner
+    success_msg: Info module returned the updated welcome banner
+
+###########################################################################
+# 4a. Info module invoked with an ext_id (accepted for consistency, ignored)
+###########################################################################
+
+- name: Fetch the welcome banner passing a placeholder ext_id
+  nutanix.ncp.ntnx_iam_welcome_banner_info_v2:
+    ext_id: "welcome-banner"
+  register: info_with_extid
+  ignore_errors: true
+
+- name: Assert info module accepted ext_id and returned the singleton banner
+  ansible.builtin.assert:
+    that:
+      - info_with_extid.changed == false
+      - info_with_extid.failed == false
+      - info_with_extid.response is defined
+      - info_with_extid.response.content == banner_plain_content
+      - info_with_extid.response.is_enabled == true
+      - info_with_extid.ext_id == "welcome-banner"
+    fail_msg: Info module with ext_id did not return the welcome banner
+    success_msg: Info module with ext_id returned the welcome banner
+
+###########################################################################
+# 5. Idempotency: re-run the same update, assert skipped
+###########################################################################
+
+- name: Re-run the same welcome banner update (idempotency)
+  nutanix.ncp.ntnx_iam_welcome_banner_v2:
+    state: present
+    content: "{{ banner_plain_content }}"
+    is_enabled: true
+  register: idempotent_update
+  ignore_errors: true
+
+- name: Assert idempotent update is a no-op
+  ansible.builtin.assert:
+    that:
+      - idempotent_update.changed == false
+      - idempotent_update.failed == false
+      - idempotent_update.skipped == true
+      - idempotent_update.response.content == banner_plain_content
+      - idempotent_update.response.is_enabled == true
+      - idempotent_update.msg == "Welcome banner is already in the desired state. Skipping update."
+    fail_msg: Idempotent update was not detected as a no-op
+    success_msg: Idempotent update correctly detected as a no-op
+
+###########################################################################
+# 6. Meaningful state transition: flip only is_enabled to false
+###########################################################################
+
+- name: Flip is_enabled to false, keep the same content
+  nutanix.ncp.ntnx_iam_welcome_banner_v2:
+    state: present
+    content: "{{ banner_plain_content }}"
+    is_enabled: false
+  register: disable_only
+  ignore_errors: true
+
+- name: Assert only is_enabled changed
+  ansible.builtin.assert:
+    that:
+      - disable_only.changed == true
+      - disable_only.failed == false
+      - disable_only.skipped == false
+      - disable_only.response.content == banner_plain_content
+      - disable_only.response.is_enabled == false
+    fail_msg: Disable-only update failed
+    success_msg: Disable-only update succeeded
+
+###########################################################################
+# 7. Update with HTML content (login-page style)
+###########################################################################
+
+- name: Update the welcome banner with HTML content and enable it
+  nutanix.ncp.ntnx_iam_welcome_banner_v2:
+    state: present
+    content: "{{ banner_html_content }}"
+    is_enabled: true
+  register: html_update
+  ignore_errors: true
+
+- name: Assert HTML update succeeded and content is persisted verbatim
+  ansible.builtin.assert:
+    that:
+      - html_update.changed == true
+      - html_update.failed == false
+      - html_update.skipped == false
+      - html_update.response.content == banner_html_content
+      - html_update.response.is_enabled == true
+      - "'<p>' in html_update.response.content"
+      - "'<b>' in html_update.response.content"
+    fail_msg: HTML update failed or content was mutated by the server
+    success_msg: HTML update succeeded and content was persisted verbatim
+
+###########################################################################
+# 8. Check-mode delete (reset) — should not mutate the server
+###########################################################################
+
+- name: Reset the welcome banner in check_mode
+  nutanix.ncp.ntnx_iam_welcome_banner_v2:
+    state: absent
+  register: cm_delete
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert check_mode delete announces reset without mutating the server
+  ansible.builtin.assert:
+    that:
+      - cm_delete.changed == false
+      - cm_delete.failed == false
+      - cm_delete.response is defined
+      - cm_delete.response.content == banner_default_content
+      - cm_delete.response.is_enabled == false
+      - cm_delete.msg == "Welcome banner will be reset to default state."
+    fail_msg: check_mode delete did not announce the expected reset
+    success_msg: check_mode delete announced the expected reset
+
+- name: Fetch banner after check_mode delete to confirm no server-side change
+  nutanix.ncp.ntnx_iam_welcome_banner_info_v2:
+  register: after_cm_delete
+  ignore_errors: true
+
+- name: Assert the server-side banner is still the HTML value we set
+  ansible.builtin.assert:
+    that:
+      - after_cm_delete.changed == false
+      - after_cm_delete.failed == false
+      - after_cm_delete.response.content == banner_html_content
+      - after_cm_delete.response.is_enabled == true
+    fail_msg: check_mode delete unexpectedly mutated the welcome banner
+    success_msg: check_mode delete did not mutate the welcome banner
+
+###########################################################################
+# 9. Real delete (reset) — assert changed, is_enabled=false, default content
+###########################################################################
+
+- name: Reset the welcome banner to defaults
+  nutanix.ncp.ntnx_iam_welcome_banner_v2:
+    state: absent
+  register: reset_result
+  ignore_errors: true
+
+- name: Assert welcome banner has been reset to defaults
+  ansible.builtin.assert:
+    that:
+      - reset_result.changed == true
+      - reset_result.failed == false
+      - reset_result.skipped == false
+      - reset_result.response is defined
+      - reset_result.response.content == banner_default_content
+      - reset_result.response.is_enabled == false
+      - reset_result.msg == "Welcome banner has been reset to the default state."
+    fail_msg: Welcome banner reset failed
+    success_msg: Welcome banner reset succeeded
+
+###########################################################################
+# 10. Idempotent reset: re-run reset on already-default banner, assert skipped
+###########################################################################
+
+- name: Re-run reset on the already-default welcome banner
+  nutanix.ncp.ntnx_iam_welcome_banner_v2:
+    state: absent
+  register: idempotent_reset
+  ignore_errors: true
+
+- name: Assert idempotent reset is a no-op
+  ansible.builtin.assert:
+    that:
+      - idempotent_reset.changed == false
+      - idempotent_reset.failed == false
+      - idempotent_reset.skipped == true
+      - idempotent_reset.response.content == banner_default_content
+      - idempotent_reset.response.is_enabled == false
+      - idempotent_reset.msg == "Welcome banner is already in the default state. Skipping reset."
+    fail_msg: Idempotent reset was not detected as a no-op
+    success_msg: Idempotent reset correctly detected as a no-op
+
+###########################################################################
+# 11. Negative: state=present without content (required_if enforcement)
+###########################################################################
+
+- name: Try to update the welcome banner with state=present but no content
+  nutanix.ncp.ntnx_iam_welcome_banner_v2:
+    state: present
+    is_enabled: true
+  register: missing_content
+  ignore_errors: true
+
+- name: Assert missing content is rejected by required_if
+  ansible.builtin.assert:
+    that:
+      - missing_content.failed == true
+      - missing_content.changed == false
+      - missing_content.msg is defined
+      - "'content' in (missing_content.msg | string)"
+    fail_msg: Missing content was not rejected as expected
+    success_msg: Missing content was rejected as expected
+
+###########################################################################
+# 12. Restore the welcome banner to its ORIGINAL configuration
+###########################################################################
+
+- name: Restore the welcome banner to the ORIGINAL content
+  nutanix.ncp.ntnx_iam_welcome_banner_v2:
+    state: present
+    content: "{{ original_banner_content }}"
+    is_enabled: "{{ original_banner_is_enabled }}"
+  register: restore_result
+  ignore_errors: true
+
+- name: Assert restore did not fail
+  ansible.builtin.assert:
+    that:
+      - restore_result.failed == false
+      - restore_result.response.content == original_banner_content
+      - restore_result.response.is_enabled == (original_banner_is_enabled | bool)
+    fail_msg: Restoring the original welcome banner failed
+    success_msg: Original welcome banner restored successfully

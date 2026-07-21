@@ -1,0 +1,105 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [IAM Welcome Banner example playbook] *************************************
+
+TASK [Fetch the current welcome banner configuration] **************************
+ok: [localhost] => {"changed": false, "error": null, "response": {"content": "Write HTML code here", "created_time": "2026-06-29T07:18:36.280134+00:00", "is_enabled": false, "last_updated_time": "2026-07-21T06:50:15.095039+00:00"}}
+
+TASK [Show the current welcome banner] *****************************************
+ok: [localhost] => {
+    "welcome_banner_before.response": {
+        "content": "Write HTML code here",
+        "created_time": "2026-06-29T07:18:36.280134+00:00",
+        "is_enabled": false,
+        "last_updated_time": "2026-07-21T06:50:15.095039+00:00"
+    }
+}
+
+TASK [Update the welcome banner (create-equivalent for this singleton)] ********
+changed: [localhost] => {"changed": true, "ext_id": null, "response": {"content": "<p><b>Authorized access only.</b><br> All activity on this Nutanix Prism Central instance is logged and monitored. By clicking Accept you agree to the acceptable-use policy of your organization.</p>", "created_time": "2026-06-29T07:18:36.280134+00:00", "is_enabled": true, "last_updated_time": "2026-07-21T06:50:36.855619+00:00"}, "task_ext_id": null}
+
+TASK [Show the updated welcome banner] *****************************************
+ok: [localhost] => {
+    "welcome_banner_updated": {
+        "changed": true,
+        "ext_id": null,
+        "failed": false,
+        "response": {
+            "content": "<p><b>Authorized access only.</b><br> All activity on this Nutanix Prism Central instance is logged and monitored. By clicking Accept you agree to the acceptable-use policy of your organization.</p>",
+            "created_time": "2026-06-29T07:18:36.280134+00:00",
+            "is_enabled": true,
+            "last_updated_time": "2026-07-21T06:50:36.855619+00:00"
+        },
+        "skipped": false,
+        "task_ext_id": null
+    }
+}
+
+TASK [Update the welcome banner content again (idempotency demo)] **************
+skipping: [localhost] => {"changed": false, "ext_id": null, "msg": "Welcome banner is already in the desired state. Skipping update.", "response": {"content": "<p><b>Authorized access only.</b><br> All activity on this Nutanix Prism Central instance is logged and monitored. By clicking Accept you agree to the acceptable-use policy of your organization.</p>", "created_time": "2026-06-29T07:18:36.280134+00:00", "is_enabled": true, "last_updated_time": "2026-07-21T06:50:36.855653+00:00"}, "task_ext_id": null}
+
+TASK [Show the second update (should be skipped)] ******************************
+ok: [localhost] => {
+    "welcome_banner_second_update": {
+        "changed": false,
+        "ext_id": null,
+        "failed": false,
+        "msg": "Welcome banner is already in the desired state. Skipping update.",
+        "response": {
+            "content": "<p><b>Authorized access only.</b><br> All activity on this Nutanix Prism Central instance is logged and monitored. By clicking Accept you agree to the acceptable-use policy of your organization.</p>",
+            "created_time": "2026-06-29T07:18:36.280134+00:00",
+            "is_enabled": true,
+            "last_updated_time": "2026-07-21T06:50:36.855653+00:00"
+        },
+        "skipped": true,
+        "task_ext_id": null
+    }
+}
+
+TASK [Change only the enablement flag (real update)] ***************************
+changed: [localhost] => {"changed": true, "ext_id": null, "response": {"content": "<p><b>Authorized access only.</b><br> All activity on this Nutanix Prism Central instance is logged and monitored. By clicking Accept you agree to the acceptable-use policy of your organization.</p>", "created_time": "2026-06-29T07:18:36.280134+00:00", "is_enabled": false, "last_updated_time": "2026-07-21T06:50:38.236156+00:00"}, "task_ext_id": null}
+
+TASK [Show the disabled welcome banner] ****************************************
+ok: [localhost] => {
+    "welcome_banner_disabled": {
+        "changed": true,
+        "ext_id": null,
+        "failed": false,
+        "response": {
+            "content": "<p><b>Authorized access only.</b><br> All activity on this Nutanix Prism Central instance is logged and monitored. By clicking Accept you agree to the acceptable-use policy of your organization.</p>",
+            "created_time": "2026-06-29T07:18:36.280134+00:00",
+            "is_enabled": false,
+            "last_updated_time": "2026-07-21T06:50:38.236156+00:00"
+        },
+        "skipped": false,
+        "task_ext_id": null
+    }
+}
+
+TASK [Reset the welcome banner to defaults (delete-equivalent)] ****************
+changed: [localhost] => {"changed": true, "ext_id": null, "msg": "Welcome banner has been reset to the default state.", "response": {"content": "Write HTML code here", "created_time": "2026-06-29T07:18:36.280134+00:00", "is_enabled": false, "last_updated_time": "2026-07-21T06:50:38.920567+00:00"}, "task_ext_id": null}
+
+TASK [Show the reset welcome banner] *******************************************
+ok: [localhost] => {
+    "welcome_banner_reset": {
+        "changed": true,
+        "ext_id": null,
+        "failed": false,
+        "msg": "Welcome banner has been reset to the default state.",
+        "response": {
+            "content": "Write HTML code here",
+            "created_time": "2026-06-29T07:18:36.280134+00:00",
+            "is_enabled": false,
+            "last_updated_time": "2026-07-21T06:50:38.920567+00:00"
+        },
+        "skipped": false,
+        "task_ext_id": null
+    }
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=9    changed=3    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
+
