@@ -1,0 +1,38 @@
+---
+# Summary:
+# This playbook shows how to control synchronous replication on a
+# Volume Group that is already protected by a synchronous protection policy:
+#   1. Pause synchronous replication for the Volume Group.
+#   2. Resume synchronous replication for the Volume Group.
+#
+# Prerequisites:
+#   - Two Nutanix clusters registered to the same Prism Central with an
+#     RTT of less than 5 ms and identically named storage containers.
+#   - A synchronous Protection Policy exists, and the target Volume Group
+#     is already associated with that policy (i.e. it is in a synced state).
+
+- name: Volume Group Synchronous Replication playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+  tasks:
+    - name: Set Volume Group identifiers
+      ansible.builtin.set_fact:
+        vg_ext_id: "f4b1b3b4-4b1b-4b1b-4b1b-4b1b4b1b4b1b"
+
+    - name: Pause synchronous replication for a Volume Group
+      nutanix.ncp.ntnx_volume_group_replication_v2:
+        state: absent
+        ext_id: "{{ vg_ext_id }}"
+      register: pause_result
+
+    - name: Resume synchronous replication for a Volume Group
+      nutanix.ncp.ntnx_volume_group_replication_v2:
+        state: present
+        ext_id: "{{ vg_ext_id }}"
+      register: resume_result
