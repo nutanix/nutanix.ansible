@@ -1,0 +1,70 @@
+---
+# Summary:
+# This playbook demonstrates the Nutanix Files UserMapping v4 modules:
+# 1. Upload (bulk configure) user mappings to a file server from a CSV file.
+# 2. Download the user mappings of a file server.
+# 3. Download the user mappings of a file server and save them to a local file.
+#
+# Connection parameters are configured ONCE using a play-level `module_defaults`
+# block so that they do not need to be repeated on every task.
+#
+# NOTE: `file_server_ext_id` must be replaced with the external identifier of an
+# existing file server in your Prism Central. User mappings are used to map
+# identities across the SMB and NFS protocols for multi-protocol shares.
+
+- name: Nutanix Files UserMapping playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "10.44.76.28"
+      nutanix_username: "admin"
+      nutanix_password: "Nutanix.123"
+      validate_certs: false
+  tasks:
+    - name: Setting variables
+      ansible.builtin.set_fact:
+        file_server_ext_id: "d1e2f3a4-b5c6-47d8-9e0f-1a2b3c4d5e6f"
+        user_mappings_file: "/tmp/user_mappings.csv"
+        downloaded_user_mappings_file: "/tmp/downloaded_user_mappings.csv"
+
+    - name: Create a sample user mappings CSV file to upload
+      ansible.builtin.copy:
+        dest: "{{ user_mappings_file }}"
+        mode: "0644"
+        content: |
+          SMB User,NFS User ID,NFS Group ID
+          DOMAIN\jdoe,1001,2001
+          DOMAIN\asmith,1002,2002
+
+    - name: Upload user mappings to the file server
+      nutanix.ncp.ntnx_user_mapping_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        path: "{{ user_mappings_file }}"
+      register: upload_result
+      ignore_errors: true
+
+    - name: Print the upload user mappings result
+      ansible.builtin.debug:
+        var: upload_result
+
+    - name: Download user mappings of the file server
+      nutanix.ncp.ntnx_files_user_mappings_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+      register: download_result
+      ignore_errors: true
+
+    - name: Print the download user mappings result
+      ansible.builtin.debug:
+        var: download_result
+
+    - name: Download user mappings of the file server and save to a local file
+      nutanix.ncp.ntnx_files_user_mappings_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        path: "{{ downloaded_user_mappings_file }}"
+      register: download_to_file_result
+      ignore_errors: true
+
+    - name: Print the download-to-file user mappings result
+      ansible.builtin.debug:
+        var: download_to_file_result

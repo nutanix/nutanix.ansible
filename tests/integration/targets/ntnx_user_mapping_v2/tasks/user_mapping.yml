@@ -1,0 +1,265 @@
+---
+##############################################################################
+# Test plan for Nutanix Files UserMapping v4 modules
+#
+# Modules under test:
+#   - ntnx_user_mapping_v2               (upload / bulk configure user mappings)
+#   - ntnx_files_user_mappings_info_v2   (download user mappings)
+#
+# Scenarios covered:
+#   A. check_mode (no API call):
+#      - Upload with all attributes (spec/preview only).
+#   B. Negative / argument-validation (no API call):
+#      - Upload missing file_server_ext_id.
+#      - Upload missing path.
+#      - Upload with a path that is not a valid file.
+#      - Download (info) missing file_server_ext_id.
+#   C. Live API tests (only run when a file server exists on the cluster):
+#      - Upload user mappings from a CSV file.
+#      - Download user mappings.
+#      - Download user mappings and save them to a local file.
+#      - Download with an invalid file server ext_id (expect error).
+#
+# The user mappings feature requires the Nutanix Files service to be enabled and
+# at least one file server to be present. When no file server can be discovered
+# (e.g. the Files service is not deployed on the cluster) the live API tests are
+# explicitly skipped with a message, and only the check_mode and negative tests
+# run. Live tests never use a hardcoded file server ext_id: it is discovered at
+# runtime from the file-servers API.
+##############################################################################
+
+- name: Start Nutanix Files UserMapping tests
+  ansible.builtin.debug:
+    msg: Start Nutanix Files UserMapping tests
+
+- name: Generate random suffix for unique file names
+  ansible.builtin.set_fact:
+    random_name: "{{ 99999999 | random | string }}"
+
+- name: Set file paths for the tests
+  ansible.builtin.set_fact:
+    user_mappings_file: "/tmp/user_mappings_{{ random_name }}.csv"
+    downloaded_user_mappings_file: "/tmp/downloaded_user_mappings_{{ random_name }}.csv"
+    missing_user_mappings_file: "/tmp/does_not_exist_{{ random_name }}.csv"
+
+- name: Create a sample user mappings CSV file to upload
+  ansible.builtin.copy:
+    dest: "{{ user_mappings_file }}"
+    mode: "0644"
+    content: |
+      SMB User,NFS User ID,NFS Group ID
+      DOMAIN\jdoe,1001,2001
+      DOMAIN\asmith,1002,2002
+
+########################################################################################
+# A. check_mode tests (no API call)
+########################################################################################
+
+- name: Upload user mappings with all attributes - check mode
+  nutanix.ncp.ntnx_user_mapping_v2:
+    file_server_ext_id: "d1e2f3a4-b5c6-47d8-9e0f-1a2b3c4d5e6f"
+    path: "{{ user_mappings_file }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Upload user mappings with all attributes - check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "d1e2f3a4-b5c6-47d8-9e0f-1a2b3c4d5e6f"
+      - "'will be uploaded' in result.msg"
+    success_msg: "Upload user mappings check mode generated the expected preview"
+    fail_msg: "Upload user mappings check mode did not behave as expected"
+
+########################################################################################
+# B. Negative / argument-validation tests (no API call)
+########################################################################################
+
+- name: Upload user mappings with missing file_server_ext_id
+  nutanix.ncp.ntnx_user_mapping_v2:
+    path: "{{ user_mappings_file }}"
+  register: result
+  ignore_errors: true
+
+- name: Upload user mappings with missing file_server_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'missing required arguments: file_server_ext_id' in result.msg"
+    success_msg: "Upload with missing file_server_ext_id failed as expected"
+    fail_msg: "Upload with missing file_server_ext_id did not fail as expected"
+
+- name: Upload user mappings with missing path
+  nutanix.ncp.ntnx_user_mapping_v2:
+    file_server_ext_id: "d1e2f3a4-b5c6-47d8-9e0f-1a2b3c4d5e6f"
+  register: result
+  ignore_errors: true
+
+- name: Upload user mappings with missing path status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'missing required arguments: path' in result.msg"
+    success_msg: "Upload with missing path failed as expected"
+    fail_msg: "Upload with missing path did not fail as expected"
+
+- name: Upload user mappings with a path that is not a valid file
+  nutanix.ncp.ntnx_user_mapping_v2:
+    file_server_ext_id: "d1e2f3a4-b5c6-47d8-9e0f-1a2b3c4d5e6f"
+    path: "{{ missing_user_mappings_file }}"
+  register: result
+  ignore_errors: true
+
+- name: Upload user mappings with a path that is not a valid file status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'is not a valid file' in result.msg"
+    success_msg: "Upload with an invalid file path failed as expected"
+    fail_msg: "Upload with an invalid file path did not fail as expected"
+
+- name: Download user mappings with missing file_server_ext_id
+  nutanix.ncp.ntnx_files_user_mappings_info_v2: {}
+  register: result
+  ignore_errors: true
+
+- name: Download user mappings with missing file_server_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'missing required arguments: file_server_ext_id' in result.msg"
+    success_msg: "Download with missing file_server_ext_id failed as expected"
+    fail_msg: "Download with missing file_server_ext_id did not fail as expected"
+
+########################################################################################
+# C. Discover a file server for the live API tests
+########################################################################################
+
+- name: Discover an existing file server
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:9440/api/files/v4.0/config/file-servers?$limit=1"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs | default(false) }}"
+    return_content: true
+    status_code: [200, 401, 403, 404, 500, 503]
+  register: file_servers_response
+  ignore_errors: true
+
+- name: Set file server ext_id when one is available
+  ansible.builtin.set_fact:
+    file_server_ext_id: "{{ file_servers_response.json.data[0].extId }}"
+  when:
+    - file_servers_response.status | default(0) == 200
+    - file_servers_response.json is defined
+    - file_servers_response.json.data is defined
+    - file_servers_response.json.data | length > 0
+
+- name: Report that live tests will be skipped when no file server is available
+  ansible.builtin.debug:
+    msg: >-
+      No file server could be discovered on the cluster (status
+      {{ file_servers_response.status | default('n/a') }}). The Nutanix Files
+      service must be enabled and at least one file server must exist to run the
+      live user mappings upload/download tests. Skipping the live API tests.
+  when: file_server_ext_id is not defined
+
+########################################################################################
+# C. Live API tests (only when a file server is available)
+########################################################################################
+
+- name: Upload user mappings to the file server
+  nutanix.ncp.ntnx_user_mapping_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    path: "{{ user_mappings_file }}"
+  register: upload_result
+  ignore_errors: true
+  when: file_server_ext_id is defined
+
+- name: Upload user mappings to the file server status
+  ansible.builtin.assert:
+    that:
+      - upload_result is defined
+      - upload_result.changed == true
+      - upload_result.failed == false
+      - upload_result.ext_id == file_server_ext_id
+      - upload_result.response is defined
+    success_msg: "User mappings uploaded successfully"
+    fail_msg: "User mappings upload failed"
+  when: file_server_ext_id is defined
+
+- name: Download user mappings from the file server
+  nutanix.ncp.ntnx_files_user_mappings_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+  register: download_result
+  ignore_errors: true
+  when: file_server_ext_id is defined
+
+- name: Download user mappings from the file server status
+  ansible.builtin.assert:
+    that:
+      - download_result is defined
+      - download_result.changed == false
+      - download_result.failed == false
+      - download_result.ext_id == file_server_ext_id
+      - download_result.response is defined
+    success_msg: "User mappings downloaded successfully"
+    fail_msg: "User mappings download failed"
+  when: file_server_ext_id is defined
+
+- name: Download user mappings and save to a local file
+  nutanix.ncp.ntnx_files_user_mappings_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    path: "{{ downloaded_user_mappings_file }}"
+  register: download_to_file_result
+  ignore_errors: true
+  when: file_server_ext_id is defined
+
+- name: Download user mappings and save to a local file status
+  ansible.builtin.assert:
+    that:
+      - download_to_file_result is defined
+      - download_to_file_result.changed == false
+      - download_to_file_result.failed == false
+      - download_to_file_result.path == downloaded_user_mappings_file
+    success_msg: "User mappings downloaded and saved to a local file successfully"
+    fail_msg: "User mappings download to a local file failed"
+  when: file_server_ext_id is defined
+
+- name: Download user mappings using an invalid file server ext_id
+  nutanix.ncp.ntnx_files_user_mappings_info_v2:
+    file_server_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: invalid_download_result
+  ignore_errors: true
+  when: file_server_ext_id is defined
+
+- name: Download user mappings using an invalid file server ext_id status
+  ansible.builtin.assert:
+    that:
+      - invalid_download_result is defined
+      - invalid_download_result.failed == true
+    success_msg: "Download with an invalid file server ext_id failed as expected"
+    fail_msg: "Download with an invalid file server ext_id did not fail as expected"
+  when: file_server_ext_id is defined
+
+########################################################################################
+# Cleanup
+########################################################################################
+
+- name: Remove the local user mappings files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ user_mappings_file }}"
+    - "{{ downloaded_user_mappings_file }}"
+  failed_when: false
