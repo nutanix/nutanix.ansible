@@ -1,0 +1,717 @@
+---
+##############################################################################
+# Test plan for ntnx_files_partner_server_v2 / ntnx_files_partner_servers_info_v2
+#
+# The following scenarios are covered end-to-end as a Domain-Expert QA engineer.
+# A partner server always lives under a file server, therefore every request
+# needs a valid `file_server_ext_id`.
+#
+# Argument-spec / negative scenarios (do NOT require a live Files service):
+#   - Missing required `file_server_ext_id`.
+#   - Create with missing required `vendor_name` and `partner_type`.
+#   - Create with an invalid `partner_type` enum value.
+#   - `vendor_properties` and `backup_server_config` are mutually exclusive.
+#   - Backup access config with an invalid `access_type` enum value.
+#   - Delete with missing `ext_id`.
+#   - Create check-mode with ALL notification attributes (no API call).
+#   - Create check-mode with ALL backup attributes (no API call).
+#   - Delete check-mode (no API call).
+#
+# Live lifecycle scenarios (require a reachable Files file server):
+#   - Create notification partner server with minimum attributes.
+#   - Create notification partner server with ALL attributes.
+#   - Create backup partner server with ALL attributes.
+#   - Create idempotency (same name -> skipped).
+#   - Update check-mode with ALL attributes.
+#   - Update partner server with ALL attributes (scalar + enum + list changes).
+#   - Update idempotency (Nothing to change).
+#   - Update with wrong ext_id (error).
+#   - Info: get by ext_id, list all, filter, limit, invalid ext_id.
+#   - Delete partner servers created in this run.
+#   - Delete with wrong ext_id (error).
+##############################################################################
+
+- name: Start ntnx_files_partner_server_v2 integration tests
+  ansible.builtin.debug:
+    msg: Start ntnx_files_partner_server_v2 integration tests
+
+- name: Generate random names
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    suffix_name: "ansible"
+    todelete: []
+
+- name: Set names for partner servers
+  ansible.builtin.set_fact:
+    notification_ps_name: "ps_notif_{{ suffix_name }}_{{ random_name }}"
+    backup_ps_name: "ps_backup_{{ suffix_name }}_{{ random_name }}"
+
+- name: Resolve file server external ID from integration config
+  ansible.builtin.set_fact:
+    file_server_ext_id: "{{ file_server_ext_id | default(partner_server.file_server_ext_id | default('')) }}"
+
+########################################################################################
+# Negative / argument-spec validation tests (no live Files service required)
+########################################################################################
+
+- name: Create partner server with missing file_server_ext_id
+  nutanix.ncp.ntnx_files_partner_server_v2:
+    name: "no_fs_partner_server"
+    vendor_name: "DataLens"
+    partner_type: "NOTIFICATION"
+  register: result
+  ignore_errors: true
+
+- name: Create partner server with missing file_server_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'missing required arguments: file_server_ext_id' in result.msg"
+    success_msg: "Create partner server with missing file_server_ext_id failed as expected"
+    fail_msg: "Create partner server with missing file_server_ext_id did not fail as expected"
+
+- name: Create partner server with missing vendor_name and partner_type
+  nutanix.ncp.ntnx_files_partner_server_v2:
+    file_server_ext_id: "{{ file_server_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    name: "missing_required_partner_server"
+  register: result
+  ignore_errors: true
+
+- name: Create partner server with missing vendor_name and partner_type status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - 'result.msg == "Missing required parameter(s): vendor_name, partner_type"'
+    success_msg: "Create partner server with missing required params failed as expected"
+    fail_msg: "Create partner server with missing required params did not fail as expected"
+
+- name: Create partner server with invalid partner_type
+  nutanix.ncp.ntnx_files_partner_server_v2:
+    file_server_ext_id: "{{ file_server_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    name: "invalid_partner_type"
+    vendor_name: "DataLens"
+    partner_type: "INVALID_TYPE"
+  register: result
+  ignore_errors: true
+
+- name: Create partner server with invalid partner_type status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'must be one of' in result.msg"
+    success_msg: "Create partner server with invalid partner_type failed as expected"
+    fail_msg: "Create partner server with invalid partner_type did not fail as expected"
+
+- name: Create partner server with mutually exclusive vendor_properties and backup_server_config
+  nutanix.ncp.ntnx_files_partner_server_v2:
+    file_server_ext_id: "{{ file_server_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    name: "mutually_exclusive_partner_server"
+    vendor_name: "DataLens"
+    partner_type: "NOTIFICATION"
+    vendor_properties:
+      address:
+        ipv4:
+          value: "10.44.77.10"
+      port: 29092
+    backup_server_config:
+      expiry_in_secs: 86400
+  register: result
+  ignore_errors: true
+
+- name: Create partner server with mutually exclusive attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'mutually exclusive' in result.msg"
+    success_msg: "Create partner server with mutually exclusive attributes failed as expected"
+    fail_msg: "Create partner server with mutually exclusive attributes did not fail as expected"
+
+- name: Create backup partner server with invalid access_type
+  nutanix.ncp.ntnx_files_partner_server_v2:
+    file_server_ext_id: "{{ file_server_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    name: "invalid_access_type"
+    vendor_name: "BackupVendor"
+    partner_type: "BACKUP"
+    backup_server_config:
+      backup_client_access_configs:
+        - address:
+            ipv4:
+              value: "10.44.77.20"
+          access_type: "INVALID_ACCESS"
+          operation_type: "ADD"
+  register: result
+  ignore_errors: true
+
+- name: Create backup partner server with invalid access_type status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'must be one of' in result.msg"
+    success_msg: "Create backup partner server with invalid access_type failed as expected"
+    fail_msg: "Create backup partner server with invalid access_type did not fail as expected"
+
+- name: Delete partner server with missing ext_id
+  nutanix.ncp.ntnx_files_partner_server_v2:
+    file_server_ext_id: "{{ file_server_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Delete partner server with missing ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is absent but all of the following are missing: ext_id' in result.msg"
+    success_msg: "Delete partner server with missing ext_id failed as expected"
+    fail_msg: "Delete partner server with missing ext_id did not fail as expected"
+
+########################################################################################
+# Check mode tests (create and delete do not make API calls in check mode)
+########################################################################################
+
+- name: Generate spec for creating notification partner server using check mode with all attributes
+  nutanix.ncp.ntnx_files_partner_server_v2:
+    file_server_ext_id: "{{ file_server_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    name: "check_mode_notification_ps"
+    vendor_name: "DataLens"
+    description: "Notification partner server created in check mode"
+    partner_type: "NOTIFICATION"
+    vendor_properties:
+      address:
+        ipv4:
+          value: "10.44.77.10"
+          prefix_length: 32
+      port: 29092
+      server_type: "PRIMARY"
+      custom_properties:
+        - name: "kafkatopic"
+          value: "1P1R"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for creating notification partner server using check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "check_mode_notification_ps"
+      - result.response.vendor_name == "DataLens"
+      - result.response.description == "Notification partner server created in check mode"
+      - result.response.partner_type == "NOTIFICATION"
+      - result.response.vendor_properties.address.ipv4.value == "10.44.77.10"
+      - result.response.vendor_properties.port == 29092
+      - result.response.vendor_properties.server_type == "PRIMARY"
+      - result.response.vendor_properties.custom_properties | length == 1
+      - result.response.vendor_properties.custom_properties[0].name == "kafkatopic"
+      - result.response.vendor_properties.custom_properties[0].value == "1P1R"
+    success_msg: "Spec for creating notification partner server using check mode with all attributes generated successfully"
+    fail_msg: "Spec for creating notification partner server using check mode with all attributes generation failed"
+
+- name: Generate spec for creating backup partner server using check mode with all attributes
+  nutanix.ncp.ntnx_files_partner_server_v2:
+    file_server_ext_id: "{{ file_server_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    name: "check_mode_backup_ps"
+    vendor_name: "BackupVendor"
+    description: "Backup partner server created in check mode"
+    partner_type: "BACKUP"
+    backup_server_config:
+      expiry_in_secs: 43200
+      backup_client_access_configs:
+        - address:
+            ipv4:
+              value: "10.44.77.20"
+          access_type: "READ_WRITE"
+          operation_type: "ADD"
+          mount_target_ext_id: "18f78959-14a6-4c47-b5db-920460c4b668"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for creating backup partner server using check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "check_mode_backup_ps"
+      - result.response.vendor_name == "BackupVendor"
+      - result.response.partner_type == "BACKUP"
+      - result.response.backup_server_config.expiry_in_secs == 43200
+      - result.response.backup_server_config.backup_client_access_configs | length == 1
+      - result.response.backup_server_config.backup_client_access_configs[0].address.ipv4.value == "10.44.77.20"
+      - result.response.backup_server_config.backup_client_access_configs[0].access_type == "READ_WRITE"
+      - result.response.backup_server_config.backup_client_access_configs[0].operation_type == "ADD"
+      - >-
+        result.response.backup_server_config.backup_client_access_configs[0].mount_target_ext_id
+        == "18f78959-14a6-4c47-b5db-920460c4b668"
+    success_msg: "Spec for creating backup partner server using check mode with all attributes generated successfully"
+    fail_msg: "Spec for creating backup partner server using check mode with all attributes generation failed"
+
+- name: Delete partner server with check mode
+  nutanix.ncp.ntnx_files_partner_server_v2:
+    file_server_ext_id: "{{ file_server_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    ext_id: "aa04b8ce-6b23-4d5e-8f6a-9e0b3c1d2e4f"
+    state: absent
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Delete partner server with check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - "'will be deleted' in result.msg"
+    success_msg: "Delete partner server with check mode passed"
+    fail_msg: "Delete partner server with check mode failed"
+
+########################################################################################
+# Preflight: check whether a live Files file server is reachable for this run.
+# The live lifecycle tests below require a reachable Files service and a valid
+# file_server_ext_id. If either is missing they are skipped with a loud message
+# (documented in the PR body), never silently.
+########################################################################################
+
+- name: Preflight - list partner servers for the file server
+  nutanix.ncp.ntnx_files_partner_servers_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+  register: preflight
+  ignore_errors: true
+  when: file_server_ext_id | length > 0
+
+- name: Set live tests availability flag
+  ansible.builtin.set_fact:
+    files_service_available: >-
+      {{ (file_server_ext_id | length > 0) and (preflight is defined) and (preflight.failed | default(true) == false) }}
+
+- name: Notify that live lifecycle tests are skipped
+  ansible.builtin.debug:
+    msg: >-
+      Skipping live partner server lifecycle tests: a reachable Files file server
+      (file_server_ext_id) is required but not available in this environment.
+  when: not (files_service_available | bool)
+
+########################################################################################
+# Live lifecycle tests
+########################################################################################
+
+- name: Partner server live lifecycle
+  when: files_service_available | bool
+  block:
+    - name: Create notification partner server with minimum attributes
+      nutanix.ncp.ntnx_files_partner_server_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        name: "{{ notification_ps_name }}_min"
+        vendor_name: "DataLens"
+        partner_type: "NOTIFICATION"
+        vendor_properties:
+          address:
+            ipv4:
+              value: "10.44.77.10"
+          port: 29092
+      register: result
+      ignore_errors: true
+
+    - name: Create notification partner server with minimum attributes status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == true
+          - result.failed == false
+          - result.ext_id is defined
+          - result.task_ext_id is defined
+          - result.response is defined
+          - result.response.name == "{{ notification_ps_name }}_min"
+          - result.response.vendor_name == "DataLens"
+          - result.response.partner_type == "NOTIFICATION"
+          - result.response.vendor_properties.port == 29092
+        success_msg: "Notification partner server with minimum attributes created successfully"
+        fail_msg: "Notification partner server with minimum attributes creation failed"
+
+    - name: Add partner server to todelete list
+      ansible.builtin.set_fact:
+        todelete: "{{ todelete + [result.ext_id] }}"
+
+    - name: Create notification partner server with all attributes
+      nutanix.ncp.ntnx_files_partner_server_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        name: "{{ notification_ps_name }}"
+        vendor_name: "DataLens"
+        description: "Notification partner server created by Ansible integration tests"
+        partner_type: "NOTIFICATION"
+        vendor_properties:
+          address:
+            ipv4:
+              value: "10.44.77.10"
+              prefix_length: 32
+          port: 29092
+          server_type: "PRIMARY"
+          custom_properties:
+            - name: "kafkatopic"
+              value: "1P1R"
+      register: result
+      ignore_errors: true
+
+    - name: Create notification partner server with all attributes status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == true
+          - result.failed == false
+          - result.ext_id is defined
+          - result.task_ext_id is defined
+          - result.response is defined
+          - result.response.name == "{{ notification_ps_name }}"
+          - result.response.vendor_name == "DataLens"
+          - result.response.description == "Notification partner server created by Ansible integration tests"
+          - result.response.partner_type == "NOTIFICATION"
+          - result.response.vendor_properties.address.ipv4.value == "10.44.77.10"
+          - result.response.vendor_properties.port == 29092
+          - result.response.vendor_properties.server_type == "PRIMARY"
+          - result.response.vendor_properties.custom_properties | length == 1
+          - result.response.vendor_properties.custom_properties[0].name == "kafkatopic"
+          - result.response.vendor_properties.custom_properties[0].value == "1P1R"
+        success_msg: "Notification partner server with all attributes created successfully"
+        fail_msg: "Notification partner server with all attributes creation failed"
+
+    - name: Set notification partner server ext_id
+      ansible.builtin.set_fact:
+        notification_ps_ext_id: "{{ result.ext_id }}"
+        todelete: "{{ todelete + [result.ext_id] }}"
+
+    - name: Create backup partner server with all attributes
+      nutanix.ncp.ntnx_files_partner_server_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        name: "{{ backup_ps_name }}"
+        vendor_name: "BackupVendor"
+        description: "Backup partner server created by Ansible integration tests"
+        partner_type: "BACKUP"
+        backup_server_config:
+          expiry_in_secs: 86400
+          backup_client_access_configs:
+            - address:
+                ipv4:
+                  value: "10.44.77.20"
+              access_type: "READ_WRITE"
+              operation_type: "ADD"
+      register: result
+      ignore_errors: true
+
+    - name: Create backup partner server with all attributes status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == true
+          - result.failed == false
+          - result.ext_id is defined
+          - result.response is defined
+          - result.response.name == "{{ backup_ps_name }}"
+          - result.response.partner_type == "BACKUP"
+          - result.response.backup_server_config.expiry_in_secs == 86400
+          - result.response.backup_server_config.backup_client_access_configs | length >= 1
+        success_msg: "Backup partner server with all attributes created successfully"
+        fail_msg: "Backup partner server with all attributes creation failed"
+
+    - name: Add backup partner server to todelete list
+      ansible.builtin.set_fact:
+        todelete: "{{ todelete + [result.ext_id] }}"
+
+    - name: Create notification partner server with same name (idempotency)
+      nutanix.ncp.ntnx_files_partner_server_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        name: "{{ notification_ps_name }}"
+        vendor_name: "DataLens"
+        partner_type: "NOTIFICATION"
+        vendor_properties:
+          address:
+            ipv4:
+              value: "10.44.77.10"
+          port: 29092
+      register: result
+      ignore_errors: true
+
+    - name: Create notification partner server with same name status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.skipped == true
+          - "'already exists' in result.msg"
+        success_msg: "Create notification partner server idempotency passed"
+        fail_msg: "Create notification partner server idempotency failed"
+
+    - name: Generate spec for updating partner server using check mode with all attributes
+      nutanix.ncp.ntnx_files_partner_server_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ notification_ps_ext_id }}"
+        name: "{{ notification_ps_name }}_updated"
+        vendor_name: "DataLens"
+        description: "Updated notification partner server"
+        partner_type: "NOTIFICATION"
+        vendor_properties:
+          address:
+            ipv4:
+              value: "10.44.77.11"
+          port: 39092
+          server_type: "PRIMARY"
+      check_mode: true
+      register: result
+      ignore_errors: true
+
+    - name: Generate spec for updating partner server using check mode status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.failed == false
+          - result.response is defined
+          - result.response.name == "{{ notification_ps_name }}_updated"
+          - result.response.vendor_properties.port == 39092
+          - result.response.vendor_properties.address.ipv4.value == "10.44.77.11"
+        success_msg: "Spec for updating partner server using check mode generated successfully"
+        fail_msg: "Spec for updating partner server using check mode generation failed"
+
+    - name: Update partner server with all attributes
+      nutanix.ncp.ntnx_files_partner_server_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ notification_ps_ext_id }}"
+        name: "{{ notification_ps_name }}_updated"
+        vendor_name: "DataLens"
+        description: "Updated notification partner server"
+        partner_type: "NOTIFICATION"
+        vendor_properties:
+          address:
+            ipv4:
+              value: "10.44.77.11"
+          port: 39092
+          server_type: "SECONDARY"
+          custom_properties:
+            - name: "kafkatopic"
+              value: "2P2R"
+      register: result
+      ignore_errors: true
+
+    - name: Update partner server with all attributes status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == true
+          - result.failed == false
+          - result.response is defined
+          - result.response.name == "{{ notification_ps_name }}_updated"
+          - result.response.description == "Updated notification partner server"
+          - result.response.vendor_properties.port == 39092
+          - result.response.vendor_properties.address.ipv4.value == "10.44.77.11"
+          - result.response.vendor_properties.server_type == "SECONDARY"
+          - result.response.vendor_properties.custom_properties[0].value == "2P2R"
+        success_msg: "Update partner server with all attributes passed"
+        fail_msg: "Update partner server with all attributes failed"
+
+    - name: Update partner server with same values (idempotency)
+      nutanix.ncp.ntnx_files_partner_server_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ notification_ps_ext_id }}"
+        name: "{{ notification_ps_name }}_updated"
+        vendor_name: "DataLens"
+        description: "Updated notification partner server"
+        partner_type: "NOTIFICATION"
+        vendor_properties:
+          address:
+            ipv4:
+              value: "10.44.77.11"
+          port: 39092
+          server_type: "SECONDARY"
+          custom_properties:
+            - name: "kafkatopic"
+              value: "2P2R"
+      register: result
+      ignore_errors: true
+
+    - name: Update partner server with same values status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.msg == "Nothing to change."
+        success_msg: "Update partner server idempotency passed"
+        fail_msg: "Update partner server idempotency failed"
+
+    - name: Update partner server with wrong ext_id
+      nutanix.ncp.ntnx_files_partner_server_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "00000000-0000-0000-0000-000000000000"
+        name: "wrong_ext_id_ps"
+        vendor_name: "DataLens"
+        partner_type: "NOTIFICATION"
+        vendor_properties:
+          address:
+            ipv4:
+              value: "10.44.77.11"
+          port: 39092
+      register: result
+      ignore_errors: true
+
+    - name: Update partner server with wrong ext_id status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == true
+        success_msg: "Update partner server with wrong ext_id failed as expected"
+        fail_msg: "Update partner server with wrong ext_id did not fail as expected"
+
+    ####################################################################################
+    # Info module tests
+    ####################################################################################
+
+    - name: Fetch partner server using ext_id
+      nutanix.ncp.ntnx_files_partner_servers_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ notification_ps_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch partner server using ext_id status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.response is defined
+          - result.ext_id == notification_ps_ext_id
+          - result.response.name == "{{ notification_ps_name }}_updated"
+          - result.response.partner_type == "NOTIFICATION"
+        success_msg: "Fetch partner server using ext_id passed"
+        fail_msg: "Fetch partner server using ext_id failed"
+
+    - name: List all partner servers for the file server
+      nutanix.ncp.ntnx_files_partner_servers_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all partner servers status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.response is defined
+          - result.response | length >= 2
+        success_msg: "List all partner servers passed"
+        fail_msg: "List all partner servers failed"
+
+    - name: List partner servers with filter
+      nutanix.ncp.ntnx_files_partner_servers_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        filter: "name eq '{{ notification_ps_name }}_updated'"
+      register: result
+      ignore_errors: true
+
+    - name: List partner servers with filter status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.response is defined
+          - result.response | length == 1
+          - result.response[0].name == "{{ notification_ps_name }}_updated"
+        success_msg: "List partner servers with filter passed"
+        fail_msg: "List partner servers with filter failed"
+
+    - name: List partner servers with limit
+      nutanix.ncp.ntnx_files_partner_servers_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: List partner servers with limit status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.response is defined
+          - result.response | length == 1
+        success_msg: "List partner servers with limit passed"
+        fail_msg: "List partner servers with limit failed"
+
+    - name: Fetch partner server using wrong ext_id
+      nutanix.ncp.ntnx_files_partner_servers_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "00000000-0000-0000-0000-000000000000"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch partner server using wrong ext_id status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == true
+        success_msg: "Fetch partner server using wrong ext_id failed as expected"
+        fail_msg: "Fetch partner server using wrong ext_id did not fail as expected"
+
+    ####################################################################################
+    # Delete tests
+    ####################################################################################
+
+    - name: Delete all created partner servers
+      nutanix.ncp.ntnx_files_partner_server_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ item }}"
+        state: absent
+      register: result
+      ignore_errors: true
+      loop: "{{ todelete }}"
+
+    - name: Deletion status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == true
+          - result.results | length == todelete | length
+          - result.msg == "All items completed"
+        success_msg: "All partner servers deleted successfully"
+        fail_msg: "Unable to delete all partner servers"
+
+    - name: Reset todelete list
+      ansible.builtin.set_fact:
+        todelete: []
+
+    - name: Delete partner server with wrong ext_id
+      nutanix.ncp.ntnx_files_partner_server_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "00000000-0000-0000-0000-000000000000"
+        state: absent
+      register: result
+      ignore_errors: true
+
+    - name: Delete partner server with wrong ext_id status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == true
+        success_msg: "Delete partner server with wrong ext_id failed as expected"
+        fail_msg: "Delete partner server with wrong ext_id did not fail as expected"

@@ -1,0 +1,69 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Partner Server playbook] *************************************************
+
+TASK [Setting variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"file_server_ext_id": "18f78959-14a6-4c47-b5db-920460c4b668"}, "changed": false}
+
+TASK [Create a notification partner server] ************************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching partner server info using name
+Origin: /tmp/example_run.yml:27:7
+
+25         file_server_ext_id: "18f78959-14a6-4c47-b5db-920460c4b668"
+26
+27     - name: Create a notification partner server
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching partner server info using name", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Create a backup partner server] ******************************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching partner server info using name
+Origin: /tmp/example_run.yml:47:7
+
+45       ignore_errors: true
+46
+47     - name: Create a backup partner server
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching partner server info using name", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Set partner server ext_id] ***********************************************
+[ERROR]: Task failed: Finalization of task args for 'ansible.builtin.set_fact' failed: Error while resolving value for 'partner_server_ext_id': object of type 'dict' has no attribute 'ext_id'
+
+Task failed.
+Origin: /tmp/example_run.yml:66:7
+
+64       ignore_errors: true
+65
+66     - name: Set partner server ext_id
+         ^ column 7
+
+<<< caused by >>>
+
+Finalization of task args for 'ansible.builtin.set_fact' failed.
+Origin: /tmp/example_run.yml:67:7
+
+65
+66     - name: Set partner server ext_id
+67       ansible.builtin.set_fact:
+         ^ column 7
+
+<<< caused by >>>
+
+Error while resolving value for 'partner_server_ext_id': object of type 'dict' has no attribute 'ext_id'
+Origin: /tmp/example_run.yml:68:32
+
+66     - name: Set partner server ext_id
+67       ansible.builtin.set_fact:
+68         partner_server_ext_id: "{{ notification_partner_server.ext_id }}"
+                                  ^ column 32
+
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "Task failed: Finalization of task args for 'ansible.builtin.set_fact' failed: Error while resolving value for 'partner_server_ext_id': object of type 'dict' has no attribute 'ext_id'"}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=3    changed=0    unreachable=0    failed=1    skipped=0    rescued=0    ignored=2   
+
