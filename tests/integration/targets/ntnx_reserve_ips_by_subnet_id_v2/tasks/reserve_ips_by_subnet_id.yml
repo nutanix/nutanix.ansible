@@ -1,0 +1,627 @@
+---
+# ==============================================================================
+# Test plan for ntnx_reserve_ips_by_subnet_id_v2 and
+# ntnx_reserve_ips_by_subnet_ids_info_v2
+# ==============================================================================
+# Prerequisites:
+#   - `cluster.uuid`               a valid PE cluster on which to create the subnet
+#   - `virtual_switch.uuid`        a valid virtual switch on that cluster
+#   - `vlan_subnets_ids`           free VLAN IDs (list, index 5 used below)
+#   - `ip_address_management`     network_ip / network_prefix / gateway
+#   - `ip_address_pools`           start_address / end_address (IPAM pool)
+#
+# The suite deliberately covers:
+#   1. Prerequisite creation of a managed VLAN subnet with IPAM (needed because
+#      IPs can only be reserved on subnets that have an IPAM pool).
+#   2. Check-mode tests: exactly ONE for reserve, ONE for unreserve.
+#   3. Real reserve using every `reserve_type` (IP_ADDRESS_LIST,
+#      IP_ADDRESS_COUNT, IP_ADDRESS_RANGE).
+#   4. List reserved IPs via info module — get-by-subnet, and pagination.
+#   5. Real unreserve using every `unreserve_type` (IP_ADDRESS_LIST,
+#      IP_ADDRESS_RANGE, CONTEXT) — each pairs with a matching reserve.
+#   6. Idempotency-style: unreserving with a `client_context` that no longer
+#      matches any reserved IP must be handled gracefully by the platform.
+#   7. Negative tests: missing required params, unknown subnet ext_id,
+#      invalid enum values.
+#   8. Cleanup: remove any remaining reservations and delete the created subnet.
+# ==============================================================================
+
+- name: Start ntnx_reserve_ips_by_subnet_id_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_reserve_ips_by_subnet_id_v2 tests
+
+- name: Generate random suffix for test resource names
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set reservation test facts
+  ansible.builtin.set_fact:
+    subnet_name: "ansible_reserve_ips_{{ random_name }}"
+    reserve_context_list: "ansible_ctx_list_{{ random_name }}"
+    reserve_context_count: "ansible_ctx_count_{{ random_name }}"
+    reserve_context_range: "ansible_ctx_range_{{ random_name }}"
+    ip_list:
+      - "192.168.240.21"
+      - "192.168.240.22"
+    range_start_ip: "192.168.240.25"
+    range_count: 2
+    random_count: 2
+
+# ------------------------------------------------------------------------------
+# 1) Create the managed subnet (prerequisite for IP reservation)
+# ------------------------------------------------------------------------------
+
+- name: Create managed VLAN subnet (prerequisite)
+  nutanix.ncp.ntnx_subnets_v2:
+    state: present
+    name: "{{ subnet_name }}"
+    subnet_type: VLAN
+    cluster_reference: "{{ cluster.uuid }}"
+    virtual_switch_reference: "{{ virtual_switch.uuid }}"
+    network_id: "{{ vlan_subnets_ids[5] }}"
+    ip_config:
+      - ipv4:
+          ip_subnet:
+            ip:
+              value: "{{ ip_address_management.network_ip }}"
+            prefix_length: "{{ ip_address_management.network_prefix }}"
+          default_gateway_ip:
+            value: "{{ ip_address_management.gateway_ip_address }}"
+          pool_list:
+            - start_ip:
+                value: "{{ ip_address_pools.start_address }}"
+              end_ip:
+                value: "{{ ip_address_pools.end_address }}"
+  register: subnet_create_result
+  ignore_errors: true
+
+- name: Managed subnet creation status
+  ansible.builtin.assert:
+    that:
+      - subnet_create_result is defined
+      - subnet_create_result.failed == false
+      - subnet_create_result.changed == true
+      - subnet_create_result.response is defined
+      - subnet_create_result.ext_id is defined
+      - subnet_create_result.response.name == subnet_name
+      - subnet_create_result.response.subnet_type == "VLAN"
+    fail_msg: "Failed to create managed subnet prerequisite"
+    success_msg: "Managed VLAN subnet created successfully"
+
+- name: Capture subnet ext_id
+  ansible.builtin.set_fact:
+    subnet_ext_id: "{{ subnet_create_result.ext_id }}"
+
+# ------------------------------------------------------------------------------
+# 2) Check-mode: Reserve (all attributes)
+# ------------------------------------------------------------------------------
+
+- name: Reserve IPs in check mode (all attributes)
+  nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
+    state: present
+    ext_id: "{{ subnet_ext_id }}"
+    reserve_type: IP_ADDRESS_LIST
+    ip_addresses:
+      - ipv4:
+          value: "{{ ip_list[0] }}"
+          prefix_length: 32
+      - ipv4:
+          value: "{{ ip_list[1] }}"
+          prefix_length: 32
+    client_context: "{{ reserve_context_list }}"
+    count: 2
+    start_ip_address:
+      ipv4:
+        value: "192.168.240.30"
+  check_mode: true
+  register: reserve_check_mode_result
+  ignore_errors: true
+
+- name: Verify reserve check-mode spec generation
+  ansible.builtin.assert:
+    that:
+      - reserve_check_mode_result is defined
+      - reserve_check_mode_result.changed == false
+      - reserve_check_mode_result.failed == false
+      - reserve_check_mode_result.ext_id == subnet_ext_id
+      - reserve_check_mode_result.response is defined
+      - reserve_check_mode_result.response.reserve_type == "IP_ADDRESS_LIST"
+      - reserve_check_mode_result.response.client_context == reserve_context_list
+      - reserve_check_mode_result.response.count == 2
+      - reserve_check_mode_result.response.start_ip_address.ipv4.value == "192.168.240.30"
+      - reserve_check_mode_result.response.ip_addresses | length == 2
+      - reserve_check_mode_result.response.ip_addresses[0].ipv4.value == ip_list[0]
+      - reserve_check_mode_result.response.ip_addresses[1].ipv4.value == ip_list[1]
+    fail_msg: "Reserve check_mode did not generate the expected spec"
+    success_msg: "Reserve check_mode generated the expected spec"
+
+# ------------------------------------------------------------------------------
+# 3) Check-mode: Unreserve (all attributes)
+# ------------------------------------------------------------------------------
+
+- name: Unreserve IPs in check mode (all attributes)
+  nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
+    state: absent
+    ext_id: "{{ subnet_ext_id }}"
+    unreserve_type: IP_ADDRESS_LIST
+    ip_addresses:
+      - ipv4:
+          value: "{{ ip_list[0] }}"
+          prefix_length: 32
+      - ipv4:
+          value: "{{ ip_list[1] }}"
+          prefix_length: 32
+    client_context: "{{ reserve_context_list }}"
+    count: 2
+    start_ip_address:
+      ipv4:
+        value: "192.168.240.30"
+  check_mode: true
+  register: unreserve_check_mode_result
+  ignore_errors: true
+
+- name: Verify unreserve check-mode spec generation
+  ansible.builtin.assert:
+    that:
+      - unreserve_check_mode_result is defined
+      - unreserve_check_mode_result.changed == false
+      - unreserve_check_mode_result.failed == false
+      - unreserve_check_mode_result.ext_id == subnet_ext_id
+      - unreserve_check_mode_result.response is defined
+      - unreserve_check_mode_result.response.unreserve_type == "IP_ADDRESS_LIST"
+      - unreserve_check_mode_result.response.client_context == reserve_context_list
+      - unreserve_check_mode_result.response.count == 2
+      - unreserve_check_mode_result.response.start_ip_address.ipv4.value == "192.168.240.30"
+      - unreserve_check_mode_result.response.ip_addresses | length == 2
+      - unreserve_check_mode_result.response.ip_addresses[0].ipv4.value == ip_list[0]
+      - unreserve_check_mode_result.response.ip_addresses[1].ipv4.value == ip_list[1]
+    fail_msg: "Unreserve check_mode did not generate the expected spec"
+    success_msg: "Unreserve check_mode generated the expected spec"
+
+# ------------------------------------------------------------------------------
+# 4) Real reserve — IP_ADDRESS_LIST (minimal attributes)
+# ------------------------------------------------------------------------------
+
+- name: Reserve IPs (IP_ADDRESS_LIST — required fields only)
+  nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
+    state: present
+    ext_id: "{{ subnet_ext_id }}"
+    reserve_type: IP_ADDRESS_LIST
+    ip_addresses:
+      - ipv4:
+          value: "{{ ip_list[0] }}"
+  register: reserve_list_result
+  ignore_errors: true
+
+- name: Verify reserve IP_ADDRESS_LIST minimal succeeded
+  ansible.builtin.assert:
+    that:
+      - reserve_list_result is defined
+      - reserve_list_result.changed == true
+      - reserve_list_result.failed == false
+      - reserve_list_result.ext_id == subnet_ext_id
+      - reserve_list_result.task_ext_id is defined
+      - reserve_list_result.response is defined
+      - reserve_list_result.response.status == "SUCCEEDED"
+    fail_msg: "Reserve IP_ADDRESS_LIST minimal failed: {{ reserve_list_result }}"
+    success_msg: "Reserve IP_ADDRESS_LIST minimal succeeded"
+
+# ------------------------------------------------------------------------------
+# 5) Real reserve — IP_ADDRESS_LIST (all attributes) — different IP
+# ------------------------------------------------------------------------------
+
+- name: Reserve IPs (IP_ADDRESS_LIST — all attributes)
+  nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
+    state: present
+    ext_id: "{{ subnet_ext_id }}"
+    reserve_type: IP_ADDRESS_LIST
+    ip_addresses:
+      - ipv4:
+          value: "{{ ip_list[1] }}"
+          prefix_length: 32
+    client_context: "{{ reserve_context_list }}"
+  register: reserve_list_full_result
+  ignore_errors: true
+
+- name: Verify reserve IP_ADDRESS_LIST full succeeded
+  ansible.builtin.assert:
+    that:
+      - reserve_list_full_result is defined
+      - reserve_list_full_result.changed == true
+      - reserve_list_full_result.failed == false
+      - reserve_list_full_result.ext_id == subnet_ext_id
+      - reserve_list_full_result.task_ext_id is defined
+      - reserve_list_full_result.response is defined
+      - reserve_list_full_result.response.status == "SUCCEEDED"
+    fail_msg: "Reserve IP_ADDRESS_LIST full failed: {{ reserve_list_full_result }}"
+    success_msg: "Reserve IP_ADDRESS_LIST full succeeded"
+
+# ------------------------------------------------------------------------------
+# 6) Real reserve — IP_ADDRESS_COUNT
+# ------------------------------------------------------------------------------
+
+- name: Reserve IPs (IP_ADDRESS_COUNT)
+  nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
+    state: present
+    ext_id: "{{ subnet_ext_id }}"
+    reserve_type: IP_ADDRESS_COUNT
+    count: "{{ random_count }}"
+    client_context: "{{ reserve_context_count }}"
+  register: reserve_count_result
+  ignore_errors: true
+
+- name: Verify reserve IP_ADDRESS_COUNT succeeded
+  ansible.builtin.assert:
+    that:
+      - reserve_count_result is defined
+      - reserve_count_result.changed == true
+      - reserve_count_result.failed == false
+      - reserve_count_result.ext_id == subnet_ext_id
+      - reserve_count_result.task_ext_id is defined
+      - reserve_count_result.response is defined
+      - reserve_count_result.response.status == "SUCCEEDED"
+    fail_msg: "Reserve IP_ADDRESS_COUNT failed: {{ reserve_count_result }}"
+    success_msg: "Reserve IP_ADDRESS_COUNT succeeded"
+
+# ------------------------------------------------------------------------------
+# 7) Real reserve — IP_ADDRESS_RANGE
+# ------------------------------------------------------------------------------
+
+- name: Reserve IPs (IP_ADDRESS_RANGE)
+  nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
+    state: present
+    ext_id: "{{ subnet_ext_id }}"
+    reserve_type: IP_ADDRESS_RANGE
+    start_ip_address:
+      ipv4:
+        value: "{{ range_start_ip }}"
+    count: "{{ range_count }}"
+    client_context: "{{ reserve_context_range }}"
+  register: reserve_range_result
+  ignore_errors: true
+
+- name: Verify reserve IP_ADDRESS_RANGE succeeded
+  ansible.builtin.assert:
+    that:
+      - reserve_range_result is defined
+      - reserve_range_result.changed == true
+      - reserve_range_result.failed == false
+      - reserve_range_result.ext_id == subnet_ext_id
+      - reserve_range_result.task_ext_id is defined
+      - reserve_range_result.response is defined
+      - reserve_range_result.response.status == "SUCCEEDED"
+    fail_msg: "Reserve IP_ADDRESS_RANGE failed: {{ reserve_range_result }}"
+    success_msg: "Reserve IP_ADDRESS_RANGE succeeded"
+
+# ------------------------------------------------------------------------------
+# 8) Info module — list all reserved IPs on the subnet
+# ------------------------------------------------------------------------------
+
+- name: List reserved IPs on the subnet
+  nutanix.ncp.ntnx_reserve_ips_by_subnet_ids_info_v2:
+    ext_id: "{{ subnet_ext_id }}"
+  register: list_reserved_result
+  ignore_errors: true
+
+- name: Verify list reserved IPs returned entries
+  ansible.builtin.assert:
+    that:
+      - list_reserved_result is defined
+      - list_reserved_result.changed == false
+      - list_reserved_result.failed == false
+      - list_reserved_result.ext_id == subnet_ext_id
+      - list_reserved_result.response is defined
+      - list_reserved_result.response | length >= 4
+      - list_reserved_result.total_available_results is defined
+      - list_reserved_result.total_available_results | int >= 4
+    fail_msg: "List reserved IPs did not return the expected entries: {{ list_reserved_result }}"
+    success_msg: "List reserved IPs returned expected entries"
+
+- name: Verify each reserved IP entry has the expected shape
+  ansible.builtin.assert:
+    that:
+      - item.ipv4_address is defined
+      - item.ipv4_address is string
+    fail_msg: "Reserved IP entry {{ item }} does not have ipv4_address"
+    success_msg: "Reserved IP entry OK"
+  loop: "{{ list_reserved_result.response }}"
+  loop_control:
+    label: "{{ item.ipv4_address | default('unknown') }}"
+
+# ------------------------------------------------------------------------------
+# 9) Info module — with limit / pagination
+# ------------------------------------------------------------------------------
+
+- name: List reserved IPs on the subnet with limit=1
+  nutanix.ncp.ntnx_reserve_ips_by_subnet_ids_info_v2:
+    ext_id: "{{ subnet_ext_id }}"
+    limit: 1
+  register: list_reserved_limited_result
+  ignore_errors: true
+
+- name: Verify limit is honoured
+  ansible.builtin.assert:
+    that:
+      - list_reserved_limited_result is defined
+      - list_reserved_limited_result.changed == false
+      - list_reserved_limited_result.failed == false
+      - list_reserved_limited_result.response is defined
+      - list_reserved_limited_result.response | length == 1
+    fail_msg: "limit=1 did not restrict list size"
+    success_msg: "limit=1 honoured"
+
+# ------------------------------------------------------------------------------
+# 10a) Real unreserve — IP_ADDRESS_LIST (no cookie, matches the minimal reserve)
+# ------------------------------------------------------------------------------
+
+- name: Unreserve IPs (IP_ADDRESS_LIST — no cookie)
+  nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
+    state: absent
+    ext_id: "{{ subnet_ext_id }}"
+    unreserve_type: IP_ADDRESS_LIST
+    ip_addresses:
+      - ipv4:
+          value: "{{ ip_list[0] }}"
+  register: unreserve_list_result
+  ignore_errors: true
+
+- name: Verify unreserve IP_ADDRESS_LIST (no cookie) succeeded
+  ansible.builtin.assert:
+    that:
+      - unreserve_list_result is defined
+      - unreserve_list_result.changed == true
+      - unreserve_list_result.failed == false
+      - unreserve_list_result.ext_id == subnet_ext_id
+      - unreserve_list_result.task_ext_id is defined
+      - unreserve_list_result.response is defined
+      - unreserve_list_result.response.status == "SUCCEEDED"
+    fail_msg: "Unreserve IP_ADDRESS_LIST (no cookie) failed: {{ unreserve_list_result }}"
+    success_msg: "Unreserve IP_ADDRESS_LIST (no cookie) succeeded"
+
+# ------------------------------------------------------------------------------
+# 10b) Real unreserve — IP_ADDRESS_LIST with matching client_context (cookie)
+# ------------------------------------------------------------------------------
+
+- name: Unreserve IPs (IP_ADDRESS_LIST — with matching cookie)
+  nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
+    state: absent
+    ext_id: "{{ subnet_ext_id }}"
+    unreserve_type: IP_ADDRESS_LIST
+    ip_addresses:
+      - ipv4:
+          value: "{{ ip_list[1] }}"
+    client_context: "{{ reserve_context_list }}"
+  register: unreserve_list_ctx_result
+  ignore_errors: true
+
+- name: Verify unreserve IP_ADDRESS_LIST (matching cookie) succeeded
+  ansible.builtin.assert:
+    that:
+      - unreserve_list_ctx_result is defined
+      - unreserve_list_ctx_result.changed == true
+      - unreserve_list_ctx_result.failed == false
+      - unreserve_list_ctx_result.ext_id == subnet_ext_id
+      - unreserve_list_ctx_result.task_ext_id is defined
+      - unreserve_list_ctx_result.response is defined
+      - unreserve_list_ctx_result.response.status == "SUCCEEDED"
+    fail_msg: "Unreserve IP_ADDRESS_LIST (with cookie) failed: {{ unreserve_list_ctx_result }}"
+    success_msg: "Unreserve IP_ADDRESS_LIST (with cookie) succeeded"
+
+# ------------------------------------------------------------------------------
+# 11) Real unreserve — IP_ADDRESS_RANGE
+# ------------------------------------------------------------------------------
+
+- name: Unreserve IPs (IP_ADDRESS_RANGE)
+  nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
+    state: absent
+    ext_id: "{{ subnet_ext_id }}"
+    unreserve_type: IP_ADDRESS_RANGE
+    start_ip_address:
+      ipv4:
+        value: "{{ range_start_ip }}"
+    count: "{{ range_count }}"
+    client_context: "{{ reserve_context_range }}"
+  register: unreserve_range_result
+  ignore_errors: true
+
+- name: Verify unreserve IP_ADDRESS_RANGE succeeded
+  ansible.builtin.assert:
+    that:
+      - unreserve_range_result is defined
+      - unreserve_range_result.changed == true
+      - unreserve_range_result.failed == false
+      - unreserve_range_result.ext_id == subnet_ext_id
+      - unreserve_range_result.task_ext_id is defined
+      - unreserve_range_result.response is defined
+      - unreserve_range_result.response.status == "SUCCEEDED"
+    fail_msg: "Unreserve IP_ADDRESS_RANGE failed: {{ unreserve_range_result }}"
+    success_msg: "Unreserve IP_ADDRESS_RANGE succeeded"
+
+# ------------------------------------------------------------------------------
+# 12) Real unreserve — CONTEXT (drop the whole reservation batch)
+# ------------------------------------------------------------------------------
+
+- name: Unreserve IPs (CONTEXT)
+  nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
+    state: absent
+    ext_id: "{{ subnet_ext_id }}"
+    unreserve_type: CONTEXT
+    client_context: "{{ reserve_context_count }}"
+  register: unreserve_context_result
+  ignore_errors: true
+
+- name: Verify unreserve CONTEXT succeeded
+  ansible.builtin.assert:
+    that:
+      - unreserve_context_result is defined
+      - unreserve_context_result.changed == true
+      - unreserve_context_result.failed == false
+      - unreserve_context_result.ext_id == subnet_ext_id
+      - unreserve_context_result.task_ext_id is defined
+      - unreserve_context_result.response is defined
+      - unreserve_context_result.response.status == "SUCCEEDED"
+    fail_msg: "Unreserve CONTEXT failed: {{ unreserve_context_result }}"
+    success_msg: "Unreserve CONTEXT succeeded"
+
+# ------------------------------------------------------------------------------
+# 13) Idempotency-style: unreserve CONTEXT again with the same context
+#     (already released — platform must handle this gracefully).
+# ------------------------------------------------------------------------------
+
+- name: Unreserve IPs (CONTEXT) a second time (already released)
+  nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
+    state: absent
+    ext_id: "{{ subnet_ext_id }}"
+    unreserve_type: CONTEXT
+    client_context: "{{ reserve_context_count }}"
+  register: unreserve_context_again_result
+  ignore_errors: true
+
+- name: Verify second unreserve CONTEXT is handled gracefully
+  ansible.builtin.assert:
+    that:
+      - unreserve_context_again_result is defined
+      - unreserve_context_again_result.ext_id == subnet_ext_id
+    fail_msg: "Second unreserve CONTEXT did not return a well-formed result"
+    success_msg: "Second unreserve CONTEXT handled gracefully"
+
+# ------------------------------------------------------------------------------
+# 14) Negative: missing required reserve_type
+# ------------------------------------------------------------------------------
+
+- name: Reserve IPs without reserve_type (must fail)
+  nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
+    state: present
+    ext_id: "{{ subnet_ext_id }}"
+    count: 1
+  register: reserve_missing_type_result
+  ignore_errors: true
+
+- name: Verify missing reserve_type is rejected
+  ansible.builtin.assert:
+    that:
+      - reserve_missing_type_result is defined
+      - reserve_missing_type_result.failed == true
+      - reserve_missing_type_result.changed == false
+    fail_msg: "Missing reserve_type was NOT rejected"
+    success_msg: "Missing reserve_type correctly rejected"
+
+# ------------------------------------------------------------------------------
+# 15) Negative: reserve_type=IP_ADDRESS_COUNT with no `count`
+# ------------------------------------------------------------------------------
+
+- name: Reserve IPs (IP_ADDRESS_COUNT) without count (must fail)
+  nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
+    state: present
+    ext_id: "{{ subnet_ext_id }}"
+    reserve_type: IP_ADDRESS_COUNT
+  register: reserve_missing_count_result
+  ignore_errors: true
+
+- name: Verify missing count is rejected for IP_ADDRESS_COUNT
+  ansible.builtin.assert:
+    that:
+      - reserve_missing_count_result is defined
+      - reserve_missing_count_result.failed == true
+      - reserve_missing_count_result.changed == false
+    fail_msg: "Missing count for IP_ADDRESS_COUNT was NOT rejected"
+    success_msg: "Missing count for IP_ADDRESS_COUNT correctly rejected"
+
+# ------------------------------------------------------------------------------
+# 16) Negative: invalid enum value for reserve_type
+# ------------------------------------------------------------------------------
+
+- name: Reserve IPs with invalid reserve_type (must fail)
+  nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
+    state: present
+    ext_id: "{{ subnet_ext_id }}"
+    reserve_type: BOGUS_VALUE
+    count: 1
+  register: reserve_invalid_enum_result
+  ignore_errors: true
+
+- name: Verify invalid reserve_type enum is rejected
+  ansible.builtin.assert:
+    that:
+      - reserve_invalid_enum_result is defined
+      - reserve_invalid_enum_result.failed == true
+      - reserve_invalid_enum_result.changed == false
+    fail_msg: "Invalid reserve_type value was NOT rejected"
+    success_msg: "Invalid reserve_type value correctly rejected"
+
+# ------------------------------------------------------------------------------
+# 17) Negative: unknown subnet ext_id on reserve
+# ------------------------------------------------------------------------------
+
+- name: Reserve IPs with unknown subnet ext_id (must fail)
+  nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    reserve_type: IP_ADDRESS_COUNT
+    count: 1
+  register: reserve_unknown_subnet_result
+  ignore_errors: true
+
+- name: Verify unknown subnet ext_id is rejected on reserve
+  ansible.builtin.assert:
+    that:
+      - reserve_unknown_subnet_result is defined
+      - reserve_unknown_subnet_result.failed == true
+      - reserve_unknown_subnet_result.changed == false
+    fail_msg: "Reserve with unknown subnet ext_id was NOT rejected"
+    success_msg: "Reserve with unknown subnet ext_id correctly rejected"
+
+# ------------------------------------------------------------------------------
+# 18) Negative: info module with unknown subnet ext_id
+# ------------------------------------------------------------------------------
+
+- name: List reserved IPs on unknown subnet ext_id (must fail)
+  nutanix.ncp.ntnx_reserve_ips_by_subnet_ids_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: list_unknown_subnet_result
+  ignore_errors: true
+
+- name: Verify unknown subnet ext_id is rejected on info
+  ansible.builtin.assert:
+    that:
+      - list_unknown_subnet_result is defined
+      - list_unknown_subnet_result.failed == true
+    fail_msg: "Info on unknown subnet ext_id was NOT rejected"
+    success_msg: "Info on unknown subnet ext_id correctly rejected"
+
+# ------------------------------------------------------------------------------
+# 19) Cleanup — delete the test subnet
+# ------------------------------------------------------------------------------
+
+- name: Cleanup any remaining reservations tagged with the LIST context
+  nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
+    state: absent
+    ext_id: "{{ subnet_ext_id }}"
+    unreserve_type: CONTEXT
+    client_context: "{{ reserve_context_list }}"
+  register: cleanup_list_ctx_result
+  ignore_errors: true
+
+- name: Cleanup any remaining reservations tagged with the RANGE context
+  nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
+    state: absent
+    ext_id: "{{ subnet_ext_id }}"
+    unreserve_type: CONTEXT
+    client_context: "{{ reserve_context_range }}"
+  register: cleanup_range_ctx_result
+  ignore_errors: true
+
+- name: Delete the test subnet
+  nutanix.ncp.ntnx_subnets_v2:
+    state: absent
+    ext_id: "{{ subnet_ext_id }}"
+  register: subnet_delete_result
+  ignore_errors: true
+
+- name: Verify test subnet was deleted
+  ansible.builtin.assert:
+    that:
+      - subnet_delete_result is defined
+      - subnet_delete_result.failed == false
+    fail_msg: "Test subnet delete failed"
+    success_msg: "Test subnet deleted successfully"

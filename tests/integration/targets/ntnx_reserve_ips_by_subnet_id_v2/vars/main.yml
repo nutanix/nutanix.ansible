@@ -1,0 +1,15 @@
+---
+# VLAN network_id pool — pick VLAN IDs that are unlikely to already be
+# reserved by other managed subnets on the cluster. The task file uses
+# index 5.
+vlan_subnets_ids: [3001, 3002, 3003, 3004, 3005, 3006]
+
+ip_address_management:
+  network_ip: 192.168.240.0
+  network_prefix: 24
+  gateway_ip_address: 192.168.240.254
+  dhcp_server_address: 192.168.240.253
+
+ip_address_pools:
+  start_address: 192.168.240.20
+  end_address: 192.168.240.40

@@ -1,0 +1,62 @@
+---
+# Summary:
+# This playbook demonstrates the ntnx_reserve_ips_by_subnet_id_v2 and
+# ntnx_reserve_ips_by_subnet_ids_info_v2 modules end-to-end.
+#
+# It exercises exactly one representative call per operation:
+#   1. Reserve IPs on a managed subnet (with ALL supported attributes).
+#   2. List reserved IPs on the subnet (info module).
+#   3. Unreserve IPs on the same subnet (with ALL supported attributes).
+#
+# Prerequisites (must exist on the target Prism Central):
+#   * A VLAN or overlay subnet with IPAM configured (i.e. the subnet has an
+#     IP address pool). The subnet ext_id is passed via `subnet_ext_id`.
+#   * The Ansible user must have Network Infra Admin / Prism Admin permissions.
+
+- name: Reserve IPs by Subnet Id playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ nutanix_username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ nutanix_password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        subnet_ext_id: "{{ subnet_ext_id | default('<managed-subnet-uuid>') }}"
+        reserve_client_context: "ansible_example_reserve"
+        first_reserved_ip: "{{ first_reserved_ip | default('192.168.214.21') }}"
+        second_reserved_ip: "{{ second_reserved_ip | default('192.168.214.22') }}"
+
+    - name: Reserve IPs on a managed subnet (all attributes)
+      nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
+        state: present
+        ext_id: "{{ subnet_ext_id }}"
+        reserve_type: IP_ADDRESS_LIST
+        ip_addresses:
+          - ipv4:
+              value: "{{ first_reserved_ip }}"
+              prefix_length: 32
+          - ipv4:
+              value: "{{ second_reserved_ip }}"
+              prefix_length: 32
+        client_context: "{{ reserve_client_context }}"
+      register: reserve_result
+      ignore_errors: true
+
+    - name: List reserved IPs on the subnet
+      nutanix.ncp.ntnx_reserve_ips_by_subnet_ids_info_v2:
+        ext_id: "{{ subnet_ext_id }}"
+      register: list_result
+      ignore_errors: true
+
+    - name: Unreserve IPs on the subnet (all attributes)
+      nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
+        state: absent
+        ext_id: "{{ subnet_ext_id }}"
+        unreserve_type: CONTEXT
+        client_context: "{{ reserve_client_context }}"
+      register: unreserve_result
+      ignore_errors: true

@@ -170,3 +170,32 @@ def get_virtual_switch(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching virtual switch info using ext_id",
         )
+
+
+def list_reserved_ips_by_subnet(module, api_instance, subnet_ext_id, **kwargs):
+    """
+    List all reserved IP addresses on a managed subnet.
+
+    Args:
+        module: Ansible module
+        api_instance: SubnetIPReservationApi instance from ntnx_networking_py_client
+        subnet_ext_id (str): UUID of the subnet whose reserved IPs to list
+        **kwargs: Optional pagination / filter query parameters
+            (`_page`, `_limit`, `_filter`, `_orderby`, `_select`)
+
+    Returns:
+        response (object): SDK ListSubnetReservedIpsApiResponse
+    """
+    try:
+        return api_instance.list_reserved_ips_by_subnet_id(
+            subnetExtId=subnet_ext_id, **kwargs
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg=(
+                "Api Exception raised while listing reserved IPs "
+                "for subnet ext_id: {0}".format(subnet_ext_id)
+            ),
+        )
