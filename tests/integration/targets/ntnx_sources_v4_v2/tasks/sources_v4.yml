@@ -1,0 +1,364 @@
+---
+# =============================================================================
+# Test plan for aiops SourcesV4 modules (ntnx_sources_v4_v2 / ntnx_sources_info_v2)
+# =============================================================================
+#
+# CONTEXT: The aiops v4 SDK (ntnx_aiops_py_client.StatsApi) exposes SourcesV4
+# ONLY as a read-only listing endpoint:
+#   GET /api/aiops/v4.2.b1/config/sources
+# There is NO Create/Update/Delete server endpoint. The `CRUD Resources
+# Identified` section of the code-generation spec confirms this (`N/A`).
+#
+# The tests below therefore cover:
+#   INFO MODULE (ntnx_sources_info_v2) — fully-supported by the SDK
+#   1. list-all: assert sources listing structure and per-element attributes.
+#   2. get-by-id (positive): pass an ext_id from listing, assert the single
+#      source matches.
+#   3. get-by-id (negative): pass a bogus ext_id, assert the module fails
+#      with a "No aiops source found" error.
+#
+#   CRUD MODULE (ntnx_sources_v4_v2) — SDK is read-only
+#   4. check_mode Create — verifies the module runs and fails cleanly with
+#      the documented "not supported" error.
+#   5. check_mode Update — verifies the module runs and returns skipped when
+#      the requested state matches the current immutable source.
+#   6. check_mode Delete — verifies the module returns the documented
+#      check-mode message without invoking the SDK.
+#   7. Real Create (all fields) — asserts the module fails cleanly with the
+#      "not supported" error and populates `msg`.
+#   8. Real Update (with a name change) — asserts the module fails cleanly
+#      with the "not supported" error.
+#   9. Idempotency: Update with source_name unchanged reports skipped=true
+#      and does NOT fail.
+#  10. Real Delete on existing ext_id — asserts the module fails cleanly
+#      with the "not supported" error.
+#  11. Negative: state=absent without ext_id — required_if triggers a
+#      descriptive error.
+#  12. Negative: state=absent with bogus ext_id — module fails with the
+#      "not found" error from the helper.
+#
+# Every check asserts `changed` and `failed` first, then domain-specific
+# behaviour, per Step 4.1 of the code-gen spec.
+# =============================================================================
+
+- name: Start aiops SourcesV4 tests
+  ansible.builtin.debug:
+    msg: Start aiops SourcesV4 tests
+
+- name: Generate random suffix to avoid collisions
+  ansible.builtin.set_fact:
+    random_suffix: "{{ query('community.general.random_string', numbers=true, special=false, length=10)[0] }}"
+
+########################################################################
+# 1. Info module — list all sources
+########################################################################
+
+- name: List all aiops sources
+  nutanix.ncp.ntnx_sources_info_v2:
+  register: sources_list
+
+- name: Assert list-all response is well-formed
+  ansible.builtin.assert:
+    that:
+      - sources_list.changed == false
+      - sources_list.failed == false
+      - sources_list.response is defined
+      - sources_list.response is iterable
+      - sources_list.total_available_results is defined
+    success_msg: "Sources list fetched successfully"
+    fail_msg: "Sources list fetch failed"
+
+- name: Assert each source has the expected read-only attributes
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.ext_id is string
+      - item.ext_id | length > 0
+      - item.source_name is defined
+      - item.source_name is string
+      - item.source_name | length > 0
+    success_msg: "Source '{{ item.source_name }}' has ext_id and source_name"
+    fail_msg: "Source is missing required read-only attributes"
+  loop: "{{ sources_list.response | default([]) }}"
+  when: (sources_list.response | default([])) | length > 0
+
+- name: Capture first source ext_id for downstream tests
+  ansible.builtin.set_fact:
+    sample_source_ext_id: "{{ (sources_list.response | default([]))[0].ext_id | default('') }}"
+    sample_source_name: "{{ (sources_list.response | default([]))[0].source_name | default('') }}"
+
+- name: Assert we have at least one source to exercise get-by-id + CRUD paths
+  ansible.builtin.assert:
+    that:
+      - sample_source_ext_id | length > 0
+    success_msg: "At least one aiops source is available for CRUD/info tests"
+    fail_msg: >-
+      No aiops sources returned from Prism Central — cannot run downstream
+      SourcesV4 CRUD/info tests. Ensure the AIOps feature is enabled on the
+      target PC.
+
+########################################################################
+# 2. Info module — get-by-id (positive)
+########################################################################
+
+- name: Get aiops source by ext_id
+  nutanix.ncp.ntnx_sources_info_v2:
+    ext_id: "{{ sample_source_ext_id }}"
+  register: source_by_id
+
+- name: Assert get-by-id returns the correct source
+  ansible.builtin.assert:
+    that:
+      - source_by_id.changed == false
+      - source_by_id.failed == false
+      - source_by_id.ext_id == sample_source_ext_id
+      - source_by_id.response is defined
+      - source_by_id.response.ext_id == sample_source_ext_id
+      - source_by_id.response.source_name == sample_source_name
+    success_msg: "Info get-by-id returned the expected source"
+    fail_msg: "Info get-by-id returned an unexpected source"
+
+########################################################################
+# 3. Info module — get-by-id (negative)
+########################################################################
+
+- name: Get aiops source by bogus ext_id (expected to fail)
+  nutanix.ncp.ntnx_sources_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000-{{ random_suffix }}"
+  register: source_by_bogus_id
+  ignore_errors: true
+
+- name: Assert get-by-bogus-id fails with a descriptive error
+  ansible.builtin.assert:
+    that:
+      - source_by_bogus_id.failed == true
+      - source_by_bogus_id.changed == false
+      - "'No aiops source found with ext_id' in (source_by_bogus_id.msg | default(''))"
+    success_msg: "Info get-by-bogus-id failed with the expected error"
+    fail_msg: "Info get-by-bogus-id did not fail with the expected error"
+
+########################################################################
+# 4-6. CRUD module — check_mode assertions
+########################################################################
+
+- name: Check_mode Create — SourcesV4 (unsupported by SDK)
+  nutanix.ncp.ntnx_sources_v4_v2:
+    state: present
+    source_name: "codegen_check_mode_source_{{ random_suffix }}"
+  check_mode: true
+  register: cm_create
+  ignore_errors: true
+
+- name: Assert check_mode Create fails with the documented unsupported error
+  ansible.builtin.assert:
+    that:
+      - cm_create.failed == true
+      - cm_create.changed == false
+      - "'SourcesV4 create is not supported by the aiops v4 SDK' in (cm_create.msg | default(''))"
+    success_msg: "check_mode Create returned the documented unsupported error"
+    fail_msg: "check_mode Create did not return the documented unsupported error"
+
+- name: Check_mode Update — SourcesV4 (immutable)
+  nutanix.ncp.ntnx_sources_v4_v2:
+    state: present
+    ext_id: "{{ sample_source_ext_id }}"
+    source_name: "codegen_check_mode_rename_{{ random_suffix }}"
+  check_mode: true
+  register: cm_update
+  ignore_errors: true
+
+- name: Assert check_mode Update reports the read-only check-mode message
+  ansible.builtin.assert:
+    that:
+      - cm_update.changed == false
+      - cm_update.ext_id == sample_source_ext_id
+      - "'read-only' in (cm_update.msg | default(''))"
+    success_msg: "check_mode Update returned the documented read-only message"
+    fail_msg: "check_mode Update did not return the documented read-only message"
+
+- name: Check_mode Delete — SourcesV4 (immutable)
+  nutanix.ncp.ntnx_sources_v4_v2:
+    state: absent
+    ext_id: "{{ sample_source_ext_id }}"
+  check_mode: true
+  register: cm_delete
+  ignore_errors: true
+
+- name: Assert check_mode Delete reports the read-only check-mode message
+  ansible.builtin.assert:
+    that:
+      - cm_delete.changed == false
+      - cm_delete.ext_id == sample_source_ext_id
+      - "'read-only' in (cm_delete.msg | default(''))"
+    success_msg: "check_mode Delete returned the documented read-only message"
+    fail_msg: "check_mode Delete did not return the documented read-only message"
+
+########################################################################
+# 7. Real Create — all fields — expected to fail
+########################################################################
+
+- name: Real Create — SourcesV4 with all fields (unsupported by SDK)
+  nutanix.ncp.ntnx_sources_v4_v2:
+    state: present
+    source_name: "codegen_all_fields_source_{{ random_suffix }}"
+  register: real_create
+  ignore_errors: true
+
+- name: Assert real Create fails cleanly with the unsupported error
+  ansible.builtin.assert:
+    that:
+      - real_create.failed == true
+      - real_create.changed == false
+      - "'SourcesV4 create is not supported by the aiops v4 SDK' in (real_create.msg | default(''))"
+      - "'ntnx_sources_info_v2' in (real_create.msg | default(''))"
+    success_msg: "Real Create fails cleanly with the documented unsupported error"
+    fail_msg: "Real Create did not fail with the documented unsupported error"
+
+- name: Real Create without required source_name — validate_required_params fires
+  nutanix.ncp.ntnx_sources_v4_v2:
+    state: present
+  register: create_missing_name
+  ignore_errors: true
+
+- name: Assert missing source_name triggers a descriptive error
+  ansible.builtin.assert:
+    that:
+      - create_missing_name.failed == true
+      - create_missing_name.changed == false
+      - "'source_name' in (create_missing_name.msg | default(''))"
+    success_msg: "Missing source_name triggered the expected validation error"
+    fail_msg: "Missing source_name did not trigger validate_required_params"
+
+########################################################################
+# 8-9. Real Update — changed value fails; unchanged reports skipped
+########################################################################
+
+- name: Real Update — attempt to rename the source (unsupported by SDK)
+  nutanix.ncp.ntnx_sources_v4_v2:
+    state: present
+    ext_id: "{{ sample_source_ext_id }}"
+    source_name: "codegen_rename_{{ random_suffix }}"
+  register: real_update
+  ignore_errors: true
+
+- name: Assert Update with a real name change fails with unsupported error
+  ansible.builtin.assert:
+    that:
+      - real_update.failed == true
+      - real_update.changed == false
+      - real_update.ext_id == sample_source_ext_id
+      - "'SourcesV4 update is not supported by the aiops v4 SDK' in (real_update.msg | default(''))"
+    success_msg: "Real Update fails cleanly with the documented unsupported error"
+    fail_msg: "Real Update did not fail with the documented unsupported error"
+
+- name: Idempotent Update — pass current source_name so nothing changes
+  nutanix.ncp.ntnx_sources_v4_v2:
+    state: present
+    ext_id: "{{ sample_source_ext_id }}"
+    source_name: "{{ sample_source_name }}"
+  register: idempotent_update
+
+- name: Assert idempotent Update reports skipped=true and does NOT fail
+  ansible.builtin.assert:
+    that:
+      - idempotent_update.failed == false
+      - idempotent_update.changed == false
+      - idempotent_update.skipped == true
+      - idempotent_update.ext_id == sample_source_ext_id
+      - idempotent_update.response.source_name == sample_source_name
+      - "'immutable' in (idempotent_update.msg | default(''))"
+    success_msg: "Idempotent Update reports skipped and does not fail"
+    fail_msg: "Idempotent Update did not behave as expected"
+
+- name: Idempotent Update — repeat to confirm stable behaviour
+  nutanix.ncp.ntnx_sources_v4_v2:
+    state: present
+    ext_id: "{{ sample_source_ext_id }}"
+    source_name: "{{ sample_source_name }}"
+  register: idempotent_update_second
+
+- name: Assert repeated idempotent Update stays skipped
+  ansible.builtin.assert:
+    that:
+      - idempotent_update_second.failed == false
+      - idempotent_update_second.changed == false
+      - idempotent_update_second.skipped == true
+      - idempotent_update_second.ext_id == sample_source_ext_id
+    success_msg: "Repeated idempotent Update stays skipped"
+    fail_msg: "Repeated idempotent Update flipped state"
+
+########################################################################
+# 10-12. Real Delete + negative tests
+########################################################################
+
+- name: Real Delete on existing ext_id (unsupported by SDK)
+  nutanix.ncp.ntnx_sources_v4_v2:
+    state: absent
+    ext_id: "{{ sample_source_ext_id }}"
+  register: real_delete
+  ignore_errors: true
+
+- name: Assert real Delete fails cleanly with the unsupported error
+  ansible.builtin.assert:
+    that:
+      - real_delete.failed == true
+      - real_delete.changed == false
+      - real_delete.ext_id == sample_source_ext_id
+      - "'SourcesV4 delete is not supported by the aiops v4 SDK' in (real_delete.msg | default(''))"
+    success_msg: "Real Delete fails cleanly with the documented unsupported error"
+    fail_msg: "Real Delete did not fail with the documented unsupported error"
+
+- name: Real Delete without ext_id — required_if must trigger
+  nutanix.ncp.ntnx_sources_v4_v2:
+    state: absent
+  register: delete_missing_ext_id
+  ignore_errors: true
+
+- name: Assert missing ext_id on delete triggers required_if error
+  ansible.builtin.assert:
+    that:
+      - delete_missing_ext_id.failed == true
+      - delete_missing_ext_id.changed == false
+      - "'ext_id' in (delete_missing_ext_id.msg | default('')) or 'state is absent' in (delete_missing_ext_id.msg | default(''))"
+    success_msg: "Missing ext_id on delete triggers required_if as expected"
+    fail_msg: "Missing ext_id on delete did not trigger required_if"
+
+- name: Real Delete with bogus ext_id (expected to fail with 'not found')
+  nutanix.ncp.ntnx_sources_v4_v2:
+    state: absent
+    ext_id: "00000000-0000-0000-0000-{{ random_suffix }}00"
+  register: delete_bogus
+  ignore_errors: true
+
+- name: Assert Delete with bogus ext_id fails with the 'not found' error
+  ansible.builtin.assert:
+    that:
+      - delete_bogus.failed == true
+      - delete_bogus.changed == false
+      - "'No aiops source found with ext_id' in (delete_bogus.msg | default(''))"
+    success_msg: "Delete with bogus ext_id fails with the expected 'not found' error"
+    fail_msg: "Delete with bogus ext_id did not fail as expected"
+
+########################################################################
+# 13. Negative: invalid state value should be rejected by argspec choices
+########################################################################
+
+- name: Attempt to use an invalid state (expected to fail)
+  nutanix.ncp.ntnx_sources_v4_v2:
+    state: "wrong_state"
+    source_name: "codegen_source_{{ random_suffix }}"
+  register: invalid_state
+  ignore_errors: true
+
+- name: Assert invalid state is rejected by the argument spec
+  ansible.builtin.assert:
+    that:
+      - invalid_state.failed == true
+      - invalid_state.changed == false
+      - "'wrong_state' in (invalid_state.msg | default('')) or 'not one of' in (invalid_state.msg | default(''))"
+    success_msg: "Invalid state rejected by argument spec choices"
+    fail_msg: "Invalid state was not rejected"
+
+- name: End aiops SourcesV4 tests
+  ansible.builtin.debug:
+    msg: End aiops SourcesV4 tests

@@ -1,0 +1,63 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [AIOps SourcesV4 playbook] ************************************************
+
+TASK [List all aiops sources] **************************************************
+ok: [localhost] => {"changed": false, "response": [{"ext_id": "db293e8a-5770-c3c7-4213-85dbbc1d3679", "links": null, "source_name": "nutanix", "tenant_id": null}], "total_available_results": 1}
+
+TASK [Show sources listing] ****************************************************
+ok: [localhost] => {
+    "sources_list": {
+        "changed": false,
+        "failed": false,
+        "response": [
+            {
+                "ext_id": "db293e8a-5770-c3c7-4213-85dbbc1d3679",
+                "links": null,
+                "source_name": "nutanix",
+                "tenant_id": null
+            }
+        ],
+        "total_available_results": 1
+    }
+}
+
+TASK [Pick the first source's ext_id (if any) for the get-by-id example] *******
+ok: [localhost] => {"ansible_facts": {"sample_source_ext_id": "db293e8a-5770-c3c7-4213-85dbbc1d3679"}, "changed": false}
+
+TASK [Get aiops source using ext_id] *******************************************
+ok: [localhost] => {"changed": false, "ext_id": "db293e8a-5770-c3c7-4213-85dbbc1d3679", "response": {"ext_id": "db293e8a-5770-c3c7-4213-85dbbc1d3679", "links": null, "source_name": "nutanix", "tenant_id": null}}
+
+TASK [Show single source] ******************************************************
+ok: [localhost] => {
+    "source_by_id": {
+        "changed": false,
+        "ext_id": "db293e8a-5770-c3c7-4213-85dbbc1d3679",
+        "failed": false,
+        "response": {
+            "ext_id": "db293e8a-5770-c3c7-4213-85dbbc1d3679",
+            "links": null,
+            "source_name": "nutanix",
+            "tenant_id": null
+        }
+    }
+}
+
+TASK [Attempt Create aiops source (unsupported — expected to fail)] ************
+fatal: [localhost]: FAILED! => {"changed": false, "ext_id": null, "msg": "SourcesV4 create is not supported by the aiops v4 SDK — the sources catalog is read-only. Use ntnx_sources_info_v2 to list existing sources.", "response": null, "task_ext_id": null}
+...ignoring
+
+TASK [Attempt Update aiops source (unsupported — expected to fail)] ************
+fatal: [localhost]: FAILED! => {"changed": false, "ext_id": "db293e8a-5770-c3c7-4213-85dbbc1d3679", "msg": "SourcesV4 update is not supported by the aiops v4 SDK — the sources catalog is read-only. Use ntnx_sources_info_v2 to list existing sources.", "response": {"ext_id": "db293e8a-5770-c3c7-4213-85dbbc1d3679", "links": null, "source_name": "nutanix", "tenant_id": null}, "task_ext_id": null}
+...ignoring
+
+TASK [Attempt Delete aiops source (unsupported — expected to fail)] ************
+fatal: [localhost]: FAILED! => {"changed": false, "ext_id": "db293e8a-5770-c3c7-4213-85dbbc1d3679", "msg": "SourcesV4 delete is not supported by the aiops v4 SDK — the sources catalog is read-only. Use ntnx_sources_info_v2 to list existing sources.", "response": null, "task_ext_id": null}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=8    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=3   
+

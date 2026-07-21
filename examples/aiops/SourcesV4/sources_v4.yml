@@ -1,0 +1,72 @@
+---
+# Summary:
+# This playbook demonstrates the aiops SourcesV4 modules:
+# 1. List all aiops sources (info module).
+# 2. Get a specific aiops source by ext_id (info module).
+# 3. Attempt create — unsupported by the aiops v4 SDK, module fails cleanly.
+# 4. Attempt update — unsupported by the aiops v4 SDK, module fails cleanly.
+# 5. Attempt delete — unsupported by the aiops v4 SDK, module fails cleanly.
+#
+# The aiops v4 SDK exposes SourcesV4 as a read-only singleton catalog
+# (GET /api/aiops/v4.2.b1/config/sources). No Create/Update/Delete server
+# endpoints exist. The ntnx_sources_v4_v2 module documents this and returns
+# a clear error message pointing to ntnx_sources_info_v2 for the read path.
+
+- name: AIOps SourcesV4 playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ nutanix_username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ nutanix_password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: false
+  tasks:
+    - name: List all aiops sources
+      nutanix.ncp.ntnx_sources_info_v2:
+      register: sources_list
+      ignore_errors: true
+
+    - name: Show sources listing
+      ansible.builtin.debug:
+        var: sources_list
+
+    - name: Pick the first source's ext_id (if any) for the get-by-id example
+      ansible.builtin.set_fact:
+        sample_source_ext_id: "{{ (sources_list.response | default([]))[0].ext_id | default('') }}"
+
+    - name: Get aiops source using ext_id
+      nutanix.ncp.ntnx_sources_info_v2:
+        ext_id: "{{ sample_source_ext_id }}"
+      when: sample_source_ext_id | length > 0
+      register: source_by_id
+      ignore_errors: true
+
+    - name: Show single source
+      ansible.builtin.debug:
+        var: source_by_id
+      when: sample_source_ext_id | length > 0
+
+    - name: Attempt Create aiops source (unsupported — expected to fail)
+      nutanix.ncp.ntnx_sources_v4_v2:
+        state: present
+        source_name: "codegen_custom_source"
+      register: create_result
+      ignore_errors: true
+
+    - name: Attempt Update aiops source (unsupported — expected to fail)
+      nutanix.ncp.ntnx_sources_v4_v2:
+        state: present
+        ext_id: "{{ sample_source_ext_id }}"
+        source_name: "codegen_custom_source_renamed"
+      when: sample_source_ext_id | length > 0
+      register: update_result
+      ignore_errors: true
+
+    - name: Attempt Delete aiops source (unsupported — expected to fail)
+      nutanix.ncp.ntnx_sources_v4_v2:
+        state: absent
+        ext_id: "{{ sample_source_ext_id }}"
+      when: sample_source_ext_id | length > 0
+      register: delete_result
+      ignore_errors: true
