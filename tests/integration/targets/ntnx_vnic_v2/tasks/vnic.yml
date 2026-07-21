@@ -1,0 +1,395 @@
+---
+# ==============================================================================
+# Integration tests for the vNIC v4 modules:
+#   - nutanix.ncp.ntnx_vnic_migrate_v2  (action: migrate a vNIC between subnets)
+#   - nutanix.ncp.ntnx_vnics_info_v2    (info: list / get vNICs on a subnet)
+#
+# Test plan
+# ---------
+# The vNIC migrate API is destructive and requires a very specific cluster
+# state (an existing VM with a NIC on a source Acropolis subnet, plus a
+# ready Atlas destination subnet). Tests exercise real create/read paths
+# for the info module and use check_mode + negative paths for the migrate
+# module so this target is safe to run against arbitrary clusters.
+#
+# 1) Prerequisite discovery
+#    - Fetch subnets on the cluster via ntnx_subnets_info_v2.
+#    - Pick the first available subnet as source_subnet, and (if available)
+#      a second subnet as destination_subnet. If no subnets exist we skip
+#      the info tests but still exercise negative + check_mode paths.
+# 2) Info module (real API calls)
+#    - List all vNICs on the source subnet.
+#    - If vNICs are returned, get-by-ext_id on the first one and assert.
+#    - Negative: ext_id not present on the subnet -> failed.
+#    - Negative: subnet_ext_id missing -> failed by argspec.
+#    - Negative: bogus subnet_ext_id -> failed by API.
+# 3) Migrate module (check_mode only + negative)
+#    - check_mode with all fields on a real vNIC (if available) or a stub
+#      ext_id + a real destination subnet -> asserts spec is echoed back.
+#    - Negative: missing required ext_id -> failed by argspec.
+#    - Negative: missing required network_uuid -> failed by argspec.
+#    - Negative: bogus ext_id in a real call (short_wait) -> failed by API.
+# ==============================================================================
+
+- name: Start Vnic v2 tests
+  ansible.builtin.debug:
+    msg: Start Vnic v2 tests
+
+- name: Generate random suffix for unique resource names
+  ansible.builtin.set_fact:
+    random_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+# ==============================================================================
+# STEP 1: Discover prerequisite subnets
+# ==============================================================================
+
+- name: List available subnets on the cluster
+  nutanix.ncp.ntnx_subnets_info_v2:
+    limit: 10
+  register: subnets_result
+  ignore_errors: true
+
+- name: Assert subnet discovery succeeded
+  ansible.builtin.assert:
+    that:
+      - subnets_result is defined
+      - subnets_result.failed == false
+      - subnets_result.changed == false
+    fail_msg: "Failed to list subnets on cluster; cannot proceed with vNIC tests"
+    success_msg: "Fetched subnets on cluster"
+
+- name: Set source subnet ext_id
+  ansible.builtin.set_fact:
+    source_subnet_ext_id: "{{ (subnets_result.response | default([]))[0].ext_id | default('') }}"
+
+- name: Set destination subnet ext_id (fall back to source if only one exists)
+  ansible.builtin.set_fact:
+    destination_subnet_ext_id: >-
+      {{ ((subnets_result.response | default([]))[1].ext_id
+          | default(source_subnet_ext_id)) }}
+
+- name: Set flag whether any subnet is available for tests
+  ansible.builtin.set_fact:
+    has_subnet: "{{ (source_subnet_ext_id | length) > 0 }}"
+
+- name: Report discovered subnets
+  ansible.builtin.debug:
+    msg:
+      - "source_subnet_ext_id: {{ source_subnet_ext_id }}"
+      - "destination_subnet_ext_id: {{ destination_subnet_ext_id }}"
+
+# ==============================================================================
+# STEP 2: Info module - list all vNICs on the source subnet (REAL API)
+# ==============================================================================
+
+- name: List vNICs on the source subnet
+  nutanix.ncp.ntnx_vnics_info_v2:
+    subnet_ext_id: "{{ source_subnet_ext_id }}"
+  register: list_all
+  when: has_subnet
+  ignore_errors: true
+
+- name: Assert list vNICs response shape
+  ansible.builtin.assert:
+    that:
+      - list_all is defined
+      - list_all.changed == false
+      - list_all.failed == false
+      - list_all.response is defined
+      - list_all.subnet_ext_id == source_subnet_ext_id
+      - list_all.total_available_results is defined
+    fail_msg: "List vNICs on source subnet failed"
+    success_msg: "Listed vNICs on source subnet successfully"
+  when: has_subnet
+
+- name: Assert each returned vNIC has ext_id set
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.ext_id | length > 0
+    fail_msg: "vNIC entry missing ext_id: {{ item }}"
+    success_msg: "vNIC entry has ext_id"
+  loop: "{{ list_all.response | default([]) }}"
+  loop_control:
+    label: "{{ item.ext_id | default('<no-ext_id>') }}"
+  when: has_subnet and (list_all.response | default([]) | length) > 0
+
+- name: Set a real vNIC ext_id for downstream tests (if any exist)
+  ansible.builtin.set_fact:
+    real_vnic_ext_id: "{{ (list_all.response | default([]))[0].ext_id | default('') }}"
+  when: has_subnet
+
+- name: Compute has_vnic flag
+  ansible.builtin.set_fact:
+    has_vnic: "{{ (real_vnic_ext_id | default('')) | length > 0 }}"
+
+# ==============================================================================
+# STEP 3: Info module - list with limit (REAL API)
+# ==============================================================================
+
+- name: List vNICs on subnet with limit=1
+  nutanix.ncp.ntnx_vnics_info_v2:
+    subnet_ext_id: "{{ source_subnet_ext_id }}"
+    limit: 1
+  register: list_limited
+  when: has_subnet
+  ignore_errors: true
+
+- name: Assert list with limit response
+  ansible.builtin.assert:
+    that:
+      - list_limited is defined
+      - list_limited.changed == false
+      - list_limited.failed == false
+      - list_limited.response is defined
+      - (list_limited.response | length) <= 1
+    fail_msg: "List vNICs with limit did not honor the limit"
+    success_msg: "List vNICs with limit honored"
+  when: has_subnet
+
+# ==============================================================================
+# STEP 4: Info module - get by ext_id (REAL API, only if a vNIC exists)
+# ==============================================================================
+
+- name: Get vNIC by ext_id on source subnet
+  nutanix.ncp.ntnx_vnics_info_v2:
+    subnet_ext_id: "{{ source_subnet_ext_id }}"
+    ext_id: "{{ real_vnic_ext_id }}"
+  register: get_one
+  when: has_vnic
+  ignore_errors: true
+
+- name: Assert get vNIC by ext_id response
+  ansible.builtin.assert:
+    that:
+      - get_one is defined
+      - get_one.changed == false
+      - get_one.failed == false
+      - get_one.response is defined
+      - get_one.response.ext_id == real_vnic_ext_id
+      - get_one.ext_id == real_vnic_ext_id
+      - get_one.subnet_ext_id == source_subnet_ext_id
+    fail_msg: "Get vNIC by ext_id returned unexpected response"
+    success_msg: "Got vNIC by ext_id successfully"
+  when: has_vnic
+
+# ==============================================================================
+# STEP 5: Info module - NEGATIVE tests
+# ==============================================================================
+
+- name: Negative - get vNIC by ext_id that does NOT exist on the subnet
+  nutanix.ncp.ntnx_vnics_info_v2:
+    subnet_ext_id: "{{ source_subnet_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: missing_vnic
+  when: has_subnet
+  ignore_errors: true
+
+- name: Assert not-found vNIC properly fails
+  ansible.builtin.assert:
+    that:
+      - missing_vnic is defined
+      - missing_vnic.failed == true
+      - missing_vnic.msg is defined
+      - "'not found' in (missing_vnic.msg | lower)"
+    fail_msg: "Not-found vNIC did not surface a clear error"
+    success_msg: "Not-found vNIC surfaced a clear error"
+  when: has_subnet
+
+- name: Negative - info module without required subnet_ext_id
+  nutanix.ncp.ntnx_vnics_info_v2: {}
+  register: missing_required
+  ignore_errors: true
+
+- name: Assert missing subnet_ext_id fails by argspec
+  ansible.builtin.assert:
+    that:
+      - missing_required is defined
+      - missing_required.failed == true
+    fail_msg: "Missing subnet_ext_id should have been rejected by argspec"
+    success_msg: "Missing subnet_ext_id rejected as expected"
+
+- name: Negative - info module with a bogus subnet_ext_id
+  nutanix.ncp.ntnx_vnics_info_v2:
+    subnet_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: bogus_subnet
+  ignore_errors: true
+
+- name: Assert bogus subnet_ext_id fails
+  ansible.builtin.assert:
+    that:
+      - bogus_subnet is defined
+      - bogus_subnet.failed == true
+    fail_msg: "Bogus subnet_ext_id should have failed"
+    success_msg: "Bogus subnet_ext_id failed as expected"
+
+# ==============================================================================
+# STEP 6: Migrate module - check_mode (does NOT call the API)
+# ==============================================================================
+# One check_mode test for the migrate action with ALL fields (per instructions:
+# exactly one check_mode test per Create/Update/Delete for CRUD entities; for
+# this action-type module we ship the equivalent single check_mode migrate
+# scenario).
+
+- name: Pick a stable UUID for migrate check_mode tests
+  ansible.builtin.set_fact:
+    migrate_vnic_ext_id: >-
+      {{ real_vnic_ext_id if has_vnic
+         else '7147b563-7b80-4be5-96b5-d8ff63187a5c' }}
+    migrate_network_uuid: >-
+      {{ destination_subnet_ext_id if has_subnet
+         else '7131f3ca-47ce-4f1d-990c-fa17800bd94d' }}
+
+- name: Migrate vNIC in check_mode with ALL attributes
+  nutanix.ncp.ntnx_vnic_migrate_v2:
+    state: present
+    ext_id: "{{ migrate_vnic_ext_id }}"
+    network_uuid: "{{ migrate_network_uuid }}"
+    requested_ip_addresses:
+      - ipv4:
+          value: "10.51.144.137"
+          prefix_length: 32
+    project_ext_id: "cbee1c8b-cfdd-5709-8316-e23573ade825"
+  register: check_mode_migrate
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert check_mode migrate echoes back full spec
+  ansible.builtin.assert:
+    that:
+      - check_mode_migrate is defined
+      - check_mode_migrate.changed == false
+      - check_mode_migrate.failed == false
+      - check_mode_migrate.response is defined
+      - check_mode_migrate.response.network_uuid == migrate_network_uuid
+      - check_mode_migrate.response.requested_ip_addresses is defined
+      - check_mode_migrate.response.requested_ip_addresses | length == 1
+      - check_mode_migrate.response.requested_ip_addresses[0].ipv4.value == "10.51.144.137"
+      - check_mode_migrate.response.requested_ip_addresses[0].ipv4.prefix_length == 32
+      - check_mode_migrate.ext_id == migrate_vnic_ext_id
+    fail_msg: "Migrate check_mode did not echo back the full spec"
+    success_msg: "Migrate check_mode echoed back the full spec"
+
+- name: Migrate vNIC in check_mode with only required fields
+  nutanix.ncp.ntnx_vnic_migrate_v2:
+    state: present
+    ext_id: "7147b563-7b80-4be5-96b5-d8ff63187a5c"
+    network_uuid: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+  register: check_mode_minimal
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert check_mode migrate with minimal spec
+  ansible.builtin.assert:
+    that:
+      - check_mode_minimal is defined
+      - check_mode_minimal.changed == false
+      - check_mode_minimal.failed == false
+      - check_mode_minimal.response is defined
+      - check_mode_minimal.response.network_uuid == "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+      - check_mode_minimal.ext_id == "7147b563-7b80-4be5-96b5-d8ff63187a5c"
+    fail_msg: "Migrate check_mode (minimal) did not echo the spec"
+    success_msg: "Migrate check_mode (minimal) worked"
+
+# ==============================================================================
+# STEP 7: Migrate module - NEGATIVE tests (real invocation)
+# ==============================================================================
+
+- name: Negative - migrate without required ext_id
+  nutanix.ncp.ntnx_vnic_migrate_v2:
+    state: present
+    network_uuid: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+  register: missing_ext_id
+  ignore_errors: true
+
+- name: Assert missing ext_id fails by argspec
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id is defined
+      - missing_ext_id.failed == true
+    fail_msg: "Missing ext_id should have been rejected by argspec"
+    success_msg: "Missing ext_id rejected as expected"
+
+- name: Negative - migrate without required network_uuid
+  nutanix.ncp.ntnx_vnic_migrate_v2:
+    state: present
+    ext_id: "7147b563-7b80-4be5-96b5-d8ff63187a5c"
+  register: missing_network
+  ignore_errors: true
+
+- name: Assert missing network_uuid fails by argspec
+  ansible.builtin.assert:
+    that:
+      - missing_network is defined
+      - missing_network.failed == true
+    fail_msg: "Missing network_uuid should have been rejected by argspec"
+    success_msg: "Missing network_uuid rejected as expected"
+
+- name: Negative - migrate with invalid state=absent (not in choices)
+  nutanix.ncp.ntnx_vnic_migrate_v2:
+    state: absent
+    ext_id: "7147b563-7b80-4be5-96b5-d8ff63187a5c"
+    network_uuid: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+  register: invalid_state
+  ignore_errors: true
+
+- name: Assert invalid state fails by argspec choices
+  ansible.builtin.assert:
+    that:
+      - invalid_state is defined
+      - invalid_state.failed == true
+    fail_msg: "state=absent should be rejected because it is not in choices"
+    success_msg: "state=absent rejected as expected"
+
+- name: Negative - migrate with a bogus vNIC ext_id (real call)
+  nutanix.ncp.ntnx_vnic_migrate_v2:
+    state: present
+    wait: true
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    network_uuid: "{{ destination_subnet_ext_id if has_subnet else 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' }}"
+  register: bogus_migrate
+  ignore_errors: true
+
+- name: Assert bogus migrate fails with an API-level error
+  ansible.builtin.assert:
+    that:
+      - bogus_migrate is defined
+      - bogus_migrate.failed == true
+    fail_msg: "Migrating a non-existent vNIC should have failed"
+    success_msg: "Migrating a non-existent vNIC failed as expected"
+
+# ==============================================================================
+# STEP 8: Idempotency-ish behavior
+# ==============================================================================
+# The migrate operation is a one-shot action; there is no "already-in-desired-
+# state" idempotency in the API. But we can assert that check_mode is fully
+# side-effect free by running the same check_mode call twice.
+
+- name: Migrate vNIC in check_mode (first run)
+  nutanix.ncp.ntnx_vnic_migrate_v2:
+    state: present
+    ext_id: "7147b563-7b80-4be5-96b5-d8ff63187a5c"
+    network_uuid: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+  register: idem_first
+  check_mode: true
+  ignore_errors: true
+
+- name: Migrate vNIC in check_mode (second run)
+  nutanix.ncp.ntnx_vnic_migrate_v2:
+    state: present
+    ext_id: "7147b563-7b80-4be5-96b5-d8ff63187a5c"
+    network_uuid: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+  register: idem_second
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert both check_mode runs are side-effect free
+  ansible.builtin.assert:
+    that:
+      - idem_first.changed == false
+      - idem_first.failed == false
+      - idem_second.changed == false
+      - idem_second.failed == false
+      - idem_first.response == idem_second.response
+    fail_msg: "check_mode runs were not side-effect free / stable"
+    success_msg: "check_mode runs are stable and side-effect free"

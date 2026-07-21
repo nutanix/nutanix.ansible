@@ -195,3 +195,20 @@ def get_bridges_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_networking_py_client.BridgesApi(api_client=api_client)
+
+
+def get_subnet_migrations_api_instance(module):
+    """
+    This method will return SubnetMigrationsApi instance.
+
+    Used for VLAN subnet migration (`migrate_subnets`) as well as for
+    migrating an individual virtual NIC (`migrate_vnic_by_id`) between the
+    Acropolis (legacy) and Atlas (advanced / VPC) networking stacks.
+
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): SubnetMigrations Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.SubnetMigrationsApi(api_client=api_client)
