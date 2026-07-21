@@ -1,0 +1,51 @@
+---
+# Summary:
+# This playbook demonstrates how to trigger the "Generate Recommendation"
+# action for an existing Nutanix capacity planning scenario using the
+# nutanix.ncp.ntnx_generate_recommendation_v2 module (v4 APIs).
+#
+# The module is an ACTION module — it does not create, update, or delete
+# scenarios. The Prism task returned by the action carries the recommendation
+# outcome; when wait is true (default) the task result is returned inline.
+#
+# Prerequisites:
+#   - A capacity planning scenario must already exist in Prism Central.
+#     Use the aiops "Scenarios" REST APIs or Prism UI to create one and
+#     pass its external ID as `scenario_ext_id` below.
+
+- name: Recommendation playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('<pc_ip>', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('<user>', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('<pass>', true) }}"
+      nutanix_port: "{{ lookup('env', 'NUTANIX_PORT') | default(9440, true) | int }}"
+      validate_certs: false
+  tasks:
+    - name: Set scenario variables
+      ansible.builtin.set_fact:
+        scenario_ext_id: "{{ lookup('env', 'AIOPS_SCENARIO_EXT_ID') | default('ac5aff0c-6c68-4948-9088-b903e2be0ce7', true) }}"
+
+    - name: Generate recommendation for a capacity planning scenario
+      nutanix.ncp.ntnx_generate_recommendation_v2:
+        state: present
+        ext_id: "{{ scenario_ext_id }}"
+      register: recommendation_result
+      ignore_errors: true
+
+    # Response is a Prism task. When wait is true (default), it contains the
+    # full task payload; when wait is false, it holds a task reference. Sample:
+    #
+    # recommendation_result:
+    #   changed: true
+    #   ext_id: "<scenario ext_id>"
+    #   task_ext_id: "ZXJnb24=:<task uuid>"
+    #   response:
+    #     operation: "GenerateRecommendation"
+    #     operation_description: "Generate recommendation for a capacity planning scenario"
+    #     status: "SUCCEEDED"
+    #     entities_affected:
+    #       - ext_id: "<scenario ext_id>"
+    #         rel: "aiops:config:scenarios"

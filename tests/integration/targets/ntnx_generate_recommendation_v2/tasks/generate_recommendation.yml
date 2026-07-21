@@ -1,0 +1,161 @@
+---
+# Test plan for ntnx_generate_recommendation_v2 (action module)
+#
+# The module triggers the Generate Recommendation action against an existing
+# capacity planning scenario. Because a scenario is a prerequisite that is
+# usually seeded via the aiops Scenarios REST API (there is no CRUD module
+# for it in this collection yet), the live path is exercised only when a
+# scenario ext_id is discovered on the target Prism Central.
+#
+# Coverage:
+#   1. check_mode  - verifies the module does not call the API in check mode
+#                    and returns ext_id + a descriptive msg.
+#   2. required    - Ansible arg spec must reject a call missing ext_id.
+#   3. negative    - Calling with a syntactically-valid but non-existent
+#                    ext_id must return failed=true with an API error.
+#   4. live (opt)  - When `scenario_ext_id` is provided as a fact (e.g. via
+#                    -e scenario_ext_id=<uuid>), the module is invoked
+#                    end-to-end and the task response is asserted.
+
+- name: Start Generate Recommendation tests
+  ansible.builtin.debug:
+    msg: Start Generate Recommendation tests
+
+- name: Generate random names
+  ansible.builtin.set_fact:
+    random_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set fake scenario ext_id for negative test
+  ansible.builtin.set_fact:
+    fake_scenario_ext_id: "00000000-0000-0000-0000-000000000001"
+
+########################################################################
+# 1. check_mode - trigger generate recommendation in dry-run
+########################################################################
+
+- name: Generate recommendation in check_mode
+  nutanix.ncp.ntnx_generate_recommendation_v2:
+    state: present
+    ext_id: "{{ fake_scenario_ext_id }}"
+  register: check_mode_result
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert check_mode result
+  ansible.builtin.assert:
+    that:
+      - check_mode_result is defined
+      - check_mode_result.changed == false
+      - check_mode_result.failed == false
+      - check_mode_result.ext_id == fake_scenario_ext_id
+      - check_mode_result.msg is defined
+      - "'Recommendation generation will be triggered' in check_mode_result.msg"
+      - "fake_scenario_ext_id in check_mode_result.msg"
+    success_msg: "Generate recommendation check_mode returned correctly."
+    fail_msg: "Generate recommendation check_mode did not behave as expected."
+
+########################################################################
+# 2. required field - Ansible argument spec must reject missing ext_id
+########################################################################
+
+- name: Generate recommendation without ext_id (should fail arg spec validation)
+  nutanix.ncp.ntnx_generate_recommendation_v2:
+    state: present
+  register: missing_ext_id_result
+  ignore_errors: true
+
+- name: Assert missing ext_id fails validation
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id_result is defined
+      - missing_ext_id_result.failed == true
+      - missing_ext_id_result.changed == false
+      - missing_ext_id_result.msg is defined
+      - "'ext_id' in missing_ext_id_result.msg"
+    success_msg: "Missing ext_id was rejected by the argument spec as expected."
+    fail_msg: "Missing ext_id was not rejected."
+
+########################################################################
+# 3. invalid state - Ansible argument spec must reject unsupported states
+########################################################################
+
+- name: Generate recommendation with unsupported state
+  nutanix.ncp.ntnx_generate_recommendation_v2:
+    state: absent
+    ext_id: "{{ fake_scenario_ext_id }}"
+  register: bad_state_result
+  ignore_errors: true
+
+- name: Assert invalid state fails validation
+  ansible.builtin.assert:
+    that:
+      - bad_state_result is defined
+      - bad_state_result.failed == true
+      - bad_state_result.changed == false
+      - bad_state_result.msg is defined
+      - "'state' in bad_state_result.msg"
+    success_msg: "Unsupported state was rejected as expected."
+    fail_msg: "Unsupported state was not rejected."
+
+########################################################################
+# 4. negative - non-existent scenario ext_id
+########################################################################
+
+- name: Generate recommendation for non-existent scenario
+  nutanix.ncp.ntnx_generate_recommendation_v2:
+    state: present
+    ext_id: "{{ fake_scenario_ext_id }}"
+  register: invalid_ext_id_result
+  ignore_errors: true
+
+- name: Assert invalid ext_id path fails with an API error
+  ansible.builtin.assert:
+    that:
+      - invalid_ext_id_result is defined
+      - invalid_ext_id_result.failed == true
+      - invalid_ext_id_result.changed == false
+      - invalid_ext_id_result.msg is defined
+      - >-
+        'Api Exception raised while generating recommendation'
+        in invalid_ext_id_result.msg
+      - invalid_ext_id_result.status is defined
+      - invalid_ext_id_result.status in [404, "404"]
+    success_msg: "Invalid scenario ext_id was rejected by the API as expected."
+    fail_msg: "Invalid scenario ext_id did not surface an API error."
+
+########################################################################
+# 5. live - only when `scenario_ext_id` extra-var is supplied
+########################################################################
+
+- name: Live generate recommendation flow (opt-in)
+  when: scenario_ext_id is defined and scenario_ext_id | length > 0
+  block:
+    - name: Generate recommendation for real scenario
+      nutanix.ncp.ntnx_generate_recommendation_v2:
+        state: present
+        ext_id: "{{ scenario_ext_id }}"
+      register: live_result
+      ignore_errors: true
+
+    - name: Assert live recommendation task returned
+      ansible.builtin.assert:
+        that:
+          - live_result is defined
+          - live_result.failed == false
+          - live_result.changed == true
+          - live_result.ext_id == scenario_ext_id
+          - live_result.task_ext_id is defined
+          - live_result.task_ext_id | length > 0
+          - live_result.response is defined
+          - live_result.response.status is defined
+          - live_result.response.status in ['SUCCEEDED', 'FAILED', 'QUEUED', 'RUNNING']
+        success_msg: "Recommendation task returned successfully."
+        fail_msg: "Recommendation task did not return the expected shape."
+
+########################################################################
+# End
+########################################################################
+
+- name: End Generate Recommendation tests
+  ansible.builtin.debug:
+    msg: End Generate Recommendation tests
