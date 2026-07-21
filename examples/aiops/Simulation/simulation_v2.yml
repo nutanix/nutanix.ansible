@@ -1,0 +1,83 @@
+---
+# Summary:
+# This playbook demonstrates end-to-end usage of the aiops Simulation modules:
+#   1. Create a Simulation (VM workload capacity spec)
+#   2. Update the Simulation
+#   3. Get Simulation using ext_id
+#   4. List all Simulations (with filter and limit variants)
+#   5. Delete the Simulation
+
+- name: Simulation playbook (aiops)
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('10.44.76.28', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('admin', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('Nutanix.123', true) }}"
+      nutanix_port: "{{ lookup('env', 'NUTANIX_PORT') | default(9440, true) }}"
+      validate_certs: false
+  tasks:
+    - name: Set common variables for the playbook
+      ansible.builtin.set_fact:
+        simulation_name: "simulation_ansible_example"
+
+    - name: Create a Simulation with all fields
+      nutanix.ncp.ntnx_simulation_v2:
+        state: present
+        name: "{{ simulation_name }}"
+        simulation_spec:
+          vcpu_count: 4
+          ram_gb: 8.0
+          hdd_gb: 100.0
+          ssd_gb: 50.0
+      register: create_result
+      ignore_errors: true
+
+    - name: Capture created Simulation ext_id
+      ansible.builtin.set_fact:
+        simulation_ext_id: "{{ create_result.ext_id }}"
+      when: create_result.ext_id is defined and create_result.ext_id | length > 0
+
+    - name: Update the Simulation with all fields
+      nutanix.ncp.ntnx_simulation_v2:
+        state: present
+        ext_id: "{{ simulation_ext_id }}"
+        name: "{{ simulation_name }}_updated"
+        simulation_spec:
+          vcpu_count: 8
+          ram_gb: 16.0
+          hdd_gb: 200.0
+          ssd_gb: 100.0
+      register: update_result
+      ignore_errors: true
+
+    - name: Get Simulation using ext_id
+      nutanix.ncp.ntnx_simulations_info_v2:
+        ext_id: "{{ simulation_ext_id }}"
+      register: get_result
+      ignore_errors: true
+
+    - name: List all Simulations
+      nutanix.ncp.ntnx_simulations_info_v2:
+      register: list_result
+      ignore_errors: true
+
+    - name: List Simulations with filter (by name)
+      nutanix.ncp.ntnx_simulations_info_v2:
+        filter: "name eq '{{ simulation_name }}_updated'"
+      register: list_filtered_result
+      ignore_errors: true
+
+    - name: List Simulations with limit
+      nutanix.ncp.ntnx_simulations_info_v2:
+        limit: 1
+      register: list_limited_result
+      ignore_errors: true
+
+    - name: Delete the Simulation
+      nutanix.ncp.ntnx_simulation_v2:
+        state: absent
+        ext_id: "{{ simulation_ext_id }}"
+      register: delete_result
+      ignore_errors: true

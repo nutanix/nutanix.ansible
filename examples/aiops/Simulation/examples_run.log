@@ -1,0 +1,37 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Simulation playbook (aiops)] *********************************************
+
+TASK [Set common variables for the playbook] ***********************************
+ok: [localhost] => {"ansible_facts": {"simulation_name": "simulation_ansible_example"}, "changed": false}
+
+TASK [Create a Simulation with all fields] *************************************
+changed: [localhost] => {"changed": true, "ext_id": "3c2f3473-9e99-4d9b-8d1b-f0bf5b1de10c", "response": {"ext_id": "3c2f3473-9e99-4d9b-8d1b-f0bf5b1de10c", "links": null, "name": "simulation_ansible_example", "simulation_spec": {"hdd_gb": 100.0, "ram_gb": 8.0, "ssd_gb": 50.0, "vcpu_count": 4}, "tenant_id": null}, "task_ext_id": null}
+
+TASK [Capture created Simulation ext_id] ***************************************
+ok: [localhost] => {"ansible_facts": {"simulation_ext_id": "3c2f3473-9e99-4d9b-8d1b-f0bf5b1de10c"}, "changed": false}
+
+TASK [Update the Simulation with all fields] ***********************************
+changed: [localhost] => {"changed": true, "ext_id": "3c2f3473-9e99-4d9b-8d1b-f0bf5b1de10c", "response": {"ext_id": "3c2f3473-9e99-4d9b-8d1b-f0bf5b1de10c", "links": null, "name": "simulation_ansible_example_updated", "simulation_spec": {"hdd_gb": 200.0, "ram_gb": 16.0, "ssd_gb": 100.0, "vcpu_count": 8}, "tenant_id": null}, "task_ext_id": null}
+
+TASK [Get Simulation using ext_id] *********************************************
+ok: [localhost] => {"changed": false, "ext_id": "3c2f3473-9e99-4d9b-8d1b-f0bf5b1de10c", "response": {"ext_id": "3c2f3473-9e99-4d9b-8d1b-f0bf5b1de10c", "links": null, "name": "simulation_ansible_example_updated", "simulation_spec": {"hdd_gb": 200.0, "ram_gb": 16.0, "ssd_gb": 100.0, "vcpu_count": 8}, "tenant_id": null}}
+
+TASK [List all Simulations] ****************************************************
+ok: [localhost] => {"changed": false, "response": [{"ext_id": "3c2f3473-9e99-4d9b-8d1b-f0bf5b1de10c", "links": null, "name": "simulation_ansible_example_updated", "simulation_spec": {"hdd_gb": 200.0, "ram_gb": 16.0, "ssd_gb": 100.0, "vcpu_count": 8}, "tenant_id": null}], "total_available_results": 1}
+
+TASK [List Simulations with filter (by name)] **********************************
+ok: [localhost] => {"changed": false, "response": [{"ext_id": "3c2f3473-9e99-4d9b-8d1b-f0bf5b1de10c", "links": null, "name": "simulation_ansible_example_updated", "simulation_spec": {"hdd_gb": 200.0, "ram_gb": 16.0, "ssd_gb": 100.0, "vcpu_count": 8}, "tenant_id": null}], "total_available_results": 1}
+
+TASK [List Simulations with limit] *********************************************
+ok: [localhost] => {"changed": false, "response": [{"ext_id": "3c2f3473-9e99-4d9b-8d1b-f0bf5b1de10c", "links": null, "name": "simulation_ansible_example_updated", "simulation_spec": {"hdd_gb": 200.0, "ram_gb": 16.0, "ssd_gb": 100.0, "vcpu_count": 8}, "tenant_id": null}], "total_available_results": 1}
+
+TASK [Delete the Simulation] ***************************************************
+changed: [localhost] => {"changed": true, "ext_id": "3c2f3473-9e99-4d9b-8d1b-f0bf5b1de10c", "msg": "Simulation with ext_id:3c2f3473-9e99-4d9b-8d1b-f0bf5b1de10c deleted successfully.", "response": {"status": "SUCCEEDED"}, "task_ext_id": null}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=9    changed=3    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
