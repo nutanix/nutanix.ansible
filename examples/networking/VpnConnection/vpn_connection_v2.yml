@@ -1,0 +1,135 @@
+---
+# Summary:
+# This playbook demonstrates end-to-end use of the VpnConnection v4 modules:
+# 1. Create a VPN connection
+# 2. Update the VPN connection
+# 3. Get the VPN connection using ext_id
+# 4. List all VPN connections (with optional filter / limit)
+# 5. Delete the VPN connection
+
+- name: VPN Connections playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('<pc_ip>', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('<user>', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('<pass>', true) }}"
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        local_gateway_ext_id: "1e04b1ef-6e2d-4cf1-8a67-8a5a70bb0a12"
+        remote_gateway_ext_id: "b8c2ce0a-3a51-4c66-8f42-5ea1a3f9c6c4"
+        vpn_connection_name: "vpn_connection_ansible"
+
+    - name: Create VPN connection
+      nutanix.ncp.ntnx_vpn_connection_v2:
+        state: present
+        name: "{{ vpn_connection_name }}"
+        description: "VPN connection created by Ansible"
+        local_gateway_reference: "{{ local_gateway_ext_id }}"
+        remote_gateway_reference: "{{ remote_gateway_ext_id }}"
+        local_gateway_role: "INITIATOR"
+        dynamic_route_priority: 500
+        ipsec_config:
+          pre_shared_key: "MyStrongSharedKey!"
+          local_vti_ip:
+            ipv4:
+              value: "169.254.10.1"
+              prefix_length: 30
+          remote_vti_ip:
+            ipv4:
+              value: "169.254.10.2"
+              prefix_length: 30
+          local_authentication_id: "local-id"
+          remote_authentication_id: "remote-id"
+          ike_lifetime_secs: 28800
+          ipsec_lifetime_secs: 3600
+          esp_pfs_dh_group_number: 14
+          ike_encryption_algorithm: "AES256"
+          ike_authentication_algorithm: "SHA256"
+          ipsec_encryption_algorithm: "AES256"
+          ipsec_authentication_algorithm: "SHA256"
+        dpd_config:
+          operation: "RESTART"
+          interval_secs: 30
+          timeout_secs: 120
+        qos_config:
+          ingress_limit_mbps: 100
+          egress_limit_mbps: 100
+      register: result
+      ignore_errors: true
+
+    - name: Set VPN connection ext_id
+      ansible.builtin.set_fact:
+        vpn_connection_ext_id: "{{ result.ext_id | default('') }}"
+
+    - name: Update VPN connection
+      nutanix.ncp.ntnx_vpn_connection_v2:
+        state: present
+        ext_id: "{{ vpn_connection_ext_id }}"
+        name: "{{ vpn_connection_name }}_updated"
+        description: "Updated VPN connection description"
+        local_gateway_reference: "{{ local_gateway_ext_id }}"
+        remote_gateway_reference: "{{ remote_gateway_ext_id }}"
+        local_gateway_role: "INITIATOR"
+        dynamic_route_priority: 450
+        ipsec_config:
+          pre_shared_key: "MyStrongSharedKey!"
+          local_vti_ip:
+            ipv4:
+              value: "169.254.10.1"
+              prefix_length: 30
+          remote_vti_ip:
+            ipv4:
+              value: "169.254.10.2"
+              prefix_length: 30
+          local_authentication_id: "local-id"
+          remote_authentication_id: "remote-id"
+          ike_lifetime_secs: 14400
+          ipsec_lifetime_secs: 1800
+          esp_pfs_dh_group_number: 14
+          ike_encryption_algorithm: "AES128"
+          ike_authentication_algorithm: "SHA512"
+          ipsec_encryption_algorithm: "AES128"
+          ipsec_authentication_algorithm: "SHA512"
+        dpd_config:
+          operation: "HOLD"
+          interval_secs: 60
+          timeout_secs: 240
+        qos_config:
+          ingress_limit_mbps: 200
+          egress_limit_mbps: 200
+      register: result
+      ignore_errors: true
+
+    - name: Get VPN connection using ext_id
+      nutanix.ncp.ntnx_vpn_connections_info_v2:
+        ext_id: "{{ vpn_connection_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all VPN connections
+      nutanix.ncp.ntnx_vpn_connections_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List VPN connections with filter
+      nutanix.ncp.ntnx_vpn_connections_info_v2:
+        filter: "name eq '{{ vpn_connection_name }}_updated'"
+      register: result
+      ignore_errors: true
+
+    - name: List VPN connections with limit
+      nutanix.ncp.ntnx_vpn_connections_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: Delete VPN connection
+      nutanix.ncp.ntnx_vpn_connection_v2:
+        state: absent
+        ext_id: "{{ vpn_connection_ext_id }}"
+      register: result
+      ignore_errors: true

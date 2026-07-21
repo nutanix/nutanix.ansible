@@ -170,3 +170,23 @@ def get_virtual_switch(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching virtual switch info using ext_id",
         )
+
+
+def get_vpn_connection(module, api_instance, ext_id):
+    """
+    This method will return VPN connection info using its ext_id
+    Args:
+        module: Ansible module
+        api_instance: VpnConnectionsApi instance from ntnx_networking_py_client sdk
+        ext_id (str): VPN connection external ID
+    return:
+        info (object): VPN connection info
+    """
+    try:
+        return api_instance.get_vpn_connection_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching VPN connection info using ext_id",
+        )
