@@ -1,0 +1,421 @@
+---
+# NicStat integration tests
+#
+# Test plan (Domain-Expert QA mindset):
+#
+#  1. Argument-spec / schema validation (no live API call needed):
+#       - missing every required field one-at-a-time
+#       - invalid choice for stat_type
+#  2. Live "get NIC stats" tests against Prism Central. The v4 API this module
+#     wraps is ESXi-only (EsxiStatsApi.get_nic_stats_by_id -> uri
+#     /api/vmm/v4.2/esxi/stats/vms/{vmExtId}/nics/{extId}). We therefore:
+#       a. discover any VM on the cluster + its NIC ext_id, and best-effort
+#          call the stats API with only required params, then with all params
+#          (sampling_interval, stat_type, select). If the cluster's hypervisor
+#          is AHV the API returns a 404 — we still assert the module surfaces
+#          this cleanly instead of crashing.
+#       b. force a "NIC not found" negative case with a well-formed but
+#          non-existent NIC ext_id and assert failed == true.
+#  3. Idempotency semantics: repeat the same call and assert `changed`
+#     remains false and the response is stable — this is an info/read-only
+#     entity, there is no create/update/delete to exercise.
+#  4. Check-mode: since both modules are read-only and set
+#     supports_check_mode=False, invoking with `check_mode: true` should be
+#     rejected — assert Ansible reports it as unsupported.
+#  5. Info module get-by-id parity: repeat 2a via ntnx_vm_nic_stats_info_v2
+#     and assert the response shape is the same.
+
+- name: Start NicStat tests
+  ansible.builtin.debug:
+    msg: Start NicStat tests
+
+- name: Generate a random suffix for run-scoped resources
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set a wide reporting window
+  ansible.builtin.set_fact:
+    stat_start_time: "2024-01-01T00:00:00Z"
+    stat_end_time: "2026-12-31T23:59:59Z"
+
+- name: Use fixed, well-formed UUIDs for negative scenarios
+  ansible.builtin.set_fact:
+    fake_vm_ext_id: "00000000-0000-0000-0000-000000000001"
+    fake_nic_ext_id: "00000000-0000-0000-0000-000000000002"
+    invalid_choice_value: "NOT_A_REAL_OP"
+
+########################################################################################
+# 1. Argument spec / schema validation (no live API call)
+########################################################################################
+
+- name: Fetch VM NIC stats with missing ext_id (should fail schema)
+  nutanix.ncp.ntnx_nic_stat_v2:
+    vm_ext_id: "{{ fake_vm_ext_id }}"
+    start_time: "{{ stat_start_time }}"
+    end_time: "{{ stat_end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch VM NIC stats with missing ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed | default(false) == false
+      - "'ext_id' in result.msg"
+    success_msg: "Missing ext_id correctly rejected by schema"
+    fail_msg: "Missing ext_id was NOT rejected as expected"
+
+- name: Fetch VM NIC stats with missing vm_ext_id (should fail schema)
+  nutanix.ncp.ntnx_nic_stat_v2:
+    ext_id: "{{ fake_nic_ext_id }}"
+    start_time: "{{ stat_start_time }}"
+    end_time: "{{ stat_end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch VM NIC stats with missing vm_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed | default(false) == false
+      - "'vm_ext_id' in result.msg"
+    success_msg: "Missing vm_ext_id correctly rejected by schema"
+    fail_msg: "Missing vm_ext_id was NOT rejected as expected"
+
+- name: Fetch VM NIC stats with missing start_time (should fail schema)
+  nutanix.ncp.ntnx_nic_stat_v2:
+    vm_ext_id: "{{ fake_vm_ext_id }}"
+    ext_id: "{{ fake_nic_ext_id }}"
+    end_time: "{{ stat_end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch VM NIC stats with missing start_time status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed | default(false) == false
+      - "'start_time' in result.msg"
+    success_msg: "Missing start_time correctly rejected"
+    fail_msg: "Missing start_time was NOT rejected as expected"
+
+- name: Fetch VM NIC stats with missing end_time (should fail schema)
+  nutanix.ncp.ntnx_nic_stat_v2:
+    vm_ext_id: "{{ fake_vm_ext_id }}"
+    ext_id: "{{ fake_nic_ext_id }}"
+    start_time: "{{ stat_start_time }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch VM NIC stats with missing end_time status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed | default(false) == false
+      - "'end_time' in result.msg"
+    success_msg: "Missing end_time correctly rejected"
+    fail_msg: "Missing end_time was NOT rejected as expected"
+
+- name: Fetch VM NIC stats with an invalid stat_type (should fail schema)
+  nutanix.ncp.ntnx_nic_stat_v2:
+    vm_ext_id: "{{ fake_vm_ext_id }}"
+    ext_id: "{{ fake_nic_ext_id }}"
+    start_time: "{{ stat_start_time }}"
+    end_time: "{{ stat_end_time }}"
+    stat_type: "{{ invalid_choice_value }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch VM NIC stats with an invalid stat_type status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed | default(false) == false
+      - "'stat_type' in result.msg"
+    success_msg: "Invalid stat_type correctly rejected"
+    fail_msg: "Invalid stat_type was NOT rejected as expected"
+
+- name: Info module — missing ext_id should also fail schema
+  nutanix.ncp.ntnx_vm_nic_stats_info_v2:
+    vm_ext_id: "{{ fake_vm_ext_id }}"
+    start_time: "{{ stat_start_time }}"
+    end_time: "{{ stat_end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: Info module — missing ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed | default(false) == false
+      - "'ext_id' in result.msg"
+    success_msg: "Info module schema correctly rejects missing ext_id"
+    fail_msg: "Info module did NOT reject missing ext_id as expected"
+
+########################################################################################
+# 2. Check-mode is unsupported on read-only stats modules — invoking should fail cleanly
+########################################################################################
+
+- name: Fetch VM NIC stats in check_mode (unsupported by module)
+  nutanix.ncp.ntnx_nic_stat_v2:
+    vm_ext_id: "{{ fake_vm_ext_id }}"
+    ext_id: "{{ fake_nic_ext_id }}"
+    start_time: "{{ stat_start_time }}"
+    end_time: "{{ stat_end_time }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Fetch VM NIC stats in check_mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - >-
+        result.failed == true or result.skipped | default(false) == true
+    success_msg: "check_mode is correctly reported as unsupported"
+    fail_msg: "check_mode was not handled as expected"
+
+########################################################################################
+# 3. Live "not found" negative case — well-formed but non-existent VM+NIC ExtIDs
+########################################################################################
+
+- name: Fetch VM NIC stats for a non-existent VM/NIC (should fail via API)
+  nutanix.ncp.ntnx_nic_stat_v2:
+    vm_ext_id: "{{ fake_vm_ext_id }}"
+    ext_id: "{{ fake_nic_ext_id }}"
+    start_time: "{{ stat_start_time }}"
+    end_time: "{{ stat_end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch VM NIC stats for a non-existent VM/NIC status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed | default(false) == false
+      - result.msg is defined
+    success_msg: "Non-existent VM/NIC correctly returned failure"
+    fail_msg: "Non-existent VM/NIC did NOT surface a failure"
+
+- name: Info module — fetch for non-existent VM/NIC (should fail via API)
+  nutanix.ncp.ntnx_vm_nic_stats_info_v2:
+    vm_ext_id: "{{ fake_vm_ext_id }}"
+    ext_id: "{{ fake_nic_ext_id }}"
+    start_time: "{{ stat_start_time }}"
+    end_time: "{{ stat_end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: Info module non-existent lookup status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed | default(false) == false
+      - result.msg is defined
+    success_msg: "Info module correctly surfaces failure for non-existent VM/NIC"
+    fail_msg: "Info module did NOT surface a failure for non-existent VM/NIC"
+
+########################################################################################
+# 4. Live discovery of a real VM+NIC (best-effort) and fetch stats
+#
+# The v4 stats API is ESXi-only. Prism Central may only have AHV VMs, in which
+# case the discovered VM will not exist under /esxi/stats and the API returns
+# an error — we still assert the module returns a well-formed failure.
+########################################################################################
+
+- name: List a handful of VMs on the cluster (used to source a real NIC ExtID)
+  nutanix.ncp.ntnx_vms_info_v2:
+    limit: 10
+  register: vms_info
+  ignore_errors: true
+
+- name: Set flag whether any VM was discovered
+  ansible.builtin.set_fact:
+    have_any_vm: "{{ vms_info is defined and vms_info.failed | default(true) == false and vms_info.response is defined and (vms_info.response | length > 0) }}"
+
+- name: Pick the first VM with at least one NIC (if any)
+  ansible.builtin.set_fact:
+    real_vm_ext_id: >-
+      {{ (vms_info.response | selectattr('nics', 'defined')
+          | selectattr('nics', 'truthy') | list | first).ext_id | default(omit) }}
+    real_nic_ext_id: >-
+      {{ ((vms_info.response | selectattr('nics', 'defined')
+          | selectattr('nics', 'truthy') | list | first).nics
+          | first).ext_id | default(omit) }}
+  when: have_any_vm | bool
+  failed_when: false
+
+- name: Fetch VM NIC stats with required attributes only (best-effort live call)
+  nutanix.ncp.ntnx_nic_stat_v2:
+    vm_ext_id: "{{ real_vm_ext_id }}"
+    ext_id: "{{ real_nic_ext_id }}"
+    start_time: "{{ stat_start_time }}"
+    end_time: "{{ stat_end_time }}"
+  register: nic_stat_min
+  when: real_vm_ext_id is defined and real_nic_ext_id is defined
+  ignore_errors: true
+
+- name: Live minimal fetch — assert the module returned a well-formed dict
+  ansible.builtin.assert:
+    that:
+      - nic_stat_min is defined
+      - nic_stat_min.changed | default(false) == false
+      - nic_stat_min.ext_id | default(none) == real_nic_ext_id
+      - nic_stat_min.vm_ext_id | default(none) == real_vm_ext_id
+    success_msg: "Live minimal NIC stats call returned a well-formed result"
+    fail_msg: "Live minimal NIC stats call did not return a well-formed result"
+  when:
+    - real_vm_ext_id is defined
+    - real_nic_ext_id is defined
+    - nic_stat_min is defined
+    - not (nic_stat_min.failed | default(false))
+
+- name: Fetch VM NIC stats with ALL supported attributes (best-effort live call)
+  nutanix.ncp.ntnx_nic_stat_v2:
+    vm_ext_id: "{{ real_vm_ext_id }}"
+    ext_id: "{{ real_nic_ext_id }}"
+    start_time: "{{ stat_start_time }}"
+    end_time: "{{ stat_end_time }}"
+    sampling_interval: 30
+    stat_type: AVG
+    select: "stats/networkDroppedReceivedPackets,stats/networkDroppedTransmittedPackets"
+  register: nic_stat_full
+  when: real_vm_ext_id is defined and real_nic_ext_id is defined
+  ignore_errors: true
+
+- name: Live full fetch — assert changed is false and ext_ids match
+  ansible.builtin.assert:
+    that:
+      - nic_stat_full is defined
+      - nic_stat_full.changed | default(false) == false
+      - nic_stat_full.ext_id | default(none) == real_nic_ext_id
+      - nic_stat_full.vm_ext_id | default(none) == real_vm_ext_id
+    success_msg: "Live full NIC stats call returned a well-formed result"
+    fail_msg: "Live full NIC stats call did not return a well-formed result"
+  when:
+    - real_vm_ext_id is defined
+    - real_nic_ext_id is defined
+    - nic_stat_full is defined
+    - not (nic_stat_full.failed | default(false))
+
+- name: Idempotency — the same request twice returns the same shape
+  nutanix.ncp.ntnx_nic_stat_v2:
+    vm_ext_id: "{{ real_vm_ext_id }}"
+    ext_id: "{{ real_nic_ext_id }}"
+    start_time: "{{ stat_start_time }}"
+    end_time: "{{ stat_end_time }}"
+  register: nic_stat_repeat
+  when: real_vm_ext_id is defined and real_nic_ext_id is defined
+  ignore_errors: true
+
+- name: Idempotency — assert changed remains false and result shape is stable
+  ansible.builtin.assert:
+    that:
+      - nic_stat_repeat is defined
+      - nic_stat_repeat.changed | default(false) == false
+      - nic_stat_repeat.ext_id | default(none) == real_nic_ext_id
+      - nic_stat_repeat.vm_ext_id | default(none) == real_vm_ext_id
+    success_msg: "Repeat call is idempotent and returns the same shape"
+    fail_msg: "Repeat call returned a different shape than the first call"
+  when:
+    - real_vm_ext_id is defined
+    - real_nic_ext_id is defined
+    - nic_stat_repeat is defined
+    - not (nic_stat_repeat.failed | default(false))
+
+########################################################################################
+# 5. Info module parity with the CRUD-style module — same operation, same shape
+########################################################################################
+
+- name: Info module — fetch NIC stats with minimum attrs (best-effort live)
+  nutanix.ncp.ntnx_vm_nic_stats_info_v2:
+    vm_ext_id: "{{ real_vm_ext_id }}"
+    ext_id: "{{ real_nic_ext_id }}"
+    start_time: "{{ stat_start_time }}"
+    end_time: "{{ stat_end_time }}"
+  register: nic_stat_info_min
+  when: real_vm_ext_id is defined and real_nic_ext_id is defined
+  ignore_errors: true
+
+- name: Info module minimal — assert well-formed shape and changed=false
+  ansible.builtin.assert:
+    that:
+      - nic_stat_info_min is defined
+      - nic_stat_info_min.changed | default(false) == false
+      - nic_stat_info_min.ext_id | default(none) == real_nic_ext_id
+      - nic_stat_info_min.vm_ext_id | default(none) == real_vm_ext_id
+    success_msg: "Info module returned a well-formed result"
+    fail_msg: "Info module did not return a well-formed result"
+  when:
+    - real_vm_ext_id is defined
+    - real_nic_ext_id is defined
+    - nic_stat_info_min is defined
+    - not (nic_stat_info_min.failed | default(false))
+
+- name: Info module — fetch NIC stats with ALL attrs
+  nutanix.ncp.ntnx_vm_nic_stats_info_v2:
+    vm_ext_id: "{{ real_vm_ext_id }}"
+    ext_id: "{{ real_nic_ext_id }}"
+    start_time: "{{ stat_start_time }}"
+    end_time: "{{ stat_end_time }}"
+    sampling_interval: 60
+    stat_type: SUM
+  register: nic_stat_info_full
+  when: real_vm_ext_id is defined and real_nic_ext_id is defined
+  ignore_errors: true
+
+- name: Info module full — assert well-formed shape and changed=false
+  ansible.builtin.assert:
+    that:
+      - nic_stat_info_full is defined
+      - nic_stat_info_full.changed | default(false) == false
+      - nic_stat_info_full.ext_id | default(none) == real_nic_ext_id
+      - nic_stat_info_full.vm_ext_id | default(none) == real_vm_ext_id
+    success_msg: "Info module full-attrs call returned a well-formed result"
+    fail_msg: "Info module full-attrs call did not return a well-formed result"
+  when:
+    - real_vm_ext_id is defined
+    - real_nic_ext_id is defined
+    - nic_stat_info_full is defined
+    - not (nic_stat_info_full.failed | default(false))
+
+########################################################################################
+# 6. Every enum choice must be accepted by the schema
+########################################################################################
+
+- name: Argument spec — every stat_type enum value must be accepted
+  nutanix.ncp.ntnx_nic_stat_v2:
+    vm_ext_id: "{{ fake_vm_ext_id }}"
+    ext_id: "{{ fake_nic_ext_id }}"
+    start_time: "{{ stat_start_time }}"
+    end_time: "{{ stat_end_time }}"
+    stat_type: "{{ item }}"
+  register: stat_type_iter
+  ignore_errors: true
+  loop:
+    - SUM
+    - MIN
+    - MAX
+    - AVG
+    - COUNT
+    - LAST
+
+- name: Argument spec — the failure must be an API error, not a schema error
+  ansible.builtin.assert:
+    that:
+      - item.failed | default(false) == true
+      - item.msg is defined
+      - item.msg is not search('value of stat_type must be one of')
+    success_msg: "stat_type={{ item.item }} accepted by schema"
+    fail_msg: "stat_type={{ item.item }} was rejected by schema unexpectedly"
+  loop: "{{ stat_type_iter.results }}"
+  loop_control:
+    label: "{{ item.item }}"

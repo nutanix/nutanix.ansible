@@ -1,0 +1,71 @@
+---
+# Summary:
+# This playbook demonstrates how to use the NicStat (VMM v4) Ansible modules
+# to fetch NIC-level performance statistics for a VM running on an ESXi host
+# managed by Nutanix Prism Central.
+#
+# Both modules wrap the same v4 SDK call
+# (EsxiStatsApi.get_nic_stats_by_id -> GET /api/vmm/v4.2/esxi/stats/vms/{vmExtId}/nics/{extId})
+# and take the same set of query parameters. Two flavors are provided:
+#   * ntnx_nic_stat_v2         - primary NIC-stats fetch module
+#   * ntnx_vm_nic_stats_info_v2 - info-style flavor of the same operation
+#
+# Steps:
+#   1. Fetch NIC stats with only the required attributes (vm_ext_id, ext_id,
+#      start_time, end_time).
+#   2. Fetch NIC stats with ALL supported attributes (adds sampling_interval,
+#      stat_type, and select).
+#   3. Use the info module to fetch NIC stats by ext_id (info-style).
+
+- name: NicStat (VMM v4) playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('10.44.76.28', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('admin', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('Nutanix.123', true) }}"
+      validate_certs: false
+  tasks:
+    # NOTE: replace vm_ext_id / nic_ext_id with the ExtIDs of an ESXi VM
+    # + NIC on your cluster. If the referenced VM lives on AHV (or does not
+    # exist under /esxi/stats), the API returns HTTP 404 with error code
+    # VMM-30100 "VM_NOT_FOUND" — the module surfaces that cleanly.
+    - name: Set stat window and identifiers
+      ansible.builtin.set_fact:
+        vm_ext_id: "4d5a5911-43f3-4788-8455-a28c81633900"
+        nic_ext_id: "868f0ac7-5f6a-4f49-7003-788a8091841f"
+        window_start: "2024-07-31T12:41:56.955Z"
+        window_end: "2025-12-31T12:41:56.955Z"
+
+    - name: Fetch VM NIC stats with required attributes only
+      nutanix.ncp.ntnx_nic_stat_v2:
+        vm_ext_id: "{{ vm_ext_id }}"
+        ext_id: "{{ nic_ext_id }}"
+        start_time: "{{ window_start }}"
+        end_time: "{{ window_end }}"
+      register: nic_stat_minimal
+      ignore_errors: true
+
+    - name: Fetch VM NIC stats with ALL attributes
+      nutanix.ncp.ntnx_nic_stat_v2:
+        vm_ext_id: "{{ vm_ext_id }}"
+        ext_id: "{{ nic_ext_id }}"
+        start_time: "{{ window_start }}"
+        end_time: "{{ window_end }}"
+        sampling_interval: 30
+        stat_type: AVG
+        select: "stats/networkDroppedReceivedPackets,stats/networkDroppedTransmittedPackets"
+      register: nic_stat_full
+      ignore_errors: true
+
+    - name: Fetch VM NIC stats via the info module
+      nutanix.ncp.ntnx_vm_nic_stats_info_v2:
+        vm_ext_id: "{{ vm_ext_id }}"
+        ext_id: "{{ nic_ext_id }}"
+        start_time: "{{ window_start }}"
+        end_time: "{{ window_end }}"
+        sampling_interval: 30
+        stat_type: AVG
+      register: nic_stat_info
+      ignore_errors: true
