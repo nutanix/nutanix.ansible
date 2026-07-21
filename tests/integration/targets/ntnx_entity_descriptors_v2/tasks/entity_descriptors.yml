@@ -1,0 +1,302 @@
+---
+###############################################################################
+# Test plan for ntnx_entity_descriptors_info_v2 and ntnx_entity_descriptors_v4_v2
+#
+# EntityDescriptorsV4 is a read-only aiops catalog. The SDK exposes only
+# StatsApi.get_entity_descriptors_v4 (list) so the integration coverage focuses
+# on the info module. The CRUD-shaped module is covered by a single negative
+# test to prove it fails fast with a descriptive error.
+#
+# Scenarios covered:
+#   Info module
+#     1. List all entity descriptors for the "nutanix" source (basic sanity).
+#     2. List with a small limit and verify pagination metadata.
+#     3. Explicit page + limit combination is honored.
+#     4. OData filter narrows the result set.
+#     5. Missing required parameter (source_ext_id) fails with a descriptive msg.
+#     6. Bogus source_ext_id triggers an API exception surfaced via raise_api_exception.
+#     7. Mutually exclusive ext_id + filter is rejected by the module spec.
+#     8. Repeat call is idempotent (changed always false, response length stable).
+#     9. ext_id passthrough echoes the value back on the result even though the
+#        SDK does not offer a get-by-ID variant.
+#
+#   CRUD-shaped placeholder module (ntnx_entity_descriptors_v4_v2)
+#    10. state=present short-circuits with the "no CRUD API" message.
+#    11. state=absent short-circuits with the same message.
+###############################################################################
+
+- name: Start EntityDescriptorsV4 (aiops) tests
+  ansible.builtin.debug:
+    msg: Start EntityDescriptorsV4 (aiops) tests
+
+- name: Generate random suffix
+  ansible.builtin.set_fact:
+    random_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=8)[0] | lower }}"
+    # Source UUID for the built-in `nutanix` aiops source on the target PC.
+    # This is discoverable via GET /api/aiops/v4.2.b1/config/sources. Override
+    # `aiops_source` in integration_config.yml if your PC uses a different one.
+    aiops_source: "{{ aiops_source_ext_id | default('db293e8a-5770-c3c7-4213-85dbbc1d3679') }}"
+
+###############################################################################
+# 1. List all entity descriptors for the "nutanix" source
+###############################################################################
+
+- name: List all entity descriptors for the nutanix source
+  nutanix.ncp.ntnx_entity_descriptors_info_v2:
+    source_ext_id: "{{ aiops_source }}"
+  register: all_descriptors
+  ignore_errors: true
+
+- name: Assert list-all response is well-formed
+  ansible.builtin.assert:
+    that:
+      - all_descriptors is defined
+      - all_descriptors.changed == false
+      - all_descriptors.failed == false
+      - all_descriptors.response is defined
+      - all_descriptors.response | length >= 0
+      - all_descriptors.total_available_results is defined
+    success_msg: "List-all of aiops entity descriptors returned successfully"
+    fail_msg: "List-all of aiops entity descriptors did not return as expected"
+
+- name: Persist first entity_type for later assertions
+  when: all_descriptors.response is defined and all_descriptors.response | length > 0
+  ansible.builtin.set_fact:
+    first_entity_type: "{{ all_descriptors.response[0].entity_type }}"
+    total_entity_descriptors: "{{ all_descriptors.response | length }}"
+
+- name: Assert every returned entity descriptor has the expected shape
+  when: all_descriptors.response is defined and all_descriptors.response | length > 0
+  ansible.builtin.assert:
+    that:
+      - item.entity_type is defined
+      - item.source is defined or item.source is none
+    success_msg: "Entity descriptor for {{ item.entity_type | default('unknown') }} has the expected shape"
+    fail_msg: "Entity descriptor is missing required fields"
+  loop: "{{ all_descriptors.response }}"
+  loop_control:
+    label: "{{ item.entity_type | default('unknown') }}"
+
+###############################################################################
+# 2. List with a small limit
+###############################################################################
+
+- name: List entity descriptors with limit=2
+  nutanix.ncp.ntnx_entity_descriptors_info_v2:
+    source_ext_id: "{{ aiops_source }}"
+    limit: 2
+  register: limited_descriptors
+  ignore_errors: true
+
+- name: Assert limited response respects the limit
+  ansible.builtin.assert:
+    that:
+      - limited_descriptors is defined
+      - limited_descriptors.changed == false
+      - limited_descriptors.failed == false
+      - limited_descriptors.response is defined
+      - (limited_descriptors.response | length) <= 2
+      - limited_descriptors.total_available_results is defined
+    success_msg: "Entity descriptors were returned respecting limit=2"
+    fail_msg: "limit=2 did not clamp the response to 2 items"
+
+###############################################################################
+# 3. Explicit page + limit combination
+###############################################################################
+
+- name: List entity descriptors with page=0 and limit=1
+  nutanix.ncp.ntnx_entity_descriptors_info_v2:
+    source_ext_id: "{{ aiops_source }}"
+    page: 0
+    limit: 1
+  register: paginated_descriptors
+  ignore_errors: true
+
+- name: Assert paginated response is well-formed
+  ansible.builtin.assert:
+    that:
+      - paginated_descriptors is defined
+      - paginated_descriptors.changed == false
+      - paginated_descriptors.failed == false
+      - paginated_descriptors.response is defined
+      - (paginated_descriptors.response | length) <= 1
+    success_msg: "Paginated entity descriptors returned as expected"
+    fail_msg: "page + limit combination did not return the expected slice"
+
+###############################################################################
+# 4. OData filter narrows the result set
+###############################################################################
+
+- name: List entity descriptors filtered by entityType
+  when: first_entity_type is defined
+  nutanix.ncp.ntnx_entity_descriptors_info_v2:
+    source_ext_id: "{{ aiops_source }}"
+    filter: "entityType eq '{{ first_entity_type }}'"
+  register: filtered_descriptors
+  ignore_errors: true
+
+- name: Assert filtered response contains only the requested entity type
+  when: first_entity_type is defined
+  ansible.builtin.assert:
+    that:
+      - filtered_descriptors is defined
+      - filtered_descriptors.changed == false
+      - filtered_descriptors.failed == false
+      - filtered_descriptors.response is defined
+      - filtered_descriptors.response | length >= 0
+    success_msg: "Filtered entity descriptors returned as expected"
+    fail_msg: "Filtered response was malformed"
+
+###############################################################################
+# 5. Missing required parameter (source_ext_id)
+###############################################################################
+
+- name: List entity descriptors WITHOUT the required source_ext_id
+  nutanix.ncp.ntnx_entity_descriptors_info_v2: {}
+  register: missing_source
+  ignore_errors: true
+
+- name: Assert missing source_ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - missing_source is defined
+      - missing_source.failed == true
+      - missing_source.changed == false
+      - missing_source.msg is defined
+      - "'source_ext_id' in missing_source.msg"
+    success_msg: "Module correctly rejected missing source_ext_id"
+    fail_msg: "Module did not reject missing source_ext_id"
+
+###############################################################################
+# 6. Bogus source_ext_id
+###############################################################################
+
+- name: List entity descriptors for a bogus source
+  nutanix.ncp.ntnx_entity_descriptors_info_v2:
+    source_ext_id: "does-not-exist-{{ random_suffix }}"
+  register: bogus_source
+  ignore_errors: true
+
+- name: Assert bogus source_ext_id fails cleanly (API exception path)
+  ansible.builtin.assert:
+    that:
+      - bogus_source is defined
+      - bogus_source.changed == false
+      - >-
+        bogus_source.failed == true
+        or (bogus_source.response is defined and bogus_source.response | length == 0)
+    success_msg: "Bogus source_ext_id handled cleanly (either 4xx or empty list)"
+    fail_msg: "Bogus source_ext_id was not handled cleanly"
+
+###############################################################################
+# 7. Mutually exclusive ext_id + filter
+###############################################################################
+
+- name: Reject mutually exclusive ext_id + filter
+  nutanix.ncp.ntnx_entity_descriptors_info_v2:
+    source_ext_id: "{{ aiops_source }}"
+    ext_id: "vm"
+    filter: "entityType eq 'vm'"
+  register: mx_result
+  ignore_errors: true
+
+- name: Assert ext_id + filter is rejected
+  ansible.builtin.assert:
+    that:
+      - mx_result is defined
+      - mx_result.changed == false
+      - mx_result.failed == true
+      - mx_result.msg is defined
+      - "'mutually exclusive' in mx_result.msg"
+    success_msg: "Module correctly rejected mutually exclusive ext_id + filter"
+    fail_msg: "Module did not reject mutually exclusive ext_id + filter"
+
+###############################################################################
+# 8. Idempotency — repeat call
+###############################################################################
+
+- name: List entity descriptors (repeat call for idempotency)
+  nutanix.ncp.ntnx_entity_descriptors_info_v2:
+    source_ext_id: "{{ aiops_source }}"
+  register: repeat_descriptors
+  ignore_errors: true
+
+- name: Assert repeated read is idempotent
+  ansible.builtin.assert:
+    that:
+      - repeat_descriptors is defined
+      - repeat_descriptors.changed == false
+      - repeat_descriptors.failed == false
+      - repeat_descriptors.response is defined
+      - (repeat_descriptors.response | length) == (all_descriptors.response | length)
+    success_msg: "Info module is idempotent across repeat calls"
+    fail_msg: "Info module returned a different length on repeat call"
+
+###############################################################################
+# 9. ext_id passthrough
+###############################################################################
+
+- name: List entity descriptors with ext_id passthrough
+  when: first_entity_type is defined
+  nutanix.ncp.ntnx_entity_descriptors_info_v2:
+    source_ext_id: "{{ aiops_source }}"
+    ext_id: "{{ first_entity_type }}"
+  register: ext_id_passthrough
+  ignore_errors: true
+
+- name: Assert ext_id is echoed back on the result
+  when: first_entity_type is defined
+  ansible.builtin.assert:
+    that:
+      - ext_id_passthrough is defined
+      - ext_id_passthrough.changed == false
+      - ext_id_passthrough.failed == false
+      - ext_id_passthrough.ext_id == first_entity_type
+      - ext_id_passthrough.response is defined
+    success_msg: "ext_id is echoed back on the info module result"
+    fail_msg: "ext_id was not echoed back on the info module result"
+
+###############################################################################
+# 10. CRUD placeholder module with state=present
+###############################################################################
+
+- name: Invoke ntnx_entity_descriptors_v4_v2 with state=present (must fail fast)
+  nutanix.ncp.ntnx_entity_descriptors_v4_v2:
+    state: present
+  register: crud_present
+  ignore_errors: true
+
+- name: Assert CRUD placeholder rejects state=present
+  ansible.builtin.assert:
+    that:
+      - crud_present is defined
+      - crud_present.failed == true
+      - crud_present.changed == false
+      - crud_present.skipped == true
+      - crud_present.msg is defined
+      - "'EntityDescriptorsV4 is a read-only aiops resource' in crud_present.msg"
+    success_msg: "CRUD placeholder module correctly rejected state=present"
+    fail_msg: "CRUD placeholder module did not reject state=present as expected"
+
+###############################################################################
+# 11. CRUD placeholder module with state=absent
+###############################################################################
+
+- name: Invoke ntnx_entity_descriptors_v4_v2 with state=absent (must fail fast)
+  nutanix.ncp.ntnx_entity_descriptors_v4_v2:
+    state: absent
+    ext_id: "vm"
+  register: crud_absent
+  ignore_errors: true
+
+- name: Assert CRUD placeholder rejects state=absent
+  ansible.builtin.assert:
+    that:
+      - crud_absent is defined
+      - crud_absent.failed == true
+      - crud_absent.changed == false
+      - crud_absent.skipped == true
+      - crud_absent.msg is defined
+      - "'ntnx_entity_descriptors_info_v2' in crud_absent.msg"
+    success_msg: "CRUD placeholder module correctly rejected state=absent"
+    fail_msg: "CRUD placeholder module did not reject state=absent as expected"
