@@ -1,0 +1,23 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Antivirus Server playbook] ***********************************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"file_server_ext_id": "18f78959-14a6-4c47-b5db-920460c4b668"}, "changed": false}
+
+TASK [Create antivirus server] *************************************************
+[ERROR]: Task failed: Module failed: Api Exception raised while creating antivirus server
+Origin: /tmp/codegen-artifacts.SQrFnp/antivirus_server_run.yml:29:7
+
+27         file_server_ext_id: "18f78959-14a6-4c47-b5db-920460c4b668"
+28
+29     - name: Create antivirus server
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while creating antivirus server", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=1    changed=0    unreachable=0    failed=1    skipped=0    rescued=0    ignored=0   
+

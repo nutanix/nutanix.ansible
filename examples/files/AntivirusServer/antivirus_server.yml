@@ -1,0 +1,82 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create an antivirus (ICAP) server on a Nutanix Files file server
+# 2. Update the antivirus server
+# 3. Get the antivirus server using ext_id
+# 4. List all antivirus servers of the file server
+# 5. List antivirus servers with a filter
+# 6. List antivirus servers with a limit
+# 7. Delete the antivirus server
+#
+# Note: An existing Nutanix Files file server is required. Replace the
+# file_server_ext_id value below with the external ID of your file server.
+
+- name: Antivirus Server playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        file_server_ext_id: "18f78959-14a6-4c47-b5db-920460c4b668"
+
+    - name: Create antivirus server
+      nutanix.ncp.ntnx_files_antivirus_server_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        description: "Antivirus server created by Ansible"
+        address:
+          ipv4:
+            value: "10.44.10.100"
+        port: 1344
+        partner_service_name: "avscan"
+      register: result
+
+    - name: Set antivirus server ext_id
+      ansible.builtin.set_fact:
+        antivirus_server_ext_id: "{{ result.ext_id }}"
+
+    - name: Update antivirus server
+      nutanix.ncp.ntnx_files_antivirus_server_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ antivirus_server_ext_id }}"
+        description: "Antivirus server updated by Ansible"
+        partner_service_name: "avscan-updated"
+      register: result
+
+    - name: Get antivirus server using ext_id
+      nutanix.ncp.ntnx_files_antivirus_servers_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ antivirus_server_ext_id }}"
+      register: result
+
+    - name: List all antivirus servers
+      nutanix.ncp.ntnx_files_antivirus_servers_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+      register: result
+
+    - name: List antivirus servers with filter
+      nutanix.ncp.ntnx_files_antivirus_servers_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        filter: "port eq 1344"
+      register: result
+
+    - name: List antivirus servers with limit
+      nutanix.ncp.ntnx_files_antivirus_servers_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        limit: 1
+      register: result
+
+    - name: Delete antivirus server
+      nutanix.ncp.ntnx_files_antivirus_server_v2:
+        state: absent
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ antivirus_server_ext_id }}"
+      register: result
