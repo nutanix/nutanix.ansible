@@ -1,0 +1,561 @@
+---
+# =============================================================================
+# TEST PLAN — ntnx_files_notification_policy_v2 / ntnx_files_notification_policies_info_v2
+# -----------------------------------------------------------------------------
+# The tests below combine SDK knowledge (NotificationPolicy struct: name,
+# protocol_types[ProtocolType], operations[FileOperation], file_blocking_mode,
+# file_extensions, mount_target_ext_ids, partner_server_ext_ids, blocked_clients,
+# should_include_all_mount_targets, has_secured_connection), module knowledge
+# (state dispatch, check_mode, idempotency, validate_required_params) and domain
+# knowledge (a policy scopes file operations on protocols/mount targets and
+# notifies partner servers; blocked clients suppress notifications).
+#
+# Offline (no live Files service required) — always run:
+#   1. check_mode create with ALL attributes -> spec is generated, no change.
+#   2. Negative: missing required file_server_ext_id.
+#   3. Negative: missing required protocol_types (create validation).
+#   4. Negative: missing required operations (create validation).
+#   5. Negative: invalid enum value for protocol_types.
+#   6. Negative: invalid enum value for file_blocking_mode.
+#   7. check_mode delete -> reports "will be deleted", no change.
+#
+# Live (require a real file server ext_id supplied in integration_config.yml) —
+# gated on notification_policy.file_server_ext_id being non-empty:
+#   8.  create with minimum required attributes.
+#   9.  create with ALL attributes.
+#   10. get-by-id via info module.
+#   11. list all via info module.
+#   12. list with filter (name eq ...).
+#   13. list with limit.
+#   14. update (change enums, add file_extensions, toggle flags).
+#   15. update idempotency (same values -> Nothing to change / skipped).
+#   16. get-by-id with invalid ext_id -> error.
+#   17. delete created policies (check_mode already covered above).
+# =============================================================================
+
+- name: Start NotificationPolicy tests
+  ansible.builtin.debug:
+    msg: Start NotificationPolicy tests
+
+- name: Generate random name suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ range(1, 2**31) | random }}{{ range(1, 2**31) | random }}"
+    suffix_name: "ansible"
+    todelete: []
+
+- name: Set notification policy names
+  ansible.builtin.set_fact:
+    np_name_min: "np_{{ suffix_name }}_{{ random_name }}_min"
+    np_name_full: "np_{{ suffix_name }}_{{ random_name }}_full"
+    np_name_updated: "np_{{ suffix_name }}_{{ random_name }}_updated"
+
+- name: Resolve prerequisite references from integration_config
+  ansible.builtin.set_fact:
+    fs_ext_id: "{{ notification_policy.file_server_ext_id | default('') }}"
+    partner_ext_id: "{{ notification_policy.partner_server_ext_id | default('') }}"
+
+########################################################################################
+# Offline check_mode + validation tests (do not require a live Files service)
+########################################################################################
+
+- name: Generate spec for creating notification policy using check mode with all attributes
+  nutanix.ncp.ntnx_files_notification_policy_v2:
+    state: present
+    file_server_ext_id: "checkmode-fs-ext-id"
+    name: "check_mode_np_full"
+    description: "Notification policy created in check mode with all attributes"
+    protocol_types:
+      - SMB_NFS
+    operations:
+      - FILE_CREATE
+      - FILE_DELETE
+      - FILE_READ
+    should_include_all_mount_targets: false
+    has_secured_connection: true
+    file_blocking_mode: "BLOCK_LIST"
+    file_extensions:
+      - "*.mp3"
+      - "*.exe"
+    mount_target_ext_ids:
+      - "mt-ext-id-1"
+    partner_server_ext_ids:
+      - "ps-ext-id-1"
+    blocked_clients:
+      - client_details:
+          address:
+            ipv4:
+              value: "10.1.1.10"
+              prefix_length: 24
+          port: 445
+          is_backup: false
+        user:
+          name: "blocked_user"
+          sid: "S-1-5-21-3623811015-3361044348-30300820-1013"
+          uid: 1000
+      - client_details:
+          address:
+            ipv6:
+              value: "2001:db8::1"
+              prefix_length: 64
+          port: 2049
+          is_backup: true
+        user:
+          name: "blocked_user_v6"
+          uid: 2000
+      - client_details:
+          address:
+            fqdn:
+              value: "client.example.com"
+          port: 139
+          is_backup: false
+        user:
+          name: "blocked_user_fqdn"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for creating notification policy using check mode with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "check_mode_np_full"
+      - result.response.description == "Notification policy created in check mode with all attributes"
+      - result.response.protocol_types == ["SMB_NFS"]
+      - result.response.operations | length == 3
+      - result.response.operations[0] == "FILE_CREATE"
+      - result.response.should_include_all_mount_targets == false
+      - result.response.has_secured_connection == true
+      - result.response.file_blocking_mode == "BLOCK_LIST"
+      - result.response.file_extensions | length == 2
+      - result.response.file_extensions[0] == "*.mp3"
+      - result.response.mount_target_ext_ids == ["mt-ext-id-1"]
+      - result.response.partner_server_ext_ids == ["ps-ext-id-1"]
+      - result.response.blocked_clients | length == 3
+      - result.response.blocked_clients[0].client_details.address.ipv4.value == "10.1.1.10"
+      - result.response.blocked_clients[0].client_details.address.ipv4.prefix_length == 24
+      - result.response.blocked_clients[0].client_details.port == 445
+      - result.response.blocked_clients[0].client_details.is_backup == false
+      - result.response.blocked_clients[0].user.name == "blocked_user"
+      - result.response.blocked_clients[0].user.sid == "S-1-5-21-3623811015-3361044348-30300820-1013"
+      - result.response.blocked_clients[0].user.uid == 1000
+      - result.response.blocked_clients[1].client_details.address.ipv6.value == "2001:db8::1"
+      - result.response.blocked_clients[1].client_details.address.ipv6.prefix_length == 64
+      - result.response.blocked_clients[1].client_details.is_backup == true
+      - result.response.blocked_clients[1].user.name == "blocked_user_v6"
+      - result.response.blocked_clients[2].client_details.address.fqdn.value == "client.example.com"
+      - result.response.blocked_clients[2].client_details.port == 139
+      - result.response.blocked_clients[2].user.name == "blocked_user_fqdn"
+    success_msg: "Spec for creating notification policy using check mode with all attributes is generated successfully"
+    fail_msg: "Spec for creating notification policy using check mode with all attributes is not generated successfully"
+
+- name: Create notification policy with missing file_server_ext_id
+  nutanix.ncp.ntnx_files_notification_policy_v2:
+    state: present
+    name: "np_missing_fs"
+    protocol_types:
+      - SMB
+    operations:
+      - FILE_CREATE
+  register: result
+  ignore_errors: true
+
+- name: Create notification policy with missing file_server_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'file_server_ext_id' in result.msg"
+    success_msg: "Create notification policy with missing file_server_ext_id failed as expected"
+    fail_msg: "Create notification policy with missing file_server_ext_id did not fail as expected"
+
+- name: Create notification policy with missing protocol_types
+  nutanix.ncp.ntnx_files_notification_policy_v2:
+    state: present
+    file_server_ext_id: "checkmode-fs-ext-id"
+    name: "np_missing_protocols"
+    operations:
+      - FILE_CREATE
+  register: result
+  ignore_errors: true
+
+- name: Create notification policy with missing protocol_types status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - 'result.msg == "Missing required parameter(s): protocol_types"'
+    success_msg: "Create notification policy with missing protocol_types failed as expected"
+    fail_msg: "Create notification policy with missing protocol_types did not fail as expected"
+
+- name: Create notification policy with missing operations
+  nutanix.ncp.ntnx_files_notification_policy_v2:
+    state: present
+    file_server_ext_id: "checkmode-fs-ext-id"
+    name: "np_missing_operations"
+    protocol_types:
+      - SMB
+  register: result
+  ignore_errors: true
+
+- name: Create notification policy with missing operations status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - 'result.msg == "Missing required parameter(s): operations"'
+    success_msg: "Create notification policy with missing operations failed as expected"
+    fail_msg: "Create notification policy with missing operations did not fail as expected"
+
+- name: Create notification policy with invalid protocol_types enum
+  nutanix.ncp.ntnx_files_notification_policy_v2:
+    state: present
+    file_server_ext_id: "checkmode-fs-ext-id"
+    name: "np_invalid_protocol"
+    protocol_types:
+      - INVALID_PROTOCOL
+    operations:
+      - FILE_CREATE
+  register: result
+  ignore_errors: true
+
+- name: Create notification policy with invalid protocol_types enum status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'protocol_types' in result.msg"
+      - "'INVALID_PROTOCOL' in result.msg"
+    success_msg: "Create notification policy with invalid protocol_types enum failed as expected"
+    fail_msg: "Create notification policy with invalid protocol_types enum did not fail as expected"
+
+- name: Create notification policy with invalid file_blocking_mode enum
+  nutanix.ncp.ntnx_files_notification_policy_v2:
+    state: present
+    file_server_ext_id: "checkmode-fs-ext-id"
+    name: "np_invalid_mode"
+    protocol_types:
+      - SMB
+    operations:
+      - FILE_CREATE
+    file_blocking_mode: "INVALID_MODE"
+  register: result
+  ignore_errors: true
+
+- name: Create notification policy with invalid file_blocking_mode enum status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'file_blocking_mode' in result.msg"
+    success_msg: "Create notification policy with invalid file_blocking_mode enum failed as expected"
+    fail_msg: "Create notification policy with invalid file_blocking_mode enum did not fail as expected"
+
+- name: Delete notification policy with check mode
+  nutanix.ncp.ntnx_files_notification_policy_v2:
+    state: absent
+    file_server_ext_id: "checkmode-fs-ext-id"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Delete notification policy with check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - "'will be deleted' in result.msg"
+    success_msg: "Delete notification policy with check mode passed"
+    fail_msg: "Delete notification policy with check mode failed"
+
+- name: Delete notification policy with missing ext_id
+  nutanix.ncp.ntnx_files_notification_policy_v2:
+    state: absent
+    file_server_ext_id: "checkmode-fs-ext-id"
+  register: result
+  ignore_errors: true
+
+- name: Delete notification policy with missing ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is absent but all of the following are missing: ext_id' in result.msg"
+    success_msg: "Delete notification policy with missing ext_id failed as expected"
+    fail_msg: "Delete notification policy with missing ext_id did not fail as expected"
+
+########################################################################################
+# Live lifecycle tests — require a real file server ext_id from integration_config.yml
+########################################################################################
+
+- name: Notify when live tests are skipped
+  ansible.builtin.debug:
+    msg: >-
+      Skipping live NotificationPolicy lifecycle tests because
+      notification_policy.file_server_ext_id is not set in integration_config.yml
+      (no reachable Nutanix Files server / AFS service).
+  when: fs_ext_id | length == 0
+
+- name: Live NotificationPolicy lifecycle
+  when: fs_ext_id | length > 0
+  block:
+    - name: Create notification policy with minimum attributes
+      nutanix.ncp.ntnx_files_notification_policy_v2:
+        state: present
+        file_server_ext_id: "{{ fs_ext_id }}"
+        name: "{{ np_name_min }}"
+        protocol_types:
+          - SMB
+        operations:
+          - FILE_CREATE
+        should_include_all_mount_targets: true
+      register: result
+      ignore_errors: true
+
+    - name: Create notification policy with minimum attributes status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == true
+          - result.failed == false
+          - result.ext_id is defined
+          - result.task_ext_id is defined
+          - result.response is defined
+          - result.response.name == np_name_min
+          - result.response.protocol_types == ["SMB"]
+          - result.response.operations == ["FILE_CREATE"]
+        success_msg: "Notification policy with minimum attributes created successfully"
+        fail_msg: "Notification policy with minimum attributes creation failed"
+
+    - name: Add notification policy to todelete list
+      ansible.builtin.set_fact:
+        todelete: "{{ todelete + [result.ext_id] }}"
+      when: result.ext_id is defined
+
+    - name: Create notification policy with all attributes
+      nutanix.ncp.ntnx_files_notification_policy_v2:
+        state: present
+        file_server_ext_id: "{{ fs_ext_id }}"
+        name: "{{ np_name_full }}"
+        description: "Notification policy created by Ansible integration tests"
+        protocol_types:
+          - SMB_NFS
+        operations:
+          - FILE_CREATE
+          - FILE_DELETE
+          - FILE_READ
+        should_include_all_mount_targets: true
+        has_secured_connection: false
+        file_blocking_mode: "BLOCK_LIST"
+        file_extensions:
+          - "*.mp3"
+        partner_server_ext_ids: "{{ [partner_ext_id] if partner_ext_id | length > 0 else omit }}"
+      register: result
+      ignore_errors: true
+
+    - name: Create notification policy with all attributes status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == true
+          - result.failed == false
+          - result.ext_id is defined
+          - result.task_ext_id is defined
+          - result.response is defined
+          - result.response.name == np_name_full
+          - result.response.description == "Notification policy created by Ansible integration tests"
+          - result.response.protocol_types == ["SMB_NFS"]
+          - result.response.operations | length == 3
+          - result.response.file_blocking_mode == "BLOCK_LIST"
+        success_msg: "Notification policy with all attributes created successfully"
+        fail_msg: "Notification policy with all attributes creation failed"
+
+    - name: Add notification policy to todelete list
+      ansible.builtin.set_fact:
+        todelete: "{{ todelete + [result.ext_id] }}"
+        np_full_ext_id: "{{ result.ext_id }}"
+      when: result.ext_id is defined
+
+    - name: Fetch notification policy using external ID
+      nutanix.ncp.ntnx_files_notification_policies_info_v2:
+        file_server_ext_id: "{{ fs_ext_id }}"
+        ext_id: "{{ np_full_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch notification policy using external ID status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.response is defined
+          - result.response.ext_id == np_full_ext_id
+          - result.response.name == np_name_full
+        success_msg: "Fetch notification policy using external ID passed"
+        fail_msg: "Fetch notification policy using external ID failed"
+
+    - name: List all notification policies
+      nutanix.ncp.ntnx_files_notification_policies_info_v2:
+        file_server_ext_id: "{{ fs_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all notification policies status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.response is defined
+          - result.response | length >= 2
+        success_msg: "List all notification policies passed"
+        fail_msg: "List all notification policies failed"
+
+    - name: List notification policies with filter
+      nutanix.ncp.ntnx_files_notification_policies_info_v2:
+        file_server_ext_id: "{{ fs_ext_id }}"
+        filter: "name eq '{{ np_name_full }}'"
+      register: result
+      ignore_errors: true
+
+    - name: List notification policies with filter status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.response is defined
+          - result.response | length == 1
+          - result.response[0].name == np_name_full
+        success_msg: "List notification policies with filter passed"
+        fail_msg: "List notification policies with filter failed"
+
+    - name: List notification policies with limit
+      nutanix.ncp.ntnx_files_notification_policies_info_v2:
+        file_server_ext_id: "{{ fs_ext_id }}"
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: List notification policies with limit status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.response is defined
+          - result.response | length == 1
+        success_msg: "List notification policies with limit passed"
+        fail_msg: "List notification policies with limit failed"
+
+    - name: Update notification policy with all attributes
+      nutanix.ncp.ntnx_files_notification_policy_v2:
+        state: present
+        file_server_ext_id: "{{ fs_ext_id }}"
+        ext_id: "{{ np_full_ext_id }}"
+        name: "{{ np_name_updated }}"
+        description: "Notification policy updated by Ansible integration tests"
+        protocol_types:
+          - SMB
+        operations:
+          - FILE_CREATE
+          - FILE_DELETE
+        should_include_all_mount_targets: true
+        has_secured_connection: false
+        file_blocking_mode: "ALLOW_LIST"
+        file_extensions:
+          - "*.exe"
+          - "*.bat"
+      register: result
+      ignore_errors: true
+
+    - name: Update notification policy with all attributes status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == true
+          - result.failed == false
+          - result.response is defined
+          - result.response.name == np_name_updated
+          - result.response.description == "Notification policy updated by Ansible integration tests"
+          - result.response.protocol_types == ["SMB"]
+          - result.response.operations | length == 2
+          - result.response.file_blocking_mode == "ALLOW_LIST"
+          - result.response.file_extensions | length == 2
+        success_msg: "Update notification policy with all attributes passed"
+        fail_msg: "Update notification policy with all attributes failed"
+
+    - name: Update notification policy with same values (idempotency)
+      nutanix.ncp.ntnx_files_notification_policy_v2:
+        state: present
+        file_server_ext_id: "{{ fs_ext_id }}"
+        ext_id: "{{ np_full_ext_id }}"
+        name: "{{ np_name_updated }}"
+        description: "Notification policy updated by Ansible integration tests"
+        protocol_types:
+          - SMB
+        operations:
+          - FILE_CREATE
+          - FILE_DELETE
+        should_include_all_mount_targets: true
+        has_secured_connection: false
+        file_blocking_mode: "ALLOW_LIST"
+        file_extensions:
+          - "*.exe"
+          - "*.bat"
+      register: result
+      ignore_errors: true
+
+    - name: Update notification policy with same values status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.msg == "Nothing to change."
+        success_msg: "Update notification policy idempotency passed"
+        fail_msg: "Update notification policy idempotency failed"
+
+    - name: Fetch notification policy using wrong external ID
+      nutanix.ncp.ntnx_files_notification_policies_info_v2:
+        file_server_ext_id: "{{ fs_ext_id }}"
+        ext_id: "00000000-0000-0000-0000-000000000000"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch notification policy using wrong external ID status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == true
+        success_msg: "Fetch notification policy using wrong external ID failed as expected"
+        fail_msg: "Fetch notification policy using wrong external ID did not fail as expected"
+
+    - name: Delete all created notification policies
+      nutanix.ncp.ntnx_files_notification_policy_v2:
+        state: absent
+        file_server_ext_id: "{{ fs_ext_id }}"
+        ext_id: "{{ item }}"
+      register: result
+      ignore_errors: true
+      loop: "{{ todelete }}"
+
+    - name: Deletion status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.results | length == todelete | length
+        success_msg: "All notification policies are deleted successfully"
+        fail_msg: "Unable to delete all notification policies"

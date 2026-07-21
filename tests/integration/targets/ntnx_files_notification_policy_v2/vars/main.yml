@@ -1,0 +1,11 @@
+---
+# External identifier of an existing Nutanix Files server used to exercise the
+# live notification-policy lifecycle tests. Leave empty to skip the live block
+# (for example when the Files/AFS service or a file server is not available on
+# the target Prism Central). Provide it via integration_config.yml, e.g.:
+#   notification_policy:
+#     file_server_ext_id: "18f78959-14a6-4c47-b5db-920460c4b668"
+#     partner_server_ext_id: "3c9a1f3b-3ddb-4585-9159-26d2318269e3"
+notification_policy:
+  file_server_ext_id: ""
+  partner_server_ext_id: ""

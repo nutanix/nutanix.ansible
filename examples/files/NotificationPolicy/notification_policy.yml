@@ -1,0 +1,89 @@
+---
+- name: Nutanix Files - NotificationPolicy operations
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host }}"
+      nutanix_username: "{{ nutanix_username }}"
+      nutanix_password: "{{ nutanix_password }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+  vars:
+    nutanix_host: "10.44.76.28"
+    nutanix_username: "admin"
+    nutanix_password: "Nutanix.123"
+    validate_certs: false
+    file_server_ext_id: "18f78959-14a6-4c47-b5db-920460c4b668"
+    partner_server_ext_id: "3c9a1f3b-3ddb-4585-9159-26d2318269e3"
+  tasks:
+    - name: Create notification policy
+      nutanix.ncp.ntnx_files_notification_policy_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        name: "notification_policy_ansible"
+        description: "Notification policy created by Ansible"
+        protocol_types:
+          - SMB
+        operations:
+          - FILE_CREATE
+          - FILE_DELETE
+        should_include_all_mount_targets: true
+        has_secured_connection: false
+        file_blocking_mode: "BLOCK_LIST"
+        file_extensions:
+          - "*.mp3"
+        partner_server_ext_ids:
+          - "{{ partner_server_ext_id }}"
+        blocked_clients:
+          - client_details:
+              address:
+                ipv4:
+                  value: "10.1.1.10"
+                  prefix_length: 24
+              port: 445
+              is_backup: false
+            user:
+              name: "blocked_user"
+              sid: "S-1-5-21-3623811015-3361044348-30300820-1013"
+              uid: 1000
+      register: create_result
+
+    - name: Update notification policy
+      nutanix.ncp.ntnx_files_notification_policy_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ create_result.ext_id }}"
+        name: "notification_policy_ansible_updated"
+        description: "Notification policy updated by Ansible"
+        protocol_types:
+          - SMB_NFS
+        operations:
+          - FILE_CREATE
+          - FILE_DELETE
+          - FILE_READ
+        should_include_all_mount_targets: false
+        has_secured_connection: true
+        file_blocking_mode: "ALLOW_LIST"
+        file_extensions:
+          - "*.exe"
+          - "*.bat"
+        partner_server_ext_ids:
+          - "{{ partner_server_ext_id }}"
+        blocked_clients:
+          - client_details:
+              address:
+                fqdn:
+                  value: "client.example.com"
+              port: 2049
+              is_backup: true
+            user:
+              name: "blocked_user_updated"
+              uid: 2000
+      register: update_result
+
+    - name: Delete notification policy
+      nutanix.ncp.ntnx_files_notification_policy_v2:
+        state: absent
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ create_result.ext_id }}"
+      register: delete_result
