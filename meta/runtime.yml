@@ -109,6 +109,7 @@ action_groups:
     - ntnx_roles_v2
     - ntnx_images_v2
     - ntnx_images_info_v2
+    - ntnx_import_image_v2
     - ntnx_image_placement_policies_v2
     - ntnx_image_placement_policies_info_v2
     - ntnx_vms_ngt_v2
