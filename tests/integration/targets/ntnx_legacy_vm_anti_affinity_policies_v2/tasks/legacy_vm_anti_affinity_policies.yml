@@ -1,0 +1,292 @@
+---
+# =============================================================================
+# Integration tests for Nutanix Ansible modules:
+#   - ntnx_legacy_vm_anti_affinity_policy_v2      (CRUD — delete only)
+#   - ntnx_legacy_vm_anti_affinity_policies_info_v2 (info — get by id / list)
+#
+# Design notes:
+# - The Nutanix v4 VMM SDK exposes ONLY list + delete for legacy VM-VM
+#   anti-affinity policies. There is no create/update endpoint, so the CRUD
+#   module intentionally fails when state=present.
+# - Legacy policies are the ones originally configured on Prism Element via
+#   VM groups (acli). They are surfaced in PC v4 API purely for read + delete
+#   migration workflows. Because Ansible cannot create them, the tests cover:
+#     * list-all / list-with-filter / list-with-limit
+#     * get-by-id happy path (only when at least one legacy policy exists on
+#       the target Prism Central) and non-existent ext_id error path
+#     * state=present create-attempt error path
+#     * state=present + ext_id update-attempt error path
+#     * state=absent missing ext_id error path
+#     * state=absent non-existent ext_id error path
+#     * state=absent check_mode dry-run
+#     * state=absent delete flow (only when at least one legacy policy exists
+#       on the target Prism Central)
+# =============================================================================
+
+- name: Start Legacy VM-VM anti-affinity policies tests
+  ansible.builtin.debug:
+    msg: Start Legacy VM-VM anti-affinity policies tests
+
+- name: Generate random suffix for test data
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    fake_ext_id: "00000000-0000-0000-0000-{{ query('community.general.random_string', numbers=true, upper=false, lower=false, special=false, length=12)[0] }}"
+
+# ============================================================================
+# Info module: LIST scenarios
+# ============================================================================
+
+- name: List all legacy VM-VM anti-affinity policies
+  nutanix.ncp.ntnx_legacy_vm_anti_affinity_policies_info_v2:
+  register: list_result
+  ignore_errors: true
+
+- name: List all legacy VM-VM anti-affinity policies status
+  ansible.builtin.assert:
+    that:
+      - list_result is defined
+      - list_result.changed == false
+      - list_result.failed == false
+      - list_result.response is defined
+      - list_result.response is iterable
+      - list_result.total_available_results is defined
+      - list_result.total_available_results is number
+    success_msg: "List all legacy VM-VM anti-affinity policies passed"
+    fail_msg: "List all legacy VM-VM anti-affinity policies failed"
+
+- name: Capture the first legacy policy ext_id (if any exist) for later tests
+  ansible.builtin.set_fact:
+    existing_legacy_policy_ext_id: >-
+      {{ (list_result.response | default([]) | length > 0) | ternary(list_result.response[0].ext_id, '') }}
+    existing_legacy_policy_name: >-
+      {{ (list_result.response | default([]) | length > 0) | ternary(list_result.response[0].name, '') }}
+
+- name: List legacy VM-VM anti-affinity policies with a small limit
+  nutanix.ncp.ntnx_legacy_vm_anti_affinity_policies_info_v2:
+    limit: 1
+  register: list_limited_result
+  ignore_errors: true
+
+- name: List legacy VM-VM anti-affinity policies with a small limit status
+  ansible.builtin.assert:
+    that:
+      - list_limited_result is defined
+      - list_limited_result.changed == false
+      - list_limited_result.failed == false
+      - list_limited_result.response is defined
+      - (list_limited_result.response | length) <= 1
+    success_msg: "List legacy VM-VM anti-affinity policies with limit passed"
+    fail_msg: "List legacy VM-VM anti-affinity policies with limit failed"
+
+- name: List legacy VM-VM anti-affinity policies with a bogus filter
+  nutanix.ncp.ntnx_legacy_vm_anti_affinity_policies_info_v2:
+    filter: "name eq 'nonexistent_policy_{{ random_name }}'"
+  register: list_filter_result
+  ignore_errors: true
+
+- name: List legacy VM-VM anti-affinity policies with a bogus filter status
+  ansible.builtin.assert:
+    that:
+      - list_filter_result is defined
+      - list_filter_result.changed == false
+      - list_filter_result.failed == false
+      - list_filter_result.response is defined
+      - (list_filter_result.response | length) == 0
+    success_msg: "Filtering by a non-existent name returned an empty list as expected"
+    fail_msg: "Filtering by a non-existent name did not return an empty list"
+
+# ============================================================================
+# Info module: GET-by-ID scenarios (happy path only if any legacy policy exists)
+# ============================================================================
+
+- name: Fetch a specific legacy VM-VM anti-affinity policy by ext_id (happy path)
+  when: existing_legacy_policy_ext_id | length > 0
+  block:
+    - name: Fetch legacy policy by ext_id
+      nutanix.ncp.ntnx_legacy_vm_anti_affinity_policies_info_v2:
+        ext_id: "{{ existing_legacy_policy_ext_id }}"
+      register: get_result
+      ignore_errors: true
+
+    - name: Fetch legacy policy by ext_id status
+      ansible.builtin.assert:
+        that:
+          - get_result is defined
+          - get_result.changed == false
+          - get_result.failed == false
+          - get_result.response is defined
+          - get_result.response.ext_id == existing_legacy_policy_ext_id
+          - get_result.ext_id == existing_legacy_policy_ext_id
+          - get_result.response.name == existing_legacy_policy_name
+        success_msg: "Fetch legacy policy by ext_id passed"
+        fail_msg: "Fetch legacy policy by ext_id failed"
+
+- name: Fetch legacy policy by non-existent ext_id (should fail)
+  nutanix.ncp.ntnx_legacy_vm_anti_affinity_policies_info_v2:
+    ext_id: "{{ fake_ext_id }}"
+  register: get_not_found_result
+  ignore_errors: true
+
+- name: Fetch legacy policy by non-existent ext_id status
+  ansible.builtin.assert:
+    that:
+      - get_not_found_result is defined
+      - get_not_found_result.failed == true
+      - "'was not found' in get_not_found_result.msg or 'not found' in (get_not_found_result.msg | lower)"
+    success_msg: "Fetching a non-existent legacy policy failed as expected"
+    fail_msg: "Fetching a non-existent legacy policy did not fail as expected"
+
+# ============================================================================
+# CRUD module: state=present must fail because create/update is unsupported
+# ============================================================================
+
+- name: Attempt to create a legacy policy (state=present without ext_id) should fail
+  nutanix.ncp.ntnx_legacy_vm_anti_affinity_policy_v2:
+    state: present
+  register: create_attempt
+  ignore_errors: true
+
+- name: Attempt to create a legacy policy status
+  ansible.builtin.assert:
+    that:
+      - create_attempt is defined
+      - create_attempt.changed == false
+      - create_attempt.failed == true
+      - "'Create is not supported for legacy VM-VM anti-affinity policies' in create_attempt.msg"
+    success_msg: "Create attempt correctly failed with a descriptive message"
+    fail_msg: "Create attempt did not fail with the expected message"
+
+- name: Attempt to update a legacy policy (state=present with ext_id) should fail
+  nutanix.ncp.ntnx_legacy_vm_anti_affinity_policy_v2:
+    state: present
+    ext_id: "{{ fake_ext_id }}"
+  register: update_attempt
+  ignore_errors: true
+
+- name: Attempt to update a legacy policy status
+  ansible.builtin.assert:
+    that:
+      - update_attempt is defined
+      - update_attempt.changed == false
+      - update_attempt.failed == true
+      - "'Update is not supported for legacy VM-VM anti-affinity policies' in update_attempt.msg"
+      - update_attempt.ext_id == fake_ext_id
+    success_msg: "Update attempt correctly failed with a descriptive message"
+    fail_msg: "Update attempt did not fail with the expected message"
+
+# ============================================================================
+# CRUD module: state=absent negative paths
+# ============================================================================
+
+- name: Attempt delete without ext_id should fail
+  nutanix.ncp.ntnx_legacy_vm_anti_affinity_policy_v2:
+    state: absent
+  register: delete_missing_ext_id
+  ignore_errors: true
+
+- name: Attempt delete without ext_id status
+  ansible.builtin.assert:
+    that:
+      - delete_missing_ext_id is defined
+      - delete_missing_ext_id.changed == false
+      - delete_missing_ext_id.failed == true
+      - "'state is absent but all of the following are missing: ext_id' in delete_missing_ext_id.msg"
+    success_msg: "Delete without ext_id failed as expected"
+    fail_msg: "Delete without ext_id did not fail as expected"
+
+- name: Delete a legacy policy using a non-existent ext_id should fail
+  nutanix.ncp.ntnx_legacy_vm_anti_affinity_policy_v2:
+    state: absent
+    ext_id: "{{ fake_ext_id }}"
+  register: delete_not_found
+  ignore_errors: true
+
+- name: Delete a legacy policy using a non-existent ext_id status
+  ansible.builtin.assert:
+    that:
+      - delete_not_found is defined
+      - delete_not_found.changed == false
+      - delete_not_found.failed == true
+      # When the task fails, the message comes from wait_for_completion — this
+      # code path does not preserve the module-local ``result`` fields (e.g.
+      # ``ext_id``), so we only assert on the fail reason and the task body.
+      - delete_not_found.msg == "Task Failed"
+      - delete_not_found.response is defined
+      - delete_not_found.response.status == "FAILED"
+      - delete_not_found.response.error_messages | length > 0
+      - delete_not_found.response.error_messages[0].code == "VMM-34060"
+    success_msg: "Delete of non-existent legacy policy failed as expected"
+    fail_msg: "Delete of non-existent legacy policy did not fail as expected"
+
+# ============================================================================
+# CRUD module: state=absent check_mode dry-run
+# ============================================================================
+
+- name: Delete a legacy policy in check_mode
+  nutanix.ncp.ntnx_legacy_vm_anti_affinity_policy_v2:
+    state: absent
+    ext_id: "{{ fake_ext_id }}"
+  check_mode: true
+  register: delete_check_mode
+  ignore_errors: true
+
+- name: Delete a legacy policy in check_mode status
+  ansible.builtin.assert:
+    that:
+      - delete_check_mode is defined
+      - delete_check_mode.changed == false
+      - delete_check_mode.failed == false
+      - delete_check_mode.ext_id == fake_ext_id
+      - "'will be deleted' in delete_check_mode.msg"
+    success_msg: "Delete in check_mode returned the expected dry-run message"
+    fail_msg: "Delete in check_mode did not return the expected dry-run message"
+
+# ============================================================================
+# CRUD module: real delete (only when a legacy policy exists on the cluster)
+# ============================================================================
+
+- name: Delete an existing legacy VM-VM anti-affinity policy (happy path)
+  when: existing_legacy_policy_ext_id | length > 0
+  block:
+    - name: Delete existing legacy policy
+      nutanix.ncp.ntnx_legacy_vm_anti_affinity_policy_v2:
+        state: absent
+        ext_id: "{{ existing_legacy_policy_ext_id }}"
+      register: delete_result
+      ignore_errors: true
+
+    - name: Delete existing legacy policy status
+      ansible.builtin.assert:
+        that:
+          - delete_result is defined
+          - delete_result.changed == true
+          - delete_result.failed == false
+          - delete_result.ext_id == existing_legacy_policy_ext_id
+          - delete_result.task_ext_id is defined
+          - delete_result.response is defined
+          - delete_result.response.status == "SUCCEEDED"
+        success_msg: "Delete of existing legacy VM-VM anti-affinity policy passed"
+        fail_msg: "Delete of existing legacy VM-VM anti-affinity policy failed"
+
+    - name: Verify the deleted legacy policy no longer exists
+      nutanix.ncp.ntnx_legacy_vm_anti_affinity_policies_info_v2:
+        ext_id: "{{ existing_legacy_policy_ext_id }}"
+      register: verify_deleted
+      ignore_errors: true
+
+    - name: Verify the deleted legacy policy no longer exists status
+      ansible.builtin.assert:
+        that:
+          - verify_deleted is defined
+          - verify_deleted.failed == true
+        success_msg: "Deleted legacy policy is no longer reachable as expected"
+        fail_msg: "Deleted legacy policy was unexpectedly still reachable"
+
+- name: Note that no legacy policies existed on this Prism Central
+  when: existing_legacy_policy_ext_id | length == 0
+  ansible.builtin.debug:
+    msg: >-
+      No legacy VM-VM anti-affinity policies were found on the target Prism Central.
+      The delete happy-path and get-by-id happy-path tests were skipped because
+      legacy policies cannot be created via the v4 API — they only exist as
+      carry-overs from PE-based VM group configurations.
