@@ -1,0 +1,11 @@
+---
+- name: Files Unified Namespace v2 integration tests
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  vars_files:
+    - ../../integration_config.yml
+  tasks:
+    - name: Include Unified Namespace tests
+      ansible.builtin.include_tasks: tasks/main.yml

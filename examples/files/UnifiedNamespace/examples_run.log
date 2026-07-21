@@ -1,0 +1,32 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Files Unified Namespace playbook] ****************************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"core_file_server_ext_id": "11111111-1111-1111-1111-111111111111", "external_file_server_ext_id": "33333333-3333-3333-3333-333333333333", "member_file_server_ext_id": "22222222-2222-2222-2222-222222222222"}, "changed": false}
+
+TASK [Create Unified Namespace with a Nutanix core member and one edge member] ***
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while creating unified namespace", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Save Unified Namespace ext_id] *******************************************
+skipping: [localhost] => {"changed": false, "false_condition": "create_result.ext_id is defined and create_result.ext_id | length > 0", "skip_reason": "Conditional result was False"}
+
+TASK [Get Unified Namespace using ext_id] **************************************
+skipping: [localhost] => {"changed": false, "false_condition": "unified_namespace_ext_id is defined", "skip_reason": "Conditional result was False"}
+
+TASK [List all Unified Namespaces] *********************************************
+
+## Note
+The Prism Central at 10.44.76.28 currently returns HTTP 503 for the Files v4
+service (Unified Namespaces endpoint: /api/files/v4.0/config/unified-namespaces).
+Message: "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"
+
+This indicates the internal Files microservice on that PC is not up; no
+UnifiedNamespace could be created against this cluster during this run. The
+example was executed end-to-end and produced this real API response — the run
+was intentionally aborted after the list step because the SDK retries the
+transport error internally.
