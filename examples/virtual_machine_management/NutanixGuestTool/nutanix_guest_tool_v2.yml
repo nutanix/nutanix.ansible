@@ -1,0 +1,97 @@
+---
+# Summary:
+# End-to-end playbook exercising the Nutanix Guest Tools (NGT) modules for an
+# ESXi-hosted VM using the v4 SDK.
+#
+# Steps:
+# 1. Get current NGT config for the VM (info module).
+# 2. Install NGT on the VM (with all supported fields populated).
+# 3. Insert the NGT ISO into an available CD-ROM slot.
+# 4. Upgrade NGT (deferred reboot).
+# 5. Update NGT configuration (toggle is_enabled + trim capabilities).
+# 6. Uninstall NGT from the VM.
+#
+# Notes:
+# - vm_ext_id must reference an ESXi-hosted VM registered with Prism Central.
+# - The install task requires guest OS credentials that can execute the NGT installer.
+# - `wait: true` is the default; the module blocks until the underlying task finishes.
+
+- name: Nutanix Guest Tools playbook (ESXi)
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        vm_ext_id: "98b9dc89-be08-3c56-b554-692b8b676fd1"
+        ngt_username: "administrator"
+        ngt_password: "ChangeMe.1"
+
+    - name: Fetch current NGT config for the VM
+      nutanix.ncp.ntnx_nutanix_guest_tools_info_v2:
+        ext_id: "{{ vm_ext_id }}"
+      register: pre_state
+      ignore_errors: true
+
+    - name: Install NGT with all supported fields
+      nutanix.ncp.ntnx_nutanix_guest_tool_v2:
+        state: present
+        operation: install
+        ext_id: "{{ vm_ext_id }}"
+        capabilities:
+          - SELF_SERVICE_RESTORE
+          - VSS_SNAPSHOT
+        credential:
+          username: "{{ ngt_username }}"
+          password: "{{ ngt_password }}"
+        reboot_preference:
+          schedule_type: LATER
+          schedule:
+            start_time: "2026-12-01T02:00:00Z"
+      register: install_result
+      ignore_errors: true
+
+    - name: Insert NGT ISO into an available CD-ROM
+      nutanix.ncp.ntnx_nutanix_guest_tool_v2:
+        state: present
+        operation: insert_iso
+        ext_id: "{{ vm_ext_id }}"
+        capabilities:
+          - VSS_SNAPSHOT
+      register: insert_result
+      ignore_errors: true
+
+    - name: Upgrade NGT (deferred reboot)
+      nutanix.ncp.ntnx_nutanix_guest_tool_v2:
+        state: present
+        operation: upgrade
+        ext_id: "{{ vm_ext_id }}"
+        reboot_preference:
+          schedule_type: LATER
+          schedule:
+            start_time: "2026-12-05T02:00:00Z"
+      register: upgrade_result
+      ignore_errors: true
+
+    - name: Update NGT configuration - disable and trim capabilities to VSS only
+      nutanix.ncp.ntnx_nutanix_guest_tool_v2:
+        state: present
+        operation: update
+        ext_id: "{{ vm_ext_id }}"
+        is_enabled: false
+        capabilities:
+          - VSS_SNAPSHOT
+      register: update_result
+      ignore_errors: true
+
+    - name: Uninstall NGT from the VM
+      nutanix.ncp.ntnx_nutanix_guest_tool_v2:
+        state: absent
+        ext_id: "{{ vm_ext_id }}"
+      register: uninstall_result
+      ignore_errors: true

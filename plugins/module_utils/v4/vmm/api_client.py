@@ -84,6 +84,15 @@ def get_vm_api_instance(module):
     return ntnx_vmm_py_client.VmApi(api_client=api_client)
 
 
+def get_esxi_vm_api_instance(module):
+    """
+    Return an ESXi VMM API instance (used for ESXi-hosted VM operations
+    such as Nutanix Guest Tools management on ESXi VMs).
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.EsxiVmApi(api_client=api_client)
+
+
 def get_image_api_instance(module):
     """
     This method will return Image API instance
