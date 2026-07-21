@@ -1,0 +1,116 @@
+---
+# Summary:
+# This playbook demonstrates the full lifecycle of a BGP Session in Nutanix
+# Prism Central using the v4 API-backed modules:
+#   1. Create a BGP session between a local BGP gateway and a remote peer.
+#   2. Fetch the BGP session by external ID.
+#   3. List all BGP sessions (with and without filter / limit).
+#   4. Update the BGP session (name, description, priority, prefix advertisement).
+#   5. Delete the BGP session.
+#
+# Prerequisites:
+#   - A local BGP gateway (Flow / Transit VPC gateway) already provisioned in PC.
+#   - A remote BGP gateway entity representing the external peer already provisioned.
+#   - IP reachability over TCP/179 between the local and remote gateways.
+
+- name: BGP Sessions playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        local_gateway_uuid: "3e0f9d59-8fa2-4b7f-9e21-2b3a4d5e6f70"
+        remote_gateway_uuid: "7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0"
+        bgp_session_name: "bgp_session_ansible"
+
+    - name: Create BGP session with all attributes
+      nutanix.ncp.ntnx_bgp_session_v2:
+        state: present
+        name: "{{ bgp_session_name }}"
+        description: "BGP session created by Ansible"
+        local_gateway_reference: "{{ local_gateway_uuid }}"
+        remote_gateway_reference: "{{ remote_gateway_uuid }}"
+        local_gateway_interface_ip_address:
+          ipv4:
+            value: "10.44.10.5"
+            prefix_length: 32
+        dynamic_route_priority: 300
+        password: "S3cretBgpPass"
+        should_advertise_all_externally_routable_prefixes: false
+        externally_routable_prefixes_to_advertise:
+          - ipv4:
+              ip:
+                value: "10.50.0.0"
+                prefix_length: 16
+              prefix_length: 16
+        prepended_autonomous_system_path:
+          - 65001
+          - 65001
+        advertised_routes_communities:
+          - autonomous_system_number: 65001
+            community_value: 100
+      register: result
+      ignore_errors: true
+
+    - name: Set BGP session ext_id
+      ansible.builtin.set_fact:
+        bgp_session_ext_id: "{{ result.ext_id }}"
+
+    - name: Get BGP session using ext_id
+      nutanix.ncp.ntnx_bgp_sessions_info_v2:
+        ext_id: "{{ bgp_session_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all BGP sessions
+      nutanix.ncp.ntnx_bgp_sessions_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List BGP sessions with filter
+      nutanix.ncp.ntnx_bgp_sessions_info_v2:
+        filter: "name eq '{{ bgp_session_name }}'"
+      register: result
+      ignore_errors: true
+
+    - name: List BGP sessions with limit
+      nutanix.ncp.ntnx_bgp_sessions_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: Update BGP session with all attributes
+      nutanix.ncp.ntnx_bgp_session_v2:
+        state: present
+        ext_id: "{{ bgp_session_ext_id }}"
+        name: "{{ bgp_session_name }}_updated"
+        description: "BGP session updated by Ansible"
+        local_gateway_reference: "{{ local_gateway_uuid }}"
+        remote_gateway_reference: "{{ remote_gateway_uuid }}"
+        local_gateway_interface_ip_address:
+          ipv4:
+            value: "10.44.10.5"
+            prefix_length: 32
+        dynamic_route_priority: 500
+        password: "S3cretBgpPass"
+        should_advertise_all_externally_routable_prefixes: true
+        prepended_autonomous_system_path:
+          - 65001
+        advertised_routes_communities:
+          - autonomous_system_number: 65001
+            community_value: 200
+      register: result
+      ignore_errors: true
+
+    - name: Delete BGP session
+      nutanix.ncp.ntnx_bgp_session_v2:
+        state: absent
+        ext_id: "{{ bgp_session_ext_id }}"
+      register: result
+      ignore_errors: true

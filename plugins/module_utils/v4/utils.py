@@ -292,6 +292,11 @@ def strip_read_only_fields(spec, fields=None):
 
     The spec is mutated in place; it is also returned so callers can chain.
 
+    For SDK models that expose fields as ``property`` objects without a
+    deleter, ``delattr`` raises ``AttributeError``; in that case the field is
+    reset to ``None`` instead so the serialized payload no longer carries a
+    server-supplied value.
+
     Args:
         spec (object): SDK model object to mutate.
         fields (Iterable[str] | None): Attribute names to remove.
@@ -304,5 +309,8 @@ def strip_read_only_fields(spec, fields=None):
 
     for field in fields:
         if hasattr(spec, field):
-            delattr(spec, field)
+            try:
+                delattr(spec, field)
+            except AttributeError:
+                setattr(spec, field, None)
     return spec
