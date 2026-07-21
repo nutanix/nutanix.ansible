@@ -1,0 +1,348 @@
+---
+# Test plan for the Nutanix Files MountTargetStat modules
+# (ntnx_mount_target_stat_v2 and ntnx_files_mount_target_stats_info_v2).
+#
+# MountTargetStat is a read-only statistics datasource. The v4 Files API only
+# exposes a single "get mount target statistics" operation that REQUIRES the
+# parent file server external ID and the mount target external ID plus a
+# reporting time window. There is no create/update/delete and no list-all
+# operation, so check_mode and idempotency (write) scenarios do not apply.
+#
+# Scenarios covered:
+#   1. Argument-spec validation (runs without a live Files deployment):
+#      - each required field omitted one at a time (file_server_ext_id,
+#        ext_id, start_time, end_time) -> descriptive "missing required
+#        arguments" failure.
+#      - invalid stat_type enum value -> "must be one of" failure.
+#      - a valid stat_type enum value is accepted by the spec (no choices
+#        error) even when the referenced entity does not exist.
+#   2. API error paths (invalid / non-existent references) for BOTH modules ->
+#      the module fails gracefully with the descriptive API-exception message.
+#   3. Live stat fetch for BOTH modules, guarded by `when` so it only runs when
+#      a real file server + mount target external ID pair is supplied through
+#      integration_config.yml (mount_target_stat.file_server_ext_id /
+#      mount_target_stat.ext_id). Asserts changed/failed first, then the
+#      response shape and every optional attribute (sampling_interval,
+#      stat_type variants).
+
+- name: Start MountTargetStat tests
+  ansible.builtin.debug:
+    msg: Start MountTargetStat tests
+
+- name: Set common test facts
+  ansible.builtin.set_fact:
+    stat_start_time: "2024-07-31T12:41:56.955Z"
+    stat_end_time: "2025-07-31T12:41:56.955Z"
+    non_existent_file_server_ext_id: "00000000-0000-0000-0000-0000000000f5"
+    non_existent_mount_target_ext_id: "00000000-0000-0000-0000-0000000000c1"
+
+########################################################################################
+# Argument-spec validation - ntnx_mount_target_stat_v2 (stats module)
+########################################################################################
+
+- name: Fetch mount target stats with missing file_server_ext_id
+  nutanix.ncp.ntnx_mount_target_stat_v2:
+    ext_id: "{{ non_existent_mount_target_ext_id }}"
+    start_time: "{{ stat_start_time }}"
+    end_time: "{{ stat_end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch mount target stats with missing file_server_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed | default(false) == false
+      - result.failed == true
+      - "'missing required arguments' in result.msg"
+      - "'file_server_ext_id' in result.msg"
+    success_msg: "Fetch mount target stats with missing file_server_ext_id failed as expected"
+    fail_msg: "Fetch mount target stats with missing file_server_ext_id did not fail as expected"
+
+- name: Fetch mount target stats with missing ext_id
+  nutanix.ncp.ntnx_mount_target_stat_v2:
+    file_server_ext_id: "{{ non_existent_file_server_ext_id }}"
+    start_time: "{{ stat_start_time }}"
+    end_time: "{{ stat_end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch mount target stats with missing ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed | default(false) == false
+      - result.failed == true
+      - "'missing required arguments' in result.msg"
+      - "'ext_id' in result.msg"
+    success_msg: "Fetch mount target stats with missing ext_id failed as expected"
+    fail_msg: "Fetch mount target stats with missing ext_id did not fail as expected"
+
+- name: Fetch mount target stats with missing start_time
+  nutanix.ncp.ntnx_mount_target_stat_v2:
+    file_server_ext_id: "{{ non_existent_file_server_ext_id }}"
+    ext_id: "{{ non_existent_mount_target_ext_id }}"
+    end_time: "{{ stat_end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch mount target stats with missing start_time status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed | default(false) == false
+      - result.failed == true
+      - "'missing required arguments' in result.msg"
+      - "'start_time' in result.msg"
+    success_msg: "Fetch mount target stats with missing start_time failed as expected"
+    fail_msg: "Fetch mount target stats with missing start_time did not fail as expected"
+
+- name: Fetch mount target stats with missing end_time
+  nutanix.ncp.ntnx_mount_target_stat_v2:
+    file_server_ext_id: "{{ non_existent_file_server_ext_id }}"
+    ext_id: "{{ non_existent_mount_target_ext_id }}"
+    start_time: "{{ stat_start_time }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch mount target stats with missing end_time status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed | default(false) == false
+      - result.failed == true
+      - "'missing required arguments' in result.msg"
+      - "'end_time' in result.msg"
+    success_msg: "Fetch mount target stats with missing end_time failed as expected"
+    fail_msg: "Fetch mount target stats with missing end_time did not fail as expected"
+
+- name: Fetch mount target stats with invalid stat_type
+  nutanix.ncp.ntnx_mount_target_stat_v2:
+    file_server_ext_id: "{{ non_existent_file_server_ext_id }}"
+    ext_id: "{{ non_existent_mount_target_ext_id }}"
+    start_time: "{{ stat_start_time }}"
+    end_time: "{{ stat_end_time }}"
+    stat_type: INVALID_TYPE
+  register: result
+  ignore_errors: true
+
+- name: Fetch mount target stats with invalid stat_type status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed | default(false) == false
+      - result.failed == true
+      - "'value of stat_type must be one of' in result.msg"
+    success_msg: "Fetch mount target stats with invalid stat_type failed as expected"
+    fail_msg: "Fetch mount target stats with invalid stat_type did not fail as expected"
+
+########################################################################################
+# API error paths - ntnx_mount_target_stat_v2 (stats module)
+########################################################################################
+
+- name: Fetch mount target stats with non-existent references
+  nutanix.ncp.ntnx_mount_target_stat_v2:
+    file_server_ext_id: "{{ non_existent_file_server_ext_id }}"
+    ext_id: "{{ non_existent_mount_target_ext_id }}"
+    start_time: "{{ stat_start_time }}"
+    end_time: "{{ stat_end_time }}"
+    read_timeout: 30000
+  register: result
+  ignore_errors: true
+
+- name: Fetch mount target stats with non-existent references status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed | default(false) == false
+      - result.failed == true
+      - "'Api Exception raised while fetching mount target stats' in result.msg"
+    success_msg: "Fetch mount target stats with non-existent references failed as expected"
+    fail_msg: "Fetch mount target stats with non-existent references did not fail as expected"
+
+- name: Fetch mount target stats with valid stat_type and non-existent references
+  nutanix.ncp.ntnx_mount_target_stat_v2:
+    file_server_ext_id: "{{ non_existent_file_server_ext_id }}"
+    ext_id: "{{ non_existent_mount_target_ext_id }}"
+    start_time: "{{ stat_start_time }}"
+    end_time: "{{ stat_end_time }}"
+    sampling_interval: 30
+    stat_type: SUM
+    read_timeout: 30000
+  register: result
+  ignore_errors: true
+
+- name: Fetch mount target stats with valid stat_type and non-existent references status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed | default(false) == false
+      - result.failed == true
+      - "'value of stat_type must be one of' not in (result.msg | default(''))"
+      - "'Api Exception raised while fetching mount target stats' in result.msg"
+    success_msg: "Fetch mount target stats with valid stat_type and non-existent references failed as expected"
+    fail_msg: "Fetch mount target stats with valid stat_type and non-existent references did not fail as expected"
+
+########################################################################################
+# Argument-spec validation and API error paths - info module
+########################################################################################
+
+- name: Fetch mount target stats info with missing file_server_ext_id
+  nutanix.ncp.ntnx_files_mount_target_stats_info_v2:
+    ext_id: "{{ non_existent_mount_target_ext_id }}"
+    start_time: "{{ stat_start_time }}"
+    end_time: "{{ stat_end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch mount target stats info with missing file_server_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed | default(false) == false
+      - result.failed == true
+      - "'missing required arguments' in result.msg"
+      - "'file_server_ext_id' in result.msg"
+    success_msg: "Fetch mount target stats info with missing file_server_ext_id failed as expected"
+    fail_msg: "Fetch mount target stats info with missing file_server_ext_id did not fail as expected"
+
+- name: Fetch mount target stats info with missing ext_id
+  nutanix.ncp.ntnx_files_mount_target_stats_info_v2:
+    file_server_ext_id: "{{ non_existent_file_server_ext_id }}"
+    start_time: "{{ stat_start_time }}"
+    end_time: "{{ stat_end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch mount target stats info with missing ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed | default(false) == false
+      - result.failed == true
+      - "'missing required arguments' in result.msg"
+      - "'ext_id' in result.msg"
+    success_msg: "Fetch mount target stats info with missing ext_id failed as expected"
+    fail_msg: "Fetch mount target stats info with missing ext_id did not fail as expected"
+
+- name: Fetch mount target stats info with invalid stat_type
+  nutanix.ncp.ntnx_files_mount_target_stats_info_v2:
+    file_server_ext_id: "{{ non_existent_file_server_ext_id }}"
+    ext_id: "{{ non_existent_mount_target_ext_id }}"
+    start_time: "{{ stat_start_time }}"
+    end_time: "{{ stat_end_time }}"
+    stat_type: NOT_A_TYPE
+  register: result
+  ignore_errors: true
+
+- name: Fetch mount target stats info with invalid stat_type status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed | default(false) == false
+      - result.failed == true
+      - "'value of stat_type must be one of' in result.msg"
+    success_msg: "Fetch mount target stats info with invalid stat_type failed as expected"
+    fail_msg: "Fetch mount target stats info with invalid stat_type did not fail as expected"
+
+- name: Fetch mount target stats info with non-existent references
+  nutanix.ncp.ntnx_files_mount_target_stats_info_v2:
+    file_server_ext_id: "{{ non_existent_file_server_ext_id }}"
+    ext_id: "{{ non_existent_mount_target_ext_id }}"
+    start_time: "{{ stat_start_time }}"
+    end_time: "{{ stat_end_time }}"
+    read_timeout: 30000
+  register: result
+  ignore_errors: true
+
+- name: Fetch mount target stats info with non-existent references status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed | default(false) == false
+      - result.failed == true
+      - "'Api Exception raised while fetching mount target stats' in result.msg"
+    success_msg: "Fetch mount target stats info with non-existent references failed as expected"
+    fail_msg: "Fetch mount target stats info with non-existent references did not fail as expected"
+
+########################################################################################
+# Live stat fetch (only when a real file server + mount target pair is supplied)
+########################################################################################
+
+- name: Live MountTargetStat fetch tests
+  when:
+    - mount_target_stat is defined
+    - mount_target_stat.file_server_ext_id is defined
+    - mount_target_stat.ext_id is defined
+  block:
+    - name: Fetch mount target stats with minimal attributes (live)
+      nutanix.ncp.ntnx_mount_target_stat_v2:
+        file_server_ext_id: "{{ mount_target_stat.file_server_ext_id }}"
+        ext_id: "{{ mount_target_stat.ext_id }}"
+        start_time: "{{ stat_start_time }}"
+        end_time: "{{ stat_end_time }}"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch mount target stats with minimal attributes (live) status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.response is defined
+          - result.ext_id == mount_target_stat.ext_id
+        success_msg: "Fetch mount target stats with minimal attributes passed"
+        fail_msg: "Fetch mount target stats with minimal attributes failed"
+
+    - name: Fetch mount target stats with all attributes (live)
+      nutanix.ncp.ntnx_mount_target_stat_v2:
+        file_server_ext_id: "{{ mount_target_stat.file_server_ext_id }}"
+        ext_id: "{{ mount_target_stat.ext_id }}"
+        start_time: "{{ stat_start_time }}"
+        end_time: "{{ stat_end_time }}"
+        sampling_interval: 30
+        stat_type: "{{ item }}"
+      register: result
+      ignore_errors: true
+      loop:
+        - SUM
+        - AVG
+        - MIN
+        - MAX
+        - COUNT
+        - LAST
+
+    - name: Fetch mount target stats with all attributes (live) status
+      ansible.builtin.assert:
+        that:
+          - item is defined
+          - item.changed == false
+          - item.failed == false
+          - item.response is defined
+          - item.ext_id == mount_target_stat.ext_id
+        success_msg: "Fetch mount target stats with all attributes passed"
+        fail_msg: "Fetch mount target stats with all attributes failed"
+      loop: "{{ result.results }}"
+
+    - name: Fetch mount target stats info with all attributes (live)
+      nutanix.ncp.ntnx_files_mount_target_stats_info_v2:
+        file_server_ext_id: "{{ mount_target_stat.file_server_ext_id }}"
+        ext_id: "{{ mount_target_stat.ext_id }}"
+        start_time: "{{ stat_start_time }}"
+        end_time: "{{ stat_end_time }}"
+        sampling_interval: 30
+        stat_type: AVG
+      register: result
+      ignore_errors: true
+
+    - name: Fetch mount target stats info with all attributes (live) status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.response is defined
+          - result.ext_id == mount_target_stat.ext_id
+        success_msg: "Fetch mount target stats info with all attributes passed"
+        fail_msg: "Fetch mount target stats info with all attributes failed"
