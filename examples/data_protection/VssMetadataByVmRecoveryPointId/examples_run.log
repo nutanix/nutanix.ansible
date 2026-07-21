@@ -1,0 +1,29 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [VssMetadataByVmRecoveryPointId playbook (live run)] **********************
+
+TASK [Set VSS metadata source recovery point identifiers] **********************
+ok: [localhost] => {"ansible_facts": {"recovery_point_ext_id": "d1382e60-4719-4715-a0ae-5cb1b0217721", "vm_recovery_point_ext_id": "124800e7-6137-47e3-8900-7a824570ee1f"}, "changed": false}
+
+TASK [Fetch VSS metadata for a VM recovery point] ******************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT IMPLEMENTED", "msg": "Api Exception raised while fetching VSS metadata for a VM recovery point using ext_ids", "response": "(501)\nReason: NOT IMPLEMENTED\nHTTP response headers: HTTPHeaderDict({'Expires': '0,0', 'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate,no-cache, no-store', 'X-Xss-Protection': '0, 1; mode=block', 'Pragma': 'no-cache, no-cache', 'Date': 'Tue, 21 Jul 2026 07:14:34 GMT', 'X-Ratelimit-Remaining': '38', 'Strict-Transport-Security': 'max-age=31536000 ; includeSubDomains, max-age=63072000; includeSubdomains; preload', 'X-Ratelimit-Limit': '40', 'X-Ratelimit-Reset': '0', 'X-Frame-Options': 'DENY, SAMEORIGIN', 'X-Api-Ratelimit-Remaining': '0', 'X-Api-Ratelimit-Refresh-Period-Seconds': '1', 'X-Api-Ratelimit-Limit': '1', 'X-Api-Ratelimit-Reset': '615', 'X-Content-Type-Options': 'nosniff, nosniff', 'Content-Length': '0', 'X-Dns-Prefetch-Control': 'off', 'Vary': 'Origin', 'X-Ntnx-Env': 'pc', 'X-Ntnx-Product': 'pc.7.6', 'Content-Security-Policy': \"connect-src 'self' wss: https://downloads.frame.nutanix.com https://downloads.frame.nutanix.us; default-src 'self' https://*.nutanix.com; frame-ancestors 'self' https://*.nutanix.com; frame-src 'self' https://*.nutanix.com blob: data:; img-src 'self' blob: data:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'\", 'X-Permitted-Cross-Domain-Policies': 'master-only', 'X-Envoy-Upstream-Service-Time': '4'})\n", "status": 501}
+...ignoring
+
+TASK [Print VSS metadata result] ***********************************************
+ok: [localhost] => {
+    "vss_metadata_result": {
+        "changed": false,
+        "error": "NOT IMPLEMENTED",
+        "failed": true,
+        "msg": "Api Exception raised while fetching VSS metadata for a VM recovery point using ext_ids",
+        "response": "(501)\nReason: NOT IMPLEMENTED\nHTTP response headers: HTTPHeaderDict({'Expires': '0,0', 'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate,no-cache, no-store', 'X-Xss-Protection': '0, 1; mode=block', 'Pragma': 'no-cache, no-cache', 'Date': 'Tue, 21 Jul 2026 07:14:34 GMT', 'X-Ratelimit-Remaining': '38', 'Strict-Transport-Security': 'max-age=31536000 ; includeSubDomains, max-age=63072000; includeSubdomains; preload', 'X-Ratelimit-Limit': '40', 'X-Ratelimit-Reset': '0', 'X-Frame-Options': 'DENY, SAMEORIGIN', 'X-Api-Ratelimit-Remaining': '0', 'X-Api-Ratelimit-Refresh-Period-Seconds': '1', 'X-Api-Ratelimit-Limit': '1', 'X-Api-Ratelimit-Reset': '615', 'X-Content-Type-Options': 'nosniff, nosniff', 'Content-Length': '0', 'X-Dns-Prefetch-Control': 'off', 'Vary': 'Origin', 'X-Ntnx-Env': 'pc', 'X-Ntnx-Product': 'pc.7.6', 'Content-Security-Policy': \"connect-src 'self' wss: https://downloads.frame.nutanix.com https://downloads.frame.nutanix.us; default-src 'self' https://*.nutanix.com; frame-ancestors 'self' https://*.nutanix.com; frame-src 'self' https://*.nutanix.com blob: data:; img-src 'self' blob: data:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'\", 'X-Permitted-Cross-Domain-Policies': 'master-only', 'X-Envoy-Upstream-Service-Time': '4'})\n",
+        "status": 501
+    }
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=1   
+

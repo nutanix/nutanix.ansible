@@ -71,3 +71,32 @@ def get_protected_resource(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching protected resource info using ext_id",
         )
+
+
+def get_vss_metadata_by_vm_recovery_point(
+    module, api_instance, recovery_point_ext_id, vm_recovery_point_ext_id
+):
+    """
+    This method will return VSS metadata for a VM recovery point which is part of
+    the given top level recovery point.
+    Args:
+        module: Ansible module
+        api_instance: RecoveryPointsApi instance from ntnx_dataprotection_py_client sdk
+        recovery_point_ext_id (str): top level recovery point external ID
+        vm_recovery_point_ext_id (str): VM recovery point external ID
+    Returns:
+        vss_metadata_info (object): VSS metadata payload wrapper for the VM
+            recovery point (FileWrapper/Path reference for the streamed
+            application/octet-stream response).
+    """
+    try:
+        return api_instance.get_vss_metadata_by_vm_recovery_point_id(
+            recoveryPointExtId=recovery_point_ext_id,
+            vmRecoveryPointExtId=vm_recovery_point_ext_id,
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching VSS metadata for a VM recovery point using ext_ids",
+        )

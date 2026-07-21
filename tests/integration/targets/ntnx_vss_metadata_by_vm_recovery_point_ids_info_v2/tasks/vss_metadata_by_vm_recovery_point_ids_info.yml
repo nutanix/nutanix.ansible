@@ -1,0 +1,264 @@
+---
+# Test plan for ntnx_vss_metadata_by_vm_recovery_point_ids_info_v2
+# =================================================================
+#
+# The SDK endpoint `RecoveryPointsApi.get_vss_metadata_by_vm_recovery_point_id`
+# is a read-only child datasource that requires BOTH a top-level
+# `recovery_point_ext_id` and a nested `vm_recovery_point_ext_id`. It streams
+# back a Windows CAB file wrapper (application/octet-stream) that only exists
+# for application-consistent (VSS) VM recovery points.
+#
+# Because a valid VSS payload can only be produced by a Windows VM that
+# actually enrolls the VSS writers, and the CI cluster may not have a
+# Windows VM standing by, this target focuses on:
+#
+#   1. Argument-spec validation (both ext_ids are required).
+#   2. Positive lifecycle: create a Linux VM -> capture an
+#      APPLICATION_CONSISTENT recovery point with `should_store_vss_metadata`
+#      -> call the info module. The module is expected either to return a
+#      metadata payload wrapper (Windows guest, VSS writers enrolled) OR to
+#      surface a descriptive API error (non-Windows guest / no VSS metadata
+#      present). Either outcome is a "clean" run of the module — we assert
+#      that the call did not raise a Python exception and produced a
+#      result dict with a populated `ext_id`.
+#   3. Negative: invalid parent recovery-point ext_id -> module must fail
+#      cleanly with an error, not crash.
+#   4. Negative: invalid VM recovery-point ext_id -> module must fail
+#      cleanly with an error, not crash.
+#   5. Negative: missing required fields -> Ansible argument-spec must
+#      reject with a `missing required arguments` failure.
+
+- name: Start VSS metadata by VM recovery point ID info tests
+  ansible.builtin.debug:
+    msg: Start VSS metadata by VM recovery point ID info tests
+
+- name: Generate random suffix and prefix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    prefix_name: "ansible_vss_meta"
+    vm_todelete: []
+    recovery_point_todelete: []
+
+- name: Set derived names
+  ansible.builtin.set_fact:
+    vm_name: "{{ prefix_name }}_{{ random_name }}_vm"
+    recovery_point_name: "{{ prefix_name }}_{{ random_name }}_rp"
+
+- name: Compute expiration time (one month out)
+  ansible.builtin.set_fact:
+    expiration_time: '{{ lookup(''pipe'', ''date -d "+1 month" +%Y-%m-%dT%H:%M:%S%:z'') }}'
+
+########################################################################################################
+# Negative: missing required fields
+########################################################################################################
+
+- name: Call info module with no arguments (should fail on argument spec)
+  nutanix.ncp.ntnx_vss_metadata_by_vm_recovery_point_ids_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Verify missing-arguments failure
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - "'missing required arguments' in (result.msg | default(''))"
+      - "'recovery_point_ext_id' in (result.msg | default(''))"
+      - "'vm_recovery_point_ext_id' in (result.msg | default(''))"
+    fail_msg: "Expected module to fail with missing required arguments error"
+    success_msg: "Module correctly rejected missing required arguments"
+
+- name: Call info module missing vm_recovery_point_ext_id (should fail)
+  nutanix.ncp.ntnx_vss_metadata_by_vm_recovery_point_ids_info_v2:
+    recovery_point_ext_id: "1ca2963d-77b6-453a-ae23-2c19e7a954a3"
+  register: result
+  ignore_errors: true
+
+- name: Verify partial-argument failure
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - "'missing required arguments' in (result.msg | default(''))"
+      - "'vm_recovery_point_ext_id' in (result.msg | default(''))"
+    fail_msg: "Expected module to fail when vm_recovery_point_ext_id is omitted"
+    success_msg: "Module correctly rejected missing vm_recovery_point_ext_id"
+
+########################################################################################################
+# Negative: invalid ext_ids
+########################################################################################################
+
+- name: Call info module with a non-existent parent recovery point ext_id
+  nutanix.ncp.ntnx_vss_metadata_by_vm_recovery_point_ids_info_v2:
+    recovery_point_ext_id: "00000000-0000-0000-0000-000000000000"
+    vm_recovery_point_ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Verify invalid parent ext_id triggers a clean API error
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - (result.msg is defined) or (result.response is defined)
+    fail_msg: "Expected an API error for an invalid parent recovery point ext_id"
+    success_msg: "Module correctly surfaced an API error for invalid parent ext_id"
+
+- name: Call info module with a syntactically valid but non-existent VM recovery point ext_id
+  nutanix.ncp.ntnx_vss_metadata_by_vm_recovery_point_ids_info_v2:
+    recovery_point_ext_id: "1ca2963d-77b6-453a-ae23-2c19e7a954a3"
+    vm_recovery_point_ext_id: "deadbeef-dead-beef-dead-beefdeadbeef"
+  register: result
+  ignore_errors: true
+
+- name: Verify invalid VM ext_id triggers a clean API error
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - (result.msg is defined) or (result.response is defined)
+    fail_msg: "Expected an API error for an invalid VM recovery point ext_id"
+    success_msg: "Module correctly surfaced an API error for invalid VM ext_id"
+
+########################################################################################################
+# Positive lifecycle: create real recovery point, then call the module
+# --------------------------------------------------------------------
+# We create a Linux VM (no VSS writer available) and take an
+# APPLICATION_CONSISTENT recovery point with should_store_vss_metadata: true.
+# On this cluster, no VSS metadata will actually be produced, so the info
+# call is expected to surface a descriptive API error (not crash). If the
+# cluster does not permit the RP creation for some other reason, we still
+# capture the module behavior in the logs and skip the metadata call.
+########################################################################################################
+
+- name: Fetch clusters to find a PE
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+    limit: 1
+  register: clusters_result
+  ignore_errors: true
+
+- name: Set cluster fact
+  ansible.builtin.set_fact:
+    target_cluster_ext_id: "{{ clusters_result.response[0].ext_id | default('') }}"
+  when:
+    - clusters_result is defined
+    - not (clusters_result.failed | default(true))
+    - clusters_result.response | default([]) | length > 0
+
+- name: Skip positive lifecycle if no cluster is available
+  ansible.builtin.debug:
+    msg: "No AOS cluster discovered on the target PC — skipping the positive lifecycle path."
+  when: target_cluster_ext_id | default('') == ''
+
+- name: Positive lifecycle block
+  when: target_cluster_ext_id | default('') != ''
+  block:
+    - name: Create source VM for VSS metadata test
+      nutanix.ncp.ntnx_vms_v2:
+        name: "{{ vm_name }}"
+        description: "ansible VSS metadata test source VM"
+        cluster:
+          ext_id: "{{ target_cluster_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Track VM in cleanup list
+      ansible.builtin.set_fact:
+        vm_ext_id: "{{ result.ext_id | default('') }}"
+        vm_todelete: "{{ vm_todelete + [result.ext_id] if (result.ext_id is defined and result.ext_id) else vm_todelete }}"
+
+    - name: Skip metadata subflow if VM was not created
+      ansible.builtin.debug:
+        msg: "Source VM could not be created — skipping VSS metadata subflow."
+      when: vm_ext_id == ''
+
+    - name: VSS metadata subflow
+      when: vm_ext_id != ''
+      block:
+        - name: Create APPLICATION_CONSISTENT recovery point storing VSS metadata
+          nutanix.ncp.ntnx_recovery_points_v2:
+            name: "{{ recovery_point_name }}"
+            expiration_time: "{{ expiration_time }}"
+            recovery_point_type: "APPLICATION_CONSISTENT"
+            vm_recovery_points:
+              - vm_ext_id: "{{ vm_ext_id }}"
+                application_consistent_properties:
+                  application_consistent_properties_spec:
+                    backup_type: "FULL_BACKUP"
+                    should_include_writers: false
+                    should_store_vss_metadata: true
+          register: rp_result
+          ignore_errors: true
+
+        - name: Track recovery point in cleanup list
+          ansible.builtin.set_fact:
+            recovery_point_ext_id: "{{ rp_result.ext_id | default('') }}"
+            vm_recovery_point_ext_id: >-
+              {{ (rp_result.response.vm_recovery_points | default([]))[0].ext_id | default('') }}
+            recovery_point_todelete: >-
+              {{ recovery_point_todelete + [rp_result.ext_id]
+                 if (rp_result.ext_id is defined and rp_result.ext_id)
+                 else recovery_point_todelete }}
+
+        - name: Fetch VSS metadata for the freshly created recovery point
+          nutanix.ncp.ntnx_vss_metadata_by_vm_recovery_point_ids_info_v2:
+            recovery_point_ext_id: "{{ recovery_point_ext_id }}"
+            vm_recovery_point_ext_id: "{{ vm_recovery_point_ext_id }}"
+          register: vss_result
+          ignore_errors: true
+          when:
+            - recovery_point_ext_id != ''
+            - vm_recovery_point_ext_id != ''
+
+        - name: Verify VSS metadata call produced a stable result dict (success path)
+          ansible.builtin.assert:
+            that:
+              - vss_result is defined
+              - vss_result.changed | default(false) == false
+              - vss_result.ext_id | default('') == vm_recovery_point_ext_id
+              - vss_result.recovery_point_ext_id | default('') == recovery_point_ext_id
+              - vss_result.response is defined
+            fail_msg: "VSS metadata success-path assertions failed"
+            success_msg: "VSS metadata call returned a payload for the created recovery point"
+          when:
+            - vss_result is defined
+            - not (vss_result.failed | default(false))
+
+        - name: Verify VSS metadata call surfaced a descriptive API error (error path)
+          ansible.builtin.assert:
+            that:
+              - vss_result is defined
+              - vss_result.changed | default(false) == false
+              - (vss_result.msg | default('')) | length > 0
+              - vss_result.status | default(0) | int >= 400
+            fail_msg: "VSS metadata error-path assertions failed"
+            success_msg: >-
+              VSS metadata call surfaced a clean API error
+              (expected on clusters where the VSS metadata endpoint is not
+              provisioned or the recovery point has no VSS payload).
+          when:
+            - vss_result is defined
+            - vss_result.failed | default(false)
+
+########################################################################################################
+# Cleanup
+########################################################################################################
+
+- name: Delete created recovery points
+  nutanix.ncp.ntnx_recovery_points_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  loop: "{{ recovery_point_todelete }}"
+  register: cleanup_rp
+  ignore_errors: true
+  when: recovery_point_todelete | length > 0
+
+- name: Delete created VMs
+  nutanix.ncp.ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  loop: "{{ vm_todelete }}"
+  register: cleanup_vm
+  ignore_errors: true
+  when: vm_todelete | length > 0

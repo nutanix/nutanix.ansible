@@ -1,0 +1,46 @@
+---
+# Summary:
+# This playbook demonstrates how to fetch Volume Shadow Copy Service (VSS)
+# metadata for a VM recovery point that is part of a top-level composite
+# recovery point in Nutanix Prism Central using the v4 dataprotection APIs.
+#
+# The playbook does the following:
+#   1. Sets connection defaults once via `module_defaults`.
+#   2. Sets facts pointing at a pre-existing composite recovery point and one
+#      of its nested VM recovery points on the cluster.
+#   3. Calls `ntnx_vss_metadata_by_vm_recovery_point_ids_info_v2` to fetch the
+#      VSS metadata payload wrapper for that VM recovery point.
+#
+# Prerequisites (must exist on the target Prism Central before running):
+#   * A composite recovery point that contains at least one Windows VM
+#     recovery point captured with `should_store_vss_metadata: true`
+#     (i.e. an application-consistent snapshot). Recovery points from
+#     non-VSS-capable workloads will not have VSS metadata to fetch.
+#   * The caller must have the `View Virtual Machine Recovery Point VSS
+#     Metadata` IAM permission.
+
+- name: VssMetadataByVmRecoveryPointId playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+
+  tasks:
+    - name: Set VSS metadata source recovery point identifiers
+      ansible.builtin.set_fact:
+        recovery_point_ext_id: "1ca2963d-77b6-453a-ae23-2c19e7a954a3"
+        vm_recovery_point_ext_id: "522670d7-e92d-45c5-9139-76ccff6813c2"
+
+    - name: Fetch VSS metadata for a VM recovery point
+      nutanix.ncp.ntnx_vss_metadata_by_vm_recovery_point_ids_info_v2:
+        recovery_point_ext_id: "{{ recovery_point_ext_id }}"
+        vm_recovery_point_ext_id: "{{ vm_recovery_point_ext_id }}"
+      register: vss_metadata_result
+
+    - name: Print VSS metadata result
+      ansible.builtin.debug:
+        var: vss_metadata_result
