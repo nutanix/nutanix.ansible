@@ -1,0 +1,36 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Recall tiered files playbook] ********************************************
+
+TASK [Setting variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"file_server_ext_id": "5f1d0b7a-7f0f-4a0d-9c9a-3f2b1c0d5e6f", "mount_target_ext_id": "7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0"}, "changed": false}
+
+TASK [Recall tiered files using file paths] ************************************
+[ERROR]: Task failed: Module failed: Api Exception raised while recalling tiered files
+Origin: /tmp/codegen/efd7dfc4f38c4aea8ac3601aa79ad1e0/repo/examples/files/RecallTieredFile/recall_tiered_files_v2.yml:32:7
+
+30         mount_target_ext_id: "7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0"
+31
+32     - name: Recall tiered files using file paths
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while recalling tiered files", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Recall tiered files using inode numbers] *********************************
+[ERROR]: Task failed: Module failed: Api Exception raised while recalling tiered files
+Origin: /tmp/codegen/efd7dfc4f38c4aea8ac3601aa79ad1e0/repo/examples/files/RecallTieredFile/recall_tiered_files_v2.yml:44:7
+
+42       ignore_errors: true
+43
+44     - name: Recall tiered files using inode numbers
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while recalling tiered files", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=2   
+

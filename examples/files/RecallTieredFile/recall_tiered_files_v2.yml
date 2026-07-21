@@ -1,0 +1,54 @@
+---
+# Summary:
+# This playbook demonstrates how to recall previously tiered files on a
+# Nutanix file server using the nutanix.ncp.ntnx_files_recall_tiered_file_v2
+# module. It covers:
+# 1. Recall tiered files by file paths (with all attributes)
+# 2. Recall tiered files by inode numbers (with all attributes)
+#
+# Notes:
+# - Recall is an asynchronous action. The module returns a task; the actual
+#   data is moved back to the file server by the tiering engine.
+# - Either file_paths or i_node_numbers must be provided, but not both.
+# - The file server must have the tiering feature configured and the target
+#   files must have been tiered previously.
+
+- name: Recall tiered files playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('ansible.builtin.env', 'NUTANIX_HOST') }}"
+      nutanix_username: "{{ lookup('ansible.builtin.env', 'NUTANIX_USERNAME') }}"
+      nutanix_password: "{{ lookup('ansible.builtin.env', 'NUTANIX_PASSWORD') }}"
+      nutanix_port: "{{ lookup('ansible.builtin.env', 'NUTANIX_PORT') | default('9440', true) }}"
+      validate_certs: false
+  tasks:
+    - name: Setting variables
+      ansible.builtin.set_fact:
+        file_server_ext_id: "5f1d0b7a-7f0f-4a0d-9c9a-3f2b1c0d5e6f"
+        mount_target_ext_id: "7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0"
+
+    - name: Recall tiered files using file paths
+      nutanix.ncp.ntnx_files_recall_tiered_file_v2:
+        state: present
+        ext_id: "{{ file_server_ext_id }}"
+        mount_target_ext_id: "{{ mount_target_ext_id }}"
+        is_single_dir_tree: false
+        file_paths:
+          - "/dir1/tiered_file1.dat"
+          - "/dir1/tiered_file2.dat"
+      register: result
+      ignore_errors: true
+
+    - name: Recall tiered files using inode numbers
+      nutanix.ncp.ntnx_files_recall_tiered_file_v2:
+        state: present
+        ext_id: "{{ file_server_ext_id }}"
+        mount_target_ext_id: "{{ mount_target_ext_id }}"
+        is_single_dir_tree: false
+        i_node_numbers:
+          - "1234567"
+          - "1234568"
+      register: result
+      ignore_errors: true

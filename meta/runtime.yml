@@ -99,6 +99,7 @@ action_groups:
     - ntnx_ndb_slas
     - ntnx_floating_ips_info_v2
     - ntnx_floating_ips_v2
+    - ntnx_files_recall_tiered_file_v2
     - ntnx_pbrs_v2
     - ntnx_pbrs_info_v2
     - ntnx_subnets_v2
