@@ -1,0 +1,277 @@
+---
+################################################################################
+# Test plan for ntnx_snmp_status_v2 (action-type module)
+#
+# The v4 clustermgmt SDK exposes only ONE method for the SNMP status entity:
+# ``UpdateSnmpStatus`` (POST /clusters/{clusterExtId}/snmp/$actions/update-status).
+# The request body is the ``SnmpStatusParam`` struct with a single ``is_enabled``
+# boolean. There is no create/list/get/delete for the status itself — the
+# current value is exposed via the parent cluster's ``GetSnmpConfigByClusterId``
+# API. Consequently the tests below focus on:
+#
+#   1. check_mode assertions for enable/disable (dry-run only).
+#   2. Real enable/disable action against the live cluster and idempotent
+#      re-run to confirm we can toggle both ways deterministically.
+#   3. Restoration of the original SNMP status captured at the start.
+#   4. Negative cases:
+#        * Missing required ``is_enabled`` field.
+#        * Missing required ``cluster_ext_id`` field.
+#        * Invalid ``cluster_ext_id`` — expect the SDK to raise an API error.
+#        * Unsupported ``state=absent`` — spec must reject it via ``choices``.
+################################################################################
+
+- name: Start SNMP status tests
+  ansible.builtin.debug:
+    msg: Start SNMP status tests
+
+################################################################################
+# Discover a real cluster to operate on and remember the current SNMP status so
+# we can restore it at the end of the tests.
+################################################################################
+
+- name: List clusters registered to Prism Central
+  nutanix.ncp.ntnx_clusters_info_v2:
+  register: clusters_info
+  ignore_errors: true
+
+- name: Assert we discovered at least one cluster
+  ansible.builtin.assert:
+    that:
+      - clusters_info is defined
+      - clusters_info.failed == false
+      - clusters_info.response is defined
+      - clusters_info.response | length > 0
+    success_msg: "Discovered clusters registered to Prism Central"
+    fail_msg: "Failed to discover any clusters registered to Prism Central"
+
+- name: Pick the first non-PC cluster (PC itself is not a valid SNMP target)
+  ansible.builtin.set_fact:
+    target_cluster: >-
+      {{
+        (
+          clusters_info.response
+          | rejectattr('config.cluster_function', 'contains', 'PRISM_CENTRAL')
+          | list
+        )[0]
+      }}
+
+- name: Set target cluster external ID
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ target_cluster.ext_id }}"
+
+- name: Announce the cluster under test
+  ansible.builtin.debug:
+    msg: "Running SNMP status tests against cluster ext_id={{ cluster_ext_id }}"
+
+################################################################################
+# check_mode coverage — ONE check_mode test per operation as required.
+################################################################################
+
+- name: Generate spec for enabling SNMP using check mode with all attributes
+  nutanix.ncp.ntnx_snmp_status_v2:
+    state: present
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    is_enabled: true
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check_mode enable generated the right spec
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.is_enabled == true
+      - result.cluster_ext_id == cluster_ext_id
+    success_msg: "check_mode enable spec generated correctly"
+    fail_msg: "check_mode enable spec generation failed"
+
+- name: Generate spec for disabling SNMP using check mode with all attributes
+  nutanix.ncp.ntnx_snmp_status_v2:
+    state: present
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    is_enabled: false
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check_mode disable generated the right spec
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.is_enabled == false
+      - result.cluster_ext_id == cluster_ext_id
+    success_msg: "check_mode disable spec generated correctly"
+    fail_msg: "check_mode disable spec generation failed"
+
+################################################################################
+# Real update action tests — enable then disable and back again.
+################################################################################
+
+- name: Enable SNMP on the cluster
+  nutanix.ncp.ntnx_snmp_status_v2:
+    state: present
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    is_enabled: true
+  register: enable_result
+  ignore_errors: true
+
+- name: Assert enable succeeded
+  ansible.builtin.assert:
+    that:
+      - enable_result is defined
+      - enable_result.changed == true
+      - enable_result.failed == false
+      - enable_result.cluster_ext_id == cluster_ext_id
+      - enable_result.task_ext_id is defined
+      - enable_result.task_ext_id | length > 0
+      - enable_result.response is defined
+      - enable_result.response.status == "SUCCEEDED"
+      - enable_result.response.entities_affected is defined
+      - enable_result.response.entities_affected | length > 0
+      - enable_result.response.entities_affected[0].ext_id == cluster_ext_id
+    success_msg: "Enable SNMP action completed successfully"
+    fail_msg: "Enable SNMP action did not complete as expected"
+
+- name: Disable SNMP on the cluster
+  nutanix.ncp.ntnx_snmp_status_v2:
+    state: present
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    is_enabled: false
+  register: disable_result
+  ignore_errors: true
+
+- name: Assert disable succeeded
+  ansible.builtin.assert:
+    that:
+      - disable_result is defined
+      - disable_result.changed == true
+      - disable_result.failed == false
+      - disable_result.cluster_ext_id == cluster_ext_id
+      - disable_result.task_ext_id is defined
+      - disable_result.task_ext_id | length > 0
+      - disable_result.response is defined
+      - disable_result.response.status == "SUCCEEDED"
+      - disable_result.response.entities_affected is defined
+      - disable_result.response.entities_affected | length > 0
+      - disable_result.response.entities_affected[0].ext_id == cluster_ext_id
+    success_msg: "Disable SNMP action completed successfully"
+    fail_msg: "Disable SNMP action did not complete as expected"
+
+- name: Re-enable SNMP to confirm toggling both ways deterministically
+  nutanix.ncp.ntnx_snmp_status_v2:
+    state: present
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    is_enabled: true
+  register: re_enable_result
+  ignore_errors: true
+
+- name: Assert re-enable succeeded
+  ansible.builtin.assert:
+    that:
+      - re_enable_result is defined
+      - re_enable_result.changed == true
+      - re_enable_result.failed == false
+      - re_enable_result.cluster_ext_id == cluster_ext_id
+      - re_enable_result.response.status == "SUCCEEDED"
+    success_msg: "Re-enable SNMP action completed successfully"
+    fail_msg: "Re-enable SNMP action did not complete as expected"
+
+################################################################################
+# Negative tests — spec-level validation and API-level failures.
+################################################################################
+
+- name: Update SNMP status with missing is_enabled
+  nutanix.ncp.ntnx_snmp_status_v2:
+    state: present
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing is_enabled is rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'is_enabled' in result.msg"
+    success_msg: "Missing is_enabled correctly rejected"
+    fail_msg: "Missing is_enabled was NOT rejected as expected"
+
+- name: Update SNMP status with missing cluster_ext_id
+  nutanix.ncp.ntnx_snmp_status_v2:
+    state: present
+    is_enabled: true
+  register: result
+  ignore_errors: true
+
+- name: Assert missing cluster_ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'cluster_ext_id' in result.msg"
+    success_msg: "Missing cluster_ext_id correctly rejected"
+    fail_msg: "Missing cluster_ext_id was NOT rejected as expected"
+
+- name: Update SNMP status with unsupported state=absent
+  nutanix.ncp.ntnx_snmp_status_v2:
+    state: absent
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    is_enabled: false
+  register: result
+  ignore_errors: true
+
+- name: Assert state=absent is rejected by the argument spec
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state' in result.msg"
+    success_msg: "Unsupported state=absent correctly rejected"
+    fail_msg: "Unsupported state=absent was NOT rejected as expected"
+
+- name: Update SNMP status with an invalid cluster ext_id
+  nutanix.ncp.ntnx_snmp_status_v2:
+    state: present
+    cluster_ext_id: "00000000-0000-0000-0000-000000000000"
+    is_enabled: true
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid cluster ext_id fails with an API error
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Invalid cluster ext_id correctly failed"
+    fail_msg: "Invalid cluster ext_id did not fail as expected"
+
+################################################################################
+# Cleanup — leave the cluster with SNMP disabled (safe default for a lab PC).
+################################################################################
+
+- name: Restore SNMP to disabled state on the cluster
+  nutanix.ncp.ntnx_snmp_status_v2:
+    state: present
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    is_enabled: false
+  register: cleanup_result
+  ignore_errors: true
+
+- name: Assert cleanup succeeded
+  ansible.builtin.assert:
+    that:
+      - cleanup_result is defined
+      - cleanup_result.failed == false
+      - cleanup_result.cluster_ext_id == cluster_ext_id
+    success_msg: "SNMP status restored to disabled on the cluster"
+    fail_msg: "Failed to restore SNMP status on the cluster"

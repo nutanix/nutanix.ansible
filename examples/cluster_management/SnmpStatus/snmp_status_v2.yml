@@ -1,0 +1,38 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Enable SNMP on a cluster.
+# 2. Disable SNMP on the same cluster (restore original state).
+#
+# The SNMP status is a cluster-scoped flag on the SNMP configuration of a
+# Prism Element cluster registered to Prism Central. Only the update action
+# is exposed by the v4 clustermgmt SDK (there is no create/delete for the
+# status itself), so this module drives the C(UpdateSnmpStatus) action.
+
+- name: SNMP status action playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Set cluster external ID
+      ansible.builtin.set_fact:
+        cluster_ext_id: "0006361b-6855-3644-7458-2268f8ffb2bd"
+
+    - name: Enable SNMP on the cluster
+      nutanix.ncp.ntnx_snmp_status_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        is_enabled: true
+      register: enable_result
+
+    - name: Disable SNMP on the cluster
+      nutanix.ncp.ntnx_snmp_status_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        is_enabled: false
+      register: disable_result
