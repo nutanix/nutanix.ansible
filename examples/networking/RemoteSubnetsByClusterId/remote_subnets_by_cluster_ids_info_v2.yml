@@ -1,0 +1,87 @@
+---
+# Summary:
+# This playbook demonstrates the ntnx_remote_subnets_by_cluster_ids_info_v2
+# module against a Prism Central. The entity is read-only in the Nutanix
+# Networking v4 API (only GET / LIST endpoints exist), so this playbook only
+# lists and fetches remote subnets.
+#
+# Steps:
+# 1. Discover a PE cluster registered with the target Prism Central.
+# 2. List all remote subnets visible on that cluster.
+# 3. If any remote subnet is returned, fetch it by ext_id.
+# 4. Re-list with an OData filter and with a limit.
+
+- name: RemoteSubnetsByClusterId info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: false
+      # The remote-subnets backend can take >30s to answer when it can't
+      # reach a remote peer (NETWORKING-10055). Give the SDK 120s so a slow
+      # 500 is captured as a proper error rather than a read timeout.
+      read_timeout: 120000
+  tasks:
+    - name: Discover a PE cluster registered with this Prism Central
+      nutanix.ncp.ntnx_clusters_info_v2:
+      register: clusters
+      ignore_errors: true
+
+    - name: Set cluster_ext_id fact from the first non-PC cluster
+      ansible.builtin.set_fact:
+        cluster_ext_id: >-
+          {{
+            (clusters.response | default([]))
+            | rejectattr('config.cluster_function', 'contains', 'PRISM_CENTRAL')
+            | map(attribute='ext_id') | list | first
+            | default('')
+          }}
+
+    - name: Fail early if no PE cluster was discovered
+      ansible.builtin.assert:
+        that:
+          - cluster_ext_id | length > 0
+        fail_msg: "No PE cluster is registered with this Prism Central."
+        success_msg: "Using cluster_ext_id={{ cluster_ext_id }} for remote subnet lookups."
+
+    - name: List all remote subnets discovered on the cluster
+      nutanix.ncp.ntnx_remote_subnets_by_cluster_ids_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: list_result
+      ignore_errors: true
+
+    - name: Show remote subnets list summary
+      ansible.builtin.debug:
+        msg:
+          - "failed={{ list_result.failed | default(false) }}"
+          - "total_available_results={{ list_result.total_available_results | default(0) }}"
+          - "count={{ (list_result.response | default([])) | length }}"
+
+    - name: Capture first remote subnet ext_id when list is non-empty
+      ansible.builtin.set_fact:
+        remote_subnet_ext_id: "{{ (list_result.response | default([]))[0].ext_id | default('') }}"
+
+    - name: Get remote subnet using ext_id
+      nutanix.ncp.ntnx_remote_subnets_by_cluster_ids_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ remote_subnet_ext_id }}"
+      register: get_result
+      when: remote_subnet_ext_id | length > 0
+      ignore_errors: true
+
+    - name: List remote subnets with OData filter (startswith on name)
+      nutanix.ncp.ntnx_remote_subnets_by_cluster_ids_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        filter: "startswith(name, 'C')"
+      register: filter_result
+      ignore_errors: true
+
+    - name: List remote subnets with limit
+      nutanix.ncp.ntnx_remote_subnets_by_cluster_ids_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        limit: 1
+      register: limit_result
+      ignore_errors: true
