@@ -1,0 +1,52 @@
+---
+# Summary:
+# This playbook demonstrates the ntnx_vm_host_affinity_policy_vm_compliance_states_info_v2
+# module. VmHostAffinityPolicyVmComplianceState is a read-only view surfaced by the
+# Prism Central v4.2 VMM API — it is populated by the AHV placement engine and
+# describes, per-VM, whether each VM matched by the parent VM-host affinity policy
+# is currently compliant with the policy (i.e. the VM lives on one of the host
+# categories the policy allows). Because it is server-computed there is no
+# create/update/delete API; the only supported operations are:
+#   1. List all VM compliance states of a VM-host affinity policy
+#   2. Paginate the list using page / limit
+#   3. Fetch a specific compliance state entry by ext_id (client-side filtered)
+
+- name: VmHostAffinityPolicyVmComplianceState info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ nutanix_username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ nutanix_password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: false
+  tasks:
+    - name: Setting variables
+      ansible.builtin.set_fact:
+        # Replace with a real VM-host affinity policy ext_id present on the cluster.
+        vm_host_affinity_policy_ext_id: "{{ vm_host_affinity_policy_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+
+    - name: List all VM compliance states of a VM-host affinity policy
+      nutanix.ncp.ntnx_vm_host_affinity_policy_vm_compliance_states_info_v2:
+        vm_host_affinity_policy_ext_id: "{{ vm_host_affinity_policy_ext_id }}"
+      register: all_compliance_states
+      ignore_errors: true
+
+    - name: Paginate the VM compliance states of a VM-host affinity policy
+      nutanix.ncp.ntnx_vm_host_affinity_policy_vm_compliance_states_info_v2:
+        vm_host_affinity_policy_ext_id: "{{ vm_host_affinity_policy_ext_id }}"
+        page: 0
+        limit: 1
+      register: paginated_compliance_states
+      ignore_errors: true
+
+    - name: Fetch a specific VM compliance state by ext_id
+      when:
+        - all_compliance_states is defined
+        - all_compliance_states.response is defined
+        - (all_compliance_states.response | length) > 0
+      nutanix.ncp.ntnx_vm_host_affinity_policy_vm_compliance_states_info_v2:
+        vm_host_affinity_policy_ext_id: "{{ vm_host_affinity_policy_ext_id }}"
+        ext_id: "{{ all_compliance_states.response[0].ext_id }}"
+      register: single_compliance_state
+      ignore_errors: true

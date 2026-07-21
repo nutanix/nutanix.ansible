@@ -1,0 +1,405 @@
+---
+###############################################################################
+# Test plan
+#
+# Entity under test:
+#   ntnx_vm_host_affinity_policy_vm_compliance_states_info_v2
+#
+# The compliance state is a *read-only* server-computed view of a VM-host
+# affinity policy — the AHV placement engine populates it as VMs are matched
+# against the policy's VM/host category filters. The v4.2 VMM SDK exposes
+# only a single endpoint for it:
+#
+#   list_vm_host_affinity_policy_vm_compliance_states(
+#       vmHostAffinityPolicyExtId, _page=None, _limit=None)
+#
+# There is no create/update/delete API surface, so this info module is the
+# only Ansible surface area for the entity.
+#
+# The tests cover:
+#   Setup
+#     - Create two random USER categories (a VM-side and a host-side) needed
+#       to build a valid VM-host affinity policy.
+#     - Create the parent VM-host affinity policy via the raw v4.2 API using
+#       `ansible.builtin.uri` (there is no ntnx_vm_host_affinity_policy_v2
+#       module in this collection yet).
+#   Positive tests
+#     1. List all compliance states of the parent policy (module returns a
+#        list — usually empty for a freshly created policy with no matching
+#        VMs — plus total_available_results and changed=false).
+#     2. Paginate the list using page=0, limit=1.
+#     3. When at least one entry is returned, fetch it by ext_id.
+#   Negative tests
+#     4. Missing required `vm_host_affinity_policy_ext_id` — argument spec
+#        validation error.
+#     5. Non-existent parent policy ext_id — SDK 4xx surfaced through
+#        raise_api_exception (result.failed == true, response has a body).
+#     6. Non-existent VM compliance state ext_id under a valid parent —
+#        module returns failed=true with the "was not found" message.
+#   Cleanup
+#     - Delete the parent policy via the raw v4.2 API.
+#     - Delete the two categories.
+###############################################################################
+
+- name: Start VM host affinity policy VM compliance states info tests
+  ansible.builtin.debug:
+    msg: Start VM host affinity policy VM compliance states info tests
+
+- name: Generate random suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set names for categories and policy
+  ansible.builtin.set_fact:
+    vm_category_key: "vm_ansible_key_{{ random_name }}"
+    vm_category_value: "vm_ansible_value_{{ random_name }}"
+    host_category_key: "host_ansible_key_{{ random_name }}"
+    host_category_value: "host_ansible_value_{{ random_name }}"
+    policy_name: "vhap_ansible_{{ random_name }}"
+
+- name: Build base v4.2 VM-host affinity policies URL and headers
+  ansible.builtin.set_fact:
+    vhap_url: "https://{{ ip }}:9440/api/vmm/v4.2/ahv/policies/vm-host-affinity-policies"
+    # The v4.2 VMM API rejects create requests without the NTNX-Request-Id
+    # idempotency header (VMM-34040) — mint a fresh UUID for this test run.
+    vhap_headers:
+      Content-Type: application/json
+      Accept: application/json
+      NTNX-Request-Id: "{{ 999999999999 | random | to_uuid }}"
+
+########################################################################################
+# Setup: create categories that the affinity policy will reference
+########################################################################################
+
+- name: Create VM-side category
+  nutanix.ncp.ntnx_categories_v2:
+    key: "{{ vm_category_key }}"
+    value: "{{ vm_category_value }}"
+    description: "VM category for vm-host affinity policy compliance state tests"
+  register: vm_category_result
+  ignore_errors: true
+
+- name: VM-side category create status
+  ansible.builtin.assert:
+    that:
+      - vm_category_result is defined
+      - vm_category_result.failed == false
+      - vm_category_result.changed == true
+      - vm_category_result.response is defined
+      - vm_category_result.response.ext_id is defined
+      - vm_category_result.response.key == vm_category_key
+      - vm_category_result.response.value == vm_category_value
+    success_msg: "VM category created successfully"
+    fail_msg: "Failed to create VM category"
+
+- name: Set vm_category_ext_id
+  ansible.builtin.set_fact:
+    vm_category_ext_id: "{{ vm_category_result.response.ext_id }}"
+
+- name: Create host-side category
+  nutanix.ncp.ntnx_categories_v2:
+    key: "{{ host_category_key }}"
+    value: "{{ host_category_value }}"
+    description: "Host category for vm-host affinity policy compliance state tests"
+  register: host_category_result
+  ignore_errors: true
+
+- name: Host-side category create status
+  ansible.builtin.assert:
+    that:
+      - host_category_result is defined
+      - host_category_result.failed == false
+      - host_category_result.changed == true
+      - host_category_result.response is defined
+      - host_category_result.response.ext_id is defined
+      - host_category_result.response.key == host_category_key
+      - host_category_result.response.value == host_category_value
+    success_msg: "Host category created successfully"
+    fail_msg: "Failed to create host category"
+
+- name: Set host_category_ext_id
+  ansible.builtin.set_fact:
+    host_category_ext_id: "{{ host_category_result.response.ext_id }}"
+
+########################################################################################
+# Setup: create parent VM-host affinity policy via raw v4.2 API
+# There is no ntnx_vm_host_affinity_policy_v2 module yet in this collection,
+# so we bootstrap the parent using ansible.builtin.uri.
+########################################################################################
+
+- name: Create parent VM-host affinity policy via raw v4.2 API
+  ansible.builtin.uri:
+    url: "{{ vhap_url }}"
+    method: POST
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: false
+    body_format: json
+    body:
+      name: "{{ policy_name }}"
+      description: "Ansible integration test parent policy"
+      vmCategories:
+        - extId: "{{ vm_category_ext_id }}"
+      hostCategories:
+        - extId: "{{ host_category_ext_id }}"
+    headers: "{{ vhap_headers }}"
+    status_code: [200, 201, 202]
+    return_content: true
+  register: vhap_create_result
+  ignore_errors: true
+
+- name: Parent VM-host affinity policy create response status
+  ansible.builtin.assert:
+    that:
+      - vhap_create_result is defined
+      - vhap_create_result.failed == false
+      - vhap_create_result.status in [200, 201, 202]
+      - vhap_create_result.json is defined
+      - vhap_create_result.json.data is defined
+      - vhap_create_result.json.data.extId is defined
+    success_msg: "Parent VM-host affinity policy task submitted successfully"
+    fail_msg: "Failed to submit create for parent VM-host affinity policy"
+
+- name: Extract create task ext_id and poll it to get the policy ext_id
+  ansible.builtin.set_fact:
+    create_task_ext_id: "{{ vhap_create_result.json.data.extId }}"
+
+- name: Fetch create task details
+  nutanix.ncp.ntnx_pc_tasks_info_v2:
+    ext_id: "{{ create_task_ext_id }}"
+  register: create_task_info
+  until:
+    - create_task_info is defined
+    - create_task_info.response is defined
+    - create_task_info.response.status in ["SUCCEEDED", "FAILED"]
+  retries: 30
+  delay: 5
+  ignore_errors: true
+
+- name: Confirm create task succeeded and resolve policy ext_id
+  ansible.builtin.assert:
+    that:
+      - create_task_info is defined
+      - create_task_info.response is defined
+      - create_task_info.response.status == "SUCCEEDED"
+      - create_task_info.response.entities_affected is defined
+      - create_task_info.response.entities_affected | length > 0
+    success_msg: "Parent VM-host affinity policy created successfully"
+    fail_msg: "Parent VM-host affinity policy create task did not succeed"
+
+- name: Set parent policy ext_id
+  ansible.builtin.set_fact:
+    parent_policy_ext_id: >-
+      {{ (create_task_info.response.entities_affected
+          | selectattr('rel', 'equalto', 'vmm:ahv:policies:vm-host-affinity-policies')
+          | list
+          | first
+          | default(create_task_info.response.entities_affected[0])
+         ).ext_id }}
+
+########################################################################################
+# Positive tests
+########################################################################################
+
+- name: List all VM compliance states of the parent policy
+  nutanix.ncp.ntnx_vm_host_affinity_policy_vm_compliance_states_info_v2:
+    vm_host_affinity_policy_ext_id: "{{ parent_policy_ext_id }}"
+  register: list_all_result
+  ignore_errors: true
+
+- name: List-all response status
+  ansible.builtin.assert:
+    that:
+      - list_all_result is defined
+      - list_all_result.changed == false
+      - list_all_result.failed == false
+      - list_all_result.response is defined
+      - list_all_result.response is iterable
+      - list_all_result.total_available_results is defined
+      - list_all_result.total_available_results >= 0
+      - list_all_result.vm_host_affinity_policy_ext_id == parent_policy_ext_id
+    success_msg: "List-all of VM compliance states passed"
+    fail_msg: "List-all of VM compliance states failed"
+
+- name: List VM compliance states with pagination (page=0, limit=1)
+  nutanix.ncp.ntnx_vm_host_affinity_policy_vm_compliance_states_info_v2:
+    vm_host_affinity_policy_ext_id: "{{ parent_policy_ext_id }}"
+    page: 0
+    limit: 1
+  register: list_paginated_result
+  ignore_errors: true
+
+- name: Paginated list response status
+  ansible.builtin.assert:
+    that:
+      - list_paginated_result is defined
+      - list_paginated_result.changed == false
+      - list_paginated_result.failed == false
+      - list_paginated_result.response is defined
+      - list_paginated_result.response | length <= 1
+      - list_paginated_result.total_available_results is defined
+      - list_paginated_result.vm_host_affinity_policy_ext_id == parent_policy_ext_id
+    success_msg: "Paginated list of VM compliance states passed"
+    fail_msg: "Paginated list of VM compliance states failed"
+
+- name: Fetch a specific VM compliance state by ext_id
+  when:
+    - list_all_result is defined
+    - list_all_result.response is defined
+    - (list_all_result.response | length) > 0
+  nutanix.ncp.ntnx_vm_host_affinity_policy_vm_compliance_states_info_v2:
+    vm_host_affinity_policy_ext_id: "{{ parent_policy_ext_id }}"
+    ext_id: "{{ list_all_result.response[0].ext_id }}"
+  register: get_by_id_result
+  ignore_errors: true
+
+- name: Fetch-by-ext_id response status
+  when:
+    - list_all_result is defined
+    - list_all_result.response is defined
+    - (list_all_result.response | length) > 0
+  ansible.builtin.assert:
+    that:
+      - get_by_id_result is defined
+      - get_by_id_result.changed == false
+      - get_by_id_result.failed == false
+      - get_by_id_result.response is defined
+      - get_by_id_result.response.ext_id == list_all_result.response[0].ext_id
+      - get_by_id_result.ext_id == list_all_result.response[0].ext_id
+      - get_by_id_result.vm_host_affinity_policy_ext_id == parent_policy_ext_id
+    success_msg: "Fetch-by-ext_id of VM compliance state passed"
+    fail_msg: "Fetch-by-ext_id of VM compliance state failed"
+
+########################################################################################
+# Negative tests
+########################################################################################
+
+- name: List with missing required vm_host_affinity_policy_ext_id
+  nutanix.ncp.ntnx_vm_host_affinity_policy_vm_compliance_states_info_v2: {}
+  register: missing_parent_result
+  ignore_errors: true
+
+- name: Missing required parameter status
+  ansible.builtin.assert:
+    that:
+      - missing_parent_result is defined
+      - missing_parent_result.changed == false
+      - missing_parent_result.failed == true
+      - "'vm_host_affinity_policy_ext_id' in missing_parent_result.msg"
+    success_msg: "Missing required parameter correctly rejected"
+    fail_msg: "Missing required parameter was not rejected"
+
+- name: List against a non-existent parent policy ext_id
+  nutanix.ncp.ntnx_vm_host_affinity_policy_vm_compliance_states_info_v2:
+    vm_host_affinity_policy_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: invalid_parent_result
+  ignore_errors: true
+
+- name: Non-existent parent policy status
+  ansible.builtin.assert:
+    that:
+      - invalid_parent_result is defined
+      - invalid_parent_result.changed == false
+      - invalid_parent_result.failed == true
+      - invalid_parent_result.msg is defined
+    success_msg: "Non-existent parent policy correctly returned an error"
+    fail_msg: "Non-existent parent policy did not return an error"
+
+- name: Fetch a non-existent VM compliance state under a valid parent
+  nutanix.ncp.ntnx_vm_host_affinity_policy_vm_compliance_states_info_v2:
+    vm_host_affinity_policy_ext_id: "{{ parent_policy_ext_id }}"
+    ext_id: "deadbeef-dead-beef-dead-beefdeadbeef"
+  register: invalid_child_result
+  ignore_errors: true
+
+- name: Non-existent VM compliance state status
+  ansible.builtin.assert:
+    that:
+      - invalid_child_result is defined
+      - invalid_child_result.changed == false
+      - invalid_child_result.failed == true
+      - "'was not found' in invalid_child_result.msg"
+    success_msg: "Non-existent VM compliance state correctly reported not-found"
+    fail_msg: "Non-existent VM compliance state did not report not-found"
+
+########################################################################################
+# Cleanup: delete parent policy + categories
+########################################################################################
+
+- name: Fetch parent policy to capture ETag for delete
+  ansible.builtin.uri:
+    url: "{{ vhap_url }}/{{ parent_policy_ext_id }}"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: false
+    headers:
+      Accept: application/json
+    status_code: [200]
+    return_content: true
+  register: vhap_get_before_delete
+  ignore_errors: true
+
+- name: Delete parent VM-host affinity policy via raw v4.2 API
+  when:
+    - vhap_get_before_delete is defined
+    - vhap_get_before_delete.status is defined
+    - vhap_get_before_delete.status == 200
+  ansible.builtin.uri:
+    url: "{{ vhap_url }}/{{ parent_policy_ext_id }}"
+    method: DELETE
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+      NTNX-Request-Id: "{{ 999999999999 | random | to_uuid }}"
+      # ansible.builtin.uri returns response headers as top-level keys
+      # (lower-cased), so we use vhap_get_before_delete.etag directly. The v4.2
+      # policy DELETE endpoint requires this If-Match header per PLAT-10004.
+      If-Match: "{{ vhap_get_before_delete.etag }}"
+    status_code: [200, 202, 204]
+  register: vhap_delete_result
+  ignore_errors: true
+
+- name: Parent policy delete status
+  ansible.builtin.assert:
+    that:
+      - vhap_delete_result is defined
+      - (vhap_delete_result.status | default(0)) in [200, 202, 204]
+    success_msg: "Parent VM-host affinity policy deletion submitted"
+    fail_msg: "Failed to submit parent VM-host affinity policy delete"
+
+- name: Delete VM-side category
+  nutanix.ncp.ntnx_categories_v2:
+    ext_id: "{{ vm_category_ext_id }}"
+    state: absent
+  register: vm_category_delete_result
+  ignore_errors: true
+
+- name: VM-side category delete status
+  ansible.builtin.assert:
+    that:
+      - vm_category_delete_result is defined
+      - vm_category_delete_result.failed == false
+    success_msg: "VM category deleted"
+    fail_msg: "Failed to delete VM category"
+
+- name: Delete host-side category
+  nutanix.ncp.ntnx_categories_v2:
+    ext_id: "{{ host_category_ext_id }}"
+    state: absent
+  register: host_category_delete_result
+  ignore_errors: true
+
+- name: Host-side category delete status
+  ansible.builtin.assert:
+    that:
+      - host_category_delete_result is defined
+      - host_category_delete_result.failed == false
+    success_msg: "Host category deleted"
+    fail_msg: "Failed to delete host category"
