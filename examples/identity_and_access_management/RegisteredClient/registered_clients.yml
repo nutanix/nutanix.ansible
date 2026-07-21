@@ -1,0 +1,45 @@
+---
+# Summary:
+# This playbook demonstrates the ntnx_registered_clients_info_v2 module by
+# fetching a registered client from Nutanix Prism Central via the IAM v4 API
+# (/api/iam/v4.1.b2/authz/clients/{extId}).
+#
+# The IAM v4 API for RegisteredClient in this SDK version only exposes
+# get-by-id, so ext_id is required. The first task uses the raw v4 list
+# endpoint (which the SDK does not surface directly) to discover a real
+# client external ID, then feeds it into ntnx_registered_clients_info_v2.
+
+- name: RegisteredClient info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+  tasks:
+    - name: Discover a registered client external ID from the live cluster
+      ansible.builtin.uri:
+        url: "https://{{ ip }}:{{ port | default(9440) }}/api/iam/v4.1.b2/authz/clients?$limit=1"
+        method: GET
+        user: "{{ username }}"
+        password: "{{ password }}"
+        force_basic_auth: true
+        validate_certs: "{{ validate_certs | default(false) }}"
+        return_content: true
+        status_code: [200]
+      register: raw_clients_list
+
+    - name: Set the discovered ext_id
+      ansible.builtin.set_fact:
+        registered_client_ext_id: "{{ raw_clients_list.json.data[0].extId }}"
+
+    - name: Fetch registered client using external ID
+      nutanix.ncp.ntnx_registered_clients_info_v2:
+        ext_id: "{{ registered_client_ext_id }}"
+      register: result
+
+    - name: Show the fetched registered client
+      ansible.builtin.debug:
+        var: result.response
