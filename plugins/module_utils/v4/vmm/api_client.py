@@ -131,3 +131,22 @@ def get_ova_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_vmm_py_client.OvasApi(api_client=api_client)
+
+
+def get_vm_startup_policies_api_instance(module):
+    """
+    This method will return VM Startup Policies API instance.
+
+    The returned instance exposes the endpoints for VM startup policies as
+    well as their nested derived resources (dependency conflicts and start
+    condition conflicts), which are read-only entities computed by the
+    platform when overlapping policies define contradictory startup rules.
+
+    Args:
+        module: Ansible module
+
+    Returns:
+        api_instance (obj): v4 VmStartupPoliciesApi instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.VmStartupPoliciesApi(api_client=api_client)
