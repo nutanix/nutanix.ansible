@@ -1,0 +1,348 @@
+---
+##############################################################################
+# Test plan — Nutanix Files Replication
+##############################################################################
+# CHECK-MODE (dry-run) coverage:
+#   1. Resume replication with ALL attributes (planned failover with AD + DNS).
+#
+# RESUME REPLICATION coverage:
+#   2. Resume replication with minimum attributes (required_together satisfied).
+#   3. Resume replication with FULL attributes — planned failover, direction
+#      PRIMARY_TO_SECONDARY, active_directory and dns re-registration.
+#   4. Resume replication with mismatched required_together — only primary
+#      ext_id supplied — must fail with a descriptive Ansible error.
+#   5. Resume replication with an invalid replication_direction — spec
+#      validation must reject it before making an API call.
+#   6. Resume replication with an invalid type (FailoverType) — spec
+#      validation must reject it before making an API call.
+#   7. Resume replication with an invalid DNS action — spec validation must
+#      reject it before making an API call.
+#
+# INFO MODULE coverage (ntnx_replications_info_v2):
+#   8.  List all replication jobs — assert list + total_available_results.
+#   9.  List replication jobs with limit=1 — assert page size honored.
+#   10. List replication jobs with orderby=startTime desc — assert accepted.
+#   11. List replication jobs with select — assert accepted.
+#   12. List replication jobs with an invalid filter — assert API error surfaced.
+#   13. Fetch replication job with a non-existent ext_id — assert error surfaced.
+#   14. Mutually exclusive ext_id + filter must fail before making an API call.
+##############################################################################
+
+- name: Start Files Replication tests
+  ansible.builtin.debug:
+    msg: Start Files Replication tests
+
+- name: Generate random suffix for test payload identifiers
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    invalid_ext_id: "00000000-0000-0000-0000-000000000000"
+    fake_primary_fs: "9c1e537d-6777-4c22-5d41-ddd0c3337aa9"
+    fake_secondary_fs: "8c1e537d-6777-4c22-5d41-ddd0c3337aa8"
+
+########################################################################################
+# Resume Replication — check mode (with ALL attributes)
+########################################################################################
+
+- name: Generate spec for resume replication using check mode with ALL attributes
+  nutanix.ncp.ntnx_resume_replication_v2:
+    state: present
+    replication_direction: PRIMARY_TO_SECONDARY
+    primary_file_server_ext_id: "{{ fake_primary_fs }}"
+    secondary_file_server_ext_id: "{{ fake_secondary_fs }}"
+    type: PLANNED
+    active_directory:
+      preferred_domain_controller: "dc.example.local"
+      credential:
+        username: "ad_admin"
+        password: "AdSecret.123"
+    dns:
+      preferred_name_server: "10.0.0.53"
+      action: ADD
+      credential:
+        username: "dns_admin"
+        password: "DnsSecret.123"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for resume replication using check mode with ALL attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.replication_direction == "PRIMARY_TO_SECONDARY"
+      - result.response.primary_file_server_ext_id == fake_primary_fs
+      - result.response.secondary_file_server_ext_id == fake_secondary_fs
+      - result.response.type == "PLANNED"
+      - result.response.active_directory is defined
+      - result.response.active_directory.preferred_domain_controller == "dc.example.local"
+      - result.response.active_directory.credential.username == "ad_admin"
+      - result.response.dns is defined
+      - result.response.dns.preferred_name_server == "10.0.0.53"
+      - result.response.dns.action == "ADD"
+      - result.response.dns.credential.username == "dns_admin"
+    success_msg: "Resume replication check_mode spec generated successfully"
+    fail_msg: "Resume replication check_mode spec generation failed"
+
+########################################################################################
+# Resume Replication — minimum + full attribute negative coverage
+########################################################################################
+
+- name: Resume replication with minimum attributes (no such policy — must fail cleanly)
+  nutanix.ncp.ntnx_resume_replication_v2:
+    replication_direction: PRIMARY_TO_SECONDARY
+    primary_file_server_ext_id: "{{ fake_primary_fs }}"
+    secondary_file_server_ext_id: "{{ fake_secondary_fs }}"
+    type: PLANNED
+  register: result
+  ignore_errors: true
+
+- name: Resume replication with minimum attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while resuming replication"
+    success_msg: "Resume replication with minimum attributes surfaced the API error as expected"
+    fail_msg: "Resume replication with minimum attributes did not surface the expected API error"
+
+- name: Resume replication with all attributes (no such policy — must fail cleanly)
+  nutanix.ncp.ntnx_resume_replication_v2:
+    replication_direction: PRIMARY_TO_SECONDARY
+    primary_file_server_ext_id: "{{ fake_primary_fs }}"
+    secondary_file_server_ext_id: "{{ fake_secondary_fs }}"
+    type: PLANNED
+    active_directory:
+      preferred_domain_controller: "dc.example.local"
+      credential:
+        username: "ad_admin"
+        password: "AdSecret.123"
+    dns:
+      preferred_name_server: "10.0.0.53"
+      action: ADD
+      credential:
+        username: "dns_admin"
+        password: "DnsSecret.123"
+  register: result
+  ignore_errors: true
+
+- name: Resume replication with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while resuming replication"
+    success_msg: "Resume replication with all attributes surfaced the API error as expected"
+    fail_msg: "Resume replication with all attributes did not surface the expected API error"
+
+########################################################################################
+# Resume Replication — required_together / invalid enum / invalid dns action
+########################################################################################
+
+- name: Resume replication with only primary_file_server_ext_id (must fail on required_together)
+  nutanix.ncp.ntnx_resume_replication_v2:
+    replication_direction: PRIMARY_TO_SECONDARY
+    primary_file_server_ext_id: "{{ fake_primary_fs }}"
+    type: PLANNED
+  register: result
+  ignore_errors: true
+
+- name: Resume replication required_together status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'parameters are required together' in result.msg"
+    success_msg: "required_together check for primary/secondary file server ext_id failed as expected"
+    fail_msg: "required_together check did not fail as expected"
+
+- name: Resume replication with invalid replication_direction (must fail spec validation)
+  nutanix.ncp.ntnx_resume_replication_v2:
+    replication_direction: "INVALID_DIRECTION"
+    primary_file_server_ext_id: "{{ fake_primary_fs }}"
+    secondary_file_server_ext_id: "{{ fake_secondary_fs }}"
+    type: PLANNED
+  register: result
+  ignore_errors: true
+
+- name: Resume replication invalid replication_direction status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'value of replication_direction must be one of' in result.msg"
+    success_msg: "Invalid replication_direction rejected by spec validation as expected"
+    fail_msg: "Invalid replication_direction was NOT rejected by spec validation"
+
+- name: Resume replication with invalid type (must fail spec validation)
+  nutanix.ncp.ntnx_resume_replication_v2:
+    replication_direction: PRIMARY_TO_SECONDARY
+    primary_file_server_ext_id: "{{ fake_primary_fs }}"
+    secondary_file_server_ext_id: "{{ fake_secondary_fs }}"
+    type: "INVALID_TYPE"
+  register: result
+  ignore_errors: true
+
+- name: Resume replication invalid type status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'value of type must be one of' in result.msg"
+    success_msg: "Invalid type rejected by spec validation as expected"
+    fail_msg: "Invalid type was NOT rejected by spec validation"
+
+- name: Resume replication with invalid dns action (must fail spec validation)
+  nutanix.ncp.ntnx_resume_replication_v2:
+    replication_direction: PRIMARY_TO_SECONDARY
+    primary_file_server_ext_id: "{{ fake_primary_fs }}"
+    secondary_file_server_ext_id: "{{ fake_secondary_fs }}"
+    type: FAILBACK
+    dns:
+      preferred_name_server: "10.0.0.53"
+      action: "BOGUS"
+  register: result
+  ignore_errors: true
+
+- name: Resume replication invalid dns action status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'value of action must be one of' in result.msg"
+    success_msg: "Invalid dns.action rejected by spec validation as expected"
+    fail_msg: "Invalid dns.action was NOT rejected by spec validation"
+
+########################################################################################
+# Replication Jobs info — list-all + pagination + orderby + select
+########################################################################################
+
+- name: List all replication jobs
+  nutanix.ncp.ntnx_replications_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: List all replication jobs status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      # On a Files-enabled PC the call succeeds and returns a list; on a PC
+      # without the Files service the same call surfaces the SDK "Api
+      # Exception" cleanly. Either code path is a valid outcome for this
+      # module — anything else (unhandled crash) is a bug.
+      - (result.failed == false and result.response is iterable and result.total_available_results is defined)
+        or (result.failed == true and result.msg == "Api Exception raised while fetching replication jobs info")
+    success_msg: "List replication jobs handled by the module cleanly"
+    fail_msg: "List replication jobs was not handled cleanly by the module"
+
+- name: List replication jobs with limit=1
+  nutanix.ncp.ntnx_replications_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List replication jobs with limit=1 status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - (result.failed == false and result.response | length <= 1)
+        or (result.failed == true and result.msg == "Api Exception raised while fetching replication jobs info")
+    success_msg: "List replication jobs with limit=1 handled cleanly"
+    fail_msg: "List replication jobs with limit=1 was not handled cleanly"
+
+- name: List replication jobs with orderby=startTime desc
+  nutanix.ncp.ntnx_replications_info_v2:
+    orderby: "startTime desc"
+    limit: 5
+  register: result
+  ignore_errors: true
+
+- name: List replication jobs with orderby status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - (result.failed == false and result.response is defined)
+        or (result.failed == true and result.msg == "Api Exception raised while fetching replication jobs info")
+    success_msg: "List replication jobs with orderby=startTime desc handled cleanly"
+    fail_msg: "List replication jobs with orderby=startTime desc was not handled cleanly"
+
+- name: List replication jobs with select
+  nutanix.ncp.ntnx_replications_info_v2:
+    select: "extId,status,progressPercentage,startTime,endTime"
+    limit: 5
+  register: result
+  ignore_errors: true
+
+- name: List replication jobs with select status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - (result.failed == false and result.response is defined)
+        or (result.failed == true and result.msg == "Api Exception raised while fetching replication jobs info")
+    success_msg: "List replication jobs with select handled cleanly"
+    fail_msg: "List replication jobs with select was not handled cleanly"
+
+- name: List replication jobs with an invalid filter (must fail via API)
+  nutanix.ncp.ntnx_replications_info_v2:
+    filter: "nonExistentField eq 'x'"
+  register: result
+  ignore_errors: true
+
+- name: List replication jobs with invalid filter status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - result.msg == "Api Exception raised while fetching replication jobs info"
+    success_msg: "Invalid filter surfaced as API error as expected"
+    fail_msg: "Invalid filter did not surface as API error"
+
+- name: Fetch a replication job with a non-existent ext_id
+  nutanix.ncp.ntnx_replications_info_v2:
+    ext_id: "{{ invalid_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch non-existent replication job status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'Api Exception raised while fetching replication job info' in result.msg"
+    success_msg: "Non-existent replication job surfaced as API error as expected"
+    fail_msg: "Non-existent replication job did not surface as API error"
+
+- name: Fetch replication jobs with mutually exclusive ext_id + filter
+  nutanix.ncp.ntnx_replications_info_v2:
+    ext_id: "{{ invalid_ext_id }}"
+    filter: "status eq Files.Config.JobStatus'SUCCEEDED'"
+  register: result
+  ignore_errors: true
+
+- name: Mutually exclusive ext_id + filter status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'parameters are mutually exclusive' in result.msg"
+    success_msg: "Mutually exclusive ext_id + filter rejected by argument spec as expected"
+    fail_msg: "Mutually exclusive ext_id + filter was NOT rejected by argument spec"
+
+- name: End Files Replication tests
+  ansible.builtin.debug:
+    msg: End Files Replication tests

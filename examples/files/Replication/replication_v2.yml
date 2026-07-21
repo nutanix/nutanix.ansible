@@ -1,0 +1,91 @@
+---
+# Summary:
+# This playbook demonstrates how to:
+# 1. Resume Nutanix Files replication after a planned or unplanned failover.
+# 2. Fetch replication job details by external ID.
+# 3. List all replication jobs.
+# 4. List replication jobs with server-side filtering.
+# 5. List replication jobs with a page limit and ordering.
+#
+# NOTE:
+#   - The `resume_replication` action is only meaningful once a failover has
+#     been performed between two file servers that are already paired via a
+#     Nutanix Files replication policy.
+#   - The playbook targets a Prism Central that manages both the primary and
+#     secondary file servers.
+
+- name: Nutanix Files Replication playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        primary_file_server_ext_id: "9c1e537d-6777-4c22-5d41-ddd0c3337aa9"
+        secondary_file_server_ext_id: "8c1e537d-6777-4c22-5d41-ddd0c3337aa8"
+
+    - name: Resume replication after a planned failover with AD and DNS re-registration
+      nutanix.ncp.ntnx_resume_replication_v2:
+        state: present
+        replication_direction: PRIMARY_TO_SECONDARY
+        primary_file_server_ext_id: "{{ primary_file_server_ext_id }}"
+        secondary_file_server_ext_id: "{{ secondary_file_server_ext_id }}"
+        type: PLANNED
+        active_directory:
+          preferred_domain_controller: "dc.example.local"
+          credential:
+            username: "ad_admin"
+            password: "AdSecret.123"
+        dns:
+          preferred_name_server: "10.0.0.53"
+          action: ADD
+          credential:
+            username: "dns_admin"
+            password: "DnsSecret.123"
+      register: resume_planned
+      ignore_errors: true
+
+    - name: Resume replication after an unplanned failover (reverse direction)
+      nutanix.ncp.ntnx_resume_replication_v2:
+        replication_direction: SECONDARY_TO_PRIMARY
+        primary_file_server_ext_id: "{{ primary_file_server_ext_id }}"
+        secondary_file_server_ext_id: "{{ secondary_file_server_ext_id }}"
+        type: UNPLANNED
+      register: resume_unplanned
+      ignore_errors: true
+
+    - name: Get replication job details using external ID
+      nutanix.ncp.ntnx_replications_info_v2:
+        ext_id: "6f6c5e75-bd80-4d5a-9d3f-7a1f7f9a4d90"
+      register: replication_by_id
+      ignore_errors: true
+
+    - name: List all replication jobs
+      nutanix.ncp.ntnx_replications_info_v2:
+      register: replications_all
+      ignore_errors: true
+
+    - name: List replication jobs filtered by policy external ID
+      nutanix.ncp.ntnx_replications_info_v2:
+        filter: "policyExtId eq '{{ primary_file_server_ext_id }}'"
+      register: replications_filtered
+      ignore_errors: true
+
+    - name: List replication jobs with limit and ordering by start time
+      nutanix.ncp.ntnx_replications_info_v2:
+        limit: 5
+        orderby: "startTime desc"
+      register: replications_limited
+      ignore_errors: true
+
+    - name: List replication jobs selecting a subset of fields
+      nutanix.ncp.ntnx_replications_info_v2:
+        select: "extId,status,progressPercentage,startTime,endTime"
+        limit: 5
+      register: replications_select
+      ignore_errors: true
