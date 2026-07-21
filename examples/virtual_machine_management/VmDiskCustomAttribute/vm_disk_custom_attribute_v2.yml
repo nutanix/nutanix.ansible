@@ -1,0 +1,43 @@
+---
+# Summary:
+# This playbook demonstrates how to add and remove custom attributes on an
+# AHV VM disk in Nutanix Prism Central using the v4 VMM APIs. Steps:
+# 1. Add custom attributes to a VM disk
+# 2. Remove custom attributes from a VM disk
+
+- name: VmDiskCustomAttribute playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        vm_uuid: "{{ vm_uuid | default('ac5aff0c-6c68-4948-9088-b903e2be0ce7') }}"
+        disk_uuid: "{{ disk_uuid | default('0f34a2a7-6068-48ba-859d-1ced14d7f5da') }}"
+
+    - name: Add custom attributes to a VM disk
+      nutanix.ncp.ntnx_vm_disk_custom_attribute_v2:
+        state: present
+        vm_ext_id: "{{ vm_uuid }}"
+        ext_id: "{{ disk_uuid }}"
+        custom_attributes:
+          - "environment:production"
+          - "tier:gold"
+          - "owner:ansible"
+      register: add_result
+      ignore_errors: true
+
+    - name: Remove custom attributes from a VM disk
+      nutanix.ncp.ntnx_vm_disk_custom_attribute_v2:
+        state: absent
+        vm_ext_id: "{{ vm_uuid }}"
+        ext_id: "{{ disk_uuid }}"
+        custom_attributes:
+          - "tier:gold"
+      register: remove_result
+      ignore_errors: true

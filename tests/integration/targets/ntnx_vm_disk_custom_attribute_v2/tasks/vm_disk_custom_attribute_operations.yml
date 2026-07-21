@@ -1,0 +1,452 @@
+---
+# Variables required before running this playbook:
+# - cluster
+# - storage_container
+#
+# Test plan for ntnx_vm_disk_custom_attribute_v2 (module: add/remove custom
+# attributes on an AHV VM disk):
+#   1.  Prerequisites: create a fresh VM and one AHV disk to operate on.
+#   2.  check_mode add (all attributes) — verify spec, no API change.
+#   3.  Add a single custom attribute (minimal input).
+#   4.  Add multiple custom attributes (full input, with ALL fields populated).
+#   5.  Idempotency: re-add same attributes → skipped, changed=false.
+#   6.  check_mode remove.
+#   7.  Remove a subset of attributes.
+#   8.  Idempotency for remove: remove already-absent attributes → skipped.
+#   9.  Remove ALL remaining attributes.
+#   10. Negative — missing required `custom_attributes` field.
+#   11. Negative — invalid (non-existent) disk ext_id.
+#   12. Negative — invalid (non-existent) vm ext_id.
+#   13. Cleanup: remove the disk and the VM.
+
+- name: Start testing ntnx_vm_disk_custom_attribute_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_vm_disk_custom_attribute_v2
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set VM name for this run
+  ansible.builtin.set_fact:
+    vm_name: "{{ random_name }}_vm_disk_ca_test"
+
+#################################################################################
+# Prerequisite — create a VM to attach a disk to
+#################################################################################
+
+- name: Create VM with minimum requirements
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    name: "{{ vm_name }}"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: VM creation status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.cluster.ext_id == cluster.uuid
+      - result.response.name == vm_name
+    fail_msg: "Unable to create VM for VM disk custom attribute test"
+    success_msg: "VM for VM disk custom attribute test created successfully"
+
+- name: Set VM ext_id
+  ansible.builtin.set_fact:
+    vm_uuid: '{{ result["ext_id"] }}'
+
+#################################################################################
+# Prerequisite — create a single AHV disk on that VM
+#################################################################################
+
+- name: Create Disk on VM (backed by storage container)
+  nutanix.ncp.ntnx_vms_disks_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+    backing_info:
+      vm_disk:
+        disk_size_bytes: 1073741824
+        storage_container:
+          ext_id: "{{ storage_container.uuid }}"
+    disk_address:
+      bus_type: "SCSI"
+      index: 1
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Create Disk on VM status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.vm_ext_id == vm_uuid
+      - result.response.disk_address.index == 1
+      - result.response.disk_address.bus_type == "SCSI"
+    fail_msg: "Unable to create disk for VM disk custom attribute test"
+    success_msg: "Disk for VM disk custom attribute test created successfully"
+
+- name: Set Disk ext_id
+  ansible.builtin.set_fact:
+    disk_uuid: '{{ result["ext_id"] }}'
+
+#################################################################################
+# check_mode: Add ALL attributes (single check_mode test for Create)
+#################################################################################
+
+- name: Add custom attributes to VM disk - check mode with all attributes
+  nutanix.ncp.ntnx_vm_disk_custom_attribute_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ disk_uuid }}"
+    custom_attributes:
+      - "environment:staging"
+      - "tier:gold"
+      - "owner:ansible-check-mode"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Add custom attributes to VM disk - check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.vm_ext_id == vm_uuid
+      - result.ext_id == disk_uuid
+      - result.response.custom_attributes is defined
+      - result.response.custom_attributes | length == 3
+      - "'environment:staging' in result.response.custom_attributes"
+      - "'tier:gold' in result.response.custom_attributes"
+      - "'owner:ansible-check-mode' in result.response.custom_attributes"
+    fail_msg: "check_mode add custom attributes did not produce expected spec"
+    success_msg: "check_mode add custom attributes produced expected spec"
+
+#################################################################################
+# Real add — single (minimal) custom attribute
+#################################################################################
+
+- name: Add a single custom attribute (minimal) to VM disk
+  nutanix.ncp.ntnx_vm_disk_custom_attribute_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ disk_uuid }}"
+    custom_attributes:
+      - "environment:production"
+  register: result
+  ignore_errors: true
+
+- name: Add single custom attribute status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == disk_uuid
+      - result.vm_ext_id == vm_uuid
+      - result.task_ext_id is defined
+      - result.response.custom_attributes is defined
+      - "'environment:production' in result.response.custom_attributes"
+    fail_msg: "Add single custom attribute failed"
+    success_msg: "Add single custom attribute passed"
+
+#################################################################################
+# Real add — multiple custom attributes (all fields populated)
+#################################################################################
+
+- name: Add multiple custom attributes (full) to VM disk
+  nutanix.ncp.ntnx_vm_disk_custom_attribute_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ disk_uuid }}"
+    custom_attributes:
+      - "tier:gold"
+      - "owner:ansible"
+      - "workload:database"
+  register: result
+  ignore_errors: true
+
+- name: Add multiple custom attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == disk_uuid
+      - result.vm_ext_id == vm_uuid
+      - result.task_ext_id is defined
+      - result.response.custom_attributes is defined
+      - "'environment:production' in result.response.custom_attributes"
+      - "'tier:gold' in result.response.custom_attributes"
+      - "'owner:ansible' in result.response.custom_attributes"
+      - "'workload:database' in result.response.custom_attributes"
+      - result.response.custom_attributes | length == 4
+    fail_msg: "Add multiple custom attributes failed"
+    success_msg: "Add multiple custom attributes passed"
+
+#################################################################################
+# Idempotency: re-add the same attributes
+#################################################################################
+
+- name: Idempotency — add already-present custom attributes
+  nutanix.ncp.ntnx_vm_disk_custom_attribute_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ disk_uuid }}"
+    custom_attributes:
+      - "environment:production"
+      - "tier:gold"
+  register: result
+  ignore_errors: true
+
+- name: Idempotency (add) status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.ext_id == disk_uuid
+      - result.vm_ext_id == vm_uuid
+      - result.msg is defined
+      - "'already present' in result.msg"
+    fail_msg: "Idempotency (add) failed"
+    success_msg: "Idempotency (add) passed"
+
+#################################################################################
+# check_mode: Remove (single check_mode test for Remove)
+#################################################################################
+
+- name: Remove custom attributes from VM disk - check mode
+  nutanix.ncp.ntnx_vm_disk_custom_attribute_v2:
+    state: absent
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ disk_uuid }}"
+    custom_attributes:
+      - "tier:gold"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Remove custom attributes - check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.vm_ext_id == vm_uuid
+      - result.ext_id == disk_uuid
+      - result.response.custom_attributes is defined
+      - "'tier:gold' in result.response.custom_attributes"
+      - result.response.custom_attributes | length == 1
+    fail_msg: "check_mode remove custom attributes did not produce expected spec"
+    success_msg: "check_mode remove custom attributes produced expected spec"
+
+#################################################################################
+# Real remove — a subset of attributes
+#################################################################################
+
+- name: Remove one custom attribute from VM disk
+  nutanix.ncp.ntnx_vm_disk_custom_attribute_v2:
+    state: absent
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ disk_uuid }}"
+    custom_attributes:
+      - "tier:gold"
+  register: result
+  ignore_errors: true
+
+- name: Remove one custom attribute status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == disk_uuid
+      - result.vm_ext_id == vm_uuid
+      - result.task_ext_id is defined
+      - result.response.custom_attributes is defined
+      - "'tier:gold' not in result.response.custom_attributes"
+      - "'environment:production' in result.response.custom_attributes"
+      - "'owner:ansible' in result.response.custom_attributes"
+      - "'workload:database' in result.response.custom_attributes"
+      - result.response.custom_attributes | length == 3
+    fail_msg: "Remove one custom attribute failed"
+    success_msg: "Remove one custom attribute passed"
+
+#################################################################################
+# Idempotency: remove already-absent attributes
+#################################################################################
+
+- name: Idempotency — remove already-absent custom attributes
+  nutanix.ncp.ntnx_vm_disk_custom_attribute_v2:
+    state: absent
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ disk_uuid }}"
+    custom_attributes:
+      - "tier:gold"
+      - "not-a-real:attribute"
+  register: result
+  ignore_errors: true
+
+- name: Idempotency (remove) status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.ext_id == disk_uuid
+      - result.vm_ext_id == vm_uuid
+      - result.msg is defined
+      - "'None of the requested' in result.msg"
+    fail_msg: "Idempotency (remove) failed"
+    success_msg: "Idempotency (remove) passed"
+
+#################################################################################
+# Real remove — remove all remaining attributes
+#################################################################################
+
+- name: Remove remaining custom attributes from VM disk
+  nutanix.ncp.ntnx_vm_disk_custom_attribute_v2:
+    state: absent
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ disk_uuid }}"
+    custom_attributes:
+      - "environment:production"
+      - "owner:ansible"
+      - "workload:database"
+  register: result
+  ignore_errors: true
+
+- name: Remove remaining custom attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == disk_uuid
+      - result.vm_ext_id == vm_uuid
+      - result.task_ext_id is defined
+      - >-
+        result.response.custom_attributes is not defined
+        or result.response.custom_attributes == none
+        or result.response.custom_attributes | length == 0
+    fail_msg: "Remove remaining custom attributes failed"
+    success_msg: "Remove remaining custom attributes passed"
+
+#################################################################################
+# Negative — missing required `custom_attributes` param
+#################################################################################
+
+- name: Negative — missing required custom_attributes
+  nutanix.ncp.ntnx_vm_disk_custom_attribute_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ disk_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Missing custom_attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.msg is defined
+      - "'custom_attributes' in result.msg"
+    fail_msg: "Missing custom_attributes did not surface a proper argument error"
+    success_msg: "Missing custom_attributes surfaced the expected argument error"
+
+#################################################################################
+# Negative — invalid disk ext_id
+#################################################################################
+
+- name: Negative — invalid disk ext_id
+  nutanix.ncp.ntnx_vm_disk_custom_attribute_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "12345678-1234-1234-1234-123456789123"
+    custom_attributes:
+      - "environment:staging"
+  register: result
+  ignore_errors: true
+
+- name: Invalid disk ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+    fail_msg: "Invalid disk ext_id did not fail as expected"
+    success_msg: "Invalid disk ext_id failed as expected"
+
+#################################################################################
+# Negative — invalid VM ext_id
+#################################################################################
+
+- name: Negative — invalid VM ext_id
+  nutanix.ncp.ntnx_vm_disk_custom_attribute_v2:
+    state: present
+    vm_ext_id: "12345678-1234-1234-1234-123456789123"
+    ext_id: "{{ disk_uuid }}"
+    custom_attributes:
+      - "environment:staging"
+  register: result
+  ignore_errors: true
+
+- name: Invalid VM ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+    fail_msg: "Invalid VM ext_id did not fail as expected"
+    success_msg: "Invalid VM ext_id failed as expected"
+
+#################################################################################
+# Cleanup — delete the disk and the VM
+#################################################################################
+
+- name: Delete disk
+  nutanix.ncp.ntnx_vms_disks_v2:
+    state: absent
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ disk_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete disk status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.changed == true
+    fail_msg: "Failed to delete disk during cleanup"
+    success_msg: "Disk deleted during cleanup"
+
+- name: Delete VM
+  nutanix.ncp.ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete VM status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.changed == true
+      - result.ext_id == vm_uuid
+    fail_msg: "Failed to delete VM during cleanup"
+    success_msg: "VM deleted during cleanup"
