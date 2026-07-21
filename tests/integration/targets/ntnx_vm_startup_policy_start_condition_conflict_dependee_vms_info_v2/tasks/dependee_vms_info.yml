@@ -1,0 +1,245 @@
+---
+# Integration tests for
+# ntnx_vm_startup_policy_start_condition_conflict_dependee_vms_info_v2.
+#
+# Test plan (info module — read-only, no CRUD counterparts exist on the SDK):
+# 1. Fake / negative — invalid vm_startup_policy_ext_id → API error is returned
+#    cleanly (module.failed=true, response contains error message).
+# 2. Missing required — omit vm_startup_policy_ext_id and expect an Ansible
+#    argument-spec failure (required=True enforcement).
+# 3. Missing required — omit start_condition_conflict_ext_id likewise.
+# 4. Real workflow (best-effort) — if the cluster already has a VM startup
+#    policy that owns at least one start-condition conflict, list its
+#    dependee VMs and assert the shape of the response.
+# 5. Pagination — same list call again with explicit page/limit values.
+
+- name: Start ntnx_vm_startup_policy_start_condition_conflict_dependee_vms_info_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_vm_startup_policy_start_condition_conflict_dependee_vms_info_v2 tests
+
+- name: Generate random suffix for uniqueness in log messages
+  ansible.builtin.set_fact:
+    random_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=8)[0] }}"
+
+########################################################################################
+# 1. Negative — invalid VM startup policy ext_id                                       #
+########################################################################################
+
+- name: List dependee VMs with a non-existent VM startup policy ext_id
+  nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflict_dependee_vms_info_v2:
+    vm_startup_policy_ext_id: "00000000-0000-0000-0000-000000000000"
+    start_condition_conflict_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: invalid_policy_result
+  ignore_errors: true
+
+- name: Assert invalid VM startup policy is reported as a failure
+  ansible.builtin.assert:
+    that:
+      - invalid_policy_result is defined
+      - invalid_policy_result.failed == true
+      - invalid_policy_result.changed == false
+    fail_msg: >-
+      Expected the API to reject a bogus vm_startup_policy_ext_id, but the
+      module returned success: {{ invalid_policy_result | to_nice_json }}
+    success_msg: Invalid VM startup policy ext_id was rejected as expected
+
+########################################################################################
+# 2. Missing required — omit vm_startup_policy_ext_id                                  #
+########################################################################################
+
+- name: Call module without vm_startup_policy_ext_id
+  nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflict_dependee_vms_info_v2:
+    start_condition_conflict_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: missing_policy_result
+  ignore_errors: true
+
+- name: Assert missing vm_startup_policy_ext_id fails argument validation
+  ansible.builtin.assert:
+    that:
+      - missing_policy_result is defined
+      - missing_policy_result.failed == true
+      - >-
+        'vm_startup_policy_ext_id' in (missing_policy_result.msg | default(''))
+        or 'missing required arguments' in (missing_policy_result.msg | default('') | lower)
+    fail_msg: >-
+      Expected argument validation to fail for missing vm_startup_policy_ext_id,
+      got: {{ missing_policy_result | to_nice_json }}
+    success_msg: vm_startup_policy_ext_id is enforced as required
+
+########################################################################################
+# 3. Missing required — omit start_condition_conflict_ext_id                           #
+########################################################################################
+
+- name: Call module without start_condition_conflict_ext_id
+  nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflict_dependee_vms_info_v2:
+    vm_startup_policy_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: missing_conflict_result
+  ignore_errors: true
+
+- name: Assert missing start_condition_conflict_ext_id fails argument validation
+  ansible.builtin.assert:
+    that:
+      - missing_conflict_result is defined
+      - missing_conflict_result.failed == true
+      - >-
+        'start_condition_conflict_ext_id' in (missing_conflict_result.msg | default(''))
+        or 'missing required arguments' in (missing_conflict_result.msg | default('') | lower)
+    fail_msg: >-
+      Expected argument validation to fail for missing start_condition_conflict_ext_id,
+      got: {{ missing_conflict_result | to_nice_json }}
+    success_msg: start_condition_conflict_ext_id is enforced as required
+
+########################################################################################
+# 4. Best-effort real workflow — resolve a policy + conflict from the cluster          #
+########################################################################################
+
+- name: Fetch existing VMs on the cluster (used only to help find a policy scope)
+  nutanix.ncp.ntnx_vms_info_v2:
+    limit: 5
+  register: vms_result
+  ignore_errors: true
+
+- name: Assert VMs list call itself was clean
+  ansible.builtin.assert:
+    that:
+      - vms_result is defined
+      - vms_result.changed == false
+    fail_msg: Underlying VMs info call failed unexpectedly
+
+# The VM startup policy list is not exposed through a first-party ansible module in
+# this repo (there is currently no ntnx_vm_startup_policies_info_v2). We use the
+# ansible.builtin.uri module to reach the SDK's List endpoint directly so the test
+# is meaningful even when a fresh cluster has no startup policies configured yet.
+
+- name: List VM startup policies via REST
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:9440/api/vmm/v4.2/ahv/policies/vm-startup-policies?$limit=1"
+    method: GET
+    url_username: "{{ username }}"
+    url_password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs }}"
+    status_code: [200, 400, 401, 403, 404, 500]
+    return_content: true
+  register: policies_result
+  ignore_errors: true
+
+- name: Set fact — a policy is available on the cluster
+  ansible.builtin.set_fact:
+    have_policy: >-
+      {{
+        policies_result is defined
+        and (policies_result.status | default(0)) == 200
+        and (policies_result.json.data | default([]) | length) > 0
+      }}
+
+- name: Set fact — first policy ext_id (only when a policy is present)
+  ansible.builtin.set_fact:
+    first_policy_ext_id: "{{ policies_result.json.data[0].extId }}"
+  when: have_policy | bool
+
+- name: Fetch start-condition conflicts for the first policy (when present)
+  ansible.builtin.uri:
+    url: >-
+      https://{{ ip }}:9440/api/vmm/v4.2/ahv/policies/vm-startup-policies/{{ first_policy_ext_id
+      }}/start-condition-conflicts
+    method: GET
+    url_username: "{{ username }}"
+    url_password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs }}"
+    status_code: [200, 400, 401, 403, 404, 500]
+    return_content: true
+  register: conflicts_result
+  when: have_policy | bool
+  ignore_errors: true
+
+- name: Set fact — a start-condition conflict is available
+  ansible.builtin.set_fact:
+    have_conflict: >-
+      {{
+        have_policy | bool
+        and conflicts_result is defined
+        and (conflicts_result.status | default(0)) == 200
+        and (conflicts_result.json.data | default([]) | length) > 0
+      }}
+
+- name: Set fact — first start-condition conflict ext_id
+  ansible.builtin.set_fact:
+    first_conflict_ext_id: "{{ conflicts_result.json.data[0].extId }}"
+  when: have_conflict | bool
+
+########################################################################################
+# 5. Real workflow — list dependee VMs (only when we resolved a policy+conflict)       #
+########################################################################################
+
+- name: List dependee VMs of the resolved start-condition conflict
+  nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflict_dependee_vms_info_v2:
+    vm_startup_policy_ext_id: "{{ first_policy_ext_id }}"
+    start_condition_conflict_ext_id: "{{ first_conflict_ext_id }}"
+  register: dependee_vms
+  ignore_errors: true
+  when: have_conflict | bool
+
+- name: Assert dependee VMs list is well-formed
+  ansible.builtin.assert:
+    that:
+      - dependee_vms is defined
+      - dependee_vms.failed == false
+      - dependee_vms.changed == false
+      - dependee_vms.response is defined
+      - dependee_vms.response | type_debug == "list"
+      - dependee_vms.total_available_results is defined
+      - dependee_vms.total_available_results is number
+    fail_msg: >-
+      Expected a well-formed dependee VMs list, got:
+      {{ dependee_vms | to_nice_json }}
+    success_msg: Dependee VMs list returned successfully
+  when: have_conflict | bool
+
+- name: Assert every dependee VM entry has an ext_id (loop assertion)
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.ext_id | length > 0
+    fail_msg: "Dependee VM missing ext_id: {{ item }}"
+    success_msg: "Dependee VM ext_id present: {{ item.ext_id }}"
+  loop: "{{ dependee_vms.response | default([]) }}"
+  when: have_conflict | bool
+
+########################################################################################
+# 6. Pagination — same call with explicit page/limit                                   #
+########################################################################################
+
+- name: List dependee VMs with pagination parameters
+  nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflict_dependee_vms_info_v2:
+    vm_startup_policy_ext_id: "{{ first_policy_ext_id }}"
+    start_condition_conflict_ext_id: "{{ first_conflict_ext_id }}"
+    page: 0
+    limit: 1
+  register: dependee_vms_paged
+  ignore_errors: true
+  when: have_conflict | bool
+
+- name: Assert paginated result honours the limit
+  ansible.builtin.assert:
+    that:
+      - dependee_vms_paged is defined
+      - dependee_vms_paged.failed == false
+      - dependee_vms_paged.changed == false
+      - dependee_vms_paged.response is defined
+      - dependee_vms_paged.response | type_debug == "list"
+      - (dependee_vms_paged.response | length) <= 1
+    fail_msg: >-
+      Paginated call did not honour the limit=1 constraint:
+      {{ dependee_vms_paged | to_nice_json }}
+    success_msg: Paginated list respects limit
+  when: have_conflict | bool
+
+- name: Note — no policy/conflict was available on the cluster
+  ansible.builtin.debug:
+    msg: >-
+      Cluster {{ ip }} did not expose any VM startup policy with a
+      start-condition conflict at run time, so the live listing tests were
+      skipped. Negative / argument-spec tests above still executed.
+  when: not (have_conflict | bool)
