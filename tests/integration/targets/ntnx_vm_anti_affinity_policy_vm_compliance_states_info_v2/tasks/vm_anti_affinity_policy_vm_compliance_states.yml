@@ -1,0 +1,364 @@
+---
+# Test plan for ntnx_vm_anti_affinity_policy_vm_compliance_states_info_v2
+#
+# The VmAntiAffinityPolicyVmComplianceState entity is a *read-only* computed
+# view — the SDK only exposes `list_vm_anti_affinity_policy_vm_compliance_states`.
+# Consequently there is no CRUD test surface for this entity; the tests below
+# exhaustively cover the info module:
+#
+# 1. Prerequisite discovery: locate (or create) a VM-VM anti-affinity policy
+#    on the target cluster via the REST API, since the collection does not
+#    yet ship an Ansible module for VmAntiAffinityPolicy CRUD.
+# 2. Positive path: list compliance states under the discovered policy.
+# 3. Positive path: paginated list via `page` / `limit`.
+# 4. Positive path: fetch a specific compliance state entry by ext_id (client-
+#    side filter over the list response) when at least one entry exists.
+# 5. Negative path: omit the required `vm_anti_affinity_policy_ext_id` param
+#    and verify Ansible surfaces the correct "missing required" error.
+# 6. Negative path: pass a non-existent policy ext_id and verify the API
+#    error is surfaced with a descriptive message.
+# 7. Negative path: pass a non-matching compliance-state `ext_id` and verify
+#    the client-side filter reports "not found".
+
+- name: Start VM-VM Anti-Affinity Policy VM Compliance States info tests
+  ansible.builtin.debug:
+    msg: Start VM-VM Anti-Affinity Policy VM Compliance States info tests
+
+- name: Set common facts
+  ansible.builtin.set_fact:
+    aaf_random_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    aaf_test_cleanup: []
+
+- name: Set derived names
+  ansible.builtin.set_fact:
+    aaf_policy_name: "aaf_ansible_{{ aaf_random_suffix }}"
+    aaf_category_key: "aaf_ansible_key_{{ aaf_random_suffix }}"
+    aaf_category_value: "aaf_ansible_val_{{ aaf_random_suffix }}"
+
+########################################################################################
+# Discover existing VM-VM anti-affinity policies (best-effort; create if none exist).
+########################################################################################
+
+- name: Discover existing VM-VM anti-affinity policies (REST)
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:9440/api/vmm/v4.2/ahv/policies/vm-anti-affinity-policies?$limit=1"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs | default(false) }}"
+    return_content: true
+    status_code: [200]
+  register: existing_policies
+  ignore_errors: true
+
+- name: Set existing policy ext_id (if any)
+  ansible.builtin.set_fact:
+    existing_policy_ext_id: >-
+      {{
+        (existing_policies.json.data | default([]))[0].extId
+        if (existing_policies is defined
+            and existing_policies.status == 200
+            and (existing_policies.json.data | default([]) | length) > 0)
+        else ''
+      }}
+
+- name: Fetch a category to attach to a new policy (if we need to create one)
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:9440/api/prism/v4.0/config/categories?$limit=1"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs | default(false) }}"
+    return_content: true
+    status_code: [200]
+  register: existing_categories
+  ignore_errors: true
+  when: existing_policy_ext_id | length == 0
+
+- name: Set candidate category ext_id
+  ansible.builtin.set_fact:
+    candidate_category_ext_id: >-
+      {{
+        (existing_categories.json.data | default([]))[0].extId
+        if (existing_categories is defined
+            and existing_categories is not skipped
+            and existing_categories.status == 200
+            and (existing_categories.json.data | default([]) | length) > 0)
+        else ''
+      }}
+  when: existing_policy_ext_id | length == 0
+
+- name: Generate a Nutanix request ID for policy creation
+  ansible.builtin.set_fact:
+    ntnx_request_id_create: "{{ 99999999999999999999 | random | to_uuid }}"
+  when:
+    - existing_policy_ext_id | length == 0
+    - candidate_category_ext_id | length > 0
+
+- name: Create a VM-VM anti-affinity policy for testing (REST)
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:9440/api/vmm/v4.2/ahv/policies/vm-anti-affinity-policies"
+    method: POST
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs | default(false) }}"
+    body_format: json
+    headers:
+      Content-Type: application/json
+      NTNX-Request-Id: "{{ ntnx_request_id_create }}"
+    body:
+      name: "{{ aaf_policy_name }}"
+      description: "Anti-affinity policy created by Ansible integration tests"
+      categories:
+        - extId: "{{ candidate_category_ext_id }}"
+    return_content: true
+    status_code: [200, 201, 202]
+  register: created_policy
+  ignore_errors: true
+  when:
+    - existing_policy_ext_id | length == 0
+    - candidate_category_ext_id | length > 0
+
+- name: Look up newly-created policy by name (REST)
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:9440/api/vmm/v4.2/ahv/policies/vm-anti-affinity-policies?%24filter=name%20eq%20'{{ aaf_policy_name }}'"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs | default(false) }}"
+    return_content: true
+    status_code: [200]
+  register: lookup_created_policy
+  ignore_errors: true
+  retries: 5
+  delay: 3
+  until: >-
+    lookup_created_policy is defined
+    and lookup_created_policy.status is defined
+    and lookup_created_policy.status == 200
+    and (lookup_created_policy.json.data | default([]) | length) > 0
+  when:
+    - existing_policy_ext_id | length == 0
+    - created_policy is defined
+    - created_policy is not skipped
+    - not (created_policy.failed | default(false))
+
+- name: Set active policy ext_id for tests
+  ansible.builtin.set_fact:
+    aaf_policy_ext_id: >-
+      {{
+        existing_policy_ext_id
+        if existing_policy_ext_id | length > 0
+        else (
+          (lookup_created_policy.json.data | default([]))[0].extId
+          if (lookup_created_policy is defined
+              and lookup_created_policy is not skipped
+              and lookup_created_policy.status is defined
+              and lookup_created_policy.status == 200
+              and (lookup_created_policy.json.data | default([]) | length) > 0)
+          else ''
+        )
+      }}
+
+- name: Track newly-created policy for cleanup
+  ansible.builtin.set_fact:
+    aaf_test_cleanup: "{{ aaf_test_cleanup + [aaf_policy_ext_id] }}"
+  when:
+    - existing_policy_ext_id | length == 0
+    - aaf_policy_ext_id | length > 0
+
+- name: Skip live-cluster tests when no policy is available
+  ansible.builtin.debug:
+    msg: >-
+      No VM-VM anti-affinity policy could be discovered or created on the cluster; the
+      positive live-cluster tests will be skipped. Negative tests will still execute.
+  when: aaf_policy_ext_id | length == 0
+
+########################################################################################
+# Positive path 1: list compliance states under the parent policy.
+########################################################################################
+
+- name: List VM compliance states under the anti-affinity policy
+  nutanix.ncp.ntnx_vm_anti_affinity_policy_vm_compliance_states_info_v2:
+    vm_anti_affinity_policy_ext_id: "{{ aaf_policy_ext_id }}"
+  register: list_result
+  ignore_errors: true
+  when: aaf_policy_ext_id | length > 0
+
+- name: Assert list of VM compliance states
+  ansible.builtin.assert:
+    that:
+      - list_result is defined
+      - list_result.changed == false
+      - list_result.failed == false
+      - list_result.vm_anti_affinity_policy_ext_id == aaf_policy_ext_id
+      - list_result.total_available_results is defined
+      - list_result.response is defined
+      - (list_result.response | type_debug) == 'list'
+    success_msg: "Listed VM compliance states successfully"
+    fail_msg: "Listing VM compliance states did not behave as expected"
+  when: aaf_policy_ext_id | length > 0
+
+########################################################################################
+# Positive path 2: pagination with page + limit.
+########################################################################################
+
+- name: List VM compliance states with pagination
+  nutanix.ncp.ntnx_vm_anti_affinity_policy_vm_compliance_states_info_v2:
+    vm_anti_affinity_policy_ext_id: "{{ aaf_policy_ext_id }}"
+    page: 0
+    limit: 1
+  register: paginated_result
+  ignore_errors: true
+  when: aaf_policy_ext_id | length > 0
+
+- name: Assert paginated list response
+  ansible.builtin.assert:
+    that:
+      - paginated_result is defined
+      - paginated_result.changed == false
+      - paginated_result.failed == false
+      - paginated_result.vm_anti_affinity_policy_ext_id == aaf_policy_ext_id
+      - (paginated_result.response | type_debug) == 'list'
+      - (paginated_result.response | length) <= 1
+    success_msg: "Paginated list of VM compliance states behaves correctly"
+    fail_msg: "Paginated list of VM compliance states did not behave as expected"
+  when: aaf_policy_ext_id | length > 0
+
+########################################################################################
+# Positive path 3: fetch a specific compliance state by ext_id (client-side filter).
+########################################################################################
+
+- name: Fetch a specific VM compliance state (client-side filter)
+  nutanix.ncp.ntnx_vm_anti_affinity_policy_vm_compliance_states_info_v2:
+    vm_anti_affinity_policy_ext_id: "{{ aaf_policy_ext_id }}"
+    ext_id: "{{ list_result.response[0].ext_id }}"
+  register: single_result
+  ignore_errors: true
+  when:
+    - aaf_policy_ext_id | length > 0
+    - list_result is defined
+    - list_result.response is defined
+    - (list_result.response | length) > 0
+
+- name: Assert single VM compliance state
+  ansible.builtin.assert:
+    that:
+      - single_result is defined
+      - single_result.changed == false
+      - single_result.failed == false
+      - single_result.ext_id == list_result.response[0].ext_id
+      - single_result.vm_anti_affinity_policy_ext_id == aaf_policy_ext_id
+      - single_result.response is defined
+      - single_result.response.ext_id == list_result.response[0].ext_id
+      - single_result.response.compliance_status is defined
+    success_msg: "Fetched a specific VM compliance state successfully"
+    fail_msg: "Fetching a specific VM compliance state did not behave as expected"
+  when:
+    - aaf_policy_ext_id | length > 0
+    - list_result is defined
+    - list_result.response is defined
+    - (list_result.response | length) > 0
+
+########################################################################################
+# Negative path 1: missing required parameter.
+########################################################################################
+
+- name: List VM compliance states without required vm_anti_affinity_policy_ext_id
+  nutanix.ncp.ntnx_vm_anti_affinity_policy_vm_compliance_states_info_v2: {}
+  register: missing_required_result
+  ignore_errors: true
+
+- name: Assert missing required parameter is rejected
+  ansible.builtin.assert:
+    that:
+      - missing_required_result is defined
+      - missing_required_result.changed == false
+      - missing_required_result.failed == true
+      - "'vm_anti_affinity_policy_ext_id' in missing_required_result.msg"
+    success_msg: "Missing required parameter is correctly rejected"
+    fail_msg: "Missing required parameter was not rejected as expected"
+
+########################################################################################
+# Negative path 2: invalid parent policy ext_id.
+########################################################################################
+
+- name: List VM compliance states with invalid parent policy ext_id
+  nutanix.ncp.ntnx_vm_anti_affinity_policy_vm_compliance_states_info_v2:
+    vm_anti_affinity_policy_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: invalid_parent_result
+  ignore_errors: true
+
+- name: Assert invalid parent policy ext_id surfaces an API error
+  ansible.builtin.assert:
+    that:
+      - invalid_parent_result is defined
+      - invalid_parent_result.changed == false
+      - invalid_parent_result.failed == true
+      - "'Api Exception raised while fetching VM-VM anti-affinity policy VM compliance states info' in invalid_parent_result.msg"
+    success_msg: "Invalid parent policy ext_id surfaces an API error as expected"
+    fail_msg: "Invalid parent policy ext_id did not surface an API error"
+
+########################################################################################
+# Negative path 3: client-side filter miss.
+########################################################################################
+
+- name: Fetch a non-matching VM compliance state (client-side filter miss)
+  nutanix.ncp.ntnx_vm_anti_affinity_policy_vm_compliance_states_info_v2:
+    vm_anti_affinity_policy_ext_id: "{{ aaf_policy_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: filter_miss_result
+  ignore_errors: true
+  when: aaf_policy_ext_id | length > 0
+
+- name: Assert client-side filter miss reports 'not found'
+  ansible.builtin.assert:
+    that:
+      - filter_miss_result is defined
+      - filter_miss_result.changed == false
+      - filter_miss_result.failed == true
+      - "'was not found' in filter_miss_result.msg"
+    success_msg: "Client-side filter miss reports 'not found' as expected"
+    fail_msg: "Client-side filter miss did not report 'not found' as expected"
+  when: aaf_policy_ext_id | length > 0
+
+########################################################################################
+# Cleanup any policies that this test created.
+########################################################################################
+
+- name: Cleanup — fetch etag for policies to delete
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:9440/api/vmm/v4.2/ahv/policies/vm-anti-affinity-policies/{{ item }}"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs | default(false) }}"
+    return_content: true
+    status_code: [200]
+  loop: "{{ aaf_test_cleanup }}"
+  when: (aaf_test_cleanup | length) > 0
+  register: cleanup_get
+  failed_when: false
+
+- name: Cleanup — delete VM-VM anti-affinity policies created by this test
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:9440/api/vmm/v4.2/ahv/policies/vm-anti-affinity-policies/{{ item.item }}"
+    method: DELETE
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs | default(false) }}"
+    headers:
+      NTNX-Request-Id: "{{ 99999999999999999999 | random | to_uuid }}"
+      If-Match: "{{ item.etag | default('') }}"
+    status_code: [200, 202, 204]
+  loop: "{{ cleanup_get.results | default([]) }}"
+  when:
+    - (aaf_test_cleanup | length) > 0
+    - item.status | default(0) == 200
+  failed_when: false
