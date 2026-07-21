@@ -108,3 +108,20 @@ def get_protected_resource_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_dataprotection_py_client.ProtectedResourcesApi(client)
+
+
+def get_recovery_plan_actions_api_instance(module):
+    """
+    Return a RecoveryPlanActionsApi instance for the data_protection SDK.
+
+    Used to invoke Recovery Plan lifecycle actions such as
+    ``test_failover_recovery_plan``, ``planned_failover_recovery_plan``,
+    ``unplanned_failover_recovery_plan``, ``validate_recovery_plan``, and
+    ``cleanup_recovery_plan_resources``.
+    Args:
+        module (object): Ansible module object
+    Returns:
+        api_instance (object): RecoveryPlanActionsApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_dataprotection_py_client.RecoveryPlanActionsApi(client)

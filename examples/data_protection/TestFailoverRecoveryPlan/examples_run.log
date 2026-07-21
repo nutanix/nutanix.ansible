@@ -1,0 +1,36 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Test Failover Recovery Plan playbook] ************************************
+
+TASK [Set variables for the Test Failover] *************************************
+ok: [localhost] => {"ansible_facts": {"recovery_plan_ext_id": "0005c0ef-b0f4-40b6-a5a1-2a5a2a5a2a5a", "source_cluster_ext_id": "000647b8-ddb3-6bbb-0000-000000028f57", "source_domain_manager_ext_id": "d4d3f6d5-1111-2222-3333-4444d3f6d5c3", "target_cluster_ext_id": "000647b8-ddb3-6bbb-0000-000000028f58", "target_domain_manager_ext_id": "d4d3f6d5-5555-6666-7777-8888d3f6d5c3"}, "changed": false}
+
+TASK [Test Failover Recovery Plan across different domain managers] ************
+[ERROR]: Task failed: Module failed: Api Exception raised while performing Test Failover on Recovery Plan
+Origin: /tmp/codegen/6eca40417ee14bc0a8da853811c60797/repo/examples/data_protection/TestFailoverRecoveryPlan/test_failover_recovery_plan.yml:31:7
+
+29         target_cluster_ext_id: "000647b8-ddb3-6bbb-0000-000000028f58"
+30
+31     - name: Test Failover Recovery Plan across different domain managers
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while performing Test Failover on Recovery Plan", "response": {"data": {"$objectType": "dataprotection.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "dataprotection.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "argumentsMap": {"reason": "Entity with external identifier 0005c0ef-b0f4-40b6-a5a1-2a5a2a5a2a5a does not exist"}, "code": "DP-10400", "errorGroup": "DATAPROTECTION_ENTITY_NON_EXISTENT_ERROR", "locale": "en_US", "message": "The request failed as one or more entities do not exist - Entity with external identifier 0005c0ef-b0f4-40b6-a5a1-2a5a2a5a2a5a does not exist.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}]}}, "status": 404}
+...ignoring
+
+TASK [Test Failover Recovery Plan within the same domain manager (with cluster refs)] ***
+[ERROR]: Task failed: Module failed: Api Exception raised while performing Test Failover on Recovery Plan
+Origin: /tmp/codegen/6eca40417ee14bc0a8da853811c60797/repo/examples/data_protection/TestFailoverRecoveryPlan/test_failover_recovery_plan.yml:43:7
+
+41       ignore_errors: true
+42
+43     - name: Test Failover Recovery Plan within the same domain manager (with cluster refs)
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while performing Test Failover on Recovery Plan", "response": {"data": {"$objectType": "dataprotection.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "dataprotection.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "argumentsMap": {"reason": "Entity with external identifier 0005c0ef-b0f4-40b6-a5a1-2a5a2a5a2a5a does not exist"}, "code": "DP-10400", "errorGroup": "DATAPROTECTION_ENTITY_NON_EXISTENT_ERROR", "locale": "en_US", "message": "The request failed as one or more entities do not exist - Entity with external identifier 0005c0ef-b0f4-40b6-a5a1-2a5a2a5a2a5a does not exist.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}]}}, "status": 404}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=2   
+
