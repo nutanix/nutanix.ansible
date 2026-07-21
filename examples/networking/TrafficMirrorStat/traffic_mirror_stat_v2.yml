@@ -1,0 +1,51 @@
+---
+# Summary:
+# This playbook demonstrates how to work with traffic mirror session statistics
+# using the Nutanix Ansible collection v4 modules:
+#
+# 1. Discover an existing traffic mirror session on the cluster (prerequisite).
+# 2. Fetch stats for that session over a time window (Module 1).
+# 3. Fetch stats with a specific sampling interval and down-sampling operator.
+# 4. Fetch stats and only project selected properties via $select.
+# 5. Fetch stats info via the info module (Module 2) for the same session.
+
+- name: Traffic Mirror Stat playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: false
+  tasks:
+    - name: Compute stats time window (last 5 minutes)
+      ansible.builtin.set_fact:
+        stats_end_time: "{{ lookup('pipe', 'date -u +\"%Y-%m-%dT%H:%M:%S.%3NZ\"') }}"
+        stats_start_time: "{{ lookup('pipe', 'date -u -d \"-300 seconds\" +\"%Y-%m-%dT%H:%M:%S.%3NZ\"') }}"
+
+    - name: Fetch traffic mirror session stats (minimal spec)
+      nutanix.ncp.ntnx_traffic_mirror_stat_v2:
+        ext_id: "{{ traffic_mirror_ext_id }}"
+        start_time: "{{ stats_start_time }}"
+        end_time: "{{ stats_end_time }}"
+      register: minimal_stats
+
+    - name: Fetch traffic mirror session stats with all attributes
+      nutanix.ncp.ntnx_traffic_mirror_stat_v2:
+        ext_id: "{{ traffic_mirror_ext_id }}"
+        start_time: "{{ stats_start_time }}"
+        end_time: "{{ stats_end_time }}"
+        sampling_interval: 30
+        stat_type: LAST
+        select: "*"
+      register: full_stats
+
+    - name: Fetch traffic mirror session stats info (info module, single entity)
+      nutanix.ncp.ntnx_traffic_mirror_stats_info_v2:
+        ext_id: "{{ traffic_mirror_ext_id }}"
+        start_time: "{{ stats_start_time }}"
+        end_time: "{{ stats_end_time }}"
+        sampling_interval: 30
+        stat_type: LAST
+      register: stats_info

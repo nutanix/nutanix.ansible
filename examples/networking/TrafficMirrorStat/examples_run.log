@@ -1,0 +1,19 @@
+No config file found; using defaults
+
+PLAY [Traffic Mirror Stat playbook] ********************************************
+
+TASK [Compute stats time window (last 5 minutes)] ******************************
+ok: [localhost] => {"ansible_facts": {"stats_end_time": "2026-07-21T06:30:54.014Z", "stats_start_time": "2026-07-21T06:25:54.018Z"}, "changed": false}
+
+TASK [Fetch traffic mirror session stats (minimal spec)] ***********************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "043902c5-cfb8-448a-8fee-028b1140d3f7", "response": {"ext_id": "043902c5-cfb8-448a-8fee-028b1140d3f7", "links": null, "stat_type": "LAST", "tenant_id": null, "transmit_byte_count": [0], "transmit_packet_count": [0]}}
+
+TASK [Fetch traffic mirror session stats with all attributes] ******************
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "043902c5-cfb8-448a-8fee-028b1140d3f7", "response": {"ext_id": "043902c5-cfb8-448a-8fee-028b1140d3f7", "links": null, "stat_type": "LAST", "tenant_id": null, "transmit_byte_count": null, "transmit_packet_count": null}}
+
+TASK [Fetch traffic mirror session stats info (info module, single entity)] ****
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "043902c5-cfb8-448a-8fee-028b1140d3f7", "response": {"ext_id": "043902c5-cfb8-448a-8fee-028b1140d3f7", "links": null, "stat_type": "LAST", "tenant_id": null, "transmit_byte_count": [0], "transmit_packet_count": [0]}}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=4    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
