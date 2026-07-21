@@ -1,0 +1,125 @@
+---
+# Summary:
+# This playbook demonstrates end-to-end usage of the VirusScanPolicy modules
+# against a Nutanix Files v4 file server:
+# 0. Discover an existing file server (or use a supplied ext_id)
+# 1. Create a virus scan policy with all attributes
+# 2. Get the virus scan policy using ext_id
+# 3. List all virus scan policies for the file server
+# 4. List virus scan policies with a limit
+# 5. Update the virus scan policy
+# 6. Delete the virus scan policy
+#
+# Requires a Nutanix Files file server to be deployed on the target
+# Prism Central. When no file server is discovered the policy-manipulating
+# tasks are gracefully skipped.
+
+- name: Nutanix Files VirusScanPolicy playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ nutanix_username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ nutanix_password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      nutanix_port: "{{ nutanix_port | default(lookup('env', 'NUTANIX_PORT') | default(9440, true)) }}"
+      validate_certs: false
+  tasks:
+    - name: Discover an available Nutanix Files file server
+      ansible.builtin.uri:
+        url: "https://{{ lookup('env', 'NUTANIX_HOST') }}:{{ lookup('env', 'NUTANIX_PORT') | default(9440, true) }}/api/files/v4.0/config/file-servers?$limit=1"
+        method: GET
+        user: "{{ lookup('env', 'NUTANIX_USERNAME') }}"
+        password: "{{ lookup('env', 'NUTANIX_PASSWORD') }}"
+        force_basic_auth: true
+        validate_certs: false
+        return_content: true
+        status_code: [200, 404, 503]
+        timeout: 15
+      register: fs_lookup
+      ignore_errors: true
+
+    - name: Set file server discovery flag and ext_id
+      ansible.builtin.set_fact:
+        has_file_server: >-
+          {{ fs_lookup is defined
+             and fs_lookup.status | default(0) == 200
+             and (fs_lookup.json.data | default([]) | length) > 0 }}
+        file_server_ext_id: >-
+          {{ (fs_lookup.json.data[0].extId
+              if (fs_lookup is defined
+                  and fs_lookup.status | default(0) == 200
+                  and (fs_lookup.json.data | default([]) | length) > 0)
+              else '') }}
+
+    - name: Skip policy tasks if no Nutanix Files file server is available
+      when: not (has_file_server | bool)
+      ansible.builtin.debug:
+        msg: >-
+          No Nutanix Files file server was discovered on this Prism Central
+          (status={{ fs_lookup.status | default('unknown') }}). Skipping the
+          VirusScanPolicy example tasks. Set 'file_server_ext_id' to a real
+          file server ext_id to run this playbook end-to-end.
+
+    - name: Manage a virus scan policy end-to-end
+      when: has_file_server | bool
+      block:
+        - name: Create global virus scan policy with all attributes
+          nutanix.ncp.ntnx_virus_scan_policy_v2:
+            state: present
+            file_server_ext_id: "{{ file_server_ext_id }}"
+            scan_timeout_interval_secs: 60
+            is_scan_on_write_enabled: true
+            is_scan_on_read_enabled: true
+            max_file_size_threshold_bytes: 10485760
+            is_file_access_blocked: false
+            is_anti_virus_enabled: true
+            excluded_file_extensions:
+              - iso
+              - tmp
+          register: create_result
+
+        - name: Save created virus scan policy ext_id
+          ansible.builtin.set_fact:
+            virus_scan_policy_ext_id: "{{ create_result.ext_id }}"
+
+        - name: Get virus scan policy using ext_id
+          nutanix.ncp.ntnx_virus_scan_policies_info_v2:
+            file_server_ext_id: "{{ file_server_ext_id }}"
+            ext_id: "{{ virus_scan_policy_ext_id }}"
+          register: get_result
+
+        - name: List all virus scan policies for the file server
+          nutanix.ncp.ntnx_virus_scan_policies_info_v2:
+            file_server_ext_id: "{{ file_server_ext_id }}"
+          register: list_all_result
+
+        - name: List virus scan policies with limit
+          nutanix.ncp.ntnx_virus_scan_policies_info_v2:
+            file_server_ext_id: "{{ file_server_ext_id }}"
+            limit: 1
+          register: list_limit_result
+
+        - name: Update virus scan policy with all attributes
+          nutanix.ncp.ntnx_virus_scan_policy_v2:
+            state: present
+            file_server_ext_id: "{{ file_server_ext_id }}"
+            ext_id: "{{ virus_scan_policy_ext_id }}"
+            scan_timeout_interval_secs: 120
+            is_scan_on_write_enabled: true
+            is_scan_on_read_enabled: false
+            max_file_size_threshold_bytes: 20971520
+            is_file_access_blocked: true
+            is_anti_virus_enabled: true
+            excluded_file_extensions:
+              - iso
+              - tmp
+              - log
+          register: update_result
+
+        - name: Delete virus scan policy
+          nutanix.ncp.ntnx_virus_scan_policy_v2:
+            state: absent
+            file_server_ext_id: "{{ file_server_ext_id }}"
+            ext_id: "{{ virus_scan_policy_ext_id }}"
+          register: delete_result

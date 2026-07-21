@@ -1,0 +1,42 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Nutanix Files VirusScanPolicy playbook] **********************************
+
+TASK [Discover an available Nutanix Files file server] *************************
+ok: [localhost] => {"cache_control": "no-cache, no-store", "changed": false, "connection": "close", "content": "{\"message\": \"Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2\"}", "content_length": "94", "content_security_policy": "connect-src 'self' wss: https://downloads.frame.nutanix.com https://downloads.frame.nutanix.us; default-src 'self' https://*.nutanix.com; frame-ancestors 'self' https://*.nutanix.com; frame-src 'self' https://*.nutanix.com blob: data:; img-src 'self' blob: data:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'", "date": "Tue, 21 Jul 2026 09:01:34 GMT", "elapsed": 1, "expires": "0", "msg": "HTTP Error 503: SERVICE UNAVAILABLE", "pragma": "no-cache", "redirected": false, "status": 503, "strict_transport_security": "max-age=63072000; includeSubdomains; preload", "url": "https://10.44.76.28:9440/api/files/v4.0/config/file-servers?$limit=1", "vary": "Origin, Accept-Encoding", "x_content_type_options": "nosniff", "x_dns_prefetch_control": "off", "x_envoy_retry": "true", "x_envoy_upstream_service_time": "889", "x_frame_options": "SAMEORIGIN", "x_ntnx_env": "pc", "x_ntnx_product": "pc.7.6", "x_permitted_cross_domain_policies": "master-only", "x_xss_protection": "1; mode=block"}
+
+TASK [Set file server discovery flag and ext_id] *******************************
+ok: [localhost] => {"ansible_facts": {"file_server_ext_id": "", "has_file_server": false}, "changed": false}
+
+TASK [Skip policy tasks if no Nutanix Files file server is available] **********
+ok: [localhost] => {
+    "msg": "No Nutanix Files file server was discovered on this Prism Central (status=503). Skipping the VirusScanPolicy example tasks. Set 'file_server_ext_id' to a real file server ext_id to run this playbook end-to-end."
+}
+
+TASK [Create global virus scan policy with all attributes] *********************
+skipping: [localhost] => {"changed": false, "false_condition": "has_file_server | bool", "skip_reason": "Conditional result was False"}
+
+TASK [Save created virus scan policy ext_id] ***********************************
+skipping: [localhost] => {"changed": false, "false_condition": "has_file_server | bool", "skip_reason": "Conditional result was False"}
+
+TASK [Get virus scan policy using ext_id] **************************************
+skipping: [localhost] => {"changed": false, "false_condition": "has_file_server | bool", "skip_reason": "Conditional result was False"}
+
+TASK [List all virus scan policies for the file server] ************************
+skipping: [localhost] => {"changed": false, "false_condition": "has_file_server | bool", "skip_reason": "Conditional result was False"}
+
+TASK [List virus scan policies with limit] *************************************
+skipping: [localhost] => {"changed": false, "false_condition": "has_file_server | bool", "skip_reason": "Conditional result was False"}
+
+TASK [Update virus scan policy with all attributes] ****************************
+skipping: [localhost] => {"changed": false, "false_condition": "has_file_server | bool", "skip_reason": "Conditional result was False"}
+
+TASK [Delete virus scan policy] ************************************************
+skipping: [localhost] => {"changed": false, "false_condition": "has_file_server | bool", "skip_reason": "Conditional result was False"}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=3    changed=0    unreachable=0    failed=0    skipped=7    rescued=0    ignored=0   
+

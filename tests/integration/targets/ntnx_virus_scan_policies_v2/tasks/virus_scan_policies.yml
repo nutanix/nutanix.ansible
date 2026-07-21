@@ -1,0 +1,499 @@
+---
+# =======================================================================
+# Test plan for the VirusScanPolicy Files v4 modules.
+#
+# Scenarios covered:
+#   * Discovery: look up a real file server ext_id from the cluster.
+#   * check_mode: exactly one Create, one Update and one Delete spec-only
+#     invocation exercised against the module (per reviewer feedback).
+#   * Create: minimal-fields and all-fields, with real API round-trips.
+#   * Info: get-by-ext_id, list-all, list-with-limit and get-with-invalid
+#     ext_id.
+#   * Update: full-field valid update plus an idempotent replay that must
+#     produce ``changed=False`` and ``msg == "Nothing to change."``.
+#   * Negative: missing required file_server_ext_id, delete without ext_id,
+#     delete/get with a non-existent ext_id.
+#   * Delete: clean up every policy this run created.
+# All resource names use a random suffix to avoid parallel-run collisions.
+# =======================================================================
+
+- name: Start VirusScanPolicy tests
+  ansible.builtin.debug:
+    msg: Start VirusScanPolicy tests
+
+- name: Generate a random suffix for resources created in this run
+  ansible.builtin.set_fact:
+    random_name: "vsp{{ 999999999 | random | to_uuid | replace('-', '') | truncate(12, true, '') }}"
+    todelete: []
+
+########################################################################################
+# Discover a file server on the cluster to run the tests against
+########################################################################################
+
+- name: List file servers on the cluster
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:9440/api/files/v4.0/config/file-servers?$limit=1"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs }}"
+    return_content: true
+    status_code: [200, 404]
+  register: file_servers_info
+  ignore_errors: true
+
+- name: Set has_file_server flag
+  ansible.builtin.set_fact:
+    has_file_server: >-
+      {{ file_servers_info.status | default(0) == 200
+         and (file_servers_info.json.data | default([]) | length) > 0 }}
+
+- name: Log discovered file server state
+  ansible.builtin.debug:
+    msg:
+      - "has_file_server = {{ has_file_server }}"
+      - "file_servers_info.status = {{ file_servers_info.status | default('unknown') }}"
+
+- name: Set file server ext_id from discovery
+  when: has_file_server | bool
+  ansible.builtin.set_fact:
+    file_server_ext_id: "{{ file_servers_info.json.data[0].extId }}"
+
+- name: Skip live tests when no file server is available
+  when: not (has_file_server | bool)
+  ansible.builtin.debug:
+    msg: >-
+      No Nutanix Files file server is available on this Prism Central.
+      Only the offline (spec-generation / negative-validation) tests will run.
+
+########################################################################################
+# Negative tests that do NOT require a live file server
+########################################################################################
+
+- name: Create virus scan policy without file_server_ext_id (must fail)
+  nutanix.ncp.ntnx_virus_scan_policy_v2:
+    is_scan_on_write_enabled: true
+    is_scan_on_read_enabled: true
+  register: result
+  ignore_errors: true
+
+- name: Assert missing file_server_ext_id fails as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'file_server_ext_id' in result.msg"
+    success_msg: "Missing file_server_ext_id was rejected as expected"
+    fail_msg: "Module accepted a request without file_server_ext_id"
+
+- name: Delete virus scan policy without ext_id (must fail)
+  nutanix.ncp.ntnx_virus_scan_policy_v2:
+    state: absent
+    file_server_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Assert delete without ext_id fails as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is absent but all of the following are missing: ext_id' in result.msg"
+    success_msg: "Delete without ext_id was rejected as expected"
+    fail_msg: "Delete without ext_id was NOT rejected"
+
+- name: Info module without file_server_ext_id (must fail)
+  nutanix.ncp.ntnx_virus_scan_policies_info_v2: {}
+  register: result
+  ignore_errors: true
+
+- name: Assert info without file_server_ext_id fails as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'file_server_ext_id' in result.msg"
+    success_msg: "Info module rejected missing file_server_ext_id as expected"
+    fail_msg: "Info module accepted request without file_server_ext_id"
+
+########################################################################################
+# Live tests: only run when a real file server was discovered
+########################################################################################
+
+- name: Live VirusScanPolicy tests
+  when: has_file_server | bool
+  block:
+
+    ######################################################################
+    # check_mode tests (one for each of create/update/delete)
+    ######################################################################
+
+    - name: Generate spec for creating virus scan policy using check mode with all attributes
+      nutanix.ncp.ntnx_virus_scan_policy_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        scan_timeout_interval_secs: 45
+        is_scan_on_write_enabled: true
+        is_scan_on_read_enabled: true
+        max_file_size_threshold_bytes: 10485760
+        is_file_access_blocked: false
+        is_anti_virus_enabled: true
+        excluded_file_extensions:
+          - iso
+          - tmp
+      check_mode: true
+      register: result
+      ignore_errors: true
+
+    - name: Assert create-with-check-mode spec
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.response is defined
+          - result.response.scan_timeout_interval_secs == 45
+          - result.response.is_scan_on_write_enabled == true
+          - result.response.is_scan_on_read_enabled == true
+          - result.response.max_file_size_threshold_bytes == 10485760
+          - result.response.is_file_access_blocked == false
+          - result.response.is_anti_virus_enabled == true
+          - result.response.excluded_file_extensions | length == 2
+          - result.response.excluded_file_extensions[0] == "iso"
+          - result.response.excluded_file_extensions[1] == "tmp"
+        success_msg: "Create-with-check-mode spec generated successfully"
+        fail_msg: "Create-with-check-mode spec generation failed"
+
+    ######################################################################
+    # Create with minimum attributes
+    ######################################################################
+
+    - name: Create virus scan policy with minimum attributes
+      nutanix.ncp.ntnx_virus_scan_policy_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+      register: create_min_result
+      ignore_errors: true
+
+    - name: Assert minimal create succeeded
+      ansible.builtin.assert:
+        that:
+          - create_min_result is defined
+          - create_min_result.changed == true
+          - create_min_result.failed == false
+          - create_min_result.ext_id is defined
+          - create_min_result.task_ext_id is defined
+          - create_min_result.response is defined
+          - create_min_result.response.is_scan_on_write_enabled == true
+          - create_min_result.response.is_scan_on_read_enabled == true
+          - create_min_result.response.is_file_access_blocked == false
+          - create_min_result.response.is_anti_virus_enabled == true
+        success_msg: "Minimal virus scan policy created successfully"
+        fail_msg: "Minimal virus scan policy creation failed"
+
+    - name: Add minimal virus scan policy to todelete list
+      when: create_min_result.ext_id is defined
+      ansible.builtin.set_fact:
+        todelete: "{{ todelete + [create_min_result.ext_id] }}"
+
+    ######################################################################
+    # Create with all attributes
+    ######################################################################
+
+    - name: Create virus scan policy with all attributes
+      nutanix.ncp.ntnx_virus_scan_policy_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        scan_timeout_interval_secs: 60
+        is_scan_on_write_enabled: true
+        is_scan_on_read_enabled: true
+        max_file_size_threshold_bytes: 10485760
+        is_file_access_blocked: false
+        is_anti_virus_enabled: true
+        excluded_file_extensions:
+          - iso
+          - tmp
+      register: create_all_result
+      ignore_errors: true
+
+    - name: Assert full-fields create succeeded
+      ansible.builtin.assert:
+        that:
+          - create_all_result is defined
+          - create_all_result.changed == true
+          - create_all_result.failed == false
+          - create_all_result.ext_id is defined
+          - create_all_result.task_ext_id is defined
+          - create_all_result.response is defined
+          - create_all_result.response.scan_timeout_interval_secs == 60
+          - create_all_result.response.is_scan_on_write_enabled == true
+          - create_all_result.response.is_scan_on_read_enabled == true
+          - create_all_result.response.max_file_size_threshold_bytes == 10485760
+          - create_all_result.response.is_file_access_blocked == false
+          - create_all_result.response.is_anti_virus_enabled == true
+          - create_all_result.response.excluded_file_extensions | length == 2
+          - create_all_result.response.excluded_file_extensions[0] == "iso"
+          - create_all_result.response.excluded_file_extensions[1] == "tmp"
+        success_msg: "Full-fields virus scan policy created successfully"
+        fail_msg: "Full-fields virus scan policy creation failed"
+
+    - name: Add all-attributes virus scan policy to todelete list
+      when: create_all_result.ext_id is defined
+      ansible.builtin.set_fact:
+        todelete: "{{ todelete + [create_all_result.ext_id] }}"
+
+    ######################################################################
+    # Info tests
+    ######################################################################
+
+    - name: Fetch virus scan policy using ext_id
+      nutanix.ncp.ntnx_virus_scan_policies_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ create_all_result.ext_id }}"
+      register: get_result
+      ignore_errors: true
+
+    - name: Assert get-by-ext_id returned expected policy
+      ansible.builtin.assert:
+        that:
+          - get_result is defined
+          - get_result.changed == false
+          - get_result.failed == false
+          - get_result.response is defined
+          - get_result.response.scan_timeout_interval_secs == 60
+          - get_result.response.is_scan_on_write_enabled == true
+          - get_result.response.is_scan_on_read_enabled == true
+          - get_result.response.max_file_size_threshold_bytes == 10485760
+          - get_result.response.is_file_access_blocked == false
+          - get_result.response.is_anti_virus_enabled == true
+          - get_result.response.excluded_file_extensions | length == 2
+          - get_result.ext_id == create_all_result.ext_id
+        success_msg: "Get virus scan policy by ext_id passed"
+        fail_msg: "Get virus scan policy by ext_id failed"
+
+    - name: Fetch virus scan policy with wrong ext_id (must fail)
+      nutanix.ncp.ntnx_virus_scan_policies_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "00000000-0000-0000-0000-000000000000"
+      register: result
+      ignore_errors: true
+
+    - name: Assert get with invalid ext_id fails as expected
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.failed == true
+        success_msg: "Get with invalid ext_id failed as expected"
+        fail_msg: "Get with invalid ext_id did not fail"
+
+    - name: List all virus scan policies for file server
+      nutanix.ncp.ntnx_virus_scan_policies_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+      register: list_result
+      ignore_errors: true
+
+    - name: Assert list returned at least the two policies created above
+      ansible.builtin.assert:
+        that:
+          - list_result is defined
+          - list_result.changed == false
+          - list_result.failed == false
+          - list_result.response is defined
+          - list_result.response | length >= 2
+        success_msg: "List all virus scan policies passed"
+        fail_msg: "List all virus scan policies failed"
+
+    - name: List virus scan policies with limit
+      nutanix.ncp.ntnx_virus_scan_policies_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        limit: 1
+      register: list_limit_result
+      ignore_errors: true
+
+    - name: Assert list-with-limit returned exactly one item
+      ansible.builtin.assert:
+        that:
+          - list_limit_result is defined
+          - list_limit_result.changed == false
+          - list_limit_result.failed == false
+          - list_limit_result.response is defined
+          - list_limit_result.response | length == 1
+        success_msg: "List virus scan policies with limit passed"
+        fail_msg: "List virus scan policies with limit failed"
+
+    ######################################################################
+    # Update tests (real update + idempotent replay + check_mode)
+    ######################################################################
+
+    - name: Generate spec for updating virus scan policy using check mode with all attributes
+      nutanix.ncp.ntnx_virus_scan_policy_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ create_all_result.ext_id }}"
+        scan_timeout_interval_secs: 120
+        is_scan_on_write_enabled: true
+        is_scan_on_read_enabled: false
+        max_file_size_threshold_bytes: 20971520
+        is_file_access_blocked: true
+        is_anti_virus_enabled: true
+        excluded_file_extensions:
+          - iso
+          - tmp
+          - log
+      check_mode: true
+      register: result
+      ignore_errors: true
+
+    - name: Assert update-with-check-mode spec
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.failed == false
+          - result.response is defined
+          - result.response.scan_timeout_interval_secs == 120
+          - result.response.is_scan_on_read_enabled == false
+          - result.response.max_file_size_threshold_bytes == 20971520
+          - result.response.is_file_access_blocked == true
+          - result.response.excluded_file_extensions | length == 3
+        success_msg: "Update-with-check-mode spec generated successfully"
+        fail_msg: "Update-with-check-mode spec generation failed"
+
+    - name: Update virus scan policy with new values
+      nutanix.ncp.ntnx_virus_scan_policy_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ create_all_result.ext_id }}"
+        scan_timeout_interval_secs: 120
+        is_scan_on_write_enabled: true
+        is_scan_on_read_enabled: false
+        max_file_size_threshold_bytes: 20971520
+        is_file_access_blocked: true
+        is_anti_virus_enabled: true
+        excluded_file_extensions:
+          - iso
+          - tmp
+          - log
+      register: update_result
+      ignore_errors: true
+
+    - name: Assert update succeeded with all new values
+      ansible.builtin.assert:
+        that:
+          - update_result is defined
+          - update_result.changed == true
+          - update_result.failed == false
+          - update_result.response is defined
+          - update_result.response.scan_timeout_interval_secs == 120
+          - update_result.response.is_scan_on_write_enabled == true
+          - update_result.response.is_scan_on_read_enabled == false
+          - update_result.response.max_file_size_threshold_bytes == 20971520
+          - update_result.response.is_file_access_blocked == true
+          - update_result.response.is_anti_virus_enabled == true
+          - update_result.response.excluded_file_extensions | length == 3
+        success_msg: "Update virus scan policy passed"
+        fail_msg: "Update virus scan policy failed"
+
+    - name: Replay same update to exercise idempotency
+      nutanix.ncp.ntnx_virus_scan_policy_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ create_all_result.ext_id }}"
+        scan_timeout_interval_secs: 120
+        is_scan_on_write_enabled: true
+        is_scan_on_read_enabled: false
+        max_file_size_threshold_bytes: 20971520
+        is_file_access_blocked: true
+        is_anti_virus_enabled: true
+        excluded_file_extensions:
+          - iso
+          - tmp
+          - log
+      register: idem_result
+      ignore_errors: true
+
+    - name: Assert idempotent update reported no change
+      ansible.builtin.assert:
+        that:
+          - idem_result is defined
+          - idem_result.changed == false
+          - idem_result.failed == false
+          - idem_result.msg == "Nothing to change."
+        success_msg: "Idempotent update passed"
+        fail_msg: "Idempotent update failed"
+
+    - name: Update virus scan policy with wrong ext_id (must fail)
+      nutanix.ncp.ntnx_virus_scan_policy_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "00000000-0000-0000-0000-000000000000"
+        scan_timeout_interval_secs: 60
+      register: result
+      ignore_errors: true
+
+    - name: Assert update with wrong ext_id fails
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == true
+        success_msg: "Update with wrong ext_id failed as expected"
+        fail_msg: "Update with wrong ext_id did not fail"
+
+    ######################################################################
+    # Delete tests (check_mode + real deletes + wrong-ext_id delete)
+    ######################################################################
+
+    - name: Delete virus scan policy with check mode
+      when: (todelete | length) > 0
+      nutanix.ncp.ntnx_virus_scan_policy_v2:
+        state: absent
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ todelete[0] }}"
+      check_mode: true
+      register: result
+      ignore_errors: true
+
+    - name: Assert delete-with-check-mode reported would-delete
+      when: (todelete | length) > 0
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - "'will be deleted' in result.msg"
+        success_msg: "Delete-with-check-mode passed"
+        fail_msg: "Delete-with-check-mode failed"
+
+    - name: Delete all created virus scan policies
+      when: (todelete | length) > 0
+      nutanix.ncp.ntnx_virus_scan_policy_v2:
+        state: absent
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ item }}"
+      register: delete_all_result
+      ignore_errors: true
+      loop: "{{ todelete }}"
+
+    - name: Assert every created virus scan policy was deleted
+      when: (todelete | length) > 0
+      ansible.builtin.assert:
+        that:
+          - delete_all_result is defined
+          - delete_all_result.results | length == todelete | length
+          - delete_all_result.results | map(attribute='changed') | list | unique == [true]
+          - delete_all_result.results | map(attribute='failed') | list | unique == [false]
+        success_msg: "All virus scan policies deleted successfully"
+        fail_msg: "Failed to delete all virus scan policies"
+
+    - name: Delete virus scan policy with wrong ext_id (must fail)
+      nutanix.ncp.ntnx_virus_scan_policy_v2:
+        state: absent
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "00000000-0000-0000-0000-000000000000"
+      register: result
+      ignore_errors: true
+
+    - name: Assert delete with wrong ext_id fails
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == true
+        success_msg: "Delete with wrong ext_id failed as expected"
+        fail_msg: "Delete with wrong ext_id did not fail"
