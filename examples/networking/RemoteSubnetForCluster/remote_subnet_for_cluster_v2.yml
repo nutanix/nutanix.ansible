@@ -1,0 +1,84 @@
+---
+# Summary:
+# This playbook demonstrates the RemoteSubnetForCluster read-only entity in
+# Nutanix Networking v4.3 (RemoteEntitiesApi). It:
+#  1. Fetches a specific remote subnet by external ID.
+#  2. Lists all remote subnets available on a Prism Central cluster.
+#  3. Lists remote subnets with a filter, limit, page and orderby.
+#
+# Notes:
+# - RemoteSubnetForCluster is read-only. It cannot be created, updated or deleted
+#   from a local Prism Central; modifications must happen on the Prism Central
+#   that owns the subnet. See the corresponding CRUD module for the error path.
+# - Requires: PC pairing / remote registration with the target cluster and
+#   advanced-networking (VPC/Flow) subnets on the remote side. Basic VLAN
+#   subnets are intentionally excluded by the API.
+
+- name: RemoteSubnetForCluster playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: false
+  tasks:
+    - name: Setting variables
+      ansible.builtin.set_fact:
+        # Replace with a real Prism Central cluster ext_id (the one that fronts the
+        # RemoteEntitiesApi) and a real remote subnet ext_id, or pass them at
+        # invocation time via `-e cluster_uuid=... -e remote_subnet_ext_id=...`.
+        cluster_uuid: "{{ cluster_uuid | default('cae459ec-08db-475e-a5e5-151e390c9484') }}"
+        remote_subnet_ext_id: "{{ remote_subnet_ext_id | default('b57a5527-72ca-45aa-be07-829ba18f9f8b') }}"
+
+    - name: List all remote subnets for a Prism Central cluster
+      nutanix.ncp.ntnx_remote_subnet_for_clusters_info_v2:
+        cluster_ext_id: "{{ cluster_uuid }}"
+      register: list_result
+      ignore_errors: true
+
+    - name: Get a specific remote subnet by ext_id (info module)
+      nutanix.ncp.ntnx_remote_subnet_for_clusters_info_v2:
+        cluster_ext_id: "{{ cluster_uuid }}"
+        ext_id: "{{ remote_subnet_ext_id }}"
+      register: info_by_id_result
+      ignore_errors: true
+
+    - name: Fetch a remote subnet with the read module (state=present)
+      nutanix.ncp.ntnx_remote_subnet_for_cluster_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_uuid }}"
+        ext_id: "{{ remote_subnet_ext_id }}"
+      register: read_result
+      ignore_errors: true
+
+    - name: List remote subnets with limit and page (paginated)
+      nutanix.ncp.ntnx_remote_subnet_for_clusters_info_v2:
+        cluster_ext_id: "{{ cluster_uuid }}"
+        limit: 5
+        page: 0
+      register: list_limit_result
+      ignore_errors: true
+
+    - name: List remote subnets with filter
+      nutanix.ncp.ntnx_remote_subnet_for_clusters_info_v2:
+        cluster_ext_id: "{{ cluster_uuid }}"
+        filter: "name eq 'remote-subnet-ansible'"
+      register: list_filter_result
+      ignore_errors: true
+
+    - name: List remote subnets ordered by name descending
+      nutanix.ncp.ntnx_remote_subnet_for_clusters_info_v2:
+        cluster_ext_id: "{{ cluster_uuid }}"
+        orderby: "name desc"
+      register: list_orderby_result
+      ignore_errors: true
+
+    - name: Attempt to delete a remote subnet (expected to fail; entity is read-only)
+      nutanix.ncp.ntnx_remote_subnet_for_cluster_v2:
+        state: absent
+        cluster_ext_id: "{{ cluster_uuid }}"
+        ext_id: "{{ remote_subnet_ext_id }}"
+      register: delete_attempt_result
+      ignore_errors: true
