@@ -1,0 +1,47 @@
+---
+# Summary:
+# This playbook demonstrates how to fetch VPC North-South (NS) statistics
+# for an external subnet attached to a given VPC using the Nutanix Prism
+# Central v4 API.
+#
+# It covers:
+# 1. Fetch VPC NS stats using only the required parameters.
+# 2. Fetch VPC NS stats with all optional parameters
+#    (sampling_interval and stat_type).
+
+- name: VPC North-South Stats playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        vpc_uuid: "7097df87-be41-4008-96ca-a5ea7908ed21"
+        external_subnet_uuid: "b63493e0-414b-4f6d-80ae-532ecdb23ef2"
+        stats_start_time: "2026-07-21T05:00:00.000Z"
+        stats_end_time: "2026-07-21T06:00:00.000Z"
+
+    - name: Fetch VPC North-South stats for an external subnet
+      nutanix.ncp.ntnx_vpc_ns_stats_info_v2:
+        vpc_ext_id: "{{ vpc_uuid }}"
+        ext_id: "{{ external_subnet_uuid }}"
+        start_time: "{{ stats_start_time }}"
+        end_time: "{{ stats_end_time }}"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch VPC North-South stats with all attributes
+      nutanix.ncp.ntnx_vpc_ns_stats_info_v2:
+        vpc_ext_id: "{{ vpc_uuid }}"
+        ext_id: "{{ external_subnet_uuid }}"
+        start_time: "{{ stats_start_time }}"
+        end_time: "{{ stats_end_time }}"
+        sampling_interval: 30
+        stat_type: "AVG"
+      register: result
+      ignore_errors: true
