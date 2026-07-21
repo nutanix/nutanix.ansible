@@ -1,0 +1,46 @@
+---
+# Summary:
+# This playbook demonstrates the ntnx_cleanup_recovery_plan_resource_v2 module.
+# The Cleanup Recovery Plan Resources action removes the entities (VMs,
+# volume groups, subnets, etc.) that were created on the target Availability
+# Zone by the last execution of a Recovery Plan - typically after a Test
+# Failover.
+#
+# This example:
+#   1. Triggers the cleanup action on a Recovery Plan by its external ID.
+#
+# NOTE:
+#   - This is a pure action module - there is no create/update/delete.
+#   - The recovery plan referenced by `recovery_plan_ext_id` MUST already
+#     exist on the target Prism Central and MUST have been executed at least
+#     once for there to be anything to clean up.
+#   - Provide connection details either through the NUTANIX_HOST /
+#     NUTANIX_USERNAME / NUTANIX_PASSWORD environment variables, or by
+#     replacing the module_defaults values below.
+- name: Cleanup Recovery Plan Resources playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('<pc_ip>', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('<pc_user>', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('<pc_password>', true) }}"
+      validate_certs: false
+  tasks:
+    - name: Set recovery plan external ID
+      ansible.builtin.set_fact:
+        recovery_plan_ext_id: "{{ lookup('env', 'RECOVERY_PLAN_EXT_ID') | default('1ca2963d-77b6-453a-ae23-2c19e7a954a3', true) }}"
+
+    - name: Cleanup resources from the last execution of a Recovery Plan
+      nutanix.ncp.ntnx_cleanup_recovery_plan_resource_v2:
+        state: present
+        ext_id: "{{ recovery_plan_ext_id }}"
+      register: cleanup_result
+      # `ignore_errors` is enabled so the sample playbook still completes
+      # when the placeholder ext_id above is not the ext_id of a real
+      # Recovery Plan on the target Prism Central.
+      ignore_errors: true
+
+    - name: Show cleanup result
+      ansible.builtin.debug:
+        var: cleanup_result
