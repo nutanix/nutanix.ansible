@@ -1,0 +1,54 @@
+---
+# Summary:
+# This playbook exercises the FileByImageId (virtual_machine_management) modules:
+#   1. Pick the smallest existing DISK_IMAGE on the cluster so we do NOT need
+#      to seed a large image just for the demo (image bytes are streamed to
+#      the Ansible controller's temp dir — a small image keeps the run cheap
+#      and portable to environments with limited local disk).
+#   2. Download the image file using ntnx_image_download_v2.
+#   3. Fetch the image file information using ntnx_file_by_image_ids_info_v2.
+
+- name: FileByImageId (virtual_machine_management) playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('10.44.76.28', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('admin', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('Nutanix.123', true) }}"
+      validate_certs: false
+  tasks:
+    - name: List DISK_IMAGE images on the cluster (ordered by size ascending)
+      nutanix.ncp.ntnx_images_info_v2:
+        filter: "type eq Vmm.Content.ImageType'DISK_IMAGE'"
+        orderby: "sizeBytes asc"
+        limit: 5
+      register: images_list
+
+    - name: Pick the smallest image ext_id (to keep the demo download cheap)
+      ansible.builtin.set_fact:
+        image_ext_id: "{{ images_list.response[0].ext_id }}"
+        image_name: "{{ images_list.response[0].name }}"
+        image_size_bytes: "{{ images_list.response[0].size_bytes }}"
+
+    - name: Show which image we will download
+      ansible.builtin.debug:
+        msg: "Using image ext_id={{ image_ext_id }} name={{ image_name }} size_bytes={{ image_size_bytes }}"
+
+    - name: Download the image file using ntnx_image_download_v2
+      nutanix.ncp.ntnx_image_download_v2:
+        image_ext_id: "{{ image_ext_id }}"
+      register: download_result
+
+    - name: Show downloaded file path
+      ansible.builtin.debug:
+        msg: "Downloaded to: {{ download_result.response.path }}"
+
+    - name: Fetch the image file info using ntnx_file_by_image_ids_info_v2
+      nutanix.ncp.ntnx_file_by_image_ids_info_v2:
+        ext_id: "{{ image_ext_id }}"
+      register: file_info_result
+
+    - name: Show fetched file info
+      ansible.builtin.debug:
+        msg: "File info: {{ file_info_result.response }}"
