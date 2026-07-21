@@ -1,0 +1,76 @@
+---
+# Summary:
+# This playbook demonstrates enabling and disabling background
+# hydration (storage migration) for a Nutanix AHV VM disk in Nutanix
+# Prism Central. This module is used mainly in Instant Recovery (IR)
+# scenarios where a VM disk is initially backed by an external
+# repository (e.g. an NFS backup target) and needs to be migrated to
+# a local storage container.
+#
+# It will:
+# 1. Create a target VM with a disk that will act as the hydration target.
+# 2. Enable hydration on the VM disk.
+# 3. Disable hydration on the VM disk.
+# 4. Clean up the VM created for the demonstration.
+
+- name: VmDiskHydration playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        cluster_uuid: "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+        storage_container_uuid: "44481f83-d0a1-47b3-b9b8-32b5465c622e"
+        vm_name: "ansible_vm_disk_hydration_demo"
+
+    - name: Create a target VM with a single disk
+      nutanix.ncp.ntnx_vms_v2:
+        state: present
+        name: "{{ vm_name }}"
+        description: "VM used to demonstrate VmDiskHydration"
+        cluster:
+          ext_id: "{{ cluster_uuid }}"
+        disks:
+          - backing_info:
+              vm_disk:
+                disk_size_bytes: 21474836480
+                storage_container:
+                  ext_id: "{{ storage_container_uuid }}"
+            disk_address:
+              bus_type: SCSI
+              index: 0
+      register: create_vm_result
+
+    - name: Set VM and disk external IDs
+      ansible.builtin.set_fact:
+        vm_ext_id: "{{ create_vm_result.ext_id }}"
+        disk_ext_id: "{{ create_vm_result.response.disks[0].ext_id }}"
+
+    - name: Enable hydration for a VM disk
+      nutanix.ncp.ntnx_vm_disk_hydration_v2:
+        state: present
+        vm_ext_id: "{{ vm_ext_id }}"
+        ext_id: "{{ disk_ext_id }}"
+      register: enable_hydration_result
+      ignore_errors: true
+
+    - name: Disable hydration for a VM disk
+      nutanix.ncp.ntnx_vm_disk_hydration_v2:
+        state: absent
+        vm_ext_id: "{{ vm_ext_id }}"
+        ext_id: "{{ disk_ext_id }}"
+      register: disable_hydration_result
+      ignore_errors: true
+
+    - name: Delete the demo VM
+      nutanix.ncp.ntnx_vms_v2:
+        state: absent
+        ext_id: "{{ vm_ext_id }}"
+      register: delete_vm_result
+      ignore_errors: true
