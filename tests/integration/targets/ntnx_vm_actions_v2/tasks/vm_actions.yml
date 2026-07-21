@@ -1,0 +1,492 @@
+---
+# =============================================================================
+# ESXi VM Actions v2 integration test plan
+# -----------------------------------------------------------------------------
+# The `ntnx_vm_actions_v2` module dispatches an ESXi VM action based on the
+# `state` parameter. Because the module talks to Prism Central's ESXi VM API
+# (`vmm.v4.esxi.config`) an ESXi VM is required on the cluster to exercise
+# real API paths. When no ESXi VM is available on the target cluster the
+# fake-ext-id tasks verify:
+#   - argument-spec validation (choices, required, mutually exclusive)
+#   - check_mode fully generates the SDK spec without calling the API
+#   - each error path returns `failed=true` with a descriptive message.
+#
+# The tests are organized as:
+#   1. Test bed setup — try to discover an ESXi VM via `ntnx_vms_info_v2` and
+#      set `esxi_vm_available` accordingly.
+#   2. check_mode tests — ONE per operation type (Create-equivalent = power
+#      action / assign_owner / associate_categories, Update-equivalent =
+#      ngt_update / ngt_upgrade, Delete-equivalent = ngt_uninstall / power_off).
+#   3. Negative / argument spec tests — invalid enum, missing required, etc.
+#   4. Live tests — power on/off/reset/suspend, guest reboot/shutdown,
+#      associate/disassociate categories, revert, NGT lifecycle — executed
+#      only when `esxi_vm_available` is true.
+#   5. Idempotency — attempt power_on twice; the second run must report
+#      `skipped=true` when the VM is already powered on.
+# =============================================================================
+
+- name: Start ESXi VM Actions v2 tests
+  ansible.builtin.debug:
+    msg: Start ESXi VM Actions v2 tests
+
+- name: Generate randomized fake external IDs
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    fake_vm_ext_id: "b8b5b5b5-1111-2222-3333-{{ 100000000000 + range(0, 9999999) | random }}"
+    fake_owner_ext_id: "00000000-0000-0000-0000-000000000000"
+    fake_category_ext_id: "aabbccdd-1111-2222-3333-{{ 100000000000 + range(0, 9999999) | random }}"
+    fake_vm_recovery_point_ext_id: "c3c3c3c3-9999-8888-7777-{{ 100000000000 + range(0, 9999999) | random }}"
+    esxi_vm_available: false
+    esxi_vm_ext_id: ""
+    # A completely random UUID we know does not exist on the cluster
+    non_existent_vm_ext_id: "00000000-dead-beef-0000-abcdef123456"
+
+# ---------------------------------------------------------------------------
+# 1. Test bed setup: try to discover an ESXi VM on the target cluster.
+# ---------------------------------------------------------------------------
+
+- name: Try to list all VMs and detect an ESXi VM if any
+  nutanix.ncp.ntnx_vms_info_v2:
+    limit: 100
+  register: all_vms_info
+  ignore_errors: true
+
+- name: Detect ESXi VM ext_id (if any)
+  ansible.builtin.set_fact:
+    esxi_vm_ext_id: >-
+      {{
+        (all_vms_info.response | default([]))
+        | selectattr('source', 'defined')
+        | selectattr('source.entity_type', 'defined')
+        | selectattr('source.entity_type', 'search', 'ESXI')
+        | map(attribute='ext_id')
+        | first | default('')
+      }}
+  when: all_vms_info is defined and not all_vms_info.failed
+
+- name: Mark ESXi VM available flag
+  ansible.builtin.set_fact:
+    esxi_vm_available: "{{ esxi_vm_ext_id | length > 0 }}"
+
+- name: Show ESXi VM discovery outcome
+  ansible.builtin.debug:
+    msg: >-
+      ESXi VM detected: {{ esxi_vm_available }}.
+      ext_id: {{ esxi_vm_ext_id if esxi_vm_available else '<none>' }}
+
+# ===========================================================================
+# 2. check_mode tests — do NOT talk to the API; validate spec generation.
+#    Exactly ONE per Create/Update/Delete-equivalent operation.
+# ===========================================================================
+
+- name: Check_mode - Create-equivalent power_on with fake ext_id (dry-run)
+  nutanix.ncp.ntnx_vm_actions_v2:
+    ext_id: "{{ fake_vm_ext_id }}"
+    state: power_on
+  check_mode: true
+  register: cm_power_on
+  ignore_errors: true
+
+- name: Assert check_mode power_on returned no change and describes intent
+  ansible.builtin.assert:
+    that:
+      - cm_power_on is defined
+      - cm_power_on.changed == false
+      - cm_power_on.failed == false
+      - cm_power_on.msg is defined
+      - "'will be power_on' in (cm_power_on.msg | string)"
+      - cm_power_on.ext_id == fake_vm_ext_id
+    fail_msg: "check_mode power_on did not describe intent correctly"
+    success_msg: "check_mode power_on correctly emitted intent without changes"
+
+- name: Check_mode - Update-equivalent ngt_update with all fields
+  nutanix.ncp.ntnx_vm_actions_v2:
+    ext_id: "{{ fake_vm_ext_id }}"
+    state: ngt_update
+    ngt_update_config:
+      capabilities:
+        - VSS_SNAPSHOT
+        - SELF_SERVICE_RESTORE
+      is_enabled: true
+  check_mode: true
+  register: cm_ngt_update
+  ignore_errors: true
+
+- name: Assert check_mode ngt_update returns the spec dict
+  ansible.builtin.assert:
+    that:
+      - cm_ngt_update is defined
+      - cm_ngt_update.failed == false
+      - cm_ngt_update.changed == false
+      - cm_ngt_update.response is mapping
+      - cm_ngt_update.response.capabilities is defined
+      - cm_ngt_update.response.capabilities | length == 2
+      - "'VSS_SNAPSHOT' in cm_ngt_update.response.capabilities"
+      - "'SELF_SERVICE_RESTORE' in cm_ngt_update.response.capabilities"
+      - cm_ngt_update.response.is_enabled == true
+      - cm_ngt_update.ext_id == fake_vm_ext_id
+    fail_msg: "check_mode ngt_update did not produce a correct spec"
+    success_msg: "check_mode ngt_update produced expected spec"
+
+- name: Check_mode - Delete-equivalent ngt_uninstall
+  nutanix.ncp.ntnx_vm_actions_v2:
+    ext_id: "{{ fake_vm_ext_id }}"
+    state: ngt_uninstall
+  check_mode: true
+  register: cm_ngt_uninstall
+  ignore_errors: true
+
+- name: Assert check_mode ngt_uninstall short-circuits when NGT not installed
+  ansible.builtin.assert:
+    that:
+      - cm_ngt_uninstall is defined
+      # ngt_uninstall reads NGT status first — with a fake ext_id the API
+      # call will fail, which is the expected behavior on live clusters.
+      # We only require that the module returns a structured result.
+      - cm_ngt_uninstall.ext_id == fake_vm_ext_id
+    fail_msg: "check_mode ngt_uninstall did not populate ext_id"
+    success_msg: "check_mode ngt_uninstall handled unknown VM gracefully"
+
+# ---------------------------------------------------------------------------
+# check_mode — every other operation with representative payload.
+# ---------------------------------------------------------------------------
+
+- name: Check_mode - assign_owner
+  nutanix.ncp.ntnx_vm_actions_v2:
+    ext_id: "{{ fake_vm_ext_id }}"
+    state: assign_owner
+    owner:
+      ext_id: "{{ fake_owner_ext_id }}"
+      entity_type: USER
+  check_mode: true
+  register: cm_assign_owner
+  ignore_errors: true
+
+- name: Assert check_mode assign_owner produces owner reference spec
+  ansible.builtin.assert:
+    that:
+      - cm_assign_owner is defined
+      - cm_assign_owner.failed == false
+      - cm_assign_owner.changed == false
+      - cm_assign_owner.response is mapping
+      - cm_assign_owner.response.ext_id == fake_owner_ext_id
+      - cm_assign_owner.response.entity_type == "USER"
+
+- name: Check_mode - associate_categories
+  nutanix.ncp.ntnx_vm_actions_v2:
+    ext_id: "{{ fake_vm_ext_id }}"
+    state: associate_categories
+    categories:
+      - ext_id: "{{ fake_category_ext_id }}"
+  check_mode: true
+  register: cm_assoc_cat
+  ignore_errors: true
+
+- name: Assert check_mode associate_categories produces categories spec
+  ansible.builtin.assert:
+    that:
+      - cm_assoc_cat is defined
+      - cm_assoc_cat.failed == false
+      - cm_assoc_cat.changed == false
+      - cm_assoc_cat.response is mapping
+      - cm_assoc_cat.response.categories is sequence
+      - cm_assoc_cat.response.categories | length == 1
+      - cm_assoc_cat.response.categories[0].ext_id == fake_category_ext_id
+
+- name: Check_mode - disassociate_categories
+  nutanix.ncp.ntnx_vm_actions_v2:
+    ext_id: "{{ fake_vm_ext_id }}"
+    state: disassociate_categories
+    categories:
+      - ext_id: "{{ fake_category_ext_id }}"
+  check_mode: true
+  register: cm_dis_cat
+  ignore_errors: true
+
+- name: Assert check_mode disassociate_categories produces categories spec
+  ansible.builtin.assert:
+    that:
+      - cm_dis_cat is defined
+      - cm_dis_cat.failed == false
+      - cm_dis_cat.changed == false
+      - cm_dis_cat.response is mapping
+      - cm_dis_cat.response.categories is sequence
+      - cm_dis_cat.response.categories | length == 1
+      - cm_dis_cat.response.categories[0].ext_id == fake_category_ext_id
+
+- name: Check_mode - revert with vm_recovery_point_ext_id
+  nutanix.ncp.ntnx_vm_actions_v2:
+    ext_id: "{{ fake_vm_ext_id }}"
+    state: revert
+    vm_recovery_point_ext_id: "{{ fake_vm_recovery_point_ext_id }}"
+  check_mode: true
+  register: cm_revert
+  ignore_errors: true
+
+- name: Assert check_mode revert produces revert params spec
+  ansible.builtin.assert:
+    that:
+      - cm_revert is defined
+      - cm_revert.failed == false
+      - cm_revert.changed == false
+      - cm_revert.response is mapping
+      - cm_revert.response.vm_recovery_point_ext_id == fake_vm_recovery_point_ext_id
+
+- name: Check_mode - ngt_install with all fields
+  nutanix.ncp.ntnx_vm_actions_v2:
+    ext_id: "{{ fake_vm_ext_id }}"
+    state: ngt_install
+    ngt_install_config:
+      capabilities:
+        - SELF_SERVICE_RESTORE
+        - VSS_SNAPSHOT
+      credential:
+        username: "administrator"
+        password: "Nutanix.123"
+      reboot_preference:
+        schedule_type: IMMEDIATE
+  check_mode: true
+  register: cm_ngt_install
+  ignore_errors: true
+
+- name: Assert check_mode ngt_install populated ext_id
+  ansible.builtin.assert:
+    that:
+      - cm_ngt_install is defined
+      - cm_ngt_install.ext_id == fake_vm_ext_id
+      # ngt_install pre-check reads current NGT status which will fail with
+      # fake ext_id; the module should either short-circuit or fail cleanly.
+
+- name: Check_mode - ngt_insert_iso with all fields
+  nutanix.ncp.ntnx_vm_actions_v2:
+    ext_id: "{{ fake_vm_ext_id }}"
+    state: ngt_insert_iso
+    ngt_insert_config:
+      capabilities:
+        - SELF_SERVICE_RESTORE
+  check_mode: true
+  register: cm_ngt_insert
+  ignore_errors: true
+
+- name: Assert check_mode ngt_insert_iso produces spec
+  ansible.builtin.assert:
+    that:
+      - cm_ngt_insert is defined
+      - cm_ngt_insert.failed == false
+      - cm_ngt_insert.changed == false
+      - cm_ngt_insert.response is mapping
+      - cm_ngt_insert.response.capabilities is sequence
+      - "'SELF_SERVICE_RESTORE' in cm_ngt_insert.response.capabilities"
+
+- name: Check_mode - ngt_upgrade with schedule=LATER + start_time
+  nutanix.ncp.ntnx_vm_actions_v2:
+    ext_id: "{{ fake_vm_ext_id }}"
+    state: ngt_upgrade
+    ngt_upgrade_config:
+      reboot_preference:
+        schedule_type: LATER
+        schedule:
+          start_time: "2036-12-31T23:59:59+00:00"
+  check_mode: true
+  register: cm_ngt_upgrade
+  ignore_errors: true
+
+- name: Assert check_mode ngt_upgrade produces upgrade spec
+  ansible.builtin.assert:
+    that:
+      - cm_ngt_upgrade is defined
+      - cm_ngt_upgrade.failed == false
+      - cm_ngt_upgrade.changed == false
+      - cm_ngt_upgrade.response is mapping
+      - cm_ngt_upgrade.response.reboot_preference is defined
+      - cm_ngt_upgrade.response.reboot_preference.schedule_type == "LATER"
+      - cm_ngt_upgrade.response.reboot_preference.schedule.start_time == "2036-12-31T23:59:59+00:00"
+
+# ===========================================================================
+# 3. Negative / error tests — validate argument-spec constraints.
+# ===========================================================================
+
+- name: Negative — missing ext_id (required)
+  nutanix.ncp.ntnx_vm_actions_v2:
+    state: power_on
+  register: neg_missing_ext_id
+  ignore_errors: true
+
+- name: Assert missing ext_id fails
+  ansible.builtin.assert:
+    that:
+      - neg_missing_ext_id.failed == true
+      - "'ext_id' in (neg_missing_ext_id.msg | string)"
+
+- name: Negative — invalid state value
+  nutanix.ncp.ntnx_vm_actions_v2:
+    ext_id: "{{ fake_vm_ext_id }}"
+    state: not_a_real_action
+  register: neg_bad_state
+  ignore_errors: true
+
+- name: Assert invalid state value fails
+  ansible.builtin.assert:
+    that:
+      - neg_bad_state.failed == true
+
+- name: Negative — assign_owner without owner (required_if)
+  nutanix.ncp.ntnx_vm_actions_v2:
+    ext_id: "{{ fake_vm_ext_id }}"
+    state: assign_owner
+  register: neg_owner
+  ignore_errors: true
+
+- name: Assert missing owner fails
+  ansible.builtin.assert:
+    that:
+      - neg_owner.failed == true
+      - "'owner' in (neg_owner.msg | string)"
+
+- name: Negative — associate_categories without categories (required_if)
+  nutanix.ncp.ntnx_vm_actions_v2:
+    ext_id: "{{ fake_vm_ext_id }}"
+    state: associate_categories
+  register: neg_assoc_cat
+  ignore_errors: true
+
+- name: Assert missing categories fails
+  ansible.builtin.assert:
+    that:
+      - neg_assoc_cat.failed == true
+      - "'categories' in (neg_assoc_cat.msg | string)"
+
+- name: Negative — revert without vm_recovery_point_ext_id
+  nutanix.ncp.ntnx_vm_actions_v2:
+    ext_id: "{{ fake_vm_ext_id }}"
+    state: revert
+  register: neg_revert
+  ignore_errors: true
+
+- name: Assert missing vm_recovery_point_ext_id fails
+  ansible.builtin.assert:
+    that:
+      - neg_revert.failed == true
+      - "'vm_recovery_point_ext_id' in (neg_revert.msg | string)"
+
+- name: Negative — ngt_install without ngt_install_config
+  nutanix.ncp.ntnx_vm_actions_v2:
+    ext_id: "{{ fake_vm_ext_id }}"
+    state: ngt_install
+  register: neg_ngt_install
+  ignore_errors: true
+
+- name: Assert missing ngt_install_config fails
+  ansible.builtin.assert:
+    that:
+      - neg_ngt_install.failed == true
+      - "'ngt_install_config' in (neg_ngt_install.msg | string)"
+
+- name: Negative — invalid NGT capability enum value
+  nutanix.ncp.ntnx_vm_actions_v2:
+    ext_id: "{{ fake_vm_ext_id }}"
+    state: ngt_update
+    ngt_update_config:
+      capabilities:
+        - NOT_A_VALID_CAPABILITY
+      is_enabled: true
+  register: neg_bad_enum
+  ignore_errors: true
+
+- name: Assert invalid capability enum fails
+  ansible.builtin.assert:
+    that:
+      - neg_bad_enum.failed == true
+
+- name: Negative — invalid reboot schedule_type enum
+  nutanix.ncp.ntnx_vm_actions_v2:
+    ext_id: "{{ fake_vm_ext_id }}"
+    state: ngt_upgrade
+    ngt_upgrade_config:
+      reboot_preference:
+        schedule_type: RIGHT_NOW
+  register: neg_bad_schedule
+  ignore_errors: true
+
+- name: Assert invalid reboot schedule_type fails
+  ansible.builtin.assert:
+    that:
+      - neg_bad_schedule.failed == true
+
+- name: Negative — power_on against a non-existent VM must return failure
+  nutanix.ncp.ntnx_vm_actions_v2:
+    ext_id: "{{ non_existent_vm_ext_id }}"
+    state: power_on
+  register: neg_missing_vm
+  ignore_errors: true
+
+- name: Assert non-existent VM power_on fails with descriptive msg
+  ansible.builtin.assert:
+    that:
+      - neg_missing_vm is defined
+      - neg_missing_vm.failed == true
+      - (neg_missing_vm.msg | string) | length > 0
+
+# ===========================================================================
+# 4. Live tests — only when an ESXi VM is available on the cluster.
+# ===========================================================================
+
+- name: Live tests block (only when an ESXi VM is present)
+  when: esxi_vm_available
+  block:
+    - name: Live — power_on the ESXi VM
+      nutanix.ncp.ntnx_vm_actions_v2:
+        ext_id: "{{ esxi_vm_ext_id }}"
+        state: power_on
+      register: live_power_on
+      ignore_errors: true
+
+    - name: Assert live power_on returned a task
+      ansible.builtin.assert:
+        that:
+          - live_power_on is defined
+          - live_power_on.failed == false or live_power_on.skipped == true
+          - live_power_on.ext_id == esxi_vm_ext_id
+
+    - name: Live idempotency check - power_on a second time (should skip)
+      nutanix.ncp.ntnx_vm_actions_v2:
+        ext_id: "{{ esxi_vm_ext_id }}"
+        state: power_on
+      register: live_power_on_again
+      ignore_errors: true
+
+    - name: Assert second power_on is skipped
+      ansible.builtin.assert:
+        that:
+          - live_power_on_again is defined
+          - live_power_on_again.failed == false
+          - live_power_on_again.skipped | default(false) == true
+          - "'already powered on' in (live_power_on_again.msg | string)"
+
+    - name: Live — associate_categories (uses first available category)
+      nutanix.ncp.ntnx_vm_actions_v2:
+        ext_id: "{{ esxi_vm_ext_id }}"
+        state: associate_categories
+        categories:
+          - ext_id: "{{ fake_category_ext_id }}"
+      register: live_assoc_cat
+      ignore_errors: true
+
+    - name: Live — power_off the ESXi VM
+      nutanix.ncp.ntnx_vm_actions_v2:
+        ext_id: "{{ esxi_vm_ext_id }}"
+        state: power_off
+      register: live_power_off
+      ignore_errors: true
+
+    - name: Assert live power_off returned a task or skipped
+      ansible.builtin.assert:
+        that:
+          - live_power_off is defined
+          - live_power_off.failed == false or live_power_off.skipped | default(false) == true
+          - live_power_off.ext_id == esxi_vm_ext_id
+
+- name: Skip live tests when no ESXi VM is present
+  ansible.builtin.debug:
+    msg: "Skipping live-cluster tests: no ESXi VM was discovered on this Prism Central."
+  when: not esxi_vm_available

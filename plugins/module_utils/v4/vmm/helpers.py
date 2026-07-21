@@ -28,6 +28,46 @@ def get_vm(module, api_instance, ext_id):
         )
 
 
+def get_esxi_vm(module, api_instance, ext_id):
+    """
+    Get ESXi VM by ext_id
+    Args:
+        module: Ansible module
+        api_instance: EsxiVmApi instance from ntnx_vmm_py_client sdk
+        ext_id: ext_id of ESXi VM
+    Returns:
+        vm (obj): ESXi VM info object
+    """
+    try:
+        return api_instance.get_vm_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching ESXi VM info using ext_id",
+        )
+
+
+def get_esxi_vm_ngt(module, api_instance, ext_id):
+    """
+    Get ESXi VM Nutanix Guest Tools config by VM ext_id
+    Args:
+        module: Ansible module
+        api_instance: EsxiVmApi instance from ntnx_vmm_py_client sdk
+        ext_id: ext_id of ESXi VM
+    Returns:
+        ngt (obj): NGT info object
+    """
+    try:
+        return api_instance.get_nutanix_guest_tools_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching NGT info for the ESXi VM",
+        )
+
+
 def get_nic(module, api_instance, ext_id, vm_ext_id):
     """
     Get NIC by ext_id
