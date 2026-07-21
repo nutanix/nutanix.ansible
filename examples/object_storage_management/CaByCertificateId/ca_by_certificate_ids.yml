@@ -1,0 +1,64 @@
+---
+# Summary:
+# This playbook exercises the CaByCertificateId modules in the Nutanix Objects v4 namespace.
+# It shows how to:
+#   1. Discover an Object store and one of its SSL certificates
+#   2. Download the Certificate Authority (CA) of that certificate to the SDK download dir
+#   3. Download the Certificate Authority (CA) of that certificate and copy it to a
+#      specific path on the controller
+#   4. Fetch (info) the Certificate Authority (CA) of that certificate
+#
+# Notes:
+#   - Replace the module_defaults values with credentials/endpoint for your
+#     Prism Central. The default here (10.44.76.28) is a Nutanix test cluster.
+#   - The playbook is discovery-driven: it locates the first Object store on
+#     the PC and its first SSL certificate rather than hardcoding UUIDs.
+
+- name: CaByCertificateId playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "10.44.76.28"
+      nutanix_username: "admin"
+      nutanix_password: "Nutanix.123"
+      validate_certs: false
+  tasks:
+    - name: List Object stores registered on this Prism Central
+      nutanix.ncp.ntnx_object_stores_info_v2:
+      register: object_stores_result
+
+    - name: Select the first Object store as the target
+      ansible.builtin.set_fact:
+        object_store_ext_id: "{{ object_stores_result.response[0].ext_id }}"
+
+    - name: List SSL certificates of the target Object store
+      nutanix.ncp.ntnx_object_stores_certificate_info_v2:
+        object_store_ext_id: "{{ object_store_ext_id }}"
+      register: certs_result
+
+    - name: Select the first certificate as the target
+      ansible.builtin.set_fact:
+        certificate_ext_id: "{{ certs_result.response[0].ext_id }}"
+        ca_dest_path: "/tmp/object_store_ca.pem"
+
+    - name: Download the CA of the Object store certificate (SDK-managed path only)
+      nutanix.ncp.ntnx_download_ca_by_certificate_v2:
+        state: present
+        object_store_ext_id: "{{ object_store_ext_id }}"
+        ext_id: "{{ certificate_ext_id }}"
+      register: download_result
+
+    - name: Download the CA and copy it to a specific path on the controller
+      nutanix.ncp.ntnx_download_ca_by_certificate_v2:
+        state: present
+        object_store_ext_id: "{{ object_store_ext_id }}"
+        ext_id: "{{ certificate_ext_id }}"
+        dest: "{{ ca_dest_path }}"
+      register: download_to_dest_result
+
+    - name: Fetch the CA of the Object store certificate (info)
+      nutanix.ncp.ntnx_ca_by_certificate_ids_info_v2:
+        object_store_ext_id: "{{ object_store_ext_id }}"
+        ext_id: "{{ certificate_ext_id }}"
+      register: info_result

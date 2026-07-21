@@ -51,3 +51,34 @@ def get_object_store_certificate(
             exception=e,
             msg="Api Exception raised while fetching object store certificate info using ext_id",
         )
+
+
+def get_ca_by_certificate_id(
+    module, object_stores_api, certificate_ext_id, object_store_ext_id
+):
+    """
+    Download the Certificate Authority (CA) associated with an Object store
+    SSL certificate.
+
+    Wraps ``ObjectStoresApi.get_ca_by_certificate_id`` and standardizes error
+    handling so info and action modules can reuse the same call.
+
+    Args:
+        module: Ansible module
+        object_stores_api: ObjectStoresApi instance from ntnx_objects_py_client sdk
+        certificate_ext_id (str): object store certificate external ID
+        object_store_ext_id (str): object store external ID
+    return:
+        response (object): GetCaApiResponse instance from ntnx_objects_py_client sdk
+    """
+    try:
+        return object_stores_api.get_ca_by_certificate_id(
+            objectStoreExtId=object_store_ext_id,
+            certificateExtId=certificate_ext_id,
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while downloading CA by certificate ID",
+        )

@@ -1,0 +1,31 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [CaByCertificateId playbook] **********************************************
+
+TASK [List Object stores registered on this Prism Central] *********************
+ok: [localhost] => {"changed": false, "response": [{"certificate_ext_ids": ["e7855f76-fe69-455a-76b1-b3b3fddd67d2"], "cluster_ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "creation_time": "2026-07-02T11:33:54+00:00", "deployment_version": "5.3.1", "description": "object store test 2", "domain": "msp.cluster.local", "ext_id": "4fcfc2ca-b9c1-4902-4297-e51c16b5d841", "last_update_time": "2026-07-02T11:33:54+00:00", "links": null, "metadata": null, "name": "ansible-object-2", "num_worker_nodes": 1, "public_network_ips": [{"ipv4": {"prefix_length": 32, "value": "10.44.77.84"}, "ipv6": null}], "public_network_reference": "e2a93f8a-35b5-4201-8efa-fd147b1251ad", "region": null, "state": "OBJECT_STORE_AVAILABLE", "storage_network_dns_ip": {"ipv4": {"prefix_length": 32, "value": "10.44.77.82"}, "ipv6": null}, "storage_network_reference": "e2a93f8a-35b5-4201-8efa-fd147b1251ad", "storage_network_vip": {"ipv4": {"prefix_length": 32, "value": "10.44.77.81"}, "ipv6": null}, "tenant_id": null, "total_capacity_gi_b": 21474836480}, {"certificate_ext_ids": ["04fd293e-e19e-4caa-7638-9d514871e92f"], "cluster_ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "creation_time": "2026-07-02T11:05:52+00:00", "deployment_version": "5.3.1", "description": "object store test 1", "domain": "msp.cluster.local", "ext_id": "c0d841c4-c3e3-425c-7fd5-71fffbcf78b1", "last_update_time": "2026-07-02T11:05:52+00:00", "links": null, "metadata": null, "name": "ansible-object-1", "num_worker_nodes": 1, "public_network_ips": [{"ipv4": {"prefix_length": 32, "value": "10.44.77.83"}, "ipv6": null}], "public_network_reference": "e2a93f8a-35b5-4201-8efa-fd147b1251ad", "region": null, "state": "OBJECT_STORE_AVAILABLE", "storage_network_dns_ip": {"ipv4": {"prefix_length": 32, "value": "10.44.77.80"}, "ipv6": null}, "storage_network_reference": "e2a93f8a-35b5-4201-8efa-fd147b1251ad", "storage_network_vip": {"ipv4": {"prefix_length": 32, "value": "10.44.77.79"}, "ipv6": null}, "tenant_id": null, "total_capacity_gi_b": 21474836480}], "total_available_results": 2}
+
+TASK [Select the first Object store as the target] *****************************
+ok: [localhost] => {"ansible_facts": {"object_store_ext_id": "4fcfc2ca-b9c1-4902-4297-e51c16b5d841"}, "changed": false}
+
+TASK [List SSL certificates of the target Object store] ************************
+ok: [localhost] => {"changed": false, "response": [{"alternate_fqdns": null, "alternate_ips": null, "ca": null, "ext_id": "e7855f76-fe69-455a-76b1-b3b3fddd67d2", "links": null, "metadata": null, "private_key": null, "public_cert": null, "should_generate": false, "tenant_id": null}], "total_available_results": 1}
+
+TASK [Select the first certificate as the target] ******************************
+ok: [localhost] => {"ansible_facts": {"ca_dest_path": "/tmp/object_store_ca.pem", "certificate_ext_id": "e7855f76-fe69-455a-76b1-b3b3fddd67d2"}, "changed": false}
+
+TASK [Download the CA of the Object store certificate (SDK-managed path only)] ***
+changed: [localhost] => {"ca_file_path": "/tmp/ntnx_ca_download_sr_k46b2/ansible-object-2-certificate-authority-2026-07-21_2026-07-21T08:44:02.780.pem", "changed": true, "ext_id": "e7855f76-fe69-455a-76b1-b3b3fddd67d2", "response": {"data": "/tmp/ntnx_ca_download_sr_k46b2/ansible-object-2-certificate-authority-2026-07-21_2026-07-21T08:44:02.780.pem", "metadata": {"extra_info": null, "flags": [{"name": "hasError", "value": false}], "links": null, "messages": null, "total_available_results": null}}}
+
+TASK [Download the CA and copy it to a specific path on the controller] ********
+changed: [localhost] => {"ca_file_path": "/tmp/ntnx_ca_download_sr01yv54/ansible-object-2-certificate-authority-2026-07-21_2026-07-21T08:44:03.373.pem", "changed": true, "dest": "/tmp/object_store_ca.pem", "ext_id": "e7855f76-fe69-455a-76b1-b3b3fddd67d2", "gid": 10000, "group": "Domain.Users", "mode": "0644", "msg": "CA for certificate with ext_id:e7855f76-fe69-455a-76b1-b3b3fddd67d2 downloaded from object store with ext_id:4fcfc2ca-b9c1-4902-4297-e51c16b5d841 and copied to /tmp/object_store_ca.pem", "owner": "abhinav.bansal1", "response": {"data": "/tmp/ntnx_ca_download_sr01yv54/ansible-object-2-certificate-authority-2026-07-21_2026-07-21T08:44:03.373.pem", "metadata": {"extra_info": null, "flags": [{"name": "hasError", "value": false}], "links": null, "messages": null, "total_available_results": null}}, "size": 1216, "state": "file", "uid": 28624}
+
+TASK [Fetch the CA of the Object store certificate (info)] *********************
+ok: [localhost] => {"ca_file_path": "/tmp/ntnx_ca_info_tntisctw/ansible-object-2-certificate-authority-2026-07-21_2026-07-21T08:44:04.099.pem", "changed": false, "ext_id": "e7855f76-fe69-455a-76b1-b3b3fddd67d2", "response": {"data": "/tmp/ntnx_ca_info_tntisctw/ansible-object-2-certificate-authority-2026-07-21_2026-07-21T08:44:04.099.pem", "metadata": {"extra_info": null, "flags": [{"name": "hasError", "value": false}], "links": null, "messages": null, "total_available_results": null}}}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=7    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
