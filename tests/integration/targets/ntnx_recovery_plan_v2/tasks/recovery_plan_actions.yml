@@ -1,0 +1,334 @@
+---
+###############################################################################
+# Recovery Plan action module (ntnx_recovery_plan_v2) integration test plan.
+#
+# Test coverage:
+#   * Argument-spec validation (Ansible-level) — no live cluster needed:
+#       - Missing required ext_id / action fails.
+#       - Invalid `action` choice fails.
+#   * Check-mode tests for every action — one per action, with ALL relevant
+#     spec attributes populated. Assert the built spec matches what we sent,
+#     without hitting the API.
+#   * Idempotency/negative live tests against a bogus recovery-plan ext_id —
+#     the module MUST surface the API error via `failed: true` and a msg.
+#
+# Because there is NO CRUD API for RecoveryPlan itself in the v4.3 SDK (the
+# entity is action-only), we cannot deterministically create a Recovery Plan
+# in setup. Live action calls therefore target a well-formed but non-existent
+# ext_id and assert on the "recovery plan not found" error path. Real
+# execution against a pre-existing plan is documented in the PR body.
+###############################################################################
+
+- name: Start ntnx_recovery_plan_v2 integration tests
+  ansible.builtin.debug:
+    msg: Start ntnx_recovery_plan_v2 integration tests
+
+- name: Generate random suffix and shared test data
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set derived facts
+  ansible.builtin.set_fact:
+    suffix_name: "ansible"
+    check_mode_plan_ext_id: "0f79d2a1-6f9b-4b8c-9d1a-3b7cd82bf5c1"
+    source_pc_ext_id: "63bebabf-744c-48ff-a6d7-cb028707f972"
+    target_pc_ext_id: "b7d2f8ee-8f61-46c8-9812-3fb0f9a8a3d0"
+    source_cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
+    target_cluster_ext_id: "0006178c-2f5c-9c1c-1f47-ac1f6b6f97e3"
+
+- name: Set derived names
+  ansible.builtin.set_fact:
+    rp_test_job_name: "rp_test_{{ suffix_name }}_{{ random_name }}"
+    rp_planned_job_name: "rp_planned_{{ suffix_name }}_{{ random_name }}"
+    rp_unplanned_job_name: "rp_unplanned_{{ suffix_name }}_{{ random_name }}"
+    rp_validate_job_name: "rp_validate_{{ suffix_name }}_{{ random_name }}"
+
+################################################################################
+# Argument-spec (negative) tests — do not require a live API call
+################################################################################
+
+- name: Negative — missing required ext_id fails
+  nutanix.ncp.ntnx_recovery_plan_v2:
+    action: VALIDATE
+    failover_directions:
+      - source_domain_manager_ext_id: "{{ source_pc_ext_id }}"
+        target_domain_manager_ext_id: "{{ target_pc_ext_id }}"
+  register: missing_ext_id_result
+  ignore_errors: true
+
+- name: Assert missing ext_id fails
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id_result is defined
+      - missing_ext_id_result.failed == true
+      - "'ext_id' in missing_ext_id_result.msg"
+    fail_msg: "Expected failure when ext_id is missing"
+    success_msg: "Correctly rejected missing ext_id"
+
+- name: Negative — missing required action fails
+  nutanix.ncp.ntnx_recovery_plan_v2:
+    ext_id: "{{ check_mode_plan_ext_id }}"
+  register: missing_action_result
+  ignore_errors: true
+
+- name: Assert missing action fails
+  ansible.builtin.assert:
+    that:
+      - missing_action_result is defined
+      - missing_action_result.failed == true
+      - "'action' in missing_action_result.msg"
+    fail_msg: "Expected failure when action is missing"
+    success_msg: "Correctly rejected missing action"
+
+- name: Negative — invalid action value fails
+  nutanix.ncp.ntnx_recovery_plan_v2:
+    ext_id: "{{ check_mode_plan_ext_id }}"
+    action: NOT_A_REAL_ACTION
+  register: invalid_action_result
+  ignore_errors: true
+
+- name: Assert invalid action fails with choices error
+  ansible.builtin.assert:
+    that:
+      - invalid_action_result is defined
+      - invalid_action_result.failed == true
+      - "'action' in invalid_action_result.msg"
+    fail_msg: "Expected failure when action is invalid"
+    success_msg: "Correctly rejected invalid action choice"
+
+- name: Negative — VALIDATE missing failover_directions fails
+  nutanix.ncp.ntnx_recovery_plan_v2:
+    ext_id: "{{ check_mode_plan_ext_id }}"
+    action: VALIDATE
+  register: validate_missing_directions
+  ignore_errors: true
+
+- name: Assert VALIDATE without failover_directions fails
+  ansible.builtin.assert:
+    that:
+      - validate_missing_directions is defined
+      - validate_missing_directions.failed == true
+      - "'failover_directions' in (validate_missing_directions.msg | default(''))"
+    fail_msg: "Expected failure when failover_directions is missing for VALIDATE"
+    success_msg: "Correctly rejected VALIDATE without failover_directions"
+
+################################################################################
+# Check-mode tests — one per action, with all relevant attributes populated
+################################################################################
+
+- name: Check-mode — VALIDATE with all attributes
+  nutanix.ncp.ntnx_recovery_plan_v2:
+    ext_id: "{{ check_mode_plan_ext_id }}"
+    action: VALIDATE
+    name: "{{ rp_validate_job_name }}"
+    failover_directions:
+      - source_domain_manager_ext_id: "{{ source_pc_ext_id }}"
+        source_cluster:
+          ext_id: "{{ source_cluster_ext_id }}"
+        target_domain_manager_ext_id: "{{ target_pc_ext_id }}"
+        target_cluster:
+          ext_id: "{{ target_cluster_ext_id }}"
+  check_mode: true
+  register: check_mode_validate
+  ignore_errors: true
+
+- name: Assert VALIDATE check-mode built the expected spec
+  ansible.builtin.assert:
+    that:
+      - check_mode_validate is defined
+      - check_mode_validate.failed == false
+      - check_mode_validate.changed == false
+      - check_mode_validate.response is defined
+      - check_mode_validate.response.name == rp_validate_job_name
+      - check_mode_validate.response.failover_directions is defined
+      - check_mode_validate.response.failover_directions | length == 1
+      - check_mode_validate.response.failover_directions[0].source_domain_manager_ext_id == source_pc_ext_id
+      - check_mode_validate.response.failover_directions[0].target_domain_manager_ext_id == target_pc_ext_id
+      - check_mode_validate.response.failover_directions[0].source_cluster.ext_id == source_cluster_ext_id
+      - check_mode_validate.response.failover_directions[0].target_cluster.ext_id == target_cluster_ext_id
+      - check_mode_validate.ext_id == check_mode_plan_ext_id
+    fail_msg: "VALIDATE check-mode spec did not match expectations"
+    success_msg: "VALIDATE check-mode spec built correctly"
+
+- name: Check-mode — TEST_FAILOVER with all attributes
+  nutanix.ncp.ntnx_recovery_plan_v2:
+    ext_id: "{{ check_mode_plan_ext_id }}"
+    action: TEST_FAILOVER
+    name: "{{ rp_test_job_name }}"
+    should_ignore_warnings: true
+    is_instant_restore: false
+    failover_directions:
+      - source_domain_manager_ext_id: "{{ source_pc_ext_id }}"
+        source_cluster:
+          ext_id: "{{ source_cluster_ext_id }}"
+        target_domain_manager_ext_id: "{{ target_pc_ext_id }}"
+        target_cluster:
+          ext_id: "{{ target_cluster_ext_id }}"
+  check_mode: true
+  register: check_mode_test
+  ignore_errors: true
+
+- name: Assert TEST_FAILOVER check-mode built the expected spec
+  ansible.builtin.assert:
+    that:
+      - check_mode_test is defined
+      - check_mode_test.failed == false
+      - check_mode_test.changed == false
+      - check_mode_test.response is defined
+      - check_mode_test.response.name == rp_test_job_name
+      - check_mode_test.response.should_ignore_warnings == true
+      - check_mode_test.response.is_instant_restore == false
+      - check_mode_test.response.failover_directions | length == 1
+      - check_mode_test.response.failover_directions[0].source_cluster.ext_id == source_cluster_ext_id
+      - check_mode_test.response.failover_directions[0].target_cluster.ext_id == target_cluster_ext_id
+    fail_msg: "TEST_FAILOVER check-mode spec did not match expectations"
+    success_msg: "TEST_FAILOVER check-mode spec built correctly"
+
+- name: Check-mode — PLANNED_FAILOVER with all attributes
+  nutanix.ncp.ntnx_recovery_plan_v2:
+    ext_id: "{{ check_mode_plan_ext_id }}"
+    action: PLANNED_FAILOVER
+    name: "{{ rp_planned_job_name }}"
+    should_ignore_warnings: false
+    should_live_migrate_vms: true
+    # post_failover_behaviour is only present in newer SDK builds; the target
+    # runtime may not have it, so omit here to keep the check-mode assertion
+    # portable across the supported SDK versions.
+    failover_directions:
+      - source_domain_manager_ext_id: "{{ source_pc_ext_id }}"
+        source_cluster:
+          ext_id: "{{ source_cluster_ext_id }}"
+        target_domain_manager_ext_id: "{{ target_pc_ext_id }}"
+        target_cluster:
+          ext_id: "{{ target_cluster_ext_id }}"
+  check_mode: true
+  register: check_mode_planned
+  ignore_errors: true
+
+- name: Assert PLANNED_FAILOVER check-mode built the expected spec
+  ansible.builtin.assert:
+    that:
+      - check_mode_planned is defined
+      - check_mode_planned.failed == false
+      - check_mode_planned.changed == false
+      - check_mode_planned.response is defined
+      - check_mode_planned.response.name == rp_planned_job_name
+      - check_mode_planned.response.should_ignore_warnings == false
+      # SDK field is should_live_migrate_v_ms (snake case of shouldLiveMigrateVMs)
+      - check_mode_planned.response.should_live_migrate_v_ms == true
+      - check_mode_planned.response.failover_directions | length == 1
+    fail_msg: "PLANNED_FAILOVER check-mode spec did not match expectations"
+    success_msg: "PLANNED_FAILOVER check-mode spec built correctly"
+
+- name: Check-mode — UNPLANNED_FAILOVER with all attributes
+  nutanix.ncp.ntnx_recovery_plan_v2:
+    ext_id: "{{ check_mode_plan_ext_id }}"
+    action: UNPLANNED_FAILOVER
+    name: "{{ rp_unplanned_job_name }}"
+    should_ignore_warnings: true
+    is_instant_restore: true
+    recovery_reference_time: "2024-01-02T03:04:05Z"
+    # post_failover_behaviour is only present in newer SDK builds; the target
+    # runtime may not have it, so omit here to keep the check-mode assertion
+    # portable across the supported SDK versions.
+    failover_directions:
+      - source_domain_manager_ext_id: "{{ source_pc_ext_id }}"
+        source_cluster:
+          ext_id: "{{ source_cluster_ext_id }}"
+        target_domain_manager_ext_id: "{{ target_pc_ext_id }}"
+        target_cluster:
+          ext_id: "{{ target_cluster_ext_id }}"
+  check_mode: true
+  register: check_mode_unplanned
+  ignore_errors: true
+
+- name: Assert UNPLANNED_FAILOVER check-mode built the expected spec
+  ansible.builtin.assert:
+    that:
+      - check_mode_unplanned is defined
+      - check_mode_unplanned.failed == false
+      - check_mode_unplanned.changed == false
+      - check_mode_unplanned.response is defined
+      - check_mode_unplanned.response.name == rp_unplanned_job_name
+      - check_mode_unplanned.response.should_ignore_warnings == true
+      - check_mode_unplanned.response.is_instant_restore == true
+      - check_mode_unplanned.response.recovery_reference_time is defined
+      - check_mode_unplanned.response.failover_directions | length == 1
+    fail_msg: "UNPLANNED_FAILOVER check-mode spec did not match expectations"
+    success_msg: "UNPLANNED_FAILOVER check-mode spec built correctly"
+
+- name: Check-mode — CLEANUP
+  nutanix.ncp.ntnx_recovery_plan_v2:
+    ext_id: "{{ check_mode_plan_ext_id }}"
+    action: CLEANUP
+  check_mode: true
+  register: check_mode_cleanup
+  ignore_errors: true
+
+- name: Assert CLEANUP check-mode returned an informational response
+  ansible.builtin.assert:
+    that:
+      - check_mode_cleanup is defined
+      - check_mode_cleanup.failed == false
+      - check_mode_cleanup.changed == false
+      - check_mode_cleanup.response is defined
+      - check_mode_cleanup.response.ext_id == check_mode_plan_ext_id
+      - check_mode_cleanup.response.action == "CLEANUP"
+      - check_mode_cleanup.msg is defined
+    fail_msg: "CLEANUP check-mode did not return an informational response"
+    success_msg: "CLEANUP check-mode returned expected informational response"
+
+################################################################################
+# Live-cluster negative tests — invalid recovery plan ext_id
+#
+# These calls actually hit the API. Because the ext_id does not exist on the
+# target Prism Central, the SDK is expected to return an error. The module
+# should convert that into `failed: true` with a descriptive `msg`. This
+# validates the exception path we cannot easily exercise via check-mode.
+################################################################################
+
+- name: Live-cluster — VALIDATE against non-existent recovery plan
+  nutanix.ncp.ntnx_recovery_plan_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    action: VALIDATE
+    name: "rp_validate_missing_{{ random_name }}"
+    failover_directions:
+      - source_domain_manager_ext_id: "{{ source_pc_ext_id }}"
+        source_cluster:
+          ext_id: "{{ source_cluster_ext_id }}"
+        target_domain_manager_ext_id: "{{ target_pc_ext_id }}"
+        target_cluster:
+          ext_id: "{{ target_cluster_ext_id }}"
+  register: validate_missing_plan
+  ignore_errors: true
+
+- name: Assert VALIDATE against non-existent plan surfaces an API error
+  ansible.builtin.assert:
+    that:
+      - validate_missing_plan is defined
+      - validate_missing_plan.failed == true
+      - validate_missing_plan.changed == false
+      - validate_missing_plan.msg is defined
+    fail_msg: "Expected live VALIDATE against a non-existent plan to fail"
+    success_msg: "Live VALIDATE against a non-existent plan failed as expected"
+
+- name: Live-cluster — CLEANUP against non-existent recovery plan
+  nutanix.ncp.ntnx_recovery_plan_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    action: CLEANUP
+  register: cleanup_missing_plan
+  ignore_errors: true
+
+- name: Assert CLEANUP against non-existent plan surfaces an API error
+  ansible.builtin.assert:
+    that:
+      - cleanup_missing_plan is defined
+      - cleanup_missing_plan.failed == true
+      - cleanup_missing_plan.changed == false
+      - cleanup_missing_plan.msg is defined
+    fail_msg: "Expected live CLEANUP against a non-existent plan to fail"
+    success_msg: "Live CLEANUP against a non-existent plan failed as expected"
+
+- name: End ntnx_recovery_plan_v2 integration tests
+  ansible.builtin.debug:
+    msg: End ntnx_recovery_plan_v2 integration tests

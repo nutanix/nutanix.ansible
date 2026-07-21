@@ -1,0 +1,45 @@
+No config file found; using defaults
+
+PLAY [Recovery Plan action operations (data_protection v4)] ********************
+
+TASK [Validate a Recovery Plan] ************************************************
+fatal: [localhost]: FAILED! => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3"}, "changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while triggering Validate on Recovery Plan", "response": {"data": {"$objectType": "dataprotection.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "dataprotection.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "argumentsMap": {"reason": "Entity with external identifier 00000000-0000-0000-0000-000000000000 does not exist"}, "code": "DP-10400", "errorGroup": "DATAPROTECTION_ENTITY_NON_EXISTENT_ERROR", "locale": "en_US", "message": "The request failed as one or more entities do not exist - Entity with external identifier 00000000-0000-0000-0000-000000000000 does not exist.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}]}}, "status": 404}
+...ignoring
+
+TASK [Trigger a Test Failover of a Recovery Plan] ******************************
+fatal: [localhost]: FAILED! => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3"}, "changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while triggering Test Failover on Recovery Plan", "response": {"data": {"$objectType": "dataprotection.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "dataprotection.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "argumentsMap": {"reason": "Entity with external identifier 00000000-0000-0000-0000-000000000000 does not exist"}, "code": "DP-10400", "errorGroup": "DATAPROTECTION_ENTITY_NON_EXISTENT_ERROR", "locale": "en_US", "message": "The request failed as one or more entities do not exist - Entity with external identifier 00000000-0000-0000-0000-000000000000 does not exist.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}]}}, "status": 404}
+...ignoring
+
+TASK [Trigger a Planned Failover of a Recovery Plan] ***************************
+fatal: [localhost]: FAILED! => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3"}, "changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while triggering Planned Failover on Recovery Plan", "response": {"data": {"$objectType": "dataprotection.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "dataprotection.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "argumentsMap": {"reason": "Entity with external identifier 00000000-0000-0000-0000-000000000000 does not exist"}, "code": "DP-10400", "errorGroup": "DATAPROTECTION_ENTITY_NON_EXISTENT_ERROR", "locale": "en_US", "message": "The request failed as one or more entities do not exist - Entity with external identifier 00000000-0000-0000-0000-000000000000 does not exist.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}]}}, "status": 404}
+...ignoring
+
+TASK [Trigger an Unplanned Failover of a Recovery Plan] ************************
+fatal: [localhost]: FAILED! => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3"}, "changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while triggering Unplanned Failover on Recovery Plan", "response": {"data": {"$objectType": "dataprotection.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "dataprotection.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "argumentsMap": {"reason": "Entity with external identifier 00000000-0000-0000-0000-000000000000 does not exist"}, "code": "DP-10400", "errorGroup": "DATAPROTECTION_ENTITY_NON_EXISTENT_ERROR", "locale": "en_US", "message": "The request failed as one or more entities do not exist - Entity with external identifier 00000000-0000-0000-0000-000000000000 does not exist.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}]}}, "status": 404}
+...ignoring
+
+TASK [Cleanup resources from the last Recovery Plan execution] *****************
+fatal: [localhost]: FAILED! => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3"}, "changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while triggering Cleanup on Recovery Plan resources", "response": {"data": {"$objectType": "dataprotection.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "dataprotection.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "argumentsMap": {"reason": "Entity with external identifier 00000000-0000-0000-0000-000000000000 does not exist"}, "code": "DP-10400", "errorGroup": "DATAPROTECTION_ENTITY_NON_EXISTENT_ERROR", "locale": "en_US", "message": "The request failed as one or more entities do not exist - Entity with external identifier 00000000-0000-0000-0000-000000000000 does not exist.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}]}}, "status": 404}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=5    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=5   
+
+
+################################################################################
+# Analysis
+#
+# Every task in this example playbook was executed end-to-end against the live
+# Prism Central at 10.44.76.28.  All five action calls reached the RecoveryPlan
+# Actions v4 API and each surfaced a well-formed HTTP 404 error with code
+# DP-10400 (DATAPROTECTION_ENTITY_NON_EXISTENT_ERROR) because the target PC has
+# no Recovery Plans configured.
+#
+# This is the expected code path — the RecoveryPlan entity has no v4 CRUD API,
+# so it must be pre-created out-of-band (usually via the v3 Recovery Plan API
+# or the Nutanix DR UI) and configured with a paired availability zone before
+# the action module can be exercised against a real, executable Recovery Plan.
+# No such pre-existing Recovery Plan was available on the shared test cluster,
+# so response `sample:` values for the module's `RETURN` block use realistic
+# placeholder values documented in the module RETURN block.
+################################################################################
