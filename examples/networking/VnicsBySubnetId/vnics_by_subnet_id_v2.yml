@@ -1,0 +1,85 @@
+---
+# Summary:
+# This playbook demonstrates how to fetch information about virtual NICs (vNICs)
+# that are attached to a given subnet in Nutanix Prism Central using the v4 API.
+#
+# The Nutanix v4 networking API exposes only a read-only listing endpoint for this
+# entity (GET /networking/v4.3/config/subnets/{subnetExtId}/vnics) — there is NO
+# Create / Update / Delete API for VnicsBySubnetId. Consequently only the info
+# module (`ntnx_vnics_by_subnet_ids_info_v2`) is provided in this playbook.
+#
+# The playbook covers:
+#   1. List ALL virtual NICs attached to a subnet (basic list).
+#   2. List virtual NICs on a subnet with a `limit` (server-side pagination).
+#   3. List virtual NICs on a subnet with an OData `orderby` (server-side sort).
+#   4. List virtual NICs on a subnet with an OData `select` (server-side projection).
+#   5. List virtual NICs on a subnet with `page` + `limit` (paginated list).
+#   6. Fetch a specific virtual NIC on a subnet by its external ID
+#      (client-side filter — see the module documentation for details).
+#
+# Prerequisites (must exist on Prism Central before running):
+#   - An accessible Nutanix Prism Central endpoint.
+#   - A VLAN or overlay subnet whose UUID is used as `subnet_ext_id`.
+#   - At least one VM with a NIC on that subnet (otherwise the list is empty).
+- name: VnicsBySubnetId (list virtual NICs by subnet ID) playbook
+  hosts: localhost
+  gather_facts: false
+  vars:
+    # Override these on the command line, e.g.:
+    #   ansible-playbook vnics_by_subnet_id_v2.yml \
+    #     -e ip=10.44.76.28 -e username=admin -e password=Nutanix.123 \
+    #     -e subnet_uuid=<subnet_ext_id> -e vnic_uuid=<vnic_ext_id>
+    ip: "<pc_ip>"
+    username: "<user>"
+    password: "<pass>"
+    validate_certs: false
+    subnet_uuid: "<subnet_ext_id>"
+    vnic_uuid: "<vnic_ext_id>"
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: "{{ validate_certs }}"
+  tasks:
+    - name: List all virtual NICs on a subnet
+      nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+        subnet_ext_id: "{{ subnet_uuid }}"
+      register: vnics_list_result
+      ignore_errors: true
+
+    - name: List virtual NICs on a subnet with a limit
+      nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+        subnet_ext_id: "{{ subnet_uuid }}"
+        limit: 1
+      register: vnics_limited_result
+      ignore_errors: true
+
+    - name: List virtual NICs on a subnet sorted by MAC address (OData orderby)
+      nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+        subnet_ext_id: "{{ subnet_uuid }}"
+        orderby: "macAddress desc"
+      register: vnics_sorted_result
+      ignore_errors: true
+
+    - name: List virtual NICs on a subnet returning only ext_id and MAC (OData select)
+      nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+        subnet_ext_id: "{{ subnet_uuid }}"
+        select: "extId,macAddress"
+      register: vnics_selected_result
+      ignore_errors: true
+
+    - name: List virtual NICs on a subnet with paging (page + limit)
+      nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+        subnet_ext_id: "{{ subnet_uuid }}"
+        page: 0
+        limit: 2
+      register: vnics_paged_result
+      ignore_errors: true
+
+    - name: Fetch a specific virtual NIC on a subnet by its external ID
+      nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+        subnet_ext_id: "{{ subnet_uuid }}"
+        ext_id: "{{ vnic_uuid }}"
+      register: vnic_by_ext_id_result
+      ignore_errors: true

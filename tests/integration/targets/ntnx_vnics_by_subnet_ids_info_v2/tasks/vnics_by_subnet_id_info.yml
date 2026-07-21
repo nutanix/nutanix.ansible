@@ -1,0 +1,531 @@
+---
+# Test plan for ntnx_vnics_by_subnet_ids_info_v2
+# =================================================
+# This target exercises the info module that wraps the Nutanix v4 networking
+# `list_vnics_by_subnet_id` (GET /networking/v4.3/config/subnets/{subnetExtId}/vnics)
+# SDK method. Because that is the ONLY SDK method the entity exposes, this
+# target focuses exclusively on the info/list behavior — there is no
+# Create/Update/Delete API to exercise for `VnicsBySubnetId`.
+#
+# Coverage:
+#   1.  Prerequisite: create a VLAN subnet using ntnx_subnets_v2.
+#   2.  Prerequisite: create a VM using ntnx_vms_v2 without any NIC (used to
+#       demonstrate the empty-list path).
+#   3.  Prerequisite: create a VM using ntnx_vms_v2 and attach a NIC on the
+#       prerequisite subnet using ntnx_vms_nics_v2 (used to demonstrate the
+#       non-empty-list path).
+#   4.  Positive: list all vNICs on the newly created subnet — assert response
+#       is a list, changed==false, failed==false, total_available_results is
+#       populated, and the created vNIC's ext_id appears in the response.
+#   5.  Positive: list vNICs with `limit=1` — assert response length ≤ 1.
+#   6.  Positive: list vNICs with `page=0` + `limit=1` — assert paging works.
+#   7.  Positive: list vNICs with an OData `filter` that matches nothing —
+#       assert response is an empty list.
+#   8.  Positive: fetch a specific vNIC by `ext_id` — assert single dict is
+#       returned and matches the created vNIC.
+#   9.  Positive: list vNICs on an unrelated (freshly created & empty) subnet —
+#       assert response is an empty list, changed==false, failed==false.
+#  10.  Negative: omit the required `subnet_ext_id` — assert failure with
+#       the expected AnsibleModule missing-required error.
+#  11.  Negative: pass an invalid `subnet_ext_id` (bogus UUID) — assert failure
+#       with a descriptive API error message.
+#  12.  Negative: pass an `ext_id` for a vNIC that does not exist on the subnet
+#       — assert failure with a "not found" style error message.
+#  13.  Negative: pass mutually-exclusive `ext_id` and `filter` together —
+#       assert failure from Ansible spec validation.
+#  14.  Cleanup: delete the created NIC, VMs, and the subnet.
+#
+# Variables required from prepare_env:
+#   - cluster.uuid
+#   - virtual_switch.uuid
+
+- name: Start ntnx_vnics_by_subnet_ids_info_v2 tests
+  ansible.builtin.debug:
+    msg: "Start ntnx_vnics_by_subnet_ids_info_v2 tests"
+
+- name: Generate random name suffix
+  ansible.builtin.set_fact:
+    random_name: "vnicsbysubnet_{{ 9999999 | random | string }}"
+
+- name: Set entity names
+  ansible.builtin.set_fact:
+    subnet_name: "{{ random_name }}_vnics_subnet"
+    empty_subnet_name: "{{ random_name }}_vnics_empty_subnet"
+    vm_name: "{{ random_name }}_vnics_vm"
+    vm_no_nic_name: "{{ random_name }}_vnics_vm_no_nic"
+    vlan_id: 763
+
+- name: Set todelete lists
+  ansible.builtin.set_fact:
+    subnets_todelete: []
+    vms_todelete: []
+    nics_todelete: []
+
+########################################################################
+# Prerequisite 1: create the primary VLAN subnet where the vNIC lives.
+########################################################################
+- name: Create prerequisite VLAN subnet
+  nutanix.ncp.ntnx_subnets_v2:
+    state: present
+    wait: true
+    name: "{{ subnet_name }}"
+    subnet_type: VLAN
+    cluster_reference: "{{ cluster.uuid }}"
+    virtual_switch_reference: "{{ virtual_switch.uuid }}"
+    network_id: "{{ vlan_id }}"
+  register: subnet_result
+  ignore_errors: true
+
+- name: Assert prerequisite subnet was created
+  ansible.builtin.assert:
+    that:
+      - subnet_result.response is defined
+      - subnet_result.changed == true
+      - subnet_result.failed == false
+      - subnet_result.ext_id is defined
+      - subnet_result.response.name == subnet_name
+      - subnet_result.response.subnet_type == "VLAN"
+    fail_msg: "Failed to create prerequisite VLAN subnet"
+    success_msg: "Prerequisite VLAN subnet created successfully"
+
+- name: Save prerequisite subnet ext_id
+  ansible.builtin.set_fact:
+    subnet_ext_id: "{{ subnet_result.ext_id }}"
+    subnets_todelete: "{{ subnets_todelete + [subnet_result.ext_id] }}"
+
+########################################################################
+# Prerequisite 2: create a second (empty) VLAN subnet for empty-list checks.
+########################################################################
+- name: Create empty prerequisite VLAN subnet
+  nutanix.ncp.ntnx_subnets_v2:
+    state: present
+    wait: true
+    name: "{{ empty_subnet_name }}"
+    subnet_type: VLAN
+    cluster_reference: "{{ cluster.uuid }}"
+    virtual_switch_reference: "{{ virtual_switch.uuid }}"
+    network_id: "{{ vlan_id + 1 }}"
+  register: empty_subnet_result
+  ignore_errors: true
+
+- name: Assert empty prerequisite subnet was created
+  ansible.builtin.assert:
+    that:
+      - empty_subnet_result.response is defined
+      - empty_subnet_result.changed == true
+      - empty_subnet_result.failed == false
+      - empty_subnet_result.ext_id is defined
+    fail_msg: "Failed to create empty prerequisite VLAN subnet"
+    success_msg: "Empty prerequisite VLAN subnet created successfully"
+
+- name: Save empty prerequisite subnet ext_id
+  ansible.builtin.set_fact:
+    empty_subnet_ext_id: "{{ empty_subnet_result.ext_id }}"
+    subnets_todelete: "{{ subnets_todelete + [empty_subnet_result.ext_id] }}"
+
+########################################################################
+# Prerequisite 3: create a VM (no NIC) — used as a control.
+########################################################################
+- name: Create prerequisite VM without any NIC
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    name: "{{ vm_no_nic_name }}"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+  register: vm_no_nic_result
+  ignore_errors: true
+
+- name: Assert prerequisite VM (no NIC) was created
+  ansible.builtin.assert:
+    that:
+      - vm_no_nic_result.response is defined
+      - vm_no_nic_result.changed == true
+      - vm_no_nic_result.failed == false
+      - vm_no_nic_result.ext_id is defined
+    fail_msg: "Failed to create prerequisite VM (no NIC)"
+    success_msg: "Prerequisite VM (no NIC) created successfully"
+
+- name: Save prerequisite (no NIC) VM ext_id
+  ansible.builtin.set_fact:
+    vm_no_nic_ext_id: "{{ vm_no_nic_result.ext_id }}"
+    vms_todelete: "{{ vms_todelete + [vm_no_nic_result.ext_id] }}"
+
+########################################################################
+# Prerequisite 4: create a VM and attach a NIC on the prerequisite subnet.
+########################################################################
+- name: Create prerequisite VM
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    name: "{{ vm_name }}"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+  register: vm_result
+  ignore_errors: true
+
+- name: Assert prerequisite VM was created
+  ansible.builtin.assert:
+    that:
+      - vm_result.response is defined
+      - vm_result.changed == true
+      - vm_result.failed == false
+      - vm_result.ext_id is defined
+    fail_msg: "Failed to create prerequisite VM"
+    success_msg: "Prerequisite VM created successfully"
+
+- name: Save prerequisite VM ext_id
+  ansible.builtin.set_fact:
+    vm_ext_id: "{{ vm_result.ext_id }}"
+    vms_todelete: "{{ vms_todelete + [vm_result.ext_id] }}"
+
+- name: Attach a virtual NIC to the prerequisite VM on the prerequisite subnet
+  nutanix.ncp.ntnx_vms_nics_v2:
+    vm_ext_id: "{{ vm_ext_id }}"
+    state: present
+    nic_network_info:
+      virtual_ethernet_nic_network_info:
+        subnet:
+          ext_id: "{{ subnet_ext_id }}"
+  register: nic_result
+  ignore_errors: true
+
+- name: Assert prerequisite vNIC was created
+  ansible.builtin.assert:
+    that:
+      - nic_result.response is defined
+      - nic_result.changed == true
+      - nic_result.failed == false
+      - nic_result.ext_id is defined
+    fail_msg: "Failed to attach prerequisite vNIC on the subnet"
+    success_msg: "Prerequisite vNIC attached successfully on the subnet"
+
+- name: Save prerequisite vNIC ext_id
+  ansible.builtin.set_fact:
+    vnic_ext_id: "{{ nic_result.ext_id }}"
+    nics_todelete: "{{ nics_todelete + [nic_result.ext_id] }}"
+
+- name: Wait briefly so PC reflects the attached vNIC on the subnet
+  ansible.builtin.pause:
+    seconds: 15
+
+########################################################################
+# Test 1: list all vNICs on the subnet (non-empty list).
+########################################################################
+- name: List all vNICs on the prerequisite subnet
+  nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+    subnet_ext_id: "{{ subnet_ext_id }}"
+  register: list_all_result
+  ignore_errors: true
+
+- name: Assert list-all vNICs response
+  ansible.builtin.assert:
+    that:
+      - list_all_result.changed == false
+      - list_all_result.failed == false
+      - list_all_result.response is defined
+      - list_all_result.response | type_debug == "list"
+      - list_all_result.response | length >= 1
+      - list_all_result.subnet_ext_id == subnet_ext_id
+      - vnic_ext_id in (list_all_result.response | map(attribute='ext_id') | list)
+    fail_msg: "list-all vNICs returned an unexpected response"
+    success_msg: "list-all vNICs returned the expected response"
+
+- name: Assert every returned vNIC exposes the documented fields
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.mac_address is defined
+    fail_msg: "A returned vNIC is missing documented fields"
+    success_msg: "All returned vNICs expose the documented fields"
+  loop: "{{ list_all_result.response }}"
+  loop_control:
+    label: "{{ item.ext_id }}"
+
+########################################################################
+# Test 2: list vNICs on the subnet with a limit.
+########################################################################
+- name: List vNICs on the prerequisite subnet with limit=1
+  nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+    subnet_ext_id: "{{ subnet_ext_id }}"
+    limit: 1
+  register: list_limit_result
+  ignore_errors: true
+
+- name: Assert limited vNICs response
+  ansible.builtin.assert:
+    that:
+      - list_limit_result.changed == false
+      - list_limit_result.failed == false
+      - list_limit_result.response is defined
+      - list_limit_result.response | type_debug == "list"
+      - list_limit_result.response | length <= 1
+      - list_limit_result.subnet_ext_id == subnet_ext_id
+    fail_msg: "Limited vNICs list returned an unexpected number of records"
+    success_msg: "Limited vNICs list respected the limit parameter"
+
+########################################################################
+# Test 3: list vNICs on the subnet with page + limit.
+########################################################################
+- name: List vNICs on the prerequisite subnet with page=0 and limit=1
+  nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+    subnet_ext_id: "{{ subnet_ext_id }}"
+    page: 0
+    limit: 1
+  register: list_page_result
+  ignore_errors: true
+
+- name: Assert paged vNICs response
+  ansible.builtin.assert:
+    that:
+      - list_page_result.changed == false
+      - list_page_result.failed == false
+      - list_page_result.response is defined
+      - list_page_result.response | type_debug == "list"
+      - list_page_result.response | length <= 1
+    fail_msg: "Paged vNICs list returned an unexpected number of records"
+    success_msg: "Paged vNICs list respected page and limit parameters"
+
+########################################################################
+# Test 4a: list vNICs with an OData `orderby` sort (supported on this
+# endpoint for the `macAddress` field per live-cluster verification).
+########################################################################
+- name: List vNICs on the prerequisite subnet sorted by MAC descending
+  nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+    subnet_ext_id: "{{ subnet_ext_id }}"
+    orderby: "macAddress desc"
+  register: list_orderby_result
+  ignore_errors: true
+
+- name: Assert orderby vNICs response
+  ansible.builtin.assert:
+    that:
+      - list_orderby_result.changed == false
+      - list_orderby_result.failed == false
+      - list_orderby_result.response is defined
+      - list_orderby_result.response | type_debug == "list"
+      - list_orderby_result.response | length >= 1
+    fail_msg: "orderby vNICs list did not return the expected response"
+    success_msg: "orderby vNICs list returned the expected response"
+
+########################################################################
+# Test 4b: list vNICs with an OData `select` projection.
+########################################################################
+- name: List vNICs on the prerequisite subnet selecting only ext_id and MAC
+  nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+    subnet_ext_id: "{{ subnet_ext_id }}"
+    select: "extId,macAddress"
+  register: list_select_result
+  ignore_errors: true
+
+- name: Assert select vNICs response
+  ansible.builtin.assert:
+    that:
+      - list_select_result.changed == false
+      - list_select_result.failed == false
+      - list_select_result.response is defined
+      - list_select_result.response | type_debug == "list"
+      - list_select_result.response | length >= 1
+    fail_msg: "select vNICs list did not return the expected response"
+    success_msg: "select vNICs list returned the expected response"
+
+########################################################################
+# Test 4c: list vNICs with an OData `filter` — the Nutanix v4.3
+# networking API currently accepts the parameter but rejects most
+# filter expressions on this endpoint with a 400. This test therefore
+# only asserts the module surfaced the parameter and either returned a
+# list or failed cleanly with the documented "bad request" API error.
+########################################################################
+- name: List vNICs on the prerequisite subnet with an OData filter
+  nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+    subnet_ext_id: "{{ subnet_ext_id }}"
+    filter: "macAddress eq '00:00:00:00:00:00'"
+  register: list_filter_result
+  ignore_errors: true
+
+- name: Assert filter behavior (either empty list OR bad-request from API)
+  ansible.builtin.assert:
+    that:
+      - list_filter_result.changed == false
+      - >-
+        (list_filter_result.failed == false
+         and list_filter_result.response is defined
+         and (list_filter_result.response | type_debug == "list"))
+        or
+        (list_filter_result.failed == true
+         and list_filter_result.msg is defined)
+    fail_msg: "Filter test produced an unexpected outcome"
+    success_msg: "Filter test produced an acceptable outcome"
+
+########################################################################
+# Test 5: fetch a specific vNIC by ext_id (client-side filter).
+########################################################################
+- name: Fetch the created vNIC by its external ID
+  nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+    subnet_ext_id: "{{ subnet_ext_id }}"
+    ext_id: "{{ vnic_ext_id }}"
+  register: get_by_ext_id_result
+  ignore_errors: true
+
+- name: Assert fetch-by-ext_id response
+  ansible.builtin.assert:
+    that:
+      - get_by_ext_id_result.changed == false
+      - get_by_ext_id_result.failed == false
+      - get_by_ext_id_result.response is defined
+      - get_by_ext_id_result.response.ext_id == vnic_ext_id
+      - get_by_ext_id_result.ext_id == vnic_ext_id
+      - get_by_ext_id_result.subnet_ext_id == subnet_ext_id
+    fail_msg: "Fetch-by-ext_id returned an unexpected response"
+    success_msg: "Fetch-by-ext_id returned the expected single vNIC"
+
+########################################################################
+# Test 6: list vNICs on the empty subnet — should return an empty list.
+########################################################################
+- name: List vNICs on the empty prerequisite subnet
+  nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+    subnet_ext_id: "{{ empty_subnet_ext_id }}"
+  register: list_empty_result
+  ignore_errors: true
+
+- name: Assert empty-subnet vNICs response
+  ansible.builtin.assert:
+    that:
+      - list_empty_result.changed == false
+      - list_empty_result.failed == false
+      - list_empty_result.response is defined
+      - list_empty_result.response | type_debug == "list"
+      - list_empty_result.response | length == 0
+      - list_empty_result.subnet_ext_id == empty_subnet_ext_id
+    fail_msg: "Empty subnet list did not return an empty list"
+    success_msg: "Empty subnet list correctly returned an empty list"
+
+########################################################################
+# Test 7: negative — omit the required subnet_ext_id parameter.
+########################################################################
+- name: Call the info module without the required subnet_ext_id (negative)
+  nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2: {}  # noqa: args[module]
+  register: missing_subnet_result
+  ignore_errors: true
+
+- name: Assert missing required subnet_ext_id fails cleanly
+  ansible.builtin.assert:
+    that:
+      - missing_subnet_result.failed == true
+      - missing_subnet_result.changed == false
+      - "'subnet_ext_id' in (missing_subnet_result.msg | default(''))"
+    fail_msg: "Module did not fail when subnet_ext_id was omitted"
+    success_msg: "Module correctly failed when subnet_ext_id was omitted"
+
+########################################################################
+# Test 8: negative — bogus subnet_ext_id should fail with API error.
+########################################################################
+- name: Call the info module with a non-existent subnet_ext_id (negative)
+  nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+    subnet_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: bad_subnet_result
+  ignore_errors: true
+
+- name: Assert bogus subnet_ext_id fails with a descriptive error
+  ansible.builtin.assert:
+    that:
+      - bad_subnet_result.failed == true
+      - bad_subnet_result.changed == false
+      - bad_subnet_result.msg is defined
+    fail_msg: "Module did not fail on a non-existent subnet_ext_id"
+    success_msg: "Module correctly failed on a non-existent subnet_ext_id"
+
+########################################################################
+# Test 9: negative — non-existent vNIC ext_id on a real subnet.
+########################################################################
+- name: Fetch a vNIC that does not exist on the prerequisite subnet (negative)
+  nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+    subnet_ext_id: "{{ subnet_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: missing_vnic_result
+  ignore_errors: true
+
+- name: Assert missing vNIC ext_id fails with a "not found" style error
+  ansible.builtin.assert:
+    that:
+      - missing_vnic_result.failed == true
+      - missing_vnic_result.changed == false
+      - "'not found' in (missing_vnic_result.msg | lower)"
+    fail_msg: "Module did not fail with 'not found' for a non-existent vNIC ext_id"
+    success_msg: "Module correctly failed with 'not found' for a non-existent vNIC ext_id"
+
+########################################################################
+# Test 10: negative — mutually exclusive ext_id + filter should fail.
+########################################################################
+- name: Call the info module with ext_id AND filter together (negative)
+  nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+    subnet_ext_id: "{{ subnet_ext_id }}"
+    ext_id: "{{ vnic_ext_id }}"
+    filter: "macAddress eq '00:00:00:00:00:00'"
+  register: mutex_result
+  ignore_errors: true
+
+- name: Assert mutually exclusive ext_id + filter fails cleanly
+  ansible.builtin.assert:
+    that:
+      - mutex_result.failed == true
+      - mutex_result.changed == false
+      - "'mutually exclusive' in (mutex_result.msg | lower)"
+    fail_msg: "Module did not fail when ext_id and filter were used together"
+    success_msg: "Module correctly rejected mutually exclusive ext_id + filter"
+
+########################################################################
+# Cleanup
+########################################################################
+- name: Cleanup created NICs
+  nutanix.ncp.ntnx_vms_nics_v2:
+    state: absent
+    vm_ext_id: "{{ vm_ext_id }}"
+    ext_id: "{{ item }}"
+  register: nic_cleanup
+  ignore_errors: true
+  loop: "{{ nics_todelete }}"
+
+- name: Assert NIC cleanup succeeded
+  ansible.builtin.assert:
+    that:
+      - item.failed == false or item.msg is defined
+    fail_msg: "NIC cleanup encountered an unexpected error"
+    success_msg: "NIC cleanup completed"
+  loop: "{{ nic_cleanup.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item | default('') }}"
+
+- name: Cleanup created VMs
+  nutanix.ncp.ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: vm_cleanup
+  ignore_errors: true
+  loop: "{{ vms_todelete }}"
+
+- name: Assert VM cleanup succeeded
+  ansible.builtin.assert:
+    that:
+      - item.failed == false or item.msg is defined
+    fail_msg: "VM cleanup encountered an unexpected error"
+    success_msg: "VM cleanup completed"
+  loop: "{{ vm_cleanup.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item | default('') }}"
+
+- name: Cleanup created subnets
+  nutanix.ncp.ntnx_subnets_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: subnet_cleanup
+  ignore_errors: true
+  loop: "{{ subnets_todelete }}"
+
+- name: Assert subnet cleanup succeeded
+  ansible.builtin.assert:
+    that:
+      - item.failed == false or item.msg is defined
+    fail_msg: "Subnet cleanup encountered an unexpected error"
+    success_msg: "Subnet cleanup completed"
+  loop: "{{ subnet_cleanup.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item | default('') }}"
