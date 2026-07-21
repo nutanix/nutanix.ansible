@@ -1,0 +1,215 @@
+---
+############################################################################
+# RouteForBgpSession integration tests
+#
+# Test plan:
+#   The RouteForBgpSession API is READ-ONLY (GetRouteForBgpSessionById and
+#   ListRoutesByBgpSessionId only). BGP routes are learned/advertised
+#   dynamically by the BGP session — they cannot be created, updated, or
+#   deleted through the API. So the tests focus on:
+#
+#     1. Missing required parameter (bgp_session_ext_id) is rejected.
+#     2. Fetching by ext_id without bgp_session_ext_id is rejected.
+#     3. Listing with an invalid / non-existent bgp_session_ext_id returns
+#        a proper API error.
+#     4. Fetching a single route with an invalid ext_id returns a proper
+#        API error.
+#     5. If a real BGP session exists on the cluster:
+#         a. List all BGP routes for that session.
+#         b. Fetch the first route by ext_id and assert equality with the
+#            corresponding entry from the list.
+#         c. List routes filtered by bgpRouteType == ADVERTISED and assert
+#            every returned route has that type.
+#         d. List with limit=1 and assert only 1 route is returned.
+#         e. Mutually-exclusive check: passing both ext_id and filter must
+#            fail.
+############################################################################
+
+- name: Start RouteForBgpSession tests
+  ansible.builtin.debug:
+    msg: Start RouteForBgpSession tests
+
+############################################################################
+# Negative tests — argument spec validation and API errors
+############################################################################
+
+- name: List BGP routes without required bgp_session_ext_id
+  nutanix.ncp.ntnx_route_for_bgp_sessions_info_v2: {}
+  register: result
+  ignore_errors: true
+
+- name: List BGP routes without required bgp_session_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'bgp_session_ext_id' in result.msg"
+    success_msg: "List BGP routes without required bgp_session_ext_id failed as expected"
+    fail_msg: "List BGP routes without required bgp_session_ext_id did not fail as expected"
+
+- name: List BGP routes with a non-existent bgp_session_ext_id
+  nutanix.ncp.ntnx_route_for_bgp_sessions_info_v2:
+    bgp_session_ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: List BGP routes with a non-existent bgp_session_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+      - "'Api Exception raised while fetching BGP routes info' in result.msg"
+    success_msg: "List BGP routes with a non-existent bgp_session_ext_id failed as expected"
+    fail_msg: "List BGP routes with a non-existent bgp_session_ext_id did not fail as expected"
+
+- name: Get BGP route with non-existent ext_id
+  nutanix.ncp.ntnx_route_for_bgp_sessions_info_v2:
+    bgp_session_ext_id: "00000000-0000-0000-0000-000000000001"
+    ext_id: "00000000-0000-0000-0000-000000000002"
+  register: result
+  ignore_errors: true
+
+- name: Get BGP route with non-existent ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+      - "'Api Exception raised while fetching BGP route info' in result.msg"
+    success_msg: "Get BGP route with non-existent ext_id failed as expected"
+    fail_msg: "Get BGP route with non-existent ext_id did not fail as expected"
+
+- name: Get BGP route with both ext_id and filter (mutually exclusive)
+  nutanix.ncp.ntnx_route_for_bgp_sessions_info_v2:
+    bgp_session_ext_id: "00000000-0000-0000-0000-000000000001"
+    ext_id: "00000000-0000-0000-0000-000000000002"
+    filter: "bgpRouteType eq Networking.Config.BgpRouteType'ADVERTISED'"
+  register: result
+  ignore_errors: true
+
+- name: Get BGP route with both ext_id and filter status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'mutually exclusive' in result.msg"
+    success_msg: "ext_id + filter mutually exclusive validation works as expected"
+    fail_msg: "ext_id + filter mutually exclusive validation did not fail as expected"
+
+############################################################################
+# Live-cluster tests — only run when a real BGP session exists
+############################################################################
+
+- name: Set discovery variables
+  ansible.builtin.set_fact:
+    live_bgp_session_ext_id: "{{ bgp_session_ext_id | default('') }}"
+
+- name: Live-cluster BGP route tests (only when a real BGP session ext_id is supplied)
+  when: live_bgp_session_ext_id | length > 0
+  block:
+    - name: List all BGP routes for the specified BGP session
+      nutanix.ncp.ntnx_route_for_bgp_sessions_info_v2:
+        bgp_session_ext_id: "{{ live_bgp_session_ext_id }}"
+      register: list_result
+      ignore_errors: true
+
+    - name: List all BGP routes for the specified BGP session status
+      ansible.builtin.assert:
+        that:
+          - list_result is defined
+          - list_result.changed == false
+          - list_result.failed == false
+          - list_result.response is defined
+          - list_result.bgp_session_ext_id == live_bgp_session_ext_id
+        success_msg: "List all BGP routes for the specified BGP session passed"
+        fail_msg: "List all BGP routes for the specified BGP session failed"
+
+    - name: Assert that every listed route has expected shape
+      ansible.builtin.assert:
+        that:
+          - item.ext_id is defined
+          - item.bgp_session_reference == live_bgp_session_ext_id
+        success_msg: "Route {{ item.ext_id }} has expected shape"
+        fail_msg: "Route {{ item.ext_id | default('<no ext_id>') }} missing bgp_session_reference or ext_id"
+      loop: "{{ list_result.response }}"
+      when: list_result.response | length > 0
+
+    - name: Fetch first BGP route by ext_id (only when the list is non-empty)
+      when: list_result.response | length > 0
+      block:
+        - name: Fetch first BGP route by ext_id
+          nutanix.ncp.ntnx_route_for_bgp_sessions_info_v2:
+            bgp_session_ext_id: "{{ live_bgp_session_ext_id }}"
+            ext_id: "{{ list_result.response[0].ext_id }}"
+          register: get_by_id_result
+          ignore_errors: true
+
+        - name: Fetch first BGP route by ext_id status
+          ansible.builtin.assert:
+            that:
+              - get_by_id_result is defined
+              - get_by_id_result.changed == false
+              - get_by_id_result.failed == false
+              - get_by_id_result.response is defined
+              - get_by_id_result.response.ext_id == list_result.response[0].ext_id
+              - get_by_id_result.response.bgp_session_reference == live_bgp_session_ext_id
+              - get_by_id_result.ext_id == list_result.response[0].ext_id
+              - get_by_id_result.bgp_session_ext_id == live_bgp_session_ext_id
+            success_msg: "Fetch first BGP route by ext_id passed"
+            fail_msg: "Fetch first BGP route by ext_id failed"
+
+    - name: List BGP routes with limit
+      nutanix.ncp.ntnx_route_for_bgp_sessions_info_v2:
+        bgp_session_ext_id: "{{ live_bgp_session_ext_id }}"
+        limit: 1
+      register: limited_result
+      ignore_errors: true
+
+    - name: List BGP routes with limit status
+      ansible.builtin.assert:
+        that:
+          - limited_result is defined
+          - limited_result.changed == false
+          - limited_result.failed == false
+          - (limited_result.response | default([])) | length <= 1
+        success_msg: "List BGP routes with limit passed"
+        fail_msg: "List BGP routes with limit failed"
+
+    - name: List BGP routes filtered by bgpRouteType == ADVERTISED
+      nutanix.ncp.ntnx_route_for_bgp_sessions_info_v2:
+        bgp_session_ext_id: "{{ live_bgp_session_ext_id }}"
+        filter: "bgpRouteType eq Networking.Config.BgpRouteType'ADVERTISED'"
+      register: filtered_result
+      ignore_errors: true
+
+    - name: List BGP routes filtered by bgpRouteType == ADVERTISED status
+      ansible.builtin.assert:
+        that:
+          - filtered_result is defined
+          - filtered_result.changed == false
+          - filtered_result.failed == false
+          - filtered_result.response is defined
+        success_msg: "List BGP routes filtered by bgpRouteType == ADVERTISED passed"
+        fail_msg: "List BGP routes filtered by bgpRouteType == ADVERTISED failed"
+
+    - name: Assert every filtered route has bgp_route_type == ADVERTISED
+      ansible.builtin.assert:
+        that:
+          - item.bgp_route_type == 'ADVERTISED'
+        success_msg: "Route {{ item.ext_id }} filtered correctly"
+        fail_msg: "Route {{ item.ext_id }} was returned by the ADVERTISED filter but bgp_route_type={{ item.bgp_route_type }}"
+      loop: "{{ filtered_result.response }}"
+      when: (filtered_result.response | default([])) | length > 0
+
+- name: Live-cluster BGP route tests skipped (no bgp_session_ext_id supplied)
+  ansible.builtin.debug:
+    msg: >-
+      Live-cluster BGP route tests were skipped because no bgp_session_ext_id
+      was supplied via extra-vars or inventory. Only negative / spec-validation
+      tests were executed.
+  when: live_bgp_session_ext_id | length == 0
