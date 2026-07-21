@@ -1,0 +1,20 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [TaskEntity playbook (Prism v4 Tasks API)] ********************************
+
+TASK [List all entities affected by a task] ************************************
+ok: [localhost] => {"changed": false, "response": [{"ext_id": "215b3b02-348e-4d05-b6c1-2cfec4778ace", "name": "image_rate_limit_policy_ansible_updated", "rel": "vmm:images:config:rate-limit-policy"}], "task_ext_id": "ZXJnb24=:409400ee-75bc-4c15-ae2b-9d44d3162fe1", "total_available_results": 1}
+
+TASK [Get a specific affected entity of a task using its ext_id] ***************
+ok: [localhost] => {"changed": false, "ext_id": "215b3b02-348e-4d05-b6c1-2cfec4778ace", "response": {"ext_id": "215b3b02-348e-4d05-b6c1-2cfec4778ace", "name": "image_rate_limit_policy_ansible_updated", "rel": "vmm:images:config:rate-limit-policy"}, "task_ext_id": "ZXJnb24=:409400ee-75bc-4c15-ae2b-9d44d3162fe1"}
+
+TASK [Cancel an ongoing task (action module)] **********************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "BAD REQUEST", "msg": "Api Exception raised while cancelling task with ext_id:ZXJnb24=:409400ee-75bc-4c15-ae2b-9d44d3162fe1", "response": {"$dataItemDiscriminator": "prism.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<prism.v4.error.AppMessage>", "$objectType": "prism.v4.error.ErrorResponse", "error": [{"$objectType": "prism.v4.error.AppMessage", "code": "TSKS-20401", "errorGroup": "TASK_CANCELLATION_INVALID_STATE_ERROR", "locale": "en-US", "message": "Failed to cancel the task because the task is already in a completed state", "severity": "ERROR"}]}}, "status": 400}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=1   
+

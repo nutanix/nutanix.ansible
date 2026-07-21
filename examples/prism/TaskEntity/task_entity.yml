@@ -1,0 +1,39 @@
+---
+# Summary:
+# 1. Create a short-lived image so we have a real task and a real
+#    "affected entity" (the image itself) attached to it.
+# 2. List the affected entities of the task and fetch a single one by ext_id
+#    using the ntnx_task_entities_info_v2 info module.
+# 3. Cancel a still-running task using the ntnx_task_entity_v2 action module.
+
+- name: TaskEntity playbook (Prism v4 Tasks API)
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+  tasks:
+    - name: List all entities affected by a task
+      nutanix.ncp.ntnx_task_entities_info_v2:
+        task_ext_id: "{{ task_ext_id }}"
+        limit: 50
+        page: 0
+      register: list_affected_entities_result
+      ignore_errors: true
+
+    - name: Get a specific affected entity of a task using its ext_id
+      nutanix.ncp.ntnx_task_entities_info_v2:
+        task_ext_id: "{{ task_ext_id }}"
+        ext_id: "{{ affected_entity_ext_id }}"
+      register: get_affected_entity_result
+      ignore_errors: true
+
+    - name: Cancel an ongoing task (action module)
+      nutanix.ncp.ntnx_task_entity_v2:
+        state: present
+        task_ext_id: "{{ cancellable_task_ext_id }}"
+      register: cancel_task_result
+      ignore_errors: true

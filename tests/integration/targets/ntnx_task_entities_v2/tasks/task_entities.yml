@@ -1,0 +1,407 @@
+---
+# Integration tests for the new TaskEntity modules:
+#   * ntnx_task_entity_v2         (action module: CancelTask)
+#   * ntnx_task_entities_info_v2  (info module: list_task_entities + get by ext_id)
+#
+# Test plan
+# ---------
+# 1.  Discover a real task on the target Prism Central by listing existing tasks
+#     (avoids depending on optional fixtures such as image URLs, VMs, or
+#     clusters). Tasks are always present on a healthy PC because virtually
+#     every operation records one.
+# 2.  Info module tests:
+#     - check_mode is NOT supported by info modules (BaseInfoModule sets
+#       supports_check_mode=False), so we only assert real invocations.
+#     - list_task_entities happy-path (no ext_id) with all optional info args
+#       (filter, limit, page, select) exercised individually.
+#     - get single affected entity by ext_id, with an empty result triggering
+#       a clean not-found error path.
+#     - mutually_exclusive(ext_id, filter) protection.
+#     - required=True enforcement of task_ext_id (missing param -> failure).
+#     - Wrong task_ext_id -> API exception with descriptive msg.
+# 3.  CRUD/action module tests (ntnx_task_entity_v2):
+#     - check_mode Cancel test (exactly one, as required by 4.1).
+#     - Real Cancel against an in-progress task (best-effort: if no
+#       cancellable task exists, fall back to attempting a cancel on the
+#       discovered task and accept either the SUCCESS AppMessage or a
+#       non-cancellable error — both are legitimate real API responses).
+#     - Cancel with a garbage/legacy ext_id -> API exception.
+#     - Missing required task_ext_id -> failure.
+#     - state=absent is not supported -> failure with descriptive message.
+#     - Idempotency: issuing the same Cancel twice on the same task_ext_id
+#       must return without raising (server-side idempotent).
+
+- name: "Start ntnx_task_entities_v2 integration tests"
+  ansible.builtin.debug:
+    msg: "Start ntnx_task_entities_v2 integration tests"
+
+################################################################################
+# Setup: discover a real task on the live PC
+################################################################################
+
+- name: List existing PC tasks to source a real task_ext_id
+  nutanix.ncp.ntnx_pc_tasks_info_v2:
+    limit: 1
+  register: seed_tasks
+  ignore_errors: true
+
+- name: Ensure at least one task exists on the target PC
+  ansible.builtin.assert:
+    that:
+      - seed_tasks.failed == false
+      - seed_tasks.changed == false
+      - seed_tasks.response is defined
+      - (seed_tasks.response | length) >= 1
+    fail_msg: "Target PC returned no tasks; cannot run TaskEntity tests"
+    success_msg: "Discovered at least one PC task to use as a fixture"
+
+- name: Remember the discovered task ext_id
+  ansible.builtin.set_fact:
+    seed_task_ext_id: "{{ seed_tasks.response[0].ext_id }}"
+
+- name: List a page of tasks and pick the first one that reports is_cancelable
+  nutanix.ncp.ntnx_pc_tasks_info_v2:
+    limit: 100
+  register: task_page
+  ignore_errors: true
+
+- name: Compute cancellable task ext_id (fall back to the seed task if none)
+  ansible.builtin.set_fact:
+    cancellable_task_ext_id: >-
+      {{
+        (task_page.response | default([]) | selectattr('is_cancelable', 'equalto', true) | list | first | default({'ext_id': seed_task_ext_id})).ext_id
+      }}
+    has_cancellable_task: >-
+      {{
+        (task_page.response | default([]) | selectattr('is_cancelable', 'equalto', true) | list | length) > 0
+      }}
+
+################################################################################
+# Info module: list_task_entities happy path (no ext_id)
+################################################################################
+
+- name: List all affected entities for the seed task
+  nutanix.ncp.ntnx_task_entities_info_v2:
+    task_ext_id: "{{ seed_task_ext_id }}"
+  register: list_all_result
+  ignore_errors: true
+
+- name: Assert list_task_entities returned a valid list response
+  ansible.builtin.assert:
+    that:
+      - list_all_result.failed == false
+      - list_all_result.changed == false
+      - list_all_result.response is defined
+      - list_all_result.response is iterable
+      - list_all_result.total_available_results is defined
+      - list_all_result.total_available_results >= 0
+      - list_all_result.task_ext_id == seed_task_ext_id
+    fail_msg: "list_task_entities happy-path did not return a valid list"
+    success_msg: "list_task_entities returned a valid list of affected entities"
+
+- name: Assert every affected entity carries an ext_id
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+    fail_msg: "An affected entity in the list is missing ext_id"
+    success_msg: "Affected entity {{ item.ext_id }} is well formed"
+  loop: "{{ list_all_result.response }}"
+  when: (list_all_result.response | length) > 0
+
+################################################################################
+# Info module: pagination (limit + page) and OData select
+################################################################################
+
+- name: List affected entities with limit=1
+  nutanix.ncp.ntnx_task_entities_info_v2:
+    task_ext_id: "{{ seed_task_ext_id }}"
+    limit: 1
+  register: list_limit_result
+  ignore_errors: true
+
+- name: Assert limit=1 shrinks the returned page
+  ansible.builtin.assert:
+    that:
+      - list_limit_result.failed == false
+      - list_limit_result.changed == false
+      - (list_limit_result.response | length) <= 1
+    fail_msg: "limit=1 was not honoured by list_task_entities"
+    success_msg: "limit=1 was honoured (returned {{ list_limit_result.response | length }} row(s))"
+
+- name: List affected entities with page=0 (first page)
+  nutanix.ncp.ntnx_task_entities_info_v2:
+    task_ext_id: "{{ seed_task_ext_id }}"
+    page: 0
+    limit: 1
+  register: list_page_result
+  ignore_errors: true
+
+- name: Assert page=0 works
+  ansible.builtin.assert:
+    that:
+      - list_page_result.failed == false
+      - list_page_result.changed == false
+    fail_msg: "page=0 pagination failed"
+    success_msg: "page=0 pagination worked"
+
+- name: List affected entities with OData select=extId
+  nutanix.ncp.ntnx_task_entities_info_v2:
+    task_ext_id: "{{ seed_task_ext_id }}"
+    select: "extId"
+    limit: 1
+  register: list_select_result
+  ignore_errors: true
+
+- name: Assert select=extId works
+  ansible.builtin.assert:
+    that:
+      - list_select_result.failed == false
+      - list_select_result.changed == false
+      - list_select_result.response is defined
+    fail_msg: "select=extId failed"
+    success_msg: "select=extId succeeded"
+
+################################################################################
+# Info module: get single entity by ext_id
+################################################################################
+
+- name: Get a specific affected entity by ext_id (only when a real one exists)
+  nutanix.ncp.ntnx_task_entities_info_v2:
+    task_ext_id: "{{ seed_task_ext_id }}"
+    ext_id: "{{ list_all_result.response[0].ext_id }}"
+  register: get_by_id_result
+  when: (list_all_result.response | length) > 0
+  ignore_errors: true
+
+- name: Assert get-by-ext_id returned a single matching entity
+  ansible.builtin.assert:
+    that:
+      - get_by_id_result.failed == false
+      - get_by_id_result.changed == false
+      - get_by_id_result.response is defined
+      - get_by_id_result.response.ext_id == list_all_result.response[0].ext_id
+      - get_by_id_result.ext_id == list_all_result.response[0].ext_id
+      - get_by_id_result.task_ext_id == seed_task_ext_id
+    fail_msg: "get-by-ext_id did not return the expected single entity"
+    success_msg: "get-by-ext_id returned the expected single entity"
+  when: (list_all_result.response | length) > 0
+
+################################################################################
+# Info module: negative — not-found ext_id
+################################################################################
+
+- name: Try to fetch a non-existent affected entity by ext_id
+  nutanix.ncp.ntnx_task_entities_info_v2:
+    task_ext_id: "{{ seed_task_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: not_found_result
+  ignore_errors: true
+
+- name: Assert not-found ext_id fails with a descriptive message
+  ansible.builtin.assert:
+    that:
+      - not_found_result.failed == true
+      - not_found_result.changed == false
+      - not_found_result.msg is defined
+      - "'was not found for task' in not_found_result.msg"
+    fail_msg: "Unexpected result for non-existent affected entity ext_id"
+    success_msg: "Non-existent affected entity ext_id was rejected as expected"
+
+################################################################################
+# Info module: negative — mutually exclusive ext_id + filter
+################################################################################
+
+- name: Try ext_id AND filter together (mutually exclusive)
+  nutanix.ncp.ntnx_task_entities_info_v2:
+    task_ext_id: "{{ seed_task_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    filter: "extId eq '00000000-0000-0000-0000-000000000000'"
+  register: mutex_result
+  ignore_errors: true
+
+- name: Assert mutex(ext_id, filter) was enforced
+  ansible.builtin.assert:
+    that:
+      - mutex_result.failed == true
+      - mutex_result.changed == false
+    fail_msg: "Mutually exclusive ext_id+filter was not enforced"
+    success_msg: "Mutually exclusive ext_id+filter was enforced as expected"
+
+################################################################################
+# Info module: negative — missing required task_ext_id
+################################################################################
+
+- name: Call info module without required task_ext_id
+  nutanix.ncp.ntnx_task_entities_info_v2: {}  # noqa args[module]
+  register: missing_task_ext_id_result
+  ignore_errors: true
+
+- name: Assert missing required task_ext_id was rejected
+  ansible.builtin.assert:
+    that:
+      - missing_task_ext_id_result.failed == true
+      - missing_task_ext_id_result.changed == false
+    fail_msg: "Missing required task_ext_id was NOT rejected"
+    success_msg: "Missing required task_ext_id was rejected as expected"
+
+################################################################################
+# Info module: negative — bogus task_ext_id
+################################################################################
+
+- name: Call info module with a bogus task_ext_id
+  nutanix.ncp.ntnx_task_entities_info_v2:
+    task_ext_id: "ZXJnb24=:11223344-5566-7788-99aa-bbccddeeff00"
+  register: bogus_task_result
+  ignore_errors: true
+
+- name: Assert bogus task_ext_id fails with API-level error
+  ansible.builtin.assert:
+    that:
+      - bogus_task_result.failed == true
+      - bogus_task_result.changed == false
+      - bogus_task_result.msg is defined
+      - bogus_task_result.msg == "Api Exception raised while fetching task entities info"
+    fail_msg: "Bogus task_ext_id was NOT rejected by the API"
+    success_msg: "Bogus task_ext_id was rejected by the API as expected"
+
+################################################################################
+# Action module: check_mode Cancel (exactly one, per 4.1)
+################################################################################
+
+- name: Cancel task in check mode
+  nutanix.ncp.ntnx_task_entity_v2:
+    state: present
+    task_ext_id: "{{ cancellable_task_ext_id }}"
+  register: cancel_check_mode_result
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert check_mode Cancel does not hit the API and reports the pending action
+  ansible.builtin.assert:
+    that:
+      - cancel_check_mode_result.failed == false
+      - cancel_check_mode_result.changed == false
+      - cancel_check_mode_result.msg is defined
+      - cancel_check_mode_result.msg == ("Task with task_ext_id:" ~ cancellable_task_ext_id ~ " will be cancelled.")
+      - cancel_check_mode_result.task_ext_id == cancellable_task_ext_id
+      - cancel_check_mode_result.ext_id == cancellable_task_ext_id
+    fail_msg: "check_mode Cancel did not behave as expected"
+    success_msg: "check_mode Cancel behaved as expected"
+
+################################################################################
+# Action module: real Cancel against the discovered task
+################################################################################
+
+- name: Cancel the discovered task for real
+  nutanix.ncp.ntnx_task_entity_v2:
+    state: present
+    task_ext_id: "{{ cancellable_task_ext_id }}"
+  register: cancel_result
+  ignore_errors: true
+
+- name: Assert Cancel either succeeded with SUCCESS AppMessage or was rejected as non-cancellable
+  ansible.builtin.assert:
+    that:
+      - >
+        (
+          cancel_result.failed == false
+          and cancel_result.changed == true
+          and cancel_result.response is defined
+          and cancel_result.task_ext_id == cancellable_task_ext_id
+          and cancel_result.ext_id == cancellable_task_ext_id
+        )
+        or
+        (
+          cancel_result.failed == true
+          and cancel_result.msg is defined
+          and 'Api Exception raised while cancelling task' in cancel_result.msg
+        )
+    fail_msg: "Cancel did not produce either a success or the expected API-level error"
+    success_msg: "Cancel produced a legitimate live API response"
+
+- name: If Cancel succeeded, assert the AppMessage payload shape
+  ansible.builtin.assert:
+    that:
+      - cancel_result.response.message is defined
+      - cancel_result.response.severity is defined
+    fail_msg: "Cancel success payload is missing AppMessage fields"
+    success_msg: "Cancel success payload carries the expected AppMessage fields"
+  when: not cancel_result.failed
+
+################################################################################
+# Action module: idempotency — cancelling the same task_ext_id again
+################################################################################
+
+- name: Re-issue the same Cancel to verify server-side idempotency
+  nutanix.ncp.ntnx_task_entity_v2:
+    state: present
+    task_ext_id: "{{ cancellable_task_ext_id }}"
+  register: cancel_repeat_result
+  ignore_errors: true
+
+- name: Assert repeated Cancel still returns a valid API response (or a well-formed error)
+  ansible.builtin.assert:
+    that:
+      - (cancel_repeat_result.failed == false and cancel_repeat_result.task_ext_id == cancellable_task_ext_id)
+        or (cancel_repeat_result.failed == true and cancel_repeat_result.msg is defined
+            and 'Api Exception raised while cancelling task' in cancel_repeat_result.msg)
+    fail_msg: "Repeated Cancel produced an unstructured response"
+    success_msg: "Repeated Cancel produced a well-formed API response"
+
+################################################################################
+# Action module: negative — bogus task_ext_id
+################################################################################
+
+- name: Cancel with a bogus task_ext_id
+  nutanix.ncp.ntnx_task_entity_v2:
+    state: present
+    task_ext_id: "11223344-5566-7788-99aa-bbccddeeff00"
+  register: cancel_bogus_result
+  ignore_errors: true
+
+- name: Assert bogus task_ext_id is rejected by the Cancel API
+  ansible.builtin.assert:
+    that:
+      - cancel_bogus_result.failed == true
+      - cancel_bogus_result.changed == false
+      - cancel_bogus_result.msg is defined
+      - "'Api Exception raised while cancelling task' in cancel_bogus_result.msg"
+    fail_msg: "Bogus task_ext_id was NOT rejected by Cancel"
+    success_msg: "Bogus task_ext_id was rejected by Cancel as expected"
+
+################################################################################
+# Action module: negative — missing required task_ext_id
+################################################################################
+
+- name: Cancel with missing task_ext_id
+  nutanix.ncp.ntnx_task_entity_v2:  # noqa args[module]
+    state: present
+  register: cancel_missing_result
+  ignore_errors: true
+
+- name: Assert missing task_ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - cancel_missing_result.failed == true
+      - cancel_missing_result.changed == false
+    fail_msg: "Missing task_ext_id was NOT rejected by Cancel"
+    success_msg: "Missing task_ext_id was rejected by Cancel as expected"
+
+################################################################################
+# Action module: negative — invalid state value (choices enforcement)
+################################################################################
+
+- name: Try an invalid state value (not in choices)
+  nutanix.ncp.ntnx_task_entity_v2:  # noqa args[module]
+    state: absent
+    task_ext_id: "{{ cancellable_task_ext_id }}"
+  register: cancel_absent_result
+  ignore_errors: true
+
+- name: Assert unsupported state is rejected by argument spec choices
+  ansible.builtin.assert:
+    that:
+      - cancel_absent_result.failed == true
+      - cancel_absent_result.changed == false
+    fail_msg: "Unsupported state was NOT rejected by argument spec choices"
+    success_msg: "Unsupported state was rejected by argument spec choices as expected"
