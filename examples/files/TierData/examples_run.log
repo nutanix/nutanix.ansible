@@ -1,0 +1,49 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [TierData examples run (against live PC)] *********************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"file_server_ext_id": "ac5aff0c-6c68-4948-9088-b903e2be0ce7", "mount_target_ext_id": "d9c3f0f3-5f4a-42c1-9c66-1b23f4e5a111"}, "changed": false}
+
+TASK [Initiate tiering for a whole file server] ********************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while initiating tier data on file server", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Show whole-server result] ************************************************
+ok: [localhost] => {
+    "result_whole": {
+        "changed": false,
+        "error": "SERVICE UNAVAILABLE",
+        "failed": true,
+        "msg": "Api Exception raised while initiating tier data on file server",
+        "response": {
+            "message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"
+        },
+        "status": 503
+    }
+}
+
+TASK [Initiate tiering for a specific set of files on a mount target] **********
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while initiating tier data on file server", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Show files-spec result] **************************************************
+ok: [localhost] => {
+    "result_files": {
+        "changed": false,
+        "error": "SERVICE UNAVAILABLE",
+        "failed": true,
+        "msg": "Api Exception raised while initiating tier data on file server",
+        "response": {
+            "message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"
+        },
+        "status": 503
+    }
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=5    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=2   
+

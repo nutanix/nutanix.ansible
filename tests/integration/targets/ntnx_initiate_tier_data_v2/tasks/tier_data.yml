@@ -1,0 +1,210 @@
+---
+###############################################################################
+# Integration tests for ntnx_initiate_tier_data_v2
+#
+# TierData is an ACTION-type API on a Nutanix Files file server. There is no
+# CRUD lifecycle; instead the action triggers a manual tiering job on an
+# existing file server that already has a tiering configuration.
+#
+# Test plan (QA mindset — covers spec + module + domain):
+#   1. check_mode with ALL attributes (file server + files_spec) — verify the
+#      module builds the full TierDataSpec/FilesSpec and does NOT call the API.
+#   2. Negative: omit the required `ext_id` — must fail with the argspec error.
+#   3. Negative: invalid file server ext_id — must surface an API exception.
+#   4. Negative: `state=absent` is not supported — argspec must reject it.
+#   5. Positive: initiate tiering with duration_seconds only (minimal action),
+#      then again with a full files_spec (all attributes). Both are gated on the
+#      presence of `tier_data_file_server_ext_id` in the integration vars so
+#      the target can be scheduled on clusters that do not have Files/tiering
+#      configured without hard-failing.
+#
+# Every module spec attribute (ext_id, duration_seconds, files_spec.*) is
+# asserted at least once across the check_mode + positive tests below.
+###############################################################################
+
+- name: Start ntnx_initiate_tier_data_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_initiate_tier_data_v2 tests
+
+- name: Generate random suffix for this run
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Use a synthetic file server ext_id for negative tests
+  ansible.builtin.set_fact:
+    fake_file_server_ext_id: "00000000-0000-0000-0000-{{ random_name | hash('md5') | truncate(12, True, '') }}"
+
+########################################################################################
+# 1. check_mode with ALL attributes
+########################################################################################
+
+- name: Generate spec for initiating tier data using check mode with all attributes
+  nutanix.ncp.ntnx_initiate_tier_data_v2:
+    state: present
+    ext_id: "ac5aff0c-6c68-4948-9088-b903e2be0ce7"
+    duration_seconds: 3600
+    files_spec:
+      is_single_dir_tree: true
+      mount_target_ext_id: "d9c3f0f3-5f4a-42c1-9c66-1b23f4e5a111"
+      file_paths:
+        - "/archive/2024/report1.pdf"
+        - "/archive/2024/report2.pdf"
+      i_node_numbers:
+        - "12345"
+        - "12346"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for initiating tier data using check mode with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == "ac5aff0c-6c68-4948-9088-b903e2be0ce7"
+      - result.response.duration_seconds == 3600
+      - result.response.files_spec is defined
+      - result.response.files_spec.is_single_dir_tree == true
+      - result.response.files_spec.mount_target_ext_id == "d9c3f0f3-5f4a-42c1-9c66-1b23f4e5a111"
+      - result.response.files_spec.file_paths | length == 2
+      - result.response.files_spec.file_paths[0] == "/archive/2024/report1.pdf"
+      - result.response.files_spec.file_paths[1] == "/archive/2024/report2.pdf"
+      - result.response.files_spec.i_node_numbers | length == 2
+      - result.response.files_spec.i_node_numbers[0] == "12345"
+      - result.response.files_spec.i_node_numbers[1] == "12346"
+    success_msg: "check_mode spec for initiating tier data with all attributes generated successfully"
+    fail_msg: "check_mode spec for initiating tier data with all attributes was not generated correctly"
+
+########################################################################################
+# 2. Negative: missing required ext_id
+########################################################################################
+
+- name: Initiate tier data without required ext_id (should fail)
+  nutanix.ncp.ntnx_initiate_tier_data_v2:
+    state: present
+    duration_seconds: 3600
+  register: result
+  ignore_errors: true
+
+- name: Initiate tier data without required ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "missing required arguments: ext_id"
+    success_msg: "Initiate tier data without required ext_id failed as expected"
+    fail_msg: "Initiate tier data without required ext_id did not fail as expected"
+
+########################################################################################
+# 3. Negative: state=absent (unsupported for an action module)
+########################################################################################
+
+- name: Initiate tier data with unsupported state=absent (should fail)
+  nutanix.ncp.ntnx_initiate_tier_data_v2:
+    state: absent
+    ext_id: "ac5aff0c-6c68-4948-9088-b903e2be0ce7"
+  register: result
+  ignore_errors: true
+
+- name: Initiate tier data with unsupported state=absent status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - >-
+        "value of state must be one of: present, got: absent"
+        in result.msg
+    success_msg: "Initiate tier data with unsupported state=absent failed as expected"
+    fail_msg: "Initiate tier data with unsupported state=absent did not fail as expected"
+
+########################################################################################
+# 4. Negative: invalid file server ext_id (real API call — must raise)
+########################################################################################
+
+- name: Initiate tier data with invalid file server ext_id (should fail)
+  nutanix.ncp.ntnx_initiate_tier_data_v2:
+    state: present
+    ext_id: "{{ fake_file_server_ext_id }}"
+    duration_seconds: 3600
+  register: result
+  ignore_errors: true
+
+- name: Initiate tier data with invalid file server ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while initiating tier data on file server"
+    success_msg: "Initiate tier data with invalid file server ext_id failed as expected"
+    fail_msg: "Initiate tier data with invalid file server ext_id did not fail as expected"
+
+########################################################################################
+# 5. Positive: real tiering action (only if a suitable file server is available)
+#
+# `tier_data_file_server_ext_id` must be defined in tests/integration/integration_config.yml
+# for a Files file server that has a tiering configuration already applied.
+# When not provided, we skip the positive path but keep the negative + check_mode
+# coverage that runs on any cluster.
+########################################################################################
+
+- name: Initiate tiering data — minimal attributes (duration_seconds only)
+  nutanix.ncp.ntnx_initiate_tier_data_v2:
+    state: present
+    ext_id: "{{ tier_data_file_server_ext_id }}"
+    duration_seconds: 3600
+  register: result
+  ignore_errors: true
+  when: tier_data_file_server_ext_id is defined and tier_data_file_server_ext_id | length > 0
+
+- name: Initiate tiering data minimal attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == tier_data_file_server_ext_id
+      - result.task_ext_id is defined
+      - result.response is defined
+    success_msg: "Initiate tiering data with minimal attributes succeeded"
+    fail_msg: "Initiate tiering data with minimal attributes failed"
+  when: tier_data_file_server_ext_id is defined and tier_data_file_server_ext_id | length > 0
+
+- name: Initiate tiering data — full files_spec
+  nutanix.ncp.ntnx_initiate_tier_data_v2:
+    state: present
+    ext_id: "{{ tier_data_file_server_ext_id }}"
+    duration_seconds: 3600
+    files_spec:
+      is_single_dir_tree: false
+      mount_target_ext_id: "{{ tier_data_mount_target_ext_id }}"
+      file_paths: "{{ tier_data_file_paths | default([]) }}"
+      i_node_numbers: "{{ tier_data_i_node_numbers | default([]) }}"
+  register: result
+  ignore_errors: true
+  when:
+    - tier_data_file_server_ext_id is defined and tier_data_file_server_ext_id | length > 0
+    - tier_data_mount_target_ext_id is defined and tier_data_mount_target_ext_id | length > 0
+
+- name: Initiate tiering data with full files_spec status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == tier_data_file_server_ext_id
+      - result.task_ext_id is defined
+      - result.response is defined
+    success_msg: "Initiate tiering data with full files_spec succeeded"
+    fail_msg: "Initiate tiering data with full files_spec failed"
+  when:
+    - tier_data_file_server_ext_id is defined and tier_data_file_server_ext_id | length > 0
+    - tier_data_mount_target_ext_id is defined and tier_data_mount_target_ext_id | length > 0
+
+- name: Finish ntnx_initiate_tier_data_v2 tests
+  ansible.builtin.debug:
+    msg: Finish ntnx_initiate_tier_data_v2 tests

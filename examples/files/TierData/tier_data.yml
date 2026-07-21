@@ -1,0 +1,53 @@
+---
+# Summary:
+# This playbook demonstrates the ntnx_initiate_tier_data_v2 action module.
+# It initiates a manual tiering data action on a Nutanix Files file server.
+#
+# The action can target:
+#   - the whole file server (only duration_seconds), or
+#   - specific files on a mount target (via files_spec).
+#
+# Steps:
+#   1. Initiate tiering for the whole file server (with duration_seconds only).
+#   2. Initiate tiering for a specific set of files under a mount target
+#      (with duration_seconds and a complete files_spec).
+
+- name: TierData playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        file_server_ext_id: "ac5aff0c-6c68-4948-9088-b903e2be0ce7"
+        mount_target_ext_id: "d9c3f0f3-5f4a-42c1-9c66-1b23f4e5a111"
+
+    - name: Initiate tiering for a whole file server
+      nutanix.ncp.ntnx_initiate_tier_data_v2:
+        state: present
+        ext_id: "{{ file_server_ext_id }}"
+        duration_seconds: 3600
+      register: result
+      ignore_errors: true
+
+    - name: Initiate tiering for a specific set of files on a mount target
+      nutanix.ncp.ntnx_initiate_tier_data_v2:
+        state: present
+        ext_id: "{{ file_server_ext_id }}"
+        duration_seconds: 3600
+        files_spec:
+          is_single_dir_tree: false
+          mount_target_ext_id: "{{ mount_target_ext_id }}"
+          file_paths:
+            - "/archive/2024/report1.pdf"
+            - "/archive/2024/report2.pdf"
+          i_node_numbers:
+            - "12345"
+            - "12346"
+      register: result
+      ignore_errors: true
