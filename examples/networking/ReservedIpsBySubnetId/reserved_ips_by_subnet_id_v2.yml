@@ -1,0 +1,166 @@
+---
+# Summary:
+# This playbook demonstrates the full lifecycle of the
+# Reserved IPs by Subnet ID (SubnetIPReservationApi) feature:
+# 1. Create a managed subnet to reserve IPs on.
+# 2. Reserve IPs using every supported reserve_type (all fields).
+# 3. List reserved IPs (all, filtered by client_context, paginated).
+# 4. Unreserve IPs using every supported unreserve_type (all fields).
+# 5. Delete the managed subnet.
+
+- name: Reserved IPs by Subnet ID playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('10.44.76.28', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('admin', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('Nutanix.123', true) }}"
+      validate_certs: false
+  tasks:
+    - name: Setting example-level variables
+      ansible.builtin.set_fact:
+        subnet_name: "reserved_ips_example_subnet"
+        # Use unique context labels so the CONTEXT unreserve does not
+        # collide with any reservations that may already exist on the cluster.
+        ctx_count: "ansible-example-count"
+        ctx_list: "ansible-example-list"
+        ctx_range: "ansible-example-range"
+
+    - name: List available Prism Element clusters
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+      register: clusters
+      ignore_errors: true
+
+    - name: Pick the first AOS cluster reference
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ clusters.response[0].ext_id }}"
+
+    - name: Create a managed subnet to reserve IPs on
+      nutanix.ncp.ntnx_subnets_v2:
+        state: present
+        name: "{{ subnet_name }}"
+        description: "Reserved IPs by Subnet ID example subnet"
+        subnet_type: "VLAN"
+        network_id: 213
+        is_advanced_networking: false
+        cluster_reference: "{{ cluster_ext_id }}"
+        ip_config:
+          - ipv4:
+              ip_subnet:
+                ip:
+                  value: "10.44.76.0"
+                prefix_length: 24
+              default_gateway_ip:
+                value: "10.44.76.1"
+              dhcp_server_address:
+                value: "10.44.76.2"
+              pool_list:
+                - start_ip:
+                    value: "10.44.76.20"
+                  end_ip:
+                    value: "10.44.76.200"
+      register: subnet_result
+
+    - name: Set the subnet ext_id used by every reserve / unreserve task
+      ansible.builtin.set_fact:
+        subnet_ext_id: "{{ subnet_result.ext_id }}"
+
+    - name: Reserve IPs on subnet using IP_ADDRESS_COUNT (all fields)
+      nutanix.ncp.ntnx_reserved_ips_by_subnet_id_v2:
+        state: present
+        subnet_ext_id: "{{ subnet_ext_id }}"
+        reserve_type: IP_ADDRESS_COUNT
+        count: 2
+        client_context: "{{ ctx_count }}"
+      register: reserve_count_result
+
+    - name: Reserve an explicit list of IPv4 addresses (all fields)
+      nutanix.ncp.ntnx_reserved_ips_by_subnet_id_v2:
+        state: present
+        subnet_ext_id: "{{ subnet_ext_id }}"
+        reserve_type: IP_ADDRESS_LIST
+        ip_addresses:
+          - ipv4:
+              value: "10.44.76.50"
+              prefix_length: 32
+          - ipv4:
+              value: "10.44.76.51"
+              prefix_length: 32
+        client_context: "{{ ctx_list }}"
+      register: reserve_list_result
+
+    - name: Reserve a consecutive range of IPs (all fields)
+      nutanix.ncp.ntnx_reserved_ips_by_subnet_id_v2:
+        state: present
+        subnet_ext_id: "{{ subnet_ext_id }}"
+        reserve_type: IP_ADDRESS_RANGE
+        start_ip_address:
+          ipv4:
+            value: "10.44.76.100"
+            prefix_length: 32
+        count: 5
+        client_context: "{{ ctx_range }}"
+      register: reserve_range_result
+
+    - name: List every reserved IP on the subnet
+      nutanix.ncp.ntnx_reserved_ips_by_subnet_ids_info_v2:
+        subnet_ext_id: "{{ subnet_ext_id }}"
+      register: list_all_result
+
+    - name: List reserved IPs filtered by client_context
+      nutanix.ncp.ntnx_reserved_ips_by_subnet_ids_info_v2:
+        subnet_ext_id: "{{ subnet_ext_id }}"
+        filter: "clientContext eq '{{ ctx_list }}'"
+      register: list_filtered_result
+
+    - name: List reserved IPs with a page-size limit of 2
+      nutanix.ncp.ntnx_reserved_ips_by_subnet_ids_info_v2:
+        subnet_ext_id: "{{ subnet_ext_id }}"
+        limit: 2
+      register: list_limited_result
+
+    - name: Unreserve the explicit list of IPs (all fields)
+      nutanix.ncp.ntnx_reserved_ips_by_subnet_id_v2:
+        state: absent
+        subnet_ext_id: "{{ subnet_ext_id }}"
+        unreserve_type: IP_ADDRESS_LIST
+        ip_addresses:
+          - ipv4:
+              value: "10.44.76.50"
+              prefix_length: 32
+          - ipv4:
+              value: "10.44.76.51"
+              prefix_length: 32
+        # The API requires the same client_context (cookie) that was used
+        # when the IPs were reserved.
+        client_context: "{{ ctx_list }}"
+      register: unreserve_list_result
+
+    - name: Unreserve the consecutive range of IPs (all fields)
+      nutanix.ncp.ntnx_reserved_ips_by_subnet_id_v2:
+        state: absent
+        subnet_ext_id: "{{ subnet_ext_id }}"
+        unreserve_type: IP_ADDRESS_RANGE
+        start_ip_address:
+          ipv4:
+            value: "10.44.76.100"
+            prefix_length: 32
+        count: 5
+        client_context: "{{ ctx_range }}"
+      register: unreserve_range_result
+
+    - name: Unreserve every IP tagged with the count client_context
+      nutanix.ncp.ntnx_reserved_ips_by_subnet_id_v2:
+        state: absent
+        subnet_ext_id: "{{ subnet_ext_id }}"
+        unreserve_type: CONTEXT
+        client_context: "{{ ctx_count }}"
+      register: unreserve_context_result
+
+    - name: Delete the managed subnet
+      nutanix.ncp.ntnx_subnets_v2:
+        state: absent
+        ext_id: "{{ subnet_ext_id }}"
+      register: delete_subnet_result
