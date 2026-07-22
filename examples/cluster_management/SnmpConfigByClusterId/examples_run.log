@@ -1,0 +1,68 @@
+
+PLAY [SnmpConfigByClusterId end-to-end example] ********************************
+
+TASK [Fetch clusters to pick the first PE cluster] *****************************
+ok: [localhost]
+
+TASK [Set cluster_ext_id fact] *************************************************
+ok: [localhost]
+
+TASK [Fetch complete SNMP config of the cluster] *******************************
+ok: [localhost]
+
+TASK [Enable SNMP on the cluster] **********************************************
+changed: [localhost]
+
+TASK [Add an SNMP transport (UDP 161)] *****************************************
+changed: [localhost]
+
+TASK [Create an SNMP V3 user] **************************************************
+changed: [localhost]
+
+TASK [Fetch the newly-created SNMP user by ext_id] *****************************
+ok: [localhost]
+
+TASK [Update the SNMP user (rotate keys, switch to MD5/DES)] *******************
+changed: [localhost]
+
+TASK [Create an SNMP V3 trap] **************************************************
+changed: [localhost]
+
+TASK [Fetch the newly-created SNMP trap by ext_id] *****************************
+ok: [localhost]
+
+TASK [Update the SNMP trap] ****************************************************
+changed: [localhost]
+
+TASK [Delete the SNMP trap] ****************************************************
+changed: [localhost]
+
+TASK [Delete the SNMP user] ****************************************************
+changed: [localhost]
+
+TASK [Remove the SNMP transport] ***********************************************
+changed: [localhost]
+
+TASK [Disable SNMP on the cluster] *********************************************
+changed: [localhost]
+
+TASK [Print run summary] *******************************************************
+ok: [localhost] => {
+    "msg": [
+        "SNMP config fetch: False",
+        "SNMP enable: False",
+        "SNMP add transport: False",
+        "SNMP create user: False",
+        "SNMP update user: False",
+        "SNMP create trap: False",
+        "SNMP update trap: False",
+        "SNMP delete trap: False",
+        "SNMP delete user: False",
+        "SNMP remove transport: False",
+        "SNMP disable: False"
+    ]
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=16   changed=10   unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+

@@ -1,0 +1,211 @@
+---
+# Summary:
+# End-to-end example playbook for the SnmpConfigByClusterId feature.
+# This playbook exercises every operation exposed by the generated modules
+# against a target Prism Central + Prism Element cluster:
+#   1. Fetch complete SNMP config for the cluster (info module).
+#   2. Enable SNMP on the cluster.
+#   3. Add an SNMP transport (protocol + port).
+#   4. Create an SNMP V3 user.
+#   5. Fetch the newly-created SNMP user by ext_id (info module).
+#   6. Update the SNMP user.
+#   7. Create an SNMP V3 trap that references the created user.
+#   8. Fetch the newly-created SNMP trap by ext_id (info module).
+#   9. Update the SNMP trap.
+#  10. Delete the SNMP trap.
+#  11. Delete the SNMP user.
+#  12. Remove the SNMP transport.
+#  13. Disable SNMP on the cluster.
+
+- name: SnmpConfigByClusterId end-to-end example
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+  vars:
+    ip: "{{ lookup('env', 'NUTANIX_HOST') | default('10.44.76.28', true) }}"
+    username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('admin', true) }}"
+    password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('Nutanix.123', true) }}"
+  tasks:
+    - name: Fetch clusters to pick the first PE cluster
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+      register: clusters_result
+      ignore_errors: true
+
+    - name: Set cluster_ext_id fact
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ clusters_result.response[0].ext_id }}"
+      when:
+        - clusters_result is defined
+        - clusters_result.response is defined
+        - clusters_result.response | length > 0
+
+    - name: Fetch complete SNMP config of the cluster
+      nutanix.ncp.ntnx_snmp_config_by_cluster_ids_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: snmp_config_result
+      ignore_errors: true
+
+    - name: Enable SNMP on the cluster
+      nutanix.ncp.ntnx_snmp_config_by_cluster_id_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        resource_type: status
+        is_enabled: true
+      register: snmp_enable_result
+      ignore_errors: true
+
+    - name: Add an SNMP transport (UDP 161)
+      nutanix.ncp.ntnx_snmp_config_by_cluster_id_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        resource_type: transport
+        transports:
+          - protocol: UDP
+            port: 161
+      register: snmp_add_transport_result
+      ignore_errors: true
+
+    - name: Create an SNMP V3 user
+      nutanix.ncp.ntnx_snmp_config_by_cluster_id_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        resource_type: user
+        username: "ansible_snmp_user"
+        auth_type: SHA
+        auth_key: "ansible-auth-key-123"
+        priv_type: AES
+        priv_key: "ansible-priv-key-123"
+      register: snmp_create_user_result
+      ignore_errors: true
+
+    - name: Fetch the newly-created SNMP user by ext_id
+      nutanix.ncp.ntnx_snmp_config_by_cluster_ids_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        resource_type: user
+        ext_id: "{{ snmp_create_user_result.ext_id }}"
+      register: snmp_user_info_result
+      ignore_errors: true
+      when: snmp_create_user_result.ext_id is defined
+
+    - name: Update the SNMP user (rotate keys, switch to MD5/DES)
+      nutanix.ncp.ntnx_snmp_config_by_cluster_id_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        resource_type: user
+        ext_id: "{{ snmp_create_user_result.ext_id }}"
+        username: "ansible_snmp_user"
+        auth_type: MD5
+        auth_key: "updated-auth-key-456"
+        priv_type: DES
+        priv_key: "updated-priv-key-456"
+      register: snmp_update_user_result
+      ignore_errors: true
+      when: snmp_create_user_result.ext_id is defined
+
+    - name: Create an SNMP V3 trap
+      nutanix.ncp.ntnx_snmp_config_by_cluster_id_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        resource_type: trap
+        address:
+          ipv4:
+            value: "10.44.76.100"
+        protocol: UDP
+        port: 162
+        should_inform: false
+        version: V3
+        username: "ansible_snmp_user"
+        reciever_name: "ansible_trap_receiver"
+        engine_id: "0x800000090300abcdef012345"
+      register: snmp_create_trap_result
+      ignore_errors: true
+
+    - name: Fetch the newly-created SNMP trap by ext_id
+      nutanix.ncp.ntnx_snmp_config_by_cluster_ids_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        resource_type: trap
+        ext_id: "{{ snmp_create_trap_result.ext_id }}"
+      register: snmp_trap_info_result
+      ignore_errors: true
+      when: snmp_create_trap_result.ext_id is defined
+
+    - name: Update the SNMP trap
+      nutanix.ncp.ntnx_snmp_config_by_cluster_id_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        resource_type: trap
+        ext_id: "{{ snmp_create_trap_result.ext_id }}"
+        address:
+          ipv4:
+            value: "10.44.76.100"
+        protocol: UDP
+        port: 162
+        should_inform: true
+        version: V3
+        username: "ansible_snmp_user"
+        reciever_name: "ansible_trap_receiver_updated"
+        engine_id: "0x800000090300abcdef012345"
+      register: snmp_update_trap_result
+      ignore_errors: true
+      when: snmp_create_trap_result.ext_id is defined
+
+    - name: Delete the SNMP trap
+      nutanix.ncp.ntnx_snmp_config_by_cluster_id_v2:
+        state: absent
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        resource_type: trap
+        ext_id: "{{ snmp_create_trap_result.ext_id }}"
+      register: snmp_delete_trap_result
+      ignore_errors: true
+      when: snmp_create_trap_result.ext_id is defined
+
+    - name: Delete the SNMP user
+      nutanix.ncp.ntnx_snmp_config_by_cluster_id_v2:
+        state: absent
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        resource_type: user
+        ext_id: "{{ snmp_create_user_result.ext_id }}"
+      register: snmp_delete_user_result
+      ignore_errors: true
+      when: snmp_create_user_result.ext_id is defined
+
+    - name: Remove the SNMP transport
+      nutanix.ncp.ntnx_snmp_config_by_cluster_id_v2:
+        state: absent
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        resource_type: transport
+        transports:
+          - protocol: UDP
+            port: 161
+      register: snmp_remove_transport_result
+      ignore_errors: true
+
+    - name: Disable SNMP on the cluster
+      nutanix.ncp.ntnx_snmp_config_by_cluster_id_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        resource_type: status
+        is_enabled: false
+      register: snmp_disable_result
+      ignore_errors: true
+
+    - name: Print run summary
+      ansible.builtin.debug:
+        msg:
+          - "SNMP config fetch: {{ snmp_config_result.failed | default(true) }}"
+          - "SNMP enable: {{ snmp_enable_result.failed | default(true) }}"
+          - "SNMP add transport: {{ snmp_add_transport_result.failed | default(true) }}"
+          - "SNMP create user: {{ snmp_create_user_result.failed | default(true) }}"
+          - "SNMP update user: {{ snmp_update_user_result.failed | default(true) }}"
+          - "SNMP create trap: {{ snmp_create_trap_result.failed | default(true) }}"
+          - "SNMP update trap: {{ snmp_update_trap_result.failed | default(true) }}"
+          - "SNMP delete trap: {{ snmp_delete_trap_result.failed | default(true) }}"
+          - "SNMP delete user: {{ snmp_delete_user_result.failed | default(true) }}"
+          - "SNMP remove transport: {{ snmp_remove_transport_result.failed | default(true) }}"
+          - "SNMP disable: {{ snmp_disable_result.failed | default(true) }}"

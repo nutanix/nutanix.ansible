@@ -109,3 +109,71 @@ def get_cluster_profile(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching cluster profile info using ext_id",
         )
+
+
+def get_snmp_config(module, api_instance, cluster_ext_id):
+    """
+    This method will return the SNMP configuration for the given cluster.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+    return:
+        SnmpConfig object
+    """
+    try:
+        return api_instance.get_snmp_config_by_cluster_id(
+            clusterExtId=cluster_ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching SNMP config using cluster ext_id",
+        )
+
+
+def get_snmp_user(module, api_instance, cluster_ext_id, ext_id):
+    """
+    This method will return an SNMP user of a cluster using its external ID.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+        ext_id (str): SNMP user external ID
+    return:
+        SnmpUser object
+    """
+    try:
+        return api_instance.get_snmp_user_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching SNMP user using ext_id",
+        )
+
+
+def get_snmp_trap(module, api_instance, cluster_ext_id, ext_id):
+    """
+    This method will return an SNMP trap of a cluster using its external ID.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+        ext_id (str): SNMP trap external ID
+    return:
+        SnmpTrap object
+    """
+    try:
+        return api_instance.get_snmp_trap_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching SNMP trap using ext_id",
+        )
