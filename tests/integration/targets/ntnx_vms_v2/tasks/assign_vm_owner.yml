@@ -16,7 +16,45 @@
     vm_name: "{{ random_name }}_vm_owner_test"
 
 ################################################################################
-# Test 1: Create VM and assign owner in single task
+# Test 0: Generate Spec Create VM with ownership_info using check_mode
+################################################################################
+
+- name: Generate Spec Create VM with ownership_info using check_mode
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    name: "owner_test_vm"
+    cluster:
+      ext_id: "00065706-eb96-06f0-3976-525400774cf3"
+    description: "VM owner test"
+    num_sockets: 1
+    num_cores_per_socket: 1
+    memory_size_bytes: 1073741824
+    ownership_info:
+      owner:
+        ext_id: "8588ccc2-a3a5-561e-bb98-325b3bd6c6cb"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Generate Spec Create VM with ownership_info using check_mode Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == "owner_test_vm"
+      - result.response.ownership_info.owner.ext_id == "8588ccc2-a3a5-561e-bb98-325b3bd6c6cb"
+      - result.ext_id is defined
+      - result.response.description == "VM owner test"
+      - result.response.cluster.ext_id == "00065706-eb96-06f0-3976-525400774cf3"
+      - result.response.num_sockets == 1
+      - result.response.num_cores_per_socket == 1
+      - result.response.memory_size_bytes == 1073741824
+    fail_msg: "Unable to create VM with ownership_info"
+    success_msg: "VM with ownership_info created successfully"
+
+################################################################################
+# Test 2: Create VM and assign owner in single task
 ################################################################################
 
 - name: Create VM with ownership_info
@@ -44,6 +82,11 @@
       - result.response.name == "{{ vm_name }}"
       - result.response.ownership_info.owner.ext_id == "{{ users.0 }}"
       - result.ext_id is defined
+      - result.response.description == "VM owner test"
+      - result.response.cluster.ext_id == "{{ cluster.uuid }}"
+      - result.response.num_sockets == 1
+      - result.response.num_cores_per_socket == 1
+      - result.response.memory_size_bytes == 1073741824
     fail_msg: "Unable to create VM with ownership_info"
     success_msg: "VM with ownership_info created successfully"
 
@@ -52,10 +95,10 @@
     vm_uuid: '{{ result["ext_id"] }}'
 
 ################################################################################
-# Test 2: Update VM owner with check mode
+# Test 3: Generate Spec Update VM owner with check mode
 ################################################################################
 
-- name: Assign VM owner with check mode
+- name: Generate Spec Update VM owner with check mode
   nutanix.ncp.ntnx_vms_v2:
     state: present
     ext_id: "{{ vm_uuid }}"
@@ -66,7 +109,7 @@
   ignore_errors: true
   check_mode: true
 
-- name: Assign VM owner with check mode Status
+- name: Generate Spec Update VM owner with check mode Status
   ansible.builtin.assert:
     that:
       - result.response is defined
@@ -77,7 +120,7 @@
     success_msg: "Assign VM owner with check mode passed"
 
 ################################################################################
-# Test 3: Assign VM owner (actual update)
+# Test 4: Assign VM owner (actual update)
 ################################################################################
 
 - name: Assign VM owner
@@ -102,7 +145,7 @@
     success_msg: "VM owner assigned successfully"
 
 ################################################################################
-# Test 4: Assign VM owner idempotency
+# Test 5: Assign VM owner idempotency
 ################################################################################
 
 - name: Assign VM owner idempotency check
@@ -127,7 +170,7 @@
     success_msg: "Assign VM owner idempotency check passed"
 
 ################################################################################
-# Test 5: Assign VM owner along with VM field update
+# Test 6: Assign VM owner along with VM field update
 ################################################################################
 
 - name: Update VM fields and assign owner simultaneously
