@@ -173,7 +173,7 @@ def run_module():
         skip_info_args=True,
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "response": None}
+    result = {"changed": False, "failed": False, "response": None}
     object_stores_api = get_objects_api_instance(module)
     download_object_store_certificate_ca(module, object_stores_api, result)
     module.exit_json(**result)
