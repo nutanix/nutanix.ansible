@@ -365,7 +365,7 @@ def reconcile_sharing(
             share_all_fn(module, api_instance, ext_id)
             changed = True
             current_shared_all = True
-        elif not is_shared_with_all and current_shared_all:
+        elif not is_shared_with_all:
             unshare_all_fn(module, api_instance, ext_id)
             changed = True
             current_shared_all = False
