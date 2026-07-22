@@ -1710,11 +1710,6 @@ def run_module():
         else:
             create_vm(module, result)
     else:
-        if module.params.get("ownership_info"):
-            module.fail_json(
-                msg="ownership_info is not supported during VM delete operation.",
-                **result,
-            )
         delete_vm(module, result)
 
     module.exit_json(**result)

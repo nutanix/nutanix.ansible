@@ -102,7 +102,7 @@
     success_msg: "VM owner assigned successfully"
 
 ################################################################################
-# Test 5: Assign VM owner idempotency
+# Test 4: Assign VM owner idempotency
 ################################################################################
 
 - name: Assign VM owner idempotency check
@@ -127,7 +127,7 @@
     success_msg: "Assign VM owner idempotency check passed"
 
 ################################################################################
-# Test 6: Assign VM owner along with VM field update
+# Test 5: Assign VM owner along with VM field update
 ################################################################################
 
 - name: Update VM fields and assign owner simultaneously
@@ -151,28 +151,6 @@
       - result.response.ownership_info.owner.ext_id == "{{ users.0 }}"
     fail_msg: "Update VM fields and assign owner simultaneously failed"
     success_msg: "Update VM fields and assign owner simultaneously passed"
-
-################################################################################
-# Test 7: Negative - ownership_info during delete
-################################################################################
-
-- name: Negative test - ownership_info during delete
-  nutanix.ncp.ntnx_vms_v2:
-    state: absent
-    ext_id: "{{ vm_uuid }}"
-    ownership_info:
-      owner:
-        ext_id: "{{ users.0 }}"
-  register: result
-  ignore_errors: true
-
-- name: Negative test - ownership_info during delete Status
-  ansible.builtin.assert:
-    that:
-      - result.failed == true
-      - result.msg == "ownership_info is not supported during VM delete operation."
-    fail_msg: "Negative test for ownership_info during delete failed"
-    success_msg: "Negative test for ownership_info during delete passed"
 
 ################################################################################
 # Cleanup
