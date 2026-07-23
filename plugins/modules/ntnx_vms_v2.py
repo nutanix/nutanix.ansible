@@ -1494,14 +1494,14 @@ def update_vm(module, result):
     ):
         update_spec.apc_config.cpu_model = None
 
+    if module.check_mode:
+        result["response"] = strip_internal_attributes(update_spec.to_dict())
+        return
+
     # check for idempotency
     if check_idempotency(current_spec, update_spec):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
-
-    if module.check_mode:
-        result["response"] = strip_internal_attributes(update_spec.to_dict())
-        return
 
     resp = None
     try:
