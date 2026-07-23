@@ -10,11 +10,11 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_snmp_config_v2
-short_description: Update SNMP configuration on a Nutanix cluster
+module: ntnx_snmp_transport_v2
+short_description: Update SNMP transport ports and protocol details on a Nutanix cluster
 version_added: 2.6.0
 description:
-  - Update SNMP configuration on a Nutanix cluster.
+  - Update SNMP transport ports and protocol details on a Nutanix cluster.
   - Update SNMP status (enable/disable) when C(is_enabled) is provided.
   - Add SNMP transport ports and protocol details when C(state) is C(present), C(transports) and C(port) are provided.
   - Remove SNMP transport ports and protocol details when C(state) is C(absent), C(transports) and C(port) are provided.
@@ -59,7 +59,7 @@ author:
 
 EXAMPLES = r"""
 - name: Enable SNMP on a cluster
-  nutanix.ncp.ntnx_snmp_config_v2:
+  nutanix.ncp.ntnx_snmp_transport_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -69,7 +69,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Disable SNMP on a cluster
-  nutanix.ncp.ntnx_snmp_config_v2:
+  nutanix.ncp.ntnx_snmp_transport_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -79,7 +79,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Add SNMP transport
-  nutanix.ncp.ntnx_snmp_config_v2:
+  nutanix.ncp.ntnx_snmp_transport_v2:
     state: present
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -91,7 +91,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Remove SNMP transport
-  nutanix.ncp.ntnx_snmp_config_v2:
+  nutanix.ncp.ntnx_snmp_transport_v2:
     state: absent
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
