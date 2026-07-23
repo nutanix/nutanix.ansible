@@ -306,3 +306,31 @@ def strip_read_only_fields(spec, fields=None):
         if hasattr(spec, field):
             delattr(spec, field)
     return spec
+
+
+def normalize_oneof_marker_values(params, marker_keys):
+    """Normalize one-of marker variants from ``null`` to ``{}``.
+
+    Some one-of (discriminated union) variants map to SDK classes with no
+    user-facing fields; the variant is selected purely by *which* key is
+    present. Users may write either ``some_marker: {}`` or simply
+    ``some_marker:`` (null) in their playbook. The latter form would otherwise
+    be stripped by ``remove_param_with_none_value`` before the spec generator
+    could dispatch it, so we promote ``null`` to ``{}`` for the given marker
+    keys here.
+
+    The structure is mutated in place.
+
+    Args:
+        params (dict | list): module params (or a nested fragment) to normalize.
+        marker_keys (Iterable[str]): keys whose ``null`` value should become ``{}``.
+    """
+    if isinstance(params, dict):
+        for key, value in params.items():
+            if key in marker_keys and value is None:
+                params[key] = {}
+            elif isinstance(value, dict):
+                normalize_oneof_marker_values(value, marker_keys)
+            elif isinstance(value, list):
+                for item in value:
+                    normalize_oneof_marker_values(item, marker_keys)

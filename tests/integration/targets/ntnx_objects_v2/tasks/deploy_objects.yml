@@ -270,6 +270,120 @@
     success_msg: "Certificate details are fetched successfully using external ID"
     fail_msg: "Certificate details are not fetched successfully using external ID"
 
+- name: Download certificate authority (CA) for the certificate to a destination path
+  nutanix.ncp.ntnx_object_stores_certificate_download_v2:
+    object_store_ext_id: "{{ object_store_ext_id_1 }}"
+    ext_id: "{{ certificate_ext_id }}"
+    dest: "/tmp/object_store_ca.pem"
+  register: result
+  ignore_errors: true
+
+- name: Stat the downloaded certificate authority (CA) file
+  ansible.builtin.stat:
+    path: "{{ result.response.path }}"
+  register: ca_file_stat
+  when: result.response.path is defined
+  ignore_errors: true
+
+- name: Download certificate authority (CA) for the certificate to a destination path status
+  ansible.builtin.assert:
+    that:
+      - result.changed is false
+      - result.failed is false
+      - result.ext_id == "{{ certificate_ext_id }}"
+      - result.response is defined
+      - result.response.path == "/tmp/object_store_ca.pem"
+      - ca_file_stat.stat.exists
+      - ca_file_stat.stat.size > 0
+    success_msg: "Certificate authority (CA) is downloaded successfully to destination path"
+    fail_msg: "Certificate authority (CA) is not downloaded successfully to destination path"
+
+- name: Remove the downloaded certificate authority (CA) file
+  ansible.builtin.file:
+    path: "/tmp/object_store_ca.pem"
+    state: absent
+  failed_when: false
+
+- name: Stat the certificate authority (CA) file after removal
+  ansible.builtin.stat:
+    path: "/tmp/object_store_ca.pem"
+  register: ca_file_stat_after_removal
+  failed_when: false
+
+- name: Verify certificate authority (CA) file is removed status
+  ansible.builtin.assert:
+    that:
+      - not ca_file_stat_after_removal.stat.exists
+    success_msg: "Certificate authority (CA) file is removed successfully"
+    fail_msg: "Certificate authority (CA) file is not removed successfully"
+
+- name: Download certificate authority (CA) for the certificate without a destination path
+  nutanix.ncp.ntnx_object_stores_certificate_download_v2:
+    object_store_ext_id: "{{ object_store_ext_id_1 }}"
+    ext_id: "{{ certificate_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Set the default location certificate authority (CA) file path
+  ansible.builtin.set_fact:
+    ca_default_path: "{{ result.response.path }}"
+  when: result.response.path is defined
+
+- name: Stat the downloaded certificate authority (CA) file at the default location
+  ansible.builtin.stat:
+    path: "{{ ca_default_path }}"
+  register: ca_default_file_stat
+  when: ca_default_path is defined
+  failed_when: false
+
+- name: Download certificate authority (CA) for the certificate without a destination path status
+  ansible.builtin.assert:
+    that:
+      - result.changed is false
+      - result.failed is false
+      - result.ext_id == "{{ certificate_ext_id }}"
+      - result.response is defined
+      - result.response.path is defined
+      - ca_default_file_stat.stat.exists
+      - ca_default_file_stat.stat.size > 0
+    success_msg: "Certificate authority (CA) is downloaded successfully to the default location"
+    fail_msg: "Certificate authority (CA) is not downloaded successfully to the default location"
+
+- name: Remove the downloaded certificate authority (CA) file from the default location
+  ansible.builtin.file:
+    path: "{{ ca_default_path }}"
+    state: absent
+  failed_when: false
+
+- name: Stat the certificate authority (CA) file at the default location after removal
+  ansible.builtin.stat:
+    path: "{{ ca_default_path }}"
+  register: ca_default_file_stat_after_removal
+  failed_when: false
+
+- name: Verify certificate authority (CA) file at the default location is removed status
+  ansible.builtin.assert:
+    that:
+      - not ca_default_file_stat_after_removal.stat.exists
+    success_msg: "Certificate authority (CA) file at the default location is removed successfully"
+    fail_msg: "Certificate authority (CA) file at the default location is not removed successfully"
+
+- name: Download certificate authority (CA) for the certificate to a destination path without ext_id
+  nutanix.ncp.ntnx_object_stores_certificate_download_v2:
+    object_store_ext_id: "{{ object_store_ext_id_1 }}"
+  register: result
+  ignore_errors: true
+
+- name: Download certificate authority (CA) for the certificate to a destination path without ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.changed is false
+      - result.failed is true
+      - >-
+        result.msg == "missing required arguments: ext_id"
+    success_msg: "Download certificate authority (CA) for the certificate to a destination path without ext_id failed as expected"
+    fail_msg: "Download certificate authority (CA) for the certificate to a destination path without ext_id did not fail as expected"
+
 - name: List all object stores
   nutanix.ncp.ntnx_object_stores_info_v2:
   register: result
@@ -351,3 +465,28 @@
       - result.response.cluster_ext_id == "{{ cluster.uuid }}"
     success_msg: "Object store details are fetched successfully using external ID"
     fail_msg: "Object store details are not fetched successfully using external ID"
+
+- name: Set time window for object store statistics
+  ansible.builtin.set_fact:
+    stats_start_time: '{{ lookup(''pipe'', ''date -u -d "1 hour ago" +%Y-%m-%dT%H:%M:%S.000+00:00'') }}'
+    stats_end_time: "{{ lookup('pipe', 'date -u +%Y-%m-%dT%H:%M:%S.000+00:00') }}"
+
+- name: Fetch object store statistics for the time window
+  nutanix.ncp.ntnx_object_stores_stats_info_v2:
+    ext_id: "{{ object_store_ext_id_1 }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+    sampling_interval: 300
+    stat_type: "SUM"
+  register: result
+  ignore_errors: true
+
+- name: Fetch object store statistics for the time window status
+  ansible.builtin.assert:
+    that:
+      - result.changed is false
+      - result.failed is false
+      - result.ext_id == "{{ object_store_ext_id_1 }}"
+      - result.response is defined
+    success_msg: "Object store statistics are fetched successfully for the time window"
+    fail_msg: "Object store statistics are not fetched successfully for the time window"

@@ -1,0 +1,118 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create load balancer session
+# 2. Update load balancer session
+# 3. Get load balancer session using ext_id
+# 4. List all load balancer sessions
+# 5. List load balancer sessions with filter
+# 6. List load balancer sessions with limit
+# 7. Delete load balancer session
+
+- name: Load Balancer Sessions playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        load_balancer_session_name: "load_balancer_session_ansible"
+        vpc_reference: "aff07e7b-0522-49d0-8c12-79614056a3c2"
+        subnet_reference: "5c214f10-213f-4ab4-b0df-451bb117992c"
+        virtual_nic_reference: "417a0eb5-7c0a-467d-9fe2-b8a796a4be78"
+
+    - name: Create load balancer session
+      nutanix.ncp.ntnx_load_balancer_session_v2:
+        state: present
+        name: "{{ load_balancer_session_name }}"
+        description: "Load balancer session created by Ansible"
+        type: "NETWORK_LOAD_BALANCER"
+        vpc_reference: "{{ vpc_reference }}"
+        algorithm: "FIVE_TUPLE_HASH"
+        listener:
+          protocol: "TCP"
+          port_ranges:
+            - start_port: 80
+              end_port: 80
+          virtual_ip:
+            subnet_reference: "{{ subnet_reference }}"
+            assignment_type: "STATIC"
+            ip_address:
+              ipv4:
+                value: "192.168.1.101"
+        targets_config:
+          nic_targets:
+            - virtual_nic_reference: "{{ virtual_nic_reference }}"
+              port: 80
+        health_check_config:
+          interval_secs: 10
+          timeout_secs: 5
+          success_threshold: 4
+          failure_threshold: 6
+      register: result
+      ignore_errors: true
+
+    - name: Set load balancer session ext_id
+      ansible.builtin.set_fact:
+        load_balancer_session_ext_id: "{{ result.response.ext_id }}"
+
+    - name: Update load balancer session
+      nutanix.ncp.ntnx_load_balancer_session_v2:
+        state: present
+        ext_id: "{{ load_balancer_session_ext_id }}"
+        name: "{{ load_balancer_session_name }}_updated"
+        description: "Updated load balancer session description"
+        listener:
+          protocol: "TCP"
+          port_ranges:
+            - start_port: 100
+              end_port: 105
+          virtual_ip:
+            subnet_reference: "{{ subnet_reference }}"
+            assignment_type: "DYNAMIC"
+        targets_config:
+          nic_targets:
+            - virtual_nic_reference: "{{ virtual_nic_reference }}"
+              port: 1080
+        health_check_config:
+          interval_secs: 13
+          timeout_secs: 14
+          success_threshold: 10
+          failure_threshold: 12
+      register: result
+      ignore_errors: true
+
+    - name: Get load balancer session using ext_id
+      nutanix.ncp.ntnx_load_balancer_sessions_info_v2:
+        ext_id: "{{ load_balancer_session_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all load balancer sessions
+      nutanix.ncp.ntnx_load_balancer_sessions_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List load balancer sessions with filter
+      nutanix.ncp.ntnx_load_balancer_sessions_info_v2:
+        filter: "name eq '{{ load_balancer_session_name }}_updated'"
+      register: result
+      ignore_errors: true
+
+    - name: List load balancer sessions with limit
+      nutanix.ncp.ntnx_load_balancer_sessions_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: Delete load balancer session
+      nutanix.ncp.ntnx_load_balancer_session_v2:
+        state: absent
+        ext_id: "{{ load_balancer_session_ext_id }}"
+      register: result
+      ignore_errors: true
