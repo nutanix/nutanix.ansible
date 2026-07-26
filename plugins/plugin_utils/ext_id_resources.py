@@ -16,9 +16,7 @@ from ..module_utils.v4.data_policies.api_client import (
     get_protection_policies_api_instance,
     get_storage_policies_api_instance,
 )
-from ..module_utils.v4.data_protection.api_client import (
-    get_recovery_point_api_instance,
-)
+from ..module_utils.v4.data_protection.api_client import get_recovery_point_api_instance
 from ..module_utils.v4.flow.api_client import (
     get_address_groups_api_instance,
     get_entity_groups_api_instance,
