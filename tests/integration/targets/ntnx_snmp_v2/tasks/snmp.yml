@@ -74,9 +74,9 @@
 - name: Set dynamic variables from initial SNMP config
   ansible.builtin.set_fact:
     current_snmp_status: "{{ initial_snmp_config.response.is_enabled | bool }}"
-    current_snmp_transports: "{{ initial_snmp_config.response.transports | default([]) }}"
+    current_snmp_transports: "{{ initial_snmp_config.response.transports | default([], true) }}"
     existing_trap_ips: >-
-      {{ (initial_snmp_config.response.traps | default([]))
+      {{ (initial_snmp_config.response.traps | default([], true))
         | selectattr('address', 'defined')
         | selectattr('address.ipv4', 'defined')
         | selectattr('address.ipv4.value', 'defined')
@@ -173,7 +173,7 @@
 
 - name: Wait for SNMP status change to propagate
   ansible.builtin.pause:
-    seconds: 5
+    seconds: 30
 
 - name: Fetch SNMP config after toggle
   nutanix.ncp.ntnx_snmp_config_info_v2:
@@ -220,7 +220,7 @@
 
 - name: Wait for SNMP status restore to propagate
   ansible.builtin.pause:
-    seconds: 5
+    seconds: 30
 
 - name: Fetch SNMP config after restore
   nutanix.ncp.ntnx_snmp_config_info_v2:
@@ -316,10 +316,9 @@
       - after_add_config.changed == false
       - after_add_config.failed == false
       - after_add_config.response is defined
-      - after_add_config.response.transports is not none
-      - after_add_config.response.transports | length == (current_snmp_transports | length) + 1
+      - (after_add_config.response.transports | default([], true) | length) == ((current_snmp_transports | default([], true) | length) + 1)
       - >-
-        after_add_config.response.transports
+        (after_add_config.response.transports | default([], true))
         | selectattr('protocol', 'equalto', test_transport_protocol)
         | selectattr('port', 'equalto', test_transport_port | int)
         | list | length > 0
@@ -394,9 +393,9 @@
       - after_remove_config.failed == false
       - after_remove_config.cluster_ext_id == "{{ cluster_ext_id }}"
       - after_remove_config.response is defined
-      - after_remove_config.response.transports | length == (current_snmp_transports | length)
+      - (after_remove_config.response.transports | default([], true) | length) == (current_snmp_transports | default([], true) | length)
       - >-
-        after_remove_config.response.transports
+        (after_remove_config.response.transports | default([], true))
         | selectattr('protocol', 'equalto', test_transport_protocol)
         | selectattr('port', 'equalto', test_transport_port | int)
         | list | length == 0
@@ -544,7 +543,7 @@
 
 - name: Update SNMP user auth_type with check mode
   nutanix.ncp.ntnx_snmp_user_v2:
-    cluster_ext_id: "913fa076-d385-4dd8-b549-0e628e645569"
+    cluster_ext_id: "{{ cluster_ext_id }}"
     ext_id: "{{ to_delete_users[1] }}"
     username: "test_user_all_updated"
     auth_type: MD5
@@ -564,7 +563,7 @@
     that:
       - check_mode_result.changed == false
       - check_mode_result.failed == false
-      - check_mode_result.cluster_ext_id == "913fa076-d385-4dd8-b549-0e628e645569"
+      - check_mode_result.cluster_ext_id == "{{ cluster_ext_id }}"
       - check_mode_result.response is defined
       - check_mode_result.response.auth_type == "MD5"
       - check_mode_result.response.priv_type == "AES"
@@ -1031,7 +1030,7 @@
     that:
       - result.changed == false
       - result.failed == true
-      - "result.msg == 'value of auth_type must be one of: MD5, SHA, got: WRONG'"
+      - "result.msg == 'value of auth_type must be one of: MD5, SHA, SHA224, SHA256, SHA384, SHA512, got: WRONG'"
     fail_msg: "Create SNMP user with wrong auth_type did not fail as expected"
     success_msg: "Create SNMP user with wrong auth_type failed as expected"
 
