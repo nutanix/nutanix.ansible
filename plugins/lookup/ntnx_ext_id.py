@@ -90,6 +90,8 @@ DOCUMENTATION = r"""
             description:
                 - If V(true), raise an error when a search term resolves to no entity.
                 - If V(false), V(None) is returned for that term instead.
+                - Prefer C(query) over C(lookup) when this is V(false), because a V(None) entry
+                  cannot be joined into a string. See the notes for details.
             type: bool
             default: true
         fail_on_multiple:
@@ -118,12 +120,14 @@ DOCUMENTATION = r"""
                 - Prism Central password.
                 - Required unless O(nutanix_api_key) is provided.
             type: str
+            no_log: true
             env:
                 - name: NUTANIX_PASSWORD
         nutanix_api_key:
             description:
                 - Prism Central API key, used instead of username and password.
             type: str
+            no_log: true
             env:
                 - name: NUTANIX_API_KEY
         nutanix_port:
@@ -148,6 +152,14 @@ DOCUMENTATION = r"""
             default: false
             env:
                 - name: NUTANIX_DEBUG
+        read_timeout:
+            description:
+                - Read timeout in milliseconds for API calls.
+                - Raise this when Prism Central is slow to answer list calls.
+            type: int
+            default: 30000
+    extends_documentation_fragment:
+        - nutanix.ncp.ntnx_proxy_v2
     requirements:
         - "ntnx_clustermgmt_py_client (for resource=cluster, cluster_profile or storage_container)"
         - "ntnx_networking_py_client (for resource=subnet, vpc, virtual_switch, floating_ip,
@@ -165,7 +177,21 @@ DOCUMENTATION = r"""
     notes:
         - Names are not guaranteed to be unique in Prism Central. When a name can match more than one
           entity, either set O(fail_on_multiple=false) or provide a more specific O(filter).
-        - This lookup runs on the Ansible controller and performs one API call per search term.
+        - This lookup runs on the Ansible controller and performs at least one API call per
+          search term. When a filter matches more than 100 entities, the results are paginated
+          and one additional API call is made per extra page.
+        - For O(resource=storage_container) the V4 API leaves C(extId) empty and returns the
+          identifier in C(containerExtId) instead. The lookup falls back to C(containerExtId) for
+          that resource, so the returned value is still the UUID that references the container.
+        - This plugin always returns a list, but C(lookup) joins that list into a comma separated
+          string. Use C(query), or C(lookup) with C(wantlist=true), whenever more than one external
+          ID can come back, that is with several search terms or with O(fail_on_multiple=false).
+          C(wantlist) is handled by Ansible itself and is available for every lookup plugin, so it
+          is not listed among the options above.
+        - With O(fail_on_missing=false) the returned list holds V(None) for terms that matched
+          nothing, and Ansible cannot join V(None) into a string. C(lookup) then falls back to
+          returning the bare V(None) for a single term, or the raw list for several terms. Use
+          C(query) to always get a list.
 """
 
 EXAMPLES = r"""
@@ -188,6 +214,20 @@ EXAMPLES = r"""
 - name: Resolve multiple VM names at once with query()
   ansible.builtin.debug:
     msg: "{{ query('nutanix.ncp.ntnx_ext_id', 'vm1', 'vm2', 'vm3', resource='vm') }}"
+
+# lookup() would join these into "uuid1,uuid2,uuid3"; wantlist=true keeps them as a list
+# and is equivalent to using query().
+- name: Same thing with lookup() and wantlist
+  ansible.builtin.debug:
+    msg: >-
+      {{ lookup('nutanix.ncp.ntnx_ext_id', 'vm1', 'vm2', 'vm3',
+                resource='vm', wantlist=true) }}
+
+- name: Tolerate missing names and keep a list with a None placeholder per missing term
+  ansible.builtin.set_fact:
+    vm_ext_ids: >-
+      {{ query('nutanix.ncp.ntnx_ext_id', 'vm1', 'does-not-exist',
+               resource='vm', fail_on_missing=false) }}
 
 - name: Resolve a subnet using a precise filter
   ansible.builtin.set_fact:
@@ -221,12 +261,33 @@ EXAMPLES = r"""
   ansible.builtin.set_fact:
     protection_policy_ext_id: >-
       {{ lookup('nutanix.ncp.ntnx_ext_id', 'pp-gold', resource='protection_policy') }}
+
+- name: Reach Prism Central through an HTTPS proxy
+  ansible.builtin.set_fact:
+    vm_ext_id: >-
+      {{ lookup('nutanix.ncp.ntnx_ext_id', 'vm1', resource='vm',
+                https_proxy='http://proxy.example.com:3128',
+                proxy_username=proxy_user, proxy_password=proxy_pass) }}
 """
 
 RETURN = r"""
 _raw:
     description:
         - A flat list of external IDs (UUIDs) matching the search terms or filter, in input order.
+          This is what C(query), or C(lookup) with C(wantlist=true), returns. Plain C(lookup) joins
+          the list into a comma separated string.
+        - When O(fail_on_missing=false) and a search term matches no entity, the entry for that term
+          is V(None) rather than a string, so the list can hold a mix of strings and V(None) values.
+          Guard against this before using a result, for example by testing an entry with C(is none)
+          or by dropping the empty entries with the C(select) filter.
+        - When O(fail_on_multiple=false) and a search term matches several entities, every matching
+          external ID is added to the list. The list is then longer than the number of search terms
+          and its entries no longer line up one to one with them.
+        - Nothing is returned when the lookup fails, an error is raised instead. This happens when
+          O(fail_on_missing=true) and a term matches no entity, when O(fail_on_multiple=true) and a
+          term matches more than one entity, when O(resource) is not one of the supported values,
+          when neither a search term nor O(filter) is given, when O(nutanix_host) is not set, and
+          when the underlying V4 list API call raises an exception.
     type: list
     elements: str
 """
@@ -238,235 +299,22 @@ from ansible.errors import AnsibleError  # noqa: E402
 from ansible.module_utils._text import to_native  # noqa: E402
 from ansible.plugins.lookup import LookupBase  # noqa: E402
 
-from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
-    get_cluster_profiles_api_instance,
-    get_clusters_api_instance,
-    get_storage_containers_api_instance,
-)
-from ..module_utils.v4.data_policies.api_client import (  # noqa: E402
-    get_protection_policies_api_instance,
-    get_storage_policies_api_instance,
-)
-from ..module_utils.v4.data_protection.api_client import (  # noqa: E402
-    get_recovery_point_api_instance,
-)
-from ..module_utils.v4.flow.api_client import (  # noqa: E402
-    get_address_groups_api_instance,
-    get_entity_groups_api_instance,
-    get_network_security_policy_api_instance,
-    get_service_groups_api_instance,
-)
-from ..module_utils.v4.iam.api_client import (  # noqa: E402
-    get_authorization_policy_api_instance,
-    get_directory_service_api_instance,
-    get_identity_provider_api_instance,
-    get_permission_api_instance,
-    get_role_api_instance,
-    get_user_api_instance,
-    get_user_group_api_instance,
-)
-from ..module_utils.v4.network.api_client import (  # noqa: E402
-    get_floating_ip_api_instance,
-    get_network_function_api_instance,
-    get_routing_policies_api_instance,
-    get_subnet_api_instance,
-    get_virtual_switches_api_instance,
-    get_vpc_api_instance,
-)
-from ..module_utils.v4.objects.api_client import get_objects_api_instance  # noqa: E402
-from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
-    get_categories_api_instance,
-)
 from ..module_utils.v4.utils import strip_internal_attributes  # noqa: E402
-from ..module_utils.v4.vmm.api_client import (  # noqa: E402
-    get_image_api_instance,
-    get_image_placement_policy_api_instance,
-    get_ova_api_instance,
-    get_templates_api_instance,
-    get_vm_api_instance,
-)
-from ..module_utils.v4.volumes.api_client import (  # noqa: E402
-    get_iscsi_client_api_instance,
-    get_vg_api_instance,
-)
+from ..plugin_utils.ext_id_resources import RESOURCE_MAP  # noqa: E402
 
-# Maps a resource keyword to how its list API is reached and which attribute
-# its names live under. Any top level entity that exposes a list API supporting
-# an OData $filter and returning an ext_id can be added here. The
-# ``filter_attribute`` is the server side OData property name (camelCase), which
-# defaults to ``name`` for most entities.
-RESOURCE_MAP = {
-    # --- clusters management --------------------------------------------------
-    "cluster": {
-        "get_api_instance": get_clusters_api_instance,
-        "list_method": "list_clusters",
-        "filter_attribute": "name",
-    },
-    "cluster_profile": {
-        "get_api_instance": get_cluster_profiles_api_instance,
-        "list_method": "list_cluster_profiles",
-        "filter_attribute": "name",
-    },
-    "storage_container": {
-        "get_api_instance": get_storage_containers_api_instance,
-        "list_method": "list_storage_containers",
-        "filter_attribute": "name",
-    },
-    # --- networking -----------------------------------------------------------
-    "subnet": {
-        "get_api_instance": get_subnet_api_instance,
-        "list_method": "list_subnets",
-        "filter_attribute": "name",
-    },
-    "vpc": {
-        "get_api_instance": get_vpc_api_instance,
-        "list_method": "list_vpcs",
-        "filter_attribute": "name",
-    },
-    "virtual_switch": {
-        "get_api_instance": get_virtual_switches_api_instance,
-        "list_method": "list_virtual_switches",
-        "filter_attribute": "name",
-    },
-    "floating_ip": {
-        "get_api_instance": get_floating_ip_api_instance,
-        "list_method": "list_floating_ips",
-        "filter_attribute": "name",
-    },
-    "network_function": {
-        "get_api_instance": get_network_function_api_instance,
-        "list_method": "list_network_functions",
-        "filter_attribute": "name",
-    },
-    "routing_policy": {
-        "get_api_instance": get_routing_policies_api_instance,
-        "list_method": "list_routing_policies",
-        "filter_attribute": "name",
-    },
-    # --- virtual machine management -------------------------------------------
-    "vm": {
-        "get_api_instance": get_vm_api_instance,
-        "list_method": "list_vms",
-        "filter_attribute": "name",
-    },
-    "image": {
-        "get_api_instance": get_image_api_instance,
-        "list_method": "list_images",
-        "filter_attribute": "name",
-    },
-    "image_placement_policy": {
-        "get_api_instance": get_image_placement_policy_api_instance,
-        "list_method": "list_placement_policies",
-        "filter_attribute": "name",
-    },
-    "template": {
-        "get_api_instance": get_templates_api_instance,
-        "list_method": "list_templates",
-        "filter_attribute": "templateName",
-    },
-    "ova": {
-        "get_api_instance": get_ova_api_instance,
-        "list_method": "list_ovas",
-        "filter_attribute": "name",
-    },
-    # --- volumes --------------------------------------------------------------
-    "volume_group": {
-        "get_api_instance": get_vg_api_instance,
-        "list_method": "list_volume_groups",
-        "filter_attribute": "name",
-    },
-    "iscsi_client": {
-        "get_api_instance": get_iscsi_client_api_instance,
-        "list_method": "list_iscsi_clients",
-        "filter_attribute": "iscsiInitiatorName",
-    },
-    # --- prism ----------------------------------------------------------------
-    "category": {
-        "get_api_instance": get_categories_api_instance,
-        "list_method": "list_categories",
-        "filter_attribute": "key",
-    },
-    # --- IAM ------------------------------------------------------------------
-    "user": {
-        "get_api_instance": get_user_api_instance,
-        "list_method": "list_users",
-        "filter_attribute": "username",
-    },
-    "user_group": {
-        "get_api_instance": get_user_group_api_instance,
-        "list_method": "list_user_groups",
-        "filter_attribute": "name",
-    },
-    "role": {
-        "get_api_instance": get_role_api_instance,
-        "list_method": "list_roles",
-        "filter_attribute": "displayName",
-    },
-    "operation": {
-        "get_api_instance": get_permission_api_instance,
-        "list_method": "list_operations",
-        "filter_attribute": "displayName",
-    },
-    "authorization_policy": {
-        "get_api_instance": get_authorization_policy_api_instance,
-        "list_method": "list_authorization_policies",
-        "filter_attribute": "displayName",
-    },
-    "directory_service": {
-        "get_api_instance": get_directory_service_api_instance,
-        "list_method": "list_directory_services",
-        "filter_attribute": "name",
-    },
-    "saml_identity_provider": {
-        "get_api_instance": get_identity_provider_api_instance,
-        "list_method": "list_saml_identity_providers",
-        "filter_attribute": "name",
-    },
-    # --- flow / microsegmentation ---------------------------------------------
-    "service_group": {
-        "get_api_instance": get_service_groups_api_instance,
-        "list_method": "list_service_groups",
-        "filter_attribute": "name",
-    },
-    "address_group": {
-        "get_api_instance": get_address_groups_api_instance,
-        "list_method": "list_address_groups",
-        "filter_attribute": "name",
-    },
-    "network_security_policy": {
-        "get_api_instance": get_network_security_policy_api_instance,
-        "list_method": "list_network_security_policies",
-        "filter_attribute": "name",
-    },
-    "entity_group": {
-        "get_api_instance": get_entity_groups_api_instance,
-        "list_method": "list_entity_groups",
-        "filter_attribute": "name",
-    },
-    # --- data protection ------------------------------------------------------
-    "recovery_point": {
-        "get_api_instance": get_recovery_point_api_instance,
-        "list_method": "list_recovery_points",
-        "filter_attribute": "name",
-    },
-    # --- data policies --------------------------------------------------------
-    "protection_policy": {
-        "get_api_instance": get_protection_policies_api_instance,
-        "list_method": "list_protection_policies",
-        "filter_attribute": "name",
-    },
-    "storage_policy": {
-        "get_api_instance": get_storage_policies_api_instance,
-        "list_method": "list_storage_policies",
-        "filter_attribute": "name",
-    },
-    # --- objects --------------------------------------------------------------
-    "object_store": {
-        "get_api_instance": get_objects_api_instance,
-        "list_method": "list_objectstores",
-        "filter_attribute": "name",
-    },
-}
+# The V4 list APIs cap ``_limit`` at 100, so bigger result sets are walked page by page.
+PAGE_SIZE = 100
+
+# Options provided by the nutanix.ncp.ntnx_proxy_v2 doc fragment, forwarded to the
+# shared API clients which read them from ``module.params``.
+PROXY_OPTIONS = (
+    "https_proxy",
+    "http_proxy",
+    "all_proxy",
+    "no_proxy",
+    "proxy_username",
+    "proxy_password",
+)
 
 
 class _LookupModuleAdapter:
@@ -482,10 +330,15 @@ class _LookupModuleAdapter:
         self.tmpdir = tempfile.gettempdir()
 
     def jsonify(self, data):
-        return json.dumps(data)
+        return json.dumps(data, default=to_native)
 
     def fail_json(self, msg, **kwargs):
-        raise AnsibleError(to_native(msg))
+        # The helpers pass extra context next to ``msg``, for example the import
+        # traceback as ``exception`` when an SDK is missing. Keep it in the error.
+        error = to_native(msg)
+        if kwargs:
+            error = "{0}: {1}".format(error, self.jsonify(kwargs))
+        raise AnsibleError(error)
 
 
 class LookupModule(LookupBase):
@@ -502,7 +355,7 @@ class LookupModule(LookupBase):
                 "nutanix_host must be provided either as a lookup argument or via the "
                 "NUTANIX_HOSTNAME/NUTANIX_HOST environment variable"
             )
-        return {
+        params = {
             "nutanix_host": nutanix_host,
             "nutanix_port": self.get_option("nutanix_port"),
             "nutanix_username": self.get_option("nutanix_username"),
@@ -511,19 +364,18 @@ class LookupModule(LookupBase):
             "validate_certs": self.get_option("validate_certs"),
             "nutanix_debug": self.get_option("nutanix_debug"),
             "nutanix_log_file": None,
-            "read_timeout": None,
+            "read_timeout": self.get_option("read_timeout"),
         }
+        # Proxy options come from the ntnx_proxy_v2 doc fragment. They are passed
+        # through as is, so the shared client falls back to the HTTPS_PROXY,
+        # HTTP_PROXY, ALL_PROXY, NO_PROXY, PROXY_USERNAME and PROXY_PASSWORD
+        # environment variables when an option is unset, exactly as it does for modules.
+        for option in PROXY_OPTIONS:
+            params[option] = self.get_option(option)
+        return params
 
-    def _list_ext_ids(self, list_method, resource, odata_filter):
-        try:
-            resp = list_method(_filter=odata_filter, _limit=100)
-        except Exception as e:
-            raise AnsibleError(
-                "API exception raised while listing {0} with filter '{1}': {2}".format(
-                    resource, odata_filter, to_native(e)
-                )
-            )
-        data = strip_internal_attributes(resp.to_dict()).get("data") or []
+    @staticmethod
+    def _extract_ext_ids(resource, data):
         if resource == "storage_container":
             return [
                 item.get("ext_id") or item.get("container_ext_id")
@@ -531,6 +383,39 @@ class LookupModule(LookupBase):
                 if item.get("ext_id") or item.get("container_ext_id")
             ]
         return [item.get("ext_id") for item in data if item.get("ext_id")]
+
+    def _list_ext_ids(self, list_method, resource, odata_filter):
+        ext_ids = []
+        fetched = 0
+        current_page = 0
+
+        while True:
+            try:
+                resp = list_method(
+                    _filter=odata_filter, _page=current_page, _limit=PAGE_SIZE
+                )
+            except Exception as e:
+                raise AnsibleError(
+                    "API exception raised while listing {0} with filter '{1}': {2}".format(
+                        resource, odata_filter, to_native(e)
+                    )
+                )
+
+            data = strip_internal_attributes(resp.to_dict()).get("data") or []
+            if not data:
+                break
+
+            ext_ids.extend(self._extract_ext_ids(resource, data))
+            fetched += len(data)
+
+            metadata = getattr(resp, "metadata", None)
+            total_available = getattr(metadata, "total_available_results", 0) or 0
+            if fetched >= total_available:
+                break
+
+            current_page += 1
+
+        return ext_ids
 
     def run(self, terms, variables=None, **kwargs):
         self.set_options(var_options=variables, direct=kwargs)

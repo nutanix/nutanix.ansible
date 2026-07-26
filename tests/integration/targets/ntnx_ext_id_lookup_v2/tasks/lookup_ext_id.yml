@@ -3,6 +3,10 @@
   ansible.builtin.debug:
     msg: Start ntnx_ext_id lookup plugin tests
 
+- name: Generate a suffix for the entities created by this target
+  ansible.builtin.set_fact:
+    lookup_test_suffix: "{{ 99999999 | random }}"
+
 ############################################################################
 # Name based resolution for every top level entity that exposes a list API.
 # Each entity is listed with its *_info_v2 module, then the first entity's
@@ -351,6 +355,17 @@
     res_resource: storage_policy
     res_info: "{{ storage_policy_info }}"
 
+- name: List object stores
+  nutanix.ncp.ntnx_object_stores_info_v2:
+  register: object_store_info
+  ignore_errors: true
+
+- name: Verify lookup for object_store
+  ansible.builtin.include_tasks: resolve_and_assert.yml
+  vars:
+    res_resource: object_store
+    res_info: "{{ object_store_info }}"
+
 ############################################################################
 # Categories are keyed on key/value rather than a unique name. The lookup
 # defaults to matching the category 'key', which can map to several
@@ -390,6 +405,76 @@
         success_msg: "ntnx_ext_id resolved category key '{{ category_ref_key }}' including ext_id {{ category_ref_ext_id }}"
         fail_msg: "ntnx_ext_id failed to resolve category key '{{ category_ref_key }}'"
       when: category_ref_key | length > 0
+
+############################################################################
+# fail_on_multiple. Two categories are created under the same key so that a
+# single search term is guaranteed to match more than one entity.
+############################################################################
+
+- name: Create two categories sharing one key
+  nutanix.ncp.ntnx_categories_v2:
+    key: "ansible-ext-id-lookup-{{ lookup_test_suffix }}"
+    value: "ansible-ext-id-lookup-value-{{ item }}"
+    description: ntnx_ext_id lookup fail_on_multiple test
+  register: shared_key_categories
+  loop: [1, 2]
+  ignore_errors: true
+
+- name: Multiple match tests
+  block:
+    - name: Verify how a term matching several entities is handled
+      when: not (shared_key_categories.failed | default(false))
+      block:
+        - name: Capture the ext_ids of the categories sharing a key
+          ansible.builtin.set_fact:
+            shared_key_ext_ids: "{{ shared_key_categories.results | map(attribute='ext_id') | list }}"
+
+        - name: Resolve the shared key with fail_on_multiple=false
+          ansible.builtin.set_fact:
+            shared_key_resolved: >-
+              {{ query('nutanix.ncp.ntnx_ext_id',
+                       'ansible-ext-id-lookup-' ~ lookup_test_suffix, resource='category',
+                       fail_on_multiple=false,
+                       nutanix_host=ip, nutanix_username=username,
+                       nutanix_password=password, validate_certs=validate_certs) }}
+
+        - name: Assert fail_on_multiple=false returns every matching ext_id
+          ansible.builtin.assert:
+            that:
+              - shared_key_resolved | length == 2
+              - shared_key_ext_ids[0] in shared_key_resolved
+              - shared_key_ext_ids[1] in shared_key_resolved
+            success_msg: "ntnx_ext_id returned both ext_ids for an ambiguous term when fail_on_multiple=false"
+            fail_msg: >-
+              ntnx_ext_id did not return both ext_ids for an ambiguous term when fail_on_multiple=false
+              (got {{ shared_key_resolved }}, expected {{ shared_key_ext_ids }})
+
+        - name: Resolve the shared key with default fail_on_multiple (should fail)
+          ansible.builtin.set_fact:
+            should_not_be_set_on_multiple: >-
+              {{ query('nutanix.ncp.ntnx_ext_id',
+                       'ansible-ext-id-lookup-' ~ lookup_test_suffix, resource='category',
+                       nutanix_host=ip, nutanix_username=username,
+                       nutanix_password=password, validate_certs=validate_certs) }}
+          register: multiple_default_result
+          ignore_errors: true
+
+        - name: Assert default fail_on_multiple raises an error
+          ansible.builtin.assert:
+            that:
+              - multiple_default_result is failed
+              - "'fail_on_multiple=false' in (multiple_default_result.msg | default(''))"
+            success_msg: "ntnx_ext_id raised an error for a term matching several entities by default"
+            fail_msg: "ntnx_ext_id did not raise an error for a term matching several entities by default"
+  always:
+    - name: Delete the categories created for the fail_on_multiple test
+      nutanix.ncp.ntnx_categories_v2:
+        ext_id: "{{ item.ext_id }}"
+        state: absent
+      loop: "{{ shared_key_categories.results | default([]) | selectattr('ext_id') | list }}"
+      loop_control:
+        label: "{{ item.ext_id }}"
+      ignore_errors: true
 
 ############################################################################
 # Option and error handling tests, anchored on cluster which always exists.
@@ -455,3 +540,175 @@
           - unsupported_resource_result is failed
         success_msg: "ntnx_ext_id raised an error for an unsupported resource"
         fail_msg: "ntnx_ext_id did not raise an error for an unsupported resource"
+
+    - name: Resolve a cluster name with lookup instead of query
+      ansible.builtin.set_fact:
+        cluster_lookup_value: >-
+          {{ lookup('nutanix.ncp.ntnx_ext_id', cluster_ref_name, resource='cluster',
+                    nutanix_host=ip, nutanix_username=username,
+                    nutanix_password=password, validate_certs=validate_certs) }}
+
+    - name: Assert lookup returns the ext_id as a string
+      ansible.builtin.assert:
+        that:
+          - cluster_lookup_value is string
+          - cluster_lookup_value == cluster_ref_ext_id
+        success_msg: "lookup returned the cluster ext_id as a string"
+        fail_msg: "lookup did not return the cluster ext_id as a string (got {{ cluster_lookup_value }})"
+
+    - name: Resolve a cluster name with lookup and wantlist
+      ansible.builtin.set_fact:
+        cluster_lookup_list: >-
+          {{ lookup('nutanix.ncp.ntnx_ext_id', cluster_ref_name, resource='cluster',
+                    wantlist=true,
+                    nutanix_host=ip, nutanix_username=username,
+                    nutanix_password=password, validate_certs=validate_certs) }}
+
+    - name: Assert lookup with wantlist returns a list
+      ansible.builtin.assert:
+        that:
+          - cluster_lookup_list is not string
+          - cluster_lookup_list == [cluster_ref_ext_id]
+        success_msg: "lookup with wantlist=true returned the cluster ext_id as a list"
+        fail_msg: "lookup with wantlist=true did not return a list (got {{ cluster_lookup_list }})"
+
+    - name: Resolve a term holding quotes so the OData literal has to be escaped
+      ansible.builtin.set_fact:
+        quoted_term_resolved: >-
+          {{ query('nutanix.ncp.ntnx_ext_id',
+                   "ntnx_ext_id' or name ne 'ntnx_ext_id", resource='cluster',
+                   fail_on_missing=false,
+                   nutanix_host=ip, nutanix_username=username,
+                   nutanix_password=password, validate_certs=validate_certs) }}
+      register: quoted_term_result
+      ignore_errors: true
+
+    - name: Assert quotes are escaped instead of breaking the filter
+      ansible.builtin.assert:
+        that:
+          - quoted_term_result is not failed
+          - quoted_term_resolved | length == 1
+          - quoted_term_resolved[0] is none
+        success_msg: "ntnx_ext_id escaped the quotes in the search term and matched nothing"
+        fail_msg: >-
+          ntnx_ext_id did not escape the quotes in the search term
+          ({{ quoted_term_result.msg | default('no error') }})
+
+    - name: Resolve without any credentials (should fail)
+      ansible.builtin.set_fact:
+        should_not_be_set_without_credentials: >-
+          {{ query('nutanix.ncp.ntnx_ext_id', cluster_ref_name, resource='cluster',
+                   nutanix_host=ip, nutanix_username='', nutanix_password='',
+                   nutanix_api_key='', validate_certs=validate_certs) }}
+      register: missing_credentials_result
+      ignore_errors: true
+
+    - name: Assert missing credentials raise an error
+      ansible.builtin.assert:
+        that:
+          - missing_credentials_result is failed
+          - "'nutanix_api_key is required' in (missing_credentials_result.msg | default(''))"
+        success_msg: "ntnx_ext_id raised an error when no credentials were provided"
+        fail_msg: "ntnx_ext_id did not raise the expected error when no credentials were provided"
+
+    - name: Resolve with an invalid API key (should fail while authenticating)
+      ansible.builtin.set_fact:
+        should_not_be_set_with_invalid_api_key: >-
+          {{ query('nutanix.ncp.ntnx_ext_id', cluster_ref_name, resource='cluster',
+                   nutanix_host=ip, nutanix_username='', nutanix_password='',
+                   nutanix_api_key='ntnx-ext-id-lookup-invalid-api-key',
+                   validate_certs=validate_certs) }}
+      register: invalid_api_key_result
+      ignore_errors: true
+
+    - name: Assert an invalid API key is used for authentication and rejected
+      ansible.builtin.assert:
+        that:
+          - invalid_api_key_result is failed
+          - "'nutanix_api_key is required' not in (invalid_api_key_result.msg | default(''))"
+        success_msg: "ntnx_ext_id authenticated with the API key alone and reported the rejection"
+        fail_msg: >-
+          ntnx_ext_id did not authenticate with the API key alone
+          ({{ invalid_api_key_result.msg | default('no error') }})
+
+############################################################################
+# API key authentication. Only runs when the environment provides a usable
+# key through the nutanix_api_key variable, the same one the modules use.
+############################################################################
+
+- name: API key authentication tests
+  when:
+    - cluster_ref_name is defined
+    - nutanix_api_key is defined
+    - (nutanix_api_key | default('', true) | length) > 0
+  block:
+    - name: Resolve a cluster with API key authentication
+      ansible.builtin.set_fact:
+        api_key_resolved: >-
+          {{ query('nutanix.ncp.ntnx_ext_id', cluster_ref_name, resource='cluster',
+                   fail_on_multiple=false,
+                   nutanix_host=ip, nutanix_api_key=nutanix_api_key,
+                   validate_certs=validate_certs) }}
+
+    - name: Assert API key authentication resolved the cluster
+      ansible.builtin.assert:
+        that:
+          - cluster_ref_ext_id in api_key_resolved
+        success_msg: "ntnx_ext_id resolved the cluster using API key authentication"
+        fail_msg: >-
+          ntnx_ext_id failed to resolve the cluster using API key authentication
+          (got {{ api_key_resolved }}, expected {{ cluster_ref_ext_id }})
+
+############################################################################
+# Names with special characters. A VM is created with an apostrophe, spaces
+# and other punctuation in its name, so the OData literal built by the lookup
+# has to escape it, and is then resolved back to its ext_id.
+############################################################################
+
+- name: Special character name tests
+  when: cluster is defined
+  block:
+    - name: Build a VM name holding special characters
+      ansible.builtin.set_fact:
+        special_char_vm_name: "ansible ext_id's lookup (test) & 100% {{ lookup_test_suffix }}"
+
+    - name: Create a VM whose name holds special characters
+      nutanix.ncp.ntnx_vms_v2:
+        name: "{{ special_char_vm_name }}"
+        description: ntnx_ext_id lookup special character test
+        cluster:
+          ext_id: "{{ cluster.uuid }}"
+        num_sockets: 1
+        num_cores_per_socket: 1
+        memory_size_bytes: 4294967296
+      register: special_char_vm
+      ignore_errors: true
+
+    - name: Resolve the special character name
+      when:
+        - not (special_char_vm.failed | default(false))
+        - (special_char_vm.ext_id | default('', true) | length) > 0
+      block:
+        - name: Resolve the VM name holding special characters
+          ansible.builtin.set_fact:
+            special_char_resolved: >-
+              {{ query('nutanix.ncp.ntnx_ext_id', special_char_vm_name,
+                       resource='vm', fail_on_multiple=false,
+                       nutanix_host=ip, nutanix_username=username,
+                       nutanix_password=password, validate_certs=validate_certs) }}
+
+        - name: Assert the special character name resolved to the VM ext_id
+          ansible.builtin.assert:
+            that:
+              - special_char_vm.ext_id in special_char_resolved
+            success_msg: "ntnx_ext_id resolved a VM name holding special characters"
+            fail_msg: >-
+              ntnx_ext_id failed to resolve a VM name holding special characters
+              (got {{ special_char_resolved }}, expected {{ special_char_vm.ext_id }})
+  always:
+    - name: Delete the VM created for the special character test
+      nutanix.ncp.ntnx_vms_v2:
+        ext_id: "{{ special_char_vm.ext_id }}"
+        state: absent
+      when: (special_char_vm.ext_id | default('', true) | length) > 0
+      ignore_errors: true
