@@ -185,13 +185,15 @@
   register: iscsi_client_info
   ignore_errors: true
 
+# The iSCSI clients list API only allows clusterReference and extId in a $filter,
+# so this resource is resolved from the cluster it belongs to, not from its name.
 - name: Verify lookup for iscsi_client
   ansible.builtin.include_tasks: resolve_and_assert.yml
   vars:
     res_resource: iscsi_client
     res_info: "{{ iscsi_client_info }}"
-    res_ref_attr: iscsi_initiator_name
-    res_filter_attr: iscsiInitiatorName
+    res_ref_attr: cluster_reference
+    res_filter_attr: clusterReference
 
 - name: List users
   nutanix.ncp.ntnx_users_info_v2:

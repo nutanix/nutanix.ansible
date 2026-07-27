@@ -79,7 +79,9 @@ DOCUMENTATION = r"""
                 - If not provided, a sensible default is used per resource
                   (C(name) for most resources, C(key) for C(category), C(username) for C(user),
                   C(displayName) for C(role), C(operation) and C(authorization_policy),
-                  C(templateName) for C(template) and C(iscsiInitiatorName) for C(iscsi_client)).
+                  C(templateName) for C(template) and C(clusterReference) for C(iscsi_client)).
+                - Only attributes the V4 list API accepts in a C($filter) can be used. Requesting
+                  any other attribute makes the API answer with an OData validation error.
             type: str
         filter:
             description:
@@ -182,6 +184,10 @@ DOCUMENTATION = r"""
         - This lookup runs on the Ansible controller and performs at least one API call per
           search term. When a filter matches more than 100 entities, the results are paginated
           and one additional API call is made per extra page.
+        - O(resource=iscsi_client) is the one resource that is not resolved by a name. Its V4 list
+          API only accepts C(clusterReference) and C(extId) in a C($filter), so a search term is
+          the external ID of a cluster and the lookup returns the external IDs of every iSCSI
+          client on it. Set O(fail_on_multiple=false) unless the cluster has a single client.
         - For O(resource=storage_container) the V4 API leaves C(extId) empty and returns the
           identifier in C(containerExtId) instead. The lookup falls back to C(containerExtId) for
           that resource, so the returned value is still the UUID that references the container.
@@ -268,6 +274,12 @@ EXAMPLES = r"""
     vm_ext_id_from_raw_filter: >-
       {{ lookup('nutanix.ncp.ntnx_ext_id', resource='vm',
                 filter="name eq 'vm1'") }}
+
+- name: List the iSCSI clients of a cluster (terms are cluster ext_ids, not client names)
+  ansible.builtin.set_fact:
+    iscsi_client_ext_ids: >-
+      {{ query('nutanix.ncp.ntnx_ext_id', cluster_ext_id,
+               resource='iscsi_client', fail_on_multiple=false) }}
 
 - name: Resolve a protection policy name to its ext_id
   ansible.builtin.set_fact:

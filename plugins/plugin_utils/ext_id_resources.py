@@ -54,7 +54,8 @@ from ..module_utils.v4.volumes.api_client import (
     get_vg_api_instance,
 )
 
-
+# Options provided by the nutanix.ncp.ntnx_proxy_v2 doc fragment, forwarded to the
+# shared API clients which read them from ``module.params``.
 PROXY_OPTIONS = (
     "https_proxy",
     "http_proxy",
@@ -149,10 +150,13 @@ RESOURCE_MAP = {
         "list_method": "list_volume_groups",
         "filter_attribute": "name",
     },
+    # The iSCSI clients list API only accepts clusterReference and extId in a
+    # $filter, so a client cannot be resolved by its initiator name. Terms are
+    # cluster external IDs here and normally match more than one client.
     "iscsi_client": {
         "get_api_instance": get_iscsi_client_api_instance,
         "list_method": "list_iscsi_clients",
-        "filter_attribute": "iscsiInitiatorName",
+        "filter_attribute": "clusterReference",
     },
     # --- prism ----------------------------------------------------------------
     "category": {
