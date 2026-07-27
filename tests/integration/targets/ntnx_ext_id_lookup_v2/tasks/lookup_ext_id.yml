@@ -473,10 +473,19 @@
       nutanix.ncp.ntnx_categories_v2:
         ext_id: "{{ item.ext_id }}"
         state: absent
+      register: shared_key_categories_deleted
       loop: "{{ shared_key_categories.results | default([]) | selectattr('ext_id') | list }}"
       loop_control:
         label: "{{ item.ext_id }}"
-      failed_when: false
+      ignore_errors: true
+
+    - name: Deletion Status
+      ansible.builtin.assert:
+        that:
+          - shared_key_categories_deleted.changed == True
+          - shared_key_categories_deleted.msg == "All items completed"
+        fail_msg: "Unable to delete the categories created for the fail_on_multiple test"
+        success_msg: "Categories created for the fail_on_multiple test deleted successfully"
 
 ############################################################################
 # Option and error handling tests, anchored on cluster which always exists.
@@ -712,5 +721,17 @@
       nutanix.ncp.ntnx_vms_v2:
         ext_id: "{{ special_char_vm.ext_id }}"
         state: absent
+      register: special_char_vm_deleted
       when: (special_char_vm.ext_id | default('', true) | length) > 0
-      failed_when: false
+      ignore_errors: true
+
+    - name: Deletion Status
+      ansible.builtin.assert:
+        that:
+          - special_char_vm_deleted.changed == True
+          - special_char_vm_deleted.failed == False
+          - special_char_vm_deleted.response is defined
+          - special_char_vm_deleted.response.status == 'SUCCEEDED'
+          - special_char_vm_deleted.ext_id == special_char_vm.ext_id
+        fail_msg: "Unable to delete the VM created for the special character test"
+        success_msg: "VM created for the special character test deleted successfully"
