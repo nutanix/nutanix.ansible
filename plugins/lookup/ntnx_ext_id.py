@@ -28,6 +28,8 @@ DOCUMENTATION = r"""
         _terms:
             description:
                 - One or more names (or values of O(filter_attribute)) to resolve to external IDs.
+                - Terms are flattened one level, so a list variable can be passed as a single
+                  argument instead of spelling out every name.
                 - Ignored when O(filter) is set, in which case the raw filter is used directly.
             type: list
             elements: str
@@ -215,6 +217,14 @@ EXAMPLES = r"""
   ansible.builtin.debug:
     msg: "{{ query('nutanix.ncp.ntnx_ext_id', 'vm1', 'vm2', 'vm3', resource='vm') }}"
 
+- name: Resolve a list variable of VM names
+  ansible.builtin.set_fact:
+    vm_ext_ids: "{{ query('nutanix.ncp.ntnx_ext_id', vm_names, resource='vm') }}"
+  vars:
+    vm_names:
+      - vm1
+      - vm2
+
 # lookup() would join these into "uuid1,uuid2,uuid3"; wantlist=true keeps them as a list
 # and is equivalent to using query().
 - name: Same thing with lookup() and wantlist
@@ -245,11 +255,13 @@ EXAMPLES = r"""
   ansible.builtin.set_fact:
     role_ext_id: "{{ lookup('nutanix.ncp.ntnx_ext_id', 'Super Admin', resource='role') }}"
 
-- name: Resolve a user by explicitly overriding filter_attribute
+# The default filter_attribute for a user is username, so matching on the email
+# address instead needs the emailId OData property.
+- name: Resolve a user by email instead of the default username
   ansible.builtin.set_fact:
     user_ext_id: >-
       {{ lookup('nutanix.ncp.ntnx_ext_id', 'alice@example.com',
-                resource='user', filter_attribute='username') }}
+                resource='user', filter_attribute='emailId') }}
 
 - name: Raw filter mode with no positional terms (when filter is set, terms are ignored)
   ansible.builtin.set_fact:
@@ -278,11 +290,8 @@ _raw:
           the list into a comma separated string.
         - When O(fail_on_missing=false) and a search term matches no entity, the entry for that term
           is V(None) rather than a string, so the list can hold a mix of strings and V(None) values.
-          Guard against this before using a result, for example by testing an entry with C(is none)
-          or by dropping the empty entries with the C(select) filter.
         - When O(fail_on_multiple=false) and a search term matches several entities, every matching
-          external ID is added to the list. The list is then longer than the number of search terms
-          and its entries no longer line up one to one with them.
+          external ID is added to the list.
         - Nothing is returned when the lookup fails, an error is raised instead. This happens when
           O(fail_on_missing=true) and a term matches no entity, when O(fail_on_multiple=true) and a
           term matches more than one entity, when O(resource) is not one of the supported values,
@@ -300,21 +309,10 @@ from ansible.module_utils._text import to_native  # noqa: E402
 from ansible.plugins.lookup import LookupBase  # noqa: E402
 
 from ..module_utils.v4.utils import strip_internal_attributes  # noqa: E402
-from ..plugin_utils.ext_id_resources import RESOURCE_MAP  # noqa: E402
+from ..plugin_utils.ext_id_resources import PROXY_OPTIONS, RESOURCE_MAP  # noqa: E402
 
 # The V4 list APIs cap ``_limit`` at 100, so bigger result sets are walked page by page.
 PAGE_SIZE = 100
-
-# Options provided by the nutanix.ncp.ntnx_proxy_v2 doc fragment, forwarded to the
-# shared API clients which read them from ``module.params``.
-PROXY_OPTIONS = (
-    "https_proxy",
-    "http_proxy",
-    "all_proxy",
-    "no_proxy",
-    "proxy_username",
-    "proxy_password",
-)
 
 
 class _LookupModuleAdapter:
@@ -333,8 +331,6 @@ class _LookupModuleAdapter:
         return json.dumps(data, default=to_native)
 
     def fail_json(self, msg, **kwargs):
-        # The helpers pass extra context next to ``msg``, for example the import
-        # traceback as ``exception`` when an SDK is missing. Keep it in the error.
         error = to_native(msg)
         if kwargs:
             error = "{0}: {1}".format(error, self.jsonify(kwargs))
@@ -420,6 +416,10 @@ class LookupModule(LookupBase):
     def run(self, terms, variables=None, **kwargs):
         self.set_options(var_options=variables, direct=kwargs)
 
+        # Ansible does not flatten lookup arguments, so a list variable passed as a
+        # single argument arrives as one nested list instead of several terms.
+        terms = self._flatten(terms)
+
         resource = self.get_option("resource")
         if resource not in RESOURCE_MAP:
             raise AnsibleError(
@@ -444,15 +444,14 @@ class LookupModule(LookupBase):
         list_method = getattr(api_instance, spec["list_method"])
 
         if raw_filter:
-            searches = [(raw_filter, raw_filter)]
+            searches = [raw_filter]
         else:
             searches = [
-                (term, "{0} eq '{1}'".format(attribute, self._escape(term)))
-                for term in terms
+                "{0} eq '{1}'".format(attribute, self._escape(term)) for term in terms
             ]
 
         ret = []
-        for term, odata_filter in searches:
+        for odata_filter in searches:
             ext_ids = self._list_ext_ids(list_method, resource, odata_filter)
 
             if not ext_ids:

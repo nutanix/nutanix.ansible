@@ -54,6 +54,16 @@ from ..module_utils.v4.volumes.api_client import (
     get_vg_api_instance,
 )
 
+
+PROXY_OPTIONS = (
+    "https_proxy",
+    "http_proxy",
+    "all_proxy",
+    "no_proxy",
+    "proxy_username",
+    "proxy_password",
+)
+
 # Maps a resource keyword to how its list API is reached and which attribute
 # its names live under. Any top level entity that exposes a list API supporting
 # an OData $filter and returning an ext_id can be added here. The
