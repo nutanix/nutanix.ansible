@@ -31,8 +31,7 @@
             res_resolved_ext_ids: >-
               {{ query('nutanix.ncp.ntnx_ext_id', res_ref_value,
                        resource=res_resource, fail_on_multiple=false,
-                       nutanix_host=ip, nutanix_username=username,
-                       nutanix_password=password, validate_certs=validate_certs) }}
+                       **lookup_auth) }}
 
         - name: Assert ntnx_ext_id resolved expected ext_id (term mode)
           ansible.builtin.assert:
@@ -49,8 +48,7 @@
               {{ query('nutanix.ncp.ntnx_ext_id', res_ref_value,
                        resource=res_resource, filter_attribute=(res_filter_attr | default('name')),
                        fail_on_multiple=false,
-                       nutanix_host=ip, nutanix_username=username,
-                       nutanix_password=password, validate_certs=validate_certs) }}
+                       **lookup_auth) }}
 
         - name: Assert ntnx_ext_id resolved with filter_attribute override
           ansible.builtin.assert:
@@ -68,8 +66,7 @@
                        resource=res_resource,
                        filter=(res_filter_attr | default('name')) ~ " eq '" ~ (res_ref_value | replace("'", "''")) ~ "'",
                        fail_on_multiple=false,
-                       nutanix_host=ip, nutanix_username=username,
-                       nutanix_password=password, validate_certs=validate_certs) }}
+                       **lookup_auth) }}
 
         - name: Assert ntnx_ext_id resolved with raw filter
           ansible.builtin.assert:

@@ -7,6 +7,16 @@
   ansible.builtin.set_fact:
     lookup_test_suffix: "{{ 99999999 | random }}"
 
+- name: Build the credentials passed to every ntnx_ext_id lookup call
+  ansible.builtin.set_fact:
+    lookup_auth:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username | default(omit) }}"
+      nutanix_password: "{{ password | default(omit) }}"
+      nutanix_api_key: "{{ nutanix_api_key | default(omit) }}"
+      validate_certs: "{{ validate_certs }}"
+      nutanix_debug: "{{ nutanix_debug | default(omit) }}"
+
 ############################################################################
 # Name based resolution for every top level entity that exposes a list API.
 # Each entity is listed with its *_info_v2 module, then the first entity's
@@ -396,8 +406,7 @@
         category_resolved_ext_ids: >-
           {{ query('nutanix.ncp.ntnx_ext_id', category_ref_key, resource='category',
                    fail_on_multiple=false,
-                   nutanix_host=ip, nutanix_username=username,
-                   nutanix_password=password, validate_certs=validate_certs) }}
+                   **lookup_auth) }}
       when: category_ref_key | length > 0
 
     - name: Assert category resolved correctly
@@ -437,8 +446,7 @@
               {{ query('nutanix.ncp.ntnx_ext_id',
                        'ansible-ext-id-lookup-' ~ lookup_test_suffix, resource='category',
                        fail_on_multiple=false,
-                       nutanix_host=ip, nutanix_username=username,
-                       nutanix_password=password, validate_certs=validate_certs) }}
+                       **lookup_auth) }}
 
         - name: Assert fail_on_multiple=false returns every matching ext_id
           ansible.builtin.assert:
@@ -456,8 +464,7 @@
             should_not_be_set_on_multiple: >-
               {{ query('nutanix.ncp.ntnx_ext_id',
                        'ansible-ext-id-lookup-' ~ lookup_test_suffix, resource='category',
-                       nutanix_host=ip, nutanix_username=username,
-                       nutanix_password=password, validate_certs=validate_certs) }}
+                       **lookup_auth) }}
           register: multiple_default_result
           ignore_errors: true
 
@@ -508,8 +515,7 @@
           {{ query('nutanix.ncp.ntnx_ext_id',
                    'ntnx_ext_id_lookup_does_not_exist_xyz', resource='cluster',
                    fail_on_missing=false,
-                   nutanix_host=ip, nutanix_username=username,
-                   nutanix_password=password, validate_certs=validate_certs) }}
+                   **lookup_auth) }}
 
     - name: Assert fail_on_missing=false returns a single None entry
       ansible.builtin.assert:
@@ -524,8 +530,7 @@
         should_not_be_set: >-
           {{ query('nutanix.ncp.ntnx_ext_id',
                    'ntnx_ext_id_lookup_does_not_exist_xyz', resource='cluster',
-                   nutanix_host=ip, nutanix_username=username,
-                   nutanix_password=password, validate_certs=validate_certs) }}
+                   **lookup_auth) }}
       register: missing_default_result
       ignore_errors: true
 
@@ -540,8 +545,7 @@
       ansible.builtin.set_fact:
         unsupported_result: >-
           {{ query('nutanix.ncp.ntnx_ext_id', cluster_ref_name, resource='not_a_real_resource',
-                   nutanix_host=ip, nutanix_username=username,
-                   nutanix_password=password, validate_certs=validate_certs) }}
+                   **lookup_auth) }}
       register: unsupported_resource_result
       ignore_errors: true
 
@@ -556,8 +560,7 @@
       ansible.builtin.set_fact:
         cluster_lookup_value: >-
           {{ lookup('nutanix.ncp.ntnx_ext_id', cluster_ref_name, resource='cluster',
-                    nutanix_host=ip, nutanix_username=username,
-                    nutanix_password=password, validate_certs=validate_certs) }}
+                    **lookup_auth) }}
 
     - name: Assert lookup returns the ext_id as a string
       ansible.builtin.assert:
@@ -572,8 +575,7 @@
         cluster_lookup_list: >-
           {{ lookup('nutanix.ncp.ntnx_ext_id', cluster_ref_name, resource='cluster',
                     wantlist=true,
-                    nutanix_host=ip, nutanix_username=username,
-                    nutanix_password=password, validate_certs=validate_certs) }}
+                    **lookup_auth) }}
 
     - name: Assert lookup with wantlist returns a list
       ansible.builtin.assert:
@@ -589,8 +591,7 @@
           {{ query('nutanix.ncp.ntnx_ext_id',
                    "ntnx_ext_id' or name ne 'ntnx_ext_id", resource='cluster',
                    fail_on_missing=false,
-                   nutanix_host=ip, nutanix_username=username,
-                   nutanix_password=password, validate_certs=validate_certs) }}
+                   **lookup_auth) }}
       register: quoted_term_result
       ignore_errors: true
 
@@ -705,8 +706,7 @@
             special_char_resolved: >-
               {{ query('nutanix.ncp.ntnx_ext_id', special_char_vm_name,
                        resource='vm', fail_on_multiple=false,
-                       nutanix_host=ip, nutanix_username=username,
-                       nutanix_password=password, validate_certs=validate_certs) }}
+                       **lookup_auth) }}
 
         - name: Assert the special character name resolved to the VM ext_id
           ansible.builtin.assert:

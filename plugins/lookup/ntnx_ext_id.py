@@ -378,7 +378,14 @@ class LookupModule(LookupBase):
         # environment variables when an option is unset, exactly as it does for modules.
         for option in PROXY_OPTIONS:
             params[option] = self.get_option(option)
-        return params
+        # The SDK accepts credentials only when ``type(value) is str``, so the str
+        # subclasses Ansible uses for variable values are discarded and the request
+        # goes out unauthenticated. Module params cross a JSON boundary and are always
+        # plain strings, lookup options are not, so convert them here.
+        return {
+            key: str(value) if isinstance(value, str) else value
+            for key, value in params.items()
+        }
 
     @staticmethod
     def _extract_ext_ids(resource, data):
