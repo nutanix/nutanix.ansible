@@ -476,7 +476,7 @@
       loop: "{{ shared_key_categories.results | default([]) | selectattr('ext_id') | list }}"
       loop_control:
         label: "{{ item.ext_id }}"
-      ignore_errors: true
+      failed_when: false
 
 ############################################################################
 # Option and error handling tests, anchored on cluster which always exists.
@@ -713,4 +713,4 @@
         ext_id: "{{ special_char_vm.ext_id }}"
         state: absent
       when: (special_char_vm.ext_id | default('', true) | length) > 0
-      ignore_errors: true
+      failed_when: false
