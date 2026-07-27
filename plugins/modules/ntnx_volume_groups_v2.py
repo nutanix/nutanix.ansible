@@ -414,14 +414,14 @@ def update_vg(module, result):
         result["error"] = err
         module.fail_json(msg="Failed generating update volume group spec", **result)
 
+    if module.check_mode:
+        result["response"] = strip_internal_attributes(spec.to_dict())
+        return
+
     # check for idempotency
     if check_idempotency(current_spec, update_spec):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
-
-    if module.check_mode:
-        result["response"] = strip_internal_attributes(spec.to_dict())
-        return
 
     etag = get_etag(current_spec)
     kwargs = {"if_match": etag}

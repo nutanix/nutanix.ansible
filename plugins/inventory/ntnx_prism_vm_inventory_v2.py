@@ -67,6 +67,22 @@ DOCUMENTATION = r"""
             type: str
             env:
                 - name: NUTANIX_API_KEY
+        auto_create_cluster_groups:
+            description:
+                - Automatically create inventory groups based on cluster ext_id.
+                - Set to C(False) to disable. Use C(keyed_groups) with C(cluster_name) for
+                  human-readable cluster groups instead.
+            default: true
+            type: bool
+        resolve_categories:
+            description:
+                - Resolve category ext_ids to key/value pairs and populate C(categories_map)
+                  in host variables.
+                - Requires fetching all categories from Prism Central via the Categories API.
+                - Set to C(False) to skip the API calls if you do not use C(categories_map)
+                  in keyed_groups, compose, or groups expressions.
+            default: true
+            type: bool
         fetch_all_vms:
             description:
                 - Set to C(True) to fetch all VMs
@@ -220,6 +236,27 @@ EXAMPLES = r"""
       prefix: power
       separator: "_"
 
+# using keyed groups with categories_map and cluster_name
+# categories_map resolves category ext_ids to {key: [values]} pairs
+# (values are lists to support multiple values per key)
+# categories retains the original list of category ext_ids
+- plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
+  nutanix_host: 10.x.x.x
+  nutanix_username: admin
+  nutanix_password: password
+  validate_certs: false
+  auto_create_cluster_groups: false
+  keyed_groups:
+    - key: cluster_name
+      prefix: cluster
+      separator: "_"
+    # categories_map values are lists (a key can have multiple values);
+    # keyed_groups creates one group per item in the list
+    - key: categories_map.Environment
+      prefix: env
+      separator: "_"
+      default_value: unassigned
+
 # using custom ansible host for defining the ansible_host for the VMs
 - plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
   nutanix_host: 10.x.x.x
@@ -243,13 +280,19 @@ import tempfile  # noqa: E402
 
 from ansible.errors import AnsibleError  # noqa: E402
 from ansible.plugins.inventory import BaseInventoryPlugin, Constructable  # noqa: E402
+from ansible.utils.display import Display  # noqa: E402
 
 from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
     get_clusters_api_instance,
 )
+from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
+    get_categories_api_instance,
+)
 from ..module_utils.v4.utils import strip_internal_attributes  # noqa: E402
 from ..module_utils.v4.vmm.api_client import get_vm_api_instance  # noqa: E402
 from ..plugin_utils.inventory_utils import get_hostname  # noqa: E402
+
+display = Display()
 
 
 class Mock_Module:
@@ -453,7 +496,9 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         for key in unwanted_keys:
             host_vars.pop(key, None)
 
-    def _build_host_vars(self, vm, cluster_ext_id_name_map, strict=False):
+    def _build_host_vars(
+        self, vm, cluster_ext_id_name_map, category_ext_id_map, strict=False
+    ):
         """
         Build a dictionary of host variables from the V4 VM response.
         Returns all VM attributes, excluding null/empty values.
@@ -481,16 +526,24 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         vm_ip = self._extract_vm_ip(vm)
         host_vars["ansible_host"] = vm_ip
 
-        # Convert categories to list of extId if present
+        # Convert categories to list of extId and build key/value map
         if vm.get("categories"):
             category_ext_ids = []
+            categories_map = {}
             for category in vm.get("categories") or []:
                 if isinstance(category, dict):
                     category_ext_id = category.get("ext_id")
                     if category_ext_id:
                         category_ext_ids.append(category_ext_id)
+                        if category_ext_id in category_ext_id_map:
+                            cat = category_ext_id_map[category_ext_id]
+                            categories_map.setdefault(cat["key"], []).append(
+                                cat["value"]
+                            )
             if category_ext_ids:
                 host_vars["categories"] = category_ext_ids
+            if categories_map:
+                host_vars["categories_map"] = categories_map
 
         # Handle custom ansible_host
         if getattr(self, "custom_ansible_host", None) and self.custom_ansible_host.get(
@@ -535,6 +588,43 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 return False
         return True
 
+    def _build_cluster_ext_id_name_map(self, clusters):
+        result = {}
+        list_clusters = clusters.list_clusters()
+        for cluster in list_clusters.data or []:
+            if cluster:
+                cluster_dict = cluster.to_dict()
+                ext_id = cluster_dict.get("ext_id")
+                name = cluster_dict.get("name")
+                result[ext_id] = name
+        return result
+
+    def _build_category_ext_id_map(self, categories_api):
+        result = {}
+        try:
+            page = 0
+            while True:
+                list_categories = categories_api.list_categories(_page=page, _limit=100)
+                if not list_categories.data:
+                    break
+                for cat in list_categories.data:
+                    cat_dict = cat.to_dict()
+                    ext_id = cat_dict.get("ext_id")
+                    if ext_id:
+                        result[ext_id] = {
+                            "key": cat_dict.get("key"),
+                            "value": cat_dict.get("value"),
+                        }
+                if len(list_categories.data) < 100:
+                    break
+                page += 1
+        except Exception as e:
+            display.warning(
+                "Failed to fetch categories from Prism Central, "
+                "categories_map will not be available: {0}".format(str(e))
+            )
+        return result
+
     def parse(self, inventory, loader, path, cache=True):
         super().parse(inventory, loader, path, cache=cache)
         self._read_config_data(path)
@@ -578,6 +668,8 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             ).lower()
             == "true"
         )
+        self.auto_create_cluster_groups = self.get_option("auto_create_cluster_groups")
+        self.resolve_categories = self.get_option("resolve_categories")
         self.fetch_all_vms = self.get_option("fetch_all_vms")
         self.page = self.get_option("page")
         self.limit = self.get_option("limit")
@@ -610,17 +702,16 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             self.nutanix_api_key,
         )
 
-        # Get VM API instance
+        # Get API instances
         vmm = get_vm_api_instance(module)
         clusters = get_clusters_api_instance(module)
-        list_clusters = clusters.list_clusters()
-        cluster_ext_id_name_map = {}
-        for cluster in list_clusters.data or []:
-            if cluster:
-                cluster_dict = cluster.to_dict()
-                ext_id = cluster_dict.get("ext_id")
-                name = cluster_dict.get("name")
-                cluster_ext_id_name_map[ext_id] = name
+
+        cluster_ext_id_name_map = self._build_cluster_ext_id_name_map(clusters)
+
+        category_ext_id_map = {}
+        if self.resolve_categories:
+            categories_api = get_categories_api_instance(module)
+            category_ext_id_map = self._build_category_ext_id_map(categories_api)
 
         # Fetch VMs
         vms = self._fetch_vms(
@@ -640,7 +731,9 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             cluster_ext_id = (vm.get("cluster") or {}).get("ext_id")
             cluster_name = cluster_ext_id_name_map.get(cluster_ext_id)
             try:
-                host_vars = self._build_host_vars(vm, cluster_ext_id_name_map, strict)
+                host_vars = self._build_host_vars(
+                    vm, cluster_ext_id_name_map, category_ext_id_map, strict
+                )
             except Exception as e:
                 raise AnsibleError(
                     f"Failed to build host vars for VM {vm.get('name')} with ext_id {vm.get('ext_id')}: {str(e)}"
@@ -675,8 +768,8 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 self._compose, host_vars, hostnames, vm_name, strict=strict
             )
 
-            # Create group based on cluster
-            if cluster_ext_id:
+            # Create group based on cluster (optional, enabled by default)
+            if self.auto_create_cluster_groups and cluster_ext_id:
                 group_name = "cluster_{0}".format(cluster_ext_id.replace("-", "_"))
                 group_name = self.inventory.add_group(group_name)
                 self.inventory.add_child("all", group_name)

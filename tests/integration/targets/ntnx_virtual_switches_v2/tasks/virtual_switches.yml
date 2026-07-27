@@ -19,7 +19,8 @@
   ansible.builtin.set_fact:
     pe_ssh_cmd: >-
       sshpass -p '{{ pe_ssh_password }}' ssh -o StrictHostKeyChecking=no -o
-      UserKnownHostsFile=/dev/null {{ pe_ssh_username }}@{{ ip_pe }}
+      UserKnownHostsFile=/dev/null -o ConnectTimeout=15 -o ServerAliveInterval=15
+      -o ServerAliveCountMax=3 {{ pe_ssh_username }}@{{ ip_pe }}
     hostssh_cmd: "/usr/local/nutanix/cluster/bin/hostssh"
     manage_ovs_cmd: "/usr/local/nutanix/cluster/bin/manage_ovs"
 
@@ -110,7 +111,7 @@
 
 - name: Create new bridge on cluster
   ansible.builtin.shell: |
-    {{ pe_ssh_cmd }} 'bash -ic "{{ create_bridge_cmd }}"'
+    timeout 180 {{ pe_ssh_cmd }} 'bash -lc "{{ create_bridge_cmd }}"' </dev/null
   register: create_bridge_output
   changed_when: false
 
