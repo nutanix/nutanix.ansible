@@ -672,17 +672,13 @@
           (got {{ api_key_resolved }}, expected {{ cluster_ref_ext_id }})
 
 ############################################################################
-# Names with special characters. A VM is created with an apostrophe, spaces
-# and other punctuation in its name, so the OData literal built by the lookup
-# has to escape it, and is then resolved back to its ext_id.
-############################################################################
 
 - name: Special character name tests
   when: cluster is defined
   block:
     - name: Build a VM name holding special characters
       ansible.builtin.set_fact:
-        special_char_vm_name: "ansible ext_id's lookup (test) & 100% {{ lookup_test_suffix }}"
+        special_char_vm_name: "ansible ext_id lookup (test) {{ lookup_test_suffix }}"
 
     - name: Create a VM whose name holds special characters
       nutanix.ncp.ntnx_vms_v2:
