@@ -124,14 +124,12 @@ DOCUMENTATION = r"""
                 - Prism Central password.
                 - Required unless O(nutanix_api_key) is provided.
             type: str
-            no_log: true
             env:
                 - name: NUTANIX_PASSWORD
         nutanix_api_key:
             description:
                 - Prism Central API key, used instead of username and password.
             type: str
-            no_log: true
             env:
                 - name: NUTANIX_API_KEY
         nutanix_port:
