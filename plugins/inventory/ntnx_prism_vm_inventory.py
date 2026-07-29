@@ -13,8 +13,7 @@ DOCUMENTATION = r"""
     description:
         - Get a list of Nutanix VMs for ansible dynamic inventory.
         - >
-          C(ansible_host) is set to the first IP address reported for the VM's NICs, which Prism
-          Central sometimes reports as an APIPA (169.254.x.x) address.
+          C(ansible_host) is set to the first IP address reported for the VM's NICs.
         - >
           Hosts with more than one IP address also get a C(vm_ip_addresses) variable listing all of
           them, so a usable address can be selected with C(compose). It is not set when the VM has
@@ -263,8 +262,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         vm_uuid = metadata.get("uuid")
         vm_ip = None
 
-        # Prism Central sometimes lists an APIPA address first, so collect every
-        # address since nic_list is stripped from host_vars below.
         vm_ip_addresses = []
         vm_resources = (status.get("resources") or {}).copy()
         for nics in vm_resources.get("nic_list", []):

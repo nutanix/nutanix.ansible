@@ -13,8 +13,7 @@ DOCUMENTATION = r"""
     description:
         - Get a list of Nutanix VMs for ansible dynamic inventory using V4 APIs and SDKs.
         - >
-          C(ansible_host) is set to the first IP address reported for the VM's NICs, which Prism
-          Central sometimes reports as an APIPA (169.254.x.x) address.
+          C(ansible_host) is set to the first IP address reported for the VM's NICs.
         - >
           Hosts with more than one IP address also get a C(vm_ip_addresses) variable listing all of
           them, so a usable address can be selected with C(compose). It is not set when the VM has
@@ -216,19 +215,6 @@ EXAMPLES = r"""
   compose:
     ansible_user: "'ansible_user'"
     memory_gb: memory_size_bytes / 1073741824 if memory_size_bytes else 0
-
-# override ansible_host with the first non-APIPA address
-# vm_ip_addresses is only defined for VMs with more than one IP address, so fall
-# back to ansible_host for the single address case
-- plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
-  nutanix_host: 10.x.x.x
-  nutanix_username: admin
-  nutanix_password: password
-  validate_certs: false
-  compose:
-    ansible_host: >-
-      (vm_ip_addresses | default([ansible_host], true) | select('string')
-       | reject('match', '169\.254\.') | first) | default(ansible_host, true)
 
 # using groups for grouping the VMs
 - plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
