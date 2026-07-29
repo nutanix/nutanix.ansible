@@ -176,6 +176,26 @@ keyed_groups:
     key: ansible_host
 custom_ansible_host:
   expr: "{vm_name}.nutanix1.{cluster}.nutanix2.{cluster_uuid}.nutanix3.{vm_uuid}.nutanix4.com"
+
+Example 3: using compose with vm_ip_addresses to pick a specific IP of a multi homed VM
+vm_ip_addresses is only set when the VM reports more than one IP address, so
+default() falls back to the single address already in ansible_host, and
+select('string') drops it when the VM has no IP at all
+inventory file starts from here
+plugin: nutanix.ncp.ntnx_prism_vm_inventory
+validate_certs: false
+data: { offset: 0, length: 20 }
+compose:
+  # only the address in the 169.254.0.0/16 (APIPA) range
+  # VMs without such an address are left without the variable rather than with an
+  # empty one, which relies on the default strict: false
+  vm_apipa_ip: >-
+    vm_ip_addresses | default([ansible_host], true) | select('string')
+    | select('match', '169\.254\.') | first
+  # connect over the first address that is not an APIPA one
+  ansible_host: >-
+    (vm_ip_addresses | default([ansible_host], true) | select('string')
+     | reject('match', '169\.254\.') | first) | default(ansible_host, true)
 """
 
 import json  # noqa: E402
