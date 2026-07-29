@@ -630,6 +630,7 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
+      - result.changed == false
       - result.failed == false
       # The directory service stays shared with all projects; the requested
       # per-project sharing is ignored, so no specific projects are added.
@@ -787,6 +788,7 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
+      - result.changed == true
       - result.failed == false
       - (result.response.shared_with_projects | default([], true)) | length == 0
       - result.response.service_account.username == "{{ active_directory.username }}"
@@ -811,6 +813,7 @@
 - name: Verify update of project_ext_id is blocked status
   ansible.builtin.assert:
     that:
+      - result.changed == false
       - result.failed == true
       - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
     fail_msg: "Update of project_ext_id should have been blocked"
