@@ -8,12 +8,12 @@
 # 5. Publish template version as active version
 # 6. Delete Template Version
 # 7. Deploy VM
-# 8. Deploy VM from template with a VM Guest Customization Profile reference and
-#    per-VM overrides (workgroup join, DHCP). Requires NGT installed on the
-#    source VM the template was captured from; otherwise the deploy API rejects
-#    the request.
-# 9. Initiate_guest_os_update
-# 10. Finish guest_os_update
+# 8. Initiate_guest_os_update
+# 9. Finish guest_os_update
+# 10. Deploy VM from template with a VM Guest Customization Profile reference and
+#     per-VM overrides (workgroup join, DHCP). Requires NGT installed on the
+#     source VM the template was captured from; otherwise the deploy API rejects
+#     the request.
 # 11. Delete Template
 
 - name: VM templates playbook

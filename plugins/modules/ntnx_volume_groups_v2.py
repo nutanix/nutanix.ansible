@@ -60,7 +60,7 @@ options:
         required: false
     project_ext_id:
         description:
-            - UUID of the project that owns this volume group.
+            - External ID (UUID) of the project that owns this volume group.
             - Update of this field is not supported.
         type: str
         required: false

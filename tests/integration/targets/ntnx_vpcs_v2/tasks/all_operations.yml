@@ -45,6 +45,7 @@
       - item.response is defined
       - item.ext_id is defined
       - item.ext_id | length > 0
+      - item.task_ext_id is defined
       - item.response.state == "ACTIVE"
     fail_msg: "Unable to create project for tests"
     success_msg: "Project for tests created successfully"
@@ -593,6 +594,8 @@
       - item.changed == true
       - item.failed == false
       - item.ext_id == item.item
+      - item.task_ext_id is defined
+      - item.response.status == "SUCCEEDED"
     fail_msg: "Unable to delete project created for tests"
     success_msg: "Project created for tests deleted successfully"
   loop: "{{ delete_projects_result.results }}"

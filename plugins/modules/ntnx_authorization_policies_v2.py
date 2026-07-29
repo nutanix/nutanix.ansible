@@ -46,7 +46,7 @@ options:
         required: false
     project_ext_id:
         description:
-            - UUID of the project that owns this authorization policy.
+            - External ID (UUID) of the project that owns this authorization policy.
             - Update of this field is not supported.
         required: false
         type: str

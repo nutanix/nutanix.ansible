@@ -4,10 +4,12 @@
 # 1. Create VLAN subnet without IPAM shared with projects
 # 2. Update subnet to share with specific projects
 # 3. Update subnet to unshare from specific projects
-# 4. Update VLAN subnet name and IP pools
-# 5. Get subnet using ext_id
-# 6. Create Overlay Subnet with minimum requirements
-# 7. Delete subnet
+# 4. Create VLAN subnet with IPAM and IP pools
+# 5. Create VLAN subnet with IPAM and DHCP options enabled
+# 6. Update VLAN subnet name and IP pools
+# 7. Get subnet using ext_id
+# 8. Create Overlay Subnet with minimum requirements
+# 9. Delete subnet
 
 - name: Subnets playbook
   hosts: localhost

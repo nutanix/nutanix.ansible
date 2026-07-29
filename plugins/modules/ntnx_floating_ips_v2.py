@@ -48,7 +48,7 @@ options:
     type: str
   project_ext_id:
     description:
-      - UUID of the project that owns this floating IP.
+      - External ID (UUID) of the project that owns this floating IP.
       - Update of this field is not supported.
     type: str
   association:

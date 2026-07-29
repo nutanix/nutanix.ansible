@@ -181,7 +181,7 @@ options:
         required: false
     project_ext_id:
         description:
-            - UUID of the project that owns this image.
+            - External ID (UUID) of the project that owns this image.
             - Update of this field is not supported.
         type: str
         required: false

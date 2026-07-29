@@ -37,6 +37,7 @@
       - item.response is defined
       - item.ext_id is defined
       - item.ext_id | length > 0
+      - item.task_ext_id is defined
       - item.response.state == "ACTIVE"
     fail_msg: "Unable to create project for tests"
     success_msg: "Project for tests created successfully"
@@ -80,7 +81,7 @@
       - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
       - result.response.shared_with_projects is defined
       - result.response.shared_with_projects | length == 2
-      - (result.response.shared_with_projects | sort) == (["11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222"] | sort)
+      - result.response.shared_with_projects == (["11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222"] | sort)
     fail_msg: "Check mode failed"
     success_msg: "Check mode passed"
 ########################################################################
@@ -107,6 +108,9 @@
       - output.failed == False
       - output.response.description == "ansible test"
       - output.response.project_ext_id == project.uuid
+      - output.response.shared_with_projects is defined
+      - output.response.shared_with_projects | length == 1
+      - output.response.shared_with_projects[0] == project.uuid
     fail_msg: "Unable to create category key & value"
     success_msg: "Category key & value created successfully"
 
@@ -338,6 +342,7 @@
       - result.response.shared_with_projects is not none
       - result.response.shared_with_projects | length == 3
       - (result.response.shared_with_projects | sort) == ([project.uuid, project2.uuid, project3.uuid] | sort)
+      - result.ext_id == shared_category_ext_id
     fail_msg: "Share with all three projects failed"
     success_msg: "Shared with all three projects successfully"
 
@@ -364,6 +369,7 @@
       - result.response.shared_with_projects | length == 2
       - (result.response.shared_with_projects | sort) == ([project2.uuid, project3.uuid] | sort)
       - project.uuid not in result.response.shared_with_projects
+      - result.ext_id == shared_category_ext_id
     fail_msg: "Reconcile shared projects to a subset failed"
     success_msg: "Reconciled shared projects to a subset successfully"
 
@@ -384,6 +390,7 @@
       - result.failed == false
       - result.changed == true
       - result.response.shared_with_projects is none or result.response.shared_with_projects | length == 0
+      - result.ext_id == shared_category_ext_id
     fail_msg: "Unshare from all projects failed with error"
     success_msg: "Unshare from all projects completed"
 ########################################################################
@@ -423,7 +430,7 @@
     success_msg: "Shared category deleted successfully"
 
 ########################################################################
-# Delete the project created for tests
+# Delete the projects created for tests
 ########################################################################
 - name: Delete projects created for tests
   nutanix.ncp.ntnx_project_v2:
@@ -442,6 +449,8 @@
       - item.changed == true
       - item.failed == false
       - item.ext_id == item.item
+      - item.task_ext_id is defined
+      - item.response.status == "SUCCEEDED"
     fail_msg: "Unable to delete project created for tests"
     success_msg: "Project created for tests deleted successfully"
   loop: "{{ delete_projects_result.results }}"

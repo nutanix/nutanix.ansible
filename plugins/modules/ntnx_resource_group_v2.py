@@ -62,7 +62,7 @@ options:
         type: str
     project_ext_id:
         description:
-            - UUID of the project that owns this resource group.
+            - External ID (UUID) of the project that owns this resource group.
             - Required for create operations.
             - Update of this field is not supported.
         type: str

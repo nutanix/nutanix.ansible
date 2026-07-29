@@ -39,6 +39,7 @@
       - create_project_result.response is defined
       - create_project_result.ext_id is defined
       - create_project_result.ext_id | length > 0
+      - create_project_result.task_ext_id is defined
       - create_project_result.response.state == "ACTIVE"
     fail_msg: "Unable to create project for tests"
     success_msg: "Project for tests created successfully"
@@ -179,6 +180,7 @@
       - result.response is defined
       - result.ext_id is defined
       - result.changed == True
+      - result.task_ext_id is defined
       - result.response.name == "{{ ag1 }}"
       - result.response.description == "test-ansible-group-3-desc"
       - result.response.ipv4_addresses[0].value == "10.1.4.1"
@@ -360,6 +362,17 @@
   register: result
   ignore_errors: true
 
+- name: Delete address group status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == "{{ todelete }}"
+      - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Unable to delete address group"
+    success_msg: "Address group deleted successfully"
+
 - name: Reset todelete variable
   ansible.builtin.set_fact:
     todelete: []
@@ -380,5 +393,7 @@
       - delete_project_result.changed == true
       - delete_project_result.failed == false
       - delete_project_result.ext_id == project.uuid
+      - delete_project_result.task_ext_id is defined
+      - delete_project_result.response.status == "SUCCEEDED"
     fail_msg: "Unable to delete project created for tests"
     success_msg: "Project created for tests deleted successfully"

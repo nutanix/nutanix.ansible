@@ -41,6 +41,7 @@
       - create_image_project_result.failed == false
       - create_image_project_result.ext_id is defined
       - create_image_project_result.ext_id | length > 0
+      - create_image_project_result.task_ext_id is defined
       - create_image_project_result.response.state == "ACTIVE"
     fail_msg: "Unable to create project for image tests"
     success_msg: "Project for image tests created successfully"
@@ -735,5 +736,7 @@
       - delete_image_project_result.changed == true
       - delete_image_project_result.failed == false
       - delete_image_project_result.ext_id == image_project_uuid
+      - delete_image_project_result.task_ext_id is defined
+      - delete_image_project_result.response.status == "SUCCEEDED"
     fail_msg: "Unable to delete the project created for image tests"
     success_msg: "Project created for image tests deleted successfully"

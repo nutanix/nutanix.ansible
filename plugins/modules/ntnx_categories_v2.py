@@ -41,7 +41,7 @@ options:
     type: str
   project_ext_id:
     description:
-      - UUID of the project that owns this category.
+      - External ID (UUID) of the project that owns this category.
       - Update of this field is not supported.
     required: false
     type: str
@@ -281,7 +281,7 @@ def _reconcile_sharing(module, categories, ext_id, shared_with_projects):
     """Drive the category's project sharing towards the desired state.
 
     A category cannot be shared with its own owning project: the API rejects it
-    (CTGRS-50047) and the owner already has full access. We therefore drop the
+    and the owner already has full access. We therefore drop the
     owner from the desired set so that input is treated as a no-op instead of a
     hard failure. Delegates to the shared ``reconcile_sharing`` helper, which
     diffs once and applies each share/unshare one by one; every call blocks on

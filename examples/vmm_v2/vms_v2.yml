@@ -7,6 +7,13 @@
 # 4. Create a VM with multiple serial port, and categories
 # 5. Create a VM with nics,cloud_init script
 # 6. Create a VM with windows unattend xml file
+# 7. Create a VM with vtpm enabled
+# 8. Update VM
+# 9. List all VMs
+# 10. List all VMs with limit
+# 11. Get vm using filter name
+# 12. Fetch VM
+# 13. Delete VM
 
 - name: VM crud playbook
   hosts: localhost

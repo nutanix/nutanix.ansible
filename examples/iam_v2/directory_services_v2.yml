@@ -4,15 +4,18 @@
 # 1. Create ACTIVE_DIRECTORY service
 # 2. Create ACTIVE_DIRECTORY service shared with all projects
 # 3. Create ACTIVE_DIRECTORY service shared with specific projects
-# 4. Update ACTIVE_DIRECTORY service
-# 5. Update directory service to share with all projects
-# 6. Update directory service to share with specific projects
-# 7. Update directory service to unshare from all projects
-# 8. Update directory service to unshare from specific projects
-# 9. Fetch ACTIVE_DIRECTORY service info using ext id
-# 10. List all directory services
-# 11. List all directory services with filter
-# 12. Delete ACTIVE_DIRECTORY service
+# 4. Create OPEN_LDAP service
+# 5. Update ACTIVE_DIRECTORY service
+# 6. Update OPEN_LDAP service
+# 7. Update directory service to share with all projects
+# 8. Update directory service to share with specific projects
+# 9. Update directory service to unshare from all projects
+# 10. Update directory service to unshare from specific projects
+# 11. Fetch ACTIVE_DIRECTORY service info using ext id
+# 12. Fetch OPEN_LDAP service info using ext id
+# 13. List all directory services
+# 14. List all directory services with filter
+# 15. Delete ACTIVE_DIRECTORY service
 
 - name: Directory Services playbook
   hosts: localhost

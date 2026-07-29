@@ -73,10 +73,10 @@
 # per-run dedicated project is intentionally NOT used: floating IPs need a real
 # external NAT subnet, and the only one on the cluster (external_nat_subnet) is
 # permanently attached to the fixture VPC. A VPC-attached subnet cannot have a
-# project share removed (NETWORKING-10068), and a project cannot be deleted while
+# project share removed, and a project cannot be deleted while
 # a subnet is shared with it, so a per-run project could never be torn down.
 # The subnet is already shared with external_subnet_project by prepare_env;
-# re-sharing here is idempotent (unique) and safe, and avoids NETWORKING-10056.
+# re-sharing here is idempotent (unique) and safe.
 - name: Get current sharing of external NAT subnet
   nutanix.ncp.ntnx_subnets_info_v2:
     ext_id: "{{ external_nat_subnet.uuid }}"

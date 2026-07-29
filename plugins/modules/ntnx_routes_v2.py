@@ -46,7 +46,7 @@ options:
     type: str
   project_ext_id:
     description:
-      - UUID of the project that owns this route.
+      - External ID (UUID) of the project that owns this route.
       - Update of this field is not supported.
     type: str
   vpc_reference:
@@ -525,8 +525,8 @@ def update_route_table(module, route_api_instance, result):
     current_spec = get_route(module, route_api_instance, ext_id, route_table_ext_id)
 
     # The API returns both the singular `nexthop` and the server-managed plural
-    # `nexthops` on GET, but rejects an update body that contains both
-    # (NETWORKING-10007). The module only manages `nexthop`, so drop the
+    # `nexthops` on GET, but rejects an update body that contains both.
+    # The module only manages `nexthop`, so drop the
     # server-only `nexthops` field before building and comparing the update spec.
     if getattr(current_spec, "nexthops", None) is not None:
         current_spec.nexthops = None

@@ -53,7 +53,7 @@ options:
     type: str
   project_ext_id:
     description:
-      - UUID of the project that owns this subnet.
+      - External ID (UUID) of the project that owns this subnet.
       - Update of this field is not supported.
     type: str
   subnet_type:

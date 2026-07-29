@@ -56,7 +56,7 @@ options:
         type: str
     project_ext_id:
         description:
-            - UUID of the project that owns this OVA.
+            - External ID (UUID) of the project that owns this OVA.
             - Update of this field is not supported.
         type: str
     checksum:

@@ -41,7 +41,7 @@ options:
         type: str
     project_ext_id:
         description:
-            - UUID of the project that owns this template.
+            - External ID (UUID) of the project that owns this template.
             - Update of this field is not supported.
         type: str
     template_name:
@@ -676,7 +676,10 @@ options:
                                 type: str
                                 required: True
                     project:
-                        description: Reference to a project.
+                        description:
+                            - Reference to a project.
+                            - This field is deprecated and will be removed in a future release.
+                            - Use project_ext_id instead.
                         type: dict
                         suboptions:
                             ext_id:

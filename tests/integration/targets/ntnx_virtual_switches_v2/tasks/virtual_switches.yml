@@ -995,6 +995,7 @@
       - item.response is defined
       - item.ext_id is defined
       - item.ext_id | length > 0
+      - item.task_ext_id is defined
     fail_msg: "Unable to create project for virtual switch sharing tests"
     success_msg: "Project for virtual switch sharing tests created successfully"
   loop: "{{ create_projects_result.results }}"
@@ -1177,6 +1178,8 @@
       - item.changed == true
       - item.failed == false
       - item.ext_id == item.item
+      - item.task_ext_id is defined
+      - item.response.status == "SUCCEEDED"
     fail_msg: "Unable to delete project created for sharing tests"
     success_msg: "Project created for sharing tests deleted successfully"
   loop: "{{ delete_projects_result.results }}"

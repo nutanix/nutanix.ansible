@@ -47,7 +47,7 @@ options:
 
   project_ext_id:
     description:
-        - UUID of the project that owns this address group.
+        - External ID (UUID) of the project that owns this address group.
         - Update of this field is not supported.
     type: str
 

@@ -126,12 +126,15 @@ options:
                 type: str
     project_ext_id:
         description:
-            - UUID of the project associated with this VM.
+            - External ID (UUID) of the project associated with this VM.
             - Update of this field is not supported.
         required: false
         type: str
     project:
-        description: Reference to a project.
+        description:
+            - Reference to a project.
+            - This field is deprecated and will be removed in a future release.
+            - Use project_ext_id instead.
         type: dict
         suboptions:
             ext_id:

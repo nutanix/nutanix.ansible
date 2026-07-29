@@ -36,6 +36,7 @@
       - item.response is defined
       - item.ext_id is defined
       - item.ext_id | length > 0
+      - item.task_ext_id is defined
       - item.response.state == "ACTIVE"
     fail_msg: "Unable to create project for tests"
     success_msg: "Project for tests created successfully"
@@ -592,10 +593,15 @@
       - result.changed == true
       - result.failed == false
       - result.response.name == "{{ directory_service }}_shared"
+      - result.response.directory_type == "ACTIVE_DIRECTORY"
+      - result.response.url == "{{ active_directory.url }}"
+      - result.response.domain_name == "{{ active_directory.domain_name }}"
       - result.response.ext_id is defined
       - result.ext_id is defined
       - result.response.project_ext_id == "00000000-0000-0000-0000-000000000000"
       - result.response.is_shared_with_all_projects == true
+      - result.response.service_account.username == "{{ active_directory.username }}"
+      - result.response.service_account.password is defined
     fail_msg: "Create directory service with is_shared_with_all_projects failed"
     success_msg: "Created directory service with is_shared_with_all_projects"
 
@@ -656,7 +662,11 @@
       - result.response is defined
       - result.changed == true
       - result.failed == false
+      - result.ext_id is defined
+      - result.ext_id == "{{ todelete }}"
       - result.response.is_shared_with_all_projects == false
+      - result.response.service_account.username == "{{ active_directory.username }}"
+      - result.response.service_account.password is defined
     fail_msg: "Unshare from all projects failed"
     success_msg: "Unshared from all projects successfully"
 
@@ -685,6 +695,10 @@
       - result.response.shared_with_projects | length == 2
       - project.uuid in result.response.shared_with_projects
       - project2.uuid in result.response.shared_with_projects
+      - result.response.service_account.username == "{{ active_directory.username }}"
+      - result.response.service_account.password is defined
+      - result.ext_id is defined
+      - result.ext_id == "{{ todelete }}"
     fail_msg: "Share with two specific projects failed"
     success_msg: "Shared with two specific projects successfully"
 
@@ -715,6 +729,10 @@
       - project.uuid in result.response.shared_with_projects
       - project2.uuid in result.response.shared_with_projects
       - project3.uuid in result.response.shared_with_projects
+      - result.response.service_account.username == "{{ active_directory.username }}"
+      - result.response.service_account.password is defined
+      - result.ext_id is defined
+      - result.ext_id == "{{ todelete }}"
     fail_msg: "Share with all three projects failed"
     success_msg: "Shared with all three projects successfully"
 
@@ -744,6 +762,10 @@
       - project.uuid not in result.response.shared_with_projects
       - project2.uuid in result.response.shared_with_projects
       - project3.uuid in result.response.shared_with_projects
+      - result.response.service_account.username == "{{ active_directory.username }}"
+      - result.response.service_account.password is defined
+      - result.ext_id is defined
+      - result.ext_id == "{{ todelete }}"
     fail_msg: "Reconcile shared projects to a subset failed"
     success_msg: "Reconciled shared projects to a subset successfully"
 
@@ -767,6 +789,10 @@
       - result.response is defined
       - result.failed == false
       - (result.response.shared_with_projects | default([], true)) | length == 0
+      - result.response.service_account.username == "{{ active_directory.username }}"
+      - result.response.service_account.password is defined
+      - result.ext_id is defined
+      - result.ext_id == "{{ todelete }}"
     fail_msg: "Unshare from all specific projects failed"
     success_msg: "Unshared from all specific projects successfully"
 ########################################################################
@@ -775,7 +801,7 @@
   nutanix.ncp.ntnx_directory_services_v2:
     state: present
     ext_id: "{{ todelete }}"
-    project_ext_id: "00000000-0000-0000-0000-000000000001"
+    project_ext_id: "{{ project2.uuid }}"
     service_account:
       username: "{{ active_directory.username }}"
       password: "{{ active_directory.password }}"
@@ -806,8 +832,8 @@
 - name: Delete shared directory service status
   ansible.builtin.assert:
     that:
-      - result.changed == True
-      - result.failed == False
+      - result.changed == true
+      - result.failed == false
       - result.ext_id == "{{ todelete }}"
       - result.msg == "{{ msg }}"
     fail_msg: "Unable to delete shared directory service"
@@ -837,6 +863,8 @@
       - item.changed == true
       - item.failed == false
       - item.ext_id == item.item
+      - item.task_ext_id is defined
+      - item.response.status == "SUCCEEDED"
     fail_msg: "Unable to delete project {{ item.item }} created for tests"
     success_msg: "Project {{ item.item }} created for tests deleted successfully"
   loop: "{{ delete_projects_result.results }}"
