@@ -1164,7 +1164,7 @@ options:
                 suboptions:
                     ext_id:
                         description:
-                            - A globally unique identifier of the VM owner. It should be of type UUID.
+                            - A globally unique identifier of the VM owner.
                         required: true
                         type: str
     state:
@@ -1492,9 +1492,7 @@ def create_vm(module, result):
     if module.check_mode:
         response = strip_internal_attributes(spec.to_dict())
         if ownership_info_params:
-            response["ownership_info"] = {
-                "owner": {"ext_id": ownership_info_params["owner"]["ext_id"]}
-            }
+            response["ownership_info"] = ownership_info_params
         result["response"] = response
         return
 
@@ -1541,12 +1539,9 @@ def _is_owner_change_needed(current_spec, module):
         return False
 
     requested_owner_ext_id = ownership_info_params["owner"]["ext_id"]
-    current_ownership = getattr(current_spec, "ownership_info", None)
-    if current_ownership and hasattr(current_ownership, "owner") and current_ownership.owner:
-        current_owner_ext_id = current_ownership.owner.ext_id
-        if current_owner_ext_id == requested_owner_ext_id:
-            return False
-    return True
+    current_ownership = getattr(getattr(current_spec, "ownership_info", None), "owner", None)
+    current_ext_id = getattr(current_ownership, "ext_id", None)
+    return current_ext_id != requested_owner_ext_id
 
 
 def _assign_vm_owner(module, vms, ext_id, result):
@@ -1624,9 +1619,7 @@ def update_vm(module, result):
     if module.check_mode:
         response = strip_internal_attributes(update_spec.to_dict())
         if owner_change_needed:
-            response["ownership_info"] = {
-                "owner": {"ext_id": ownership_info_params["owner"]["ext_id"]}
-            }
+            response["ownership_info"] = ownership_info_params
         result["response"] = response
         return
 
