@@ -1539,7 +1539,9 @@ def _is_owner_change_needed(current_spec, module):
         return False
 
     requested_owner_ext_id = ownership_info_params["owner"]["ext_id"]
-    current_ownership = getattr(getattr(current_spec, "ownership_info", None), "owner", None)
+    current_ownership = getattr(
+        getattr(current_spec, "ownership_info", None), "owner", None
+    )
     current_ext_id = getattr(current_ownership, "ext_id", None)
     return current_ext_id != requested_owner_ext_id
 
@@ -1608,8 +1610,8 @@ def update_vm(module, result):
         update_spec.apc_config.cpu_model = None
 
     vm_update_needed = not check_idempotency(current_spec, update_spec)
-    owner_change_needed = (
-        module.params.get("wait") and _is_owner_change_needed(current_spec, module)
+    owner_change_needed = module.params.get("wait") and _is_owner_change_needed(
+        current_spec, module
     )
 
     if module.check_mode:
