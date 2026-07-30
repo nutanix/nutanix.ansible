@@ -1612,16 +1612,19 @@ def update_vm(module, result):
         module.params.get("wait") and _is_owner_change_needed(current_spec, module)
     )
 
-    if not vm_update_needed and not owner_change_needed:
-        result["skipped"] = True
-        module.exit_json(msg="Nothing to change.", **result)
-
     if module.check_mode:
+        if not vm_update_needed and not owner_change_needed:
+            result["skipped"] = True
+            module.exit_json(msg="Nothing to change.", **result)
         response = strip_internal_attributes(update_spec.to_dict())
         if owner_change_needed:
             response["ownership_info"] = ownership_info_params
         result["response"] = response
         return
+
+    if not vm_update_needed and not owner_change_needed:
+        result["skipped"] = True
+        module.exit_json(msg="Nothing to change.", **result)
 
     if vm_update_needed:
         resp = None

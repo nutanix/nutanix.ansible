@@ -1,7 +1,6 @@
-pip>=23.0
-setuptools>=65.0
-ansible-core>=2.16.0
-requests>=2.31.0
+pip>=26.1.2
+setuptools>=70.3.0
+requests>=2.34.2
 ntnx-clustermgmt-py-client==4.2.2
 ntnx-iam-py-client==4.1.2b2
 ntnx-microseg-py-client==4.2.2
