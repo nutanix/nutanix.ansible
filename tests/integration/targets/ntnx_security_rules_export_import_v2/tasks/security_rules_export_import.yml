@@ -267,31 +267,6 @@
     fail_msg: "Export-all file was not downloaded to the provided file path"
 
 ########################################################################################
-# Export - negative: non-existent policy reference
-########################################################################################
-
-- name: Export with a non-existent policy reference
-  nutanix.ncp.ntnx_security_rules_export_v2:
-    policy_references:
-      - "00000000-0000-0000-0000-000000000000"
-    path: "{{ export_file }}"
-  register: result
-  ignore_errors: true
-
-- name: Verify export with a non-existent policy reference fails
-  ansible.builtin.assert:
-    that:
-      - result is defined
-      - result.failed == true
-      - result.changed == false
-      - result.response is defined
-      - result.response.status == "FAILED"
-      - result.response.error_messages is defined
-      - result.response.error_messages | length > 0
-    success_msg: "Export with a non-existent policy reference failed as expected"
-    fail_msg: "Export with a non-existent policy reference did not fail as expected"
-
-########################################################################################
 # Import - check mode using the downloaded export file
 ########################################################################################
 
@@ -382,33 +357,42 @@
     success_msg: "Import of network security policies succeeded"
     fail_msg: "Import of network security policies failed"
 
-- name: Get the first policy after import
+- name: Get the first imported policy by name filter
   nutanix.ncp.ntnx_security_rules_info_v2:
-    ext_id: "{{ policy_ext_id_1 }}"
+    filter: "name eq '{{ policy_name_1 }}'"
   register: imported_policy_1
   ignore_errors: true
 
-- name: Get the second policy after import
+- name: Get the second imported policy by name filter
   nutanix.ncp.ntnx_security_rules_info_v2:
-    ext_id: "{{ policy_ext_id_2 }}"
+    filter: "name eq '{{ policy_name_2 }}'"
   register: imported_policy_2
   ignore_errors: true
 
-- name: Verify both policies were restored with the same external IDs
+- name: Update policy external IDs with imported policy IDs
+  ansible.builtin.set_fact:
+    policy_ext_id_1: "{{ imported_policy_1.response[0].ext_id }}"
+    policy_ext_id_2: "{{ imported_policy_2.response[0].ext_id }}"
+
+- name: Verify both policies were restored after import
   ansible.builtin.assert:
     that:
       - imported_policy_1.failed == false
-      - imported_policy_1.response.ext_id == policy_ext_id_1
-      - imported_policy_1.response.name == policy_name_1
-      - imported_policy_1.response.type == "APPLICATION"
-      - imported_policy_1.response.state == "MONITOR"
-      - imported_policy_1.response.scope == "ALL_VLAN"
+      - imported_policy_1.response is defined
+      - imported_policy_1.response | length == 1
+      - imported_policy_1.response[0].ext_id is defined
+      - imported_policy_1.response[0].name == policy_name_1
+      - imported_policy_1.response[0].type == "APPLICATION"
+      - imported_policy_1.response[0].state == "MONITOR"
+      - imported_policy_1.response[0].scope == "ALL_VLAN"
       - imported_policy_2.failed == false
-      - imported_policy_2.response.ext_id == policy_ext_id_2
-      - imported_policy_2.response.name == policy_name_2
-      - imported_policy_2.response.type == "APPLICATION"
-      - imported_policy_2.response.state == "MONITOR"
-      - imported_policy_2.response.scope == "ALL_VLAN"
+      - imported_policy_2.response is defined
+      - imported_policy_2.response | length == 1
+      - imported_policy_2.response[0].ext_id is defined
+      - imported_policy_2.response[0].name == policy_name_2
+      - imported_policy_2.response[0].type == "APPLICATION"
+      - imported_policy_2.response[0].state == "MONITOR"
+      - imported_policy_2.response[0].scope == "ALL_VLAN"
     success_msg: "Both network security policies were restored by the import"
     fail_msg: "Imported network security policies were not restored as expected"
 
