@@ -1094,24 +1094,83 @@
     success_msg: "Delete policies passed"
   loop: "{{ result.results }}"
 
-- name: Destroy the cluster for cleanup
-  nutanix.ncp.ntnx_clusters_v2:
-    state: absent
-    ext_id: "{{ cluster_ext_id }}"
-  register: result
+- name: Get current host details from v3 API before category cleanup
+  ansible.builtin.uri:
+    url: "https://10.44.76.39:9440/api/nutanix/v3/hosts/3d75550f-b2c8-4ce6-afdb-535bf64d3f09"
+    method: GET
+    user: "admin"
+    password: "Nutanix.123"
+    force_basic_auth: true
+    validate_certs: false
+    headers:
+      Accept: "application/json"
+    status_code: [200, 202]
+  register: host_info_v3_before_cleanup
   ignore_errors: true
 
-- name: Verify cluster deletion
+- name: Build host categories cleanup payloads
+  ansible.builtin.set_fact:
+    cleaned_host_categories: >-
+      {{
+        (
+          host_info_v3_before_cleanup.json.metadata.categories
+          | default({})
+          | dict2items
+          | rejectattr('key', 'equalto', functional_host_category_key)
+          | list
+        ) | items2dict
+      }}
+    cleaned_host_categories_mapping: >-
+      {{
+        (
+          host_info_v3_before_cleanup.json.metadata.categories_mapping
+          | default({})
+          | dict2items
+          | rejectattr('key', 'equalto', functional_host_category_key)
+          | list
+        ) | items2dict
+      }}
+
+- name: Build host v3 cleanup payload
+  ansible.builtin.set_fact:
+    host_cleanup_v3_payload:
+      api_version: "{{ host_info_v3_before_cleanup.json.api_version | default('3.1') }}"
+      metadata: >-
+        {{
+          host_info_v3_before_cleanup.json.metadata
+          | combine({
+              'categories': cleaned_host_categories,
+              'categories_mapping': cleaned_host_categories_mapping
+            })
+        }}
+      spec: "{{ host_info_v3_before_cleanup.json.spec }}"
+
+- name: Remove functional host category association using v3 API
+  ansible.builtin.uri:
+    url: "{{ host_v3_api }}"
+    method: PUT
+    user: "{{ username_for_tests }}"
+    password: "{{ password_for_tests }}"
+    force_basic_auth: true
+    validate_certs: false
+    headers:
+      Accept: "application/json"
+    body_format: json
+    status_code: [200, 202]
+    body: "{{ host_cleanup_v3_payload }}"
+  register: host_cleanup_v3
+  ignore_errors: true
+
+- name: Verify host category cleanup response
   ansible.builtin.assert:
     that:
-      - result.response is defined
-      - result.changed == true
-      - result.response.status == "SUCCEEDED"
-      - result.ext_id == cluster_ext_id
-    fail_msg: Failed verifying cluster deletion
-    success_msg: Cluster deletion passed successfully
+      - host_cleanup_v3 is defined
+      - host_cleanup_v3.failed == false
+      - host_cleanup_v3.status in [200, 202]
+    fail_msg: "Failed to cleanup host category association before category deletion"
+    success_msg: "Host category association cleanup request accepted"
 
-- name: Sleep for 10 seconds after destroying cluster
+- name: Sleep for 10 seconds after host category cleanup
   ansible.builtin.pause:
     seconds: 10
 
@@ -1133,3 +1192,24 @@
     fail_msg: "Unable to delete categories for host-affinity policy tests"
     success_msg: "Categories for host-affinity policy tests deleted successfully"
   loop: "{{ result.results }}"
+
+- name: Destroy the cluster for cleanup
+  nutanix.ncp.ntnx_clusters_v2:
+    state: absent
+    ext_id: "{{ cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Print cluster deletion result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify cluster deletion
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.response.status == "SUCCEEDED"
+      - result.ext_id == cluster_ext_id
+    fail_msg: Failed verifying cluster deletion
+    success_msg: Cluster deletion passed successfully
