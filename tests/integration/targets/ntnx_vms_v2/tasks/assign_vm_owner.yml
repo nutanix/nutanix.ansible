@@ -306,12 +306,36 @@
   register: negative_vm_info
   ignore_errors: true
 
+- name: Find VM created in negative test using name filter Status
+  ansible.builtin.assert:
+    that:
+      - negative_vm_info.failed == false
+      - negative_vm_info.changed == false
+      - negative_vm_info.response is defined
+      - negative_vm_info.response[0].name == "{{ vm_name }}_negative"
+    fail_msg: "Unable to fetch VM created in negative test"
+    success_msg: "VM created in negative test fetched successfully"
+
 - name: Delete VM created in negative test (if it was partially created)
   nutanix.ncp.ntnx_vms_v2:
     state: absent
     ext_id: "{{ negative_vm_info.response[0].ext_id }}"
   register: cleanup_result
   ignore_errors: true
+  when:
+    - negative_vm_info.response is defined
+    - negative_vm_info.response | length > 0
+
+- name: Delete VM created in negative test Status
+  ansible.builtin.assert:
+    that:
+      - cleanup_result.response is defined
+      - cleanup_result.changed == true
+      - cleanup_result.failed == false
+      - cleanup_result.ext_id == "{{ negative_vm_info.response[0].ext_id }}"
+      - cleanup_result.response.status == 'SUCCEEDED'
+    fail_msg: "Unable to delete VM created in negative test"
+    success_msg: "VM created in negative test deleted successfully"
   when:
     - negative_vm_info.response is defined
     - negative_vm_info.response | length > 0
