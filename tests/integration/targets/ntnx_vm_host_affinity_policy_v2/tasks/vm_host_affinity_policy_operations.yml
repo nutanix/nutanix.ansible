@@ -1096,10 +1096,10 @@
 
 - name: Get current host details from v3 API before category cleanup
   ansible.builtin.uri:
-    url: "https://10.44.76.39:9440/api/nutanix/v3/hosts/3d75550f-b2c8-4ce6-afdb-535bf64d3f09"
+    url: "{{ host_v3_api }}"
     method: GET
-    user: "admin"
-    password: "Nutanix.123"
+    user: "{{ username_for_tests }}"
+    password: "{{ password_for_tests }}"
     force_basic_auth: true
     validate_certs: false
     headers:
@@ -1134,7 +1134,6 @@
 - name: Build host v3 cleanup payload
   ansible.builtin.set_fact:
     host_cleanup_v3_payload:
-      api_version: "{{ host_info_v3_before_cleanup.json.api_version | default('3.1') }}"
       metadata: >-
         {{
           host_info_v3_before_cleanup.json.metadata
