@@ -90,7 +90,7 @@ failed:
 
 error:
   description: Error message if something goes wrong.
-  returned: always
+  returned: When an error occurs
   type: str
   sample: null
 
@@ -139,7 +139,7 @@ def run_module():
         supports_check_mode=False,
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None}
+    result = {"changed": False, "failed": False, "response": None}
     api_instance = get_snmp_api_instance(module)
     get_snmp_trap_using_ext_id(module, api_instance, result)
     module.exit_json(**result)

@@ -19,7 +19,7 @@ description:
 options:
   state:
     description:
-      - If C(state) is present, it will create or update the snmp trap.
+      - If C(state) is C(present), it will create or update the snmp trap.
       - If C(state) is set to C(present) and ext_id is not provided, the operation will create the snmp trap.
       - If C(state) is set to C(present) and ext_id is provided, the operation will update the snmp trap.
       - If C(state) is set to C(absent) and ext_id is provided, the operation will delete the snmp trap.
@@ -186,7 +186,7 @@ response:
     - Response for snmp trap operations.
     - SNMP config details if operation is create and C(wait) is True.
     - SNMP trap details if operation is update and C(wait) is True.
-    - Task details if operation is delete and C(wait) is True.
+    - Task details if operation is delete or C(wait) is True.
   type: dict
   returned: always
   sample:
@@ -251,13 +251,13 @@ failed:
 
 error:
   description: Error message if something goes wrong.
-  returned: always
+  returned: When an error occurs
   type: str
   sample: null
 
 skipped:
   description: This indicates whether the task was skipped
-  returned: always
+  returned: When the operation was skipped
   type: bool
   sample: false
 
@@ -307,6 +307,7 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
+    validate_required_params,
 )
 
 SDK_IMP_ERROR = None
@@ -372,6 +373,7 @@ def get_module_spec():
 
 
 def create_snmp_trap(module, result, snmp_traps, snmp_config_api):
+    validate_required_params(module, ["protocol", "port"])
     cluster_ext_id = module.params.get("cluster_ext_id")
     result["cluster_ext_id"] = cluster_ext_id
     sg = SpecGenerator(module)
@@ -481,7 +483,7 @@ def delete_snmp_trap(module, result, snmp_traps):
     result["cluster_ext_id"] = cluster_ext_id
 
     if module.check_mode:
-        result["msg"] = "SnmpTrap with ext_id:{0} will be deleted.".format(ext_id)
+        result["msg"] = "Snmp Trap with ext_id:{0} will be deleted.".format(ext_id)
         return
 
     try:
@@ -524,7 +526,7 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
+        "failed": False,
         "response": None,
         "ext_id": None,
         "task_ext_id": None,

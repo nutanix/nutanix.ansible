@@ -111,8 +111,8 @@ response:
   description:
   - The response for snmp user operations.
   - SNMP config details if operation is create and C(wait) is True.
-  - SNMP user details if operation is update and C(wait) is True.
-  - Task details if operation is delete and C(wait) is True.
+  - SNMP config details if operation is update and C(wait) is True.
+  - Task details if operation is delete or C(wait) is False.
   type: dict
   returned: always
   sample:
@@ -140,7 +140,7 @@ failed:
 
 error:
   description: Error message if something goes wrong.
-  returned: always
+  returned: When an error occurs
   type: str
   sample: null
 
@@ -170,7 +170,7 @@ msg:
 
 skipped:
   description: This indicates whether the task was skipped
-  returned: always
+  returned: When the operation was skipped
   type: bool
   sample: false
 """
@@ -196,6 +196,7 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
+    validate_required_params,
 )
 
 SDK_IMP_ERROR = None
@@ -234,6 +235,7 @@ def get_module_spec():
 
 
 def create_snmp_user(module, result, snmp_users, snmp_config_api):
+    validate_required_params(module, ["username", "auth_type", "auth_key"])
     cluster_ext_id = module.params.get("cluster_ext_id")
     result["cluster_ext_id"] = cluster_ext_id
     sg = SpecGenerator(module)
@@ -306,9 +308,6 @@ def update_snmp_user(module, result, snmp_users, snmp_config_api):
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
 
-    result["current_spec"] = strip_internal_attributes(current_spec.to_dict())
-    result["update_spec"] = strip_internal_attributes(update_spec.to_dict())
-
     if check_snmp_user_idempotency(current_spec, update_spec):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
@@ -346,7 +345,7 @@ def delete_snmp_user(module, result, snmp_users, snmp_config_api):
     result["cluster_ext_id"] = cluster_ext_id
 
     if module.check_mode:
-        result["msg"] = "SnmpUser with ext_id:{0} will be deleted.".format(ext_id)
+        result["msg"] = "Snmp User with ext_id:{0} will be deleted.".format(ext_id)
         return
 
     try:
@@ -389,7 +388,7 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
+        "failed": False,
         "response": None,
         "ext_id": None,
         "task_ext_id": None,

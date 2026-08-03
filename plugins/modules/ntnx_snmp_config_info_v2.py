@@ -112,7 +112,7 @@ failed:
 
 error:
   description: Error message if something goes wrong.
-  returned: always
+  returned: When an error occurs
   type: str
   sample: null
 
@@ -145,7 +145,7 @@ def run_module():
         supports_check_mode=False,
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None}
+    result = {"changed": False, "failed": False, "response": None}
     cluster_ext_id = module.params.get("cluster_ext_id")
     result["cluster_ext_id"] = cluster_ext_id
     api_instance = get_snmp_api_instance(module)
