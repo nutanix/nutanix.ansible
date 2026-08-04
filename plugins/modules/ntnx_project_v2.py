@@ -68,7 +68,7 @@ options:
     project_id:
         description:
             - Unique human-readable ID for the project.
-            - Required for create operations.
+            - If not set, then it is set to the name of the project.
             - Must be between 1 and 64 characters.
         type: str
 extends_documentation_fragment:
@@ -90,6 +90,17 @@ EXAMPLES = r"""
     state: present
     name: "my-project"
     project_id: "my-project-id"
+    description: "A test project created via Ansible"
+  register: result
+
+- name: Create a project without setting project_id
+  nutanix.ncp.ntnx_project_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    state: present
+    name: "my-project"
     description: "A test project created via Ansible"
   register: result
 
@@ -228,7 +239,12 @@ def get_module_spec():
 
 
 def create_project(module, projects, result):
-    validate_required_params(module, ["name", "project_id"])
+    validate_required_params(
+        module,
+        [
+            "name",
+        ],
+    )
 
     sg = SpecGenerator(module)
     default_spec = multidomain_sdk.Project()
@@ -241,6 +257,8 @@ def create_project(module, projects, result):
     project_id = module.params.get("project_id")
     if project_id:
         spec.id = project_id
+    else:
+        spec.id = module.params.get("name")
 
     # SpecGenerator picks up Ansible's 'state' param ("present"/"absent")
     # and sets it on the SDK object; reset to None so the API does not
