@@ -239,7 +239,12 @@ def get_module_spec():
 
 
 def create_project(module, projects, result):
-    validate_required_params(module, ["name",])
+    validate_required_params(
+        module,
+        [
+            "name",
+        ],
+    )
 
     sg = SpecGenerator(module)
     default_spec = multidomain_sdk.Project()
