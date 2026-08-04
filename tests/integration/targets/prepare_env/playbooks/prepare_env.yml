@@ -236,11 +236,31 @@
     #           name: "{{dr_vm_name}}"
     #           uuid: "{{result.vm_uuid}}"
 
+    - name: Check if cirros image already exists locally
+      ansible.builtin.stat:
+        path: "{{ cirros_image.dest }}"
+      register: cirros_image_stat
+
+    - name: Downloading small cirros image for object store upload tests
+      ansible.builtin.get_url:
+        mode: "0644"
+        url: "{{ cirros_image.url }}"
+        dest: "{{ cirros_image.dest }}"
+        timeout: 120
+      when: not cirros_image_stat.stat.exists
+
+    - name: Check if disk image already exists locally
+      ansible.builtin.stat:
+        path: "{{ disk_image.dest }}"
+      register: disk_image_stat
+
     - name: Downloading disk image for image related tests
       ansible.builtin.get_url:
         mode: "0644"
         url: "{{ disk_image.url }}"
         dest: "{{ disk_image.dest }}"
+        timeout: 120
+      when: not disk_image_stat.stat.exists
     #   # - name: create address group for network security policy related tests
     #   #   nutanix.ncp.ntnx_address_groups:
     #   #     state: present

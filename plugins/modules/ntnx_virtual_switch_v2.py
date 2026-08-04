@@ -37,9 +37,9 @@ notes:
 options:
   state:
     description:
-      - If C(state) is set to C(present) and ext_id is not provided then the operation will be create virtual switch.
-      - If C(state) is set to C(present) and ext_id is provided then the operation will be update virtual switch.
-      - If C(state) is set to C(absent) and ext_id is provided then the operation will be delete virtual switch.
+      - If C(state) is set to C(present) and C(ext_id) is not provided then the operation will be create virtual switch.
+      - If C(state) is set to C(present) and C(ext_id) is provided then the operation will be update virtual switch.
+      - If C(state) is set to C(absent) and C(ext_id) is provided then the operation will be delete virtual switch.
     type: str
     required: false
     choices:
@@ -48,7 +48,8 @@ options:
     default: present
   ext_id:
     description:
-      - The external ID of the virtual switch. Required for update and delete operations.
+      - The external ID of the virtual switch.
+      - Required for update and delete operations.
     type: str
     required: false
   project_ext_id:
@@ -282,6 +283,7 @@ extends_documentation_fragment:
   - nutanix.ncp.ntnx_proxy_v2
 author:
   - George Ghawali (@george-ghawali)
+  - Abhinav Bansal (@abhinavbansal29)
 """
 
 EXAMPLES = r"""
@@ -425,14 +427,14 @@ response:
 
 task_ext_id:
   description:
-    - The external id of the task.
+    - The external ID of the task.
   returned: always
   type: str
   sample: "ZXJnb24=:90458bc7-a12b-4616-ac66-562fdb00c209"
 
 ext_id:
   description:
-    - The external id of the virtual switch.
+    - The external ID of the virtual switch.
   returned: always
   type: str
   sample: "7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0"
@@ -464,6 +466,7 @@ msg:
   description: This indicates the message if any message occurred
   returned: When there is an error, module is idempotent or check mode (in delete operation)
   type: str
+  sample: "Api Exception raised while creating virtual switch"
 """
 
 import traceback  # noqa: E402
@@ -741,6 +744,14 @@ def create_virtual_switch_from_existing_bridge(module, bridges_api, result):
                 )
             resp = get_virtual_switch(module, virtual_switches_api, ext_id)
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Virtual Switch"
+                ),
+                msg="Failed to get entity ext_id from task for Virtual Switch",
+            )
     result["changed"] = True
 
 
@@ -790,6 +801,14 @@ def create_virtual_switch(module, virtual_switches, result):
                 )
             resp = get_virtual_switch(module, virtual_switches, ext_id)
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Virtual Switch"
+                ),
+                msg="Failed to get entity ext_id from task for Virtual Switch",
+            )
     result["changed"] = True
 
 
@@ -985,7 +1004,6 @@ def run_module():
             )
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "failed": False,
         "ext_id": None,

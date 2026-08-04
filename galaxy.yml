@@ -24,3 +24,4 @@ build_ignore:
   - .github
   - .vscode
   - logs
+  - py3.12_virt

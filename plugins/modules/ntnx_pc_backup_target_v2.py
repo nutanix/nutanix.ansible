@@ -394,10 +394,6 @@ def update_backup_target(module, domain_manager_backups_api, result):
             result["skipped"] = True
             module.exit_json(msg="Nothing to change.", **result)
 
-    if module.check_mode:
-        result["response"] = strip_internal_attributes(update_spec.to_dict())
-        return
-
     resp = None
     try:
         resp = domain_manager_backups_api.update_backup_target_by_id(
