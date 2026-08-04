@@ -474,15 +474,13 @@ def update_image(module, result):
         result["error"] = err
         module.fail_json(msg="Failed generating image update spec", **result)
 
-<<<<<<< HEAD
     raise_unsupported_update_fields(
         module, current_spec, update_spec, ["project_ext_id"]
     )
-=======
+
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
->>>>>>> release/2.6.0
 
     # check for idempotency
     if check_idempotency(current_spec, update_spec):
