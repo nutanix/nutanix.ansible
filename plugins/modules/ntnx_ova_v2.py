@@ -545,14 +545,10 @@ def update_ova(module, ova, result):
         result["error"] = err
         module.fail_json(msg="Failed generating ova update spec", **result)
 
-    # The update body is built from a blank spec (the OVA API rejects read-only
-    # fields such as createdBy in the body), so only validate project_ext_id when
-    # the user explicitly provides it, otherwise a name-only update would be
-    # falsely flagged as changing the (unset in update_spec) project_ext_id.
-    if module.params.get("project_ext_id") is not None:
-        raise_unsupported_update_fields(
-            module, current_spec, update_spec, ["project_ext_id"]
-        )
+
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
 
     # check for idempotency
     if check_idempotency(current_spec.to_dict(), update_spec.to_dict()):

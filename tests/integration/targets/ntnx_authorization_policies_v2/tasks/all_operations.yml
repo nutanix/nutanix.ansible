@@ -38,12 +38,13 @@
       - create_project_result.ext_id | length > 0
       - create_project_result.task_ext_id is defined
       - create_project_result.response.state == "ACTIVE"
+      - create_project_result.response.status == "SUCCEEDED"
     fail_msg: "Unable to create project for tests"
     success_msg: "Project for tests created successfully"
 
 - name: Set project fact for tests
   ansible.builtin.set_fact:
-    project:
+    project1:
       name: "{{ random_name }}-ansible-project"
       uuid: "{{ create_project_result.ext_id }}"
 
@@ -154,7 +155,7 @@
     description: ansible created acps
     role: "{{ role_ext_id }}"
     authorization_policy_type: USER_DEFINED
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "{{ project1.uuid }}"
     entities:
       - images:
           "*":
@@ -191,7 +192,7 @@
       - result.response.description == "ansible created acps"
       - result.response.role == "{{ role_ext_id }}"
       - result.response.authorization_policy_type == "USER_DEFINED"
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == project1.uuid
       - result.response.entities[0].entity_filter.images["*"]["eq"] == "*"
       - result.response.entities[1].entity_filter.directory_service.uuid.anyof | length == 1
       - result.response.entities[1].entity_filter.directory_service.uuid.anyof[0] == "{{ directory_service_uuid }}"
@@ -264,7 +265,7 @@
       - "*":
           project_uuid:
             anyof:
-              - "{{ project.uuid }}"
+              - "{{ project1.uuid }}"
   register: result
   ignore_errors: true
   check_mode: true
@@ -279,7 +280,7 @@
       - result.response.entities | length == 3
       - result.response.entities[0].entity_filter.images["*"]["eq"] == "*"
       - result.response.entities[1].entity_filter.marketplace_item.owner_uuid.eq == "SELF_OWNED"
-      - result.response.entities[2].entity_filter["*"].project_uuid.anyof[0] == "{{ project.uuid }}"
+      - result.response.entities[2].entity_filter["*"].project_uuid.anyof[0] == "{{ project1.uuid }}"
       - result.response.identities | length == 1
       - result.response.identities[0].identity_filter.user.group.anyof | length == 1
       - result.response.identities[0].identity_filter.user.group.anyof[0] == "{{ user_groups[0] }}"
@@ -300,7 +301,7 @@
       - "*":
           project_uuid:
             anyof:
-              - "{{ project.uuid }}"
+              - "{{ project1.uuid }}"
   register: result
   ignore_errors: true
 
@@ -314,7 +315,7 @@
       - result.response.entities | length == 3
       - result.response.entities[0].entity_filter.images["*"]["eq"] == "*"
       - result.response.entities[1].entity_filter.marketplace_item.owner_uuid.eq == "SELF_OWNED"
-      - result.response.entities[2].entity_filter["*"].project_uuid.anyof[0] == "{{ project.uuid }}"
+      - result.response.entities[2].entity_filter["*"].project_uuid.anyof[0] == "{{ project1.uuid }}"
       - result.response.identities | length == 1
       - result.response.identities[0].identity_filter.user.group.anyof | length == 1
       - result.response.identities[0].identity_filter.user.group.anyof[0] == "{{ user_groups[0] }}"
@@ -344,7 +345,7 @@
       - result.response.entities | length == 3
       - result.response.entities[0].entity_filter.images["*"]["eq"] == "*"
       - result.response.entities[1].entity_filter.marketplace_item.owner_uuid.eq == "SELF_OWNED"
-      - result.response.entities[2].entity_filter["*"].project_uuid.anyof[0] == "{{ project.uuid }}"
+      - result.response.entities[2].entity_filter["*"].project_uuid.anyof[0] == "{{ project1.uuid }}"
       - result.response.identities | length == 1
       - result.response.identities[0].identity_filter.user.uuid.anyof | length == 2
       - result.response.identities[0].identity_filter.user.uuid.anyof[0] == "{{ users[0] }}"
@@ -515,6 +516,7 @@
   ansible.builtin.assert:
     that:
       - result.failed == true
+      - result.changed == false
       - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
     fail_msg: "Update of project_ext_id should have been blocked"
     success_msg: "Update of project_ext_id is correctly blocked"
@@ -593,7 +595,7 @@
 - name: Delete project created for tests
   nutanix.ncp.ntnx_project_v2:
     state: absent
-    ext_id: "{{ project.uuid }}"
+    ext_id: "{{ project1.uuid }}"
   register: delete_project_result
   ignore_errors: true
 
@@ -602,7 +604,7 @@
     that:
       - delete_project_result.changed == true
       - delete_project_result.failed == false
-      - delete_project_result.ext_id == project.uuid
+      - delete_project_result.ext_id == project1.uuid
       - delete_project_result.task_ext_id is defined
       - delete_project_result.response.status == "SUCCEEDED"
     fail_msg: "Unable to delete project created for tests"

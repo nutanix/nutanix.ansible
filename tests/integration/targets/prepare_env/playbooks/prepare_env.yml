@@ -55,8 +55,8 @@
         nutanix_debug: "{{ nutanix_debug | default(omit) }}"
         nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
         validate_certs: false
-        name: "integration_test_ext_subnet_project"
-        project_id: "integration_test_ext_subnet_project"
+        name: "{{ external_nat_subnets[0].name }}_project"
+        project_id: "{{ external_nat_subnets[0].name }}_project"
       register: project_result
 
     - name: Share external NAT subnet with the fixture project
@@ -79,7 +79,7 @@
         marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 6"
         block: |
           external_subnet_project:
-            name: "integration_test_ext_subnet_project"
+            name: "{{ external_nat_subnets[0].name }}_project"
             uuid: "{{project_result.ext_id}}"
 
     - name: Create min VPC with external_subnet uuid

@@ -142,6 +142,7 @@
   nutanix.ncp.ntnx_virtual_switch_v2:
     name: "check_mode_vs_full"
     description: "Virtual switch created in check mode with all attributes"
+    project_ext_id: "83083083-0000-0000-0000-000000000000"
     bond_mode: "NONE"
     mtu: 9000
     is_default: false
@@ -195,6 +196,8 @@
       - result.response.name == "check_mode_vs_full"
       - result.response.description == "Virtual switch created in check mode
         with all attributes"
+      - result.response.project_ext_id ==
+        "83083083-0000-0000-0000-000000000000"
       - result.response.bond_mode == "NONE"
       - result.response.mtu == 9000
       - result.response.is_default == false
@@ -228,8 +231,8 @@
       - result.response.shared_with_projects is defined
       - result.response.shared_with_projects | length == 2
       - (result.response.shared_with_projects | sort) ==
-        (["11111111-1111-1111-1111-111111111111",
-        "22222222-2222-2222-2222-222222222222"] | sort)
+        ["11111111-1111-1111-1111-111111111111",
+        "22222222-2222-2222-2222-222222222222"]
     success_msg: "Spec for creating virtual switch using check mode with all
       attributes is generated successfully"
     fail_msg: "Spec for creating virtual switch using check mode with all attributes
@@ -694,8 +697,6 @@
       category_ids:
         - "8c2d5e9f-3a7b-4c1d-6e8f-2a5b9c1d4e7f"
         - "1e4f7a2c-5d8b-3e6c-9a2d-5f8b1e4c7a2d"
-    shared_with_projects:
-      - "33333333-3333-3333-3333-333333333333"
   check_mode: true
   register: result
   ignore_errors: true
@@ -739,8 +740,6 @@
         result.response.metadata.category_ids"
       - result.response.shared_with_projects is defined
       - result.response.shared_with_projects | length == 1
-      - result.response.shared_with_projects[0] ==
-        "33333333-3333-3333-3333-333333333333"
     success_msg: "Spec for updating virtual switch using check mode with all
       attributes is generated successfully"
     fail_msg: "Spec for updating virtual switch using check mode with all attributes
@@ -975,6 +974,27 @@
     fail_msg: "List virtual switches with limit failed"
 
 ########################################################################################
+# Verify update of project_ext_id is not supported
+########################################################################################
+
+- name: Verify update of project_ext_id is not supported
+  nutanix.ncp.ntnx_virtual_switch_v2:
+    state: present
+    ext_id: "{{ todelete[0] }}"
+    project_ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Verify update of project_ext_id is blocked status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
+    fail_msg: "Update of project_ext_id should have been blocked"
+    success_msg: "Update of project_ext_id is correctly blocked"
+
+########################################################################################
 # Tests for shared_with_projects
 ########################################################################################
 
@@ -996,6 +1016,7 @@
       - item.ext_id is defined
       - item.ext_id | length > 0
       - item.task_ext_id is defined
+      - item.response.status == "SUCCEEDED"
     fail_msg: "Unable to create project for virtual switch sharing tests"
     success_msg: "Project for virtual switch sharing tests created successfully"
   loop: "{{ create_projects_result.results }}"
@@ -1004,7 +1025,7 @@
 
 - name: Set project facts for sharing tests
   ansible.builtin.set_fact:
-    project:
+    project1:
       uuid: "{{ create_projects_result.results[0].ext_id }}"
     project2:
       uuid: "{{ create_projects_result.results[1].ext_id }}"
@@ -1026,7 +1047,7 @@
     metadata:
       owner_reference_id: "{{ owner.uuid }}"
     shared_with_projects:
-      - "{{ project.uuid }}"
+      - "{{ project1.uuid }}"
       - "{{ project2.uuid }}"
   register: result
   ignore_errors: true
@@ -1041,7 +1062,7 @@
       - result.response.name == vs_name ~ "_shared"
       - result.response.shared_with_projects is defined
       - result.response.shared_with_projects | length == 2
-      - (result.response.shared_with_projects | sort) == ([project.uuid,
+      - (result.response.shared_with_projects | sort) == ([project1.uuid,
         project2.uuid] | sort)
     fail_msg: "Create virtual switch shared with two projects failed"
     success_msg: "Created virtual switch shared with two projects"
@@ -1063,7 +1084,7 @@
     state: present
     ext_id: "{{ shared_vs_ext_id }}"
     shared_with_projects:
-      - "{{ project.uuid }}"
+      - "{{ project1.uuid }}"
       - "{{ project2.uuid }}"
       - "{{ project3.uuid }}"
   register: result
@@ -1077,7 +1098,7 @@
       - result.failed == false
       - result.response.shared_with_projects is not none
       - result.response.shared_with_projects | length == 3
-      - (result.response.shared_with_projects | sort) == ([project.uuid,
+      - (result.response.shared_with_projects | sort) == ([project1.uuid,
         project2.uuid, project3.uuid] | sort)
     fail_msg: "Share virtual switch with all three projects failed"
     success_msg: "Shared virtual switch with all three projects successfully"
@@ -1091,7 +1112,7 @@
     state: present
     ext_id: "{{ shared_vs_ext_id }}"
     shared_with_projects:
-      - "{{ project.uuid }}"
+      - "{{ project1.uuid }}"
       - "{{ project2.uuid }}"
       - "{{ project3.uuid }}"
   register: result
@@ -1131,7 +1152,7 @@
       - result.response.shared_with_projects | length == 2
       - (result.response.shared_with_projects | sort) == ([project2.uuid,
         project3.uuid] | sort)
-      - project.uuid not in result.response.shared_with_projects
+      - project1.uuid not in result.response.shared_with_projects
     fail_msg: "Reconcile virtual switch shared projects to a subset failed"
     success_msg: "Reconciled virtual switch shared projects to a subset successfully"
 
@@ -1167,7 +1188,7 @@
     ext_id: "{{ item }}"
   register: delete_projects_result
   loop:
-    - "{{ project.uuid }}"
+    - "{{ project1.uuid }}"
     - "{{ project2.uuid }}"
     - "{{ project3.uuid }}"
   ignore_errors: true

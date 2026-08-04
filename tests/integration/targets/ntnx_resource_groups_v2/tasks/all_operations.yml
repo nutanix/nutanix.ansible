@@ -43,6 +43,7 @@
       - project_result1.response.id == rg_name ~ "-project-id1"
       - project_result1.response.name == rg_name ~ "-project1"
       - project_result1.response.state == "ACTIVE"
+      - project_result1.response.status == "SUCCEEDED"
     fail_msg: "Create project 1 failed"
     success_msg: "Create project 1 passed"
 
@@ -71,6 +72,7 @@
       - project_result2.response.id == rg_name ~ "-project-id2"
       - project_result2.response.name == rg_name ~ "-project2"
       - project_result2.response.state == "ACTIVE"
+      - project_result2.response.status == "SUCCEEDED"
     fail_msg: "Create project 2 failed"
     success_msg: "Create project 2 passed"
 
@@ -269,6 +271,7 @@
   ansible.builtin.assert:
     that:
       - result.failed == true
+      - result.changed == false
       - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
     fail_msg: "Update of project_ext_id should have been blocked"
     success_msg: "Update of project_ext_id is correctly blocked"

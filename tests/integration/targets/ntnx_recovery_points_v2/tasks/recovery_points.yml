@@ -51,12 +51,13 @@
       - create_project_result.ext_id | length > 0
       - create_project_result.task_ext_id is defined
       - create_project_result.response.state == "ACTIVE"
+      - create_project_result.response.status == "SUCCEEDED"
     fail_msg: "Unable to create project for tests"
     success_msg: "Project for tests created successfully"
 
 - name: Set project fact for tests
   ansible.builtin.set_fact:
-    project:
+    project1:
       name: "{{ random_name }}-ansible-project"
       uuid: "{{ create_project_result.ext_id }}"
 
@@ -67,7 +68,7 @@
   nutanix.ncp.ntnx_resource_group_v2:
     state: present
     name: "{{ random_name }}-ansible-rg"
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "{{ project1.uuid }}"
     placement_targets:
       - cluster_ext_id: "{{ cluster.uuid }}"
         storage_containers:
@@ -80,9 +81,15 @@
     that:
       - create_rg_result.changed == true
       - create_rg_result.failed == false
+      - create_rg_result.response is defined
       - create_rg_result.ext_id is defined
       - create_rg_result.ext_id | length > 0
-      - create_rg_result.response.project_ext_id == project.uuid
+      - create_rg_result.response.project_ext_id == project1.uuid
+      - create_rg_result.response.name == "{{ random_name }}-ansible-rg"
+      - create_rg_result.response.placement_targets | length == 1
+      - create_rg_result.response.placement_targets[0].cluster_ext_id == "{{ cluster.uuid }}"
+      - create_rg_result.response.placement_targets[0].storage_containers | length == 1
+      - create_rg_result.response.placement_targets[0].storage_containers[0].ext_id == "{{ storage_container.uuid }}"
     fail_msg: "Unable to create resource group for tests"
     success_msg: "Resource group for tests created successfully"
 
@@ -102,7 +109,7 @@
     description: ansible test project vm
     cluster:
       ext_id: "{{ cluster.uuid }}"
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "{{ project1.uuid }}"
   register: result
   ignore_errors: true
 
@@ -110,11 +117,11 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.changed == True
-      - result.failed == False
+      - result.changed == true
+      - result.failed == false
       - result.response.cluster.ext_id == "{{ cluster.uuid }}"
       - result.response.name == "{{ vm_name }}_project"
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == project1.uuid
     fail_msg: " Unable to create project owned VM "
     success_msg: "Project owned VM is created successfully "
 
@@ -125,7 +132,7 @@
 - name: Create recovery point owned by the test project
   nutanix.ncp.ntnx_recovery_points_v2:
     name: "{{ recovery_point_name }}_project"
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "{{ project1.uuid }}"
     expiration_time: "{{ expiration_time }}"
     recovery_point_type: "CRASH_CONSISTENT"
     vm_recovery_points:
@@ -144,7 +151,7 @@
       - result.response.status == "COMPLETE"
       - result.response.recovery_point_type == "CRASH_CONSISTENT"
       - result.response.vm_recovery_points[0].vm_ext_id == "{{ vm_ext_id_project }}"
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == project1.uuid
     fail_msg: "Unable to create recovery point owned by the test project"
     success_msg: "Recovery point owned by the test project created successfully"
 
@@ -167,8 +174,8 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.changed == True
-      - result.failed == False
+      - result.changed == true
+      - result.failed == false
       - result.response.cluster.ext_id == "{{ cluster.uuid }}"
       - result.response.name == "{{ vm_name }}_1"
       - result.response.description == "ansible test"
@@ -195,8 +202,8 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.changed == True
-      - result.failed == False
+      - result.changed == true
+      - result.failed == false
       - result.response.cluster.ext_id == "{{ cluster.uuid }}"
       - result.response.name == "{{ vm_name }}_2"
       - result.response.description == "ansible test"
@@ -1195,6 +1202,7 @@
   ansible.builtin.assert:
     that:
       - result.failed == true
+      - result.changed == false
       - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
     fail_msg: "Update of project_ext_id should have been blocked"
     success_msg: "Update of project_ext_id is correctly blocked"
@@ -1365,6 +1373,7 @@
       - delete_rg_result.ext_id is defined
       - delete_rg_result.task_ext_id is defined
       - delete_rg_result.response is defined
+      - delete_rg_result.ext_id == resource_group_ext_id
       - delete_rg_result.response.status == "SUCCEEDED"
     fail_msg: "Unable to delete resource group created for tests"
     success_msg: "Resource group created for tests deleted successfully"
@@ -1372,7 +1381,7 @@
 - name: Delete project created for tests
   nutanix.ncp.ntnx_project_v2:
     state: absent
-    ext_id: "{{ project.uuid }}"
+    ext_id: "{{ project1.uuid }}"
   register: delete_project_result
   ignore_errors: true
 
@@ -1382,7 +1391,7 @@
       - delete_project_result.changed == true
       - delete_project_result.failed == false
       - delete_project_result.response is defined
-      - delete_project_result.ext_id == project.uuid
+      - delete_project_result.ext_id == project1.uuid
       - delete_project_result.task_ext_id is defined
       - delete_project_result.response.status == "SUCCEEDED"
     fail_msg: "Unable to delete project created for tests"

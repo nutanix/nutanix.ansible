@@ -49,12 +49,13 @@
       - create_project_result.ext_id | length > 0
       - create_project_result.task_ext_id is defined
       - create_project_result.response.state == "ACTIVE"
+      - create_project_result.response.status == "SUCCEEDED"
     fail_msg: "Unable to create project for tests"
     success_msg: "Project for tests created successfully"
 
 - name: Set project fact for tests
   ansible.builtin.set_fact:
-    project:
+    project1:
       name: "{{ random_name }}-ansible-project"
       uuid: "{{ create_project_result.ext_id }}"
 
@@ -62,7 +63,7 @@
   nutanix.ncp.ntnx_vpcs_v2:
     state: present
     name: "{{random_name}}vpc"
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "{{ project1.uuid }}"
   register: result
 
 - name: Creation status
@@ -73,7 +74,7 @@
       - result.response is defined
       - result.response.name == "{{random_name}}vpc"
       - result.response.ext_id is defined
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == project1.uuid
     fail_msg: " Unable to create min VPC "
     success_msg: " Min VPC for pbr testing created successfully "
 
@@ -91,7 +92,7 @@
     name: "{{ random_name }}_subnet_pbrs"
     subnet_type: OVERLAY
     vpc_reference: "{{ pbr.vpc.uuid }}"
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "{{ project1.uuid }}"
     ip_config:
       - ipv4:
           ip_subnet:
@@ -114,7 +115,7 @@
       - result.response.ip_config.0.ipv4.default_gateway_ip.value == "{{ overlay_subnet.gateway_ip }}"
       - result.response.ip_config.0.ipv4.ip_subnet.prefix_length == {{ overlay_subnet.network_prefix }}
       - result.response.ip_config.0.ipv4.ip_subnet.ip.value == "{{ overlay_subnet.network_ip }}"
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == project1.uuid
     fail_msg: " Unable to create Overlay Subnet with minimum requirements "
     success_msg: " Overlay Subnet with minimum requirements created successfully "
 
@@ -178,7 +179,7 @@
     name: "{{pbr_name}}1"
     priority: "{{ priority.0 }}"
     vpc_ext_id: "{{pbr.vpc.uuid}}"
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "{{ project1.uuid }}"
     description: "test description"
     policies:
       - policy_action:
@@ -218,7 +219,7 @@
       - result.response.policies.0.policy_match.protocol_parameters.icmp_type == 25
       - result.changed == true
       - result.failed == false
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == project1.uuid
     fail_msg: " Create PBR with vpc, source network, external destination, with PERMIT action and icmp failed"
     success_msg: " Create PBR with vpc, source network, external destination, with PERMIT action and icmp passed"
 
@@ -259,7 +260,7 @@
       - result.response.0.priority == {{ priority.0 }}
       - result.response[0].vpc_ext_id == '{{pbr.vpc.uuid}}'
       - result.response[0].name == "{{pbr_name}}1"
-      - result.response[0].project_ext_id == project.uuid
+      - result.response[0].project_ext_id == project1.uuid
       - result.response.0.policies.0.policy_action.action_type == "PERMIT"
       - result.response.0.policies.0.policy_match.destination.address_type == "EXTERNAL"
       - result.response.0.policies.0.policy_match.protocol_type == "ICMP"
@@ -284,7 +285,7 @@
       - result.response.ext_id == "{{todelete[-1]}}"
       - result.response.name == "{{pbr_name}}1"
       - result.response.vpc_ext_id == "{{pbr.vpc.uuid}}"
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == project1.uuid
       - result.response.policies.0.policy_action.action_type == "PERMIT"
       - result.response.policies.0.policy_match.destination.address_type == "EXTERNAL"
       - result.response.policies.0.policy_match.protocol_type == "ICMP"
@@ -299,7 +300,7 @@
 - name: Create PBR with vpc, any source, any destination, any protocol and permit action
   nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "{{ project1.uuid }}"
     state: present
     priority: "{{ priority.1 }}"
     name: "{{pbr_name}}2"
@@ -323,7 +324,7 @@
       - result.failed == false
       - result.response.vpc_ext_id == "{{pbr.vpc.uuid}}"
       - result.response.name == "{{pbr_name}}2"
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == project1.uuid
       - result.response.policies.0.policy_action.action_type == "PERMIT"
       - result.response.policies.0.policy_match.destination.address_type == "ANY"
       - result.response.policies.0.policy_match.protocol_type == "ANY"
@@ -381,7 +382,7 @@
 - name: Create PBR with vpc, any source, external destination and deny action with protocol number
   nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "{{ project1.uuid }}"
     state: present
     priority: "{{ priority.2 }}"
     name: "{{pbr_name}}3"
@@ -411,7 +412,7 @@
       - result.response.description == "Test desc"
       - result.response.vpc_ext_id == "{{pbr.vpc.uuid}}"
       - result.response.name == "{{pbr_name}}3"
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == project1.uuid
       - result.response.policies.0.policy_action.action_type == "DENY"
       - result.response.policies.0.policy_match.destination.address_type == "EXTERNAL"
       - result.response.policies.0.policy_match.protocol_type == "PROTOCOL_NUMBER"
@@ -483,7 +484,7 @@
 - name: Create PBR with vpc with source external and destination network with reroute action and with tcp protocol
   nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "{{ project1.uuid }}"
     state: present
     priority: "{{ priority.3 }}"
     name: "{{pbr_name}}4"
@@ -527,7 +528,7 @@
       - result.failed == false
       - result.response.vpc_ext_id == "{{pbr.vpc.uuid}}"
       - result.response.name == "{{pbr_name}}4"
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == project1.uuid
       - result.response.policies.0.policy_action.action_type == "REROUTE"
       - result.response.policies.0.policy_match.destination.address_type == "SUBNET"
       - result.response.policies.0.policy_match.source.address_type == "EXTERNAL"
@@ -553,7 +554,7 @@
 - name: Create PBR with vpc with source external and destination network with reroute action and any tcp port rangelist
   nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "{{ project1.uuid }}"
     state: present
     priority: "{{ priority.4 }}"
     name: "{{pbr_name}}5"
@@ -588,7 +589,7 @@
       - result.failed == false
       - result.response.vpc_ext_id == "{{pbr.vpc.uuid}}"
       - result.response.name == "{{pbr_name}}5"
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == project1.uuid
       - result.response.policies.0.policy_action.action_type == "PERMIT"
       - result.response.policies.0.policy_match.destination.address_type == "SUBNET"
       - result.response.policies.0.policy_match.source.address_type == "EXTERNAL"
@@ -606,7 +607,7 @@
 - name: Create PBR with vpc, custom source network, external destination, reroute action and udp port rangelist
   nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "{{ project1.uuid }}"
     state: present
     priority: "{{ priority.5 }}"
     name: "{{pbr_name}}6"
@@ -652,7 +653,7 @@
       - result.failed == false
       - result.response.vpc_ext_id == "{{pbr.vpc.uuid}}"
       - result.response.name == "{{pbr_name}}6"
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == project1.uuid
       - result.response.policies.0.policy_action.action_type == "REROUTE"
       - result.response.policies.0.policy_match.destination.address_type == "ANY"
       - result.response.policies.0.policy_match.source.address_type == "SUBNET"
@@ -677,7 +678,7 @@
 - name: Create PBR with vpc name, custom source network, external destination, reroute action and any udp ports
   nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "{{ project1.uuid }}"
     state: present
     priority: "{{ priority.6 }}"
     name: "{{pbr_name}}7"
@@ -717,7 +718,7 @@
       - result.failed == false
       - result.response.vpc_ext_id == "{{pbr.vpc.uuid}}"
       - result.response.name == "{{pbr_name}}7"
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == project1.uuid
       - result.response.policies.0.policy_action.action_type == "REROUTE"
       - result.response.policies.0.policy_match.destination.address_type == "ANY"
       - result.response.policies.0.policy_match.source.address_type == "SUBNET"
@@ -738,7 +739,7 @@
 - name: Create PBR with vpc, source network, external destination, with reroute action and icmp
   nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "{{ project1.uuid }}"
     state: present
     priority: "{{ priority.7 }}"
     name: "{{pbr_name}}8"
@@ -777,7 +778,7 @@
       - result.failed == false
       - result.response.vpc_ext_id == "{{pbr.vpc.uuid}}"
       - result.response.name == "{{pbr_name}}8"
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == project1.uuid
       - result.response.policies.0.policy_action.action_type == "REROUTE"
       - result.response.policies.0.policy_match.destination.address_type == "EXTERNAL"
       - result.response.policies.0.policy_match.protocol_type == "ICMP"
@@ -795,7 +796,7 @@
 - name: Create PBR with vpc, source network, external destination, with forward action and icmp
   nutanix.ncp.ntnx_pbrs_v2:
     vpc_ext_id: "{{pbr.vpc.uuid}}"
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "{{ project1.uuid }}"
     state: present
     priority: "{{ priority.9 }}"
     name: "{{pbr_name}}9"
@@ -834,7 +835,7 @@
       - result.failed == false
       - result.response.vpc_ext_id == "{{pbr.vpc.uuid}}"
       - result.response.name == "{{pbr_name}}9"
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == project1.uuid
       - result.response.policies.0.policy_action.action_type == "FORWARD"
       - result.response.policies.0.policy_action.nexthop_ip_address.ipv4.value == "{{reroute.ip}}"
       - result.response.policies.0.policy_match.destination.address_type == "EXTERNAL"
@@ -866,7 +867,7 @@
       - result.response[0].ext_id == "{{ todelete[-1] }}"
       - result.response[0].name == "{{pbr_name}}9"
       - result.response[0].vpc_ext_id == "{{pbr.vpc.uuid}}"
-      - result.response[0].project_ext_id == project.uuid
+      - result.response[0].project_ext_id == project1.uuid
       - result.response.0.policies.0.policy_action.action_type == "FORWARD"
       - result.response.0.policies.0.policy_action.nexthop_ip_address.ipv4.value == "{{reroute.ip}}"
       - result.response.0.policies.0.policy_match.destination.address_type == "EXTERNAL"
@@ -891,6 +892,7 @@
   ansible.builtin.assert:
     that:
       - result.failed == true
+      - result.changed == false
       - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
     fail_msg: "Update of project_ext_id should have been blocked"
     success_msg: "Update of project_ext_id is correctly blocked"
@@ -978,7 +980,7 @@
 - name: Delete project created for tests
   nutanix.ncp.ntnx_project_v2:
     state: absent
-    ext_id: "{{ project.uuid }}"
+    ext_id: "{{ project1.uuid }}"
   register: delete_project_result
   ignore_errors: true
 
@@ -987,7 +989,7 @@
     that:
       - delete_project_result.changed == true
       - delete_project_result.failed == false
-      - delete_project_result.ext_id == project.uuid
+      - delete_project_result.ext_id == project1.uuid
       - delete_project_result.task_ext_id is defined
       - delete_project_result.response.status == "SUCCEEDED"
     fail_msg: "Unable to delete project created for tests"

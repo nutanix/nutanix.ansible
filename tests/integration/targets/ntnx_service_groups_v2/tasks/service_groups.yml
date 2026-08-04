@@ -35,12 +35,13 @@
       - create_project_result.ext_id | length > 0
       - create_project_result.task_ext_id is defined
       - create_project_result.response.state == "ACTIVE"
+      - create_project_result.response.status == "SUCCEEDED"
     fail_msg: "Unable to create project for tests"
     success_msg: "Project for tests created successfully"
 
 - name: Set project fact for tests
   ansible.builtin.set_fact:
-    project:
+    project1:
       name: "{{ random_name }}-ansible-project"
       uuid: "{{ create_project_result.ext_id }}"
 
@@ -88,7 +89,7 @@
   nutanix.ncp.ntnx_service_groups_v2:
     name: "{{ service_group_name }}_1"
     description: desc
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "{{ project1.uuid }}"
     tcp_services:
       - start_port: 10
         end_port: 50
@@ -124,7 +125,7 @@
       - result.response.tcp_services[2].end_port == 98
       - result.response.tcp_services[3].start_port == 99
       - result.response.tcp_services[3].end_port == 99
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == project1.uuid
     fail_msg: "Fail: Unable to create tcp service group  "
     success_msg: "Pass: tcp service group  created successfully"
 
@@ -413,6 +414,7 @@
   ansible.builtin.assert:
     that:
       - result.failed == true
+      - result.changed == false
       - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
     fail_msg: "Update of project_ext_id should have been blocked"
     success_msg: "Update of project_ext_id is correctly blocked"
@@ -464,7 +466,7 @@
 - name: Delete project created for tests
   nutanix.ncp.ntnx_project_v2:
     state: absent
-    ext_id: "{{ project.uuid }}"
+    ext_id: "{{ project1.uuid }}"
   register: delete_project_result
   ignore_errors: true
 
@@ -473,7 +475,7 @@
     that:
       - delete_project_result.changed == true
       - delete_project_result.failed == false
-      - delete_project_result.ext_id == project.uuid
+      - delete_project_result.ext_id == project1.uuid
       - delete_project_result.response is defined
       - delete_project_result.response.status == "SUCCEEDED"
       - delete_project_result.task_ext_id is defined

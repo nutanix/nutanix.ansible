@@ -25,7 +25,7 @@
 
 ##################################################################################
 # Create a dedicated v2 project and attach a Resource Group to it. Images require
-# the project to have a Resource Group (VMM-20010), which the v4 project API does
+# the project to have a Resource Group, which the v4 project API does
 # not create on its own, so we add one with ntnx_resource_group_v2.
 - name: Create project for image tests
   nutanix.ncp.ntnx_project_v2:
@@ -43,6 +43,7 @@
       - create_image_project_result.ext_id | length > 0
       - create_image_project_result.task_ext_id is defined
       - create_image_project_result.response.state == "ACTIVE"
+      - create_image_project_result.response.status == "SUCCEEDED"
     fail_msg: "Unable to create project for image tests"
     success_msg: "Project for image tests created successfully"
 
@@ -66,9 +67,15 @@
     that:
       - create_image_rg_result.changed == true
       - create_image_rg_result.failed == false
+      - create_image_rg_result.response is defined
       - create_image_rg_result.ext_id is defined
       - create_image_rg_result.ext_id | length > 0
       - create_image_rg_result.response.project_ext_id == image_project_uuid
+      - create_image_rg_result.response.name == "{{ random_name }}-ansible-image-rg"
+      - create_image_rg_result.response.placement_targets | length == 1
+      - create_image_rg_result.response.placement_targets[0].cluster_ext_id == cluster.uuid
+      - create_image_rg_result.response.placement_targets[0].storage_containers | length == 1
+      - create_image_rg_result.response.placement_targets[0].storage_containers[0].ext_id == storage_container.uuid
     fail_msg: "Unable to create resource group for image tests"
     success_msg: "Resource group for image tests created successfully"
 
@@ -621,6 +628,7 @@
   ansible.builtin.assert:
     that:
       - result.failed == true
+      - result.changed == false
       - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
     fail_msg: "Update of project_ext_id should have been blocked"
     success_msg: "Update of project_ext_id is correctly blocked"
@@ -720,6 +728,8 @@
     that:
       - delete_image_rg_result.changed == true
       - delete_image_rg_result.failed == false
+      - delete_image_rg_result.task_ext_id is defined
+      - delete_image_rg_result.response.status == "SUCCEEDED"
     fail_msg: "Unable to delete the resource group created for image tests"
     success_msg: "Resource group created for image tests deleted successfully"
 

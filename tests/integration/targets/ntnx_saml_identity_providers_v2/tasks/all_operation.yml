@@ -42,6 +42,7 @@
       - item.ext_id | length > 0
       - item.task_ext_id is defined
       - item.response.state == "ACTIVE"
+      - item.response.status == "SUCCEEDED"
     fail_msg: "Unable to create project for tests"
     success_msg: "Project for tests created successfully"
   loop: "{{ create_projects_result.results }}"
@@ -50,7 +51,7 @@
 
 - name: Set project facts for tests
   ansible.builtin.set_fact:
-    project:
+    project1:
       name: "{{ random_name }}-ansible-project-1"
       uuid: "{{ create_projects_result.results[0].ext_id }}"
     project2:
@@ -102,18 +103,6 @@
       - result.response.custom_attributes[1] == "custom2"
     fail_msg: " Unable to Verify spec generation for identity providers with check_mode "
     success_msg: " Verify spec generation for identity providers with check_mode finished successfully "
-
-- name: Create temp dir for SAML IdP metadata
-  ansible.builtin.tempfile:
-    state: directory
-    suffix: saml_xml
-  register: saml_xml_dir
-
-- name: Download SAML IdP metadata content
-  ansible.builtin.get_url:
-    url: "{{ xml_content.url }}"
-    dest: "{{ saml_xml_dir.path }}/content.txt"
-    mode: "0644"
 
 - name: Read content from file
   ansible.builtin.set_fact:
@@ -352,6 +341,7 @@
   ansible.builtin.assert:
     that:
       - result.failed == true
+      - result.changed == false
       - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
     fail_msg: "Update of project_ext_id should have been blocked"
     success_msg: "Update of project_ext_id is correctly blocked"
@@ -422,6 +412,11 @@
       - result.ext_id is defined
       - result.response.project_ext_id == "00000000-0000-0000-0000-000000000000"
       - result.response.is_shared_with_all_projects == false
+      - result.response.name == "{{ full_name }}_shared"
+      - result.response.username_attribute == "{{ user_name }}_shared"
+      - result.response.email_attribute == "email"
+      - result.response.groups_attribute == "groups"
+      - result.response.groups_delim == ","
     fail_msg: "Create SAML for sharing tests failed"
     success_msg: "Created SAML for sharing tests"
 
@@ -457,7 +452,7 @@
     state: present
     ext_id: "{{ shared_saml_ext_id }}"
     shared_with_projects:
-      - "{{ project.uuid }}"
+      - "{{ project1.uuid }}"
       - "{{ project2.uuid }}"
   register: result
   ignore_errors: true
@@ -488,7 +483,7 @@
       - result.failed == false
       - result.response.is_shared_with_all_projects == true
       - (result.response.shared_with_projects | default([], true)) | length == 0
-      - project.uuid not in (result.response.shared_with_projects | default([], true))
+      - project1.uuid not in (result.response.shared_with_projects | default([], true))
       - project2.uuid not in (result.response.shared_with_projects | default([], true))
     fail_msg: "shared_with_projects should be ignored when identity provider is already shared with all projects"
     success_msg: "shared_with_projects correctly ignored when identity provider is already shared with all projects"
@@ -520,7 +515,7 @@
     state: present
     ext_id: "{{ shared_saml_ext_id }}"
     shared_with_projects:
-      - "{{ project.uuid }}"
+      - "{{ project1.uuid }}"
       - "{{ project2.uuid }}"
   register: result
   ignore_errors: true
@@ -533,7 +528,7 @@
       - result.failed == false
       - result.response.shared_with_projects is defined
       - result.response.shared_with_projects | length == 2
-      - project.uuid in result.response.shared_with_projects
+      - project1.uuid in result.response.shared_with_projects
       - project2.uuid in result.response.shared_with_projects
     fail_msg: "SAML share with two specific projects failed"
     success_msg: "SAML shared with two specific projects successfully"
@@ -546,7 +541,7 @@
     state: present
     ext_id: "{{ shared_saml_ext_id }}"
     shared_with_projects:
-      - "{{ project.uuid }}"
+      - "{{ project1.uuid }}"
       - "{{ project2.uuid }}"
       - "{{ project3.uuid }}"
   register: result
@@ -559,11 +554,35 @@
       - result.changed == true
       - result.failed == false
       - result.response.shared_with_projects | length == 3
-      - project.uuid in result.response.shared_with_projects
+      - project1.uuid in result.response.shared_with_projects
       - project2.uuid in result.response.shared_with_projects
       - project3.uuid in result.response.shared_with_projects
     fail_msg: "SAML share with all three projects failed"
     success_msg: "SAML shared with all three projects successfully"
+
+########################################################################
+# Scenario: sharing idempotency (share with the same three projects again)
+########################################################################
+- name: Update SAML sharing with the same projects (idempotency)
+  nutanix.ncp.ntnx_saml_identity_providers_v2:
+    state: present
+    ext_id: "{{ shared_saml_ext_id }}"
+    shared_with_projects:
+      - "{{ project1.uuid }}"
+      - "{{ project2.uuid }}"
+      - "{{ project3.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of SAML sharing idempotency
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.skipped == true
+      - result.msg == "Nothing to change."
+    fail_msg: "SAML sharing idempotency failed"
+    success_msg: "SAML sharing idempotency passed"
 
 ########################################################################
 # Scenario: reconcile shared projects to a subset (drop one, keep two)
@@ -585,7 +604,7 @@
       - result.changed == true
       - result.failed == false
       - result.response.shared_with_projects | length == 2
-      - project.uuid not in result.response.shared_with_projects
+      - project1.uuid not in result.response.shared_with_projects
       - project2.uuid in result.response.shared_with_projects
       - project3.uuid in result.response.shared_with_projects
     fail_msg: "SAML reconcile shared projects to a subset failed"
@@ -625,6 +644,8 @@
       - result.changed == true
       - result.failed == false
       - result.ext_id == "{{ shared_saml_ext_id }}"
+      - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
     fail_msg: "Unable to delete shared SAML identity provider"
     success_msg: "Shared SAML identity provider deleted successfully"
 
@@ -637,7 +658,7 @@
     ext_id: "{{ item }}"
   register: delete_projects_result
   loop:
-    - "{{ project.uuid }}"
+    - "{{ project1.uuid }}"
     - "{{ project2.uuid }}"
     - "{{ project3.uuid }}"
   ignore_errors: true

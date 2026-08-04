@@ -47,6 +47,7 @@
       - item.ext_id | length > 0
       - item.task_ext_id is defined
       - item.response.state == "ACTIVE"
+      - item.response.status == "SUCCEEDED"
     fail_msg: "Unable to create project for tests"
     success_msg: "Project for tests created successfully"
   loop: "{{ create_projects_result.results }}"
@@ -55,7 +56,7 @@
 
 - name: Set project facts for tests
   ansible.builtin.set_fact:
-    project:
+    project1:
       name: "{{ random_name }}-ansible-project-1"
       uuid: "{{ create_projects_result.results[0].ext_id }}"
     project2:
@@ -152,6 +153,7 @@
   ansible.builtin.assert:
     that:
       - result.failed == true
+      - result.changed == false
       - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
     fail_msg: "Update of project_ext_id should have been blocked"
     success_msg: "Update of project_ext_id is correctly blocked"
@@ -464,7 +466,7 @@
     external_subnets:
       - subnet_reference: "{{ external_nat_subnet.uuid }}"
     shared_with_projects:
-      - "{{ project.uuid }}"
+      - "{{ project1.uuid }}"
       - "{{ project2.uuid }}"
   register: result
   ignore_errors: true
@@ -478,7 +480,7 @@
       - result.ext_id is defined
       - result.response.shared_with_projects is defined
       - result.response.shared_with_projects | length == 2
-      - (result.response.shared_with_projects | sort) == ([project.uuid, project2.uuid] | sort)
+      - (result.response.shared_with_projects | sort) == ([project1.uuid, project2.uuid] | sort)
     fail_msg: "Create VPC for sharing tests failed"
     success_msg: "Created VPC for sharing tests"
 
@@ -494,7 +496,7 @@
     state: present
     ext_id: "{{ shared_vpc_ext_id }}"
     shared_with_projects:
-      - "{{ project.uuid }}"
+      - "{{ project1.uuid }}"
       - "{{ project2.uuid }}"
       - "{{ project3.uuid }}"
   register: result
@@ -508,9 +510,33 @@
       - result.failed == false
       - result.response.shared_with_projects is not none
       - result.response.shared_with_projects | length == 3
-      - (result.response.shared_with_projects | sort) == ([project.uuid, project2.uuid, project3.uuid] | sort)
+      - (result.response.shared_with_projects | sort) == ([project1.uuid, project2.uuid, project3.uuid] | sort)
     fail_msg: "VPC share with all three projects failed"
     success_msg: "VPC shared with all three projects successfully"
+
+###########################################################
+# Scenario: sharing idempotency (share with the same three projects again)
+###########################################################
+- name: Update VPC sharing with the same projects (idempotency)
+  nutanix.ncp.ntnx_vpcs_v2:
+    state: present
+    ext_id: "{{ shared_vpc_ext_id }}"
+    shared_with_projects:
+      - "{{ project1.uuid }}"
+      - "{{ project2.uuid }}"
+      - "{{ project3.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of VPC sharing idempotency
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.skipped == true
+      - result.msg == "Nothing to change."
+    fail_msg: "VPC sharing idempotency failed"
+    success_msg: "VPC sharing idempotency passed"
 
 ###########################################################
 # Scenario: reconcile shared projects to a subset (drop one, keep two)
@@ -534,7 +560,7 @@
       - result.response.shared_with_projects is not none
       - result.response.shared_with_projects | length == 2
       - (result.response.shared_with_projects | sort) == ([project2.uuid, project3.uuid] | sort)
-      - project.uuid not in result.response.shared_with_projects
+      - project1.uuid not in result.response.shared_with_projects
     fail_msg: "VPC reconcile shared projects to a subset failed"
     success_msg: "VPC reconciled shared projects to a subset successfully"
 
@@ -571,6 +597,8 @@
     that:
       - result.changed == true
       - result.failed == false
+      - result.response.status == "SUCCEEDED"
+      - result.ext_id == shared_vpc_ext_id
     fail_msg: "Unable to delete shared VPC"
     success_msg: "Shared VPC deleted successfully"
 
@@ -583,7 +611,7 @@
     ext_id: "{{ item }}"
   register: delete_projects_result
   loop:
-    - "{{ project.uuid }}"
+    - "{{ project1.uuid }}"
     - "{{ project2.uuid }}"
     - "{{ project3.uuid }}"
   ignore_errors: true

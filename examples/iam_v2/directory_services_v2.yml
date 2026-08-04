@@ -58,6 +58,7 @@
             - "group4"
           directory_service_ext_id: "51485478-3699-9999-8585-123456789012"
         project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
+        shared_project_ext_id: "12345678-1234-1234-1234-123456789012"
 
     - name: Create ACTIVE_DIRECTORY service
       nutanix.ncp.ntnx_directory_services_v2:
@@ -102,7 +103,7 @@
           username: "{{ active_directory.username }}"
           password: "{{ active_directory.password }}"
         shared_with_projects:
-          - "12345678-1234-1234-1234-123456789012"
+          - "{{ shared_project_ext_id }}"
       register: result
       ignore_errors: true
 
@@ -174,7 +175,7 @@
           username: "{{ active_directory.username }}"
           password: "{{ active_directory.password }}"
         shared_with_projects:
-          - "12345678-1234-1234-1234-123456789012"
+          - "{{ shared_project_ext_id }}"
       register: result
       ignore_errors: true
 

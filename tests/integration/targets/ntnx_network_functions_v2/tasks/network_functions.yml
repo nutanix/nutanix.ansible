@@ -53,7 +53,7 @@
 
 - name: Set project fact for network function tests
   ansible.builtin.set_fact:
-    project:
+    project1:
       uuid: "{{ (default_project_result.response | selectattr('is_default', 'equalto', true) | first).ext_id }}"
 
 ##################################################
@@ -422,7 +422,7 @@
   nutanix.ncp.ntnx_network_function_v2:
     name: "{{ network_function_name }}_1"
     description: "network function for testing the first network function"
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "{{ project1.uuid }}"
     high_availability_mode: ACTIVE_PASSIVE
     failure_handling: FAIL_CLOSE
     traffic_forwarding_mode: INLINE
@@ -453,7 +453,7 @@
       - network_function_result.task_ext_id is defined
       - network_function_result.response.name == "{{ network_function_name }}_1"
       - network_function_result.response.description == "network function for testing the first network function"
-      - network_function_result.response.project_ext_id == project.uuid
+      - network_function_result.response.project_ext_id == project1.uuid
       - network_function_result.response.high_availability_mode == "ACTIVE_PASSIVE"
       - network_function_result.response.failure_handling == "FAIL_CLOSE"
       - network_function_result.response.traffic_forwarding_mode == "INLINE"

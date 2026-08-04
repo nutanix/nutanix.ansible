@@ -41,12 +41,13 @@
       - create_project_result.ext_id | length > 0
       - create_project_result.task_ext_id is defined
       - create_project_result.response.state == "ACTIVE"
+      - create_project_result.response.status == "SUCCEEDED"
     fail_msg: "Unable to create project for tests"
     success_msg: "Project for tests created successfully"
 
 - name: Set project fact for tests
   ansible.builtin.set_fact:
-    project:
+    project1:
       name: "{{ random_name }}-ansible-project"
       uuid: "{{ create_project_result.ext_id }}"
 
@@ -94,7 +95,7 @@
     state: present
     name: "{{ ag2 }}"
     description: test-ansible-group-1-desc
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "{{ project1.uuid }}"
     ipv4_addresses:
       - value: 10.1.1.0
         prefix_length: 24
@@ -118,7 +119,7 @@
       - result.response.ipv4_addresses[0].prefix_length == 24
       - result.response.ipv4_addresses[1].prefix_length == 32
       - result.task_ext_id is defined
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == project1.uuid
 
     fail_msg: Unable to create address group
     success_msg: Address group created successfully
@@ -223,7 +224,7 @@
     ipv4_addresses:
       - value: 10.1.1.0
         prefix_length: 24
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "{{ project1.uuid }}"
   register: result
   ignore_errors: true
 
@@ -233,7 +234,7 @@
       - result.msg == "Task Failed"
       - result.changed == false
       - result.failed == true
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == project1.uuid
 
     fail_msg: Was able to create address group with existing address group name
     success_msg: Address group with existing address group name failed successfully
@@ -330,6 +331,7 @@
   ansible.builtin.assert:
     that:
       - result.failed == true
+      - result.changed == false
       - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
     fail_msg: "Update of project_ext_id should have been blocked"
     success_msg: "Update of project_ext_id is correctly blocked"
@@ -383,7 +385,7 @@
 - name: Delete project created for tests
   nutanix.ncp.ntnx_project_v2:
     state: absent
-    ext_id: "{{ project.uuid }}"
+    ext_id: "{{ project1.uuid }}"
   register: delete_project_result
   ignore_errors: true
 
@@ -392,7 +394,7 @@
     that:
       - delete_project_result.changed == true
       - delete_project_result.failed == false
-      - delete_project_result.ext_id == project.uuid
+      - delete_project_result.ext_id == project1.uuid
       - delete_project_result.task_ext_id is defined
       - delete_project_result.response.status == "SUCCEEDED"
     fail_msg: "Unable to delete project created for tests"

@@ -38,6 +38,7 @@
       - item.ext_id | length > 0
       - item.task_ext_id is defined
       - item.response.state == "ACTIVE"
+      - item.response.status == "SUCCEEDED"
     fail_msg: "Unable to create project for tests"
     success_msg: "Project for tests created successfully"
   loop: "{{ create_projects_result.results }}"
@@ -46,7 +47,7 @@
 
 - name: Set project facts for tests
   ansible.builtin.set_fact:
-    project:
+    project1:
       name: "{{ random_name }}-ansible-project-1"
       uuid: "{{ create_projects_result.results[0].ext_id }}"
     project2:
@@ -150,7 +151,7 @@
     url: "{{ active_directory.url }}"
     directory_type: ACTIVE_DIRECTORY
     domain_name: "{{ active_directory.domain_name }}"
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "{{ project1.uuid }}"
     service_account:
       username: "{{ active_directory.username }}"
       password: "{{ active_directory.password }}"
@@ -174,7 +175,7 @@
       - result.response.ext_id is defined
       - result.ext_id is defined
       - result.response.ext_id == result.ext_id
-      - result.response.project_ext_id == "{{ project.uuid }}"
+      - result.response.project_ext_id == "{{ project1.uuid }}"
     fail_msg: "Unable to create ACTIVE_DIRECTORY service "
     success_msg: "ACTIVE_DIRECTORY service created successfully  "
 
@@ -196,6 +197,7 @@
       password: "{{ active_directory.password }}"
     white_listed_groups:
       - "{{ white_listed_groups[1] }}"
+    project_ext_id: "{{ project1.uuid }}"
   register: result
   ignore_errors: true
 
@@ -621,7 +623,7 @@
       username: "{{ active_directory.username }}"
       password: "{{ active_directory.password }}"
     shared_with_projects:
-      - "{{ project.uuid }}"
+      - "{{ project1.uuid }}"
       - "{{ project2.uuid }}"
   register: result
   ignore_errors: true
@@ -636,7 +638,7 @@
       # per-project sharing is ignored, so no specific projects are added.
       - result.response.is_shared_with_all_projects == true
       - (result.response.shared_with_projects | default([], true)) | length == 0
-      - project.uuid not in (result.response.shared_with_projects | default([], true))
+      - project1.uuid not in (result.response.shared_with_projects | default([], true))
       - project2.uuid not in (result.response.shared_with_projects | default([], true))
       # The user is warned that their shared_with_projects input was dropped.
       - result.warnings is defined
@@ -681,7 +683,7 @@
       username: "{{ active_directory.username }}"
       password: "{{ active_directory.password }}"
     shared_with_projects:
-      - "{{ project.uuid }}"
+      - "{{ project1.uuid }}"
       - "{{ project2.uuid }}"
   register: result
   ignore_errors: true
@@ -694,7 +696,7 @@
       - result.failed == false
       - result.response.shared_with_projects is defined
       - result.response.shared_with_projects | length == 2
-      - project.uuid in result.response.shared_with_projects
+      - project1.uuid in result.response.shared_with_projects
       - project2.uuid in result.response.shared_with_projects
       - result.response.service_account.username == "{{ active_directory.username }}"
       - result.response.service_account.password is defined
@@ -714,7 +716,7 @@
       username: "{{ active_directory.username }}"
       password: "{{ active_directory.password }}"
     shared_with_projects:
-      - "{{ project.uuid }}"
+      - "{{ project1.uuid }}"
       - "{{ project2.uuid }}"
       - "{{ project3.uuid }}"
   register: result
@@ -727,7 +729,7 @@
       - result.changed == true
       - result.failed == false
       - result.response.shared_with_projects | length == 3
-      - project.uuid in result.response.shared_with_projects
+      - project1.uuid in result.response.shared_with_projects
       - project2.uuid in result.response.shared_with_projects
       - project3.uuid in result.response.shared_with_projects
       - result.response.service_account.username == "{{ active_directory.username }}"
@@ -736,6 +738,33 @@
       - result.ext_id == "{{ todelete }}"
     fail_msg: "Share with all three projects failed"
     success_msg: "Shared with all three projects successfully"
+
+########################################################################
+# Scenario: sharing idempotency (share with the same three projects again)
+########################################################################
+- name: Update directory service sharing with the same projects (idempotency)
+  nutanix.ncp.ntnx_directory_services_v2:
+    state: present
+    ext_id: "{{ todelete }}"
+    service_account:
+      username: "{{ active_directory.username }}"
+      password: "{{ active_directory.password }}"
+    shared_with_projects:
+      - "{{ project1.uuid }}"
+      - "{{ project2.uuid }}"
+      - "{{ project3.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of directory service sharing idempotency
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.skipped == true
+      - result.msg == "Nothing to change."
+    fail_msg: "Directory service sharing idempotency failed"
+    success_msg: "Directory service sharing idempotency passed"
 
 ########################################################################
 # Scenario: reconcile shared projects to a subset (drop one, keep two)
@@ -760,7 +789,7 @@
       - result.changed == true
       - result.failed == false
       - result.response.shared_with_projects | length == 2
-      - project.uuid not in result.response.shared_with_projects
+      - project1.uuid not in result.response.shared_with_projects
       - project2.uuid in result.response.shared_with_projects
       - project3.uuid in result.response.shared_with_projects
       - result.response.service_account.username == "{{ active_directory.username }}"
@@ -793,6 +822,7 @@
       - (result.response.shared_with_projects | default([], true)) | length == 0
       - result.response.service_account.username == "{{ active_directory.username }}"
       - result.response.service_account.password is defined
+      - result.response.is_shared_with_all_projects == false
       - result.ext_id is defined
       - result.ext_id == "{{ todelete }}"
     fail_msg: "Unshare from all specific projects failed"
@@ -855,7 +885,7 @@
     ext_id: "{{ item }}"
   register: delete_projects_result
   loop:
-    - "{{ project.uuid }}"
+    - "{{ project1.uuid }}"
     - "{{ project2.uuid }}"
     - "{{ project3.uuid }}"
   ignore_errors: true

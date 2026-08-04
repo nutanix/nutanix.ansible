@@ -24,22 +24,22 @@
 ################################################ Test Setup ################################################
 
 # This test creates a VPC on the external NAT subnet and scopes a VPC_LIST
-# network security policy to a project. The referenced VPC is only "associated
-# with" the project when the project is shared with the VPC's external subnet
-# (MIC-10007 otherwise). The external NAT subnet cannot be unshared once a
-# fixture VPC is attached (NETWORKING-10068), so a per-run project could never
+# network security policy to a project1. The referenced VPC is only "associated
+# with" the project when the project is shared with the VPC's external subnet.
+# The external NAT subnet cannot be unshared once a
+# fixture VPC is attached, so a per-run project could never
 # be torn down. Instead, consume the external_subnet_project that prepare_env
 # creates and permanently shares with the external NAT subnet.
 - name: Set project fact from prepare_env fixture
   ansible.builtin.set_fact:
-    project:
+    project1:
       name: "{{ external_subnet_project.name }}"
       uuid: "{{ external_subnet_project.uuid }}"
 
 - name: Create min VPC for security rules
   nutanix.ncp.ntnx_vpcs_v2:
     name: ansible-vpc-{{ random_name }}
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "{{ project1.uuid }}"
     external_subnets:
       - subnet_reference: "{{ external_nat_subnet.uuid }}"
   register: result
@@ -50,7 +50,7 @@
       - result.response is defined
       - result.changed == true
       - result.ext_id is defined
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == project1.uuid
     fail_msg: Failed to create VPC
     success_msg: Successfully created VPC
 
@@ -85,7 +85,7 @@
     category5: "{{ results.results[4].response.ext_id }}"
 
 # The VPC_LIST security policy below is scoped to a non-default project, and the
-# backend requires every category it references to belong to that same project.
+# backend requires every category it references to belong to that same project1.
 # These dedicated project-scoped categories are used only by that policy; the
 # shared categories above stay in the default project for the default-project
 # policies that also reference them.
@@ -94,7 +94,7 @@
     key: AnsibleSecurityRuleTestProj
     value: AnsibleSecurityRuleTestProj{{ random_name }}{{ item }}
     description: ansible test
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "{{ project1.uuid }}"
   register: proj_categories
   loop: [0, 1]
 
@@ -103,7 +103,12 @@
     that:
       - item.response is defined
       - item.changed == true
+      - item.failed == false
       - item.ext_id is defined
+      - item.response.project_ext_id == project1.uuid
+      - item.response.key == "AnsibleSecurityRuleTestProj"
+      - item.response.value == "AnsibleSecurityRuleTestProj{{ random_name }}{{ item }}"
+      - item.response.description == "ansible test"
     fail_msg: Failed to create project-scoped category
     success_msg: Successfully created project-scoped category
   loop: "{{ proj_categories.results }}"
@@ -344,7 +349,7 @@
   nutanix.ncp.ntnx_security_rules_v2:
     name: "{{ rule_name_1 }}"
     description: Ansible created rule
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "{{ project1.uuid }}"
     type: APPLICATION
     policy_state: ENFORCE
     scope: VPC_LIST
@@ -454,7 +459,7 @@
       - result.response.rules[inbound2_index].spec.secured_group_category_references[0] in proj_category_list
       - result.response.rules[inbound2_index].spec.secured_group_category_references[1] in proj_category_list
       - result.response.rules[inbound2_index].spec.is_all_protocol_allowed == true
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == project1.uuid
     fail_msg: Failed to create security rule
     success_msg: Successfully created security rule
 
@@ -1339,6 +1344,7 @@
   ansible.builtin.assert:
     that:
       - result.failed == true
+      - result.changed == false
       - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
     fail_msg: "Update of project_ext_id should have been blocked"
     success_msg: "Update of project_ext_id is correctly blocked"

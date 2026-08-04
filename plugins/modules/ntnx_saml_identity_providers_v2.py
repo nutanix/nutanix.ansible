@@ -182,7 +182,7 @@ author:
 
 
 EXAMPLES = r"""
-- name: Create identity provider
+- name: Create identity provider shared with all projects
   nutanix.ncp.ntnx_saml_identity_providers_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -203,6 +203,27 @@ EXAMPLES = r"""
     state: present
   register: result
   ignore_errors: true
+
+- name: Create identity provider shared with specific projects
+  nutanix.ncp.ntnx_saml_identity_providers_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    name: "ansible-saml-shared"
+    username_attribute: "test_name"
+    email_attribute: "email"
+    groups_attribute: "groups"
+    groups_delim: ","
+    idp_metadata_xml: "https://samltest.id/saml/idp"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
+    shared_with_projects:
+      - "12345678-1234-1234-1234-123456789012"
+      - "87654321-4321-4321-4321-210987654321"
+    state: present
+  register: result
+  ignore_errors: true
+
 - name: Update identity provider
   nutanix.ncp.ntnx_saml_identity_providers_v2:
     ext_id: "59d5de78-a964-5746-8c6e-677c4c7a79df"
@@ -215,6 +236,28 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     state: present
+
+- name: Update identity provider to share with specific projects
+  nutanix.ncp.ntnx_saml_identity_providers_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    ext_id: "59d5de78-a964-5746-8c6e-677c4c7a79df"
+    shared_with_projects:
+      - "12345678-1234-1234-1234-123456789012"
+    state: present
+
+- name: Update identity provider to unshare from specific projects
+  nutanix.ncp.ntnx_saml_identity_providers_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    ext_id: "59d5de78-a964-5746-8c6e-677c4c7a79df"
+    shared_with_projects: []
+    state: present
+
 - name: Delete identity provider
   nutanix.ncp.ntnx_saml_identity_providers_v2:
     nutanix_host: "{{ ip }}"

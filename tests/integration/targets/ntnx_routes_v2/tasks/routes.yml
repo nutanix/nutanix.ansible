@@ -18,12 +18,12 @@
 ############################################################################################
 # Use the fixture project that prepare_env created and permanently shared with
 # the external NAT subnet. The subnet cannot be unshared at runtime while the
-# fixture VPC is attached to it (NETWORKING-10068), so the test must not
+# fixture VPC is attached to it, so the test must not
 # share/unshare it; it consumes the pre-shared fixture project instead.
 
 - name: Set project fact from prepare_env fixture
   ansible.builtin.set_fact:
-    project:
+    project1:
       name: "{{ external_subnet_project.name }}"
       uuid: "{{ external_subnet_project.uuid }}"
 
@@ -55,7 +55,7 @@
   nutanix.ncp.ntnx_vpcs_v2:
     state: present
     name: "{{ vpc_name }}_1"
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "{{ project1.uuid }}"
     external_subnets:
       - subnet_reference: "{{ external_subnet_uuid }}"
   register: result
@@ -73,7 +73,7 @@
       - result.response.vpc_type == "REGULAR"
       - result.response.name == "{{ vpc_name }}_1"
       - result.task_ext_id is defined
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == project1.uuid
     fail_msg: "Create first VPC failed "
     success_msg: "Create first VPC passed "
 
@@ -87,7 +87,7 @@
   nutanix.ncp.ntnx_vpcs_v2:
     state: present
     name: "{{ vpc_name }}_2"
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "{{ project1.uuid }}"
     external_subnets:
       - subnet_reference: "{{ external_subnet_uuid }}"
   register: result
@@ -105,7 +105,7 @@
       - result.response.vpc_type == "REGULAR"
       - result.response.name == "{{ vpc_name }}_2"
       - result.task_ext_id is defined
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == project1.uuid
     fail_msg: "Create second VPC failed "
     success_msg: "Create second VPC passed "
 
@@ -213,7 +213,7 @@
     state: present
     name: "{{ random_name }}_route_1"
     description: "Route for testing"
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "{{ project1.uuid }}"
     vpc_reference: "{{ vpc_uuid_1 }}"
     route_table_ext_id: "{{ route_table_external_id_1 }}"
     route_type: STATIC
@@ -227,7 +227,7 @@
       nexthop_reference: "{{ external_subnet_uuid }}"
     metadata:
       owner_reference_id: "{{ vpc_uuid_1 }}"
-      project_reference_id: "{{ project.uuid }}"
+      project_reference_id: "{{ project1.uuid }}"
   register: result
   ignore_errors: true
 
@@ -247,9 +247,9 @@
       - result.response.nexthop.nexthop_type == "EXTERNAL_SUBNET"
       - result.response.nexthop.nexthop_reference == "{{ external_subnet_uuid }}"
       - result.response.metadata.owner_reference_id == "{{ vpc_uuid_1 }}"
-      - result.response.metadata.project_reference_id == "{{ project.uuid }}"
+      - result.response.metadata.project_reference_id == "{{ project1.uuid }}"
       - result.task_ext_id is defined
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == project1.uuid
     fail_msg: "Create first static route failed "
     success_msg: "Create first static route passed "
 
@@ -264,7 +264,7 @@
     state: present
     name: "{{ random_name }}_route_2"
     description: "Route for testing"
-    project_ext_id: "{{ project.uuid }}"
+    project_ext_id: "{{ project1.uuid }}"
     vpc_reference: "{{ vpc_uuid_1 }}"
     route_table_ext_id: "{{ route_table_external_id_1 }}"
     route_type: STATIC
@@ -278,7 +278,7 @@
       nexthop_reference: "{{ external_subnet_uuid }}"
     metadata:
       owner_reference_id: "{{ vpc_uuid_1 }}"
-      project_reference_id: "{{ project.uuid }}"
+      project_reference_id: "{{ project1.uuid }}"
   register: result
   ignore_errors: true
 
@@ -298,9 +298,9 @@
       - result.response.nexthop.nexthop_type == "EXTERNAL_SUBNET"
       - result.response.nexthop.nexthop_reference == "{{ external_subnet_uuid }}"
       - result.response.metadata.owner_reference_id == "{{ vpc_uuid_1 }}"
-      - result.response.metadata.project_reference_id == "{{ project.uuid }}"
+      - result.response.metadata.project_reference_id == "{{ project1.uuid }}"
       - result.task_ext_id is defined
-      - result.response.project_ext_id == project.uuid
+      - result.response.project_ext_id == project1.uuid
     fail_msg: "Create second static route failed "
     success_msg: "Create second static route passed "
 
@@ -401,7 +401,7 @@
       nexthop_reference: "{{ external_subnet_uuid }}"
     metadata:
       owner_reference_id: "{{ vpc_uuid_1 }}"
-      project_reference_id: "{{ project.uuid }}"
+      project_reference_id: "{{ project1.uuid }}"
   register: result
   ignore_errors: true
 
@@ -444,7 +444,7 @@
       - result.response.nexthop.nexthop_type == "EXTERNAL_SUBNET"
       - result.response.nexthop.nexthop_reference == "{{ external_subnet_uuid }}"
       - result.response.metadata.owner_reference_id == "{{ vpc_uuid_1 }}"
-      - result.response.metadata.project_reference_id == "{{ project.uuid }}"
+      - result.response.metadata.project_reference_id == "{{ project1.uuid }}"
     fail_msg: "Fetch route by external ID failed "
     success_msg: "Fetch route by external ID passed "
 
@@ -596,6 +596,7 @@
   ansible.builtin.assert:
     that:
       - result.failed == true
+      - result.changed == false
       - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
     fail_msg: "Update of project_ext_id should have been blocked"
     success_msg: "Update of project_ext_id is correctly blocked"
