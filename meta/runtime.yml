@@ -265,6 +265,7 @@ action_groups:
     - ntnx_snmp_trap_v2
     - ntnx_snmp_trap_info_v2
     - ntnx_snmp_transport_v2
+    - ntnx_snmp_status_v2
     - ntnx_snmp_config_info_v2
     - ntnx_vm_startup_policy_v2
     - ntnx_vm_startup_policies_info_v2

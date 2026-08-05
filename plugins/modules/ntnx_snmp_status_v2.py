@@ -10,36 +10,24 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_snmp_transport_v2
-short_description: Update SNMP transport ports and protocol details on a Nutanix cluster
+module: ntnx_snmp_status_v2
+short_description: Update SNMP status (enable/disable) on a Nutanix cluster
 version_added: 2.6.0
 description:
-  - Add SNMP transport ports and protocol details when C(state) is C(present), C(protocol) and C(port) are provided.
-  - Remove SNMP transport ports and protocol details when C(state) is C(absent), C(protocol) and C(port) are provided.
+  - Update SNMP status (enable/disable) on a Nutanix cluster.
+  - Set C(is_enabled) to C(true) to enable SNMP, C(false) to disable it.
   - This module uses PC v4 APIs based SDKs.
 options:
-  state:
-    description:
-      - If C(state) is C(present), it will add the specified SNMP transport.
-      - If C(state) is C(absent), it will remove the specified SNMP transport.
-    type: str
-    choices: ['present', 'absent']
   cluster_ext_id:
     description:
       - The external ID of the cluster.
     type: str
     required: true
-  protocol:
+  is_enabled:
     description:
-      - SNMP transport protocol.
-      - Required when adding or removing SNMP transport.
-    type: str
-    choices: ['UDP', 'UDP6', 'TCP', 'TCP6']
-  port:
-    description:
-      - SNMP port number.
-      - Required when adding or removing SNMP transport.
-    type: int
+      - SNMP status. Set to C(true) to enable SNMP, C(false) to disable.
+    type: bool
+    required: true
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
@@ -50,35 +38,31 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Add SNMP transport
-  nutanix.ncp.ntnx_snmp_transport_v2:
-    state: present
+- name: Enable SNMP on a cluster
+  nutanix.ncp.ntnx_snmp_status_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    cluster_ext_id: "{{ cluster_ext_id }}"
-    protocol: UDP
-    port: 162
+    cluster_ext_id: "913fa076-d385-4dd8-b549-0e628e645569"
+    is_enabled: true
   register: result
 
-- name: Remove SNMP transport
-  nutanix.ncp.ntnx_snmp_transport_v2:
-    state: absent
+- name: Disable SNMP on a cluster
+  nutanix.ncp.ntnx_snmp_status_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    cluster_ext_id: "{{ cluster_ext_id }}"
-    protocol: UDP
-    port: 162
+    cluster_ext_id: "913fa076-d385-4dd8-b549-0e628e645569"
+    is_enabled: false
   register: result
 """
 
 RETURN = r"""
 response:
   description:
-    - Task details for SNMP config operations.
+    - Task details for SNMP status operations.
   type: dict
   returned: always
   sample:
@@ -119,14 +103,14 @@ task_ext_id:
   description: Task External ID
   returned: always
   type: str
+  sample: "ZXJnb24=:54a506dc-6d4f-4344-43e4-41205eba32f4"
+
 msg:
   description: This indicates the message if any message occurred
   returned: When there is an error
   type: str
-error:
-  description: Error message if any
-  returned: always
-  type: str
+  sample: "Api Exception raised while updating SNMP status"
+
 changed:
   description: This indicates whether the task resulted in any changes
   returned: always
@@ -157,7 +141,6 @@ from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
     get_snmp_api_instance,
 )
 from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
-from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
@@ -178,27 +161,17 @@ def get_module_spec():
 
     module_args = dict(
         cluster_ext_id=dict(type="str", required=True),
-        protocol=dict(
-            type="str",
-            choices=["UDP", "UDP6", "TCP", "TCP6"],
-            obj=clusters_sdk.SnmpProtocol,
-        ),
-        port=dict(type="int"),
+        is_enabled=dict(type="bool", required=True),
     )
-
     return module_args
 
 
-def add_snmp_transport(module, result, api_instance):
+def update_snmp_status(module, result, api_instance):
     cluster_ext_id = module.params.get("cluster_ext_id")
+    is_enabled = module.params.get("is_enabled")
     result["cluster_ext_id"] = cluster_ext_id
-    sg = SpecGenerator(module)
-    default_spec = clusters_sdk.SnmpTransport()
-    spec, err = sg.generate_spec(obj=default_spec)
 
-    if err:
-        result["error"] = err
-        module.fail_json(msg="Failed generating add SNMP transport spec", **result)
+    spec = clusters_sdk.SnmpStatusParam(is_enabled=is_enabled)
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
@@ -206,50 +179,12 @@ def add_snmp_transport(module, result, api_instance):
 
     resp = None
     try:
-        resp = api_instance.add_snmp_transport(clusterExtId=cluster_ext_id, body=spec)
+        resp = api_instance.update_snmp_status(clusterExtId=cluster_ext_id, body=spec)
     except Exception as e:
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while adding SNMP transport",
-        )
-
-    task_ext_id = resp.data.ext_id
-    result["task_ext_id"] = task_ext_id
-    result["response"] = strip_internal_attributes(resp.data.to_dict())
-
-    if task_ext_id and module.params.get("wait"):
-        resp = wait_for_completion(module, task_ext_id)
-        result["response"] = strip_internal_attributes(resp.to_dict())
-
-    result["changed"] = True
-
-
-def remove_snmp_transport(module, result, api_instance):
-    cluster_ext_id = module.params.get("cluster_ext_id")
-    result["cluster_ext_id"] = cluster_ext_id
-    sg = SpecGenerator(module)
-    default_spec = clusters_sdk.SnmpTransport()
-    spec, err = sg.generate_spec(obj=default_spec)
-
-    if err:
-        result["error"] = err
-        module.fail_json(msg="Failed generating remove SNMP transport spec", **result)
-
-    if module.check_mode:
-        result["response"] = strip_internal_attributes(spec.to_dict())
-        return
-
-    resp = None
-    try:
-        resp = api_instance.remove_snmp_transport(
-            clusterExtId=cluster_ext_id, body=spec
-        )
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while removing SNMP transport",
+            msg="Api Exception raised while updating SNMP status",
         )
 
     task_ext_id = resp.data.ext_id
@@ -277,23 +212,12 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
+        "failed": False,
         "response": None,
         "task_ext_id": None,
     }
     api_instance = get_snmp_api_instance(module)
-
-    if not module.params.get("protocol") or not module.params.get("port"):
-        module.fail_json(
-            msg="protocol and port are required when adding or removing SNMP transport",
-            **result,
-        )
-    state = module.params["state"]
-    if state == "present":
-        add_snmp_transport(module, result, api_instance)
-    else:
-        remove_snmp_transport(module, result, api_instance)
-
+    update_snmp_status(module, result, api_instance)
     module.exit_json(**result)
 
 
