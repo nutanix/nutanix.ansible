@@ -646,8 +646,6 @@
     fail_msg: "Unable to delete resource group created for tests"
     success_msg: "Resource group created for tests deleted successfully"
 
-
-
 - name: Delete created categories
   nutanix.ncp.ntnx_categories_v2:
     ext_id: "{{ item }}"
@@ -667,7 +665,6 @@
     fail_msg: "Unable to delete categories"
     success_msg: "Categories deleted successfully"
   loop: "{{ result.results }}"
-
 
 - name: Delete project created for tests
   nutanix.ncp.ntnx_project_v2:
