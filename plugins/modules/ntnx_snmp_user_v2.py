@@ -110,51 +110,20 @@ RETURN = r"""
 response:
   description:
   - The response for snmp user operations.
-  - SNMP config details if operation is create and C(wait) is True.
-  - SNMP config details if operation is update and C(wait) is True.
+    - SNMP user details if operation is create/update and C(wait) is True.
   - Task details if operation is delete or C(wait) is False.
   type: dict
   returned: always
   sample:
     {
-      "is_enabled": true,
+      "auth_key": null,
+      "auth_type": "SHA",
+      "ext_id": "ad29297f-08d5-4896-9fbe-b6ad13937a8f",
       "links": null,
+      "priv_key": null,
+      "priv_type": "AES",
       "tenant_id": null,
-      "transports": null,
-      "traps": [
-          {
-              "address": {
-                  "ipv4": {
-                      "prefix_length": 32,
-                      "value": "10.0.0.1"
-                  },
-                  "ipv6": null
-              },
-              "community_string": null,
-              "engine_id": null,
-              "ext_id": "52612ba9-4c44-41f6-a5cd-7b5b79d3b7ad",
-              "links": null,
-              "port": 164,
-              "protocol": "TCP",
-              "reciever_name": null,
-              "should_inform": null,
-              "tenant_id": null,
-              "username": "snmp_user_min_ansible_test_OzLNdxNsWPYv",
-              "version": "V3"
-          }
-      ],
-      "users": [
-          {
-              "auth_key": null,
-              "auth_type": "SHA",
-              "ext_id": "ad29297f-08d5-4896-9fbe-b6ad13937a8f",
-              "links": null,
-              "priv_key": null,
-              "priv_type": "AES",
-              "tenant_id": null,
-              "username": "snmp_user_all_ansible_test_YmmCRkyeGjaT"
-          }
-      ]
+      "username": "snmp_user_all_ansible_test_YmmCRkyeGjaT"
     }
 changed:
   description: This indicates whether the task resulted in any changes
@@ -226,6 +195,7 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
+    filter_entities_by_attribute_get_ext_id,
     validate_required_params,
 )
 
@@ -295,8 +265,29 @@ def create_snmp_user(module, result, snmp_users, snmp_config_api):
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
         wait_for_completion(module, task_ext_id)
+        # Fetch full config, then locally filter down to the created user.
+        # This avoids returning the whole config in result.response.
         resp = get_snmp_config(module, snmp_config_api, cluster_ext_id)
-        result["response"] = strip_internal_attributes(resp.to_dict())
+        config = strip_internal_attributes(resp.to_dict())
+
+        username = module.params.get("username")
+        created_ext_id = filter_entities_by_attribute_get_ext_id(
+            config.get("users"),
+            "username",
+            username,
+            ext_id_key="ext_id",
+        )
+        if not created_ext_id:
+            module.fail_json(
+                msg="Unable to locate created SNMP user ext_id in SNMP config",
+                **result,
+            )
+
+        result["ext_id"] = created_ext_id
+        created_user = get_snmp_user(
+            module, snmp_users, ext_id=created_ext_id, cluster_ext_id=cluster_ext_id
+        )
+        result["response"] = strip_internal_attributes(created_user.to_dict())
 
     result["changed"] = True
 

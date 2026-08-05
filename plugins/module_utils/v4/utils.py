@@ -52,6 +52,53 @@ def strip_internal_attributes(data, exclude_attributes=None):
     return data
 
 
+def _get_nested_value(obj, dotted_path):
+    """
+    Get a nested value from a dict using a dotted path.
+
+    Example:
+        _get_nested_value({"address": {"ipv4": {"value": "1.2.3.4"}}}, "address.ipv4.value")
+        -> "1.2.3.4"
+    """
+    if obj is None or dotted_path is None:
+        return None
+    current_obj = obj
+    for part in str(dotted_path).split("."):
+        if not isinstance(current_obj, dict) or part not in current_obj:
+            return None
+        current_obj = current_obj[part]
+    return current_obj
+
+
+def filter_entities_by_attribute_get_ext_id(
+    entities,
+    attribute_path,
+    expected_value,
+    ext_id_key="ext_id",
+):
+    """
+    Filter a list of entity dicts by a (possibly nested) attribute and return the matching ext_id.
+
+    Args:
+        entities (list[dict]|None): entities to search (e.g. config['users'] or config['traps'])
+        attribute_path (str): attribute name or dotted path (e.g. 'username' or 'address.ipv4.value')
+        expected_value: value to match with == (after extraction)
+        ext_id_key (str): field name that contains the external id (default: 'ext_id')
+
+    Returns:
+        str|None: the first matched entity's ext_id, or None if no match.
+    """
+    if not entities:
+        return None
+    for item in entities:
+        if not isinstance(item, dict):
+            continue
+        actual = _get_nested_value(item, attribute_path)
+        if actual == expected_value:
+            return item.get(ext_id_key)
+    return None
+
+
 def raise_api_exception(module, exception, msg=None):
     """
     This routine raise module failure as per exception
@@ -144,28 +191,28 @@ def remove_empty_ip_config(obj):
 def remove_fields_from_spec(obj, fields_to_remove, deep=False):
     """
     Removes specified fields from a given object (dict or list).
-    If deep=True, it removes the fields recursively.
+    If deep=True, it removes the fields recurrent_objsively.
     Modifies the object in-place.
 
     Args:
         obj (dict | list): The object to strip fields from.
         fields_to_remove (set): Field names to remove.
-        deep (bool): Whether to remove fields recursively.
+        deep (bool): Whether to remove fields recurrent_objsively.
     """
     if isinstance(obj, dict):
-        # First, remove the unwanted keys at current level
+        # First, remove the unwanted keys at current_objrent level
         for field in fields_to_remove:
             if field in obj:
                 del obj[field]
 
-        # If deep, recurse into values
+        # If deep, recurrent_objse into values
         if deep:
             for key in list(obj.keys()):
                 value = obj[key]
                 remove_fields_from_spec(value, fields_to_remove, deep=True)
 
     elif isinstance(obj, list):
-        # Recurse into each item if deep
+        # Recurrent_objse into each item if deep
         if deep:
             for item in obj:
                 remove_fields_from_spec(item, fields_to_remove, deep=True)

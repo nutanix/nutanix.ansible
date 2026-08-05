@@ -457,16 +457,15 @@
       - result.changed == true
       - result.failed == false
       - result.response is defined
-      - result.response.users is defined
-      - result.response.users | selectattr('username', 'equalto', snmp_username_min) | list | length == 1
-      - (result.response.users | selectattr('username', 'equalto', snmp_username_min) | list | first).auth_type == "MD5"
+      - result.response.username == snmp_username_min
+      - result.response.auth_type == "MD5"
       - result.task_ext_id is defined
     fail_msg: "Failed to create SNMP user with minimum attributes"
     success_msg: "SNMP user with minimum attributes created successfully"
 
 - name: Add user ext_id to delete list
   ansible.builtin.set_fact:
-    to_delete_users: "{{ to_delete_users + [(result.response.users | selectattr('username', 'equalto', snmp_username_min) | list | first).ext_id] }}"
+    to_delete_users: "{{ to_delete_users + [result.ext_id] }}"
 
 ##################################################
 # SNMP User - Create (all attributes)
@@ -493,16 +492,16 @@
       - result.changed == true
       - result.failed == false
       - result.response is defined
-      - result.response.users | selectattr('username', 'equalto', snmp_username_all) | list | length == 1
-      - (result.response.users | selectattr('username', 'equalto', snmp_username_all) | list | first).auth_type == "SHA"
-      - (result.response.users | selectattr('username', 'equalto', snmp_username_all) | list | first).priv_type == "AES"
+      - result.response.username == snmp_username_all
+      - result.response.auth_type == "SHA"
+      - result.response.priv_type == "AES"
       - result.task_ext_id is defined
     fail_msg: "Failed to create SNMP user with all attributes"
     success_msg: "SNMP user with all attributes created successfully"
 
 - name: Add all user ext_id to delete list
   ansible.builtin.set_fact:
-    to_delete_users: "{{ to_delete_users + [(result.response.users | selectattr('username', 'equalto', snmp_username_all) | list | first).ext_id] }}"
+    to_delete_users: "{{ to_delete_users + [result.ext_id] }}"
 
 - name: Debug to_delete_users
   ansible.builtin.debug:
@@ -701,51 +700,18 @@
       - result.changed == true
       - result.failed == false
       - result.response is defined
-      - result.response.traps is defined
-      - result.response.traps | length >= 1
-      - >-
-        result.response.traps
-        | selectattr('version', 'equalto', 'V2')
-        | selectattr('address.ipv4.value', 'equalto', trap_v2_ip)
-        | list | length == 1
-      - >-
-        (result.response.traps
-        | selectattr('version', 'equalto', 'V2')
-        | selectattr('address.ipv4.value', 'equalto', trap_v2_ip)
-        | list | first).community_string == "public"
-      - >-
-        (result.response.traps
-        | selectattr('version', 'equalto', 'V2')
-        | selectattr('address.ipv4.value', 'equalto', trap_v2_ip)
-        | list | first).protocol == test_trap_protocol_v2
-      - >-
-        (result.response.traps
-        | selectattr('version', 'equalto', 'V2')
-        | selectattr('address.ipv4.value', 'equalto', trap_v2_ip)
-        | list | first).port == trap_v2_port
+      - result.response.version == "V2"
+      - result.response.address.ipv4.value == trap_v2_ip
+      - result.response.community_string == "public"
+      - result.response.protocol == test_trap_protocol_v2
+      - result.response.port == trap_v2_port | int
       - result.task_ext_id is defined
     fail_msg: "Failed to create SNMP V2 trap"
     success_msg: "SNMP V2 trap created successfully"
 
-- name: Extract V2 trap ext_id
+- name: Set V2 trap ext_id from result
   ansible.builtin.set_fact:
-    trap_v2_ext_id: "{{ item.ext_id }}"
-  loop: "{{ result.response.traps }}"
-  when: >
-    item.version is defined and item.version == "V2"
-    and item.address is defined
-    and item.address.ipv4 is defined
-    and item.address.ipv4.value == trap_v2_ip
-  loop_control:
-    label: "{{ item.ext_id | default('unknown') }}"
-
-- name: Verify V2 trap in config response
-  ansible.builtin.assert:
-    that:
-      - trap_v2_ext_id is defined
-      - trap_v2_ext_id | length > 0
-    fail_msg: "V2 trap not found in SNMP config response"
-    success_msg: "V2 trap found in SNMP config with ext_id {{ trap_v2_ext_id }}"
+    trap_v2_ext_id: "{{ result.ext_id }}"
 
 - name: Add V2 trap ext_id to delete list
   ansible.builtin.set_fact:
@@ -779,55 +745,18 @@
       - result.changed == true
       - result.failed == false
       - result.response is defined
-      - result.response.traps is defined
-      - result.response.traps | length >= 2
-      - >-
-        result.response.traps
-        | selectattr('version', 'equalto', 'V3')
-        | selectattr('address.ipv4.value', 'equalto', trap_v3_ip)
-        | list | length == 1
-      - >-
-        (result.response.traps
-        | selectattr('version', 'equalto', 'V3')
-        | selectattr('address.ipv4.value', 'equalto', trap_v3_ip)
-        | list | first).username == snmp_username_all
-      - >-
-        (result.response.traps
-        | selectattr('version', 'equalto', 'V3')
-        | selectattr('address.ipv4.value', 'equalto', trap_v3_ip)
-        | list | first).protocol == test_trap_protocol_v3
-      - >-
-        (result.response.traps
-        | selectattr('version', 'equalto', 'V3')
-        | selectattr('address.ipv4.value', 'equalto', trap_v3_ip)
-        | list | first).port == trap_v3_port
+      - result.response.version == "V3"
+      - result.response.address.ipv4.value == trap_v3_ip
+      - result.response.username == snmp_username_all
+      - result.response.protocol == test_trap_protocol_v3
+      - result.response.port == trap_v3_port | int
       - result.task_ext_id is defined
     fail_msg: "Failed to create SNMP V3 trap"
     success_msg: "SNMP V3 trap created successfully"
 
-- name: Extract V3 trap ext_id
-  ansible.builtin.set_fact:
-    trap_v3_ext_id: "{{ item.ext_id }}"
-  loop: "{{ result.response.traps }}"
-  when: >
-    item.version is defined and item.version == "V3"
-    and item.address is defined
-    and item.address.ipv4 is defined
-    and item.address.ipv4.value == trap_v3_ip
-  loop_control:
-    label: "{{ item.ext_id | default('unknown') }}"
-
-- name: Verify V3 trap in config response
-  ansible.builtin.assert:
-    that:
-      - trap_v3_ext_id is defined
-      - trap_v3_ext_id | length > 0
-    fail_msg: "V3 trap not found in SNMP config response"
-    success_msg: "V3 trap found in SNMP config with ext_id {{ trap_v3_ext_id }}"
-
 - name: Add V3 trap ext_id to delete list
   ansible.builtin.set_fact:
-    to_delete_traps: "{{ to_delete_traps + [trap_v3_ext_id] }}"
+    to_delete_traps: "{{ to_delete_traps + [result.ext_id] }}"
 
 ##################################################
 # SNMP Trap - Fetch Info

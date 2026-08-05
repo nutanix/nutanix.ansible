@@ -184,57 +184,31 @@ RETURN = r"""
 response:
   description:
     - Response for snmp trap operations.
-    - SNMP config details if operation is create and C(wait) is True.
+    - SNMP trap details if operation is create and C(wait) is True.
     - SNMP trap details if operation is update and C(wait) is True.
     - Task details if operation is delete or C(wait) is True.
   type: dict
   returned: always
   sample:
     {
-      "ext_id": null,
-      "is_enabled": true,
+      "address": {
+          "ipv4": {
+              "prefix_length": 32,
+              "value": "10.0.0.1"
+          },
+          "ipv6": null
+      },
+      "community_string": "public",
+      "engine_id": null,
+      "ext_id": "e4ef5d18-645f-4a35-a5be-93a3dab5db45",
       "links": null,
+      "port": 162,
+      "protocol": "UDP",
+      "reciever_name": null,
+      "should_inform": null,
       "tenant_id": null,
-      "transports": [
-          {
-              "port": 165,
-              "protocol": "UDP6"
-          }
-      ],
-      "traps": [
-          {
-              "address": {
-                  "ipv4": {
-                      "prefix_length": 32,
-                      "value": "10.0.0.1"
-                  },
-                  "ipv6": null
-              },
-              "community_string": "public",
-              "engine_id": null,
-              "ext_id": "e4ef5d18-645f-4a35-a5be-93a3dab5db45",
-              "links": null,
-              "port": 162,
-              "protocol": "UDP",
-              "reciever_name": null,
-              "should_inform": null,
-              "tenant_id": null,
-              "username": null,
-              "version": "V2"
-          }
-      ],
-      "users": [
-          {
-              "auth_key": null,
-              "auth_type": "MD5",
-              "ext_id": "84a60289-e6b6-4814-b882-7858f5485a24",
-              "links": null,
-              "priv_key": null,
-              "priv_type": "DES",
-              "tenant_id": null,
-              "username": "snmp_user_all_ansible_test_EriQKlYVhfgw"
-          }
-      ]
+      "username": null,
+      "version": "V2"
     }
 
 changed:
@@ -307,6 +281,7 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
+    filter_entities_by_attribute_get_ext_id,
     validate_required_params,
 )
 
@@ -373,7 +348,7 @@ def get_module_spec():
 
 
 def create_snmp_trap(module, result, snmp_traps, snmp_config_api):
-    validate_required_params(module, ["protocol", "port"])
+    validate_required_params(module, ["protocol", "port", "address"])
     cluster_ext_id = module.params.get("cluster_ext_id")
     result["cluster_ext_id"] = cluster_ext_id
     sg = SpecGenerator(module)
@@ -404,8 +379,58 @@ def create_snmp_trap(module, result, snmp_traps, snmp_config_api):
 
     if task_ext_id and module.params.get("wait"):
         wait_for_completion(module, task_ext_id)
+        # Fetch full config, then locally filter down to the created trap.
         resp = get_snmp_config(module, snmp_config_api, cluster_ext_id)
-        result["response"] = strip_internal_attributes(resp.to_dict())
+        config = strip_internal_attributes(resp.to_dict())
+
+        trap_version = module.params.get("version")
+        # We can have multiple traps for the same user, so we should identify the
+        # created trap by address. ipv4 is unique; if ipv4 isn't present, fall
+        # back to ipv6.
+        if trap_version == "V3":
+            expected_username = module.params.get("username")
+            if not expected_username:
+                module.fail_json(
+                    msg="username is required to create/identify SNMP V3 trap",
+                    **result,
+                )
+
+        address = module.params.get("address") or {}
+        ipv4 = address.get("ipv4") or {}
+        expected_ipv4_value = ipv4.get("value")
+        if expected_ipv4_value:
+            created_ext_id = filter_entities_by_attribute_get_ext_id(
+                config.get("traps"),
+                "address.ipv4.value",
+                expected_ipv4_value,
+                ext_id_key="ext_id",
+            )
+        else:
+            ipv6 = address.get("ipv6") or {}
+            expected_ipv6_value = ipv6.get("value")
+            if not expected_ipv6_value:
+                module.fail_json(
+                    msg="address.ipv4.value not found; address.ipv6.value is required to identify created SNMP trap",
+                    **result,
+                )
+            created_ext_id = filter_entities_by_attribute_get_ext_id(
+                config.get("traps"),
+                "address.ipv6.value",
+                expected_ipv6_value,
+                ext_id_key="ext_id",
+            )
+
+        if not created_ext_id:
+            module.fail_json(
+                msg="Unable to locate created SNMP trap ext_id in SNMP config",
+                **result,
+            )
+
+        result["ext_id"] = created_ext_id
+        created_trap = get_snmp_trap(
+            module, snmp_traps, ext_id=created_ext_id, cluster_ext_id=cluster_ext_id
+        )
+        result["response"] = strip_internal_attributes(created_trap.to_dict())
 
     result["changed"] = True
 
@@ -525,7 +550,6 @@ def run_module():
         "changed": False,
         "failed": False,
         "response": None,
-        "ext_id": None,
         "task_ext_id": None,
         "cluster_ext_id": None,
     }
