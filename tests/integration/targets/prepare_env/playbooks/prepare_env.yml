@@ -231,14 +231,26 @@
     #   #       - network_ip: "10.1.1.0"
     #   #         network_prefix: 24
 
+    - name: Check if saml xml content already exists locally
+      ansible.builtin.stat:
+        path: "{{ xml_content.dest }}"
+      register: xml_content_stat
+
     - name: Downloading xml content for saml tests
       ansible.builtin.get_url:
         mode: "0644"
         url: "{{ xml_content.url }}"
         dest: "{{ xml_content.dest }}"
+      when: not xml_content_stat.stat.exists
+
+    - name: Check if unattendxml file already exists locally
+      ansible.builtin.stat:
+        path: "{{ unattendxml.dest }}"
+      register: unattendxml_stat
 
     - name: Downloading unattendxml file for windows tests
       ansible.builtin.get_url:
         mode: "0644"
         url: "{{ unattendxml.url }}"
         dest: "{{ unattendxml.dest }}"
+      when: not unattendxml_stat.stat.exists
