@@ -1,4 +1,8 @@
 ---
+# The ntnx_ext_id lookup plugin runs on the controller and does not honor the
+# module_defaults group, so it receives credentials explicitly as arguments.
+# The module_defaults group below is only used by the *_info_v2 modules that
+# provide the reference data the lookup results are checked against.
 - name: Set module defaults
   module_defaults:
     group/nutanix.ncp.ntnx:
@@ -10,11 +14,5 @@
       nutanix_debug: "{{ nutanix_debug | default(omit) }}"
       nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
   block:
-    - name: Import create_delete_info_vm.yml
-      ansible.builtin.import_tasks: create_delete_info_vm.yml
-    - name: Import update_vm.yml
-      ansible.builtin.import_tasks: "update_vm.yml"
-    - name: Import assign_vm_owner.yml
-      ansible.builtin.import_tasks: "assign_vm_owner.yml"
-    - name: Import create_delete_uefi_vms.yml
-      ansible.builtin.import_tasks: "create_delete_uefi_vms.yml"
+    - name: Import lookup_ext_id.yml
+      ansible.builtin.import_tasks: lookup_ext_id.yml
