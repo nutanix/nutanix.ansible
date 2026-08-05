@@ -64,7 +64,7 @@
         - hostvars[inventory_hostname].cluster_name is defined
         - hostvars[inventory_hostname].cluster_ext_id is defined
 
-    - name: Assert that {{ vm_name }} VM has more than one IP address
+    - name: Assert that VM has more than one IP address for {{ vm_name }}
       ansible.builtin.assert:
         that:
           - hostvars[inventory_hostname].vm_ip_addresses | length == 2
