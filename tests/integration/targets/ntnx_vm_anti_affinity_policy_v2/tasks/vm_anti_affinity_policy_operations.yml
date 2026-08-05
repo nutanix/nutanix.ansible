@@ -646,23 +646,7 @@
     fail_msg: "Unable to delete resource group created for tests"
     success_msg: "Resource group created for tests deleted successfully"
 
-- name: Delete project created for tests
-  nutanix.ncp.ntnx_project_v2:
-    state: absent
-    ext_id: "{{ project_1.uuid }}"
-  register: delete_project_result
-  ignore_errors: true
 
-- name: Status of project deletion for tests
-  ansible.builtin.assert:
-    that:
-      - delete_project_result.changed == true
-      - delete_project_result.failed == false
-      - delete_project_result.ext_id == project_1.uuid
-      - delete_project_result.task_ext_id is defined
-      - delete_project_result.response.status == "SUCCEEDED"
-    fail_msg: "Unable to delete project created for tests"
-    success_msg: "Project created for tests deleted successfully"
 
 - name: Delete created categories
   nutanix.ncp.ntnx_categories_v2:
@@ -683,3 +667,22 @@
     fail_msg: "Unable to delete categories"
     success_msg: "Categories deleted successfully"
   loop: "{{ result.results }}"
+
+
+- name: Delete project created for tests
+  nutanix.ncp.ntnx_project_v2:
+    state: absent
+    ext_id: "{{ project_1.uuid }}"
+  register: delete_project_result
+  ignore_errors: true
+
+- name: Status of project deletion for tests
+  ansible.builtin.assert:
+    that:
+      - delete_project_result.changed == true
+      - delete_project_result.failed == false
+      - delete_project_result.ext_id == project_1.uuid
+      - delete_project_result.task_ext_id is defined
+      - delete_project_result.response.status == "SUCCEEDED"
+    fail_msg: "Unable to delete project created for tests"
+    success_msg: "Project created for tests deleted successfully"
