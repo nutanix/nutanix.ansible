@@ -78,40 +78,55 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - Task details for SNMP config operations.
+    - Task details for SNMP transport operations.
   type: dict
   returned: always
   sample:
     {
       "app_name": null,
       "batch_summary": null,
-      "cluster_ext_ids": null,
-      "completed_time": "2026-03-12T12:06:25.726843+00:00",
+      "cluster_ext_ids": [
+          "0006580f-6db7-1270-185b-ac1f6b6f97e2"
+      ],
+      "completed_time": "2026-08-05T05:57:14.314347+00:00",
       "completion_details": null,
-      "created_time": "2026-03-12T12:06:25.540060+00:00",
-      "entities_affected": null,
+      "created_time": "2026-08-05T05:57:13.844105+00:00",
+      "entities_affected": [
+          {
+              "ext_id": "0006580f-6db7-1270-185b-ac1f6b6f97e2",
+              "name": null,
+              "rel": "clustermgmt:config:cluster"
+          }
+      ],
       "error_messages": null,
-      "ext_id": "ZXJnb24=:54a506dc-6d4f-4344-43e4-41205eba32f4",
+      "ext_id": "ZXJnb24=:06cb58fd-e3f4-4a4a-674f-f8cae8f08d0d",
       "is_background_task": false,
       "is_cancelable": false,
-      "last_updated_time": "2026-03-12T12:06:25.726842+00:00",
+      "last_updated_time": "2026-08-05T05:57:14.314346+00:00",
       "legacy_error_message": null,
-      "number_of_entities_affected": 0,
-      "number_of_subtasks": 0,
-      "operation": "UpdateSnmpStatus",
-      "operation_description": "Update snmp status",
+      "number_of_entities_affected": 1,
+      "number_of_subtasks": 1,
+      "operation": "Add Snmp Transports",
+      "operation_description": "Add snmp transports",
       "owned_by": {
           "ext_id": "00000000-0000-0000-0000-000000000000",
           "name": "admin"
       },
       "parent_task": null,
       "progress_percentage": 100,
+      "project_ext_id": "00000000-0000-0000-0000-000000000000",
       "resource_links": null,
       "root_task": null,
-      "started_time": "2026-03-12T12:06:25.604235+00:00",
+      "started_time": "2026-08-05T05:57:13.856749+00:00",
       "status": "SUCCEEDED",
       "sub_steps": null,
-      "sub_tasks": null,
+      "sub_tasks": [
+          {
+              "ext_id": "ZXJnb24=:99dc258c-8d81-4eff-450f-1a359fa40e16",
+              "href": "https://10.44.76.39:9440/api/prism/v4.4/config/tasks/ZXJnb24=:99dc258c-8d81-4eff-450f-1a359fa40e16",
+              "rel": "subtask"
+          }
+      ],
       "warnings": null
     }
 

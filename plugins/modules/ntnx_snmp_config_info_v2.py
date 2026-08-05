@@ -52,7 +52,6 @@ response:
   returned: always
   sample:
     {
-      "ext_id": null,
       "is_enabled": true,
       "links": null,
       "tenant_id": null,

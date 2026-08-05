@@ -117,14 +117,44 @@ response:
   returned: always
   sample:
     {
-      "auth_key": null,
-      "auth_type": "SHA",
-      "ext_id": "84a60289-e6b6-4814-b882-7858f5485a24",
+      "is_enabled": true,
       "links": null,
-      "priv_key": null,
-      "priv_type": "AES",
       "tenant_id": null,
-      "username": "snmp_user_all_ansible_test_EriQKlYVhfgw"
+      "transports": null,
+      "traps": [
+          {
+              "address": {
+                  "ipv4": {
+                      "prefix_length": 32,
+                      "value": "10.0.0.1"
+                  },
+                  "ipv6": null
+              },
+              "community_string": null,
+              "engine_id": null,
+              "ext_id": "52612ba9-4c44-41f6-a5cd-7b5b79d3b7ad",
+              "links": null,
+              "port": 164,
+              "protocol": "TCP",
+              "reciever_name": null,
+              "should_inform": null,
+              "tenant_id": null,
+              "username": "snmp_user_min_ansible_test_OzLNdxNsWPYv",
+              "version": "V3"
+          }
+      ],
+      "users": [
+          {
+              "auth_key": null,
+              "auth_type": "SHA",
+              "ext_id": "ad29297f-08d5-4896-9fbe-b6ad13937a8f",
+              "links": null,
+              "priv_key": null,
+              "priv_type": "AES",
+              "tenant_id": null,
+              "username": "snmp_user_all_ansible_test_YmmCRkyeGjaT"
+          }
+      ]
     }
 changed:
   description: This indicates whether the task resulted in any changes
@@ -390,7 +420,6 @@ def run_module():
         "changed": False,
         "failed": False,
         "response": None,
-        "ext_id": None,
         "task_ext_id": None,
         "cluster_ext_id": None,
     }

@@ -69,33 +69,48 @@ response:
     {
       "app_name": null,
       "batch_summary": null,
-      "cluster_ext_ids": null,
-      "completed_time": "2026-03-12T12:06:25.726843+00:00",
+      "cluster_ext_ids": [
+          "0006580f-6db7-1270-185b-ac1f6b6f97e2"
+      ],
+      "completed_time": "2026-08-05T05:55:57.373218+00:00",
       "completion_details": null,
-      "created_time": "2026-03-12T12:06:25.540060+00:00",
-      "entities_affected": null,
+      "created_time": "2026-08-05T05:55:56.918689+00:00",
+      "entities_affected": [
+          {
+              "ext_id": "0006580f-6db7-1270-185b-ac1f6b6f97e2",
+              "name": null,
+              "rel": "clustermgmt:config:cluster"
+          }
+      ],
       "error_messages": null,
-      "ext_id": "ZXJnb24=:54a506dc-6d4f-4344-43e4-41205eba32f4",
+      "ext_id": "ZXJnb24=:69c1057e-2805-4670-62d5-664d43ac4ef6",
       "is_background_task": false,
       "is_cancelable": false,
-      "last_updated_time": "2026-03-12T12:06:25.726842+00:00",
+      "last_updated_time": "2026-08-05T05:55:57.373218+00:00",
       "legacy_error_message": null,
-      "number_of_entities_affected": 0,
-      "number_of_subtasks": 0,
-      "operation": "UpdateSnmpStatus",
-      "operation_description": "Update snmp status",
+      "number_of_entities_affected": 1,
+      "number_of_subtasks": 1,
+      "operation": "Update Snmp Status",
+      "operation_description": "Update Snmp Status",
       "owned_by": {
           "ext_id": "00000000-0000-0000-0000-000000000000",
           "name": "admin"
       },
       "parent_task": null,
       "progress_percentage": 100,
+      "project_ext_id": "00000000-0000-0000-0000-000000000000",
       "resource_links": null,
       "root_task": null,
-      "started_time": "2026-03-12T12:06:25.604235+00:00",
+      "started_time": "2026-08-05T05:55:56.930686+00:00",
       "status": "SUCCEEDED",
       "sub_steps": null,
-      "sub_tasks": null,
+      "sub_tasks": [
+          {
+              "ext_id": "ZXJnb24=:91004042-2cc6-4270-79c5-a3babf940d79",
+              "href": "https://10.44.76.39:9440/api/prism/v4.4/config/tasks/ZXJnb24=:91004042-2cc6-4270-79c5-a3babf940d79",
+              "rel": "subtask"
+          }
+      ],
       "warnings": null
     }
 

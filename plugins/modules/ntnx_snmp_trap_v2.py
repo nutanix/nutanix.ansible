@@ -443,9 +443,6 @@ def update_snmp_trap(module, result, snmp_traps, snmp_config_api):
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
 
-    result["current_spec"] = strip_internal_attributes(current_spec.to_dict())
-    result["update_spec"] = strip_internal_attributes(update_spec.to_dict())
-
     if check_snmp_trap_idempotency(current_spec, update_spec):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
