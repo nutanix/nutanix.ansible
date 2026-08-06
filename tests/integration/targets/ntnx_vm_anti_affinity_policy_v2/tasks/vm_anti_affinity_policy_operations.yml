@@ -560,8 +560,44 @@
     success_msg: "Verify negative test for update with category already in use passed"
 
 ##################################################################################
-# List VM-VM anti-affinity policy compliance states
+# Create VMs and List VM-VM anti-affinity policy compliance states
 ##################################################################################
+
+- name: Create 2 VMs (single category pair) with minimum spec and auto cluster selection
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    name: "{{ vm_name_prefix }}_{{ item + 1 }}"
+    description: "anti-affinity test VM"
+    categories:
+      - ext_id: "{{ todelete_categories[1] }}"
+    project_ext_id: "{{ project1.uuid }}"
+  register: vms_result
+  loop: "{{ range(0, 2) | list }}"
+  ignore_errors: true
+
+- name: Collect VM ext_ids for cleanup
+  ansible.builtin.set_fact:
+    vms_todelete: "{{ vms_result.results | map(attribute='ext_id') | list }}"
+
+- name: Verify creation of all 2 VMs (single category pair)
+  ansible.builtin.assert:
+    that:
+      - vms_result.results | length == 2
+      - vms_todelete | length == 2
+      - item.changed == true
+      - item.failed == false
+      - item.response is defined
+      - item.response.name == "{{ vm_name_prefix }}_{{ vm_idx + 1 }}"
+      - item.response.description == "anti-affinity test VM"
+      - item.response.categories[0].ext_id == todelete_categories[1]
+      - item.response.project_ext_id == "{{ project1.uuid }}"
+    fail_msg: "Failed to create VM at index {{ vm_idx }} (expected category {{
+      todelete_categories[1] }})"
+    success_msg: "VM {{ vm_idx + 1 }} created successfully with category {{
+      todelete_categories[1] }}"
+  loop: "{{ vms_result.results }}"
+  loop_control:
+    index_var: vm_idx
 
 - name: List VM-VM anti-affinity policy compliance states
   nutanix.ncp.ntnx_vm_anti_affinity_policy_compliance_info_v2:
@@ -587,6 +623,28 @@
         )
     fail_msg: "Verify list of VM-VM anti-affinity policy compliance states failed"
     success_msg: "Verify list of VM-VM anti-affinity policy compliance states passed"
+
+- name: Delete all 2 created VMs
+  nutanix.ncp.ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  loop: "{{ vms_todelete }}"
+  ignore_errors: true
+
+- name: VM deletion status
+  ansible.builtin.assert:
+    that:
+      - item.response is defined
+      - item.changed == true
+      - item.failed == false
+      - item.response.status == 'SUCCEEDED'
+      - result.changed == true
+      - result.msg == "All items completed"
+      - result.results | length == 2
+    fail_msg: "Failed to delete one or more VMs"
+    success_msg: "All 2 VMs deleted successfully"
+  loop: "{{ result.results }}"
 
 ##################################################################################
 # Negative - Delete non-existent policy
