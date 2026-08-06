@@ -39,6 +39,11 @@ options:
         description:
             - A globally unique identifier of an instance that is suitable for external consumption.
         type: str
+    project_ext_id:
+        description:
+            - External ID (UUID) of the project that owns this template.
+            - Update of this field is not supported.
+        type: str
     template_name:
         description:
             - The user defined name of a Template.
@@ -671,12 +676,18 @@ options:
                                 type: str
                                 required: True
                     project:
-                        description: Reference to a project.
+                        description:
+                            - Reference to a project.
+                            - This field is deprecated and will be removed in a future release.
+                            - Use project_ext_id instead.
                         type: dict
                         suboptions:
                             ext_id:
                                 description: The globally unique identifier of a project. It should be of type UUID.
                                 type: str
+                    project_ext_id:
+                        description: The globally unique identifier of a project. It should be of type UUID.
+                        type: str
                     host:
                         description: Reference to a host.
                         type: dict
@@ -1604,6 +1615,7 @@ EXAMPLES = r"""
     validate_certs: false
     template_name: "{{ template_name }}"
     template_description: "ansible test"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     template_version_spec:
       version_source:
         template_vm_reference:
@@ -1849,6 +1861,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 from ..module_utils.v4.vmm.api_client import (  # noqa: E402
@@ -1944,6 +1957,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         template_name=dict(type="str"),
         template_description=dict(type="str"),
         template_version_spec=dict(
@@ -2007,6 +2021,10 @@ def update_template(module, result):
     current_spec = get_template(module, templates, ext_id)
     sg = SpecGenerator(module)
     update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
+
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
 
     if not update_spec.created_by.user_type:
         update_spec.created_by.user_type = "LOCAL"

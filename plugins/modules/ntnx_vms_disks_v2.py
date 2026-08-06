@@ -434,6 +434,10 @@ def update_disk(module, result):
         result["error"] = err
         module.fail_json(msg="Failed generating vm disk update spec", **result)
 
+    if module.check_mode:
+        result["response"] = strip_internal_attributes(update_spec.to_dict())
+        return
+
     # check for idempotency
     if check_idempotency(current_spec, update_spec):
         result["skipped"] = True
@@ -451,9 +455,6 @@ def update_disk(module, result):
     )
     if storage_container:
         update_spec.backing_info.storage_container = None
-    if module.check_mode:
-        result["response"] = strip_internal_attributes(update_spec.to_dict())
-        return
 
     resp = None
     try:

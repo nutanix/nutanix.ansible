@@ -24,12 +24,14 @@
         test_operation_1_uuid: 00000000-0000-0000-0000-000000000001
         test_operation_2_uuid: 00000000-0000-0000-0000-000000000002
         role_uuid: 00000000-0000-0000-0000-000000000003
+        project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
 
     - name: Create roles with operations
       nutanix.ncp.ntnx_roles_v2:
         state: present
         display_name: "{{ role_name_test }}"
         description: test-ansible-role-1-desc
+        project_ext_id: "{{ project_ext_id }}"
         operations:
           - "{{ test_operation_1_uuid }}"
           - "{{ test_operation_2_uuid }}"

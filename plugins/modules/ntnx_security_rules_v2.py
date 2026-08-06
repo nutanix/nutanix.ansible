@@ -47,6 +47,11 @@ options:
     description:
       - External ID of the Flow Network Security Policy.
     type: str
+  project_ext_id:
+    description:
+      - External ID (UUID) of the project that owns this network security policy.
+      - Update of this field is not supported.
+    type: str
   name:
     description:
       - Name of the Flow Network Security Policy.
@@ -562,6 +567,7 @@ EXAMPLES = r"""
     nutanix_password: "<pc_password>"
     name: "rule1"
     description: "Ansible created rule"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     type: "APPLICATION"
     policy_state: "ENFORCE"
     scope: "ALL_VLAN"
@@ -818,6 +824,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 
@@ -1036,6 +1043,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         name=dict(type="str"),
         description=dict(type="str"),
         type=dict(
@@ -1175,6 +1183,10 @@ def update_network_security_policy(module, result):
         module.fail_json(
             msg="Failed generating network_security_policies update spec", **result
         )
+
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
 
     # due to conflict of spec.state with module state
     if module.params.get("policy_state"):

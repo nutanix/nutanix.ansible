@@ -54,6 +54,11 @@ options:
         description:
             - External ID of the Ova to be updated or deleted
         type: str
+    project_ext_id:
+        description:
+            - External ID (UUID) of the project that owns this OVA.
+            - Update of this field is not supported.
+        type: str
     checksum:
         description:
             - Checksum of the Ova
@@ -167,6 +172,7 @@ EXAMPLES = r"""
 - name: Create Ova from the VM
   nutanix.ncp.ntnx_ova_v2:
     name: "name"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     source:
       ova_vm_source:
         vm_ext_id: "12345678-1234-1234-1234-123456789012"
@@ -368,6 +374,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 from ..module_utils.v4.vmm.api_client import (  # noqa: E402
@@ -449,6 +456,7 @@ def get_module_spec():
     module_args = dict(
         name=dict(type="str"),
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         checksum=dict(
             type="dict",
             options=checksum_spec,
@@ -537,14 +545,17 @@ def update_ova(module, ova, result):
         result["error"] = err
         module.fail_json(msg="Failed generating ova update spec", **result)
 
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
+    if module.check_mode:
+        result["response"] = strip_internal_attributes(update_spec.to_dict())
+        return
+
     # check for idempotency
     if check_idempotency(current_spec.to_dict(), update_spec.to_dict()):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
-
-    if module.check_mode:
-        result["response"] = strip_internal_attributes(update_spec.to_dict())
-        return
 
     resp = None
     try:

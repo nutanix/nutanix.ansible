@@ -12,6 +12,12 @@ DOCUMENTATION = r"""
     short_description: Get a list of Nutanix VMs for ansible dynamic inventory using V4 APIs.
     description:
         - Get a list of Nutanix VMs for ansible dynamic inventory using V4 APIs and SDKs.
+        - >
+          C(ansible_host) is set to the first IP address reported for the VM's NICs.
+        - >
+          Hosts with more than one IP address also get a C(vm_ip_addresses) variable listing all of
+          them, so a usable address can be selected with C(compose). It is not set when the VM has
+          a single address or none, since C(ansible_host) already covers that case.
     version_added: "2.4.0"
     author:
         - George Ghawali (@george-ghawali)
@@ -67,6 +73,22 @@ DOCUMENTATION = r"""
             type: str
             env:
                 - name: NUTANIX_API_KEY
+        auto_create_cluster_groups:
+            description:
+                - Automatically create inventory groups based on cluster ext_id.
+                - Set to C(False) to disable. Use C(keyed_groups) with C(cluster_name) for
+                  human-readable cluster groups instead.
+            default: true
+            type: bool
+        resolve_categories:
+            description:
+                - Resolve category ext_ids to key/value pairs and populate C(categories_map)
+                  in host variables.
+                - Requires fetching all categories from Prism Central via the Categories API.
+                - Set to C(False) to skip the API calls if you do not use C(categories_map)
+                  in keyed_groups, compose, or groups expressions.
+            default: true
+            type: bool
         fetch_all_vms:
             description:
                 - Set to C(True) to fetch all VMs
@@ -220,6 +242,48 @@ EXAMPLES = r"""
       prefix: power
       separator: "_"
 
+# using keyed groups with categories_map and cluster_name
+# categories_map resolves category ext_ids to {key: [values]} pairs
+# (values are lists to support multiple values per key)
+# categories retains the original list of category ext_ids
+- plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
+  nutanix_host: 10.x.x.x
+  nutanix_username: admin
+  nutanix_password: password
+  validate_certs: false
+  auto_create_cluster_groups: false
+  keyed_groups:
+    - key: cluster_name
+      prefix: cluster
+      separator: "_"
+    # categories_map values are lists (a key can have multiple values);
+    # keyed_groups creates one group per item in the list
+    - key: categories_map.Environment
+      prefix: env
+      separator: "_"
+      default_value: unassigned
+
+# using compose with vm_ip_addresses to pick a specific IP of a multi homed VM
+# vm_ip_addresses is only set when the VM reports more than one IP address, so
+# default() falls back to the single address already in ansible_host, and
+# select('string') drops it when the VM has no IP at all
+- plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
+  nutanix_host: 10.x.x.x
+  nutanix_username: admin
+  nutanix_password: password
+  validate_certs: false
+  compose:
+    # only the address in the 169.254.0.0/16 (APIPA) range
+    # VMs without such an address are left without the variable rather than with an
+    # empty one, which relies on the default strict: false
+    vm_apipa_ip: >-
+      vm_ip_addresses | default([ansible_host], true) | select('string')
+      | select('match', '169\.254\.') | first
+    # connect over the first address that is not an APIPA one
+    ansible_host: >-
+      (vm_ip_addresses | default([ansible_host], true) | select('string')
+       | reject('match', '169\.254\.') | first) | default(ansible_host, true)
+
 # using custom ansible host for defining the ansible_host for the VMs
 - plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
   nutanix_host: 10.x.x.x
@@ -243,13 +307,19 @@ import tempfile  # noqa: E402
 
 from ansible.errors import AnsibleError  # noqa: E402
 from ansible.plugins.inventory import BaseInventoryPlugin, Constructable  # noqa: E402
+from ansible.utils.display import Display  # noqa: E402
 
 from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
     get_clusters_api_instance,
 )
+from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
+    get_categories_api_instance,
+)
 from ..module_utils.v4.utils import strip_internal_attributes  # noqa: E402
 from ..module_utils.v4.vmm.api_client import get_vm_api_instance  # noqa: E402
 from ..plugin_utils.inventory_utils import get_hostname  # noqa: E402
+
+display = Display()
 
 
 class Mock_Module:
@@ -361,42 +431,40 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
 
         return vms
 
-    def _extract_vm_ip(self, vm):
+    def _extract_vm_ips(self, vm):
         """
-        Extract IP address from VM NICs.
-        Returns the first learned/DHCP IP address found.
+        Collect every IP address reported for the VM's NICs, in NIC order:
+        learned (DHCP) addresses first, then statically configured ones, then IPv6.
+        The first entry is used as ansible_host. When there is more than one the
+        full list is also exposed as vm_ip_addresses, because Prism Central
+        sometimes reports an APIPA address first and callers need to be able to
+        pick a usable address themselves.
         """
-        nics = vm.get("nics") or []
-        for nic in nics:
+        ips = []
+
+        def add(value):
+            if value and value not in ips:
+                ips.append(value)
+
+        for nic in vm.get("nics") or []:
             network_info = nic.get("nic_network_info") or {}
-            if not network_info:
-                continue
             if network_info.get("nic_type") != "NORMAL_NIC":
                 continue
-            ipv4_info = network_info.get("ipv4_info")
-            ipv4_config = network_info.get("ipv4_config")
-            if ipv4_info:
-                learned_ips = ipv4_info.get("learned_ip_addresses", [])
-                if learned_ips and len(learned_ips) > 0:
-                    first_ip = learned_ips[0]
-                    if first_ip and first_ip.get("value"):
-                        return first_ip.get("value")
-            elif ipv4_config:
-                ip_address = ipv4_config.get("ip_address")
-                if ip_address:
-                    value = ip_address.get("value")
-                    if value:
-                        return value
-            else:
-                ipv6_info = network_info.get("ipv6_info")
-                if ipv6_info:
-                    learned_ips = ipv6_info.get("learned_ipv6_addresses", [])
-                    if learned_ips and len(learned_ips) > 0:
-                        first_ip = learned_ips[0]
-                        if first_ip and first_ip.get("value"):
-                            return first_ip.get("value")
 
-        return None
+            ipv4_info = network_info.get("ipv4_info") or {}
+            for address in ipv4_info.get("learned_ip_addresses") or []:
+                add((address or {}).get("value"))
+
+            ipv4_config = network_info.get("ipv4_config") or {}
+            add((ipv4_config.get("ip_address") or {}).get("value"))
+            for address in ipv4_config.get("secondary_ip_address_list") or []:
+                add((address or {}).get("value"))
+
+            ipv6_info = network_info.get("ipv6_info") or {}
+            for address in ipv6_info.get("learned_ipv6_addresses") or []:
+                add((address or {}).get("value"))
+
+        return ips
 
     def _resolve_custom_ansible_host(self, vm, cluster_ext_id_name_map, expr, strict):
         """Resolve ansible_host expression with placeholders if defined."""
@@ -453,7 +521,9 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         for key in unwanted_keys:
             host_vars.pop(key, None)
 
-    def _build_host_vars(self, vm, cluster_ext_id_name_map, strict=False):
+    def _build_host_vars(
+        self, vm, cluster_ext_id_name_map, category_ext_id_map, strict=False
+    ):
         """
         Build a dictionary of host variables from the V4 VM response.
         Returns all VM attributes, excluding null/empty values.
@@ -461,9 +531,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         # Validate VM data
         if not vm or not isinstance(vm, dict):
             raise ValueError("Invalid VM data: expected dict, got {0}".format(type(vm)))
-
-        # Extract IP address from NICs for ansible_host
-        vm_ip = None
 
         # Start with all VM attributes
         host_vars = {}
@@ -477,20 +544,35 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
 
             host_vars[key] = value
 
+        # Expose every NIC address, since nics is stripped from host_vars below.
+        # Only set when there is more than one, as ansible_host already carries
+        # the single address case.
+        vm_ips = self._extract_vm_ips(vm)
+        if len(vm_ips) > 1:
+            host_vars["vm_ip_addresses"] = vm_ips
+
         # Add ansible_host for SSH connectivity
-        vm_ip = self._extract_vm_ip(vm)
+        vm_ip = vm_ips[0] if vm_ips else None
         host_vars["ansible_host"] = vm_ip
 
-        # Convert categories to list of extId if present
+        # Convert categories to list of extId and build key/value map
         if vm.get("categories"):
             category_ext_ids = []
+            categories_map = {}
             for category in vm.get("categories") or []:
                 if isinstance(category, dict):
                     category_ext_id = category.get("ext_id")
                     if category_ext_id:
                         category_ext_ids.append(category_ext_id)
+                        if category_ext_id in category_ext_id_map:
+                            cat = category_ext_id_map[category_ext_id]
+                            categories_map.setdefault(cat["key"], []).append(
+                                cat["value"]
+                            )
             if category_ext_ids:
                 host_vars["categories"] = category_ext_ids
+            if categories_map:
+                host_vars["categories_map"] = categories_map
 
         # Handle custom ansible_host
         if getattr(self, "custom_ansible_host", None) and self.custom_ansible_host.get(
@@ -535,6 +617,43 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 return False
         return True
 
+    def _build_cluster_ext_id_name_map(self, clusters):
+        result = {}
+        list_clusters = clusters.list_clusters()
+        for cluster in list_clusters.data or []:
+            if cluster:
+                cluster_dict = cluster.to_dict()
+                ext_id = cluster_dict.get("ext_id")
+                name = cluster_dict.get("name")
+                result[ext_id] = name
+        return result
+
+    def _build_category_ext_id_map(self, categories_api):
+        result = {}
+        try:
+            page = 0
+            while True:
+                list_categories = categories_api.list_categories(_page=page, _limit=100)
+                if not list_categories.data:
+                    break
+                for cat in list_categories.data:
+                    cat_dict = cat.to_dict()
+                    ext_id = cat_dict.get("ext_id")
+                    if ext_id:
+                        result[ext_id] = {
+                            "key": cat_dict.get("key"),
+                            "value": cat_dict.get("value"),
+                        }
+                if len(list_categories.data) < 100:
+                    break
+                page += 1
+        except Exception as e:
+            display.warning(
+                "Failed to fetch categories from Prism Central, "
+                "categories_map will not be available: {0}".format(str(e))
+            )
+        return result
+
     def parse(self, inventory, loader, path, cache=True):
         super().parse(inventory, loader, path, cache=cache)
         self._read_config_data(path)
@@ -578,6 +697,8 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             ).lower()
             == "true"
         )
+        self.auto_create_cluster_groups = self.get_option("auto_create_cluster_groups")
+        self.resolve_categories = self.get_option("resolve_categories")
         self.fetch_all_vms = self.get_option("fetch_all_vms")
         self.page = self.get_option("page")
         self.limit = self.get_option("limit")
@@ -610,17 +731,16 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             self.nutanix_api_key,
         )
 
-        # Get VM API instance
+        # Get API instances
         vmm = get_vm_api_instance(module)
         clusters = get_clusters_api_instance(module)
-        list_clusters = clusters.list_clusters()
-        cluster_ext_id_name_map = {}
-        for cluster in list_clusters.data or []:
-            if cluster:
-                cluster_dict = cluster.to_dict()
-                ext_id = cluster_dict.get("ext_id")
-                name = cluster_dict.get("name")
-                cluster_ext_id_name_map[ext_id] = name
+
+        cluster_ext_id_name_map = self._build_cluster_ext_id_name_map(clusters)
+
+        category_ext_id_map = {}
+        if self.resolve_categories:
+            categories_api = get_categories_api_instance(module)
+            category_ext_id_map = self._build_category_ext_id_map(categories_api)
 
         # Fetch VMs
         vms = self._fetch_vms(
@@ -640,7 +760,9 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             cluster_ext_id = (vm.get("cluster") or {}).get("ext_id")
             cluster_name = cluster_ext_id_name_map.get(cluster_ext_id)
             try:
-                host_vars = self._build_host_vars(vm, cluster_ext_id_name_map, strict)
+                host_vars = self._build_host_vars(
+                    vm, cluster_ext_id_name_map, category_ext_id_map, strict
+                )
             except Exception as e:
                 raise AnsibleError(
                     f"Failed to build host vars for VM {vm.get('name')} with ext_id {vm.get('ext_id')}: {str(e)}"
@@ -675,8 +797,8 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 self._compose, host_vars, hostnames, vm_name, strict=strict
             )
 
-            # Create group based on cluster
-            if cluster_ext_id:
+            # Create group based on cluster (optional, enabled by default)
+            if self.auto_create_cluster_groups and cluster_ext_id:
                 group_name = "cluster_{0}".format(cluster_ext_id.replace("-", "_"))
                 group_name = self.inventory.add_group(group_name)
                 self.inventory.add_child("all", group_name)
