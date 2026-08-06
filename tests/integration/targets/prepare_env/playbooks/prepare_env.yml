@@ -150,6 +150,10 @@
             subnet:
               name: "{{overlay_subnet.name}}"
             private_ip: "{{overlay_subnet.private_ip}}"
+          - is_connected: true
+            subnet:
+              name: "{{overlay_subnet.name}}"
+            private_ip: "{{overlay_subnet.private_ip1}}"
       register: result
 
     - name: Insert vm configuration block to var file
