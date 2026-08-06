@@ -191,28 +191,28 @@ def remove_empty_ip_config(obj):
 def remove_fields_from_spec(obj, fields_to_remove, deep=False):
     """
     Removes specified fields from a given object (dict or list).
-    If deep=True, it removes the fields recurrent_objsively.
+    If deep=True, it removes the fields recursively.
     Modifies the object in-place.
 
     Args:
         obj (dict | list): The object to strip fields from.
         fields_to_remove (set): Field names to remove.
-        deep (bool): Whether to remove fields recurrent_objsively.
+        deep (bool): Whether to remove fields recursively.
     """
     if isinstance(obj, dict):
-        # First, remove the unwanted keys at current_objrent level
+        # First, remove the unwanted keys at current level
         for field in fields_to_remove:
             if field in obj:
                 del obj[field]
 
-        # If deep, recurrent_objse into values
+        # If deep, recurse into values
         if deep:
             for key in list(obj.keys()):
                 value = obj[key]
                 remove_fields_from_spec(value, fields_to_remove, deep=True)
 
     elif isinstance(obj, list):
-        # Recurrent_objse into each item if deep
+        # Recurse into each item if deep
         if deep:
             for item in obj:
                 remove_fields_from_spec(item, fields_to_remove, deep=True)
