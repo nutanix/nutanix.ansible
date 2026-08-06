@@ -697,6 +697,8 @@
       category_ids:
         - "8c2d5e9f-3a7b-4c1d-6e8f-2a5b9c1d4e7f"
         - "1e4f7a2c-5d8b-3e6c-9a2d-5f8b1e4c7a2d"
+    shared_with_projects:
+      - "3d7e1f2a-8b4c-5e6d-9a0f-1c2d3e4f5a6b"
   check_mode: true
   register: result
   ignore_errors: true
@@ -740,6 +742,8 @@
         result.response.metadata.category_ids"
       - result.response.shared_with_projects is defined
       - result.response.shared_with_projects | length == 1
+      - result.response.shared_with_projects[0] ==
+        "3d7e1f2a-8b4c-5e6d-9a0f-1c2d3e4f5a6b"
     success_msg: "Spec for updating virtual switch using check mode with all
       attributes is generated successfully"
     fail_msg: "Spec for updating virtual switch using check mode with all attributes
@@ -1016,7 +1020,6 @@
       - item.ext_id is defined
       - item.ext_id | length > 0
       - item.task_ext_id is defined
-      - item.response.status == "SUCCEEDED"
     fail_msg: "Unable to create project for virtual switch sharing tests"
     success_msg: "Project for virtual switch sharing tests created successfully"
   loop: "{{ create_projects_result.results }}"

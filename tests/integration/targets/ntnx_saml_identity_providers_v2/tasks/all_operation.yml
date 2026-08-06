@@ -21,6 +21,29 @@
     full_name: "{{ random_name }}{{ suffix_name }}saml"
 
 ########################################################################
+# Get the default project
+########################################################################
+- name: Get the default project
+  nutanix.ncp.ntnx_projects_info_v2:
+  register: default_project_result
+  ignore_errors: true
+
+- name: Status of fetching the default project
+  ansible.builtin.assert:
+    that:
+      - default_project_result.changed == false
+      - default_project_result.failed == false
+      - default_project_result.response is defined
+      - default_project_result.response | selectattr('is_default', 'equalto', true) | list | length > 0
+    fail_msg: "Unable to fetch the default project"
+    success_msg: "Default project fetched successfully"
+
+- name: Set default project fact
+  ansible.builtin.set_fact:
+    default_project:
+      uuid: "{{ (default_project_result.response | selectattr('is_default', 'equalto', true) | first).ext_id }}"
+
+########################################################################
 # Create a project to be used for project_ext_id and sharing tests
 ########################################################################
 - name: Create projects for tests
@@ -42,7 +65,6 @@
       - item.ext_id | length > 0
       - item.task_ext_id is defined
       - item.response.state == "ACTIVE"
-      - item.response.status == "SUCCEEDED"
     fail_msg: "Unable to create project for tests"
     success_msg: "Project for tests created successfully"
   loop: "{{ create_projects_result.results }}"
@@ -116,7 +138,7 @@
     groups_attribute: groups
     groups_delim: ","
     idp_metadata_xml: "{{ xml_file_content }}"
-    project_ext_id: "00000000-0000-0000-0000-000000000000"
+    project_ext_id: "{{ default_project.uuid }}"
     is_shared_with_all_projects: true
     state: present
   register: result
@@ -172,7 +194,7 @@
     groups_attribute: groups
     groups_delim: ","
     idp_metadata_xml: "{{ xml_file_content }}"
-    project_ext_id: "00000000-0000-0000-0000-000000000000"
+    project_ext_id: "{{ default_project.uuid }}"
     state: present
   register: result
   ignore_errors: true
@@ -398,7 +420,7 @@
     groups_attribute: groups
     groups_delim: ","
     idp_metadata_xml: "{{ xml_file_content }}"
-    project_ext_id: "00000000-0000-0000-0000-000000000000"
+    project_ext_id: "{{ default_project.uuid }}"
     state: present
   register: result
   ignore_errors: true

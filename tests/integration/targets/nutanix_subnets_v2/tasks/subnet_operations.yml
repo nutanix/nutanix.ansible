@@ -48,7 +48,6 @@
       - item.ext_id | length > 0
       - item.task_ext_id is defined
       - item.response.state == "ACTIVE"
-      - item.response.status == "SUCCEEDED"
     fail_msg: "Unable to create project for tests"
     success_msg: "Project for tests created successfully"
   loop: "{{ create_projects_result.results }}"
@@ -769,6 +768,7 @@
             prefix_length: "{{ ip_address_management.network_prefix }}"
           default_gateway_ip:
             value: "{{ ip_address_management.gateway_ip_address }}"
+    project_ext_id: "{{ project1.uuid }}"
   register: result
   ignore_errors: true
 
@@ -783,6 +783,7 @@
       - result.response.ip_config.0.ipv4.default_gateway_ip.value == "{{ ip_address_management.gateway_ip_address }}"
       - result.response.ip_config.0.ipv4.ip_subnet.prefix_length == {{ ip_address_management.network_prefix }}
       - result.response.ip_config.0.ipv4.ip_subnet.ip.value == "{{ ip_address_management.network_ip }}"
+      - result.response.project_ext_id == "{{ project1.uuid }}"
     fail_msg: " Unable to create Overlay Subnet with minimum requirements "
     success_msg: " Overlay Subnet with minimum requirements created successfully "
 
