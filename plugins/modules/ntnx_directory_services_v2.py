@@ -659,9 +659,10 @@ def update_directory_service(module, directory_services, result):
             msg="Failed generating directory services update spec", **result
         )
 
-    raise_unsupported_update_fields(
-        module, current_spec, update_spec, ["project_ext_id"]
-    )
+    if module.params.get("project_ext_id"):
+        raise_unsupported_update_fields(
+            module, current_spec, update_spec, ["project_ext_id"]
+        )
 
     if module.check_mode:
         response = strip_internal_attributes(update_spec.to_dict())

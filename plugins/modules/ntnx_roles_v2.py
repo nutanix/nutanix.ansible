@@ -289,9 +289,10 @@ def update_role(module, result):
         result["error"] = err
         module.fail_json(msg="Failed generating roles update spec", **result)
 
-    raise_unsupported_update_fields(
-        module, current_spec, update_spec, ["project_ext_id"]
-    )
+    if module.params.get("project_ext_id"):
+        raise_unsupported_update_fields(
+            module, current_spec, update_spec, ["project_ext_id"]
+        )
 
     # check for idempotency
     if check_roles_idempotency(current_spec.to_dict(), update_spec.to_dict()):

@@ -1620,9 +1620,10 @@ def update_vm(module, result):
     ):
         update_spec.apc_config.cpu_model = None
 
-    raise_unsupported_update_fields(
-        module, current_spec, update_spec, ["project_ext_id"]
-    )
+    if module.params.get("project_ext_id"):
+        raise_unsupported_update_fields(
+            module, current_spec, update_spec, ["project_ext_id"]
+        )
 
     vm_update_needed = not check_idempotency(current_spec, update_spec)
     owner_change_needed = module.params.get("wait") and _is_owner_change_needed(

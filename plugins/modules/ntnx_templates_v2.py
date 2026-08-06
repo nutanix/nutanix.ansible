@@ -2022,9 +2022,10 @@ def update_template(module, result):
     sg = SpecGenerator(module)
     update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
 
-    raise_unsupported_update_fields(
-        module, current_spec, update_spec, ["project_ext_id"]
-    )
+    if module.params.get("project_ext_id"):
+        raise_unsupported_update_fields(
+            module, current_spec, update_spec, ["project_ext_id"]
+        )
 
     if not update_spec.created_by.user_type:
         update_spec.created_by.user_type = "LOCAL"

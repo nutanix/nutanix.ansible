@@ -383,9 +383,10 @@ def update_authorization_policy(module, result):
             msg="Failed generating authorization policy update spec", **result
         )
 
-    raise_unsupported_update_fields(
-        module, current_spec, update_spec, ["project_ext_id"]
-    )
+    if module.params.get("project_ext_id"):
+        raise_unsupported_update_fields(
+            module, current_spec, update_spec, ["project_ext_id"]
+        )
 
     # handling identities and entities spec creation separately as their dicts are to be passed in $reserved
     identities = module.params.get("identities")

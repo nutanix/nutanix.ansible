@@ -434,9 +434,10 @@ def update_floating_ip(module, result):
         result["error"] = err
         module.fail_json(msg="Failed generating floating_ips update spec", **result)
 
-    raise_unsupported_update_fields(
-        module, current_spec, update_spec, ["project_ext_id"]
-    )
+    if module.params.get("project_ext_id"):
+        raise_unsupported_update_fields(
+            module, current_spec, update_spec, ["project_ext_id"]
+        )
 
     # handle update of association type
     if getattr(current_spec, "association", None):

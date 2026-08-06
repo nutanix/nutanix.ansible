@@ -415,7 +415,10 @@ def update_expiry_date_recovery_point(module, result):
         result["error"] = err
         module.fail_json(msg="Failed generating update recovery point Spec", **result)
 
-    raise_unsupported_update_fields(module, old_spec, update_spec, ["project_ext_id"])
+    if module.params.get("project_ext_id"):
+        raise_unsupported_update_fields(
+            module, old_spec, update_spec, ["project_ext_id"]
+        )
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())

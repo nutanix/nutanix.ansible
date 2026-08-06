@@ -1184,9 +1184,10 @@ def update_network_security_policy(module, result):
             msg="Failed generating network_security_policies update spec", **result
         )
 
-    raise_unsupported_update_fields(
-        module, current_spec, update_spec, ["project_ext_id"]
-    )
+    if module.params.get("project_ext_id"):
+        raise_unsupported_update_fields(
+            module, current_spec, update_spec, ["project_ext_id"]
+        )
 
     # due to conflict of spec.state with module state
     if module.params.get("policy_state"):

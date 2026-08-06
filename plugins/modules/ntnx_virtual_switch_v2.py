@@ -878,7 +878,10 @@ def update_virtual_switch(module, virtual_switches, result):
         result["error"] = err
         module.fail_json(msg="Failed generating update virtual switch spec", **result)
 
-    raise_unsupported_update_fields(module, old_spec, update_spec, ["project_ext_id"])
+    if module.params.get("project_ext_id"):
+        raise_unsupported_update_fields(
+            module, old_spec, update_spec, ["project_ext_id"]
+        )
 
     if module.check_mode:
         response = strip_internal_attributes(update_spec.to_dict())

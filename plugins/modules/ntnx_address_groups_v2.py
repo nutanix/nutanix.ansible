@@ -318,9 +318,10 @@ def update_address_group(module, result):
         result["error"] = err
         module.fail_json(msg="Failed generating address_groups update spec", **result)
 
-    raise_unsupported_update_fields(
-        module, current_spec, update_spec, ["project_ext_id"]
-    )
+    if module.params.get("project_ext_id"):
+        raise_unsupported_update_fields(
+            module, current_spec, update_spec, ["project_ext_id"]
+        )
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
