@@ -348,7 +348,7 @@ def get_module_spec():
 
 
 def create_snmp_trap(module, result, snmp_traps, snmp_config_api):
-    validate_required_params(module, ["protocol", "port", "address"])
+    validate_required_params(module, ["version", "address"])
     cluster_ext_id = module.params.get("cluster_ext_id")
     result["cluster_ext_id"] = cluster_ext_id
     sg = SpecGenerator(module)
@@ -358,6 +358,17 @@ def create_snmp_trap(module, result, snmp_traps, snmp_config_api):
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating create snmp trap spec", **result)
+
+    address = module.params.get("address") or {}
+    ipv4 = address.get("ipv4") or {}
+    ipv6 = address.get("ipv6") or {}
+    if not ipv4 and not ipv6:
+        module.fail_json(
+            msg="Both address.ipv4.value and address.ipv6.value are not found, at least one is required to create SNMP trap",
+            **result,
+        )
+    expected_ipv4_value = ipv4.get("value")
+    expected_ipv6_value = ipv6.get("value")
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
@@ -383,21 +394,6 @@ def create_snmp_trap(module, result, snmp_traps, snmp_config_api):
         resp = get_snmp_config(module, snmp_config_api, cluster_ext_id)
         config = strip_internal_attributes(resp.to_dict())
 
-        trap_version = module.params.get("version")
-        # We can have multiple traps for the same user, so we should identify the
-        # created trap by address. ipv4 is unique; if ipv4 isn't present, fall
-        # back to ipv6.
-        if trap_version == "V3":
-            expected_username = module.params.get("username")
-            if not expected_username:
-                module.fail_json(
-                    msg="username is required to create/identify SNMP V3 trap",
-                    **result,
-                )
-
-        address = module.params.get("address") or {}
-        ipv4 = address.get("ipv4") or {}
-        expected_ipv4_value = ipv4.get("value")
         if expected_ipv4_value:
             created_ext_id = filter_entities_by_attribute_get_ext_id(
                 config.get("traps"),
@@ -406,13 +402,6 @@ def create_snmp_trap(module, result, snmp_traps, snmp_config_api):
                 ext_id_key="ext_id",
             )
         else:
-            ipv6 = address.get("ipv6") or {}
-            expected_ipv6_value = ipv6.get("value")
-            if not expected_ipv6_value:
-                module.fail_json(
-                    msg="address.ipv4.value not found; address.ipv6.value is required to identify created SNMP trap",
-                    **result,
-                )
             created_ext_id = filter_entities_by_attribute_get_ext_id(
                 config.get("traps"),
                 "address.ipv6.value",
@@ -537,6 +526,7 @@ def run_module():
         required_if=[
             ("state", "present", ("address", "version")),
             ("state", "absent", ("ext_id",)),
+            ("version", "V3", ("username",)),
         ],
     )
     if SDK_IMP_ERROR:
@@ -549,6 +539,7 @@ def run_module():
     result = {
         "changed": False,
         "failed": False,
+        "ext_id": None,
         "response": None,
         "task_ext_id": None,
         "cluster_ext_id": None,

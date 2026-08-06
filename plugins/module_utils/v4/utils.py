@@ -62,12 +62,12 @@ def _get_nested_value(obj, dotted_path):
     """
     if obj is None or dotted_path is None:
         return None
-    current_obj = obj
+    current_val = obj
     for part in str(dotted_path).split("."):
-        if not isinstance(current_obj, dict) or part not in current_obj:
+        if not isinstance(current_val, dict) or part not in current_val:
             return None
-        current_obj = current_obj[part]
-    return current_obj
+        current_val = current_val[part]
+    return current_val
 
 
 def filter_entities_by_attribute_get_ext_id(
@@ -191,28 +191,28 @@ def remove_empty_ip_config(obj):
 def remove_fields_from_spec(obj, fields_to_remove, deep=False):
     """
     Removes specified fields from a given object (dict or list).
-    If deep=True, it removes the fields recurrent_objsively.
+    If deep=True, it removes the fields recurrent_valsively.
     Modifies the object in-place.
 
     Args:
         obj (dict | list): The object to strip fields from.
         fields_to_remove (set): Field names to remove.
-        deep (bool): Whether to remove fields recurrent_objsively.
+        deep (bool): Whether to remove fields recurrent_valsively.
     """
     if isinstance(obj, dict):
-        # First, remove the unwanted keys at current_objrent level
+        # First, remove the unwanted keys at current_valrent level
         for field in fields_to_remove:
             if field in obj:
                 del obj[field]
 
-        # If deep, recurrent_objse into values
+        # If deep, recurrent_valse into values
         if deep:
             for key in list(obj.keys()):
                 value = obj[key]
                 remove_fields_from_spec(value, fields_to_remove, deep=True)
 
     elif isinstance(obj, list):
-        # Recurrent_objse into each item if deep
+        # Recurrent_valse into each item if deep
         if deep:
             for item in obj:
                 remove_fields_from_spec(item, fields_to_remove, deep=True)

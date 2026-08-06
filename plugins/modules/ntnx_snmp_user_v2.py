@@ -410,6 +410,7 @@ def run_module():
     result = {
         "changed": False,
         "failed": False,
+        "ext_id": None,
         "response": None,
         "task_ext_id": None,
         "cluster_ext_id": None,

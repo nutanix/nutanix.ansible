@@ -134,14 +134,17 @@ task_ext_id:
   description: Task External ID
   returned: always
   type: str
+
 msg:
   description: This indicates the message if any message occurred
   returned: When there is an error
   type: str
+
 error:
   description: Error message if any
-  returned: always
+  returned: When there is an error
   type: str
+
 changed:
   description: This indicates whether the task resulted in any changes
   returned: always
@@ -292,7 +295,7 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
+        "failed": False,
         "response": None,
         "task_ext_id": None,
     }
