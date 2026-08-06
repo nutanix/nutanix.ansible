@@ -36,12 +36,13 @@
       - create_project_result.ext_id | length > 0
       - create_project_result.task_ext_id is defined
       - create_project_result.response.state == "ACTIVE"
+      - create_project_result.response.status == "SUCCEEDED"
     fail_msg: "Unable to create project for tests"
     success_msg: "Project for tests created successfully"
 
 - name: Set project fact for tests
   ansible.builtin.set_fact:
-    project_1:
+    project1:
       name: "{{ random_name }}-ansible-project"
       uuid: "{{ create_project_result.ext_id }}"
 
@@ -51,7 +52,7 @@
   nutanix.ncp.ntnx_resource_group_v2:
     state: present
     name: "{{ random_name }}-ansible-rg"
-    project_ext_id: "{{ project_1.uuid }}"
+    project_ext_id: "{{ project1.uuid }}"
     placement_targets:
       - cluster_ext_id: "{{ cluster.uuid }}"
         storage_containers:
@@ -67,7 +68,12 @@
       - create_rg_result.response is defined
       - create_rg_result.ext_id is defined
       - create_rg_result.ext_id | length > 0
-      - create_rg_result.response.project_ext_id == project_1.uuid
+      - create_rg_result.response.project_ext_id == project1.uuid
+      - create_rg_result.response.name == "{{ random_name }}-ansible-rg"
+      - create_rg_result.response.placement_targets | length == 1
+      - create_rg_result.response.placement_targets[0].cluster_ext_id == "{{ cluster.uuid }}"
+      - create_rg_result.response.placement_targets[0].storage_containers | length == 1
+      - create_rg_result.response.placement_targets[0].storage_containers[0].ext_id == "{{ storage_container.uuid }}"
     fail_msg: "Unable to create resource group for tests"
     success_msg: "Resource group for tests created successfully"
 
@@ -80,7 +86,7 @@
     key: "{{ random_name }}_af_key_{{ item }}"
     value: "{{ random_name }}_af_value_{{ item }}"
     description: "ansible anti-affinity category"
-    project_ext_id: "{{ project_1.uuid }}"
+    project_ext_id: "{{ project1.uuid }}"
   register: category_create_result
   ignore_errors: true
   loop: "{{ range(0, 4) | list }}"
@@ -95,7 +101,7 @@
       - item.failed == false
       - item.response is defined
       - item.response.ext_id is defined
-      - item.response.project_ext_id == "{{ project_1.uuid }}"
+      - item.response.project_ext_id == "{{ project1.uuid }}"
     fail_msg: "Categories creation failed"
     success_msg: "Categories created successfully"
   loop: "{{ category_create_result.results }}"
@@ -153,11 +159,11 @@
     name: "{{ policy_name }}_1"
     categories:
       - ext_id: "{{ todelete_categories[0] }}"
-    project_ext_id: "{{ project_1.uuid }}"
+    project_ext_id: "{{ project1.uuid }}"
   register: result
   ignore_errors: true
 
-- name: Verify created VM-VM anti-affinity policy without description
+- name: Verify created VM-VM anti-affinity policy minimal spec with project
   ansible.builtin.assert:
     that:
       - result.changed == true
@@ -165,9 +171,9 @@
       - result.response is defined
       - result.response.categories[0].ext_id == "{{ todelete_categories[0] }}"
       - result.response.name == "{{ policy_name }}_1"
-      - result.response.project_ext_id == "{{ project_1.uuid }}"
-    fail_msg: "Verify created VM-VM anti-affinity policy without description failed"
-    success_msg: "Verify created VM-VM anti-affinity policy without description passed"
+      - result.response.project_ext_id == "{{ project1.uuid }}"
+    fail_msg: "Verify created VM-VM anti-affinity policy minimal spec with project failed"
+    success_msg: "Verify created VM-VM anti-affinity policy minimal spec with project passed"
 
 - name: Add to delete list
   ansible.builtin.set_fact:
@@ -185,7 +191,7 @@
     categories:
       - ext_id: "{{ todelete_categories[1] }}"
       - ext_id: "{{ todelete_categories[2] }}"
-    project_ext_id: "{{ project_1.uuid }}"
+    project_ext_id: "{{ project1.uuid }}"
   register: result
   ignore_errors: true
 
@@ -200,7 +206,7 @@
       - result.response.categories | length == 2
       - result.response.categories[0].ext_id == "{{ todelete_categories[1] }}"
       - result.response.categories[1].ext_id == "{{ todelete_categories[2] }}"
-      - result.response.project_ext_id == "{{ project_1.uuid }}"
+      - result.response.project_ext_id == "{{ project1.uuid }}"
     fail_msg: "Verify created VM-VM anti-affinity policy with full spec failed"
     success_msg: "Verify created VM-VM anti-affinity policy with full spec passed"
 
@@ -315,6 +321,7 @@
   ansible.builtin.assert:
     that:
       - result.failed == true
+      - result.changed == false
       - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
     fail_msg: "Verify update of project_ext_id is not supported failed"
     success_msg: "Verify update of project_ext_id is not supported passed"
@@ -554,6 +561,35 @@
     success_msg: "Verify negative test for update with category already in use passed"
 
 ##################################################################################
+# List VM-VM anti-affinity policy compliance states
+##################################################################################
+
+- name: List VM-VM anti-affinity policy compliance states
+  nutanix.ncp.ntnx_vm_anti_affinity_policy_compliance_info_v2:
+    ext_id: "{{ todelete[1] }}"
+  register: compliance_result
+  ignore_errors: true
+
+- name: Verify list of VM-VM anti-affinity policy compliance states
+  ansible.builtin.assert:
+    that:
+      - compliance_result.changed == false
+      - compliance_result.failed == false
+      - compliance_result.response is defined
+      - compliance_result.response | length > 0
+      - compliance_result.total_available_results is defined
+      - compliance_result.total_available_results == (vms_todelete | length)
+      - compliance_result.total_available_results == (compliance_result.response | length)
+      - >-
+        (
+          compliance_result.response | map(attribute='ext_id') | list | sort
+        ) == (
+          vms_todelete | list | sort
+        )
+    fail_msg: "Verify list of VM-VM anti-affinity policy compliance states failed"
+    success_msg: "Verify list of VM-VM anti-affinity policy compliance states passed"
+
+##################################################################################
 # Negative - Delete non-existent policy
 ##################################################################################
 
@@ -643,6 +679,7 @@
       - delete_rg_result.changed == true
       - delete_rg_result.failed == false
       - delete_rg_result.ext_id == resource_group_ext_id
+      - delete_rg_result.response.status == "SUCCEEDED"
     fail_msg: "Unable to delete resource group created for tests"
     success_msg: "Resource group created for tests deleted successfully"
 
@@ -669,7 +706,7 @@
 - name: Delete project created for tests
   nutanix.ncp.ntnx_project_v2:
     state: absent
-    ext_id: "{{ project_1.uuid }}"
+    ext_id: "{{ project1.uuid }}"
   register: delete_project_result
   ignore_errors: true
 
@@ -678,7 +715,7 @@
     that:
       - delete_project_result.changed == true
       - delete_project_result.failed == false
-      - delete_project_result.ext_id == project_1.uuid
+      - delete_project_result.ext_id == project1.uuid
       - delete_project_result.task_ext_id is defined
       - delete_project_result.response.status == "SUCCEEDED"
     fail_msg: "Unable to delete project created for tests"
