@@ -1,15 +1,17 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create virtual switch
+# 1. Create virtual switch owned by a project and shared with projects
 # 2. Create virtual switch from an existing bridge
 # 3. Update virtual switch
-# 4. Get virtual switch using ext_id
-# 5. List all virtual switches
-# 6. List virtual switches with filter
-# 7. List virtual switches with limit
-# 8. Delete virtual switch
-# 9. Delete virtual switch from bridge
+# 4. Update virtual switch to share with specific projects
+# 5. Update virtual switch to unshare from specific projects
+# 6. Get virtual switch using ext_id
+# 7. List all virtual switches
+# 8. List virtual switches with filter
+# 9. List virtual switches with limit
+# 10. Delete virtual switch
+# 11. Delete virtual switch from bridge
 
 - name: Virtual Switches playbook
   hosts: localhost
@@ -32,12 +34,17 @@
         category_ids:
           - "66f4d0aa-4e77-5261-94c6-4dc19a857049"
           - "594bb16c-3498-5706-bd9d-301dea6a6bcb"
+        shared_with_projects:
+          - "12345678-1234-1234-1234-123456789012"
+          - "98798798-1234-1111-2222-6788222f17b8"
+        project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
 
-    - name: Create virtual switch
+    - name: Create virtual switch owned by a project and shared with projects
       nutanix.ncp.ntnx_virtual_switch_v2:
         state: present
         name: "{{ virtual_switch_name }}"
         description: "Virtual switch created by Ansible"
+        project_ext_id: "{{ project_ext_id }}"
         bond_mode: "NONE"
         mtu: 1500
         is_default: false
@@ -48,6 +55,7 @@
             vlan_identifier: 0
         igmp_spec:
           is_snooping_enabled: false
+        shared_with_projects: "{{ shared_with_projects }}"
         metadata:
           owner_reference_id: "{{ owner_reference_id }}"
           owner_user_name: "{{ owner_user_name }}"
@@ -101,6 +109,22 @@
           owner_user_name: "{{ owner_user_name }}"
           category_ids:
             - "{{ category_ids[0] }}"
+      register: result
+      ignore_errors: true
+
+    - name: Update virtual switch to share with specific projects
+      nutanix.ncp.ntnx_virtual_switch_v2:
+        state: present
+        ext_id: "{{ virtual_switch_ext_id }}"
+        shared_with_projects: "{{ shared_with_projects }}"
+      register: result
+      ignore_errors: true
+
+    - name: Update virtual switch to unshare from specific projects
+      nutanix.ncp.ntnx_virtual_switch_v2:
+        state: present
+        ext_id: "{{ virtual_switch_ext_id }}"
+        shared_with_projects: []
       register: result
       ignore_errors: true
 

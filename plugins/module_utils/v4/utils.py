@@ -119,7 +119,7 @@ def remove_empty_ip_config(obj):
         "$dataItemDiscriminator",
     ]
 
-    ip_config = obj.to_dict().get("ip_config", [])
+    ip_config = obj.to_dict().get("ip_config") or []
     empty_ipv4 = False
     empty_ipv6 = False
     for item in ip_config.copy():
@@ -280,6 +280,170 @@ def _apply_proxy_from_env(config, module=None):
     else:
         config.proxy_password = module.params.get("proxy_password") or os.environ.get(
             "PROXY_PASSWORD"
+        )
+
+
+def get_task_ext_id_from_response(resp):
+    """Return the task ext_id from an async share/unshare API response.
+
+    Only a genuine ``TaskReference`` payload is treated as awaitable. Responses
+    that completed synchronously (e.g. IAM's ``DirectoryServiceShareResponse``)
+    or that carry an empty list/map return ``None`` so the caller skips waiting.
+
+    Args:
+        resp: The SDK response object returned by a share/unshare call.
+
+    Returns:
+        str | None: The task external ID, or None when there is no task.
+    """
+    data = getattr(resp, "data", None)
+    if data is None:
+        return None
+    if type(data).__name__ != "TaskReference":
+        return None
+    return getattr(data, "ext_id", None)
+
+
+def reconcile_sharing(
+    module,
+    api_instance,
+    ext_id,
+    read_fn,
+    share_fn,
+    unshare_fn,
+    shared_with_projects=None,
+    share_all_fn=None,
+    unshare_all_fn=None,
+    is_shared_with_all=None,
+    resource_label="resource",
+):
+    """Drive a resource's project sharing to the desired state.
+
+    Reads the current sharing state once, then walks the difference against the
+    desired state and performs each share/unshare one at a time. Every
+    ``share_fn``/``unshare_fn`` call is expected to block until its change is
+    applied (task-based APIs wait on their task via ``wait_for_completion``;
+    the synchronous IAM endpoints return only once applied), so a single pass
+    reaches the desired state. If nothing differs, no call is made and the
+    resource is already in the desired state (idempotent no-op).
+
+    Args:
+        module: Ansible module object.
+        api_instance: SDK API instance, passed through to the callables.
+        ext_id (str): External ID of the resource.
+        read_fn (callable): ``read_fn(module, ext_id)`` returning the current
+            SDK spec of the resource.
+        share_fn/unshare_fn (callable): Per-project share/unshare functions
+            (signature ``fn(module, api_instance, ext_id, project_ext_id)``).
+        shared_with_projects (list | None): Desired list of project ext_ids.
+            ``None`` leaves per-project sharing untouched. Ignored when the
+            resource ends up shared with all projects, whether because
+            ``is_shared_with_all`` was set truthy in this call or the resource
+            was already shared with every project, since per-project sharing is
+            then redundant.
+        share_all_fn/unshare_all_fn (callable | None): Optional all-projects
+            share/unshare functions (signature ``fn(module, api_instance, ext_id)``).
+        is_shared_with_all (bool | None): Desired shared-with-all-projects state.
+            ``None`` leaves it untouched.
+        resource_label (str): Human-readable resource name used in the warning
+            emitted when ``shared_with_projects`` is ignored because the resource
+            is already shared with all projects.
+
+    Returns:
+        bool: True if any share/unshare was performed.
+    """
+    current = read_fn(module, ext_id)
+    changed = False
+
+    current_shared_all = bool(
+        getattr(current, "is_shared_with_all_projects", None)
+        or getattr(current, "shared_with_all_projects", None)
+    )
+
+    if is_shared_with_all is not None and share_all_fn and unshare_all_fn:
+        if is_shared_with_all and not current_shared_all:
+            share_all_fn(module, api_instance, ext_id)
+            changed = True
+            current_shared_all = True
+        elif not is_shared_with_all:
+            unshare_all_fn(module, api_instance, ext_id)
+            changed = True
+            current_shared_all = False
+
+    if shared_with_projects is not None and current_shared_all:
+        module.warn(
+            "shared_with_projects was ignored because the {0} is shared with all "
+            "projects, which already grants access to every project. To manage "
+            "per-project sharing, first set is_shared_with_all_projects to false, "
+            "then specify shared_with_projects.".format(resource_label)
+        )
+
+    if shared_with_projects is not None and not current_shared_all:
+        current_projects = set(getattr(current, "shared_with_projects", None) or [])
+        desired_projects = set(shared_with_projects)
+
+        for project_ext_id in desired_projects - current_projects:
+            share_fn(module, api_instance, ext_id, project_ext_id)
+            changed = True
+
+        for project_ext_id in current_projects - desired_projects:
+            unshare_fn(module, api_instance, ext_id, project_ext_id)
+            changed = True
+
+    return changed
+
+
+def raise_unsupported_update_fields(module, current_spec, update_spec, fields):
+    """
+    Fail the module if the user attempts to update fields that the API does
+    not allow to be changed.
+
+    Compares the values of each field in ``fields`` between ``current_spec``
+    and ``update_spec``.  If any value differs, the module is failed with a
+    message listing the offending fields.
+
+    Dot-notation is supported for nested fields.  For example,
+    ``"a.b"`` will traverse into key/attribute ``a`` and then compare ``b``.
+
+    Both specs may be SDK model objects (with attributes) or plain dicts;
+    the look-up strategy adapts automatically at each nesting level.
+
+    Args:
+        module: AnsibleModule instance.
+        current_spec: The existing resource spec fetched from the API.
+        update_spec: The spec generated from the user-provided parameters.
+        fields (list[str]): Field names (dot-notation for nested) for which
+            update is not supported.
+    """
+    if not fields:
+        return
+
+    _sentinel = object()
+
+    def _get(obj, name):
+        if isinstance(obj, dict):
+            return obj.get(name, _sentinel)
+        return getattr(obj, name, _sentinel)
+
+    def _resolve(obj, path):
+        for part in path.split("."):
+            if obj is _sentinel or obj is None:
+                return _sentinel
+            obj = _get(obj, part)
+        return obj
+
+    changed = []
+    for field in fields:
+        current_val = _resolve(current_spec, field)
+        update_val = _resolve(update_spec, field)
+        if current_val != update_val:
+            changed.append(field)
+
+    if changed:
+        module.fail_json(
+            msg="Update is not supported for the following field(s): {0}".format(
+                ", ".join(changed)
+            )
         )
 
 

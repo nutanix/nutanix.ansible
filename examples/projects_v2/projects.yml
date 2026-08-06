@@ -2,12 +2,13 @@
 # Summary:
 # This playbook will do:
 # 1. Create a project with all fields (name, project_id, description)
-# 2. Update the project description
-# 3. Fetch a project using external ID
-# 4. List all projects
-# 5. List projects with name filter
-# 6. List projects with limit
-# 7. Delete the project
+# 2. Create a project without setting project_id
+# 3. Update the project description
+# 4. Fetch a project using external ID
+# 5. List all projects
+# 6. List projects with name filter
+# 7. List projects with limit
+# 8. Delete the project
 
 - name: Projects playbook
   hosts: localhost
@@ -34,6 +35,13 @@
         name: "{{ project_name }}-full"
         project_id: "{{ project_id }}-full"
         description: "A comprehensive example project created using Ansible"
+      register: result
+      ignore_errors: true
+
+    - name: Create a project without setting project_id
+      nutanix.ncp.ntnx_project_v2:
+        state: present
+        name: "{{ project_name }}-without-id"
       register: result
       ignore_errors: true
 

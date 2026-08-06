@@ -124,8 +124,17 @@ options:
                     - The external ID of the category.
                 required: true
                 type: str
+    project_ext_id:
+        description:
+            - External ID (UUID) of the project associated with this VM.
+            - Update of this field is not supported.
+        required: false
+        type: str
     project:
-        description: Reference to a project.
+        description:
+            - Reference to a project.
+            - This field is deprecated and will be removed in a future release.
+            - Use project_ext_id instead.
         type: dict
         suboptions:
             ext_id:
@@ -1147,6 +1156,26 @@ options:
                 description:
                     - its not supported for serial ports using VM
                 type: str
+    ownership_info:
+        description:
+            - The ownership information for the VM.
+            - Uses the assign VM owner API to change the owner of the VM.
+            - This parameter requires C(wait) to be C(true) (default).
+              If C(wait) is set to C(false), this parameter will be ignored.
+        required: false
+        type: dict
+        suboptions:
+            owner:
+                description:
+                    - The owner reference for the VM.
+                required: true
+                type: dict
+                suboptions:
+                    ext_id:
+                        description:
+                            - A globally unique identifier of the VM owner.
+                        required: true
+                        type: str
     state:
         description:
             - The desired state of the VM.
@@ -1187,6 +1216,7 @@ EXAMPLES = r"""
     description: "ansible test"
     cluster:
       ext_id: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     num_sockets: 1
     num_cores_per_socket: 1
     num_threads_per_core: 1
@@ -1232,6 +1262,25 @@ EXAMPLES = r"""
     enabled_cpu_features: HARDWARE_VIRTUALIZATION
   register: result
   ignore_errors: true
+
+- name: Create VM and assign owner
+  nutanix.ncp.ntnx_vms_v2:
+    name: "test_name"
+    cluster:
+      ext_id: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
+    ownership_info:
+      owner:
+        ext_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+  register: result
+
+- name: Assign VM owner during update
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    ext_id: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
+    ownership_info:
+      owner:
+        ext_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+  register: result
 
 - name: Delete VM
   nutanix.ncp.ntnx_vms_v2:
@@ -1396,6 +1445,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 from ..module_utils.v4.vmm.api_client import get_etag, get_vm_api_instance  # noqa: E402
@@ -1418,22 +1468,43 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def get_module_spec():
     module_args = vm_specs.get_vm_spec()
 
+    owner_reference_spec = dict(
+        ext_id=dict(type="str", required=True),
+    )
+    ownership_info_spec = dict(
+        owner=dict(type="dict", options=owner_reference_spec, required=True),
+    )
+    module_args["ownership_info"] = dict(
+        type="dict", options=ownership_info_spec, required=False
+    )
+
     return module_args
 
 
 def create_vm(module, result):
     vms = get_vm_api_instance(module)
 
+    # Remove ownership_info from params before spec generation since it's handled
+    # via a separate action API after VM creation.
+    ownership_info_params = module.params.pop("ownership_info", None)
+
     sg = SpecGenerator(module)
     default_spec = vmm_sdk.AhvConfigVm()
     spec, err = sg.generate_spec(obj=default_spec)
+
+    # Restore ownership_info in params for later use
+    if ownership_info_params is not None:
+        module.params["ownership_info"] = ownership_info_params
 
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating create vms spec", **result)
 
     if module.check_mode:
-        result["response"] = strip_internal_attributes(spec.to_dict())
+        response = strip_internal_attributes(spec.to_dict())
+        if ownership_info_params:
+            response["ownership_info"] = ownership_info_params
+        result["response"] = response
         return
 
     resp = None
@@ -1456,9 +1527,12 @@ def create_vm(module, result):
             task_status, rel=TASK_CONSTANTS.RelEntityType.VM
         )
         if ext_id:
-            resp = get_vm(module, vms, ext_id)
             result["ext_id"] = ext_id
-            result["response"] = strip_internal_attributes(resp.to_dict())
+            if ownership_info_params:
+                _assign_vm_owner(module, vms, ext_id, result)
+            else:
+                resp = get_vm(module, vms, ext_id)
+                result["response"] = strip_internal_attributes(resp.to_dict())
 
     result["changed"] = True
 
@@ -1469,6 +1543,49 @@ def check_idempotency(current_spec, update_spec):
     return True
 
 
+def _is_owner_change_needed(current_spec, module):
+    """Check if the VM owner needs to be changed."""
+    ownership_info_params = module.params.get("ownership_info")
+    if not ownership_info_params:
+        return False
+
+    requested_owner_ext_id = ownership_info_params["owner"]["ext_id"]
+    current_ownership = getattr(
+        getattr(current_spec, "ownership_info", None), "owner", None
+    )
+    current_ext_id = getattr(current_ownership, "ext_id", None)
+    return current_ext_id != requested_owner_ext_id
+
+
+def _assign_vm_owner(module, vms, ext_id, result):
+    """Assign a new owner to the VM using the assign_vm_owner action API."""
+    ownership_info_params = module.params.get("ownership_info")
+    owner_ext_id = ownership_info_params["owner"]["ext_id"]
+
+    owner_ref = vmm_sdk.AhvConfigOwnerReference(ext_id=owner_ext_id)
+    body = vmm_sdk.AhvConfigOwnershipInfo(owner=owner_ref)
+
+    resp = None
+    try:
+        resp = vms.assign_vm_owner(extId=ext_id, body=body)
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while assigning VM owner",
+        )
+
+    task_ext_id = resp.data.ext_id
+    result["task_ext_id"] = task_ext_id
+    result["response"] = strip_internal_attributes(resp.data.to_dict())
+    if task_ext_id and module.params.get("wait"):
+        wait_for_completion(module, task_ext_id)
+        resp = get_vm(module, vms, ext_id)
+        result["response"] = strip_internal_attributes(resp.to_dict())
+
+    result["changed"] = True
+
+
 def update_vm(module, result):
     vms = get_vm_api_instance(module)
     ext_id = module.params.get("ext_id")
@@ -1476,8 +1593,17 @@ def update_vm(module, result):
 
     current_spec = get_vm(module, vms, ext_id=ext_id)
 
+    # Remove ownership_info from params before spec generation since it's handled
+    # via a separate action API and should not be part of the VM update body.
+    ownership_info_params = module.params.pop("ownership_info", None)
+
     sg = SpecGenerator(module)
     update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
+
+    # Restore ownership_info in params for later use
+    if ownership_info_params is not None:
+        module.params["ownership_info"] = ownership_info_params
+
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating vm update spec", **result)
@@ -1494,34 +1620,49 @@ def update_vm(module, result):
     ):
         update_spec.apc_config.cpu_model = None
 
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
+
+    vm_update_needed = not check_idempotency(current_spec, update_spec)
+    owner_change_needed = module.params.get("wait") and _is_owner_change_needed(
+        current_spec, module
+    )
+
     if module.check_mode:
-        result["response"] = strip_internal_attributes(update_spec.to_dict())
+        response = strip_internal_attributes(update_spec.to_dict())
+        if owner_change_needed:
+            response["ownership_info"] = ownership_info_params
+        result["response"] = response
         return
 
-    # check for idempotency
-    if check_idempotency(current_spec, update_spec):
+    if not vm_update_needed and not owner_change_needed:
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
 
-    resp = None
-    try:
-        resp = vms.update_vm_by_id(extId=ext_id, body=update_spec)
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while updating vm",
-        )
+    if vm_update_needed:
+        resp = None
+        try:
+            resp = vms.update_vm_by_id(extId=ext_id, body=update_spec)
+        except Exception as e:
+            raise_api_exception(
+                module=module,
+                exception=e,
+                msg="Api Exception raised while updating vm",
+            )
 
-    task_ext_id = resp.data.ext_id
-    result["task_ext_id"] = task_ext_id
-    result["response"] = strip_internal_attributes(resp.data.to_dict())
-    if task_ext_id and module.params.get("wait"):
-        wait_for_completion(module, task_ext_id)
-        resp = get_vm(module, vms, ext_id)
-        result["response"] = strip_internal_attributes(resp.to_dict())
+        task_ext_id = resp.data.ext_id
+        result["task_ext_id"] = task_ext_id
+        result["response"] = strip_internal_attributes(resp.data.to_dict())
+        if task_ext_id and module.params.get("wait"):
+            wait_for_completion(module, task_ext_id)
+            resp = get_vm(module, vms, ext_id)
+            result["response"] = strip_internal_attributes(resp.to_dict())
 
-    result["changed"] = True
+        result["changed"] = True
+
+    if owner_change_needed:
+        _assign_vm_owner(module, vms, ext_id, result)
 
 
 def delete_vm(module, result):

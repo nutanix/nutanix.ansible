@@ -89,6 +89,36 @@
       - "{{random_name}}{{suffix_name}}value4"
 
 ########################################################################################
+# Create a project to be used for project_ext_id tests
+
+- name: Create project for tests
+  nutanix.ncp.ntnx_project_v2:
+    state: present
+    name: "{{ random_name }}-ansible-project"
+    project_id: "{{ random_name }}-ansible-project-id"
+  register: create_project_result
+  ignore_errors: true
+
+- name: Status of project creation for tests
+  ansible.builtin.assert:
+    that:
+      - create_project_result.changed == true
+      - create_project_result.failed == false
+      - create_project_result.response is defined
+      - create_project_result.ext_id is defined
+      - create_project_result.ext_id | length > 0
+      - create_project_result.task_ext_id is defined
+      - create_project_result.response.state == "ACTIVE"
+    fail_msg: "Unable to create project for tests"
+    success_msg: "Project for tests created successfully"
+
+- name: Set project fact for tests
+  ansible.builtin.set_fact:
+    project1:
+      name: "{{ random_name }}-ansible-project"
+      uuid: "{{ create_project_result.ext_id }}"
+
+########################################################################################
 # Create cluster for promoting VG
 
 - name: List all clusters to get prism central external ID
@@ -352,6 +382,7 @@
   nutanix.ncp.ntnx_protection_policies_v2:
     name: "ansible-create-protection-policy-name"
     description: "ansible-create-protection-policy-description"
+    project_ext_id: "83083083-0000-0000-0000-000000000000"
     replication_locations:
       - label: "ansible-label-{{label1}}"
         domain_manager_ext_id: "{{domain_manager_ext_id}}"
@@ -451,6 +482,7 @@
       - result.response.replication_locations[0] != result.response.replication_locations[1]
       - result.response.replication_configurations[0] != result.response.replication_configurations[1]
       - result.response.category_ids[0] == "00000000-0000-0000-0000-000000000000"
+      - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
     success_msg: "Protection policy spec generated successfully"
     fail_msg: "Protection policy spec generation failed"
 
@@ -460,6 +492,7 @@
   nutanix.ncp.ntnx_protection_policies_v2:
     name: "ansible-name-linear-{{random_name}}"
     description: "ansible-description-linear-{{random_name}}"
+    project_ext_id: "{{ project1.uuid }}"
     replication_locations:
       - label: "ansible-label-{{label1}}"
         domain_manager_ext_id: "{{domain_manager_ext_id}}"
@@ -557,6 +590,7 @@
       - result.response.replication_locations[0] != result.response.replication_locations[1]
       - result.response.replication_configurations[0] != result.response.replication_configurations[1]
       - result.response.category_ids[0] == "{{category_ext_id_1}}"
+      - result.response.project_ext_id == project1.uuid
     success_msg: "Protection policy created successfully"
     fail_msg: "Protection policy creation failed"
 
@@ -1973,6 +2007,25 @@
 
 ########################################################################################
 
+- name: Verify update of project_ext_id is not supported
+  nutanix.ncp.ntnx_protection_policies_v2:
+    state: present
+    ext_id: "{{ todelete[0] }}"
+    project_ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Verify update of project_ext_id is blocked status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
+    fail_msg: "Update of project_ext_id should have been blocked"
+    success_msg: "Update of project_ext_id is correctly blocked"
+
+########################################################################################
+
 - name: Delete protection policy with check mode enabled
   nutanix.ncp.ntnx_protection_policies_v2:
     ext_id: "{{ todelete[0] }}"
@@ -2055,3 +2108,24 @@
       - result.msg == "All items completed"
     fail_msg: "Unable to delete category key & value"
     success_msg: "Category key & value deleted successfully"
+
+########################################################################################
+# Delete the project created for tests
+
+- name: Delete project created for tests
+  nutanix.ncp.ntnx_project_v2:
+    state: absent
+    ext_id: "{{ project1.uuid }}"
+  register: delete_project_result
+  ignore_errors: true
+
+- name: Status of project deletion for tests
+  ansible.builtin.assert:
+    that:
+      - delete_project_result.changed == true
+      - delete_project_result.failed == false
+      - delete_project_result.ext_id == project1.uuid
+      - delete_project_result.task_ext_id is defined
+      - delete_project_result.response.status == "SUCCEEDED"
+    fail_msg: "Unable to delete project created for tests"
+    success_msg: "Project created for tests deleted successfully"

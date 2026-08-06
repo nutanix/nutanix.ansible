@@ -51,7 +51,6 @@
   nutanix.ncp.ntnx_project_v2:
     state: present
     name: "{{ project_name }}1"
-    project_id: "{{ project_name }}-id-1"
   register: result
   ignore_errors: true
 
@@ -63,8 +62,8 @@
       - result.ext_id | length > 0
       - result.task_ext_id is defined
       - result.changed == true
-      - result.response.name == project_name ~ "1"
-      - result.response.id == project_name ~ "-id-1"
+      - result.response.name == "{{ project_name }}1"
+      - result.response.id == "{{ project_name }}1"
       - result.response.state == "ACTIVE"
     fail_msg: "Create project with minimum fields failed"
     success_msg: "Create project with minimum fields passed"
