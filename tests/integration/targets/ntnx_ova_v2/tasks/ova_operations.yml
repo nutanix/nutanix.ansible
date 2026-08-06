@@ -20,6 +20,72 @@
     vm_name: "{{ random_name }}{{ suffix_name }}vm"
     ova_name: "{{ random_name }}{{ suffix_name }}ova"
 
+###################################################################################################
+# Create a project to be used for project_ext_id tests
+###################################################################################################
+- name: Create project for tests
+  nutanix.ncp.ntnx_project_v2:
+    state: present
+    name: "{{ random_name }}-ansible-project"
+    project_id: "{{ random_name }}-ansible-project-id"
+  register: create_project_result
+  ignore_errors: true
+
+- name: Status of project creation for tests
+  ansible.builtin.assert:
+    that:
+      - create_project_result.changed == true
+      - create_project_result.failed == false
+      - create_project_result.response is defined
+      - create_project_result.ext_id is defined
+      - create_project_result.ext_id | length > 0
+      - create_project_result.task_ext_id is defined
+      - create_project_result.response.state == "ACTIVE"
+    fail_msg: "Unable to create project for tests"
+    success_msg: "Project for tests created successfully"
+
+- name: Set project fact for tests
+  ansible.builtin.set_fact:
+    project1:
+      name: "{{ random_name }}-ansible-project"
+      uuid: "{{ create_project_result.ext_id }}"
+
+# A VM (and OVA export from it) requires the owning project to have a Resource
+# Group, which the v4 project API does not create on its own, so we add one with
+# ntnx_resource_group_v2.
+- name: Create resource group for the test project
+  nutanix.ncp.ntnx_resource_group_v2:
+    state: present
+    name: "{{ random_name }}-ansible-rg"
+    project_ext_id: "{{ project1.uuid }}"
+    placement_targets:
+      - cluster_ext_id: "{{ cluster.uuid }}"
+        storage_containers:
+          - ext_id: "{{ storage_container.uuid }}"
+  register: create_rg_result
+  ignore_errors: true
+
+- name: Status of resource group creation for tests
+  ansible.builtin.assert:
+    that:
+      - create_rg_result.changed == true
+      - create_rg_result.failed == false
+      - create_rg_result.response is defined
+      - create_rg_result.ext_id is defined
+      - create_rg_result.ext_id | length > 0
+      - create_rg_result.response.project_ext_id == project1.uuid
+      - create_rg_result.response.name == "{{ random_name }}-ansible-rg"
+      - create_rg_result.response.placement_targets | length == 1
+      - create_rg_result.response.placement_targets[0].cluster_ext_id == "{{ cluster.uuid }}"
+      - create_rg_result.response.placement_targets[0].storage_containers | length == 1
+      - create_rg_result.response.placement_targets[0].storage_containers[0].ext_id == "{{ storage_container.uuid }}"
+    fail_msg: "Unable to create resource group for tests"
+    success_msg: "Resource group for tests created successfully"
+
+- name: Set resource group fact for tests
+  ansible.builtin.set_fact:
+    resource_group_ext_id: "{{ create_rg_result.ext_id }}"
+
 #############################################################################################################################################
 
 - name: Create VM with some specific requirements
@@ -54,6 +120,7 @@
 - name: Create an Ova from a VM check mode
   nutanix.ncp.ntnx_ova_v2:
     name: "ova_name"
+    project_ext_id: "83083083-0000-0000-0000-000000000000"
     checksum:
       ova_sha1_checksum:
         hex_digest: "1234567890abcdef1234567890abcdef12345678"
@@ -81,6 +148,7 @@
       - result.response.source.disk_file_format == "QCOW2"
       - result.response.cluster_location_ext_ids == ["b7f9c1a2-4d3e-4c2a-9e2f-1a2b3c4d5e6f", "0a1b2c3d-4e5f-6789-abcd-ef0123456789"]
       - result.response.disk_format == "QCOW2"
+      - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
     fail_msg: " Unable to create Ova from VM in check mode "
     success_msg: " Ova created successfully from VM in check mode "
 
@@ -289,6 +357,7 @@
 - name: Create Ova from a valid url
   nutanix.ncp.ntnx_ova_v2:
     name: "{{ ova_name }}_url"
+    project_ext_id: "{{ project1.uuid }}"
     source:
       ova_url_source:
         url: "{{ ova_url }}"
@@ -309,6 +378,7 @@
       - result.task_ext_id is defined
       - result.response.name == "{{ ova_name }}_url"
       - result.response.cluster_location_ext_ids == ["{{ cluster.uuid }}"]
+      - result.response.project_ext_id == project1.uuid
     fail_msg: " Unable to create Ova from url "
     success_msg: " Ova created successfully from url "
 
@@ -658,6 +728,26 @@
 
 ########################################################################################################################
 
+- name: Verify update of project_ext_id is not supported
+  nutanix.ncp.ntnx_ova_v2:
+    state: present
+    ext_id: "{{ todelete[0] }}"
+    name: "{{ ova_name }}_updated"
+    project_ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Verify update of project_ext_id is blocked status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
+    fail_msg: "Update of project_ext_id should have been blocked"
+    success_msg: "Update of project_ext_id is correctly blocked"
+
+########################################################################################################################
+
 - name: Delete ova check mode
   nutanix.ncp.ntnx_ova_v2:
     ext_id: "{{ todelete[0] }}"
@@ -750,3 +840,42 @@
   ansible.builtin.set_fact:
     todelete: []
     todelete_vm: []
+
+###################################################################################################
+# Delete the resource group and project created for tests
+###################################################################################################
+- name: Delete resource group created for tests
+  nutanix.ncp.ntnx_resource_group_v2:
+    state: absent
+    ext_id: "{{ resource_group_ext_id }}"
+  register: delete_rg_result
+  ignore_errors: true
+
+- name: Status of resource group deletion for tests
+  ansible.builtin.assert:
+    that:
+      - delete_rg_result.changed == true
+      - delete_rg_result.failed == false
+      - delete_rg_result.ext_id == resource_group_ext_id
+      - delete_rg_result.task_ext_id is defined
+      - delete_rg_result.response.status == "SUCCEEDED"
+    fail_msg: "Unable to delete resource group created for tests"
+    success_msg: "Resource group created for tests deleted successfully"
+
+- name: Delete project created for tests
+  nutanix.ncp.ntnx_project_v2:
+    state: absent
+    ext_id: "{{ project1.uuid }}"
+  register: delete_project_result
+  ignore_errors: true
+
+- name: Status of project deletion for tests
+  ansible.builtin.assert:
+    that:
+      - delete_project_result.changed == true
+      - delete_project_result.failed == false
+      - delete_project_result.ext_id == project1.uuid
+      - delete_project_result.task_ext_id is defined
+      - delete_project_result.response.status == "SUCCEEDED"
+    fail_msg: "Unable to delete project created for tests"
+    success_msg: "Project created for tests deleted successfully"

@@ -58,6 +58,12 @@ options:
             - Required for C(state)=absent for delete.
         type: str
         required: false
+    project_ext_id:
+        description:
+            - External ID (UUID) of the project that owns this volume group.
+            - Update of this field is not supported.
+        type: str
+        required: false
     name:
         description:
             - Name of VG
@@ -187,6 +193,7 @@ EXAMPLES = r"""
     state: "present"
     name: "{{vg1_name}}"
     description: "Volume group 2"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     should_load_balance_vm_attachments: true
     sharing_status: "SHARED"
     target_prefix: "vg1"
@@ -319,6 +326,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 from ..module_utils.v4.volumes.api_client import (  # noqa: E402
@@ -406,6 +414,10 @@ def update_vg(module, result):
 
     sg = SpecGenerator(module)
     update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
+
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
 
     default_spec = volumes_sdk.VolumeGroup()
     spec, err = sg.generate_spec(obj=default_spec)

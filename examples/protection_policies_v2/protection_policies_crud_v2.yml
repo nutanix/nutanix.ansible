@@ -39,6 +39,7 @@
         suffix_name: "ansible-category"
         todelete_categories: []
         todelete: []
+        project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
         cluster:
           uuid: "00062db4-a450-e685-0fda-cdf9ca935bfd"
         cluster_availability_zone:
@@ -80,55 +81,6 @@
         category_ext_id_1: "{{ todelete_categories[0] }}"
         category_ext_id_2: "{{ todelete_categories[1] }}"
         category_ext_id_3: "{{ todelete_categories[2] }}"
-
-    ########################################################################################
-
-    - name: Generate spec for creating protection policy using check mode
-      nutanix.ncp.ntnx_protection_policies_v2:
-        name: "ansible-create-protection-policy-name"
-        description: "ansible-create-protection-policy-description"
-        replication_locations:
-          - label: "ansible-label-{{ label1 }}"
-            domain_manager_ext_id: "{{ domain_manager_ext_id }}"
-            is_primary: true
-            replication_sub_location:
-              nutanix_cluster:
-                cluster_ext_ids:
-                  - "{{ cluster.uuid }}"
-          - label: "ansible-label-{{ label2 }}"
-            domain_manager_ext_id: "{{ availability_zone_pc_uuid }}"
-            is_primary: false
-            replication_sub_location:
-              nutanix_cluster:
-                cluster_ext_ids:
-                  - "{{ cluster_availability_zone.uuid }}"
-        replication_configurations:
-          - source_location_label: "ansible-label-{{ label1 }}"
-            remote_location_label: "ansible-label-{{ label2 }}"
-            schedule:
-              recovery_point_type: "CRASH_CONSISTENT"
-              recovery_point_objective_time_seconds: 3600
-              retention:
-                linear_retention:
-                  local: 1
-                  remote: 1
-              start_time: "13h:11m"
-              sync_replication_auto_suspend_timeout_seconds: 300
-          - source_location_label: "ansible-label-{{ label2 }}"
-            remote_location_label: "ansible-label-{{ label1 }}"
-            schedule:
-              recovery_point_type: "CRASH_CONSISTENT"
-              recovery_point_objective_time_seconds: 3600
-              retention:
-                linear_retention:
-                  local: 1
-                  remote: 1
-              start_time: "13h:11m"
-              sync_replication_auto_suspend_timeout_seconds: 300
-        category_ids:
-          - "00000000-0000-0000-0000-000000000000"
-      register: result
-      check_mode: true
 
     ########################################################################################
 
@@ -236,6 +188,7 @@
               sync_replication_auto_suspend_timeout_seconds: 300
         category_ids:
           - "{{ category_ext_id_2 }}"
+        project_ext_id: "{{ project_ext_id }}"
       register: result
 
     - name: Add auto retention protection policy external ID to todelete list
@@ -287,56 +240,6 @@
     - name: Add synchronous protection policy external ID to todelete list
       ansible.builtin.set_fact:
         todelete: "{{ todelete + [result.response.ext_id] }}"
-
-    ########################################################################################
-
-    - name: Generate spec for updating linear retention protection policy using check mode
-      nutanix.ncp.ntnx_protection_policies_v2:
-        ext_id: "{{ todelete[0] }}"
-        name: "ansible-update-protection-policy-name"
-        description: "ansible-update-protection-policy-description"
-        replication_locations:
-          - label: "ansible-label-{{ label1 }}_updated"
-            domain_manager_ext_id: "{{ domain_manager_ext_id }}"
-            is_primary: true
-            replication_sub_location:
-              nutanix_cluster:
-                cluster_ext_ids:
-                  - "{{ cluster.uuid }}"
-          - label: "ansible-label-{{ label2 }}_updated"
-            domain_manager_ext_id: "{{ availability_zone_pc_uuid }}"
-            is_primary: false
-            replication_sub_location:
-              nutanix_cluster:
-                cluster_ext_ids:
-                  - "{{ cluster_availability_zone.uuid }}"
-        replication_configurations:
-          - source_location_label: "ansible-label-{{ label1 }}_updated"
-            remote_location_label: "ansible-label-{{ label2 }}_updated"
-            schedule:
-              recovery_point_type: "CRASH_CONSISTENT"
-              recovery_point_objective_time_seconds: 7200
-              retention:
-                linear_retention:
-                  local: 2
-                  remote: 2
-              start_time: "14h:26m"
-              sync_replication_auto_suspend_timeout_seconds: 90
-          - source_location_label: "ansible-label-{{ label2 }}_updated"
-            remote_location_label: "ansible-label-{{ label1 }}_updated"
-            schedule:
-              recovery_point_type: "CRASH_CONSISTENT"
-              recovery_point_objective_time_seconds: 7200
-              retention:
-                linear_retention:
-                  local: 2
-                  remote: 2
-              start_time: "14h:26m"
-              sync_replication_auto_suspend_timeout_seconds: 90
-        category_ids:
-          - "{{ category_ext_id_1 }}"
-      register: result
-      check_mode: true
 
     ########################################################################################
 
