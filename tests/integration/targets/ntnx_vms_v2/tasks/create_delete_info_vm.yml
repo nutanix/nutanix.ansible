@@ -432,7 +432,7 @@
       - result.response.is_agent_vm == false
       - result.response.apc_config.is_apc_enabled == false
       - result.response.vtpm_config.is_vtpm_enabled == false
-      - result.response.project1.ext_id == "{{ project1.uuid }}"
+      - result.response.project_ext_id == "{{ project1.uuid }}"
     fail_msg: " Unable to create VM with full requirements "
     success_msg: " VM with full requirements created successfully "
 
@@ -797,7 +797,7 @@
 
 - name: Read content from file
   ansible.builtin.set_fact:
-    xml_file_content: "{{ lookup('file', unattend_xml_dir.path + '/unattendxml.txt') }}"
+    xml_file_content: "{{ lookup('file', unattendxml.dest + '/unattendxml.txt') }}"
 
 - name: Create vm with windows unattend xml file
   nutanix.ncp.ntnx_vms_v2:

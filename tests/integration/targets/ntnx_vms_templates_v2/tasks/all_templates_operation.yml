@@ -719,7 +719,7 @@
       - proj_vm_result.ext_id is defined
       - proj_vm_result.response.name == "{{ vm2_name }}"
       - proj_vm_result.response.cluster.ext_id == "{{ cluster.uuid }}"
-      - proj_vm_result.response.project1.ext_id == project1.uuid
+      - proj_vm_result.response.project_ext_id == project1.uuid
     fail_msg: "Unable to create VM in the test project"
     success_msg: "VM created in the test project successfully"
 

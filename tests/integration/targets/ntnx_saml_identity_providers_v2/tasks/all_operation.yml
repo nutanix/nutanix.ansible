@@ -128,7 +128,7 @@
 
 - name: Read content from file
   ansible.builtin.set_fact:
-    xml_file_content: "{{ lookup('file', saml_xml_dir.path + '/content.txt') }}"
+    xml_file_content: "{{ lookup('file', xml_content.dest + '/content.txt') }}"
 
 - name: Create saml
   nutanix.ncp.ntnx_saml_identity_providers_v2:
@@ -653,6 +653,25 @@
     success_msg: "SAML unshare from all specific projects completed"
 ########################################################################
 
+- name: Delete SAML identity provider with check mode enabled
+  nutanix.ncp.ntnx_saml_identity_providers_v2:
+    state: absent
+    ext_id: "{{ shared_saml_ext_id }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete SAML identity provider with check mode status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ shared_saml_ext_id }}"
+      - result.msg == "Identity provider with ext_id:{{ shared_saml_ext_id }} will be deleted."
+    fail_msg: " Delete shared SAML identity provider with check mode enabled failed "
+    success_msg: " Delete shared SAML identity provider with check mode enabled successfully "
+
 - name: Delete shared SAML identity provider
   nutanix.ncp.ntnx_saml_identity_providers_v2:
     state: absent
@@ -666,8 +685,7 @@
       - result.changed == true
       - result.failed == false
       - result.ext_id == "{{ shared_saml_ext_id }}"
-      - result.task_ext_id is defined
-      - result.response.status == "SUCCEEDED"
+      - 'result.msg == "Identity Provider with ext_id: {{ shared_saml_ext_id }} deleted successfully"'
     fail_msg: "Unable to delete shared SAML identity provider"
     success_msg: "Shared SAML identity provider deleted successfully"
 

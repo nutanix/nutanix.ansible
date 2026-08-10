@@ -107,7 +107,7 @@
       - item.ext_id is defined
       - item.response.project_ext_id == project1.uuid
       - item.response.key == "AnsibleSecurityRuleTestProj"
-      - item.response.value == "AnsibleSecurityRuleTestProj{{ random_name }}{{ item }}"
+      - item.response.value == "AnsibleSecurityRuleTestProj{{ random_name }}{{ item.item }}"
       - item.response.description == "ansible test"
     fail_msg: Failed to create project-scoped category
     success_msg: Successfully created project-scoped category
