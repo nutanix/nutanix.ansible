@@ -436,7 +436,7 @@ def raise_unsupported_update_fields(module, current_spec, update_spec, fields):
     for field in fields:
         current_val = _resolve(current_spec, field)
         update_val = _resolve(update_spec, field)
-        if current_val != update_val:
+        if current_val != update_val and update_val is not None:
             changed.append(field)
 
     if changed:
