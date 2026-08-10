@@ -997,10 +997,6 @@
   loop: "{{ todelete_categories }}"
   ignore_errors: true
 
-- name: Print result
-  ansible.builtin.debug:
-    var: result
-
 - name: Categories deletion status
   ansible.builtin.assert:
     that:

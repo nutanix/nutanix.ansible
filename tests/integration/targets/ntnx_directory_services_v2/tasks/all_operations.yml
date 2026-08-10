@@ -650,9 +650,6 @@
   register: result
   ignore_errors: true
 
-- debug:
-    var: result
-
 - name: Status of shared_with_projects being ignored when already shared with all projects
   ansible.builtin.assert:
     that:

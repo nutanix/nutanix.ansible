@@ -1179,10 +1179,6 @@
   register: result
   ignore_errors: true
 
-- name: Print cluster deletion result
-  ansible.builtin.debug:
-    var: result
-
 - name: Verify cluster deletion
   ansible.builtin.assert:
     that:
