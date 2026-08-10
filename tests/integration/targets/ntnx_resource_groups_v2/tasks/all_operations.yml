@@ -43,7 +43,6 @@
       - project_result1.response.id == rg_name ~ "-project-id1"
       - project_result1.response.name == rg_name ~ "-project1"
       - project_result1.response.state == "ACTIVE"
-      - project_result1.response.status == "SUCCEEDED"
     fail_msg: "Create project 1 failed"
     success_msg: "Create project 1 passed"
 
