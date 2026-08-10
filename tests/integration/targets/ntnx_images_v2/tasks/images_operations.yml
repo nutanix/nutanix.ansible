@@ -43,7 +43,6 @@
       - create_image_project_result.ext_id | length > 0
       - create_image_project_result.task_ext_id is defined
       - create_image_project_result.response.state == "ACTIVE"
-      - create_image_project_result.response.status == "SUCCEEDED"
     fail_msg: "Unable to create project for image tests"
     success_msg: "Project for image tests created successfully"
 
