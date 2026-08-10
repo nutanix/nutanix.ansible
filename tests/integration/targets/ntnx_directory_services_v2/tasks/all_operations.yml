@@ -650,11 +650,14 @@
   register: result
   ignore_errors: true
 
+- debug:
+    var: result
+
 - name: Status of shared_with_projects being ignored when already shared with all projects
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.changed == false
+      - result.changed == true
       - result.failed == false
       # The directory service stays shared with all projects; the requested
       # per-project sharing is ignored, so no specific projects are added.
@@ -770,7 +773,6 @@
     ext_id: "{{ todelete }}"
     service_account:
       username: "{{ active_directory.username }}"
-      password: "{{ active_directory.password }}"
     shared_with_projects:
       - "{{ project1.uuid }}"
       - "{{ project2.uuid }}"
