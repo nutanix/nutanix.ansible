@@ -539,8 +539,8 @@
       - result.changed == false
       - result.failed == false
       - result.response.ext_id == "{{ todelete[1] }}"
-      - result.response.name == "{{ policy_name }}_3"
-      - result.response.description == "{{ policy_name }}_3_description"
+      - result.response.name == "{{ policy_name }}_2"
+      - result.response.description == "{{ policy_name }}_2_description"
       - result.response.vm_categories | length == 2
       - result.response.host_categories | length == 1
       - >-
@@ -991,6 +991,9 @@
     state: power_on
     ext_id: "{{ item }}"
   register: power_on_result
+  retries: 3
+  delay: 10
+  until: power_on_result.response.status == "SUCCEEDED"
   loop: "{{ vms_todelete }}"
   ignore_errors: true
 
@@ -1105,12 +1108,22 @@
   register: host_info_v3_before_cleanup
   ignore_errors: true
 
-- name: Build host categories cleanup payload
+- name: Build host categories cleanup payloads
   ansible.builtin.set_fact:
     cleaned_host_categories: >-
       {{
         (
           host_info_v3_before_cleanup.json.metadata.categories
+          | default({})
+          | dict2items
+          | rejectattr('key', 'equalto', functional_host_category_key)
+          | list
+        ) | items2dict
+      }}
+    cleaned_host_categories_mapping: >-
+      {{
+        (
+          host_info_v3_before_cleanup.json.metadata.categories_mapping
           | default({})
           | dict2items
           | rejectattr('key', 'equalto', functional_host_category_key)
@@ -1124,7 +1137,10 @@
       metadata: >-
         {{
           host_info_v3_before_cleanup.json.metadata
-          | combine({'categories': cleaned_host_categories}, recursive=True)
+          | combine({
+              'categories': cleaned_host_categories,
+              'categories_mapping': cleaned_host_categories_mapping
+            })
         }}
       spec: "{{ host_info_v3_before_cleanup.json.spec }}"
 
@@ -1152,6 +1168,10 @@
       - host_cleanup_v3.status in [200, 202]
     fail_msg: "Failed to cleanup host category association before category deletion"
     success_msg: "Host category association cleanup request accepted"
+
+- name: Sleep for 10 seconds after host category cleanup
+  ansible.builtin.pause:
+    seconds: 10
 
 - name: Delete created categories
   nutanix.ncp.ntnx_categories_v2:

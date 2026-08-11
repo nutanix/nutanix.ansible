@@ -1,4 +1,3 @@
----
 - name: Start testing ntnx_vm_anti_affinity_policy_v2
   ansible.builtin.debug:
     msg: Start testing ntnx_vm_anti_affinity_policy_v2
@@ -13,280 +12,80 @@
   ansible.builtin.set_fact:
     policy_name: "{{ random_name }}_anti_affinity_test"
     vm_name_prefix: "{{ random_name }}_af_vm"
+    wrong_project_ext_id: "123e4567-e89b-12d3-a456-426614174000"
     todelete: []
     todelete_categories: []
 
-- name: Set cluster variables
+# Create a project to be used for project_ext_id tests
+###################################################################################################
+- name: Create project for tests
+  nutanix.ncp.ntnx_project_v2:
+    state: present
+    name: "{{ random_name }}-ansible-project"
+    project_id: "{{ random_name }}-ansible-project-id"
+  register: create_project_result
+  ignore_errors: true
+
+- name: Status of project creation for tests
+  ansible.builtin.assert:
+    that:
+      - create_project_result.changed == true
+      - create_project_result.failed == false
+      - create_project_result.response is defined
+      - create_project_result.ext_id is defined
+      - create_project_result.ext_id | length > 0
+      - create_project_result.task_ext_id is defined
+      - create_project_result.response.state == "ACTIVE"
+    fail_msg: "Unable to create project for tests"
+    success_msg: "Project for tests created successfully"
+
+- name: Set project fact for tests
   ansible.builtin.set_fact:
-    node_indices: [0, 1, 2, 3]
-    prefix_name: ansible_cluster_test
-    pe_ssh_cmd: sshpass -p '{{ clusters[0].pe_password }}' ssh -o
-      StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {{
-      clusters[0].pe_username }}@{{ clusters[0].nodes[0].cvm_ip }}
-    reset_username_password: /home/nutanix/prism/cli/ncli user reset-password
-      user-name={{ username_for_tests }} password={{ password_for_tests }}
+    project1:
+      name: "{{ random_name }}-ansible-project"
+      uuid: "{{ create_project_result.ext_id }}"
 
-- name: Set cluster name and reset command
+# A project needs at least one Resource Group with placement targets before
+# project-scoped VM creation can succeed via v4 APIs.
+- name: Create resource group for the test project
+  nutanix.ncp.ntnx_resource_group_v2:
+    state: present
+    name: "{{ random_name }}-ansible-rg"
+    project_ext_id: "{{ project1.uuid }}"
+    placement_targets:
+      - cluster_ext_id: "{{ cluster.uuid }}"
+        storage_containers:
+          - ext_id: "{{ storage_container.uuid }}"
+  register: create_rg_result
+  ignore_errors: true
+
+- name: Status of resource group creation for tests
+  ansible.builtin.assert:
+    that:
+      - create_rg_result.changed == true
+      - create_rg_result.failed == false
+      - create_rg_result.response is defined
+      - create_rg_result.ext_id is defined
+      - create_rg_result.ext_id | length > 0
+      - create_rg_result.response.project_ext_id == project1.uuid
+      - create_rg_result.response.name == "{{ random_name }}-ansible-rg"
+      - create_rg_result.response.placement_targets | length == 1
+      - create_rg_result.response.placement_targets[0].cluster_ext_id == "{{ cluster.uuid }}"
+      - create_rg_result.response.placement_targets[0].storage_containers | length == 1
+      - create_rg_result.response.placement_targets[0].storage_containers[0].ext_id == "{{ storage_container.uuid }}"
+    fail_msg: "Unable to create resource group for tests"
+    success_msg: "Resource group for tests created successfully"
+
+- name: Set resource group fact for tests
   ansible.builtin.set_fact:
-    cluster_name: "{{ prefix_name }}_{{ clusters[0].name }}"
-    reset_command: '{{ pe_ssh_cmd }} "{{ reset_username_password }}"'
-
-- name: Check if each cluster node is unconfigured
-  ansible.builtin.command: "sshpass -p \"{{ clusters[0].pe_password }}\" ssh -o
-    StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \\ {{
-    clusters[0].pe_username }}@{{ clusters[0].nodes[item].cvm_ip }}
-    \"/usr/local/nutanix/cluster/bin/cluster status\""
-  loop: "{{ node_indices }}"
-  register: results
-  ignore_errors: true
-  changed_when: results.rc != 0
-  no_log: true
-
-- name: Assert that all cluster nodes are unconfigured
-  ansible.builtin.assert:
-    that:
-      - results.results | map(attribute='rc') | select('equalto', 1) | list |
-        length == 4
-      - results.results | map(attribute='stderr') | select('search', 'Cluster is
-        currently unconfigured') | list | length == 4
-    fail_msg: Cannot create cluster, one or more nodes are already configured
-    success_msg: All cluster nodes are unconfigured
-
-- name: Discover unconfigured nodes
-  nutanix.ncp.ntnx_discover_unconfigured_nodes_v2:
-    address_type: "IPV4"
-    ip_filter_list:
-      - ipv4:
-          value: "{{ clusters[0].nodes[item].cvm_ip }}"
-  loop: "{{ node_indices }}"
-  register: results
-  ignore_errors: true
-
-- name: Assert discover unconfigured nodes status for each node
-  ansible.builtin.assert:
-    that:
-      - item.changed == false
-      - item.failed == false
-      - item.response.ext_id is defined
-      - item.response.response.node_list.0.cvm_ip.ipv4.value | string in "{{
-        clusters[0].nodes }}"
-      - results | map(attribute='response.node_list.0.cvm_ip.ipv4.value') | list
-        | length == clusters[0].nodes | length
-    fail_msg: "Discover unconfigured nodes failed"
-    success_msg: "Discover unconfigured nodes passed"
-  loop: "{{ results.results }}"
-  no_log: true
-
-- name: Run cluster create prechecks
-  nutanix.ncp.ntnx_clusters_v2:
-    name: "{{ clusters[0].name }}"
-    nodes:
-      node_list:
-        - controller_vm_ip:
-            ipv4:
-              value: "{{ clusters[0].nodes[0].cvm_ip }}"
-        - controller_vm_ip:
-            ipv4:
-              value: "{{ clusters[0].nodes[1].cvm_ip }}"
-        - controller_vm_ip:
-            ipv4:
-              value: "{{ clusters[0].nodes[2].cvm_ip }}"
-    config:
-      cluster_function: "{{ clusters[0].config.cluster_functions }}"
-      authorized_public_key_list:
-        - name: "{{ clusters[0].config.auth_public_keys[0].name }}"
-          key: "{{ clusters[0].config.auth_public_keys[0].key }}"
-      redundancy_factor: "{{ clusters[0].config.redundancy_factor_cluster_expanding }}"
-      cluster_arch: "{{ clusters[0].config.cluster_arch }}"
-      fault_tolerance_state:
-        domain_awareness_level: "{{
-          clusters[0].config.fault_tolerance_state.domain_awareness_level_clust\
-          er_expanding }}"
-    network:
-      external_address:
-        ipv4:
-          value: "{{ clusters[0].network.virtual_ip }}"
-      external_data_service_ip:
-        ipv4:
-          value: "{{ clusters[0].network.iscsi_ip }}"
-      ntp_server_ip_list:
-        - fqdn:
-            value: "{{ clusters[0].network.ntp_servers[0] }}"
-        - fqdn:
-            value: "{{ clusters[0].network.ntp_servers[1] }}"
-        - fqdn:
-            value: "{{ clusters[0].network.ntp_servers[2] }}"
-        - fqdn:
-            value: "{{ clusters[0].network.ntp_servers[3] }}"
-      name_server_ip_list:
-        - ipv4:
-            value: "{{ clusters[0].network.dns_servers[0] }}"
-        - ipv4:
-            value: "{{ clusters[0].network.dns_servers[1] }}"
-      smtp_server:
-        email_address: "{{ clusters[0].network.smtp_server.email_address }}"
-        server:
-          ip_address:
-            ipv4:
-              value: "{{ clusters[0].network.smtp_server.ip }}"
-          port: "{{ clusters[0].network.smtp_server.port }}"
-          username: "{{ clusters[0].network.smtp_server.username }}"
-          password: "{{ clusters[0].network.smtp_server.password }}"
-        type: "{{ clusters[0].network.smtp_server.type }}"
-    dryrun: true
-    timeout: 1800
-  register: result
-  ignore_errors: true
-
-- name: Verify cluster create prechecks run
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == false
-      - result.task_ext_id is defined
-      - result.response.status == "SUCCEEDED"
-    fail_msg: Cluster create prechecks failed
-    success_msg: Cluster create prechecks passed
-
-- name: Create 3 nodes cluster with minimum spec
-  nutanix.ncp.ntnx_clusters_v2:
-    name: "{{cluster_name}}"
-    nodes:
-      node_list:
-        - controller_vm_ip:
-            ipv4:
-              value: "{{ clusters[0].nodes[0].cvm_ip }}"
-        - controller_vm_ip:
-            ipv4:
-              value: "{{ clusters[0].nodes[1].cvm_ip }}"
-        - controller_vm_ip:
-            ipv4:
-              value: "{{ clusters[0].nodes[2].cvm_ip }}"
-    config:
-      cluster_function: "{{ clusters[0].config.cluster_functions }}"
-      redundancy_factor: "{{ clusters[0].config.redundancy_factor_cluster_expanding }}"
-      cluster_arch: "{{ clusters[0].config.cluster_arch }}"
-      fault_tolerance_state:
-        domain_awareness_level: "{{
-          clusters[0].config.fault_tolerance_state.domain_awareness_level_clust\
-          er_expanding }}"
-    timeout: 1800
-  register: result
-  ignore_errors: true
-
-- name: Verify cluster create task status
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == true
-      - result.task_ext_id is defined
-      - result.response.status == "SUCCEEDED"
-    fail_msg: Cluster create failed
-    success_msg: Cluster create passed
-
-- name: Reset username and password
-  ansible.builtin.command: "{{ reset_command }}"
-  register: result
-  ignore_errors: true
-  changed_when: result.rc != 0
-
-- name: List all clusters to get prism central external ID
-  nutanix.ncp.ntnx_clusters_info_v2:
-    filter: "config/clusterFunction/any(t:t eq
-      Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
-  register: result
-  ignore_errors: true
-
-- name: Get prism central external ID
-  ansible.builtin.set_fact:
-    prism_central_external_id: "{{ result.response[0].ext_id }}"
-
-- name: Run PE PC registration
-  nutanix.ncp.ntnx_pc_registration_v2:
-    ext_id: "{{ prism_central_external_id }}"
-    remote_cluster:
-      aos_remote_cluster:
-        remote_cluster:
-          address:
-            ipv4:
-              value: "{{ clusters[0].nodes[0].cvm_ip }}"
-          credentials:
-            authentication:
-              username: "{{ username_for_tests }}"
-              password: "{{ password_for_tests }}"
-  register: result
-  ignore_errors: true
-
-- name: Run PE PC registration status
-  ansible.builtin.assert:
-    that:
-      - result.changed == true
-      - result.ext_id is defined
-      - result.ext_id == prism_central_external_id
-      - result.response.status == 'SUCCEEDED'
-      - result.task_ext_id is defined
-    fail_msg: "Run PE PC registration failed"
-    success_msg: "Run PE PC registration passed"
-
-- name: Sleep for 1 minute
-  ansible.builtin.pause:
-    seconds: 60
-
-- name: Fetch cluster using name
-  nutanix.ncp.ntnx_clusters_info_v2:
-    filter: name eq '{{ cluster_name }}'
-  register: result
-  ignore_errors: true
-
-- name: Verify listing
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.response | length > 0
-    fail_msg: Failed verifying PE PC registration
-    success_msg: PE PC registration passed successfully
-
-- name: Set cluster external ID
-  ansible.builtin.set_fact:
-    cluster_ext_id: "{{ result.response[0].ext_id }}"
-
-- name: Fetch cluster info using external ID
-  nutanix.ncp.ntnx_clusters_info_v2:
-    ext_id: "{{ cluster_ext_id }}"
-  register: result
-  ignore_errors: true
-
-- name: Verify created cluster's details using cluster info
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.ext_id == cluster_ext_id
-      - result.response.name == "{{ cluster_name }}"
-      - result.response.nodes.node_list[0].controller_vm_ip.ipv4.value == "{{
-        clusters[0].nodes[0].cvm_ip }}"
-      - result.response.nodes.node_list[1].controller_vm_ip.ipv4.value == "{{
-        clusters[0].nodes[1].cvm_ip }}"
-      - result.response.nodes.node_list[2].controller_vm_ip.ipv4.value == "{{
-        clusters[0].nodes[2].cvm_ip }}"
-      - result.response.config.cluster_function[0] == "{{
-        clusters[0].config.cluster_functions[0] }}"
-      - result.response.config.redundancy_factor ==
-        clusters[0].config.redundancy_factor_cluster_expanding
-      - result.response.config.cluster_arch == "{{
-        clusters[0].config.cluster_arch }}"
-      - >
-        result.response.config.fault_tolerance_state.domain_awareness_level ==
-        "{{
-        clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_expanding
-        }}"
-    fail_msg: Failed verifying cluster creation
-    success_msg: Cluster creation passed successfully
+    resource_group_ext_id: "{{ create_rg_result.ext_id }}"
 
 - name: Create categories for anti-affinity policy tests
   nutanix.ncp.ntnx_categories_v2:
     key: "{{ random_name }}_af_key_{{ item }}"
     value: "{{ random_name }}_af_value_{{ item }}"
     description: "ansible anti-affinity category"
+    project_ext_id: "{{ project1.uuid }}"
   register: category_create_result
   ignore_errors: true
   loop: "{{ range(0, 4) | list }}"
@@ -301,6 +100,7 @@
       - item.failed == false
       - item.response is defined
       - item.response.ext_id is defined
+      - item.response.project_ext_id == "{{ project1.uuid }}"
     fail_msg: "Categories creation failed"
     success_msg: "Categories created successfully"
   loop: "{{ category_create_result.results }}"
@@ -322,6 +122,7 @@
     categories:
       - ext_id: "00065133-7ad0-1d82-451d-5254003d8207"
       - ext_id: "00065133-7ad0-1d82-451d-5254003d8209"
+    project_ext_id: "dd23e456-e89b-12d3-a456-426614174000"
   register: result
   ignore_errors: true
   check_mode: true
@@ -339,6 +140,7 @@
         "00065133-7ad0-1d82-451d-5254003d8209"
       - result.response.name == 'test_policy_1'
       - result.response.description == "test_policy_1_description"
+      - result.response.project_ext_id == "dd23e456-e89b-12d3-a456-426614174000"
     fail_msg:
       "Verify generated spec for a VM-VM anti-affinity policy using check mode
       failed"
@@ -350,16 +152,17 @@
 # Create - Minimal spec
 ##################################################################################
 
-- name: Create a VM-VM anti-affinity policy with minimal spec
+- name: Create a VM-VM anti-affinity policy without description
   nutanix.ncp.ntnx_vm_anti_affinity_policy_v2:
     state: present
     name: "{{ policy_name }}_1"
     categories:
       - ext_id: "{{ todelete_categories[0] }}"
+    project_ext_id: "{{ project1.uuid }}"
   register: result
   ignore_errors: true
 
-- name: Verify created VM-VM anti-affinity policy with minimal spec
+- name: Verify created VM-VM anti-affinity policy minimal spec with project
   ansible.builtin.assert:
     that:
       - result.changed == true
@@ -367,8 +170,9 @@
       - result.response is defined
       - result.response.categories[0].ext_id == "{{ todelete_categories[0] }}"
       - result.response.name == "{{ policy_name }}_1"
-    fail_msg: "Verify created VM-VM anti-affinity policy with minimal spec failed"
-    success_msg: "Verify created VM-VM anti-affinity policy with minimal spec passed"
+      - result.response.project_ext_id == "{{ project1.uuid }}"
+    fail_msg: "Verify created VM-VM anti-affinity policy minimal spec with project failed"
+    success_msg: "Verify created VM-VM anti-affinity policy minimal spec with project passed"
 
 - name: Add to delete list
   ansible.builtin.set_fact:
@@ -386,6 +190,7 @@
     categories:
       - ext_id: "{{ todelete_categories[1] }}"
       - ext_id: "{{ todelete_categories[2] }}"
+    project_ext_id: "{{ project1.uuid }}"
   register: result
   ignore_errors: true
 
@@ -400,6 +205,7 @@
       - result.response.categories | length == 2
       - result.response.categories[0].ext_id == "{{ todelete_categories[1] }}"
       - result.response.categories[1].ext_id == "{{ todelete_categories[2] }}"
+      - result.response.project_ext_id == "{{ project1.uuid }}"
     fail_msg: "Verify created VM-VM anti-affinity policy with full spec failed"
     success_msg: "Verify created VM-VM anti-affinity policy with full spec passed"
 
@@ -501,6 +307,23 @@
       - result.msg == "Nothing to change."
     fail_msg: "Verify idempotency by updating the same policy with same spec failed"
     success_msg: "Verify idempotency by updating the same policy with same spec passed"
+
+- name: Verify update of project_ext_id is not supported
+  nutanix.ncp.ntnx_vm_anti_affinity_policy_v2:
+    state: present
+    ext_id: "{{ todelete[1] }}"
+    project_ext_id: "{{ wrong_project_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify update of project_ext_id is not supported
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
+    fail_msg: "Verify update of project_ext_id is not supported failed"
+    success_msg: "Verify update of project_ext_id is not supported passed"
 
 ##################################################################################
 # Get Anti-Affinity Policy by ext_id
@@ -737,6 +560,93 @@
     success_msg: "Verify negative test for update with category already in use passed"
 
 ##################################################################################
+# Create VMs and List VM-VM anti-affinity policy compliance states
+##################################################################################
+
+- name: Create 2 VMs (single category pair) with minimum spec and auto cluster selection
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    name: "{{ vm_name_prefix }}_{{ item + 1 }}"
+    description: "anti-affinity test VM"
+    categories:
+      - ext_id: "{{ todelete_categories[1] }}"
+    project_ext_id: "{{ project1.uuid }}"
+  register: vms_result
+  loop: "{{ range(0, 2) | list }}"
+  ignore_errors: true
+
+- name: Collect VM ext_ids for cleanup
+  ansible.builtin.set_fact:
+    vms_todelete: "{{ vms_result.results | map(attribute='ext_id') | list }}"
+
+- name: Verify creation of all 2 VMs (single category pair)
+  ansible.builtin.assert:
+    that:
+      - vms_result.results | length == 2
+      - vms_todelete | length == 2
+      - item.changed == true
+      - item.failed == false
+      - item.response is defined
+      - item.response.name == "{{ vm_name_prefix }}_{{ vm_idx + 1 }}"
+      - item.response.description == "anti-affinity test VM"
+      - item.response.categories[0].ext_id == todelete_categories[1]
+      - item.response.project_ext_id == "{{ project1.uuid }}"
+    fail_msg: "Failed to create VM at index {{ vm_idx }} (expected category {{
+      todelete_categories[1] }})"
+    success_msg: "VM {{ vm_idx + 1 }} created successfully with category {{
+      todelete_categories[1] }}"
+  loop: "{{ vms_result.results }}"
+  loop_control:
+    index_var: vm_idx
+
+- name: List VM-VM anti-affinity policy compliance states
+  nutanix.ncp.ntnx_vm_anti_affinity_policy_compliance_info_v2:
+    ext_id: "{{ todelete[1] }}"
+  register: compliance_result
+  ignore_errors: true
+
+- name: Verify list of VM-VM anti-affinity policy compliance states
+  ansible.builtin.assert:
+    that:
+      - compliance_result.changed == false
+      - compliance_result.failed == false
+      - compliance_result.response is defined
+      - compliance_result.response | length > 0
+      - compliance_result.total_available_results is defined
+      - compliance_result.total_available_results == (vms_todelete | length)
+      - compliance_result.total_available_results == (compliance_result.response | length)
+      - >-
+        (
+          compliance_result.response | map(attribute='ext_id') | list | sort
+        ) == (
+          vms_todelete | list | sort
+        )
+    fail_msg: "Verify list of VM-VM anti-affinity policy compliance states failed"
+    success_msg: "Verify list of VM-VM anti-affinity policy compliance states passed"
+
+- name: Delete all 2 created VMs
+  nutanix.ncp.ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  loop: "{{ vms_todelete }}"
+  ignore_errors: true
+
+- name: VM deletion status
+  ansible.builtin.assert:
+    that:
+      - item.response is defined
+      - item.changed == true
+      - item.failed == false
+      - item.response.status == 'SUCCEEDED'
+      - result.changed == true
+      - result.msg == "All items completed"
+      - result.results | length == 2
+    fail_msg: "Failed to delete one or more VMs"
+    success_msg: "All 2 VMs deleted successfully"
+  loop: "{{ result.results }}"
+
+##################################################################################
 # Negative - Delete non-existent policy
 ##################################################################################
 
@@ -763,182 +673,6 @@
       - result.response.data.error | length > 0
     fail_msg: "Negative test for non-existent policy delete failed"
     success_msg: "Negative test for non-existent policy delete passed"
-
-##################################################################################
-# Functional test - Verify anti-affinity policies enforce host placement.
-# Uses todelete_categories[1] which is owned by todelete[1] (the full-spec
-# policy). Two VMs share a single category, so anti-affinity should force
-# the pair onto different hosts.
-##################################################################################
-
-- name: Create 2 VMs (single category pair) with minimum spec and auto cluster selection
-  nutanix.ncp.ntnx_vms_v2:
-    state: present
-    name: "{{ vm_name_prefix }}_{{ item + 1 }}"
-    description: "anti-affinity test VM"
-    categories:
-      - ext_id: "{{ todelete_categories[1] }}"
-  register: vms_result
-  loop: "{{ range(0, 2) | list }}"
-  ignore_errors: true
-
-- name: Collect VM ext_ids for cleanup
-  ansible.builtin.set_fact:
-    vms_todelete: "{{ vms_result.results | map(attribute='ext_id') | list }}"
-
-- name: Verify creation of all 2 VMs (single category pair)
-  ansible.builtin.assert:
-    that:
-      - vms_result.results | length == 2
-      - vms_todelete | length == 2
-      - item.changed == true
-      - item.failed == false
-      - item.response.categories[0].ext_id == todelete_categories[1]
-    fail_msg: "Failed to create VM at index {{ vm_idx }} (expected category {{
-      todelete_categories[1] }})"
-    success_msg: "VM {{ vm_idx + 1 }} created successfully with category {{
-      todelete_categories[1] }}"
-  loop: "{{ vms_result.results }}"
-  loop_control:
-    index_var: vm_idx
-
-- name: Power on all 2 VMs
-  nutanix.ncp.ntnx_vms_power_actions_v2:
-    state: power_on
-    ext_id: "{{ item }}"
-  register: power_on_result
-  loop: "{{ vms_todelete }}"
-  ignore_errors: true
-
-- name: Power on Status
-  ansible.builtin.assert:
-    that:
-      - item.response is defined
-      - item.changed == true
-      - item.failed == false
-      - item.response.status == 'SUCCEEDED'
-    fail_msg: "Failed to power on one or more VMs"
-    success_msg: "Power on requests for all VMs accepted successfully"
-  loop: "{{ power_on_result.results }}"
-
-- name: Wait until all VMs are powered on
-  nutanix.ncp.ntnx_vms_info_v2:
-    ext_id: "{{ item }}"
-  register: wait_result
-  until: wait_result.response.power_state == 'ON'
-  retries: 60
-  delay: 5
-  loop: "{{ vms_todelete }}"
-  ignore_errors: true
-
-- name: Fetch info for all 2 VMs after power-on
-  nutanix.ncp.ntnx_vms_info_v2:
-    ext_id: "{{ item }}"
-  register: vms_info
-  loop: "{{ vms_todelete }}"
-  ignore_errors: true
-
-- name: Assert all 2 VMs are powered on and have a host assigned
-  ansible.builtin.assert:
-    that:
-      - item.response is defined
-      - item.response.power_state == 'ON'
-      - item.response.host is defined
-      - item.response.host is not none
-      - item.response.host.ext_id is defined
-    fail_msg:
-      "VM {{ item.response.ext_id | default('unknown') }} is not powered on
-      or has no host assigned"
-    success_msg: "VM {{ item.response.ext_id }} is powered on and hosted on {{
-      item.response.host.ext_id }}"
-  loop: "{{ vms_info.results }}"
-
-- name: List VM-VM anti-affinity policy compliance states until compliant is observed
-  nutanix.ncp.ntnx_vm_anti_affinity_policy_compliance_info_v2:
-    ext_id: "{{ todelete[1] }}"
-  register: compliance_result
-  until: >-
-    compliance_result.response is defined and
-      (
-        compliance_result.response
-        | selectattr("compliance_status._object_type", "defined")
-        | selectattr(
-          "compliance_status._object_type",
-          "equalto",
-          "vmm.v4.ahv.policies.CompliantVmAntiAffinityPolicy"
-        )
-        | list
-        | length
-      ) == (vms_todelete | length)
-  retries: 12
-  delay: 5
-  ignore_errors: true
-
-- name: Verify pending VM-VM anti-affinity policy compliance states response
-  ansible.builtin.assert:
-    that:
-      - compliance_result.changed == false
-      - compliance_result.failed == false
-      - compliance_result.response is defined
-      - compliance_result.response | length > 0
-      - compliance_result.total_available_results is defined
-      - compliance_result.total_available_results == (vms_todelete | length)
-      - compliance_result.total_available_results == (compliance_result.response | length)
-      - >-
-        (
-          compliance_result.response | map(attribute='ext_id') | list | sort
-        ) == (
-          vms_todelete | list | sort
-        )
-      - >-
-        (
-          compliance_result.response
-          | selectattr("compliance_status._object_type", "defined")
-          | selectattr(
-            "compliance_status._object_type",
-            "equalto",
-            "vmm.v4.ahv.policies.CompliantVmAntiAffinityPolicy"
-          )
-          | list
-          | length
-        ) == (vms_todelete | length)
-    fail_msg: "Verify pending VM-VM anti-affinity policy compliance states failed"
-    success_msg: "Verify pending VM-VM anti-affinity policy compliance states passed"
-
-- name: Assert that VMs in the same category are hosted on different hosts
-  ansible.builtin.assert:
-    that:
-      - vms_info.results[0].response.host.ext_id !=
-        vms_info.results[1].response.host.ext_id
-    fail_msg: >-
-      Anti-affinity NOT enforced - VMs in the same category are on the same
-      host. Pair hosts: [{{ vms_info.results[0].response.host.ext_id }}, {{
-      vms_info.results[1].response.host.ext_id }}].
-    success_msg:
-      "Anti-affinity enforced successfully - VM pair in same category is on
-      different hosts"
-
-- name: Delete all 2 created VMs
-  nutanix.ncp.ntnx_vms_v2:
-    state: absent
-    ext_id: "{{ item }}"
-  register: result
-  loop: "{{ vms_todelete }}"
-  ignore_errors: true
-
-- name: VM deletion status
-  ansible.builtin.assert:
-    that:
-      - item.response is defined
-      - item.changed == true
-      - item.failed == false
-      - item.response.status == 'SUCCEEDED'
-      - result.changed == true
-      - result.msg == "All items completed"
-      - result.results | length == 2
-    fail_msg: "Failed to delete one or more VMs"
-    success_msg: "All 2 VMs deleted successfully"
-  loop: "{{ result.results }}"
 
 ##################################################################################
 # Delete policy with check mode enabled
@@ -989,6 +723,23 @@
     success_msg: "Delete policies passed"
   loop: "{{ result.results }}"
 
+- name: Delete resource group created for tests
+  nutanix.ncp.ntnx_resource_group_v2:
+    state: absent
+    ext_id: "{{ resource_group_ext_id }}"
+  register: delete_rg_result
+  ignore_errors: true
+
+- name: Status of resource group deletion for tests
+  ansible.builtin.assert:
+    that:
+      - delete_rg_result.changed == true
+      - delete_rg_result.failed == false
+      - delete_rg_result.ext_id == resource_group_ext_id
+      - delete_rg_result.response.status == "SUCCEEDED"
+    fail_msg: "Unable to delete resource group created for tests"
+    success_msg: "Resource group created for tests deleted successfully"
+
 - name: Delete created categories
   nutanix.ncp.ntnx_categories_v2:
     ext_id: "{{ item }}"
@@ -1009,19 +760,20 @@
     success_msg: "Categories deleted successfully"
   loop: "{{ result.results }}"
 
-- name: Destroy the cluster for cleanup
-  nutanix.ncp.ntnx_clusters_v2:
+- name: Delete project created for tests
+  nutanix.ncp.ntnx_project_v2:
     state: absent
-    ext_id: "{{ cluster_ext_id }}"
-  register: result
+    ext_id: "{{ project1.uuid }}"
+  register: delete_project_result
   ignore_errors: true
 
-- name: Verify cluster deletion
+- name: Status of project deletion for tests
   ansible.builtin.assert:
     that:
-      - result.response is defined
-      - result.changed == true
-      - result.response.status == "SUCCEEDED"
-      - result.ext_id == cluster_ext_id
-    fail_msg: Failed verifying cluster deletion
-    success_msg: Cluster deletion passed successfully
+      - delete_project_result.changed == true
+      - delete_project_result.failed == false
+      - delete_project_result.ext_id == project1.uuid
+      - delete_project_result.task_ext_id is defined
+      - delete_project_result.response.status == "SUCCEEDED"
+    fail_msg: "Unable to delete project created for tests"
+    success_msg: "Project created for tests deleted successfully"

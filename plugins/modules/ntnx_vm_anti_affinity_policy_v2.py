@@ -50,6 +50,12 @@ options:
                     - The external ID of the category.
                 required: true
                 type: str
+    project_ext_id:
+        description:
+            - External ID (UUID) of the project that owns this address group.
+            - Update of this field is not supported.
+        required: false
+        type: str
     state:
         description:
             - Specify state.
@@ -98,6 +104,7 @@ EXAMPLES = r"""
     categories:
       - ext_id: "2f54419e-596d-4b34-aa8f-1a1e944ee7d7"
       - ext_id: "8811743f-f3ea-463c-539a-8d6a7f69b8f5"
+    project_ext_id: "123e4567-e89b-12d3-a456-426614174000"
 
 - name: Update a VM-VM anti-affinity policy
   nutanix.ncp.ntnx_vm_anti_affinity_policy_v2:
@@ -209,6 +216,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 from ..module_utils.v4.vmm.api_client import (  # noqa: E402
@@ -247,6 +255,7 @@ def get_module_spec():
             options=category_spec,
             obj=vmm_sdk.AhvPoliciesCategoryReference,
         ),
+        project_ext_id=dict(type="str", required=False),
     )
     return module_args
 
@@ -323,6 +332,10 @@ def update_policy(module, api_instance, result):
         module.fail_json(
             msg="Failed generating VM-VM anti-affinity policy update spec", **result
         )
+
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
