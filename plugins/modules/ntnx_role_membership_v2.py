@@ -169,7 +169,7 @@ ext_id:
 
 msg:
     description: Additional message about the operation.
-    returned: When there is an error or check mode (in delete operation)
+    returned: When there is an error or delete operation.
     type: str
     sample: "Role membership with ext_id:aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee will be deleted."
 

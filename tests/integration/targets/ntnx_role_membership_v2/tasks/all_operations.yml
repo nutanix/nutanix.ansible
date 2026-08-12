@@ -23,6 +23,30 @@
   ansible.builtin.set_fact:
     project_name: "{{ suffix_name }}{{ random_name }}"
 
+########################################################################
+# Get the default project
+########################################################################
+
+- name: Get the default project
+  nutanix.ncp.ntnx_projects_info_v2:
+  register: default_project_result
+  ignore_errors: true
+
+- name: Status of fetching the default project
+  ansible.builtin.assert:
+    that:
+      - default_project_result.changed == false
+      - default_project_result.failed == false
+      - default_project_result.response is defined
+      - default_project_result.response | selectattr('is_default', 'equalto', true) | list | length > 0
+    fail_msg: "Unable to fetch the default project"
+    success_msg: "Default project fetched successfully"
+
+- name: Set default project fact
+  ansible.builtin.set_fact:
+    default_project:
+      uuid: "{{ (default_project_result.response | selectattr('is_default', 'equalto', true) | first).ext_id }}"
+
 - name: List existing roles
   nutanix.ncp.ntnx_roles_info_v2:
     limit: 3
@@ -118,6 +142,22 @@
     ext_id: "{{ identity_provider_uuid }}"
   register: idp_info_result
   ignore_errors: true
+
+- name: Verify current IDP sharing state fetched before test
+  vars:
+    existing_shared_projects: "{{ idp_info_result.response.shared_with_projects | default([], true) }}"
+  ansible.builtin.assert:
+    that:
+      - idp_info_result.changed == false
+      - idp_info_result.failed == false
+      - idp_info_result.error == None
+      - idp_info_result.ext_id == identity_provider_uuid
+      - idp_info_result.response is defined
+      - idp_info_result.response.ext_id == identity_provider_uuid
+      - idp_info_result.response.name is defined
+      - idp_info_result.response.is_shared_with_all_projects == false
+    fail_msg: "Fetching current IDP sharing state before test failed"
+    success_msg: "Current IDP sharing state fetched before test successfully"
 
 - name: Save existing shared projects list
   ansible.builtin.set_fact:
@@ -228,7 +268,7 @@
     scope_template_name: "ProjectsScopeTemplate"
     scope_template_name_values:
       - name: "projectExtId"
-        value: "00000000-0000-0000-0000-000000000000"
+        value: "{{ default_project.uuid }}"
     idp_ext_id: "{{ identity_provider_uuid }}"
   register: create_result
   ignore_errors: true
@@ -247,8 +287,8 @@
       - create_result.response.scope_template_name == "ProjectsScopeTemplate"
       - create_result.response.scope_template_name_values | length == 1
       - create_result.response.scope_template_name_values[0].name == "projectExtId"
-      - create_result.response.scope_template_name_values[0].value == "00000000-0000-0000-0000-000000000000"
-      - create_result.response.project_ext_id == "00000000-0000-0000-0000-000000000000"
+      - create_result.response.scope_template_name_values[0].value == default_project.uuid
+      - create_result.response.project_ext_id == default_project.uuid
     fail_msg: "Create role membership for a User Group with default project failed"
     success_msg: "Create role membership for a User Group with default project passed"
 
@@ -571,23 +611,23 @@
 # CLEANUP
 ###########################################################
 
-# Use the V3 delete API to remove users, as the V4 delete API is not available for user deletion.
-- name: Delete created users
+# Use the V3 delete API to remove user, as the V4 delete API is not available for user deletion.
+- name: Delete created user
   nutanix.ncp.ntnx_users:
     state: absent
     user_uuid: "{{ test_user_ext_id }}"
   register: result
   ignore_errors: true
 
-- name: Delete created users status
+- name: Delete created user status
   ansible.builtin.assert:
     that:
       - result.changed == true
       - result.failed == false
       - result.response.status == "SUCCEEDED"
       - result.uuid == test_user_ext_id
-    fail_msg: Delete created users failed
-    success_msg: Delete created users passed
+    fail_msg: Delete created user failed
+    success_msg: Delete created user passed
 
 - name: Delete created SAML user group
   nutanix.ncp.ntnx_user_groups_v2:
