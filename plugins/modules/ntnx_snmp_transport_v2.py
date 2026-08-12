@@ -205,8 +205,7 @@ def get_module_spec():
             obj=clusters_sdk.SnmpProtocol,
             required=True,
         ),
-        port=dict(type="int"),
-        required=True,
+        port=dict(type="int", required=True),
     )
 
     return module_args
