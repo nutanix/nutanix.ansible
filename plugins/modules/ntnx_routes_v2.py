@@ -510,6 +510,12 @@ def create_route_table(module, route_api_instance, result):
             result["ext_id"] = ext_id
             route = get_route(module, route_api_instance, ext_id, route_table_ext_id)
             result["response"] = strip_internal_attributes(route.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception("Failed to get entity ext_id from task for Route"),
+                msg="Failed to get entity ext_id from task for Route",
+            )
     result["changed"] = True
 
 

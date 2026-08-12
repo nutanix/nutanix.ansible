@@ -367,6 +367,12 @@ def create_cd_rom(module, result):
             resp = get_cd_rom(module, vms, ext_id, vm_ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception("Failed to get entity ext_id from task for CD ROM"),
+                msg="Failed to get entity ext_id from task for CD ROM",
+            )
 
     result["changed"] = True
 

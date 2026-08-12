@@ -364,6 +364,14 @@ def create_disk(module, result):
             resp = get_volume_group_disk(module, vgs, ext_id, volume_group_ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Volume Group Disk"
+                ),
+                msg="Failed to get entity ext_id from task for Volume Group Disk",
+            )
 
     result["changed"] = True
 

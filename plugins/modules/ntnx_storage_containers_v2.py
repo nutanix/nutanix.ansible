@@ -453,6 +453,14 @@ def create_storage_container(module, storage_container_api, result):
             resp = get_storage_container(module, storage_container_api, ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Storage Container"
+                ),
+                msg="Failed to get entity ext_id from task for Storage Container",
+            )
 
     result["changed"] = True
 

@@ -407,6 +407,12 @@ def create_disk(module, result):
             resp = get_disk(module, vmm, ext_id, vm_ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception("Failed to get entity ext_id from task for VM Disk"),
+                msg="Failed to get entity ext_id from task for VM Disk",
+            )
 
     result["changed"] = True
 

@@ -788,6 +788,14 @@ def deploy_vm_using_ova(module, result):
             resp = get_vm(module, vm, vm_ext_id)
             result["vm_ext_id"] = vm_ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for the VM"
+                ),
+                msg="Failed to get entity ext_id from task for the VM",
+            )
 
     result["changed"] = True
 

@@ -376,6 +376,14 @@ def create_service_group(module, result):
             resp = get_service_group(module, service_groups, ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Service Group"
+                ),
+                msg="Failed to get entity ext_id from task for Service Group",
+            )
 
     result["changed"] = True
 

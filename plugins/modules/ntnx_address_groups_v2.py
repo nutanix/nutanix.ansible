@@ -292,6 +292,14 @@ def create_address_group(module, result):
             resp = get_address_group(module, address_groups, ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Address Group"
+                ),
+                msg="Failed to get entity ext_id from task for Address Group",
+            )
 
     result["changed"] = True
 

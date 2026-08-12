@@ -525,6 +525,14 @@ def create_network_function(module, result, network_functions):
             resp = get_network_function(module, network_functions, ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Network Function"
+                ),
+                msg="Failed to get entity ext_id from task for Network Function",
+            )
 
     result["changed"] = True
 
