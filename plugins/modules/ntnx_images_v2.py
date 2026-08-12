@@ -451,6 +451,12 @@ def create_image(module, result):
             resp = get_image(module, images, ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception("Failed to get entity ext_id from task for Image"),
+                msg="Failed to get entity ext_id from task for Image",
+            )
 
     result["changed"] = True
 

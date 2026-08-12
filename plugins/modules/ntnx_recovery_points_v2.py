@@ -389,6 +389,14 @@ def create_recovery_point(module, result):
             resp = get_recovery_point(module, recovery_points, ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Recovery Point"
+                ),
+                msg="Failed to get entity ext_id from task for Recovery Point",
+            )
     result["changed"] = True
 
 

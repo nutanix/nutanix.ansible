@@ -241,6 +241,14 @@ def create_serial_port(module, result):
             resp = get_serial_port(module, vmm, ext_id, vm_ext_id=vm_ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for VM Serial Port"
+                ),
+                msg="Failed to get entity ext_id from task for VM Serial Port",
+            )
 
     result["changed"] = True
 

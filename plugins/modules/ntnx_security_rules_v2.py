@@ -1118,6 +1118,14 @@ def create_network_security_policy(module, result):
             )
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Security Policy"
+                ),
+                msg="Failed to get entity ext_id from task for Security Policy",
+            )
 
     result["changed"] = True
 
