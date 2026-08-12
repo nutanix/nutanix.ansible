@@ -1,8 +1,8 @@
-pip>=23.0
-setuptools>=65.0
+pip>=26.1.2
+setuptools>=83.0.0
 ansible-core==2.16.0
 ansible-lint==24.12.2
-requests>=2.31.0
+requests>=2.34.2
 black>=22.8.0
 flake8>=7.0.0
 isort>=5.9.3
