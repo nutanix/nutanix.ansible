@@ -2012,7 +2012,9 @@ def create_template(module, result):
         else:
             raise_api_exception(
                 module=module,
-                exception=Exception("Failed to get entity ext_id from task for Template"),
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Template"
+                ),
                 msg="Failed to get entity ext_id from task for Template",
             )
 

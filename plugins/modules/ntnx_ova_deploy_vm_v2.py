@@ -791,9 +791,7 @@ def deploy_vm_using_ova(module, result):
         else:
             raise_api_exception(
                 module=module,
-                exception=Exception(
-                    "Failed to get entity ext_id from task for the VM"
-                ),
+                exception=Exception("Failed to get entity ext_id from task for the VM"),
                 msg="Failed to get entity ext_id from task for the VM",
             )
 

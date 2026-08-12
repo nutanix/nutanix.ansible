@@ -410,7 +410,9 @@ def create_disk(module, result):
         else:
             raise_api_exception(
                 module=module,
-                exception=Exception("Failed to get entity ext_id from task for VM Disk"),
+                exception=Exception(
+                    "Failed to get entity ext_id from task for VM Disk"
+                ),
                 msg="Failed to get entity ext_id from task for VM Disk",
             )
 
