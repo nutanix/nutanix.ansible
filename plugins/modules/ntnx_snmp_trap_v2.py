@@ -11,24 +11,24 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_snmp_trap_v2
-short_description: Manage snmp traps in Nutanix Prism Central
+short_description: Create, Update and Delete SNMP traps in Nutanix Prism Central
 version_added: 2.6.0
 description:
-  - Create, Update, Delete snmp traps.
+  - Create, Update, Delete SNMP traps.
   - This module uses PC v4 APIs based SDKs
 options:
   state:
     description:
-      - If C(state) is C(present), it will create or update the snmp trap.
-      - If C(state) is set to C(present) and ext_id is not provided, the operation will create the snmp trap.
-      - If C(state) is set to C(present) and ext_id is provided, the operation will update the snmp trap.
-      - If C(state) is set to C(absent) and ext_id is provided, the operation will delete the snmp trap.
+      - If C(state) is C(present), it will create or update the SNMP trap.
+      - If C(state) is set to C(present) and ext_id is not provided, the operation will create the SNMP trap.
+      - If C(state) is set to C(present) and ext_id is provided, the operation will update the SNMP trap.
+      - If C(state) is set to C(absent) and ext_id is provided, the operation will delete the SNMP trap.
     type: str
     choices: ['present', 'absent']
   ext_id:
     description:
-      - SnmpTrap external ID.
-      - Required for updating or deleting the snmp trap.
+      - SNMP Trap external ID.
+      - Required for updating or deleting the SNMP trap.
     type: str
   cluster_ext_id:
     description:
@@ -75,11 +75,11 @@ options:
             default: 128
   username:
     description:
-      - SNMP username. For SNMP trap v3 version, SNMP username is required parameter.
+      - SNMP username. For SNMP trap v3 C(version), SNMP username is required parameter.
     type: str
   protocol:
     description:
-      - Protocol.
+      - SNMP Protocol type.
     type: str
     choices: ['UDP', 'UDP6', 'TCP', 'TCP6']
   port:
@@ -118,7 +118,7 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Create snmp trap (v2)
+- name: Create SNMP trap (v2)
   nutanix.ncp.ntnx_snmp_trap_v2:
     state: present
     nutanix_host: "{{ ip }}"
@@ -135,7 +135,7 @@ EXAMPLES = r"""
     protocol: UDP
   register: result
 
-- name: Create snmp trap (v3)
+- name: Create SNMP trap (v3)
   nutanix.ncp.ntnx_snmp_trap_v2:
     state: present
     nutanix_host: "{{ ip }}"
@@ -152,7 +152,7 @@ EXAMPLES = r"""
     protocol: UDP
   register: result
 
-- name: Update snmp trap
+- name: Update SNMP trap
   nutanix.ncp.ntnx_snmp_trap_v2:
     state: present
     nutanix_host: "{{ ip }}"
@@ -168,7 +168,7 @@ EXAMPLES = r"""
     port: 163
   register: result
 
-- name: Delete snmp trap
+- name: Delete SNMP trap
   nutanix.ncp.ntnx_snmp_trap_v2:
     state: absent
     nutanix_host: "{{ ip }}"
@@ -183,7 +183,7 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - Response for snmp trap operations.
+    - Response for SNMP trap operations.
     - SNMP trap details if operation is create and C(wait) is True.
     - SNMP trap details if operation is update and C(wait) is True.
     - Task details if operation is delete or C(wait) is True.
@@ -239,7 +239,7 @@ msg:
     description: This indicates the message if any message occurred
     returned: When there is an error, module is idempotent or check mode (in delete operation)
     type: str
-    sample: "Api Exception raised while creating snmp trap"
+    sample: "Api Exception raised while creating SNMP trap"
 
 cluster_ext_id:
   description: The external ID of the cluster.
@@ -357,7 +357,7 @@ def create_snmp_trap(module, result, snmp_traps, snmp_config_api):
 
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating create snmp trap spec", **result)
+        module.fail_json(msg="Failed generating create SNMP trap spec", **result)
 
     address = module.params.get("address") or {}
     ipv4 = address.get("ipv4") or {}
@@ -381,7 +381,7 @@ def create_snmp_trap(module, result, snmp_traps, snmp_config_api):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while creating snmp trap",
+            msg="Api Exception raised while creating SNMP trap",
         )
 
     task_ext_id = resp.data.ext_id
@@ -442,7 +442,7 @@ def update_snmp_trap(module, result, snmp_traps, snmp_config_api):
     )
     etag = get_etag(data=current_spec)
     if not etag:
-        return module.fail_json("Unable to fetch etag for updating snmp trap", **result)
+        return module.fail_json("Unable to fetch etag for updating SNMP trap", **result)
 
     kwargs = {"if_match": etag}
 
@@ -451,7 +451,7 @@ def update_snmp_trap(module, result, snmp_traps, snmp_config_api):
 
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating snmp trap update spec", **result)
+        module.fail_json(msg="Failed generating SNMP trap update spec", **result)
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
@@ -470,7 +470,7 @@ def update_snmp_trap(module, result, snmp_traps, snmp_config_api):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while updating snmp trap",
+            msg="Api Exception raised while updating SNMP trap",
         )
 
     task_ext_id = resp.data.ext_id
@@ -494,7 +494,7 @@ def delete_snmp_trap(module, result, snmp_traps):
     result["cluster_ext_id"] = cluster_ext_id
 
     if module.check_mode:
-        result["msg"] = "Snmp Trap with ext_id:{0} will be deleted.".format(ext_id)
+        result["msg"] = "SNMP Trap with ext_id:{0} will be deleted.".format(ext_id)
         return
 
     try:
@@ -505,7 +505,7 @@ def delete_snmp_trap(module, result, snmp_traps):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while deleting snmp trap",
+            msg="Api Exception raised while deleting SNMP trap",
         )
 
     task_ext_id = resp.data.ext_id

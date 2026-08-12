@@ -11,24 +11,24 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_snmp_user_v2
-short_description: Manage snmp users in Nutanix Prism Central
+short_description: Create, Update and Delete SNMP users in Nutanix Prism Central
 version_added: 2.6.0
 description:
-  - Create, Update, Delete snmp users.
+  - Create, Update, Delete SNMP users.
   - This module uses PC v4 APIs based SDKs
 options:
   state:
     description:
-      - If C(state) is present, it will create or update the snmp user.
-      - If C(state) is set to C(present) and ext_id is not provided, the operation will create the snmp user.
-      - If C(state) is set to C(present) and ext_id is provided, the operation will update the snmp user.
-      - If C(state) is set to C(absent) and ext_id is provided, the operation will delete the snmp user.
+      - If C(state) is present, it will create or update the SNMP user.
+      - If C(state) is set to C(present) and ext_id is not provided, the operation will create the SNMP user.
+      - If C(state) is set to C(present) and ext_id is provided, the operation will update the SNMP user.
+      - If C(state) is set to C(absent) and ext_id is provided, the operation will delete the SNMP user.
     type: str
     choices: ['present', 'absent']
   ext_id:
     description:
       - SnmpUser external ID.
-      - Required for updating or deleting the snmp user.
+      - Required for updating or deleting the SNMP user.
     type: str
   cluster_ext_id:
     description:
@@ -37,16 +37,19 @@ options:
     required: true
   username:
     description:
-      - SNMP username. For SNMP trap v3 version, SNMP username is required parameter.
+      - SNMP username.
+      - For SNMP trap v3 C(version), SNMP username is required parameter.
     type: str
   auth_type:
     description:
-      - Auth type.
+      - SNMP user authentication type.
+      - Required for create operation.
     type: str
     choices: ['MD5', 'SHA', 'SHA224', 'SHA256', 'SHA384', 'SHA512']
   auth_key:
     description:
       - SNMP user authentication key.
+      - Required for create operation.
     type: str
   priv_type:
     description:
@@ -67,7 +70,7 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Create snmp user
+- name: Create SNMP user
   nutanix.ncp.ntnx_snmp_user_v2:
     state: present
     nutanix_host: "{{ ip }}"
@@ -80,7 +83,7 @@ EXAMPLES = r"""
     auth_key: "my_auth_key_123"
   register: result
 
-- name: Update snmp user
+- name: Update SNMP user
   nutanix.ncp.ntnx_snmp_user_v2:
     state: present
     nutanix_host: "{{ ip }}"
@@ -94,7 +97,7 @@ EXAMPLES = r"""
     auth_key: "updated_auth_key_123"
   register: result
 
-- name: Delete snmp user
+- name: Delete SNMP user
   nutanix.ncp.ntnx_snmp_user_v2:
     state: absent
     nutanix_host: "{{ ip }}"
@@ -109,8 +112,8 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-  - The response for snmp user operations.
-    - SNMP user details if operation is create/update and C(wait) is True.
+  - The response for SNMP user operations.
+  - SNMP user details if operation is create/update and C(wait) is True.
   - Task details if operation is delete or C(wait) is False.
   type: dict
   returned: always
@@ -150,7 +153,7 @@ cluster_ext_id:
   sample: "913fa076-d385-4dd8-b549-0e628e645569"
 
 ext_id:
-  description: The external ID of the snmp user that was updated or deleted.
+  description: The external ID of the SNMP user that was updated or deleted.
   returned: always
   type: str
   sample: "84a60289-e6b6-4814-b882-7858f5485a24"
@@ -165,7 +168,7 @@ msg:
   description: This indicates the message if any message occurred
   returned: When there is an error, module is idempotent or check mode (in delete operation)
   type: str
-  sample: "Api Exception raised while creating snmp user"
+  sample: "Api Exception raised while creating SNMP user"
 
 skipped:
   description: This indicates whether the task was skipped
@@ -244,7 +247,7 @@ def create_snmp_user(module, result, snmp_users, snmp_config_api):
 
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating create snmp user spec", **result)
+        module.fail_json(msg="Failed generating create SNMP user spec", **result)
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
@@ -257,7 +260,7 @@ def create_snmp_user(module, result, snmp_users, snmp_config_api):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while creating snmp user",
+            msg="Api Exception raised while creating SNMP user",
         )
 
     task_ext_id = resp.data.ext_id
@@ -314,7 +317,7 @@ def update_snmp_user(module, result, snmp_users, snmp_config_api):
     )
     etag = get_etag(data=current_spec)
     if not etag:
-        return module.fail_json("Unable to fetch etag for updating snmp user", **result)
+        return module.fail_json("Unable to fetch etag for updating SNMP user", **result)
 
     kwargs = {"if_match": etag}
 
@@ -323,7 +326,7 @@ def update_snmp_user(module, result, snmp_users, snmp_config_api):
 
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating snmp user update spec", **result)
+        module.fail_json(msg="Failed generating SNMP user update spec", **result)
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
@@ -342,7 +345,7 @@ def update_snmp_user(module, result, snmp_users, snmp_config_api):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while updating snmp user",
+            msg="Api Exception raised while updating SNMP user",
         )
 
     task_ext_id = resp.data.ext_id
@@ -377,7 +380,7 @@ def delete_snmp_user(module, result, snmp_users, snmp_config_api):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while deleting snmp user",
+            msg="Api Exception raised while deleting SNMP user",
         )
 
     task_ext_id = resp.data.ext_id

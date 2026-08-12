@@ -11,7 +11,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_snmp_transport_v2
-short_description: Update SNMP transport ports and protocol details on a Nutanix cluster
+short_description: Add or Remove SNMP transport ports and protocol details on a Nutanix cluster
 version_added: 2.6.0
 description:
   - Add SNMP transport ports and protocol details when C(state) is C(present), C(protocol) and C(port) are provided.
@@ -35,11 +35,13 @@ options:
       - Required when adding or removing SNMP transport.
     type: str
     choices: ['UDP', 'UDP6', 'TCP', 'TCP6']
+    required: true
   port:
     description:
       - SNMP port number.
       - Required when adding or removing SNMP transport.
     type: int
+    required: true
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
@@ -139,6 +141,7 @@ msg:
   description: This indicates the message if any message occurred
   returned: When there is an error
   type: str
+  sample: "Failed generating add SNMP transport spec"
 
 error:
   description: Error message if any
@@ -200,8 +203,10 @@ def get_module_spec():
             type="str",
             choices=["UDP", "UDP6", "TCP", "TCP6"],
             obj=clusters_sdk.SnmpProtocol,
+            required=True,
         ),
         port=dict(type="int"),
+        required=True,
     )
 
     return module_args
@@ -298,14 +303,10 @@ def run_module():
         "failed": False,
         "response": None,
         "task_ext_id": None,
+        "cluster_ext_id": None,
     }
     api_instance = get_snmp_api_instance(module)
 
-    if not module.params.get("protocol") or not module.params.get("port"):
-        module.fail_json(
-            msg="protocol and port are required when adding or removing SNMP transport",
-            **result,
-        )
     state = module.params["state"]
     if state == "present":
         add_snmp_transport(module, result, api_instance)

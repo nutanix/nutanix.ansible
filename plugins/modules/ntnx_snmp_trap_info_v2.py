@@ -29,7 +29,6 @@ options:
     required: true
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
-  - nutanix.ncp.ntnx_info_v2
   - nutanix.ncp.ntnx_logger
   - nutanix.ncp.ntnx_proxy_v2
 author:
@@ -137,6 +136,7 @@ def run_module():
     module = BaseInfoModule(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
+        skip_info_args=True,
     )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "failed": False, "response": None}

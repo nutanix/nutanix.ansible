@@ -18,6 +18,13 @@ description:
   - Set C(is_enabled) to C(true) to enable SNMP, C(false) to disable it.
   - This module uses PC v4 APIs based SDKs.
 options:
+  state:
+        description:
+          - state is not supported for this module.
+          - It will always be present.
+        type: str
+        choices: ['present']
+        default: present
   cluster_ext_id:
     description:
       - The external ID of the cluster.
@@ -138,6 +145,11 @@ failed:
   type: bool
   sample: false
 
+error:
+  description: This field typically holds information about if the task have errors that occurred during the task execution
+  returned: when there is an error
+  type: str
+
 cluster_ext_id:
   description: The external ID of the cluster.
   returned: always
@@ -156,6 +168,7 @@ from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
     get_snmp_api_instance,
 )
 from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
+from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
@@ -176,6 +189,7 @@ def get_module_spec():
 
     module_args = dict(
         cluster_ext_id=dict(type="str", required=True),
+        state=dict(type="str", choices=["present"], default="present"),
         is_enabled=dict(type="bool", required=True),
     )
     return module_args
@@ -183,10 +197,14 @@ def get_module_spec():
 
 def update_snmp_status(module, result, api_instance):
     cluster_ext_id = module.params.get("cluster_ext_id")
-    is_enabled = module.params.get("is_enabled")
     result["cluster_ext_id"] = cluster_ext_id
+    sg = SpecGenerator(module)
+    default_spec = clusters_sdk.SnmpConfig()
+    spec, err = sg.generate_spec(obj=default_spec)
 
-    spec = clusters_sdk.SnmpStatusParam(is_enabled=is_enabled)
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed generating update SNMP status spec", **result)
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
@@ -230,6 +248,7 @@ def run_module():
         "failed": False,
         "response": None,
         "task_ext_id": None,
+        "cluster_ext_id": None,
     }
     api_instance = get_snmp_api_instance(module)
     update_snmp_status(module, result, api_instance)
