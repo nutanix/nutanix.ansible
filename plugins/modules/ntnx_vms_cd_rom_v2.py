@@ -370,8 +370,8 @@ def create_cd_rom(module, result):
         else:
             raise_api_exception(
                 module=module,
-                exception=Exception("Failed to get entity ext_id from task for CD ROM"),
-                msg="Failed to get entity ext_id from task for CD ROM",
+                exception=Exception("Failed to get entity ext_id from task for VM CD ROM"),
+                msg="Failed to get entity ext_id from task for VM CD ROM",
             )
 
     result["changed"] = True

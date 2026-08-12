@@ -381,9 +381,9 @@ def attach_iscsi_client(module, result):
             raise_api_exception(
                 module=module,
                 exception=Exception(
-                    "Failed to get entity ext_id from task for the ISCSI client"
+                    "Failed to get entity ext_id from task for the Volume Group ISCSI client"
                 ),
-                msg="Failed to get entity ext_id from task for the ISCSI client",
+                msg="Failed to get entity ext_id from task for the Volume Group ISCSI client",
             )
     result["changed"] = True
 

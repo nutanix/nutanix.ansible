@@ -245,9 +245,9 @@ def create_serial_port(module, result):
             raise_api_exception(
                 module=module,
                 exception=Exception(
-                    "Failed to get entity ext_id from task for Serial Port"
+                    "Failed to get entity ext_id from task for VM Serial Port"
                 ),
-                msg="Failed to get entity ext_id from task for Serial Port",
+                msg="Failed to get entity ext_id from task for VM Serial Port",
             )
 
     result["changed"] = True
