@@ -39,10 +39,10 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    ext_id: "44844104-873b-5a14-a89c-ea6fb67d6055"
+    ext_id: "12345678-1234-1234-1234-123456789012"
   register: result
 
-- name: Get all role memberships
+- name: List all role memberships
   nutanix.ncp.ntnx_role_memberships_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -56,7 +56,7 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    filter: "roleExtId eq '93939393-9393-9393-9393-939393939393'"
+    filter: "roleExtId eq '12345678-1234-1234-1234-123456789012'"
   register: result
 
 - name: List role memberships with limit
@@ -125,13 +125,13 @@ total_available_results:
 
 msg:
     description: Additional message about the operation.
-    returned: When there is an error
+    returned: always
     type: str
-    sample: "Api Exception raised while fetching role membership info using ext_id"
+    sample: "Api Exception raised while listing role memberships"
 
 error:
     description: This field holds information about errors that occurred during the task execution.
-    returned: When an error occurs
+    returned: always
     type: str
 
 failed:

@@ -103,9 +103,9 @@ EXAMPLES = r"""
     scope_template_name: "ProjectsScopeTemplate"
     scope_template_name_values:
       - name: "projectExtId"
-        value: "00000000-0000-0000-0000-000000000000"
+        value: "44444444-4444-4444-4444-444444444444"
     idp_ext_id: "99999999-9999-9999-9999-999999999999"
-    project_ext_id: "00000000-0000-0000-0000-000000000000"
+    project_ext_id: "44444444-4444-4444-4444-444444444444"
   register: result
 
 - name: Delete a role membership
@@ -115,7 +115,7 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     state: absent
-    ext_id: "44844104-873b-5a14-a89c-ea6fb67d6055"
+    ext_id: "12345678-1234-1234-1234-123456789012"
   register: result
 """
 
@@ -124,7 +124,7 @@ response:
     description:
         - Response for creating or deleting role memberships.
         - Role membership details if the operation is create.
-        - None if the operation is delete.
+        - Delete success message if the operation is delete.
     returned: always
     type: dict
     sample: {
@@ -356,6 +356,7 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
+        "failed": False,
         "response": None,
         "ext_id": None,
     }

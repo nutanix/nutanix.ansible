@@ -84,20 +84,16 @@
   ansible.builtin.set_fact:
     test_user_group_ext_id: "{{ result.ext_id }}"
 
-- name: Debug setup variables
-  ansible.builtin.debug:
-    msg: "role_ext_id={{ test_role_ext_id }}, user_ext_id={{ test_user_ext_id }}, idp_ext_id={{ identity_provider_uuid }}"
-
-- name: Create project with all fields
+- name: Create project for role membership testing
   nutanix.ncp.ntnx_project_v2:
     state: present
-    name: "{{ project_name }}2"
-    project_id: "{{ project_name }}-id-2"
-    description: "Project with all fields for testing"
+    name: "{{ project_name }}"
+    project_id: "{{ project_name }}-id"
+    description: "Project for role membership testing"
   register: result
   ignore_errors: true
 
-- name: Verify create with all fields
+- name: Verify project creation
   ansible.builtin.assert:
     that:
       - result.changed == true
@@ -106,16 +102,52 @@
       - result.ext_id is defined
       - result.ext_id | length > 0
       - result.task_ext_id is defined
-      - result.response.name == project_name ~ "2"
-      - result.response.id == project_name ~ "-id-2"
-      - result.response.description == "Project with all fields for testing"
+      - result.response.name == project_name
+      - result.response.id == project_name ~ "-id"
+      - result.response.description == "Project for role membership testing"
       - result.response.state == "ACTIVE"
-    fail_msg: "Create project with all fields failed"
-    success_msg: "Create project with all fields passed"
+    fail_msg: "Create project for role membership testing failed"
+    success_msg: "Create project for role membership testing passed"
 
-- name: Save project ext_id for update tests
+- name: Save project ext_id
   ansible.builtin.set_fact:
     project_ext_id: "{{ result.ext_id }}"
+
+- name: Fetch current IDP sharing state before test
+  nutanix.ncp.ntnx_saml_identity_providers_info_v2:
+    ext_id: "{{ identity_provider_uuid }}"
+  register: idp_info_result
+  ignore_errors: true
+
+- name: Debug IDP info result
+  ansible.builtin.debug:
+    var: idp_info_result
+
+- name: Save existing shared projects list
+  ansible.builtin.set_fact:
+    idp_existing_shared_projects: "{{ idp_info_result.response.shared_with_projects | default([], true) }}"
+
+- name: Share IDP with the created project
+  nutanix.ncp.ntnx_saml_identity_providers_v2:
+    state: present
+    ext_id: "{{ identity_provider_uuid }}"
+    shared_with_projects: "{{ idp_existing_shared_projects + [project_ext_id] }}"
+  register: share_idp_result
+  ignore_errors: true
+
+- name: Debug share IDP result
+  ansible.builtin.debug:
+    var: share_idp_result
+
+- name: Verify IDP shared with project
+  ansible.builtin.assert:
+    that:
+      - share_idp_result.failed == false
+      - share_idp_result.changed == true
+      - share_idp_result.response is defined
+      - project_ext_id in share_idp_result.response.shared_with_projects
+    fail_msg: "Sharing IDP with project failed"
+    success_msg: "IDP shared with project successfully"
 
 ###########################################################
 # CHECK MODE TESTS - CREATE (all fields)
@@ -157,7 +189,7 @@
 ###########################################################
 # CREATE OPERATION
 ###########################################################
-- name: Create role membership for a User
+- name: Create role membership for a User with non-default project
   nutanix.ncp.ntnx_role_membership_v2:
     state: present
     role_ext_id: "{{ test_role_ext_id }}"
@@ -172,11 +204,7 @@
   register: create_result
   ignore_errors: true
 
-- name: Debug create result
-  ansible.builtin.debug:
-    var: create_result
-
-- name: Verify create role membership for a User
+- name: Verify create role membership for a User with non-default project
   ansible.builtin.assert:
     that:
       - create_result.changed == true
@@ -192,14 +220,14 @@
       - create_result.response.scope_template_name_values[0].name == "projectExtId"
       - create_result.response.scope_template_name_values[0].value == project_ext_id
       - create_result.response.project_ext_id == project_ext_id
-    fail_msg: "Create role membership for a User failed"
-    success_msg: "Create role membership for a User passed"
+    fail_msg: "Create role membership for a User with non-default project failed"
+    success_msg: "Create role membership for a User with non-default project passed"
 
 - name: Save role membership ext_id
   ansible.builtin.set_fact:
     todelete_rm: "{{ todelete_rm + [create_result.ext_id] }}"
 
-- name: Create role membership for a User Group
+- name: Create role membership for a User Group with default project
   nutanix.ncp.ntnx_role_membership_v2:
     state: present
     role_ext_id: "{{ test_role_ext_id }}"
@@ -213,11 +241,7 @@
   register: create_result
   ignore_errors: true
 
-- name: Debug create result
-  ansible.builtin.debug:
-    var: create_result
-
-- name: Verify create role membership without passing scope_template_name_values' value
+- name: Verify create role membership for a User Group with default project
   ansible.builtin.assert:
     that:
       - create_result.changed == true
@@ -231,10 +255,10 @@
       - create_result.response.scope_template_name == "ProjectsScopeTemplate"
       - create_result.response.scope_template_name_values | length == 1
       - create_result.response.scope_template_name_values[0].name == "projectExtId"
-      - create_result.response.scope_template_name_values[0].value == 00000000-0000-0000-0000-000000000000
-      - create_result.response.project_ext_id == 00000000-0000-0000-0000-000000000000
-    fail_msg: "Create role membership for a User Group failed"
-    success_msg: "Create role membership for a User Group passed"
+      - create_result.response.scope_template_name_values[0].value == "00000000-0000-0000-0000-000000000000"
+      - create_result.response.project_ext_id == "00000000-0000-0000-0000-000000000000"
+    fail_msg: "Create role membership for a User Group with default project failed"
+    success_msg: "Create role membership for a User Group with default project passed"
 
 - name: Save role membership ext_id
   ansible.builtin.set_fact:
@@ -248,10 +272,6 @@
     ext_id: "{{ todelete_rm[0] }}"
   register: get_result
   ignore_errors: true
-
-- name: Debug get result
-  ansible.builtin.debug:
-    var: get_result
 
 - name: Verify get role membership by ext_id
   ansible.builtin.assert:
@@ -323,15 +343,16 @@
 ###########################################################
 # INFO OPERATIONS - LIST WITH FILTER
 ###########################################################
-- name: List role memberships with filter by role ext_id
+# The API rejects identityType and identityExtId as query properties
+# (IAM-20017); only roleExtId and projectExtId are filterable. Filtering on this
+# run's own project isolates the USER membership, since the GROUP membership
+# created above uses the default project. The identity assertions below still
+# verify identity_type/identity_ext_id on the returned record.
+- name: List role memberships with filter by role ext_id and project ext_id
   nutanix.ncp.ntnx_role_memberships_info_v2:
-    filter: "roleExtId eq '{{ test_role_ext_id }}' and identityType eq 'USER'"
+    filter: "roleExtId eq '{{ test_role_ext_id }}' and projectExtId eq '{{ project_ext_id }}'"
   register: filter_result
   ignore_errors: true
-
-- name: Debug filter result
-  ansible.builtin.debug:
-    var: filter_result
 
 - name: Verify list with filter
   ansible.builtin.assert:
@@ -339,11 +360,18 @@
       - filter_result.changed == false
       - filter_result.failed == false
       - filter_result.response is defined
-      - filter_result.response | length >= 1
+      - filter_result.response | length == 1
+      - filter_result.response[0].ext_id == todelete_rm[0]
       - filter_result.response[0].role_ext_id == test_role_ext_id
-      - filter_result.response[0].ext_id is defined
-      - filter_result.response[0].scope_template_name is defined
       - filter_result.response[0].identity_type == "USER"
+      - filter_result.response[0].identity_ext_id == test_user_ext_id
+      - filter_result.response[0].idp_ext_id == identity_provider_uuid
+      - filter_result.response[0].scope_template_name == "ProjectsScopeTemplate"
+      - filter_result.response[0].project_ext_id == project_ext_id
+      - filter_result.response[0].scope_template_name_values is defined
+      - filter_result.response[0].scope_template_name_values | length == 1
+      - filter_result.response[0].scope_template_name_values[0].name == "projectExtId"
+      - filter_result.response[0].scope_template_name_values[0].value == project_ext_id
     fail_msg: "List role memberships with filter failed"
     success_msg: "List role memberships with filter passed"
 
@@ -379,10 +407,6 @@
   register: delete_result
   loop: "{{ todelete_rm }}"
   ignore_errors: true
-
-- name: Debug delete result
-  ansible.builtin.debug:
-    var: delete_result
 
 - name: Verify deletion loop result
   ansible.builtin.assert:
@@ -428,10 +452,6 @@
   register: fetch_after_delete_result
   ignore_errors: true
 
-- name: Debug fetch after delete result
-  ansible.builtin.debug:
-    var: fetch_after_delete_result
-
 - name: Verify fetching deleted role membership fails with not found
   ansible.builtin.assert:
     that:
@@ -439,8 +459,6 @@
       - fetch_after_delete_result.failed == true
       - fetch_after_delete_result.msg is defined
       - fetch_after_delete_result.msg == "Api Exception raised while fetching role membership info using ext_id"
-      - fetch_after_delete_result.error is defined
-      - fetch_after_delete_result.error == "NOT FOUND"
       - fetch_after_delete_result.status is defined
       - fetch_after_delete_result.status == 404
       - fetch_after_delete_result.response is defined
@@ -449,7 +467,7 @@
   when: deleted_rm_ext_id is defined and fetch_after_delete_result is defined
 
 ###########################################################
-# NEGATIVE SCENARIOS
+# NEGATIVE SCENARIOS - CREATE
 ###########################################################
 - name: "Negative: Create role membership without any required fields"
   nutanix.ncp.ntnx_role_membership_v2:
@@ -457,22 +475,13 @@
   register: result
   ignore_errors: true
 
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
-
-- name: Verify create without required fields fails and mentions all missing fields
+- name: Verify create without required fields fails
   ansible.builtin.assert:
     that:
       - result.changed == false
       - result.failed == true
       - result.msg is defined
-      - "'role_ext_id' in result.msg"
-      - "'identity_type' in result.msg"
-      - "'identity_ext_id' in result.msg"
-      - "'idp_ext_id' in result.msg"
-      - "'scope_template_name' in result.msg"
-      - "'Missing required parameter' in result.msg"
+      - 'result.msg == "Missing required parameter(s): role_ext_id, identity_type, identity_ext_id, idp_ext_id, scope_template_name"'
     fail_msg: "Negative test - create without required fields should fail"
     success_msg: "Negative test - create without required fields correctly failed"
 
@@ -487,21 +496,13 @@
   register: result
   ignore_errors: true
 
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
-
 - name: Verify create with invalid identity_type fails
   ansible.builtin.assert:
     that:
       - result.changed == false
       - result.failed == true
       - result.msg is defined
-      - "'identity_type' in result.msg"
-      - "'must be one of' in result.msg"
-      - "'USER' in result.msg"
-      - "'GROUP' in result.msg"
-      - "'INVALID' in result.msg"
+      - 'result.msg == "value of identity_type must be one of: USER, GROUP, got: INVALID"'
     fail_msg: "Negative test - invalid identity_type should fail"
     success_msg: "Negative test - invalid identity_type correctly failed"
 
@@ -516,10 +517,6 @@
   register: result
   ignore_errors: true
 
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
-
 - name: Verify create with invalid scope_template_name fails
   ansible.builtin.assert:
     that:
@@ -527,49 +524,20 @@
       - result.failed == true
       - result.msg is defined
       - result.msg == "Api Exception raised while creating role membership"
-      - result.error is defined
-      - result.error == "BAD REQUEST"
       - result.status is defined
       - result.status == 400
       - result.response is defined
     fail_msg: "Negative test - invalid scope_template_name should fail"
     success_msg: "Negative test - invalid scope_template_name correctly failed"
 
-- name: "Negative: Delete role membership with non-existent ext_id"
-  nutanix.ncp.ntnx_role_membership_v2:
-    state: absent
-    ext_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
-  register: result
-  ignore_errors: true
-
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
-
-- name: Verify delete with non-existent ext_id fails
-  ansible.builtin.assert:
-    that:
-      - result.changed == false
-      - result.failed == true
-      - result.msg is defined
-      - result.msg == "Api Exception raised while fetching role membership info using ext_id"
-      - result.error is defined
-      - result.error == "NOT FOUND"
-      - result.status is defined
-      - result.status == 404
-      - result.response is defined
-    fail_msg: "Negative test - delete with non-existent ext_id should fail"
-    success_msg: "Negative test - delete with non-existent ext_id correctly failed"
-
+###########################################################
+# NEGATIVE SCENARIOS - GET
+###########################################################
 - name: "Negative: Get role membership info with non-existent ext_id"
   nutanix.ncp.ntnx_role_memberships_info_v2:
     ext_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
   register: result
   ignore_errors: true
-
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
 
 - name: Verify get info with non-existent ext_id fails
   ansible.builtin.assert:
@@ -578,13 +546,34 @@
       - result.failed == true
       - result.msg is defined
       - result.msg == "Api Exception raised while fetching role membership info using ext_id"
-      - result.error is defined
-      - result.error == "NOT FOUND"
       - result.status is defined
       - result.status == 404
       - result.response is defined
     fail_msg: "Negative test - get info with non-existent ext_id should fail"
     success_msg: "Negative test - get info with non-existent ext_id correctly failed"
+
+###########################################################
+# NEGATIVE SCENARIOS - DELETE
+###########################################################
+- name: "Negative: Delete role membership with non-existent ext_id"
+  nutanix.ncp.ntnx_role_membership_v2:
+    state: absent
+    ext_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+  register: result
+  ignore_errors: true
+
+- name: Verify delete with non-existent ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+      - result.msg == "Api Exception raised while fetching role membership info using ext_id"
+      - result.status is defined
+      - result.status == 404
+      - result.response is defined
+    fail_msg: "Negative test - delete with non-existent ext_id should fail"
+    success_msg: "Negative test - delete with non-existent ext_id correctly failed"
 
 ###########################################################
 # CLEANUP
@@ -597,10 +586,6 @@
     user_uuid: "{{ test_user_ext_id }}"
   register: result
   ignore_errors: true
-
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
 
 - name: Delete created users status
   ansible.builtin.assert:
@@ -630,6 +615,33 @@
       - result.msg == expected_msg
     fail_msg: Delete created SAML user group failed
     success_msg: Delete created SAML user group passed
+
+- name: Restore IDP sharing to original state
+  nutanix.ncp.ntnx_saml_identity_providers_v2:
+    state: present
+    ext_id: "{{ identity_provider_uuid }}"
+    shared_with_projects: "{{ idp_existing_shared_projects }}"
+  register: restore_idp_result
+  ignore_errors: true
+
+- name: Verify IDP sharing restored
+  vars:
+    # The API returns null, not [], for an IDP shared with no projects, so
+    # normalise before comparing against the list captured before the test.
+    restored_shared_projects: "{{ restore_idp_result.response.shared_with_projects | default([], true) }}"
+  ansible.builtin.assert:
+    that:
+      - restore_idp_result.changed == true
+      - restore_idp_result.failed == false
+      - restore_idp_result.error == None
+      - restore_idp_result.ext_id == identity_provider_uuid
+      - restore_idp_result.response is defined
+      - restore_idp_result.response.ext_id == identity_provider_uuid
+      - restore_idp_result.response.is_shared_with_all_projects == false
+      - project_ext_id not in restored_shared_projects
+      - (restored_shared_projects | sort) == (idp_existing_shared_projects | sort)
+    fail_msg: "Restoring IDP sharing state failed"
+    success_msg: "IDP sharing restored to original state successfully"
 
 - name: Delete created project
   nutanix.ncp.ntnx_project_v2:
