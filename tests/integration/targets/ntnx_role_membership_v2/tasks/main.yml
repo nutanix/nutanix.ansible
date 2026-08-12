@@ -12,8 +12,3 @@
   block:
     - name: Import all_operations test tasks
       ansible.builtin.import_tasks: "all_operations.yml"
-  # always:
-  #   # Safety net: a run that fails partway would otherwise leave debris that
-  #   # blocks every subsequent run. See teardown.yml for why.
-  #   - name: Import teardown tasks
-  #     ansible.builtin.import_tasks: "teardown.yml"

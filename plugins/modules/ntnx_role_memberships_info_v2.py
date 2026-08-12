@@ -125,13 +125,13 @@ total_available_results:
 
 msg:
     description: Additional message about the operation.
-    returned: always
+    returned: When there is an error
     type: str
-    sample: "Api Exception raised while listing role memberships"
+    sample: "Api Exception raised while fetching role membership info using ext_id"
 
 error:
     description: This field holds information about errors that occurred during the task execution.
-    returned: always
+    returned: When there is an error
     type: str
 
 failed:

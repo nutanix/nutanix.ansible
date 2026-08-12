@@ -119,10 +119,6 @@
   register: idp_info_result
   ignore_errors: true
 
-- name: Debug IDP info result
-  ansible.builtin.debug:
-    var: idp_info_result
-
 - name: Save existing shared projects list
   ansible.builtin.set_fact:
     idp_existing_shared_projects: "{{ idp_info_result.response.shared_with_projects | default([], true) }}"
@@ -134,10 +130,6 @@
     shared_with_projects: "{{ idp_existing_shared_projects + [project_ext_id] }}"
   register: share_idp_result
   ignore_errors: true
-
-- name: Debug share IDP result
-  ansible.builtin.debug:
-    var: share_idp_result
 
 - name: Verify IDP shared with project
   ansible.builtin.assert:
