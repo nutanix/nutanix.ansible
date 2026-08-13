@@ -16,7 +16,7 @@
         nutanix_debug: "{{ nutanix_debug | default(omit) }}"
         nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
         validate_certs: false
-        name: "{{external_nat_subnets[0].name}}"
+        name: "{{external_nat_subnets[0].name}}_{{ external_nat_subnets[0].vlan_id }}"
         external_subnet:
           vlan_id: "{{external_nat_subnets[0].vlan_id}}"
           enable_nat: true
@@ -36,7 +36,7 @@
         marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 1"
         block: |
           external_nat_subnet:
-            name: "{{external_nat_subnets[0].name}}"
+            name: "{{external_nat_subnets[0].name}}_{{ external_nat_subnets[0].vlan_id }}"
             uuid: "{{result.subnet_uuid}}"
 
     # Fixture project permanently shared with the external NAT subnet. This is
@@ -79,7 +79,7 @@
         marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 6"
         block: |
           external_subnet_project:
-            name: "{{ external_nat_subnets[0].name }}_project"
+            name: "{{ external_nat_subnets[0].name }}_project_{{ external_nat_subnets[0].vlan_id }}"
             uuid: "{{project_result.ext_id}}"
 
     - name: Create min VPC with external_subnet uuid
