@@ -93,7 +93,7 @@ jobs:
           echo '${{ secrets.PC_CONFIG }}' > "$VARS_FILE"
 
           # Use a random valid VLAN ID for the generated external NAT subnet.
-          RANDOM_VLAN_ID=$(( (RANDOM % 4092) + 2 ))
+          RANDOM_VLAN_ID=$(shuf -e {3..1001} {1006..4092} -n 1)
           sed -i -E \
             "/^external_nat_subnets:/,/^[^[:space:]]/ s/^([[:space:]]+vlan_id:)[[:space:]]*[0-9]+/\\1 ${RANDOM_VLAN_ID}/" \
             "$VARS_FILE"
