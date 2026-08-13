@@ -118,7 +118,7 @@
         validate_certs: false
         name: "{{static_subnet_name}}"
         vlan_subnet:
-          vlan_id: 373
+          vlan_id: "{{ (external_nat_subnets[0].vlan_id | int) + 1 }}"
           virtual_switch:
             name: vs0
           cluster:
