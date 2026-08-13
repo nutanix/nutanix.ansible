@@ -99,4 +99,6 @@
         - item | string | trim | length > 0
         - item != '.'
         - item != './'
-        - item != (ansible_env.PWD | default(''))
+        - not item.endswith('/_work')
+        - not item.endswith('/_work/')
+        - item not in (playbook_dir | default(''))
