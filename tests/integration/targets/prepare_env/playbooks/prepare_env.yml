@@ -92,7 +92,7 @@
         nutanix_debug: "{{ nutanix_debug | default(omit) }}"
         nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
         validate_certs: false
-        name: "{{vpc_name}}"
+        name: "{{vpc_name}}_{{ external_nat_subnets[0].vlan_id }}"
         external_subnets:
           - subnet_uuid: "{{ result.subnet_uuid }}"
       register: result
@@ -103,7 +103,7 @@
         marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 2"
         block: |
           vpc:
-            name: "{{vpc_name}}"
+            name: "{{vpc_name}}_{{ external_nat_subnets[0].vlan_id }}"
             uuid: "{{result.vpc_uuid}}"
 
     - name: Create vlan subnet with IPAM
@@ -116,7 +116,7 @@
         nutanix_debug: "{{ nutanix_debug | default(omit) }}"
         nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
         validate_certs: false
-        name: "{{static_subnet_name}}"
+        name: "{{static_subnet_name}}_{{ external_nat_subnets[0].vlan_id }}"
         vlan_subnet:
           vlan_id: "{{ (external_nat_subnets[0].vlan_id | int) + 1 }}"
           virtual_switch:
@@ -138,7 +138,7 @@
         marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 3"
         block: |
           static:
-            name: "{{static_subnet_name}}"
+            name: "{{static_subnet_name}}_{{ external_nat_subnets[0].vlan_id }}"
             uuid: "{{result.subnet_uuid}}"
             network_ip: 10.30.30.0
             network_prefix: 24
@@ -156,7 +156,7 @@
         nutanix_debug: "{{ nutanix_debug | default(omit) }}"
         nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
         validate_certs: false
-        name: "{{overlay_subnet.name}}"
+        name: "{{overlay_subnet.name}}_{{ external_nat_subnets[0].vlan_id }}"
         overlay_subnet:
           vpc:
             uuid: "{{ vpc.uuid }}"
@@ -172,7 +172,7 @@
         marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 4"
         block: |
           overlay:
-            name: "{{overlay_subnet.name}}"
+            name: "{{overlay_subnet.name}}_{{ external_nat_subnets[0].vlan_id }}"
             uuid: "{{result.subnet_uuid}}"
 
     - name: Create VM with overlay subnet
@@ -185,17 +185,17 @@
         nutanix_debug: "{{ nutanix_debug | default(omit) }}"
         nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
         validate_certs: false
-        name: "{{vm_name}}"
+        name: "{{vm_name}}_{{ external_nat_subnets[0].vlan_id }}"
         cluster:
           uuid: "{{ cluster.uuid }}"
         networks:
           - is_connected: true
             subnet:
-              name: "{{overlay_subnet.name}}"
+              name: "{{overlay_subnet.name}}_{{ external_nat_subnets[0].vlan_id }}"
             private_ip: "{{overlay_subnet.private_ip}}"
           - is_connected: true
             subnet:
-              name: "{{overlay_subnet.name}}"
+              name: "{{overlay_subnet.name}}_{{ external_nat_subnets[0].vlan_id }}"
             private_ip: "{{overlay_subnet.private_ip1}}"
       register: result
 
@@ -205,7 +205,7 @@
         marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 5"
         block: |
           vm:
-            name: "{{vm_name}}"
+            name: "{{vm_name}}_{{ external_nat_subnets[0].vlan_id }}"
             uuid: "{{result.vm_uuid}}"
 
     # - name: create VM with static subnet for dr tests
