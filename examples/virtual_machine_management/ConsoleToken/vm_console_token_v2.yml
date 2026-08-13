@@ -1,0 +1,82 @@
+---
+# Summary:
+# This playbook demonstrates how to generate a VNC console token for an AHV
+# VM using the Nutanix VMM v4 API.
+#
+# It covers:
+# 1. Generating a console token for an existing AHV VM.
+# 2. Handling the negative case where the VM external ID does not exist.
+#
+# Override the following variables when running the playbook against a live
+# Prism Central (see also examples_run.log):
+#   -e pc_ip=<pc_ip> -e pc_user=<user> -e pc_password=<pass>
+#      -e vm_ext_id=<real_vm_uuid>
+
+- name: VM Console Token playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ pc_ip | default('<pc_ip>') }}"
+      nutanix_username: "{{ pc_user | default('<user>') }}"
+      nutanix_password: "{{ pc_password | default('<pass>') }}"
+      validate_certs: false
+  tasks:
+    - name: Set variables for the console token example
+      ansible.builtin.set_fact:
+        vm_ext_id: "{{ vm_ext_id | default('ac5aff0c-6c68-4948-9088-b903e2be0ce7') }}"
+        invalid_vm_ext_id: "00000000-0000-0000-0000-000000000000"
+
+    - name: Generate a VM console token
+      nutanix.ncp.ntnx_vm_console_token_v2:
+        state: present
+        ext_id: "{{ vm_ext_id }}"
+      register: token_result
+      ignore_errors: true
+
+    - name: Show generated console token task response
+      ansible.builtin.debug:
+        var: token_result
+
+    - name: Attempt to generate a token for a non-existent VM
+      nutanix.ncp.ntnx_vm_console_token_v2:
+        state: present
+        ext_id: "{{ invalid_vm_ext_id }}"
+      register: invalid_token_result
+      ignore_errors: true
+
+    - name: Show the failure response for an invalid VM external ID
+      ansible.builtin.debug:
+        var: invalid_token_result
+
+# Sample response (real output captured from an actual run against a live
+# Prism Central 4.2 cluster — the VmConsoleToken JWT is redacted below):
+#
+# token_result:
+#   changed: true
+#   failed: false
+#   ext_id: "70f9a8bb-7834-4146-7b12-a436f3fbd520"
+#   task_ext_id: "ZXJnb24=:XXXX-XXXX-XXXX-XXXX"
+#   response:
+#     status: "SUCCEEDED"
+#     operation: "GenerateVmConsoleToken"
+#     progress_percentage: 100
+#     entities_affected:
+#       - ext_id: "70f9a8bb-7834-4146-7b12-a436f3fbd520"
+#         rel: "vmm:ahv:config:vm"
+#     completion_details:
+#       - name: "VmConsoleToken"
+#         value: "<REDACTED-JWT>"
+#       - name: "WsUri"
+#         value: "/console/launch/70f9a8bb-7834-4146-7b12-a436f3fbd520"
+#
+# invalid_token_result:
+#   failed: true
+#   status: 404
+#   error: "NOT FOUND"
+#   response:
+#     data:
+#       error:
+#         - code: "VMM-30100"
+#           errorGroup: "VM_NOT_FOUND"
+#           message: "Failed to perform the operation on the VM with UUID '00000000-0000-0000-0000-000000000000', because it is not found."

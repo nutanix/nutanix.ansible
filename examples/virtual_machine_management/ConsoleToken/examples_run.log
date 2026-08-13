@@ -1,0 +1,110 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [VM Console Token playbook] ***********************************************
+
+TASK [Set variables for the console token example] *****************************
+ok: [localhost] => {"ansible_facts": {"invalid_vm_ext_id": "00000000-0000-0000-0000-000000000000", "vm_ext_id": "70f9a8bb-7834-4146-7b12-a436f3fbd520"}, "changed": false}
+
+TASK [Generate a VM console token] *********************************************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "70f9a8bb-7834-4146-7b12-a436f3fbd520", "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": null, "completed_time": "2026-07-20T17:54:29.608900+00:00", "completion_details": [{"name": "VmConsoleToken", "value": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3ODQ1NzM2NjksInVzZXJVdWlkIjoiMDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAwIiwidm1VdWlkIjoiNzBmOWE4YmItNzgzNC00MTQ2LTdiMTItYTQzNmYzZmJkNTIwIn0.MOuxHsmYa_D8GBjDvfcV9DgqHQEBuIy5f0X6yN_LzVPHlsL6zGt23vhForch9VrNyJuaUmo15uVC837oDPYxMN-0Ayq5fQlsv-Rr9bI2aQQq2ECC74giRlgzuJlhpXCc2AZAlTIdrAZbbKdW_VSBEDKQukdSLtlBIQbGl2N-7CPCafcYLYEKFOTEk8rlFNmmgcWRds3m4bDvceEYjpoJwH-gzo57Kd3yXN1Ad5abEWM--L8G2KUVfqKkiZ9SkUhFYGiCaYN4IE1U2ZNhfRJvwIVMCGAT6FKpozgoco5KIKUe7bpEl-jRfaAPO3L3WuAAFv_8ZZwKGtcQMzZT_V5Hfw"}, {"name": "WsUri", "value": "/console/launch/70f9a8bb-7834-4146-7b12-a436f3fbd520"}], "created_time": "2026-07-20T17:54:29.544886+00:00", "entities_affected": [{"ext_id": "70f9a8bb-7834-4146-7b12-a436f3fbd520", "name": "nkp-bastion", "rel": "vmm:ahv:config:vm"}], "error_messages": null, "ext_id": "ZXJnb24=:df2d5769-abcf-50cb-b77d-0ba16e5faab9", "is_background_task": false, "is_cancelable": false, "last_updated_time": "2026-07-20T17:54:29.608899+00:00", "legacy_error_message": null, "number_of_entities_affected": 1, "number_of_subtasks": 0, "operation": "GenerateVmConsoleToken", "operation_description": "Generate VM console token", "owned_by": {"ext_id": "00000000-0000-0000-0000-000000000000", "name": "admin"}, "parent_task": null, "progress_percentage": 100, "projectExtId": "00000000-0000-0000-0000-000000000000", "resource_links": null, "root_task": null, "started_time": "2026-07-20T17:54:29.552914+00:00", "status": "SUCCEEDED", "sub_steps": null, "sub_tasks": null, "warnings": null}, "task_ext_id": "ZXJnb24=:df2d5769-abcf-50cb-b77d-0ba16e5faab9"}
+
+TASK [Show generated console token task response] ******************************
+ok: [localhost] => {
+    "token_result": {
+        "changed": true,
+        "error": null,
+        "ext_id": "70f9a8bb-7834-4146-7b12-a436f3fbd520",
+        "failed": false,
+        "response": {
+            "app_name": null,
+            "batch_summary": null,
+            "cluster_ext_ids": null,
+            "completed_time": "2026-07-20T17:54:29.608900+00:00",
+            "completion_details": [
+                {
+                    "name": "VmConsoleToken",
+                    "value": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3ODQ1NzM2NjksInVzZXJVdWlkIjoiMDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAwIiwidm1VdWlkIjoiNzBmOWE4YmItNzgzNC00MTQ2LTdiMTItYTQzNmYzZmJkNTIwIn0.MOuxHsmYa_D8GBjDvfcV9DgqHQEBuIy5f0X6yN_LzVPHlsL6zGt23vhForch9VrNyJuaUmo15uVC837oDPYxMN-0Ayq5fQlsv-Rr9bI2aQQq2ECC74giRlgzuJlhpXCc2AZAlTIdrAZbbKdW_VSBEDKQukdSLtlBIQbGl2N-7CPCafcYLYEKFOTEk8rlFNmmgcWRds3m4bDvceEYjpoJwH-gzo57Kd3yXN1Ad5abEWM--L8G2KUVfqKkiZ9SkUhFYGiCaYN4IE1U2ZNhfRJvwIVMCGAT6FKpozgoco5KIKUe7bpEl-jRfaAPO3L3WuAAFv_8ZZwKGtcQMzZT_V5Hfw"
+                },
+                {
+                    "name": "WsUri",
+                    "value": "/console/launch/70f9a8bb-7834-4146-7b12-a436f3fbd520"
+                }
+            ],
+            "created_time": "2026-07-20T17:54:29.544886+00:00",
+            "entities_affected": [
+                {
+                    "ext_id": "70f9a8bb-7834-4146-7b12-a436f3fbd520",
+                    "name": "nkp-bastion",
+                    "rel": "vmm:ahv:config:vm"
+                }
+            ],
+            "error_messages": null,
+            "ext_id": "ZXJnb24=:df2d5769-abcf-50cb-b77d-0ba16e5faab9",
+            "is_background_task": false,
+            "is_cancelable": false,
+            "last_updated_time": "2026-07-20T17:54:29.608899+00:00",
+            "legacy_error_message": null,
+            "number_of_entities_affected": 1,
+            "number_of_subtasks": 0,
+            "operation": "GenerateVmConsoleToken",
+            "operation_description": "Generate VM console token",
+            "owned_by": {
+                "ext_id": "00000000-0000-0000-0000-000000000000",
+                "name": "admin"
+            },
+            "parent_task": null,
+            "progress_percentage": 100,
+            "projectExtId": "00000000-0000-0000-0000-000000000000",
+            "resource_links": null,
+            "root_task": null,
+            "started_time": "2026-07-20T17:54:29.552914+00:00",
+            "status": "SUCCEEDED",
+            "sub_steps": null,
+            "sub_tasks": null,
+            "warnings": null
+        },
+        "task_ext_id": "ZXJnb24=:df2d5769-abcf-50cb-b77d-0ba16e5faab9"
+    }
+}
+
+TASK [Attempt to generate a token for a non-existent VM] ***********************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while generating VM console token", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "argumentsMap": {"vm_uuid": "00000000-0000-0000-0000-000000000000"}, "code": "VMM-30100", "errorGroup": "VM_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the VM with UUID '00000000-0000-0000-0000-000000000000', because it is not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [Show the failure response for an invalid VM external ID] *****************
+ok: [localhost] => {
+    "invalid_token_result": {
+        "changed": false,
+        "error": "NOT FOUND",
+        "failed": true,
+        "msg": "Api Exception raised while generating VM console token",
+        "response": {
+            "$dataItemDiscriminator": "vmm.v4.error.ErrorResponse",
+            "data": {
+                "$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>",
+                "$objectType": "vmm.v4.error.ErrorResponse",
+                "error": [
+                    {
+                        "$objectType": "vmm.v4.error.AppMessage",
+                        "argumentsMap": {
+                            "vm_uuid": "00000000-0000-0000-0000-000000000000"
+                        },
+                        "code": "VMM-30100",
+                        "errorGroup": "VM_NOT_FOUND",
+                        "locale": "en-US",
+                        "message": "Failed to perform the operation on the VM with UUID '00000000-0000-0000-0000-000000000000', because it is not found.",
+                        "severity": "ERROR"
+                    }
+                ]
+            }
+        },
+        "status": 404
+    }
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=5    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=1   
+
