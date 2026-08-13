@@ -55,8 +55,8 @@
         nutanix_debug: "{{ nutanix_debug | default(omit) }}"
         nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
         validate_certs: false
-        name: "{{ external_nat_subnets[0].name }}_project"
-        project_id: "{{ external_nat_subnets[0].name }}_project"
+        name: "{{ external_nat_subnets[0].name }}_project_{{ external_nat_subnets[0].vlan_id }}"
+        project_id: "{{ external_nat_subnets[0].name }}_project_{{ external_nat_subnets[0].vlan_id }}"
       register: project_result
 
     - name: Share external NAT subnet with the fixture project
