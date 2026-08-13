@@ -83,9 +83,14 @@
         nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
         validate_certs: false
         ext_id: "{{ external_subnet_project.uuid }}"
-    - name: Delete downloaded disk file
+    - name: Delete downloaded test files
       ignore_errors: true
       register: result
       ansible.builtin.file:
-        path: "{{ disk_image.dest }}"
+        path: "{{ item }}"
         state: absent
+      loop:
+        - "{{ cirros_image.dest }}"
+        - "{{ disk_image.dest }}"
+        - "{{ xml_content.dest }}"
+        - "{{ unattendxml.dest }}"
