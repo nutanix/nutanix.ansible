@@ -75,7 +75,7 @@
         validate_certs: false
         name: "{{static_subnet_name}}"
         vlan_subnet:
-          vlan_id: 373
+          vlan_id: "{{ (external_nat_subnets[0].vlan_id | int) + 1 }}"
           virtual_switch:
             name: vs0
           cluster:
@@ -150,6 +150,10 @@
             subnet:
               name: "{{overlay_subnet.name}}"
             private_ip: "{{overlay_subnet.private_ip}}"
+          - is_connected: true
+            subnet:
+              name: "{{overlay_subnet.name}}"
+            private_ip: "{{overlay_subnet.private_ip1}}"
       register: result
 
     - name: Insert vm configuration block to var file
@@ -193,11 +197,31 @@
     #           name: "{{dr_vm_name}}"
     #           uuid: "{{result.vm_uuid}}"
 
+    - name: Check if cirros image already exists locally
+      ansible.builtin.stat:
+        path: "{{ cirros_image.dest }}"
+      register: cirros_image_stat
+
+    - name: Downloading small cirros image for object store upload tests
+      ansible.builtin.get_url:
+        mode: "0644"
+        url: "{{ cirros_image.url }}"
+        dest: "{{ cirros_image.dest }}"
+        timeout: 120
+      when: not cirros_image_stat.stat.exists
+
+    - name: Check if disk image already exists locally
+      ansible.builtin.stat:
+        path: "{{ disk_image.dest }}"
+      register: disk_image_stat
+
     - name: Downloading disk image for image related tests
       ansible.builtin.get_url:
         mode: "0644"
         url: "{{ disk_image.url }}"
         dest: "{{ disk_image.dest }}"
+        timeout: 120
+      when: not disk_image_stat.stat.exists
     #   # - name: create address group for network security policy related tests
     #   #   nutanix.ncp.ntnx_address_groups:
     #   #     state: present
@@ -207,14 +231,26 @@
     #   #       - network_ip: "10.1.1.0"
     #   #         network_prefix: 24
 
+    - name: Check if saml xml content already exists locally
+      ansible.builtin.stat:
+        path: "{{ xml_content.dest }}"
+      register: xml_content_stat
+
     - name: Downloading xml content for saml tests
       ansible.builtin.get_url:
         mode: "0644"
         url: "{{ xml_content.url }}"
         dest: "{{ xml_content.dest }}"
+      when: not xml_content_stat.stat.exists
+
+    - name: Check if unattendxml file already exists locally
+      ansible.builtin.stat:
+        path: "{{ unattendxml.dest }}"
+      register: unattendxml_stat
 
     - name: Downloading unattendxml file for windows tests
       ansible.builtin.get_url:
         mode: "0644"
         url: "{{ unattendxml.url }}"
         dest: "{{ unattendxml.dest }}"
+      when: not unattendxml_stat.stat.exists
