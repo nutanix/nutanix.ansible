@@ -90,15 +90,7 @@
         path: "{{ item }}"
         state: absent
       loop:
-        - "{{ cirros_image.dest | default('', true) }}"
-        - "{{ disk_image.dest | default('', true) }}"
-        - "{{ xml_content.dest | default('', true) }}"
-        - "{{ unattendxml.dest | default('', true) }}"
-      when:
-        - item is defined
-        - item | string | trim | length > 0
-        - item != '.'
-        - item != './'
-        - not item.endswith('/_work')
-        - not item.endswith('/_work/')
-        - item not in (playbook_dir | default(''))
+        - "{{ cirros_image.dest }}"
+        - "{{ disk_image.dest }}"
+        - "{{ xml_content.dest }}"
+        - "{{ unattendxml.dest }}"
