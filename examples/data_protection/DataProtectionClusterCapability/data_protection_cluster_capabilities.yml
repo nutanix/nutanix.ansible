@@ -1,0 +1,76 @@
+---
+# Summary:
+# This playbook demonstrates the ntnx_data_protection_cluster_capabilities_info_v2 module.
+# The Nutanix Prism Central v4 Data Protection API only exposes a *list* endpoint for the
+# DataProtectionClusterCapability entity (no create/update/delete/get-by-id endpoints).
+# All operations therefore go through the info module.
+#
+# 1. List all data protection cluster capabilities
+# 2. Get data protection cluster capability using ext_id (cluster UUID)
+# 3. List with an OData filter on extId
+# 4. List with pagination (page + limit)
+# 5. List with a limit only
+# 6. List selecting only specific fields
+# 7. List ordered by extId
+
+- name: Data Protection Cluster Capabilities playbook
+  hosts: localhost
+  gather_facts: false
+  vars:
+    # Replace these placeholders (or override with `-e ...`) before running.
+    ip: "<pc_ip>"
+    username: "<user>"
+    password: "<pass>"
+    validate_certs: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: "{{ validate_certs }}"
+  tasks:
+    - name: Set variables for examples
+      ansible.builtin.set_fact:
+        cluster_capability_ext_id: "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+
+    - name: List all data protection cluster capabilities
+      nutanix.ncp.ntnx_data_protection_cluster_capabilities_info_v2:
+      register: list_all_result
+      ignore_errors: true
+
+    - name: Get data protection cluster capabilities using ext_id
+      nutanix.ncp.ntnx_data_protection_cluster_capabilities_info_v2:
+        ext_id: "{{ cluster_capability_ext_id }}"
+      register: get_by_id_result
+      ignore_errors: true
+
+    - name: List data protection cluster capabilities with filter on extId
+      nutanix.ncp.ntnx_data_protection_cluster_capabilities_info_v2:
+        filter: "extId eq '{{ cluster_capability_ext_id }}'"
+      register: list_filter_result
+      ignore_errors: true
+
+    - name: List data protection cluster capabilities with pagination
+      nutanix.ncp.ntnx_data_protection_cluster_capabilities_info_v2:
+        page: 0
+        limit: 10
+      register: list_paginated_result
+      ignore_errors: true
+
+    - name: List data protection cluster capabilities with limit
+      nutanix.ncp.ntnx_data_protection_cluster_capabilities_info_v2:
+        limit: 1
+      register: list_limit_result
+      ignore_errors: true
+
+    - name: List data protection cluster capabilities selecting only specific fields
+      nutanix.ncp.ntnx_data_protection_cluster_capabilities_info_v2:
+        select: "extId,clusterExtId"
+      register: list_select_result
+      ignore_errors: true
+
+    - name: List data protection cluster capabilities ordered by extId
+      nutanix.ncp.ntnx_data_protection_cluster_capabilities_info_v2:
+        orderby: "extId"
+      register: list_orderby_result
+      ignore_errors: true

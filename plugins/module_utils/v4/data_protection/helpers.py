@@ -71,3 +71,42 @@ def get_protected_resource(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching protected resource info using ext_id",
         )
+
+
+def get_data_protection_cluster_capability(module, api_instance, ext_id):
+    """
+    This method will return the data protection cluster capabilities for a given
+    cluster external ID.
+
+    The underlying v4 SDK only exposes a list API for DataProtectionClusterCapability
+    (no dedicated get-by-id endpoint). This helper filters the list on the server side
+    using ``$filter=extId eq '<ext_id>'`` and returns the single matching entity.
+
+    Args:
+        module: Ansible module.
+        api_instance: ``DataProtectionClusterCapabilitiesApi`` SDK instance.
+        ext_id (str): External identifier of the DataProtectionClusterCapability
+            (which corresponds to a cluster UUID).
+
+    Returns:
+        object | None: SDK ``DataProtectionClusterCapability`` object, or ``None`` if
+        no capability entity is found for the supplied external ID.
+    """
+    try:
+        resp = api_instance.list_data_protection_cluster_capabilities(
+            _filter="extId eq '{0}'".format(ext_id)
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg=(
+                "Api Exception raised while fetching data protection cluster "
+                "capability using ext_id"
+            ),
+        )
+    entities = resp.data if resp and resp.data else []
+    for entity in entities:
+        if getattr(entity, "ext_id", None) == ext_id:
+            return entity
+    return None

@@ -1,0 +1,33 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Data Protection Cluster Capabilities playbook] ***************************
+
+TASK [Set variables for examples] **********************************************
+ok: [localhost] => {"ansible_facts": {"cluster_capability_ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"}, "changed": false}
+
+TASK [List all data protection cluster capabilities] ***************************
+ok: [localhost] => {"changed": false, "response": [{"capabilities": [{"capability_name": "SUPPORTS_NEAR_SYNC", "is_supported": true}, {"capability_name": "SUPPORTS_POLICY_BASED_RP_RETENTION", "is_supported": true}], "cluster_ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "links": null, "tenant_id": null}], "total_available_results": 1}
+
+TASK [Get data protection cluster capabilities using ext_id] *******************
+ok: [localhost] => {"changed": false, "ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "response": {"capabilities": [{"capability_name": "SUPPORTS_NEAR_SYNC", "is_supported": true}, {"capability_name": "SUPPORTS_POLICY_BASED_RP_RETENTION", "is_supported": true}], "cluster_ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "links": null, "tenant_id": null}}
+
+TASK [List data protection cluster capabilities with filter on extId] **********
+ok: [localhost] => {"changed": false, "response": [{"capabilities": [{"capability_name": "SUPPORTS_NEAR_SYNC", "is_supported": true}, {"capability_name": "SUPPORTS_POLICY_BASED_RP_RETENTION", "is_supported": true}], "cluster_ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "links": null, "tenant_id": null}], "total_available_results": 0}
+
+TASK [List data protection cluster capabilities with pagination] ***************
+ok: [localhost] => {"changed": false, "response": [{"capabilities": [{"capability_name": "SUPPORTS_NEAR_SYNC", "is_supported": true}, {"capability_name": "SUPPORTS_POLICY_BASED_RP_RETENTION", "is_supported": true}], "cluster_ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "links": null, "tenant_id": null}], "total_available_results": 1}
+
+TASK [List data protection cluster capabilities with limit] ********************
+ok: [localhost] => {"changed": false, "response": [{"capabilities": [{"capability_name": "SUPPORTS_NEAR_SYNC", "is_supported": true}, {"capability_name": "SUPPORTS_POLICY_BASED_RP_RETENTION", "is_supported": true}], "cluster_ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "links": null, "tenant_id": null}], "total_available_results": 1}
+
+TASK [List data protection cluster capabilities selecting only specific fields] ***
+ok: [localhost] => {"changed": false, "response": [{"capabilities": null, "cluster_ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "links": null, "tenant_id": null}], "total_available_results": 1}
+
+TASK [List data protection cluster capabilities ordered by extId] **************
+ok: [localhost] => {"changed": false, "response": [{"capabilities": [{"capability_name": "SUPPORTS_NEAR_SYNC", "is_supported": true}, {"capability_name": "SUPPORTS_POLICY_BASED_RP_RETENTION", "is_supported": true}], "cluster_ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "links": null, "tenant_id": null}], "total_available_results": 1}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=8    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
