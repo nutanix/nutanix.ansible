@@ -1,0 +1,292 @@
+---
+# Integration test plan for ntnx_vm_to_host_migration_v2
+#
+# Domain-expert QA scenarios (SDK + module + domain knowledge):
+#
+# 1) check_mode test with all fields — verify spec generation, no API call.
+# 2) Real create prerequisites — a running VM on the target PE cluster.
+#    - Create a VM with a small memory footprint.
+#    - Power on the VM (required for AHV live migration).
+# 3) Discover hosts in the cluster (ntnx_hosts_info_v2). Two hosts required
+#    for a meaningful live migration test; skip the "real" migration
+#    scenarios (but keep negative + check_mode) on single-host clusters.
+# 4) Negative — invalid VM ext_id (VM not found).
+# 5) Negative — invalid destination host ext_id (host not found / task FAILED).
+# 6) Real live migration — pick a destination host different from current.
+#    Assert task SUCCEEDED and result.response contains a task/vm dict.
+# 7) Idempotent-ish check — migrate again to the SAME host it's now on.
+#    Nutanix returns a specific validation failure for this case; verify
+#    the module surfaces it as failed=true, changed=false.
+# 8) Missing-required-field validation — omit ext_id, omit host — Ansible
+#    argspec must reject the invocation.
+# 9) Cleanup — delete the VM.
+#
+# Variables required from prepare_env / integration_config.yml:
+# - cluster.uuid — the target PE cluster UUID.
+
+- name: Start ntnx_vm_to_host_migration_v2 integration tests
+  ansible.builtin.debug:
+    msg: Start ntnx_vm_to_host_migration_v2 integration tests
+
+- name: Generate random suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set VM name
+  ansible.builtin.set_fact:
+    vm_name: "ansible-test-{{ random_name }}-vm-host-mig"
+
+- name: Fetch all hosts in the cluster
+  nutanix.ncp.ntnx_hosts_info_v2:
+    cluster_ext_id: "{{ cluster.uuid }}"
+  register: hosts_result
+  ignore_errors: true
+
+- name: Assert hosts fetched
+  ansible.builtin.assert:
+    that:
+      - hosts_result.failed == false
+      - hosts_result.changed == false
+      - hosts_result.response is defined
+      - (hosts_result.response | length) >= 1
+    fail_msg: "Unable to fetch hosts for cluster {{ cluster.uuid }}"
+    success_msg: "Fetched {{ hosts_result.response | length }} host(s) for cluster {{ cluster.uuid }}"
+
+- name: Set host inventory
+  ansible.builtin.set_fact:
+    cluster_hosts: "{{ hosts_result.response | map(attribute='ext_id') | list }}"
+    cluster_hosts_count: "{{ hosts_result.response | length }}"
+
+- name: Create VM to migrate
+  nutanix.ncp.ntnx_vms_v2:
+    name: "{{ vm_name }}"
+    description: "VM created by ntnx_vm_to_host_migration_v2 integration tests"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    memory_size_bytes: 1073741824
+    num_sockets: 1
+    num_cores_per_socket: 1
+  register: vm_result
+  ignore_errors: true
+
+- name: Assert VM created
+  ansible.builtin.assert:
+    that:
+      - vm_result.changed == true
+      - vm_result.failed == false
+      - vm_result.ext_id is defined
+      - vm_result.response.name == vm_name
+      - vm_result.response.cluster.ext_id == cluster.uuid
+    fail_msg: "Unable to create VM {{ vm_name }}"
+    success_msg: "VM {{ vm_name }} created"
+
+- name: Set VM ext_id
+  ansible.builtin.set_fact:
+    vm_ext_id: "{{ vm_result.ext_id }}"
+
+- name: Power on the VM (required for AHV live migration)
+  nutanix.ncp.ntnx_vms_power_actions_v2:
+    ext_id: "{{ vm_ext_id }}"
+    state: power_on
+  register: power_on_result
+  ignore_errors: true
+
+- name: Assert VM powered on
+  ansible.builtin.assert:
+    that:
+      - power_on_result.changed == true
+      - power_on_result.failed == false
+    fail_msg: "Unable to power on VM {{ vm_ext_id }}"
+    success_msg: "VM {{ vm_ext_id }} powered on"
+
+- name: Refresh VM info to learn current host
+  nutanix.ncp.ntnx_vms_info_v2:
+    ext_id: "{{ vm_ext_id }}"
+  register: vm_info_result
+  ignore_errors: true
+
+- name: Assert VM info fetched and host is set
+  ansible.builtin.assert:
+    that:
+      - vm_info_result.failed == false
+      - vm_info_result.response is defined
+      - vm_info_result.response.host is defined
+      - vm_info_result.response.host.ext_id is defined
+    fail_msg: "Unable to fetch VM info or VM host not assigned yet"
+    success_msg: "VM host discovered: {{ vm_info_result.response.host.ext_id }}"
+
+- name: Set current host
+  ansible.builtin.set_fact:
+    current_host_ext_id: "{{ vm_info_result.response.host.ext_id }}"
+    other_hosts: "{{ cluster_hosts | difference([vm_info_result.response.host.ext_id]) }}"
+
+- name: Check_mode — migrate VM to host (dry-run)
+  nutanix.ncp.ntnx_vm_to_host_migration_v2:
+    ext_id: "{{ vm_ext_id }}"
+    host:
+      ext_id: "{{ current_host_ext_id }}"
+  check_mode: true
+  register: cm_result
+  ignore_errors: true
+
+- name: Assert check_mode invocation
+  ansible.builtin.assert:
+    that:
+      - cm_result.changed == false
+      - cm_result.failed == false
+      - cm_result.response is defined
+      - cm_result.response.host is defined
+      - cm_result.response.host.ext_id == current_host_ext_id
+      - cm_result.ext_id == vm_ext_id
+      - cm_result.task_ext_id is none
+    fail_msg: "check_mode dry-run for VM-to-host migration did not behave as expected"
+    success_msg: "check_mode dry-run for VM-to-host migration succeeded"
+
+- name: Negative — migrate a non-existent VM
+  nutanix.ncp.ntnx_vm_to_host_migration_v2:
+    ext_id: "00000000-0000-0000-0000-0000000ffff1"
+    host:
+      ext_id: "{{ current_host_ext_id }}"
+  register: bad_vm_result
+  ignore_errors: true
+
+- name: Assert non-existent VM fails
+  ansible.builtin.assert:
+    that:
+      - bad_vm_result.changed == false
+      - bad_vm_result.failed == true
+      - (bad_vm_result.msg is defined) or (bad_vm_result.error is defined)
+    fail_msg: "Migrating a non-existent VM did not fail as expected"
+    success_msg: "Migrating a non-existent VM failed as expected"
+
+- name: Negative — migrate VM to a non-existent host
+  nutanix.ncp.ntnx_vm_to_host_migration_v2:
+    ext_id: "{{ vm_ext_id }}"
+    host:
+      ext_id: "00000000-0000-0000-0000-0000000ffff2"
+  register: bad_host_result
+  ignore_errors: true
+
+- name: Assert non-existent destination host fails
+  ansible.builtin.assert:
+    that:
+      - bad_host_result.changed == false
+      - bad_host_result.failed == true
+      - (bad_host_result.msg is defined) or (bad_host_result.error is defined)
+    fail_msg: "Migrating to non-existent host did not fail as expected"
+    success_msg: "Migrating to non-existent host failed as expected"
+
+- name: Live migration — only run when multiple hosts are available
+  when: (other_hosts | length) > 0
+  block:
+    - name: Set target host for live migration
+      ansible.builtin.set_fact:
+        target_host_ext_id: "{{ other_hosts[0] }}"
+
+    - name: Migrate VM to a different host
+      nutanix.ncp.ntnx_vm_to_host_migration_v2:
+        ext_id: "{{ vm_ext_id }}"
+        host:
+          ext_id: "{{ target_host_ext_id }}"
+      register: mig_result
+      ignore_errors: true
+
+    - name: Assert live migration succeeded
+      ansible.builtin.assert:
+        that:
+          - mig_result.changed == true
+          - mig_result.failed == false
+          - mig_result.response is defined
+          - mig_result.response.status == "SUCCEEDED"
+          - mig_result.task_ext_id is defined
+          - mig_result.ext_id == vm_ext_id
+        fail_msg: "Live migration to host {{ target_host_ext_id }} did not succeed"
+        success_msg: "Live migration to host {{ target_host_ext_id }} succeeded"
+
+    - name: Verify VM host actually changed
+      nutanix.ncp.ntnx_vms_info_v2:
+        ext_id: "{{ vm_ext_id }}"
+      register: vm_info_after
+
+    - name: Assert VM is now on the target host
+      ansible.builtin.assert:
+        that:
+          - vm_info_after.failed == false
+          - vm_info_after.response.host.ext_id == target_host_ext_id
+        fail_msg: "VM host did not update to {{ target_host_ext_id }} after migration"
+        success_msg: "VM host correctly updated to {{ target_host_ext_id }}"
+
+    - name: Idempotency — migrate to the same (now-current) host
+      nutanix.ncp.ntnx_vm_to_host_migration_v2:
+        ext_id: "{{ vm_ext_id }}"
+        host:
+          ext_id: "{{ target_host_ext_id }}"
+      register: idem_result
+      ignore_errors: true
+
+    - name: Assert migrating to already-current host is rejected
+      ansible.builtin.assert:
+        that:
+          - idem_result.failed == true
+          - idem_result.changed == false
+        fail_msg: "Migrating a VM to the host it is already on should have been rejected"
+        success_msg: "Migrating to the current host was correctly rejected"
+
+- name: Single-host cluster notice
+  when: (other_hosts | length) == 0
+  ansible.builtin.debug:
+    msg: >-
+      Only one AHV host is available on cluster {{ cluster.uuid }};
+      skipping live migration / idempotency scenarios. check_mode and
+      negative tests still ran and were asserted.
+
+- name: Negative — missing required ext_id should be rejected by argspec
+  nutanix.ncp.ntnx_vm_to_host_migration_v2:
+    host:
+      ext_id: "{{ current_host_ext_id }}"
+  register: missing_ext_id
+  ignore_errors: true
+
+- name: Assert missing ext_id validation error
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id.failed == true
+      - "'ext_id' in (missing_ext_id.msg | default(''))"
+    fail_msg: "Argspec did not reject missing ext_id"
+    success_msg: "Argspec correctly rejected missing ext_id"
+
+- name: Negative — missing required host should be rejected by argspec
+  nutanix.ncp.ntnx_vm_to_host_migration_v2:
+    ext_id: "{{ vm_ext_id }}"
+  register: missing_host
+  ignore_errors: true
+
+- name: Assert missing host validation error
+  ansible.builtin.assert:
+    that:
+      - missing_host.failed == true
+      - "'host' in (missing_host.msg | default(''))"
+    fail_msg: "Argspec did not reject missing host"
+    success_msg: "Argspec correctly rejected missing host"
+
+- name: Cleanup — power off VM before delete
+  nutanix.ncp.ntnx_vms_power_actions_v2:
+    ext_id: "{{ vm_ext_id }}"
+    state: power_off
+  register: power_off_result
+  ignore_errors: true
+
+- name: Cleanup — delete VM
+  nutanix.ncp.ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ vm_ext_id }}"
+  register: delete_result
+  ignore_errors: true
+
+- name: Assert VM deletion
+  ansible.builtin.assert:
+    that:
+      - delete_result.failed == false
+      - delete_result.ext_id == vm_ext_id
+    fail_msg: "Unable to delete VM {{ vm_ext_id }}"
+    success_msg: "VM {{ vm_ext_id }} deleted"
