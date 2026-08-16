@@ -195,3 +195,20 @@ def get_bridges_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_networking_py_client.BridgesApi(api_client=api_client)
+
+
+def get_remote_entities_api_instance(module):
+    """
+    This method will return RemoteEntitiesApi instance.
+
+    The RemoteEntitiesApi exposes read-only Get and List endpoints for
+    entities that live on a remote (paired) Prism Central cluster, such as
+    remote VPN connections, remote subnets, and remote VTEP gateways.
+
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Remote Entities Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.RemoteEntitiesApi(api_client=api_client)

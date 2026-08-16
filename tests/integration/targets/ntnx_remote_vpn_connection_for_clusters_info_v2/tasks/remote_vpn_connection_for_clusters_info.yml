@@ -1,0 +1,284 @@
+---
+##############################################################################
+# RemoteVpnConnectionForCluster info module tests
+#
+# Test plan:
+#   1. Discover the local Prism Central cluster ext_id via
+#      ntnx_clusters_info_v2 with the standard PRISM_CENTRAL cluster filter.
+#      This is the required parent id for the RemoteEntities API.
+#   2. Negative: missing required cluster_ext_id -> module should fail
+#      argument-spec validation.
+#   3. Negative: mutually exclusive ext_id + filter -> should fail.
+#   4. Negative: non-existent cluster_ext_id -> API should return an error.
+#   5. Positive listing: list all remote VPN connections for the local PC
+#      cluster ext_id and validate response type / total_available_results.
+#   6. Positive listing with limit=1.
+#   7. Positive listing with orderby (name desc).
+#   8. Positive listing with an OData filter that matches nothing.
+#   9. Negative get-by-id: valid cluster_ext_id, non-existent VPN ext_id
+#      -> API should return a not-found style error.
+#   10. Positive get-by-id (executed only when the list above returned at
+#       least one entity — no manual prerequisite creation is possible since
+#       the SDK exposes no Create API for this entity).
+##############################################################################
+
+- name: Start RemoteVpnConnectionForCluster info tests
+  ansible.builtin.debug:
+    msg: Start RemoteVpnConnectionForCluster info tests
+
+##############################################################################
+# Discover the local Prism Central cluster ext_id
+##############################################################################
+
+- name: Fetch the local Prism Central cluster ext_id
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
+  register: pc_cluster_info
+  ignore_errors: true
+
+- name: Assert Prism Central cluster was discovered
+  ansible.builtin.assert:
+    that:
+      - pc_cluster_info is defined
+      - pc_cluster_info.failed == false
+      - pc_cluster_info.changed == false
+      - pc_cluster_info.response is defined
+      - pc_cluster_info.response | length > 0
+      - pc_cluster_info.response[0].ext_id is defined
+    success_msg: "Prism Central cluster ext_id discovered"
+    fail_msg: "Failed to discover Prism Central cluster ext_id — RemoteEntities API cannot be exercised"
+
+- name: Set local Prism Central cluster ext_id
+  ansible.builtin.set_fact:
+    local_pc_cluster_ext_id: "{{ pc_cluster_info.response[0].ext_id }}"
+    invalid_cluster_ext_id: "00000000-0000-0000-0000-000000000000"
+    invalid_vpn_ext_id: "00000000-0000-0000-0000-000000000000"
+
+##############################################################################
+# Negative — missing required cluster_ext_id
+##############################################################################
+
+- name: Attempt to list remote VPN connections without cluster_ext_id
+  nutanix.ncp.ntnx_remote_vpn_connection_for_clusters_info_v2: {}
+  register: missing_cluster_result
+  ignore_errors: true
+
+- name: Assert missing cluster_ext_id fails
+  ansible.builtin.assert:
+    that:
+      - missing_cluster_result is defined
+      - missing_cluster_result.failed == true
+      - missing_cluster_result.changed == false
+      - '"cluster_ext_id" in (missing_cluster_result.msg | default("") | string)'
+    success_msg: "Missing cluster_ext_id was rejected as expected"
+    fail_msg: "Missing cluster_ext_id was NOT rejected"
+
+##############################################################################
+# Negative — mutually exclusive ext_id + filter
+##############################################################################
+
+- name: Attempt to combine ext_id and filter
+  nutanix.ncp.ntnx_remote_vpn_connection_for_clusters_info_v2:
+    cluster_ext_id: "{{ local_pc_cluster_ext_id }}"
+    ext_id: "{{ invalid_vpn_ext_id }}"
+    filter: "name eq 'anything'"
+  register: mutex_result
+  ignore_errors: true
+
+- name: Assert ext_id and filter are mutually exclusive
+  ansible.builtin.assert:
+    that:
+      - mutex_result is defined
+      - mutex_result.failed == true
+      - mutex_result.changed == false
+      - '"mutually exclusive" in (mutex_result.msg | default("") | string)'
+    success_msg: "ext_id + filter combination was rejected as expected"
+    fail_msg: "ext_id + filter combination was NOT rejected"
+
+##############################################################################
+# Negative — non-existent cluster_ext_id (should surface an API error)
+##############################################################################
+
+- name: List remote VPN connections with an invalid cluster_ext_id
+  nutanix.ncp.ntnx_remote_vpn_connection_for_clusters_info_v2:
+    cluster_ext_id: "{{ invalid_cluster_ext_id }}"
+  register: invalid_cluster_list_result
+  ignore_errors: true
+
+- name: Assert invalid cluster_ext_id list is rejected by the API
+  ansible.builtin.assert:
+    that:
+      - invalid_cluster_list_result is defined
+      - invalid_cluster_list_result.failed == true
+      - invalid_cluster_list_result.changed == false
+    success_msg: "Invalid cluster_ext_id list request was rejected"
+    fail_msg: "Invalid cluster_ext_id list request was accepted"
+
+##############################################################################
+# Positive listing — basic
+##############################################################################
+
+- name: List all remote VPN connections for the local PC cluster
+  nutanix.ncp.ntnx_remote_vpn_connection_for_clusters_info_v2:
+    cluster_ext_id: "{{ local_pc_cluster_ext_id }}"
+  register: list_all_result
+  ignore_errors: true
+
+- name: Assert basic list succeeded
+  ansible.builtin.assert:
+    that:
+      - list_all_result is defined
+      - list_all_result.changed == false
+      - list_all_result.failed == false
+      - list_all_result.response is defined
+      - list_all_result.response is iterable
+      - list_all_result.total_available_results is defined
+      - list_all_result.total_available_results >= 0
+    success_msg: "Basic list of remote VPN connections succeeded"
+    fail_msg: "Basic list of remote VPN connections failed"
+
+- name: Assert every listed entry has the RemoteVpnConnection shape
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+    success_msg: "Listed remote VPN connection entry has expected shape"
+    fail_msg: "Listed remote VPN connection entry is missing ext_id"
+  loop: "{{ list_all_result.response | default([]) }}"
+  loop_control:
+    label: "{{ item.ext_id | default('unknown') }}"
+  when: (list_all_result.response | default([])) | length > 0
+
+##############################################################################
+# Positive listing — limit
+##############################################################################
+
+- name: List remote VPN connections with limit=1
+  nutanix.ncp.ntnx_remote_vpn_connection_for_clusters_info_v2:
+    cluster_ext_id: "{{ local_pc_cluster_ext_id }}"
+    limit: 1
+  register: list_limit_result
+  ignore_errors: true
+
+- name: Assert list with limit=1 succeeded
+  ansible.builtin.assert:
+    that:
+      - list_limit_result is defined
+      - list_limit_result.changed == false
+      - list_limit_result.failed == false
+      - list_limit_result.response is defined
+      - list_limit_result.response | length <= 1
+      - list_limit_result.total_available_results is defined
+    success_msg: "List with limit=1 succeeded and honoured the limit"
+    fail_msg: "List with limit=1 did not honour the limit"
+
+##############################################################################
+# Positive listing — orderby
+##############################################################################
+
+- name: List remote VPN connections ordered by name desc
+  nutanix.ncp.ntnx_remote_vpn_connection_for_clusters_info_v2:
+    cluster_ext_id: "{{ local_pc_cluster_ext_id }}"
+    orderby: "name desc"
+    limit: 5
+  register: list_orderby_result
+  ignore_errors: true
+
+- name: Assert list with orderby succeeded
+  ansible.builtin.assert:
+    that:
+      - list_orderby_result is defined
+      - list_orderby_result.changed == false
+      - list_orderby_result.failed == false
+      - list_orderby_result.response is defined
+      - list_orderby_result.response | length <= 5
+    success_msg: "List with orderby succeeded"
+    fail_msg: "List with orderby failed"
+
+##############################################################################
+# Positive listing — filter that matches nothing
+##############################################################################
+
+- name: List remote VPN connections with a filter that matches nothing
+  nutanix.ncp.ntnx_remote_vpn_connection_for_clusters_info_v2:
+    cluster_ext_id: "{{ local_pc_cluster_ext_id }}"
+    filter: "name eq 'ntnx-ansible-nonexistent-vpn-connection'"
+  register: list_filter_result
+  ignore_errors: true
+
+- name: Assert filtered list returns an empty list
+  ansible.builtin.assert:
+    that:
+      - list_filter_result is defined
+      - list_filter_result.changed == false
+      - list_filter_result.failed == false
+      - list_filter_result.response is defined
+      - list_filter_result.response == []
+      - list_filter_result.total_available_results is defined
+      - list_filter_result.total_available_results == 0
+    success_msg: "Filtered list returned empty as expected"
+    fail_msg: "Filtered list did not return empty as expected"
+
+##############################################################################
+# Negative get-by-id — non-existent VPN ext_id
+##############################################################################
+
+- name: Get remote VPN connection with a non-existent ext_id
+  nutanix.ncp.ntnx_remote_vpn_connection_for_clusters_info_v2:
+    cluster_ext_id: "{{ local_pc_cluster_ext_id }}"
+    ext_id: "{{ invalid_vpn_ext_id }}"
+  register: invalid_get_result
+  ignore_errors: true
+
+- name: Assert get with a non-existent ext_id fails
+  ansible.builtin.assert:
+    that:
+      - invalid_get_result is defined
+      - invalid_get_result.failed == true
+      - invalid_get_result.changed == false
+    success_msg: "Get with non-existent ext_id was rejected by the API"
+    fail_msg: "Get with non-existent ext_id was accepted"
+
+##############################################################################
+# Positive get-by-id — only when at least one entity was listed
+#
+# The SDK exposes no Create API for RemoteVpnConnection so we cannot
+# provision one for the test. If the environment already has at least one
+# remote VPN connection, we verify get-by-id against it; otherwise we
+# gracefully skip this task and record the reason.
+##############################################################################
+
+- name: Get remote VPN connection using the first listed ext_id
+  nutanix.ncp.ntnx_remote_vpn_connection_for_clusters_info_v2:
+    cluster_ext_id: "{{ local_pc_cluster_ext_id }}"
+    ext_id: "{{ list_all_result.response[0].ext_id }}"
+  register: single_get_result
+  ignore_errors: true
+  when:
+    - list_all_result.response is defined
+    - list_all_result.response | length > 0
+
+- name: Assert get-by-id returned the requested entity
+  ansible.builtin.assert:
+    that:
+      - single_get_result is defined
+      - single_get_result.failed == false
+      - single_get_result.changed == false
+      - single_get_result.response is defined
+      - single_get_result.ext_id is defined
+      - single_get_result.ext_id == list_all_result.response[0].ext_id
+      - single_get_result.response.ext_id == list_all_result.response[0].ext_id
+    success_msg: "Get-by-id returned the requested remote VPN connection"
+    fail_msg: "Get-by-id did not return the requested remote VPN connection"
+  when:
+    - list_all_result.response is defined
+    - list_all_result.response | length > 0
+
+- name: Note that no live remote VPN connections were available for get-by-id
+  ansible.builtin.debug:
+    msg: >-
+      No remote VPN connections were reported for this Prism Central cluster,
+      so the positive get-by-id path could not be exercised end-to-end. The
+      negative get-by-id path above still validates the API contract.
+  when:
+    - list_all_result.response is defined
+    - (list_all_result.response | length) == 0

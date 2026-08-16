@@ -1,0 +1,71 @@
+---
+# Summary:
+# This playbook demonstrates how to fetch remote VPN connections for a
+# Prism Central cluster using the ntnx_remote_vpn_connection_for_clusters_info_v2
+# module.
+#
+# The RemoteVpnConnectionForCluster feature is read-only: it exposes
+# information about VPN connections that live on a remote (paired) Prism
+# Central cluster. The SDK does not expose any Create / Update / Delete
+# operations for these entities, therefore only the info module is provided.
+#
+# It performs:
+# 1. List all remote VPN connections for a Prism Central cluster
+# 2. List remote VPN connections with a limit
+# 3. List remote VPN connections with an OData filter
+# 4. List remote VPN connections with orderby
+# 5. Get a specific remote VPN connection by external ID
+
+- name: RemoteVpnConnectionForCluster info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ nutanix_username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ nutanix_password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+  tasks:
+    - name: Discover the local Prism Central cluster ext_id
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
+      register: pc_cluster_info
+
+    - name: Set common variables
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ pc_cluster_info.response[0].ext_id }}"
+
+    - name: List all remote VPN connections for a Prism Central cluster
+      nutanix.ncp.ntnx_remote_vpn_connection_for_clusters_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: all_result
+      ignore_errors: true
+
+    - name: List remote VPN connections with limit
+      nutanix.ncp.ntnx_remote_vpn_connection_for_clusters_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        limit: 1
+      register: limited_result
+      ignore_errors: true
+
+    - name: List remote VPN connections with a name filter
+      nutanix.ncp.ntnx_remote_vpn_connection_for_clusters_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        filter: "name eq 'remote-vpn-01'"
+      register: filtered_result
+      ignore_errors: true
+
+    - name: List remote VPN connections ordered by name (desc)
+      nutanix.ncp.ntnx_remote_vpn_connection_for_clusters_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        orderby: "name desc"
+        limit: 5
+      register: ordered_result
+      ignore_errors: true
+
+    - name: Get a specific remote VPN connection by external ID
+      nutanix.ncp.ntnx_remote_vpn_connection_for_clusters_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "00000000-0000-0000-0000-000000000000"
+      register: single_result
+      ignore_errors: true
