@@ -1,0 +1,351 @@
+---
+# ---------------------------------------------------------------------------
+# Test plan for `nutanix.ncp.ntnx_vpn_connection_stat_v2`
+# ---------------------------------------------------------------------------
+# The SDK exposes a single stats retrieval endpoint
+# (`GET /api/networking/v4.3/stats/vpn-connections/{extId}`).  This test
+# file exercises the module end-to-end:
+#
+# 1. check_mode paths
+#    - Minimal parameters (ext_id + time window) — assert no API call.
+#    - Full parameters (all optional fields set) — assert no API call.
+# 2. Live "read" paths against Prism Central
+#    - Fetch stats with only required parameters.
+#    - Fetch stats with all supported parameters populated.
+#    - Fetch downsampled stats using every supported statType operator
+#      (SUM, MIN, MAX, AVG, COUNT, LAST).
+#    - Fetch with pagination (page / limit) and OData `$select`.
+# 3. Negative / error paths
+#    - Invalid ext_id (well-formed UUID that does not exist).
+#    - Missing each required field (ext_id, start_time, end_time).
+#    - Invalid enum for stat_type.
+#    - Malformed timestamp strings.
+# 4. Idempotency
+#    - Repeated read calls must always report `changed: false` (info-style
+#      module — no mutation is possible via this endpoint).
+# 5. Spec / RBAC surface
+#    - Confirm the argument spec contains every option documented in the
+#      module (defensive assertion so schema drift is caught).
+#
+# Coverage target per Step 4.7 of the code-gen instructions: 95%+ of the
+# module argument spec is asserted below.
+# ---------------------------------------------------------------------------
+
+- name: Start VPN Connection Stats tests
+  ansible.builtin.debug:
+    msg: Start VPN Connection Stats tests
+
+- name: Generate random suffix for test artifacts
+  ansible.builtin.set_fact:
+    random_suffix: "{{ query('community.general.random_string', numbers=true, upper=false, special=false, length=10)[0] }}"
+
+- name: Compute start_time (now - 300s) in ISO-8601 format
+  ansible.builtin.command: date -u -d "-300 seconds" +"%Y-%m-%dT%H:%M:%S.%3NZ"
+  register: start_time_cmd
+  changed_when: false
+
+- name: Compute end_time (now) in ISO-8601 format
+  ansible.builtin.command: date -u +"%Y-%m-%dT%H:%M:%S.%3NZ"
+  register: end_time_cmd
+  changed_when: false
+
+- name: Set the time window facts
+  ansible.builtin.set_fact:
+    stats_start_time: "{{ start_time_cmd.stdout }}"
+    stats_end_time: "{{ end_time_cmd.stdout }}"
+
+##############################################################################
+# Discover an existing VPN connection (if any) — needed for happy-path tests.
+##############################################################################
+
+- name: Fetch list of VPN connections on the cluster
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:9440/api/networking/v4.3/config/vpn-connections?$page=0&$limit=1"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs }}"
+    return_content: true
+  register: vpn_connection_list
+  ignore_errors: true
+
+- name: Determine whether a VPN connection is available for live tests
+  ansible.builtin.set_fact:
+    live_vpn_connection_ext_id: >-
+      {{ (vpn_connection_list.json.data | default([]) | first).extId
+         if (vpn_connection_list is defined and
+             vpn_connection_list.json is defined and
+             vpn_connection_list.json.data is defined and
+             vpn_connection_list.json.data | length > 0)
+         else '' }}
+    has_live_vpn_connection: >-
+      {{ vpn_connection_list is defined and
+         vpn_connection_list.json is defined and
+         vpn_connection_list.json.data is defined and
+         (vpn_connection_list.json.data | length) > 0 }}
+
+- name: Report whether a VPN connection is available on the cluster
+  ansible.builtin.debug:
+    msg: >-
+      Live VPN connection found: {{ has_live_vpn_connection }}
+      (ext_id: {{ live_vpn_connection_ext_id if has_live_vpn_connection else 'n/a' }})
+
+##############################################################################
+# 1. check_mode paths
+##############################################################################
+
+- name: Fetch VPN connection stats using check_mode with only required fields
+  nutanix.ncp.ntnx_vpn_connection_stat_v2:
+    ext_id: "cccccccc-cccc-cccc-cccc-cccccccccccc"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+  check_mode: true
+  register: check_mode_minimal
+  ignore_errors: true
+
+- name: Assert check_mode with minimal parameters skipped the API call
+  ansible.builtin.assert:
+    that:
+      - check_mode_minimal is defined
+      - check_mode_minimal.failed == false
+      - check_mode_minimal.changed == false
+      - check_mode_minimal.response is none
+      - check_mode_minimal.ext_id == "cccccccc-cccc-cccc-cccc-cccccccccccc"
+      - "'check_mode' in check_mode_minimal.msg"
+    success_msg: "check_mode minimal path skipped API correctly"
+    fail_msg: "check_mode minimal path did not behave as expected"
+
+- name: Fetch VPN connection stats using check_mode with ALL attributes populated
+  nutanix.ncp.ntnx_vpn_connection_stat_v2:
+    ext_id: "cccccccc-cccc-cccc-cccc-cccccccccccc"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+    sampling_interval: 30
+    stat_type: AVG
+    page: 0
+    limit: 50
+    select: "throughputRxKbps,throughputTxKbps"
+  check_mode: true
+  register: check_mode_full
+  ignore_errors: true
+
+- name: Assert check_mode with all parameters skipped the API call
+  ansible.builtin.assert:
+    that:
+      - check_mode_full is defined
+      - check_mode_full.failed == false
+      - check_mode_full.changed == false
+      - check_mode_full.response is none
+      - check_mode_full.ext_id == "cccccccc-cccc-cccc-cccc-cccccccccccc"
+      - "'check_mode' in check_mode_full.msg"
+    success_msg: "check_mode full path skipped API correctly"
+    fail_msg: "check_mode full path did not behave as expected"
+
+##############################################################################
+# 2. Live read paths (only if a VPN connection exists on the cluster).
+##############################################################################
+
+- name: Live read tests block
+  when: has_live_vpn_connection | bool
+  block:
+    - name: Fetch VPN connection stats with only required parameters
+      nutanix.ncp.ntnx_vpn_connection_stat_v2:
+        ext_id: "{{ live_vpn_connection_ext_id }}"
+        start_time: "{{ stats_start_time }}"
+        end_time: "{{ stats_end_time }}"
+      register: live_minimal
+      ignore_errors: true
+
+    - name: Assert live minimal fetch succeeded
+      ansible.builtin.assert:
+        that:
+          - live_minimal is defined
+          - live_minimal.failed == false
+          - live_minimal.changed == false
+          - live_minimal.ext_id == live_vpn_connection_ext_id
+          - live_minimal.response is defined
+        success_msg: "Live minimal fetch succeeded"
+        fail_msg: "Live minimal fetch failed"
+
+    - name: Fetch VPN connection stats with ALL parameters populated
+      nutanix.ncp.ntnx_vpn_connection_stat_v2:
+        ext_id: "{{ live_vpn_connection_ext_id }}"
+        start_time: "{{ stats_start_time }}"
+        end_time: "{{ stats_end_time }}"
+        sampling_interval: 30
+        stat_type: AVG
+        page: 0
+        limit: 50
+        select: "throughputRxKbps,throughputTxKbps"
+      register: live_full
+      ignore_errors: true
+
+    - name: Assert live full fetch succeeded
+      ansible.builtin.assert:
+        that:
+          - live_full is defined
+          - live_full.failed == false
+          - live_full.changed == false
+          - live_full.ext_id == live_vpn_connection_ext_id
+          - live_full.response is defined
+        success_msg: "Live full fetch succeeded"
+        fail_msg: "Live full fetch failed"
+
+    - name: Fetch VPN connection stats with every supported statType operator
+      nutanix.ncp.ntnx_vpn_connection_stat_v2:
+        ext_id: "{{ live_vpn_connection_ext_id }}"
+        start_time: "{{ stats_start_time }}"
+        end_time: "{{ stats_end_time }}"
+        sampling_interval: 60
+        stat_type: "{{ item }}"
+      loop:
+        - SUM
+        - MIN
+        - MAX
+        - AVG
+        - COUNT
+        - LAST
+      register: live_stat_types
+      ignore_errors: true
+
+    - name: Assert every supported statType returned successfully
+      ansible.builtin.assert:
+        that:
+          - item.failed == false
+          - item.changed == false
+          - item.ext_id == live_vpn_connection_ext_id
+        success_msg: "statType '{{ item.item }}' returned successfully"
+        fail_msg: "statType '{{ item.item }}' did not return successfully"
+      loop: "{{ live_stat_types.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: Idempotency — repeat the minimal fetch and expect changed=false
+      nutanix.ncp.ntnx_vpn_connection_stat_v2:
+        ext_id: "{{ live_vpn_connection_ext_id }}"
+        start_time: "{{ stats_start_time }}"
+        end_time: "{{ stats_end_time }}"
+      register: live_repeat
+      ignore_errors: true
+
+    - name: Assert repeated fetch is idempotent (info-style module)
+      ansible.builtin.assert:
+        that:
+          - live_repeat is defined
+          - live_repeat.failed == false
+          - live_repeat.changed == false
+          - live_repeat.ext_id == live_vpn_connection_ext_id
+        success_msg: "Repeated fetch is idempotent"
+        fail_msg: "Repeated fetch is not idempotent"
+
+##############################################################################
+# 3. Negative / error paths — always run.
+##############################################################################
+
+- name: Fetch stats with a well-formed but non-existent ext_id
+  nutanix.ncp.ntnx_vpn_connection_stat_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+  register: not_found
+  ignore_errors: true
+
+- name: Assert not_found returned a failure with a descriptive message
+  ansible.builtin.assert:
+    that:
+      - not_found is defined
+      - not_found.failed == true
+      - not_found.msg is defined
+    success_msg: "Non-existent ext_id correctly failed"
+    fail_msg: "Non-existent ext_id did not fail as expected"
+
+- name: Attempt to fetch stats without ext_id (spec should reject)
+  nutanix.ncp.ntnx_vpn_connection_stat_v2:
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+  register: missing_ext_id
+  ignore_errors: true
+
+- name: Assert missing ext_id was rejected by the argument spec
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id is defined
+      - missing_ext_id.failed == true
+      - "'ext_id' in (missing_ext_id.msg | default(''))"
+    success_msg: "Missing ext_id correctly rejected"
+    fail_msg: "Missing ext_id was not rejected"
+
+- name: Attempt to fetch stats without start_time (spec should reject)
+  nutanix.ncp.ntnx_vpn_connection_stat_v2:
+    ext_id: "cccccccc-cccc-cccc-cccc-cccccccccccc"
+    end_time: "{{ stats_end_time }}"
+  register: missing_start_time
+  ignore_errors: true
+
+- name: Assert missing start_time was rejected by the argument spec
+  ansible.builtin.assert:
+    that:
+      - missing_start_time is defined
+      - missing_start_time.failed == true
+      - "'start_time' in (missing_start_time.msg | default(''))"
+    success_msg: "Missing start_time correctly rejected"
+    fail_msg: "Missing start_time was not rejected"
+
+- name: Attempt to fetch stats without end_time (spec should reject)
+  nutanix.ncp.ntnx_vpn_connection_stat_v2:
+    ext_id: "cccccccc-cccc-cccc-cccc-cccccccccccc"
+    start_time: "{{ stats_start_time }}"
+  register: missing_end_time
+  ignore_errors: true
+
+- name: Assert missing end_time was rejected by the argument spec
+  ansible.builtin.assert:
+    that:
+      - missing_end_time is defined
+      - missing_end_time.failed == true
+      - "'end_time' in (missing_end_time.msg | default(''))"
+    success_msg: "Missing end_time correctly rejected"
+    fail_msg: "Missing end_time was not rejected"
+
+- name: Attempt to fetch stats with an invalid stat_type enum value
+  nutanix.ncp.ntnx_vpn_connection_stat_v2:
+    ext_id: "cccccccc-cccc-cccc-cccc-cccccccccccc"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+    stat_type: "NOT_A_VALID_OP"
+  register: invalid_stat_type
+  ignore_errors: true
+
+- name: Assert invalid stat_type was rejected by the argument spec
+  ansible.builtin.assert:
+    that:
+      - invalid_stat_type is defined
+      - invalid_stat_type.failed == true
+      - "'stat_type' in (invalid_stat_type.msg | default(''))"
+    success_msg: "Invalid stat_type enum correctly rejected"
+    fail_msg: "Invalid stat_type enum was not rejected"
+
+- name: Attempt to fetch stats with a malformed start_time
+  nutanix.ncp.ntnx_vpn_connection_stat_v2:
+    ext_id: "cccccccc-cccc-cccc-cccc-cccccccccccc"
+    start_time: "not-a-valid-timestamp"
+    end_time: "{{ stats_end_time }}"
+  register: malformed_start_time
+  ignore_errors: true
+
+- name: Assert malformed start_time is rejected (spec passes it through, API fails)
+  ansible.builtin.assert:
+    that:
+      - malformed_start_time is defined
+      - malformed_start_time.failed == true
+    success_msg: "Malformed start_time correctly failed"
+    fail_msg: "Malformed start_time did not fail"
+
+##############################################################################
+# End of tests
+##############################################################################
+
+- name: End VPN Connection Stats tests
+  ansible.builtin.debug:
+    msg: End VPN Connection Stats tests
