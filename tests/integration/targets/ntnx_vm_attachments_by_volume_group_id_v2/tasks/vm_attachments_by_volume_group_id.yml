@@ -1,0 +1,504 @@
+---
+# Integration tests for:
+#   - ntnx_vm_attachments_by_volume_group_id_v2 (attach/detach VmAttachment on a VG)
+#   - ntnx_volume_group_vm_attachment_info_v2   (list / get-by-ext_id)
+#
+# Test plan (why each block exists):
+#   1. Discover cluster + subnet — every test needs real cluster/network refs.
+#   2. Test setup — create a fresh Volume Group and two AHV VMs.
+#   3. check_mode: create (attach), update (attach with different index), delete (detach).
+#      Each has exactly one check_mode task (per reviewer feedback).
+#   4. Real attach with only required fields (no index) — validates minimum spec.
+#   5. Real attach with all fields (index set) — validates full spec.
+#   6. Info: list all VM attachments — assert list contains both VMs, index values.
+#   7. Info: list with limit — assert pagination truncates.
+#   8. Info: get single by ext_id — assert single entity returned.
+#   9. Info: get by non-existent ext_id — assert descriptive error.
+#   10. Negative: attach with non-existent VG ext_id — assert API exception.
+#   11. Negative: attach with missing volume_group_ext_id — assert Ansible argument error.
+#   12. Detach both VMs — assert both detaches succeed.
+#   13. Idempotency: detach a VM that is already detached — API returns failure/error,
+#       we tolerate it via ignore_errors and assert we did not silently mark changed.
+#   14. Cleanup — delete VMs and Volume Group.
+
+- name: Start VmAttachmentsByVolumeGroupId tests
+  ansible.builtin.debug:
+    msg: "Start VmAttachmentsByVolumeGroupId tests"
+
+- name: Generate random suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set entity names
+  ansible.builtin.set_fact:
+    vg_name: "ansible-vg-vmattach-{{ random_name }}"
+    vm1_name: "ansible-vm-vmattach-{{ random_name }}-1"
+    vm2_name: "ansible-vm-vmattach-{{ random_name }}-2"
+
+############################################ Discover cluster ############################################
+- name: List clusters and pick the first AOS cluster
+  nutanix.ncp.ntnx_clusters_info_v2:
+  register: clusters_result
+
+- name: Verify clusters listing succeeded
+  ansible.builtin.assert:
+    that:
+      - clusters_result.changed == false
+      - clusters_result.failed == false
+    fail_msg: "Unable to list clusters — cannot proceed with VmAttachmentsByVolumeGroupId tests"
+    success_msg: "Clusters listed successfully"
+
+- name: Filter to AOS clusters only
+  ansible.builtin.set_fact:
+    aos_clusters: "{{ clusters_result.response | selectattr('config.cluster_function', 'defined')
+                     | selectattr('config.cluster_function', 'contains', 'AOS') | list }}"
+
+- name: Store target cluster ext_id
+  ansible.builtin.set_fact:
+    target_cluster_uuid: "{{ aos_clusters[0].ext_id }}"
+
+############################################ Discover a usable subnet ############################################
+- name: List subnets available on this PC
+  nutanix.ncp.ntnx_subnets_info_v2:
+  register: subnets_result
+
+- name: Verify subnets listing succeeded
+  ansible.builtin.assert:
+    that:
+      - subnets_result.changed == false
+      - subnets_result.failed == false
+    fail_msg: "Unable to list subnets — cannot create VMs for tests"
+    success_msg: "Subnets listed successfully"
+
+- name: Filter VLAN subnets on target cluster
+  ansible.builtin.set_fact:
+    usable_subnets: "{{ subnets_result.response | selectattr('subnet_type', 'equalto', 'VLAN')
+                       | selectattr('cluster_reference', 'equalto', target_cluster_uuid) | list }}"
+
+- name: Store target subnet ext_id
+  ansible.builtin.set_fact:
+    target_subnet_uuid: "{{ usable_subnets[0].ext_id }}"
+
+############################################ Setup: create Volume Group ############################################
+- name: Create Volume Group for VM attachment tests
+  nutanix.ncp.ntnx_volume_groups_v2:
+    state: present
+    name: "{{ vg_name }}"
+    description: "Volume Group for VmAttachmentsByVolumeGroupId tests"
+    should_load_balance_vm_attachments: true
+    sharing_status: "SHARED"
+    target_prefix: "vmattach"
+    cluster_reference: "{{ target_cluster_uuid }}"
+    usage_type: "USER"
+  register: vg_result
+
+- name: Verify VG creation
+  ansible.builtin.assert:
+    that:
+      - vg_result.changed == true
+      - vg_result.failed == false
+      - vg_result.ext_id is defined
+    fail_msg: "Unable to create Volume Group for tests"
+    success_msg: "Volume Group created successfully"
+
+- name: Store Volume Group ext_id
+  ansible.builtin.set_fact:
+    vg_uuid: "{{ vg_result.ext_id }}"
+
+############################################ Setup: create two AHV VMs ############################################
+- name: Create VM1 for attachment
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    name: "{{ vm1_name }}"
+    num_sockets: 1
+    num_cores_per_socket: 1
+    memory_size_bytes: 1073741824
+    cluster:
+      ext_id: "{{ target_cluster_uuid }}"
+    nics:
+      - network_info:
+          nic_type: "NORMAL_NIC"
+          vlan_mode: "ACCESS"
+          subnet:
+            ext_id: "{{ target_subnet_uuid }}"
+  register: vm1_result
+
+- name: Verify VM1 creation
+  ansible.builtin.assert:
+    that:
+      - vm1_result.changed == true
+      - vm1_result.failed == false
+      - vm1_result.ext_id is defined
+    fail_msg: "Unable to create VM1 for tests"
+    success_msg: "VM1 created successfully"
+
+- name: Store VM1 ext_id
+  ansible.builtin.set_fact:
+    vm1_uuid: "{{ vm1_result.ext_id }}"
+
+- name: Create VM2 for attachment
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    name: "{{ vm2_name }}"
+    num_sockets: 1
+    num_cores_per_socket: 1
+    memory_size_bytes: 1073741824
+    cluster:
+      ext_id: "{{ target_cluster_uuid }}"
+    nics:
+      - network_info:
+          nic_type: "NORMAL_NIC"
+          vlan_mode: "ACCESS"
+          subnet:
+            ext_id: "{{ target_subnet_uuid }}"
+  register: vm2_result
+
+- name: Verify VM2 creation
+  ansible.builtin.assert:
+    that:
+      - vm2_result.changed == true
+      - vm2_result.failed == false
+      - vm2_result.ext_id is defined
+    fail_msg: "Unable to create VM2 for tests"
+    success_msg: "VM2 created successfully"
+
+- name: Store VM2 ext_id
+  ansible.builtin.set_fact:
+    vm2_uuid: "{{ vm2_result.ext_id }}"
+
+############################################ check_mode tests ############################################
+- name: Check_mode — attach VM1 to VG with ALL attributes
+  nutanix.ncp.ntnx_vm_attachments_by_volume_group_id_v2:
+    state: present
+    volume_group_ext_id: "{{ vg_uuid }}"
+    ext_id: "{{ vm1_uuid }}"
+    index: 1
+  register: check_attach_result
+  check_mode: true
+
+- name: Verify check_mode attach (present) did not mutate the API
+  ansible.builtin.assert:
+    that:
+      - check_attach_result.changed == false
+      - check_attach_result.failed == false
+      - check_attach_result.ext_id == vm1_uuid
+      - check_attach_result.volume_group_ext_id == vg_uuid
+      - check_attach_result.response.index == 1
+      - check_attach_result.response.ext_id == vm1_uuid
+    fail_msg: "check_mode attach did not produce the expected spec"
+    success_msg: "check_mode attach produced the expected VmAttachment spec"
+
+- name: Check_mode — attach VM1 to VG with a DIFFERENT index (update transition)
+  nutanix.ncp.ntnx_vm_attachments_by_volume_group_id_v2:
+    state: present
+    volume_group_ext_id: "{{ vg_uuid }}"
+    ext_id: "{{ vm1_uuid }}"
+    index: 3
+  register: check_attach_update_result
+  check_mode: true
+
+- name: Verify check_mode update-style spec (different index)
+  ansible.builtin.assert:
+    that:
+      - check_attach_update_result.changed == false
+      - check_attach_update_result.failed == false
+      - check_attach_update_result.response.index == 3
+      - check_attach_update_result.response.ext_id == vm1_uuid
+    fail_msg: "check_mode update-style spec did not reflect the new index"
+    success_msg: "check_mode update-style spec correctly reflected the new index"
+
+- name: Check_mode — detach VM1 from VG
+  nutanix.ncp.ntnx_vm_attachments_by_volume_group_id_v2:
+    state: absent
+    volume_group_ext_id: "{{ vg_uuid }}"
+    ext_id: "{{ vm1_uuid }}"
+  register: check_detach_result
+  check_mode: true
+
+- name: Verify check_mode detach did not mutate the API
+  ansible.builtin.assert:
+    that:
+      - check_detach_result.changed == false
+      - check_detach_result.failed == false
+      - check_detach_result.ext_id == vm1_uuid
+      - check_detach_result.volume_group_ext_id == vg_uuid
+      - check_detach_result.msg is defined
+      - check_detach_result.msg is search("will be detached")
+    fail_msg: "check_mode detach did not return the expected preview message"
+    success_msg: "check_mode detach preview message returned as expected"
+
+############################################ Real attach ############################################
+- name: Attach VM1 to VG using ONLY required fields (no index)
+  nutanix.ncp.ntnx_vm_attachments_by_volume_group_id_v2:
+    state: present
+    volume_group_ext_id: "{{ vg_uuid }}"
+    ext_id: "{{ vm1_uuid }}"
+  register: attach_vm1_result
+
+- name: Verify VM1 attach succeeded
+  ansible.builtin.assert:
+    that:
+      - attach_vm1_result.changed == true
+      - attach_vm1_result.failed == false
+      - attach_vm1_result.ext_id == vm1_uuid
+      - attach_vm1_result.volume_group_ext_id == vg_uuid
+      - attach_vm1_result.task_ext_id is defined
+      - attach_vm1_result.response.status == "SUCCEEDED"
+    fail_msg: "Unable to attach VM1 to VG"
+    success_msg: "VM1 attached to VG successfully"
+
+- name: Attach VM2 to VG with ALL fields (explicit SCSI index)
+  nutanix.ncp.ntnx_vm_attachments_by_volume_group_id_v2:
+    state: present
+    volume_group_ext_id: "{{ vg_uuid }}"
+    ext_id: "{{ vm2_uuid }}"
+    index: 4
+  register: attach_vm2_result
+
+- name: Verify VM2 attach succeeded with explicit index
+  ansible.builtin.assert:
+    that:
+      - attach_vm2_result.changed == true
+      - attach_vm2_result.failed == false
+      - attach_vm2_result.ext_id == vm2_uuid
+      - attach_vm2_result.volume_group_ext_id == vg_uuid
+      - attach_vm2_result.task_ext_id is defined
+      - attach_vm2_result.response.status == "SUCCEEDED"
+    fail_msg: "Unable to attach VM2 to VG"
+    success_msg: "VM2 attached to VG successfully"
+
+############################################ Info: list ############################################
+- name: List all VM attachments on the Volume Group
+  nutanix.ncp.ntnx_volume_group_vm_attachment_info_v2:
+    volume_group_ext_id: "{{ vg_uuid }}"
+  register: list_vmattach_result
+
+- name: Verify list contains both VM attachments
+  ansible.builtin.assert:
+    that:
+      - list_vmattach_result.changed == false
+      - list_vmattach_result.failed == false
+      - list_vmattach_result.volume_group_ext_id == vg_uuid
+      - list_vmattach_result.response is iterable
+      - list_vmattach_result.response | length >= 2
+      - (list_vmattach_result.response | map(attribute='ext_id') | list) is superset([vm1_uuid, vm2_uuid])
+      - list_vmattach_result.total_available_results is defined
+      - list_vmattach_result.total_available_results >= 2
+    fail_msg: "list_vm_attachments did not return both attached VMs"
+    success_msg: "list_vm_attachments returned both attached VMs"
+
+- name: Verify VM2 attachment record surfaces in the list
+  ansible.builtin.assert:
+    that:
+      - (list_vmattach_result.response
+           | selectattr('ext_id', 'equalto', vm2_uuid) | list | length) == 1
+      # NOTE: the deprecated ListVmAttachmentsByVolumeGroupId API returns
+      # `index: null` for entries; the SCSI index requested at attach time is
+      # not echoed back on the list response. We assert the record exists but
+      # tolerate a null index. The full disk-address (with index) can be seen
+      # via the VM info module (ntnx_vms_info_v2 -> disks[*].disk_address).
+      - ((list_vmattach_result.response
+             | selectattr('ext_id', 'equalto', vm2_uuid)
+             | map(attribute='index') | list | first) in [4, None])
+    fail_msg: "list_vm_attachments did not include VM2 as expected"
+    success_msg: "list_vm_attachments included VM2 as expected"
+
+- name: List VM attachments with a limit of 1
+  nutanix.ncp.ntnx_volume_group_vm_attachment_info_v2:
+    volume_group_ext_id: "{{ vg_uuid }}"
+    limit: 1
+  register: list_vmattach_limit_result
+
+- name: Verify limit truncates the response
+  ansible.builtin.assert:
+    that:
+      - list_vmattach_limit_result.changed == false
+      - list_vmattach_limit_result.failed == false
+      - list_vmattach_limit_result.response | length == 1
+      - list_vmattach_limit_result.total_available_results >= 2
+    fail_msg: "limit parameter did not truncate the VM attachment list"
+    success_msg: "limit parameter correctly truncated the VM attachment list"
+
+############################################ Info: get by ext_id ############################################
+- name: Fetch VM1 attachment by ext_id
+  nutanix.ncp.ntnx_volume_group_vm_attachment_info_v2:
+    volume_group_ext_id: "{{ vg_uuid }}"
+    ext_id: "{{ vm1_uuid }}"
+  register: get_vm1_result
+
+- name: Verify single VM attachment fetched
+  ansible.builtin.assert:
+    that:
+      - get_vm1_result.changed == false
+      - get_vm1_result.failed == false
+      - get_vm1_result.ext_id == vm1_uuid
+      - get_vm1_result.volume_group_ext_id == vg_uuid
+      - get_vm1_result.response.ext_id == vm1_uuid
+    fail_msg: "Unable to fetch VM1 attachment by ext_id"
+    success_msg: "VM1 attachment fetched by ext_id successfully"
+
+- name: Fetch a non-existent VM attachment on this VG
+  nutanix.ncp.ntnx_volume_group_vm_attachment_info_v2:
+    volume_group_ext_id: "{{ vg_uuid }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: get_missing_result
+  ignore_errors: true
+
+- name: Verify not-found error is descriptive
+  ansible.builtin.assert:
+    that:
+      - get_missing_result.failed == true
+      - get_missing_result.msg is defined
+      - get_missing_result.msg is search("not found")
+    fail_msg: "Fetching a non-existent VmAttachment did not fail with a descriptive error"
+    success_msg: "Fetching a non-existent VmAttachment failed with a descriptive error"
+
+############################################ Negative: attach on non-existent VG ############################################
+- name: Attempt to attach VM1 to a non-existent Volume Group
+  nutanix.ncp.ntnx_vm_attachments_by_volume_group_id_v2:
+    state: present
+    volume_group_ext_id: "00000000-0000-0000-0000-000000000000"
+    ext_id: "{{ vm1_uuid }}"
+  register: attach_bad_vg_result
+  ignore_errors: true
+
+- name: Verify attach against invalid VG failed
+  ansible.builtin.assert:
+    that:
+      - attach_bad_vg_result.failed == true
+    fail_msg: "Attach to a non-existent VG unexpectedly succeeded"
+    success_msg: "Attach to a non-existent VG failed as expected"
+
+############################################ Negative: missing required param ############################################
+- name: Attempt to attach without volume_group_ext_id (should fail spec validation)
+  nutanix.ncp.ntnx_vm_attachments_by_volume_group_id_v2:
+    state: present
+    ext_id: "{{ vm1_uuid }}"
+  register: attach_missing_vg_result
+  ignore_errors: true
+
+- name: Verify Ansible argument-spec rejected the missing required param
+  ansible.builtin.assert:
+    that:
+      - attach_missing_vg_result.failed == true
+      - attach_missing_vg_result.msg is defined
+      - attach_missing_vg_result.msg is search("volume_group_ext_id")
+    fail_msg: "Ansible spec did not reject a missing required parameter"
+    success_msg: "Ansible spec correctly rejected the missing required parameter"
+
+############################################ Detach ############################################
+- name: Detach VM1 from VG
+  nutanix.ncp.ntnx_vm_attachments_by_volume_group_id_v2:
+    state: absent
+    volume_group_ext_id: "{{ vg_uuid }}"
+    ext_id: "{{ vm1_uuid }}"
+  register: detach_vm1_result
+
+- name: Verify VM1 detach succeeded
+  ansible.builtin.assert:
+    that:
+      - detach_vm1_result.changed == true
+      - detach_vm1_result.failed == false
+      - detach_vm1_result.ext_id == vm1_uuid
+      - detach_vm1_result.volume_group_ext_id == vg_uuid
+      - detach_vm1_result.task_ext_id is defined
+      - detach_vm1_result.response.status == "SUCCEEDED"
+    fail_msg: "Unable to detach VM1 from VG"
+    success_msg: "VM1 detached from VG successfully"
+
+- name: Detach VM2 from VG
+  nutanix.ncp.ntnx_vm_attachments_by_volume_group_id_v2:
+    state: absent
+    volume_group_ext_id: "{{ vg_uuid }}"
+    ext_id: "{{ vm2_uuid }}"
+  register: detach_vm2_result
+
+- name: Verify VM2 detach succeeded
+  ansible.builtin.assert:
+    that:
+      - detach_vm2_result.changed == true
+      - detach_vm2_result.failed == false
+      - detach_vm2_result.ext_id == vm2_uuid
+      - detach_vm2_result.volume_group_ext_id == vg_uuid
+      - detach_vm2_result.task_ext_id is defined
+      - detach_vm2_result.response.status == "SUCCEEDED"
+    fail_msg: "Unable to detach VM2 from VG"
+    success_msg: "VM2 detached from VG successfully"
+
+############################################ Idempotency: detach twice ############################################
+- name: Detach VM1 a second time (already detached — expect API error, tolerated)
+  nutanix.ncp.ntnx_vm_attachments_by_volume_group_id_v2:
+    state: absent
+    volume_group_ext_id: "{{ vg_uuid }}"
+    ext_id: "{{ vm1_uuid }}"
+  register: detach_vm1_again_result
+  ignore_errors: true
+
+- name: Verify repeat detach did not silently succeed
+  ansible.builtin.assert:
+    that:
+      - detach_vm1_again_result.changed == false or detach_vm1_again_result.failed == true
+    fail_msg: "Detaching an already-detached VM silently reported changed=true, which is unsafe"
+    success_msg: "Detaching an already-detached VM correctly reported no-change / failure"
+
+- name: List VM attachments after detach — expect empty
+  nutanix.ncp.ntnx_volume_group_vm_attachment_info_v2:
+    volume_group_ext_id: "{{ vg_uuid }}"
+  register: list_after_detach_result
+
+- name: Verify listing shows no VM attachments after detach
+  ansible.builtin.assert:
+    that:
+      - list_after_detach_result.changed == false
+      - list_after_detach_result.failed == false
+      - (list_after_detach_result.response | length) == 0
+      - list_after_detach_result.total_available_results == 0
+    fail_msg: "VG still shows VM attachments after detaching both VMs"
+    success_msg: "VG shows no VM attachments after detaching both VMs"
+
+############################################ Cleanup ############################################
+- name: Delete VM1
+  nutanix.ncp.ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ vm1_uuid }}"
+  register: delete_vm1_result
+  ignore_errors: true
+
+- name: Verify VM1 deletion
+  ansible.builtin.assert:
+    that:
+      - delete_vm1_result.failed == false
+      - delete_vm1_result.changed == true
+    fail_msg: "Failed to delete VM1 during cleanup"
+    success_msg: "VM1 deleted successfully during cleanup"
+
+- name: Delete VM2
+  nutanix.ncp.ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ vm2_uuid }}"
+  register: delete_vm2_result
+  ignore_errors: true
+
+- name: Verify VM2 deletion
+  ansible.builtin.assert:
+    that:
+      - delete_vm2_result.failed == false
+      - delete_vm2_result.changed == true
+    fail_msg: "Failed to delete VM2 during cleanup"
+    success_msg: "VM2 deleted successfully during cleanup"
+
+- name: Delete Volume Group
+  nutanix.ncp.ntnx_volume_groups_v2:
+    state: absent
+    ext_id: "{{ vg_uuid }}"
+  register: delete_vg_result
+  ignore_errors: true
+
+- name: Verify Volume Group deletion
+  ansible.builtin.assert:
+    that:
+      - delete_vg_result.failed == false
+      - delete_vg_result.changed == true
+      - delete_vg_result.ext_id == vg_uuid
+    fail_msg: "Failed to delete Volume Group during cleanup"
+    success_msg: "Volume Group deleted successfully during cleanup"
