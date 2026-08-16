@@ -1,0 +1,28 @@
+---
+# ============================================================================
+# Nutanix Full Lifecycle Demo using Ansible
+# ============================================================================
+#
+# This playbook demonstrates a complete Day-0 to Day-2 lifecycle:
+#
+#   Phase 1  Foundation       — Image bare-metal nodes & create a cluster
+#   Phase 2  PE Setup         — Reset credentials, create a PE subnet
+#   Phase 3  Deploy PC        — Deploy Prism Central from PE
+#   Phase 4  Register         — Register PE cluster to Prism Central
+#   Phase 5  Protect & LCM    — Enable PC backup, run LCM inventory
+#   Phase 6  Discover         — Discover clusters, virtual switches, storage
+#   Phase 7  Create Resources — Image, Subnet, Category, VM on PC
+#   Phase 8  Update Resources — Modify Category, VM, Image
+#   Phase 9  Cleanup          — Delete all demo resources (reverse order)
+#
+# Interactive: pauses after every operation — press Enter to advance.
+#
+# Usage:
+#   ansible-playbook nutanix_lifecycle_demo/site.yml -v
+# ============================================================================
+
+# Phases 1–3: PE-targeted operations (Foundation, PE Setup, PC Deployment)
+- import_playbook: pe_phases.yml
+
+# Phases 4–9: PC-targeted operations (Register, Protect, Discover, Create, Update, Cleanup)
+- import_playbook: pc_phases.yml
