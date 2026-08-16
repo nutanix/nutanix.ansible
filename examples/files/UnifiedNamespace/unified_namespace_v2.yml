@@ -1,0 +1,92 @@
+---
+# Summary:
+# This playbook demonstrates the full lifecycle of a Files Unified Namespace
+# (also known as Federation Policy) using the Nutanix v4 modules:
+#   1. Create a Unified Namespace with a Nutanix core member and one edge member.
+#   2. Get the Unified Namespace by ext_id.
+#   3. List all Unified Namespaces (optionally with filter / limit).
+#   4. Update the Unified Namespace (add an external member).
+#   5. Delete the Unified Namespace.
+
+- name: Files Unified Namespace playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        core_file_server_ext_id: "11111111-1111-1111-1111-111111111111"
+        member_file_server_ext_id: "22222222-2222-2222-2222-222222222222"
+        external_file_server_ext_id: "33333333-3333-3333-3333-333333333333"
+
+    - name: Create Unified Namespace with a Nutanix core member and one edge member
+      nutanix.ncp.ntnx_unified_namespace_v2:
+        state: present
+        namespace_member_configs:
+          - file_server_ext_id: "{{ core_file_server_ext_id }}"
+            is_core_member: true
+            file_server_type: "NUTANIX"
+            should_include_all_mount_targets: true
+          - file_server_ext_id: "{{ member_file_server_ext_id }}"
+            is_core_member: false
+            file_server_type: "NUTANIX"
+            should_include_all_mount_targets: true
+      register: create_result
+      ignore_errors: true
+
+    - name: Save Unified Namespace ext_id
+      ansible.builtin.set_fact:
+        unified_namespace_ext_id: "{{ create_result.ext_id }}"
+      when: create_result.ext_id is defined and create_result.ext_id | length > 0
+
+    - name: Get Unified Namespace using ext_id
+      nutanix.ncp.ntnx_unified_namespaces_info_v2:
+        ext_id: "{{ unified_namespace_ext_id }}"
+      register: get_result
+      ignore_errors: true
+      when: unified_namespace_ext_id is defined
+
+    - name: List all Unified Namespaces
+      nutanix.ncp.ntnx_unified_namespaces_info_v2:
+      register: list_result
+      ignore_errors: true
+
+    - name: List Unified Namespaces with limit
+      nutanix.ncp.ntnx_unified_namespaces_info_v2:
+        limit: 1
+      register: list_limit_result
+      ignore_errors: true
+
+    - name: Update Unified Namespace to add an external migration source
+      nutanix.ncp.ntnx_unified_namespace_v2:
+        state: present
+        ext_id: "{{ unified_namespace_ext_id }}"
+        namespace_member_configs:
+          - file_server_ext_id: "{{ core_file_server_ext_id }}"
+            is_core_member: true
+            file_server_type: "NUTANIX"
+            should_include_all_mount_targets: true
+          - file_server_ext_id: "{{ member_file_server_ext_id }}"
+            is_core_member: false
+            file_server_type: "NUTANIX"
+            should_include_all_mount_targets: true
+          - file_server_ext_id: "{{ external_file_server_ext_id }}"
+            is_core_member: false
+            file_server_type: "EXTERNAL"
+            should_include_all_mount_targets: false
+      register: update_result
+      ignore_errors: true
+      when: unified_namespace_ext_id is defined
+
+    - name: Delete Unified Namespace
+      nutanix.ncp.ntnx_unified_namespace_v2:
+        state: absent
+        ext_id: "{{ unified_namespace_ext_id }}"
+      register: delete_result
+      ignore_errors: true
+      when: unified_namespace_ext_id is defined
