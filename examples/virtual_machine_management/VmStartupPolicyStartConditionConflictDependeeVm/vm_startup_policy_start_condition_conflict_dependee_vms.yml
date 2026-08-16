@@ -1,0 +1,41 @@
+---
+# Example playbook demonstrating the info module
+# ntnx_vm_startup_policy_start_condition_conflict_dependee_vms_info_v2.
+#
+# The module lists the dependee VMs associated with a specific start-condition
+# conflict of a VM startup policy. A dependee VM is one that must be started
+# first and meet its startup conditions before dependent VMs are allowed to
+# power on. Both the VM startup policy external ID and the start-condition
+# conflict external ID are required.
+
+- name: VM Startup Policy Start-Condition Conflict Dependee VMs examples
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ nutanix_username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ nutanix_password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      nutanix_port: "{{ nutanix_port | default(lookup('env', 'NUTANIX_PORT') | default('9440', true)) }}"
+      validate_certs: false
+
+  vars:
+    vm_startup_policy_ext_id: "0b0f9c7e-2b6f-4d61-8d3d-7b8c9e0a1b2c"
+    start_condition_conflict_ext_id: "aa11bb22-cc33-dd44-ee55-ff6677889900"
+
+  tasks:
+    - name: List all dependee VMs of a start-condition conflict of a VM startup policy
+      nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflict_dependee_vms_info_v2:
+        vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+        start_condition_conflict_ext_id: "{{ start_condition_conflict_ext_id }}"
+      register: dependee_vms
+      ignore_errors: true
+
+    - name: List dependee VMs with pagination
+      nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflict_dependee_vms_info_v2:
+        vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+        start_condition_conflict_ext_id: "{{ start_condition_conflict_ext_id }}"
+        page: 0
+        limit: 10
+      register: dependee_vms_paged
+      ignore_errors: true
