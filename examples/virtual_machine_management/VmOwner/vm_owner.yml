@@ -1,0 +1,39 @@
+---
+# Summary:
+# This playbook demonstrates the ntnx_vm_owner_v2 module. It performs the
+# following operations:
+# 1. Assign an owner to an ESXi VM using the assign-owner v4 action.
+#
+# The connection parameters can be supplied either as extra-vars
+# (``-e pc_ip=... pc_user=... pc_password=...``) or as environment variables
+# (``NUTANIX_HOST``, ``NUTANIX_USERNAME``, ``NUTANIX_PASSWORD``). Sensible
+# placeholder defaults are used when neither is set.
+
+- name: VmOwner playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ pc_ip | default(lookup('env', 'NUTANIX_HOST') | default('<pc_ip>', true), true) }}"
+      nutanix_username: "{{ pc_user | default(lookup('env', 'NUTANIX_USERNAME') | default('<user>', true), true) }}"
+      nutanix_password: "{{ pc_password | default(lookup('env', 'NUTANIX_PASSWORD') | default('<pass>', true), true) }}"
+      validate_certs: false
+  tasks:
+    - name: Set variables for the VmOwner playbook
+      ansible.builtin.set_fact:
+        vm_ext_id: "{{ vm_ext_id | default('ac5aff0c-6c68-4948-9088-b903e2be0ce7') }}"
+        owner_ext_id: "{{ owner_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+
+    - name: Assign owner to an ESXi VM with all attributes
+      nutanix.ncp.ntnx_vm_owner_v2:
+        state: present
+        ext_id: "{{ vm_ext_id }}"
+        owner:
+          ext_id: "{{ owner_ext_id }}"
+          entity_type: "USER"
+      register: assign_owner_result
+      ignore_errors: true
+
+    - name: Show the module response
+      ansible.builtin.debug:
+        var: assign_owner_result

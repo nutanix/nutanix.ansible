@@ -28,6 +28,28 @@ def get_vm(module, api_instance, ext_id):
         )
 
 
+def get_esxi_vm(module, api_instance, ext_id):
+    """
+    Get ESXi VM configuration details by ext_id.
+
+    Args:
+        module: Ansible module.
+        api_instance: EsxiVmApi instance from ntnx_vmm_py_client sdk.
+        ext_id: External identifier (UUID) of the ESXi VM.
+
+    Returns:
+        vm (obj): ESXi VM info object.
+    """
+    try:
+        return api_instance.get_vm_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching ESXi VM info using ext_id",
+        )
+
+
 def get_nic(module, api_instance, ext_id, vm_ext_id):
     """
     Get NIC by ext_id

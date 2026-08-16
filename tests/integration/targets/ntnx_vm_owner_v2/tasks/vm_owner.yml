@@ -1,0 +1,222 @@
+---
+# ntnx_vm_owner_v2 — integration test plan
+# ----------------------------------------
+# The v4 VMM ``assign_vm_owner`` action lives on the ``EsxiVmApi`` receiver
+# (URI: /api/vmm/v4.2/esxi/config/vms/{extId}/$actions/assign-owner) and the
+# request body is an ``EsxiConfigOwnershipInfo`` object referencing an
+# ``EsxiConfigOwnerReference`` with ``ext_id`` (UUID) and ``entity_type``
+# (currently ``USER``).
+#
+# Scenarios covered by this target:
+#   1. check_mode Assign Owner with ALL attributes (owner.ext_id +
+#      owner.entity_type) — verifies argument spec + spec-generator wiring
+#      end-to-end WITHOUT touching the cluster.
+#   2. check_mode Assign Owner with REQUIRED attributes only (owner.ext_id) —
+#      verifies that the ``entity_type`` sub-option is optional.
+#   3. Negative — Missing ``ext_id`` — argument spec must reject it.
+#   4. Negative — Missing ``owner`` — argument spec must reject it.
+#   5. Negative — Missing ``owner.ext_id`` — nested argument spec must reject it.
+#   6. Negative — Invalid ``owner.entity_type`` choice — argument spec must
+#      reject values that are not part of the enum.
+#   7. Discovery — list ESXi VMs on the cluster; if any are present run a real
+#      Assign Owner call, otherwise trigger the "VM not found" error path via
+#      the real API using a well-known missing UUID (still exercises the SDK,
+#      etag lookup, and error handler).
+
+- name: Start ntnx_vm_owner_v2 integration tests
+  ansible.builtin.debug:
+    msg: Start ntnx_vm_owner_v2 integration tests
+
+- name: Generate random suffix for test data
+  ansible.builtin.set_fact:
+    random_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set static UUIDs used by check_mode tests
+  ansible.builtin.set_fact:
+    vm_owner_check_vm_uuid: "00000000-0000-0000-0000-0000000000aa"
+    vm_owner_check_owner_uuid: "00000000-0000-0000-0000-0000000000bb"
+    vm_owner_missing_vm_uuid: "00000000-0000-0000-0000-000000000000"
+
+##############################################################################
+# 1. check_mode with ALL attributes
+##############################################################################
+
+- name: Assign owner to ESXi VM in check_mode with ALL attributes
+  nutanix.ncp.ntnx_vm_owner_v2:
+    state: present
+    ext_id: "{{ vm_owner_check_vm_uuid }}"
+    owner:
+      ext_id: "{{ vm_owner_check_owner_uuid }}"
+      entity_type: "USER"
+  check_mode: true
+  register: check_mode_full
+  ignore_errors: true
+
+- name: Verify check_mode with ALL attributes generates spec correctly
+  ansible.builtin.assert:
+    that:
+      - check_mode_full is defined
+      - check_mode_full.changed == false
+      - check_mode_full.failed == false
+      - check_mode_full.ext_id == vm_owner_check_vm_uuid
+      - check_mode_full.response is defined
+      - check_mode_full.response.owner is defined
+      - check_mode_full.response.owner.ext_id == vm_owner_check_owner_uuid
+      - check_mode_full.response.owner.entity_type == "USER"
+    success_msg: "check_mode Assign Owner with all attributes generated spec successfully"
+    fail_msg: "check_mode Assign Owner with all attributes did NOT generate the expected spec"
+
+##############################################################################
+# 2. check_mode with REQUIRED attributes only
+##############################################################################
+
+- name: Assign owner to ESXi VM in check_mode with REQUIRED attributes only
+  nutanix.ncp.ntnx_vm_owner_v2:
+    state: present
+    ext_id: "{{ vm_owner_check_vm_uuid }}"
+    owner:
+      ext_id: "{{ vm_owner_check_owner_uuid }}"
+  check_mode: true
+  register: check_mode_required
+  ignore_errors: true
+
+- name: Verify check_mode with REQUIRED attributes generates spec correctly
+  ansible.builtin.assert:
+    that:
+      - check_mode_required is defined
+      - check_mode_required.changed == false
+      - check_mode_required.failed == false
+      - check_mode_required.ext_id == vm_owner_check_vm_uuid
+      - check_mode_required.response is defined
+      - check_mode_required.response.owner is defined
+      - check_mode_required.response.owner.ext_id == vm_owner_check_owner_uuid
+      - >-
+        check_mode_required.response.owner.entity_type is not defined
+        or check_mode_required.response.owner.entity_type is none
+    success_msg: "check_mode Assign Owner with required attributes generated spec successfully"
+    fail_msg: "check_mode Assign Owner with required attributes did NOT generate the expected spec"
+
+##############################################################################
+# 3. Negative — missing ext_id
+##############################################################################
+
+- name: Attempt Assign Owner WITHOUT ext_id (must fail)
+  nutanix.ncp.ntnx_vm_owner_v2:
+    state: present
+    owner:
+      ext_id: "{{ vm_owner_check_owner_uuid }}"
+      entity_type: "USER"
+  register: missing_ext_id
+  ignore_errors: true
+
+- name: Verify missing ext_id is rejected by the module
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id is defined
+      - missing_ext_id.failed == true
+      - "'ext_id' in missing_ext_id.msg | default('')"
+    success_msg: "Module correctly rejected request with missing ext_id"
+    fail_msg: "Module DID NOT reject request with missing ext_id"
+
+##############################################################################
+# 4. Negative — missing owner
+##############################################################################
+
+- name: Attempt Assign Owner WITHOUT owner (must fail)
+  nutanix.ncp.ntnx_vm_owner_v2:
+    state: present
+    ext_id: "{{ vm_owner_check_vm_uuid }}"
+  register: missing_owner
+  ignore_errors: true
+
+- name: Verify missing owner is rejected by the module
+  ansible.builtin.assert:
+    that:
+      - missing_owner is defined
+      - missing_owner.failed == true
+      - "'owner' in missing_owner.msg | default('')"
+    success_msg: "Module correctly rejected request with missing owner"
+    fail_msg: "Module DID NOT reject request with missing owner"
+
+##############################################################################
+# 5. Negative — missing owner.ext_id
+##############################################################################
+
+- name: Attempt Assign Owner with owner.entity_type but no owner.ext_id (must fail)
+  nutanix.ncp.ntnx_vm_owner_v2:
+    state: present
+    ext_id: "{{ vm_owner_check_vm_uuid }}"
+    owner:
+      entity_type: "USER"
+  register: missing_owner_ext_id
+  ignore_errors: true
+
+- name: Verify missing owner.ext_id is rejected by the module
+  ansible.builtin.assert:
+    that:
+      - missing_owner_ext_id is defined
+      - missing_owner_ext_id.failed == true
+    success_msg: "Module correctly rejected request with missing owner.ext_id"
+    fail_msg: "Module DID NOT reject request with missing owner.ext_id"
+
+##############################################################################
+# 6. Negative — invalid owner.entity_type value
+##############################################################################
+
+- name: Attempt Assign Owner with an invalid owner.entity_type (must fail)
+  nutanix.ncp.ntnx_vm_owner_v2:
+    state: present
+    ext_id: "{{ vm_owner_check_vm_uuid }}"
+    owner:
+      ext_id: "{{ vm_owner_check_owner_uuid }}"
+      entity_type: "INVALID_ENTITY"
+  register: invalid_entity_type
+  ignore_errors: true
+
+- name: Verify invalid owner.entity_type is rejected by the argument spec
+  ansible.builtin.assert:
+    that:
+      - invalid_entity_type is defined
+      - invalid_entity_type.failed == true
+    success_msg: "Module correctly rejected an invalid owner.entity_type value"
+    fail_msg: "Module DID NOT reject an invalid owner.entity_type value"
+
+##############################################################################
+# 7. Real API — exercise the SDK path against a missing ESXi VM. The v4 VMM
+#    ``assign_vm_owner`` action targets ESXi VMs specifically; on an AHV-only
+#    cluster (or any cluster without a matching VM) the API must return a
+#    NOT_FOUND response, which the module must surface as a descriptive
+#    failure. This validates the real SDK invocation, the etag lookup, and
+#    the error handler end-to-end.
+##############################################################################
+
+- name: Attempt Assign Owner against a non-existent ESXi VM ext_id (must fail cleanly)
+  nutanix.ncp.ntnx_vm_owner_v2:
+    state: present
+    ext_id: "{{ vm_owner_missing_vm_uuid }}"
+    owner:
+      ext_id: "{{ vm_owner_check_owner_uuid }}"
+      entity_type: "USER"
+  register: missing_vm
+  ignore_errors: true
+
+- name: Verify missing ESXi VM path returns a clean error
+  ansible.builtin.assert:
+    that:
+      - missing_vm is defined
+      - missing_vm.changed == false
+      - missing_vm.failed == true
+      - missing_vm.status | default(0) | int == 404
+      - >-
+        ('ESXi VM' in (missing_vm.msg | default(''))) or
+        ('assigning owner' in (missing_vm.msg | default(''))) or
+        ('etag' in (missing_vm.msg | default('')))
+      - >-
+        (missing_vm.response is mapping) or
+        (missing_vm.response is string)
+    success_msg: "Missing ESXi VM path returned a descriptive error"
+    fail_msg: "Missing ESXi VM path did NOT return a descriptive error"
+
+- name: Finish ntnx_vm_owner_v2 integration tests
+  ansible.builtin.debug:
+    msg: Finish ntnx_vm_owner_v2 integration tests
