@@ -1,0 +1,124 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Nutanix Files UserMapping playbook] **************************************
+
+TASK [Setting variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"downloaded_user_mappings_file": "/tmp/downloaded_user_mappings.csv", "file_server_ext_id": "d1e2f3a4-b5c6-47d8-9e0f-1a2b3c4d5e6f", "user_mappings_file": "/tmp/user_mappings.csv"}, "changed": false}
+
+TASK [Create a sample user mappings CSV file to upload] ************************
+ok: [localhost] => {"changed": false, "checksum": "f95a8f66aa6d728a6bedd45184cf144a497ec73d", "dest": "/tmp/user_mappings.csv", "gid": 10000, "group": "Domain.Users", "mode": "0644", "owner": "sudhanva.nadiger", "path": "/tmp/user_mappings.csv", "size": 80, "state": "file", "uid": 34305}
+
+TASK [Upload user mappings to the file server] *********************************
+[ERROR]: Task failed: Timed out after 30 second(s).
+Origin: /tmp/codegen/5b2d5b96ff1249a7b5a58d8b91f0d9a8/repo/examples/files/UserMapping/user_mapping_v2.yml:40:7
+
+38           DOMAIN\asmith,1002,2002
+39
+40     - name: Upload user mappings to the file server
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "Task failed: Timed out after 30 second(s).", "timedout": {"frame": "Configure `DISPLAY_TRACEBACK` to see a traceback on timeout errors.", "period": 30}}
+...ignoring
+
+TASK [Print the upload user mappings result] ***********************************
+[WARNING]: Deprecation warnings can be disabled by setting `deprecation_warnings=False` in ansible.cfg.
+[DEPRECATION WARNING]: The `timedout.frame` task result key is deprecated. This feature will be removed from ansible-core version 2.23.
+Origin: /tmp/codegen/5b2d5b96ff1249a7b5a58d8b91f0d9a8/repo/examples/files/UserMapping/user_mapping_v2.yml:49:14
+
+47     - name: Print the upload user mappings result
+48       ansible.builtin.debug:
+49         var: upload_result
+                ^ column 14
+
+Configure `DISPLAY_TRACEBACK` to see a traceback on timeout errors.
+
+ok: [localhost] => {
+    "upload_result": {
+        "changed": false,
+        "exception": "(traceback unavailable)",
+        "failed": true,
+        "msg": "Task failed: Timed out after 30 second(s).",
+        "timedout": {
+            "frame": "Configure `DISPLAY_TRACEBACK` to see a traceback on timeout errors.",
+            "period": 30
+        }
+    }
+}
+
+TASK [Download user mappings of the file server] *******************************
+[ERROR]: Task failed: Timed out after 30 second(s).
+Origin: /tmp/codegen/5b2d5b96ff1249a7b5a58d8b91f0d9a8/repo/examples/files/UserMapping/user_mapping_v2.yml:51:7
+
+49         var: upload_result
+50
+51     - name: Download user mappings of the file server
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "Task failed: Timed out after 30 second(s).", "timedout": {"frame": "Configure `DISPLAY_TRACEBACK` to see a traceback on timeout errors.", "period": 30}}
+...ignoring
+
+TASK [Print the download user mappings result] *********************************
+[DEPRECATION WARNING]: The `timedout.frame` task result key is deprecated. This feature will be removed from ansible-core version 2.23.
+Origin: /tmp/codegen/5b2d5b96ff1249a7b5a58d8b91f0d9a8/repo/examples/files/UserMapping/user_mapping_v2.yml:59:14
+
+57     - name: Print the download user mappings result
+58       ansible.builtin.debug:
+59         var: download_result
+                ^ column 14
+
+Configure `DISPLAY_TRACEBACK` to see a traceback on timeout errors.
+
+ok: [localhost] => {
+    "download_result": {
+        "changed": false,
+        "exception": "(traceback unavailable)",
+        "failed": true,
+        "msg": "Task failed: Timed out after 30 second(s).",
+        "timedout": {
+            "frame": "Configure `DISPLAY_TRACEBACK` to see a traceback on timeout errors.",
+            "period": 30
+        }
+    }
+}
+
+TASK [Download user mappings of the file server and save to a local file] ******
+[ERROR]: Task failed: Timed out after 30 second(s).
+Origin: /tmp/codegen/5b2d5b96ff1249a7b5a58d8b91f0d9a8/repo/examples/files/UserMapping/user_mapping_v2.yml:61:7
+
+59         var: download_result
+60
+61     - name: Download user mappings of the file server and save to a local file
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "Task failed: Timed out after 30 second(s).", "timedout": {"frame": "Configure `DISPLAY_TRACEBACK` to see a traceback on timeout errors.", "period": 30}}
+...ignoring
+
+TASK [Print the download-to-file user mappings result] *************************
+[DEPRECATION WARNING]: The `timedout.frame` task result key is deprecated. This feature will be removed from ansible-core version 2.23.
+Origin: /tmp/codegen/5b2d5b96ff1249a7b5a58d8b91f0d9a8/repo/examples/files/UserMapping/user_mapping_v2.yml:70:14
+
+68     - name: Print the download-to-file user mappings result
+69       ansible.builtin.debug:
+70         var: download_to_file_result
+                ^ column 14
+
+Configure `DISPLAY_TRACEBACK` to see a traceback on timeout errors.
+
+ok: [localhost] => {
+    "download_to_file_result": {
+        "changed": false,
+        "exception": "(traceback unavailable)",
+        "failed": true,
+        "msg": "Task failed: Timed out after 30 second(s).",
+        "timedout": {
+            "frame": "Configure `DISPLAY_TRACEBACK` to see a traceback on timeout errors.",
+            "period": 30
+        }
+    }
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=8    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=3   
+
