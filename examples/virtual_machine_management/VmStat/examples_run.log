@@ -1,0 +1,39 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [ESXi VM stats playbook] **************************************************
+
+TASK [Compute the stats time window (last 5 minutes)] **************************
+ok: [localhost] => {"changed": false, "cmd": ["date", "-u", "-d", "-300 seconds", "+%Y-%m-%dT%H:%M:%S.%3NZ"], "delta": "0:00:00.003028", "end": "2026-07-21 05:32:03.413486", "msg": "", "rc": 0, "start": "2026-07-21 05:32:03.410458", "stderr": "", "stderr_lines": [], "stdout": "2026-07-21T05:27:03.413Z", "stdout_lines": ["2026-07-21T05:27:03.413Z"]}
+
+TASK [Compute the stats end time (now)] ****************************************
+ok: [localhost] => {"changed": false, "cmd": ["date", "-u", "+%Y-%m-%dT%H:%M:%S.%3NZ"], "delta": "0:00:00.002901", "end": "2026-07-21 05:32:03.617989", "msg": "", "rc": 0, "start": "2026-07-21 05:32:03.615088", "stderr": "", "stderr_lines": [], "stdout": "2026-07-21T05:32:03.617Z", "stdout_lines": ["2026-07-21T05:32:03.617Z"]}
+
+TASK [Set stats variables] *****************************************************
+ok: [localhost] => {"ansible_facts": {"disk_ext_id": "11111111-1111-1111-1111-111111111111", "nic_ext_id": "22222222-2222-2222-2222-222222222222", "vm_ext_id": "00000000-0000-0000-0000-000000000000"}, "changed": false}
+
+TASK [List all ESXi VM stats within the time window] ***************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "BAD REQUEST", "msg": "Api Exception raised while fetching ESXi VM stats info", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "code": "VMM-10000", "errorGroup": "INTERNAL_ERROR", "locale": "en-US", "message": "Failed to perform the operation due to an internal error.", "severity": "ERROR"}]}}, "status": 400}
+...ignoring
+
+TASK [List ESXi VM stats with sampling, aggregation, paging and projection] ****
+fatal: [localhost]: FAILED! => {"changed": false, "error": "BAD REQUEST", "msg": "Api Exception raised while fetching ESXi VM stats info", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "argumentsMap": {"argument_key": "query parameters", "argument_value": "", "vm_uuid": ""}, "code": "VMM-30102", "errorGroup": "VM_INVALID_ARGUMENT", "locale": "en-US", "message": "Failed to perform the operation on the VM with UUID '', due to an invalid argument with key 'query parameters' and value ''.", "severity": "ERROR"}]}}, "status": 400}
+...ignoring
+
+TASK [Get stats for a single ESXi VM by external ID] ***************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching ESXi VM stats using ext_id", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "argumentsMap": {"vm_uuid": "00000000-0000-0000-0000-000000000000"}, "code": "VMM-30100", "errorGroup": "VM_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the VM with UUID '00000000-0000-0000-0000-000000000000', because it is not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [Get stats for an ESXi VM disk (all attributes)] **************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching ESXi VM disk stats using ext_id", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "argumentsMap": {"vm_uuid": "00000000-0000-0000-0000-000000000000"}, "code": "VMM-30100", "errorGroup": "VM_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the VM with UUID '00000000-0000-0000-0000-000000000000', because it is not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [Get stats for an ESXi VM NIC (all attributes)] ***************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching ESXi VM NIC stats using ext_id", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "argumentsMap": {"vm_uuid": "00000000-0000-0000-0000-000000000000"}, "code": "VMM-30100", "errorGroup": "VM_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the VM with UUID '00000000-0000-0000-0000-000000000000', because it is not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=8    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=5   
+

@@ -173,6 +173,131 @@ def get_gpu(module, api_instance, ext_id, vm_ext_id):
         )
 
 
+def get_esxi_vm_stats(
+    module,
+    api_instance,
+    ext_id,
+    start_time,
+    end_time,
+    sampling_interval=None,
+    stat_type=None,
+    select=None,
+):
+    """
+    Get ESXi VM stats by VM ext_id.
+
+    Args:
+        module: Ansible module
+        api_instance: EsxiStatsApi instance from ntnx_vmm_py_client sdk
+        ext_id: ext_id of ESXi VM
+        start_time: ISO-8601 start time
+        end_time: ISO-8601 end time
+        sampling_interval: sampling interval in seconds
+        stat_type: down-sampling operator (SUM/AVG/...)
+        select: OData $select projection
+
+    Returns:
+        response: raw SDK response object
+    """
+    try:
+        return api_instance.get_vm_stats_by_id(
+            extId=ext_id,
+            _startTime=start_time,
+            _endTime=end_time,
+            _samplingInterval=sampling_interval,
+            _statType=stat_type,
+            _select=select,
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching ESXi VM stats using ext_id",
+        )
+
+
+def get_esxi_vm_disk_stats(
+    module,
+    api_instance,
+    vm_ext_id,
+    ext_id,
+    start_time,
+    end_time,
+    sampling_interval=None,
+    stat_type=None,
+    select=None,
+):
+    """
+    Get ESXi VM disk stats by VM ext_id and disk ext_id.
+
+    Args:
+        module: Ansible module
+        api_instance: EsxiStatsApi instance from ntnx_vmm_py_client sdk
+        vm_ext_id: ext_id of the parent ESXi VM
+        ext_id: ext_id of the ESXi VM disk
+
+    Returns:
+        response: raw SDK response object
+    """
+    try:
+        return api_instance.get_disk_stats_by_id(
+            vmExtId=vm_ext_id,
+            extId=ext_id,
+            _startTime=start_time,
+            _endTime=end_time,
+            _samplingInterval=sampling_interval,
+            _statType=stat_type,
+            _select=select,
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching ESXi VM disk stats using ext_id",
+        )
+
+
+def get_esxi_vm_nic_stats(
+    module,
+    api_instance,
+    vm_ext_id,
+    ext_id,
+    start_time,
+    end_time,
+    sampling_interval=None,
+    stat_type=None,
+    select=None,
+):
+    """
+    Get ESXi VM NIC stats by VM ext_id and NIC ext_id.
+
+    Args:
+        module: Ansible module
+        api_instance: EsxiStatsApi instance from ntnx_vmm_py_client sdk
+        vm_ext_id: ext_id of the parent ESXi VM
+        ext_id: ext_id of the ESXi VM NIC
+
+    Returns:
+        response: raw SDK response object
+    """
+    try:
+        return api_instance.get_nic_stats_by_id(
+            vmExtId=vm_ext_id,
+            extId=ext_id,
+            _startTime=start_time,
+            _endTime=end_time,
+            _samplingInterval=sampling_interval,
+            _statType=stat_type,
+            _select=select,
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching ESXi VM NIC stats using ext_id",
+        )
+
+
 def get_ova(module, api_instance, ext_id):
     """
     Get OVA by ext_id

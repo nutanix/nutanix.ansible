@@ -1,0 +1,96 @@
+---
+# Summary:
+# This playbook demonstrates the ntnx_vm_stat_v2 and ntnx_vm_stats_info_v2 modules
+# (Nutanix Prism Central v4 ESXi VM stats APIs). It shows how to:
+#   1. List ESXi VM stats across all VMs within a time window
+#   2. List ESXi VM stats with sampling / aggregation / paging / projection
+#   3. Fetch stats for a single ESXi VM by external ID
+#   4. Fetch stats for a specific disk attached to an ESXi VM
+#   5. Fetch stats for a specific NIC attached to an ESXi VM
+#
+# Prerequisites:
+#   - The Prism Central must have at least one ESXi cluster registered via
+#     vCenter. The ESXi VM stats API will fail for AHV clusters.
+#   - The user account must have one of the following roles:
+#     Prism Admin, Prism Viewer, Project Manager, Self-Service Admin,
+#     Super Admin.
+
+- name: ESXi VM stats playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Compute the stats time window (last 5 minutes)
+      ansible.builtin.command: date -u -d "-300 seconds" +"%Y-%m-%dT%H:%M:%S.%3NZ"
+      register: start_time
+      changed_when: false
+
+    - name: Compute the stats end time (now)
+      ansible.builtin.command: date -u +"%Y-%m-%dT%H:%M:%S.%3NZ"
+      register: end_time
+      changed_when: false
+
+    - name: Set stats variables
+      ansible.builtin.set_fact:
+        vm_ext_id: "<esxi_vm_ext_id>"
+        disk_ext_id: "<esxi_vm_disk_ext_id>"
+        nic_ext_id: "<esxi_vm_nic_ext_id>"
+
+    - name: List all ESXi VM stats within the time window
+      nutanix.ncp.ntnx_vm_stats_info_v2:
+        start_time: "{{ start_time.stdout }}"
+        end_time: "{{ end_time.stdout }}"
+      register: all_stats
+      ignore_errors: true
+
+    - name: List ESXi VM stats with sampling, aggregation, paging and projection
+      nutanix.ncp.ntnx_vm_stats_info_v2:
+        start_time: "{{ start_time.stdout }}"
+        end_time: "{{ end_time.stdout }}"
+        sampling_interval: 60
+        stat_type: AVG
+        limit: 5
+        page: 0
+        orderby: extId
+        select: "extId,stats/hypervisorCpuUsagePpm"
+      register: paged_stats
+      ignore_errors: true
+
+    - name: Get stats for a single ESXi VM by external ID
+      nutanix.ncp.ntnx_vm_stats_info_v2:
+        ext_id: "{{ vm_ext_id }}"
+        start_time: "{{ start_time.stdout }}"
+        end_time: "{{ end_time.stdout }}"
+        sampling_interval: 30
+        stat_type: AVG
+      register: single_vm_stats
+      ignore_errors: true
+
+    - name: Get stats for an ESXi VM disk (all attributes)
+      nutanix.ncp.ntnx_vm_stat_v2:
+        ext_id: "{{ vm_ext_id }}"
+        disk_ext_id: "{{ disk_ext_id }}"
+        start_time: "{{ start_time.stdout }}"
+        end_time: "{{ end_time.stdout }}"
+        sampling_interval: 30
+        stat_type: AVG
+        select: "stats/controllerNumIops,stats/controllerAvgIoLatencyMicros"
+      register: disk_stats
+      ignore_errors: true
+
+    - name: Get stats for an ESXi VM NIC (all attributes)
+      nutanix.ncp.ntnx_vm_stat_v2:
+        ext_id: "{{ vm_ext_id }}"
+        nic_ext_id: "{{ nic_ext_id }}"
+        start_time: "{{ start_time.stdout }}"
+        end_time: "{{ end_time.stdout }}"
+        sampling_interval: 30
+        stat_type: SUM
+        select: "stats/networkDroppedReceivedPackets,stats/networkDroppedTransmittedPackets"
+      register: nic_stats
+      ignore_errors: true
