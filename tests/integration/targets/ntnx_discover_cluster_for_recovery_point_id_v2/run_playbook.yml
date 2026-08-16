@@ -1,0 +1,10 @@
+---
+# Wrapper playbook to allow running the target's tasks directly via
+# `ansible-playbook` (outside `ansible-test integration`). The target's
+# `tasks/main.yml` is a tasks file, so we import it inside a play here.
+- name: Run ntnx_discover_cluster_for_recovery_point_id_v2 tests
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Import main.yml
+      ansible.builtin.import_tasks: tasks/main.yml

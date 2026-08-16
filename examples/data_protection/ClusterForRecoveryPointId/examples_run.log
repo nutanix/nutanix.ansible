@@ -1,0 +1,167 @@
+
+PLAY [Set up prerequisites and run discover cluster examples] ******************
+
+TASK [Find AOS cluster] ********************************************************
+[WARNING]: Host 'localhost' is using the discovered Python interpreter at '/home/george.ghawali/code_gen/terraform-provider-nutanix/.venv/bin/python3.12', but future installation of another Python interpreter could cause a different interpreter to be discovered. See https://docs.ansible.com/ansible-core/2.21/reference_appendices/interpreter_discovery.html for more information.
+ok: [localhost]
+
+TASK [Select AOS cluster] ******************************************************
+ok: [localhost]
+
+TASK [Find a storage container on the cluster] *********************************
+ok: [localhost]
+
+TASK [Set storage container id] ************************************************
+ok: [localhost]
+
+TASK [Compute expiration time] *************************************************
+ok: [localhost]
+
+TASK [Create example VM] *******************************************************
+changed: [localhost]
+
+TASK [Set VM ext_id] ***********************************************************
+ok: [localhost]
+
+TASK [Create example recovery point] *******************************************
+changed: [localhost]
+
+TASK [Set recovery point IDs] **************************************************
+ok: [localhost]
+
+TASK [Show setup details] ******************************************************
+ok: [localhost] => {
+    "msg": "vm=2be1fc30-b5e4-44f7-7c61-0b41740ab255 rp=70a5eca8-eeb6-4a11-a183-67b7699c8dd8 vm_rp=01a85d96-11a3-4c8e-a5ec-1005dce1d972 disk_rp=d02c6142-dae8-4ead-b2d9-4c566b290fb8"
+}
+
+TASK [Discover cluster - COMPUTE_CHANGED_REGIONS example] **********************
+ok: [localhost]
+
+TASK [Show CBT discover-cluster response] **************************************
+ok: [localhost] => {
+    "cbt_result.response": {
+        "cluster_ip": {
+            "ipv4": {
+                "prefix_length": 0,
+                "value": "10.46.136.38"
+            },
+            "ipv6": null
+        },
+        "jwt_token": "<REDACTED_JWT>"
+    }
+}
+
+TASK [Discover cluster - COMPUTE_CHANGED_REGIONS with reference example] *******
+ok: [localhost]
+
+TASK [Show CBT with reference discover-cluster response] ***********************
+ok: [localhost] => {
+    "cbt_ref_result.response": {
+        "cluster_ip": {
+            "ipv4": {
+                "prefix_length": 0,
+                "value": "10.46.136.38"
+            },
+            "ipv6": null
+        },
+        "jwt_token": "<REDACTED_JWT>"
+    }
+}
+
+TASK [Discover cluster - GET_VSS_METADATA example (best-effort; requires APPLICATION_CONSISTENT RP with VSS metadata)] ***
+[ERROR]: Task failed: Module failed: Api Exception raised while discovering cluster for recovery point
+Origin: /tmp/setup_and_run_example.yml:119:7
+
+117         var: cbt_ref_result.response
+118
+119     - name: Discover cluster - GET_VSS_METADATA example (best-effort; requires APPLICATION_CONSISTENT RP with VSS...
+          ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "UNPROCESSABLE ENTITY", "msg": "Api Exception raised while discovering cluster for recovery point", "response": {"data": {"$objectType": "dataprotection.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "dataprotection.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "argumentsMap": {"reason": "Recovery point '70a5eca8-eeb6-4a11-a183-67b7699c8dd8' is not an application consistent recovery point"}, "code": "DP-10100", "errorGroup": "DATAPROTECTION_INVALID_INPUT", "locale": "en_US", "message": "Input is invalid because Recovery point '70a5eca8-eeb6-4a11-a183-67b7699c8dd8' is not an application consistent recovery point.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}]}}, "status": 422}
+...ignoring
+
+TASK [Show VSS metadata discover-cluster response] *****************************
+ok: [localhost] => {
+    "vss_result": {
+        "changed": false,
+        "error": "UNPROCESSABLE ENTITY",
+        "exception": "(traceback unavailable)",
+        "failed": true,
+        "msg": "Api Exception raised while discovering cluster for recovery point",
+        "response": {
+            "data": {
+                "$objectType": "dataprotection.v4.error.ErrorResponse",
+                "$reserved": {
+                    "$fv": "v4.r4"
+                },
+                "error": [
+                    {
+                        "$objectType": "dataprotection.v4.error.AppMessage",
+                        "$reserved": {
+                            "$fv": "v4.r4"
+                        },
+                        "argumentsMap": {
+                            "reason": "Recovery point '70a5eca8-eeb6-4a11-a183-67b7699c8dd8' is not an application consistent recovery point"
+                        },
+                        "code": "DP-10100",
+                        "errorGroup": "DATAPROTECTION_INVALID_INPUT",
+                        "locale": "en_US",
+                        "message": "Input is invalid because Recovery point '70a5eca8-eeb6-4a11-a183-67b7699c8dd8' is not an application consistent recovery point.",
+                        "severity": "ERROR"
+                    }
+                ]
+            },
+            "metadata": {
+                "$objectType": "common.v1.response.ApiResponseMetadata",
+                "$reserved": {
+                    "$fv": "v1.r0"
+                },
+                "flags": [
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "hasError",
+                        "value": true
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isPaginated",
+                        "value": false
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isTruncated",
+                        "value": false
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isExpandRestricted",
+                        "value": false
+                    }
+                ]
+            }
+        },
+        "status": 422
+    }
+}
+
+TASK [Cleanup - delete recovery point] *****************************************
+changed: [localhost]
+
+TASK [Cleanup - delete VM] *****************************************************
+changed: [localhost]
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=18   changed=4    unreachable=0    failed=0    skipped=0    rescued=0    ignored=1   
+

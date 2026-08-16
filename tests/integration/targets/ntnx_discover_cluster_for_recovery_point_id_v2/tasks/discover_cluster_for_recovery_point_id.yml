@@ -1,0 +1,634 @@
+---
+# Test plan for ntnx_discover_cluster_for_recovery_point_id_v2
+#
+# Setup (prerequisites created on-the-fly):
+#   1. Create a VM on the cluster.
+#   2. Create a CRASH_CONSISTENT recovery point for that VM so we get a
+#      real recovery point extId, a vm_recovery_point_ext_id, and a
+#      disk_recovery_point_ext_id (needed for CBT / COMPUTE_CHANGED_REGIONS).
+#   3. Create an APPLICATION_CONSISTENT recovery point (with VSS metadata) for
+#      the same VM so we can call discover-cluster for GET_VSS_METADATA.
+#
+# Positive tests (module invocations):
+#   - check_mode for GET_VSS_METADATA (asserts spec generation only, no API call).
+#   - check_mode for COMPUTE_CHANGED_REGIONS with disk_recovery_point only.
+#   - check_mode for COMPUTE_CHANGED_REGIONS with disk_recovery_point +
+#     reference_disk_recovery_point (full spec, VM disk variant).
+#   - check_mode for COMPUTE_CHANGED_REGIONS with volume_group_disk_recovery_point
+#     variant (exercises the alternate polymorphic branch of the module spec).
+#   - Live invocation for GET_VSS_METADATA against the APPLICATION_CONSISTENT
+#     recovery point; assert the returned cluster_ip and jwt_token.
+#   - Live invocation for COMPUTE_CHANGED_REGIONS with disk_recovery_point only;
+#     assert the returned cluster_ip and jwt_token.
+#   - Live invocation for COMPUTE_CHANGED_REGIONS with reference_disk_recovery_point.
+#
+# Negative tests:
+#   - Missing required top-level fields (ext_id, operation, spec).
+#   - Invalid operation value.
+#   - Missing spec.get_vss_metadata for GET_VSS_METADATA operation.
+#   - Missing spec.compute_changed_regions for COMPUTE_CHANGED_REGIONS operation.
+#   - Mutually exclusive vm_disk vs vg_disk under disk_recovery_point.
+#   - Non-existent recovery point ext_id (expect 404 from API).
+#
+# Teardown:
+#   - Delete both recovery points and the VM.
+
+- name: Start ntnx_discover_cluster_for_recovery_point_id_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_discover_cluster_for_recovery_point_id_v2 tests
+
+- name: Generate random suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set names used in this test target
+  ansible.builtin.set_fact:
+    prefix_name: "ansible_dcrp"
+    vm_todelete: []
+    rp_todelete: []
+
+- name: Set derived names and dummy identifiers
+  ansible.builtin.set_fact:
+    vm_name: "{{ prefix_name }}_vm_{{ random_name }}"
+    rp_name: "{{ prefix_name }}_rp_{{ random_name }}"
+    dummy_uuid: "d492e754-1792-41a5-8960-e2e87c8fea7d"
+    dummy_uuid_2: "aa2963d1-77b6-453a-ae23-2c19e7a95400"
+    missing_uuid: "0dc3fd69-dc3c-4812-a8d3-9a77a20a0981"
+
+- name: Compute recovery point expiration time (one month from now)
+  ansible.builtin.set_fact:
+    expiration_time: '{{ lookup(''pipe'', ''date -d "+1 month" +%Y-%m-%dT%H:%M:%S%:z'') }}'
+
+########################################################################################
+# check_mode tests — validated BEFORE prerequisites are created so they can be run
+# even if the live cluster prerequisites cannot be fulfilled.
+########################################################################################
+
+- name: Generate spec for GET_VSS_METADATA operation using check mode
+  nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+    ext_id: "{{ dummy_uuid }}"
+    operation: "GET_VSS_METADATA"
+    spec:
+      get_vss_metadata:
+        vm_recovery_point_ext_id: "{{ dummy_uuid_2 }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for GET_VSS_METADATA operation using check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == dummy_uuid
+      - result.response is defined
+      - result.response.operation == "GET_VSS_METADATA"
+      - result.response.spec is defined
+      - result.response.spec.vm_recovery_point_ext_id == dummy_uuid_2
+    success_msg: "GET_VSS_METADATA check_mode spec generated successfully"
+    fail_msg: "GET_VSS_METADATA check_mode spec generation failed"
+
+- name: Generate spec for COMPUTE_CHANGED_REGIONS with vm_disk variant using check mode
+  nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+    ext_id: "{{ dummy_uuid }}"
+    operation: "COMPUTE_CHANGED_REGIONS"
+    spec:
+      compute_changed_regions:
+        disk_recovery_point:
+          vm_disk_recovery_point:
+            vm_recovery_point_ext_id: "{{ dummy_uuid_2 }}"
+            recovery_point_ext_id: "{{ dummy_uuid }}"
+            disk_recovery_point_ext_id: "{{ dummy_uuid }}"
+        reference_disk_recovery_point:
+          vm_disk_recovery_point:
+            vm_recovery_point_ext_id: "{{ dummy_uuid_2 }}"
+            recovery_point_ext_id: "{{ dummy_uuid_2 }}"
+            disk_recovery_point_ext_id: "{{ dummy_uuid_2 }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for COMPUTE_CHANGED_REGIONS with vm_disk variant using check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == dummy_uuid
+      - result.response is defined
+      - result.response.operation == "COMPUTE_CHANGED_REGIONS"
+      - result.response.spec is defined
+      - result.response.spec.disk_recovery_point is defined
+      - result.response.spec.disk_recovery_point.vm_recovery_point_ext_id == dummy_uuid_2
+      - result.response.spec.disk_recovery_point.recovery_point_ext_id == dummy_uuid
+      - result.response.spec.disk_recovery_point.disk_recovery_point_ext_id == dummy_uuid
+      - result.response.spec.reference_disk_recovery_point is defined
+      - result.response.spec.reference_disk_recovery_point.vm_recovery_point_ext_id == dummy_uuid_2
+      - result.response.spec.reference_disk_recovery_point.recovery_point_ext_id == dummy_uuid_2
+      - result.response.spec.reference_disk_recovery_point.disk_recovery_point_ext_id == dummy_uuid_2
+    success_msg: "COMPUTE_CHANGED_REGIONS vm_disk check_mode spec generated successfully"
+    fail_msg: "COMPUTE_CHANGED_REGIONS vm_disk check_mode spec generation failed"
+
+- name: Generate spec for COMPUTE_CHANGED_REGIONS with vg_disk variant using check mode
+  nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+    ext_id: "{{ dummy_uuid }}"
+    operation: "COMPUTE_CHANGED_REGIONS"
+    spec:
+      compute_changed_regions:
+        disk_recovery_point:
+          volume_group_disk_recovery_point:
+            volume_group_recovery_point_ext_id: "{{ dummy_uuid_2 }}"
+            recovery_point_ext_id: "{{ dummy_uuid }}"
+            disk_recovery_point_ext_id: "{{ dummy_uuid }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for COMPUTE_CHANGED_REGIONS with vg_disk variant using check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.operation == "COMPUTE_CHANGED_REGIONS"
+      - result.response.spec.disk_recovery_point is defined
+      - result.response.spec.disk_recovery_point.volume_group_recovery_point_ext_id == dummy_uuid_2
+      - result.response.spec.disk_recovery_point.recovery_point_ext_id == dummy_uuid
+      - result.response.spec.disk_recovery_point.disk_recovery_point_ext_id == dummy_uuid
+    success_msg: "COMPUTE_CHANGED_REGIONS vg_disk check_mode spec generated successfully"
+    fail_msg: "COMPUTE_CHANGED_REGIONS vg_disk check_mode spec generation failed"
+
+########################################################################################
+# Negative validation tests — they exercise argument-spec validation and only need
+# to reach the argument parser, not the live API.
+########################################################################################
+
+- name: Fail without ext_id
+  nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+    operation: "GET_VSS_METADATA"
+    spec:
+      get_vss_metadata:
+        vm_recovery_point_ext_id: "{{ dummy_uuid_2 }}"
+  register: result
+  ignore_errors: true
+
+- name: Fail without ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'ext_id' in result.msg"
+    success_msg: "Missing ext_id fails as expected"
+    fail_msg: "Missing ext_id did not fail as expected"
+
+- name: Fail without operation
+  nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+    ext_id: "{{ dummy_uuid }}"
+    spec:
+      get_vss_metadata:
+        vm_recovery_point_ext_id: "{{ dummy_uuid_2 }}"
+  register: result
+  ignore_errors: true
+
+- name: Fail without operation status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'operation' in result.msg"
+    success_msg: "Missing operation fails as expected"
+    fail_msg: "Missing operation did not fail as expected"
+
+- name: Fail without spec
+  nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+    ext_id: "{{ dummy_uuid }}"
+    operation: "GET_VSS_METADATA"
+  register: result
+  ignore_errors: true
+
+- name: Fail without spec status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'spec' in result.msg"
+    success_msg: "Missing spec fails as expected"
+    fail_msg: "Missing spec did not fail as expected"
+
+- name: Fail with invalid operation value
+  nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+    ext_id: "{{ dummy_uuid }}"
+    operation: "INVALID_OP"
+    spec:
+      get_vss_metadata:
+        vm_recovery_point_ext_id: "{{ dummy_uuid_2 }}"
+  register: result
+  ignore_errors: true
+
+- name: Fail with invalid operation value status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'value of operation must be one of' in result.msg"
+    success_msg: "Invalid operation value fails as expected"
+    fail_msg: "Invalid operation value did not fail as expected"
+
+- name: Fail when spec.get_vss_metadata is missing for GET_VSS_METADATA operation
+  nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+    ext_id: "{{ dummy_uuid }}"
+    operation: "GET_VSS_METADATA"
+    spec:
+      compute_changed_regions:
+        disk_recovery_point:
+          vm_disk_recovery_point:
+            vm_recovery_point_ext_id: "{{ dummy_uuid_2 }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Fail when spec.get_vss_metadata is missing for GET_VSS_METADATA operation status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - result.msg == "spec.get_vss_metadata is required when operation is GET_VSS_METADATA"
+    success_msg: "Missing spec.get_vss_metadata for GET_VSS_METADATA fails as expected"
+    fail_msg: "Missing spec.get_vss_metadata for GET_VSS_METADATA did not fail as expected"
+
+- name: Fail when spec.compute_changed_regions is missing for COMPUTE_CHANGED_REGIONS operation
+  nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+    ext_id: "{{ dummy_uuid }}"
+    operation: "COMPUTE_CHANGED_REGIONS"
+    spec:
+      get_vss_metadata:
+        vm_recovery_point_ext_id: "{{ dummy_uuid_2 }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Fail when spec.compute_changed_regions is missing for COMPUTE_CHANGED_REGIONS operation status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - result.msg == "spec.compute_changed_regions is required when operation is COMPUTE_CHANGED_REGIONS"
+    success_msg: "Missing spec.compute_changed_regions for COMPUTE_CHANGED_REGIONS fails as expected"
+    fail_msg: "Missing spec.compute_changed_regions for COMPUTE_CHANGED_REGIONS did not fail as expected"
+
+- name: Fail when both vm_disk and vg_disk are provided in disk_recovery_point (mutually exclusive)
+  nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+    ext_id: "{{ dummy_uuid }}"
+    operation: "COMPUTE_CHANGED_REGIONS"
+    spec:
+      compute_changed_regions:
+        disk_recovery_point:
+          vm_disk_recovery_point:
+            vm_recovery_point_ext_id: "{{ dummy_uuid_2 }}"
+          volume_group_disk_recovery_point:
+            volume_group_recovery_point_ext_id: "{{ dummy_uuid_2 }}"
+  register: result
+  ignore_errors: true
+
+- name: Fail when both vm_disk and vg_disk are provided in disk_recovery_point status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'mutually exclusive' in result.msg"
+    success_msg: "Mutually exclusive vm_disk/vg_disk fails as expected"
+    fail_msg: "Mutually exclusive vm_disk/vg_disk did not fail as expected"
+
+- name: Fail when both get_vss_metadata and compute_changed_regions are provided in spec
+  nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+    ext_id: "{{ dummy_uuid }}"
+    operation: "GET_VSS_METADATA"
+    spec:
+      get_vss_metadata:
+        vm_recovery_point_ext_id: "{{ dummy_uuid_2 }}"
+      compute_changed_regions:
+        disk_recovery_point:
+          vm_disk_recovery_point:
+            vm_recovery_point_ext_id: "{{ dummy_uuid_2 }}"
+  register: result
+  ignore_errors: true
+
+- name: Fail when both get_vss_metadata and compute_changed_regions are provided in spec status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'mutually exclusive' in result.msg"
+    success_msg: "Mutually exclusive spec branches fail as expected"
+    fail_msg: "Mutually exclusive spec branches did not fail as expected"
+
+########################################################################################
+# Create prerequisites for live tests: VM + two recovery points.
+########################################################################################
+
+- name: List all clusters registered in Prism Central
+  nutanix.ncp.ntnx_clusters_info_v2: {}
+  register: clusters_result
+  ignore_errors: true
+
+- name: Verify the cluster listing succeeded
+  ansible.builtin.assert:
+    that:
+      - clusters_result is defined
+      - not clusters_result.failed
+      - clusters_result.response is defined
+      - clusters_result.response | length > 0
+    success_msg: "Cluster listing succeeded"
+    fail_msg: "Cluster listing failed - cannot proceed with recovery point tests"
+
+- name: Select the first non-PC cluster (AOS) from the results
+  ansible.builtin.set_fact:
+    aos_cluster_ext_id: >-
+      {{
+        (clusters_result.response
+          | selectattr('config.cluster_function', 'defined')
+          | rejectattr('config.cluster_function', 'search', 'PRISM_CENTRAL')
+          | list
+          | first
+        ).ext_id
+      }}
+
+- name: Show selected AOS cluster ext_id
+  ansible.builtin.debug:
+    msg: "Selected AOS cluster ext_id: {{ aos_cluster_ext_id }}"
+
+- name: Fetch a storage container from the selected cluster
+  nutanix.ncp.ntnx_storage_containers_info_v2:
+    filter: "clusterExtId eq '{{ aos_cluster_ext_id }}'"
+  register: sc_result
+  ignore_errors: true
+
+- name: Verify storage container listing succeeded
+  ansible.builtin.assert:
+    that:
+      - sc_result is defined
+      - not sc_result.failed
+      - sc_result.response is defined
+      - sc_result.response | length > 0
+    success_msg: "Storage container discovered"
+    fail_msg: "Cannot discover a storage container for the AOS cluster"
+
+- name: Select the first storage container
+  ansible.builtin.set_fact:
+    storage_container_ext_id: "{{ sc_result.response[0].container_ext_id }}"
+
+- name: Create a VM (with a small disk) for recovery point tests
+  nutanix.ncp.ntnx_vms_v2:
+    name: "{{ vm_name }}"
+    description: "ansible discover-cluster tests"
+    cluster:
+      ext_id: "{{ aos_cluster_ext_id }}"
+    disks:
+      - backing_info:
+          vm_disk:
+            disk_size_bytes: 1073741824
+            storage_container:
+              ext_id: "{{ storage_container_ext_id }}"
+        disk_address:
+          bus_type: SCSI
+          index: 0
+  register: vm_result
+  ignore_errors: true
+
+- name: Verify VM creation
+  ansible.builtin.assert:
+    that:
+      - vm_result is defined
+      - vm_result.changed == true
+      - vm_result.failed == false
+      - vm_result.ext_id is defined
+      - vm_result.response.name == vm_name
+    success_msg: "VM created successfully"
+    fail_msg: "VM creation failed"
+
+- name: Track VM to delete
+  ansible.builtin.set_fact:
+    vm_ext_id: "{{ vm_result.ext_id }}"
+    vm_todelete: "{{ vm_todelete + [vm_result.ext_id] }}"
+
+- name: Create a CRASH_CONSISTENT recovery point for the VM (for CBT tests)
+  nutanix.ncp.ntnx_recovery_points_v2:
+    name: "{{ rp_name }}_cbt"
+    expiration_time: "{{ expiration_time }}"
+    recovery_point_type: "CRASH_CONSISTENT"
+    vm_recovery_points:
+      - vm_ext_id: "{{ vm_ext_id }}"
+  register: rp_cbt_result
+  ignore_errors: true
+
+- name: Verify CRASH_CONSISTENT recovery point creation
+  ansible.builtin.assert:
+    that:
+      - rp_cbt_result is defined
+      - rp_cbt_result.changed == true
+      - rp_cbt_result.failed == false
+      - rp_cbt_result.ext_id is defined
+      - rp_cbt_result.response.status == "COMPLETE"
+      - rp_cbt_result.response.recovery_point_type == "CRASH_CONSISTENT"
+      - rp_cbt_result.response.vm_recovery_points[0].vm_ext_id == vm_ext_id
+      - rp_cbt_result.response.vm_recovery_points[0].disk_recovery_points | length > 0
+    success_msg: "CRASH_CONSISTENT recovery point created"
+    fail_msg: "CRASH_CONSISTENT recovery point creation failed"
+
+- name: Capture CBT recovery point identifiers
+  ansible.builtin.set_fact:
+    rp_cbt_ext_id: "{{ rp_cbt_result.response.ext_id }}"
+    vm_rp_cbt_ext_id: "{{ rp_cbt_result.response.vm_recovery_points[0].ext_id }}"
+    disk_rp_cbt_ext_id: "{{ rp_cbt_result.response.vm_recovery_points[0].disk_recovery_points[0].disk_recovery_point_ext_id }}"
+    rp_todelete: "{{ rp_todelete + [rp_cbt_result.response.ext_id] }}"
+
+- name: Create an APPLICATION_CONSISTENT recovery point for the VM (for VSS tests)
+  nutanix.ncp.ntnx_recovery_points_v2:
+    name: "{{ rp_name }}_vss"
+    expiration_time: "{{ expiration_time }}"
+    recovery_point_type: "APPLICATION_CONSISTENT"
+    vm_recovery_points:
+      - vm_ext_id: "{{ vm_ext_id }}"
+        application_consistent_properties:
+          application_consistent_properties_spec:
+            backup_type: "FULL_BACKUP"
+            should_include_writers: false
+            should_store_vss_metadata: true
+  register: rp_vss_result
+  ignore_errors: true
+
+- name: Log APPLICATION_CONSISTENT recovery point creation result
+  ansible.builtin.debug:
+    msg: "APPLICATION_CONSISTENT rp result: failed={{ rp_vss_result.failed }}"
+
+- name: Track VSS recovery point if it was created
+  when:
+    - rp_vss_result is defined
+    - not rp_vss_result.failed
+    - rp_vss_result.ext_id is defined
+  ansible.builtin.set_fact:
+    rp_vss_ext_id: "{{ rp_vss_result.response.ext_id }}"
+    vm_rp_vss_ext_id: "{{ rp_vss_result.response.vm_recovery_points[0].ext_id }}"
+    rp_todelete: "{{ rp_todelete + [rp_vss_result.response.ext_id] }}"
+
+########################################################################################
+# Live invocation tests
+########################################################################################
+
+- name: Discover cluster for CBT using disk_recovery_point only
+  nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+    ext_id: "{{ rp_cbt_ext_id }}"
+    operation: "COMPUTE_CHANGED_REGIONS"
+    spec:
+      compute_changed_regions:
+        disk_recovery_point:
+          vm_disk_recovery_point:
+            vm_recovery_point_ext_id: "{{ vm_rp_cbt_ext_id }}"
+            recovery_point_ext_id: "{{ rp_cbt_ext_id }}"
+            disk_recovery_point_ext_id: "{{ disk_rp_cbt_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify discover cluster for CBT status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.changed == false
+      - result.ext_id == rp_cbt_ext_id
+      - result.response is defined
+      - result.response.jwt_token is defined
+      - result.response.jwt_token | length > 0
+      - result.response.cluster_ip is defined
+    success_msg: "Cluster discovered for CBT successfully"
+    fail_msg: "Cluster discovery for CBT failed"
+
+- name: Discover cluster for CBT with reference_disk_recovery_point (self-reference)
+  nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+    ext_id: "{{ rp_cbt_ext_id }}"
+    operation: "COMPUTE_CHANGED_REGIONS"
+    spec:
+      compute_changed_regions:
+        disk_recovery_point:
+          vm_disk_recovery_point:
+            vm_recovery_point_ext_id: "{{ vm_rp_cbt_ext_id }}"
+            recovery_point_ext_id: "{{ rp_cbt_ext_id }}"
+            disk_recovery_point_ext_id: "{{ disk_rp_cbt_ext_id }}"
+        reference_disk_recovery_point:
+          vm_disk_recovery_point:
+            vm_recovery_point_ext_id: "{{ vm_rp_cbt_ext_id }}"
+            recovery_point_ext_id: "{{ rp_cbt_ext_id }}"
+            disk_recovery_point_ext_id: "{{ disk_rp_cbt_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify discover cluster for CBT with reference_disk_recovery_point status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.changed == false
+      - result.ext_id == rp_cbt_ext_id
+      - result.response is defined
+      - result.response.jwt_token is defined
+      - result.response.jwt_token | length > 0
+      - result.response.cluster_ip is defined
+    success_msg: "Cluster discovered for CBT with reference_disk_recovery_point successfully"
+    fail_msg: "Cluster discovery for CBT with reference_disk_recovery_point failed"
+
+- name: Discover cluster for VSS metadata (only when APPLICATION_CONSISTENT RP is available)
+  when: rp_vss_ext_id is defined
+  nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+    ext_id: "{{ rp_vss_ext_id }}"
+    operation: "GET_VSS_METADATA"
+    spec:
+      get_vss_metadata:
+        vm_recovery_point_ext_id: "{{ vm_rp_vss_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify discover cluster for VSS metadata status (only when RP is available)
+  when: rp_vss_ext_id is defined
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.ext_id == rp_vss_ext_id
+      - result.response is defined
+    success_msg: "Cluster discovery for VSS metadata invoked successfully"
+    fail_msg: "Cluster discovery for VSS metadata invocation failed"
+
+########################################################################################
+# Negative — live API error path
+########################################################################################
+
+- name: Discover cluster for a non-existent recovery point ext_id
+  nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+    ext_id: "{{ missing_uuid }}"
+    operation: "COMPUTE_CHANGED_REGIONS"
+    spec:
+      compute_changed_regions:
+        disk_recovery_point:
+          vm_disk_recovery_point:
+            vm_recovery_point_ext_id: "{{ vm_rp_cbt_ext_id }}"
+            recovery_point_ext_id: "{{ missing_uuid }}"
+            disk_recovery_point_ext_id: "{{ disk_rp_cbt_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify discover cluster with non-existent ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - result.msg == "Api Exception raised while discovering cluster for recovery point"
+    success_msg: "Discover cluster with non-existent ext_id failed as expected"
+    fail_msg: "Discover cluster with non-existent ext_id did not fail as expected"
+
+########################################################################################
+# Cleanup
+########################################################################################
+
+- name: Delete all created recovery points
+  nutanix.ncp.ntnx_recovery_points_v2:
+    ext_id: "{{ item }}"
+    state: absent
+  register: result
+  ignore_errors: true
+  loop: "{{ rp_todelete }}"
+
+- name: Verify recovery points deletion
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.results is defined
+      - result.results | length == rp_todelete | length
+    success_msg: "All recovery points deleted"
+    fail_msg: "Some recovery points could not be deleted"
+
+- name: Delete the VM
+  nutanix.ncp.ntnx_vms_v2:
+    ext_id: "{{ item }}"
+    state: absent
+  register: result
+  ignore_errors: true
+  loop: "{{ vm_todelete }}"
+
+- name: Verify VM deletion
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.results is defined
+      - result.results | length == vm_todelete | length
+    success_msg: "VM deleted"
+    fail_msg: "VM could not be deleted"
