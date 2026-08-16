@@ -1,0 +1,100 @@
+---
+# Summary:
+# This playbook demonstrates how to use the ntnx_lcm_preload_artifact_v2 module to
+# preload LCM (Life Cycle Manager) artifacts on to a Nutanix cluster before running
+# an upgrade. Preloading downloads the target images ahead of time so that the
+# subsequent upgrade window is shorter.
+#
+# High-level flow:
+#   1. Locate the Prism Central cluster external ID.
+#   2. Run an LCM inventory so the LCM entities are populated.
+#   3. Pick one LCM entity + available target version to preload.
+#   4. Preload artifacts for that entity (a) against Prism Central and
+#      (b) against a specific Prism Element cluster via cluster_ext_id
+#         (which is passed as the X-Cluster-Id header).
+#
+# Note: cluster_ext_id maps to the X-Cluster-Id header. Set it to the Prism Element
+# cluster external ID to run the preload on a specific PE cluster; leave it unset to
+# target Prism Central itself.
+
+- name: LCM PreloadArtifact playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: List all clusters to get prism central external ID
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
+      register: pc_result
+      ignore_errors: true
+
+    - name: Get prism central external ID
+      ansible.builtin.set_fact:
+        prism_central_external_id: "{{ pc_result.response[0].ext_id }}"
+
+    - name: Perform inventory of LCM to populate LCM entities (best-effort)
+      nutanix.ncp.ntnx_lcm_inventory_v2:
+      register: lcm_inventory
+      ignore_errors: true
+
+    - name: List up to 50 LCM entities so we have one with a target version
+      nutanix.ncp.ntnx_lcm_entities_info_v2:
+        limit: 50
+      register: lcm_entities
+      ignore_errors: true
+
+    - name: Pick an LCM entity that has at least one available_version
+      ansible.builtin.set_fact:
+        lcm_entity_pick: >-
+          {{ (lcm_entities.response | default([])
+                | selectattr('available_versions', 'defined')
+                | rejectattr('available_versions', 'equalto', None)
+                | list) }}
+
+    - name: Set the LCM entity + version to preload
+      ansible.builtin.set_fact:
+        lcm_entity_external_id: "{{ (lcm_entity_pick | first).ext_id }}"
+        lcm_entity_model_version: "{{ ((lcm_entity_pick | first).available_versions | first).version }}"
+      when: lcm_entity_pick | length > 0
+
+    - name: Preload LCM artifacts on Prism Central (default target)
+      nutanix.ncp.ntnx_lcm_preload_artifact_v2:
+        entity_update_specs:
+          - entity_uuid: "{{ lcm_entity_external_id }}"
+            to_version: "{{ lcm_entity_model_version }}"
+      register: preload_on_pc
+      when: lcm_entity_pick | length > 0
+      ignore_errors: true
+
+    - name: Preload LCM artifacts on a specific Prism Element cluster (via X-Cluster-Id header)
+      nutanix.ncp.ntnx_lcm_preload_artifact_v2:
+        cluster_ext_id: "{{ prism_central_external_id }}"
+        entity_update_specs:
+          - entity_uuid: "{{ lcm_entity_external_id }}"
+            to_version: "{{ lcm_entity_model_version }}"
+      register: preload_on_pe
+      when: lcm_entity_pick | length > 0
+      ignore_errors: true
+
+    - name: Note when no discoverable LCM entity is available
+      ansible.builtin.debug:
+        msg: >-
+          No LCM entity with an available target version was discoverable on the
+          cluster. If a shared cluster is running an inventory, retry after it
+          completes. Otherwise run the LCM inventory (ntnx_lcm_inventory_v2)
+          first to populate the entities.
+      when: lcm_entity_pick | length == 0
+
+    - name: Show the preload responses
+      ansible.builtin.debug:
+        msg:
+          - "preload_on_pc.task_ext_id={{ preload_on_pc.task_ext_id | default('N/A') }}"
+          - "preload_on_pc.response.status={{ preload_on_pc.response.status | default('N/A') }}"
+          - "preload_on_pe.task_ext_id={{ preload_on_pe.task_ext_id | default('N/A') }}"
+          - "preload_on_pe.response.status={{ preload_on_pe.response.status | default('N/A') }}"
+      when: lcm_entity_pick | length > 0

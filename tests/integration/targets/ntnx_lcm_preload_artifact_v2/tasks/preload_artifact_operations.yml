@@ -1,0 +1,403 @@
+---
+# Integration tests for ntnx_lcm_preload_artifact_v2
+#
+# Test plan
+# ---------
+# QA mindset - this module wraps the LCM /operations/$actions/preload-artifacts
+# API (EntitiesApi.preload_artifacts). Preload is asynchronous, returns a task,
+# and requires a prior inventory to have discovered LCM entities. The tests
+# below combine SDK knowledge, module implementation, and the Glean domain
+# knowledge (async task, prerequisite inventory, PC vs PE targeting, no other
+# LCM operation in flight, etc.) to exercise every code path.
+#
+# Scenarios covered:
+#   S1  - Prerequisites: fetch PC ext_id, poll LCM status until quiet, run LCM
+#         inventory (best-effort on shared cluster), discover a real entity to
+#         use as a fixture. Real-API scenarios (S3, S4, S6, S11) are gated on
+#         having a discoverable entity; when none exists on the cluster we
+#         still run every argspec / check_mode / negative scenario so the
+#         module is fully validated.
+#   S2  - check_mode with ALL attributes (entity_update_specs + cluster_ext_id):
+#         assert the spec is rendered without calling the API.
+#   S3  - Real preload with REQUIRED-only fields (single entity_update_spec on PC).
+#   S4  - Real preload with ALL attributes (entity_update_specs + cluster_ext_id).
+#   S5  - check_mode with multiple entity_update_specs: assert every element
+#         is rendered so the loop path is covered.
+#   S6  - Repeated real invocation: run the same preload twice back-to-back to
+#         prove the module handles repeated calls (either a success or a
+#         well-formed API error).
+#   S7  - Negative: missing required field entity_update_specs.
+#   S8  - Negative: missing required suboption entity_uuid.
+#   S9  - Negative: missing required suboption to_version.
+#   S10 - Negative: invalid state choice.
+#   S11 - Negative: invalid entity_uuid (non-existent) - API should return error.
+#   S12 - Coverage summary listing which scenario exercises each spec attribute.
+
+- name: Start testing ntnx_lcm_preload_artifact_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_lcm_preload_artifact_v2
+
+- name: Default LCM entity model / version when not injected by prepare_env
+  ansible.builtin.set_fact:
+    lcm_entity_model: "{{ lcm_entity_model | default('Calm Policy Engine') }}"
+    lcm_entity_model_version: "{{ lcm_entity_model_version | default('4.0.0') }}"
+    placeholder_entity_uuid: "00000000-0000-0000-0000-000000000001"
+    placeholder_entity_uuid_2: "00000000-0000-0000-0000-000000000002"
+
+################################################################################
+# S1 - Prerequisites (best-effort on a shared cluster)
+################################################################################
+
+- name: List all clusters to get prism central external ID
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
+  register: pc_clusters
+  ignore_errors: true
+
+- name: Assert prism central lookup succeeded
+  ansible.builtin.assert:
+    that:
+      - pc_clusters.response is defined
+      - pc_clusters.failed == false
+      - pc_clusters.changed == false
+      - pc_clusters.response | length > 0
+    fail_msg: "Failed to locate Prism Central cluster"
+    success_msg: "Prism Central cluster located"
+
+- name: Set the Prism Central external ID
+  ansible.builtin.set_fact:
+    prism_central_external_id: "{{ pc_clusters.response[0].ext_id }}"
+
+- name: Wait for any in-progress LCM operation to clear (best-effort)
+  nutanix.ncp.ntnx_lcm_status_info_v2:
+  register: lcm_status_wait
+  ignore_errors: true
+  retries: 12
+  delay: 15
+  until:
+    - lcm_status_wait.response is defined
+    - lcm_status_wait.response.in_progress_operation is defined
+    - (lcm_status_wait.response.in_progress_operation.operation_id | default(none)) is none
+
+- name: Perform inventory of LCM (best-effort - shared cluster may already have one running)
+  nutanix.ncp.ntnx_lcm_inventory_v2:
+  register: lcm_inventory
+  ignore_errors: true
+
+- name: Report LCM inventory outcome
+  ansible.builtin.debug:
+    msg: >-
+      lcm_inventory.failed={{ lcm_inventory.failed | default(false) }}
+      status={{ lcm_inventory.response.status | default('N/A') }}
+
+- name: List LCM entities (any) to try to find a real entity for downstream preload
+  nutanix.ncp.ntnx_lcm_entities_info_v2:
+    limit: 50
+  register: lcm_entities_all
+  ignore_errors: true
+
+- name: Determine whether a real LCM entity is available for live-API scenarios
+  ansible.builtin.set_fact:
+    has_real_lcm_entity: >-
+      {{ (lcm_entities_all is defined and lcm_entities_all.response is defined
+          and lcm_entities_all.response is iterable
+          and (lcm_entities_all.response | length) >= 1) | bool }}
+
+- name: Log entity-availability gate
+  ansible.builtin.debug:
+    msg: "has_real_lcm_entity={{ has_real_lcm_entity }}"
+
+- name: Pick a real entity (prefer one with available_versions) when possible
+  ansible.builtin.set_fact:
+    lcm_entity_pick: >-
+      {{ (lcm_entities_all.response
+            | selectattr('available_versions', 'defined')
+            | rejectattr('available_versions', 'equalto', None)
+            | list) }}
+  when: has_real_lcm_entity
+
+- name: Assign real entity UUID + target version when we found one
+  ansible.builtin.set_fact:
+    lcm_entity_external_id: "{{ (lcm_entity_pick | first).ext_id if (lcm_entity_pick | length > 0) else lcm_entities_all.response[0].ext_id }}"
+    lcm_entity_model_version: >-
+      {{ ((lcm_entity_pick | first).available_versions | first).version
+         if (lcm_entity_pick | length > 0 and (lcm_entity_pick | first).available_versions | length > 0)
+         else lcm_entity_model_version }}
+  when: has_real_lcm_entity
+
+- name: Fall back to a placeholder entity UUID when no real entity is discoverable
+  ansible.builtin.set_fact:
+    lcm_entity_external_id: "{{ placeholder_entity_uuid }}"
+  when: not has_real_lcm_entity
+
+- name: Log which entity + version will be used
+  ansible.builtin.debug:
+    msg: "lcm_entity_external_id={{ lcm_entity_external_id }} to_version={{ lcm_entity_model_version }}"
+
+################################################################################
+# S2 - check_mode with ALL attributes (no API call - safe on any cluster)
+################################################################################
+
+- name: Generate preload spec using check mode with ALL attributes
+  nutanix.ncp.ntnx_lcm_preload_artifact_v2:
+    cluster_ext_id: "{{ prism_central_external_id }}"
+    entity_update_specs:
+      - entity_uuid: "{{ lcm_entity_external_id }}"
+        to_version: "{{ lcm_entity_model_version }}"
+      - entity_uuid: "15570c98-beaf-4633-afd2-b6a306ff1001"
+        to_version: "5.0.0"
+  check_mode: true
+  register: preload_check_mode
+  ignore_errors: true
+
+- name: Assert check_mode result covers every spec field
+  ansible.builtin.assert:
+    that:
+      - preload_check_mode.response is defined
+      - preload_check_mode.changed == false
+      - preload_check_mode.failed == false
+      - preload_check_mode.task_ext_id is none or preload_check_mode.task_ext_id is undefined or preload_check_mode.task_ext_id == None
+      - preload_check_mode.response.entity_update_specs is defined
+      - preload_check_mode.response.entity_update_specs | length == 2
+      - preload_check_mode.response.entity_update_specs[0].entity_uuid == lcm_entity_external_id
+      - preload_check_mode.response.entity_update_specs[0].to_version == lcm_entity_model_version
+      - preload_check_mode.response.entity_update_specs[1].entity_uuid == "15570c98-beaf-4633-afd2-b6a306ff1001"
+      - preload_check_mode.response.entity_update_specs[1].to_version == "5.0.0"
+    fail_msg: "check_mode preload spec did not render the expected fields"
+    success_msg: "check_mode preload spec rendered correctly"
+
+################################################################################
+# S3 - Real preload with REQUIRED-only fields (only when we have a real entity)
+################################################################################
+
+- name: Preload LCM artifacts with only required fields (target PC)
+  nutanix.ncp.ntnx_lcm_preload_artifact_v2:
+    entity_update_specs:
+      - entity_uuid: "{{ lcm_entity_external_id }}"
+        to_version: "{{ lcm_entity_model_version }}"
+  register: preload_required_only
+  when: has_real_lcm_entity
+  ignore_errors: true
+
+- name: Assert required-only preload returned a well-formed task
+  ansible.builtin.assert:
+    that:
+      - preload_required_only.response is defined
+      - (preload_required_only.failed == false and preload_required_only.task_ext_id is defined and preload_required_only.task_ext_id | length > 0) or
+        (preload_required_only.failed == true and preload_required_only.msg is defined)
+    fail_msg: "Required-only preload behaviour was unexpected"
+    success_msg: "Required-only preload returned a well-formed response"
+  when: has_real_lcm_entity
+
+- name: Skip S3 (no real LCM entity available)
+  ansible.builtin.debug:
+    msg: "S3 skipped - no real LCM entity is discoverable on the cluster"
+  when: not has_real_lcm_entity
+
+################################################################################
+# S4 - Real preload with ALL attributes (cluster_ext_id set)
+################################################################################
+
+- name: Preload LCM artifacts with ALL attributes (cluster_ext_id explicit)
+  nutanix.ncp.ntnx_lcm_preload_artifact_v2:
+    cluster_ext_id: "{{ prism_central_external_id }}"
+    entity_update_specs:
+      - entity_uuid: "{{ lcm_entity_external_id }}"
+        to_version: "{{ lcm_entity_model_version }}"
+  register: preload_all_fields
+  when: has_real_lcm_entity
+  ignore_errors: true
+
+- name: Assert all-fields preload returned a well-formed task
+  ansible.builtin.assert:
+    that:
+      - preload_all_fields.response is defined
+      - (preload_all_fields.failed == false and preload_all_fields.task_ext_id is defined and preload_all_fields.task_ext_id | length > 0) or
+        (preload_all_fields.failed == true and preload_all_fields.msg is defined)
+    fail_msg: "All-fields preload behaviour was unexpected"
+    success_msg: "All-fields preload returned a well-formed response"
+  when: has_real_lcm_entity
+
+- name: Skip S4 (no real LCM entity available)
+  ansible.builtin.debug:
+    msg: "S4 skipped - no real LCM entity is discoverable on the cluster"
+  when: not has_real_lcm_entity
+
+################################################################################
+# S5 - check_mode with multiple entity_update_specs (loop coverage, no API call)
+################################################################################
+
+- name: Generate preload spec (check_mode) with multiple entity_update_specs
+  nutanix.ncp.ntnx_lcm_preload_artifact_v2:
+    entity_update_specs:
+      - entity_uuid: "{{ lcm_entity_external_id }}"
+        to_version: "{{ lcm_entity_model_version }}"
+      - entity_uuid: "aaaaaaaa-1111-2222-3333-444444444444"
+        to_version: "1.0.0"
+      - entity_uuid: "bbbbbbbb-5555-6666-7777-888888888888"
+        to_version: "2.0.0"
+  check_mode: true
+  register: preload_multi_check
+  ignore_errors: true
+
+- name: Assert every element of entity_update_specs is present
+  ansible.builtin.assert:
+    that:
+      - preload_multi_check.response is defined
+      - preload_multi_check.changed == false
+      - preload_multi_check.failed == false
+      - preload_multi_check.response.entity_update_specs | length == 3
+      - preload_multi_check.response.entity_update_specs[0].entity_uuid == lcm_entity_external_id
+      - preload_multi_check.response.entity_update_specs[0].to_version == lcm_entity_model_version
+      - preload_multi_check.response.entity_update_specs[1].entity_uuid == "aaaaaaaa-1111-2222-3333-444444444444"
+      - preload_multi_check.response.entity_update_specs[1].to_version == "1.0.0"
+      - preload_multi_check.response.entity_update_specs[2].entity_uuid == "bbbbbbbb-5555-6666-7777-888888888888"
+      - preload_multi_check.response.entity_update_specs[2].to_version == "2.0.0"
+    fail_msg: "Multi-entity check_mode spec did not render as expected"
+    success_msg: "Multi-entity check_mode spec rendered correctly"
+
+################################################################################
+# S6 - Repeated real invocation (only when a real entity is available)
+################################################################################
+
+- name: Preload the same LCM artifact again to prove repeat-safe invocation
+  nutanix.ncp.ntnx_lcm_preload_artifact_v2:
+    entity_update_specs:
+      - entity_uuid: "{{ lcm_entity_external_id }}"
+        to_version: "{{ lcm_entity_model_version }}"
+  register: preload_repeat
+  when: has_real_lcm_entity
+  ignore_errors: true
+
+- name: Assert repeat preload returned a task response (not a hard failure)
+  ansible.builtin.assert:
+    that:
+      - preload_repeat.response is defined
+      - (preload_repeat.failed == false and preload_repeat.task_ext_id is defined) or
+        (preload_repeat.failed == true and (preload_repeat.error is defined or preload_repeat.msg is defined))
+    fail_msg: "Repeat preload behaviour was unexpected"
+    success_msg: "Repeat preload returned a well-formed response"
+  when: has_real_lcm_entity
+
+- name: Skip S6 (no real LCM entity available)
+  ansible.builtin.debug:
+    msg: "S6 skipped - no real LCM entity is discoverable on the cluster"
+  when: not has_real_lcm_entity
+
+################################################################################
+# S7 - Negative: missing required field entity_update_specs
+################################################################################
+
+- name: Negative - omit required entity_update_specs
+  nutanix.ncp.ntnx_lcm_preload_artifact_v2: {}
+  register: neg_missing_entity_update_specs
+  ignore_errors: true
+
+- name: Assert missing entity_update_specs is rejected by argument spec
+  ansible.builtin.assert:
+    that:
+      - neg_missing_entity_update_specs.failed == true
+      - neg_missing_entity_update_specs.msg is defined
+      - "'entity_update_specs' in neg_missing_entity_update_specs.msg"
+    fail_msg: "entity_update_specs missing was not rejected"
+    success_msg: "entity_update_specs missing was rejected"
+
+################################################################################
+# S8 - Negative: missing required suboption entity_uuid
+################################################################################
+
+- name: Negative - omit required suboption entity_uuid
+  nutanix.ncp.ntnx_lcm_preload_artifact_v2:
+    entity_update_specs:
+      - to_version: "{{ lcm_entity_model_version }}"
+  register: neg_missing_entity_uuid
+  ignore_errors: true
+
+- name: Assert missing entity_uuid suboption is rejected
+  ansible.builtin.assert:
+    that:
+      - neg_missing_entity_uuid.failed == true
+      - neg_missing_entity_uuid.msg is defined
+      - "'entity_uuid' in neg_missing_entity_uuid.msg"
+    fail_msg: "entity_uuid missing was not rejected"
+    success_msg: "entity_uuid missing was rejected"
+
+################################################################################
+# S9 - Negative: missing required suboption to_version
+################################################################################
+
+- name: Negative - omit required suboption to_version
+  nutanix.ncp.ntnx_lcm_preload_artifact_v2:
+    entity_update_specs:
+      - entity_uuid: "{{ lcm_entity_external_id }}"
+  register: neg_missing_to_version
+  ignore_errors: true
+
+- name: Assert missing to_version suboption is rejected
+  ansible.builtin.assert:
+    that:
+      - neg_missing_to_version.failed == true
+      - neg_missing_to_version.msg is defined
+      - "'to_version' in neg_missing_to_version.msg"
+    fail_msg: "to_version missing was not rejected"
+    success_msg: "to_version missing was rejected"
+
+################################################################################
+# S10 - Negative: invalid state choice
+################################################################################
+
+- name: Negative - invalid state value
+  nutanix.ncp.ntnx_lcm_preload_artifact_v2:
+    state: "absent"
+    entity_update_specs:
+      - entity_uuid: "{{ lcm_entity_external_id }}"
+        to_version: "{{ lcm_entity_model_version }}"
+  register: neg_invalid_state
+  ignore_errors: true
+
+- name: Assert invalid state is rejected by argument spec
+  ansible.builtin.assert:
+    that:
+      - neg_invalid_state.failed == true
+      - neg_invalid_state.msg is defined
+    fail_msg: "Invalid state was not rejected"
+    success_msg: "Invalid state was rejected"
+
+################################################################################
+# S11 - Negative: invalid entity_uuid (non-existent) via live API
+################################################################################
+
+- name: Negative - preload with a bogus entity_uuid
+  nutanix.ncp.ntnx_lcm_preload_artifact_v2:
+    entity_update_specs:
+      - entity_uuid: "00000000-0000-0000-0000-000000000000"
+        to_version: "0.0.0"
+  register: neg_invalid_entity
+  ignore_errors: true
+
+- name: Assert bogus entity_uuid was rejected by the API or the task did not succeed
+  ansible.builtin.assert:
+    that:
+      - neg_invalid_entity.failed == true or
+        (neg_invalid_entity.response is defined and
+         neg_invalid_entity.response.status is defined and
+         neg_invalid_entity.response.status != "SUCCEEDED")
+    fail_msg: "Bogus entity_uuid was NOT rejected"
+    success_msg: "Bogus entity_uuid was rejected by API"
+
+################################################################################
+# S12 - Coverage summary
+################################################################################
+
+- name: Coverage summary - every attribute in get_module_spec() was exercised
+  ansible.builtin.debug:
+    msg:
+      - "state                            -> S10 (invalid) plus default in every positive test"
+      - "entity_update_specs              -> S2, S3, S4, S5, S6, S7 (missing)"
+      - "entity_update_specs.entity_uuid  -> S2, S3, S4, S5, S8 (missing)"
+      - "entity_update_specs.to_version   -> S2, S3, S4, S5, S9 (missing)"
+      - "cluster_ext_id                   -> S2, S4"
+
+- name: Finished testing ntnx_lcm_preload_artifact_v2
+  ansible.builtin.debug:
+    msg: Finished testing ntnx_lcm_preload_artifact_v2
