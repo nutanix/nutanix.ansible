@@ -1,0 +1,161 @@
+================================================================================
+BGP Sessions playbook run (bgp_sessions_v2.yml)
+================================================================================
+Note: This log is captured against a live PC. The full CRUD lifecycle
+(create/update/delete) requires two pre-existing BGP gateways: a local Flow
+Transit VPC BGP gateway and a remote BGP gateway entity. If those do not
+exist on the target PC, the create task will return HTTP 404 as shown below,
+which is the expected outcome for the placeholder UUIDs in the example file.
+The info paths (list, filter, get-by-ext-id) always work.
+================================================================================
+
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+
+PLAY [BGP Sessions playbook] ***************************************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost]
+
+TASK [Create BGP session with all attributes] **********************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while creating BGP session", "response": {"$objectType": "networking.v4.config.GetBgpSessionApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10060", "locale": "en_US", "message": "Failed to create BGP session bgp_session_ansible as a referenced resource was not found - Application error kNotFound raised: VpnGateway 3e0f9d59-8fa2-4b7f-9e21-2b3a4d5e6f70 not found", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.3/config/bgp-sessions", "rel": "self"}], "totalAvailableResults": 0}}, "status": 404}
+...ignoring
+
+TASK [Set BGP session ext_id] **************************************************
+fatal: [localhost]: FAILED! => {"msg": "The task includes an option with an undefined variable. The error was: 'dict object' has no attribute 'ext_id'. 'dict object' has no attribute 'ext_id'\n\nThe error appears to be in '/tmp/bgp_sessions_v2_run.yml': line 61, column 7, but may\nbe elsewhere in the file depending on the exact syntax problem.\n\nThe offending line appears to be:\n\n\n    - name: Set BGP session ext_id\n      ^ here\n"}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=2    changed=0    unreachable=0    failed=1    skipped=0    rescued=0    ignored=1   
+
+
+
+================================================================================
+Info-only run (list, filter, get-by-ext-id)
+================================================================================
+
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+
+PLAY [BGP info-only test] ******************************************************
+
+TASK [List all BGP sessions] ***************************************************
+ok: [localhost]
+
+TASK [ansible.builtin.debug] ***************************************************
+ok: [localhost] => {
+    "r1": {
+        "changed": false,
+        "failed": false,
+        "response": [],
+        "total_available_results": 0
+    }
+}
+
+TASK [List with filter] ********************************************************
+ok: [localhost]
+
+TASK [ansible.builtin.debug] ***************************************************
+ok: [localhost] => {
+    "r2": {
+        "changed": false,
+        "failed": false,
+        "response": [],
+        "total_available_results": 0
+    }
+}
+
+TASK [Get non-existent by ext_id] **********************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching BGP session info using ext_id", "response": {"$objectType": "networking.v4.config.GetBgpSessionApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10060", "locale": "en_US", "message": "Failed to get BGP session aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee as a referenced resource was not found - BGP session not found.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.3/config/bgp-sessions/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", "rel": "self"}], "totalAvailableResults": 0}}, "status": 404}
+...ignoring
+
+TASK [ansible.builtin.debug] ***************************************************
+ok: [localhost] => {
+    "r3": {
+        "changed": false,
+        "error": "NOT FOUND",
+        "failed": true,
+        "msg": "Api Exception raised while fetching BGP session info using ext_id",
+        "response": {
+            "$objectType": "networking.v4.config.GetBgpSessionApiResponse",
+            "$reserved": {
+                "$fv": "v4.r4"
+            },
+            "data": {
+                "$objectType": "networking.v4.error.ErrorResponse",
+                "$reserved": {
+                    "$fv": "v4.r4"
+                },
+                "error": [
+                    {
+                        "$objectType": "networking.v4.error.AppMessage",
+                        "$reserved": {
+                            "$fv": "v4.r4"
+                        },
+                        "code": "NETWORKING-10060",
+                        "locale": "en_US",
+                        "message": "Failed to get BGP session aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee as a referenced resource was not found - BGP session not found.",
+                        "severity": "ERROR"
+                    }
+                ]
+            },
+            "metadata": {
+                "$objectType": "common.v1.response.ApiResponseMetadata",
+                "$reserved": {
+                    "$fv": "v1.r0"
+                },
+                "flags": [
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "hasError",
+                        "value": true
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isPaginated",
+                        "value": false
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isTruncated",
+                        "value": false
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isExpandRestricted",
+                        "value": false
+                    }
+                ],
+                "links": [
+                    {
+                        "$objectType": "common.v1.response.ApiLink",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "href": "https://10.44.76.28:9440/api/networking/v4.3/config/bgp-sessions/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+                        "rel": "self"
+                    }
+                ],
+                "totalAvailableResults": 0
+            }
+        },
+        "status": 404
+    }
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=6    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=1   
+
