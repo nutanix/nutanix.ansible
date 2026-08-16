@@ -1,0 +1,33 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Enable WORM compliance on a WORM-enabled mount target (share) of a file server
+#
+# Prerequisites:
+# - A file server must already exist on the cluster.
+# - The mount target (share) must already be WORM-enabled (worm_spec.worm_type set)
+#   before WORM compliance can be enabled on it.
+# - Enabling WORM compliance is an irreversible action.
+
+- name: WORM compliance playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: 10.44.76.28
+      nutanix_username: admin
+      nutanix_password: Nutanix.123
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        file_server_ext_id: "b2fb8f36-6b3a-4e1a-9b0e-3c2f7d1a9c4e"
+        mount_target_ext_id: "9c1e537d-6777-4c22-5d41-ddd0c3337aa9"
+
+    - name: Enable WORM compliance on a mount target
+      nutanix.ncp.ntnx_files_worm_compliance_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ mount_target_ext_id }}"
+      register: result
+      ignore_errors: true

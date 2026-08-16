@@ -1,0 +1,332 @@
+---
+# Test plan for ntnx_files_worm_compliance_v2 (Enable WORM compliance action module)
+#
+# The module wraps the Files v4 action:
+#   POST /api/files/v4.0/config/file-servers/{fileServerExtId}/mount-targets/{extId}/$actions/enable-worm-compliance
+# It only takes two path params (file_server_ext_id, ext_id) and no request body.
+#
+# Scenarios covered:
+#   1. check_mode enable with ALL attributes -> no API call, descriptive msg, changed=false.
+#   2. Negative: missing file_server_ext_id -> arg-spec validation error.
+#   3. Negative: missing ext_id -> arg-spec validation error.
+#   4. Negative: missing both required params -> arg-spec validation error.
+#   5. Negative: invalid state value (absent) -> choices validation error.
+#   6. Real API negative: enable on a non-existent reference -> module fails gracefully.
+#   7. Live end-to-end (only when a Files server + WORM-enabled share are discoverable):
+#        a. create a WORM-enabled mount target (prerequisite) via the Files v4 API,
+#        b. enable WORM compliance through the module and assert task success,
+#        c. verify worm_spec.is_compliance_enabled is true,
+#        d. negative: enable on a wrong mount target ext_id,
+#        e. clean up the created mount target.
+#
+# NOTE: WORM compliance is irreversible; the live block is gated behind the
+# availability of the Files service so it is skipped cleanly on clusters where
+# Files is not deployed.
+
+- name: Start ntnx_files_worm_compliance_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_files_worm_compliance_v2 tests
+
+- name: Generate random names
+  ansible.builtin.set_fact:
+    random_name: "{{ 99999999 | random | string }}"
+    suffix_name: "ansible"
+
+- name: Set share name and dummy external IDs
+  ansible.builtin.set_fact:
+    share_name: "worm_{{ suffix_name }}_{{ random_name }}"
+    dummy_file_server_ext_id: "b2fb8f36-6b3a-4e1a-9b0e-3c2f7d1a9c4e"
+    dummy_mount_target_ext_id: "9c1e537d-6777-4c22-5d41-ddd0c3337aa9"
+
+########################################################################################
+# check_mode
+########################################################################################
+
+- name: Enable WORM compliance in check mode with all attributes
+  nutanix.ncp.ntnx_files_worm_compliance_v2:
+    state: present
+    file_server_ext_id: "{{ dummy_file_server_ext_id }}"
+    ext_id: "{{ dummy_mount_target_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Enable WORM compliance in check mode with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == dummy_mount_target_ext_id
+      - "'will be enabled' in result.msg"
+      - dummy_mount_target_ext_id in result.msg
+      - dummy_file_server_ext_id in result.msg
+    success_msg: "Enable WORM compliance check mode generated the expected result"
+    fail_msg: "Enable WORM compliance check mode did not behave as expected"
+
+########################################################################################
+# Negative / argument-spec validation tests (no API calls)
+########################################################################################
+
+- name: Enable WORM compliance with missing file_server_ext_id
+  nutanix.ncp.ntnx_files_worm_compliance_v2:
+    state: present
+    ext_id: "{{ dummy_mount_target_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Enable WORM compliance with missing file_server_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'file_server_ext_id' in result.msg"
+    success_msg: "Missing file_server_ext_id failed as expected"
+    fail_msg: "Missing file_server_ext_id did not fail as expected"
+
+- name: Enable WORM compliance with missing ext_id
+  nutanix.ncp.ntnx_files_worm_compliance_v2:
+    state: present
+    file_server_ext_id: "{{ dummy_file_server_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Enable WORM compliance with missing ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'ext_id' in result.msg"
+    success_msg: "Missing ext_id failed as expected"
+    fail_msg: "Missing ext_id did not fail as expected"
+
+- name: Enable WORM compliance with missing required params
+  nutanix.ncp.ntnx_files_worm_compliance_v2:
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Enable WORM compliance with missing required params status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'missing required arguments' in result.msg"
+    success_msg: "Missing required params failed as expected"
+    fail_msg: "Missing required params did not fail as expected"
+
+- name: Enable WORM compliance with invalid state value
+  nutanix.ncp.ntnx_files_worm_compliance_v2:
+    state: absent
+    file_server_ext_id: "{{ dummy_file_server_ext_id }}"
+    ext_id: "{{ dummy_mount_target_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Enable WORM compliance with invalid state value status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state' in result.msg"
+    success_msg: "Invalid state value failed as expected"
+    fail_msg: "Invalid state value did not fail as expected"
+
+########################################################################################
+# Real API negative test - enable on a non-existent reference
+########################################################################################
+
+- name: Enable WORM compliance on a non-existent reference
+  nutanix.ncp.ntnx_files_worm_compliance_v2:
+    state: present
+    file_server_ext_id: "{{ dummy_file_server_ext_id }}"
+    ext_id: "{{ dummy_mount_target_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Enable WORM compliance on a non-existent reference status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+    success_msg: "Enable WORM compliance on a non-existent reference failed as expected"
+    fail_msg: "Enable WORM compliance on a non-existent reference did not fail as expected"
+
+########################################################################################
+# Discover Files service / file servers to decide if the live workflow can run
+########################################################################################
+
+- name: List file servers on the cluster
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:{{ port | default('9440') }}/api/files/v4.0/config/file-servers?$limit=1"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: false
+    status_code: [200, 400, 401, 403, 404, 500, 503]
+    return_content: true
+  register: file_servers_resp
+  ignore_errors: true
+
+- name: Set file server availability facts
+  ansible.builtin.set_fact:
+    files_available: >-
+      {{ (file_servers_resp.status | default(0)) == 200
+         and (file_servers_resp.json.data | default([]) | length) > 0 }}
+
+- name: Print live workflow status
+  ansible.builtin.debug:
+    msg: >-
+      Files service reachable with file servers: {{ files_available }}.
+      Live enable-worm-compliance workflow will {{ 'run' if files_available else 'be skipped' }}.
+
+########################################################################################
+# Live end-to-end workflow (only when a file server exists)
+########################################################################################
+
+- name: Live WORM compliance workflow
+  when: files_available | bool
+  block:
+    - name: Set file server ext_id from discovery
+      ansible.builtin.set_fact:
+        file_server_ext_id: "{{ file_servers_resp.json.data[0].extId }}"
+
+    - name: Create a WORM-enabled mount target (prerequisite)
+      ansible.builtin.uri:
+        url: "https://{{ ip }}:{{ port | default('9440') }}/api/files/v4.0/config/file-servers/{{ file_server_ext_id }}/mount-targets"
+        method: POST
+        user: "{{ username }}"
+        password: "{{ password }}"
+        force_basic_auth: true
+        validate_certs: false
+        body_format: json
+        body:
+          name: "{{ share_name }}"
+          type: STANDARD
+          protocol: NFS
+          wormSpec:
+            wormType: SHARE_LEVEL
+            cooloffIntervalSeconds: 60
+            retentionPeriodSeconds: 120
+        status_code: [200, 202]
+        return_content: true
+      register: create_share_resp
+      ignore_errors: true
+
+    - name: Wait for the create mount target task to complete
+      ansible.builtin.uri:
+        url: "https://{{ ip }}:{{ port | default('9440') }}/api/prism/v4.0/config/tasks/{{ create_share_resp.json.data.extId }}"
+        method: GET
+        user: "{{ username }}"
+        password: "{{ password }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [200]
+        return_content: true
+      register: create_task_resp
+      until: create_task_resp.json.data.status in ['SUCCEEDED', 'FAILED']
+      retries: 30
+      delay: 10
+      ignore_errors: true
+
+    - name: Fetch the created WORM-enabled mount target ext_id
+      ansible.builtin.uri:
+        url: >-
+          https://{{ ip }}:{{ port | default('9440') }}/api/files/v4.0/config/file-servers/{{ file_server_ext_id }}/mount-targets?$filter=name eq '{{ share_name }}'
+        method: GET
+        user: "{{ username }}"
+        password: "{{ password }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [200]
+        return_content: true
+      register: share_lookup_resp
+      ignore_errors: true
+
+    - name: Set mount target ext_id
+      ansible.builtin.set_fact:
+        mount_target_ext_id: "{{ share_lookup_resp.json.data[0].extId }}"
+
+    - name: Enable WORM compliance on the mount target
+      nutanix.ncp.ntnx_files_worm_compliance_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ mount_target_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Enable WORM compliance on the mount target status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == true
+          - result.failed == false
+          - result.ext_id == mount_target_ext_id
+          - result.task_ext_id is defined
+          - result.response is defined
+          - result.response.status == "SUCCEEDED"
+          - result.response.operation == "EnableWormCompliance"
+        success_msg: "WORM compliance enabled successfully on the mount target"
+        fail_msg: "WORM compliance enable failed on the mount target"
+
+    - name: Verify WORM compliance is enabled on the mount target
+      ansible.builtin.uri:
+        url: "https://{{ ip }}:{{ port | default('9440') }}/api/files/v4.0/config/file-servers/{{ file_server_ext_id }}/mount-targets/{{ mount_target_ext_id }}"
+        method: GET
+        user: "{{ username }}"
+        password: "{{ password }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [200]
+        return_content: true
+      register: verify_resp
+      ignore_errors: true
+
+    - name: Verify WORM compliance is enabled status
+      ansible.builtin.assert:
+        that:
+          - verify_resp.json.data.wormSpec.isComplianceEnabled == true
+        success_msg: "Mount target is now WORM-compliance enabled"
+        fail_msg: "Mount target WORM compliance flag was not set"
+
+    - name: Enable WORM compliance on a wrong mount target ext_id
+      nutanix.ncp.ntnx_files_worm_compliance_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ dummy_mount_target_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Enable WORM compliance on a wrong mount target ext_id status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == true
+        success_msg: "Enable WORM compliance on a wrong mount target ext_id failed as expected"
+        fail_msg: "Enable WORM compliance on a wrong mount target ext_id did not fail as expected"
+
+  always:
+    - name: Clean up the created mount target (best effort)
+      ansible.builtin.uri:
+        url: "https://{{ ip }}:{{ port | default('9440') }}/api/files/v4.0/config/file-servers/{{ file_server_ext_id }}/mount-targets/{{ mount_target_ext_id }}"
+        method: DELETE
+        user: "{{ username }}"
+        password: "{{ password }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [200, 202, 400, 404, 409]
+      register: cleanup_resp
+      when: mount_target_ext_id is defined
+      ignore_errors: true
+
+- name: Finish ntnx_files_worm_compliance_v2 tests
+  ansible.builtin.debug:
+    msg: Finish ntnx_files_worm_compliance_v2 tests
