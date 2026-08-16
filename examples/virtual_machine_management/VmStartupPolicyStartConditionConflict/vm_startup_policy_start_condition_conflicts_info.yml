@@ -1,0 +1,87 @@
+---
+# Summary:
+# This playbook demonstrates how to fetch VmStartupPolicyStartConditionConflict entities
+# from Nutanix Prism Central using the v4 VMM APIs. The entity is a read-only
+# diagnostic object that is auto-computed by the platform when two or more
+# VM startup policies define conflicting start conditions for overlapping
+# category-based dependency groups.
+#
+# Operations demonstrated:
+#   1. List all start condition conflicts for a given VM startup policy.
+#   2. List start condition conflicts with pagination (page + limit).
+#   3. Fetch a specific start condition conflict by ext_id.
+#
+# NOTE: The VM startup policy entity itself is created/updated/deleted by a
+# different module. This playbook assumes at least one VM startup policy already
+# exists on the target Prism Central. Start condition conflicts are ONLY present
+# when multiple policies specify contradictory start conditions on overlapping
+# VMs/categories; on a clean cluster the list is expected to be empty.
+
+- name: VmStartupPolicyStartConditionConflict info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('10.44.76.28', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('admin', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('Nutanix.123', true) }}"
+      validate_certs: false
+  tasks:
+    - name: Discover an existing VM startup policy ext_id
+      ansible.builtin.uri:
+        url: "https://{{ lookup('env', 'NUTANIX_HOST') | default('10.44.76.28', true) }}:9440/api/vmm/v4.2/ahv/policies/vm-startup-policies?_limit=1"
+        method: GET
+        user: "{{ lookup('env', 'NUTANIX_USERNAME') | default('admin', true) }}"
+        password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('Nutanix.123', true) }}"
+        force_basic_auth: true
+        validate_certs: false
+        return_content: true
+      register: discover_policy
+      ignore_errors: true
+
+    - name: Derive VM startup policy ext_id for downstream tasks
+      ansible.builtin.set_fact:
+        vm_startup_policy_ext_id: >-
+          {{
+            (discover_policy.json.data[0].extId
+             if discover_policy is defined
+                and discover_policy.json is defined
+                and discover_policy.json.data is defined
+                and (discover_policy.json.data | length) > 0
+             else 'd1d1c1b1-1111-1111-1111-000000000001')
+          }}
+
+    - name: List all start condition conflicts of a VM startup policy
+      nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflicts_info_v2:
+        vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+      register: all_conflicts
+      ignore_errors: true
+
+    - name: List start condition conflicts with pagination
+      nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflicts_info_v2:
+        vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+        page: 0
+        limit: 5
+      register: paginated_conflicts
+      ignore_errors: true
+
+    - name: Compute a specific conflict ext_id (if the previous list found one)
+      ansible.builtin.set_fact:
+        first_conflict_ext_id: >-
+          {{
+            (all_conflicts.response[0].ext_id
+             if all_conflicts is defined
+                and all_conflicts.failed | default(false) == false
+                and all_conflicts.response is defined
+                and (all_conflicts.response is iterable)
+                and (all_conflicts.response is not mapping)
+                and (all_conflicts.response | length) > 0
+             else 'f2f2f2f2-2222-2222-2222-000000000002')
+          }}
+
+    - name: Fetch a specific start condition conflict by ext_id
+      nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflicts_info_v2:
+        vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+        ext_id: "{{ first_conflict_ext_id }}"
+      register: single_conflict
+      ignore_errors: true

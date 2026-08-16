@@ -191,3 +191,31 @@ def get_ova(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching OVA info using ext_id",
         )
+
+
+def get_vm_startup_policy_start_condition_conflict(
+    module, api_instance, vm_startup_policy_ext_id, ext_id
+):
+    """
+    Get VM startup policy start condition conflict by ext_id
+    Args:
+        module: Ansible module
+        api_instance: VmStartupPoliciesApi instance from ntnx_vmm_py_client sdk
+        vm_startup_policy_ext_id: ext_id of parent VM startup policy
+        ext_id: ext_id of the start condition conflict
+    Returns:
+        conflict (obj): start condition conflict info object
+    """
+    try:
+        return api_instance.get_vm_startup_policy_start_condition_conflict_by_id(
+            vmStartupPolicyExtId=vm_startup_policy_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg=(
+                "Api Exception raised while fetching VM startup policy "
+                "start condition conflict info using ext_id"
+            ),
+        )

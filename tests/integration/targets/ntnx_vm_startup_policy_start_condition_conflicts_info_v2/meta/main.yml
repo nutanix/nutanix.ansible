@@ -1,0 +1,6 @@
+---
+# This target only exercises read APIs against Prism Central and does not
+# need the shared prepare_env fixtures (VPCs, subnets, VMs, etc.). Keeping
+# the dependency list empty allows the target to run standalone with only
+# tests/integration/integration_config.yml (ip/username/password) supplied.
+dependencies: []

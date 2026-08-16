@@ -248,3 +248,4 @@ action_groups:
     - ntnx_virtual_switches_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
+    - ntnx_vm_startup_policy_start_condition_conflicts_info_v2

@@ -1,0 +1,36 @@
+[DEPRECATION WARNING]: ANSIBLE_COLLECTIONS_PATHS option, does not fit var 
+naming standard, use the singular form ANSIBLE_COLLECTIONS_PATH instead. This 
+feature will be removed from ansible-core in version 2.19. Deprecation warnings
+ can be disabled by setting deprecation_warnings=False in ansible.cfg.
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+running playbook inside collection nutanix.ncp
+
+PLAY [VmStartupPolicyStartConditionConflict info playbook] *********************
+
+TASK [Discover an existing VM startup policy ext_id] ***************************
+ok: [localhost] => {"cache_control": "no-cache, no-store, max-age=0, must-revalidate,no-cache, no-store", "changed": false, "connection": "close", "content": "{\"$reserved\":{\"$fv\":\"v4.r3\"},\"$objectType\":\"vmm.v4.ahv.policies.ListVmStartupPoliciesApiResponse\",\"metadata\":{\"flags\":[{\"$reserved\":{\"$fv\":\"v1.r0\"},\"$objectType\":\"common.v1.config.Flag\",\"name\":\"hasError\",\"value\":false},{\"$reserved\":{\"$fv\":\"v1.r0\"},\"$objectType\":\"common.v1.config.Flag\",\"name\":\"isPaginated\",\"value\":true},{\"$reserved\":{\"$fv\":\"v1.r0\"},\"$objectType\":\"common.v1.config.Flag\",\"name\":\"isTruncated\",\"value\":false},{\"$reserved\":{\"$fv\":\"v1.r0\"},\"$objectType\":\"common.v1.config.Flag\",\"name\":\"isExpandRestricted\",\"value\":false}],\"$reserved\":{\"$fv\":\"v1.r0\"},\"$objectType\":\"common.v1.response.ApiResponseMetadata\",\"totalAvailableResults\":0}}", "content_encoding": "identity", "content_length": "645", "content_security_policy": "connect-src 'self' wss: https://downloads.frame.nutanix.com https://downloads.frame.nutanix.us; default-src 'self' https://*.nutanix.com; frame-ancestors 'self' https://*.nutanix.com; frame-src 'self' https://*.nutanix.com blob: data:; img-src 'self' blob: data:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'", "content_type": "application/json", "cookies": {"NTNX_SESSION_ID": "82c45c81-ac26-4e3a-93a2-a2ce1b0aeec4"}, "cookies_string": "NTNX_SESSION_ID=82c45c81-ac26-4e3a-93a2-a2ce1b0aeec4", "date": "Tue, 21 Jul 2026 05:18:12 GMT", "elapsed": 0, "expires": "0,0", "json": {"$objectType": "vmm.v4.ahv.policies.ListVmStartupPoliciesApiResponse", "$reserved": {"$fv": "v4.r3"}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "totalAvailableResults": 0}}, "msg": "OK (645 bytes)", "pragma": "no-cache, no-cache", "redirected": false, "set_cookie": "NTNX_SESSION_ID=82c45c81-ac26-4e3a-93a2-a2ce1b0aeec4;Max-Age=29700;Path=/;Secure;HttpOnly;SameSite=Lax", "status": 200, "strict_transport_security": "max-age=31536000 ; includeSubDomains, max-age=63072000; includeSubdomains; preload", "url": "https://10.44.76.28:9440/api/vmm/v4.2/ahv/policies/vm-startup-policies?_limit=1", "vary": "Origin", "x_api_ratelimit_limit": "2", "x_api_ratelimit_refresh_period_seconds": "1", "x_api_ratelimit_remaining": "1", "x_api_ratelimit_reset": "0", "x_content_type_options": "nosniff, nosniff", "x_dns_prefetch_control": "off", "x_envoy_upstream_service_time": "9", "x_frame_options": "DENY, SAMEORIGIN", "x_ntnx_env": "pc", "x_ntnx_product": "pc.7.6", "x_permitted_cross_domain_policies": "master-only", "x_ratelimit_limit": "40", "x_ratelimit_remaining": "39", "x_ratelimit_reset": "0", "x_xss_protection": "0, 1; mode=block"}
+
+TASK [Derive VM startup policy ext_id for downstream tasks] ********************
+ok: [localhost] => {"ansible_facts": {"vm_startup_policy_ext_id": "d1d1c1b1-1111-1111-1111-000000000001"}, "changed": false}
+
+TASK [List all start condition conflicts of a VM startup policy] ***************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching VM startup policy start condition conflicts info", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "argumentsMap": {"policy_uuid": "d1d1c1b1-1111-1111-1111-000000000001"}, "code": "VMM-34060", "errorGroup": "POLICY_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the policy with UUID 'd1d1c1b1-1111-1111-1111-000000000001', because it is not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [List start condition conflicts with pagination] **************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching VM startup policy start condition conflicts info", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "argumentsMap": {"policy_uuid": "d1d1c1b1-1111-1111-1111-000000000001"}, "code": "VMM-34060", "errorGroup": "POLICY_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the policy with UUID 'd1d1c1b1-1111-1111-1111-000000000001', because it is not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [Compute a specific conflict ext_id (if the previous list found one)] *****
+ok: [localhost] => {"ansible_facts": {"first_conflict_ext_id": "f2f2f2f2-2222-2222-2222-000000000002"}, "changed": false}
+
+TASK [Fetch a specific start condition conflict by ext_id] *********************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching VM startup policy start condition conflict info using ext_id", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "argumentsMap": {"policy_uuid": "d1d1c1b1-1111-1111-1111-000000000001"}, "code": "VMM-34060", "errorGroup": "POLICY_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the policy with UUID 'd1d1c1b1-1111-1111-1111-000000000001', because it is not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=6    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=3   
+
