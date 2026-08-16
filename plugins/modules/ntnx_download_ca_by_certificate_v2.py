@@ -1,0 +1,361 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+# Copyright: (c) 2026, Nutanix
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+from __future__ import absolute_import, division, print_function
+
+__metaclass__ = type
+
+DOCUMENTATION = r"""
+---
+module: ntnx_download_ca_by_certificate_v2
+short_description: Download the Certificate Authority (CA) of a Nutanix Object store SSL certificate
+version_added: 2.7.0
+description:
+    - This module downloads the Certificate Authority (CA) associated with an Object store
+      SSL certificate in Nutanix Prism Central.
+    - The CA is used by S3 clients to trust the HTTPS endpoints exposed by the Object store.
+    - The Nutanix v4 Python SDK streams the CA response as C(application/octet-stream) and
+      writes it to a file inside the configured C(download_directory); this module returns
+      the downloaded file path.
+    - If C(dest) is provided, the downloaded CA is additionally copied to that destination
+      path so it can be consumed by S3 clients or other tooling.
+    - This module uses PC v4 APIs based SDKs.
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Download the certificate authority) -
+      Required Roles: Objects Admin, Objects Editor, Objects Viewer, Prism Admin, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=objects)"
+options:
+    state:
+        description:
+            - State of the module.
+            - If C(state) is C(present), the module downloads the CA of the referenced certificate.
+        type: str
+        choices:
+            - present
+        default: present
+    object_store_ext_id:
+        description:
+            - The external ID (UUID) of the Object store that owns the certificate.
+        type: str
+        required: true
+    ext_id:
+        description:
+            - The external ID (UUID) of the certificate whose Certificate Authority (CA)
+              is to be downloaded.
+        type: str
+        required: true
+    dest:
+        description:
+            - Optional path on the Ansible controller where the downloaded CA file
+              should be copied.
+            - When provided, the module copies the CA that the SDK downloaded into its
+              C(download_directory) to this destination path.
+            - If not provided, the module returns the SDK download path only.
+        type: str
+        required: false
+extends_documentation_fragment:
+    - nutanix.ncp.ntnx_credentials
+    - nutanix.ncp.ntnx_operations_v2
+    - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
+author:
+    - Abhinav Bansal (@abhinavbansal29)
+    - George Ghawali (@george-ghawali)
+"""
+
+EXAMPLES = r"""
+- name: Download the CA for an Object store certificate
+  nutanix.ncp.ntnx_download_ca_by_certificate_v2:
+    object_store_ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
+    ext_id: "b18822e9-b417-4834-6191-986010a4ee06"
+  register: result
+  ignore_errors: true
+
+- name: Download the CA and save it to a specific path on the controller
+  nutanix.ncp.ntnx_download_ca_by_certificate_v2:
+    object_store_ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
+    ext_id: "b18822e9-b417-4834-6191-986010a4ee06"
+    dest: "/tmp/object_store_ca.pem"
+  register: result
+  ignore_errors: true
+"""
+
+RETURN = r"""
+response:
+    description:
+        - Response from the Nutanix PC Objects v4 API for downloading the Object store
+          certificate authority.
+        - Contains the SDK response metadata and the path (under C(data)) to the file
+          in which the SDK saved the streamed CA content.
+    returned: always
+    type: dict
+    sample:
+        {
+            "data": "/tmp/ntnx_ca_download_sr01yv54/ansible-object-2-certificate-authority-2026-07-21_2026-07-21T08:44:03.373.pem",
+            "metadata": {
+                "extra_info": null,
+                "flags": [
+                    {"name": "hasError", "value": false}
+                ],
+                "links": null,
+                "messages": null,
+                "total_available_results": null
+            }
+        }
+
+dest:
+    description:
+        - The path on the Ansible controller where the CA file was copied.
+    returned: when C(dest) is provided
+    type: str
+    sample: "/tmp/object_store_ca.pem"
+
+ca_file_path:
+    description:
+        - The path returned by the SDK where the downloaded CA content was written.
+    returned: when the SDK returns a downloaded file path
+    type: str
+    sample: "/tmp/ntnx_ca_download_sr01yv54/ansible-object-2-certificate-authority-2026-07-21_2026-07-21T08:44:03.373.pem"
+
+task_ext_id:
+    description:
+        - The external ID of the task, if the API returns one.
+        - For this synchronous download operation the API does not usually return a task.
+    returned: when a task is generated by the API
+    type: str
+    sample: "ZXJnb24=:5f63a855-6b6e-4aca-4efb-159a35ce0e52"
+
+ext_id:
+    description:
+        - The external ID of the certificate whose CA was downloaded.
+    returned: always
+    type: str
+    sample: "e7855f76-fe69-455a-76b1-b3b3fddd67d2"
+
+changed:
+    description: This indicates whether the task resulted in any changes.
+    returned: always
+    type: bool
+    sample: true
+
+msg:
+    description: Status/error message emitted by the module.
+    returned: When there is an error, in check mode, or when the CA was copied to C(dest)
+    type: str
+    sample: >-
+        CA for certificate with ext_id:e7855f76-fe69-455a-76b1-b3b3fddd67d2
+        downloaded from object store with ext_id:4fcfc2ca-b9c1-4902-4297-e51c16b5d841
+        and copied to /tmp/object_store_ca.pem
+
+error:
+    description:
+        - This field typically holds information about errors that occurred during the API call.
+    returned: When an error occurs
+    type: str
+
+failed:
+    description: This field indicates whether the task failed.
+    returned: always
+    type: bool
+    sample: false
+"""
+
+import os  # noqa: E402
+import shutil  # noqa: E402
+import tempfile  # noqa: E402
+import warnings  # noqa: E402
+
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
+from ..module_utils.v4.objects.api_client import get_objects_api_instance  # noqa: E402
+from ..module_utils.v4.objects.helpers import get_ca_by_certificate_id  # noqa: E402
+from ..module_utils.v4.utils import strip_internal_attributes  # noqa: E402
+
+warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
+
+
+def get_module_spec():
+    module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
+        object_store_ext_id=dict(type="str", required=True),
+        ext_id=dict(type="str", required=True),
+        dest=dict(type="str", required=False),
+    )
+    return module_args
+
+
+def _jsonify(value):
+    """Recursively coerce SDK response values into JSON-serializable types.
+
+    ``ntnx_objects_py_client`` streams the CA download to disk and returns
+    a native ``pathlib.Path`` in ``resp.data``. That value flows into
+    Ansible's ``exit_json`` unchanged and breaks ``_remove_values_conditions``
+    (which only knows the primitive types). We walk the whole payload and
+    convert any Path-like value into ``str``, leaving everything else
+    untouched.
+    """
+    if isinstance(value, dict):
+        return {k: _jsonify(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_jsonify(v) for v in value]
+    if isinstance(value, tuple):
+        return tuple(_jsonify(v) for v in value)
+    if isinstance(value, (str, bool, int, float)) or value is None:
+        return value
+    if hasattr(value, "__fspath__"):
+        return os.fspath(value)
+    return value
+
+
+def _serialize_response(resp):
+    """Convert a v4 SDK response into a JSON-serializable dict.
+
+    The ``get_ca_by_certificate_id`` API returns a response whose ``data``
+    field is a ``pathlib.Path`` (or an SDK wrapper around one) pointing to
+    the file the SDK streamed the CA into. ``to_dict()`` does not always
+    stringify that Path, so we walk the payload and coerce every Path-like
+    value into a string; SDK Path wrappers that serialize to a dict with a
+    ``path`` key are also flattened to a plain string.
+    """
+    resp_dict = _jsonify(resp.to_dict())
+    data = resp_dict.get("data")
+    flattened = _flatten_path_dict(data)
+    if flattened is not None:
+        resp_dict["data"] = flattened
+    return strip_internal_attributes(resp_dict)
+
+
+def _flatten_path_dict(data):
+    """Return a filesystem path string if ``data`` is an SDK Path dict."""
+    if isinstance(data, dict) and "path" in data:
+        path_value = data.get("path")
+        if isinstance(path_value, str):
+            return path_value
+        if hasattr(path_value, "__fspath__"):
+            return os.fspath(path_value)
+    return None
+
+
+def _pin_sdk_download_directory(api_instance):
+    """Force the SDK's download directory to a per-invocation temp dir.
+
+    ``ntnx_objects_py_client.Configuration`` defaults ``download_directory``
+    to ``os.getcwd()`` at construction time. When Ansible runs the module
+    from an ephemeral test/tempdir, that directory may not exist or may
+    not be writable on subsequent invocations, so we pin it to a fresh
+    ``tempfile.mkdtemp()`` we know we can create files in.
+    """
+    try:
+        config = api_instance.api_client.configuration
+    except AttributeError:
+        return
+    download_dir = tempfile.mkdtemp(prefix="ntnx_ca_download_")
+    config.download_directory = download_dir
+
+
+def _extract_downloaded_path(resp):
+    """Return the filesystem path the SDK wrote the CA to, if any.
+
+    ``get_ca_by_certificate_id`` may return the path as a native
+    ``pathlib.Path``, as an SDK Path wrapper exposing a ``path`` attribute,
+    or as a dict-of-str (once serialized via ``to_dict()``); we handle all
+    three shapes so callers always get a plain string.
+    """
+    data = getattr(resp, "data", None)
+    if data is None:
+        return None
+    if isinstance(data, str):
+        return data
+    if hasattr(data, "__fspath__"):
+        return os.fspath(data)
+    attr_path = getattr(data, "path", None)
+    if attr_path is not None:
+        if isinstance(attr_path, str):
+            return attr_path
+        if hasattr(attr_path, "__fspath__"):
+            return os.fspath(attr_path)
+    if isinstance(data, dict):
+        return _flatten_path_dict(data)
+    return None
+
+
+def download_ca_by_certificate(module, result, api_instance):
+    object_store_ext_id = module.params.get("object_store_ext_id")
+    ext_id = module.params.get("ext_id")
+    dest = module.params.get("dest")
+
+    result["ext_id"] = ext_id
+
+    if module.check_mode:
+        msg = (
+            "CA for certificate with ext_id:{0} will be downloaded from "
+            "object store with ext_id:{1}"
+        ).format(ext_id, object_store_ext_id)
+        if dest:
+            msg = "{0} and copied to {1}".format(msg, dest)
+        result["msg"] = msg
+        return
+
+    _pin_sdk_download_directory(api_instance)
+    resp = get_ca_by_certificate_id(module, api_instance, ext_id, object_store_ext_id)
+    result["response"] = _serialize_response(resp)
+
+    task_ext_id = getattr(getattr(resp, "data", None), "ext_id", None)
+    if isinstance(task_ext_id, str):
+        result["task_ext_id"] = task_ext_id
+
+    ca_file_path = _extract_downloaded_path(resp)
+    if ca_file_path:
+        result["ca_file_path"] = ca_file_path
+
+    if dest and ca_file_path:
+        try:
+            dest_dir = os.path.dirname(dest)
+            if dest_dir and not os.path.isdir(dest_dir):
+                os.makedirs(dest_dir)
+            shutil.copyfile(ca_file_path, dest)
+        except OSError as copy_err:
+            result["error"] = str(copy_err)
+            module.fail_json(
+                msg="Failed to copy downloaded CA file to dest:{0}".format(dest),
+                **result,
+            )
+        result["dest"] = dest
+        result["msg"] = (
+            "CA for certificate with ext_id:{0} downloaded from object store "
+            "with ext_id:{1} and copied to {2}"
+        ).format(ext_id, object_store_ext_id, dest)
+
+    result["changed"] = True
+
+
+def run_module():
+    module = BaseModuleV4(
+        argument_spec=get_module_spec(),
+        supports_check_mode=True,
+    )
+
+    remove_param_with_none_value(module.params)
+    result = {
+        "changed": False,
+        "response": None,
+        "ext_id": None,
+    }
+    api_instance = get_objects_api_instance(module)
+    download_ca_by_certificate(module, result, api_instance)
+
+    module.exit_json(**result)
+
+
+def main():
+    run_module()
+
+
+if __name__ == "__main__":
+    main()

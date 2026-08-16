@@ -1,0 +1,360 @@
+---
+###############################################################################
+# Test plan for CaByCertificateId modules
+# ---------------------------------------------------------------------------
+# Modules under test:
+#   * ntnx_download_ca_by_certificate_v2  (action / download)
+#   * ntnx_ca_by_certificate_ids_info_v2  (info / download-as-fact)
+#
+# Coverage matrix:
+#   1. Discover prerequisites — enumerate Object stores; skip cleanly when none
+#      or when the selected store has no certificate (the CA download needs
+#      both the Object store and the certificate to already exist).
+#   2. Negative — omit required fields (object_store_ext_id, ext_id) on each
+#      module and verify Ansible argument validation surfaces the error.
+#   3. Negative — pass invalid enum for `state` on the download module.
+#   4. Check mode — download module: verify no API call, correct msg text with
+#      and without `dest`.
+#   5. Positive — download module WITHOUT `dest`: verify SDK returns a file
+#      path in `ca_file_path`, response is populated, `changed` is True.
+#   6. Positive — download module WITH `dest`: verify file is copied to the
+#      requested destination, `dest` is set on the result, `changed` is True.
+#   7. Positive — info module: verify response is populated, `changed` is
+#      False, `ext_id` echoed back.
+#   8. Negative — info module with non-existent certificate UUID: verify
+#      module fails with descriptive API error.
+###############################################################################
+
+- name: Start CaByCertificateId tests
+  ansible.builtin.debug:
+    msg: Start CaByCertificateId tests
+
+###############################################################################
+# Section A: Argument-validation negative tests (no API traffic needed).
+###############################################################################
+
+- name: Download CA - missing object_store_ext_id must fail
+  nutanix.ncp.ntnx_download_ca_by_certificate_v2:
+    ext_id: "b18822e9-b417-4834-6191-986010a4ee06"
+  register: missing_obj_store_result
+  ignore_errors: true
+
+- name: Assert missing object_store_ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - missing_obj_store_result.failed is true
+      - "'object_store_ext_id' in missing_obj_store_result.msg"
+    success_msg: "Download module correctly rejected missing object_store_ext_id"
+    fail_msg: "Download module did not reject missing object_store_ext_id"
+
+- name: Download CA - missing ext_id must fail
+  nutanix.ncp.ntnx_download_ca_by_certificate_v2:
+    object_store_ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
+  register: missing_ext_id_result
+  ignore_errors: true
+
+- name: Assert missing ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id_result.failed is true
+      - "'ext_id' in missing_ext_id_result.msg"
+    success_msg: "Download module correctly rejected missing ext_id"
+    fail_msg: "Download module did not reject missing ext_id"
+
+- name: Download CA - invalid state value must fail
+  nutanix.ncp.ntnx_download_ca_by_certificate_v2:
+    nutanix_host: "{{ ip }}"
+    state: "absent"
+    object_store_ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
+    ext_id: "b18822e9-b417-4834-6191-986010a4ee06"
+  register: invalid_state_result
+  ignore_errors: true
+
+- name: Assert invalid state is rejected
+  ansible.builtin.assert:
+    that:
+      - invalid_state_result.failed is true
+      - "'state' in invalid_state_result.msg or 'not one of' in invalid_state_result.msg or 'value' in invalid_state_result.msg"
+    success_msg: "Download module correctly rejected invalid state value"
+    fail_msg: "Download module did not reject invalid state value"
+
+- name: Info CA - missing object_store_ext_id must fail
+  nutanix.ncp.ntnx_ca_by_certificate_ids_info_v2:
+    ext_id: "b18822e9-b417-4834-6191-986010a4ee06"
+  register: info_missing_obj_store_result
+  ignore_errors: true
+
+- name: Assert info module rejects missing object_store_ext_id
+  ansible.builtin.assert:
+    that:
+      - info_missing_obj_store_result.failed is true
+      - "'object_store_ext_id' in info_missing_obj_store_result.msg"
+    success_msg: "Info module correctly rejected missing object_store_ext_id"
+    fail_msg: "Info module did not reject missing object_store_ext_id"
+
+- name: Info CA - missing ext_id must fail
+  nutanix.ncp.ntnx_ca_by_certificate_ids_info_v2:
+    object_store_ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
+  register: info_missing_ext_id_result
+  ignore_errors: true
+
+- name: Assert info module rejects missing ext_id
+  ansible.builtin.assert:
+    that:
+      - info_missing_ext_id_result.failed is true
+      - "'ext_id' in info_missing_ext_id_result.msg"
+    success_msg: "Info module correctly rejected missing ext_id"
+    fail_msg: "Info module did not reject missing ext_id"
+
+###############################################################################
+# Section B: Discover an existing Object store + certificate to drive the
+# positive path. If none exist we skip the live-cluster tests cleanly so this
+# test target can also be executed on a bare PC.
+###############################################################################
+
+- name: List all Object stores in Prism Central
+  nutanix.ncp.ntnx_object_stores_info_v2:
+  register: object_stores_result
+  ignore_errors: true
+
+- name: Determine whether an Object store is available
+  ansible.builtin.set_fact:
+    object_store_present: >-
+      {{
+        object_stores_result is defined
+        and object_stores_result.failed is false
+        and object_stores_result.response is defined
+        and (object_stores_result.response | length) > 0
+      }}
+
+- name: Skip live tests when no Object store is present on this PC
+  ansible.builtin.debug:
+    msg: >-
+      No Object store found on this PC — skipping live CaByCertificateId tests.
+      Argument-validation tests above still ran.
+  when: not object_store_present
+
+- name: Live CaByCertificateId tests
+  when: object_store_present
+  block:
+    - name: Set target Object store ext_id
+      ansible.builtin.set_fact:
+        target_object_store_ext_id: "{{ object_stores_result.response[0].ext_id }}"
+
+    - name: List certificates for the target Object store
+      nutanix.ncp.ntnx_object_stores_certificate_info_v2:
+        object_store_ext_id: "{{ target_object_store_ext_id }}"
+      register: certificates_result
+      ignore_errors: true
+
+    - name: Determine whether a certificate is available
+      ansible.builtin.set_fact:
+        certificate_present: >-
+          {{
+            certificates_result is defined
+            and certificates_result.failed is false
+            and certificates_result.response is defined
+            and (certificates_result.response | length) > 0
+          }}
+
+    - name: Skip live download tests when the Object store has no certificate
+      ansible.builtin.debug:
+        msg: >-
+          Object store {{ target_object_store_ext_id }} has no certificates
+          yet — skipping live CA-download tests.
+      when: not certificate_present
+
+    - name: Live download tests (requires certificate)
+      when: certificate_present
+      block:
+        - name: Set target certificate ext_id
+          ansible.builtin.set_fact:
+            target_certificate_ext_id: "{{ certificates_result.response[0].ext_id }}"
+            random_suffix: >-
+              {{ query('community.general.random_string',
+                        numbers=true, special=false, upper=false, length=8)[0] }}
+
+        - name: Set download destination on the controller
+          ansible.builtin.set_fact:
+            ca_dest_path: "/tmp/ansible_ca_download_{{ random_suffix }}.pem"
+            ca_dest_dir_path: "/tmp/ansible_ca_dir_{{ random_suffix }}/ca.pem"
+
+        - name: Download CA using check_mode without dest
+          nutanix.ncp.ntnx_download_ca_by_certificate_v2:
+            state: present
+            object_store_ext_id: "{{ target_object_store_ext_id }}"
+            ext_id: "{{ target_certificate_ext_id }}"
+          check_mode: true
+          register: check_mode_no_dest
+          ignore_errors: true
+
+        - name: Assert check_mode without dest
+          ansible.builtin.assert:
+            that:
+              - check_mode_no_dest.changed is false
+              - check_mode_no_dest.failed is false
+              - check_mode_no_dest.ext_id == target_certificate_ext_id
+              - check_mode_no_dest.msg is defined
+              - target_certificate_ext_id in check_mode_no_dest.msg
+              - target_object_store_ext_id in check_mode_no_dest.msg
+            success_msg: "Download check_mode (no dest) reported expected message"
+            fail_msg: "Download check_mode (no dest) did not report expected message"
+
+        - name: Download CA using check_mode with dest and all attributes
+          nutanix.ncp.ntnx_download_ca_by_certificate_v2:
+            state: present
+            object_store_ext_id: "{{ target_object_store_ext_id }}"
+            ext_id: "{{ target_certificate_ext_id }}"
+            dest: "{{ ca_dest_path }}"
+          check_mode: true
+          register: check_mode_with_dest
+          ignore_errors: true
+
+        - name: Assert check_mode with dest
+          ansible.builtin.assert:
+            that:
+              - check_mode_with_dest.changed is false
+              - check_mode_with_dest.failed is false
+              - check_mode_with_dest.ext_id == target_certificate_ext_id
+              - check_mode_with_dest.msg is defined
+              - target_certificate_ext_id in check_mode_with_dest.msg
+              - target_object_store_ext_id in check_mode_with_dest.msg
+              - ca_dest_path in check_mode_with_dest.msg
+            success_msg: "Download check_mode (with dest) reported expected message"
+            fail_msg: "Download check_mode (with dest) did not report expected message"
+
+        - name: Download CA without dest (SDK-managed path only)
+          nutanix.ncp.ntnx_download_ca_by_certificate_v2:
+            state: present
+            object_store_ext_id: "{{ target_object_store_ext_id }}"
+            ext_id: "{{ target_certificate_ext_id }}"
+          register: download_no_dest
+          ignore_errors: true
+
+        - name: Assert download without dest
+          ansible.builtin.assert:
+            that:
+              - download_no_dest.changed is true
+              - download_no_dest.failed is false
+              - download_no_dest.ext_id == target_certificate_ext_id
+              - download_no_dest.response is defined
+              - download_no_dest.response.data is defined
+              - download_no_dest.ca_file_path is defined
+              - (download_no_dest.ca_file_path | length) > 0
+              - download_no_dest.dest is not defined
+            success_msg: "Download without dest succeeded"
+            fail_msg: "Download without dest did not succeed"
+
+        - name: Verify SDK-downloaded CA file exists on the controller
+          ansible.builtin.stat:
+            path: "{{ download_no_dest.ca_file_path }}"
+          register: sdk_download_stat
+
+        - name: Assert SDK-downloaded CA file is present
+          ansible.builtin.assert:
+            that:
+              - sdk_download_stat.stat.exists is true
+              - sdk_download_stat.stat.isreg is true
+            success_msg: "SDK-managed CA file is present on the controller"
+            fail_msg: "SDK-managed CA file was not created on the controller"
+
+        - name: Download CA with dest set to a new file
+          nutanix.ncp.ntnx_download_ca_by_certificate_v2:
+            state: present
+            object_store_ext_id: "{{ target_object_store_ext_id }}"
+            ext_id: "{{ target_certificate_ext_id }}"
+            dest: "{{ ca_dest_path }}"
+          register: download_with_dest
+          ignore_errors: true
+
+        - name: Assert download with dest
+          ansible.builtin.assert:
+            that:
+              - download_with_dest.changed is true
+              - download_with_dest.failed is false
+              - download_with_dest.ext_id == target_certificate_ext_id
+              - download_with_dest.dest == ca_dest_path
+              - download_with_dest.ca_file_path is defined
+              - download_with_dest.msg is defined
+              - ca_dest_path in download_with_dest.msg
+              - target_certificate_ext_id in download_with_dest.msg
+            success_msg: "Download with dest succeeded"
+            fail_msg: "Download with dest did not succeed"
+
+        - name: Verify CA was copied to dest
+          ansible.builtin.stat:
+            path: "{{ ca_dest_path }}"
+          register: dest_stat
+
+        - name: Assert dest file exists
+          ansible.builtin.assert:
+            that:
+              - dest_stat.stat.exists is true
+              - dest_stat.stat.isreg is true
+            success_msg: "Dest CA file is present on the controller"
+            fail_msg: "Dest CA file was not created"
+
+        - name: Download CA with dest that requires directory creation
+          nutanix.ncp.ntnx_download_ca_by_certificate_v2:
+            state: present
+            object_store_ext_id: "{{ target_object_store_ext_id }}"
+            ext_id: "{{ target_certificate_ext_id }}"
+            dest: "{{ ca_dest_dir_path }}"
+          register: download_with_dir
+          ignore_errors: true
+
+        - name: Assert download with dest requiring directory creation
+          ansible.builtin.assert:
+            that:
+              - download_with_dir.changed is true
+              - download_with_dir.failed is false
+              - download_with_dir.dest == ca_dest_dir_path
+            success_msg: "Download created parent directory and copied CA"
+            fail_msg: "Download failed to create parent directory / copy CA"
+
+        - name: Fetch CA via info module
+          nutanix.ncp.ntnx_ca_by_certificate_ids_info_v2:
+            object_store_ext_id: "{{ target_object_store_ext_id }}"
+            ext_id: "{{ target_certificate_ext_id }}"
+          register: info_result
+          ignore_errors: true
+
+        - name: Assert info module response
+          ansible.builtin.assert:
+            that:
+              - info_result.changed is false
+              - info_result.failed is false
+              - info_result.ext_id == target_certificate_ext_id
+              - info_result.response is defined
+              - info_result.response.data is defined
+              - info_result.ca_file_path is defined
+            success_msg: "Info module returned expected data"
+            fail_msg: "Info module did not return expected data"
+
+        - name: Fetch CA with an invalid certificate ext_id (negative)
+          nutanix.ncp.ntnx_ca_by_certificate_ids_info_v2:
+            object_store_ext_id: "{{ target_object_store_ext_id }}"
+            ext_id: "00000000-0000-0000-0000-000000000000"
+          register: info_bad_ext_id
+          ignore_errors: true
+
+        - name: Assert info module fails on invalid ext_id
+          ansible.builtin.assert:
+            that:
+              - info_bad_ext_id.failed is true
+              - info_bad_ext_id.msg is defined
+            success_msg: "Info module correctly failed on invalid ext_id"
+            fail_msg: "Info module did not fail on invalid ext_id"
+
+        - name: Cleanup dest CA files
+          ansible.builtin.file:
+            path: "{{ item }}"
+            state: absent
+          loop:
+            - "{{ ca_dest_path }}"
+            - "{{ ca_dest_dir_path }}"
+
+        - name: Cleanup parent directory for ca_dest_dir_path
+          ansible.builtin.file:
+            path: "/tmp/ansible_ca_dir_{{ random_suffix }}"
+            state: absent

@@ -11,6 +11,6 @@ ntnx-volumes-py-client==4.2.2
 ntnx-dataprotection-py-client==4.3.1
 ntnx-datapolicies-py-client==4.2.2
 ntnx-lifecycle-py-client==4.2.2
-ntnx-objects-py-client==4.0.3
+ntnx-objects-py-client==latest
 ntnx-security-py-client==4.1.2
 ntnx-licensing-py-client==4.3.2
