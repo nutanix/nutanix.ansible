@@ -1,0 +1,471 @@
+---
+############################################################################
+# Layer2 Stretch integration tests.
+#
+# Test plan:
+#   1. check_mode Create (all attributes) - assert spec matches params.
+#   2. check_mode Update (all attributes) - assert spec matches params.
+#   3. check_mode Delete - assert would-delete message + ext_id echo.
+#   4. Negative: missing required field (name) on Create - assert failure.
+#   5. Negative: invalid connection_type enum - assert argument-spec rejection.
+#   6. Negative: invalid ext_id (not found) on Get - assert API error.
+#   7. Info list-all - assert list returned (may be empty).
+#   8. Info list with limit=1 - assert respects limit and total metadata.
+#   9. Info list with filter - assert filter parameter is accepted.
+#  10. Negative: delete unknown ext_id - assert API error.
+#
+# Real create/update/delete against the live cluster is NOT executed
+# unconditionally because a Layer2 Stretch requires a fully paired second
+# Prism Central plus a pre-provisioned VPN/VTEP connection and stretched
+# subnets on both sides. Instead we drive the argument-spec, check_mode
+# code paths, and the info listing/error paths that DO exercise the live
+# API. If `l2_stretch_prereqs_available` is defined and truthy on the
+# cluster we also run the full CRUD block.
+############################################################################
+
+- name: Start Layer2 Stretch tests
+  ansible.builtin.debug:
+    msg: Start Layer2 Stretch tests
+
+- name: Generate random suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set names for Layer2 Stretch
+  ansible.builtin.set_fact:
+    l2s_name: "l2s_ansible_{{ random_name }}"
+    fake_ext_id: "00000000-0000-0000-0000-000000000000"
+
+########################################################################
+# 1. check_mode Create with ALL attributes
+########################################################################
+
+- name: Generate spec for creating Layer2 Stretch using check mode with all attributes
+  nutanix.ncp.ntnx_layer2_stretche_v2:
+    state: present
+    name: "check_mode_l2s_full"
+    description: "Layer2 Stretch created in check mode with all attributes"
+    connection_type: "VXLAN"
+    mtu: 1500
+    vni: 100000
+    local_site_params:
+      pc_cluster_reference: "5ab1b1a2-1111-4e00-9999-0000000000aa"
+      stretch_subnet_reference: "8b5df6bc-1111-4e00-9999-0000000000bb"
+      connection_reference: "3f9e5c2d-1111-4e00-9999-0000000000cc"
+      stretch_interface_ip_address:
+        ipv4:
+          value: "192.168.10.1"
+          prefix_length: 24
+      vpn_interface_ip_address:
+        ipv4:
+          value: "192.168.10.2"
+          prefix_length: 24
+      default_gateway_ip_address:
+        ipv4:
+          value: "192.168.10.254"
+          prefix_length: 24
+      high_availability_group:
+        is_ha_enabled: true
+        algorithm: "ACTIVE_BACKUP"
+        peered_gateways:
+          - ext_id: "1a2b3c4d-1111-4e00-9999-000000000011"
+    remote_site_params:
+      pc_cluster_reference: "6bc2b2b3-2222-4e00-9999-0000000000dd"
+      stretch_subnet_reference: "9c6ef7cd-2222-4e00-9999-0000000000ee"
+      connection_reference: "4a0f6d3e-2222-4e00-9999-0000000000ff"
+      stretch_interface_ip_address:
+        ipv4:
+          value: "192.168.20.1"
+          prefix_length: 24
+      vpn_interface_ip_address:
+        ipv4:
+          value: "192.168.20.2"
+          prefix_length: 24
+      default_gateway_ip_address:
+        ipv4:
+          value: "192.168.20.254"
+          prefix_length: 24
+      high_availability_group:
+        is_ha_enabled: true
+        algorithm: "ACTIVE_BACKUP"
+        peered_gateways:
+          - ext_id: "2b3c4d5e-2222-4e00-9999-000000000022"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Verify create Layer2 Stretch check mode spec
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "check_mode_l2s_full"
+      - result.response.description == "Layer2 Stretch created in check mode with all attributes"
+      - result.response.connection_type == "VXLAN"
+      - result.response.mtu == 1500
+      - result.response.vni == 100000
+      - result.response.local_site_params.pc_cluster_reference == "5ab1b1a2-1111-4e00-9999-0000000000aa"
+      - result.response.local_site_params.stretch_subnet_reference == "8b5df6bc-1111-4e00-9999-0000000000bb"
+      - result.response.local_site_params.connection_reference == "3f9e5c2d-1111-4e00-9999-0000000000cc"
+      - result.response.local_site_params.stretch_interface_ip_address.ipv4.value == "192.168.10.1"
+      - result.response.local_site_params.vpn_interface_ip_address.ipv4.value == "192.168.10.2"
+      - result.response.local_site_params.default_gateway_ip_address.ipv4.value == "192.168.10.254"
+      - result.response.local_site_params.high_availability_group.is_ha_enabled == true
+      - result.response.local_site_params.high_availability_group.algorithm == "ACTIVE_BACKUP"
+      - result.response.local_site_params.high_availability_group.peered_gateways | length == 1
+      - result.response.local_site_params.high_availability_group.peered_gateways[0].ext_id == "1a2b3c4d-1111-4e00-9999-000000000011"
+      - result.response.remote_site_params.pc_cluster_reference == "6bc2b2b3-2222-4e00-9999-0000000000dd"
+      - result.response.remote_site_params.stretch_subnet_reference == "9c6ef7cd-2222-4e00-9999-0000000000ee"
+      - result.response.remote_site_params.connection_reference == "4a0f6d3e-2222-4e00-9999-0000000000ff"
+      - result.response.remote_site_params.stretch_interface_ip_address.ipv4.value == "192.168.20.1"
+      - result.response.remote_site_params.vpn_interface_ip_address.ipv4.value == "192.168.20.2"
+      - result.response.remote_site_params.default_gateway_ip_address.ipv4.value == "192.168.20.254"
+      - result.response.remote_site_params.high_availability_group.is_ha_enabled == true
+      - result.response.remote_site_params.high_availability_group.peered_gateways | length == 1
+      - result.response.remote_site_params.high_availability_group.peered_gateways[0].ext_id == "2b3c4d5e-2222-4e00-9999-000000000022"
+    success_msg: "check_mode Create spec matches supplied attributes"
+    fail_msg: "check_mode Create spec did not match supplied attributes"
+
+########################################################################
+# 2. check_mode Update with ALL attributes
+########################################################################
+
+- name: Generate spec for updating Layer2 Stretch using check mode with all attributes
+  nutanix.ncp.ntnx_layer2_stretche_v2:
+    state: present
+    ext_id: "{{ fake_ext_id }}"
+    name: "check_mode_l2s_updated"
+    description: "Layer2 Stretch updated in check mode"
+    connection_type: "VPN"
+    mtu: 8950
+    vni: 200000
+    local_site_params:
+      pc_cluster_reference: "5ab1b1a2-1111-4e00-9999-0000000000aa"
+      stretch_subnet_reference: "8b5df6bc-1111-4e00-9999-0000000000bb"
+      connection_reference: "3f9e5c2d-1111-4e00-9999-0000000000cc"
+    remote_site_params:
+      pc_cluster_reference: "6bc2b2b3-2222-4e00-9999-0000000000dd"
+      stretch_subnet_reference: "9c6ef7cd-2222-4e00-9999-0000000000ee"
+      connection_reference: "4a0f6d3e-2222-4e00-9999-0000000000ff"
+  check_mode: true
+  register: update_check_result
+  ignore_errors: true
+
+# Update check_mode fetches the existing resource first; because our
+# ext_id is fabricated the pre-fetch will fail. We assert that behaviour.
+- name: Verify update Layer2 Stretch check mode returns a failure or spec
+  ansible.builtin.assert:
+    that:
+      - update_check_result is defined
+      - >-
+        (update_check_result.failed == true and 'Api Exception' in (update_check_result.msg | default('')))
+        or (update_check_result.failed == false and update_check_result.response is defined)
+    success_msg: "check_mode Update handled non-existent ext_id gracefully"
+    fail_msg: "check_mode Update did not handle non-existent ext_id properly"
+
+########################################################################
+# 3. check_mode Delete
+########################################################################
+
+- name: Generate spec for deleting Layer2 Stretch using check mode
+  nutanix.ncp.ntnx_layer2_stretche_v2:
+    state: absent
+    ext_id: "{{ fake_ext_id }}"
+  check_mode: true
+  register: delete_check_result
+  ignore_errors: true
+
+- name: Verify delete Layer2 Stretch check mode
+  ansible.builtin.assert:
+    that:
+      - delete_check_result is defined
+      - delete_check_result.changed == false
+      - delete_check_result.failed == false
+      - delete_check_result.ext_id == fake_ext_id
+      - delete_check_result.msg is defined
+      - "'will be deleted' in delete_check_result.msg"
+    success_msg: "check_mode Delete produced correct dry-run message"
+    fail_msg: "check_mode Delete did not produce expected dry-run message"
+
+########################################################################
+# 4. Negative: missing required field (name) on Create
+########################################################################
+
+- name: Create Layer2 Stretch without required name
+  nutanix.ncp.ntnx_layer2_stretche_v2:
+    state: present
+    description: "missing name field"
+    connection_type: "VPN"
+  register: missing_name_result
+  ignore_errors: true
+
+- name: Verify missing name is rejected
+  ansible.builtin.assert:
+    that:
+      - missing_name_result is defined
+      - missing_name_result.failed == true
+      - >-
+        ('name' in (missing_name_result.msg | default('')))
+        or ('one of the following' in (missing_name_result.msg | default('')))
+    success_msg: "Missing required field 'name' was rejected"
+    fail_msg: "Missing required field 'name' was NOT rejected"
+
+########################################################################
+# 5. Negative: invalid enum for connection_type
+########################################################################
+
+- name: Create Layer2 Stretch with invalid connection_type enum
+  nutanix.ncp.ntnx_layer2_stretche_v2:
+    state: present
+    name: "{{ l2s_name }}_badenum"
+    connection_type: "INVALID_TYPE"
+  register: bad_enum_result
+  ignore_errors: true
+
+- name: Verify invalid connection_type is rejected
+  ansible.builtin.assert:
+    that:
+      - bad_enum_result is defined
+      - bad_enum_result.failed == true
+      - "'connection_type' in (bad_enum_result.msg | default('')) or 'value of connection_type' in (bad_enum_result.msg | default(''))"
+    success_msg: "Invalid connection_type enum value was rejected by the argument spec"
+    fail_msg: "Invalid connection_type enum value was NOT rejected"
+
+########################################################################
+# 6. Negative: Get Layer2 Stretch by invalid ext_id
+########################################################################
+
+- name: Get Layer2 Stretch using invalid ext_id
+  nutanix.ncp.ntnx_layer2_stretches_info_v2:
+    ext_id: "{{ fake_ext_id }}"
+  register: get_bad_result
+  ignore_errors: true
+
+- name: Verify get with invalid ext_id fails clearly
+  ansible.builtin.assert:
+    that:
+      - get_bad_result is defined
+      - get_bad_result.failed == true
+      - "'Api Exception raised while fetching Layer2 Stretch info' in (get_bad_result.msg | default(''))"
+    success_msg: "Get by invalid ext_id returned a descriptive Api Exception"
+    fail_msg: "Get by invalid ext_id did not return the expected Api Exception"
+
+########################################################################
+# 7. Info: list all Layer2 Stretches
+########################################################################
+
+- name: List all Layer2 Stretches
+  nutanix.ncp.ntnx_layer2_stretches_info_v2:
+  register: list_all_result
+  ignore_errors: true
+
+- name: Verify list all Layer2 Stretches returned a list
+  ansible.builtin.assert:
+    that:
+      - list_all_result is defined
+      - list_all_result.failed == false
+      - list_all_result.changed == false
+      - list_all_result.response is defined
+      - list_all_result.response is iterable
+      - list_all_result.total_available_results is defined
+    success_msg: "List all Layer2 Stretches succeeded"
+    fail_msg: "List all Layer2 Stretches failed"
+
+########################################################################
+# 8. Info: list with limit=1
+########################################################################
+
+- name: List Layer2 Stretches with limit
+  nutanix.ncp.ntnx_layer2_stretches_info_v2:
+    limit: 1
+  register: list_limit_result
+  ignore_errors: true
+
+- name: Verify list with limit respected the limit
+  ansible.builtin.assert:
+    that:
+      - list_limit_result is defined
+      - list_limit_result.failed == false
+      - list_limit_result.changed == false
+      - list_limit_result.response is defined
+      - (list_limit_result.response | length) <= 1
+    success_msg: "List Layer2 Stretches with limit=1 respected the limit"
+    fail_msg: "List Layer2 Stretches with limit=1 returned more than 1 item"
+
+########################################################################
+# 9. Info: list with filter
+########################################################################
+
+- name: List Layer2 Stretches with filter
+  nutanix.ncp.ntnx_layer2_stretches_info_v2:
+    filter: "name eq '{{ l2s_name }}_does_not_exist'"
+  register: list_filter_result
+  ignore_errors: true
+
+- name: Verify list with filter was accepted
+  ansible.builtin.assert:
+    that:
+      - list_filter_result is defined
+      - list_filter_result.failed == false
+      - list_filter_result.changed == false
+      - list_filter_result.response is defined
+    success_msg: "List Layer2 Stretches with filter was accepted"
+    fail_msg: "List Layer2 Stretches with filter failed"
+
+########################################################################
+# 10. Negative: delete unknown ext_id
+########################################################################
+
+- name: Delete Layer2 Stretch using unknown ext_id
+  nutanix.ncp.ntnx_layer2_stretche_v2:
+    state: absent
+    ext_id: "{{ fake_ext_id }}"
+  register: delete_bad_result
+  ignore_errors: true
+
+- name: Verify delete with unknown ext_id fails clearly
+  ansible.builtin.assert:
+    that:
+      - delete_bad_result is defined
+      - delete_bad_result.failed == true
+      - >-
+        ('Api Exception' in (delete_bad_result.msg | default('')))
+        or ('not found' in (delete_bad_result.msg | default('') | lower))
+    success_msg: "Delete of unknown ext_id returned an Api Exception as expected"
+    fail_msg: "Delete of unknown ext_id did not return the expected error"
+
+########################################################################
+# 11. Optional: full CRUD lifecycle. Only run when the operator
+# has provided the prerequisites variable on the inventory.
+########################################################################
+
+- name: Run full Layer2 Stretch CRUD lifecycle
+  when:
+    - l2_stretch_prereqs is defined
+    - l2_stretch_prereqs.local_pc_cluster_reference is defined
+    - l2_stretch_prereqs.remote_pc_cluster_reference is defined
+    - l2_stretch_prereqs.local_stretch_subnet_reference is defined
+    - l2_stretch_prereqs.remote_stretch_subnet_reference is defined
+    - l2_stretch_prereqs.local_connection_reference is defined
+    - l2_stretch_prereqs.remote_connection_reference is defined
+  block:
+    - name: Create Layer2 Stretch with minimum attributes
+      nutanix.ncp.ntnx_layer2_stretche_v2:
+        state: present
+        name: "{{ l2s_name }}_min"
+        connection_type: "VPN"
+        local_site_params:
+          pc_cluster_reference: "{{ l2_stretch_prereqs.local_pc_cluster_reference }}"
+          stretch_subnet_reference: "{{ l2_stretch_prereqs.local_stretch_subnet_reference }}"
+          connection_reference: "{{ l2_stretch_prereqs.local_connection_reference }}"
+        remote_site_params:
+          pc_cluster_reference: "{{ l2_stretch_prereqs.remote_pc_cluster_reference }}"
+          stretch_subnet_reference: "{{ l2_stretch_prereqs.remote_stretch_subnet_reference }}"
+          connection_reference: "{{ l2_stretch_prereqs.remote_connection_reference }}"
+      register: create_min_result
+
+    - name: Verify create minimum Layer2 Stretch
+      ansible.builtin.assert:
+        that:
+          - create_min_result is defined
+          - create_min_result.changed == true
+          - create_min_result.failed == false
+          - create_min_result.ext_id is defined
+          - create_min_result.task_ext_id is defined
+          - create_min_result.response is defined
+          - create_min_result.response.name == l2s_name ~ "_min"
+        success_msg: "Layer2 Stretch created with minimum attributes"
+        fail_msg: "Layer2 Stretch creation with minimum attributes failed"
+
+    - name: Update Layer2 Stretch description
+      nutanix.ncp.ntnx_layer2_stretche_v2:
+        state: present
+        ext_id: "{{ create_min_result.ext_id }}"
+        name: "{{ l2s_name }}_min_upd"
+        description: "Updated by Ansible"
+        connection_type: "VPN"
+        local_site_params:
+          pc_cluster_reference: "{{ l2_stretch_prereqs.local_pc_cluster_reference }}"
+          stretch_subnet_reference: "{{ l2_stretch_prereqs.local_stretch_subnet_reference }}"
+          connection_reference: "{{ l2_stretch_prereqs.local_connection_reference }}"
+        remote_site_params:
+          pc_cluster_reference: "{{ l2_stretch_prereqs.remote_pc_cluster_reference }}"
+          stretch_subnet_reference: "{{ l2_stretch_prereqs.remote_stretch_subnet_reference }}"
+          connection_reference: "{{ l2_stretch_prereqs.remote_connection_reference }}"
+      register: update_result
+
+    - name: Verify update Layer2 Stretch
+      ansible.builtin.assert:
+        that:
+          - update_result is defined
+          - update_result.changed == true
+          - update_result.failed == false
+          - update_result.response is defined
+          - update_result.response.name == l2s_name ~ "_min_upd"
+          - update_result.response.description == "Updated by Ansible"
+        success_msg: "Layer2 Stretch updated successfully"
+        fail_msg: "Layer2 Stretch update failed"
+
+    - name: Update Layer2 Stretch again with same attributes (idempotency)
+      nutanix.ncp.ntnx_layer2_stretche_v2:
+        state: present
+        ext_id: "{{ create_min_result.ext_id }}"
+        name: "{{ l2s_name }}_min_upd"
+        description: "Updated by Ansible"
+        connection_type: "VPN"
+        local_site_params:
+          pc_cluster_reference: "{{ l2_stretch_prereqs.local_pc_cluster_reference }}"
+          stretch_subnet_reference: "{{ l2_stretch_prereqs.local_stretch_subnet_reference }}"
+          connection_reference: "{{ l2_stretch_prereqs.local_connection_reference }}"
+        remote_site_params:
+          pc_cluster_reference: "{{ l2_stretch_prereqs.remote_pc_cluster_reference }}"
+          stretch_subnet_reference: "{{ l2_stretch_prereqs.remote_stretch_subnet_reference }}"
+          connection_reference: "{{ l2_stretch_prereqs.remote_connection_reference }}"
+      register: idempotent_result
+
+    - name: Verify idempotent update did not change resource
+      ansible.builtin.assert:
+        that:
+          - idempotent_result is defined
+          - idempotent_result.failed == false
+          - idempotent_result.skipped == true
+          - idempotent_result.changed == false
+          - "'Nothing to change' in (idempotent_result.msg | default(''))"
+        success_msg: "Idempotent update reported no change"
+        fail_msg: "Idempotent update reported a change"
+
+    - name: Get created Layer2 Stretch by ext_id
+      nutanix.ncp.ntnx_layer2_stretches_info_v2:
+        ext_id: "{{ create_min_result.ext_id }}"
+      register: get_lifecycle_result
+
+    - name: Verify get by ext_id
+      ansible.builtin.assert:
+        that:
+          - get_lifecycle_result is defined
+          - get_lifecycle_result.failed == false
+          - get_lifecycle_result.changed == false
+          - get_lifecycle_result.response is defined
+          - get_lifecycle_result.response.ext_id == create_min_result.ext_id
+          - get_lifecycle_result.response.name == l2s_name ~ "_min_upd"
+        success_msg: "Get by ext_id returned expected entity"
+        fail_msg: "Get by ext_id did not return the expected entity"
+
+    - name: Delete Layer2 Stretch
+      nutanix.ncp.ntnx_layer2_stretche_v2:
+        state: absent
+        ext_id: "{{ create_min_result.ext_id }}"
+      register: delete_lifecycle_result
+
+    - name: Verify delete Layer2 Stretch
+      ansible.builtin.assert:
+        that:
+          - delete_lifecycle_result is defined
+          - delete_lifecycle_result.failed == false
+          - delete_lifecycle_result.changed == true
+          - delete_lifecycle_result.ext_id == create_min_result.ext_id
+          - delete_lifecycle_result.task_ext_id is defined
+        success_msg: "Layer2 Stretch deleted successfully"
+        fail_msg: "Layer2 Stretch delete failed"

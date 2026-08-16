@@ -170,3 +170,23 @@ def get_virtual_switch(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching virtual switch info using ext_id",
         )
+
+
+def get_layer2_stretch(module, api_instance, ext_id):
+    """
+    This method will return Layer2 Stretch info using its ext_id.
+    Args:
+        module: Ansible module
+        api_instance: Layer2StretchesApi instance from ntnx_networking_py_client sdk
+        ext_id (str): Layer2 Stretch external ID
+    return:
+        info (object): Layer2 Stretch info
+    """
+    try:
+        return api_instance.get_layer2_stretch_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching Layer2 Stretch info using ext_id",
+        )
