@@ -1,0 +1,101 @@
+---
+# Summary:
+# This playbook demonstrates using the LCM ComputeNotifications v4.2 API through the
+# nutanix.ncp Ansible collection. Given a set of LCM entities and their target versions
+# it computes the upgrade plan and the corresponding upgrade notifications (severity
+# messages, disruptive actions such as host reboots, VM migrations, maintenance-mode
+# entries, and per-entity target versions), and then fetches the resulting notification
+# resource by its external ID.
+#
+# Workflow:
+# 1. Get the Prism Central external ID (used for cluster_ext_id references below).
+# 2. Discover an LCM entity to compute notifications for.
+# 3. Trigger compute-notifications for that entity (analogous to a "create" operation).
+# 4. Trigger compute-notifications again for the same entity + a different target version
+#    (analogous to an "update" operation — the underlying resource is server-managed and
+#    expires after one hour, so recomputing acts as an update in this domain).
+# 5. Fetch the resulting notification resource via the info module.
+# 6. Let the resource expire naturally (server-managed, one-hour TTL) — this is the
+#    equivalent "delete" flow because the API does not expose an explicit DELETE
+#    endpoint for compute notifications.
+
+- name: LCM ComputeNotifications playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip | default('10.44.76.28') }}"
+      nutanix_username: "{{ username | default('admin') }}"
+      nutanix_password: "{{ password | default('Nutanix.123') }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+  tasks:
+    - name: List all clusters to discover the Prism Central external ID
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
+      register: pc_cluster_info
+      ignore_errors: true
+
+    - name: Set Prism Central external ID fact
+      ansible.builtin.set_fact:
+        prism_central_external_id: "{{ pc_cluster_info.response[0].ext_id }}"
+
+    - name: Run LCM inventory so the entity catalog is fresh
+      nutanix.ncp.ntnx_lcm_inventory_v2:
+        cluster_ext_id: "{{ prism_central_external_id }}"
+      register: lcm_inventory
+      ignore_errors: true
+
+    - name: List LCM entities to pick one for notification computation
+      nutanix.ncp.ntnx_lcm_entities_info_v2:
+        limit: 1
+      register: lcm_entities
+      ignore_errors: true
+
+    - name: Set the target LCM entity facts (skip if no entity is present)
+      ansible.builtin.set_fact:
+        lcm_entity_ext_id: "{{ lcm_entities.response[0].ext_id }}"
+        lcm_entity_target_version: "{{ lcm_entities.response[0].target_version | default(lcm_entities.response[0].entity_version) }}"
+      when: lcm_entities.response | default([]) | length > 0
+
+    - name: Compute LCM upgrade notifications for the target entity (create-style)
+      nutanix.ncp.ntnx_lcm_compute_notification_v2:
+        entity_update_specs:
+          - entity_uuid: "{{ lcm_entity_ext_id }}"
+            to_version: "{{ lcm_entity_target_version }}"
+      register: compute_notifications_result
+      when: lcm_entity_ext_id is defined and lcm_entity_target_version is defined
+      ignore_errors: true
+
+    - name: Set notification external ID fact
+      ansible.builtin.set_fact:
+        notification_ext_id: "{{ compute_notifications_result.ext_id }}"
+      when:
+        - compute_notifications_result is defined
+        - compute_notifications_result.ext_id is defined
+        - compute_notifications_result.ext_id
+        - compute_notifications_result.ext_id | length > 0
+
+    - name: Recompute LCM upgrade notifications for the same entity on the PC cluster (update-style)
+      nutanix.ncp.ntnx_lcm_compute_notification_v2:
+        cluster_ext_id: "{{ prism_central_external_id }}"
+        entity_update_specs:
+          - entity_uuid: "{{ lcm_entity_ext_id }}"
+            to_version: "{{ lcm_entity_target_version }}"
+      register: compute_notifications_update
+      when: lcm_entity_ext_id is defined and lcm_entity_target_version is defined
+      ignore_errors: true
+
+    - name: Fetch the compute-notification resource by external ID
+      nutanix.ncp.ntnx_compute_notifications_info_v2:
+        ext_id: "{{ notification_ext_id }}"
+      register: notification_info
+      when: notification_ext_id is defined
+      ignore_errors: true
+
+    - name: Show that the notification resource expires automatically (delete-style)
+      ansible.builtin.debug:
+        msg: >-
+          LCM compute-notification resource {{ notification_ext_id }} is server-managed
+          and expires automatically one hour after creation. The LCM API does not expose
+          an explicit DELETE endpoint for this resource, so no delete task is required.
+      when: notification_ext_id is defined
