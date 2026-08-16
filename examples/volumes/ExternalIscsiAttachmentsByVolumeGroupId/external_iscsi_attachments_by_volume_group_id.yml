@@ -1,0 +1,128 @@
+---
+# Summary:
+# This playbook demonstrates end-to-end management of external iSCSI
+# attachments (iSCSI clients) on a Nutanix Volume Group using the v4 API.
+#
+# It performs, in order:
+#   1. Discovers a cluster (needed to create the Volume Group).
+#   2. Creates a temporary Volume Group for the demonstration.
+#   3. Attaches a new external iSCSI attachment using an IQN initiator name (Create).
+#   4. Lists all external iSCSI attachments for the Volume Group.
+#   5. Fetches a specific external iSCSI attachment by its ext_id.
+#   6. Re-attaches the same iSCSI client by ext_id (Update / attach-existing path).
+#   7. Detaches the external iSCSI attachment (Delete).
+#   8. Cleans up the Volume Group.
+#
+# The connection parameters are set ONCE via a play-level `module_defaults`
+# block (see the `module_defaults:` section below).
+
+- name: External iSCSI Attachments By Volume Group ID — end-to-end playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ nutanix_username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ nutanix_password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      nutanix_port: "{{ nutanix_port | default(lookup('env', 'NUTANIX_PORT') | default(9440, true)) }}"
+      validate_certs: false
+  tasks:
+    - name: Generate a unique suffix for the demo Volume Group name
+      ansible.builtin.set_fact:
+        demo_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=8)[0] | lower }}"
+
+    - name: Discover an available cluster
+      nutanix.ncp.ntnx_clusters_info_v2:
+      register: clusters_info
+
+    - name: Set cluster ext_id and (fallback) initiator IQN
+      ansible.builtin.set_fact:
+        demo_cluster_ext_id: >-
+          {{
+            (clusters_info.response
+             | selectattr('config.cluster_function', 'defined')
+             | rejectattr('config.cluster_function', 'contains', 'PRISM_CENTRAL')
+             | map(attribute='ext_id')
+             | first)
+            | default(clusters_info.response[0].ext_id, true)
+          }}
+        demo_iqn: "iqn.1991-05.com.microsoft:ansible-ext-{{ demo_suffix }}"
+
+    - name: Create a Volume Group to host the external iSCSI attachments
+      nutanix.ncp.ntnx_volume_groups_v2:
+        state: present
+        name: "ansible-external-iscsi-{{ demo_suffix }}"
+        description: "Demo VG for external iSCSI attachment examples"
+        cluster_reference: "{{ demo_cluster_ext_id }}"
+        target_prefix: "extiscsi"
+        usage_type: "USER"
+      register: created_vg
+
+    - name: Set VG ext_id for the rest of the playbook
+      ansible.builtin.set_fact:
+        demo_vg_ext_id: "{{ created_vg.ext_id }}"
+
+    # ---------------------------------------------------------------------
+    # Create — attach a new external iSCSI client (full attribute set)
+    # ---------------------------------------------------------------------
+    - name: Attach a new external iSCSI client to the Volume Group (create — all fields)
+      nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+        state: present
+        volume_group_ext_id: "{{ demo_vg_ext_id }}"
+        iscsi_initiator_name: "{{ demo_iqn }}"
+        num_virtual_targets: 32
+        enabled_authentications: "NONE"
+        attachment_site: "PRIMARY"
+      register: attach_new
+
+    # ---------------------------------------------------------------------
+    # Read — list all external iSCSI attachments on the Volume Group
+    # ---------------------------------------------------------------------
+    - name: List all external iSCSI attachments for the Volume Group
+      nutanix.ncp.ntnx_volume_group_external_iscsi_attachmentsinfo_v2:
+        volume_group_ext_id: "{{ demo_vg_ext_id }}"
+      register: list_attachments
+
+    - name: Capture the attached ext_id returned by the Create task
+      ansible.builtin.set_fact:
+        demo_attachment_ext_id: "{{ attach_new.ext_id }}"
+
+    # ---------------------------------------------------------------------
+    # Read — fetch a specific external iSCSI attachment by ext_id
+    # ---------------------------------------------------------------------
+    - name: Fetch the specific external iSCSI attachment by ext_id
+      nutanix.ncp.ntnx_volume_group_external_iscsi_attachmentsinfo_v2:
+        volume_group_ext_id: "{{ demo_vg_ext_id }}"
+        ext_id: "{{ demo_attachment_ext_id }}"
+      register: fetch_attachment
+
+    # ---------------------------------------------------------------------
+    # Update — attach an already-existing iSCSI client (by ext_id) again.
+    # The v4 API has no dedicated update op; the module short-circuits with
+    # an idempotent skip because the attachment already exists.
+    # ---------------------------------------------------------------------
+    - name: Attempt to re-attach the same client by ext_id (idempotent — should be skipped)
+      nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+        state: present
+        volume_group_ext_id: "{{ demo_vg_ext_id }}"
+        ext_id: "{{ demo_attachment_ext_id }}"
+      register: reattach_existing
+
+    # ---------------------------------------------------------------------
+    # Delete — detach the external iSCSI attachment
+    # ---------------------------------------------------------------------
+    - name: Detach the external iSCSI attachment from the Volume Group
+      nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+        state: absent
+        volume_group_ext_id: "{{ demo_vg_ext_id }}"
+        ext_id: "{{ demo_attachment_ext_id }}"
+      register: detach_result
+
+    # ---------------------------------------------------------------------
+    # Cleanup — remove the demo Volume Group so the run leaves no trace.
+    # ---------------------------------------------------------------------
+    - name: Delete the demo Volume Group
+      nutanix.ncp.ntnx_volume_groups_v2:
+        state: absent
+        ext_id: "{{ demo_vg_ext_id }}"
+      register: delete_vg

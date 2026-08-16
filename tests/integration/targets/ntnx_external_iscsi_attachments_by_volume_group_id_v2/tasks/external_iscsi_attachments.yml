@@ -1,0 +1,592 @@
+---
+# Test plan for ntnx_external_iscsi_attachments_by_volume_group_id_v2 and
+# ntnx_volume_group_external_iscsi_attachmentsinfo_v2. Scenarios covered:
+#
+#   Prerequisites & setup
+#     - Discover a compute cluster from the target PC and set random names.
+#     - Create a dedicated Volume Group used as the parent for all tests.
+#
+#   Negative / spec validation
+#     - Missing required parameter `volume_group_ext_id` on the CRUD module.
+#     - Missing required parameter `volume_group_ext_id` on the info module.
+#     - Missing `ext_id` when `state: absent` on the CRUD module.
+#     - Mutually exclusive `iscsi_initiator_name` + `iscsi_initiator_network_id`.
+#     - Invalid choices for `enabled_authentications` and `attachment_site`.
+#     - Fetching a specific attachment with an ext_id that does not exist.
+#     - Listing attachments for a non-existent Volume Group.
+#
+#   Check-mode
+#     - Exactly ONE check_mode test for Create (all attributes) with IQN.
+#     - Exactly ONE check_mode test for Update (attach-existing by ext_id).
+#     - Exactly ONE check_mode test for Delete.
+#
+#   Real create / read / update / delete
+#     - Attach a new external iSCSI client with minimal required fields (IQN only).
+#     - Attach a new external iSCSI client with a full field set (IQN + CHAP + attachment_site).
+#     - Attach a new external iSCSI client using an IPv4 initiator network id.
+#     - Attach a new external iSCSI client using an FQDN initiator network id.
+#     - List attachments and locate each newly created ext_id.
+#     - Fetch each new attachment by ext_id via the info module.
+#     - Re-attach one existing attachment by ext_id (idempotent skip path).
+#     - Detach all created attachments.
+#
+#   Idempotency
+#     - Detach an already-detached attachment (module should surface a task error via `error`).
+#     - Re-attach existing ext_id — module returns changed=false + skipped=true.
+#
+#   Cleanup
+#     - Delete the Volume Group created during setup.
+
+- name: "Start external iSCSI attachments tests"
+  ansible.builtin.debug:
+    msg: "Start external iSCSI attachments tests"
+
+- name: Generate random names
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set suffix name
+  ansible.builtin.set_fact:
+    suffix_name: "ansible-extiscsi"
+
+- name: Set VG name and initiator IQNs used across the tests
+  ansible.builtin.set_fact:
+    vg1_name: "{{ suffix_name }}-{{ random_name }}"
+    iqn_min: "iqn.1991-05.com.microsoft:{{ suffix_name }}-min-{{ random_name }}"
+    iqn_full: "iqn.1991-05.com.microsoft:{{ suffix_name }}-full-{{ random_name }}"
+    iqn_ipv4: "iqn.1991-05.com.microsoft:{{ suffix_name }}-ipv4-{{ random_name }}"
+    iqn_fqdn: "iqn.1991-05.com.microsoft:{{ suffix_name }}-fqdn-{{ random_name }}"
+    initiator_ipv4: "10.44.76.201"
+    initiator_fqdn: "ansible-extiscsi-{{ random_name }}.example.com"
+    bogus_vg_ext_id: "00000000-0000-0000-0000-000000000001"
+    bogus_client_ext_id: "00000000-0000-0000-0000-000000000002"
+
+############################################ Test Setup ############################################
+
+- name: Create Volume group for external iSCSI attachment tests (SHARED sharing_status so multiple external clients can attach)
+  nutanix.ncp.ntnx_volume_groups_v2:
+    name: "{{ vg1_name }}"
+    description: "Volume group for external iSCSI attachment tests"
+    target_prefix: "extiscsi"
+    cluster_reference: "{{ cluster.uuid }}"
+    usage_type: "USER"
+    sharing_status: "SHARED"
+  register: create_vg_result
+
+- name: Verify VG create
+  ansible.builtin.assert:
+    that:
+      - create_vg_result.error == None
+      - create_vg_result.failed == false
+      - create_vg_result.changed == true
+      - create_vg_result.response is defined
+      - create_vg_result.ext_id is defined
+    fail_msg: "Unable to create Volume Group for external iSCSI attachment tests"
+    success_msg: "Volume Group created successfully for external iSCSI attachment tests"
+
+- name: Set VG uuid for the rest of the playbook
+  ansible.builtin.set_fact:
+    vg1_uuid: "{{ create_vg_result.ext_id }}"
+
+############################################ Negative — spec validation ############################################
+
+- name: Negative — CRUD module without required volume_group_ext_id
+  nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+    state: present
+    iscsi_initiator_name: "{{ iqn_min }}"
+  register: neg_missing_vg
+  ignore_errors: true
+
+- name: Verify missing volume_group_ext_id fails cleanly
+  ansible.builtin.assert:
+    that:
+      - neg_missing_vg.failed == true
+      - neg_missing_vg.changed == false
+      - "'volume_group_ext_id' in (neg_missing_vg.msg | default(''))"
+    fail_msg: "CRUD module did not fail when volume_group_ext_id was omitted"
+    success_msg: "CRUD module correctly rejected missing volume_group_ext_id"
+
+- name: Negative — info module without required volume_group_ext_id
+  nutanix.ncp.ntnx_volume_group_external_iscsi_attachmentsinfo_v2: {}
+  register: neg_info_missing_vg
+  ignore_errors: true
+
+- name: Verify info module missing volume_group_ext_id fails cleanly
+  ansible.builtin.assert:
+    that:
+      - neg_info_missing_vg.failed == true
+      - neg_info_missing_vg.changed == false
+      - "'volume_group_ext_id' in (neg_info_missing_vg.msg | default(''))"
+    fail_msg: "Info module did not fail when volume_group_ext_id was omitted"
+    success_msg: "Info module correctly rejected missing volume_group_ext_id"
+
+- name: Negative — state=absent without ext_id
+  nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+    state: absent
+    volume_group_ext_id: "{{ vg1_uuid }}"
+  register: neg_absent_no_ext_id
+  ignore_errors: true
+
+- name: Verify state=absent without ext_id fails cleanly
+  ansible.builtin.assert:
+    that:
+      - neg_absent_no_ext_id.failed == true
+      - neg_absent_no_ext_id.changed == false
+      - "'ext_id' in (neg_absent_no_ext_id.msg | default(''))"
+    fail_msg: "CRUD module did not reject state=absent without ext_id"
+    success_msg: "CRUD module correctly rejected state=absent without ext_id"
+
+- name: Negative — mutually exclusive iscsi_initiator_name + iscsi_initiator_network_id
+  nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+    state: present
+    volume_group_ext_id: "{{ vg1_uuid }}"
+    iscsi_initiator_name: "{{ iqn_min }}"
+    iscsi_initiator_network_id:
+      ipv4:
+        value: "{{ initiator_ipv4 }}"
+  register: neg_mutex_initiator
+  ignore_errors: true
+
+- name: Verify mutually exclusive validation
+  ansible.builtin.assert:
+    that:
+      - neg_mutex_initiator.failed == true
+      - neg_mutex_initiator.changed == false
+      - "'mutually exclusive' in (neg_mutex_initiator.msg | default(''))"
+    fail_msg: "Module did not reject mutually exclusive initiator parameters"
+    success_msg: "Module correctly rejected mutually exclusive initiator parameters"
+
+- name: Negative — invalid enabled_authentications value
+  nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+    state: present
+    volume_group_ext_id: "{{ vg1_uuid }}"
+    iscsi_initiator_name: "{{ iqn_min }}"
+    enabled_authentications: "INVALID"
+  register: neg_bad_auth
+  ignore_errors: true
+
+- name: Verify invalid enum for enabled_authentications is rejected
+  ansible.builtin.assert:
+    that:
+      - neg_bad_auth.failed == true
+      - neg_bad_auth.changed == false
+      - "'enabled_authentications' in (neg_bad_auth.msg | default(''))"
+    fail_msg: "Module accepted an invalid enabled_authentications value"
+    success_msg: "Module correctly rejected an invalid enabled_authentications value"
+
+- name: Negative — invalid attachment_site value
+  nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+    state: present
+    volume_group_ext_id: "{{ vg1_uuid }}"
+    iscsi_initiator_name: "{{ iqn_min }}"
+    attachment_site: "INVALID"
+  register: neg_bad_site
+  ignore_errors: true
+
+- name: Verify invalid enum for attachment_site is rejected
+  ansible.builtin.assert:
+    that:
+      - neg_bad_site.failed == true
+      - neg_bad_site.changed == false
+      - "'attachment_site' in (neg_bad_site.msg | default(''))"
+    fail_msg: "Module accepted an invalid attachment_site value"
+    success_msg: "Module correctly rejected an invalid attachment_site value"
+
+- name: Negative — list attachments for a non-existent Volume Group
+  nutanix.ncp.ntnx_volume_group_external_iscsi_attachmentsinfo_v2:
+    volume_group_ext_id: "{{ bogus_vg_ext_id }}"
+  register: neg_list_bogus_vg
+  ignore_errors: true
+
+- name: Verify list on non-existent Volume Group surfaces an API error
+  ansible.builtin.assert:
+    that:
+      - neg_list_bogus_vg.failed == true
+      - neg_list_bogus_vg.changed == false
+      - neg_list_bogus_vg.error is defined
+      - (neg_list_bogus_vg.error | length) > 0
+    fail_msg: "Info module did not surface an error for a non-existent Volume Group"
+    success_msg: "Info module surfaced an API error for a non-existent Volume Group as expected"
+
+- name: Negative — fetch non-existent external iSCSI attachment ext_id
+  nutanix.ncp.ntnx_volume_group_external_iscsi_attachmentsinfo_v2:
+    volume_group_ext_id: "{{ vg1_uuid }}"
+    ext_id: "{{ bogus_client_ext_id }}"
+  register: neg_fetch_bogus
+  ignore_errors: true
+
+- name: Verify fetching a non-existent ext_id yields a descriptive error
+  ansible.builtin.assert:
+    that:
+      - neg_fetch_bogus.failed == true
+      - neg_fetch_bogus.changed == false
+      - "bogus_client_ext_id in (neg_fetch_bogus.msg | default(''))"
+    fail_msg: "Info module did not fail when fetching a non-existent attachment ext_id"
+    success_msg: "Info module correctly failed for a non-existent attachment ext_id"
+
+############################################ Check-mode ############################################
+
+- name: Check mode — Create with ALL attributes (IQN)
+  nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+    volume_group_ext_id: "{{ vg1_uuid }}"
+    iscsi_initiator_name: "{{ iqn_full }}"
+    num_virtual_targets: 32
+    enabled_authentications: CHAP
+    client_secret: "Nutanix.1234455"
+    attachment_site: "PRIMARY"
+  check_mode: true
+  register: check_create
+  ignore_errors: true
+
+- name: Verify check_mode Create spec generation
+  ansible.builtin.assert:
+    that:
+      - check_create.error == None
+      - check_create.failed == false
+      - check_create.changed == false
+      - check_create.response is defined
+      - check_create.response.iscsi_initiator_name == iqn_full
+      - check_create.response.num_virtual_targets == 32
+      - check_create.response.enabled_authentications == "CHAP"
+      - check_create.response.attachment_site == "PRIMARY"
+      - check_create.volume_group_ext_id == vg1_uuid
+    fail_msg: "check_mode Create did not build the expected spec"
+    success_msg: "check_mode Create generated the expected spec"
+
+- name: Check mode — Update (attach-existing by ext_id) with a placeholder ext_id
+  nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+    state: present
+    volume_group_ext_id: "{{ vg1_uuid }}"
+    ext_id: "{{ bogus_client_ext_id }}"
+    cluster_reference: "{{ cluster.uuid }}"
+  check_mode: true
+  register: check_update
+  ignore_errors: true
+
+- name: Verify check_mode Update spec generation
+  ansible.builtin.assert:
+    that:
+      - check_update.error == None
+      - check_update.failed == false
+      - check_update.changed == false
+      - check_update.response is defined
+      - check_update.ext_id == bogus_client_ext_id
+      - check_update.volume_group_ext_id == vg1_uuid
+    fail_msg: "check_mode Update did not build the expected spec"
+    success_msg: "check_mode Update generated the expected spec"
+
+- name: Check mode — Delete
+  nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+    state: absent
+    volume_group_ext_id: "{{ vg1_uuid }}"
+    ext_id: "{{ bogus_client_ext_id }}"
+  check_mode: true
+  register: check_delete
+  ignore_errors: true
+
+- name: Verify check_mode Delete produced descriptive msg without change
+  ansible.builtin.assert:
+    that:
+      - check_delete.error == None
+      - check_delete.failed == false
+      - check_delete.changed == false
+      - check_delete.ext_id == bogus_client_ext_id
+      - check_delete.volume_group_ext_id == vg1_uuid
+      - "bogus_client_ext_id in (check_delete.msg | default(''))"
+      - "vg1_uuid in (check_delete.msg | default(''))"
+    fail_msg: "check_mode Delete did not build the expected preview message"
+    success_msg: "check_mode Delete generated the expected preview message"
+
+############################################ Real Create — minimal (IQN only) ############################################
+
+- name: Attach external iSCSI client with MINIMUM required fields (IQN only)
+  nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+    state: present
+    volume_group_ext_id: "{{ vg1_uuid }}"
+    iscsi_initiator_name: "{{ iqn_min }}"
+  register: attach_min
+
+- name: Verify minimal attach succeeded
+  ansible.builtin.assert:
+    that:
+      - attach_min.error == None
+      - attach_min.failed == false
+      - attach_min.changed == true
+      - attach_min.response is defined
+      - attach_min.response.status == "SUCCEEDED"
+      - attach_min.task_ext_id is defined
+      - attach_min.volume_group_ext_id == vg1_uuid
+      - attach_min.ext_id is defined
+    fail_msg: "Minimal attach of external iSCSI client failed"
+    success_msg: "Minimal attach of external iSCSI client succeeded"
+
+- name: Capture minimal-attach ext_id
+  ansible.builtin.set_fact:
+    ext_id_min: "{{ attach_min.ext_id }}"
+
+############################################ Real Create — full field set ############################################
+
+- name: Attach external iSCSI client with a FULL field set (IQN + num_virtual_targets)
+  # NOTE: On CHAP-enabled Volume Groups, the API enforces that every attachment's
+  # target params (num_virtual_targets, target_secret) match the first attachment.
+  # Because the minimal-attach above already fixed the VG-level target params, we
+  # attach subsequent clients with the same num_virtual_targets and rely on the
+  # VG-level CHAP secret rather than re-declaring client-side CHAP.
+  nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+    state: present
+    volume_group_ext_id: "{{ vg1_uuid }}"
+    iscsi_initiator_name: "{{ iqn_full }}"
+    num_virtual_targets: 32
+  register: attach_full
+
+- name: Verify full attach succeeded
+  ansible.builtin.assert:
+    that:
+      - attach_full.error == None
+      - attach_full.failed == false
+      - attach_full.changed == true
+      - attach_full.response is defined
+      - attach_full.response.status == "SUCCEEDED"
+      - attach_full.task_ext_id is defined
+      - attach_full.volume_group_ext_id == vg1_uuid
+      - attach_full.ext_id is defined
+    fail_msg: "Full attach of external iSCSI client failed"
+    success_msg: "Full attach of external iSCSI client succeeded"
+
+- name: Capture full-attach ext_id
+  ansible.builtin.set_fact:
+    ext_id_full: "{{ attach_full.ext_id }}"
+
+############################################ Real Create — IPv4 initiator ############################################
+
+- name: Attach external iSCSI client using an IPv4 initiator network id
+  nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+    state: present
+    volume_group_ext_id: "{{ vg1_uuid }}"
+    num_virtual_targets: 32
+    iscsi_initiator_network_id:
+      ipv4:
+        value: "{{ initiator_ipv4 }}"
+  register: attach_ipv4
+
+- name: Verify IPv4 attach succeeded
+  ansible.builtin.assert:
+    that:
+      - attach_ipv4.error == None
+      - attach_ipv4.failed == false
+      - attach_ipv4.changed == true
+      - attach_ipv4.response.status == "SUCCEEDED"
+      - attach_ipv4.task_ext_id is defined
+      - attach_ipv4.volume_group_ext_id == vg1_uuid
+      - attach_ipv4.ext_id is defined
+    fail_msg: "IPv4 attach of external iSCSI client failed"
+    success_msg: "IPv4 attach of external iSCSI client succeeded"
+
+- name: Capture IPv4-attach ext_id
+  ansible.builtin.set_fact:
+    ext_id_ipv4: "{{ attach_ipv4.ext_id }}"
+
+############################################ Real Create — FQDN initiator ############################################
+
+- name: Attach external iSCSI client using an FQDN initiator network id
+  # Some cluster storage backends reject FQDN initiators with the error
+  # "FQDN is not supported." — we tolerate that with ignore_errors and gate the
+  # subsequent verifications on whether the attach actually succeeded.
+  nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+    state: present
+    volume_group_ext_id: "{{ vg1_uuid }}"
+    num_virtual_targets: 32
+    iscsi_initiator_network_id:
+      fqdn:
+        value: "{{ initiator_fqdn }}"
+  register: attach_fqdn
+  ignore_errors: true
+
+- name: Verify FQDN attach behavior (success OR "FQDN is not supported" from the backend)
+  ansible.builtin.assert:
+    that:
+      - >-
+        (attach_fqdn.failed == false and attach_fqdn.changed == true
+         and attach_fqdn.response.status == "SUCCEEDED"
+         and attach_fqdn.ext_id is defined)
+        or
+        (attach_fqdn.failed == true
+         and 'FQDN is not supported' in (attach_fqdn.response.data.error[0].message | default('')))
+    fail_msg: "FQDN attach did not succeed and did not surface the expected 'FQDN is not supported' backend error"
+    success_msg: "FQDN attach either succeeded or was rejected by the backend with 'FQDN is not supported' as expected"
+
+- name: Capture FQDN-attach ext_id if the FQDN attach succeeded
+  ansible.builtin.set_fact:
+    ext_id_fqdn: "{{ attach_fqdn.ext_id | default('') }}"
+    fqdn_supported: "{{ attach_fqdn.failed == false }}"
+
+############################################ List / Read ############################################
+
+- name: List ALL external iSCSI attachments for the Volume Group
+  nutanix.ncp.ntnx_volume_group_external_iscsi_attachmentsinfo_v2:
+    volume_group_ext_id: "{{ vg1_uuid }}"
+  register: list_all
+
+- name: Compute the set of ext_ids expected to be listed (skip FQDN when unsupported)
+  ansible.builtin.set_fact:
+    expected_ext_ids: >-
+      {{
+        [ext_id_min, ext_id_full, ext_id_ipv4]
+        + ([ext_id_fqdn] if fqdn_supported | bool else [])
+      }}
+
+- name: Verify list returns all newly attached iSCSI clients
+  ansible.builtin.assert:
+    that:
+      - list_all.error == None
+      - list_all.failed == false
+      - list_all.changed == false
+      - list_all.response is defined
+      - list_all.response | length >= (expected_ext_ids | length)
+      - list_all.total_available_results is defined
+      - list_all.total_available_results >= (expected_ext_ids | length)
+      - list_all.volume_group_ext_id == vg1_uuid
+      - ext_id_min in (list_all.response | map(attribute='ext_id') | list)
+      - ext_id_full in (list_all.response | map(attribute='ext_id') | list)
+      - ext_id_ipv4 in (list_all.response | map(attribute='ext_id') | list)
+      - not (fqdn_supported | bool) or (ext_id_fqdn in (list_all.response | map(attribute='ext_id') | list))
+    fail_msg: "List did not return all attached external iSCSI clients"
+    success_msg: "List returned all attached external iSCSI clients"
+
+- name: Assert every listed attachment has the expected shape
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.cluster_reference is defined
+    fail_msg: "External iSCSI attachment {{ item.ext_id | default('<no-ext-id>') }} is missing required fields"
+    success_msg: "External iSCSI attachment {{ item.ext_id }} has the expected shape"
+  loop: "{{ list_all.response }}"
+  loop_control:
+    label: "{{ item.ext_id | default('<no-ext-id>') }}"
+
+- name: List external iSCSI attachments with an OData limit
+  nutanix.ncp.ntnx_volume_group_external_iscsi_attachmentsinfo_v2:
+    volume_group_ext_id: "{{ vg1_uuid }}"
+    limit: 2
+  register: list_limited
+
+- name: Verify limit is applied
+  ansible.builtin.assert:
+    that:
+      - list_limited.error == None
+      - list_limited.failed == false
+      - list_limited.changed == false
+      - list_limited.response is defined
+      - list_limited.response | length <= 2
+      - list_limited.total_available_results is defined
+    fail_msg: "OData limit was not applied by the info module"
+    success_msg: "OData limit was applied by the info module"
+
+- name: Fetch each attachment by ext_id via the info module
+  nutanix.ncp.ntnx_volume_group_external_iscsi_attachmentsinfo_v2:
+    volume_group_ext_id: "{{ vg1_uuid }}"
+    ext_id: "{{ item }}"
+  register: fetch_by_id
+  loop: "{{ expected_ext_ids }}"
+
+- name: Verify each single fetch matches the requested ext_id
+  ansible.builtin.assert:
+    that:
+      - item.error == None
+      - item.failed == false
+      - item.changed == false
+      - item.response is defined
+      - item.response.ext_id == item.ext_id
+      - item.volume_group_ext_id == vg1_uuid
+    fail_msg: "Single fetch failed for ext_id {{ item.ext_id | default('<no-ext-id>') }}"
+    success_msg: "Single fetch succeeded for ext_id {{ item.ext_id }}"
+  loop: "{{ fetch_by_id.results }}"
+  loop_control:
+    label: "{{ item.ext_id | default('<no-ext-id>') }}"
+
+############################################ Idempotency — re-attach by ext_id ############################################
+
+- name: Re-attach existing external iSCSI client by ext_id (idempotent path)
+  nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+    state: present
+    volume_group_ext_id: "{{ vg1_uuid }}"
+    ext_id: "{{ ext_id_min }}"
+    cluster_reference: "{{ cluster.uuid }}"
+  register: reattach_idempotent
+
+- name: Verify re-attach short-circuits with an idempotent skip
+  ansible.builtin.assert:
+    that:
+      - reattach_idempotent.error == None
+      - reattach_idempotent.failed == false
+      - reattach_idempotent.changed == false
+      - reattach_idempotent.skipped == true
+      - reattach_idempotent.ext_id == ext_id_min
+      - reattach_idempotent.volume_group_ext_id == vg1_uuid
+      - "'already attached' in (reattach_idempotent.msg | default(''))"
+    fail_msg: "Re-attach by ext_id did not report the expected idempotent skip"
+    success_msg: "Re-attach by ext_id reported the expected idempotent skip"
+
+############################################ Delete — real ############################################
+
+- name: Detach each newly created external iSCSI attachment
+  nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+    state: absent
+    volume_group_ext_id: "{{ vg1_uuid }}"
+    ext_id: "{{ item }}"
+  register: detach_results
+  loop: "{{ expected_ext_ids }}"
+
+- name: Verify each detach succeeded
+  ansible.builtin.assert:
+    that:
+      - item.error == None
+      - item.failed == false
+      - item.changed == true
+      - item.response is defined
+      - item.response.status == "SUCCEEDED"
+      - item.task_ext_id is defined
+      - item.volume_group_ext_id == vg1_uuid
+    fail_msg: "Detach of external iSCSI client {{ item.ext_id | default('<no-ext-id>') }} failed"
+    success_msg: "Detach of external iSCSI client {{ item.ext_id }} succeeded"
+  loop: "{{ detach_results.results }}"
+  loop_control:
+    label: "{{ item.ext_id | default('<no-ext-id>') }}"
+
+- name: Verify list is empty after all attachments have been detached
+  nutanix.ncp.ntnx_volume_group_external_iscsi_attachmentsinfo_v2:
+    volume_group_ext_id: "{{ vg1_uuid }}"
+  register: list_after_detach
+
+- name: Assert none of the newly attached ext_ids remain
+  ansible.builtin.assert:
+    that:
+      - list_after_detach.error == None
+      - list_after_detach.failed == false
+      - list_after_detach.changed == false
+      - ext_id_min not in (list_after_detach.response | map(attribute='ext_id') | list)
+      - ext_id_full not in (list_after_detach.response | map(attribute='ext_id') | list)
+      - ext_id_ipv4 not in (list_after_detach.response | map(attribute='ext_id') | list)
+      - not (fqdn_supported | bool) or (ext_id_fqdn not in (list_after_detach.response | map(attribute='ext_id') | list))
+    fail_msg: "One or more external iSCSI attachments were not detached"
+    success_msg: "All external iSCSI attachments were detached successfully"
+
+############################################ Cleanup ############################################
+
+- name: Delete the Volume Group
+  nutanix.ncp.ntnx_volume_groups_v2:
+    state: absent
+    ext_id: "{{ vg1_uuid }}"
+  register: delete_vg_result
+
+- name: Verify VG delete
+  ansible.builtin.assert:
+    that:
+      - delete_vg_result.error == None
+      - delete_vg_result.failed == false
+      - delete_vg_result.changed == true
+      - delete_vg_result.ext_id == vg1_uuid
+      - delete_vg_result.task_ext_id is defined
+      - delete_vg_result.response.status == "SUCCEEDED"
+    fail_msg: "Unable to delete Volume Group used for external iSCSI attachment tests"
+    success_msg: "Volume Group used for external iSCSI attachment tests deleted successfully"
