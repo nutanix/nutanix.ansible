@@ -1,0 +1,21 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Reserve IPs by Subnet Id playbook] ***************************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"first_reserved_ip": "192.168.214.21", "reserve_client_context": "ansible_example_reserve", "second_reserved_ip": "192.168.214.22", "subnet_ext_id": "6be3e46b-794a-43f9-ab3e-04b94acf9f2e"}, "changed": false}
+
+TASK [Reserve IPs on a managed subnet (all attributes)] ************************
+changed: [localhost] => {"changed": true, "ext_id": "6be3e46b-794a-43f9-ab3e-04b94acf9f2e", "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": null, "completed_time": "2026-07-21T05:51:41.861959+00:00", "completion_details": [{"name": "reserved_or_unreserved_ips", "value": "{\"reserved_ips\": [\"192.168.214.21\", \"192.168.214.22\"]}"}], "created_time": "2026-07-21T05:51:41.730026+00:00", "entities_affected": [{"ext_id": "6be3e46b-794a-43f9-ab3e-04b94acf9f2e", "name": null, "rel": "networking:config:subnet"}], "error_messages": null, "ext_id": "ZXJnb24=:b7d0e296-5968-43b1-a14e-10480ba7191b", "is_background_task": false, "is_cancelable": false, "last_updated_time": "2026-07-21T05:51:41.861958+00:00", "legacy_error_message": null, "number_of_entities_affected": 1, "number_of_subtasks": 0, "operation": "kSubnetReserveIp", "operation_description": "Reserve or Unreserve IP on Managed Subnet", "owned_by": {"ext_id": "00000000-0000-0000-0000-000000000000", "name": "admin"}, "parent_task": null, "progress_percentage": 100, "projectExtId": "00000000-0000-0000-0000-000000000000", "resource_links": null, "root_task": null, "started_time": "2026-07-21T05:51:41.739554+00:00", "status": "SUCCEEDED", "sub_steps": null, "sub_tasks": null, "warnings": null}, "task_ext_id": "ZXJnb24=:b7d0e296-5968-43b1-a14e-10480ba7191b"}
+
+TASK [List reserved IPs on the subnet] *****************************************
+ok: [localhost] => {"changed": false, "ext_id": "6be3e46b-794a-43f9-ab3e-04b94acf9f2e", "response": [{"client_context": "ansible_example_reserve", "ext_id": null, "ipv4_address": "192.168.214.22", "links": null, "tenant_id": null}, {"client_context": "ansible_example_reserve", "ext_id": null, "ipv4_address": "192.168.214.21", "links": null, "tenant_id": null}], "total_available_results": 2}
+
+TASK [Unreserve IPs on the subnet (all attributes)] ****************************
+changed: [localhost] => {"changed": true, "ext_id": "6be3e46b-794a-43f9-ab3e-04b94acf9f2e", "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": null, "completed_time": "2026-07-21T05:51:45.880382+00:00", "completion_details": [{"name": "reserved_or_unreserved_ips", "value": "{\"unreserved_ips\": [\"192.168.214.22\", \"192.168.214.21\"]}"}], "created_time": "2026-07-21T05:51:45.784359+00:00", "entities_affected": [{"ext_id": "6be3e46b-794a-43f9-ab3e-04b94acf9f2e", "name": null, "rel": "networking:config:subnet"}], "error_messages": null, "ext_id": "ZXJnb24=:61c184e1-d811-4d04-91d7-1119479d82df", "is_background_task": false, "is_cancelable": false, "last_updated_time": "2026-07-21T05:51:45.880380+00:00", "legacy_error_message": null, "number_of_entities_affected": 1, "number_of_subtasks": 0, "operation": "kSubnetReserveIp", "operation_description": "Reserve or Unreserve IP on Managed Subnet", "owned_by": {"ext_id": "00000000-0000-0000-0000-000000000000", "name": "admin"}, "parent_task": null, "progress_percentage": 100, "projectExtId": "00000000-0000-0000-0000-000000000000", "resource_links": null, "root_task": null, "started_time": "2026-07-21T05:51:45.794160+00:00", "status": "SUCCEEDED", "sub_steps": null, "sub_tasks": null, "warnings": null}, "task_ext_id": "ZXJnb24=:61c184e1-d811-4d04-91d7-1119479d82df"}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=4    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+

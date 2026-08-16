@@ -1,3 +1,6 @@
 nutanix-ncp-*
 .ansible/
 py3.12_virt
+tests/integration/integration_config.yml
+tests/integration/inventory
+tests/output/
