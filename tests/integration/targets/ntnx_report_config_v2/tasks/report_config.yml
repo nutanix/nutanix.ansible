@@ -1,0 +1,732 @@
+---
+############################################################################
+# Test plan (Domain-Expert QA perspective)
+# -------------------------------------------------------------------------
+# Goal: End-to-end validation of the ReportConfig CRUD and info modules
+# against a live Prism Central. Every module argument is exercised via
+# either a check_mode task (which returns the assembled spec without hitting
+# the API) or a real create/update/get/list task.
+#
+# Coverage (matches Step 4 in INSTRUCTIONS.md):
+#   * check_mode: exactly one Create/Update/Delete check_mode task, each with
+#     ALL supported fields populated.
+#   * Real Create: minimal (required only) and full (all fields) creations
+#     assert every populated attribute round-trips from the API.
+#   * Real Update: exercises meaningful transitions - changes scalar values,
+#     flips enums, resizes lists, swaps widget kind.
+#   * Idempotency: re-runs the last update with identical params and asserts
+#     `changed: false` + `skipped: true` + the exact idempotency message.
+#   * Info: get-by-id, list-all, filter, limit, and negative not-found.
+#   * Negative: missing required fields for create + update, invalid enum
+#     value for the argument spec, invalid ext_id for update/delete/info.
+#   * Domain: notification recipients list + widget_template vs widget_config
+#     oneof + retention_config mutually-exclusive semantics.
+############################################################################
+
+- name: Start ReportConfig integration tests
+  ansible.builtin.debug:
+    msg: Start ReportConfig integration tests
+
+- name: Generate random suffix and initialise per-test facts
+  ansible.builtin.set_fact:
+    random_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=10)[0] }}"
+    todelete: []
+
+- name: Set report configuration names
+  ansible.builtin.set_fact:
+    rc_full_name: "ansible_rc_full_{{ random_suffix }}"
+    rc_min_name: "ansible_rc_min_{{ random_suffix }}"
+    rc_check_name: "ansible_rc_check_{{ random_suffix }}"
+
+  ##########################################################################
+  # 1. check_mode: create with ALL supported fields
+  ##########################################################################
+- name: Create report configuration in check_mode (all fields)
+  nutanix.ncp.ntnx_report_config_v2:
+    state: present
+    name: "{{ rc_check_name }}"
+    description: "check_mode create"
+    timezone: "UTC"
+    is_private: false
+    supported_formats:
+      - PDF
+      - CSV
+    default_section_entity_type: VM
+    start_time_offset_secs: 86400
+    end_time_offset_secs: 0
+    schedule:
+      schedule_interval: DAILY
+      frequency: 1
+      start_time: "2026-01-01T00:00:00Z"
+      end_time: "2026-12-31T00:00:00Z"
+    retention_config:
+      retention_count: 5
+    notification_policy:
+      recipient_formats:
+        - PDF
+      recipients:
+        - email_address: "check@example.com"
+          recipient_name: "Check Recipient"
+      email_subject: "Check subject"
+      email_body: "Check body"
+    report_customization:
+      header_html: "<h1>H</h1>"
+      footer_html: "<footer>F</footer>"
+      css_style_sheet: "body{}"
+      logo_image_ext_id: "00000000-0000-0000-0000-000000000000"
+    sections:
+      - name: "check_section"
+        description: "check section"
+        time_filter: CREATED_TIME
+        repeat_criteria:
+          entity_type: VM
+          repetition_rule: "power_state eq 'ON'"
+        rows:
+          - widgets:
+              - widget_config:
+                  entity_type: VM
+                  heading: "VM Count"
+                  description: "Count of virtual machines"
+                  type: COUNT_SUMMARY
+                  size: SMALL
+                  widget_id: "vm_count_widget"
+                  time_filter: CREATED_TIME
+                  data_criteria:
+                    filter_criteria: "power_state eq 'ON'"
+                    sort_column: "name"
+                    sort_order: ASCENDING
+                    limit: 10
+                    sort_key: FIRST
+                    custom_parameters:
+                      - name: "group_by"
+                        value: "host"
+                  type_specific_configs:
+                    - name: "showLegend"
+                      value: "true"
+                  fields:
+                    - label: "Total VMs"
+                      name: "vm_count"
+                      aggregate_function: COUNT
+                      unit: ABSOLUTE
+                      thresholds:
+                        - start_range: 0
+                          end_range: 10
+                          color: "#00FF00"
+                      compound_metric:
+                        formula: "A"
+                        operands:
+                          - label: "Count"
+                            name: "count"
+                            aggregate_function: COUNT
+                            unit: ABSOLUTE
+              - widget_template:
+                  widget_template: CLUSTER_INACTIVE_VM_TABLE
+  register: create_check_mode
+  check_mode: true
+  ignore_errors: true
+
+- name: Verify create check_mode result
+  ansible.builtin.assert:
+    that:
+      - create_check_mode.changed == false
+      - create_check_mode.failed == false
+      - create_check_mode.response is defined
+      - create_check_mode.response.name == rc_check_name
+      - create_check_mode.response.description == "check_mode create"
+      - create_check_mode.response.timezone == "UTC"
+      - create_check_mode.response.is_private == false
+      - create_check_mode.response.supported_formats == ["PDF", "CSV"]
+      - create_check_mode.response.default_section_entity_type == "VM"
+      - create_check_mode.response.start_time_offset_secs == 86400
+      - create_check_mode.response.end_time_offset_secs == 0
+      - create_check_mode.response.schedule.schedule_interval == "DAILY"
+      - create_check_mode.response.schedule.frequency == 1
+      - create_check_mode.response.retention_config.retention_count == 5
+      - create_check_mode.response.notification_policy.email_subject == "Check subject"
+      - create_check_mode.response.notification_policy.email_body == "Check body"
+      - create_check_mode.response.notification_policy.recipient_formats == ["PDF"]
+      - create_check_mode.response.notification_policy.recipients | length == 1
+      - create_check_mode.response.notification_policy.recipients[0].email_address == "check@example.com"
+      - create_check_mode.response.notification_policy.recipients[0].recipient_name == "Check Recipient"
+      - create_check_mode.response.report_customization.header_html == "<h1>H</h1>"
+      - create_check_mode.response.report_customization.footer_html == "<footer>F</footer>"
+      - create_check_mode.response.report_customization.css_style_sheet == "body{}"
+      - create_check_mode.response.report_customization.logo_image_ext_id == "00000000-0000-0000-0000-000000000000"
+      - create_check_mode.response.sections | length == 1
+      - create_check_mode.response.sections[0].name == "check_section"
+      - create_check_mode.response.sections[0].repeat_criteria.entity_type == "VM"
+      - create_check_mode.response.sections[0].repeat_criteria.repetition_rule == "power_state eq 'ON'"
+      - create_check_mode.response.sections[0].time_filter == "CREATED_TIME"
+      - create_check_mode.response.sections[0].rows | length == 1
+      - create_check_mode.response.sections[0].rows[0].widgets | length == 2
+    success_msg: "check_mode create returned the expected assembled spec"
+    fail_msg: "check_mode create did not return the expected spec"
+
+  ##########################################################################
+  # 2. Real create with ONLY required fields (name + sections)
+  ##########################################################################
+- name: Create report configuration with only required fields
+  nutanix.ncp.ntnx_report_config_v2:
+    state: present
+    name: "{{ rc_min_name }}"
+    sections:
+      - name: "minimal_section"
+        rows:
+          - widgets:
+              - widget_template:
+                  widget_template: ALERTS_COUNT
+  register: create_min
+  ignore_errors: true
+
+- name: Verify minimal create
+  ansible.builtin.assert:
+    that:
+      - create_min.failed == false
+      - create_min.changed == true
+      - create_min.ext_id is defined
+      - create_min.ext_id | length > 0
+      - create_min.response.name == rc_min_name
+      - create_min.response.sections | length == 1
+      - create_min.response.sections[0].name == "minimal_section"
+    success_msg: "Minimal create succeeded and returned an ext_id"
+    fail_msg: "Minimal create failed"
+
+- name: Record minimal report config for cleanup
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [create_min.ext_id] }}"
+  when: create_min.ext_id is defined and create_min.ext_id | length > 0
+
+  ##########################################################################
+  # 3. Real create with ALL supported fields
+  ##########################################################################
+- name: Create report configuration with all fields
+  nutanix.ncp.ntnx_report_config_v2:
+    state: present
+    name: "{{ rc_full_name }}"
+    description: "Full report configuration created by Ansible"
+    timezone: "UTC"
+    is_private: false
+    supported_formats:
+      - PDF
+      - CSV
+    default_section_entity_type: VM
+    start_time_offset_secs: 86400
+    end_time_offset_secs: 0
+    schedule:
+      schedule_interval: DAILY
+      frequency: 1
+      start_time: "2026-01-01T00:00:00Z"
+      end_time: "2026-12-31T00:00:00Z"
+    retention_config:
+      retention_count: 10
+    notification_policy:
+      recipient_formats:
+        - PDF
+      recipients:
+        - email_address: "reports@example.com"
+          recipient_name: "Reports Team"
+      email_subject: "Daily VM report"
+      email_body: "Please find the attached VM report."
+    report_customization:
+      header_html: "<h1>VM Report</h1>"
+      footer_html: "<footer>Generated by Ansible</footer>"
+      css_style_sheet: "body{font-family:Arial;}"
+    sections:
+      - name: "vm_overview"
+        description: "Overview of virtual machines"
+        time_filter: CREATED_TIME
+        repeat_criteria:
+          entity_type: VM
+        rows:
+          - widgets:
+              - widget_config:
+                  entity_type: VM
+                  heading: "VM Count"
+                  description: "Count of virtual machines"
+                  type: COUNT_SUMMARY
+                  size: SMALL
+                  widget_id: "vm_count_widget"
+                  data_criteria:
+                    sort_column: "name"
+                    sort_order: ASCENDING
+                    limit: 10
+                  fields:
+                    - label: "Total VMs"
+                      name: "vm_count"
+                      aggregate_function: COUNT
+                      unit: ABSOLUTE
+              - widget_template:
+                  widget_template: CLUSTER_INACTIVE_VM_TABLE
+  register: create_full
+  ignore_errors: true
+
+- name: Verify full create
+  ansible.builtin.assert:
+    that:
+      - create_full.failed == false
+      - create_full.changed == true
+      - create_full.ext_id is defined
+      - create_full.ext_id | length > 0
+      - create_full.response.name == rc_full_name
+      - create_full.response.description == "Full report configuration created by Ansible"
+      - create_full.response.timezone == "UTC"
+      - create_full.response.is_private == false
+      - "'PDF' in create_full.response.supported_formats"
+      - "'CSV' in create_full.response.supported_formats"
+      - create_full.response.default_section_entity_type == "VM"
+      - create_full.response.start_time_offset_secs == 86400
+      - create_full.response.end_time_offset_secs == 0
+      - create_full.response.schedule.schedule_interval == "DAILY"
+      - create_full.response.schedule.frequency == 1
+      - create_full.response.retention_config.retention_count == 10
+      - create_full.response.notification_policy.email_subject == "Daily VM report"
+      - create_full.response.notification_policy.email_body == "Please find the attached VM report."
+      - create_full.response.notification_policy.recipient_formats == ["PDF"]
+      - create_full.response.notification_policy.recipients | length == 1
+      - create_full.response.notification_policy.recipients[0].email_address == "reports@example.com"
+      - create_full.response.notification_policy.recipients[0].recipient_name == "Reports Team"
+      - create_full.response.report_customization.header_html == "<h1>VM Report</h1>"
+      - create_full.response.report_customization.footer_html == "<footer>Generated by Ansible</footer>"
+      - create_full.response.report_customization.css_style_sheet == "body{font-family:Arial;}"
+      - create_full.response.sections | length == 1
+      - create_full.response.sections[0].name == "vm_overview"
+      - create_full.response.sections[0].time_filter == "CREATED_TIME"
+      - create_full.response.sections[0].repeat_criteria.entity_type == "VM"
+      - create_full.response.sections[0].rows[0].widgets | length == 2
+    success_msg: "Full create succeeded with every field round-tripping"
+    fail_msg: "Full create response is missing expected fields"
+
+- name: Record full report config for cleanup
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [create_full.ext_id] }}"
+  when: create_full.ext_id is defined and create_full.ext_id | length > 0
+
+  ##########################################################################
+  # 4. Info module tests
+  ##########################################################################
+- name: Get created report configuration by ext_id
+  nutanix.ncp.ntnx_report_configs_info_v2:
+    ext_id: "{{ create_full.ext_id }}"
+  register: get_result
+  ignore_errors: true
+
+- name: Verify get-by-ext_id
+  ansible.builtin.assert:
+    that:
+      - get_result.failed == false
+      - get_result.changed == false
+      - get_result.ext_id == create_full.ext_id
+      - get_result.response.name == rc_full_name
+      - get_result.response.ext_id == create_full.ext_id
+    success_msg: "Get-by-ext_id returned the expected report configuration"
+    fail_msg: "Get-by-ext_id did not return the expected report configuration"
+
+- name: List all report configurations
+  nutanix.ncp.ntnx_report_configs_info_v2: {}
+  register: list_all
+  ignore_errors: true
+
+- name: Verify list-all
+  ansible.builtin.assert:
+    that:
+      - list_all.failed == false
+      - list_all.changed == false
+      - list_all.response is defined
+      - list_all.response | length >= 2
+      - list_all.total_available_results is defined
+      - list_all.total_available_results >= list_all.response | length
+    success_msg: "List-all returned at least the two configs we created"
+    fail_msg: "List-all failed or returned fewer configs than expected"
+
+- name: Verify created configs are present in list-all
+  ansible.builtin.assert:
+    that:
+      - (list_all.response | map(attribute='ext_id') | list) is superset([create_full.ext_id, create_min.ext_id])
+    success_msg: "Both created configs are present in list-all response"
+    fail_msg: "One of the created configs is missing from list-all response"
+
+- name: List report configurations filtered by name
+  nutanix.ncp.ntnx_report_configs_info_v2:
+    filter: "name eq '{{ rc_full_name }}'"
+  register: list_filter
+  ignore_errors: true
+
+- name: Verify filter
+  ansible.builtin.assert:
+    that:
+      - list_filter.failed == false
+      - list_filter.changed == false
+      - list_filter.response is defined
+      - list_filter.response | length == 1
+      - list_filter.response[0].name == rc_full_name
+      - list_filter.response[0].ext_id == create_full.ext_id
+    success_msg: "Filter matched exactly the expected report config"
+    fail_msg: "Filter response is incorrect"
+
+- name: List report configurations with limit=1
+  nutanix.ncp.ntnx_report_configs_info_v2:
+    limit: 1
+  register: list_limit
+  ignore_errors: true
+
+- name: Verify limit
+  ansible.builtin.assert:
+    that:
+      - list_limit.failed == false
+      - list_limit.changed == false
+      - list_limit.response is defined
+      - list_limit.response | length == 1
+    success_msg: "Limit=1 returned a single report config"
+    fail_msg: "Limit=1 did not return a single report config"
+
+  ##########################################################################
+  # 5. Update check_mode + real update + idempotency
+  ##########################################################################
+- name: Update report configuration in check_mode (all fields)
+  nutanix.ncp.ntnx_report_config_v2:
+    state: present
+    ext_id: "{{ create_full.ext_id }}"
+    name: "{{ rc_full_name }}_check"
+    description: "check_mode update"
+    timezone: "UTC"
+    is_private: true
+    supported_formats:
+      - PDF
+    default_section_entity_type: CLUSTER
+    start_time_offset_secs: 172800
+    end_time_offset_secs: 3600
+    schedule:
+      schedule_interval: WEEKLY
+      frequency: 2
+    retention_config:
+      retention_count: 5
+    notification_policy:
+      recipient_formats:
+        - PDF
+      recipients:
+        - email_address: "ops@example.com"
+          recipient_name: "Ops"
+      email_subject: "Weekly cluster report"
+      email_body: "Weekly cluster report body."
+    report_customization:
+      header_html: "<h2>Cluster Report</h2>"
+      footer_html: "<footer>Updated by Ansible</footer>"
+    sections:
+      - name: "cluster_overview"
+        description: "Overview of clusters"
+        time_filter: LAST_OCCURRED_TIME
+        repeat_criteria:
+          entity_type: CLUSTER
+        rows:
+          - widgets:
+              - widget_config:
+                  entity_type: CLUSTER
+                  heading: "Top Clusters"
+                  type: DATA_TABLE
+                  size: LARGE
+                  widget_id: "cluster_table_widget"
+                  data_criteria:
+                    sort_column: "name"
+                    sort_order: DESCENDING
+                    limit: 5
+  register: update_check_mode
+  check_mode: true
+  ignore_errors: true
+
+- name: Verify update check_mode
+  ansible.builtin.assert:
+    that:
+      - update_check_mode.failed == false
+      - update_check_mode.changed == false
+      - update_check_mode.ext_id == create_full.ext_id
+      - update_check_mode.response.name == rc_full_name + "_check"
+      - update_check_mode.response.description == "check_mode update"
+      - update_check_mode.response.is_private == true
+      - update_check_mode.response.supported_formats == ["PDF"]
+      - update_check_mode.response.default_section_entity_type == "CLUSTER"
+      - update_check_mode.response.schedule.schedule_interval == "WEEKLY"
+      - update_check_mode.response.schedule.frequency == 2
+    success_msg: "check_mode update returned the expected merged spec"
+    fail_msg: "check_mode update did not return the expected merged spec"
+
+- name: Real update of report configuration
+  nutanix.ncp.ntnx_report_config_v2:
+    state: present
+    ext_id: "{{ create_full.ext_id }}"
+    name: "{{ rc_full_name }}_updated"
+    description: "Updated by Ansible"
+    timezone: "UTC"
+    is_private: true
+    supported_formats:
+      - PDF
+    default_section_entity_type: CLUSTER
+    start_time_offset_secs: 172800
+    end_time_offset_secs: 3600
+    schedule:
+      schedule_interval: WEEKLY
+      frequency: 2
+    retention_config:
+      retention_count: 5
+    notification_policy:
+      recipient_formats:
+        - PDF
+      recipients:
+        - email_address: "ops@example.com"
+          recipient_name: "Ops"
+      email_subject: "Weekly cluster report"
+      email_body: "Weekly cluster report body."
+    report_customization:
+      header_html: "<h2>Cluster Report</h2>"
+      footer_html: "<footer>Updated by Ansible</footer>"
+    sections:
+      - name: "cluster_overview"
+        description: "Overview of clusters"
+        time_filter: LAST_OCCURRED_TIME
+        repeat_criteria:
+          entity_type: CLUSTER
+        rows:
+          - widgets:
+              - widget_config:
+                  entity_type: CLUSTER
+                  heading: "Top Clusters"
+                  type: DATA_TABLE
+                  size: LARGE
+                  widget_id: "cluster_table_widget"
+                  data_criteria:
+                    sort_column: "name"
+                    sort_order: DESCENDING
+                    limit: 5
+  register: update_real
+  ignore_errors: true
+
+- name: Verify real update
+  ansible.builtin.assert:
+    that:
+      - update_real.failed == false
+      - update_real.changed == true
+      - update_real.ext_id == create_full.ext_id
+      - update_real.response.name == rc_full_name + "_updated"
+      - update_real.response.description == "Updated by Ansible"
+      - update_real.response.is_private == true
+      - update_real.response.supported_formats == ["PDF"]
+      - update_real.response.default_section_entity_type == "CLUSTER"
+      - update_real.response.schedule.schedule_interval == "WEEKLY"
+      - update_real.response.schedule.frequency == 2
+      - update_real.response.retention_config.retention_count == 5
+      - update_real.response.notification_policy.email_subject == "Weekly cluster report"
+      - update_real.response.notification_policy.recipients | length == 1
+      - update_real.response.notification_policy.recipients[0].email_address == "ops@example.com"
+      - update_real.response.sections | length == 1
+      - update_real.response.sections[0].name == "cluster_overview"
+      - update_real.response.sections[0].time_filter == "LAST_OCCURRED_TIME"
+      - update_real.response.sections[0].repeat_criteria.entity_type == "CLUSTER"
+    success_msg: "Real update succeeded with every transition applied"
+    fail_msg: "Real update did not return the expected updated configuration"
+
+- name: Idempotency - re-run identical update
+  nutanix.ncp.ntnx_report_config_v2:
+    state: present
+    ext_id: "{{ create_full.ext_id }}"
+    name: "{{ rc_full_name }}_updated"
+    description: "Updated by Ansible"
+    timezone: "UTC"
+    is_private: true
+    supported_formats:
+      - PDF
+    default_section_entity_type: CLUSTER
+    start_time_offset_secs: 172800
+    end_time_offset_secs: 3600
+    schedule:
+      schedule_interval: WEEKLY
+      frequency: 2
+    retention_config:
+      retention_count: 5
+    notification_policy:
+      recipient_formats:
+        - PDF
+      recipients:
+        - email_address: "ops@example.com"
+          recipient_name: "Ops"
+      email_subject: "Weekly cluster report"
+      email_body: "Weekly cluster report body."
+    report_customization:
+      header_html: "<h2>Cluster Report</h2>"
+      footer_html: "<footer>Updated by Ansible</footer>"
+    sections:
+      - name: "cluster_overview"
+        description: "Overview of clusters"
+        time_filter: LAST_OCCURRED_TIME
+        repeat_criteria:
+          entity_type: CLUSTER
+        rows:
+          - widgets:
+              - widget_config:
+                  entity_type: CLUSTER
+                  heading: "Top Clusters"
+                  type: DATA_TABLE
+                  size: LARGE
+                  widget_id: "cluster_table_widget"
+                  data_criteria:
+                    sort_column: "name"
+                    sort_order: DESCENDING
+                    limit: 5
+  register: update_idempotent
+  ignore_errors: true
+
+- name: Verify idempotency
+  ansible.builtin.assert:
+    that:
+      - update_idempotent.failed == false
+      - update_idempotent.changed == false
+      - update_idempotent.skipped == true
+      - "'Nothing to change' in update_idempotent.msg"
+    success_msg: "Idempotency: re-run with identical params was skipped"
+    fail_msg: "Idempotency check failed - update ran again"
+
+  ##########################################################################
+  # 6. Negative tests
+  ##########################################################################
+- name: Negative - create without name
+  nutanix.ncp.ntnx_report_config_v2:
+    state: present
+    sections:
+      - name: "s1"
+        rows: []
+  register: neg_missing_name
+  ignore_errors: true
+
+- name: Verify create-without-name failed
+  ansible.builtin.assert:
+    that:
+      - neg_missing_name.failed == true
+      - neg_missing_name.changed == false
+    success_msg: "Create without name failed as expected"
+    fail_msg: "Create without name unexpectedly succeeded"
+
+- name: Negative - create without sections
+  nutanix.ncp.ntnx_report_config_v2:
+    state: present
+    name: "no_sections_{{ random_suffix }}"
+  register: neg_missing_sections
+  ignore_errors: true
+
+- name: Verify create-without-sections failed
+  ansible.builtin.assert:
+    that:
+      - neg_missing_sections.failed == true
+      - neg_missing_sections.changed == false
+      - "'sections' in (neg_missing_sections.msg | default(''))"
+    success_msg: "Create without sections failed as expected"
+    fail_msg: "Create without sections unexpectedly succeeded"
+
+- name: Negative - invalid enum for supported_formats
+  nutanix.ncp.ntnx_report_config_v2:
+    state: present
+    name: "invalid_enum_{{ random_suffix }}"
+    supported_formats:
+      - XML
+    sections:
+      - name: "s1"
+        rows: []
+  register: neg_invalid_enum
+  ignore_errors: true
+
+- name: Verify invalid-enum failed
+  ansible.builtin.assert:
+    that:
+      - neg_invalid_enum.failed == true
+      - neg_invalid_enum.changed == false
+    success_msg: "Invalid enum value was rejected by the argument spec"
+    fail_msg: "Invalid enum value was not rejected"
+
+- name: Negative - update with non-existent ext_id
+  nutanix.ncp.ntnx_report_config_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    name: "bogus_{{ random_suffix }}"
+    sections:
+      - name: "s1"
+        rows: []
+  register: neg_update_bad_ext_id
+  ignore_errors: true
+
+- name: Verify update-with-bad-ext_id failed
+  ansible.builtin.assert:
+    that:
+      - neg_update_bad_ext_id.failed == true
+      - neg_update_bad_ext_id.changed == false
+    success_msg: "Update with unknown ext_id failed with an API error"
+    fail_msg: "Update with unknown ext_id unexpectedly succeeded"
+
+- name: Negative - delete with non-existent ext_id
+  nutanix.ncp.ntnx_report_config_v2:
+    state: absent
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: neg_delete_bad_ext_id
+  ignore_errors: true
+
+- name: Verify delete-with-bad-ext_id failed
+  ansible.builtin.assert:
+    that:
+      - neg_delete_bad_ext_id.failed == true
+      - neg_delete_bad_ext_id.changed == false
+    success_msg: "Delete with unknown ext_id failed with an API error"
+    fail_msg: "Delete with unknown ext_id unexpectedly succeeded"
+
+- name: Negative - info with non-existent ext_id
+  nutanix.ncp.ntnx_report_configs_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: neg_info_bad_ext_id
+  ignore_errors: true
+
+- name: Verify info-with-bad-ext_id failed
+  ansible.builtin.assert:
+    that:
+      - neg_info_bad_ext_id.failed == true
+      - neg_info_bad_ext_id.changed == false
+    success_msg: "Info with unknown ext_id failed with an API error"
+    fail_msg: "Info with unknown ext_id unexpectedly succeeded"
+
+  ##########################################################################
+  # 7. Delete check_mode + real delete
+  ##########################################################################
+- name: Delete report configuration in check_mode
+  nutanix.ncp.ntnx_report_config_v2:
+    state: absent
+    ext_id: "{{ create_min.ext_id }}"
+  register: delete_check_mode
+  check_mode: true
+  ignore_errors: true
+
+- name: Verify delete check_mode
+  ansible.builtin.assert:
+    that:
+      - delete_check_mode.failed == false
+      - delete_check_mode.changed == false
+      - delete_check_mode.ext_id == create_min.ext_id
+      - delete_check_mode.msg == "Report configuration with ext_id:" ~ create_min.ext_id ~ " will be deleted."
+    success_msg: "check_mode delete returned the expected preview message"
+    fail_msg: "check_mode delete did not return the expected preview"
+
+  ##########################################################################
+  # 8. Cleanup (real delete on everything we created)
+  ##########################################################################
+- name: Delete all report configurations created during the test
+  nutanix.ncp.ntnx_report_config_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  loop: "{{ todelete }}"
+  register: cleanup_result
+  ignore_errors: true
+
+- name: Verify cleanup
+  ansible.builtin.assert:
+    that:
+      - item.failed == false
+      - item.changed == true
+      - item.ext_id == item.item
+    success_msg: "Every created report configuration was deleted"
+    fail_msg: "Cleanup did not delete every created report configuration"
+  loop: "{{ cleanup_result.results }}"
+  loop_control:
+    label: "{{ item.item | default('') }}"

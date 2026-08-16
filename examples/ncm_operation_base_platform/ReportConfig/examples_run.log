@@ -1,0 +1,16 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Report configurations playbook] ******************************************
+
+TASK [Setting variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"report_config_name": "ansible_report_config_example"}, "changed": false}
+
+TASK [Create report configuration with all fields] *****************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while creating report configuration", "response": {"message": "The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again."}, "status": 404}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=1    changed=0    unreachable=0    failed=1    skipped=0    rescued=0    ignored=0   
+
