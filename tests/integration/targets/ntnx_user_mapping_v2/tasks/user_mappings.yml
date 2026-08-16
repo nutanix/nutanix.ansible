@@ -1,0 +1,324 @@
+---
+# Test plan — Files v4 UserMapping modules
+# =============================================================================
+# This target covers the two generated modules for the files/UserMapping
+# entity:
+#   - nutanix.ncp.ntnx_user_mapping_v2      (POST upload-user-mappings)
+#   - nutanix.ncp.ntnx_user_mappings_info_v2 (GET  user-mappings)
+#
+# Because the underlying SDK only exposes Upload and Download actions
+# (there is no Create/Update/Delete/List/Get-by-id for a UserMapping
+# resource in the Files v4 API), the coverage focuses on:
+#   1. check_mode dry run for the upload action (with ALL attributes).
+#   2. Argument-spec validation:
+#        - missing required fields (file_server_ext_id, path)
+#        - invalid state value (spec choices enforcement)
+#        - non-existent user mappings file path (controller-side validation)
+#   3. Idempotent re-invocation of upload_user_mappings from check_mode.
+#   4. Info module argument-spec validation (missing file_server_ext_id).
+#   5. Live upload + download round-trip against a real file server
+#      (executed only when a valid `files_user_mapping.file_server_ext_id`
+#      is supplied via prepare_env vars). This block also covers the info
+#      module get + wrong-ext_id negative case.
+#
+# The variable `files_user_mapping.file_server_ext_id` is expected to be
+# discovered / injected by the harness. If missing, we skip the live block
+# but still exercise every check_mode / spec-validation code path so the
+# module's argument spec and check_mode paths are covered without needing
+# a Files-enabled cluster.
+# =============================================================================
+
+- name: Start UserMapping tests
+  ansible.builtin.debug:
+    msg: Start UserMapping tests
+
+- name: Generate random suffix for test artifacts
+  ansible.builtin.set_fact:
+    random_name: "{{ 999999 | random | to_uuid | replace('-', '') | truncate(12, true, '') }}"
+
+- name: Set names for user mappings test files
+  ansible.builtin.set_fact:
+    user_mappings_file: "/tmp/user_mappings_{{ random_name }}.json"
+    replacement_user_mappings_file: "/tmp/user_mappings_replacement_{{ random_name }}.json"
+    missing_user_mappings_file: "/tmp/does_not_exist_{{ random_name }}.json"
+    fake_file_server_ext_id: "00000000-0000-0000-0000-{{ '%012d' | format(range(1, 999999999) | random) }}"
+
+- name: Create a sample user mappings file on the controller
+  ansible.builtin.copy:
+    dest: "{{ user_mappings_file }}"
+    mode: "0600"
+    content: |
+      {
+        "mappings": [
+          {"windowsUser": "CORP\\alice", "unixUid": 10001, "unixGid": 10001},
+          {"windowsUser": "CORP\\bob",   "unixUid": 10002, "unixGid": 10002}
+        ]
+      }
+
+- name: Create a replacement user mappings file on the controller
+  ansible.builtin.copy:
+    dest: "{{ replacement_user_mappings_file }}"
+    mode: "0600"
+    content: |
+      {
+        "mappings": [
+          {"windowsUser": "CORP\\alice",   "unixUid": 20001, "unixGid": 20001},
+          {"windowsUser": "CORP\\charlie", "unixUid": 20003, "unixGid": 20003}
+        ]
+      }
+
+########################################################################################
+# check_mode upload test (with ALL attributes)
+########################################################################################
+
+- name: Upload user mappings using check mode with all attributes
+  nutanix.ncp.ntnx_user_mapping_v2:
+    state: present
+    file_server_ext_id: "0005d0f6-1c3f-4e15-1155-ac1f6b6d0e3c"
+    path: "{{ user_mappings_file }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Upload user mappings using check mode with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "0005d0f6-1c3f-4e15-1155-ac1f6b6d0e3c"
+      - result.msg is defined
+      - "'will be uploaded to file server' in result.msg"
+      - user_mappings_file in result.msg
+    success_msg: "Upload user mappings check_mode with all attributes passed"
+    fail_msg: "Upload user mappings check_mode with all attributes failed"
+
+########################################################################################
+# Argument-spec / validation tests for the CRUD/action module
+########################################################################################
+
+- name: Upload user mappings with missing file_server_ext_id
+  nutanix.ncp.ntnx_user_mapping_v2:
+    state: present
+    path: "{{ user_mappings_file }}"
+  register: result
+  ignore_errors: true
+
+- name: Upload user mappings with missing file_server_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+      - "'file_server_ext_id' in result.msg"
+    success_msg: "Missing file_server_ext_id was rejected as expected"
+    fail_msg: "Missing file_server_ext_id was NOT rejected"
+
+- name: Upload user mappings with missing path
+  nutanix.ncp.ntnx_user_mapping_v2:
+    state: present
+    file_server_ext_id: "0005d0f6-1c3f-4e15-1155-ac1f6b6d0e3c"
+  register: result
+  ignore_errors: true
+
+- name: Upload user mappings with missing path status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+      - "'path' in result.msg"
+    success_msg: "Missing path was rejected as expected"
+    fail_msg: "Missing path was NOT rejected"
+
+- name: Upload user mappings with invalid state value
+  nutanix.ncp.ntnx_user_mapping_v2:
+    state: absent
+    file_server_ext_id: "0005d0f6-1c3f-4e15-1155-ac1f6b6d0e3c"
+    path: "{{ user_mappings_file }}"
+  register: result
+  ignore_errors: true
+
+- name: Upload user mappings with invalid state value status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+      - "'state' in result.msg"
+      - "'absent' in result.msg"
+    success_msg: "Invalid state value was rejected as expected"
+    fail_msg: "Invalid state value was NOT rejected"
+
+- name: Upload user mappings with a non-existent path on the controller
+  nutanix.ncp.ntnx_user_mapping_v2:
+    state: present
+    file_server_ext_id: "0005d0f6-1c3f-4e15-1155-ac1f6b6d0e3c"
+    path: "{{ missing_user_mappings_file }}"
+  register: result
+  ignore_errors: true
+
+- name: Upload user mappings with a non-existent path status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+      - "'user mappings file' in result.msg"
+      - "'invalid or does not exist' in result.msg"
+      - result.ext_id == "0005d0f6-1c3f-4e15-1155-ac1f6b6d0e3c"
+    success_msg: "Non-existent user mappings file was rejected as expected"
+    fail_msg: "Non-existent user mappings file was NOT rejected"
+
+- name: Upload user mappings with check_mode again for idempotency check
+  nutanix.ncp.ntnx_user_mapping_v2:
+    state: present
+    file_server_ext_id: "0005d0f6-1c3f-4e15-1155-ac1f6b6d0e3c"
+    path: "{{ user_mappings_file }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Upload user mappings with check_mode again for idempotency status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "0005d0f6-1c3f-4e15-1155-ac1f6b6d0e3c"
+      - "'will be uploaded to file server' in result.msg"
+    success_msg: "check_mode upload is idempotent (no API calls, no change)"
+    fail_msg: "check_mode upload was not idempotent"
+
+########################################################################################
+# Argument-spec / validation tests for the info module
+########################################################################################
+
+- name: Fetch user mappings with missing file_server_ext_id
+  nutanix.ncp.ntnx_user_mappings_info_v2: {}
+  register: result
+  ignore_errors: true
+
+- name: Fetch user mappings with missing file_server_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.msg is defined
+      - "'file_server_ext_id' in result.msg"
+    success_msg: "Info module missing file_server_ext_id was rejected as expected"
+    fail_msg: "Info module missing file_server_ext_id was NOT rejected"
+
+########################################################################################
+# Live upload + download round-trip (only when a real file_server_ext_id is provided)
+########################################################################################
+
+- name: Live upload + download round-trip against a real file server
+  when:
+    - files_user_mapping is defined
+    - files_user_mapping.file_server_ext_id is defined
+    - files_user_mapping.file_server_ext_id | length > 0
+  block:
+    - name: Upload user mappings for the real file server (initial)
+      nutanix.ncp.ntnx_user_mapping_v2:
+        state: present
+        file_server_ext_id: "{{ files_user_mapping.file_server_ext_id }}"
+        path: "{{ user_mappings_file }}"
+      register: result
+      ignore_errors: true
+
+    - name: Upload user mappings for the real file server (initial) status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == true
+          - result.failed == false
+          - result.ext_id == files_user_mapping.file_server_ext_id
+          - result.response is defined
+        success_msg: "Uploaded user mappings for real file server"
+        fail_msg: "Failed to upload user mappings for real file server"
+
+    - name: Download user mappings for the real file server
+      nutanix.ncp.ntnx_user_mappings_info_v2:
+        file_server_ext_id: "{{ files_user_mapping.file_server_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Download user mappings for the real file server status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.ext_id == files_user_mapping.file_server_ext_id
+          - result.response is defined
+        success_msg: "Fetched user mappings for real file server"
+        fail_msg: "Failed to fetch user mappings for real file server"
+
+    - name: Re-upload user mappings with a different file (replacement)
+      nutanix.ncp.ntnx_user_mapping_v2:
+        state: present
+        file_server_ext_id: "{{ files_user_mapping.file_server_ext_id }}"
+        path: "{{ replacement_user_mappings_file }}"
+      register: result
+      ignore_errors: true
+
+    - name: Re-upload user mappings with a different file status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == true
+          - result.failed == false
+          - result.ext_id == files_user_mapping.file_server_ext_id
+          - result.response is defined
+        success_msg: "Replaced user mappings for real file server"
+        fail_msg: "Failed to replace user mappings for real file server"
+
+- name: Download user mappings with a wrong file_server_ext_id (should fail)
+  nutanix.ncp.ntnx_user_mappings_info_v2:
+    file_server_ext_id: "{{ fake_file_server_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Download user mappings with a wrong file_server_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.msg is defined
+    success_msg: "Wrong file_server_ext_id was rejected as expected"
+    fail_msg: "Wrong file_server_ext_id was NOT rejected"
+
+- name: Upload user mappings with a wrong file_server_ext_id (should fail)
+  nutanix.ncp.ntnx_user_mapping_v2:
+    state: present
+    file_server_ext_id: "{{ fake_file_server_ext_id }}"
+    path: "{{ user_mappings_file }}"
+  register: result
+  ignore_errors: true
+
+- name: Upload user mappings with a wrong file_server_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+    success_msg: "Upload against wrong file_server_ext_id was rejected as expected"
+    fail_msg: "Upload against wrong file_server_ext_id was NOT rejected"
+
+########################################################################################
+# Cleanup temporary files
+########################################################################################
+
+- name: Cleanup temporary user mappings files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ user_mappings_file }}"
+    - "{{ replacement_user_mappings_file }}"
