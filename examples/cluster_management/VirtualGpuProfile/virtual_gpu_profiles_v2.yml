@@ -1,0 +1,98 @@
+---
+# Summary:
+# This playbook demonstrates the Virtual GPU Profile V4 modules for the
+# cluster_management namespace:
+#   1. Discover a Prism Element cluster's ext_id via the clusters info module.
+#   2. List all Virtual GPU profiles registered on that cluster.
+#   3. List Virtual GPU profiles with pagination (limit).
+#   4. Fetch a specific Virtual GPU profile by its external ID.
+#   5. Attempt a create/update/delete against the read-only CRUD shim so users
+#      see the expected error message.
+#
+# NOTE: The clustermgmt V4 SDK exposes ONLY a read-only List endpoint for
+# VirtualGpuProfile. There are no Create, Update or Delete APIs. The
+# ntnx_virtual_gpu_profile_v2 module therefore returns a descriptive error
+# for state=present/absent. Use ntnx_virtual_gpu_profiles_info_v2 for
+# discovery.
+
+- name: Virtual GPU Profiles playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: List all registered clusters
+      nutanix.ncp.ntnx_clusters_info_v2: {}
+      register: cluster_result
+      ignore_errors: true
+
+    - name: Filter to PE clusters (drop Prism Central itself)
+      ansible.builtin.set_fact:
+        pe_clusters: >-
+          {{
+            cluster_result.response
+            | selectattr('config', 'defined')
+            | selectattr('config.cluster_function', 'defined')
+            | rejectattr('config.cluster_function', 'contains', 'PRISM_CENTRAL')
+            | list
+          }}
+
+    - name: Set cluster_ext_id fact from first PE cluster
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ pe_clusters[0].ext_id }}"
+
+    - name: List all Virtual GPU profiles on the cluster
+      nutanix.ncp.ntnx_virtual_gpu_profiles_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: profiles_result
+      ignore_errors: true
+
+    - name: List Virtual GPU profiles with limit
+      nutanix.ncp.ntnx_virtual_gpu_profiles_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        limit: 1
+      register: profiles_limit_result
+      ignore_errors: true
+
+    - name: Set first Virtual GPU profile ext_id (only when profiles exist)
+      ansible.builtin.set_fact:
+        virtual_gpu_profile_ext_id: "{{ profiles_result.response[0].ext_id }}"
+      when:
+        - profiles_result is defined
+        - profiles_result.response is defined
+        - profiles_result.response | length > 0
+
+    - name: Get a specific Virtual GPU profile by external ID
+      nutanix.ncp.ntnx_virtual_gpu_profiles_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ virtual_gpu_profile_ext_id }}"
+      register: single_profile_result
+      when: virtual_gpu_profile_ext_id is defined
+      ignore_errors: true
+
+    - name: Attempt to create a Virtual GPU profile (read-only entity)
+      nutanix.ncp.ntnx_virtual_gpu_profile_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: create_attempt
+      ignore_errors: true
+
+    - name: Attempt to update a Virtual GPU profile (read-only entity)
+      nutanix.ncp.ntnx_virtual_gpu_profile_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ virtual_gpu_profile_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+      register: update_attempt
+      ignore_errors: true
+
+    - name: Attempt to delete a Virtual GPU profile (read-only entity)
+      nutanix.ncp.ntnx_virtual_gpu_profile_v2:
+        state: absent
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ virtual_gpu_profile_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+      register: delete_attempt
+      ignore_errors: true

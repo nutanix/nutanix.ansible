@@ -109,3 +109,42 @@ def get_cluster_profile(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching cluster profile info using ext_id",
         )
+
+
+def get_virtual_gpu_profile(module, api_instance, cluster_ext_id, ext_id):
+    """
+    This method will return a virtual GPU profile by external ID.
+
+    The underlying V4 ClustersApi only exposes a list endpoint
+    (list_virtual_gpu_profiles). We emulate a "get by ext_id" by listing
+    profiles for the given cluster and returning the entry whose ext_id
+    matches. If the profile is not found, the module will be failed with a
+    descriptive error.
+
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        cluster_ext_id (str): cluster external ID (path parameter)
+        ext_id (str): virtual GPU profile external ID to look up
+    return:
+        virtual GPU profile (object): matching VirtualGpuProfile object
+    """
+    try:
+        resp = api_instance.list_virtual_gpu_profiles(clusterExtId=cluster_ext_id)
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching virtual GPU profiles for cluster",
+        )
+    profiles = resp.data or []
+    for profile in profiles:
+        if getattr(profile, "ext_id", None) == ext_id:
+            return profile
+    module.fail_json(
+        msg=(
+            "Virtual GPU profile with ext_id '{0}' not found on cluster '{1}'".format(
+                ext_id, cluster_ext_id
+            )
+        )
+    )
