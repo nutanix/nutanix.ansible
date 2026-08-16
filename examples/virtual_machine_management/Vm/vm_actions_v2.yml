@@ -1,0 +1,177 @@
+---
+# Summary:
+# This playbook demonstrates all supported ESXi VM management actions
+# via the ntnx_vm_actions_v2 module in Nutanix Prism Central.
+#
+# Prerequisites:
+#   - A Prism Central endpoint that manages one or more ESXi clusters
+#     (i.e. vCenter is registered with the Prism Central).
+#   - An existing ESXi VM whose external ID (vm_ext_id) is known.
+#
+# Actions demonstrated:
+#   1. Fetch ESXi VM info (get-by-id + list).
+#   2. Power on the ESXi VM.
+#   3. Guest reboot the ESXi VM.
+#   4. Guest shutdown the ESXi VM.
+#   5. Reset the ESXi VM.
+#   6. Suspend the ESXi VM.
+#   7. Power off the ESXi VM.
+#   8. Assign owner of the ESXi VM.
+#   9. Associate categories with the ESXi VM.
+#  10. Disassociate categories from the ESXi VM.
+#  11. Revert the ESXi VM to a VM Recovery Point.
+#  12. Install / insert-ISO / upgrade / update / uninstall NGT on the ESXi VM.
+
+- name: ESXi VM actions playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('10.44.76.28', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('admin', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('Nutanix.123', true) }}"
+      nutanix_port: "{{ lookup('env', 'NUTANIX_PORT') | default('9440', true) }}"
+      validate_certs: false
+  vars:
+    # Replace with a real ESXi VM external ID managed by this Prism Central.
+    vm_ext_id: "b8b5b5b5-1111-2222-3333-444455556666"
+    # Replace with a real category external ID for the associate / disassociate steps.
+    category_ext_id: "a3220c60-2ba2-4e91-8c1d-1111aabbccdd"
+    # Replace with a real user external ID for the assign owner step.
+    owner_ext_id: "00000000-0000-0000-0000-000000000000"
+    # Replace with a real VM Recovery Point external ID for the revert step.
+    vm_recovery_point_ext_id: "c3c3c3c3-9999-8888-7777-666655554444"
+
+  tasks:
+    - name: Power on an ESXi VM (all-fields Create-equivalent)
+      nutanix.ncp.ntnx_vm_actions_v2:
+        ext_id: "{{ vm_ext_id }}"
+        state: power_on
+      register: power_on_result
+      ignore_errors: true
+
+    - name: Assign an owner to an ESXi VM (all-fields Update-equivalent)
+      nutanix.ncp.ntnx_vm_actions_v2:
+        ext_id: "{{ vm_ext_id }}"
+        state: assign_owner
+        owner:
+          ext_id: "{{ owner_ext_id }}"
+          entity_type: USER
+      register: assign_owner_result
+      ignore_errors: true
+
+    - name: Associate categories with an ESXi VM
+      nutanix.ncp.ntnx_vm_actions_v2:
+        ext_id: "{{ vm_ext_id }}"
+        state: associate_categories
+        categories:
+          - ext_id: "{{ category_ext_id }}"
+      register: associate_categories_result
+      ignore_errors: true
+
+    - name: Disassociate categories from an ESXi VM
+      nutanix.ncp.ntnx_vm_actions_v2:
+        ext_id: "{{ vm_ext_id }}"
+        state: disassociate_categories
+        categories:
+          - ext_id: "{{ category_ext_id }}"
+      register: disassociate_categories_result
+      ignore_errors: true
+
+    - name: Guest reboot the ESXi VM
+      nutanix.ncp.ntnx_vm_actions_v2:
+        ext_id: "{{ vm_ext_id }}"
+        state: guest_reboot
+      register: guest_reboot_result
+      ignore_errors: true
+
+    - name: Guest shutdown the ESXi VM
+      nutanix.ncp.ntnx_vm_actions_v2:
+        ext_id: "{{ vm_ext_id }}"
+        state: guest_shutdown
+      register: guest_shutdown_result
+      ignore_errors: true
+
+    - name: Reset the ESXi VM
+      nutanix.ncp.ntnx_vm_actions_v2:
+        ext_id: "{{ vm_ext_id }}"
+        state: reset
+      register: reset_result
+      ignore_errors: true
+
+    - name: Suspend the ESXi VM
+      nutanix.ncp.ntnx_vm_actions_v2:
+        ext_id: "{{ vm_ext_id }}"
+        state: suspend
+      register: suspend_result
+      ignore_errors: true
+
+    - name: Install NGT on the ESXi VM
+      nutanix.ncp.ntnx_vm_actions_v2:
+        ext_id: "{{ vm_ext_id }}"
+        state: ngt_install
+        ngt_install_config:
+          capabilities:
+            - SELF_SERVICE_RESTORE
+            - VSS_SNAPSHOT
+          credential:
+            username: "administrator"
+            password: "Nutanix.123"
+          reboot_preference:
+            schedule_type: IMMEDIATE
+      register: ngt_install_result
+      ignore_errors: true
+      no_log: true
+
+    - name: Insert NGT ISO on the ESXi VM
+      nutanix.ncp.ntnx_vm_actions_v2:
+        ext_id: "{{ vm_ext_id }}"
+        state: ngt_insert_iso
+        ngt_insert_config:
+          capabilities:
+            - SELF_SERVICE_RESTORE
+      register: ngt_insert_result
+      ignore_errors: true
+
+    - name: Upgrade NGT on the ESXi VM
+      nutanix.ncp.ntnx_vm_actions_v2:
+        ext_id: "{{ vm_ext_id }}"
+        state: ngt_upgrade
+        ngt_upgrade_config:
+          reboot_preference:
+            schedule_type: SKIP
+      register: ngt_upgrade_result
+      ignore_errors: true
+
+    - name: Update NGT configuration on the ESXi VM
+      nutanix.ncp.ntnx_vm_actions_v2:
+        ext_id: "{{ vm_ext_id }}"
+        state: ngt_update
+        ngt_update_config:
+          capabilities:
+            - VSS_SNAPSHOT
+          is_enabled: true
+      register: ngt_update_result
+      ignore_errors: true
+
+    - name: Revert the ESXi VM to a VM Recovery Point
+      nutanix.ncp.ntnx_vm_actions_v2:
+        ext_id: "{{ vm_ext_id }}"
+        state: revert
+        vm_recovery_point_ext_id: "{{ vm_recovery_point_ext_id }}"
+      register: revert_result
+      ignore_errors: true
+
+    - name: Uninstall NGT on the ESXi VM (Delete-equivalent, terminal action)
+      nutanix.ncp.ntnx_vm_actions_v2:
+        ext_id: "{{ vm_ext_id }}"
+        state: ngt_uninstall
+      register: ngt_uninstall_result
+      ignore_errors: true
+
+    - name: Force power off the ESXi VM
+      nutanix.ncp.ntnx_vm_actions_v2:
+        ext_id: "{{ vm_ext_id }}"
+        state: power_off
+      register: power_off_result
+      ignore_errors: true

@@ -84,6 +84,16 @@ def get_vm_api_instance(module):
     return ntnx_vmm_py_client.VmApi(api_client=api_client)
 
 
+def get_esxi_vm_api_instance(module):
+    """
+    This method will return ESXi VM API instance
+    Args:
+        api_instance (obj): v4 ESXi VM api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.EsxiVmApi(api_client=api_client)
+
+
 def get_image_api_instance(module):
     """
     This method will return Image API instance
