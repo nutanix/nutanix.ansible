@@ -1,0 +1,102 @@
+---
+# Summary:
+# This playbook demonstrates how to interact with aiops EntityDescriptorsV4
+# in Nutanix Prism Central.
+#
+# The EntityDescriptorsV4 API is a read-only catalog exposed by aiops
+# (URI: /api/aiops/v4.2.b1/config/sources/{sourceExtId}/entity-descriptors).
+# The Nutanix aiops SDK (ntnx_aiops_py_client) only offers a list operation
+# (StatsApi.get_entity_descriptors_v4). There are no Create / Update / Delete
+# APIs to demonstrate. The M(ntnx_entity_descriptors_v4_v2) module is therefore
+# only a fail-fast placeholder — see the last task at the bottom of this file
+# for its behavior.
+#
+# Tasks:
+# 1. List all entity descriptors for the "nutanix" source
+# 2. List entity descriptors with a limit
+# 3. List entity descriptors with an OData filter
+# 4. Paginate entity descriptors (page + limit)
+# 5. Show that the CRUD-shaped placeholder module fails as expected
+
+- name: EntityDescriptorsV4 (aiops) playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "10.44.76.28"
+      nutanix_username: "admin"
+      nutanix_password: "Nutanix.123"
+      validate_certs: false
+  tasks:
+    - name: Setting variables
+      ansible.builtin.set_fact:
+        # `source_ext_id` is the UUID of an aiops source. On any PC you can
+        # discover it with the following raw REST call:
+        #   GET /api/aiops/v4.2.b1/config/sources
+        # The response's `data[].extId` is what you pass here. The friendly
+        # `nutanix` name resolves to a UUID like the one below.
+        source_ext_id: "db293e8a-5770-c3c7-4213-85dbbc1d3679"
+        entity_type_filter: "entityType eq 'vm'"
+
+    - name: List all entity descriptors for the nutanix source
+      nutanix.ncp.ntnx_entity_descriptors_info_v2:
+        source_ext_id: "{{ source_ext_id }}"
+      register: all_entity_descriptors
+      ignore_errors: true
+      # sample:
+      # response:
+      #   - entity_type: vm
+      #     display_name: VM
+      #     source: nutanix
+      #     ext_id: vm
+      #     parents:
+      #       - entity_type: cluster
+      #         ext_id: cluster
+      #     metrics:
+      #       - name: hypervisor_cpu_usage_ppm
+      #         display_name: "CPU Usage (%)"
+      #         unit: ppm
+      #         value_type: DOUBLE
+      #         sampling_interval_secs: 30
+
+    - name: List entity descriptors with a limit
+      nutanix.ncp.ntnx_entity_descriptors_info_v2:
+        source_ext_id: "{{ source_ext_id }}"
+        limit: 5
+      register: limited_entity_descriptors
+      ignore_errors: true
+      # sample:
+      # response: [<up to 5 entity descriptor dicts>]
+      # total_available_results: 42
+
+    - name: List entity descriptors with an OData filter
+      nutanix.ncp.ntnx_entity_descriptors_info_v2:
+        source_ext_id: "{{ source_ext_id }}"
+        filter: "{{ entity_type_filter }}"
+      register: filtered_entity_descriptors
+      ignore_errors: true
+      # sample:
+      # response:
+      #   - entity_type: vm
+      #     display_name: VM
+
+    - name: Paginate entity descriptors
+      nutanix.ncp.ntnx_entity_descriptors_info_v2:
+        source_ext_id: "{{ source_ext_id }}"
+        page: 0
+        limit: 10
+      register: paginated_entity_descriptors
+      ignore_errors: true
+      # sample:
+      # response: [<up to 10 entity descriptor dicts>]
+      # total_available_results: 42
+
+    - name: Placeholder CRUD invocation always fails (no CRUD API in SDK)
+      nutanix.ncp.ntnx_entity_descriptors_v4_v2:
+        state: present
+      register: crud_result
+      ignore_errors: true
+      # sample:
+      # failed: true
+      # skipped: true
+      # msg: "EntityDescriptorsV4 is a read-only aiops resource. ..."
