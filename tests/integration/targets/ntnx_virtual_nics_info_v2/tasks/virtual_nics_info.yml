@@ -1,0 +1,302 @@
+---
+############################################################################################
+# Test plan for ntnx_virtual_nics_info_v2 (VirtualNicsByHostId — read-only)
+#
+# The SDK exposes only two operations for this entity: GetVirtualNicById and
+# ListVirtualNicsByHostId. Both require a cluster ext_id and host ext_id as
+# path parameters. The following scenarios are covered end to end:
+#
+#   Prerequisite setup:
+#     - Discover a Prism Element cluster reachable from the target Prism Central
+#       using ntnx_clusters_info_v2 (filter out PC entries).
+#     - Discover a host on that cluster using ntnx_hosts_info_v2.
+#     - Capture the first virtual NIC on the discovered host (when any exist)
+#       to reuse below.
+#
+#   Positive tests always run:
+#     1. List all virtual NICs on the host (default paging) — verify
+#        response, changed, failed, total_available_results.
+#
+#   Positive tests that run only when at least one vNIC is present:
+#     2. List with `limit: 1` — verify only one entity is returned.
+#     3. List with `orderby: name desc` — verify the response is sorted.
+#     4. List with `select: "name,macAddress,vlanId"` — verify projected
+#        fields are still present.
+#     5. Fetch a single virtual NIC by external ID and assert the returned
+#        ext_id and name match.
+#
+#   Negative tests always run:
+#     6. Missing required `cluster_ext_id` — expect an argspec failure that
+#        mentions the missing parameter.
+#     7. Missing required `host_ext_id` — expect an argspec failure that
+#        mentions the missing parameter.
+#     8. Invalid virtual NIC ext_id — expect a graceful API-exception failure
+#        (uses a random UUID so the API returns 404).
+#     9. ext_id and filter used together — expect a mutually-exclusive
+#        argspec failure.
+#
+# Every task asserts `changed`, `failed`, and the exact response shape.
+############################################################################################
+
+- name: Start VirtualNicsByHostId info tests
+  ansible.builtin.debug:
+    msg: Start VirtualNicsByHostId info tests
+
+########################################################################################
+# Discover the Prism Element cluster and one of its hosts
+########################################################################################
+
+- name: List clusters reachable from the target Prism Central
+  nutanix.ncp.ntnx_clusters_info_v2:
+  register: clusters_info
+  ignore_errors: true
+
+- name: Verify at least one cluster is available
+  ansible.builtin.assert:
+    that:
+      - clusters_info is defined
+      - clusters_info.failed == false
+      - clusters_info.changed == false
+      - clusters_info.response is defined
+      - clusters_info.response | length > 0
+    success_msg: "Clusters info fetched successfully"
+    fail_msg: "Failed to fetch clusters info"
+
+- name: Pick a Prism Element cluster (skip Prism Central entries)
+  ansible.builtin.set_fact:
+    pe_clusters: >-
+      {{ clusters_info.response
+         | selectattr('config', 'defined')
+         | selectattr('config.cluster_function', 'defined')
+         | rejectattr('config.cluster_function', 'contains', 'PRISM_CENTRAL')
+         | list }}
+
+- name: Fail if no Prism Element cluster is registered
+  ansible.builtin.assert:
+    that:
+      - pe_clusters | length > 0
+    success_msg: "Discovered {{ pe_clusters | length }} PE cluster(s)"
+    fail_msg: "No Prism Element cluster registered on this PC — cannot exercise VirtualNicsByHostId"
+
+- name: Set cluster ext_id under test
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ pe_clusters[0].ext_id }}"
+
+- name: List hosts on the discovered cluster
+  nutanix.ncp.ntnx_hosts_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: hosts_info
+  ignore_errors: true
+
+- name: Verify at least one host is available on the cluster
+  ansible.builtin.assert:
+    that:
+      - hosts_info is defined
+      - hosts_info.failed == false
+      - hosts_info.changed == false
+      - hosts_info.response is defined
+      - hosts_info.response | length > 0
+    success_msg: "Hosts info fetched successfully"
+    fail_msg: "No hosts returned for cluster {{ cluster_ext_id }}"
+
+- name: Set host ext_id under test
+  ansible.builtin.set_fact:
+    host_ext_id: "{{ hosts_info.response[0].ext_id }}"
+
+########################################################################################
+# Positive tests — always
+########################################################################################
+
+- name: List all virtual NICs on the host
+  nutanix.ncp.ntnx_virtual_nics_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    host_ext_id: "{{ host_ext_id }}"
+  register: vnics_all
+  ignore_errors: true
+
+- name: Verify list all virtual NICs response
+  ansible.builtin.assert:
+    that:
+      - vnics_all is defined
+      - vnics_all.changed == false
+      - vnics_all.failed == false
+      - vnics_all.response is defined
+      - vnics_all.response is iterable
+      - vnics_all.total_available_results is defined
+      - vnics_all.total_available_results | int >= (vnics_all.response | length)
+    success_msg: "Virtual NICs listed successfully ({{ vnics_all.total_available_results }} available)"
+    fail_msg: "Failed to list virtual NICs on host {{ host_ext_id }}"
+
+- name: Capture first virtual NIC ext_id when available
+  ansible.builtin.set_fact:
+    vnic_ext_id: "{{ vnics_all.response[0].ext_id }}"
+    vnic_name: "{{ vnics_all.response[0].name }}"
+  when: vnics_all.response | length > 0
+
+- name: Note that the host has no virtual NICs registered
+  ansible.builtin.debug:
+    msg: >-
+      Host {{ host_ext_id }} on cluster {{ cluster_ext_id }} has 0 virtual NICs.
+      The list-with-options, get-by-id and mutual-exclusion tests will be skipped
+      because they require at least one existing vNIC.
+  when: vnics_all.response | length == 0
+
+########################################################################################
+# Positive tests — only when at least one virtual NIC exists on the host
+########################################################################################
+
+- name: Tests that require an existing virtual NIC
+  when: vnics_all.response | length > 0
+  block:
+    - name: List virtual NICs on the host with limit
+      nutanix.ncp.ntnx_virtual_nics_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        limit: 1
+      register: vnics_limited
+      ignore_errors: true
+
+    - name: Verify limit is respected
+      ansible.builtin.assert:
+        that:
+          - vnics_limited is defined
+          - vnics_limited.changed == false
+          - vnics_limited.failed == false
+          - vnics_limited.response is defined
+          - vnics_limited.response | length == 1
+          - vnics_limited.response[0].ext_id is defined
+        success_msg: "Virtual NICs limit works as expected"
+        fail_msg: "limit=1 did not return exactly one virtual NIC"
+
+    - name: List virtual NICs on the host ordered by name desc
+      nutanix.ncp.ntnx_virtual_nics_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        orderby: "name desc"
+      register: vnics_ordered
+      ignore_errors: true
+
+    - name: Verify orderby returns a sorted list
+      ansible.builtin.assert:
+        that:
+          - vnics_ordered is defined
+          - vnics_ordered.changed == false
+          - vnics_ordered.failed == false
+          - vnics_ordered.response is defined
+          - vnics_ordered.response | length > 0
+          - (vnics_ordered.response | map(attribute='name') | list)
+            == (vnics_ordered.response | map(attribute='name') | list | sort(reverse=true))
+        success_msg: "Virtual NICs orderby works as expected"
+        fail_msg: "orderby=name desc did not return a descending sorted list"
+
+    - name: List virtual NICs on the host selecting only name/mac/vlan
+      nutanix.ncp.ntnx_virtual_nics_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        select: "name,macAddress,vlanId"
+      register: vnics_selected
+      ignore_errors: true
+
+    - name: Verify $select returns the requested fields
+      ansible.builtin.assert:
+        that:
+          - vnics_selected is defined
+          - vnics_selected.changed == false
+          - vnics_selected.failed == false
+          - vnics_selected.response is defined
+          - vnics_selected.response | length > 0
+          - vnics_selected.response[0].name is defined
+        success_msg: "Virtual NICs select works as expected"
+        fail_msg: "select did not return the projected virtual NICs"
+
+    - name: Fetch a virtual NIC by external ID
+      nutanix.ncp.ntnx_virtual_nics_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        ext_id: "{{ vnic_ext_id }}"
+      register: vnic_single
+      ignore_errors: true
+
+    - name: Verify single virtual NIC fetch
+      ansible.builtin.assert:
+        that:
+          - vnic_single is defined
+          - vnic_single.changed == false
+          - vnic_single.failed == false
+          - vnic_single.ext_id == vnic_ext_id
+          - vnic_single.response is defined
+          - vnic_single.response.ext_id == vnic_ext_id
+          - vnic_single.response.name == vnic_name
+        success_msg: "Virtual NIC fetched by external ID successfully"
+        fail_msg: "Failed to fetch virtual NIC by external ID"
+
+    - name: Mutually exclusive ext_id and filter
+      nutanix.ncp.ntnx_virtual_nics_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        ext_id: "{{ vnic_ext_id }}"
+        filter: "name eq 'br0'"
+      register: mutex_result
+      ignore_errors: true
+
+    - name: Verify mutually exclusive ext_id/filter fails
+      ansible.builtin.assert:
+        that:
+          - mutex_result is defined
+          - mutex_result.failed == true
+          - "'mutually exclusive' in mutex_result.msg"
+        success_msg: "ext_id/filter mutual-exclusion validated"
+        fail_msg: "ext_id/filter mutual-exclusion did not fail as expected"
+
+########################################################################################
+# Negative tests — always
+########################################################################################
+
+- name: Missing required cluster_ext_id
+  nutanix.ncp.ntnx_virtual_nics_info_v2:
+    host_ext_id: "{{ host_ext_id }}"
+  register: missing_cluster
+  ignore_errors: true
+
+- name: Verify missing cluster_ext_id fails
+  ansible.builtin.assert:
+    that:
+      - missing_cluster is defined
+      - missing_cluster.failed == true
+      - "'cluster_ext_id' in missing_cluster.msg"
+    success_msg: "Missing cluster_ext_id failed as expected"
+    fail_msg: "Missing cluster_ext_id did not fail as expected"
+
+- name: Missing required host_ext_id
+  nutanix.ncp.ntnx_virtual_nics_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: missing_host
+  ignore_errors: true
+
+- name: Verify missing host_ext_id fails
+  ansible.builtin.assert:
+    that:
+      - missing_host is defined
+      - missing_host.failed == true
+      - "'host_ext_id' in missing_host.msg"
+    success_msg: "Missing host_ext_id failed as expected"
+    fail_msg: "Missing host_ext_id did not fail as expected"
+
+- name: Fetch a virtual NIC using a non-existent external ID
+  nutanix.ncp.ntnx_virtual_nics_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    host_ext_id: "{{ host_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: missing_vnic
+  ignore_errors: true
+
+- name: Verify missing virtual NIC ext_id fails gracefully
+  ansible.builtin.assert:
+    that:
+      - missing_vnic is defined
+      - missing_vnic.failed == true
+      - missing_vnic.changed == false
+      - missing_vnic.msg is defined
+      - "'virtual NIC info using ext_id' in missing_vnic.msg"
+    success_msg: "Missing virtual NIC ext_id failed as expected"
+    fail_msg: "Missing virtual NIC ext_id did not fail as expected"

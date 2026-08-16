@@ -1,0 +1,137 @@
+---
+# Summary:
+# This playbook demonstrates how to use the info module for the
+# VirtualNicsByHostId entity in the Nutanix cluster_management v4 API.
+#
+# The playbook will:
+#   1. Discover a Prism Element cluster reachable from Prism Central.
+#   2. Discover a host on that cluster.
+#   3. List all virtual NICs on that host (default paging).
+#   4. Show a list variant using $limit / $orderby / $select (only when
+#      the host actually exposes virtual NICs).
+#   5. Fetch a single virtual NIC by its external ID (only when a vNIC exists).
+#   6. Show the negative case where an invalid external ID is used.
+
+- name: VirtualNicsByHostId info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      nutanix_port: "{{ port | default(lookup('env', 'NUTANIX_PORT') or 9440) }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+  tasks:
+    - name: Discover clusters registered with Prism Central
+      nutanix.ncp.ntnx_clusters_info_v2:
+      register: clusters_info
+      # sample:
+      #   response:
+      #     - ext_id: "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+      #       name: "auto_cluster_prod_36acf9b012ca"
+      #       config:
+      #         cluster_function: ["AOS"]
+
+    - name: Pick a Prism Element cluster (skip Prism Central entries)
+      ansible.builtin.set_fact:
+        pe_cluster_ext_id: >-
+          {{ (clusters_info.response
+              | selectattr('config', 'defined')
+              | selectattr('config.cluster_function', 'defined')
+              | rejectattr('config.cluster_function', 'contains', 'PRISM_CENTRAL')
+              | list | first).ext_id }}
+
+    - name: List hosts on the discovered cluster
+      nutanix.ncp.ntnx_hosts_info_v2:
+        cluster_ext_id: "{{ pe_cluster_ext_id }}"
+      register: hosts_info
+      # sample:
+      #   response:
+      #     - ext_id: "adf0c9e0-4051-4cd2-9f6f-ca9f962e941b"
+      #       host_name: "goku-4"
+
+    - name: Set host ext_id fact
+      ansible.builtin.set_fact:
+        pe_host_ext_id: "{{ hosts_info.response[0].ext_id }}"
+
+    - name: List all virtual NICs on the host
+      nutanix.ncp.ntnx_virtual_nics_info_v2:
+        cluster_ext_id: "{{ pe_cluster_ext_id }}"
+        host_ext_id: "{{ pe_host_ext_id }}"
+      register: vnics_all
+      # sample:
+      #   changed: false
+      #   response: []
+      #   total_available_results: 0
+
+    - name: Print number of virtual NICs discovered
+      ansible.builtin.debug:
+        msg: >-
+          Host {{ pe_host_ext_id }} on cluster {{ pe_cluster_ext_id }} has
+          {{ vnics_all.total_available_results }} virtual NIC(s).
+
+    - name: Capture first virtual NIC ext_id (when available)
+      ansible.builtin.set_fact:
+        vnic_ext_id: "{{ vnics_all.response[0].ext_id }}"
+      when: vnics_all.response | length > 0
+
+    - name: List virtual NICs on the host using limit
+      nutanix.ncp.ntnx_virtual_nics_info_v2:
+        cluster_ext_id: "{{ pe_cluster_ext_id }}"
+        host_ext_id: "{{ pe_host_ext_id }}"
+        limit: 1
+      register: vnics_limited
+      when: vnics_all.response | length > 0
+      # sample:
+      #   response:
+      #     - ext_id: "0a0a0a0a-1111-2222-3333-444455556666"
+      #       name: "br0"
+
+    - name: List virtual NICs on the host ordered by name desc
+      nutanix.ncp.ntnx_virtual_nics_info_v2:
+        cluster_ext_id: "{{ pe_cluster_ext_id }}"
+        host_ext_id: "{{ pe_host_ext_id }}"
+        orderby: "name desc"
+      register: vnics_ordered
+      when: vnics_all.response | length > 0
+      # sample:
+      #   response:
+      #     - name: "br1"
+      #     - name: "br0"
+
+    - name: List virtual NICs on the host selecting a few fields only
+      nutanix.ncp.ntnx_virtual_nics_info_v2:
+        cluster_ext_id: "{{ pe_cluster_ext_id }}"
+        host_ext_id: "{{ pe_host_ext_id }}"
+        select: "name,macAddress,vlanId"
+      register: vnics_selected
+      when: vnics_all.response | length > 0
+      # sample:
+      #   response:
+      #     - name: "br0"
+      #       mac_address: "aa:bb:cc:dd:ee:ff"
+      #       vlan_id: 0
+
+    - name: Fetch a single virtual NIC by external ID
+      nutanix.ncp.ntnx_virtual_nics_info_v2:
+        cluster_ext_id: "{{ pe_cluster_ext_id }}"
+        host_ext_id: "{{ pe_host_ext_id }}"
+        ext_id: "{{ vnic_ext_id }}"
+      register: vnic_single
+      when: vnics_all.response | length > 0
+      # sample:
+      #   response:
+      #     ext_id: "0a0a0a0a-1111-2222-3333-444455556666"
+      #     name: "br0"
+
+    - name: Fetch a virtual NIC using a non-existent external ID (negative)
+      nutanix.ncp.ntnx_virtual_nics_info_v2:
+        cluster_ext_id: "{{ pe_cluster_ext_id }}"
+        host_ext_id: "{{ pe_host_ext_id }}"
+        ext_id: "00000000-0000-0000-0000-000000000000"
+      register: vnic_missing
+      ignore_errors: true
+      # sample:
+      #   failed: true
+      #   msg: "Api Exception raised while fetching virtual NIC info using ext_id"
