@@ -1,0 +1,18 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [VM Startup Policy Start-Condition Conflict Dependent VMs examples] *******
+
+TASK [List all dependent VMs of a start-condition conflict of a VM startup policy] ***
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching VM startup policy start-condition conflict dependent VMs info", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "argumentsMap": {"policy_uuid": "0b0f9c7e-2b6f-4d61-8d3d-7b8c9e0a1b2c"}, "code": "VMM-34060", "errorGroup": "POLICY_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the policy with UUID '0b0f9c7e-2b6f-4d61-8d3d-7b8c9e0a1b2c', because it is not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [List dependent VMs with pagination] **************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching VM startup policy start-condition conflict dependent VMs info", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "argumentsMap": {"policy_uuid": "0b0f9c7e-2b6f-4d61-8d3d-7b8c9e0a1b2c"}, "code": "VMM-34060", "errorGroup": "POLICY_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the policy with UUID '0b0f9c7e-2b6f-4d61-8d3d-7b8c9e0a1b2c', because it is not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=2   
+
