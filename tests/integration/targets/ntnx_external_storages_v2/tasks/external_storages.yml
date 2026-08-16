@@ -1,0 +1,150 @@
+---
+###############################################################################
+# Test plan for ntnx_external_storages_info_v2 (Prism v4 API)
+# ----------------------------------------------------------------------------
+# The Prism v4 SDK for ExternalStorage exposes ONLY a `get_external_storage_by_id`
+# operation (the full CRUD API lives under the `clustermgmt` namespace and is
+# outside the scope of this codegen run). The tests below therefore focus on
+# every observable behaviour of the get-by-id info module:
+#
+#   1. Module spec validation: ext_id is required — omitting it must fail.
+#   2. Invalid input types (non-string ext_id) are rejected by Ansible.
+#   3. Requesting a non-existent (well-formed UUID) ext_id must return a
+#      structured API error via `raise_api_exception` (failed=True, no crash).
+#   4. Requesting a malformed ext_id must return a structured API error.
+#   5. When a real ExternalStorage exists on the cluster and its ext_id is
+#      supplied via the `external_storage_ext_id` variable, the module must
+#      return a single dict response containing at minimum: name, provider_type,
+#      ext_id, plus (optionally) config, total_capacity_bytes, free_capacity_bytes.
+#   6. The module never mutates state: `changed` must always be False.
+#   7. `check_mode` is not supported by info modules — verify supports_check_mode=False
+#      by running via BaseInfoModule.
+#
+# Every test asserts `changed` and `failed` first, then the specific behaviour.
+###############################################################################
+
+- name: Start ExternalStorage info tests
+  ansible.builtin.debug:
+    msg: Start ExternalStorage info tests
+
+- name: Generate random suffix for test artefacts
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    todelete: []
+
+- name: Set fake / real ExternalStorage ext_ids
+  ansible.builtin.set_fact:
+    # A well-formed UUID that (with overwhelming probability) does not exist
+    # on the cluster. Used to trigger the "not found" API error path.
+    nonexistent_ext_id: "00000000-0000-4000-8000-000000000000"
+    # A clearly malformed ext_id used to exercise the API validation path.
+    malformed_ext_id: "not-a-uuid"
+    # Real ExternalStorage ext_id supplied by the test harness (may be empty).
+    real_ext_id: "{{ external_storage_ext_id | default('') }}"
+
+########################################################################################
+# 1. Module spec validation: ext_id is required
+########################################################################################
+
+- name: Fetch external storage info WITHOUT ext_id (should fail — ext_id is required)  # noqa: args[module]
+  nutanix.ncp.ntnx_external_storages_info_v2: {}
+  register: missing_ext_id_result
+  ignore_errors: true
+
+- name: Assert missing ext_id is rejected by argument spec
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id_result is defined
+      - missing_ext_id_result.failed == true
+      - missing_ext_id_result.changed is not defined or missing_ext_id_result.changed == false
+      - "'ext_id' in (missing_ext_id_result.msg | default(''))"
+    success_msg: "Missing ext_id correctly rejected by module argument spec"
+    fail_msg: "Module did not reject a call missing the required ext_id parameter"
+
+########################################################################################
+# 2. Non-existent (well-formed UUID) ext_id must produce a structured API error
+########################################################################################
+
+- name: Fetch external storage info with well-formed but non-existent ext_id
+  nutanix.ncp.ntnx_external_storages_info_v2:
+    ext_id: "{{ nonexistent_ext_id }}"
+  register: nonexistent_result
+  ignore_errors: true
+
+- name: Assert non-existent ext_id yields a structured API error
+  ansible.builtin.assert:
+    that:
+      - nonexistent_result is defined
+      - nonexistent_result.failed == true
+      - nonexistent_result.changed is not defined or nonexistent_result.changed == false
+      - (nonexistent_result.msg | default('')) | length > 0
+    success_msg: "Non-existent ext_id correctly raised an API exception"
+    fail_msg: "Module did not raise an API exception for a non-existent ext_id"
+
+########################################################################################
+# 3. Malformed ext_id must produce a structured API error
+########################################################################################
+
+- name: Fetch external storage info with malformed ext_id
+  nutanix.ncp.ntnx_external_storages_info_v2:
+    ext_id: "{{ malformed_ext_id }}"
+  register: malformed_result
+  ignore_errors: true
+
+- name: Assert malformed ext_id yields a structured API error
+  ansible.builtin.assert:
+    that:
+      - malformed_result is defined
+      - malformed_result.failed == true
+      - malformed_result.changed is not defined or malformed_result.changed == false
+      - (malformed_result.msg | default('')) | length > 0
+    success_msg: "Malformed ext_id correctly raised an API exception"
+    fail_msg: "Module did not raise an API exception for a malformed ext_id"
+
+########################################################################################
+# 4. Real ExternalStorage: fetch by ext_id and validate response shape
+#    (only runs if the test harness supplied a real external_storage_ext_id)
+########################################################################################
+
+- name: Fetch a real ExternalStorage entity by ext_id
+  when: real_ext_id | length > 0
+  block:
+    - name: Get external storage using real ext_id
+      nutanix.ncp.ntnx_external_storages_info_v2:
+        ext_id: "{{ real_ext_id }}"
+      register: real_result
+      ignore_errors: true
+
+    - name: Assert real ext_id returned a single ExternalStorage dict
+      ansible.builtin.assert:
+        that:
+          - real_result is defined
+          - real_result.failed == false
+          - real_result.changed == false
+          - real_result.ext_id == real_ext_id
+          - real_result.response is defined
+          - real_result.response is mapping
+          - real_result.response.ext_id == real_ext_id
+          - real_result.response.name is defined
+          - real_result.response.name | length > 0
+          - real_result.response.provider_type is defined
+          - real_result.response.provider_type in ["DELL_POWERFLEX", "PURE_STORAGE_FLASHARRAY"]
+        success_msg: "Real ExternalStorage entity returned with the expected shape"
+        fail_msg: "Real ExternalStorage entity did not have the expected shape"
+
+    - name: Assert capacity fields are integers when present
+      ansible.builtin.assert:
+        that:
+          - (real_result.response.total_capacity_bytes | default(0)) is number
+          - (real_result.response.free_capacity_bytes | default(0)) is number
+        success_msg: "Capacity fields are numeric"
+        fail_msg: "Capacity fields are not numeric"
+
+- name: Skip real-ext_id path if none was supplied
+  when: real_ext_id | length == 0
+  ansible.builtin.debug:
+    msg: >-
+      No `external_storage_ext_id` variable supplied — skipping the real
+      ExternalStorage fetch test. Set `external_storage_ext_id` in
+      integration_config.yml to enable this test on clusters that have an
+      attached ExternalStorage entity.

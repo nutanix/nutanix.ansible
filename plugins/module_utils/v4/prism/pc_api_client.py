@@ -129,3 +129,17 @@ def get_categories_api_instance(module):
     """
     api_client = get_pc_api_client(module)
     return ntnx_prism_py_client.CategoriesApi(api_client=api_client)
+
+
+def get_external_storages_api_instance(module):
+    """
+    This method will return an ExternalStoragesApi instance backed by the
+    Prism Central v4 API client.
+
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): external storages api instance
+    """
+    api_client = get_pc_api_client(module)
+    return ntnx_prism_py_client.ExternalStoragesApi(api_client=api_client)
