@@ -191,3 +191,81 @@ def get_ova(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching OVA info using ext_id",
         )
+
+
+def list_vm_host_affinity_policy_vm_compliance_states(
+    module, api_instance, vm_host_affinity_policy_ext_id, page=None, limit=None
+):
+    """
+    List the VM compliance states associated with a VM-Host Affinity policy.
+
+    The v4 SDK exposes only a paginated list endpoint for compliance state
+    entries; there is no dedicated GetById counterpart. Callers can iterate
+    the result client-side to find a single entry by ``ext_id``.
+
+    Args:
+        module: Ansible module (used to raise a descriptive failure).
+        api_instance: VmHostAffinityPoliciesApi instance from ntnx_vmm_py_client.
+        vm_host_affinity_policy_ext_id (str): ext_id of the parent VM-Host
+            Affinity policy whose compliance states must be listed.
+        page (int | None): Optional 0-indexed page number.
+        limit (int | None): Optional page size (SDK caps this at 100).
+
+    Returns:
+        obj: The full v4 SDK response object
+        (``ListVmHostAffinityPolicyVmComplianceStatesApiResponse``).
+    """
+    kwargs = {}
+    if page is not None:
+        kwargs["_page"] = page
+    if limit is not None:
+        kwargs["_limit"] = limit
+    try:
+        return api_instance.list_vm_host_affinity_policy_vm_compliance_states(
+            vmHostAffinityPolicyExtId=vm_host_affinity_policy_ext_id, **kwargs
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg=(
+                "Api Exception raised while fetching VM host affinity policy "
+                "VM compliance states"
+            ),
+        )
+
+
+def get_vm_host_affinity_policy_vm_compliance_state(
+    module, api_instance, vm_host_affinity_policy_ext_id, ext_id
+):
+    """
+    Fetch a single VmHostAffinityPolicyVmComplianceState entry by iterating
+    the list endpoint (the SDK has no GetById for this entity).
+
+    Args:
+        module: Ansible module.
+        api_instance: VmHostAffinityPoliciesApi instance.
+        vm_host_affinity_policy_ext_id (str): ext_id of the parent policy.
+        ext_id (str): ext_id of the desired compliance state entry.
+
+    Returns:
+        obj | None: The matching SDK compliance state entry, or ``None`` when
+        no compliance state on the policy has the provided ``ext_id``.
+    """
+    page = 0
+    limit = 100
+    while True:
+        resp = list_vm_host_affinity_policy_vm_compliance_states(
+            module,
+            api_instance,
+            vm_host_affinity_policy_ext_id,
+            page=page,
+            limit=limit,
+        )
+        entries = resp.data or []
+        for entry in entries:
+            if getattr(entry, "ext_id", None) == ext_id:
+                return entry
+        if len(entries) < limit:
+            return None
+        page += 1

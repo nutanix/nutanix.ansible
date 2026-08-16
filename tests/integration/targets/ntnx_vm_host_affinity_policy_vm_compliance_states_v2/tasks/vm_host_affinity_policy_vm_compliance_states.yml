@@ -1,0 +1,354 @@
+---
+# Test plan
+# =========
+# The VmHostAffinityPolicyVmComplianceState entity is READ-ONLY: the v4 SDK only
+# exposes ``list_vm_host_affinity_policy_vm_compliance_states`` on the parent
+# ``VmHostAffinityPoliciesApi`` receiver. There is no create/update/delete API
+# and no dedicated Ansible module yet in this repo to create a VM-host affinity
+# policy. To exercise the two generated modules end-to-end we therefore:
+#   1. Discover an existing policy on the target cluster via a raw REST call
+#      (``ansible.builtin.uri``). If none exists we cleanly skip the "happy
+#      path" tests and only run the negative / check_mode scenarios (which do
+#      not need a live policy).
+#   2. Exercise every code path in the two modules:
+#      * Check-mode fetch (management module, all attributes)
+#      * Check-mode "update" (management module with ext_id + all attributes)
+#      * Check-mode "delete" fails with a descriptive message
+#      * Real list-all (management module + info module)
+#      * Real get-by-ext_id (management module + info module)
+#      * Idempotency: re-run the same list twice; changed remains false
+#      * Negative: missing required param, invalid policy ext_id, mutually
+#        exclusive ext_id + limit on the info module
+#
+# Every test asserts ``changed`` and ``failed`` first, then any additional
+# response shape/keys we can rely on. We use dynamic random names/values to
+# avoid collisions across parallel runs.
+
+- name: Start VM host affinity policy VM compliance state tests
+  ansible.builtin.debug:
+    msg: Start VM host affinity policy VM compliance state tests
+
+- name: Generate random suffix for test resources
+  ansible.builtin.set_fact:
+    random_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=10)[0] }}"
+    todelete: []
+
+- name: Set base URL for direct v4 API calls
+  ansible.builtin.set_fact:
+    vmm_v4_base_url: "https://{{ ip }}:9440/api/vmm/v4.2"
+
+- name: Discover an existing VM-host affinity policy for read-only tests
+  ansible.builtin.uri:
+    url: "{{ vmm_v4_base_url }}/ahv/policies/vm-host-affinity-policies?$page=0&$limit=1"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs | default(false) }}"
+    status_code: [200]
+  register: policies_probe
+  ignore_errors: true
+
+- name: Set discovered VM-host affinity policy ext_id (may be empty)
+  ansible.builtin.set_fact:
+    vm_host_affinity_policy_ext_id: >-
+      {{
+        (policies_probe.json.data | default([]) | first).extId
+        if (policies_probe is defined and policies_probe.json is defined
+            and (policies_probe.json.data | default([])) | length > 0)
+        else ''
+      }}
+
+- name: Report whether a policy was discovered
+  ansible.builtin.debug:
+    msg: >-
+      Using VM-host affinity policy ext_id
+      '{{ vm_host_affinity_policy_ext_id }}' for read-only tests.
+
+########################################################################################
+# Check-mode tests (do not need a real policy)
+########################################################################################
+
+- name: Check-mode fetch (all attributes) — management module
+  nutanix.ncp.ntnx_vm_host_affinity_policy_vm_compliance_state_v2:
+    state: present
+    vm_host_affinity_policy_ext_id: "00000000-0000-0000-0000-000000000000"
+    page: 0
+    limit: 20
+  check_mode: true
+  register: check_mode_fetch_all
+  ignore_errors: true
+
+- name: Assert check-mode fetch-all output
+  ansible.builtin.assert:
+    that:
+      - check_mode_fetch_all is defined
+      - check_mode_fetch_all.changed == false
+      - check_mode_fetch_all.failed == false
+      - check_mode_fetch_all.skipped == true
+      - "'Check mode' in check_mode_fetch_all.msg"
+    fail_msg: "Check-mode fetch-all did not skip cleanly"
+    success_msg: "Check-mode fetch-all skipped cleanly"
+
+- name: Check-mode "update" (all attributes) — management module with ext_id
+  nutanix.ncp.ntnx_vm_host_affinity_policy_vm_compliance_state_v2:
+    state: present
+    vm_host_affinity_policy_ext_id: "00000000-0000-0000-0000-000000000000"
+    ext_id: "00000000-0000-0000-0000-000000000001"
+  check_mode: true
+  register: check_mode_update
+  ignore_errors: true
+
+- name: Assert check-mode update output
+  ansible.builtin.assert:
+    that:
+      - check_mode_update is defined
+      - check_mode_update.changed == false
+      - check_mode_update.failed == false
+      - check_mode_update.skipped == true
+      - "'Check mode' in check_mode_update.msg"
+    fail_msg: "Check-mode update path did not skip cleanly"
+    success_msg: "Check-mode update path skipped cleanly"
+
+- name: Attempt state=absent (check_mode) — must fail because entity is read-only
+  nutanix.ncp.ntnx_vm_host_affinity_policy_vm_compliance_state_v2:
+    state: absent
+    vm_host_affinity_policy_ext_id: "00000000-0000-0000-0000-000000000000"
+    ext_id: "00000000-0000-0000-0000-000000000001"
+  check_mode: true
+  register: check_mode_delete
+  ignore_errors: true
+
+- name: Assert delete is not supported
+  ansible.builtin.assert:
+    that:
+      - check_mode_delete is defined
+      - check_mode_delete.failed == true
+      - check_mode_delete.changed == false
+      - "'state=absent is not supported' in check_mode_delete.msg"
+    fail_msg: "Delete on read-only compliance state entity did not fail as expected"
+    success_msg: "Delete on read-only compliance state entity failed as expected"
+
+########################################################################################
+# Negative / validation tests
+########################################################################################
+
+- name: Omit required vm_host_affinity_policy_ext_id — management module
+  nutanix.ncp.ntnx_vm_host_affinity_policy_vm_compliance_state_v2:
+    state: present
+  register: missing_policy_ext_id
+  ignore_errors: true
+
+- name: Assert missing required parameter is caught by argument spec
+  ansible.builtin.assert:
+    that:
+      - missing_policy_ext_id is defined
+      - missing_policy_ext_id.failed == true
+      - "'vm_host_affinity_policy_ext_id' in (missing_policy_ext_id.msg | string)"
+    fail_msg: "Argument spec did not enforce required vm_host_affinity_policy_ext_id"
+    success_msg: "Argument spec correctly rejected missing vm_host_affinity_policy_ext_id"
+
+- name: Omit required vm_host_affinity_policy_ext_id — info module
+  nutanix.ncp.ntnx_vm_host_affinity_policy_vm_compliance_states_info_v2: {}
+  register: missing_policy_ext_id_info
+  ignore_errors: true
+
+- name: Assert info module also enforces required param
+  ansible.builtin.assert:
+    that:
+      - missing_policy_ext_id_info is defined
+      - missing_policy_ext_id_info.failed == true
+      - "'vm_host_affinity_policy_ext_id' in (missing_policy_ext_id_info.msg | string)"
+    fail_msg: "Info argument spec did not enforce required vm_host_affinity_policy_ext_id"
+    success_msg: "Info argument spec correctly rejected missing required param"
+
+- name: Attempt mutually exclusive ext_id + limit — info module
+  nutanix.ncp.ntnx_vm_host_affinity_policy_vm_compliance_states_info_v2:
+    vm_host_affinity_policy_ext_id: "00000000-0000-0000-0000-000000000000"
+    ext_id: "00000000-0000-0000-0000-000000000001"
+    limit: 5
+  register: mutually_exclusive_check
+  ignore_errors: true
+
+- name: Assert mutually exclusive params are rejected
+  ansible.builtin.assert:
+    that:
+      - mutually_exclusive_check is defined
+      - mutually_exclusive_check.failed == true
+      - "'mutually exclusive' in (mutually_exclusive_check.msg | string)"
+    fail_msg: "Info module did not reject mutually exclusive ext_id + limit"
+    success_msg: "Info module correctly rejected mutually exclusive params"
+
+- name: Fetch compliance state for a non-existent policy ext_id — info module
+  nutanix.ncp.ntnx_vm_host_affinity_policy_vm_compliance_states_info_v2:
+    vm_host_affinity_policy_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: bogus_policy_lookup
+  ignore_errors: true
+
+- name: Assert invalid policy ext_id produces an API error
+  ansible.builtin.assert:
+    that:
+      - bogus_policy_lookup is defined
+      - bogus_policy_lookup.failed == true
+      - bogus_policy_lookup.changed == false
+    fail_msg: "Invalid parent policy ext_id did not produce an API error"
+    success_msg: "Invalid parent policy ext_id correctly raised an API error"
+
+########################################################################################
+# Real read-path tests (only if a policy was discovered)
+########################################################################################
+
+- name: Run happy-path tests only if a policy was discovered
+  when: vm_host_affinity_policy_ext_id | length > 0
+  block:
+    - name: List all compliance state entries (info module)
+      nutanix.ncp.ntnx_vm_host_affinity_policy_vm_compliance_states_info_v2:
+        vm_host_affinity_policy_ext_id: "{{ vm_host_affinity_policy_ext_id }}"
+      register: list_all_info
+      ignore_errors: true
+
+    - name: Assert list-all via info module
+      ansible.builtin.assert:
+        that:
+          - list_all_info is defined
+          - list_all_info.changed == false
+          - list_all_info.failed == false
+          - list_all_info.response is defined
+          - (list_all_info.response | type_debug) == 'list'
+        fail_msg: "info module did not return a list of compliance states"
+        success_msg: "info module returned a list of compliance states"
+
+    - name: List all compliance state entries (management module)
+      nutanix.ncp.ntnx_vm_host_affinity_policy_vm_compliance_state_v2:
+        state: present
+        vm_host_affinity_policy_ext_id: "{{ vm_host_affinity_policy_ext_id }}"
+      register: list_all_mgmt
+      ignore_errors: true
+
+    - name: Assert list-all via management module
+      ansible.builtin.assert:
+        that:
+          - list_all_mgmt is defined
+          - list_all_mgmt.changed == false
+          - list_all_mgmt.failed == false
+          - list_all_mgmt.response is defined
+          - (list_all_mgmt.response | type_debug) == 'list'
+          - "'VM compliance state entries' in (list_all_mgmt.msg | default(''))"
+        fail_msg: "Management module list-all did not return a list"
+        success_msg: "Management module list-all returned a list"
+
+    - name: Idempotency — re-run list-all and expect no change
+      nutanix.ncp.ntnx_vm_host_affinity_policy_vm_compliance_state_v2:
+        state: present
+        vm_host_affinity_policy_ext_id: "{{ vm_host_affinity_policy_ext_id }}"
+      register: list_all_mgmt_repeat
+      ignore_errors: true
+
+    - name: Assert idempotency
+      ansible.builtin.assert:
+        that:
+          - list_all_mgmt_repeat.changed == false
+          - list_all_mgmt_repeat.failed == false
+          - >-
+            (list_all_mgmt_repeat.response | default([]) | length)
+            == (list_all_mgmt.response | default([]) | length)
+        fail_msg: "Re-running the list-all was not idempotent"
+        success_msg: "List-all fetch is idempotent"
+
+    - name: Capture a compliance state ext_id if the list is non-empty
+      ansible.builtin.set_fact:
+        compliance_state_ext_id: "{{ (list_all_info.response | first).ext_id | default('') }}"
+      when: (list_all_info.response | default([])) | length > 0
+
+    - name: Fetch by ext_id via info module
+      nutanix.ncp.ntnx_vm_host_affinity_policy_vm_compliance_states_info_v2:
+        vm_host_affinity_policy_ext_id: "{{ vm_host_affinity_policy_ext_id }}"
+        ext_id: "{{ compliance_state_ext_id }}"
+      register: info_by_ext_id
+      when:
+        - compliance_state_ext_id is defined
+        - compliance_state_ext_id | length > 0
+      ignore_errors: true
+
+    - name: Assert single-entry fetch via info module
+      ansible.builtin.assert:
+        that:
+          - info_by_ext_id is defined
+          - info_by_ext_id.changed == false
+          - info_by_ext_id.failed == false
+          - info_by_ext_id.response is defined
+          - info_by_ext_id.ext_id == compliance_state_ext_id
+        fail_msg: "info module did not return the expected single entry"
+        success_msg: "info module returned the expected single entry"
+      when:
+        - compliance_state_ext_id is defined
+        - compliance_state_ext_id | length > 0
+
+    - name: Fetch by ext_id via management module
+      nutanix.ncp.ntnx_vm_host_affinity_policy_vm_compliance_state_v2:
+        state: present
+        vm_host_affinity_policy_ext_id: "{{ vm_host_affinity_policy_ext_id }}"
+        ext_id: "{{ compliance_state_ext_id }}"
+      register: mgmt_by_ext_id
+      when:
+        - compliance_state_ext_id is defined
+        - compliance_state_ext_id | length > 0
+      ignore_errors: true
+
+    - name: Assert single-entry fetch via management module
+      ansible.builtin.assert:
+        that:
+          - mgmt_by_ext_id is defined
+          - mgmt_by_ext_id.changed == false
+          - mgmt_by_ext_id.failed == false
+          - mgmt_by_ext_id.response is defined
+          - mgmt_by_ext_id.ext_id == compliance_state_ext_id
+          - "'Fetched VM compliance state entry' in mgmt_by_ext_id.msg"
+        fail_msg: "management module did not return the expected single entry"
+        success_msg: "management module returned the expected single entry"
+      when:
+        - compliance_state_ext_id is defined
+        - compliance_state_ext_id | length > 0
+
+    - name: Fetch by ext_id with a bogus ext_id — must gracefully skip
+      nutanix.ncp.ntnx_vm_host_affinity_policy_vm_compliance_state_v2:
+        state: present
+        vm_host_affinity_policy_ext_id: "{{ vm_host_affinity_policy_ext_id }}"
+        ext_id: "00000000-0000-0000-0000-0000abcdef99"
+      register: mgmt_missing_state
+      ignore_errors: true
+
+    - name: Assert missing compliance state ext_id is handled gracefully
+      ansible.builtin.assert:
+        that:
+          - mgmt_missing_state.failed == false
+          - mgmt_missing_state.changed == false
+          - mgmt_missing_state.skipped == true
+          - "'No VM compliance state entry found' in mgmt_missing_state.msg"
+        fail_msg: "Missing compliance state ext_id was not handled gracefully"
+        success_msg: "Missing compliance state ext_id handled gracefully"
+
+    - name: Pagination — list with a small page size
+      nutanix.ncp.ntnx_vm_host_affinity_policy_vm_compliance_states_info_v2:
+        vm_host_affinity_policy_ext_id: "{{ vm_host_affinity_policy_ext_id }}"
+        page: 0
+        limit: 1
+      register: paged_result
+      ignore_errors: true
+
+    - name: Assert pagination limit is honored
+      ansible.builtin.assert:
+        that:
+          - paged_result.failed == false
+          - paged_result.changed == false
+          - (paged_result.response | default([]) | length) <= 1
+        fail_msg: "Pagination limit was not honored by the info module"
+        success_msg: "Pagination limit was honored by the info module"
+
+- name: Skip happy-path assertions when no policy could be discovered
+  ansible.builtin.debug:
+    msg: >-
+      No VM-host affinity policy was discovered on this cluster; only negative
+      / check-mode / argument-spec tests were run. Add a policy to exercise the
+      full read-path.
+  when: vm_host_affinity_policy_ext_id | length == 0
