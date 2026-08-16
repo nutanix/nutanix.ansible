@@ -1,0 +1,34 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [EffectiveRateLimitPolicy playbook] ***************************************
+
+TASK [Setting variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"cluster_category_ext_id": "66f4d0aa-4e77-5261-94c6-4dc19a857049", "rate_limit_policy_name": "image_rate_limit_policy_ansible"}, "changed": false}
+
+TASK [Create an image rate limit policy] ***************************************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "215b3b02-348e-4d05-b6c1-2cfec4778ace", "response": {"cluster_entity_filter": {"category_ext_ids": ["66f4d0aa-4e77-5261-94c6-4dc19a857049"], "type": "CATEGORIES_MATCH_ANY"}, "create_time": "2026-07-21T08:33:21.835843+00:00", "description": "Image rate limit policy created by Ansible", "ext_id": "215b3b02-348e-4d05-b6c1-2cfec4778ace", "last_update_time": "2026-07-21T08:33:21.835843+00:00", "links": null, "matching_cluster_ext_ids": null, "name": "image_rate_limit_policy_ansible", "owner_ext_id": "00000000-0000-0000-0000-000000000000", "owner_name": "admin", "rate_limit_kbps": 1024, "tenant_id": null}, "task_ext_id": "ZXJnb24=:b980a9c0-1934-4eab-940b-14e735985002"}
+
+TASK [Update the image rate limit policy] **************************************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "215b3b02-348e-4d05-b6c1-2cfec4778ace", "response": {"cluster_entity_filter": {"category_ext_ids": ["66f4d0aa-4e77-5261-94c6-4dc19a857049"], "type": "CATEGORIES_MATCH_ALL"}, "create_time": "2026-07-21T08:33:21.835843+00:00", "description": "Updated image rate limit policy description", "ext_id": "215b3b02-348e-4d05-b6c1-2cfec4778ace", "last_update_time": "2026-07-21T08:33:25.302682+00:00", "links": null, "matching_cluster_ext_ids": null, "name": "image_rate_limit_policy_ansible_updated", "owner_ext_id": "00000000-0000-0000-0000-000000000000", "owner_name": "admin", "rate_limit_kbps": 2048, "tenant_id": null}, "task_ext_id": "ZXJnb24=:63d2e4ce-d28d-4f26-9521-88199d76cc93"}
+
+TASK [List all effective rate limit policies] **********************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List effective rate limit policies with a page limit] ********************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [Filter effective rate limit policies by cluster] *************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [Fetch effective rate limit record for the created policy] ****************
+ok: [localhost] => {"changed": false, "ext_id": "215b3b02-348e-4d05-b6c1-2cfec4778ace", "response": [], "total_available_results": 0}
+
+TASK [Delete the image rate limit policy] **************************************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "215b3b02-348e-4d05-b6c1-2cfec4778ace", "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": null, "completed_time": "2026-07-21T08:33:31.653879+00:00", "completion_details": null, "created_time": "2026-07-21T08:33:31.578185+00:00", "entities_affected": [{"ext_id": "215b3b02-348e-4d05-b6c1-2cfec4778ace", "name": "image_rate_limit_policy_ansible_updated", "rel": "vmm:images:config:rate-limit-policy"}], "error_messages": null, "ext_id": "ZXJnb24=:409400ee-75bc-4c15-ae2b-9d44d3162fe1", "is_background_task": false, "is_cancelable": false, "last_updated_time": "2026-07-21T08:33:31.653878+00:00", "legacy_error_message": null, "number_of_entities_affected": 1, "number_of_subtasks": 0, "operation": "kCatalogRateLimitDelete", "operation_description": "Delete BW Throttling Policy", "owned_by": {"ext_id": "00000000-0000-0000-0000-000000000000", "name": "admin"}, "parent_task": null, "progress_percentage": 100, "projectExtId": "00000000-0000-0000-0000-000000000000", "resource_links": null, "root_task": null, "started_time": "2026-07-21T08:33:31.588500+00:00", "status": "SUCCEEDED", "sub_steps": null, "sub_tasks": null, "warnings": null}, "task_ext_id": "ZXJnb24=:409400ee-75bc-4c15-ae2b-9d44d3162fe1"}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=8    changed=3    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+

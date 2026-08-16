@@ -104,6 +104,16 @@ def get_image_placement_policy_api_instance(module):
     return ntnx_vmm_py_client.ImagePlacementPoliciesApi(api_client=api_client)
 
 
+def get_image_rate_limit_policy_api_instance(module):
+    """
+    This method will return Image Rate Limit policy API instance
+    Args:
+        api_instance (obj): v4 Image rate limit policy api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.ImageRateLimitPoliciesApi(api_client=api_client)
+
+
 def get_templates_api_instance(module):
     """
     This method will return Templates API instance

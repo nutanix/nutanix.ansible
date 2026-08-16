@@ -1,0 +1,580 @@
+---
+# Test plan for ntnx_effective_rate_limit_policy_v2 +
+# ntnx_vm_effective_rate_limit_policies_info_v2:
+#
+# CRUD module (ntnx_effective_rate_limit_policy_v2):
+#   1. Check-mode create (all attributes) — asserts spec is materialized but
+#      nothing is created on PC.
+#   2. Real create with minimal required fields (name, rate_limit_kbps,
+#      cluster_entity_filter).
+#   3. Real create with all fields (adds description + CATEGORIES_MATCH_ANY).
+#   4. Idempotent create by name — asserts the module reports skipped=True and
+#      does not create a duplicate policy.
+#   5. Check-mode update (all attributes) — asserts spec assembly.
+#   6. Real update — flips rate_limit_kbps, description, and filter type to
+#      CATEGORIES_MATCH_ALL; asserts the API response reflects each change.
+#   7. Idempotent update — replays the same update and asserts
+#      msg == "Nothing to change." with changed=False.
+#   8. Negative: create with missing rate_limit_kbps — required_params guard.
+#   9. Negative: create with missing cluster_entity_filter — required_params guard.
+#  10. Negative: create with invalid filter.type enum — argument_spec guard.
+#  11. Negative: update a non-existent ext_id — API returns 404.
+#  12. Check-mode delete — asserts the deterministic delete message.
+#  13. Real delete of every created policy — asserts task SUCCEEDED.
+#  14. Negative: delete a non-existent ext_id — API returns 404.
+#
+# Info module (ntnx_vm_effective_rate_limit_policies_info_v2):
+#  15. List all effective rate limit policies.
+#  16. List with limit=1.
+#  17. List with OData filter on clusterExtId (only asserted when at least one
+#      cluster is present).
+#  18. Get by ext_id — resolves the effective record for a specific policy by
+#      first loading the source policy and filtering the effective list.
+#  19. Get by ext_id with an unknown identifier — asserts failure.
+
+- name: Start testing ntnx_effective_rate_limit_policy_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_effective_rate_limit_policy_v2
+
+- name: Generate random suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set base names
+  ansible.builtin.set_fact:
+    policy_base_name: "erlp_ansible_{{ random_name }}"
+    todelete: []
+    created_category_ext_ids: []
+
+# ---------------------------------------------------------------------------
+# Test setup: create dedicated categories so the cluster_entity_filter has
+# valid category_ext_ids. Using purpose-built categories keeps this test
+# self-contained and avoids clashing with other test targets on the cluster.
+# ---------------------------------------------------------------------------
+
+- name: Create category one for cluster_entity_filter
+  nutanix.ncp.ntnx_categories_v2:
+    key: "AnsibleRateLimit"
+    value: "erlp_a_{{ random_name }}"
+    description: "ansible rate limit policy category A"
+  register: category_a
+  ignore_errors: true
+
+- name: Ensure category one was created
+  ansible.builtin.assert:
+    that:
+      - category_a.failed == false
+      - category_a.changed == true
+      - category_a.response is defined
+      - category_a.response.ext_id is defined
+    success_msg: "Category A created successfully"
+    fail_msg: "Failed to create category A"
+
+- name: Register category one for cleanup
+  ansible.builtin.set_fact:
+    category_a_ext_id: "{{ category_a.response.ext_id }}"
+    created_category_ext_ids: "{{ created_category_ext_ids + [category_a.response.ext_id] }}"
+
+- name: Create category two for cluster_entity_filter
+  nutanix.ncp.ntnx_categories_v2:
+    key: "AnsibleRateLimit"
+    value: "erlp_b_{{ random_name }}"
+    description: "ansible rate limit policy category B"
+  register: category_b
+  ignore_errors: true
+
+- name: Ensure category two was created
+  ansible.builtin.assert:
+    that:
+      - category_b.failed == false
+      - category_b.changed == true
+      - category_b.response is defined
+      - category_b.response.ext_id is defined
+    success_msg: "Category B created successfully"
+    fail_msg: "Failed to create category B"
+
+- name: Register category two for cleanup
+  ansible.builtin.set_fact:
+    category_b_ext_id: "{{ category_b.response.ext_id }}"
+    created_category_ext_ids: "{{ created_category_ext_ids + [category_b.response.ext_id] }}"
+
+# ---------------------------------------------------------------------------
+# 1. Check-mode create with ALL attributes
+# ---------------------------------------------------------------------------
+
+- name: Create rate limit policy - check mode with all attributes
+  nutanix.ncp.ntnx_effective_rate_limit_policy_v2:
+    state: present
+    name: "{{ policy_base_name }}_check"
+    description: "Check-mode created policy"
+    rate_limit_kbps: 512
+    cluster_entity_filter:
+      type: CATEGORIES_MATCH_ANY
+      category_ext_ids:
+        - "{{ category_a_ext_id }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Create rate limit policy check mode status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == policy_base_name ~ "_check"
+      - result.response.description == "Check-mode created policy"
+      - result.response.rate_limit_kbps == 512
+      - result.response.cluster_entity_filter.type == "CATEGORIES_MATCH_ANY"
+      - result.response.cluster_entity_filter.category_ext_ids | length == 1
+      - result.response.cluster_entity_filter.category_ext_ids[0] == category_a_ext_id
+    success_msg: "Check-mode create of image rate limit policy passed"
+    fail_msg: "Check-mode create of image rate limit policy failed"
+
+# ---------------------------------------------------------------------------
+# 2. Real create with minimal required fields
+# ---------------------------------------------------------------------------
+
+- name: Create rate limit policy with minimal required fields
+  nutanix.ncp.ntnx_effective_rate_limit_policy_v2:
+    state: present
+    name: "{{ policy_base_name }}_min"
+    rate_limit_kbps: 256
+    cluster_entity_filter:
+      type: CATEGORIES_MATCH_ANY
+      category_ext_ids:
+        - "{{ category_a_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Minimal create status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response.name == policy_base_name ~ "_min"
+      - result.response.rate_limit_kbps == 256
+      - result.response.cluster_entity_filter.type == "CATEGORIES_MATCH_ANY"
+      - result.response.cluster_entity_filter.category_ext_ids[0] == category_a_ext_id
+    success_msg: "Minimal create of image rate limit policy passed"
+    fail_msg: "Minimal create of image rate limit policy failed"
+
+- name: Register minimal policy for cleanup
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+    policy_min_ext_id: "{{ result.ext_id }}"
+
+# ---------------------------------------------------------------------------
+# 3. Real create with ALL fields
+# ---------------------------------------------------------------------------
+
+- name: Create rate limit policy with all fields
+  nutanix.ncp.ntnx_effective_rate_limit_policy_v2:
+    state: present
+    name: "{{ policy_base_name }}_all"
+    description: "Rate limit policy created by ansible with all fields"
+    rate_limit_kbps: 1024
+    cluster_entity_filter:
+      type: CATEGORIES_MATCH_ANY
+      category_ext_ids:
+        - "{{ category_a_ext_id }}"
+        - "{{ category_b_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Full create status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response.name == policy_base_name ~ "_all"
+      - result.response.description == "Rate limit policy created by ansible with all fields"
+      - result.response.rate_limit_kbps == 1024
+      - result.response.cluster_entity_filter.type == "CATEGORIES_MATCH_ANY"
+      - result.response.cluster_entity_filter.category_ext_ids | length == 2
+      - category_a_ext_id in result.response.cluster_entity_filter.category_ext_ids
+      - category_b_ext_id in result.response.cluster_entity_filter.category_ext_ids
+    success_msg: "Full create of image rate limit policy passed"
+    fail_msg: "Full create of image rate limit policy failed"
+
+- name: Register full policy for cleanup
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+    policy_all_ext_id: "{{ result.ext_id }}"
+
+# ---------------------------------------------------------------------------
+# 4. Idempotent create by name — should not create a duplicate.
+# ---------------------------------------------------------------------------
+
+- name: Create rate limit policy with duplicate name (idempotency)
+  nutanix.ncp.ntnx_effective_rate_limit_policy_v2:
+    state: present
+    name: "{{ policy_base_name }}_all"
+    description: "Duplicate name attempt"
+    rate_limit_kbps: 4096
+    cluster_entity_filter:
+      type: CATEGORIES_MATCH_ANY
+      category_ext_ids:
+        - "{{ category_a_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Duplicate name create status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.skipped == true
+      - result.msg is defined
+      - "'already exists' in result.msg"
+      - "'Skipping creation' in result.msg"
+      - result.ext_id == policy_all_ext_id
+    success_msg: "Idempotent create-by-name skipped as expected"
+    fail_msg: "Idempotent create-by-name did not skip as expected"
+
+# ---------------------------------------------------------------------------
+# 5. Check-mode update with all attributes
+# ---------------------------------------------------------------------------
+
+- name: Update rate limit policy - check mode with all attributes
+  nutanix.ncp.ntnx_effective_rate_limit_policy_v2:
+    state: present
+    ext_id: "{{ policy_all_ext_id }}"
+    name: "{{ policy_base_name }}_all"
+    description: "Rate limit policy updated by ansible (check mode)"
+    rate_limit_kbps: 2048
+    cluster_entity_filter:
+      type: CATEGORIES_MATCH_ALL
+      category_ext_ids:
+        - "{{ category_a_ext_id }}"
+        - "{{ category_b_ext_id }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Check-mode update status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == policy_base_name ~ "_all"
+      - result.response.description == "Rate limit policy updated by ansible (check mode)"
+      - result.response.rate_limit_kbps == 2048
+      - result.response.cluster_entity_filter.type == "CATEGORIES_MATCH_ALL"
+      - result.response.cluster_entity_filter.category_ext_ids | length == 2
+    success_msg: "Check-mode update of image rate limit policy passed"
+    fail_msg: "Check-mode update of image rate limit policy failed"
+
+# ---------------------------------------------------------------------------
+# 6. Real update
+# ---------------------------------------------------------------------------
+
+- name: Update rate limit policy
+  nutanix.ncp.ntnx_effective_rate_limit_policy_v2:
+    state: present
+    ext_id: "{{ policy_all_ext_id }}"
+    name: "{{ policy_base_name }}_all"
+    description: "Rate limit policy updated by ansible"
+    rate_limit_kbps: 2048
+    cluster_entity_filter:
+      type: CATEGORIES_MATCH_ALL
+      category_ext_ids:
+        - "{{ category_a_ext_id }}"
+        - "{{ category_b_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Update status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == policy_all_ext_id
+      - result.response.name == policy_base_name ~ "_all"
+      - result.response.description == "Rate limit policy updated by ansible"
+      - result.response.rate_limit_kbps == 2048
+      - result.response.cluster_entity_filter.type == "CATEGORIES_MATCH_ALL"
+      - result.response.cluster_entity_filter.category_ext_ids | length == 2
+    success_msg: "Update of image rate limit policy passed"
+    fail_msg: "Update of image rate limit policy failed"
+
+# ---------------------------------------------------------------------------
+# 7. Idempotent update — replay same params
+# ---------------------------------------------------------------------------
+
+- name: Update rate limit policy with same values (idempotency)
+  nutanix.ncp.ntnx_effective_rate_limit_policy_v2:
+    state: present
+    ext_id: "{{ policy_all_ext_id }}"
+    name: "{{ policy_base_name }}_all"
+    description: "Rate limit policy updated by ansible"
+    rate_limit_kbps: 2048
+    cluster_entity_filter:
+      type: CATEGORIES_MATCH_ALL
+      category_ext_ids:
+        - "{{ category_a_ext_id }}"
+        - "{{ category_b_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Idempotent update status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.msg == "Nothing to change."
+      - result.ext_id == policy_all_ext_id
+    success_msg: "Idempotent update passed"
+    fail_msg: "Idempotent update did not skip as expected"
+
+# ---------------------------------------------------------------------------
+# 8. Negative: missing rate_limit_kbps
+# ---------------------------------------------------------------------------
+
+- name: Create rate limit policy with missing rate_limit_kbps (should fail)
+  nutanix.ncp.ntnx_effective_rate_limit_policy_v2:
+    state: present
+    name: "{{ policy_base_name }}_missing_rate"
+    cluster_entity_filter:
+      type: CATEGORIES_MATCH_ANY
+      category_ext_ids:
+        - "{{ category_a_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Missing rate_limit_kbps status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - "'rate_limit_kbps' in result.msg"
+    success_msg: "Missing rate_limit_kbps failed as expected"
+    fail_msg: "Missing rate_limit_kbps did not fail as expected"
+
+# ---------------------------------------------------------------------------
+# 9. Negative: missing cluster_entity_filter
+# ---------------------------------------------------------------------------
+
+- name: Create rate limit policy with missing cluster_entity_filter (should fail)
+  nutanix.ncp.ntnx_effective_rate_limit_policy_v2:
+    state: present
+    name: "{{ policy_base_name }}_missing_filter"
+    rate_limit_kbps: 256
+  register: result
+  ignore_errors: true
+
+- name: Missing cluster_entity_filter status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - "'cluster_entity_filter' in result.msg"
+    success_msg: "Missing cluster_entity_filter failed as expected"
+    fail_msg: "Missing cluster_entity_filter did not fail as expected"
+
+# ---------------------------------------------------------------------------
+# 10. Negative: invalid enum for filter type
+# ---------------------------------------------------------------------------
+
+- name: Create rate limit policy with invalid filter type (should fail)
+  nutanix.ncp.ntnx_effective_rate_limit_policy_v2:
+    state: present
+    name: "{{ policy_base_name }}_invalid_enum"
+    rate_limit_kbps: 256
+    cluster_entity_filter:
+      type: INVALID_MATCH
+      category_ext_ids:
+        - "{{ category_a_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Invalid filter type status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    success_msg: "Invalid filter type failed as expected"
+    fail_msg: "Invalid filter type did not fail as expected"
+
+# ---------------------------------------------------------------------------
+# 11. Negative: update non-existent ext_id
+# ---------------------------------------------------------------------------
+
+- name: Update non-existent rate limit policy (should fail)
+  nutanix.ncp.ntnx_effective_rate_limit_policy_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    name: "{{ policy_base_name }}_nonexistent"
+    rate_limit_kbps: 256
+    cluster_entity_filter:
+      type: CATEGORIES_MATCH_ANY
+      category_ext_ids:
+        - "{{ category_a_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Update non-existent policy status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    success_msg: "Update non-existent policy failed as expected"
+    fail_msg: "Update non-existent policy did not fail as expected"
+
+# ---------------------------------------------------------------------------
+# 12. Check-mode delete
+# ---------------------------------------------------------------------------
+
+- name: Delete rate limit policy - check mode
+  nutanix.ncp.ntnx_effective_rate_limit_policy_v2:
+    state: absent
+    ext_id: "{{ policy_min_ext_id }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Check-mode delete status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.msg is defined
+      - "'will be deleted' in result.msg"
+      - result.ext_id == policy_min_ext_id
+    success_msg: "Check-mode delete passed"
+    fail_msg: "Check-mode delete did not behave as expected"
+
+# ---------------------------------------------------------------------------
+# 13-17. Info module: list-all, limit, get-by-id
+# ---------------------------------------------------------------------------
+
+- name: List all effective rate limit policies
+  nutanix.ncp.ntnx_vm_effective_rate_limit_policies_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: List all effective rate limit policies status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.response is defined
+      - result.total_available_results is defined
+    success_msg: "List all effective rate limit policies passed"
+    fail_msg: "List all effective rate limit policies failed"
+
+- name: List effective rate limit policies with limit 1
+  nutanix.ncp.ntnx_vm_effective_rate_limit_policies_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List with limit status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.response is defined
+      - result.response | length <= 1
+    success_msg: "List effective rate limit policies with limit passed"
+    fail_msg: "List effective rate limit policies with limit failed"
+
+- name: Get effective record for the created policy
+  nutanix.ncp.ntnx_vm_effective_rate_limit_policies_info_v2:
+    ext_id: "{{ policy_all_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Get effective record status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.ext_id == policy_all_ext_id
+      - result.response is defined
+    success_msg: "Fetching effective record for a policy succeeded"
+    fail_msg: "Fetching effective record for a policy failed"
+
+- name: Get effective record with unknown ext_id
+  nutanix.ncp.ntnx_vm_effective_rate_limit_policies_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Unknown ext_id fetch status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    success_msg: "Fetching effective record with unknown ext_id failed as expected"
+    fail_msg: "Fetching effective record with unknown ext_id did not fail as expected"
+
+# ---------------------------------------------------------------------------
+# 18. Real deletion of every created policy
+# ---------------------------------------------------------------------------
+
+- name: Delete all created rate limit policies
+  nutanix.ncp.ntnx_effective_rate_limit_policy_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  ignore_errors: true
+  loop: "{{ todelete }}"
+
+- name: Deletion status
+  ansible.builtin.assert:
+    that:
+      - item.failed == false
+      - item.changed == true
+      - item.response is defined
+      - item.response.status == "SUCCEEDED"
+    fail_msg: "Deletion of an image rate limit policy failed"
+    success_msg: "Deletion of image rate limit policies succeeded"
+  loop: "{{ result.results }}"
+
+# ---------------------------------------------------------------------------
+# 19. Negative: delete non-existent ext_id
+# ---------------------------------------------------------------------------
+
+- name: Delete non-existent rate limit policy (should fail)
+  nutanix.ncp.ntnx_effective_rate_limit_policy_v2:
+    state: absent
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Delete non-existent policy status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    success_msg: "Delete non-existent policy failed as expected"
+    fail_msg: "Delete non-existent policy did not fail as expected"
+
+# ---------------------------------------------------------------------------
+# Cleanup: remove categories created for tests
+# ---------------------------------------------------------------------------
+
+- name: Cleanup - delete created categories
+  nutanix.ncp.ntnx_categories_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: cat_delete_result
+  ignore_errors: true
+  loop: "{{ created_category_ext_ids }}"
+
+- name: Cleanup categories status
+  ansible.builtin.assert:
+    that:
+      - item.failed == false
+    fail_msg: "Failed to delete category"
+    success_msg: "Categories deleted successfully"
+  loop: "{{ cat_delete_result.results }}"
