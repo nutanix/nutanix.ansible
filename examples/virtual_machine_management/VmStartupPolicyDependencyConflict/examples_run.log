@@ -1,0 +1,33 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [VM startup policy dependency conflicts info playbook] ********************
+
+TASK [Setting variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"dependency_conflict_ext_id": "0b0f7f13-3d13-4bfb-9df0-2af1a4a3e21b", "vm_startup_policy_ext_id": "8c6bc5f3-c18c-4702-4c2d-b769fd5f94b0"}, "changed": false}
+
+TASK [List all dependency conflicts for a VM startup policy] *******************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching VM startup policy dependency conflicts info", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "argumentsMap": {"policy_uuid": "8c6bc5f3-c18c-4702-4c2d-b769fd5f94b0"}, "code": "VMM-34060", "errorGroup": "POLICY_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the policy with UUID '8c6bc5f3-c18c-4702-4c2d-b769fd5f94b0', because it is not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [List dependency conflicts with pagination] *******************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching VM startup policy dependency conflicts info", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "argumentsMap": {"policy_uuid": "8c6bc5f3-c18c-4702-4c2d-b769fd5f94b0"}, "code": "VMM-34060", "errorGroup": "POLICY_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the policy with UUID '8c6bc5f3-c18c-4702-4c2d-b769fd5f94b0', because it is not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [Fetch a specific dependency conflict by external ID] *********************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching VM startup policy dependency conflict info using ext_id", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "argumentsMap": {"policy_uuid": "8c6bc5f3-c18c-4702-4c2d-b769fd5f94b0"}, "code": "VMM-34060", "errorGroup": "POLICY_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the policy with UUID '8c6bc5f3-c18c-4702-4c2d-b769fd5f94b0', because it is not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [List dependee VMs for a specific dependency conflict] ********************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching dependee VMs of VM startup policy dependency conflict", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "argumentsMap": {"policy_uuid": "8c6bc5f3-c18c-4702-4c2d-b769fd5f94b0"}, "code": "VMM-34060", "errorGroup": "POLICY_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the policy with UUID '8c6bc5f3-c18c-4702-4c2d-b769fd5f94b0', because it is not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [List dependent VMs for a specific dependency conflict] *******************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching dependent VMs of VM startup policy dependency conflict", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "argumentsMap": {"policy_uuid": "8c6bc5f3-c18c-4702-4c2d-b769fd5f94b0"}, "code": "VMM-34060", "errorGroup": "POLICY_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the policy with UUID '8c6bc5f3-c18c-4702-4c2d-b769fd5f94b0', because it is not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=6    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=5   
+
