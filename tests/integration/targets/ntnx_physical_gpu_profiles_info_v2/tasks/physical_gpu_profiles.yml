@@ -1,0 +1,247 @@
+---
+# ##############################################################################
+# Test plan — ntnx_physical_gpu_profiles_info_v2
+#
+# PhysicalGpuProfile is a READ-ONLY resource in the clustermgmt v4 SDK
+# (only ClustersApi.list_physical_gpu_profiles exists — no create / update /
+# delete). Because of that, this test file focuses on:
+#
+#   * required-arg validation (cluster_ext_id is mandatory)
+#   * mutually-exclusive validation (ext_id vs. filter)
+#   * happy-path listing (all profiles on the cluster)
+#   * paginated listing (limit / page)
+#   * ordered listing (orderby)
+#   * server-side filtering (filter by GPU type when the cluster has profiles)
+#   * get-by-ext_id (only executed when at least one profile is discovered)
+#   * negative — get-by-ext_id with an unknown UUID
+#   * response-shape assertions on every real API call
+#
+# The test target is disabled by default (see `aliases`), matching every
+# other cluster-management info target in this collection.
+# ##############################################################################
+
+- name: Start PhysicalGpuProfile info tests
+  ansible.builtin.debug:
+    msg: Start PhysicalGpuProfile info tests
+
+- name: Set cluster ext_id
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ cluster.uuid }}"
+
+########################################################################################
+# Argument-spec / negative validation
+########################################################################################
+
+- name: List profiles without cluster_ext_id (should fail — required)  # noqa: args[module]
+  nutanix.ncp.ntnx_physical_gpu_profiles_info_v2: {}
+  register: result
+  ignore_errors: true
+
+- name: List profiles without cluster_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'missing required arguments: cluster_ext_id' in result.msg"
+    success_msg: "Missing cluster_ext_id failed as expected"
+    fail_msg: "Missing cluster_ext_id did not fail as expected"
+
+- name: List profiles with ext_id AND filter (should fail — mutually exclusive)
+  nutanix.ncp.ntnx_physical_gpu_profiles_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    filter: "extId eq '00000000-0000-0000-0000-000000000000'"
+  register: result
+  ignore_errors: true
+
+- name: Verify ext_id + filter mutual exclusivity status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'mutually exclusive' in result.msg"
+    success_msg: "ext_id and filter are mutually exclusive as expected"
+    fail_msg: "ext_id + filter mutual exclusivity check failed"
+
+########################################################################################
+# List all physical GPU profiles on the cluster (happy path)
+########################################################################################
+
+- name: List all physical GPU profiles on the cluster
+  nutanix.ncp.ntnx_physical_gpu_profiles_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: all_profiles
+  ignore_errors: true
+
+- name: List all physical GPU profiles status
+  ansible.builtin.assert:
+    that:
+      - all_profiles is defined
+      - all_profiles.changed == false
+      - all_profiles.failed == false
+      - all_profiles.response is defined
+      - all_profiles.total_available_results is defined
+      - (all_profiles.response | type_debug) == 'list'
+    success_msg: "Listed physical GPU profiles successfully"
+    fail_msg: "Failed to list physical GPU profiles"
+
+########################################################################################
+# List with pagination (limit / page)
+########################################################################################
+
+- name: List physical GPU profiles with limit=1
+  nutanix.ncp.ntnx_physical_gpu_profiles_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    limit: 1
+  register: paged_profiles
+  ignore_errors: true
+
+- name: List profiles with limit status
+  ansible.builtin.assert:
+    that:
+      - paged_profiles is defined
+      - paged_profiles.changed == false
+      - paged_profiles.failed == false
+      - paged_profiles.response is defined
+      - (paged_profiles.response | length) <= 1
+    success_msg: "Limit enforcement worked as expected"
+    fail_msg: "Limit enforcement did not work as expected"
+
+- name: List physical GPU profiles with page=0 and limit=2
+  nutanix.ncp.ntnx_physical_gpu_profiles_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    page: 0
+    limit: 2
+  register: paged_profiles_2
+  ignore_errors: true
+
+- name: List profiles with page + limit status
+  ansible.builtin.assert:
+    that:
+      - paged_profiles_2 is defined
+      - paged_profiles_2.changed == false
+      - paged_profiles_2.failed == false
+      - paged_profiles_2.response is defined
+      - (paged_profiles_2.response | length) <= 2
+    success_msg: "Page + limit enforcement worked as expected"
+    fail_msg: "Page + limit enforcement did not work as expected"
+
+########################################################################################
+# Ordered listing
+########################################################################################
+
+- name: List physical GPU profiles ordered by frame buffer size (asc)
+  nutanix.ncp.ntnx_physical_gpu_profiles_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    orderby: "physicalGpuConfig/frameBufferSizeBytes asc"
+  register: ordered_profiles
+  ignore_errors: true
+
+- name: Ordered listing status
+  ansible.builtin.assert:
+    that:
+      - ordered_profiles is defined
+      - ordered_profiles.changed == false
+      - ordered_profiles.failed == false
+      - ordered_profiles.response is defined
+    success_msg: "Ordered listing succeeded"
+    fail_msg: "Ordered listing failed"
+
+########################################################################################
+# Server-side filtering (only when at least one profile exists)
+########################################################################################
+
+- name: List physical GPU profiles filtered by GPU type (PASSTHROUGH_GRAPHICS)
+  nutanix.ncp.ntnx_physical_gpu_profiles_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    filter: "physicalGpuConfig/type eq Clustermgmt.Config.GpuType'PASSTHROUGH_GRAPHICS'"
+  register: filtered_profiles
+  ignore_errors: true
+
+- name: Filtered listing status
+  ansible.builtin.assert:
+    that:
+      - filtered_profiles is defined
+      - filtered_profiles.changed == false
+      - filtered_profiles.failed == false
+      - filtered_profiles.response is defined
+    success_msg: "Filtered listing succeeded"
+    fail_msg: "Filtered listing failed"
+
+- name: Every filtered profile actually has the requested type
+  ansible.builtin.assert:
+    that:
+      - item.physical_gpu_config.type == "PASSTHROUGH_GRAPHICS"
+    fail_msg: "Filter returned a profile of the wrong type"
+    success_msg: "All filtered profiles match the requested type"
+  loop: "{{ filtered_profiles.response }}"
+  when:
+    - filtered_profiles.response is defined
+    - filtered_profiles.response | length > 0
+
+########################################################################################
+# Get-by-ext_id (only when we discovered at least one profile above)
+########################################################################################
+
+- name: Fetch a single physical GPU profile by ext_id
+  nutanix.ncp.ntnx_physical_gpu_profiles_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ all_profiles.response[0].ext_id }}"
+  register: single_profile
+  when:
+    - all_profiles.response is defined
+    - all_profiles.response | length > 0
+  ignore_errors: true
+
+- name: Single-profile fetch status
+  ansible.builtin.assert:
+    that:
+      - single_profile is defined
+      - single_profile.changed == false
+      - single_profile.failed == false
+      - single_profile.response is defined
+      - single_profile.ext_id == all_profiles.response[0].ext_id
+      - single_profile.response.ext_id == all_profiles.response[0].ext_id
+      - single_profile.response.physical_gpu_config is defined
+    success_msg: "Single physical GPU profile fetched successfully"
+    fail_msg: "Single physical GPU profile fetch failed"
+  when:
+    - all_profiles.response is defined
+    - all_profiles.response | length > 0
+
+- name: Fetch physical GPU profile with an unknown ext_id (should fail)
+  nutanix.ncp.ntnx_physical_gpu_profiles_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: missing_profile
+  ignore_errors: true
+
+- name: Unknown ext_id status
+  ansible.builtin.assert:
+    that:
+      - missing_profile is defined
+      - missing_profile.changed == false
+      - missing_profile.failed == true
+    success_msg: "Unknown ext_id failed as expected"
+    fail_msg: "Unknown ext_id did not fail as expected"
+
+- name: Fetch physical GPU profile with an invalid cluster_ext_id (should fail)
+  nutanix.ncp.ntnx_physical_gpu_profiles_info_v2:
+    cluster_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: bad_cluster
+  ignore_errors: true
+
+- name: Invalid cluster_ext_id status
+  ansible.builtin.assert:
+    that:
+      - bad_cluster is defined
+      - bad_cluster.changed == false
+      - bad_cluster.failed == true
+    success_msg: "Invalid cluster_ext_id failed as expected"
+    fail_msg: "Invalid cluster_ext_id did not fail as expected"
+
+- name: End PhysicalGpuProfile info tests
+  ansible.builtin.debug:
+    msg: End PhysicalGpuProfile info tests

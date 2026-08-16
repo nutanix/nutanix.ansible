@@ -1,0 +1,71 @@
+---
+# Summary:
+# This playbook demonstrates the ntnx_physical_gpu_profiles_info_v2 module:
+# 1. Discover a Prism Element cluster UUID (needed as the parent identifier).
+# 2. List all physical GPU profiles on that cluster.
+# 3. List physical GPU profiles with a filter (by GPU type).
+# 4. List physical GPU profiles ordered by frame buffer size.
+# 5. List physical GPU profiles with pagination (page + limit).
+# 6. Fetch a single physical GPU profile by its external ID.
+
+- name: PhysicalGpuProfile info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('10.44.76.28', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('admin', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('Nutanix.123', true) }}"
+      validate_certs: false
+  tasks:
+    - name: List all clusters registered with Prism Central
+      nutanix.ncp.ntnx_clusters_info_v2:
+      register: clusters_result
+
+    - name: Pick the first Prism Element cluster (skip Prism Central itself)
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ item.ext_id }}"
+      loop: "{{ clusters_result.response }}"
+      loop_control:
+        label: "{{ item.name }}"
+      when:
+        - cluster_ext_id is not defined
+        - "'PRISM_CENTRAL' not in (item.config.cluster_function | default([]))"
+
+    - name: List all physical GPU profiles on the cluster
+      nutanix.ncp.ntnx_physical_gpu_profiles_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: all_profiles
+      ignore_errors: true
+
+    - name: List physical GPU profiles filtered by passthrough graphics type
+      nutanix.ncp.ntnx_physical_gpu_profiles_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        filter: "physicalGpuConfig/type eq Clustermgmt.Config.GpuType'PASSTHROUGH_GRAPHICS'"
+      register: filtered_profiles
+      ignore_errors: true
+
+    - name: List physical GPU profiles ordered by frame buffer size (desc)
+      nutanix.ncp.ntnx_physical_gpu_profiles_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        orderby: "physicalGpuConfig/frameBufferSizeBytes desc"
+      register: ordered_profiles
+      ignore_errors: true
+
+    - name: List physical GPU profiles with page and limit
+      nutanix.ncp.ntnx_physical_gpu_profiles_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        page: 0
+        limit: 5
+      register: paged_profiles
+      ignore_errors: true
+
+    - name: Fetch a single physical GPU profile by external ID (when at least one exists)
+      nutanix.ncp.ntnx_physical_gpu_profiles_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ all_profiles.response[0].ext_id }}"
+      register: single_profile
+      when:
+        - all_profiles.response is defined
+        - all_profiles.response | length > 0
+      ignore_errors: true

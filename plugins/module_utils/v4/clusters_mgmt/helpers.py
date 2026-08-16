@@ -109,3 +109,47 @@ def get_cluster_profile(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching cluster profile info using ext_id",
         )
+
+
+def get_physical_gpu_profile(module, api_instance, ext_id, cluster_ext_id):
+    """
+    Return a single PhysicalGpuProfile from the per-cluster list endpoint.
+
+    The clustermgmt v4 SDK exposes only a list method
+    (ClustersApi.list_physical_gpu_profiles) for physical GPU profiles.
+    This helper performs a server-side filter on ``extId`` and then verifies
+    the match client-side, so callers can operate as if a real
+    "get-by-ext_id" endpoint existed.
+
+    Args:
+        module: Ansible module.
+        api_instance: ``ClustersApi`` instance from the SDK.
+        ext_id (str): PhysicalGpuProfile external ID.
+        cluster_ext_id (str): Parent cluster external ID (required by the
+            SDK/API).
+
+    Returns:
+        The matching PhysicalGpuProfile model instance.
+    """
+    try:
+        resp = api_instance.list_physical_gpu_profiles(
+            clusterExtId=cluster_ext_id,
+            _filter="extId eq '{0}'".format(ext_id),
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching physical GPU profile info using ext_id",
+        )
+
+    data = getattr(resp, "data", None) or []
+    for profile in data:
+        if getattr(profile, "ext_id", None) == ext_id:
+            return profile
+
+    module.fail_json(
+        msg=(
+            "PhysicalGpuProfile with ext_id '{0}' was not found on cluster '{1}'."
+        ).format(ext_id, cluster_ext_id)
+    )
