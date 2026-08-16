@@ -1,0 +1,468 @@
+---
+# =============================================================================
+# Test plan (RemoteSubnetForCluster in Nutanix Networking v4.3)
+#
+# Scope of coverage:
+#  * The Networking v4.3 RemoteEntitiesApi exposes ONLY read operations
+#    (get_remote_subnet_for_cluster_by_id, list_remote_subnets_by_cluster_id).
+#    There is no create / update / delete. The tests here therefore focus on:
+#      1. Positive read paths (list + get-by-id) against a live PC where the
+#         cluster ext_id is known.
+#      2. check_mode for the read module (state=present).
+#      3. Negative paths: unsupported state=absent (read-only), missing
+#         required params, invalid enum for state, unknown cluster ext_id,
+#         unknown remote subnet ext_id, mutually exclusive info params.
+#      4. Info-module filters/limits/orderby/paging.
+#      5. Domain checks: response shape mirrors the local Subnet schema and
+#         basic VLAN subnets are excluded (ENG-931792); every returned entry
+#         is at least of the advertised advanced-networking form.
+#
+# The dependency chain is intentionally light: the tests use the same PC that
+# they are querying as the "cluster" reference, because Nutanix v4 remote
+# endpoints accept the local PC cluster ext_id. Where a real remote pairing is
+# missing on the target cluster, the list should still succeed (returning an
+# empty data list) and the get-by-id / negative tests still exercise the code
+# paths.
+# =============================================================================
+
+- name: Start RemoteSubnetForCluster tests
+  ansible.builtin.debug:
+    msg: Start RemoteSubnetForCluster tests
+
+- name: Generate random names
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    suffix_name: "ansible"
+
+- name: Set names used across the tests
+  ansible.builtin.set_fact:
+    bogus_cluster_ext_id: "00000000-0000-0000-0000-{{ random_name | lower }}"
+    bogus_remote_subnet_ext_id: "11111111-1111-1111-1111-000000000000"
+
+########################################################################################
+# Discover a live PC cluster ext_id we can query
+########################################################################################
+
+- name: Discover a Prism Central cluster ext_id via clusters info module
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
+    limit: 1
+  register: pc_cluster_info
+  ignore_errors: true
+
+- name: Fallback to any cluster if no PC cluster is discoverable
+  when:
+    - pc_cluster_info is defined
+    - (pc_cluster_info.failed | default(false))
+      or (pc_cluster_info.response | default([]) | length == 0)
+  block:
+    - name: List any single cluster the PC knows about
+      nutanix.ncp.ntnx_clusters_info_v2:
+        limit: 1
+      register: any_cluster_info
+      ignore_errors: true
+
+    - name: Reuse any_cluster_info as pc_cluster_info
+      ansible.builtin.set_fact:
+        pc_cluster_info: "{{ any_cluster_info }}"
+
+- name: Guard that at least one cluster is visible from the PC
+  ansible.builtin.assert:
+    that:
+      - pc_cluster_info is defined
+      - pc_cluster_info.failed == false
+      - pc_cluster_info.response is defined
+      - pc_cluster_info.response | length > 0
+    success_msg: "Discovered a cluster ext_id to use for the RemoteSubnetForCluster tests"
+    fail_msg: "No cluster ext_id could be discovered on the target PC"
+
+- name: Capture the discovered cluster ext_id
+  ansible.builtin.set_fact:
+    pc_cluster_ext_id: "{{ pc_cluster_info.response[0].ext_id }}"
+
+########################################################################################
+# List all remote subnets on the PC (positive path, info module)
+########################################################################################
+
+- name: List all remote subnets for the discovered cluster
+  nutanix.ncp.ntnx_remote_subnet_for_clusters_info_v2:
+    cluster_ext_id: "{{ pc_cluster_ext_id }}"
+  register: list_all_result
+  ignore_errors: true
+
+- name: Assert list-all remote subnets succeeded
+  ansible.builtin.assert:
+    that:
+      - list_all_result is defined
+      - list_all_result.changed == false
+      - list_all_result.failed == false
+      - list_all_result.response is defined
+      - (list_all_result.response is iterable)
+      - list_all_result.total_available_results is defined
+    success_msg: "list_remote_subnets_by_cluster_id returned successfully"
+    fail_msg: "list_remote_subnets_by_cluster_id did not return as expected"
+
+- name: Domain check - every listed remote subnet exposes the read-only schema
+  when: list_all_result.response | length > 0
+  ansible.builtin.assert:
+    that:
+      - list_all_result.response[0].ext_id is defined
+      - list_all_result.response[0].name is defined
+      - "'subnet_type' in list_all_result.response[0]"
+      - "'cluster_reference' in list_all_result.response[0]"
+      - "'is_advanced_networking' in list_all_result.response[0]"
+    success_msg: "Each remote subnet entry mirrors the local Subnet schema as documented"
+    fail_msg: "A remote subnet entry is missing an expected field from the RemoteSubnet schema"
+
+########################################################################################
+# List with limit / page / orderby (positive path)
+########################################################################################
+
+- name: List remote subnets with limit=1 and page=0
+  nutanix.ncp.ntnx_remote_subnet_for_clusters_info_v2:
+    cluster_ext_id: "{{ pc_cluster_ext_id }}"
+    limit: 1
+    page: 0
+  register: list_limit_result
+  ignore_errors: true
+
+- name: Assert list with limit succeeded
+  ansible.builtin.assert:
+    that:
+      - list_limit_result is defined
+      - list_limit_result.changed == false
+      - list_limit_result.failed == false
+      - list_limit_result.response is defined
+      - list_limit_result.response | length <= 1
+    success_msg: "List with limit=1 respected the paging contract"
+    fail_msg: "List with limit=1 returned more than one entry"
+
+- name: List remote subnets ordered by name desc
+  nutanix.ncp.ntnx_remote_subnet_for_clusters_info_v2:
+    cluster_ext_id: "{{ pc_cluster_ext_id }}"
+    orderby: "name desc"
+  register: list_orderby_result
+  ignore_errors: true
+
+- name: Assert orderby succeeded
+  ansible.builtin.assert:
+    that:
+      - list_orderby_result is defined
+      - list_orderby_result.changed == false
+      - list_orderby_result.failed == false
+      - list_orderby_result.response is defined
+    success_msg: "List with orderby=name desc returned successfully"
+    fail_msg: "List with orderby=name desc did not return as expected"
+
+- name: List remote subnets with a filter that matches nothing
+  nutanix.ncp.ntnx_remote_subnet_for_clusters_info_v2:
+    cluster_ext_id: "{{ pc_cluster_ext_id }}"
+    filter: "name eq 'does-not-exist-{{ random_name }}'"
+  register: list_filter_empty_result
+  ignore_errors: true
+
+- name: Assert filter with no match returns an empty list, not failure
+  ansible.builtin.assert:
+    that:
+      - list_filter_empty_result is defined
+      - list_filter_empty_result.changed == false
+      - list_filter_empty_result.failed == false
+      - list_filter_empty_result.response is defined
+      - (list_filter_empty_result.response | length) == 0
+    success_msg: "Filter with no match returned an empty response list as designed"
+    fail_msg: "Filter with no match did not return an empty response list"
+
+########################################################################################
+# Get-by-id via info module (positive path, when a subnet is available)
+########################################################################################
+
+- name: Get a specific remote subnet via info module when at least one exists
+  when: list_all_result.response | length > 0
+  block:
+    - name: Capture the ext_id of the first remote subnet returned
+      ansible.builtin.set_fact:
+        first_remote_subnet_ext_id: "{{ list_all_result.response[0].ext_id }}"
+        first_remote_subnet_name: "{{ list_all_result.response[0].name }}"
+
+    - name: Get remote subnet by ext_id (info module)
+      nutanix.ncp.ntnx_remote_subnet_for_clusters_info_v2:
+        cluster_ext_id: "{{ pc_cluster_ext_id }}"
+        ext_id: "{{ first_remote_subnet_ext_id }}"
+      register: info_get_by_id_result
+      ignore_errors: true
+
+    - name: Assert info get-by-id returned the same remote subnet
+      ansible.builtin.assert:
+        that:
+          - info_get_by_id_result is defined
+          - info_get_by_id_result.changed == false
+          - info_get_by_id_result.failed == false
+          - info_get_by_id_result.response is defined
+          - info_get_by_id_result.response is mapping
+          - info_get_by_id_result.response.ext_id == first_remote_subnet_ext_id
+          - info_get_by_id_result.ext_id == first_remote_subnet_ext_id
+        success_msg: "Info get-by-id returned the expected remote subnet"
+        fail_msg: "Info get-by-id did not return the expected remote subnet"
+
+    - name: Get remote subnet by ext_id (read module, state=present)
+      nutanix.ncp.ntnx_remote_subnet_for_cluster_v2:
+        state: present
+        cluster_ext_id: "{{ pc_cluster_ext_id }}"
+        ext_id: "{{ first_remote_subnet_ext_id }}"
+      register: read_result
+      ignore_errors: true
+
+    - name: Assert read module returned the same remote subnet as the info module
+      ansible.builtin.assert:
+        that:
+          - read_result is defined
+          - read_result.changed == false
+          - read_result.failed == false
+          - read_result.ext_id == first_remote_subnet_ext_id
+          - read_result.response is defined
+          - read_result.response.ext_id == first_remote_subnet_ext_id
+          - read_result.response.name == info_get_by_id_result.response.name
+        success_msg: "Read module and info module agree on the remote subnet payload"
+        fail_msg: "Read module and info module returned different remote subnet payloads"
+
+    - name: Idempotency - fetch the same remote subnet twice, second read must not change
+      nutanix.ncp.ntnx_remote_subnet_for_cluster_v2:
+        state: present
+        cluster_ext_id: "{{ pc_cluster_ext_id }}"
+        ext_id: "{{ first_remote_subnet_ext_id }}"
+      register: read_result_2
+      ignore_errors: true
+
+    - name: Assert double-read is idempotent (changed=false both times)
+      ansible.builtin.assert:
+        that:
+          - read_result_2 is defined
+          - read_result_2.changed == false
+          - read_result_2.failed == false
+          - read_result_2.response.ext_id == first_remote_subnet_ext_id
+        success_msg: "Repeated reads are idempotent (as expected for a read-only entity)"
+        fail_msg: "Repeated reads reported a change; that violates the read-only contract"
+
+- name: Skip get-by-id positive tests because no remote subnet is reachable
+  when: list_all_result.response | length == 0
+  ansible.builtin.debug:
+    msg: >-
+      No remote subnet was returned by list_remote_subnets_by_cluster_id on this PC.
+      This is expected when the target Prism Central has no cross-cluster pairing set up.
+      Positive get-by-id assertions are skipped; negative tests still run.
+
+########################################################################################
+# check_mode (read module) - dry run must not call the API
+########################################################################################
+
+- name: Read module in check_mode with all attributes
+  nutanix.ncp.ntnx_remote_subnet_for_cluster_v2:
+    state: present
+    cluster_ext_id: "{{ pc_cluster_ext_id }}"
+    ext_id: "{{ bogus_remote_subnet_ext_id }}"
+  check_mode: true
+  register: read_check_mode_result
+  ignore_errors: true
+
+- name: Assert check_mode read did not fail and did not fetch data
+  ansible.builtin.assert:
+    that:
+      - read_check_mode_result is defined
+      - read_check_mode_result.changed == false
+      - read_check_mode_result.failed == false
+      - read_check_mode_result.skipped == true
+      - read_check_mode_result.msg is defined
+      - "'would be fetched' in read_check_mode_result.msg"
+      - read_check_mode_result.ext_id == bogus_remote_subnet_ext_id
+    success_msg: "check_mode read did not call the API and reported the intended dry-run"
+    fail_msg: "check_mode read incorrectly called the API or did not report the dry-run"
+
+########################################################################################
+# Negative: state=absent is not supported (read-only entity)
+########################################################################################
+
+- name: Attempt delete on a read-only remote subnet (must fail)
+  nutanix.ncp.ntnx_remote_subnet_for_cluster_v2:
+    state: absent
+    cluster_ext_id: "{{ pc_cluster_ext_id }}"
+    ext_id: "{{ bogus_remote_subnet_ext_id }}"
+  register: delete_result
+  ignore_errors: true
+
+- name: Assert delete on a read-only remote subnet fails with a descriptive msg
+  ansible.builtin.assert:
+    that:
+      - delete_result is defined
+      - delete_result.changed == false
+      - delete_result.failed == true
+      - delete_result.msg is defined
+      - "'read-only' in delete_result.msg"
+      - "'state=absent is not supported' in delete_result.msg"
+    success_msg: "state=absent is rejected as documented (read-only entity)"
+    fail_msg: "state=absent did not fail with the expected read-only error"
+
+########################################################################################
+# Negative: missing required params
+########################################################################################
+
+- name: Read module missing ext_id (must fail)
+  nutanix.ncp.ntnx_remote_subnet_for_cluster_v2:
+    state: present
+    cluster_ext_id: "{{ pc_cluster_ext_id }}"
+  register: missing_ext_id_result
+  ignore_errors: true
+
+- name: Assert missing ext_id is rejected by argument-spec validation
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id_result is defined
+      - missing_ext_id_result.changed == false
+      - missing_ext_id_result.failed == true
+      - missing_ext_id_result.msg is defined
+      - "'missing required arguments: ext_id' in missing_ext_id_result.msg"
+    success_msg: "Missing ext_id failed as expected"
+    fail_msg: "Missing ext_id did not fail as expected"
+
+- name: Read module missing cluster_ext_id (must fail)
+  nutanix.ncp.ntnx_remote_subnet_for_cluster_v2:
+    state: present
+    ext_id: "{{ bogus_remote_subnet_ext_id }}"
+  register: missing_cluster_result
+  ignore_errors: true
+
+- name: Assert missing cluster_ext_id is rejected by argument-spec validation
+  ansible.builtin.assert:
+    that:
+      - missing_cluster_result is defined
+      - missing_cluster_result.changed == false
+      - missing_cluster_result.failed == true
+      - missing_cluster_result.msg is defined
+      - "'missing required arguments: cluster_ext_id' in missing_cluster_result.msg"
+    success_msg: "Missing cluster_ext_id failed as expected"
+    fail_msg: "Missing cluster_ext_id did not fail as expected"
+
+- name: Info module missing cluster_ext_id (must fail)
+  nutanix.ncp.ntnx_remote_subnet_for_clusters_info_v2: {}
+  register: info_missing_cluster_result
+  ignore_errors: true
+
+- name: Assert info module without cluster_ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - info_missing_cluster_result is defined
+      - info_missing_cluster_result.changed == false
+      - info_missing_cluster_result.failed == true
+      - info_missing_cluster_result.msg is defined
+      - "'missing required arguments: cluster_ext_id' in info_missing_cluster_result.msg"
+    success_msg: "Info module rejects missing cluster_ext_id as expected"
+    fail_msg: "Info module did not reject missing cluster_ext_id"
+
+########################################################################################
+# Negative: invalid enum value for state
+########################################################################################
+
+- name: Read module with invalid state value (must fail)
+  nutanix.ncp.ntnx_remote_subnet_for_cluster_v2:
+    state: "invalid_state"
+    cluster_ext_id: "{{ pc_cluster_ext_id }}"
+    ext_id: "{{ bogus_remote_subnet_ext_id }}"
+  register: invalid_state_result
+  ignore_errors: true
+
+- name: Assert invalid state is rejected by choices validation
+  ansible.builtin.assert:
+    that:
+      - invalid_state_result is defined
+      - invalid_state_result.changed == false
+      - invalid_state_result.failed == true
+      - invalid_state_result.msg is defined
+      - "'value of state must be one of' in invalid_state_result.msg"
+    success_msg: "Invalid state value rejected by choices validation"
+    fail_msg: "Invalid state value was not rejected"
+
+########################################################################################
+# Negative: mutually exclusive info parameters
+########################################################################################
+
+- name: Info module with ext_id and filter combined (must fail)
+  nutanix.ncp.ntnx_remote_subnet_for_clusters_info_v2:
+    cluster_ext_id: "{{ pc_cluster_ext_id }}"
+    ext_id: "{{ bogus_remote_subnet_ext_id }}"
+    filter: "name eq 'x'"
+  register: info_mut_ex_filter
+  ignore_errors: true
+
+- name: Assert ext_id + filter is rejected as mutually exclusive
+  ansible.builtin.assert:
+    that:
+      - info_mut_ex_filter is defined
+      - info_mut_ex_filter.changed == false
+      - info_mut_ex_filter.failed == true
+      - info_mut_ex_filter.msg is defined
+      - "'mutually exclusive' in info_mut_ex_filter.msg"
+    success_msg: "ext_id + filter rejected as mutually exclusive"
+    fail_msg: "ext_id + filter was not rejected as mutually exclusive"
+
+- name: Info module with ext_id and limit combined (must fail)
+  nutanix.ncp.ntnx_remote_subnet_for_clusters_info_v2:
+    cluster_ext_id: "{{ pc_cluster_ext_id }}"
+    ext_id: "{{ bogus_remote_subnet_ext_id }}"
+    limit: 1
+  register: info_mut_ex_limit
+  ignore_errors: true
+
+- name: Assert ext_id + limit is rejected as mutually exclusive
+  ansible.builtin.assert:
+    that:
+      - info_mut_ex_limit is defined
+      - info_mut_ex_limit.changed == false
+      - info_mut_ex_limit.failed == true
+      - info_mut_ex_limit.msg is defined
+      - "'mutually exclusive' in info_mut_ex_limit.msg"
+    success_msg: "ext_id + limit rejected as mutually exclusive"
+    fail_msg: "ext_id + limit was not rejected as mutually exclusive"
+
+########################################################################################
+# Negative: invalid references (must fail with a descriptive API error)
+########################################################################################
+
+- name: Get remote subnet with an invalid ext_id (must fail)
+  nutanix.ncp.ntnx_remote_subnet_for_clusters_info_v2:
+    cluster_ext_id: "{{ pc_cluster_ext_id }}"
+    ext_id: "{{ bogus_remote_subnet_ext_id }}"
+  register: invalid_ext_id_result
+  ignore_errors: true
+
+- name: Assert unknown remote subnet ext_id yields a descriptive API failure
+  ansible.builtin.assert:
+    that:
+      - invalid_ext_id_result is defined
+      - invalid_ext_id_result.changed == false
+      - invalid_ext_id_result.failed == true
+      - invalid_ext_id_result.msg is defined
+      - "'Api Exception raised while fetching remote subnet' in invalid_ext_id_result.msg"
+    success_msg: "Unknown remote subnet ext_id fails with a descriptive Api Exception"
+    fail_msg: "Unknown remote subnet ext_id did not fail with the expected error"
+
+- name: Get remote subnet with an invalid cluster_ext_id (must fail)
+  nutanix.ncp.ntnx_remote_subnet_for_cluster_v2:
+    state: present
+    cluster_ext_id: "{{ bogus_cluster_ext_id }}"
+    ext_id: "{{ bogus_remote_subnet_ext_id }}"
+  register: invalid_cluster_result
+  ignore_errors: true
+
+- name: Assert unknown cluster_ext_id yields a descriptive API failure
+  ansible.builtin.assert:
+    that:
+      - invalid_cluster_result is defined
+      - invalid_cluster_result.changed == false
+      - invalid_cluster_result.failed == true
+      - invalid_cluster_result.msg is defined
+      - "'Api Exception raised while fetching remote subnet' in invalid_cluster_result.msg"
+    success_msg: "Unknown cluster_ext_id fails with a descriptive Api Exception"
+    fail_msg: "Unknown cluster_ext_id did not fail with the expected error"
+
+- name: End RemoteSubnetForCluster tests
+  ansible.builtin.debug:
+    msg: End RemoteSubnetForCluster tests

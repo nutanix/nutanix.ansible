@@ -170,3 +170,31 @@ def get_virtual_switch(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching virtual switch info using ext_id",
         )
+
+
+def get_remote_subnet_for_cluster(module, api_instance, cluster_ext_id, ext_id):
+    """
+    This method fetches a remote subnet on the given Prism Central cluster by
+    its external ID. RemoteSubnetForCluster is a read-only construct exposed by
+    Nutanix Networking v4.3 (RemoteEntitiesApi).
+    Args:
+        module: Ansible module
+        api_instance: RemoteEntitiesApi instance from ntnx_networking_py_client
+        cluster_ext_id (str): Reference to the Prism Central cluster
+        ext_id (str): Reference to the specified remote subnet
+    return:
+        info (object): remote subnet info
+    """
+    try:
+        return api_instance.get_remote_subnet_for_cluster_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg=(
+                "Api Exception raised while fetching remote subnet for cluster "
+                "ext_id='{0}' remote subnet ext_id='{1}'".format(cluster_ext_id, ext_id)
+            ),
+        )
