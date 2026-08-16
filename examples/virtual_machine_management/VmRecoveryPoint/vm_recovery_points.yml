@@ -1,0 +1,111 @@
+---
+# Examples for AHV VM recovery points (vmm v4.2 API).
+#
+# Modules exercised:
+#   * nutanix.ncp.ntnx_vm_recovery_point_v2               (CRUD: create / delete)
+#   * nutanix.ncp.ntnx_vm_recovery_points_info_v2         (info: get / list)
+#   * nutanix.ncp.ntnx_vm_recovery_point_restore_v2       (action: restore VM)
+#
+# Prerequisites:
+#   - A reachable Prism Central endpoint (`ip`) with admin credentials.
+#   - An existing AHV VM (`source_vm_ext_id`) that can be snapshotted.
+#   - For APPLICATION_CONSISTENT recovery points: the source VM must be a
+#     Windows VM with NGT installed and VSS enabled.
+#
+# Variables referenced (override on the command line with -e):
+#   ip                : Prism Central endpoint (e.g. 10.44.76.28)
+#   username          : PC username (e.g. admin)
+#   password          : PC password
+#   source_vm_ext_id  : External ID of the source AHV VM to snapshot
+#
+# ansible-playbook examples/virtual_machine_management/VmRecoveryPoint/vm_recovery_points.yml \
+#     -e ip=... -e username=... -e password=... -e source_vm_ext_id=...
+
+- name: Nutanix AHV VM Recovery Point examples
+  hosts: localhost
+  gather_facts: true
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      nutanix_port: "{{ nutanix_port | default(9440) }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+  tasks:
+
+    - name: Compute an expiration time 30 days out (ISO-8601 UTC)
+      ansible.builtin.set_fact:
+        expiration_time: "{{ '%Y-%m-%dT%H:%M:%SZ' | strftime((ansible_date_time.epoch | int) + (30 * 86400)) }}"
+
+    - name: Create a crash-consistent AHV VM recovery point
+      nutanix.ncp.ntnx_vm_recovery_point_v2:
+        state: present
+        name: "ansible_example_vm_rp_crash"
+        vm_ext_id: "{{ source_vm_ext_id }}"
+        recovery_point_type: "CRASH_CONSISTENT"
+        expiration_time: "{{ expiration_time }}"
+      register: crash_rp
+    # sample:
+    #   response:
+    #     ext_id: "b387359d-fa5c-4d58-9eb2-3af1a4976319"
+    #     name: "ansible_example_vm_rp_crash"
+    #     recovery_point_type: "CRASH_CONSISTENT"
+    #     status: "COMPLETE"
+    #     vm_ext_id: "ac5aff0c-6c68-4948-9088-b903e2be0ce7"
+
+    - name: Create an application-consistent AHV VM recovery point (Windows + VSS)
+      nutanix.ncp.ntnx_vm_recovery_point_v2:
+        state: present
+        name: "ansible_example_vm_rp_app"
+        vm_ext_id: "{{ source_vm_ext_id }}"
+        recovery_point_type: "APPLICATION_CONSISTENT"
+        expiration_time: "{{ expiration_time }}"
+        application_consistent_properties:
+          backup_type: "FULL_BACKUP"
+          should_include_writers: false
+          should_store_vss_metadata: false
+      when: run_app_consistent | default(false) | bool
+      register: app_rp
+
+    - name: Fetch a specific AHV VM recovery point by ext_id
+      nutanix.ncp.ntnx_vm_recovery_points_info_v2:
+        ext_id: "{{ crash_rp.ext_id }}"
+      register: rp_info
+
+    - name: List all AHV VM recovery points (paged)
+      nutanix.ncp.ntnx_vm_recovery_points_info_v2:
+        limit: 10
+      register: rp_list
+
+    - name: List AHV VM recovery points filtered by source VM ext_id
+      nutanix.ncp.ntnx_vm_recovery_points_info_v2:
+        filter: "vmExtId eq '{{ source_vm_ext_id }}'"
+      register: rp_filtered
+
+    - name: Restore a new AHV VM from the crash-consistent recovery point
+      nutanix.ncp.ntnx_vm_recovery_point_restore_v2:
+        ext_id: "{{ crash_rp.ext_id }}"
+        vm_config_override_spec:
+          name: "ansible_example_restored_vm"
+          description: "Restored by ntnx_vm_recovery_point_restore_v2 example"
+      register: restored
+
+    - name: Delete the newly restored VM (cleanup)
+      nutanix.ncp.ntnx_vms_v2:
+        state: absent
+        ext_id: "{{ restored.vm_ext_id }}"
+      when: restored.vm_ext_id is defined and restored.vm_ext_id | length > 0
+      register: restored_vm_delete
+
+    - name: Delete the crash-consistent AHV VM recovery point (cleanup)
+      nutanix.ncp.ntnx_vm_recovery_point_v2:
+        state: absent
+        ext_id: "{{ crash_rp.ext_id }}"
+      register: crash_rp_delete
+
+    - name: Delete the application-consistent AHV VM recovery point (cleanup)
+      nutanix.ncp.ntnx_vm_recovery_point_v2:
+        state: absent
+        ext_id: "{{ app_rp.ext_id }}"
+      when: app_rp is defined and app_rp.ext_id is defined
+      register: app_rp_delete

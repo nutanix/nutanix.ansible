@@ -1,0 +1,882 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+
+PLAY [Nutanix AHV VM Recovery Point examples] **********************************
+
+TASK [Gathering Facts] *********************************************************
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004159
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004173
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004201
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004202
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004211
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004252
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004260
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004276
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004287
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004288
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004289
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004290
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004292
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004293
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004294
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004298
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004299
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004300
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004317
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004318
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004319
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004320
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004321
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004322
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004323
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004324
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004326
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004327
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004328
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004329
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004330
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004331
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004332
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004333
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004334
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004335
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004336
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004337
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004338
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004340
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004341
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004343
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004344
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004346
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004348
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004349
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004350
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004351
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004352
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004353
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004354
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004355
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004356
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004357
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004358
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004359
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004361
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004362
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004364
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004366
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004367
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004369
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004370
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004371
+[WARNING]: Timeout exceeded when getting mount info for /misc/legacy-kernel-
+builds/40
+[WARNING]: Timeout exceeded when getting mount info for /misc/legacy-kernel-
+builds/41
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004372
+[WARNING]: Timeout exceeded when getting mount info for /misc/legacy-kernel-
+builds/43
+[WARNING]: Timeout exceeded when getting mount info for /misc/legacy-kernel-
+builds/44
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004373
+[WARNING]: Timeout exceeded when getting mount info for /misc/legacy-kernel-
+builds/45
+[WARNING]: Timeout exceeded when getting mount info for /misc/legacy-kernel-
+builds/47
+[WARNING]: Timeout exceeded when getting mount info for /misc/legacy-kernel-
+builds/48
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004375
+[WARNING]: Timeout exceeded when getting mount info for /misc/legacy-kernel-
+builds/49
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004376
+[WARNING]: Timeout exceeded when getting mount info for /misc/legacy-kernel-
+builds/51
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004377
+[WARNING]: Timeout exceeded when getting mount info for /misc/legacy-kernel-
+builds/56
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/2.2.3
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004378
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004379
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004380
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/2.3.0.2
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004381
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004382
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004383
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004384
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004385
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004386
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004387
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/27_hop_version_dummy
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004388
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004389
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004390
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004391
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/27_hop_version_release
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004392
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004393
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004394
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004395
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004396
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/50480_build
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004397
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004399
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004400
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004401
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004402
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004403
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004405
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/ENG-783283
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004406
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004407
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004408
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004409
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004410
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004411
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004412
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004413
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004414
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004417
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004418
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004419
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004420
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004421
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004423
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004424
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004425
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004426
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004427
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004430
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004431
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004433
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004435
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004436
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/ENG-918959
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004437
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004438
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004441
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/Endor_LCM
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004442
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004443
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004444
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004447
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004448
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004449
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004450
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004451
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004452
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004453
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004454
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004455
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004456
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004457
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004458
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004459
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/LCM_1.1
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004460
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/LCM_1.2
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004461
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004462
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/LCM_1.3
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/LCM_1.4
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004464
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004465
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004466
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004467
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/LCM_1.4_Dec_mod_ref
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004468
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004469
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/LCM_1.4_NX_2018_3
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004470
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004471
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004472
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/LCM_1.4_Nov_Mod_ref
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004473
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004474
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004475
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004476
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004477
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/LCM_1.4_XC_2018_3
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004478
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/LCM_1.4_pre_post_checks
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004479
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/LCM_1.5
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004480
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004481
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004482
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004483
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/LCM_1.6
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004484
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004485
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004486
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004487
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004488
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004489
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004491
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004492
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004503
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004504
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004506
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/LCM_2.1
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004509
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004510
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004514
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004516
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/LCM_2.1_Dec_Mod_ref
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004517
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004518
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004519
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004520
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/LCM_2.2
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004521
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004522
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1004524
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1009
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.101002
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.101019
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/LCM_2.2.3
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.101020
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.101023
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.101025
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.101026
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.101027
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.101034
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.101035
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.101045
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.101046
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.101059
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.101060
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/LCM_2.2.3.1
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.1011
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.102001
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.102004
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.102005
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.103001
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.103002
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.103003
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.103010
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.103013
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.103014
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.103022
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.103031
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.103032
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.103052
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.103053
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.103067
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.103068
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.103072
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.103073
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.103074
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/LCM_2.2.4
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.103076
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.103084
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.103087
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.103088
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.103092
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.103099
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.103100
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.103103
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.116
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.124
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.125
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/LCM_2.2.R1
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.132
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.135
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/LCM_2.2.R2
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.144
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150001
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150066
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150086
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150110
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150111
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150128
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150137
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150144
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150150
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150163
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150165
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150171
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150173
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150177
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150180
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150265
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150268
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150269
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150270
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/LCM_2.2.R2.1
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150273
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150275
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150278
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150283
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150284
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150287
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150289
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150290
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150291
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/LCM_2.2.R2.2
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150292
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150333
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150338
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150339
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150371
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150381
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/LCM_2.3
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150384
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150389
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150390
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/LCM_2.3.0.1
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150400
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150404
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150423
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150427
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150428
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150431
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150435
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150437
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150445
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150448
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150450
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150453
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150455
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150457
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/LCM_2.3.0.2
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150459
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150460
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150462
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150469
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150470
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150475
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150477
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150479
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150480
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150484
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150487
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150489
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150491
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150494
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150495
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150497
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150498
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/LCM_2.3.0.3
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150502
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150504
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150506
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150509
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150511
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.150513
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.155
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.156
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.179
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.181
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/LCM_2.3.0.4
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.186
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.188
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.192
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.193
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.198
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.2001
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.2007
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.2008
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.2010
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.2014
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.2016
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.2017
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.2019
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.202
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.2024
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.2026
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.203
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.204
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.207
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.209
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.216
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.289
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.3001
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/LCM_2.3.1
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.3002
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.3003
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.4
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500005
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500007
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500009
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500010
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500011
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500012
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500013
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500016
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500017
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500018
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500021
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500024
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500027
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500028
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500030
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500038
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500039
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500040
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500044
+[WARNING]: Timeout exceeded when getting mount info for /misc/lcm-cci-
+builds/LCM_2.3.1.1
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500045
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500046
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500050
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500052
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500054
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500055
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500056
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500057
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500058
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500059
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500062
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500064
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500066
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500068
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500071
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500074
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500076
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500077
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500079
+[WARNING]: Timeout exceeded when getting mount info for /misc/ahv-
+builds/20230302.500080
+ok: [localhost]
+
+TASK [Compute an expiration time 30 days out (ISO-8601 UTC)] *******************
+ok: [localhost]
+
+TASK [Create a crash-consistent AHV VM recovery point] *************************
+changed: [localhost]
+
+TASK [Create an application-consistent AHV VM recovery point (Windows + VSS)] ***
+skipping: [localhost]
+
+TASK [Fetch a specific AHV VM recovery point by ext_id] ************************
+ok: [localhost]
+
+TASK [List all AHV VM recovery points (paged)] *********************************
+ok: [localhost]
+
+TASK [List AHV VM recovery points filtered by source VM ext_id] ****************
+ok: [localhost]
+
+TASK [Restore a new AHV VM from the crash-consistent recovery point] ***********
+changed: [localhost]
+
+TASK [Delete the newly restored VM (cleanup)] **********************************
+changed: [localhost]
+
+TASK [Delete the crash-consistent AHV VM recovery point (cleanup)] *************
+changed: [localhost]
+
+TASK [Delete the application-consistent AHV VM recovery point (cleanup)] *******
+skipping: [localhost]
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=9    changed=4    unreachable=0    failed=0    skipped=2    rescued=0    ignored=0   
+
