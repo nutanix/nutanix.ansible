@@ -1,0 +1,124 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create a notification partner server (with all vendor_properties fields)
+# 2. Create a backup partner server (with all backup_server_config fields)
+# 3. Update a partner server (with all fields)
+# 4. Get partner server using ext_id
+# 5. List all partner servers for a file server
+# 6. List partner servers with filter
+# 7. List partner servers with limit
+# 8. Delete a partner server
+
+- name: Partner Server playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting variables
+      ansible.builtin.set_fact:
+        file_server_ext_id: "18f78959-14a6-4c47-b5db-920460c4b668"
+
+    - name: Create a notification partner server
+      nutanix.ncp.ntnx_files_partner_server_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        name: "partner_server_ansible"
+        vendor_name: "DataLens"
+        description: "Notification partner server created by Ansible"
+        partner_type: "NOTIFICATION"
+        vendor_properties:
+          address:
+            ipv4:
+              value: "10.44.77.10"
+          port: 29092
+          server_type: "PRIMARY"
+          custom_properties:
+            - name: "kafkatopic"
+              value: "1P1R"
+      register: notification_partner_server
+      ignore_errors: true
+
+    - name: Create a backup partner server
+      nutanix.ncp.ntnx_files_partner_server_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        name: "backup_partner_server_ansible"
+        vendor_name: "BackupVendor"
+        description: "Backup partner server created by Ansible"
+        partner_type: "BACKUP"
+        backup_server_config:
+          expiry_in_secs: 86400
+          backup_client_access_configs:
+            - address:
+                ipv4:
+                  value: "10.44.77.20"
+              access_type: "READ_WRITE"
+              operation_type: "ADD"
+      register: backup_partner_server
+      ignore_errors: true
+
+    - name: Set partner server ext_id
+      ansible.builtin.set_fact:
+        partner_server_ext_id: "{{ notification_partner_server.ext_id }}"
+
+    - name: Update partner server
+      nutanix.ncp.ntnx_files_partner_server_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ partner_server_ext_id }}"
+        name: "partner_server_ansible_updated"
+        vendor_name: "DataLens"
+        description: "Notification partner server updated by Ansible"
+        partner_type: "NOTIFICATION"
+        vendor_properties:
+          address:
+            ipv4:
+              value: "10.44.77.11"
+          port: 39092
+          server_type: "PRIMARY"
+          custom_properties:
+            - name: "kafkatopic"
+              value: "2P2R"
+      register: result
+      ignore_errors: true
+
+    - name: Get partner server using ext_id
+      nutanix.ncp.ntnx_files_partner_servers_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ partner_server_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all partner servers for a file server
+      nutanix.ncp.ntnx_files_partner_servers_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List partner servers with filter
+      nutanix.ncp.ntnx_files_partner_servers_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        filter: "name eq 'partner_server_ansible_updated'"
+      register: result
+      ignore_errors: true
+
+    - name: List partner servers with limit
+      nutanix.ncp.ntnx_files_partner_servers_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: Delete partner server
+      nutanix.ncp.ntnx_files_partner_server_v2:
+        state: absent
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ partner_server_ext_id }}"
+      register: result
+      ignore_errors: true
