@@ -106,3 +106,16 @@ def get_kms_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_security_py_client.KeyManagementServersApi(client)
+
+
+def get_vulnerabilities_api_instance(module):
+    """
+    This method will return Vulnerabilities Api instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Vulnerabilities api instance backed by the
+            Nutanix Vulnerability Database (NXVD).
+    """
+    client = get_api_client(module)
+    return ntnx_security_py_client.VulnerabilitiesApi(client)

@@ -1,0 +1,396 @@
+---
+# =============================================================================
+# Integration tests for ntnx_vulnerabilities_info_v2
+# -----------------------------------------------------------------------------
+# The module wraps the Prism Central v4.1 Security "list vulnerabilities" API
+# (GET /api/security/v4.1/report/vulnerabilities) backed by the Nutanix
+# Vulnerability Database (NXVD). The API is read-only and only supports
+# pagination + OData filter/orderby/select query parameters.
+#
+# Notes on API behaviour:
+#   * The list endpoint is paginated. Default page size is 50, maximum is 100.
+#     `total_available_results` in the response metadata is the TRUE total,
+#     independent of how many records the current page contains.
+#   * The `severity` field is sortable; `nxvdCreatedTime` is NOT sortable
+#     (the API returns SEC-70008).
+#
+# These tests cover:
+#   1. Positive path
+#      - List vulnerabilities with default paging (assert total > 0)
+#      - Limit / Page pagination boundaries
+#      - Filter by every valid Severity enum value (CRITICAL, HIGH, MEDIUM, LOW)
+#      - Order by severity asc / desc
+#      - Projection ($select) of a subset of properties
+#      - Cross-check: sum of per-severity totals == overall total
+#      - Assert every record has a non-empty ext_id and a Severity in the
+#        allowed enum set
+#   2. Negative path
+#      - Invalid OData filter property
+#      - Invalid OData filter enum value
+#      - Non-sortable orderby property (e.g. nxvdCreatedTime)
+# =============================================================================
+
+- name: Start ntnx_vulnerabilities_info_v2 tests
+  ansible.builtin.debug:
+    msg: "Starting ntnx_vulnerabilities_info_v2 tests"
+
+# ---------------------------------------------------------------------------
+# 1. Fetch vulnerabilities in the NXVD (default paging).
+# ---------------------------------------------------------------------------
+- name: Fetch vulnerabilities from the Nutanix Vulnerability Database (NXVD)
+  nutanix.ncp.ntnx_vulnerabilities_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Verify vulnerabilities information response
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length > 0
+      - result.total_available_results is defined
+      - result.total_available_results > 0
+      - result.response | length <= result.total_available_results
+    fail_msg: "Vulnerabilities information verification failed"
+    success_msg: "Vulnerabilities information verification passed"
+
+- name: Assert every vulnerability record on the current page has ext_id and a valid severity
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.ext_id | length > 0
+      - item.severity in ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
+    fail_msg: "Vulnerability {{ item.ext_id | default('<no ext_id>') }} has unexpected shape"
+    success_msg: "Vulnerability {{ item.ext_id }} shape verified"
+  loop: "{{ result.response }}"
+  loop_control:
+    label: "{{ item.ext_id | default('<no ext_id>') }}"
+
+- name: Save the overall total of vulnerabilities
+  ansible.builtin.set_fact:
+    overall_total: "{{ result.total_available_results }}"
+
+# ---------------------------------------------------------------------------
+# 2. Pagination: limit and page.
+# ---------------------------------------------------------------------------
+- name: Fetch vulnerabilities with limit=1
+  nutanix.ncp.ntnx_vulnerabilities_info_v2:
+    limit: 1
+  register: result_limit
+  ignore_errors: true
+
+- name: Verify limit=1 returns exactly one vulnerability
+  ansible.builtin.assert:
+    that:
+      - result_limit.changed == false
+      - result_limit.failed == false
+      - result_limit.response is defined
+      - result_limit.response | length == 1
+      - result_limit.total_available_results == (overall_total | int)
+    fail_msg: "Vulnerabilities with limit=1 verification failed"
+    success_msg: "Vulnerabilities with limit=1 verification passed"
+
+- name: Fetch vulnerabilities with page=0 and limit=5
+  nutanix.ncp.ntnx_vulnerabilities_info_v2:
+    page: 0
+    limit: 5
+  register: result_page
+  ignore_errors: true
+
+- name: Verify page=0 limit=5 returns at most five vulnerabilities
+  ansible.builtin.assert:
+    that:
+      - result_page.changed == false
+      - result_page.failed == false
+      - result_page.response is defined
+      - result_page.response | length <= 5
+      - result_page.response | length > 0
+      - result_page.total_available_results == (overall_total | int)
+    fail_msg: "Vulnerabilities with pagination verification failed"
+    success_msg: "Vulnerabilities with pagination verification passed"
+
+# ---------------------------------------------------------------------------
+# 3. Filter by every valid Severity value.
+# ---------------------------------------------------------------------------
+- name: Fetch CRITICAL severity vulnerabilities (limit=100)
+  nutanix.ncp.ntnx_vulnerabilities_info_v2:
+    filter: "severity eq Security.Report.Severity'CRITICAL'"
+    limit: 100
+  register: result_critical
+  ignore_errors: true
+
+- name: Verify CRITICAL severity filter
+  ansible.builtin.assert:
+    that:
+      - result_critical.changed == false
+      - result_critical.failed == false
+      - result_critical.response is defined
+      - result_critical.total_available_results is defined
+      - result_critical.total_available_results >= 0
+      - result_critical.response | length <= result_critical.total_available_results
+    fail_msg: "CRITICAL severity filter verification failed"
+    success_msg: "CRITICAL severity filter verification passed"
+
+- name: Assert every CRITICAL result has severity CRITICAL
+  ansible.builtin.assert:
+    that:
+      - item.severity == "CRITICAL"
+    fail_msg: "Non-CRITICAL vulnerability leaked into CRITICAL filter: {{ item.ext_id }}"
+    success_msg: "Vulnerability {{ item.ext_id }} is CRITICAL"
+  loop: "{{ result_critical.response }}"
+  loop_control:
+    label: "{{ item.ext_id }}"
+  when: result_critical.response | length > 0
+
+- name: Save CRITICAL total
+  ansible.builtin.set_fact:
+    critical_total: "{{ result_critical.total_available_results }}"
+
+- name: Fetch HIGH severity vulnerabilities (limit=100)
+  nutanix.ncp.ntnx_vulnerabilities_info_v2:
+    filter: "severity eq Security.Report.Severity'HIGH'"
+    limit: 100
+  register: result_high
+  ignore_errors: true
+
+- name: Verify HIGH severity filter
+  ansible.builtin.assert:
+    that:
+      - result_high.changed == false
+      - result_high.failed == false
+      - result_high.response is defined
+      - result_high.total_available_results is defined
+      - result_high.total_available_results >= 0
+      - result_high.response | length <= result_high.total_available_results
+    fail_msg: "HIGH severity filter verification failed"
+    success_msg: "HIGH severity filter verification passed"
+
+- name: Assert every HIGH result has severity HIGH
+  ansible.builtin.assert:
+    that:
+      - item.severity == "HIGH"
+    fail_msg: "Non-HIGH vulnerability leaked into HIGH filter: {{ item.ext_id }}"
+    success_msg: "Vulnerability {{ item.ext_id }} is HIGH"
+  loop: "{{ result_high.response }}"
+  loop_control:
+    label: "{{ item.ext_id }}"
+  when: result_high.response | length > 0
+
+- name: Save HIGH total
+  ansible.builtin.set_fact:
+    high_total: "{{ result_high.total_available_results }}"
+
+- name: Fetch MEDIUM severity vulnerabilities (limit=100)
+  nutanix.ncp.ntnx_vulnerabilities_info_v2:
+    filter: "severity eq Security.Report.Severity'MEDIUM'"
+    limit: 100
+  register: result_medium
+  ignore_errors: true
+
+- name: Verify MEDIUM severity filter
+  ansible.builtin.assert:
+    that:
+      - result_medium.changed == false
+      - result_medium.failed == false
+      - result_medium.response is defined
+      - result_medium.total_available_results is defined
+      - result_medium.total_available_results >= 0
+      - result_medium.response | length <= result_medium.total_available_results
+    fail_msg: "MEDIUM severity filter verification failed"
+    success_msg: "MEDIUM severity filter verification passed"
+
+- name: Assert every MEDIUM result has severity MEDIUM
+  ansible.builtin.assert:
+    that:
+      - item.severity == "MEDIUM"
+    fail_msg: "Non-MEDIUM vulnerability leaked into MEDIUM filter: {{ item.ext_id }}"
+    success_msg: "Vulnerability {{ item.ext_id }} is MEDIUM"
+  loop: "{{ result_medium.response }}"
+  loop_control:
+    label: "{{ item.ext_id }}"
+  when: result_medium.response | length > 0
+
+- name: Save MEDIUM total
+  ansible.builtin.set_fact:
+    medium_total: "{{ result_medium.total_available_results }}"
+
+- name: Fetch LOW severity vulnerabilities (limit=100)
+  nutanix.ncp.ntnx_vulnerabilities_info_v2:
+    filter: "severity eq Security.Report.Severity'LOW'"
+    limit: 100
+  register: result_low
+  ignore_errors: true
+
+- name: Verify LOW severity filter
+  ansible.builtin.assert:
+    that:
+      - result_low.changed == false
+      - result_low.failed == false
+      - result_low.response is defined
+      - result_low.total_available_results is defined
+      - result_low.total_available_results >= 0
+      - result_low.response | length <= result_low.total_available_results
+    fail_msg: "LOW severity filter verification failed"
+    success_msg: "LOW severity filter verification passed"
+
+- name: Assert every LOW result has severity LOW
+  ansible.builtin.assert:
+    that:
+      - item.severity == "LOW"
+    fail_msg: "Non-LOW vulnerability leaked into LOW filter: {{ item.ext_id }}"
+    success_msg: "Vulnerability {{ item.ext_id }} is LOW"
+  loop: "{{ result_low.response }}"
+  loop_control:
+    label: "{{ item.ext_id }}"
+  when: result_low.response | length > 0
+
+- name: Save LOW total
+  ansible.builtin.set_fact:
+    low_total: "{{ result_low.total_available_results }}"
+
+- name: Verify sum of per-severity totals equals overall total
+  ansible.builtin.assert:
+    that:
+      - (critical_total | int) + (high_total | int) + (medium_total | int) + (low_total | int) == (overall_total | int)
+    fail_msg: >
+      Sum of per-severity totals does not match overall total_available_results:
+      CRITICAL={{ critical_total }} HIGH={{ high_total }}
+      MEDIUM={{ medium_total }} LOW={{ low_total }} vs overall {{ overall_total }}
+    success_msg: "Sum of per-severity totals matches overall total_available_results"
+
+# ---------------------------------------------------------------------------
+# 4. Order by severity: ascending -> CRITICAL first, descending -> lower-severities first.
+# ---------------------------------------------------------------------------
+- name: Fetch vulnerabilities ordered by severity ascending
+  nutanix.ncp.ntnx_vulnerabilities_info_v2:
+    orderby: "severity asc"
+    limit: 5
+  register: result_order_asc
+  ignore_errors: true
+
+- name: Verify orderby severity asc puts CRITICAL first when CRITICAL entries exist
+  ansible.builtin.assert:
+    that:
+      - result_order_asc.changed == false
+      - result_order_asc.failed == false
+      - result_order_asc.response is defined
+      - result_order_asc.response | length > 0
+      - result_order_asc.response[0].severity == "CRITICAL"
+    fail_msg: "Order by severity asc verification failed"
+    success_msg: "Order by severity asc verification passed"
+  when: (critical_total | int) > 0
+
+- name: Fetch vulnerabilities ordered by severity descending
+  nutanix.ncp.ntnx_vulnerabilities_info_v2:
+    orderby: "severity desc"
+    limit: 5
+  register: result_order_desc
+  ignore_errors: true
+
+- name: Verify orderby severity desc does NOT put a CRITICAL entry first when other severities exist
+  ansible.builtin.assert:
+    that:
+      - result_order_desc.changed == false
+      - result_order_desc.failed == false
+      - result_order_desc.response is defined
+      - result_order_desc.response | length > 0
+      - result_order_desc.response[0].severity != "CRITICAL"
+    fail_msg: "Order by severity desc verification failed"
+    success_msg: "Order by severity desc verification passed"
+  when: ((overall_total | int) - (critical_total | int)) > 0
+
+# ---------------------------------------------------------------------------
+# 5. Projection ($select) -- only ext_id + severity should carry values.
+# ---------------------------------------------------------------------------
+- name: Fetch projected view of vulnerabilities (ext_id + severity only)
+  nutanix.ncp.ntnx_vulnerabilities_info_v2:
+    select: "extId,severity"
+    limit: 3
+  register: result_select
+  ignore_errors: true
+
+- name: Verify projection returns records with only ext_id and severity populated
+  ansible.builtin.assert:
+    that:
+      - result_select.changed == false
+      - result_select.failed == false
+      - result_select.response is defined
+      - result_select.response | length > 0
+      - result_select.response | length <= 3
+    fail_msg: "Projected vulnerabilities verification failed"
+    success_msg: "Projected vulnerabilities verification passed"
+
+- name: Assert projected records have ext_id and severity but no cve_ids or fix_versions
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.ext_id | length > 0
+      - item.severity in ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
+      - item.cve_ids is none
+      - item.fix_versions is none
+    fail_msg: "Projected vulnerability {{ item.ext_id }} carries un-selected fields"
+    success_msg: "Projected vulnerability {{ item.ext_id }} carries only selected fields"
+  loop: "{{ result_select.response }}"
+  loop_control:
+    label: "{{ item.ext_id }}"
+
+# ---------------------------------------------------------------------------
+# 6. Negative path: invalid OData filter property.
+# ---------------------------------------------------------------------------
+- name: Fetch vulnerabilities with an invalid filter property
+  nutanix.ncp.ntnx_vulnerabilities_info_v2:
+    filter: "invalidProperty eq 'x'"
+  register: invalid_filter_prop_result
+  ignore_errors: true
+
+- name: Verify invalid filter property returns a descriptive error
+  ansible.builtin.assert:
+    that:
+      - invalid_filter_prop_result.changed == false
+      - invalid_filter_prop_result.failed == true
+      - invalid_filter_prop_result.error is defined
+      - invalid_filter_prop_result.msg == "Api Exception raised while fetching vulnerabilities information"
+      - invalid_filter_prop_result.response.data.error | length > 0
+    fail_msg: "Invalid filter property verification failed"
+    success_msg: "Invalid filter property verification passed"
+
+# ---------------------------------------------------------------------------
+# 7. Negative path: invalid enum value inside a filter.
+# ---------------------------------------------------------------------------
+- name: Fetch vulnerabilities with an invalid Severity enum value
+  nutanix.ncp.ntnx_vulnerabilities_info_v2:
+    filter: "severity eq Security.Report.Severity'INVALID'"
+  register: invalid_filter_val_result
+  ignore_errors: true
+
+- name: Verify invalid Severity enum value returns a descriptive error
+  ansible.builtin.assert:
+    that:
+      - invalid_filter_val_result.changed == false
+      - invalid_filter_val_result.failed == true
+      - invalid_filter_val_result.error is defined
+      - invalid_filter_val_result.msg == "Api Exception raised while fetching vulnerabilities information"
+      - invalid_filter_val_result.response.data.error | length > 0
+    fail_msg: "Invalid Severity enum value verification failed"
+    success_msg: "Invalid Severity enum value verification passed"
+
+# ---------------------------------------------------------------------------
+# 8. Negative path: non-sortable orderby property.
+# ---------------------------------------------------------------------------
+- name: Fetch vulnerabilities ordered by a non-sortable property
+  nutanix.ncp.ntnx_vulnerabilities_info_v2:
+    orderby: "nxvdCreatedTime desc"
+  register: invalid_orderby_result
+  ignore_errors: true
+
+- name: Verify non-sortable orderby returns a descriptive error
+  ansible.builtin.assert:
+    that:
+      - invalid_orderby_result.changed == false
+      - invalid_orderby_result.failed == true
+      - invalid_orderby_result.error is defined
+      - invalid_orderby_result.msg == "Api Exception raised while fetching vulnerabilities information"
+      - invalid_orderby_result.response.data.error | length > 0
+    fail_msg: "Non-sortable orderby verification failed"
+    success_msg: "Non-sortable orderby verification passed"
