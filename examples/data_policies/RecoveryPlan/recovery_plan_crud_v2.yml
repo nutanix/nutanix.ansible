@@ -1,0 +1,123 @@
+---
+# Summary:
+# This playbook demonstrates the full lifecycle of a Recovery Plan managed
+# through the Nutanix Prism Central v4 Data Policies API:
+#   1. Create a Recovery Plan (all fields).
+#   2. List Recovery Plans (all).
+#   3. List Recovery Plans (filter, limit).
+#   4. Fetch a single Recovery Plan by external ID.
+#   5. Update the Recovery Plan (all fields).
+#   6. Delete the Recovery Plan.
+#
+# Prerequisites (must all be satisfied for the Create task to succeed):
+#   - Two Prism Centrals (primary + recovery) registered as availability
+#     zones and reachable from each other. If the two PCs happen to be the
+#     SAME Domain Manager, primaryLocation.clusters and
+#     recoveryLocation.clusters MUST be specified and MUST reference
+#     DIFFERENT clusters.  If the two PCs are DIFFERENT Domain Managers,
+#     primaryLocation.clusters and recoveryLocation.clusters MUST be
+#     omitted (all clusters attached to that PC are used automatically).
+#   - Each PC has at least one AOS cluster registered under it whose VMs
+#     and volume groups you want to protect.
+#   - The witness ext_id must reference an existing witness service.
+#   - See the JIRA parent: FEAT-13057 for the full feature spec.
+- name: Recovery Plan v4 playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  vars:
+    # Replace these with real values from `ntnx_pc_config_info_v2` (Domain
+    # manager ext_ids) and `ntnx_clusters_info_v2` (PE cluster ext_ids).
+    primary_pc_ext_id: "cae459ec-08db-475e-a5e5-151e390c9484"
+    primary_cluster_ext_id: "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+    recovery_pc_ext_id: "b3a6932b-f64e-49ee-924d-c5a5b8ce2f3f"
+    recovery_cluster_ext_id: "000649c4-1a2b-1234-5678-000000012345"
+    witness_ext_id: "22222222-2222-2222-2222-222222222222"
+
+  tasks:
+    - name: Generate random suffix for uniqueness
+      ansible.builtin.set_fact:
+        random_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=8)[0] }}"
+
+    ########################################################################
+    # Create
+    ########################################################################
+    - name: Create recovery plan (all fields)
+      nutanix.ncp.ntnx_recovery_plan_v2:
+        state: present
+        name: "rp_ansible_{{ random_suffix }}"
+        description: "Recovery plan created by Ansible codegen example"
+        primary_location:
+          domain_manager_ext_id: "{{ primary_pc_ext_id }}"
+          clusters:
+            - ext_id: "{{ primary_cluster_ext_id }}"
+        recovery_location:
+          domain_manager_ext_id: "{{ recovery_pc_ext_id }}"
+          clusters:
+            - ext_id: "{{ recovery_cluster_ext_id }}"
+        witness:
+          ext_id: "{{ witness_ext_id }}"
+          timeout_secs: 300
+      register: created_rp
+
+    - name: Save recovery plan ext_id
+      ansible.builtin.set_fact:
+        recovery_plan_ext_id: "{{ created_rp.ext_id }}"
+
+    ########################################################################
+    # List / Get
+    ########################################################################
+    - name: List all recovery plans
+      nutanix.ncp.ntnx_recovery_plans_info_v2:
+      register: all_rps
+
+    - name: List recovery plans with filter (by name)
+      nutanix.ncp.ntnx_recovery_plans_info_v2:
+        filter: "name eq 'rp_ansible_{{ random_suffix }}'"
+      register: filtered_rps
+
+    - name: List recovery plans with limit
+      nutanix.ncp.ntnx_recovery_plans_info_v2:
+        limit: 1
+      register: limited_rps
+
+    - name: Fetch recovery plan by external ID
+      nutanix.ncp.ntnx_recovery_plans_info_v2:
+        ext_id: "{{ recovery_plan_ext_id }}"
+      register: fetched_rp
+
+    ########################################################################
+    # Update
+    ########################################################################
+    - name: Update recovery plan (all fields)
+      nutanix.ncp.ntnx_recovery_plan_v2:
+        state: present
+        ext_id: "{{ recovery_plan_ext_id }}"
+        name: "rp_ansible_{{ random_suffix }}_updated"
+        description: "Updated by Ansible codegen example"
+        primary_location:
+          domain_manager_ext_id: "{{ primary_pc_ext_id }}"
+          clusters:
+            - ext_id: "{{ primary_cluster_ext_id }}"
+        recovery_location:
+          domain_manager_ext_id: "{{ recovery_pc_ext_id }}"
+          clusters:
+            - ext_id: "{{ recovery_cluster_ext_id }}"
+        witness:
+          ext_id: "{{ witness_ext_id }}"
+          timeout_secs: 600
+      register: updated_rp
+
+    ########################################################################
+    # Delete
+    ########################################################################
+    - name: Delete recovery plan
+      nutanix.ncp.ntnx_recovery_plan_v2:
+        state: absent
+        ext_id: "{{ recovery_plan_ext_id }}"
+      register: deleted_rp
