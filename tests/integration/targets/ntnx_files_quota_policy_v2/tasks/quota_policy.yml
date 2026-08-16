@@ -1,0 +1,571 @@
+---
+###############################################################################
+# Test plan for ntnx_files_quota_policy_v2 and ntnx_files_quota_policies_info_v2
+#
+# A quota policy sets the storage consumption limit for a user or group on a
+# Nutanix Files mount target (share/export). It therefore requires a deployed
+# file server and a mount target to exist. Their external IDs are supplied via
+# the `quota_policy` variable group in integration_config.yml.
+#
+# Scenarios covered:
+#   check_mode:
+#     - Create quota policy (ALL attributes) in check mode - no API call.
+#     - Delete quota policy in check mode - no API call.
+#   negative / validation:
+#     - Create with no principal_type and no ext_id -> required_if error.
+#     - Create with principal_type only, missing principal_name/size/enforcement
+#       -> validate_required_params error.
+#     - Create with an invalid principal_type enum value -> argspec error.
+#     - Create with an invalid enforcement_type enum value -> argspec error.
+#     - Delete with missing ext_id -> required_if error.
+#     - Get / Update / Delete with a non-existent ext_id -> API not-found error.
+#   lifecycle (require a live Files backend):
+#     - Create with minimal (required) attributes.
+#     - Create with ALL attributes.
+#     - Get by ext_id (info) and assert every field.
+#     - List all, list with filter, list with limit.
+#     - Update ALL attributes (scalar + enum change SOFT->HARD + list change).
+#     - Idempotent update (same values) -> changed false, "Nothing to change.".
+#     - Delete created quota policies (loop) and assert per-item.
+###############################################################################
+
+- name: Start ntnx_files_quota_policy_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_files_quota_policy_v2 tests
+
+- name: Generate random names
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    suffix_name: "ansible"
+
+- name: Set quota policy test facts
+  ansible.builtin.set_fact:
+    file_server_ext_id: "{{ (quota_policy | default({})).file_server_ext_id | default('9c1e537d-6777-4c22-5d41-ddd0c3337aa9') }}"
+    mount_target_ext_id: "{{ (quota_policy | default({})).mount_target_ext_id | default('48f78959-14a6-4c47-b5db-920460c4b668') }}"
+    non_existent_ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+    todelete: []
+
+- name: Set principal names
+  ansible.builtin.set_fact:
+    principal_user: "{{ (quota_policy | default({})).principal_name | default('user_' + suffix_name + '_' + random_name + '@ad.example.com') }}"
+    principal_group: "{{ (quota_policy | default({})).group_name | default('group_' + suffix_name + '_' + random_name + '@ad.example.com') }}"
+
+########################################################################################
+# Create quota policy - check mode with all attributes
+########################################################################################
+
+- name: Generate spec for creating quota policy using check mode with all attributes
+  nutanix.ncp.ntnx_files_quota_policy_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    principal_type: "USER"
+    principal_name: "{{ principal_user }}"
+    size_in_bytes: 1073741824
+    enforcement_type: "SOFT"
+    is_notification_enabled: true
+    notification_recipients:
+      - "admin@ad.example.com"
+      - "ops@ad.example.com"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for creating quota policy using check mode with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.principal_type == "USER"
+      - result.response.principal_name == principal_user
+      - result.response.size_in_bytes == 1073741824
+      - result.response.enforcement_type == "SOFT"
+      - result.response.is_notification_enabled == true
+      - result.response.notification_recipients | length == 2
+      - result.response.notification_recipients[0] == "admin@ad.example.com"
+      - result.response.notification_recipients[1] == "ops@ad.example.com"
+    success_msg: "Spec for creating quota policy using check mode with all attributes generated successfully"
+    fail_msg: "Spec for creating quota policy using check mode with all attributes generation failed"
+
+########################################################################################
+# Create quota policy - negative / validation
+########################################################################################
+
+- name: Create quota policy with no principal_type and no ext_id (should fail)
+  nutanix.ncp.ntnx_files_quota_policy_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    principal_name: "{{ principal_user }}"
+    size_in_bytes: 1073741824
+    enforcement_type: "SOFT"
+  register: result
+  ignore_errors: true
+
+- name: Create quota policy with no principal_type and no ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is present but any of the following are missing: principal_type, ext_id' in result.msg"
+    success_msg: "Create quota policy with no principal_type failed as expected"
+    fail_msg: "Create quota policy with no principal_type did not fail as expected"
+
+- name: Create quota policy with missing required attributes (should fail)
+  nutanix.ncp.ntnx_files_quota_policy_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    principal_type: "USER"
+  register: result
+  ignore_errors: true
+
+- name: Create quota policy with missing required attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'Missing required parameter(s):' in result.msg"
+      - "'principal_name' in result.msg"
+      - "'size_in_bytes' in result.msg"
+      - "'enforcement_type' in result.msg"
+    success_msg: "Create quota policy with missing required attributes failed as expected"
+    fail_msg: "Create quota policy with missing required attributes did not fail as expected"
+
+- name: Create quota policy with invalid principal_type enum (should fail)
+  nutanix.ncp.ntnx_files_quota_policy_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    principal_type: "INVALID_TYPE"
+    principal_name: "{{ principal_user }}"
+    size_in_bytes: 1073741824
+    enforcement_type: "SOFT"
+  register: result
+  ignore_errors: true
+
+- name: Create quota policy with invalid principal_type enum status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'value of principal_type must be one of' in result.msg"
+    success_msg: "Create quota policy with invalid principal_type enum failed as expected"
+    fail_msg: "Create quota policy with invalid principal_type enum did not fail as expected"
+
+- name: Create quota policy with invalid enforcement_type enum (should fail)
+  nutanix.ncp.ntnx_files_quota_policy_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    principal_type: "USER"
+    principal_name: "{{ principal_user }}"
+    size_in_bytes: 1073741824
+    enforcement_type: "INVALID_ENFORCEMENT"
+  register: result
+  ignore_errors: true
+
+- name: Create quota policy with invalid enforcement_type enum status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'value of enforcement_type must be one of' in result.msg"
+    success_msg: "Create quota policy with invalid enforcement_type enum failed as expected"
+    fail_msg: "Create quota policy with invalid enforcement_type enum did not fail as expected"
+
+########################################################################################
+# Create quota policy - live (minimal + full)
+########################################################################################
+
+- name: Create quota policy with minimum (required) attributes
+  nutanix.ncp.ntnx_files_quota_policy_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    principal_type: "USER"
+    principal_name: "{{ principal_user }}_min"
+    size_in_bytes: 1073741824
+    enforcement_type: "SOFT"
+  register: result
+  ignore_errors: true
+
+- name: Create quota policy with minimum attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.principal_type == "USER"
+      - result.response.principal_name == principal_user ~ "_min"
+      - result.response.size_in_bytes == 1073741824
+      - result.response.enforcement_type == "SOFT"
+    success_msg: "Quota policy with minimum attributes created successfully"
+    fail_msg: "Quota policy with minimum attributes creation failed"
+
+- name: Add quota policy to todelete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+  when: result.ext_id is defined and result.ext_id
+
+- name: Create quota policy with all attributes
+  nutanix.ncp.ntnx_files_quota_policy_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    principal_type: "GROUP"
+    principal_name: "{{ principal_group }}"
+    size_in_bytes: 2147483648
+    enforcement_type: "HARD"
+    is_notification_enabled: true
+    notification_recipients:
+      - "admin@ad.example.com"
+  register: result
+  ignore_errors: true
+
+- name: Create quota policy with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.principal_type == "GROUP"
+      - result.response.principal_name == principal_group
+      - result.response.size_in_bytes == 2147483648
+      - result.response.enforcement_type == "HARD"
+      - result.response.is_notification_enabled == true
+      - result.response.notification_recipients | length == 1
+      - result.response.notification_recipients[0] == "admin@ad.example.com"
+    success_msg: "Quota policy with all attributes created successfully"
+    fail_msg: "Quota policy with all attributes creation failed"
+
+- name: Set quota policy ext_id for full lifecycle
+  ansible.builtin.set_fact:
+    quota_policy_ext_id: "{{ result.ext_id }}"
+  when: result.ext_id is defined and result.ext_id
+
+- name: Add quota policy to todelete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+  when: result.ext_id is defined and result.ext_id
+
+########################################################################################
+# Info module - get single quota policy
+########################################################################################
+
+- name: Fetch quota policy using external ID
+  nutanix.ncp.ntnx_files_quota_policies_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    ext_id: "{{ quota_policy_ext_id }}"
+  register: result
+  ignore_errors: true
+  when: quota_policy_ext_id is defined
+
+- name: Fetch quota policy using external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == quota_policy_ext_id
+      - result.response.principal_type == "GROUP"
+      - result.response.principal_name == principal_group
+      - result.response.size_in_bytes == 2147483648
+      - result.response.enforcement_type == "HARD"
+    success_msg: "Fetch quota policy using external ID passed"
+    fail_msg: "Fetch quota policy using external ID failed"
+  when: quota_policy_ext_id is defined
+
+- name: Fetch quota policy using wrong external ID
+  nutanix.ncp.ntnx_files_quota_policies_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    ext_id: "{{ non_existent_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch quota policy using wrong external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Fetch quota policy using wrong external ID failed as expected"
+    fail_msg: "Fetch quota policy using wrong external ID did not fail as expected"
+
+########################################################################################
+# Info module - list quota policies
+########################################################################################
+
+- name: List all quota policies for the mount target
+  nutanix.ncp.ntnx_files_quota_policies_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: List all quota policies status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length >= 2
+    success_msg: "List all quota policies passed"
+    fail_msg: "List all quota policies failed"
+  when: quota_policy_ext_id is defined
+
+- name: List quota policies with filter
+  nutanix.ncp.ntnx_files_quota_policies_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    filter: "principalName eq '{{ principal_group }}'"
+  register: result
+  ignore_errors: true
+
+- name: List quota policies with filter status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].principal_name == principal_group
+    success_msg: "List quota policies with filter passed"
+    fail_msg: "List quota policies with filter failed"
+  when: quota_policy_ext_id is defined
+
+- name: List quota policies with limit
+  nutanix.ncp.ntnx_files_quota_policies_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List quota policies with limit status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+    success_msg: "List quota policies with limit passed"
+    fail_msg: "List quota policies with limit failed"
+  when: quota_policy_ext_id is defined
+
+########################################################################################
+# Update quota policy
+########################################################################################
+
+- name: Generate spec for updating quota policy using check mode with all attributes
+  nutanix.ncp.ntnx_files_quota_policy_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    ext_id: "{{ quota_policy_ext_id }}"
+    principal_type: "GROUP"
+    principal_name: "{{ principal_group }}"
+    size_in_bytes: 5368709120
+    enforcement_type: "SOFT"
+    is_notification_enabled: false
+  check_mode: true
+  register: result
+  ignore_errors: true
+  when: quota_policy_ext_id is defined
+
+- name: Generate spec for updating quota policy using check mode with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.response is defined
+      - result.response.principal_type == "GROUP"
+      - result.response.size_in_bytes == 5368709120
+      - result.response.enforcement_type == "SOFT"
+      - result.response.is_notification_enabled == false
+    success_msg: "Spec for updating quota policy using check mode with all attributes generated successfully"
+    fail_msg: "Spec for updating quota policy using check mode with all attributes generation failed"
+  when: quota_policy_ext_id is defined
+
+- name: Update quota policy with all attributes
+  nutanix.ncp.ntnx_files_quota_policy_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    ext_id: "{{ quota_policy_ext_id }}"
+    principal_type: "GROUP"
+    principal_name: "{{ principal_group }}"
+    size_in_bytes: 5368709120
+    enforcement_type: "SOFT"
+    is_notification_enabled: false
+    notification_recipients:
+      - "admin@ad.example.com"
+      - "ops@ad.example.com"
+  register: result
+  ignore_errors: true
+  when: quota_policy_ext_id is defined
+
+- name: Update quota policy with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.size_in_bytes == 5368709120
+      - result.response.enforcement_type == "SOFT"
+      - result.response.is_notification_enabled == false
+      - result.response.notification_recipients | length == 2
+    success_msg: "Update quota policy with all attributes passed"
+    fail_msg: "Update quota policy with all attributes failed"
+  when: quota_policy_ext_id is defined
+
+- name: Update quota policy with same values (idempotency test)
+  nutanix.ncp.ntnx_files_quota_policy_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    ext_id: "{{ quota_policy_ext_id }}"
+    principal_type: "GROUP"
+    principal_name: "{{ principal_group }}"
+    size_in_bytes: 5368709120
+    enforcement_type: "SOFT"
+    is_notification_enabled: false
+    notification_recipients:
+      - "admin@ad.example.com"
+      - "ops@ad.example.com"
+  register: result
+  ignore_errors: true
+  when: quota_policy_ext_id is defined
+
+- name: Update quota policy with same values (idempotency test) status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.msg == "Nothing to change."
+    success_msg: "Update quota policy idempotency test passed"
+    fail_msg: "Update quota policy idempotency test failed"
+  when: quota_policy_ext_id is defined
+
+- name: Update quota policy with wrong external ID (should fail)
+  nutanix.ncp.ntnx_files_quota_policy_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    ext_id: "{{ non_existent_ext_id }}"
+    principal_type: "USER"
+    principal_name: "{{ principal_user }}"
+    size_in_bytes: 1073741824
+    enforcement_type: "SOFT"
+  register: result
+  ignore_errors: true
+
+- name: Update quota policy with wrong external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Update quota policy with wrong external ID failed as expected"
+    fail_msg: "Update quota policy with wrong external ID did not fail as expected"
+
+########################################################################################
+# Delete quota policy
+########################################################################################
+
+- name: Delete quota policy with check mode
+  nutanix.ncp.ntnx_files_quota_policy_v2:
+    state: absent
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    ext_id: "{{ todelete[0] | default(non_existent_ext_id) }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Delete quota policy with check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - "'will be deleted' in result.msg"
+    success_msg: "Delete quota policy with check mode passed"
+    fail_msg: "Delete quota policy with check mode failed"
+
+- name: Delete all created quota policies
+  nutanix.ncp.ntnx_files_quota_policy_v2:
+    state: absent
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    ext_id: "{{ item }}"
+  register: result
+  ignore_errors: true
+  loop: "{{ todelete }}"
+  when: todelete | length > 0
+
+- name: Deletion status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.results | length == todelete | length
+    success_msg: "All quota policies are deleted successfully"
+    fail_msg: "Unable to delete all quota policies"
+  when: todelete | length > 0
+
+- name: Delete quota policy with wrong external ID (should fail)
+  nutanix.ncp.ntnx_files_quota_policy_v2:
+    state: absent
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    ext_id: "{{ non_existent_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete quota policy with wrong external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Delete quota policy with wrong external ID failed as expected"
+    fail_msg: "Delete quota policy with wrong external ID did not fail as expected"
+
+- name: Delete quota policy with missing external ID (should fail)
+  nutanix.ncp.ntnx_files_quota_policy_v2:
+    state: absent
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete quota policy with missing external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is absent but all of the following are missing: ext_id' in result.msg"
+    success_msg: "Delete quota policy with missing external ID failed as expected"
+    fail_msg: "Delete quota policy with missing external ID did not fail as expected"

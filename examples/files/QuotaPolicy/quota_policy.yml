@@ -1,0 +1,80 @@
+---
+# Summary:
+# This playbook demonstrates the management of Nutanix Files quota policies for a
+# mount target (share/export) using the v4 API based modules.
+# It will do:
+# 1. Create a quota policy for a user with all attributes
+# 2. Fetch the above created quota policy using its external ID
+# 3. Fetch all quota policies of the mount target
+# 4. Update the quota policy with all attributes
+# 5. Delete the quota policy
+
+- name: Nutanix Files quota policy playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting variables
+      ansible.builtin.set_fact:
+        file_server_ext_id: "9c1e537d-6777-4c22-5d41-ddd0c3337aa9"
+        mount_target_ext_id: "48f78959-14a6-4c47-b5db-920460c4b668"
+
+    - name: Create quota policy for a user with all attributes
+      nutanix.ncp.ntnx_files_quota_policy_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        mount_target_ext_id: "{{ mount_target_ext_id }}"
+        principal_type: "USER"
+        principal_name: "user1@ad.example.com"
+        size_in_bytes: 1073741824
+        enforcement_type: "SOFT"
+        is_notification_enabled: true
+        notification_recipients:
+          - "admin@ad.example.com"
+      register: created_quota_policy
+      ignore_errors: true
+
+    - name: Fetch the created quota policy using its external ID
+      nutanix.ncp.ntnx_files_quota_policies_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        mount_target_ext_id: "{{ mount_target_ext_id }}"
+        ext_id: "{{ created_quota_policy.ext_id }}"
+      register: quota_policy_info
+      ignore_errors: true
+
+    - name: Fetch all quota policies of the mount target
+      nutanix.ncp.ntnx_files_quota_policies_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        mount_target_ext_id: "{{ mount_target_ext_id }}"
+      register: all_quota_policies
+      ignore_errors: true
+
+    - name: Update the quota policy with all attributes
+      nutanix.ncp.ntnx_files_quota_policy_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        mount_target_ext_id: "{{ mount_target_ext_id }}"
+        ext_id: "{{ created_quota_policy.ext_id }}"
+        principal_type: "USER"
+        principal_name: "user1@ad.example.com"
+        size_in_bytes: 2147483648
+        enforcement_type: "HARD"
+        is_notification_enabled: false
+        notification_recipients:
+          - "admin@ad.example.com"
+      register: updated_quota_policy
+      ignore_errors: true
+
+    - name: Delete the quota policy
+      nutanix.ncp.ntnx_files_quota_policy_v2:
+        state: absent
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        mount_target_ext_id: "{{ mount_target_ext_id }}"
+        ext_id: "{{ created_quota_policy.ext_id }}"
+      register: deleted_quota_policy
+      ignore_errors: true
