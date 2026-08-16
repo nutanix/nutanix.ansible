@@ -1,0 +1,69 @@
+---
+# Summary:
+# This playbook demonstrates the Nutanix Files AD-DNS failover action module.
+# It covers the three failover types supported by the API:
+# 1. Perform a planned AD-DNS failover (with all attributes)
+# 2. Perform an unplanned AD-DNS failover
+# 3. Perform an AD-DNS failback to the original primary file server
+#
+# Prerequisites:
+# - Two Nutanix Files file servers configured with a replication policy between them.
+# - Valid Active Directory and DNS credentials with permissions to move the file
+#   server computer account and update the DNS records.
+
+- name: Nutanix Files AD-DNS failover playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "10.44.76.28"
+      nutanix_username: "admin"
+      nutanix_password: "Nutanix.123"
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        primary_file_server_ext_id: "c66fcb19-01f0-49de-9d35-4b90ebbca2d9"
+        secondary_file_server_ext_id: "483ca0d4-855e-4f92-a5a0-fc56907d919b"
+
+    - name: Perform a planned AD-DNS failover with all attributes
+      nutanix.ncp.ntnx_files_ad_dns_failover_v2:
+        primary_file_server_ext_id: "{{ primary_file_server_ext_id }}"
+        secondary_file_server_ext_id: "{{ secondary_file_server_ext_id }}"
+        type: "PLANNED"
+        active_directory:
+          credential:
+            username: "ad-admin"
+            password: "ad-password"
+          preferred_domain_controller: "dc1.ansible.local"
+        dns:
+          preferred_name_server: "10.44.76.10"
+          action: "ADD"
+          credential:
+            username: "dns-admin"
+            password: "dns-password"
+      register: result
+      ignore_errors: true
+
+    - name: Perform an unplanned AD-DNS failover
+      nutanix.ncp.ntnx_files_ad_dns_failover_v2:
+        primary_file_server_ext_id: "{{ primary_file_server_ext_id }}"
+        secondary_file_server_ext_id: "{{ secondary_file_server_ext_id }}"
+        type: "UNPLANNED"
+        active_directory:
+          credential:
+            username: "ad-admin"
+            password: "ad-password"
+      register: result
+      ignore_errors: true
+
+    - name: Perform an AD-DNS failback to the original primary file server
+      nutanix.ncp.ntnx_files_ad_dns_failover_v2:
+        primary_file_server_ext_id: "{{ secondary_file_server_ext_id }}"
+        secondary_file_server_ext_id: "{{ primary_file_server_ext_id }}"
+        type: "FAILBACK"
+        dns:
+          preferred_name_server: "10.44.76.10"
+          action: "REMOVE"
+      register: result
+      ignore_errors: true
