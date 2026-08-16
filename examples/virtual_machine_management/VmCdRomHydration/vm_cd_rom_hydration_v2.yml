@@ -1,0 +1,99 @@
+---
+# Summary:
+# This playbook demonstrates the ntnx_vm_cd_rom_hydration_v2 module.
+# The order of operations is:
+#   1. Create a VM to host the CD-ROM
+#   2. Create a CD-ROM on the VM (no ISO / no external data source)
+#   3. Enable hydration for the VM CD-ROM (state: present)
+#   4. Disable hydration for the VM CD-ROM (state: absent)
+#   5. Cleanup: delete the CD-ROM and the VM
+#
+# Notes on hydration:
+# - Hydration is only meaningful when the CD-ROM is backed by an external
+#   data source (Managed Storage Tier / Instant Recovery workflow).
+# - When invoked on an ordinary CD-ROM the API will reject the request with
+#   a documented VMM-30715 "CD-ROM backing datasource EMPTY" error. The
+#   playbook uses `ignore_errors: true` on the hydrate steps so this
+#   expected reject does not abort the run — the sample response body then
+#   contains the exact API error, which is what a user would see in a real
+#   integration.
+
+- name: VM CD-ROM Hydration playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "10.44.76.28"
+      nutanix_username: "admin"
+      nutanix_password: "Nutanix.123"
+      validate_certs: false
+  tasks:
+    - name: Setting variables
+      ansible.builtin.set_fact:
+        vm_name: "vm_cd_rom_hydration_example"
+
+    - name: Discover an AOS Prism Element cluster
+      nutanix.ncp.ntnx_clusters_info_v2:
+      register: clusters_list
+
+    - name: Pick the first AOS PE cluster
+      ansible.builtin.set_fact:
+        cluster_uuid: >-
+          {{
+            (clusters_list.response
+              | selectattr('config', 'defined')
+              | selectattr('config.cluster_function', 'contains', 'AOS')
+              | rejectattr('config.cluster_function', 'contains', 'PRISM_CENTRAL')
+              | list)[0].ext_id
+          }}
+
+    - name: Create a VM to host the CD-ROM
+      nutanix.ncp.ntnx_vms_v2:
+        state: present
+        name: "{{ vm_name }}"
+        cluster:
+          ext_id: "{{ cluster_uuid }}"
+      register: vm_result
+
+    - name: Store the VM ext_id
+      ansible.builtin.set_fact:
+        vm_ext_id: "{{ vm_result.ext_id }}"
+
+    - name: Create a CD-ROM on the VM
+      nutanix.ncp.ntnx_vms_cd_rom_v2:
+        state: present
+        vm_ext_id: "{{ vm_ext_id }}"
+      register: cd_rom_result
+
+    - name: Store the CD-ROM ext_id
+      ansible.builtin.set_fact:
+        cd_rom_ext_id: "{{ cd_rom_result.ext_id }}"
+
+    - name: Enable hydration for the VM CD-ROM
+      nutanix.ncp.ntnx_vm_cd_rom_hydration_v2:
+        state: present
+        vm_ext_id: "{{ vm_ext_id }}"
+        ext_id: "{{ cd_rom_ext_id }}"
+      register: enable_result
+      ignore_errors: true
+
+    - name: Disable hydration for the VM CD-ROM
+      nutanix.ncp.ntnx_vm_cd_rom_hydration_v2:
+        state: absent
+        vm_ext_id: "{{ vm_ext_id }}"
+        ext_id: "{{ cd_rom_ext_id }}"
+      register: disable_result
+      ignore_errors: true
+
+    - name: Delete the CD-ROM
+      nutanix.ncp.ntnx_vms_cd_rom_v2:
+        state: absent
+        vm_ext_id: "{{ vm_ext_id }}"
+        ext_id: "{{ cd_rom_ext_id }}"
+      register: cd_rom_delete_result
+
+    - name: Delete the VM
+      nutanix.ncp.ntnx_vms:
+        state: absent
+        vm_uuid: "{{ vm_ext_id }}"
+      register: vm_delete_result
