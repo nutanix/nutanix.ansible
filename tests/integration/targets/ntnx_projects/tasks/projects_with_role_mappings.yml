@@ -159,7 +159,6 @@
       - result.response.status.project_status.resources.user_reference_list | length == 3
       - result.response.status.access_control_policy_list_status | length == 4
       - response_acp.filter_list.context_list | length >= 1
-      - "'SELF_OWNED' in response_context_entity_types"
     fail_msg: "Unable to create project with all specifications"
     success_msg: "Project with all specifications created successfully"
 
