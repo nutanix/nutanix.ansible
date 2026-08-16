@@ -51,7 +51,13 @@
 
 - name: Set response context entity types
   ansible.builtin.set_fact:
-    response_context_entity_types: "{{ response_acp.filter_list.context_list | map(attribute='entity_filter_expression_list') | map('first') | map(attribute='left_hand_side') | map(attribute='entity_type') | list }}"
+    response_context_entity_types: >-
+      {{ response_acp.filter_list.context_list
+      | map(attribute='entity_filter_expression_list')
+      | map('first')
+      | map(attribute='left_hand_side')
+      | map(attribute='entity_type')
+      | list }}
 
 - name: Creation Status
   ansible.builtin.assert:
@@ -124,7 +130,13 @@
 
 - name: Set response context entity types
   ansible.builtin.set_fact:
-    response_context_entity_types: "{{ response_acp.filter_list.context_list | map(attribute='entity_filter_expression_list') | map('first') | map(attribute='left_hand_side') | map(attribute='entity_type') | list }}"
+    response_context_entity_types: >-
+      {{ response_acp.filter_list.context_list
+      | map(attribute='entity_filter_expression_list')
+      | map('first')
+      | map(attribute='left_hand_side')
+      | map(attribute='entity_type')
+      | list }}
 
 - name: Creation Status
   ansible.builtin.assert:
@@ -203,7 +215,13 @@
 
 - name: Set response context entity types
   ansible.builtin.set_fact:
-    response_context_entity_types: "{{ response_acp.filter_list.context_list | map(attribute='entity_filter_expression_list') | map('first') | map(attribute='left_hand_side') | map(attribute='entity_type') | list }}"
+    response_context_entity_types: >-
+      {{ response_acp.filter_list.context_list
+      | map(attribute='entity_filter_expression_list')
+      | map('first')
+      | map(attribute='left_hand_side')
+      | map(attribute='entity_type')
+      | list }}
 - name: Set acp_users
   ansible.builtin.set_fact:
     acp_users:
