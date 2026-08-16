@@ -1,0 +1,105 @@
+---
+# Summary:
+# This playbook demonstrates the Volume Group Metadata Info v4 modules.
+# It is fully self-contained:
+#   1. Discovers an AOS cluster on the target PC.
+#   2. Creates a temporary Volume Group.
+#   3. Fetches the initial (empty) VG Metadata Info.
+#   4. Updates the VG Metadata Info with all supported fields
+#      (create-equivalent, since Metadata Info always exists alongside its
+#      parent Volume Group and cannot be created independently).
+#   5. Updates the VG Metadata Info with a modified subset (update).
+#   6. Clears the VG Metadata Info fields (delete-equivalent).
+#   7. Deletes the temporary Volume Group so nothing is left on the cluster,
+#      even if any of the intermediate metadata calls fail.
+#
+# Notes:
+#   * The Volume Group Metadata Info sub-resource cannot be created or deleted
+#     independently of its parent Volume Group. The storage v4 API only exposes
+#     GET and update-metadata-info operations.
+#   * The metadata-info API is a deprecated Nutanix storage v4 API kept for
+#     backwards compatibility. New consumers should prefer the Volume Group
+#     Metadata API (`ntnx_volume_groups_metadata_v2`) when available.
+
+- name: Volume Group Metadata Info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        vg_name: "vgmd-example-{{ 999999 | random }}"
+        owner_uuid: "00000000-0000-0000-0000-000000000000"
+        project_uuid: "00000000-0000-0000-0000-000000000001"
+
+    - name: Fetch an AOS cluster on the target PC
+      nutanix.ncp.ntnx_clusters_info_v2: {}
+      register: clusters_result
+
+    - name: Pick the first AOS cluster ext_id
+      ansible.builtin.set_fact:
+        cluster_ext_id: >-
+          {{
+            (clusters_result.response | default([]))
+            | selectattr('config', 'defined')
+            | selectattr('config.cluster_function', 'defined')
+            | selectattr('config.cluster_function', 'contains', 'AOS')
+            | map(attribute='ext_id')
+            | list
+            | first
+          }}
+
+    - name: Create a temporary Volume Group to attach metadata to
+      nutanix.ncp.ntnx_volume_groups_v2:
+        name: "{{ vg_name }}"
+        description: "VG for VolumeGroupMetadataInfo example"
+        cluster_reference: "{{ cluster_ext_id }}"
+      register: vg_result
+
+    - name: Capture Volume Group ext_id
+      ansible.builtin.set_fact:
+        vg_ext_id: "{{ vg_result.ext_id }}"
+
+    - name: Metadata-info operations (always cleans up the parent VG)
+      block:
+        - name: Fetch initial Volume Group Metadata Info
+          nutanix.ncp.ntnx_volume_group_metadata_info_v2:
+            ext_id: "{{ vg_ext_id }}"
+          register: metadata_info_before
+
+        - name: Update Volume Group Metadata Info with all supported fields
+          nutanix.ncp.ntnx_volume_group_metadata_v2:
+            state: present
+            ext_id: "{{ vg_ext_id }}"
+            owner_reference_id: "{{ owner_uuid }}"
+            owner_user_name: "admin"
+            project_reference_id: "{{ project_uuid }}"
+            project_name: "ansible-project"
+            category_ids: []
+          register: metadata_update_full
+
+        - name: Update Volume Group Metadata Info with a modified subset
+          nutanix.ncp.ntnx_volume_group_metadata_v2:
+            state: present
+            ext_id: "{{ vg_ext_id }}"
+            project_name: "ansible-project-updated"
+          register: metadata_update_partial
+
+        - name: Clear Volume Group Metadata Info fields (delete-equivalent)
+          nutanix.ncp.ntnx_volume_group_metadata_v2:
+            state: present
+            ext_id: "{{ vg_ext_id }}"
+            category_ids: []
+          register: metadata_clear
+
+      always:
+        - name: Delete the temporary Volume Group
+          nutanix.ncp.ntnx_volume_groups_v2:
+            state: absent
+            ext_id: "{{ vg_ext_id }}"
+          register: vg_delete_result

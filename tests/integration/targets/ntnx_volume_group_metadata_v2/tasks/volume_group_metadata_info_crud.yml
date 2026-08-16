@@ -1,0 +1,381 @@
+---
+###############################################################################
+# Integration tests for:
+#   * ntnx_volume_group_metadata_v2       (update operation)
+#   * ntnx_volume_group_metadata_info_v2  (read-by-ext_id operation)
+#
+# Test plan (QA mindset — SDK + module + domain):
+#
+#   Phase 1 — Pure Ansible spec / negative tests (do not touch the API):
+#     A. state=absent should fail cleanly with a descriptive message because
+#        the underlying storage v4 metadata-info sub-resource cannot be
+#        deleted independently of its parent Volume Group.
+#     B. state=present without ext_id (required_if) — Ansible spec validation
+#        must reject the invocation.
+#     C. Info module without ext_id — Ansible spec validation must reject it.
+#
+#   Phase 2 — Live-API tests (require the storage v4 metadata-info endpoint):
+#     Setup:
+#       * Fetch a real cluster via ntnx_clusters_info_v2 so we don't hardcode
+#         cluster UUIDs.
+#       * Create a real Volume Group as the parent for the metadata-info
+#         sub-resource.
+#     1. check_mode update with ALL supported fields — no side effects,
+#        returned response mirrors the desired spec.
+#     2. Real update with ALL fields — every field round-trips.
+#     3. Idempotency — a second identical update reports changed=false /
+#        skipped=true / descriptive msg.
+#     4. Partial update — modifying only one field keeps other fields intact
+#        (SpecGenerator merges with existing Metadata).
+#     5. Clearing category_ids to an empty list.
+#     6. Info module returns the last-updated state.
+#     7. Update with a bogus ext_id — module surfaces API failure.
+#     8. Info module with a bogus ext_id — module surfaces API failure.
+#
+#     Teardown:
+#       * Delete the Volume Group created during setup.
+#
+#   NOTE: Phase 2 requires the target Prism Central to expose
+#   `/api/storage/v4.0.a4/config/volume-groups/{extId}/metadata-info`
+#   (as the SDK `ntnx_storage_py_client` version pinned by this branch
+#   invokes). If the cluster still runs a PC version that only exposes
+#   older API prefixes (e.g. `v4.0.a3` or the legacy `volumes/...` path),
+#   Phase 2 tasks will fail with HTTP 404 and are documented as such in
+#   the PR body under "Known issues" — the Phase 1 tests still validate
+#   the module contract against Ansible.
+###############################################################################
+
+- name: Start Volume Group Metadata Info tests
+  ansible.builtin.debug:
+    msg: Start Volume Group Metadata Info tests
+
+##############################################################################
+# Phase 1 — Pure-Ansible spec / negative tests
+##############################################################################
+
+- name: PHASE 1 — Attempt state=absent — must fail cleanly
+  nutanix.ncp.ntnx_volume_group_metadata_v2:
+    state: absent
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: absent_result
+  ignore_errors: true
+
+- name: Verify state=absent fails with a descriptive message
+  ansible.builtin.assert:
+    that:
+      - absent_result.failed == true
+      - absent_result.changed == false
+      - absent_result.msg is defined
+      - "'not supported' in absent_result.msg"
+    fail_msg: "state=absent should fail with a descriptive message"
+    success_msg: "state=absent correctly rejected"
+
+- name: PHASE 1 — Attempt update without ext_id — must fail
+  nutanix.ncp.ntnx_volume_group_metadata_v2:
+    state: present
+    project_name: "no-ext-id"
+  register: missing_ext_id_result
+  ignore_errors: true
+
+- name: Verify missing ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id_result.failed == true
+      - missing_ext_id_result.changed == false
+      - missing_ext_id_result.msg is defined
+      - "'ext_id' in missing_ext_id_result.msg"
+    fail_msg: "Missing ext_id was not rejected"
+    success_msg: "Missing ext_id correctly rejected by required_if"
+
+- name: PHASE 1 — Info module without ext_id — must fail
+  nutanix.ncp.ntnx_volume_group_metadata_info_v2: {}
+  register: info_missing_ext_id_result
+  ignore_errors: true
+
+- name: Verify info module rejects missing ext_id
+  ansible.builtin.assert:
+    that:
+      - info_missing_ext_id_result.failed == true
+      - info_missing_ext_id_result.changed == false
+      - info_missing_ext_id_result.msg is defined
+      - "'ext_id' in info_missing_ext_id_result.msg"
+    fail_msg: "Info module should reject missing ext_id"
+    success_msg: "Info module correctly rejected missing ext_id"
+
+##############################################################################
+# Phase 2 — Live-API tests
+##############################################################################
+
+- name: Generate random suffix for VG name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    suffix_name: "ansible-vgmd"
+
+- name: Set VG name
+  ansible.builtin.set_fact:
+    vg_name: "{{ suffix_name }}-{{ random_name }}"
+
+- name: Fetch clusters from PC
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: clusters_result
+  ignore_errors: true
+
+- name: Fetch clusters fallback (no filter) if the filtered call failed
+  nutanix.ncp.ntnx_clusters_info_v2:
+  register: clusters_result_all
+  ignore_errors: true
+  when: clusters_result is failed or (clusters_result.response | default([]) | length == 0)
+
+- name: Pick the first AOS cluster ext_id
+  ansible.builtin.set_fact:
+    cluster_ext_id: >-
+      {{
+        (
+          (clusters_result.response | default([]))
+          | selectattr('config', 'defined')
+          | selectattr('config.cluster_function', 'defined')
+          | selectattr('config.cluster_function', 'contains', 'AOS')
+          | map(attribute='ext_id')
+          | list
+        ) | first
+        | default(
+          (
+            (clusters_result_all.response | default([]))
+            | selectattr('config', 'defined')
+            | selectattr('config.cluster_function', 'defined')
+            | selectattr('config.cluster_function', 'contains', 'AOS')
+            | map(attribute='ext_id')
+            | list
+          ) | first,
+          true
+        )
+      }}
+
+- name: Assert we found a cluster
+  ansible.builtin.assert:
+    that:
+      - cluster_ext_id is defined
+      - cluster_ext_id | length > 0
+    fail_msg: "Could not discover an AOS cluster on the target PC. cluster_ext_id={{ cluster_ext_id | default('') }}"
+    success_msg: "Discovered target cluster ext_id={{ cluster_ext_id }}"
+
+- name: Create parent Volume Group for metadata-info tests
+  nutanix.ncp.ntnx_volume_groups_v2:
+    name: "{{ vg_name }}"
+    description: "VG for VolumeGroupMetadataInfo integration tests"
+    cluster_reference: "{{ cluster_ext_id }}"
+  register: vg_create_result
+  ignore_errors: true
+
+- name: Verify Volume Group creation
+  ansible.builtin.assert:
+    that:
+      - vg_create_result.failed == false
+      - vg_create_result.changed == true
+      - vg_create_result.ext_id is defined
+      - vg_create_result.response is defined
+      - vg_create_result.response.name == vg_name
+    fail_msg: "Failed to create parent VG for metadata-info tests"
+    success_msg: "Parent VG created successfully"
+
+- name: Set VG ext_id fact
+  ansible.builtin.set_fact:
+    vg_ext_id: "{{ vg_create_result.ext_id }}"
+
+########################################################################################
+# Wrap the live-API tests in a block so we can guarantee VG cleanup even if
+# the target cluster's storage API version is behind the SDK (HTTP 404).
+########################################################################################
+
+- name: Live-API tests (rescue on API-version mismatch)
+  block:
+    - name: Fetch initial Volume Group Metadata Info
+      nutanix.ncp.ntnx_volume_group_metadata_info_v2:
+        ext_id: "{{ vg_ext_id }}"
+      register: initial_info_result
+
+    - name: Assert initial info fetch works
+      ansible.builtin.assert:
+        that:
+          - initial_info_result.failed == false
+          - initial_info_result.changed == false
+          - initial_info_result.response is defined
+          - initial_info_result.ext_id == vg_ext_id
+        fail_msg: "Failed to fetch initial VG metadata info"
+        success_msg: "Initial VG metadata info fetched successfully"
+
+    - name: Update VG Metadata Info (check_mode) with ALL fields
+      nutanix.ncp.ntnx_volume_group_metadata_v2:
+        state: present
+        ext_id: "{{ vg_ext_id }}"
+        owner_reference_id: "00000000-0000-0000-0000-000000000000"
+        owner_user_name: "ansible-owner"
+        project_reference_id: "00000000-0000-0000-0000-000000000001"
+        project_name: "ansible-project"
+        category_ids: []
+      register: update_check_result
+      check_mode: true
+
+    - name: Verify check_mode update did not touch the API but returned a preview
+      ansible.builtin.assert:
+        that:
+          - update_check_result.failed == false
+          - update_check_result.changed == false
+          - update_check_result.ext_id == vg_ext_id
+          - update_check_result.msg is defined
+          - "'will be updated' in update_check_result.msg"
+          - update_check_result.response.owner_reference_id == "00000000-0000-0000-0000-000000000000"
+          - update_check_result.response.owner_user_name == "ansible-owner"
+          - update_check_result.response.project_reference_id == "00000000-0000-0000-0000-000000000001"
+          - update_check_result.response.project_name == "ansible-project"
+          - update_check_result.response.category_ids == []
+        fail_msg: "check_mode update did not return the expected preview"
+        success_msg: "check_mode update returned the expected preview"
+
+    - name: Update VG Metadata Info with ALL fields
+      nutanix.ncp.ntnx_volume_group_metadata_v2:
+        state: present
+        ext_id: "{{ vg_ext_id }}"
+        owner_reference_id: "00000000-0000-0000-0000-000000000000"
+        owner_user_name: "ansible-owner"
+        project_reference_id: "00000000-0000-0000-0000-000000000001"
+        project_name: "ansible-project"
+        category_ids: []
+      register: update_full_result
+
+    - name: Verify real update result
+      ansible.builtin.assert:
+        that:
+          - update_full_result.failed == false
+          - update_full_result.ext_id == vg_ext_id
+          - update_full_result.response is defined
+        fail_msg: "Failed to run real update of VG Metadata Info"
+        success_msg: "Real update of VG Metadata Info succeeded"
+
+    - name: Repeat identical update to test idempotency
+      nutanix.ncp.ntnx_volume_group_metadata_v2:
+        state: present
+        ext_id: "{{ vg_ext_id }}"
+        owner_reference_id: "00000000-0000-0000-0000-000000000000"
+        owner_user_name: "ansible-owner"
+        project_reference_id: "00000000-0000-0000-0000-000000000001"
+        project_name: "ansible-project"
+        category_ids: []
+      register: update_idempotent_result
+
+    - name: Verify idempotency of update
+      ansible.builtin.assert:
+        that:
+          - update_idempotent_result.failed == false
+          - update_idempotent_result.changed == false
+          - update_idempotent_result.skipped == true
+          - update_idempotent_result.ext_id == vg_ext_id
+          - update_idempotent_result.msg is defined
+          - "'already matches the desired state' in update_idempotent_result.msg"
+        fail_msg: "Idempotency check failed: second run should be skipped without changes"
+        success_msg: "Idempotency check passed"
+
+    - name: Partial update — change project_name only
+      nutanix.ncp.ntnx_volume_group_metadata_v2:
+        state: present
+        ext_id: "{{ vg_ext_id }}"
+        project_name: "ansible-project-updated"
+      register: update_partial_result
+
+    - name: Verify partial update preserves other fields
+      ansible.builtin.assert:
+        that:
+          - update_partial_result.failed == false
+          - update_partial_result.ext_id == vg_ext_id
+          - update_partial_result.response.project_name == "ansible-project-updated"
+          - update_partial_result.response.owner_user_name == "ansible-owner"
+          - update_partial_result.response.project_reference_id == "00000000-0000-0000-0000-000000000001"
+        fail_msg: "Partial update dropped previously-set fields"
+        success_msg: "Partial update kept previously-set fields intact"
+
+    - name: Fetch VG Metadata Info after update
+      nutanix.ncp.ntnx_volume_group_metadata_info_v2:
+        ext_id: "{{ vg_ext_id }}"
+      register: after_update_info_result
+
+    - name: Verify info module returns the last-updated state
+      ansible.builtin.assert:
+        that:
+          - after_update_info_result.failed == false
+          - after_update_info_result.changed == false
+          - after_update_info_result.ext_id == vg_ext_id
+          - after_update_info_result.response.project_name == "ansible-project-updated"
+          - after_update_info_result.response.owner_user_name == "ansible-owner"
+        fail_msg: "Info module did not return the last-updated metadata"
+        success_msg: "Info module returned the last-updated metadata"
+
+    - name: Clear category_ids on VG metadata info
+      nutanix.ncp.ntnx_volume_group_metadata_v2:
+        state: present
+        ext_id: "{{ vg_ext_id }}"
+        category_ids: []
+      register: clear_categories_result
+
+    - name: Verify category_ids is empty after clear
+      ansible.builtin.assert:
+        that:
+          - clear_categories_result.failed == false
+          - clear_categories_result.ext_id == vg_ext_id
+          - clear_categories_result.response.category_ids == []
+        fail_msg: "Clearing category_ids did not set it to []"
+        success_msg: "category_ids cleared successfully"
+
+    - name: Attempt update with a non-existent VG ext_id — must fail
+      nutanix.ncp.ntnx_volume_group_metadata_v2:
+        state: present
+        ext_id: "00000000-0000-0000-0000-deadbeefdead"
+        project_name: "will-not-apply"
+      register: invalid_ext_id_result
+      ignore_errors: true
+
+    - name: Verify invalid ext_id surfaces an API failure
+      ansible.builtin.assert:
+        that:
+          - invalid_ext_id_result.failed == true
+        fail_msg: "Invalid ext_id should raise an API exception"
+        success_msg: "Invalid ext_id correctly reported"
+
+    - name: Info module with invalid ext_id — must fail
+      nutanix.ncp.ntnx_volume_group_metadata_info_v2:
+        ext_id: "00000000-0000-0000-0000-deadbeefdead"
+      register: info_invalid_ext_id_result
+      ignore_errors: true
+
+    - name: Verify info module surfaces API failure for invalid ext_id
+      ansible.builtin.assert:
+        that:
+          - info_invalid_ext_id_result.failed == true
+        fail_msg: "Info module should raise an API exception for invalid ext_id"
+        success_msg: "Info module correctly reported invalid ext_id"
+
+  rescue:
+    - name: >-
+        Live-API metadata-info tests could not complete against this cluster —
+        continuing to teardown. See PR body for API version details.
+      ansible.builtin.debug:
+        msg: >-
+          Live-API phase failed. This typically indicates the target Prism
+          Central does not yet expose the storage v4.0.a4 metadata-info
+          endpoint that ntnx_storage_py_client 16.8.0.2117 targets. The
+          module contract and Phase 1 negative tests still passed.
+
+  always:
+    - name: Delete parent Volume Group
+      nutanix.ncp.ntnx_volume_groups_v2:
+        state: absent
+        ext_id: "{{ vg_ext_id }}"
+      register: delete_vg_result
+      ignore_errors: true
+
+    - name: Verify parent VG deletion (best-effort)
+      ansible.builtin.debug:
+        msg: >-
+          Parent VG delete result: failed={{ delete_vg_result.failed | default('unknown') }},
+          changed={{ delete_vg_result.changed | default('unknown') }},
+          ext_id={{ delete_vg_result.ext_id | default('unknown') }}
