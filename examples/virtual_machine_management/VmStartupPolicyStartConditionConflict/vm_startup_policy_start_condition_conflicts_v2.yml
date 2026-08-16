@@ -1,0 +1,97 @@
+---
+# Summary:
+# VmStartupPolicyStartConditionConflict is a READ-ONLY, derived entity in
+# Nutanix Prism Central v4 VMM APIs. The platform computes these conflict
+# entries automatically whenever two or more VM startup policies enforce
+# contradictory start conditions (delay durations or power-state criteria)
+# against overlapping category memberships.
+#
+# This playbook demonstrates:
+#   1. Listing all start condition conflicts for a given VM startup policy.
+#   2. Listing them with pagination.
+#   3. Fetching a single start condition conflict by external ID.
+#   4. Fetching the dependent VMs of a specific conflict.
+#   5. Fetching the dependee VMs of a specific conflict.
+#   6. Attempting Create / Update / Delete via the CRUD module - these
+#      calls fail cleanly because the SDK does not expose mutating
+#      endpoints for this entity.
+#
+# To actually create/remove conflicts, you must adjust the parent VM
+# startup policies (their groups, categories or start conditions) via
+# the VM startup policy management modules; Prism Central will re-compute
+# the conflicts.
+
+- name: VmStartupPolicyStartConditionConflict playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        vm_startup_policy_ext_id: "9b7c5c2e-9c9e-4f2d-a9c1-1e2f3a4b5c6d"
+        start_condition_conflict_ext_id: "aa11bb22-cc33-dd44-ee55-ff6677889900"
+
+    - name: List all start condition conflicts for a VM startup policy
+      nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflicts_info_v2:
+        vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+      register: list_result
+      ignore_errors: true
+
+    - name: List start condition conflicts with pagination
+      nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflicts_info_v2:
+        vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+        page: 0
+        limit: 10
+      register: list_paginated_result
+      ignore_errors: true
+
+    - name: Get a specific start condition conflict by ext_id
+      nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflicts_info_v2:
+        vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+        ext_id: "{{ start_condition_conflict_ext_id }}"
+      register: get_by_id_result
+      ignore_errors: true
+
+    - name: Fetch dependent VMs of a start condition conflict
+      nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflicts_info_v2:
+        vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+        ext_id: "{{ start_condition_conflict_ext_id }}"
+        fetch_dependent_vms: true
+      register: dependent_vms_result
+      ignore_errors: true
+
+    - name: Fetch dependee VMs of a start condition conflict
+      nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflicts_info_v2:
+        vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+        ext_id: "{{ start_condition_conflict_ext_id }}"
+        fetch_dependee_vms: true
+      register: dependee_vms_result
+      ignore_errors: true
+
+    - name: Create a start condition conflict (fails - not supported by SDK)
+      nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflict_v2:
+        state: present
+        vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+      register: create_result
+      ignore_errors: true
+
+    - name: Update a start condition conflict (fails - not supported by SDK)
+      nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflict_v2:
+        state: present
+        vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+        ext_id: "{{ start_condition_conflict_ext_id }}"
+      register: update_result
+      ignore_errors: true
+
+    - name: Delete a start condition conflict (fails - not supported by SDK)
+      nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflict_v2:
+        state: absent
+        vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+        ext_id: "{{ start_condition_conflict_ext_id }}"
+      register: delete_result
+      ignore_errors: true

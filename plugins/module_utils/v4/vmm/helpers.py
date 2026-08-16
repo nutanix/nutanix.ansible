@@ -191,3 +191,40 @@ def get_ova(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching OVA info using ext_id",
         )
+
+
+def get_vm_startup_policy_start_condition_conflict(
+    module, api_instance, ext_id, vm_startup_policy_ext_id
+):
+    """
+    Get a VM Startup Policy Start Condition Conflict by ext_id.
+
+    Start condition conflicts are computed/derived entities exposed by
+    Prism Central v4 VMM APIs when two VM startup policies enforce
+    contradictory start conditions (delay durations or power-state
+    criteria) on overlapping category memberships. They are ONLY exposed
+    as read-only sub-resources of a VM startup policy.
+
+    Args:
+        module: Ansible module
+        api_instance: VmStartupPoliciesApi instance from ntnx_vmm_py_client sdk
+        ext_id: ext_id of the start condition conflict
+        vm_startup_policy_ext_id: ext_id of the parent VM startup policy
+
+    Returns:
+        conflict (obj): StartConditionConflict info object
+    """
+    try:
+        return api_instance.get_vm_startup_policy_start_condition_conflict_by_id(
+            vmStartupPolicyExtId=vm_startup_policy_ext_id,
+            extId=ext_id,
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg=(
+                "Api Exception raised while fetching VM startup policy start "
+                "condition conflict info using ext_id"
+            ),
+        )

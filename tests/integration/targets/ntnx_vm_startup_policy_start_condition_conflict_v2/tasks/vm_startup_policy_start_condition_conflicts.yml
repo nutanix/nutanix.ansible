@@ -1,0 +1,442 @@
+---
+############################################################################
+# Test plan
+#
+# VmStartupPolicyStartConditionConflict is a READ-ONLY, DERIVED entity in
+# Prism Central v4 VMM APIs. The SDK exposes only:
+#   * ListVmStartupPolicyStartConditionConflicts             (paginated)
+#   * GetVmStartupPolicyStartConditionConflictById
+#   * ListVmStartupPolicyStartConditionConflictDependeeVms   (paginated)
+#   * ListVmStartupPolicyStartConditionConflictDependentVms  (paginated)
+#
+# The CRUD-shaped module (ntnx_vm_startup_policy_start_condition_conflict_v2)
+# therefore intentionally fails all Create/Update/Delete calls with a clear
+# message. The info module does the real work.
+#
+# What we test:
+#   1. Argument validation on the info module (missing required parent,
+#      mutually_exclusive flags, required_by flags).
+#   2. Argument validation on the CRUD stub (state=absent requires
+#      ext_id + vm_startup_policy_ext_id).
+#   3. Live list-all on a real VM startup policy (auto-discovered by
+#      listing the cluster's policies; skipped cleanly if none exist).
+#   4. Live paginated list (page/limit) and assertion that limit is
+#      honoured.
+#   5. Live get-by-ext-id (only when a conflict is present on the
+#      cluster - else skipped without failing).
+#   6. Live nested list of dependent VMs / dependee VMs on a real
+#      conflict (same skip semantics).
+#   7. Negative: invalid parent ext_id -> failed=true, error message.
+#   8. Negative: invalid conflict ext_id under a real parent -> failed=true.
+#   9. CRUD stub: check_mode delete returns failed=true + explanatory msg
+#      without touching the API.
+#  10. CRUD stub: state=present create fails with the read-only message.
+#  11. CRUD stub: state=present update fails with the read-only message
+#      (using a real parent ext_id when available, else a random UUID).
+#  12. CRUD stub: state=absent delete fails with the read-only message.
+############################################################################
+
+- name: Start VM Startup Policy Start Condition Conflict tests
+  ansible.builtin.debug:
+    msg: Start VM Startup Policy Start Condition Conflict tests
+
+- name: Debug credentials sanity
+  ansible.builtin.debug:
+    msg: >-
+      Loaded integration_config vars:
+      ip='{{ ip | default('<undefined>') }}'
+      username='{{ username | default('<undefined>') }}'
+      validate_certs='{{ validate_certs | default('<undefined>') }}'
+
+- name: Set common non-existent UUIDs for negative tests
+  ansible.builtin.set_fact:
+    fake_policy_ext_id: "00000000-0000-4000-a000-000000000001"
+    fake_conflict_ext_id: "00000000-0000-4000-a000-000000000002"
+
+########################################################################################
+# 1. Info module: missing required vm_startup_policy_ext_id
+########################################################################################
+- name: Info - missing vm_startup_policy_ext_id must fail
+  nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflicts_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: "{{ validate_certs }}"
+  register: result
+  ignore_errors: true
+
+- name: Info - missing vm_startup_policy_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'vm_startup_policy_ext_id' in result.msg"
+    success_msg: "Info module correctly required vm_startup_policy_ext_id"
+    fail_msg: "Info module did NOT enforce required vm_startup_policy_ext_id"
+
+########################################################################################
+# 2. Info module: fetch_dependent_vms and fetch_dependee_vms are mutually exclusive
+########################################################################################
+- name: Info - mutually exclusive fetch_dependent_vms/fetch_dependee_vms must fail
+  nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflicts_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: "{{ validate_certs }}"
+    vm_startup_policy_ext_id: "{{ fake_policy_ext_id }}"
+    ext_id: "{{ fake_conflict_ext_id }}"
+    fetch_dependent_vms: true
+    fetch_dependee_vms: true
+  register: result
+  ignore_errors: true
+
+- name: Info - mutually exclusive fetch flags status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'mutually exclusive' in result.msg"
+    success_msg: "Info module correctly rejected mutually exclusive fetch flags"
+    fail_msg: "Info module did NOT reject mutually exclusive fetch flags"
+
+########################################################################################
+# 3. Info module: fetch_dependent_vms requires ext_id
+########################################################################################
+- name: Info - fetch_dependent_vms without ext_id must fail
+  nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflicts_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: "{{ validate_certs }}"
+    vm_startup_policy_ext_id: "{{ fake_policy_ext_id }}"
+    fetch_dependent_vms: true
+  register: result
+  ignore_errors: true
+
+- name: Info - fetch_dependent_vms without ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'ext_id' in result.msg"
+    success_msg: "Info module correctly required ext_id for fetch_dependent_vms"
+    fail_msg: "Info module did NOT require ext_id for fetch_dependent_vms"
+
+########################################################################################
+# 4. CRUD stub: state=absent requires ext_id + vm_startup_policy_ext_id
+########################################################################################
+- name: CRUD stub - state=absent without ext_id must fail
+  nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflict_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: "{{ validate_certs }}"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: CRUD stub - state=absent without ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'ext_id' in result.msg"
+    success_msg: "CRUD stub correctly required ext_id + vm_startup_policy_ext_id for delete"
+    fail_msg: "CRUD stub did NOT enforce required IDs for delete"
+
+########################################################################################
+# 5. Live: list VM startup policies to discover a real parent policy ext_id
+########################################################################################
+- name: Discover an existing VM startup policy via raw v4 VMM API
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:9440/api/vmm/v4.2/ahv/policies/vm-startup-policies"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    validate_certs: "{{ validate_certs }}"
+    force_basic_auth: true
+    return_content: true
+    status_code: [200, 401, 403, 404]
+  register: startup_policies
+  ignore_errors: true
+
+- name: Set has_startup_policies flag
+  ansible.builtin.set_fact:
+    has_startup_policies: >-
+      {{ (startup_policies.status | default(0)) == 200
+         and (startup_policies.json.data | default([])) | length > 0 }}
+    real_policy_ext_id: >-
+      {{ (startup_policies.json.data | default([]))[0].extId
+         if (startup_policies.status | default(0)) == 200
+            and (startup_policies.json.data | default([])) | length > 0
+         else '' }}
+
+- name: Report discovered VM startup policy
+  ansible.builtin.debug:
+    msg: >-
+      Discovered VM startup policies:
+      has_startup_policies={{ has_startup_policies }},
+      real_policy_ext_id={{ real_policy_ext_id }},
+      status={{ startup_policies.status | default('n/a') }}
+
+########################################################################################
+# 6. Live: list start condition conflicts on the real parent policy (if any)
+########################################################################################
+- name: Live - list start condition conflicts on real parent (has_startup_policies)
+  nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflicts_info_v2:
+    vm_startup_policy_ext_id: "{{ real_policy_ext_id }}"
+  register: real_list_result
+  when: has_startup_policies | bool
+  ignore_errors: true
+
+- name: Live - list start condition conflicts on real parent status
+  ansible.builtin.assert:
+    that:
+      - real_list_result is defined
+      - real_list_result.changed == false
+      - real_list_result.failed == false
+      - real_list_result.response is defined
+    success_msg: "Live list of start condition conflicts returned successfully"
+    fail_msg: "Live list of start condition conflicts failed unexpectedly"
+  when: has_startup_policies | bool
+
+- name: Note when no real VM startup policy exists
+  ansible.builtin.debug:
+    msg: >-
+      No VM startup policy present on the cluster - live list/get tests
+      that require a real parent policy are skipped (this is expected on
+      a clean cluster with no configured VM startup policies).
+  when: not (has_startup_policies | bool)
+
+########################################################################################
+# 7. Live: paginated list with limit=1 (only when a parent policy exists)
+########################################################################################
+- name: Live - paginated list with limit=1 on real parent
+  nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflicts_info_v2:
+    vm_startup_policy_ext_id: "{{ real_policy_ext_id }}"
+    page: 0
+    limit: 1
+  register: real_list_limited
+  when: has_startup_policies | bool
+  ignore_errors: true
+
+- name: Live - paginated list limit=1 status
+  ansible.builtin.assert:
+    that:
+      - real_list_limited is defined
+      - real_list_limited.changed == false
+      - real_list_limited.failed == false
+      - real_list_limited.response is defined
+      - (real_list_limited.response | length) <= 1
+    success_msg: "Paginated list of start condition conflicts honoured limit=1"
+    fail_msg: "Paginated list of start condition conflicts did NOT honour limit=1"
+  when: has_startup_policies | bool
+
+########################################################################################
+# 8. Live: get-by-ext-id (only when a conflict is actually present)
+########################################################################################
+- name: Determine if a real conflict is available
+  ansible.builtin.set_fact:
+    has_real_conflict: >-
+      {{ has_startup_policies | bool
+         and real_list_result is defined
+         and (real_list_result.response | default([]) | length) > 0 }}
+    real_conflict_ext_id: >-
+      {{ (real_list_result.response[0].ext_id
+          if has_startup_policies | bool
+             and real_list_result is defined
+             and (real_list_result.response | default([]) | length) > 0
+          else '') }}
+
+- name: Live - get start condition conflict by ext_id (when present)
+  nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflicts_info_v2:
+    vm_startup_policy_ext_id: "{{ real_policy_ext_id }}"
+    ext_id: "{{ real_conflict_ext_id }}"
+  register: real_get_result
+  when: has_real_conflict | bool
+  ignore_errors: true
+
+- name: Live - get start condition conflict by ext_id status
+  ansible.builtin.assert:
+    that:
+      - real_get_result is defined
+      - real_get_result.changed == false
+      - real_get_result.failed == false
+      - real_get_result.response is defined
+      - real_get_result.ext_id == real_conflict_ext_id
+    success_msg: "Live get-by-id of start condition conflict succeeded"
+    fail_msg: "Live get-by-id of start condition conflict failed unexpectedly"
+  when: has_real_conflict | bool
+
+########################################################################################
+# 9. Live: list dependent VMs for the real conflict (when present)
+########################################################################################
+- name: Live - list dependent VMs for real conflict
+  nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflicts_info_v2:
+    vm_startup_policy_ext_id: "{{ real_policy_ext_id }}"
+    ext_id: "{{ real_conflict_ext_id }}"
+    fetch_dependent_vms: true
+  register: real_dependent_vms
+  when: has_real_conflict | bool
+  ignore_errors: true
+
+- name: Live - list dependent VMs for real conflict status
+  ansible.builtin.assert:
+    that:
+      - real_dependent_vms is defined
+      - real_dependent_vms.changed == false
+      - real_dependent_vms.failed == false
+      - real_dependent_vms.response is defined
+    success_msg: "Live list of dependent VMs succeeded"
+    fail_msg: "Live list of dependent VMs failed unexpectedly"
+  when: has_real_conflict | bool
+
+########################################################################################
+# 10. Live: list dependee VMs for the real conflict (when present)
+########################################################################################
+- name: Live - list dependee VMs for real conflict
+  nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflicts_info_v2:
+    vm_startup_policy_ext_id: "{{ real_policy_ext_id }}"
+    ext_id: "{{ real_conflict_ext_id }}"
+    fetch_dependee_vms: true
+  register: real_dependee_vms
+  when: has_real_conflict | bool
+  ignore_errors: true
+
+- name: Live - list dependee VMs for real conflict status
+  ansible.builtin.assert:
+    that:
+      - real_dependee_vms is defined
+      - real_dependee_vms.changed == false
+      - real_dependee_vms.failed == false
+      - real_dependee_vms.response is defined
+    success_msg: "Live list of dependee VMs succeeded"
+    fail_msg: "Live list of dependee VMs failed unexpectedly"
+  when: has_real_conflict | bool
+
+########################################################################################
+# 11. Negative: invalid parent VM startup policy ext_id
+########################################################################################
+- name: Negative - list on invalid parent ext_id must fail
+  nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflicts_info_v2:
+    vm_startup_policy_ext_id: "{{ fake_policy_ext_id }}"
+  register: bad_parent_list
+  ignore_errors: true
+
+- name: Negative - list on invalid parent ext_id status
+  ansible.builtin.assert:
+    that:
+      - bad_parent_list is defined
+      - bad_parent_list.changed == false
+      - bad_parent_list.failed == true
+    success_msg: "Info list on invalid parent ext_id failed as expected"
+    fail_msg: "Info list on invalid parent ext_id did NOT fail"
+
+- name: Negative - get on invalid conflict ext_id must fail
+  nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflicts_info_v2:
+    vm_startup_policy_ext_id: "{{ real_policy_ext_id if has_startup_policies | bool else fake_policy_ext_id }}"
+    ext_id: "{{ fake_conflict_ext_id }}"
+  register: bad_conflict_get
+  ignore_errors: true
+
+- name: Negative - get on invalid conflict ext_id status
+  ansible.builtin.assert:
+    that:
+      - bad_conflict_get is defined
+      - bad_conflict_get.changed == false
+      - bad_conflict_get.failed == true
+    success_msg: "Info get on invalid conflict ext_id failed as expected"
+    fail_msg: "Info get on invalid conflict ext_id did NOT fail"
+
+########################################################################################
+# 12. CRUD stub - state=present create fails with read-only message
+########################################################################################
+- name: CRUD stub - create must fail with read-only message
+  nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflict_v2:
+    state: present
+    vm_startup_policy_ext_id: "{{ real_policy_ext_id if has_startup_policies | bool else fake_policy_ext_id }}"
+  register: crud_create
+  ignore_errors: true
+
+- name: CRUD stub - create status
+  ansible.builtin.assert:
+    that:
+      - crud_create is defined
+      - crud_create.changed == false
+      - crud_create.failed == true
+      - "'read-only' in crud_create.msg"
+      - "'ntnx_vm_startup_policy_start_condition_conflicts_info_v2' in crud_create.msg"
+    success_msg: "CRUD stub create correctly refused with read-only message"
+    fail_msg: "CRUD stub create did NOT return the read-only message"
+
+########################################################################################
+# 13. CRUD stub - state=present update fails with read-only message
+########################################################################################
+- name: CRUD stub - update must fail with read-only message
+  nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflict_v2:
+    state: present
+    vm_startup_policy_ext_id: "{{ real_policy_ext_id if has_startup_policies | bool else fake_policy_ext_id }}"
+    ext_id: "{{ real_conflict_ext_id if has_real_conflict | bool else fake_conflict_ext_id }}"
+  register: crud_update
+  ignore_errors: true
+
+- name: CRUD stub - update status
+  ansible.builtin.assert:
+    that:
+      - crud_update is defined
+      - crud_update.changed == false
+      - crud_update.failed == true
+      - "'read-only' in crud_update.msg"
+    success_msg: "CRUD stub update correctly refused with read-only message"
+    fail_msg: "CRUD stub update did NOT return the read-only message"
+
+########################################################################################
+# 14. CRUD stub - state=absent delete fails with read-only message
+########################################################################################
+- name: CRUD stub - delete must fail with read-only message
+  nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflict_v2:
+    state: absent
+    vm_startup_policy_ext_id: "{{ real_policy_ext_id if has_startup_policies | bool else fake_policy_ext_id }}"
+    ext_id: "{{ real_conflict_ext_id if has_real_conflict | bool else fake_conflict_ext_id }}"
+  register: crud_delete
+  ignore_errors: true
+
+- name: CRUD stub - delete status
+  ansible.builtin.assert:
+    that:
+      - crud_delete is defined
+      - crud_delete.changed == false
+      - crud_delete.failed == true
+      - "'read-only' in crud_delete.msg"
+    success_msg: "CRUD stub delete correctly refused with read-only message"
+    fail_msg: "CRUD stub delete did NOT return the read-only message"
+
+########################################################################################
+# 15. CRUD stub - check_mode delete also fails cleanly
+########################################################################################
+- name: CRUD stub - check_mode delete must fail cleanly
+  nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflict_v2:
+    state: absent
+    vm_startup_policy_ext_id: "{{ fake_policy_ext_id }}"
+    ext_id: "{{ fake_conflict_ext_id }}"
+  check_mode: true
+  register: crud_check_delete
+  ignore_errors: true
+
+- name: CRUD stub - check_mode delete status
+  ansible.builtin.assert:
+    that:
+      - crud_check_delete is defined
+      - crud_check_delete.changed == false
+      - crud_check_delete.failed == true
+      - "'read-only' in crud_check_delete.msg"
+    success_msg: "CRUD stub check_mode delete correctly refused with read-only message"
+    fail_msg: "CRUD stub check_mode delete did NOT return the read-only message"
+
+- name: End VM Startup Policy Start Condition Conflict tests
+  ansible.builtin.debug:
+    msg: End VM Startup Policy Start Condition Conflict tests
