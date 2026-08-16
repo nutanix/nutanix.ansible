@@ -1,0 +1,94 @@
+---
+# Summary:
+# This playbook demonstrates the storage-namespace IscsiClient v4 modules.
+# The storage v4 IscsiClient API (/api/storage/v4.0.a4/config/iscsi-clients)
+# only exposes GET / LIST / PATCH; new iSCSI clients are materialized by the
+# volumes-namespace attach action and torn down by the corresponding detach.
+#
+# Steps:
+# 1. Discover a Prism Element cluster and create a Volume Group (setup).
+# 2. Attach an iSCSI client to the Volume Group (creates the entity that the
+#    storage IscsiClient API surface exposes) via the volumes module.
+# 3. List all iSCSI clients (with a limit) using the info module.
+# 4. Get the specific iSCSI client by its external ID using the info module.
+# 5. Update the iSCSI client (enable CHAP + set target params + attachment site)
+#    via ntnx_iscsi_client_v2.
+# 6. Detach the iSCSI client and delete the Volume Group (teardown).
+
+- name: IscsiClient v4 storage module playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "10.44.76.28"
+      nutanix_username: "admin"
+      nutanix_password: "Nutanix.123"
+      validate_certs: false
+  vars:
+    iscsi_initiator_name: "iqn.1991-05.com.microsoft:ansible-iscsi-client-demo"
+  tasks:
+    - name: Discover a Prism Element cluster
+      nutanix.ncp.ntnx_clusters_info_v2:
+      register: clusters_info
+
+    - name: Capture the first non-PC cluster's ext_id
+      ansible.builtin.set_fact:
+        cluster_ext_id: >-
+          {{
+            (clusters_info.response | rejectattr('name', 'equalto', 'PC') | list | first).ext_id
+          }}
+
+    - name: Create a Volume Group (setup)
+      nutanix.ncp.ntnx_volume_groups_v2:
+        name: "ansible-iscsi-demo-vg"
+        description: "Volume group for the storage IscsiClient v4 example playbook"
+        target_prefix: "iscsi-demo"
+        cluster_reference: "{{ cluster_ext_id }}"
+        usage_type: "USER"
+      register: vg_result
+
+    - name: Attach iSCSI client to Volume Group (creates the storage IscsiClient)
+      nutanix.ncp.ntnx_volume_groups_iscsi_clients_v2:
+        state: present
+        volume_group_ext_id: "{{ vg_result.ext_id }}"
+        iscsi_initiator_name: "{{ iscsi_initiator_name }}"
+        num_virtual_targets: 32
+      register: attach_result
+
+    - name: Capture the iSCSI client ext_id
+      ansible.builtin.set_fact:
+        iscsi_client_ext_id: "{{ attach_result.ext_id }}"
+
+    - name: List iSCSI clients (info)
+      nutanix.ncp.ntnx_iscsi_clients_info_v2:
+        limit: 10
+      register: list_result
+
+    - name: Get iSCSI client by external ID (info)
+      nutanix.ncp.ntnx_iscsi_clients_info_v2:
+        ext_id: "{{ iscsi_client_ext_id }}"
+      register: get_result
+
+    - name: Update iSCSI client (CHAP + target params + attachment site)
+      nutanix.ncp.ntnx_iscsi_client_v2:
+        state: present
+        ext_id: "{{ iscsi_client_ext_id }}"
+        enabled_authentications: "CHAP"
+        client_secret: "Nutanix.chapsecret1"
+        target_params:
+          num_virtual_targets: 32
+        attachment_site: "PRIMARY"
+      register: update_result
+
+    - name: Detach iSCSI client from Volume Group (teardown)
+      nutanix.ncp.ntnx_volume_groups_iscsi_clients_v2:
+        state: absent
+        volume_group_ext_id: "{{ vg_result.ext_id }}"
+        ext_id: "{{ iscsi_client_ext_id }}"
+      register: detach_result
+
+    - name: Delete the Volume Group (teardown)
+      nutanix.ncp.ntnx_volume_groups_v2:
+        state: absent
+        ext_id: "{{ vg_result.ext_id }}"
+      register: vg_delete_result
