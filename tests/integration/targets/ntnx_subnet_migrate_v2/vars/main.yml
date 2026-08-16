@@ -1,0 +1,20 @@
+# Test data for ntnx_subnet_migrate_v2 integration tests.
+# The concrete UUIDs live on the target Prism Central; when this suite runs
+# against a fresh cluster the setup block creates a VLAN basic subnet on the
+# fly and overrides these placeholders. The values here are non-empty so
+# check_mode assertions can still exercise the spec builder without touching
+# the cluster.
+
+placeholder_subnet_uuid_a: "00000000-0000-0000-0000-000000000001"
+placeholder_subnet_uuid_b: "00000000-0000-0000-0000-000000000002"
+placeholder_vnic_ext_id: "00000000-0000-0000-0000-0000000000aa"
+placeholder_network_uuid: "00000000-0000-0000-0000-0000000000bb"
+placeholder_ipv4: "10.51.144.137"
+
+vlan_subnet_test:
+  network_id: 231
+  ip_subnet: "192.168.99.0"
+  prefix_length: 24
+  gateway: "192.168.99.254"
+  pool_start: "192.168.99.20"
+  pool_end: "192.168.99.30"
