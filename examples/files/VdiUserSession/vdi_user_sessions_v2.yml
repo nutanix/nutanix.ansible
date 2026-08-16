@@ -1,0 +1,65 @@
+---
+# Summary:
+# This playbook demonstrates the Nutanix Files v4 VDI user session Ansible
+# modules. VDI user sessions belong to a VDI-sync replication policy that lives
+# under a file server, so every task in this playbook works with the same triple
+# of external identifiers (file server, replication policy, user session).
+# The Files v4 API only exposes Get, List and Update for this entity, so this
+# playbook covers:
+#   1. Fetch a single VDI user session using ext_id.
+#   2. List all VDI user sessions belonging to the replication policy.
+#   3. List VDI user sessions with a filter and a limit.
+#   4. Update the owner file server for a specific VDI user session.
+
+- name: VDI user sessions playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Set common identifiers
+      ansible.builtin.set_fact:
+        file_server_ext_id: "b1c9d6a2-1234-4c22-8d41-000000000001"
+        replication_policy_ext_id: "9c1e537d-6777-4c22-5d41-ddd0c3337aa9"
+        vdi_user_session_ext_id: "e5d3f0a1-4444-4222-8d41-000000000010"
+        new_owner_file_server_ext_id: "5f7b26f9-aaaa-4c22-8d41-000000000002"
+        vdi_user_name: "EXAMPLE\\alice"
+
+    - name: Fetch a single VDI user session using ext_id
+      nutanix.ncp.ntnx_vdi_user_sessions_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        replication_policy_ext_id: "{{ replication_policy_ext_id }}"
+        ext_id: "{{ vdi_user_session_ext_id }}"
+      register: single_session
+      ignore_errors: true
+
+    - name: List all VDI user sessions belonging to the replication policy
+      nutanix.ncp.ntnx_vdi_user_sessions_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        replication_policy_ext_id: "{{ replication_policy_ext_id }}"
+      register: all_sessions
+      ignore_errors: true
+
+    - name: List VDI user sessions with a filter and a limit
+      nutanix.ncp.ntnx_vdi_user_sessions_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        replication_policy_ext_id: "{{ replication_policy_ext_id }}"
+        filter: "userName eq '{{ vdi_user_name }}'"
+        limit: 1
+      register: filtered_sessions
+      ignore_errors: true
+
+    - name: Update the owner file server for a specific VDI user session
+      nutanix.ncp.ntnx_vdi_user_session_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        replication_policy_ext_id: "{{ replication_policy_ext_id }}"
+        ext_id: "{{ vdi_user_session_ext_id }}"
+        owner_file_server_ext_id: "{{ new_owner_file_server_ext_id }}"
+        user_name: "{{ vdi_user_name }}"
+      register: updated_session
+      ignore_errors: true
