@@ -131,3 +131,13 @@ def get_ova_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_vmm_py_client.OvasApi(api_client=api_client)
+
+
+def get_vm_anti_affinity_policies_api_instance(module):
+    """
+    This method will return VM Anti-Affinity Policies API instance.
+    Args:
+        api_instance (obj): v4 VmAntiAffinityPoliciesApi instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.VmAntiAffinityPoliciesApi(api_client=api_client)

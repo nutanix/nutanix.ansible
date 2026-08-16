@@ -191,3 +191,42 @@ def get_ova(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching OVA info using ext_id",
         )
+
+
+def get_legacy_vm_anti_affinity_policy(module, api_instance, ext_id):
+    """
+    Get legacy VM-VM anti-affinity policy by ext_id.
+
+    Legacy VM-VM anti-affinity policies do not expose a GET-by-ID API in the
+    v4 SDK. This helper implements the equivalent lookup by listing legacy
+    policies with an OData filter on ``extId`` and returning the single
+    matching entity, or failing the module when the entity does not exist.
+
+    Args:
+        module: Ansible module
+        api_instance: VmAntiAffinityPoliciesApi instance from ntnx_vmm_py_client sdk
+        ext_id: ext_id of the legacy VM-VM anti-affinity policy
+
+    Returns:
+        obj: The matching LegacyVmAntiAffinityPolicy SDK model instance.
+    """
+    try:
+        resp = api_instance.list_legacy_vm_anti_affinity_policies(
+            _filter="extId eq '{0}'".format(ext_id)
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching legacy VM-VM anti-affinity policy using ext_id",
+        )
+
+    data = getattr(resp, "data", None)
+    if not data:
+        module.fail_json(
+            msg=(
+                "Legacy VM-VM anti-affinity policy with ext_id "
+                "'{0}' was not found.".format(ext_id)
+            )
+        )
+    return data[0]
