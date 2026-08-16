@@ -1,0 +1,199 @@
+---
+# Test plan for ntnx_cluster_rackable_units_info_v2
+# ------------------------------------------------------------------------
+# The SDK only exposes read APIs for rackable units (list & get_by_id).
+# There is no Create / Update / Delete for RackableUnit. Tests therefore
+# focus on the info-module surface plus argument-spec validation:
+#
+#   1.  Locate an AOS (Prism Element) cluster ext_id dynamically.
+#   2.  List rackable units for that cluster and validate shape.
+#   3.  Fetch a single rackable unit by ext_id and validate shape.
+#   4.  Negative: omit required cluster_ext_id.
+#   5.  Negative: pass a non-existent cluster_ext_id.
+#   6.  Negative: pass a valid cluster_ext_id but non-existent ext_id.
+#   7.  Negative: pass a malformed ext_id (bad UUID).
+#   8.  Domain check: verify every returned rackable unit carries the
+#       core fields we expect (serial, model, model_name, nodes, ext_id)
+#       and that each node references a host UUID + position.
+
+- name: Start rackable units info tests
+  ansible.builtin.debug:
+    msg: Start rackable units info tests
+
+########################################################################
+# 1. Locate an AOS (Prism Element) cluster ext_id dynamically.
+########################################################################
+
+- name: List all AOS (Prism Element) clusters
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: aos_clusters
+  ignore_errors: true
+
+- name: Verify at least one AOS cluster exists
+  ansible.builtin.assert:
+    that:
+      - aos_clusters is defined
+      - aos_clusters.failed == false
+      - aos_clusters.response is defined
+      - aos_clusters.response | length > 0
+    success_msg: "AOS cluster(s) discovered"
+    fail_msg: "No AOS/PE clusters registered to this Prism Central"
+
+- name: Record cluster_ext_id fact
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ aos_clusters.response[0].ext_id }}"
+
+########################################################################
+# 2. List rackable units for that cluster.
+########################################################################
+
+- name: List rackable units for the cluster
+  nutanix.ncp.ntnx_cluster_rackable_units_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: rackable_units_list
+  ignore_errors: true
+
+- name: List rackable units status
+  ansible.builtin.assert:
+    that:
+      - rackable_units_list is defined
+      - rackable_units_list.changed == false
+      - rackable_units_list.failed == false
+      - rackable_units_list.response is defined
+      - rackable_units_list.response | length > 0
+      - rackable_units_list.total_available_results is defined
+      - rackable_units_list.total_available_results | int >= 1
+    success_msg: "Rackable units listed successfully"
+    fail_msg: "Failed to list rackable units for the cluster"
+
+- name: Domain check - every rackable unit exposes core physical fields
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.serial is defined
+      - item.model is defined
+      - item.model_name is defined
+      - item.nodes is defined
+      - item.nodes | length >= 1
+    success_msg: "Rackable unit {{ item.ext_id }} carries expected core fields"
+    fail_msg: "Rackable unit {{ item.ext_id | default('<no ext_id>') }} is missing one or more core fields"
+  loop: "{{ rackable_units_list.response }}"
+  loop_control:
+    label: "{{ item.ext_id | default('<no ext_id>') }}"
+
+- name: Domain check - every rackable unit node has a UUID + position
+  ansible.builtin.assert:
+    that:
+      - item.1.uuid is defined
+      - item.1.position is defined
+    success_msg: "Node {{ item.1.uuid }} (position {{ item.1.position }}) on rackable unit {{ item.0.ext_id }} is well-formed"
+    fail_msg: "A node entry on rackable unit {{ item.0.ext_id }} is missing uuid/position"
+  loop: "{{ rackable_units_list.response | subelements('nodes') }}"
+  loop_control:
+    label: "{{ item.0.ext_id }} / {{ item.1.uuid | default('<no uuid>') }}"
+
+- name: Record first rackable_unit_ext_id fact
+  ansible.builtin.set_fact:
+    rackable_unit_ext_id: "{{ rackable_units_list.response[0].ext_id }}"
+    expected_serial: "{{ rackable_units_list.response[0].serial }}"
+
+########################################################################
+# 3. Fetch a single rackable unit by ext_id.
+########################################################################
+
+- name: Fetch a specific rackable unit by ext_id
+  nutanix.ncp.ntnx_cluster_rackable_units_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ rackable_unit_ext_id }}"
+  register: rackable_unit_detail
+  ignore_errors: true
+
+- name: Fetch rackable unit by ext_id status
+  ansible.builtin.assert:
+    that:
+      - rackable_unit_detail is defined
+      - rackable_unit_detail.changed == false
+      - rackable_unit_detail.failed == false
+      - rackable_unit_detail.ext_id == rackable_unit_ext_id
+      - rackable_unit_detail.response is defined
+      - rackable_unit_detail.response.ext_id == rackable_unit_ext_id
+      - rackable_unit_detail.response.serial == expected_serial
+      - rackable_unit_detail.response.nodes is defined
+      - rackable_unit_detail.response.nodes | length >= 1
+    success_msg: "Rackable unit fetched by ext_id successfully"
+    fail_msg: "Failed to fetch rackable unit by ext_id"
+
+########################################################################
+# 4. Negative - omit required cluster_ext_id.
+########################################################################
+
+- name: Fetch rackable units without cluster_ext_id (should fail)
+  nutanix.ncp.ntnx_cluster_rackable_units_info_v2: {}
+  register: no_cluster_ext_id
+  ignore_errors: true
+
+- name: Missing cluster_ext_id status
+  ansible.builtin.assert:
+    that:
+      - no_cluster_ext_id is defined
+      - no_cluster_ext_id.failed == true
+      - "'cluster_ext_id' in no_cluster_ext_id.msg"
+    success_msg: "Missing cluster_ext_id was rejected as expected"
+    fail_msg: "Missing cluster_ext_id did not fail as expected"
+
+########################################################################
+# 5. Negative - non-existent cluster ext_id (list).
+########################################################################
+
+- name: List rackable units for non-existent cluster (should fail)
+  nutanix.ncp.ntnx_cluster_rackable_units_info_v2:
+    cluster_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: bad_cluster
+  ignore_errors: true
+
+- name: Non-existent cluster status
+  ansible.builtin.assert:
+    that:
+      - bad_cluster is defined
+      - bad_cluster.failed == true
+    success_msg: "Non-existent cluster ext_id failed as expected"
+    fail_msg: "Non-existent cluster ext_id did not fail as expected"
+
+########################################################################
+# 6. Negative - valid cluster, non-existent rackable-unit ext_id.
+########################################################################
+
+- name: Fetch rackable unit with non-existent ext_id (should fail)
+  nutanix.ncp.ntnx_cluster_rackable_units_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: bad_ext_id
+  ignore_errors: true
+
+- name: Non-existent rackable unit ext_id status
+  ansible.builtin.assert:
+    that:
+      - bad_ext_id is defined
+      - bad_ext_id.failed == true
+    success_msg: "Non-existent rackable unit ext_id failed as expected"
+    fail_msg: "Non-existent rackable unit ext_id did not fail as expected"
+
+########################################################################
+# 7. Negative - malformed ext_id.
+########################################################################
+
+- name: Fetch rackable unit with malformed ext_id (should fail)
+  nutanix.ncp.ntnx_cluster_rackable_units_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "not-a-uuid"
+  register: malformed_ext_id
+  ignore_errors: true
+
+- name: Malformed rackable unit ext_id status
+  ansible.builtin.assert:
+    that:
+      - malformed_ext_id is defined
+      - malformed_ext_id.failed == true
+    success_msg: "Malformed rackable unit ext_id failed as expected"
+    fail_msg: "Malformed rackable unit ext_id did not fail as expected"
