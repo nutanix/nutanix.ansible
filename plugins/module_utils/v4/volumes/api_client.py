@@ -97,3 +97,12 @@ def get_iscsi_client_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_volumes_py_client.IscsiClientsApi(api_client=client)
+
+
+def get_nvmf_client_api_instance(module):
+    """
+    This method will return NvmfClientsApi instance used for NVMe-TCP
+    (NVMf/NVMe-over-Fabrics) clients registered against a Volume Group.
+    """
+    client = get_api_client(module)
+    return ntnx_volumes_py_client.NvmfClientsApi(api_client=client)

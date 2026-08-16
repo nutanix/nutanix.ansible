@@ -1,0 +1,77 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Volumes NVMe-TCP (NVMf) Clients info playbook (execution wrapper)] *******
+
+TASK [List all NVMe-TCP clients across Volume Groups] **************************
+ok: [localhost] => {"changed": false, "error": null, "response": [], "total_available_results": 0}
+
+TASK [ansible.builtin.debug] ***************************************************
+ok: [localhost] => {
+    "all_nvmf_clients": {
+        "changed": false,
+        "error": null,
+        "failed": false,
+        "response": [],
+        "total_available_results": 0
+    }
+}
+
+TASK [List NVMe-TCP clients filtered by clusterReference] **********************
+ok: [localhost] => {"changed": false, "error": null, "response": [], "total_available_results": 0}
+
+TASK [ansible.builtin.debug] ***************************************************
+ok: [localhost] => {
+    "filtered_nvmf_clients": {
+        "changed": false,
+        "error": null,
+        "failed": false,
+        "response": [],
+        "total_available_results": 0
+    }
+}
+
+TASK [List NVMe-TCP clients with pagination and ordering] **********************
+ok: [localhost] => {"changed": false, "error": null, "response": [], "total_available_results": 0}
+
+TASK [ansible.builtin.debug] ***************************************************
+ok: [localhost] => {
+    "paged_nvmf_clients": {
+        "changed": false,
+        "error": null,
+        "failed": false,
+        "response": [],
+        "total_available_results": 0
+    }
+}
+
+TASK [List NVMe-TCP clients with a select projection] **************************
+ok: [localhost] => {"changed": false, "error": null, "response": [], "total_available_results": 0}
+
+TASK [ansible.builtin.debug] ***************************************************
+ok: [localhost] => {
+    "selected_nvmf_clients": {
+        "changed": false,
+        "error": null,
+        "failed": false,
+        "response": [],
+        "total_available_results": 0
+    }
+}
+
+TASK [Set NVMe-TCP client external ID (from the list above, if any)] ***********
+ok: [localhost] => {"ansible_facts": {"nvmf_client_ext_id": ""}, "changed": false}
+
+TASK [Fetch a specific NVMe-TCP client by external ID] *************************
+skipping: [localhost] => {"changed": false, "false_condition": "nvmf_client_ext_id | length > 0", "skip_reason": "Conditional result was False"}
+
+TASK [ansible.builtin.debug] ***************************************************
+ok: [localhost] => {
+    "msg": "No NVMf clients exist on this cluster — get-by-ext_id skipped."
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=10   changed=0    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
+

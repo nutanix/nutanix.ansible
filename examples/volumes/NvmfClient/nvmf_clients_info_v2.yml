@@ -1,0 +1,61 @@
+---
+# Summary:
+# This playbook demonstrates every operation exposed by
+# ntnx_volume_group_nvmf_clients_info_v2:
+#   1. List all NVMe-TCP (NVMf) clients registered in Prism Central
+#   2. List NVMe-TCP clients with a filter on clusterReference (OData `$filter`)
+#   3. List NVMe-TCP clients with pagination + ordering
+#   4. List NVMe-TCP clients with a select projection
+#   5. Fetch a single NVMe-TCP client using its external ID
+
+- name: Volumes NVMe-TCP (NVMf) Clients info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: List all NVMe-TCP clients across Volume Groups
+      nutanix.ncp.ntnx_volume_group_nvmf_clients_info_v2:
+      register: all_nvmf_clients
+      ignore_errors: true
+
+    - name: List NVMe-TCP clients filtered by clusterReference
+      nutanix.ncp.ntnx_volume_group_nvmf_clients_info_v2:
+        filter: "clusterReference eq '00061663-9fa0-28ca-185b-ac1f6b6f97e2'"
+      register: filtered_nvmf_clients
+      ignore_errors: true
+
+    - name: List NVMe-TCP clients with pagination and ordering
+      nutanix.ncp.ntnx_volume_group_nvmf_clients_info_v2:
+        page: 0
+        limit: 5
+        orderby: "extId asc"
+      register: paged_nvmf_clients
+      ignore_errors: true
+
+    - name: List NVMe-TCP clients with a select projection
+      nutanix.ncp.ntnx_volume_group_nvmf_clients_info_v2:
+        select: "extId,clusterReference"
+      register: selected_nvmf_clients
+      ignore_errors: true
+
+    - name: Set NVMe-TCP client external ID (from the list above, if any)
+      ansible.builtin.set_fact:
+        nvmf_client_ext_id: >-
+          {{
+            (all_nvmf_clients.response | default([], true)
+             | map(attribute='ext_id')
+             | first)
+            | default('', true)
+          }}
+
+    - name: Fetch a specific NVMe-TCP client by external ID
+      nutanix.ncp.ntnx_volume_group_nvmf_clients_info_v2:
+        ext_id: "{{ nvmf_client_ext_id }}"
+      register: single_nvmf_client
+      when: nvmf_client_ext_id | length > 0
+      ignore_errors: true
