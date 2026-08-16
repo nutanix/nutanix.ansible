@@ -1,0 +1,21 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Planned Failover Recovery Plan actions] **********************************
+
+TASK [Set variables for planned failover] **************************************
+ok: [localhost] => {"ansible_facts": {"recovery_plan_ext_id": "6f4ffcee-1dc4-4982-9401-aa1f65dd7177", "source_cluster_ext_id": "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2", "source_pc_ext_id": "63bebabf-744c-48ff-a6d7-cb028707f972", "target_cluster_ext_id": "00062411-a2b3-4dd8-185b-ac1f6b6f97e2", "target_pc_ext_id": "63bebabf-744c-48ff-a6d7-cb028707f972"}, "changed": false}
+
+TASK [Trigger a Planned Failover with all attributes] **************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while triggering planned failover on recovery plan", "response": {"data": {"$objectType": "dataprotection.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "dataprotection.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "argumentsMap": {"reason": "Entity with external identifier 6f4ffcee-1dc4-4982-9401-aa1f65dd7177 does not exist"}, "code": "DP-10400", "errorGroup": "DATAPROTECTION_ENTITY_NON_EXISTENT_ERROR", "locale": "en_US", "message": "The request failed as one or more entities do not exist - Entity with external identifier 6f4ffcee-1dc4-4982-9401-aa1f65dd7177 does not exist.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}]}}, "status": 404}
+...ignoring
+
+TASK [Trigger a Planned Failover with only required parameters] ****************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "BAD REQUEST", "msg": "Api Exception raised while triggering planned failover on recovery plan", "response": {"$dataItemDiscriminator": "dataprotection.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "dataprotection.v4.error.SchemaValidationError", "$objectType": "dataprotection.v4.error.ErrorResponse", "error": {"$objectType": "dataprotection.v4.error.SchemaValidationError", "error": "Bad Request", "path": "/api/dataprotection/v4.3/operations/recovery-plans/6f4ffcee-1dc4-4982-9401-aa1f65dd7177/$actions/planned-failover", "statusCode": 400, "timestamp": "2026-07-21T10:07:10.048580480Z", "validationErrorMessages": [{"$objectType": "dataprotection.v4.error.SchemaValidationErrorMessage", "location": "@body", "message": "ERROR - Object has missing required properties ([\"failoverDirections\",\"name\"]): []"}]}}}, "status": 400}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=2   
+
