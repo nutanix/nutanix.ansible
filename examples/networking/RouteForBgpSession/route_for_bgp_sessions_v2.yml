@@ -1,0 +1,72 @@
+---
+# Summary:
+# This playbook will do:
+# 1. List all BGP routes for the specified BGP session.
+# 2. Fetch a specific BGP route by external ID.
+# 3. List BGP routes filtered by bgpRouteType.
+# 4. List BGP routes with pagination (limit).
+#
+# Notes:
+#   - RouteForBgpSession is a read-only entity in the Nutanix Networking v4 API:
+#     the SDK exposes only GetRouteForBgpSessionById and ListRoutesByBgpSessionId.
+#     BGP routes are learned/advertised dynamically by the BGP session — they
+#     are NOT created, updated, or deleted through the API.
+#   - Prerequisites on the cluster:
+#       * A Transit VPC / Flow Gateway is deployed.
+#       * At least one BGP session is configured and established.
+#     Supply the ext_id of the BGP session via the `bgp_session_ext_id`
+#     variable (either through --extra-vars, an inventory var, or by editing
+#     the set_fact task below).
+
+- name: RouteForBgpSession playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip | default('10.44.76.28') }}"
+      nutanix_username: "{{ username | default('admin') }}"
+      nutanix_password: "{{ password | default('Nutanix.123') }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+  tasks:
+    - name: Set BGP session ext_id
+      ansible.builtin.set_fact:
+        bgp_session_ext_id: "{{ bgp_session_ext_id | default('0005c73f-8fdb-4c86-83a3-a97e7a5e8ff2') }}"
+
+    - name: List all BGP routes for the specified BGP session
+      nutanix.ncp.ntnx_route_for_bgp_sessions_info_v2:
+        bgp_session_ext_id: "{{ bgp_session_ext_id }}"
+      register: bgp_routes_list_result
+      ignore_errors: true
+
+    - name: Set BGP route ext_id from list result (if any)
+      ansible.builtin.set_fact:
+        bgp_route_ext_id: "{{ (bgp_routes_list_result.response[0].ext_id) | default('') }}"
+      when:
+        - bgp_routes_list_result is defined
+        - bgp_routes_list_result.response is defined
+        - bgp_routes_list_result.response is not none
+        - (bgp_routes_list_result.response | length) > 0
+
+    - name: Fetch a specific BGP route by external ID
+      nutanix.ncp.ntnx_route_for_bgp_sessions_info_v2:
+        bgp_session_ext_id: "{{ bgp_session_ext_id }}"
+        ext_id: "{{ bgp_route_ext_id }}"
+      register: bgp_route_by_ext_id_result
+      ignore_errors: true
+      when:
+        - bgp_route_ext_id is defined
+        - bgp_route_ext_id | length > 0
+
+    - name: List BGP routes filtered by bgpRouteType == ADVERTISED
+      nutanix.ncp.ntnx_route_for_bgp_sessions_info_v2:
+        bgp_session_ext_id: "{{ bgp_session_ext_id }}"
+        filter: "bgpRouteType eq Networking.Config.BgpRouteType'ADVERTISED'"
+      register: bgp_routes_filtered_result
+      ignore_errors: true
+
+    - name: List first BGP route for the specified BGP session (limit)
+      nutanix.ncp.ntnx_route_for_bgp_sessions_info_v2:
+        bgp_session_ext_id: "{{ bgp_session_ext_id }}"
+        limit: 1
+      register: bgp_routes_limited_result
+      ignore_errors: true
