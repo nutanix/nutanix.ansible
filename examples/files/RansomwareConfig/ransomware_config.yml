@@ -1,0 +1,91 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create ransomware config for a file server
+# 2. Update ransomware config for a file server
+# 3. Get ransomware config using ext_id
+# 4. List all ransomware configs of a file server
+# 5. List ransomware configs with filter
+# 6. List ransomware configs with limit
+# 7. Delete ransomware config of a file server
+
+- name: Ransomware Config playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: 10.44.76.28
+      nutanix_username: admin
+      nutanix_password: Nutanix.123
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        file_server_ext_id: "b1c2d3e4-f5a6-4789-90ab-cdef01234567"
+        excluded_mount_target_ext_id: "5f0d1c2b-3a4e-4d5c-8b7a-9e0f1a2b3c4d"
+
+    - name: Create ransomware config for a file server
+      nutanix.ncp.ntnx_files_ransomware_config_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        file_extensions:
+          - "*.crypto"
+          - "*.locked"
+          - "?.enc"
+        excluded_mount_target_ext_ids:
+          - "{{ excluded_mount_target_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Set ransomware config ext_id
+      ansible.builtin.set_fact:
+        ransomware_config_ext_id: "{{ result.ext_id | default(file_server_ext_id) }}"
+
+    - name: Update ransomware config for a file server
+      nutanix.ncp.ntnx_files_ransomware_config_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ ransomware_config_ext_id }}"
+        file_extensions:
+          - "*.crypto"
+          - "*.locked"
+          - "*.ransom"
+        excluded_mount_target_ext_ids:
+          - "{{ excluded_mount_target_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Get ransomware config using ext_id
+      nutanix.ncp.ntnx_files_ransomware_configs_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ ransomware_config_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all ransomware configs of a file server
+      nutanix.ncp.ntnx_files_ransomware_configs_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List ransomware configs with filter
+      nutanix.ncp.ntnx_files_ransomware_configs_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        filter: "fileExtensions eq '*.crypto'"
+      register: result
+      ignore_errors: true
+
+    - name: List ransomware configs with limit
+      nutanix.ncp.ntnx_files_ransomware_configs_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: Delete ransomware config of a file server
+      nutanix.ncp.ntnx_files_ransomware_config_v2:
+        state: absent
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ ransomware_config_ext_id }}"
+      register: result
+      ignore_errors: true

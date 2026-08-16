@@ -1,0 +1,394 @@
+---
+# =============================================================================
+# Test plan for ntnx_files_ransomware_config_v2 and
+# ntnx_files_ransomware_configs_info_v2
+# =============================================================================
+# The RansomwareConfig entity is a per-file-server ransomware protection
+# configuration. It exposes two writable attributes:
+#   - file_extensions               : list[str]  (ransomware patterns, e.g. *.enc)
+#   - excluded_mount_target_ext_ids : list[str]  (shares excluded from protection)
+# The configuration is a singleton per file server (its ext_id equals the file
+# server ext_id) and all operations are asynchronous ergon tasks.
+#
+# Scenarios covered:
+#   1.  check_mode create (all attributes)      -> spec generated, no change
+#   2.  check_mode delete                       -> message, no change
+#   3.  negative: create without file_extensions -> descriptive failure
+#   4.  negative: missing required file_server_ext_id -> arg validation failure
+#   5.  negative: state=absent without ext_id   -> required_if failure
+#   6.  create with all attributes              -> changed, ext_id, task_ext_id
+#   7.  get by ext_id                           -> single entity returned
+#   8.  list all                                -> list + total_available_results
+#   9.  list with filter                        -> filtered list
+#   10. list with limit                         -> limited list
+#   11. check_mode update (all attributes)      -> spec generated, no change
+#   12. update (change extensions + excluded)   -> changed
+#   13. idempotent update (same values)         -> skipped, not changed
+#   14. negative: get with invalid ext_id       -> descriptive failure
+#   15. delete                                  -> changed, task_ext_id
+#   16. delete non-existent                     -> graceful failure
+# =============================================================================
+
+- name: Start ntnx_files_ransomware_config_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_files_ransomware_config_v2 tests
+
+- name: Verify a file server ext_id is available for ransomware config tests
+  ansible.builtin.assert:
+    that:
+      - file_server_ext_id is defined
+      - file_server_ext_id | length > 0
+    success_msg: "file_server_ext_id is available: {{ file_server_ext_id }}"
+    fail_msg: >-
+      file_server_ext_id must be provided in integration_config.yml. A deployed
+      Nutanix File Server is a prerequisite for ransomware config tests and
+      cannot be created by these modules.
+
+- name: Generate random file extensions to avoid collisions
+  ansible.builtin.set_fact:
+    random_suffix: "{{ 99999999 | random | string }}"
+
+- name: Set test data
+  ansible.builtin.set_fact:
+    create_file_extensions:
+      - "*.{{ random_suffix }}crypto"
+      - "*.{{ random_suffix }}locked"
+      - "?.{{ random_suffix }}enc"
+    updated_file_extensions:
+      - "*.{{ random_suffix }}crypto"
+      - "*.{{ random_suffix }}ransom"
+    excluded_ext_ids: "{{ [mount_target_ext_id] if (mount_target_ext_id is defined and mount_target_ext_id | length > 0) else [] }}"
+
+########################################################################################
+# check_mode tests
+########################################################################################
+
+- name: Generate spec for creating ransomware config using check mode with all attributes
+  nutanix.ncp.ntnx_files_ransomware_config_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    file_extensions: "{{ create_file_extensions }}"
+    excluded_mount_target_ext_ids: "{{ excluded_ext_ids }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for creating ransomware config using check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.file_extensions | length == 3
+      - result.response.file_extensions == create_file_extensions
+      - result.response.excluded_mount_target_ext_ids == excluded_ext_ids
+    success_msg: "Spec for creating ransomware config using check mode generated successfully"
+    fail_msg: "Spec for creating ransomware config using check mode not generated successfully"
+
+- name: Generate spec for deleting ransomware config using check mode
+  nutanix.ncp.ntnx_files_ransomware_config_v2:
+    state: absent
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    ext_id: "{{ file_server_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for deleting ransomware config using check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.msg == "Ransomware config with ext_id:{{ file_server_ext_id }} will be deleted."
+    success_msg: "Delete ransomware config check mode message generated successfully"
+    fail_msg: "Delete ransomware config check mode message not generated successfully"
+
+########################################################################################
+# Negative tests (no API call required)
+########################################################################################
+
+- name: Create ransomware config without file_extensions (negative)
+  nutanix.ncp.ntnx_files_ransomware_config_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Create ransomware config without file_extensions status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'Missing required parameter(s): file_extensions' in result.msg"
+    success_msg: "Create without file_extensions failed as expected"
+    fail_msg: "Create without file_extensions did not fail as expected"
+
+- name: Create ransomware config without file_server_ext_id (negative)
+  nutanix.ncp.ntnx_files_ransomware_config_v2:
+    state: present
+    file_extensions:
+      - "*.enc"
+  register: result
+  ignore_errors: true
+
+- name: Create ransomware config without file_server_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'file_server_ext_id' in result.msg"
+    success_msg: "Create without file_server_ext_id failed as expected"
+    fail_msg: "Create without file_server_ext_id did not fail as expected"
+
+- name: Delete ransomware config without ext_id (negative)
+  nutanix.ncp.ntnx_files_ransomware_config_v2:
+    state: absent
+    file_server_ext_id: "{{ file_server_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete ransomware config without ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'ext_id' in result.msg"
+    success_msg: "Delete without ext_id failed as expected"
+    fail_msg: "Delete without ext_id did not fail as expected"
+
+########################################################################################
+# Create ransomware config with all attributes
+########################################################################################
+
+- name: Create ransomware config with all attributes
+  nutanix.ncp.ntnx_files_ransomware_config_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    file_extensions: "{{ create_file_extensions }}"
+    excluded_mount_target_ext_ids: "{{ excluded_ext_ids }}"
+  register: result
+  ignore_errors: true
+
+- name: Create ransomware config with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.file_extensions == create_file_extensions
+    success_msg: "Ransomware config created successfully with all attributes"
+    fail_msg: "Ransomware config creation with all attributes failed"
+
+- name: Set ransomware config ext_id
+  ansible.builtin.set_fact:
+    ransomware_config_ext_id: "{{ result.ext_id }}"
+
+########################################################################################
+# Info: get by ext_id / list / filter / limit
+########################################################################################
+
+- name: Get ransomware config using ext_id
+  nutanix.ncp.ntnx_files_ransomware_configs_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    ext_id: "{{ ransomware_config_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Get ransomware config using ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == ransomware_config_ext_id
+      - result.response is defined
+      - result.response.ext_id == ransomware_config_ext_id
+      - result.response.file_extensions == create_file_extensions
+    success_msg: "Ransomware config fetched successfully using ext_id"
+    fail_msg: "Ransomware config fetch using ext_id failed"
+
+- name: List all ransomware configs of the file server
+  nutanix.ncp.ntnx_files_ransomware_configs_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: List all ransomware configs status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length > 0
+      - result.total_available_results is defined
+    success_msg: "Ransomware configs listed successfully"
+    fail_msg: "Ransomware configs list failed"
+
+- name: List ransomware configs with filter
+  nutanix.ncp.ntnx_files_ransomware_configs_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    filter: "fileExtensions eq '{{ create_file_extensions[0] }}'"
+  register: result
+  ignore_errors: true
+
+- name: List ransomware configs with filter status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+    success_msg: "Ransomware configs listed with filter successfully"
+    fail_msg: "Ransomware configs list with filter failed"
+
+- name: List ransomware configs with limit
+  nutanix.ncp.ntnx_files_ransomware_configs_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List ransomware configs with limit status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length <= 1
+    success_msg: "Ransomware configs listed with limit successfully"
+    fail_msg: "Ransomware configs list with limit failed"
+
+########################################################################################
+# Update ransomware config
+########################################################################################
+
+- name: Generate spec for updating ransomware config using check mode
+  nutanix.ncp.ntnx_files_ransomware_config_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    ext_id: "{{ ransomware_config_ext_id }}"
+    file_extensions: "{{ updated_file_extensions }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for updating ransomware config using check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.file_extensions == updated_file_extensions
+    success_msg: "Spec for updating ransomware config using check mode generated successfully"
+    fail_msg: "Spec for updating ransomware config using check mode not generated successfully"
+
+- name: Update ransomware config with different file extensions
+  nutanix.ncp.ntnx_files_ransomware_config_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    ext_id: "{{ ransomware_config_ext_id }}"
+    file_extensions: "{{ updated_file_extensions }}"
+  register: result
+  ignore_errors: true
+
+- name: Update ransomware config status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == ransomware_config_ext_id
+      - result.response is defined
+      - result.response.file_extensions == updated_file_extensions
+    success_msg: "Ransomware config updated successfully"
+    fail_msg: "Ransomware config update failed"
+
+- name: Update ransomware config again with the same values (idempotency)
+  nutanix.ncp.ntnx_files_ransomware_config_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    ext_id: "{{ ransomware_config_ext_id }}"
+    file_extensions: "{{ updated_file_extensions }}"
+  register: result
+  ignore_errors: true
+
+- name: Update ransomware config idempotency status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.msg == "Nothing to change."
+    success_msg: "Ransomware config update is idempotent as expected"
+    fail_msg: "Ransomware config update idempotency check failed"
+
+########################################################################################
+# Negative: get with invalid ext_id
+########################################################################################
+
+- name: Get ransomware config with invalid ext_id (negative)
+  nutanix.ncp.ntnx_files_ransomware_configs_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Get ransomware config with invalid ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Get ransomware config with invalid ext_id failed as expected"
+    fail_msg: "Get ransomware config with invalid ext_id did not fail as expected"
+
+########################################################################################
+# Delete ransomware config
+########################################################################################
+
+- name: Delete ransomware config
+  nutanix.ncp.ntnx_files_ransomware_config_v2:
+    state: absent
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    ext_id: "{{ ransomware_config_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete ransomware config status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == ransomware_config_ext_id
+      - result.task_ext_id is defined
+    success_msg: "Ransomware config deleted successfully"
+    fail_msg: "Ransomware config deletion failed"
+
+- name: Delete non-existent ransomware config (negative)
+  nutanix.ncp.ntnx_files_ransomware_config_v2:
+    state: absent
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    ext_id: "{{ ransomware_config_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete non-existent ransomware config status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+    success_msg: "Delete of non-existent ransomware config failed as expected"
+    fail_msg: "Delete of non-existent ransomware config did not fail as expected"
