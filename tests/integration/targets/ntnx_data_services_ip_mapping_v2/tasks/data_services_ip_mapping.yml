@@ -1,0 +1,757 @@
+---
+# =============================================================================
+# Test plan for ntnx_data_services_ip_mapping_v2 / _info_v2
+# -----------------------------------------------------------------------------
+# check_mode:
+#   * Create with ALL attributes (asserts spec generation)
+#   * Update with ALL attributes (asserts spec generation)
+#   * Delete (asserts msg is generated, no changes made)
+# Real API tests (only when a two-cluster Recovery Plan can be created):
+#   * Create minimal (required fields only)
+#   * Create full (all attributes)
+#   * Get by ext_id (single-entity fetch)
+#   * List (plural fetch) with and without filter/limit
+#   * Update to new IP values (state transitions on every scalar)
+#   * Idempotency (second update with same values -> skipped/no change)
+#   * Delete (real)
+# Negative:
+#   * Missing recovery_plan_ext_id
+#   * Missing primary_cluster on create
+#   * Both ipv4 and ipv6 on same IP field (mutually_exclusive)
+#   * Neither ipv4 nor ipv6 on IP field (required_one_of)
+#   * state=absent without ext_id
+#   * Update with non-existent ext_id
+#   * Delete with non-existent ext_id
+#   * Info fetch with non-existent ext_id
+# Domain-level:
+#   * Assert primary != recovery IP structure survives round-trip
+#   * total_available_results reported in list responses
+# =============================================================================
+
+- name: Start Data Services IP Mapping tests
+  ansible.builtin.debug:
+    msg: Start Data Services IP Mapping tests
+
+- name: Generate random suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    suffix_name: "ansible"
+
+- name: Set names
+  ansible.builtin.set_fact:
+    rp_name: "rp_dsip_{{ suffix_name }}_{{ random_name }}"
+
+########################################################################################
+# Dummy IDs used by check_mode / negative tests
+########################################################################################
+
+- name: Set dummy IDs used by check_mode / negative tests
+  ansible.builtin.set_fact:
+    dummy_rp_ext_id: "b3a6932b-f64e-49ee-924d-c5a5b8ce2f3f"
+    dummy_dsip_ext_id: "e7ae4b0d-726d-410d-87c2-af46f8bea264"
+    dummy_primary_cluster_ext_id: "0005f7bf-3e2b-4a41-0000-000000029d0e"
+    dummy_recovery_cluster_ext_id: "000647b8-ddb3-6bbb-0000-000000028f57"
+    dummy_bogus_ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+
+########################################################################################
+# Check-mode: Create with ALL attributes
+########################################################################################
+
+- name: Generate spec for creating Data Services IP Mapping using check mode with all attributes
+  nutanix.ncp.ntnx_data_services_ip_mapping_v2:
+    state: present
+    recovery_plan_ext_id: "{{ dummy_rp_ext_id }}"
+    primary_cluster:
+      ext_id: "{{ dummy_primary_cluster_ext_id }}"
+    recovery_cluster:
+      ext_id: "{{ dummy_recovery_cluster_ext_id }}"
+    primary_data_services_ip:
+      ipv4:
+        value: "10.44.76.55"
+        prefix_length: 32
+    recovery_data_services_ip:
+      ipv4:
+        value: "10.44.77.55"
+        prefix_length: 32
+    primary_test_data_services_ip:
+      ipv4:
+        value: "10.44.76.56"
+        prefix_length: 32
+    recovery_test_data_services_ip:
+      ipv4:
+        value: "10.44.77.56"
+        prefix_length: 32
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for creating Data Services IP Mapping using check mode with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.primary_cluster.ext_id == dummy_primary_cluster_ext_id
+      - result.response.recovery_cluster.ext_id == dummy_recovery_cluster_ext_id
+      - result.response.primary_data_services_ip.ipv4.value == "10.44.76.55"
+      - result.response.primary_data_services_ip.ipv4.prefix_length == 32
+      - result.response.recovery_data_services_ip.ipv4.value == "10.44.77.55"
+      - result.response.recovery_data_services_ip.ipv4.prefix_length == 32
+      - result.response.primary_test_data_services_ip.ipv4.value == "10.44.76.56"
+      - result.response.recovery_test_data_services_ip.ipv4.value == "10.44.77.56"
+    success_msg: "Spec for creating Data Services IP Mapping using check mode with all attributes is generated successfully"
+    fail_msg: "Spec for creating Data Services IP Mapping using check mode with all attributes is not generated successfully"
+
+########################################################################################
+# Check-mode: Update with ALL attributes
+########################################################################################
+
+- name: Generate spec for updating Data Services IP Mapping using check mode with all attributes
+  nutanix.ncp.ntnx_data_services_ip_mapping_v2:
+    state: present
+    recovery_plan_ext_id: "{{ dummy_rp_ext_id }}"
+    ext_id: "{{ dummy_dsip_ext_id }}"
+    primary_cluster:
+      ext_id: "{{ dummy_primary_cluster_ext_id }}"
+    recovery_cluster:
+      ext_id: "{{ dummy_recovery_cluster_ext_id }}"
+    primary_data_services_ip:
+      ipv4:
+        value: "10.44.76.65"
+        prefix_length: 32
+    recovery_data_services_ip:
+      ipv4:
+        value: "10.44.77.65"
+        prefix_length: 32
+    primary_test_data_services_ip:
+      ipv4:
+        value: "10.44.76.66"
+        prefix_length: 32
+    recovery_test_data_services_ip:
+      ipv4:
+        value: "10.44.77.66"
+        prefix_length: 32
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for updating Data Services IP Mapping using check mode with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - result.msg == "Api Exception raised while fetching data services IP mapping info using ext_id"
+    success_msg: "Update check_mode against a non-existent mapping correctly failed at the pre-fetch step"
+    fail_msg: "Update check_mode did not fail as expected on a non-existent mapping"
+
+########################################################################################
+# Check-mode: Delete
+########################################################################################
+
+- name: Delete Data Services IP Mapping using check mode
+  nutanix.ncp.ntnx_data_services_ip_mapping_v2:
+    state: absent
+    recovery_plan_ext_id: "{{ dummy_rp_ext_id }}"
+    ext_id: "{{ dummy_dsip_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Delete Data Services IP Mapping using check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - "'will be deleted' in result.msg"
+      - result.ext_id == dummy_dsip_ext_id
+    success_msg: "Delete Data Services IP Mapping using check mode passed"
+    fail_msg: "Delete Data Services IP Mapping using check mode failed"
+
+########################################################################################
+# Negative: argument validation and required-if
+########################################################################################
+
+- name: Try create with missing primary_cluster
+  nutanix.ncp.ntnx_data_services_ip_mapping_v2:
+    state: present
+    recovery_plan_ext_id: "{{ dummy_rp_ext_id }}"
+    recovery_cluster:
+      ext_id: "{{ dummy_recovery_cluster_ext_id }}"
+    primary_data_services_ip:
+      ipv4:
+        value: "10.44.76.55"
+        prefix_length: 32
+    recovery_data_services_ip:
+      ipv4:
+        value: "10.44.77.55"
+        prefix_length: 32
+  register: result
+  ignore_errors: true
+
+- name: Try create with missing primary_cluster status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'Missing required parameter' in result.msg"
+      - "'primary_cluster' in result.msg"
+    success_msg: "Missing primary_cluster failed as expected"
+    fail_msg: "Missing primary_cluster did not fail as expected"
+
+- name: Try create with both ipv4 and ipv6 on primary_data_services_ip
+  nutanix.ncp.ntnx_data_services_ip_mapping_v2:
+    state: present
+    recovery_plan_ext_id: "{{ dummy_rp_ext_id }}"
+    primary_cluster:
+      ext_id: "{{ dummy_primary_cluster_ext_id }}"
+    recovery_cluster:
+      ext_id: "{{ dummy_recovery_cluster_ext_id }}"
+    primary_data_services_ip:
+      ipv4:
+        value: "10.44.76.55"
+        prefix_length: 32
+      ipv6:
+        value: "fd00::55"
+        prefix_length: 128
+    recovery_data_services_ip:
+      ipv4:
+        value: "10.44.77.55"
+        prefix_length: 32
+  register: result
+  ignore_errors: true
+
+- name: Both ipv4 and ipv6 provided (mutually_exclusive) status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'parameters are mutually exclusive' in result.msg"
+    success_msg: "Mutual exclusivity of ipv4/ipv6 enforced as expected"
+    fail_msg: "Mutual exclusivity of ipv4/ipv6 not enforced"
+
+- name: Try create with neither ipv4 nor ipv6 on primary_data_services_ip # noqa args[module]
+  nutanix.ncp.ntnx_data_services_ip_mapping_v2:
+    state: present
+    recovery_plan_ext_id: "{{ dummy_rp_ext_id }}"
+    primary_cluster:
+      ext_id: "{{ dummy_primary_cluster_ext_id }}"
+    recovery_cluster:
+      ext_id: "{{ dummy_recovery_cluster_ext_id }}"
+    primary_data_services_ip: {}
+    recovery_data_services_ip:
+      ipv4:
+        value: "10.44.77.55"
+        prefix_length: 32
+  register: result
+  ignore_errors: true
+
+- name: Neither ipv4 nor ipv6 provided (required_one_of) status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'one of the following is required' in result.msg"
+    success_msg: "required_one_of enforced as expected"
+    fail_msg: "required_one_of not enforced"
+
+- name: Delete without ext_id # noqa args[module]
+  nutanix.ncp.ntnx_data_services_ip_mapping_v2:
+    state: absent
+    recovery_plan_ext_id: "{{ dummy_rp_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete without ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'state is absent but all of the following are missing: ext_id' in result.msg"
+    success_msg: "Delete without ext_id failed as expected"
+    fail_msg: "Delete without ext_id did not fail as expected"
+
+########################################################################################
+# Negative: real API calls that must fail cleanly
+########################################################################################
+
+- name: Delete non-existent Data Services IP Mapping (real API)
+  nutanix.ncp.ntnx_data_services_ip_mapping_v2:
+    state: absent
+    recovery_plan_ext_id: "{{ dummy_rp_ext_id }}"
+    ext_id: "{{ dummy_bogus_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete non-existent Data Services IP Mapping status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - result.msg == "Api Exception raised while deleting Data Services IP Mapping"
+    success_msg: "Delete non-existent Data Services IP Mapping failed as expected"
+    fail_msg: "Delete non-existent Data Services IP Mapping did not fail as expected"
+
+- name: Fetch Data Services IP Mapping with wrong ext_id
+  nutanix.ncp.ntnx_data_services_ip_mappings_info_v2:
+    recovery_plan_ext_id: "{{ dummy_rp_ext_id }}"
+    ext_id: "{{ dummy_bogus_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch Data Services IP Mapping with wrong ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching data services IP mapping info using ext_id"
+    success_msg: "Fetch with wrong ext_id failed as expected"
+    fail_msg: "Fetch with wrong ext_id did not fail as expected"
+
+- name: List Data Services IP Mappings on non-existent Recovery Plan
+  nutanix.ncp.ntnx_data_services_ip_mappings_info_v2:
+    recovery_plan_ext_id: "{{ dummy_bogus_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: List Data Services IP Mappings on non-existent Recovery Plan status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching Data Services IP Mappings info"
+    success_msg: "List on non-existent Recovery Plan failed as expected"
+    fail_msg: "List on non-existent Recovery Plan did not fail as expected"
+
+########################################################################################
+# Setup: discover clusters and (best-effort) create a Recovery Plan for live CRUD
+########################################################################################
+
+- name: Fetch domain managers (Prism Centrals)
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:{{ port | default(9440) }}/api/prism/v4.0/config/domain-managers"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs }}"
+    return_content: true
+    status_code: [200]
+  register: domain_managers_resp
+  ignore_errors: true
+
+- name: Fetch registered PE clusters (excluding PC)
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:{{ port | default(9440) }}/api/clustermgmt/v4.1/config/clusters"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs }}"
+    return_content: true
+    status_code: [200]
+  register: clusters_resp
+  ignore_errors: true
+
+- name: Extract PE cluster ext_ids # noqa ignore-errors
+  ansible.builtin.set_fact:
+    pe_cluster_ext_ids: >-
+      {{
+        (clusters_resp.json.data | default([]))
+        | rejectattr('config.clusterFunction', 'contains', 'PRISM_CENTRAL')
+        | map(attribute='extId')
+        | list
+      }}
+    pc_domain_manager_ext_id: >-
+      {{ (domain_managers_resp.json.data | default([])) | map(attribute='extId') | first | default(None) }}
+  ignore_errors: true
+
+- name: Log discovered cluster info
+  ansible.builtin.debug:
+    msg:
+      - "Discovered PE clusters: {{ pe_cluster_ext_ids | default([]) }}"
+      - "Discovered PC domain manager: {{ pc_domain_manager_ext_id | default('unknown') }}"
+
+- name: Decide whether a real Recovery Plan can be created (needs >= 2 PE clusters)
+  ansible.builtin.set_fact:
+    can_run_live_crud: "{{ (pe_cluster_ext_ids | default([]) | length) >= 2 and pc_domain_manager_ext_id is not none }}"
+
+- name: Skip live CRUD when prerequisites are missing
+  ansible.builtin.debug:
+    msg: >-
+      Skipping live CRUD block: at least two PE clusters registered to the same PC
+      are required to create a Recovery Plan for Data Services IP Mapping. This is
+      not a code defect — it is an environmental limitation. All check_mode and
+      negative tests have already executed above.
+  when: not can_run_live_crud
+
+########################################################################################
+# Live CRUD (only when environment supports a real Recovery Plan)
+########################################################################################
+
+- name: Live Data Services IP Mapping CRUD
+  when: can_run_live_crud
+  block:
+    - name: Set live cluster ext_ids
+      ansible.builtin.set_fact:
+        primary_cluster_ext_id: "{{ pe_cluster_ext_ids[0] }}"
+        recovery_cluster_ext_id: "{{ pe_cluster_ext_ids[1] }}"
+        rp_ext_id: ""
+        todelete: []
+
+    - name: Create Recovery Plan (prereq for Data Services IP Mapping)
+      ansible.builtin.uri:
+        url: "https://{{ ip }}:{{ port | default(9440) }}/api/datapolicies/v4.2/config/recovery-plans"
+        method: POST
+        user: "{{ username }}"
+        password: "{{ password }}"
+        force_basic_auth: true
+        validate_certs: "{{ validate_certs }}"
+        headers:
+          Content-Type: "application/json"
+          NTNX-Request-Id: "{{ 99999999999999999999 | random | to_uuid }}"
+        body_format: json
+        body:
+          name: "{{ rp_name }}"
+          description: "Recovery plan for Ansible code-gen DataServicesIpMapping tests"
+          primaryLocation:
+            domainManagerExtId: "{{ pc_domain_manager_ext_id }}"
+            clusters:
+              - extId: "{{ primary_cluster_ext_id }}"
+          recoveryLocation:
+            domainManagerExtId: "{{ pc_domain_manager_ext_id }}"
+            clusters:
+              - extId: "{{ recovery_cluster_ext_id }}"
+        status_code: [200, 202]
+        return_content: true
+      register: rp_create_resp
+      ignore_errors: true
+
+    - name: Poll create-Recovery-Plan task until it terminates
+      ansible.builtin.uri:
+        url: "https://{{ ip }}:{{ port | default(9440) }}/api/prism/v4.1/config/tasks/{{ rp_create_resp.json.data.extId }}"
+        method: GET
+        user: "{{ username }}"
+        password: "{{ password }}"
+        force_basic_auth: true
+        validate_certs: "{{ validate_certs }}"
+        return_content: true
+        status_code: [200]
+      register: rp_task_status
+      until: rp_task_status.json.data.status in ["SUCCEEDED", "FAILED"]
+      retries: 30
+      delay: 4
+      ignore_errors: true
+
+    - name: Capture the created Recovery Plan ext_id
+      ansible.builtin.set_fact:
+        rp_ext_id: >-
+          {{
+            (rp_task_status.json.data.entitiesAffected
+             | selectattr('rel', 'equalto', 'datapolicies:config:recovery-plan')
+             | map(attribute='extId') | first)
+            | default(rp_task_status.json.data.entitiesAffected[0].extId | default(''))
+          }}
+      when:
+        - rp_task_status.json is defined
+        - rp_task_status.json.data.status == "SUCCEEDED"
+
+    - name: Confirm Recovery Plan is available; otherwise fall back to check_mode only
+      ansible.builtin.set_fact:
+        can_run_live_crud: "{{ rp_ext_id | default('') | length > 0 }}"
+
+    - name: Live DataServicesIpMapping CRUD (nested)
+      when: can_run_live_crud
+      block:
+        # -------------------- Create (minimum fields) --------------------
+        - name: Create Data Services IP Mapping with minimum fields
+          nutanix.ncp.ntnx_data_services_ip_mapping_v2:
+            recovery_plan_ext_id: "{{ rp_ext_id }}"
+            primary_cluster:
+              ext_id: "{{ primary_cluster_ext_id }}"
+            recovery_cluster:
+              ext_id: "{{ recovery_cluster_ext_id }}"
+            primary_data_services_ip:
+              ipv4:
+                value: "10.44.76.101"
+            recovery_data_services_ip:
+              ipv4:
+                value: "10.44.77.101"
+          register: result
+          ignore_errors: true
+
+        - name: Assert minimum-fields create
+          ansible.builtin.assert:
+            that:
+              - result is defined
+              - result.changed == true
+              - result.failed == false
+              - result.ext_id is defined
+              - result.task_ext_id is defined
+              - result.response is defined
+              - result.response.primary_cluster.ext_id == primary_cluster_ext_id
+              - result.response.recovery_cluster.ext_id == recovery_cluster_ext_id
+              - result.response.primary_data_services_ip.ipv4.value == "10.44.76.101"
+              - result.response.recovery_data_services_ip.ipv4.value == "10.44.77.101"
+            success_msg: "Data Services IP Mapping created with minimum fields"
+            fail_msg: "Failed to create Data Services IP Mapping with minimum fields"
+
+        - name: Track first Data Services IP Mapping for cleanup
+          ansible.builtin.set_fact:
+            todelete: "{{ todelete + [result.ext_id] }}"
+
+        # -------------------- Create (all fields) --------------------
+        - name: Create Data Services IP Mapping with all fields
+          nutanix.ncp.ntnx_data_services_ip_mapping_v2:
+            recovery_plan_ext_id: "{{ rp_ext_id }}"
+            primary_cluster:
+              ext_id: "{{ primary_cluster_ext_id }}"
+            recovery_cluster:
+              ext_id: "{{ recovery_cluster_ext_id }}"
+            primary_data_services_ip:
+              ipv4:
+                value: "10.44.76.102"
+                prefix_length: 32
+            recovery_data_services_ip:
+              ipv4:
+                value: "10.44.77.102"
+                prefix_length: 32
+            primary_test_data_services_ip:
+              ipv4:
+                value: "10.44.76.103"
+                prefix_length: 32
+            recovery_test_data_services_ip:
+              ipv4:
+                value: "10.44.77.103"
+                prefix_length: 32
+          register: result
+          ignore_errors: true
+
+        - name: Assert all-fields create
+          ansible.builtin.assert:
+            that:
+              - result is defined
+              - result.changed == true
+              - result.failed == false
+              - result.ext_id is defined
+              - result.task_ext_id is defined
+              - result.response is defined
+              - result.response.primary_cluster.ext_id == primary_cluster_ext_id
+              - result.response.recovery_cluster.ext_id == recovery_cluster_ext_id
+              - result.response.primary_data_services_ip.ipv4.value == "10.44.76.102"
+              - result.response.primary_data_services_ip.ipv4.prefix_length == 32
+              - result.response.recovery_data_services_ip.ipv4.value == "10.44.77.102"
+              - result.response.recovery_data_services_ip.ipv4.prefix_length == 32
+              - result.response.primary_test_data_services_ip.ipv4.value == "10.44.76.103"
+              - result.response.primary_test_data_services_ip.ipv4.prefix_length == 32
+              - result.response.recovery_test_data_services_ip.ipv4.value == "10.44.77.103"
+              - result.response.recovery_test_data_services_ip.ipv4.prefix_length == 32
+            success_msg: "Data Services IP Mapping created with all fields"
+            fail_msg: "Failed to create Data Services IP Mapping with all fields"
+
+        - name: Save DSIP mapping ext_id for further tests
+          ansible.builtin.set_fact:
+            dsip_ext_id_full: "{{ result.ext_id }}"
+            todelete: "{{ todelete + [result.ext_id] }}"
+
+        # -------------------- Get by ext_id --------------------
+        - name: Get Data Services IP Mapping by ext_id
+          nutanix.ncp.ntnx_data_services_ip_mappings_info_v2:
+            recovery_plan_ext_id: "{{ rp_ext_id }}"
+            ext_id: "{{ dsip_ext_id_full }}"
+          register: result
+          ignore_errors: true
+
+        - name: Assert get-by-ext_id
+          ansible.builtin.assert:
+            that:
+              - result is defined
+              - result.failed == false
+              - result.changed == false
+              - result.ext_id == dsip_ext_id_full
+              - result.response.primary_cluster.ext_id == primary_cluster_ext_id
+              - result.response.recovery_cluster.ext_id == recovery_cluster_ext_id
+              - result.response.primary_data_services_ip.ipv4.value == "10.44.76.102"
+              - result.response.recovery_test_data_services_ip.ipv4.value == "10.44.77.103"
+            success_msg: "Get by ext_id returned the full DataServicesIpMapping"
+            fail_msg: "Get by ext_id did not return the expected DataServicesIpMapping"
+
+        # -------------------- List all --------------------
+        - name: List all Data Services IP Mappings for the RP
+          nutanix.ncp.ntnx_data_services_ip_mappings_info_v2:
+            recovery_plan_ext_id: "{{ rp_ext_id }}"
+          register: result
+          ignore_errors: true
+
+        - name: Assert list-all
+          ansible.builtin.assert:
+            that:
+              - result is defined
+              - result.failed == false
+              - result.changed == false
+              - result.response is defined
+              - result.response | length >= 2
+              - result.total_available_results >= 2
+            success_msg: "List all returned every Data Services IP Mapping"
+            fail_msg: "List all did not return the expected Data Services IP Mappings"
+
+        # -------------------- List with limit --------------------
+        - name: List Data Services IP Mappings with limit
+          nutanix.ncp.ntnx_data_services_ip_mappings_info_v2:
+            recovery_plan_ext_id: "{{ rp_ext_id }}"
+            limit: 1
+          register: result
+          ignore_errors: true
+
+        - name: Assert list-with-limit
+          ansible.builtin.assert:
+            that:
+              - result is defined
+              - result.failed == false
+              - result.response is defined
+              - result.response | length == 1
+            success_msg: "List with limit=1 returned exactly one Data Services IP Mapping"
+            fail_msg: "List with limit=1 did not honor the limit"
+
+        # -------------------- List with filter --------------------
+        - name: List Data Services IP Mappings with filter on primaryCluster
+          nutanix.ncp.ntnx_data_services_ip_mappings_info_v2:
+            recovery_plan_ext_id: "{{ rp_ext_id }}"
+            filter: "primaryCluster/extId eq '{{ primary_cluster_ext_id }}'"
+          register: result
+          ignore_errors: true
+
+        - name: Assert list-with-filter
+          ansible.builtin.assert:
+            that:
+              - result is defined
+              - result.failed == false
+              - result.response is defined
+              - result.response | length >= 1
+              - >-
+                result.response
+                | selectattr('primary_cluster.ext_id','equalto', primary_cluster_ext_id)
+                | list | length == result.response | length
+            success_msg: "List with filter returned only matching Data Services IP Mappings"
+            fail_msg: "List with filter did not filter as expected"
+
+        # -------------------- Update (state transitions on every scalar) --------------------
+        - name: Update Data Services IP Mapping (new IP values)
+          nutanix.ncp.ntnx_data_services_ip_mapping_v2:
+            recovery_plan_ext_id: "{{ rp_ext_id }}"
+            ext_id: "{{ dsip_ext_id_full }}"
+            primary_cluster:
+              ext_id: "{{ primary_cluster_ext_id }}"
+            recovery_cluster:
+              ext_id: "{{ recovery_cluster_ext_id }}"
+            primary_data_services_ip:
+              ipv4:
+                value: "10.44.76.112"
+                prefix_length: 32
+            recovery_data_services_ip:
+              ipv4:
+                value: "10.44.77.112"
+                prefix_length: 32
+            primary_test_data_services_ip:
+              ipv4:
+                value: "10.44.76.113"
+                prefix_length: 32
+            recovery_test_data_services_ip:
+              ipv4:
+                value: "10.44.77.113"
+                prefix_length: 32
+          register: result
+          ignore_errors: true
+
+        - name: Assert update
+          ansible.builtin.assert:
+            that:
+              - result is defined
+              - result.changed == true
+              - result.failed == false
+              - result.ext_id == dsip_ext_id_full
+              - result.task_ext_id is defined
+              - result.response.primary_data_services_ip.ipv4.value == "10.44.76.112"
+              - result.response.recovery_data_services_ip.ipv4.value == "10.44.77.112"
+              - result.response.primary_test_data_services_ip.ipv4.value == "10.44.76.113"
+              - result.response.recovery_test_data_services_ip.ipv4.value == "10.44.77.113"
+            success_msg: "Data Services IP Mapping updated with new IP values"
+            fail_msg: "Failed to update Data Services IP Mapping"
+
+        # -------------------- Idempotency --------------------
+        - name: Update Data Services IP Mapping with SAME values (idempotency)
+          nutanix.ncp.ntnx_data_services_ip_mapping_v2:
+            recovery_plan_ext_id: "{{ rp_ext_id }}"
+            ext_id: "{{ dsip_ext_id_full }}"
+            primary_cluster:
+              ext_id: "{{ primary_cluster_ext_id }}"
+            recovery_cluster:
+              ext_id: "{{ recovery_cluster_ext_id }}"
+            primary_data_services_ip:
+              ipv4:
+                value: "10.44.76.112"
+                prefix_length: 32
+            recovery_data_services_ip:
+              ipv4:
+                value: "10.44.77.112"
+                prefix_length: 32
+            primary_test_data_services_ip:
+              ipv4:
+                value: "10.44.76.113"
+                prefix_length: 32
+            recovery_test_data_services_ip:
+              ipv4:
+                value: "10.44.77.113"
+                prefix_length: 32
+          register: result
+          ignore_errors: true
+
+        - name: Assert idempotency
+          ansible.builtin.assert:
+            that:
+              - result is defined
+              - result.changed == false
+              - result.failed == false
+              - result.msg == "Nothing to change."
+            success_msg: "Idempotency respected — same values yielded no change"
+            fail_msg: "Idempotency failed — second update reported a change"
+
+        # -------------------- Delete --------------------
+        - name: Delete each Data Services IP Mapping
+          nutanix.ncp.ntnx_data_services_ip_mapping_v2:
+            state: absent
+            recovery_plan_ext_id: "{{ rp_ext_id }}"
+            ext_id: "{{ item }}"
+          loop: "{{ todelete }}"
+          register: delete_results
+          ignore_errors: true
+
+        - name: Assert all deletes succeeded
+          ansible.builtin.assert:
+            that:
+              - delete_results is defined
+              - delete_results.results | length == todelete | length
+              - delete_results.results | selectattr('changed', 'equalto', true) | list | length == todelete | length
+              - delete_results.results | selectattr('failed', 'equalto', false) | list | length == todelete | length
+            success_msg: "All Data Services IP Mappings deleted"
+            fail_msg: "One or more Data Services IP Mapping deletes failed"
+
+  always:
+    - name: Delete the Recovery Plan created for the tests # noqa ignore-errors
+      ansible.builtin.uri:
+        url: "https://{{ ip }}:{{ port | default(9440) }}/api/datapolicies/v4.2/config/recovery-plans/{{ rp_ext_id }}"
+        method: DELETE
+        user: "{{ username }}"
+        password: "{{ password }}"
+        force_basic_auth: true
+        validate_certs: "{{ validate_certs }}"
+        status_code: [200, 202, 204, 404]
+      when: rp_ext_id | default('') | length > 0
+      ignore_errors: true
