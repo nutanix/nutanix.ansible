@@ -1,0 +1,31 @@
+---
+# Summary:
+# This playbook demonstrates how to trigger the capacity planning Runway
+# generation for a Nutanix Prism Central AIOps capacity planning scenario.
+#
+# The Runway feature forecasts how many days a cluster will be able to
+# sustain its existing (and simulated) workloads before running out of
+# CPU, memory, or storage effective capacity. GenerateRunway is an
+# asynchronous action on an existing scenario; the module returns the
+# task reference and waits for the underlying Ergon task to finish.
+
+- name: AIOps capacity planning Runway playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+  tasks:
+    - name: Set scenario ext_id
+      ansible.builtin.set_fact:
+        scenario_ext_id: "5b3d1f7c-2b6a-4b64-8b6a-1b0a5f3d8e4c"
+
+    - name: Generate runway for an existing capacity planning scenario
+      nutanix.ncp.ntnx_runway_v2:
+        state: present
+        ext_id: "{{ scenario_ext_id }}"
+      register: runway_result
+      ignore_errors: true
