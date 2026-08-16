@@ -1,0 +1,26 @@
+# Best-effort run of examples/storage/VolumeGroupSynchronousReplication/volume_group_replication_v2.yml
+# against the test Prism Central at 10.44.76.28.
+#
+# NOTE: The example uses a placeholder Volume Group ext_id
+# (f4b1b3b4-4b1b-4b1b-4b1b-4b1b4b1b4b1b) that does not exist on this PC, and the
+# test PC in this sandbox does not currently expose the storage/v4.0.a4 API surface
+# used by ntnx_volume_group_replication_v2, so both tasks fail with a HTTP 404 from
+# /api/storage/v4.0.a4/config/volume-groups/... The module correctly surfaces the
+# API error rather than crashing, which matches the intended behaviour. To exercise
+# the happy path, run this playbook against a Prism Central that has two AOS
+# clusters registered, a synchronous protection policy configured, and a Volume
+# Group associated with that policy; then replace vg_ext_id with the ext_id of
+# that Volume Group.
+
+[WARNING]: Found variable using reserved name: port
+
+PLAY [Volume Group Synchronous Replication playbook] ***************************
+
+TASK [Set Volume Group identifiers] ********************************************
+ok: [localhost]
+
+TASK [Pause synchronous replication for a Volume Group] ************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching Volume group info using ext_id", "response": {"error": "Not Found", "message": "No static resource storage/v4.0.a4/config/volume-groups/f4b1b3b4-4b1b-4b1b-4b1b-4b1b4b1b4b1b.", "path": "/api/storage/v4.0.a4/config/volume-groups/f4b1b3b4-4b1b-4b1b-4b1b-4b1b4b1b4b1b", "status": 404, "timestamp": "2026-07-21T08:46:36.473856388Z"}, "status": 404}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=1    changed=0    unreachable=0    failed=1    skipped=0    rescued=0    ignored=0

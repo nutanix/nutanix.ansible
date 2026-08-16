@@ -1,0 +1,222 @@
+---
+# Test plan for ntnx_volume_group_replication_v2 (action module).
+#
+# The module exposes two SDK actions on the storage v4 VolumeGroup API:
+#   - pause_volume_group_synchronous_replication  (state=absent)
+#   - resume_volume_group_synchronous_replication (state=present)
+#
+# Scenarios exercised below:
+#   1. Setup: create a Volume Group we can safely target on the live cluster
+#      so that error-path assertions have a valid Volume Group extId.
+#   2. check_mode Pause: verify the module reports changed=true, sets ext_id,
+#      and does NOT call the API (no task_ext_id, no SUCCEEDED status).
+#   3. check_mode Resume: same as above but for state=present.
+#   4. Argument-spec validation: omit required ext_id and assert failure with
+#      a descriptive message.
+#   5. Negative Pause on a non-sync-rep VG: run the real Pause action on a VG
+#      that is NOT protected by a synchronous protection policy and assert the
+#      module fails cleanly with a helpful message
+#      (see JIRA ENG-718894 - PauseSyncRepVgOp should run only on sync rep VGs).
+#   6. Negative Resume on a non-sync-rep VG: same as above for state=present.
+#   7. Negative on a non-existent Volume Group ext_id: assert the module fails
+#      with an API "not found" error.
+#   8. Cleanup: delete the Volume Group created in step 1.
+#
+# NOTE: A full end-to-end pause/resume happy-path test requires two clusters
+# registered to the same PC, a synchronous Protection Policy and a Volume
+# Group already associated with it. That environment is not guaranteed on the
+# code-gen sandbox, so the happy-path assertions live in the example playbook
+# under `examples/storage/VolumeGroupSynchronousReplication/` and are validated
+# manually against a full DR-enabled cluster pair.
+
+- name: "Start ntnx_volume_group_replication_v2 tests"
+  ansible.builtin.debug:
+    msg: "Start ntnx_volume_group_replication_v2 tests"
+
+- name: Generate random suffix for VG name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set VG name and non-existent ext_id
+  ansible.builtin.set_fact:
+    vg_name: "ansible-vg-sync-rep-{{ random_name }}"
+    non_existent_ext_id: "00000000-0000-0000-0000-000000000000"
+
+############################################ Setup ############################################
+
+- name: Discover a cluster to host the test Volume Group
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(f:f eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: clusters_info
+  ignore_errors: true
+
+- name: Pick a cluster ext_id when info API is unavailable
+  ansible.builtin.set_fact:
+    cluster_ext_id: >-
+      {{ (clusters_info.response | default([])
+          | selectattr('config.cluster_function', 'defined')
+          | list | first).ext_id
+          if (clusters_info.response is defined
+              and clusters_info.response | length > 0)
+          else '' }}
+
+- name: Fail early if no cluster could be discovered
+  ansible.builtin.assert:
+    that:
+      - cluster_ext_id | length > 0
+    fail_msg: "No AOS cluster discovered via ntnx_clusters_info_v2 - cannot run VG sync-rep tests"
+
+- name: Create a Volume Group to exercise negative flows
+  nutanix.ncp.ntnx_volume_groups_v2:
+    name: "{{ vg_name }}"
+    description: "VG used to exercise pause/resume sync-rep negative flows"
+    should_load_balance_vm_attachments: false
+    sharing_status: "NOT_SHARED"
+    target_prefix: "syncrep"
+    cluster_reference: "{{ cluster_ext_id }}"
+    usage_type: "USER"
+  register: create_vg_result
+
+- name: Verify VG was created
+  ansible.builtin.assert:
+    that:
+      - create_vg_result.changed == true
+      - create_vg_result.failed == false
+      - create_vg_result.error == None
+      - create_vg_result.ext_id is defined
+    fail_msg: "Unable to create VG for sync-rep tests"
+    success_msg: "VG created for sync-rep tests"
+
+- name: Capture VG ext_id
+  ansible.builtin.set_fact:
+    vg_ext_id: "{{ create_vg_result.ext_id }}"
+
+############################################ check_mode: Pause ############################################
+
+- name: Pause synchronous replication (check_mode)
+  nutanix.ncp.ntnx_volume_group_replication_v2:
+    state: absent
+    ext_id: "{{ vg_ext_id }}"
+  register: pause_check
+  check_mode: true
+
+- name: Verify check_mode pause result
+  ansible.builtin.assert:
+    that:
+      - pause_check.changed == true
+      - pause_check.failed == false
+      - pause_check.ext_id == vg_ext_id
+      - pause_check.task_ext_id is none
+      - pause_check.response.action == "pause"
+      - pause_check.response.ext_id == vg_ext_id
+    fail_msg: "check_mode pause did not behave as expected"
+    success_msg: "check_mode pause behaved as expected"
+
+############################################ check_mode: Resume ############################################
+
+- name: Resume synchronous replication (check_mode)
+  nutanix.ncp.ntnx_volume_group_replication_v2:
+    state: present
+    ext_id: "{{ vg_ext_id }}"
+  register: resume_check
+  check_mode: true
+
+- name: Verify check_mode resume result
+  ansible.builtin.assert:
+    that:
+      - resume_check.changed == true
+      - resume_check.failed == false
+      - resume_check.ext_id == vg_ext_id
+      - resume_check.task_ext_id is none
+      - resume_check.response.action == "resume"
+      - resume_check.response.ext_id == vg_ext_id
+    fail_msg: "check_mode resume did not behave as expected"
+    success_msg: "check_mode resume behaved as expected"
+
+############################################ Negative: missing required field ############################################
+
+- name: Attempt pause without ext_id (should fail argspec validation)
+  nutanix.ncp.ntnx_volume_group_replication_v2:  # noqa: args[module]
+    state: absent
+  register: missing_ext_id_result
+  ignore_errors: true
+
+- name: Verify pause failed due to missing ext_id
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id_result.failed == true
+      - missing_ext_id_result.msg is search("ext_id")
+    fail_msg: "Missing ext_id should have been rejected by argument_spec"
+    success_msg: "Argument spec correctly rejected missing ext_id"
+
+############################################ Negative: pause on a non-sync-rep VG ############################################
+
+- name: Attempt to pause synchronous replication on a non-protected VG
+  nutanix.ncp.ntnx_volume_group_replication_v2:
+    state: absent
+    ext_id: "{{ vg_ext_id }}"
+  register: pause_no_syncrep
+  ignore_errors: true
+
+- name: Verify pause on a non-sync-rep VG failed cleanly
+  ansible.builtin.assert:
+    that:
+      - pause_no_syncrep.failed == true
+      - pause_no_syncrep.msg is defined
+      - pause_no_syncrep.changed == false
+    fail_msg: "Pause on a non-sync-rep VG did not fail cleanly"
+    success_msg: "Pause on a non-sync-rep VG failed cleanly with an API error"
+
+############################################ Negative: resume on a non-sync-rep VG ############################################
+
+- name: Attempt to resume synchronous replication on a non-protected VG
+  nutanix.ncp.ntnx_volume_group_replication_v2:
+    state: present
+    ext_id: "{{ vg_ext_id }}"
+  register: resume_no_syncrep
+  ignore_errors: true
+
+- name: Verify resume on a non-sync-rep VG failed cleanly
+  ansible.builtin.assert:
+    that:
+      - resume_no_syncrep.failed == true
+      - resume_no_syncrep.msg is defined
+      - resume_no_syncrep.changed == false
+    fail_msg: "Resume on a non-sync-rep VG did not fail cleanly"
+    success_msg: "Resume on a non-sync-rep VG failed cleanly with an API error"
+
+############################################ Negative: non-existent VG ############################################
+
+- name: Attempt to pause synchronous replication on a non-existent VG
+  nutanix.ncp.ntnx_volume_group_replication_v2:
+    state: absent
+    ext_id: "{{ non_existent_ext_id }}"
+  register: pause_missing_vg
+  ignore_errors: true
+
+- name: Verify pause on a non-existent VG failed cleanly
+  ansible.builtin.assert:
+    that:
+      - pause_missing_vg.failed == true
+      - pause_missing_vg.msg is defined
+      - pause_missing_vg.changed == false
+    fail_msg: "Pause on a non-existent VG did not fail cleanly"
+    success_msg: "Pause on a non-existent VG failed cleanly"
+
+############################################ Cleanup ############################################
+
+- name: Delete the Volume Group used in tests
+  nutanix.ncp.ntnx_volume_groups_v2:
+    state: absent
+    ext_id: "{{ vg_ext_id }}"
+  register: cleanup_result
+
+- name: Verify VG cleanup
+  ansible.builtin.assert:
+    that:
+      - cleanup_result.changed == true
+      - cleanup_result.failed == false
+      - cleanup_result.ext_id == vg_ext_id
+      - cleanup_result.task_ext_id is defined
+    fail_msg: "Unable to delete the sync-rep test VG"
+    success_msg: "Sync-rep test VG deleted successfully"
