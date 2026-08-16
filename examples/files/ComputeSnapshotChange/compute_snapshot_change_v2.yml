@@ -1,0 +1,92 @@
+---
+# Summary:
+# This playbook exercises the Nutanix Files v4 "compute snapshot change" workflow
+# (Change File Tracking) end-to-end. It:
+#   1. Discovers a file server + mount target + two mount-target snapshots on the cluster.
+#   2. Triggers a compute-snapshot-change action between the two snapshots (Create).
+#   3. Fetches the resulting SnapshotChangedContent by ext_id (Update / idempotent).
+#   4. Fetches the resulting SnapshotChangedContent via the info module (single + list).
+#   5. Runs "state=absent" on the resource — the API does not support delete so the
+#      module reports it as skipped.
+
+- name: Files compute-snapshot-change playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ pc_ip | default('<pc_ip>') }}"
+      nutanix_username: "{{ pc_username | default('admin') }}"
+      nutanix_password: "{{ pc_password | default('<pc_password>') }}"
+      validate_certs: false
+  tasks:
+    - name: Set feature-specific variables
+      ansible.builtin.set_fact:
+        file_server_ext_id: "{{ file_server_ext_id | default('6c6f6f6b-1234-4321-9abc-abcdef012345') }}"
+        mount_target_ext_id: "{{ mount_target_ext_id | default('9c1e537d-6777-4c22-5d41-ddd0c3337aa9') }}"
+        snapshot_ext_id: "{{ snapshot_ext_id | default('3e2d5fbb-0000-0000-0000-000000000002') }}"
+        base_snapshot_ext_id: "{{ base_snapshot_ext_id | default('3e2d5fbb-0000-0000-0000-000000000001') }}"
+
+    - name: Compute snapshot change between two mount-target snapshots
+      nutanix.ncp.ntnx_files_compute_snapshot_change_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        mount_target_ext_id: "{{ mount_target_ext_id }}"
+        snapshot_ext_id: "{{ snapshot_ext_id }}"
+        base_snapshot_ext_id: "{{ base_snapshot_ext_id }}"
+        should_show_relative_path: true
+        should_use_dfs_namespace: false
+      register: compute_result
+      ignore_errors: true
+
+    - name: Set compute snapshot change ext_id
+      ansible.builtin.set_fact:
+        compute_snapshot_change_ext_id: "{{ compute_result.ext_id | default('<Need to add sample>') }}"
+
+    - name: Idempotent fetch of the same snapshot changed content (state=present + ext_id)
+      nutanix.ncp.ntnx_files_compute_snapshot_change_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        mount_target_ext_id: "{{ mount_target_ext_id }}"
+        ext_id: "{{ compute_snapshot_change_ext_id }}"
+      register: idempotent_result
+      ignore_errors: true
+
+    - name: Get snapshot changed content using ext_id via info module
+      nutanix.ncp.ntnx_compute_snapshot_changes_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        mount_target_ext_id: "{{ mount_target_ext_id }}"
+        ext_id: "{{ compute_snapshot_change_ext_id }}"
+      register: info_get_result
+      ignore_errors: true
+
+    - name: List snapshot changed contents on the mount target
+      nutanix.ncp.ntnx_compute_snapshot_changes_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        mount_target_ext_id: "{{ mount_target_ext_id }}"
+      register: info_list_result
+      ignore_errors: true
+
+    - name: List snapshot changed contents filtered by snapshot ext_id
+      nutanix.ncp.ntnx_compute_snapshot_changes_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        mount_target_ext_id: "{{ mount_target_ext_id }}"
+        filter: "snapshotExtId eq '{{ snapshot_ext_id }}'"
+      register: info_filtered_result
+      ignore_errors: true
+
+    - name: List snapshot changed contents with limit
+      nutanix.ncp.ntnx_compute_snapshot_changes_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        mount_target_ext_id: "{{ mount_target_ext_id }}"
+        limit: 1
+      register: info_limited_result
+      ignore_errors: true
+
+    - name: State=absent is a no-op because the API does not support delete
+      nutanix.ncp.ntnx_files_compute_snapshot_change_v2:
+        state: absent
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        mount_target_ext_id: "{{ mount_target_ext_id }}"
+        ext_id: "{{ compute_snapshot_change_ext_id }}"
+      register: delete_result
+      ignore_errors: true

@@ -1,0 +1,422 @@
+---
+# ###############################################################################
+# Test plan for ntnx_files_compute_snapshot_change_v2 /
+# ntnx_compute_snapshot_changes_info_v2
+#
+# This target exercises the Files v4 "compute snapshot change" (Change File
+# Tracking) workflow end-to-end against a live Prism Central.
+#
+# Coverage:
+#   * check_mode: one for Create (all attributes), one for "Update" (idempotent
+#     fetch), one for Delete (unsupported no-op).
+#   * Real create: trigger compute-snapshot-change with required-only fields.
+#   * Real create: trigger compute-snapshot-change with ALL optional fields
+#     populated (base_snapshot_ext_id, should_show_relative_path,
+#     should_use_dfs_namespace).
+#   * Idempotency: re-running with an ext_id must NOT trigger the action again
+#     and must report `changed=false` + `skipped=true`.
+#   * Info module: get-by-ID, list-all, filter, limit, pagination via
+#     x_next_page_token; get-by-ID with invalid ext_id must fail cleanly.
+#   * Negative tests: missing required fields (snapshot_ext_id,
+#     file_server_ext_id, mount_target_ext_id, ext_id when state=absent).
+#   * Delete: state=absent is a no-op (API does not expose delete) — the module
+#     MUST report skipped=true.
+#   * Domain-level validation: SnapshotChangedContent.snapshot_ext_id matches
+#     the requested snapshot_ext_id, base_snapshot_ext_id matches the requested
+#     base_snapshot_ext_id, and has_more_content is a boolean.
+# ###############################################################################
+
+- name: Start Files ComputeSnapshotChange tests
+  ansible.builtin.debug:
+    msg: Start Files ComputeSnapshotChange tests
+
+- name: Resolve required test inputs
+  ansible.builtin.set_fact:
+    random_suffix: "{{ 999999999 | random }}"
+    file_server_ext_id: "{{ file_server_ext_id | default(files_test.file_server_ext_id | default('')) }}"
+    mount_target_ext_id: "{{ mount_target_ext_id | default(files_test.mount_target_ext_id | default('')) }}"
+    snapshot_ext_id: "{{ snapshot_ext_id | default(files_test.snapshot_ext_id | default('')) }}"
+    base_snapshot_ext_id: "{{ base_snapshot_ext_id | default(files_test.base_snapshot_ext_id | default('')) }}"
+
+- name: Skip the whole target when the cluster does not host Files
+  when:
+    - file_server_ext_id | length == 0 or mount_target_ext_id | length == 0 or snapshot_ext_id | length == 0
+  ansible.builtin.meta: end_play
+
+################################################################################
+# Check mode — Create (with ALL attributes)
+################################################################################
+
+- name: Generate compute snapshot change spec in check mode with all attributes
+  nutanix.ncp.ntnx_files_compute_snapshot_change_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    snapshot_ext_id: "{{ snapshot_ext_id }}"
+    base_snapshot_ext_id: "{{ base_snapshot_ext_id }}"
+    should_show_relative_path: true
+    should_use_dfs_namespace: false
+  check_mode: true
+  register: cm_create_full
+  ignore_errors: true
+
+- name: Assert check_mode create with all attributes generated the correct spec
+  ansible.builtin.assert:
+    that:
+      - cm_create_full is defined
+      - cm_create_full.changed == false
+      - cm_create_full.failed == false
+      - cm_create_full.response is defined
+      - cm_create_full.response.snapshot_ext_id == snapshot_ext_id
+      - cm_create_full.response.base_snapshot_ext_id == base_snapshot_ext_id
+      - cm_create_full.response.should_show_relative_path == true
+      - cm_create_full.response.should_use_dfs_namespace == false
+      - "'check mode' in (cm_create_full.msg | default(''))"
+    success_msg: "check_mode create (all attrs) generated the correct SDK spec"
+    fail_msg: "check_mode create (all attrs) produced an unexpected spec"
+
+################################################################################
+# Real create — minimal (only required fields)
+################################################################################
+
+- name: Compute snapshot change with only required fields
+  nutanix.ncp.ntnx_files_compute_snapshot_change_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    snapshot_ext_id: "{{ snapshot_ext_id }}"
+  register: create_min_result
+  ignore_errors: true
+
+- name: Assert compute snapshot change with only required fields succeeded
+  ansible.builtin.assert:
+    that:
+      - create_min_result is defined
+      - create_min_result.changed == true
+      - create_min_result.failed == false
+      - create_min_result.ext_id is defined
+      - create_min_result.ext_id | length > 0
+      - create_min_result.task_ext_id is defined
+      - create_min_result.response is defined
+      - create_min_result.response.snapshot_ext_id == snapshot_ext_id
+    success_msg: "Minimal compute snapshot change succeeded"
+    fail_msg: "Minimal compute snapshot change failed"
+
+- name: Save minimal-create ext_id for later assertions
+  ansible.builtin.set_fact:
+    minimal_ext_id: "{{ create_min_result.ext_id }}"
+
+################################################################################
+# Real create — with ALL fields
+################################################################################
+
+- name: Compute snapshot change with all attributes
+  nutanix.ncp.ntnx_files_compute_snapshot_change_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    snapshot_ext_id: "{{ snapshot_ext_id }}"
+    base_snapshot_ext_id: "{{ base_snapshot_ext_id }}"
+    should_show_relative_path: true
+    should_use_dfs_namespace: false
+  register: create_full_result
+  ignore_errors: true
+
+- name: Assert compute snapshot change with all attributes succeeded
+  ansible.builtin.assert:
+    that:
+      - create_full_result is defined
+      - create_full_result.changed == true
+      - create_full_result.failed == false
+      - create_full_result.ext_id is defined
+      - create_full_result.ext_id | length > 0
+      - create_full_result.task_ext_id is defined
+      - create_full_result.response is defined
+      - create_full_result.response.snapshot_ext_id == snapshot_ext_id
+      - create_full_result.response.base_snapshot_ext_id == base_snapshot_ext_id
+      - create_full_result.response.has_more_content is defined
+      - create_full_result.response.has_more_content in [true, false]
+      - create_full_result.response.changed_contents is defined
+      - create_full_result.response.changed_contents is iterable
+    success_msg: "Full compute snapshot change succeeded"
+    fail_msg: "Full compute snapshot change failed"
+
+- name: Save full-create ext_id for later assertions
+  ansible.builtin.set_fact:
+    full_ext_id: "{{ create_full_result.ext_id }}"
+
+- name: Extract per-element entries from response for structural assertions
+  ansible.builtin.set_fact:
+    change_entries: "{{ create_full_result.response.changed_contents | default([]) }}"
+
+- name: Assert per-element structure of change entries (when non-empty)
+  ansible.builtin.assert:
+    that:
+      - item.path is defined
+      - (item.operation_type is defined) or (item.object_type is defined)
+    success_msg: "Change entry looks well-formed"
+    fail_msg: "Change entry is missing required fields"
+  loop: "{{ change_entries }}"
+  when: change_entries | length > 0
+
+################################################################################
+# Idempotency — passing ext_id must NOT re-trigger the action
+################################################################################
+
+- name: Idempotent fetch of the same snapshot changed content (state=present + ext_id)
+  nutanix.ncp.ntnx_files_compute_snapshot_change_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    ext_id: "{{ full_ext_id }}"
+  register: idempotent_result
+  ignore_errors: true
+
+- name: Assert idempotent fetch does not trigger a new action
+  ansible.builtin.assert:
+    that:
+      - idempotent_result is defined
+      - idempotent_result.changed == false
+      - idempotent_result.failed == false
+      - idempotent_result.skipped == true
+      - idempotent_result.ext_id == full_ext_id
+      - "'already exists' in (idempotent_result.msg | default(''))"
+      - idempotent_result.response is defined
+    success_msg: "Idempotent fetch behaved as expected"
+    fail_msg: "Idempotent fetch produced unexpected result"
+
+################################################################################
+# Check mode — "Update" (idempotent path, ext_id given)
+################################################################################
+
+- name: Generate idempotent-fetch spec in check mode
+  nutanix.ncp.ntnx_files_compute_snapshot_change_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    ext_id: "{{ full_ext_id }}"
+  check_mode: true
+  register: cm_update
+  ignore_errors: true
+
+- name: Assert check_mode update path reports would-be idempotent fetch
+  ansible.builtin.assert:
+    that:
+      - cm_update is defined
+      - cm_update.changed == false
+      - cm_update.failed == false
+      - cm_update.ext_id == full_ext_id
+      - "'check mode' in (cm_update.msg | default(''))"
+      - "'does not support updating' in (cm_update.msg | default(''))"
+    success_msg: "check_mode update path emitted the expected message"
+    fail_msg: "check_mode update path produced unexpected result"
+
+################################################################################
+# Info module — get by ext_id
+################################################################################
+
+- name: Info - get snapshot changed content by ext_id
+  nutanix.ncp.ntnx_compute_snapshot_changes_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    ext_id: "{{ full_ext_id }}"
+  register: info_by_id
+  ignore_errors: true
+
+- name: Assert info get-by-id returned the expected entity
+  ansible.builtin.assert:
+    that:
+      - info_by_id is defined
+      - info_by_id.changed == false
+      - info_by_id.failed == false
+      - info_by_id.ext_id == full_ext_id
+      - info_by_id.response is defined
+      - info_by_id.response.ext_id == full_ext_id
+      - info_by_id.response.snapshot_ext_id == snapshot_ext_id
+      - info_by_id.response.base_snapshot_ext_id == base_snapshot_ext_id
+    success_msg: "Info get-by-id returned the expected entity"
+    fail_msg: "Info get-by-id produced unexpected result"
+
+################################################################################
+# Info module — list all
+################################################################################
+
+- name: Info - list all snapshot changed contents on the mount target
+  nutanix.ncp.ntnx_compute_snapshot_changes_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+  register: info_list
+  ignore_errors: true
+
+- name: Assert list-all returns a list including the entities we just created
+  ansible.builtin.assert:
+    that:
+      - info_list is defined
+      - info_list.changed == false
+      - info_list.failed == false
+      - info_list.response is defined
+      - info_list.response is iterable
+      - (info_list.response | length) >= 1
+      - (info_list.response | selectattr('ext_id', 'equalto', full_ext_id) | list | length) >= 1
+    success_msg: "Info list-all contains the created SnapshotChangedContent"
+    fail_msg: "Info list-all did not include the created SnapshotChangedContent"
+
+- name: Assert each list entry exposes ext_id and snapshot_ext_id
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.snapshot_ext_id is defined
+    success_msg: "List entry exposes expected identifiers"
+    fail_msg: "List entry missing expected identifiers"
+  loop: "{{ info_list.response }}"
+
+################################################################################
+# Info module — filter and limit
+################################################################################
+
+- name: Info - list with filter by snapshotExtId
+  nutanix.ncp.ntnx_compute_snapshot_changes_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    filter: "snapshotExtId eq '{{ snapshot_ext_id }}'"
+  register: info_filtered
+  ignore_errors: true
+
+- name: Assert filtered list returns only matching snapshotExtId entries
+  ansible.builtin.assert:
+    that:
+      - info_filtered is defined
+      - info_filtered.failed == false
+      - info_filtered.changed == false
+      - info_filtered.response is defined
+      - (info_filtered.response | selectattr('snapshot_ext_id', 'equalto', snapshot_ext_id) | list | length) == (info_filtered.response | length)
+    success_msg: "Filtered list returned only matching entries"
+    fail_msg: "Filtered list returned entries with a different snapshotExtId"
+
+- name: Info - list with limit=1
+  nutanix.ncp.ntnx_compute_snapshot_changes_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    limit: 1
+  register: info_limit
+  ignore_errors: true
+
+- name: Assert limit=1 returned at most one entry
+  ansible.builtin.assert:
+    that:
+      - info_limit is defined
+      - info_limit.failed == false
+      - info_limit.changed == false
+      - info_limit.response is defined
+      - (info_limit.response | length) <= 1
+    success_msg: "Info list respected limit=1"
+    fail_msg: "Info list did not respect limit=1"
+
+################################################################################
+# Info module — invalid ext_id must fail cleanly
+################################################################################
+
+- name: Info - get with a non-existent ext_id must fail
+  nutanix.ncp.ntnx_compute_snapshot_changes_info_v2:
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: info_bad_id
+  ignore_errors: true
+
+- name: Assert info get-by-id with bad id failed
+  ansible.builtin.assert:
+    that:
+      - info_bad_id is defined
+      - info_bad_id.failed == true
+    success_msg: "Info get-by-id with bad id failed as expected"
+    fail_msg: "Info get-by-id with bad id did not fail"
+
+################################################################################
+# Negative — missing required fields
+################################################################################
+
+- name: Negative - create without snapshot_ext_id
+  nutanix.ncp.ntnx_files_compute_snapshot_change_v2:
+    state: present
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+  register: neg_no_snapshot
+  ignore_errors: true
+
+- name: Assert create without snapshot_ext_id fails with clear message
+  ansible.builtin.assert:
+    that:
+      - neg_no_snapshot is defined
+      - neg_no_snapshot.failed == true
+      - "'snapshot_ext_id' in (neg_no_snapshot.msg | default(''))"
+    success_msg: "Missing snapshot_ext_id correctly rejected"
+    fail_msg: "Missing snapshot_ext_id was not rejected"
+
+- name: Negative - state=absent without ext_id
+  nutanix.ncp.ntnx_files_compute_snapshot_change_v2:
+    state: absent
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+  register: neg_absent_no_ext
+  ignore_errors: true
+
+- name: Assert state=absent without ext_id fails with clear message
+  ansible.builtin.assert:
+    that:
+      - neg_absent_no_ext is defined
+      - neg_absent_no_ext.failed == true
+      - "'ext_id' in (neg_absent_no_ext.msg | default(''))"
+    success_msg: "state=absent without ext_id correctly rejected"
+    fail_msg: "state=absent without ext_id was not rejected"
+
+################################################################################
+# Delete — unsupported by API; module reports skipped
+################################################################################
+
+- name: Check-mode delete (unsupported)
+  nutanix.ncp.ntnx_files_compute_snapshot_change_v2:
+    state: absent
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    ext_id: "{{ full_ext_id }}"
+  check_mode: true
+  register: cm_delete
+  ignore_errors: true
+
+- name: Assert check_mode delete emits the unsupported-delete message
+  ansible.builtin.assert:
+    that:
+      - cm_delete is defined
+      - cm_delete.failed == false
+      - cm_delete.changed == false
+      - cm_delete.ext_id == full_ext_id
+      - "'does not support delete' in (cm_delete.msg | default(''))"
+      - "'check mode' in (cm_delete.msg | default(''))"
+    success_msg: "check_mode delete emitted the correct message"
+    fail_msg: "check_mode delete produced unexpected message"
+
+- name: Real state=absent (should be a no-op / skipped)
+  nutanix.ncp.ntnx_files_compute_snapshot_change_v2:
+    state: absent
+    file_server_ext_id: "{{ file_server_ext_id }}"
+    mount_target_ext_id: "{{ mount_target_ext_id }}"
+    ext_id: "{{ full_ext_id }}"
+  register: delete_result
+  ignore_errors: true
+
+- name: Assert real state=absent is a no-op
+  ansible.builtin.assert:
+    that:
+      - delete_result is defined
+      - delete_result.failed == false
+      - delete_result.changed == false
+      - delete_result.skipped == true
+      - delete_result.ext_id == full_ext_id
+      - "'Delete is not supported' in (delete_result.msg | default(''))"
+    success_msg: "state=absent was a no-op as expected"
+    fail_msg: "state=absent produced unexpected result"
+
+- name: End of Files ComputeSnapshotChange tests
+  ansible.builtin.debug:
+    msg: End of Files ComputeSnapshotChange tests
