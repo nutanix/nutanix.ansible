@@ -1,0 +1,381 @@
+---
+# ============================================================================
+# Test plan for ntnx_vm_startup_policy_vm_compliance_states_info_v2
+# ----------------------------------------------------------------------------
+# The SDK method list_vm_startup_policy_vm_compliance_states requires a
+# VM startup policy ext_id and supports pagination only (_page, _limit).
+# Since there is no Ansible module for VM startup policy CRUD in this
+# collection, we use the PC v4 REST endpoint directly via ansible.builtin.uri
+# to set up the parent policy for the tests, then tear it down at the end.
+#
+# Cases covered:
+#   1. Ensure a VM startup policy exists (setup via REST).
+#   2. list-all VM compliance states -> asserts structure of response +
+#      total_available_results field.
+#   3. list with pagination (page=0, limit=10) -> asserts response is a list
+#      of length <= 10.
+#   4. get-by-id when the compliance list is empty -> asserts failed with
+#      descriptive error mentioning the ext_id.
+#   5. get-by-id with a well-formed but random ext_id (dependency-not-found)
+#      -> asserts failed with descriptive error.
+#   6. Negative: missing required vm_startup_policy_ext_id -> asserts fail.
+#   7. Negative: invalid parent vm_startup_policy_ext_id -> asserts SDK error
+#      is surfaced.
+#   8. If the cluster has any real compliance entries, get-by-id with the
+#      first one -> asserts it returns a single entity dict with matching
+#      ext_id.
+#   9. Cleanup: delete the created policy (with etag).
+# ============================================================================
+
+- name: Start ntnx_vm_startup_policy_vm_compliance_states_info_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_vm_startup_policy_vm_compliance_states_info_v2 tests
+
+- name: Generate random suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set unique test policy name
+  ansible.builtin.set_fact:
+    startup_policy_name: "vmm-compliance-states-info-ansible-{{ random_name }}"
+
+- name: Fetch existing categories to use as policy group members
+  nutanix.ncp.ntnx_categories_info_v2:
+    limit: 2
+  register: categories_info
+  ignore_errors: true
+
+- name: Assert we could fetch at least one category
+  ansible.builtin.assert:
+    that:
+      - categories_info is defined
+      - categories_info.failed == false
+      - categories_info.response is defined
+      - categories_info.response | length >= 1
+    fail_msg: "Failed to fetch categories from Prism Central; cannot build test startup policy."
+    success_msg: "Fetched categories for building test startup policy."
+
+- name: Compute category ext_ids for policy groups
+  ansible.builtin.set_fact:
+    dep_category_ext_id_1: "{{ categories_info.response[0].ext_id }}"
+    dep_category_ext_id_2: >-
+      {{ (categories_info.response[1].ext_id)
+         if ((categories_info.response | length) > 1)
+         else categories_info.response[0].ext_id }}
+
+- name: Generate a unique request id for policy creation (v4 idempotency header)
+  ansible.builtin.set_fact:
+    create_request_id: "{{ 99999999999999999 | random | to_uuid }}"
+
+- name: Create a VM startup policy directly via PC v4 REST (setup)
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:9440/api/vmm/v4.2/ahv/policies/vm-startup-policies"
+    method: POST
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs }}"
+    headers:
+      Content-Type: "application/json"
+      Accept: "application/json"
+      NTNX-Request-Id: "{{ create_request_id }}"
+    body_format: json
+    body:
+      name: "{{ startup_policy_name }}"
+      description: "Ansible integration test policy for VM compliance states info module."
+      groups:
+        - categories:
+            - extId: "{{ dep_category_ext_id_1 }}"
+        - categories:
+            - extId: "{{ dep_category_ext_id_2 }}"
+      startConditions:
+        - powerStateCriteria:
+            "$objectType": "vmm.v4.ahv.policies.PowerStateCriteriaPowerOn"
+          delayDurationSecs: 60
+    status_code: [200, 201, 202]
+  register: create_policy_result
+  ignore_errors: true
+
+- name: Assert create-policy REST call succeeded
+  ansible.builtin.assert:
+    that:
+      - create_policy_result is defined
+      - create_policy_result.failed == false
+      - create_policy_result.json is defined
+      - create_policy_result.json.data is defined
+      - create_policy_result.json.data.extId is defined
+    fail_msg: "Failed to create test VM startup policy via REST for setup."
+    success_msg: "Test VM startup policy creation task was accepted."
+
+- name: Set task ext_id
+  ansible.builtin.set_fact:
+    create_task_ext_id: "{{ create_policy_result.json.data.extId }}"
+
+- name: Poll create task until it completes
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:9440/api/prism/v4.0/config/tasks/{{ create_task_ext_id }}"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs }}"
+    headers:
+      Accept: "application/json"
+    status_code: [200]
+  register: task_poll
+  until:
+    - task_poll.json is defined
+    - task_poll.json.data is defined
+    - (task_poll.json.data.status | default('')) in ["SUCCEEDED", "FAILED", "CANCELED"]
+  retries: 30
+  delay: 2
+  ignore_errors: true
+
+- name: Assert create task succeeded
+  ansible.builtin.assert:
+    that:
+      - task_poll is defined
+      - task_poll.failed == false
+      - task_poll.json.data.status == "SUCCEEDED"
+      - task_poll.json.data.entitiesAffected is defined
+      - task_poll.json.data.entitiesAffected | length >= 1
+    fail_msg: "Create-policy task did not succeed: {{ task_poll.json.data | default({}) }}"
+    success_msg: "Create-policy task succeeded."
+
+- name: Extract the created policy ext_id
+  ansible.builtin.set_fact:
+    vm_startup_policy_ext_id: "{{ task_poll.json.data.entitiesAffected[0].extId }}"
+
+- name: Show policy ext_id
+  ansible.builtin.debug:
+    msg: "Created VM startup policy ext_id={{ vm_startup_policy_ext_id }}"
+
+########################################################################################
+# Test 1: List all VM compliance states of the created policy
+########################################################################################
+
+- name: List all VM compliance states of the created VM startup policy
+  nutanix.ncp.ntnx_vm_startup_policy_vm_compliance_states_info_v2:
+    vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+  register: list_all_result
+  ignore_errors: true
+
+- name: List all VM compliance states of the created VM startup policy status
+  ansible.builtin.assert:
+    that:
+      - list_all_result is defined
+      - list_all_result.changed == false
+      - list_all_result.failed == false
+      - list_all_result.response is defined
+      - list_all_result.response is iterable
+      - list_all_result.vm_startup_policy_ext_id == vm_startup_policy_ext_id
+      - list_all_result.total_available_results is defined
+      - list_all_result.total_available_results is integer
+      - list_all_result.total_available_results >= 0
+    success_msg: "List-all VM compliance states passed"
+    fail_msg: "List-all VM compliance states failed"
+
+########################################################################################
+# Test 2: List VM compliance states with pagination
+########################################################################################
+
+- name: List VM compliance states with pagination page=0 limit=10
+  nutanix.ncp.ntnx_vm_startup_policy_vm_compliance_states_info_v2:
+    vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+    page: 0
+    limit: 10
+  register: paginated_result
+  ignore_errors: true
+
+- name: List VM compliance states with pagination status
+  ansible.builtin.assert:
+    that:
+      - paginated_result is defined
+      - paginated_result.changed == false
+      - paginated_result.failed == false
+      - paginated_result.response is defined
+      - paginated_result.response is iterable
+      - (paginated_result.response | length) <= 10
+      - paginated_result.vm_startup_policy_ext_id == vm_startup_policy_ext_id
+    success_msg: "Paginated VM compliance states list passed"
+    fail_msg: "Paginated VM compliance states list failed"
+
+########################################################################################
+# Test 3: List with limit=1 (assert page size upper bound)
+########################################################################################
+
+- name: List VM compliance states with limit=1
+  nutanix.ncp.ntnx_vm_startup_policy_vm_compliance_states_info_v2:
+    vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+    limit: 1
+  register: limit_result
+  ignore_errors: true
+
+- name: List VM compliance states with limit=1 status
+  ansible.builtin.assert:
+    that:
+      - limit_result is defined
+      - limit_result.changed == false
+      - limit_result.failed == false
+      - limit_result.response is defined
+      - (limit_result.response | length) <= 1
+    success_msg: "Limit=1 VM compliance states list passed"
+    fail_msg: "Limit=1 VM compliance states list failed"
+
+########################################################################################
+# Test 4: Get-by-id with a random UUID that doesn't exist under this policy
+########################################################################################
+
+- name: Try to fetch a compliance state with a non-existent ext_id
+  nutanix.ncp.ntnx_vm_startup_policy_vm_compliance_states_info_v2:
+    vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+    ext_id: "deadbeef-dead-beef-dead-beefdeadbeef"
+  register: missing_by_id_result
+  ignore_errors: true
+
+- name: Assert get-by-id with non-existent ext_id fails cleanly
+  ansible.builtin.assert:
+    that:
+      - missing_by_id_result is defined
+      - missing_by_id_result.changed == false
+      - missing_by_id_result.failed == true
+      - missing_by_id_result.msg is defined
+      - "'deadbeef-dead-beef-dead-beefdeadbeef' in missing_by_id_result.msg"
+      - "'No VM compliance state with ext_id' in missing_by_id_result.msg"
+    success_msg: "Get-by-id with non-existent ext_id failed as expected"
+    fail_msg: "Get-by-id with non-existent ext_id did not fail as expected"
+
+########################################################################################
+# Test 5: Get-by-id when actual entries exist (only if list_all_result has entries)
+########################################################################################
+
+- name: Get first compliance state by ext_id (only when entries exist)
+  nutanix.ncp.ntnx_vm_startup_policy_vm_compliance_states_info_v2:
+    vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+    ext_id: "{{ (list_all_result.response | first).ext_id }}"
+  register: first_entry_result
+  ignore_errors: true
+  when: (list_all_result.response | length) > 0
+
+- name: Assert first compliance state fetch (when entries exist)
+  ansible.builtin.assert:
+    that:
+      - first_entry_result is defined
+      - first_entry_result.changed == false
+      - first_entry_result.failed == false
+      - first_entry_result.response is defined
+      - first_entry_result.response.ext_id is defined
+      - first_entry_result.response.ext_id == (list_all_result.response | first).ext_id
+      - first_entry_result.ext_id == (list_all_result.response | first).ext_id
+    success_msg: "Get-by-id with valid ext_id passed"
+    fail_msg: "Get-by-id with valid ext_id failed"
+  when: (list_all_result.response | length) > 0
+
+########################################################################################
+# Test 6: Negative - missing required vm_startup_policy_ext_id
+########################################################################################
+
+- name: Missing required vm_startup_policy_ext_id
+  nutanix.ncp.ntnx_vm_startup_policy_vm_compliance_states_info_v2: {}
+  register: missing_required_result
+  ignore_errors: true
+
+- name: Assert missing required vm_startup_policy_ext_id fails
+  ansible.builtin.assert:
+    that:
+      - missing_required_result is defined
+      - missing_required_result.failed == true
+      - missing_required_result.msg is defined
+      - "'vm_startup_policy_ext_id' in missing_required_result.msg"
+    success_msg: "Missing required vm_startup_policy_ext_id failed as expected"
+    fail_msg: "Missing required vm_startup_policy_ext_id did not fail as expected"
+
+########################################################################################
+# Test 7: Negative - invalid parent vm_startup_policy_ext_id
+########################################################################################
+
+- name: Invalid parent vm_startup_policy_ext_id
+  nutanix.ncp.ntnx_vm_startup_policy_vm_compliance_states_info_v2:
+    vm_startup_policy_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: invalid_parent_result
+  ignore_errors: true
+
+- name: Assert invalid parent vm_startup_policy_ext_id fails
+  ansible.builtin.assert:
+    that:
+      - invalid_parent_result is defined
+      - invalid_parent_result.failed == true
+      - invalid_parent_result.msg is defined
+      - "'Api Exception raised while fetching VM startup policy VM compliance states info' in invalid_parent_result.msg"
+    success_msg: "Invalid parent vm_startup_policy_ext_id failed as expected"
+    fail_msg: "Invalid parent vm_startup_policy_ext_id did not fail as expected"
+
+########################################################################################
+# Test 8: Type validation on limit (invalid non-int)
+########################################################################################
+
+- name: Type validation - non-int limit
+  nutanix.ncp.ntnx_vm_startup_policy_vm_compliance_states_info_v2:
+    vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+    limit: "not-a-number"
+  register: bad_limit_result
+  ignore_errors: true
+
+- name: Assert non-int limit is rejected by the argument spec
+  ansible.builtin.assert:
+    that:
+      - bad_limit_result is defined
+      - bad_limit_result.failed == true
+      - bad_limit_result.msg is defined
+      - >-
+        ('cannot be converted to an int' in bad_limit_result.msg)
+        or ('is not a valid integer' in bad_limit_result.msg)
+    success_msg: "Non-int limit rejected as expected"
+    fail_msg: "Non-int limit was not rejected as expected"
+
+########################################################################################
+# Cleanup: fetch etag and delete the test policy
+########################################################################################
+
+- name: Get created policy details to obtain etag
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:9440/api/vmm/v4.2/ahv/policies/vm-startup-policies/{{ vm_startup_policy_ext_id }}"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs }}"
+    headers:
+      Accept: "application/json"
+    status_code: [200]
+    return_content: true
+  register: policy_get
+  ignore_errors: true
+
+- name: Extract policy etag
+  ansible.builtin.set_fact:
+    policy_etag: "{{ policy_get.etag | default(policy_get['etag'] | default('')) }}"
+
+- name: Generate a unique request id for policy delete
+  ansible.builtin.set_fact:
+    delete_request_id: "{{ 99999999999999999 | random | to_uuid }}"
+
+- name: Delete the test VM startup policy
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:9440/api/vmm/v4.2/ahv/policies/vm-startup-policies/{{ vm_startup_policy_ext_id }}"
+    method: DELETE
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs }}"
+    headers:
+      Accept: "application/json"
+      If-Match: "{{ policy_etag }}"
+      NTNX-Request-Id: "{{ delete_request_id }}"
+    status_code: [200, 202, 204]
+  register: delete_policy_result
+  ignore_errors: true
+
+- name: Log delete result (best-effort cleanup)
+  ansible.builtin.debug:
+    msg: "Delete result status={{ delete_policy_result.status | default('n/a') }}"
