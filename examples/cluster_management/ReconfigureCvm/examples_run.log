@@ -1,0 +1,21 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Reconfigure CVM playbook] ************************************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"cluster_ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"}, "changed": false}
+
+TASK [Reconfigure CVMs — change both vCPU and memory (all fields)] *************
+ok: [localhost] => {"changed": false, "ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "msg": "CVMs of cluster with ext_id:0006555e-4e63-4a5e-185b-ac1f6b6f97e2 will be reconfigured with the following spec.", "response": {"memory_size_bytes": 38654705664, "num_vcpus": 12}, "task_ext_id": null}
+
+TASK [Reconfigure CVMs — change vCPU only] *************************************
+ok: [localhost] => {"changed": false, "ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "msg": "CVMs of cluster with ext_id:0006555e-4e63-4a5e-185b-ac1f6b6f97e2 will be reconfigured with the following spec.", "response": {"memory_size_bytes": null, "num_vcpus": 10}, "task_ext_id": null}
+
+TASK [Reconfigure CVMs — change memory only (32 GiB)] **************************
+ok: [localhost] => {"changed": false, "ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "msg": "CVMs of cluster with ext_id:0006555e-4e63-4a5e-185b-ac1f6b6f97e2 will be reconfigured with the following spec.", "response": {"memory_size_bytes": 34359738368, "num_vcpus": null}, "task_ext_id": null}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=4    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+

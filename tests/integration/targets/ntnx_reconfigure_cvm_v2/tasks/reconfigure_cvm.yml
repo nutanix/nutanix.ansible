@@ -1,0 +1,274 @@
+---
+############################################################################
+# Test plan for ntnx_reconfigure_cvm_v2 (action-type module).
+#
+# Because a live reconfigure drives a rolling change across every CVM
+# in the cluster (which is disruptive and known to have long tail-latency —
+# ENG-819567, ENG-826255, ENG-863697), the destructive path is exercised
+# via check_mode. A live API call is issued only against an intentionally
+# invalid cluster ext_id so we validate error handling without perturbing
+# the real cluster.
+#
+# Coverage:
+#   1. Positive check_mode with both fields (num_vcpus + memory_size_bytes).
+#   2. Positive check_mode with only num_vcpus.
+#   3. Positive check_mode with only memory_size_bytes.
+#   4. Live info discovery of the target cluster ext_id (ntnx_clusters_info_v2).
+#   5. Negative: missing required "ext_id" — module must fail with clear error.
+#   6. Negative: missing both num_vcpus and memory_size_bytes — required_one_of.
+#   7. Negative: invalid num_vcpus (0) — validated by module (min=1).
+#   8. Negative: invalid memory_size_bytes (0) — validated by module (min=1).
+#   9. Negative: invalid state (not "present") — argspec choices.
+#  10. Negative: unknown cluster ext_id — live API returns 4xx.
+############################################################################
+
+- name: Start ntnx_reconfigure_cvm_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_reconfigure_cvm_v2 tests
+
+- name: Generate random suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+############################################################################
+# 4. Discover a real cluster ext_id from the target Prism Central.
+############################################################################
+
+- name: List clusters on Prism Central
+  nutanix.ncp.ntnx_clusters_info_v2:
+  register: clusters_info_result
+  ignore_errors: true
+
+- name: Assert clusters info fetched
+  ansible.builtin.assert:
+    that:
+      - clusters_info_result is defined
+      - clusters_info_result.failed == false
+      - clusters_info_result.changed == false
+      - clusters_info_result.response is defined
+      - clusters_info_result.response | length > 0
+    success_msg: "Clusters info fetched successfully"
+    fail_msg: "Failed to fetch clusters info from Prism Central"
+
+- name: Pick the first non-PC cluster ext_id
+  ansible.builtin.set_fact:
+    target_cluster_ext_id: >-
+      {{
+        (
+          clusters_info_result.response
+          | selectattr('config', 'defined')
+          | selectattr('config.cluster_function', 'defined')
+          | rejectattr('config.cluster_function', 'contains', 'PRISM_CENTRAL')
+          | list
+          | first
+          | default(clusters_info_result.response | first)
+        ).ext_id
+      }}
+
+- name: Confirm we selected a cluster ext_id
+  ansible.builtin.assert:
+    that:
+      - target_cluster_ext_id is defined
+      - target_cluster_ext_id | length > 0
+    success_msg: "Target cluster ext_id: {{ target_cluster_ext_id }}"
+    fail_msg: "Unable to derive a target cluster ext_id"
+
+############################################################################
+# 1. Positive check_mode with ALL fields (num_vcpus + memory_size_bytes).
+############################################################################
+
+- name: Reconfigure CVMs (check_mode) with all fields
+  nutanix.ncp.ntnx_reconfigure_cvm_v2:
+    ext_id: "{{ target_cluster_ext_id }}"
+    num_vcpus: 12
+    memory_size_bytes: 38654705664
+  register: cm_all_result
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert check_mode with all fields
+  ansible.builtin.assert:
+    that:
+      - cm_all_result is defined
+      - cm_all_result.failed == false
+      - cm_all_result.changed == false
+      - cm_all_result.ext_id == target_cluster_ext_id
+      - cm_all_result.response is defined
+      - cm_all_result.response.num_vcpus == 12
+      - cm_all_result.response.memory_size_bytes == 38654705664
+      - "'will be reconfigured' in (cm_all_result.msg | default(''))"
+    success_msg: "check_mode with all fields produced expected spec"
+    fail_msg: "check_mode with all fields failed to produce expected spec"
+
+############################################################################
+# 2. Positive check_mode with only num_vcpus.
+############################################################################
+
+- name: Reconfigure CVMs (check_mode) with only num_vcpus
+  nutanix.ncp.ntnx_reconfigure_cvm_v2:
+    ext_id: "{{ target_cluster_ext_id }}"
+    num_vcpus: 10
+  register: cm_vcpus_result
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert check_mode with only num_vcpus
+  ansible.builtin.assert:
+    that:
+      - cm_vcpus_result is defined
+      - cm_vcpus_result.failed == false
+      - cm_vcpus_result.changed == false
+      - cm_vcpus_result.response.num_vcpus == 10
+      - cm_vcpus_result.response.memory_size_bytes is none
+    success_msg: "check_mode with only num_vcpus produced expected spec"
+    fail_msg: "check_mode with only num_vcpus failed"
+
+############################################################################
+# 3. Positive check_mode with only memory_size_bytes.
+############################################################################
+
+- name: Reconfigure CVMs (check_mode) with only memory_size_bytes
+  nutanix.ncp.ntnx_reconfigure_cvm_v2:
+    ext_id: "{{ target_cluster_ext_id }}"
+    memory_size_bytes: 34359738368
+  register: cm_mem_result
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert check_mode with only memory_size_bytes
+  ansible.builtin.assert:
+    that:
+      - cm_mem_result is defined
+      - cm_mem_result.failed == false
+      - cm_mem_result.changed == false
+      - cm_mem_result.response.num_vcpus is none
+      - cm_mem_result.response.memory_size_bytes == 34359738368
+    success_msg: "check_mode with only memory_size_bytes produced expected spec"
+    fail_msg: "check_mode with only memory_size_bytes failed"
+
+############################################################################
+# 5. Negative: missing required ext_id.
+############################################################################
+
+- name: Reconfigure CVMs (negative) — missing ext_id
+  nutanix.ncp.ntnx_reconfigure_cvm_v2:
+    num_vcpus: 12
+  register: neg_missing_ext_id
+  ignore_errors: true
+
+- name: Assert missing ext_id raises error
+  ansible.builtin.assert:
+    that:
+      - neg_missing_ext_id is defined
+      - neg_missing_ext_id.failed == true
+      - "'ext_id' in (neg_missing_ext_id.msg | default(''))"
+    success_msg: "Missing ext_id correctly rejected"
+    fail_msg: "Missing ext_id was not rejected"
+
+############################################################################
+# 6. Negative: neither num_vcpus nor memory_size_bytes.
+############################################################################
+
+- name: Reconfigure CVMs (negative) — neither num_vcpus nor memory_size_bytes
+  nutanix.ncp.ntnx_reconfigure_cvm_v2:
+    ext_id: "{{ target_cluster_ext_id }}"
+  register: neg_missing_body
+  ignore_errors: true
+
+- name: Assert required_one_of triggers
+  ansible.builtin.assert:
+    that:
+      - neg_missing_body is defined
+      - neg_missing_body.failed == true
+      - >-
+        ('num_vcpus' in (neg_missing_body.msg | default('')))
+        or ('memory_size_bytes' in (neg_missing_body.msg | default('')))
+        or ('one of' in (neg_missing_body.msg | default('')))
+    success_msg: "required_one_of validation works"
+    fail_msg: "required_one_of validation did not trigger"
+
+############################################################################
+# 7. Negative: num_vcpus=0 (must be >= 1).
+############################################################################
+
+- name: Reconfigure CVMs (negative) — num_vcpus=0
+  nutanix.ncp.ntnx_reconfigure_cvm_v2:
+    ext_id: "{{ target_cluster_ext_id }}"
+    num_vcpus: 0
+  register: neg_bad_vcpus
+  ignore_errors: true
+
+- name: Assert num_vcpus < 1 rejected
+  ansible.builtin.assert:
+    that:
+      - neg_bad_vcpus is defined
+      - neg_bad_vcpus.failed == true
+      - "'num_vcpus' in (neg_bad_vcpus.msg | default(''))"
+    success_msg: "Invalid num_vcpus=0 rejected"
+    fail_msg: "Invalid num_vcpus=0 was accepted"
+
+############################################################################
+# 8. Negative: memory_size_bytes=0 (must be >= 1).
+############################################################################
+
+- name: Reconfigure CVMs (negative) — memory_size_bytes=0
+  nutanix.ncp.ntnx_reconfigure_cvm_v2:
+    ext_id: "{{ target_cluster_ext_id }}"
+    memory_size_bytes: 0
+  register: neg_bad_mem
+  ignore_errors: true
+
+- name: Assert memory_size_bytes < 1 rejected
+  ansible.builtin.assert:
+    that:
+      - neg_bad_mem is defined
+      - neg_bad_mem.failed == true
+      - "'memory_size_bytes' in (neg_bad_mem.msg | default(''))"
+    success_msg: "Invalid memory_size_bytes=0 rejected"
+    fail_msg: "Invalid memory_size_bytes=0 was accepted"
+
+############################################################################
+# 9. Negative: unsupported state value.
+############################################################################
+
+- name: Reconfigure CVMs (negative) — state=absent
+  nutanix.ncp.ntnx_reconfigure_cvm_v2:
+    state: absent
+    ext_id: "{{ target_cluster_ext_id }}"
+    num_vcpus: 12
+  register: neg_bad_state
+  ignore_errors: true
+
+- name: Assert unsupported state rejected
+  ansible.builtin.assert:
+    that:
+      - neg_bad_state is defined
+      - neg_bad_state.failed == true
+      - "'state' in (neg_bad_state.msg | default(''))"
+    success_msg: "Unsupported state=absent rejected"
+    fail_msg: "Unsupported state=absent was accepted"
+
+############################################################################
+# 10. Negative live API call: unknown cluster ext_id.
+############################################################################
+
+- name: Reconfigure CVMs (negative) — invalid cluster ext_id
+  nutanix.ncp.ntnx_reconfigure_cvm_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    num_vcpus: 12
+    memory_size_bytes: 38654705664
+  register: neg_bad_cluster
+  ignore_errors: true
+
+- name: Assert invalid cluster ext_id raises API error
+  ansible.builtin.assert:
+    that:
+      - neg_bad_cluster is defined
+      - neg_bad_cluster.failed == true
+      - "'reconfiguring CVMs' in (neg_bad_cluster.msg | default(''))"
+    success_msg: "Invalid cluster ext_id rejected by API"
+    fail_msg: "Invalid cluster ext_id was not rejected"
+
+- name: Finished ntnx_reconfigure_cvm_v2 tests
+  ansible.builtin.debug:
+    msg: "Finished ntnx_reconfigure_cvm_v2 tests"
