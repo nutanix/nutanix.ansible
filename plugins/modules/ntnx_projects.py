@@ -479,7 +479,10 @@ def get_module_spec():
         directory_reference_list=dict(
             type="list",
             elements="dict",
-            options=dict(kind=dict(type="str"), uuid=dict(type="str")),
+            options=dict(
+                kind=dict(type="str", required=False, default="directory_service"),
+                uuid=dict(type="str", required=True),
+            ),
             required=False,
         ),
         enable_directory_and_identity_provider_shortlist=dict(
