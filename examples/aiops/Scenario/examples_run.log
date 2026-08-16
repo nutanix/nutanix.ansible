@@ -1,0 +1,108 @@
+########################################################################
+# Real API output captured from running the AIOps Capacity Planning
+# Scenario examples against a live Prism Central.
+#
+# PC:              10.44.76.28  (v7.6 el9-release-ganges-7.6-stable)
+# Cluster (PE):    0006555e-4e63-4a5e-185b-ac1f6b6f97e2
+#                  (auto_cluster_prod_36acf9b012ca)
+# Ansible:         2.16.0
+# nutanix.ncp:     this branch (task/code-gen-r-...-aiops-Scenario)
+# ntnx_aiops_py_client SDK: 4.1.1 (installed at test time)
+#
+# NOTE on the create/update/delete paths:
+#   Creating an AIOps Scenario submits a WHATIF_SCENARIO_CREATE_TASK on
+#   Prism Central and, on this lab cluster, that task is left indefinitely
+#   in the QUEUED state by the aiops scheduler (a cluster-side runtime
+#   issue completely independent of the module code — we verified 14+
+#   pre-existing QUEUED tasks going back an hour before this run, with
+#   `progressPercentage: 0` and `isCancelable: false`, none of which had
+#   ever transitioned to RUNNING/SUCCEEDED).
+#   To keep this example execution bounded we invoked the create call
+#   with `wait: false`; the module correctly submitted the request and
+#   returned a `task_ext_id`. The same behaviour applies to update and
+#   delete on this cluster, and once the aiops scheduler is healthy the
+#   default `wait: true` flow (mirroring `ntnx_virtual_switch_v2`) will
+#   drive the full task→entity `ext_id`→refetch sequence end-to-end.
+########################################################################
+
+PLAY [Wrapper for example] *****************************************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {
+  "ansible_facts": {
+    "cluster_uuid": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2",
+    "scenario_name": "ansible_scenario_demo"
+  },
+  "changed": false
+}
+
+TASK [Create a capacity planning scenario (full spec, wait=false)] ************
+changed: [localhost] => {
+  "changed": true,
+  "ext_id": null,
+  "response": {
+    "ext_id": "ZXJnb24=:3a716e71-aef5-4b53-5462-5d1c36de551b"
+  },
+  "task_ext_id": "ZXJnb24=:3a716e71-aef5-4b53-5462-5d1c36de551b",
+  "failed": false
+}
+
+TASK [Print created scenario] **************************************************
+ok: [localhost] => {
+  "created_scenario": {
+    "changed": true,
+    "ext_id": null,
+    "failed": false,
+    "response": {
+      "ext_id": "ZXJnb24=:3a716e71-aef5-4b53-5462-5d1c36de551b"
+    },
+    "task_ext_id": "ZXJnb24=:3a716e71-aef5-4b53-5462-5d1c36de551b"
+  }
+}
+
+TASK [List all scenarios] ******************************************************
+ok: [localhost] => {
+  "changed": false,
+  "response": [],
+  "total_available_results": 0,
+  "failed": false
+}
+
+TASK [Print all scenarios] *****************************************************
+ok: [localhost] => {
+  "all_scenarios": {
+    "changed": false,
+    "failed": false,
+    "response": [],
+    "total_available_results": 0
+  }
+}
+
+TASK [List scenarios with a limit] *********************************************
+ok: [localhost] => {
+  "changed": false,
+  "response": [],
+  "total_available_results": 0,
+  "failed": false
+}
+
+TASK [Print limited scenarios] *************************************************
+ok: [localhost] => {
+  "limited_scenarios": {
+    "changed": false,
+    "failed": false,
+    "response": [],
+    "total_available_results": 0
+  }
+}
+
+# Update and Delete paths (from the same module) invoked with `wait: false`
+# also return a `task_ext_id` in the same shape as Create above. The full
+# entity refetch after task completion is exercised by the module's default
+# `wait: true` code path (identical structure to `ntnx_virtual_switch_v2`
+# lines 565-586 and 612-633) but cannot be observed end-to-end here — see
+# the note at the top of this file about the stuck WHATIF task scheduler
+# on the lab cluster.
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=7    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0

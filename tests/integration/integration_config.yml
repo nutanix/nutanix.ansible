@@ -1,0 +1,5 @@
+ip: "10.44.76.28"
+username: "admin"
+password: "Nutanix.123"
+port: 9440
+validate_certs: false
