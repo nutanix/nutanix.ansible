@@ -1,0 +1,123 @@
+---
+# Summary:
+# This playbook demonstrates how to manage Nutanix Volumes iSCSI clients
+# through the v4 IscsiClientsApi endpoints:
+#   1. Attach a fresh iSCSI initiator to a Volume Group so a client entity is
+#      auto-registered (uses ntnx_volume_groups_iscsi_clients_v2 - the only
+#      way an iSCSI client is created because the v4 API does not expose a
+#      standalone create).
+#   2. List all iSCSI clients in Prism Central and locate the one just created.
+#   3. Fetch that single iSCSI client by ext_id.
+#   4. Update the iSCSI client (enable CHAP + refresh secret) using
+#      ntnx_volume_group_iscsi_client_v2 - the module generated for this
+#      code-gen run.
+#   5. Re-fetch the client to confirm the update.
+#   6. Update the client again with the same values to demonstrate the
+#      idempotency behaviour ("Nothing to change").
+#   7. Detach the client so the environment is left clean.
+
+- name: Volumes IscsiClient playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+  tasks:
+    - name: Set random suffix so parallel runs do not collide
+      ansible.builtin.set_fact:
+        random_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=10)[0] }}"
+
+    - name: Set example variables
+      ansible.builtin.set_fact:
+        vg_name: "vg_iscsi_client_example_{{ random_suffix }}"
+        iscsi_initiator_name: "iqn.1993-08.org.debian:01:{{ random_suffix }}"
+
+    - name: Discover a cluster to host the Volume Group
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+        limit: 1
+      register: clusters_result
+
+    - name: Set target cluster ext_id
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ clusters_result.response[0].ext_id }}"
+
+    - name: Create Volume Group so we have a home for the iSCSI client
+      nutanix.ncp.ntnx_volume_groups_v2:
+        name: "{{ vg_name }}"
+        description: "VG used by the IscsiClient examples"
+        cluster_reference: "{{ cluster_ext_id }}"
+        target_prefix: "vg1"
+        usage_type: "USER"
+      register: vg_result
+
+    - name: Save Volume Group ext_id
+      ansible.builtin.set_fact:
+        vg_ext_id: "{{ vg_result.ext_id }}"
+
+    - name: Attach an iSCSI client to the Volume Group (auto-creates client)
+      nutanix.ncp.ntnx_volume_groups_iscsi_clients_v2:
+        state: present
+        volume_group_ext_id: "{{ vg_ext_id }}"
+        iscsi_initiator_name: "{{ iscsi_initiator_name }}"
+        num_virtual_targets: 32
+      register: attach_result
+
+    - name: List every iSCSI client in Prism Central
+      nutanix.ncp.ntnx_iscsi_clients_info_v2: {}
+      register: iscsi_clients_list
+
+    - name: Resolve ext_id for the newly attached iSCSI initiator
+      ansible.builtin.set_fact:
+        iscsi_client_ext_id: >-
+          {{
+            (iscsi_clients_list.response
+             | selectattr('iscsi_initiator_name', 'equalto', iscsi_initiator_name)
+             | map(attribute='ext_id')
+             | first)
+            | default(attach_result.ext_id, true)
+          }}
+
+    - name: Fetch the iSCSI client by ext_id
+      nutanix.ncp.ntnx_iscsi_clients_info_v2:
+        ext_id: "{{ iscsi_client_ext_id }}"
+      register: iscsi_client_details
+
+    - name: Update the iSCSI client - enable CHAP and refresh secret
+      # NOTE: The Nutanix Volumes API enforces a maximum length of 16
+      # characters on ``client_secret``; longer values are rejected with a
+      # 400 SchemaValidationError.
+      nutanix.ncp.ntnx_volume_group_iscsi_client_v2:
+        state: present
+        ext_id: "{{ iscsi_client_ext_id }}"
+        enabled_authentications: CHAP
+        client_secret: "SecretPass16chr"
+      register: update_result
+
+    - name: Re-fetch the iSCSI client after update
+      nutanix.ncp.ntnx_iscsi_clients_info_v2:
+        ext_id: "{{ iscsi_client_ext_id }}"
+      register: iscsi_client_after_update
+
+    - name: Re-run the same update to demonstrate idempotency
+      nutanix.ncp.ntnx_volume_group_iscsi_client_v2:
+        state: present
+        ext_id: "{{ iscsi_client_ext_id }}"
+        enabled_authentications: CHAP
+      register: update_idempotent_result
+
+    - name: Detach the iSCSI client (removes it from the cluster)
+      nutanix.ncp.ntnx_volume_groups_iscsi_clients_v2:
+        state: absent
+        volume_group_ext_id: "{{ vg_ext_id }}"
+        ext_id: "{{ iscsi_client_ext_id }}"
+      register: detach_result
+
+    - name: Delete the Volume Group used by this playbook
+      nutanix.ncp.ntnx_volume_groups_v2:
+        state: absent
+        ext_id: "{{ vg_ext_id }}"
+      register: vg_delete_result
