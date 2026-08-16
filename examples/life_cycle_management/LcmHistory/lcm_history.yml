@@ -1,0 +1,69 @@
+---
+# Summary:
+# This playbook demonstrates end-to-end usage of the LCM histories modules:
+#   1. Perform an LCM inventory so that at least one history entry exists on the cluster.
+#   2. List all LCM history entries.
+#   3. List LCM history entries with limit and orderby (pagination style).
+#   4. Filter LCM history entries by operation type (INVENTORY).
+#   5. Get a specific LCM history entry by external ID.
+#   6. Trigger the LCM histories export action in CSV format.
+#
+# Prerequisites:
+#   * A Prism Central endpoint with LCM v4 API support.
+#   * Credentials with the roles required to read/export LCM history entries
+#     (Cluster Admin / Prism Admin / Super Admin depending on the operation).
+
+- name: LcmHistory example playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ nutanix_username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ nutanix_password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: false
+  tasks:
+    - name: Perform an LCM inventory so at least one history entry exists
+      nutanix.ncp.ntnx_lcm_inventory_v2:
+      register: lcm_inventory
+      ignore_errors: true
+
+    - name: List all LCM history entries
+      nutanix.ncp.ntnx_lcm_histories_info_v2:
+      register: lcm_histories_all
+
+    - name: Show the total number of LCM history entries
+      ansible.builtin.debug:
+        msg: "Total LCM history entries: {{ lcm_histories_all.total_available_results }}"
+
+    - name: List LCM history entries with limit and orderby (latest first)
+      nutanix.ncp.ntnx_lcm_histories_info_v2:
+        limit: 5
+        page: 0
+        orderby: "startTime desc"
+      register: lcm_histories_page
+
+    - name: Filter LCM history entries by INVENTORY operation type
+      nutanix.ncp.ntnx_lcm_histories_info_v2:
+        filter: "operationType eq Lcm.Common.OperationType'INVENTORY'"
+        limit: 5
+      register: lcm_histories_filtered
+      ignore_errors: true
+
+    - name: Set LCM history external ID for the get-by-id call
+      when: lcm_histories_all.response | length > 0
+      ansible.builtin.set_fact:
+        lcm_history_external_id: "{{ lcm_histories_all.response[0].ext_id }}"
+
+    - name: Get an LCM history entry using external ID
+      when: lcm_history_external_id is defined
+      nutanix.ncp.ntnx_lcm_histories_info_v2:
+        ext_id: "{{ lcm_history_external_id }}"
+      register: lcm_history_entry
+
+    - name: Export LCM histories in CSV format (action module)
+      nutanix.ncp.ntnx_lcm_history_v2:
+        state: present
+        file_format: "CSV"
+      register: lcm_history_export
+      ignore_errors: true
