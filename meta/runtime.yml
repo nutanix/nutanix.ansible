@@ -5,6 +5,8 @@ action_groups:
     - ntnx_acps
     - ntnx_address_groups
     - ntnx_categories
+    - ntnx_files_recommendation_v2
+    - ntnx_files_recommendations_info_v2
     - ntnx_floating_ips
     - ntnx_hosts_info
     - ntnx_images
