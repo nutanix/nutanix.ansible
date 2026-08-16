@@ -66,3 +66,23 @@ def get_lcm_entity(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching entity info using external identifier of the entity",
         )
+
+
+def get_lcm_history(module, api_instance, ext_id):
+    """
+    This method will return LCM history entry info using external identifier.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): LCM histories api instance
+        ext_id (str): External id of the LCM history entry
+    Returns:
+        history_info (dict): LCM history info
+    """
+    try:
+        return api_instance.get_lcm_history_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching LCM history info using external identifier of the history",
+        )

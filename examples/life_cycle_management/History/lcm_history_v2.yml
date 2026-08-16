@@ -1,0 +1,53 @@
+---
+# Summary:
+# This playbook demonstrates end-to-end usage of the LCM History v4 modules:
+# 1. List all LCM history entries in Prism Central.
+# 2. List LCM history entries with a limit.
+# 3. List LCM history entries filtered by operation status.
+# 4. Fetch details of a specific LCM history entry by external ID.
+# 5. Trigger an LCM history export action (CSV) and capture the resulting task.
+
+- name: LCM History playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('<pc_ip>', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('<user>', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('<pass>', true) }}"
+      validate_certs: false
+  tasks:
+    - name: List all LCM history entries
+      nutanix.ncp.ntnx_histories_info_v2:
+      register: histories
+      ignore_errors: true
+
+    - name: List LCM history entries with limit
+      nutanix.ncp.ntnx_histories_info_v2:
+        limit: 2
+      register: histories_limited
+      ignore_errors: true
+
+    - name: List LCM history entries filtered by FAILED status
+      nutanix.ncp.ntnx_histories_info_v2:
+        filter: "operationStatus eq 'FAILED'"
+      register: failed_histories
+      ignore_errors: true
+
+    - name: Set first LCM history external ID (if any exist)
+      ansible.builtin.set_fact:
+        first_history_ext_id: "{{ (histories.response | default([]))[0].ext_id | default('') }}"
+
+    - name: Fetch a specific LCM history entry by external ID
+      nutanix.ncp.ntnx_histories_info_v2:
+        ext_id: "{{ first_history_ext_id }}"
+      register: history_detail
+      when: first_history_ext_id | length > 0
+      ignore_errors: true
+
+    - name: Export LCM histories as CSV
+      nutanix.ncp.ntnx_lcm_history_v2:
+        state: present
+        file_format: CSV
+      register: lcm_history_export
+      ignore_errors: true
