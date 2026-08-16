@@ -1,0 +1,51 @@
+---
+# Summary:
+# This playbook demonstrates the re-enforce action for a VM-Host Affinity Policy.
+#
+# Preconditions (must exist on the target Prism Central):
+# 1. A VM-Host Affinity Policy has already been created (its external ID
+#    is passed as `vm_host_affinity_policy_ext_id`).
+# 2. The caller has the `Reenforce_VM_Host_Affinity_Policy` permission
+#    (roles Prism Admin / Super Admin carry it by default).
+#
+# The re-enforce action re-evaluates the affinity rules for all VMs in the
+# policy scope and, if required, live-migrates non-compliant VMs so the
+# policy compliance status moves back to compliant.
+#
+# Tasks performed by this playbook:
+# 1. Re-enforce a VM-Host Affinity Policy by its external ID.
+
+- name: VM-Host Affinity Policy re-enforce playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ nutanix_username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ nutanix_password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: false
+  tasks:
+    - name: Set the policy external ID to re-enforce
+      ansible.builtin.set_fact:
+        vm_host_affinity_policy_ext_id: "{{ vm_host_affinity_policy_ext_id | default('2e40ff57-20aa-4d2b-b179-298db969c20d') }}"
+
+    - name: Re-enforce a VM-Host Affinity Policy
+      nutanix.ncp.ntnx_re_enforce_vm_host_affinity_policy_v2:
+        ext_id: "{{ vm_host_affinity_policy_ext_id }}"
+      register: reenforce_result
+
+    # Sample response (backfilled after a real run on Prism Central):
+    #   changed: true
+    #   failed: false
+    #   ext_id: "<vm_host_affinity_policy_ext_id>"
+    #   task_ext_id: "ZXJnb24=:<task-uuid>"
+    #   response:
+    #     status: SUCCEEDED
+    #     operation: "kVmApplyVmHostAffinityPolicy"
+    #     operation_description: "Re-enforce VM-host affinity policy"
+    #     entities_affected:
+    #       - ext_id: "<policy_ext_id>"
+    #         rel: "vmm:ahv:policies:vm-host-affinity-policy"
+    - name: Print re-enforce result
+      ansible.builtin.debug:
+        var: reenforce_result
