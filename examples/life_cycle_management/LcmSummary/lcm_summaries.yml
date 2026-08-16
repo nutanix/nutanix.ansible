@@ -1,0 +1,62 @@
+---
+# Summary:
+# This playbook demonstrates how to use the ntnx_lcm_summaries_info_v2 module
+# to fetch LCM (Life Cycle Manager) cluster-wide summaries from Nutanix Prism
+# Central. The LcmSummary API is read-only and is refreshed by LCM after every
+# inventory or upgrade operation. Available operations are:
+#   1. List all LCM summaries (paginated).
+#   2. List LCM summaries with a limit.
+#   3. List LCM summaries filtered by cluster type (PRISM_CENTRAL vs AOS/PE).
+#   4. Fetch a single LCM summary by its external ID (cluster UUID).
+#
+# Prerequisites:
+#   - A reachable Prism Central endpoint with valid credentials.
+#   - The user must have one of the following IAM roles:
+#     Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, or Super Admin.
+#   - LCM should have been run at least once on the target Prism Central so
+#     that at least one summary record exists.
+
+- name: LCM Summaries info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: List all LCM summaries
+      nutanix.ncp.ntnx_lcm_summaries_info_v2:
+      register: lcm_summaries
+      ignore_errors: true
+
+    - name: Show total available LCM summaries
+      ansible.builtin.debug:
+        msg: "Total available LCM summaries: {{ lcm_summaries.total_available_results | default('n/a') }}"
+
+    - name: List LCM summaries with a limit of 1
+      nutanix.ncp.ntnx_lcm_summaries_info_v2:
+        limit: 1
+      register: lcm_summaries_limited
+      ignore_errors: true
+
+    - name: List LCM summaries filtered by hasAvailableUpgrades=true
+      nutanix.ncp.ntnx_lcm_summaries_info_v2:
+        filter: "hasAvailableUpgrades eq true"
+      register: upgradable_lcm_summaries
+      ignore_errors: true
+
+    - name: Capture the first LCM summary's external ID from the list response
+      ansible.builtin.set_fact:
+        first_lcm_summary_ext_id: "{{ lcm_summaries.response[0].ext_id }}"
+      when:
+        - lcm_summaries.response is defined
+        - (lcm_summaries.response | length) > 0
+
+    - name: Fetch a specific LCM summary using external ID
+      nutanix.ncp.ntnx_lcm_summaries_info_v2:
+        ext_id: "{{ first_lcm_summary_ext_id }}"
+      register: single_lcm_summary
+      ignore_errors: true
+      when: first_lcm_summary_ext_id is defined

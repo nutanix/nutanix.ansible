@@ -1,0 +1,30 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [LCM Summaries info playbook] *********************************************
+
+TASK [List all LCM summaries] **************************************************
+ok: [localhost] => {"changed": false, "response": [{"available_version": "3.3.1.1.79152", "capabilities": ["MCL_INVENTORY", "TARGETED_INVENTORY", "MCL_UPGRADE", "MCL_UNIFIED_UPLOADS"], "cluster_ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "cluster_type": "AOS", "compatibility_bundle_version": null, "connectivity_type": "CONNECTED_SITE", "current_version": "3.4.86535", "ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "hardware_vendor": "Supermicro", "hasAvailableUpgrades": false, "in_progress_operation": null, "isInventoryIncomplete": false, "isRestrictedMode": false, "isUploadReady": true, "is_url_accessible": true, "links": null, "restricted_mode_type": null, "tenant_id": null}, {"available_version": "3.3.1.1.79152", "capabilities": ["MCL_INVENTORY", "TARGETED_INVENTORY", "MCL_UPGRADE", "MCL_UNIFIED_UPLOADS"], "cluster_ext_id": "cae459ec-08db-475e-a5e5-151e390c9484", "cluster_type": "PRISM_CENTRAL", "compatibility_bundle_version": null, "connectivity_type": "CONNECTED_SITE", "current_version": "3.4.86535", "ext_id": "cae459ec-08db-475e-a5e5-151e390c9484", "hardware_vendor": null, "hasAvailableUpgrades": false, "in_progress_operation": null, "isInventoryIncomplete": false, "isRestrictedMode": false, "isUploadReady": false, "is_url_accessible": true, "links": null, "restricted_mode_type": null, "tenant_id": null}], "total_available_results": 2}
+
+TASK [Show total available LCM summaries] **************************************
+ok: [localhost] => {
+    "msg": "Total available LCM summaries: 2"
+}
+
+TASK [List LCM summaries with a limit of 1] ************************************
+ok: [localhost] => {"changed": false, "response": [{"available_version": "3.3.1.1.79152", "capabilities": ["MCL_INVENTORY", "TARGETED_INVENTORY", "MCL_UPGRADE", "MCL_UNIFIED_UPLOADS"], "cluster_ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "cluster_type": "AOS", "compatibility_bundle_version": null, "connectivity_type": "CONNECTED_SITE", "current_version": "3.4.86535", "ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "hardware_vendor": "Supermicro", "hasAvailableUpgrades": false, "in_progress_operation": null, "isInventoryIncomplete": false, "isRestrictedMode": false, "isUploadReady": true, "is_url_accessible": true, "links": null, "restricted_mode_type": null, "tenant_id": null}], "total_available_results": 2}
+
+TASK [List LCM summaries filtered by hasAvailableUpgrades=true] ****************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [Capture the first LCM summary's external ID from the list response] ******
+ok: [localhost] => {"ansible_facts": {"first_lcm_summary_ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"}, "changed": false}
+
+TASK [Fetch a specific LCM summary using external ID] **************************
+ok: [localhost] => {"changed": false, "ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "response": {"available_version": "3.3.1.1.79152", "capabilities": ["MCL_INVENTORY", "TARGETED_INVENTORY", "MCL_UPGRADE", "MCL_UNIFIED_UPLOADS"], "cluster_ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "cluster_type": "AOS", "compatibility_bundle_version": null, "connectivity_type": "CONNECTED_SITE", "current_version": "3.4.86535", "ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "hardware_vendor": "Supermicro", "hasAvailableUpgrades": false, "in_progress_operation": null, "isInventoryIncomplete": false, "isRestrictedMode": false, "isUploadReady": true, "is_url_accessible": true, "links": null, "restricted_mode_type": null, "tenant_id": null}}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=6    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
