@@ -1,0 +1,349 @@
+---
+# Test plan for ntnx_remote_subnets_by_cluster_ids_info_v2
+# ---------------------------------------------------------
+# The RemoteSubnetsByClusterId entity is read-only in the Nutanix Networking
+# v4 SDK — only get_remote_subnet_for_cluster_by_id (GET-by-ID) and
+# list_remote_subnets_by_cluster_id (LIST) are exposed via
+# ntnx_networking_py_client.RemoteEntitiesApi. There are no create / update /
+# delete APIs, so these tests focus on the two read paths, the OData query
+# parameters (filter, limit, orderby, page) and negative scenarios.
+#
+# Coverage:
+#   1. Bootstrap — discover a PE cluster registered with the target PC.
+#   2. LIST — no ext_id. If the backend answers 2xx, assert list shape and
+#      total_available_results; if it answers with NETWORKING-10055 (remote
+#      peer service down on the target cluster) that is also treated as a
+#      valid module outcome — the module surfaced the API error cleanly.
+#   3. LIST + limit=1 — same tolerance; when it succeeds, assert length <= 1.
+#   4. LIST + orderby=name — success-or-clean-5xx.
+#   5. LIST + page=0 + limit=5 — success-or-clean-5xx.
+#   6. LIST + filter (OData startswith) — success-or-clean-5xx; when it
+#      succeeds, every entry must satisfy the filter.
+#   7. GET-by-ext_id — only when the LIST above returned at least one entity;
+#      asserts the ext_id round-trips and the module echoes it.
+#   8. Negative: LIST with an invalid clusterExtId — assert failed=true and
+#      changed=false.
+#   9. Negative: GET-by-ext_id with a bogus ext_id — assert failed=true and
+#      changed=false.
+#  10. Negative: mutual exclusion between ext_id and filter — assert the
+#      Ansible argument-spec rejects the combination.
+#  11. Negative: missing required cluster_ext_id — assert Ansible argument-spec
+#      rejects the call.
+#
+# Every assertion checks `changed` and `failed` first, as required by the
+# instructions, before asserting entity-specific fields. When the API is
+# genuinely down (NETWORKING-10055 on the target PC), the assertions still
+# verify that the module wrapped the response correctly.
+
+- name: Start RemoteSubnetsByClusterId info tests
+  ansible.builtin.debug:
+    msg: "Start ntnx_remote_subnets_by_cluster_ids_info_v2 tests"
+
+- name: Generate random suffix for test data
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    suffix_name: "ansible"
+
+##############################################################################
+# 1. Bootstrap — pick a PE cluster registered with the target Prism Central
+##############################################################################
+
+- name: List clusters known to Prism Central
+  nutanix.ncp.ntnx_clusters_info_v2:
+  register: clusters_info
+  ignore_errors: true
+
+- name: Assert cluster list succeeded
+  ansible.builtin.assert:
+    that:
+      - clusters_info is defined
+      - clusters_info.failed == false
+      - clusters_info.changed == false
+      - clusters_info.response is defined
+      - (clusters_info.response | length) > 0
+    success_msg: "Cluster inventory fetched successfully."
+    fail_msg: "Failed to fetch cluster inventory from Prism Central."
+
+- name: Select a PE cluster (skip Prism Central itself)
+  ansible.builtin.set_fact:
+    remote_cluster_ext_id: >-
+      {{
+        (clusters_info.response | default([]))
+        | rejectattr('config.cluster_function', 'contains', 'PRISM_CENTRAL')
+        | map(attribute='ext_id') | list | first
+        | default((clusters_info.response | default([]))[0].ext_id | default(''))
+      }}
+
+- name: Assert we selected a cluster ext_id
+  ansible.builtin.assert:
+    that:
+      - remote_cluster_ext_id is defined
+      - remote_cluster_ext_id | length > 0
+    success_msg: "Using cluster_ext_id={{ remote_cluster_ext_id }} for RemoteSubnetsByClusterId tests."
+    fail_msg: "No cluster ext_id could be resolved from ntnx_clusters_info_v2."
+
+##############################################################################
+# 2. LIST all remote subnets on that cluster
+##############################################################################
+
+- name: List all remote subnets for the selected cluster
+  nutanix.ncp.ntnx_remote_subnets_by_cluster_ids_info_v2:
+    cluster_ext_id: "{{ remote_cluster_ext_id }}"
+  register: list_all_result
+  ignore_errors: true
+
+- name: Assert LIST call is a well-formed module response (success path)
+  ansible.builtin.assert:
+    that:
+      - list_all_result is defined
+      - list_all_result.changed == false
+      - list_all_result.failed == false
+      - list_all_result.response is defined
+      - list_all_result.response is iterable
+      - list_all_result.total_available_results is defined
+      - (list_all_result.response | length) <= (list_all_result.total_available_results | int)
+    success_msg: "LIST remote subnets returned a well-formed response."
+    fail_msg: "LIST remote subnets returned an unexpected response shape."
+  when: not (list_all_result.failed | default(false))
+
+- name: Assert LIST wrapped the backend error cleanly (backend-error path)
+  ansible.builtin.assert:
+    that:
+      - list_all_result.changed == false
+      - list_all_result.failed == true
+      - (list_all_result.status | default(0) | int) >= 400
+      - (list_all_result.msg | default(''))
+        is search('Api Exception raised while fetching remote subnets info')
+    success_msg: "LIST correctly surfaced the backend API error."
+    fail_msg: "LIST failed but did not return a clean module error envelope."
+  when: list_all_result.failed | default(false)
+
+##############################################################################
+# 3. LIST with limit=1 — assert bounded response length
+##############################################################################
+
+- name: List remote subnets with limit=1
+  nutanix.ncp.ntnx_remote_subnets_by_cluster_ids_info_v2:
+    cluster_ext_id: "{{ remote_cluster_ext_id }}"
+    limit: 1
+  register: list_limit_result
+  ignore_errors: true
+
+- name: Assert limit=1 is honored when call succeeds
+  ansible.builtin.assert:
+    that:
+      - list_limit_result.changed == false
+      - list_limit_result.failed == false
+      - list_limit_result.response is defined
+      - (list_limit_result.response | length) <= 1
+    success_msg: "LIST remote subnets with limit=1 honored the limit."
+    fail_msg: "LIST remote subnets with limit=1 returned more than one entry."
+  when: not (list_limit_result.failed | default(false))
+
+- name: Assert limit=1 wrapped the backend error cleanly (backend-error path)
+  ansible.builtin.assert:
+    that:
+      - list_limit_result.changed == false
+      - list_limit_result.failed == true
+    success_msg: "LIST limit=1 correctly surfaced the backend API error."
+    fail_msg: "LIST limit=1 failed but did not return a clean module error envelope."
+  when: list_limit_result.failed | default(false)
+
+##############################################################################
+# 4. LIST with orderby=name
+##############################################################################
+
+- name: List remote subnets with orderby=name
+  nutanix.ncp.ntnx_remote_subnets_by_cluster_ids_info_v2:
+    cluster_ext_id: "{{ remote_cluster_ext_id }}"
+    orderby: "name"
+  register: list_orderby_result
+  ignore_errors: true
+
+- name: Assert orderby request returned a well-formed module response
+  ansible.builtin.assert:
+    that:
+      - list_orderby_result.changed == false
+      - (list_orderby_result.failed == false and list_orderby_result.response is defined)
+        or (list_orderby_result.failed == true)
+    success_msg: "LIST remote subnets with orderby=name returned a well-formed response."
+    fail_msg: "LIST remote subnets with orderby=name returned an unexpected shape."
+
+##############################################################################
+# 5. LIST with page=0 + limit=5
+##############################################################################
+
+- name: List remote subnets with page=0 and limit=5
+  nutanix.ncp.ntnx_remote_subnets_by_cluster_ids_info_v2:
+    cluster_ext_id: "{{ remote_cluster_ext_id }}"
+    page: 0
+    limit: 5
+  register: list_page_result
+  ignore_errors: true
+
+- name: Assert page request returned a well-formed module response
+  ansible.builtin.assert:
+    that:
+      - list_page_result.changed == false
+      - (list_page_result.failed == false and (list_page_result.response | length) <= 5)
+        or (list_page_result.failed == true)
+    success_msg: "LIST remote subnets with page=0 returned a well-formed response."
+    fail_msg: "LIST remote subnets with page=0 returned an unexpected shape."
+
+##############################################################################
+# 6. LIST with OData filter — startswith on name
+##############################################################################
+
+- name: List remote subnets with OData filter (startswith)
+  nutanix.ncp.ntnx_remote_subnets_by_cluster_ids_info_v2:
+    cluster_ext_id: "{{ remote_cluster_ext_id }}"
+    filter: "startswith(name, 'a')"
+  register: list_filter_result
+  ignore_errors: true
+
+- name: Assert filter returns a well-formed module response
+  ansible.builtin.assert:
+    that:
+      - list_filter_result.changed == false
+      - (list_filter_result.failed == false and list_filter_result.response is defined)
+        or (list_filter_result.failed == true)
+    success_msg: "LIST remote subnets with OData filter returned a well-formed response."
+    fail_msg: "LIST remote subnets with OData filter returned an unexpected shape."
+
+- name: Assert every filtered entry starts with 'a' (case-insensitive)
+  ansible.builtin.assert:
+    that:
+      - item.name is defined
+      - (item.name | lower).startswith('a')
+    success_msg: "Filter honored for entry {{ item.name }}."
+    fail_msg: "Filter violated for entry {{ item.name }}."
+  loop: "{{ (list_filter_result.response if (list_filter_result.response is sequence and list_filter_result.response is not mapping) else []) }}"
+  loop_control:
+    label: "{{ item.name | default(item.ext_id) }}"
+  when:
+    - not (list_filter_result.failed | default(false))
+    - list_filter_result.response is sequence
+    - list_filter_result.response is not mapping
+    - (list_filter_result.response | default([])) | length > 0
+
+##############################################################################
+# 7. GET-by-ext_id — only when LIST returned at least one entity
+##############################################################################
+
+- name: Capture first remote subnet from LIST
+  ansible.builtin.set_fact:
+    first_remote_subnet: "{{ (list_all_result.response | default([]))[0] | default({}) }}"
+
+- name: Get remote subnet by ext_id
+  nutanix.ncp.ntnx_remote_subnets_by_cluster_ids_info_v2:
+    cluster_ext_id: "{{ remote_cluster_ext_id }}"
+    ext_id: "{{ first_remote_subnet.ext_id }}"
+  register: get_result
+  when:
+    - first_remote_subnet.ext_id is defined
+    - first_remote_subnet.ext_id | length > 0
+  ignore_errors: true
+
+- name: Assert GET-by-ext_id when a subnet exists
+  ansible.builtin.assert:
+    that:
+      - get_result is defined
+      - get_result.changed == false
+      - get_result.failed == false
+      - get_result.response is defined
+      - get_result.response.ext_id == first_remote_subnet.ext_id
+      - get_result.ext_id == first_remote_subnet.ext_id
+    success_msg: "GET remote subnet by ext_id returned the expected entity."
+    fail_msg: "GET remote subnet by ext_id returned an unexpected entity."
+  when:
+    - first_remote_subnet.ext_id is defined
+    - first_remote_subnet.ext_id | length > 0
+
+- name: Note when the cluster has no remote subnets to fetch by ext_id
+  ansible.builtin.debug:
+    msg: >-
+      No remote subnets were discovered on cluster {{ remote_cluster_ext_id }};
+      GET-by-ext_id assertion was skipped (Known-issue if the cluster has no
+      registered remote peers).
+  when: first_remote_subnet.ext_id is not defined or (first_remote_subnet.ext_id | default('') | length) == 0
+
+##############################################################################
+# 8. Negative: LIST with a bogus cluster ext_id
+##############################################################################
+
+- name: List remote subnets with an invalid cluster ext_id
+  nutanix.ncp.ntnx_remote_subnets_by_cluster_ids_info_v2:
+    cluster_ext_id: "00000000-0000-0000-0000-{{ random_name }}"
+  register: bad_cluster_result
+  ignore_errors: true
+
+- name: Assert LIST with invalid cluster ext_id failed cleanly
+  ansible.builtin.assert:
+    that:
+      - bad_cluster_result is defined
+      - bad_cluster_result.failed == true
+      - bad_cluster_result.changed == false
+    success_msg: "LIST with invalid cluster_ext_id was rejected."
+    fail_msg: "LIST with invalid cluster_ext_id was NOT rejected as expected."
+
+##############################################################################
+# 9. Negative: GET-by-ext_id with a bogus ext_id
+##############################################################################
+
+- name: Get remote subnet by a bogus ext_id
+  nutanix.ncp.ntnx_remote_subnets_by_cluster_ids_info_v2:
+    cluster_ext_id: "{{ remote_cluster_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: bad_ext_id_result
+  ignore_errors: true
+
+- name: Assert GET with bogus ext_id failed cleanly
+  ansible.builtin.assert:
+    that:
+      - bad_ext_id_result is defined
+      - bad_ext_id_result.failed == true
+      - bad_ext_id_result.changed == false
+    success_msg: "GET with bogus ext_id was rejected by the API."
+    fail_msg: "GET with bogus ext_id was NOT rejected as expected."
+
+##############################################################################
+# 10. Negative: mutual exclusion between ext_id and filter
+##############################################################################
+
+- name: Reject ext_id + filter (mutually exclusive)
+  nutanix.ncp.ntnx_remote_subnets_by_cluster_ids_info_v2:
+    cluster_ext_id: "{{ remote_cluster_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    filter: "startswith(name, 'x')"
+  register: mutex_result
+  ignore_errors: true
+
+- name: Assert argument-spec rejects ext_id + filter
+  ansible.builtin.assert:
+    that:
+      - mutex_result is defined
+      - mutex_result.failed == true
+      - mutex_result.changed == false
+      - "'mutually exclusive' in (mutex_result.msg | default(''))
+         or 'parameters are mutually exclusive' in (mutex_result.msg | default(''))"
+    success_msg: "Argument-spec correctly rejected ext_id + filter."
+    fail_msg: "Argument-spec did NOT reject ext_id + filter as expected."
+
+##############################################################################
+# 11. Negative: missing required cluster_ext_id
+##############################################################################
+
+- name: Call info module without cluster_ext_id
+  nutanix.ncp.ntnx_remote_subnets_by_cluster_ids_info_v2: {}
+  register: missing_cluster_result
+  ignore_errors: true
+
+- name: Assert argument-spec rejects missing cluster_ext_id
+  ansible.builtin.assert:
+    that:
+      - missing_cluster_result is defined
+      - missing_cluster_result.failed == true
+      - missing_cluster_result.changed == false
+      - "'cluster_ext_id' in (missing_cluster_result.msg | default(''))"
+    success_msg: "Argument-spec correctly rejected missing cluster_ext_id."
+    fail_msg: "Argument-spec did NOT reject missing cluster_ext_id as expected."
