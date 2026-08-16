@@ -14,3 +14,9 @@ ntnx-lifecycle-py-client==4.2.2
 ntnx-objects-py-client==4.0.3
 ntnx-security-py-client==4.1.2
 ntnx-licensing-py-client==4.3.2
+# Storage v4 SDK (preview) required for ntnx_vm_attachment_v2 /
+# ntnx_volume_group_vm_attachments_info_v2. Install with --no-deps because
+# the preview pins ``certifi==2020.4.5.1`` which conflicts with the
+# certifi range required by the stable clients above:
+#     pip install --no-deps ntnx-storage-py-client==16.8.0.2117
+# ntnx-storage-py-client==16.8.0.2117

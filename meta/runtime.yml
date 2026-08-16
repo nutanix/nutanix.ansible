@@ -248,3 +248,5 @@ action_groups:
     - ntnx_virtual_switches_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
+    - ntnx_vm_attachment_v2
+    - ntnx_volume_group_vm_attachments_info_v2

@@ -24,3 +24,10 @@ ntnx-lifecycle-py-client==4.2.2
 ntnx-objects-py-client==4.0.3
 ntnx-security-py-client==4.1.2
 ntnx-licensing-py-client==4.3.2
+# Storage v4 SDK (preview) — pinned to a version that provides the storage
+# namespace VolumeGroupApi (attach_vm / detach_vm / get_vm_attachments) used
+# by ntnx_vm_attachment_v2 and ntnx_volume_group_vm_attachments_info_v2.
+# Left as ``latest`` on purpose: the preview SDK pins ``certifi==2020.4.5.1``
+# which conflicts with the certifi range required by the stable SDKs, so it
+# is best installed separately (``pip install --no-deps ntnx-storage-py-client``).
+# ntnx-storage-py-client
