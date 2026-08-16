@@ -131,3 +131,23 @@ def get_ova_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_vmm_py_client.OvasApi(api_client=api_client)
+
+
+def get_esxi_stats_api_instance(module):
+    """
+    This method will return the ESXi VM stats API instance.
+
+    The instance exposes the following operations against Prism Central:
+      - list_vm_stats               -> GET /vmm/v4.2/esxi/stats/vms
+      - get_vm_stats_by_id          -> GET /vmm/v4.2/esxi/stats/vms/{extId}
+      - get_disk_stats_by_id        -> GET /vmm/v4.2/esxi/stats/vms/{vmExtId}/disks/{extId}
+      - get_nic_stats_by_id         -> GET /vmm/v4.2/esxi/stats/vms/{vmExtId}/nics/{extId}
+
+    Args:
+        module (AnsibleModule): the caller module used to build the API client.
+
+    Returns:
+        obj: v4 ``EsxiStatsApi`` instance ready for use.
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.EsxiStatsApi(api_client=api_client)
