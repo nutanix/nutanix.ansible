@@ -1,0 +1,94 @@
+---
+# Summary:
+# 1. Create a Prism Central task by uploading a new image (produces a task_ext_id).
+# 2. Wait for the task to reach SUCCEEDED so the affected-entities list is populated.
+# 3. List all TaskEntity (affected entities) of the task.
+# 4. List TaskEntity of the task with a limit.
+# 5. List TaskEntity of the task with an OData filter on `rel`.
+# 6. Project a subset of TaskEntity fields via `select`.
+# 7. Clean up the image created for the demo.
+#
+# TaskEntity in Prism v4 is the EntityReference model returned by
+# GET /api/prism/v4.3/config/tasks/{taskExtId}/affected-entities and describes
+# the entities (VM, image, subnet, VPC, ...) that a long-running async task
+# created, modified, or otherwise affected.
+
+- name: Nutanix Prism TaskEntity (task affected-entities) playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') }}"
+      nutanix_port: "{{ lookup('env', 'NUTANIX_PORT') | default(9440, true) }}"
+      validate_certs: false
+  vars:
+    demo_image_name: "ansible-task-entity-demo-{{ 999999 | random }}"
+    demo_image_url: "http://download.cirros-cloud.net/0.5.2/cirros-0.5.2-x86_64-disk.img"
+
+  tasks:
+    - name: Create a Prism Central task by uploading a disk image
+      nutanix.ncp.ntnx_images_v2:
+        state: present
+        type: DISK_IMAGE
+        name: "{{ demo_image_name }}"
+        description: "Image created by ntnx_task_entities_info_v2 example"
+        source:
+          url_source:
+            url: "{{ demo_image_url }}"
+            should_allow_insecure_url: true
+      register: image_task
+      ignore_errors: true
+
+    - name: Save task_ext_id for the follow-up TaskEntity queries
+      ansible.builtin.set_fact:
+        demo_task_ext_id: "{{ image_task.task_ext_id }}"
+      when: image_task.task_ext_id is defined
+
+    - name: Wait for the image-create task to reach SUCCEEDED
+      nutanix.ncp.ntnx_pc_tasks_info_v2:
+        ext_id: "{{ demo_task_ext_id }}"
+      register: task_status
+      until: task_status.response.status == 'SUCCEEDED'
+      retries: 60
+      delay: 10
+      when: demo_task_ext_id is defined
+
+    - name: List all TaskEntity (affected entities) of the task
+      nutanix.ncp.ntnx_task_entities_info_v2:
+        task_ext_id: "{{ demo_task_ext_id }}"
+      register: entities_all
+      ignore_errors: true
+
+    - name: List TaskEntity of the task with a limit
+      nutanix.ncp.ntnx_task_entities_info_v2:
+        task_ext_id: "{{ demo_task_ext_id }}"
+        limit: 1
+      register: entities_limited
+      ignore_errors: true
+
+    - name: List TaskEntity of the task filtered by rel (entity type)
+      nutanix.ncp.ntnx_task_entities_info_v2:
+        task_ext_id: "{{ demo_task_ext_id }}"
+        filter: "rel eq 'vmm:content:image'"
+      register: entities_filtered
+      ignore_errors: true
+
+    - name: Project only a subset of TaskEntity fields via select
+      nutanix.ncp.ntnx_task_entities_info_v2:
+        task_ext_id: "{{ demo_task_ext_id }}"
+        select: "extId,rel"
+      register: entities_selected
+      ignore_errors: true
+
+    - name: Delete the demo image once TaskEntity queries are done
+      nutanix.ncp.ntnx_images_v2:
+        state: absent
+        ext_id: "{{ task_status.response.entities_affected[0].ext_id }}"
+      when:
+        - task_status is defined
+        - task_status.response is defined
+        - task_status.response.entities_affected | default([]) | length > 0
+      register: cleanup_result
+      failed_when: false

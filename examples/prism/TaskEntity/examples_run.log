@@ -1,0 +1,34 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Nutanix Prism TaskEntity (task affected-entities) playbook] **************
+
+TASK [Create a Prism Central task by uploading a disk image] *******************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "d3eb648f-3992-4361-a3c0-a4be6b709a9a", "response": {"category_ext_ids": null, "checksum": null, "cluster_location_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "create_time": "2026-07-21T08:30:33.009016+00:00", "description": "Image created by ntnx_task_entities_info_v2 example", "ext_id": "d3eb648f-3992-4361-a3c0-a4be6b709a9a", "isSharedWithAllProjects": true, "last_update_time": "2026-07-21T08:30:33.009016+00:00", "links": null, "name": "ansible-task-entity-demo-959635", "owner_ext_id": "00000000-0000-0000-0000-000000000000", "owner_name": "admin", "placement_policy_status": null, "projectExtId": "00000000-0000-0000-0000-000000000000", "size_bytes": 117440512, "source": {"basic_auth": null, "should_allow_insecure_url": false, "url": "http://download.cirros-cloud.net/0.5.2/cirros-0.5.2-x86_64-disk.img"}, "tenant_id": null, "type": "DISK_IMAGE"}, "task_ext_id": "ZXJnb24=:a07737b5-2e42-402c-9f28-24457a0665a5"}
+
+TASK [Save task_ext_id for the follow-up TaskEntity queries] *******************
+ok: [localhost] => {"ansible_facts": {"demo_task_ext_id": "ZXJnb24=:a07737b5-2e42-402c-9f28-24457a0665a5"}, "changed": false}
+
+TASK [Wait for the image-create task to reach SUCCEEDED] ***********************
+ok: [localhost] => {"attempts": 1, "changed": false, "ext_id": "ZXJnb24=:a07737b5-2e42-402c-9f28-24457a0665a5", "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "completed_time": "2026-07-21T08:30:35.161902+00:00", "completion_details": null, "created_time": "2026-07-21T08:30:32.811670+00:00", "entities_affected": [{"ext_id": "d3eb648f-3992-4361-a3c0-a4be6b709a9a", "name": "ansible-task-entity-demo-959635", "rel": "vmm:content:image"}], "error_messages": null, "ext_id": "ZXJnb24=:a07737b5-2e42-402c-9f28-24457a0665a5", "is_background_task": false, "is_cancelable": true, "last_updated_time": "2026-07-21T08:30:35.161900+00:00", "legacy_error_message": null, "number_of_entities_affected": 1, "number_of_subtasks": 1, "operation": "kImageCreate", "operation_description": "Create Image", "owned_by": {"ext_id": "00000000-0000-0000-0000-000000000000", "name": "admin"}, "parent_task": null, "progress_percentage": 100, "projectExtId": "00000000-0000-0000-0000-000000000000", "resource_links": null, "root_task": null, "started_time": "2026-07-21T08:30:32.826256+00:00", "status": "SUCCEEDED", "sub_steps": null, "sub_tasks": [{"ext_id": "ZXJnb24=:3f3cd445-46aa-4c88-9c1d-03e78567cee6", "href": "https://10.44.76.28:9440/api/prism/v4.3/config/tasks/ZXJnb24=:3f3cd445-46aa-4c88-9c1d-03e78567cee6", "rel": "subtask"}], "warnings": null}}
+
+TASK [List all TaskEntity (affected entities) of the task] *********************
+ok: [localhost] => {"changed": false, "response": [{"ext_id": "d3eb648f-3992-4361-a3c0-a4be6b709a9a", "name": "ansible-task-entity-demo-959635", "rel": "vmm:content:image"}], "task_ext_id": "ZXJnb24=:a07737b5-2e42-402c-9f28-24457a0665a5", "total_available_results": 1}
+
+TASK [List TaskEntity of the task with a limit] ********************************
+ok: [localhost] => {"changed": false, "response": [{"ext_id": "d3eb648f-3992-4361-a3c0-a4be6b709a9a", "name": "ansible-task-entity-demo-959635", "rel": "vmm:content:image"}], "task_ext_id": "ZXJnb24=:a07737b5-2e42-402c-9f28-24457a0665a5", "total_available_results": 1}
+
+TASK [List TaskEntity of the task filtered by rel (entity type)] ***************
+ok: [localhost] => {"changed": false, "response": [{"ext_id": "d3eb648f-3992-4361-a3c0-a4be6b709a9a", "name": "ansible-task-entity-demo-959635", "rel": "vmm:content:image"}], "task_ext_id": "ZXJnb24=:a07737b5-2e42-402c-9f28-24457a0665a5", "total_available_results": 1}
+
+TASK [Project only a subset of TaskEntity fields via select] *******************
+ok: [localhost] => {"changed": false, "response": [{"ext_id": "d3eb648f-3992-4361-a3c0-a4be6b709a9a", "name": null, "rel": "vmm:content:image"}], "task_ext_id": "ZXJnb24=:a07737b5-2e42-402c-9f28-24457a0665a5", "total_available_results": 1}
+
+TASK [Delete the demo image once TaskEntity queries are done] ******************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "d3eb648f-3992-4361-a3c0-a4be6b709a9a", "failed_when_result": false, "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "completed_time": "2026-07-21T08:30:42.479849+00:00", "completion_details": null, "created_time": "2026-07-21T08:30:41.773396+00:00", "entities_affected": [{"ext_id": "d3eb648f-3992-4361-a3c0-a4be6b709a9a", "name": "ansible-task-entity-demo-959635", "rel": "vmm:content:image"}], "error_messages": null, "ext_id": "ZXJnb24=:99978b44-461d-4ca7-9341-5a0f4d5d1322", "is_background_task": false, "is_cancelable": true, "last_updated_time": "2026-07-21T08:30:42.479848+00:00", "legacy_error_message": null, "number_of_entities_affected": 1, "number_of_subtasks": 1, "operation": "kImageDelete", "operation_description": "Delete Image", "owned_by": {"ext_id": "00000000-0000-0000-0000-000000000000", "name": "admin"}, "parent_task": null, "progress_percentage": 100, "projectExtId": "00000000-0000-0000-0000-000000000000", "resource_links": null, "root_task": null, "started_time": "2026-07-21T08:30:41.785802+00:00", "status": "SUCCEEDED", "sub_steps": null, "sub_tasks": [{"ext_id": "ZXJnb24=:408e5bb3-2142-4277-afe2-d06e61421d68", "href": "https://10.44.76.28:9440/api/prism/v4.3/config/tasks/ZXJnb24=:408e5bb3-2142-4277-afe2-d06e61421d68", "rel": "subtask"}], "warnings": null}, "task_ext_id": "ZXJnb24=:99978b44-461d-4ca7-9341-5a0f4d5d1322"}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=8    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
