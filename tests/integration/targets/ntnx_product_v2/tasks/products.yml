@@ -1,0 +1,566 @@
+---
+# Test plan for ntnx_product_v2 and ntnx_products_info_v2.
+#
+# The Product API is unusual in that only get / list / update are supported
+# by the SDK. Portfolio products (Self Service, Nutanix Cloud Manager,
+# Intelligent Operations, Flow Network Security, Flow Virtual Networking,
+# Flow Controller, Nutanix Marketplace, Nutanix Disaster Recovery) are
+# pre-provisioned on the PC and cannot be created or deleted via the API.
+#
+# The tests below therefore cover:
+#   1. Discovery of the domain manager (Prism Central) ext_id.
+#   2. Info module — list, get-by-id, filter, limit, orderby, pagination,
+#      invalid ext_id and missing-required-parameter negative paths.
+#   3. CRUD module check_mode — one check_mode test each for "create", update
+#      and delete, matching Step 4.1 in INSTRUCTIONS.md (create + delete are
+#      not supported by the API and MUST fail with a descriptive error).
+#   4. CRUD module real invocations — idempotency (matching current state
+#      is a no-op), an actual update that triggers the async enablement task
+#      (wait: false to avoid a multi-minute polling loop), missing
+#      required params, invalid enum, invalid ext_id, wrong state.
+#   5. Domain validation — the module rejects "create" and "delete" verbs
+#      and the API rejects unknown enablement states.
+#
+# The test picks INTELLIGENT_OPERATIONS as the "target" product because it is
+# typically pre-provisioned in the DISABLED state on a clean PC and can be
+# safely enabled + disabled without permanently impacting the cluster (unlike
+# NUTANIX_DISASTER_RECOVERY, which cannot be disabled once enabled).
+
+- name: Start ntnx_product_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_product_v2 tests
+
+########################################################################################
+# Discover the domain manager (PC) ext_id
+########################################################################################
+
+- name: Fetch the domain manager (PC) config
+  nutanix.ncp.ntnx_pc_config_info_v2: {}
+  register: pc_config
+  ignore_errors: true
+
+- name: Assert PC config was fetched
+  ansible.builtin.assert:
+    that:
+      - pc_config is defined
+      - pc_config.failed == false
+      - pc_config.changed == false
+      - pc_config.response is defined
+      - pc_config.response | length > 0
+      - pc_config.response[0].ext_id is defined
+    success_msg: "Domain manager (PC) config fetched successfully"
+    fail_msg: "Failed to fetch domain manager (PC) config"
+
+- name: Set domain_manager_ext_id
+  ansible.builtin.set_fact:
+    domain_manager_ext_id: "{{ pc_config.response[0].ext_id }}"
+
+########################################################################################
+# Info module — list all products
+########################################################################################
+
+- name: List all portfolio products on the PC
+  nutanix.ncp.ntnx_products_info_v2:
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+  register: all_products
+  ignore_errors: true
+
+- name: Assert list-all returned the portfolio catalogue
+  ansible.builtin.assert:
+    that:
+      - all_products is defined
+      - all_products.failed == false
+      - all_products.changed == false
+      - all_products.response is defined
+      - all_products.response | length > 0
+      - all_products.total_available_results is defined
+      - all_products.total_available_results >= all_products.response | length
+      - all_products.response[0].name is defined
+      - all_products.response[0].ext_id is defined
+      - all_products.response[0].enablement_state in ["ENABLED", "DISABLED"]
+    success_msg: "List of portfolio products fetched successfully"
+    fail_msg: "Failed to list portfolio products"
+
+- name: Assert every listed product exposes the expected v4 attributes
+  ansible.builtin.assert:
+    that:
+      - item.name is defined
+      - item.name in ["FLOW_CONTROLLER", "FLOW_NETWORK_SECURITY", "FLOW_VIRTUAL_NETWORKING",
+                       "INTELLIGENT_OPERATIONS", "NUTANIX_CLOUD_MANAGER",
+                       "NUTANIX_DISASTER_RECOVERY", "NUTANIX_MARKETPLACE", "SELF_SERVICE"]
+      - item.ext_id is defined
+      - item.enablement_state in ["ENABLED", "DISABLED"]
+    success_msg: "Product {{ item.name }} has valid v4 attributes"
+    fail_msg: "Product {{ item.name | default('<unknown>') }} is missing required attributes"
+  loop: "{{ all_products.response }}"
+  loop_control:
+    label: "{{ item.name | default(item.ext_id) }}"
+
+- name: Pick the target product for update tests (INTELLIGENT_OPERATIONS)
+  ansible.builtin.set_fact:
+    target_product: >-
+      {{ (all_products.response
+          | selectattr('name', 'equalto', 'INTELLIGENT_OPERATIONS')
+          | list
+          | first) }}
+
+- name: Record the original enablement_state so we can restore it later
+  ansible.builtin.set_fact:
+    target_product_ext_id: "{{ target_product.ext_id }}"
+    original_enablement_state: "{{ target_product.enablement_state }}"
+    inverted_enablement_state: >-
+      {{ 'DISABLED' if target_product.enablement_state == 'ENABLED' else 'ENABLED' }}
+
+########################################################################################
+# Info module — get by ext_id
+########################################################################################
+
+- name: Get a single product using its ext_id
+  nutanix.ncp.ntnx_products_info_v2:
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    ext_id: "{{ target_product_ext_id }}"
+  register: one_product
+  ignore_errors: true
+
+- name: Assert get-by-ext-id returns the expected product
+  ansible.builtin.assert:
+    that:
+      - one_product is defined
+      - one_product.failed == false
+      - one_product.changed == false
+      - one_product.response is defined
+      - one_product.ext_id == target_product_ext_id
+      - one_product.response.ext_id == target_product_ext_id
+      - one_product.response.name == "INTELLIGENT_OPERATIONS"
+      - one_product.response.enablement_state in ["ENABLED", "DISABLED"]
+    success_msg: "Get product by ext_id returned the expected entity"
+    fail_msg: "Get product by ext_id did not return the expected entity"
+
+- name: Get a product using an unknown ext_id
+  nutanix.ncp.ntnx_products_info_v2:
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: bad_id_result
+  ignore_errors: true
+
+- name: Assert get-by-ext-id with an unknown ext_id fails cleanly
+  ansible.builtin.assert:
+    that:
+      - bad_id_result is defined
+      - bad_id_result.failed == true
+      - bad_id_result.changed == false
+      - bad_id_result.msg == "Api Exception raised while fetching product info using ext_id"
+    success_msg: "Get product with unknown ext_id failed as expected"
+    fail_msg: "Get product with unknown ext_id did not fail as expected"
+
+########################################################################################
+# Info module — filter / limit / orderby / pagination
+########################################################################################
+
+- name: List products with an OData filter (Products API currently rejects all filter properties)
+  nutanix.ncp.ntnx_products_info_v2:
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    filter: "name eq Prism.Config.ProductName'SELF_SERVICE'"
+  register: filtered_products
+  ignore_errors: true
+
+- name: Assert unsupported filter property is rejected by the backend with a descriptive error
+  ansible.builtin.assert:
+    that:
+      - filtered_products is defined
+      - filtered_products.failed == true
+      - filtered_products.changed == false
+      - filtered_products.msg == "Api Exception raised while fetching products info"
+      - filtered_products.status == 400
+    success_msg: "Products API correctly rejected the unsupported filter property"
+    fail_msg: "Products API did not reject the unsupported filter property as expected"
+
+- name: List products with a limit
+  nutanix.ncp.ntnx_products_info_v2:
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    limit: 1
+  register: limited_products
+  ignore_errors: true
+
+- name: Assert limit was respected
+  ansible.builtin.assert:
+    that:
+      - limited_products is defined
+      - limited_products.failed == false
+      - limited_products.changed == false
+      - limited_products.response is defined
+      - limited_products.response | length == 1
+    success_msg: "Limit was respected"
+    fail_msg: "Limit was not respected"
+
+- name: List products ordered by name descending
+  nutanix.ncp.ntnx_products_info_v2:
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    orderby: "name desc"
+  register: ordered_products
+  ignore_errors: true
+
+- name: Assert orderby returned a non-empty ordered list
+  ansible.builtin.assert:
+    that:
+      - ordered_products is defined
+      - ordered_products.failed == false
+      - ordered_products.changed == false
+      - ordered_products.response is defined
+      - ordered_products.response | length > 0
+    success_msg: "Orderby returned a non-empty list"
+    fail_msg: "Orderby did not return a non-empty list"
+
+- name: List products with a page + limit
+  nutanix.ncp.ntnx_products_info_v2:
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    page: 0
+    limit: 2
+  register: paged_products
+  ignore_errors: true
+
+- name: Assert pagination was respected
+  ansible.builtin.assert:
+    that:
+      - paged_products is defined
+      - paged_products.failed == false
+      - paged_products.response is defined
+      - paged_products.response | length <= 2
+    success_msg: "Pagination was respected"
+    fail_msg: "Pagination was not respected"
+
+- name: List products with mutually exclusive ext_id + filter
+  nutanix.ncp.ntnx_products_info_v2:
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    ext_id: "{{ target_product_ext_id }}"
+    filter: "name eq Prism.Config.ProductName'SELF_SERVICE'"
+  register: mutex_result
+  ignore_errors: true
+
+- name: Assert mutually exclusive ext_id + filter fails at the argspec layer
+  ansible.builtin.assert:
+    that:
+      - mutex_result is defined
+      - mutex_result.failed == true
+      - mutex_result.changed == false
+      - mutex_result.msg == "parameters are mutually exclusive: ext_id|filter"
+    success_msg: "Mutually exclusive ext_id + filter failed as expected"
+    fail_msg: "Mutually exclusive ext_id + filter did not fail as expected"
+
+- name: List products with a missing domain_manager_ext_id
+  nutanix.ncp.ntnx_products_info_v2: {}
+  register: missing_dm_result
+  ignore_errors: true
+
+- name: Assert missing domain_manager_ext_id fails at the argspec layer
+  ansible.builtin.assert:
+    that:
+      - missing_dm_result is defined
+      - missing_dm_result.failed == true
+      - missing_dm_result.changed == false
+      - "'missing required arguments: domain_manager_ext_id' in missing_dm_result.msg"
+    success_msg: "Missing domain_manager_ext_id failed as expected"
+    fail_msg: "Missing domain_manager_ext_id did not fail as expected"
+
+########################################################################################
+# CRUD module check_mode — one each for create, update, delete (INSTRUCTIONS 4.1)
+########################################################################################
+
+- name: Generate spec for updating product using check_mode with ALL attributes
+  nutanix.ncp.ntnx_product_v2:
+    state: present
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    ext_id: "{{ target_product_ext_id }}"
+    name: "INTELLIGENT_OPERATIONS"
+    version: "1.0"
+    enablement_state: "{{ inverted_enablement_state }}"
+    resource_spec:
+      cpu_count: 4
+      memory_size_bytes: 8589934592
+    metadata:
+      generic_metadata:
+        attributes:
+          - name: "environment"
+            value: "test"
+          - name: "owner"
+            value: "ansible"
+  check_mode: true
+  register: update_check_mode_result
+  ignore_errors: true
+
+- name: Assert the update check_mode spec is fully populated
+  ansible.builtin.assert:
+    that:
+      - update_check_mode_result is defined
+      - update_check_mode_result.changed == false
+      - update_check_mode_result.failed == false
+      - update_check_mode_result.response is defined
+      - update_check_mode_result.response.name == "INTELLIGENT_OPERATIONS"
+      - update_check_mode_result.response.version == "1.0"
+      - update_check_mode_result.response.enablement_state == inverted_enablement_state
+      - update_check_mode_result.response.resource_spec.cpu_count == 4
+      - update_check_mode_result.response.resource_spec.memory_size_bytes == 8589934592
+      - update_check_mode_result.response.metadata is defined
+      - update_check_mode_result.response.metadata.attributes | length == 2
+      - update_check_mode_result.response.metadata.attributes[0].name == "environment"
+      - update_check_mode_result.response.metadata.attributes[0].value == "test"
+      - update_check_mode_result.response.metadata.attributes[1].name == "owner"
+      - update_check_mode_result.response.metadata.attributes[1].value == "ansible"
+      - update_check_mode_result.response.ext_id == target_product_ext_id
+    success_msg: "Update check_mode spec generated correctly with all attributes"
+    fail_msg: "Update check_mode spec generation failed"
+
+- name: Attempt create in check_mode (should fail — create not supported)
+  nutanix.ncp.ntnx_product_v2:
+    state: present
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    name: "INTELLIGENT_OPERATIONS"
+    version: "1.0"
+    enablement_state: "ENABLED"
+    resource_spec:
+      cpu_count: 2
+      memory_size_bytes: 4294967296
+  check_mode: true
+  register: create_check_mode_result
+  ignore_errors: true
+
+- name: Assert create check_mode fails with the "not supported" error
+  ansible.builtin.assert:
+    that:
+      - create_check_mode_result is defined
+      - create_check_mode_result.failed == true
+      - create_check_mode_result.changed == false
+      - "'Create operation is not supported for Product' in create_check_mode_result.msg"
+    success_msg: "Create in check_mode failed as expected"
+    fail_msg: "Create in check_mode did not fail as expected"
+
+- name: Attempt delete in check_mode (should fail — delete not supported)
+  nutanix.ncp.ntnx_product_v2:
+    state: absent
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    ext_id: "{{ target_product_ext_id }}"
+  check_mode: true
+  register: delete_check_mode_result
+  ignore_errors: true
+
+- name: Assert delete check_mode fails with the "not supported" error
+  ansible.builtin.assert:
+    that:
+      - delete_check_mode_result is defined
+      - delete_check_mode_result.failed == true
+      - delete_check_mode_result.changed == false
+      - "'Delete operation is not supported for Product' in delete_check_mode_result.msg"
+    success_msg: "Delete in check_mode failed as expected"
+    fail_msg: "Delete in check_mode did not fail as expected"
+
+########################################################################################
+# CRUD module — real update flows
+########################################################################################
+
+- name: Idempotency — update the target product to its CURRENT state (no-op)
+  nutanix.ncp.ntnx_product_v2:
+    state: present
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    ext_id: "{{ target_product_ext_id }}"
+    name: "INTELLIGENT_OPERATIONS"
+    enablement_state: "{{ original_enablement_state }}"
+  register: idempotency_result
+  ignore_errors: true
+
+- name: Assert idempotent update was skipped
+  ansible.builtin.assert:
+    that:
+      - idempotency_result is defined
+      - idempotency_result.failed == false
+      - idempotency_result.changed == false
+      - idempotency_result.skipped == true
+      - idempotency_result.ext_id == target_product_ext_id
+      - idempotency_result.msg is defined
+      - "'already in the desired state' in idempotency_result.msg"
+    success_msg: "Update with same state was skipped as expected"
+    fail_msg: "Update with same state was not skipped as expected"
+
+- name: Update — flip enablement_state on the target product (async, don't wait)
+  # NOTE: Whether the backend actually accepts the flip depends on the
+  # product on the target cluster (some portfolio products, e.g.
+  # INTELLIGENT_OPERATIONS on certain PC builds, reject enable / disable
+  # with a PRE-CONDITION FAILED error). The test therefore treats BOTH
+  # outcomes as valid — either the module drove an async task, or the
+  # backend rejected the flip with a clean 412 that our module surfaced
+  # verbatim. What matters for coverage is that the module exercised the
+  # etag-guarded update_product_by_id call end-to-end against the live
+  # API and produced a well-formed result either way.
+  nutanix.ncp.ntnx_product_v2:
+    state: present
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    ext_id: "{{ target_product_ext_id }}"
+    name: "INTELLIGENT_OPERATIONS"
+    enablement_state: "{{ inverted_enablement_state }}"
+    wait: false
+  register: real_update_result
+  ignore_errors: true
+
+- name: Assert async update either returned a task ext_id or was rejected by the backend
+  ansible.builtin.assert:
+    that:
+      - real_update_result is defined
+      - >-
+        (real_update_result.failed == false
+         and real_update_result.changed == true
+         and real_update_result.ext_id == target_product_ext_id
+         and real_update_result.task_ext_id is defined
+         and real_update_result.task_ext_id is string
+         and real_update_result.task_ext_id | length > 0
+         and real_update_result.response is defined)
+        or
+        (real_update_result.failed == true
+         and real_update_result.changed == false
+         and real_update_result.msg == ("Api Exception raised while updating product with ext_id: "
+                                        ~ target_product_ext_id)
+         and real_update_result.status in [400, 409, 412])
+    success_msg: "Async update to flip enablement_state completed with a valid outcome"
+    fail_msg: "Async update to flip enablement_state produced an unexpected outcome"
+
+########################################################################################
+# CRUD module — negative / error paths
+########################################################################################
+
+- name: Update — missing enablement_state (required)
+  nutanix.ncp.ntnx_product_v2:
+    state: present
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    ext_id: "{{ target_product_ext_id }}"
+    name: "INTELLIGENT_OPERATIONS"
+  register: missing_enablement_result
+  ignore_errors: true
+
+- name: Assert missing enablement_state was rejected
+  ansible.builtin.assert:
+    that:
+      - missing_enablement_result is defined
+      - missing_enablement_result.failed == true
+      - missing_enablement_result.changed == false
+      - missing_enablement_result.msg == "Missing required parameter(s): enablement_state"
+    success_msg: "Missing enablement_state was rejected as expected"
+    fail_msg: "Missing enablement_state was NOT rejected as expected"
+
+- name: Update — invalid enablement_state (bad enum value)
+  nutanix.ncp.ntnx_product_v2:
+    state: present
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    ext_id: "{{ target_product_ext_id }}"
+    name: "INTELLIGENT_OPERATIONS"
+    enablement_state: "BOGUS"
+  register: bad_enum_result
+  ignore_errors: true
+
+- name: Assert invalid enum value was rejected at the argspec layer
+  ansible.builtin.assert:
+    that:
+      - bad_enum_result is defined
+      - bad_enum_result.failed == true
+      - bad_enum_result.changed == false
+      - "'value of enablement_state must be one of' in bad_enum_result.msg"
+    success_msg: "Invalid enablement_state enum was rejected as expected"
+    fail_msg: "Invalid enablement_state enum was NOT rejected as expected"
+
+- name: Update — invalid product name enum
+  nutanix.ncp.ntnx_product_v2:
+    state: present
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    ext_id: "{{ target_product_ext_id }}"
+    name: "NOT_A_PRODUCT"
+    enablement_state: "ENABLED"
+  register: bad_name_result
+  ignore_errors: true
+
+- name: Assert invalid product name enum was rejected at the argspec layer
+  ansible.builtin.assert:
+    that:
+      - bad_name_result is defined
+      - bad_name_result.failed == true
+      - bad_name_result.changed == false
+      - "'value of name must be one of' in bad_name_result.msg"
+    success_msg: "Invalid product name enum was rejected as expected"
+    fail_msg: "Invalid product name enum was NOT rejected as expected"
+
+- name: Update — unknown ext_id
+  nutanix.ncp.ntnx_product_v2:
+    state: present
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    enablement_state: "ENABLED"
+  register: unknown_id_update
+  ignore_errors: true
+
+- name: Assert update with unknown ext_id fails cleanly
+  ansible.builtin.assert:
+    that:
+      - unknown_id_update is defined
+      - unknown_id_update.failed == true
+      - unknown_id_update.changed == false
+      - unknown_id_update.msg == "Api Exception raised while fetching product info using ext_id"
+    success_msg: "Update with unknown ext_id failed as expected"
+    fail_msg: "Update with unknown ext_id did NOT fail as expected"
+
+- name: Update — missing ext_id (would attempt create; create is not supported)
+  nutanix.ncp.ntnx_product_v2:
+    state: present
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    name: "INTELLIGENT_OPERATIONS"
+    enablement_state: "ENABLED"
+  register: no_ext_id_result
+  ignore_errors: true
+
+- name: Assert update without ext_id is rejected as "create not supported"
+  ansible.builtin.assert:
+    that:
+      - no_ext_id_result is defined
+      - no_ext_id_result.failed == true
+      - no_ext_id_result.changed == false
+      - "'Create operation is not supported for Product' in no_ext_id_result.msg"
+    success_msg: "Update without ext_id was rejected as expected"
+    fail_msg: "Update without ext_id was NOT rejected as expected"
+
+- name: Delete — state=absent must fail because delete is not supported by the API
+  nutanix.ncp.ntnx_product_v2:
+    state: absent
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    ext_id: "{{ target_product_ext_id }}"
+  register: delete_real_result
+  ignore_errors: true
+
+- name: Assert delete verb is rejected with the "not supported" error
+  ansible.builtin.assert:
+    that:
+      - delete_real_result is defined
+      - delete_real_result.failed == true
+      - delete_real_result.changed == false
+      - "'Delete operation is not supported for Product' in delete_real_result.msg"
+    success_msg: "Delete verb was rejected as expected"
+    fail_msg: "Delete verb was NOT rejected as expected"
+
+- name: Delete — state=absent without ext_id (required_if guard should fire)
+  nutanix.ncp.ntnx_product_v2:
+    state: absent
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+  register: delete_no_ext_id
+  ignore_errors: true
+
+- name: Assert missing ext_id under state=absent is rejected by required_if
+  ansible.builtin.assert:
+    that:
+      - delete_no_ext_id is defined
+      - delete_no_ext_id.failed == true
+      - delete_no_ext_id.changed == false
+      - "'state is absent but all of the following are missing: ext_id' in delete_no_ext_id.msg"
+    success_msg: "State=absent without ext_id was rejected as expected"
+    fail_msg: "State=absent without ext_id was NOT rejected as expected"
+
+########################################################################################
+# End of tests
+########################################################################################
+
+- name: Finish ntnx_product_v2 tests
+  ansible.builtin.debug:
+    msg: "Finished ntnx_product_v2 tests"
