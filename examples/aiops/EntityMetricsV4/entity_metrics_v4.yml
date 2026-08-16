@@ -1,0 +1,85 @@
+---
+# Summary:
+# This playbook demonstrates end-to-end usage of the AIOps EntityMetricsV4 API
+# via the nutanix.ncp.ntnx_entity_metrics_v4_v2 and ntnx_entity_metrics_info_v2
+# modules. It follows the standard AIOps discovery workflow:
+#   1. Compute a time window (last 15 minutes).
+#   2. Fetch entity metrics for a well-known entity type via the "CRUD" module.
+#   3. Fetch entity metrics with all optional attributes (sampling, stat_type,
+#      pagination, ordering).
+#   4. Fetch entity metrics info via the info module (get-style single fetch).
+#   5. Fetch entity metrics info with sampling / stat_type via the info module.
+
+- name: AIOps EntityMetricsV4 playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ pc_ip | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ pc_user | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ pc_password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: false
+  tasks:
+    - name: Set example variables (source id, entity type id)
+      ansible.builtin.set_fact:
+        # AIOps 'nutanix' data source UUID on the target cluster.
+        # Use ntnx_aiops_py_client.StatsApi.get_sources_v4 to discover it.
+        source_ext_id: "db293e8a-5770-c3c7-4213-85dbbc1d3679"
+        # AIOps 'cluster' entity type UUID for the source above.
+        # Use ntnx_aiops_py_client.StatsApi.get_entity_types_v4 to discover it.
+        entity_type_ext_id: "06b2d4b9-1b5c-9eaa-8c20-a1c270f95b3c"
+
+    - name: Compute reporting window start (now minus 15 minutes)
+      ansible.builtin.command: date -u -d "-900 seconds" +"%Y-%m-%dT%H:%M:%S.%3NZ"
+      register: start_time
+      changed_when: false
+
+    - name: Compute reporting window end (now)
+      ansible.builtin.command: date -u +"%Y-%m-%dT%H:%M:%S.%3NZ"
+      register: end_time
+      changed_when: false
+
+    - name: Fetch VM entity metrics (all attributes populated) — Create/Get equivalent
+      nutanix.ncp.ntnx_entity_metrics_v4_v2:
+        source_ext_id: "{{ source_ext_id }}"
+        ext_id: "{{ entity_type_ext_id }}"
+        start_time: "{{ start_time.stdout }}"
+        end_time: "{{ end_time.stdout }}"
+        sampling_interval: 30
+        stat_type: "AVG"
+        page: 0
+        limit: 5
+        orderby: "extId asc"
+      register: full_metrics_result
+      ignore_errors: true
+
+    - name: Fetch VM entity metrics (minimal required attributes) — Update-equivalent refresh
+      nutanix.ncp.ntnx_entity_metrics_v4_v2:
+        source_ext_id: "{{ source_ext_id }}"
+        ext_id: "{{ entity_type_ext_id }}"
+        start_time: "{{ start_time.stdout }}"
+        end_time: "{{ end_time.stdout }}"
+      register: minimal_metrics_result
+      ignore_errors: true
+
+    - name: Fetch entity metrics info (all attributes populated)
+      nutanix.ncp.ntnx_entity_metrics_info_v2:
+        source_ext_id: "{{ source_ext_id }}"
+        ext_id: "{{ entity_type_ext_id }}"
+        start_time: "{{ start_time.stdout }}"
+        end_time: "{{ end_time.stdout }}"
+        sampling_interval: 60
+        stat_type: "SUM"
+        limit: 3
+        orderby: "extId asc"
+      register: full_info_result
+      ignore_errors: true
+
+    - name: Fetch entity metrics info (minimal) — Delete/Get equivalent
+      nutanix.ncp.ntnx_entity_metrics_info_v2:
+        source_ext_id: "{{ source_ext_id }}"
+        ext_id: "{{ entity_type_ext_id }}"
+        start_time: "{{ start_time.stdout }}"
+        end_time: "{{ end_time.stdout }}"
+      register: minimal_info_result
+      ignore_errors: true

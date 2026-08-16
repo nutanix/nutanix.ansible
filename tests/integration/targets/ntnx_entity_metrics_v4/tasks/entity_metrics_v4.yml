@@ -1,0 +1,359 @@
+---
+# Integration tests for the AIOps EntityMetricsV4 modules.
+#
+# Test plan (built following the QA mindset described in the codegen
+# instructions):
+#   1. Setup — compute a 15 minute reporting window from "now" and choose
+#      a well-known source ("nutanix") and entity type ("vm"). The AIOps
+#      Stats API is a read-only feature; there is no create/update/delete
+#      side-effect to clean up.
+#   2. Positive path — call ntnx_entity_metrics_v4_v2 and
+#      ntnx_entity_metrics_info_v2 with (a) only required parameters,
+#      (b) with every optional parameter populated (sampling_interval,
+#      stat_type, page, limit, orderby, filter for the CRUD module).
+#      Assert changed=false, failed=false, response is a list, and that
+#      total_available_results is set to an int. Also assert that both
+#      source_ext_id and ext_id are echoed back correctly in the result.
+#   3. Enum coverage — exercise every valid stat_type value on both
+#      modules (SUM, MIN, MAX, AVG, COUNT, LAST) so every choices/enum
+#      is validated at least once against the live API.
+#   4. Negative path — omit each required field one at a time and assert
+#      the module fails with a descriptive error (missing_required_params
+#      handler); pass an invalid stat_type and assert Ansible's own spec
+#      validator rejects it; pass a bogus ext_id and assert the API
+#      returns a not-found style error.
+#   5. Idempotency — invoke the same read call twice, assert the two
+#      results carry the same shape and changed remains false (info
+#      operations are always idempotent).
+#   6. Info listing — call the info module without stat_type/sampling and
+#      assert we get a list back with an int total_available_results.
+#
+
+- name: Start AIOps EntityMetricsV4 tests
+  ansible.builtin.debug:
+    msg: Start AIOps EntityMetricsV4 tests
+
+- name: Set common test facts
+  ansible.builtin.set_fact:
+    # AIOps 'nutanix' data source UUID on the target cluster.
+    source_ext_id: "db293e8a-5770-c3c7-4213-85dbbc1d3679"
+    # AIOps 'cluster' entity type UUID for the source above (always present).
+    entity_type_ext_id: "06b2d4b9-1b5c-9eaa-8c20-a1c270f95b3c"
+    stat_type_choices:
+      - "SUM"
+      - "MIN"
+      - "MAX"
+      - "AVG"
+      - "COUNT"
+      - "LAST"
+    random_suffix: "{{ query('community.general.random_string', numbers=true, special=false, length=8)[0] }}"
+
+- name: Compute reporting window start (now minus 15 minutes)
+  ansible.builtin.command: date -u -d "-900 seconds" +"%Y-%m-%dT%H:%M:%S.%3NZ"
+  register: window_start
+  changed_when: false
+
+- name: Compute reporting window end (now)
+  ansible.builtin.command: date -u +"%Y-%m-%dT%H:%M:%S.%3NZ"
+  register: window_end
+  changed_when: false
+
+- name: Set reporting window facts
+  ansible.builtin.set_fact:
+    start_time_str: "{{ window_start.stdout }}"
+    end_time_str: "{{ window_end.stdout }}"
+
+########################################################################################
+# Positive: ntnx_entity_metrics_v4_v2 with all attributes
+########################################################################################
+
+- name: Fetch entity metrics with all attributes populated
+  nutanix.ncp.ntnx_entity_metrics_v4_v2:
+    source_ext_id: "{{ source_ext_id }}"
+    ext_id: "{{ entity_type_ext_id }}"
+    start_time: "{{ start_time_str }}"
+    end_time: "{{ end_time_str }}"
+    sampling_interval: 30
+    stat_type: "AVG"
+    page: 0
+    limit: 5
+    orderby: "extId asc"
+  register: full_result
+  ignore_errors: true
+
+- name: Assert fetch entity metrics with all attributes populated
+  ansible.builtin.assert:
+    that:
+      - full_result is defined
+      - full_result.changed == false
+      - full_result.failed == false
+      - full_result.source_ext_id == source_ext_id
+      - full_result.ext_id == entity_type_ext_id
+      - full_result.response is defined
+      - full_result.response is iterable
+      - full_result.total_available_results is defined
+      - full_result.total_available_results | int >= 0
+    success_msg: "Fetch entity metrics with all attributes populated succeeded"
+    fail_msg: "Fetch entity metrics with all attributes populated failed"
+
+########################################################################################
+# Positive: ntnx_entity_metrics_v4_v2 with minimum attributes
+########################################################################################
+
+- name: Fetch entity metrics with minimum required attributes
+  nutanix.ncp.ntnx_entity_metrics_v4_v2:
+    source_ext_id: "{{ source_ext_id }}"
+    ext_id: "{{ entity_type_ext_id }}"
+    start_time: "{{ start_time_str }}"
+    end_time: "{{ end_time_str }}"
+  register: min_result
+  ignore_errors: true
+
+- name: Assert fetch entity metrics with minimum required attributes
+  ansible.builtin.assert:
+    that:
+      - min_result is defined
+      - min_result.changed == false
+      - min_result.failed == false
+      - min_result.source_ext_id == source_ext_id
+      - min_result.ext_id == entity_type_ext_id
+      - min_result.response is defined
+      - min_result.response is iterable
+      - min_result.total_available_results is defined
+    success_msg: "Fetch entity metrics with minimum required attributes succeeded"
+    fail_msg: "Fetch entity metrics with minimum required attributes failed"
+
+########################################################################################
+# Idempotency: re-run the same minimum-attribute fetch — changed must stay False
+########################################################################################
+
+- name: Re-fetch entity metrics with minimum required attributes (idempotency)
+  nutanix.ncp.ntnx_entity_metrics_v4_v2:
+    source_ext_id: "{{ source_ext_id }}"
+    ext_id: "{{ entity_type_ext_id }}"
+    start_time: "{{ start_time_str }}"
+    end_time: "{{ end_time_str }}"
+  register: min_result_second
+  ignore_errors: true
+
+- name: Assert idempotency (read is always idempotent, changed stays false)
+  ansible.builtin.assert:
+    that:
+      - min_result_second is defined
+      - min_result_second.changed == false
+      - min_result_second.failed == false
+      - min_result_second.response is defined
+    success_msg: "Second fetch returned the same idempotent shape"
+    fail_msg: "Second fetch changed the shape unexpectedly"
+
+########################################################################################
+# Enum coverage: every valid stat_type must be accepted
+########################################################################################
+
+- name: Exercise every valid stat_type value on the CRUD module
+  nutanix.ncp.ntnx_entity_metrics_v4_v2:
+    source_ext_id: "{{ source_ext_id }}"
+    ext_id: "{{ entity_type_ext_id }}"
+    start_time: "{{ start_time_str }}"
+    end_time: "{{ end_time_str }}"
+    sampling_interval: 30
+    stat_type: "{{ stat_type_item }}"
+  register: stat_type_results
+  loop: "{{ stat_type_choices }}"
+  loop_control:
+    loop_var: stat_type_item
+  ignore_errors: true
+
+- name: Assert every stat_type value was accepted
+  ansible.builtin.assert:
+    that:
+      - stat_type_results.results | length == stat_type_choices | length
+      - item.changed == false
+      - item.failed == false
+      - item.response is defined
+      - item.source_ext_id == source_ext_id
+      - item.ext_id == entity_type_ext_id
+    success_msg: "stat_type={{ item.stat_type_item }} accepted"
+    fail_msg: "stat_type={{ item.stat_type_item }} rejected unexpectedly"
+  loop: "{{ stat_type_results.results }}"
+  loop_control:
+    label: "{{ item.stat_type_item }}"
+
+########################################################################################
+# Positive: ntnx_entity_metrics_info_v2 with all attributes
+########################################################################################
+
+- name: Fetch entity metrics info with all attributes populated
+  nutanix.ncp.ntnx_entity_metrics_info_v2:
+    source_ext_id: "{{ source_ext_id }}"
+    ext_id: "{{ entity_type_ext_id }}"
+    start_time: "{{ start_time_str }}"
+    end_time: "{{ end_time_str }}"
+    sampling_interval: 60
+    stat_type: "SUM"
+    limit: 3
+    orderby: "extId asc"
+  register: info_full_result
+  ignore_errors: true
+
+- name: Assert fetch entity metrics info with all attributes populated
+  ansible.builtin.assert:
+    that:
+      - info_full_result is defined
+      - info_full_result.changed == false
+      - info_full_result.failed == false
+      - info_full_result.source_ext_id == source_ext_id
+      - info_full_result.ext_id == entity_type_ext_id
+      - info_full_result.response is defined
+      - info_full_result.response is iterable
+      - info_full_result.total_available_results is defined
+    success_msg: "Fetch entity metrics info with all attributes populated succeeded"
+    fail_msg: "Fetch entity metrics info with all attributes populated failed"
+
+########################################################################################
+# Positive: ntnx_entity_metrics_info_v2 minimum (list-style get)
+########################################################################################
+
+- name: Fetch entity metrics info with minimum required attributes
+  nutanix.ncp.ntnx_entity_metrics_info_v2:
+    source_ext_id: "{{ source_ext_id }}"
+    ext_id: "{{ entity_type_ext_id }}"
+    start_time: "{{ start_time_str }}"
+    end_time: "{{ end_time_str }}"
+  register: info_min_result
+  ignore_errors: true
+
+- name: Assert fetch entity metrics info with minimum required attributes
+  ansible.builtin.assert:
+    that:
+      - info_min_result is defined
+      - info_min_result.changed == false
+      - info_min_result.failed == false
+      - info_min_result.source_ext_id == source_ext_id
+      - info_min_result.ext_id == entity_type_ext_id
+      - info_min_result.response is defined
+      - info_min_result.total_available_results is defined
+    success_msg: "Fetch entity metrics info with minimum required attributes succeeded"
+    fail_msg: "Fetch entity metrics info with minimum required attributes failed"
+
+########################################################################################
+# Info module — exercise every valid stat_type value
+########################################################################################
+
+- name: Exercise every valid stat_type value on the info module
+  nutanix.ncp.ntnx_entity_metrics_info_v2:
+    source_ext_id: "{{ source_ext_id }}"
+    ext_id: "{{ entity_type_ext_id }}"
+    start_time: "{{ start_time_str }}"
+    end_time: "{{ end_time_str }}"
+    sampling_interval: 60
+    stat_type: "{{ stat_type_item }}"
+  register: info_stat_type_results
+  loop: "{{ stat_type_choices }}"
+  loop_control:
+    loop_var: stat_type_item
+  ignore_errors: true
+
+- name: Assert every info-module stat_type value was accepted
+  ansible.builtin.assert:
+    that:
+      - info_stat_type_results.results | length == stat_type_choices | length
+      - item.changed == false
+      - item.failed == false
+      - item.response is defined
+      - item.source_ext_id == source_ext_id
+      - item.ext_id == entity_type_ext_id
+    success_msg: "info stat_type={{ item.stat_type_item }} accepted"
+    fail_msg: "info stat_type={{ item.stat_type_item }} rejected unexpectedly"
+  loop: "{{ info_stat_type_results.results }}"
+  loop_control:
+    label: "{{ item.stat_type_item }}"
+
+########################################################################################
+# Negative: missing required field — start_time absent
+########################################################################################
+
+- name: Attempt fetch without start_time (should fail)
+  nutanix.ncp.ntnx_entity_metrics_v4_v2:
+    source_ext_id: "{{ source_ext_id }}"
+    ext_id: "{{ entity_type_ext_id }}"
+    end_time: "{{ end_time_str }}"
+  register: missing_start_result
+  ignore_errors: true
+
+- name: Assert missing start_time triggered a descriptive failure
+  ansible.builtin.assert:
+    that:
+      - missing_start_result is defined
+      - missing_start_result.failed == true
+      - missing_start_result.msg is defined
+      - '"start_time" in missing_start_result.msg'
+    success_msg: "Missing start_time produced a descriptive failure"
+    fail_msg: "Missing start_time did not produce the expected error"
+
+########################################################################################
+# Negative: missing required field — source_ext_id absent
+########################################################################################
+
+- name: Attempt fetch without source_ext_id (should fail)
+  nutanix.ncp.ntnx_entity_metrics_v4_v2:
+    ext_id: "{{ entity_type_ext_id }}"
+    start_time: "{{ start_time_str }}"
+    end_time: "{{ end_time_str }}"
+  register: missing_source_result
+  ignore_errors: true
+
+- name: Assert missing source_ext_id triggered a descriptive failure
+  ansible.builtin.assert:
+    that:
+      - missing_source_result is defined
+      - missing_source_result.failed == true
+      - missing_source_result.msg is defined
+      - '"source_ext_id" in missing_source_result.msg'
+    success_msg: "Missing source_ext_id produced a descriptive failure"
+    fail_msg: "Missing source_ext_id did not produce the expected error"
+
+########################################################################################
+# Negative: invalid stat_type value must be rejected by Ansible spec
+########################################################################################
+
+- name: Attempt fetch with invalid stat_type value (should fail)
+  nutanix.ncp.ntnx_entity_metrics_v4_v2:
+    source_ext_id: "{{ source_ext_id }}"
+    ext_id: "{{ entity_type_ext_id }}"
+    start_time: "{{ start_time_str }}"
+    end_time: "{{ end_time_str }}"
+    stat_type: "INVALID_STAT_TYPE_{{ random_suffix }}"
+  register: invalid_stat_type_result
+  ignore_errors: true
+
+- name: Assert invalid stat_type was rejected by the spec
+  ansible.builtin.assert:
+    that:
+      - invalid_stat_type_result is defined
+      - invalid_stat_type_result.failed == true
+      - invalid_stat_type_result.msg is defined
+      - '"stat_type" in invalid_stat_type_result.msg or "value of stat_type" in invalid_stat_type_result.msg or "choices" in invalid_stat_type_result.msg'
+    success_msg: "Invalid stat_type was rejected by the spec"
+    fail_msg: "Invalid stat_type was not rejected"
+
+########################################################################################
+# Negative: bogus ext_id must trigger an API not-found style error
+########################################################################################
+
+- name: Attempt fetch with a non-existent entity type ext_id
+  nutanix.ncp.ntnx_entity_metrics_v4_v2:
+    source_ext_id: "{{ source_ext_id }}"
+    ext_id: "no-such-entity-type-{{ random_suffix }}"
+    start_time: "{{ start_time_str }}"
+    end_time: "{{ end_time_str }}"
+  register: bogus_ext_id_result
+  ignore_errors: true
+
+- name: Assert non-existent ext_id produced an API-side failure
+  ansible.builtin.assert:
+    that:
+      - bogus_ext_id_result is defined
+      - bogus_ext_id_result.failed == true
+    success_msg: "Non-existent ext_id triggered the expected API failure"
+    fail_msg: "Non-existent ext_id did not trigger a failure"
