@@ -170,3 +170,27 @@ def get_virtual_switch(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching virtual switch info using ext_id",
         )
+
+
+def get_remote_vtep_gateway_for_cluster(module, api_instance, cluster_ext_id, ext_id):
+    """
+    This method will return remote VTEP gateway info scoped to a Prism Central
+    cluster using its ext_id.
+    Args:
+        module: Ansible module
+        api_instance: RemoteEntitiesApi instance from ntnx_networking_py_client sdk
+        cluster_ext_id (str): Prism Central cluster external ID
+        ext_id (str): remote VTEP gateway external ID
+    return:
+        info (object): remote VTEP gateway info
+    """
+    try:
+        return api_instance.get_remote_vtep_gateway_for_cluster_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching remote VTEP gateway info using ext_id",
+        )

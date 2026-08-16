@@ -1,0 +1,52 @@
+---
+# Summary:
+# This playbook demonstrates how to fetch remote VTEP gateway info scoped to a
+# Prism Central cluster using the v4 info module:
+# 1. List all remote VTEP gateways for a cluster
+# 2. List with a filter
+# 3. List with a limit
+# 4. Fetch a specific remote VTEP gateway by ext_id (only when a gateway exists)
+
+- name: Remote VTEP Gateway for Cluster info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('<pc_ip>', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('<user>', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('<pass>', true) }}"
+      nutanix_port: "{{ lookup('env', 'NUTANIX_PORT') | default('9440', true) | int }}"
+      validate_certs: false
+
+  tasks:
+    - name: Set variables for the playbook
+      ansible.builtin.set_fact:
+        cluster_ext_id: "cae459ec-08db-475e-a5e5-151e390c9484"
+
+    - name: List all remote VTEP gateways for the cluster
+      nutanix.ncp.ntnx_remote_vtep_gateway_for_clusters_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: all_gateways
+      ignore_errors: true
+
+    - name: List remote VTEP gateways with a filter
+      nutanix.ncp.ntnx_remote_vtep_gateway_for_clusters_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        filter: "name eq 'remote-vtep-gateway-example'"
+      register: filtered_gateways
+      ignore_errors: true
+
+    - name: List remote VTEP gateways with a limit
+      nutanix.ncp.ntnx_remote_vtep_gateway_for_clusters_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        limit: 5
+      register: limited_gateways
+      ignore_errors: true
+
+    - name: Fetch a specific remote VTEP gateway by ext_id (only when one exists)
+      nutanix.ncp.ntnx_remote_vtep_gateway_for_clusters_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ all_gateways.response[0].ext_id }}"
+      register: gateway_by_id
+      when: all_gateways.response | default([]) | length > 0
+      ignore_errors: true
