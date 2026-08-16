@@ -1,0 +1,56 @@
+---
+# Summary:
+# This playbook demonstrates fetching the dependee VMs of a VM startup policy's
+# dependency conflict via the info module
+# `ntnx_vm_startup_policy_dependency_conflict_dependee_vms_info_v2`.
+#
+# The endpoint under test is a LIST-only endpoint on the Nutanix VMM v4 API:
+#   GET /vmm/v4.2/ahv/policies/vm-startup-policies/{vmStartupPolicyExtId}/
+#       dependency-conflicts/{dependencyConflictExtId}/dependee-vms
+#
+# A "dependee" VM is a VM that other VMs in the startup policy depend on
+# (i.e. it must be running before its dependents can start). A dependency
+# conflict exists when Prism Central detects an ordering/consistency issue
+# with the startup graph (e.g. a missing VM, a circular dependency, or a
+# category with no member VMs).
+#
+# Prerequisites (see also the domain knowledge block in the PR body):
+#   1. A VM Startup Policy exists on the cluster.
+#   2. The policy currently has at least one dependency conflict — use
+#      `list_vm_startup_policy_dependency_conflicts` (or the parent info
+#      module once available) to discover the conflict UUIDs.
+#
+# The playbook covers:
+#   1. Listing ALL dependee VMs of a specific dependency conflict.
+#   2. Listing dependee VMs with pagination (page/limit).
+
+- name: VmStartupPolicyDependencyConflictDependeeVm info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+  tasks:
+    - name: Set VM startup policy and dependency conflict external IDs
+      ansible.builtin.set_fact:
+        vm_startup_policy_ext_id: "e3d33be5-ea1e-4b6a-a30d-4f1f8d0a1b21"
+        dependency_conflict_ext_id: "9f6141a0-4a34-46e3-a4cf-4fe25d05c8f7"
+
+    - name: List all dependee VMs of a VM startup policy dependency conflict
+      nutanix.ncp.ntnx_vm_startup_policy_dependency_conflict_dependee_vms_info_v2:
+        vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+        dependency_conflict_ext_id: "{{ dependency_conflict_ext_id }}"
+      register: all_dependee_vms
+      ignore_errors: true
+
+    - name: List dependee VMs of a dependency conflict with pagination
+      nutanix.ncp.ntnx_vm_startup_policy_dependency_conflict_dependee_vms_info_v2:
+        vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+        dependency_conflict_ext_id: "{{ dependency_conflict_ext_id }}"
+        page: 0
+        limit: 5
+      register: paginated_dependee_vms
+      ignore_errors: true
