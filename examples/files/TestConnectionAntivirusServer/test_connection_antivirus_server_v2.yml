@@ -1,0 +1,34 @@
+---
+# Summary:
+# This playbook demonstrates:
+# 1. Testing the connectivity of a configured antivirus (ICAP) server that is
+#    registered against a Nutanix Files file server.
+#
+# Prerequisites:
+# - A running Nutanix Files file server whose external identifier is known.
+# - An antivirus (ICAP) server already registered on that file server.
+# - Prism Central credentials with sufficient privileges (File Server Admin,
+#   Prism Admin, or Super Admin) to invoke the test-connection action.
+
+- name: Test connection antivirus server playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Set input variables
+      ansible.builtin.set_fact:
+        file_server_ext_id: "18f78959-14a6-4c47-b5db-920460c4b668"
+        antivirus_server_ext_id: "ac5aff0c-6c68-4948-9088-b903e2be0ce7"
+
+    - name: Test antivirus server connection
+      nutanix.ncp.ntnx_test_connection_antivirus_server_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ antivirus_server_ext_id }}"
+      register: result
+      ignore_errors: true
