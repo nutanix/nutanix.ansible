@@ -1,0 +1,382 @@
+---
+###############################################################################
+# Test plan for ntnx_remote_vpn_connections_by_cluster_id_v2 and
+# ntnx_remote_vpn_connections_by_cluster_ids_info_v2
+#
+# The underlying V4 API C(GET /networking/v4.3/config/clusters/{clusterExtId}
+# /remote-vpn-connections[/{extId}]) is READ ONLY — the SDK only exposes
+# get-single and list operations, so these are the only paths we can exercise.
+#
+# Scenarios covered here:
+#   Phase 1 — Setup
+#     P1.1 Discover a Prism Central cluster ext_id via ntnx_clusters_info_v2.
+#     P1.2 Assert we found at least one PC-tagged cluster.
+#
+#   Phase 2 — Info module (list variant)
+#     2.1 List all remote VPN connections for the cluster (may be empty).
+#     2.2 Assert response is a list; total_available_results is present.
+#     2.3 List with limit=1; assert response length <= 1.
+#     2.4 List with filter=name eq '<random-non-matching>'; assert empty list.
+#     2.5 List with orderby=name; assert response is a list.
+#     2.6 Info module with only cluster_ext_id: verifies default listing.
+#
+#   Phase 3 — Info module (single get by ext_id)
+#     3.1 If any connection exists, get it by (cluster_ext_id, ext_id) via the
+#         info module.  Assert response is a single dict with matching ext_id.
+#     3.2 Skip cleanly when there are no connections on the cluster.
+#
+#   Phase 4 — CRUD-shaped get-by-id module
+#     4.1 If any connection exists, fetch via the ntnx_remote_vpn_
+#         connections_by_cluster_id_v2 module and assert the same payload
+#         shape.
+#     4.2 Skip cleanly when there are no connections on the cluster.
+#
+#   Phase 5 — Negative / error paths
+#     5.1 Info module with a bogus cluster_ext_id — expect failure and error.
+#     5.2 Info module with a valid cluster_ext_id but bogus ext_id — expect
+#         failure.
+#     5.3 Info module with ext_id AND filter — mutually exclusive → failure.
+#     5.4 Get-by-id module without ext_id — required-param failure.
+#     5.5 Get-by-id module without cluster_ext_id — required-param failure.
+#     5.6 Get-by-id module with bogus cluster_ext_id / ext_id — API failure.
+#
+# We assert C(changed) and C(failed) BEFORE anything else in every test.
+###############################################################################
+
+- name: Start Remote VPN Connections By Cluster Id tests
+  ansible.builtin.debug:
+    msg: Start Remote VPN Connections By Cluster Id tests
+
+###############################################################################
+# Phase 1 — Discover a PC-tagged cluster ext_id from the target Prism Central.
+###############################################################################
+
+- name: Discover Prism Central managed clusters
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
+  register: pc_clusters_info
+  ignore_errors: true
+
+- name: Assert Prism Central cluster discovery succeeded
+  ansible.builtin.assert:
+    that:
+      - pc_clusters_info is defined
+      - pc_clusters_info.changed == false
+      - pc_clusters_info.failed == false
+      - pc_clusters_info.response is defined
+      - pc_clusters_info.response | length > 0
+    success_msg: "Discovered at least one Prism Central cluster"
+    fail_msg: "Failed to discover any Prism Central cluster"
+
+- name: Set cluster_ext_id fact
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ pc_clusters_info.response[0].ext_id }}"
+
+###############################################################################
+# Phase 2 — Info module: listing variants.
+###############################################################################
+
+- name: List all remote VPN connections for the discovered PC cluster
+  nutanix.ncp.ntnx_remote_vpn_connections_by_cluster_ids_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: list_all
+  ignore_errors: true
+
+- name: Verify list-all remote VPN connections status
+  ansible.builtin.assert:
+    that:
+      - list_all is defined
+      - list_all.changed == false
+      - list_all.failed == false
+      - list_all.response is defined
+      - list_all.response is iterable
+      - list_all.total_available_results is defined
+      - (list_all.total_available_results is none) or (list_all.total_available_results | int >= 0)
+    success_msg: "Listing all remote VPN connections succeeded"
+    fail_msg: "Listing all remote VPN connections failed"
+
+- name: List remote VPN connections with limit
+  nutanix.ncp.ntnx_remote_vpn_connections_by_cluster_ids_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    limit: 1
+  register: list_limit
+  ignore_errors: true
+
+- name: Verify list-with-limit result
+  ansible.builtin.assert:
+    that:
+      - list_limit is defined
+      - list_limit.changed == false
+      - list_limit.failed == false
+      - list_limit.response is defined
+      - list_limit.response | length <= 1
+    success_msg: "List with limit=1 returned <= 1 entries as expected"
+    fail_msg: "List with limit=1 did not honour the limit constraint"
+
+- name: List remote VPN connections with a filter that should not match
+  nutanix.ncp.ntnx_remote_vpn_connections_by_cluster_ids_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    filter: "name eq 'ansible_remote_vpn_non_existent_zzz_1234567890'"
+  register: list_filter_empty
+  ignore_errors: true
+
+- name: Verify filtered result is an empty list
+  ansible.builtin.assert:
+    that:
+      - list_filter_empty is defined
+      - list_filter_empty.changed == false
+      - list_filter_empty.failed == false
+      - list_filter_empty.response is defined
+      - list_filter_empty.response | length == 0
+    success_msg: "Filter returned an empty list as expected"
+    fail_msg: "Filter did not return an empty list"
+
+- name: List remote VPN connections ordered by name
+  nutanix.ncp.ntnx_remote_vpn_connections_by_cluster_ids_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    orderby: "name"
+  register: list_orderby
+  ignore_errors: true
+
+- name: Verify orderby result is a list (possibly empty)
+  ansible.builtin.assert:
+    that:
+      - list_orderby is defined
+      - list_orderby.changed == false
+      - list_orderby.failed == false
+      - list_orderby.response is defined
+      - list_orderby.response is iterable
+    success_msg: "orderby=name returned a list"
+    fail_msg: "orderby=name did not return a list"
+
+- name: List remote VPN connections using page + limit pagination
+  nutanix.ncp.ntnx_remote_vpn_connections_by_cluster_ids_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    page: 0
+    limit: 5
+  register: list_paginated
+  ignore_errors: true
+
+- name: Verify paginated result
+  ansible.builtin.assert:
+    that:
+      - list_paginated is defined
+      - list_paginated.changed == false
+      - list_paginated.failed == false
+      - list_paginated.response is defined
+      - list_paginated.response | length <= 5
+    success_msg: "Pagination page=0 limit=5 returned <= 5 entries"
+    fail_msg: "Pagination did not honour limit=5"
+
+###############################################################################
+# Phase 3 — Info module get-by-id variant (only if a connection exists).
+###############################################################################
+
+- name: Set first_ext_id fact if any remote VPN connection exists
+  ansible.builtin.set_fact:
+    first_ext_id: >-
+      {{ (list_all.response | default([]))[0].ext_id
+         if (list_all.response | default([])) | length > 0
+         else '' }}
+
+- name: Get single remote VPN connection via info module by ext_id
+  nutanix.ncp.ntnx_remote_vpn_connections_by_cluster_ids_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ first_ext_id }}"
+  register: info_single
+  when: first_ext_id | length > 0
+  ignore_errors: true
+
+- name: Verify single-get via info module
+  ansible.builtin.assert:
+    that:
+      - info_single is defined
+      - info_single.changed == false
+      - info_single.failed == false
+      - info_single.response is defined
+      - info_single.response.ext_id == first_ext_id
+      - info_single.ext_id == first_ext_id
+    success_msg: "Info module returned the requested remote VPN connection"
+    fail_msg: "Info module did not return the requested remote VPN connection"
+  when: first_ext_id | length > 0
+
+- name: Note that no remote VPN connection exists on the cluster
+  ansible.builtin.debug:
+    msg: >-
+      No remote VPN connection is configured on cluster {{ cluster_ext_id }};
+      single-get scenarios (Phase 3/4) are skipped as designed.
+  when: first_ext_id | length == 0
+
+###############################################################################
+# Phase 4 — Get-by-id module.
+###############################################################################
+
+- name: Get single remote VPN connection via the get-by-id module
+  nutanix.ncp.ntnx_remote_vpn_connections_by_cluster_id_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ first_ext_id }}"
+  register: get_single
+  when: first_ext_id | length > 0
+  ignore_errors: true
+
+- name: Verify single-get via the get-by-id module
+  ansible.builtin.assert:
+    that:
+      - get_single is defined
+      - get_single.changed == false
+      - get_single.failed == false
+      - get_single.response is defined
+      - get_single.response.ext_id == first_ext_id
+      - get_single.ext_id == first_ext_id
+    success_msg: "Get-by-id module returned the requested remote VPN connection"
+    fail_msg: "Get-by-id module did not return the requested remote VPN connection"
+  when: first_ext_id | length > 0
+
+- name: Cross-check that info-single and get-single return the same payload
+  ansible.builtin.assert:
+    that:
+      - info_single.response.ext_id == get_single.response.ext_id
+      - info_single.response.name == get_single.response.name
+      - info_single.response.cluster_reference == get_single.response.cluster_reference
+    success_msg: "Info-module get and get-by-id module returned matching payloads"
+    fail_msg: "Info-module get and get-by-id module payloads diverged"
+  when: first_ext_id | length > 0
+
+###############################################################################
+# Phase 5 — Negative / error paths.
+###############################################################################
+
+- name: Info list with an invalid cluster_ext_id must fail
+  nutanix.ncp.ntnx_remote_vpn_connections_by_cluster_ids_info_v2:
+    cluster_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: list_bad_cluster
+  ignore_errors: true
+
+- name: Verify info list with invalid cluster_ext_id failed with an error
+  ansible.builtin.assert:
+    that:
+      - list_bad_cluster is defined
+      - list_bad_cluster.changed == false
+      - list_bad_cluster.failed == true
+      - list_bad_cluster.msg is defined
+    success_msg: "Info list with invalid cluster_ext_id failed as expected"
+    fail_msg: "Info list with invalid cluster_ext_id did not fail"
+
+- name: Info get-by-id with an invalid ext_id must fail
+  nutanix.ncp.ntnx_remote_vpn_connections_by_cluster_ids_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: info_bad_ext_id
+  ignore_errors: true
+
+- name: Verify info get-by-id with invalid ext_id failed
+  ansible.builtin.assert:
+    that:
+      - info_bad_ext_id is defined
+      - info_bad_ext_id.changed == false
+      - info_bad_ext_id.failed == true
+      - info_bad_ext_id.msg is defined
+    success_msg: "Info get-by-id with invalid ext_id failed as expected"
+    fail_msg: "Info get-by-id with invalid ext_id did not fail"
+
+- name: Info module with ext_id AND filter must fail (mutually exclusive)
+  nutanix.ncp.ntnx_remote_vpn_connections_by_cluster_ids_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    filter: "name eq 'nope'"
+  register: mx_filter
+  ignore_errors: true
+
+- name: Verify mutually-exclusive ext_id+filter is rejected
+  ansible.builtin.assert:
+    that:
+      - mx_filter is defined
+      - mx_filter.failed == true
+      - "'mutually exclusive' in (mx_filter.msg | default('') | lower)"
+    success_msg: "Ansible correctly rejected ext_id+filter as mutually exclusive"
+    fail_msg: "Ansible did not reject ext_id+filter"
+
+- name: Get-by-id module without ext_id must fail (missing required)
+  nutanix.ncp.ntnx_remote_vpn_connections_by_cluster_id_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: missing_ext_id
+  ignore_errors: true
+
+- name: Verify get-by-id module without ext_id failed on required-arg
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id is defined
+      - missing_ext_id.failed == true
+      - missing_ext_id.msg is defined
+      - "'ext_id' in missing_ext_id.msg"
+    success_msg: "Missing ext_id was correctly rejected"
+    fail_msg: "Missing ext_id was NOT rejected"
+
+- name: Get-by-id module without cluster_ext_id must fail (missing required)
+  nutanix.ncp.ntnx_remote_vpn_connections_by_cluster_id_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: missing_cluster_ext_id
+  ignore_errors: true
+
+- name: Verify get-by-id module without cluster_ext_id failed on required-arg
+  ansible.builtin.assert:
+    that:
+      - missing_cluster_ext_id is defined
+      - missing_cluster_ext_id.failed == true
+      - missing_cluster_ext_id.msg is defined
+      - "'cluster_ext_id' in missing_cluster_ext_id.msg"
+    success_msg: "Missing cluster_ext_id was correctly rejected"
+    fail_msg: "Missing cluster_ext_id was NOT rejected"
+
+- name: Get-by-id module with a bogus cluster_ext_id must fail
+  nutanix.ncp.ntnx_remote_vpn_connections_by_cluster_id_v2:
+    cluster_ext_id: "00000000-0000-0000-0000-000000000000"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: get_bogus_cluster
+  ignore_errors: true
+
+- name: Verify get-by-id with a bogus cluster_ext_id failed with an API error
+  ansible.builtin.assert:
+    that:
+      - get_bogus_cluster is defined
+      - get_bogus_cluster.changed == false
+      - get_bogus_cluster.failed == true
+      - get_bogus_cluster.msg is defined
+    success_msg: "Get-by-id with a bogus cluster_ext_id failed as expected"
+    fail_msg: "Get-by-id with a bogus cluster_ext_id did not fail"
+
+- name: Get-by-id module with a valid cluster_ext_id but bogus ext_id must fail
+  nutanix.ncp.ntnx_remote_vpn_connections_by_cluster_id_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: get_bogus_ext_id
+  ignore_errors: true
+
+- name: Verify get-by-id with bogus ext_id failed with an API error
+  ansible.builtin.assert:
+    that:
+      - get_bogus_ext_id is defined
+      - get_bogus_ext_id.changed == false
+      - get_bogus_ext_id.failed == true
+      - get_bogus_ext_id.msg is defined
+    success_msg: "Get-by-id with bogus ext_id failed as expected"
+    fail_msg: "Get-by-id with bogus ext_id did not fail"
+
+- name: Info list check_mode dry-run passes (module is read-only)
+  nutanix.ncp.ntnx_remote_vpn_connections_by_cluster_ids_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  check_mode: true
+  register: info_check_mode
+  ignore_errors: true
+
+- name: Verify info check_mode returns no changes
+  ansible.builtin.assert:
+    that:
+      - info_check_mode is defined
+      - info_check_mode.changed == false
+    success_msg: "Info module check_mode did not report any change"
+    fail_msg: "Info module check_mode reported a change unexpectedly"
+
+- name: End Remote VPN Connections By Cluster Id tests
+  ansible.builtin.debug:
+    msg: End Remote VPN Connections By Cluster Id tests

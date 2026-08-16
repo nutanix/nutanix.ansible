@@ -170,3 +170,33 @@ def get_virtual_switch(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching virtual switch info using ext_id",
         )
+
+
+def get_remote_vpn_connection_by_cluster_id(
+    module, api_instance, cluster_ext_id, ext_id
+):
+    """
+    Fetch a remote VPN connection for a given Prism Central cluster by ext_id.
+
+    Args:
+        module: Ansible module
+        api_instance: RemoteEntitiesApi instance from ntnx_networking_py_client sdk
+        cluster_ext_id (str): Prism Central cluster external ID
+        ext_id (str): remote VPN connection external ID
+
+    return:
+        info (object): remote VPN connection info
+    """
+    try:
+        return api_instance.get_remote_vpn_connection_for_cluster_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg=(
+                "Api Exception raised while fetching remote VPN connection info "
+                "using cluster ext_id and ext_id"
+            ),
+        )
