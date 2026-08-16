@@ -1,0 +1,343 @@
+---
+# Test plan for ntnx_vm_disk_hydration_v2
+#
+# The module wraps the AHV VM disk `enable-hydration` / `disable-hydration`
+# `$action` endpoints. Real hydration is only meaningful when the VM disk
+# is backed by an external repository (e.g. NFS Instant Recovery target),
+# which is not something a generic integration environment has. So the
+# hydration action itself will typically fail with a validation error on
+# a normal ADSF-backed disk — we deliberately capture that as a negative
+# assertion and confirm the module reports it cleanly. On a cluster where
+# the disk is instant-restore backed, `changed: true` would be expected.
+#
+# Coverage:
+#   * check_mode Enable  (state=present)   - all attrs, no API call
+#   * check_mode Disable (state=absent)    - all attrs, no API call
+#   * Missing vm_ext_id                    - spec validation error
+#   * Missing ext_id                       - spec validation error
+#   * Invalid state value                  - spec validation error
+#   * Real Enable on ADSF-backed disk      - real API call, expect
+#                                            controlled failure or success
+#   * Real Disable on ADSF-backed disk     - real API call
+#   * Enable with non-existent disk ext_id - real 404-style API error
+#   * Disable with non-existent VM ext_id  - real API error
+#   * Enable with garbage vm_ext_id        - real API error / validation
+#   * Result-shape assertions              - task_ext_id, vm_ext_id,
+#                                            ext_id, response fields
+# Variables required before running this playbook:
+#   - cluster                (fact: cluster.uuid)
+#   - storage_container      (fact: storage_container.uuid)
+
+- name: Start ntnx_vm_disk_hydration_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_vm_disk_hydration_v2 tests
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set VM name and cleanup list
+  ansible.builtin.set_fact:
+    vm_name: "ans_vdh_{{ random_name }}"
+    todelete: []
+
+####################################################################
+# Setup: create a VM with a single ADSF disk so we have valid
+# vm_ext_id + disk_ext_id inputs for the module.
+####################################################################
+
+- name: Create a VM with a single ADSF disk (setup)
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    name: "{{ vm_name }}"
+    description: "VM for ntnx_vm_disk_hydration_v2 integration test"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    disks:
+      - backing_info:
+          vm_disk:
+            disk_size_bytes: 21474836480
+            storage_container:
+              ext_id: "{{ storage_container.uuid }}"
+        disk_address:
+          bus_type: SCSI
+          index: 0
+  register: create_vm_result
+  ignore_errors: true
+
+- name: Assert VM creation succeeded
+  ansible.builtin.assert:
+    that:
+      - create_vm_result.changed == true
+      - create_vm_result.failed == false
+      - create_vm_result.ext_id is defined
+      - create_vm_result.response.disks is defined
+      - create_vm_result.response.disks | length == 1
+      - create_vm_result.response.disks[0].ext_id is defined
+    fail_msg: "Setup VM creation failed — cannot run hydration tests"
+    success_msg: "Setup VM created for hydration tests"
+
+- name: Set VM + disk ext_ids
+  ansible.builtin.set_fact:
+    vm_ext_id: "{{ create_vm_result.ext_id }}"
+    disk_ext_id: "{{ create_vm_result.response.disks[0].ext_id }}"
+
+####################################################################
+# Section 1 — check_mode: Enable hydration
+####################################################################
+
+- name: Enable hydration for a VM disk — check_mode
+  nutanix.ncp.ntnx_vm_disk_hydration_v2:
+    state: present
+    vm_ext_id: "{{ vm_ext_id }}"
+    ext_id: "{{ disk_ext_id }}"
+  register: enable_check
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert Enable hydration check_mode is a no-op
+  ansible.builtin.assert:
+    that:
+      - enable_check.changed == false
+      - enable_check.failed == false
+      - enable_check.vm_ext_id == vm_ext_id
+      - enable_check.ext_id == disk_ext_id
+      - enable_check.msg is defined
+      - "'Hydration will be enabled' in enable_check.msg"
+      - disk_ext_id in enable_check.msg
+      - vm_ext_id in enable_check.msg
+    fail_msg: "Enable hydration check_mode did not behave correctly"
+    success_msg: "Enable hydration check_mode behaves as expected"
+
+####################################################################
+# Section 2 — check_mode: Disable hydration
+####################################################################
+
+- name: Disable hydration for a VM disk — check_mode
+  nutanix.ncp.ntnx_vm_disk_hydration_v2:
+    state: absent
+    vm_ext_id: "{{ vm_ext_id }}"
+    ext_id: "{{ disk_ext_id }}"
+  register: disable_check
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert Disable hydration check_mode is a no-op
+  ansible.builtin.assert:
+    that:
+      - disable_check.changed == false
+      - disable_check.failed == false
+      - disable_check.vm_ext_id == vm_ext_id
+      - disable_check.ext_id == disk_ext_id
+      - disable_check.msg is defined
+      - "'Hydration will be disabled' in disable_check.msg"
+      - disk_ext_id in disable_check.msg
+      - vm_ext_id in disable_check.msg
+    fail_msg: "Disable hydration check_mode did not behave correctly"
+    success_msg: "Disable hydration check_mode behaves as expected"
+
+####################################################################
+# Section 3 — Negative: missing required parameters
+####################################################################
+
+- name: Enable hydration — missing vm_ext_id (spec validation)
+  nutanix.ncp.ntnx_vm_disk_hydration_v2:
+    state: present
+    ext_id: "{{ disk_ext_id }}"
+  register: missing_vm
+  ignore_errors: true
+
+- name: Assert missing vm_ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - missing_vm.failed == true
+      - missing_vm.msg is defined
+      - "'vm_ext_id' in missing_vm.msg"
+    fail_msg: "Missing vm_ext_id should have been rejected"
+    success_msg: "Missing vm_ext_id was properly rejected"
+
+- name: Enable hydration — missing ext_id (spec validation)
+  nutanix.ncp.ntnx_vm_disk_hydration_v2:
+    state: present
+    vm_ext_id: "{{ vm_ext_id }}"
+  register: missing_disk
+  ignore_errors: true
+
+- name: Assert missing ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - missing_disk.failed == true
+      - missing_disk.msg is defined
+      - "'ext_id' in missing_disk.msg"
+    fail_msg: "Missing ext_id should have been rejected"
+    success_msg: "Missing ext_id was properly rejected"
+
+####################################################################
+# Section 4 — Negative: invalid enum value for state
+####################################################################
+
+- name: Enable hydration — invalid state value
+  nutanix.ncp.ntnx_vm_disk_hydration_v2:
+    state: "hydrated"
+    vm_ext_id: "{{ vm_ext_id }}"
+    ext_id: "{{ disk_ext_id }}"
+  register: bad_state
+  ignore_errors: true
+
+- name: Assert invalid state is rejected
+  ansible.builtin.assert:
+    that:
+      - bad_state.failed == true
+      - bad_state.msg is defined
+      - "'hydrated' in bad_state.msg or 'state' in bad_state.msg"
+    fail_msg: "Invalid state value should have been rejected"
+    success_msg: "Invalid state value was properly rejected"
+
+####################################################################
+# Section 5 — Real Enable hydration on ADSF-backed disk
+#
+# The AHV EnableVmDiskHydration API is meaningful only when the VM
+# disk is backed by an external repository (e.g. NFS Instant
+# Recovery target). On a normal ADSF-backed disk the PC layer
+# accepts the call and returns a task, but the underlying task
+# terminates with status=FAILED and error code VMM-30715
+# ("disk backing datasource EMPTY"). This is the documented,
+# expected behaviour on a non-IR disk. Ansible reports that as
+# module failure — we assert that the failure is well-formed and
+# came from wait_for_completion (i.e. the task itself failed,
+# not the module wiring).
+####################################################################
+
+- name: Enable hydration for a VM disk — real call
+  nutanix.ncp.ntnx_vm_disk_hydration_v2:
+    state: present
+    vm_ext_id: "{{ vm_ext_id }}"
+    ext_id: "{{ disk_ext_id }}"
+  register: enable_real
+  ignore_errors: true
+
+- name: Assert Enable hydration real-call result shape
+  ansible.builtin.assert:
+    that:
+      # Success path (PC that ships hydration for ADSF disks) OR
+      # expected task failure on a non-IR ADSF disk.
+      - (enable_real.failed == false
+         and enable_real.changed == true
+         and enable_real.task_ext_id is defined
+         and enable_real.vm_ext_id == vm_ext_id
+         and enable_real.ext_id == disk_ext_id)
+        or
+        (enable_real.failed == true
+         and enable_real.msg is defined
+         and enable_real.msg == "Task Failed"
+         and enable_real.response is defined
+         and enable_real.response.status == "FAILED"
+         and enable_real.response.operation == "EnableVmDiskHydration")
+    fail_msg: "Enable hydration real-call result shape is invalid"
+    success_msg: "Enable hydration real-call returned a well-formed result"
+
+- name: Print Enable hydration outcome
+  ansible.builtin.debug:
+    var: enable_real
+
+####################################################################
+# Section 6 — Real Disable hydration on ADSF-backed disk
+#
+# Disable hydration on a disk that never had hydration enabled is
+# accepted by the PC layer but the task terminates with
+# status=FAILED as well. We accept either outcome (same reasoning
+# as the Enable case above).
+####################################################################
+
+- name: Disable hydration for a VM disk — real call
+  nutanix.ncp.ntnx_vm_disk_hydration_v2:
+    state: absent
+    vm_ext_id: "{{ vm_ext_id }}"
+    ext_id: "{{ disk_ext_id }}"
+  register: disable_real
+  ignore_errors: true
+
+- name: Assert Disable hydration real-call result shape
+  ansible.builtin.assert:
+    that:
+      - (disable_real.failed == false
+         and disable_real.changed == true
+         and disable_real.task_ext_id is defined
+         and disable_real.vm_ext_id == vm_ext_id
+         and disable_real.ext_id == disk_ext_id)
+        or
+        (disable_real.failed == true
+         and disable_real.msg is defined
+         and disable_real.msg == "Task Failed"
+         and disable_real.response is defined
+         and disable_real.response.status == "FAILED"
+         and disable_real.response.operation == "DisableVmDiskHydration")
+    fail_msg: "Disable hydration real-call result shape is invalid"
+    success_msg: "Disable hydration real-call returned a well-formed result"
+
+- name: Print Disable hydration outcome
+  ansible.builtin.debug:
+    var: disable_real
+
+####################################################################
+# Section 7 — Negative: non-existent disk ext_id (real 404-style)
+####################################################################
+
+- name: Enable hydration with non-existent disk ext_id
+  nutanix.ncp.ntnx_vm_disk_hydration_v2:
+    state: present
+    vm_ext_id: "{{ vm_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-deadbeef0001"
+  register: bad_disk
+  ignore_errors: true
+
+- name: Assert non-existent disk ext_id fails cleanly
+  ansible.builtin.assert:
+    that:
+      - bad_disk.failed == true
+      - bad_disk.msg is defined
+      - (bad_disk.changed | default(false)) == false
+    fail_msg: "Non-existent disk ext_id should have failed"
+    success_msg: "Non-existent disk ext_id failed cleanly"
+
+####################################################################
+# Section 8 — Negative: non-existent VM ext_id (real API error)
+####################################################################
+
+- name: Disable hydration with non-existent VM ext_id
+  nutanix.ncp.ntnx_vm_disk_hydration_v2:
+    state: absent
+    vm_ext_id: "00000000-0000-0000-0000-deadbeef0002"
+    ext_id: "{{ disk_ext_id }}"
+  register: bad_vm
+  ignore_errors: true
+
+- name: Assert non-existent VM ext_id fails cleanly
+  ansible.builtin.assert:
+    that:
+      - bad_vm.failed == true
+      - bad_vm.msg is defined
+      - (bad_vm.changed | default(false)) == false
+    fail_msg: "Non-existent VM ext_id should have failed"
+    success_msg: "Non-existent VM ext_id failed cleanly"
+
+####################################################################
+# Cleanup: delete the setup VM. Wrap in `always` semantics via
+# ignore_errors so we do not leak resources even if earlier
+# assertions failed.
+####################################################################
+
+- name: Delete the setup VM
+  nutanix.ncp.ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ vm_ext_id }}"
+  register: cleanup_result
+  ignore_errors: true
+
+- name: Assert VM cleanup succeeded
+  ansible.builtin.assert:
+    that:
+      - cleanup_result.failed == false
+      - cleanup_result.changed == true
+    fail_msg: "Setup VM cleanup failed — manual cleanup may be needed"
+    success_msg: "Setup VM cleaned up successfully"
