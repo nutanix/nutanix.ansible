@@ -1,0 +1,57 @@
+---
+# Summary:
+# This playbook demonstrates fetching time-series statistics for a Nutanix
+# Volume Group in Nutanix Prism Central using the v4 stats API. It picks an
+# existing Volume Group on the cluster (rather than a freshly created one,
+# because the stats pipeline does not report data for empty VGs), queries
+# its stats twice (minimal + with all attributes), and prints the response.
+
+- name: Volume Group Stats playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Get start time (2 hours ago) in extended ISO-8601 format
+      ansible.builtin.command: date -u -d "-7200 seconds" +"%Y-%m-%dT%H:%M:%S.%3NZ"
+      register: start_time
+      changed_when: false
+
+    - name: Get end time (now) in extended ISO-8601 format
+      ansible.builtin.command: date -u +"%Y-%m-%dT%H:%M:%S.%3NZ"
+      register: end_time
+      changed_when: false
+
+    - name: Discover existing Volume Groups
+      nutanix.ncp.ntnx_volume_groups_info_v2:
+        limit: 5
+      register: existing_vgs
+
+    - name: Pick the first VG
+      ansible.builtin.set_fact:
+        vg_ext_id: "{{ existing_vgs.response[0].ext_id }}"
+
+    - name: Fetch Volume Group stats with minimum params
+      nutanix.ncp.ntnx_volume_group_stat_v2:
+        ext_id: "{{ vg_ext_id }}"
+        start_time: "{{ start_time.stdout }}"
+        end_time: "{{ end_time.stdout }}"
+      register: vg_stats_min
+
+    - name: Fetch Volume Group stats with all attributes
+      nutanix.ncp.ntnx_volume_group_stat_v2:
+        ext_id: "{{ vg_ext_id }}"
+        start_time: "{{ start_time.stdout }}"
+        end_time: "{{ end_time.stdout }}"
+        sampling_interval: 120
+        stat_type: "AVG"
+        select: "*"
+      register: vg_stats_full
+
+    - name: Show Volume Group stats
+      ansible.builtin.debug:
+        var: vg_stats_full.response

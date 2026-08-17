@@ -146,6 +146,7 @@ action_groups:
     - ntnx_categories_info_v2
     - ntnx_volume_groups_v2
     - ntnx_volume_groups_info_v2
+    - ntnx_volume_group_stat_v2
     - ntnx_volume_groups_disks_v2
     - ntnx_volume_groups_disks_info_v2
     - ntnx_volume_groups_vms_v2

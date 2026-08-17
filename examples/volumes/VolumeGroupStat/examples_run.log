@@ -1,0 +1,34 @@
+
+PLAY [Volume Group Stats playbook] *********************************************
+
+TASK [Get start time (2 hours ago) in extended ISO-8601 format] ****************
+ok: [localhost]
+
+TASK [Get end time (now) in extended ISO-8601 format] **************************
+ok: [localhost]
+
+TASK [Discover existing Volume Groups] *****************************************
+ok: [localhost]
+
+TASK [Pick the first VG] *******************************************************
+ok: [localhost]
+
+TASK [Fetch Volume Group stats with minimum params] ****************************
+ok: [localhost]
+
+TASK [Fetch Volume Group stats with all attributes] ****************************
+ok: [localhost]
+
+TASK [Show Volume Group stats (minimum params)] ********************************
+ok: [localhost] => {
+    "msg": "min_params ext_id=94f36661-3188-3ab6-8adb-d84dbbce2f6b response.volume_group_ext_id=94f36661-3188-3ab6-8adb-d84dbbce2f6b num_iops_samples=0"
+}
+
+TASK [Show Volume Group stats (all attributes)] ********************************
+ok: [localhost] => {
+    "msg": "full_params ext_id=94f36661-3188-3ab6-8adb-d84dbbce2f6b response.volume_group_ext_id=94f36661-3188-3ab6-8adb-d84dbbce2f6b num_iops_samples=0"
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=8    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
