@@ -23,6 +23,11 @@ options:
       - The external ID of the cluster to fetch SNMP config from.
     type: str
     required: true
+  read_timeout:
+        description: Read timeout in milliseconds for API calls.
+        type: int
+        required: false
+        default: 30000
 author:
   - George Ghawali (@george-ghawali)
 extends_documentation_fragment:
