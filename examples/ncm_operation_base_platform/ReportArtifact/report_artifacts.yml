@@ -1,0 +1,85 @@
+---
+# Summary:
+# This playbook demonstrates the full ReportArtifact workflow:
+# 1. Create a ReportArtifact (LOGO / PNG metadata + upload binary).
+# 2. Update the artifact (re-upload the binary via ext_id).
+# 3. Get the artifact by ext_id.
+# 4. List all artifacts, list with filter, list with limit.
+# 5. Delete (reports skipped: the opsmgmt v4 API does not support delete).
+
+- name: Nutanix opsmgmt ReportArtifact playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        report_artifact_logo_path: "/tmp/report_logo.png"
+        report_artifact_logo_updated_path: "/tmp/report_logo_updated.png"
+        # 1x1 transparent PNG (base64 encoded).
+        report_artifact_logo_b64: >-
+          iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAA
+          SUVORK5CYII=
+        # A second tiny PNG for update flow.
+        report_artifact_logo_updated_b64: >-
+          iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAA
+          SUVORK5CYII=
+
+    - name: Ensure a small PNG payload exists (create sample logo)
+      ansible.builtin.command:
+        cmd: bash -c 'echo -n "{{ report_artifact_logo_b64 | replace(" ", "") }}" | base64 -d > "{{ report_artifact_logo_path }}"'
+      changed_when: true
+
+    - name: Ensure a second small PNG payload exists (for update)
+      ansible.builtin.command:
+        cmd: bash -c 'echo -n "{{ report_artifact_logo_updated_b64 | replace(" ", "") }}" | base64 -d > "{{ report_artifact_logo_updated_path }}"'
+      changed_when: true
+
+    - name: Create ReportArtifact (LOGO / PNG) with binary upload
+      nutanix.ncp.ntnx_report_artifact_v2:
+        state: present
+        type: LOGO
+        file_type: PNG
+        file_path: "{{ report_artifact_logo_path }}"
+      register: create_result
+
+    - name: Set report_artifact_ext_id
+      ansible.builtin.set_fact:
+        report_artifact_ext_id: "{{ create_result.ext_id }}"
+
+    - name: Update ReportArtifact by re-uploading a new binary
+      nutanix.ncp.ntnx_report_artifact_v2:
+        state: present
+        ext_id: "{{ report_artifact_ext_id }}"
+        file_path: "{{ report_artifact_logo_updated_path }}"
+      register: update_result
+
+    - name: Get ReportArtifact using ext_id
+      nutanix.ncp.ntnx_report_artifacts_info_v2:
+        ext_id: "{{ report_artifact_ext_id }}"
+      register: get_result
+
+    - name: List all ReportArtifacts
+      nutanix.ncp.ntnx_report_artifacts_info_v2:
+      register: list_result
+
+    - name: List ReportArtifacts with filter
+      nutanix.ncp.ntnx_report_artifacts_info_v2:
+        filter: "type eq 'LOGO'"
+      register: filter_result
+
+    - name: List ReportArtifacts with limit
+      nutanix.ncp.ntnx_report_artifacts_info_v2:
+        limit: 1
+      register: limit_result
+
+    - name: Delete ReportArtifact (opsmgmt v4 API does not support delete)
+      nutanix.ncp.ntnx_report_artifact_v2:
+        state: absent
+        ext_id: "{{ report_artifact_ext_id }}"
+      register: delete_result

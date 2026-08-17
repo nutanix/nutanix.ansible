@@ -1,0 +1,22 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Nutanix opsmgmt ReportArtifact playbook] *********************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"report_artifact_logo_b64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAA SUVORK5CYII=", "report_artifact_logo_path": "/tmp/report_logo.png", "report_artifact_logo_updated_b64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAA SUVORK5CYII=", "report_artifact_logo_updated_path": "/tmp/report_logo_updated.png"}, "changed": false}
+
+TASK [Ensure a small PNG payload exists (create sample logo)] ******************
+changed: [localhost] => {"changed": true, "cmd": ["bash", "-c", "echo -n \"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=\" | base64 -d > \"/tmp/report_logo.png\""], "delta": "0:00:00.006335", "end": "2026-07-21 07:24:11.197372", "msg": "", "rc": 0, "start": "2026-07-21 07:24:11.191037", "stderr": "", "stderr_lines": [], "stdout": "", "stdout_lines": []}
+
+TASK [Ensure a second small PNG payload exists (for update)] *******************
+changed: [localhost] => {"changed": true, "cmd": ["bash", "-c", "echo -n \"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=\" | base64 -d > \"/tmp/report_logo_updated.png\""], "delta": "0:00:00.006771", "end": "2026-07-21 07:24:11.427172", "msg": "", "rc": 0, "start": "2026-07-21 07:24:11.420401", "stderr": "", "stderr_lines": [], "stdout": "", "stdout_lines": []}
+
+TASK [Create ReportArtifact (LOGO / PNG) with binary upload] *******************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while creating report artifact", "response": {"message": "The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again."}, "status": 404}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=3    changed=2    unreachable=0    failed=1    skipped=0    rescued=0    ignored=0   
+
