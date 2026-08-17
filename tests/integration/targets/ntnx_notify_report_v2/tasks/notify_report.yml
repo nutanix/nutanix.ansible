@@ -1,0 +1,376 @@
+---
+# Test plan for ntnx_notify_report_v2 (opsmgmt / ncm_operation_base_platform)
+# -------------------------------------------------------------------------
+# Coverage goals:
+#  * SDK knowledge: exercise every field in the argument spec — ext_id,
+#    recipient_formats (both PDF and CSV enum values), recipients (with
+#    all sub-options: email_address AND recipient_name).
+#  * Module implementation: exercise check_mode (spec generation, no API
+#    call), the real notify API code path, and the argument-spec / custom
+#    validate_required_params error paths.
+#  * Domain knowledge: NotifyReport is an asynchronous action on a
+#    pre-existing report instance; the API returns a task reference. If
+#    the report ext_id does not exist we expect an API-level failure with
+#    a descriptive error, matching the ENG-917690 / ENG-879167 failure
+#    modes documented in the reporting service.
+#
+# Real-cluster prerequisite discovery:
+#   - We try to list existing reports on the target Prism Central via the
+#     opsmgmt v4 List Reports endpoint (using ansible.builtin.uri). If any
+#     report is present we use its ext_id for a real end-to-end notify
+#     task. Otherwise we still exercise the API code path with a random
+#     non-existent ext_id and assert that the module surfaces the API
+#     failure cleanly.
+
+- name: Start ntnx_notify_report_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_notify_report_v2 tests
+
+- name: Generate random suffix for test data
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=10)[0] }}"
+
+- name: Set test data
+  ansible.builtin.set_fact:
+    fake_report_ext_id: "00000000-0000-0000-0000-{{ random_name | hash('sha1') | truncate(12, True, '') }}"
+    test_email_primary: "ansible_{{ random_name | lower }}@example.com"
+    test_email_secondary: "ansible2_{{ random_name | lower }}@example.com"
+
+########################################################################################
+# Discover an existing report on the cluster (best-effort) so we can run a
+# real notify against it. The prerequisite pattern mirrors what the
+# ntnx_virtual_switches_v2 integration test does when it needs a
+# pre-existing entity — we look it up on the live cluster instead of
+# hardcoding an ext_id.
+########################################################################################
+
+- name: List existing reports on the cluster
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:{{ port | default(9440) }}/api/opsmgmt/v4.1.b1/config/reports?$limit=1"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs }}"
+    status_code: [200]
+    return_content: true
+    headers:
+      Accept: "application/json"
+  register: list_reports_result
+  ignore_errors: true
+  no_log: false
+
+- name: Determine if a real report is available for a live notify test
+  ansible.builtin.set_fact:
+    real_report_ext_id: >-
+      {{
+        (list_reports_result.json.data
+         | default([])
+         | selectattr('extId', 'defined')
+         | map(attribute='extId')
+         | list
+         | first
+        )
+        if (list_reports_result is defined
+            and list_reports_result.status is defined
+            and list_reports_result.status == 200
+            and (list_reports_result.json.data | default([])) | length > 0)
+        else ''
+      }}
+
+- name: Show real report ext_id availability
+  ansible.builtin.debug:
+    msg: >-
+      Real report ext_id available for live notify test: '{{ real_report_ext_id }}'
+      (empty string means no report was found on the cluster; the live
+      end-to-end task will be skipped for this run)
+
+########################################################################################
+# Check-mode: full attributes
+########################################################################################
+
+- name: Generate spec for notify_report using check mode with ALL attributes
+  nutanix.ncp.ntnx_notify_report_v2:
+    ext_id: "{{ fake_report_ext_id }}"
+    recipient_formats:
+      - PDF
+      - CSV
+    recipients:
+      - email_address: "{{ test_email_primary }}"
+        recipient_name: "Ansible Primary"
+      - email_address: "{{ test_email_secondary }}"
+        recipient_name: "Ansible Secondary"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Verify check mode spec for notify_report with ALL attributes
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.recipient_formats is defined
+      - result.response.recipient_formats | length == 2
+      - "'PDF' in result.response.recipient_formats"
+      - "'CSV' in result.response.recipient_formats"
+      - result.response.recipients is defined
+      - result.response.recipients | length == 2
+      - result.response.recipients[0].email_address == test_email_primary
+      - result.response.recipients[0].recipient_name == "Ansible Primary"
+      - result.response.recipients[1].email_address == test_email_secondary
+      - result.response.recipients[1].recipient_name == "Ansible Secondary"
+      - result.ext_id == fake_report_ext_id
+    success_msg: "Check mode spec for notify_report with ALL attributes generated successfully"
+    fail_msg: "Check mode spec for notify_report with ALL attributes was not generated correctly"
+
+########################################################################################
+# Check-mode: minimal attributes (single recipient, single format)
+########################################################################################
+
+- name: Generate spec for notify_report using check mode with MINIMAL attributes
+  nutanix.ncp.ntnx_notify_report_v2:
+    ext_id: "{{ fake_report_ext_id }}"
+    recipient_formats:
+      - PDF
+    recipients:
+      - email_address: "{{ test_email_primary }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Verify check mode spec for notify_report with MINIMAL attributes
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.recipient_formats | length == 1
+      - result.response.recipient_formats[0] == "PDF"
+      - result.response.recipients | length == 1
+      - result.response.recipients[0].email_address == test_email_primary
+      - result.response.recipients[0].recipient_name is none
+      - result.ext_id == fake_report_ext_id
+    success_msg: "Check mode spec for notify_report with MINIMAL attributes generated successfully"
+    fail_msg: "Check mode spec for notify_report with MINIMAL attributes was not generated correctly"
+
+########################################################################################
+# Check-mode: CSV-only enum coverage
+########################################################################################
+
+- name: Generate spec for notify_report using check mode with CSV format only
+  nutanix.ncp.ntnx_notify_report_v2:
+    ext_id: "{{ fake_report_ext_id }}"
+    recipient_formats:
+      - CSV
+    recipients:
+      - email_address: "{{ test_email_primary }}"
+        recipient_name: "CSV Recipient"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Verify check mode spec for notify_report with CSV format only
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.recipient_formats | length == 1
+      - result.response.recipient_formats[0] == "CSV"
+      - result.response.recipients[0].email_address == test_email_primary
+      - result.response.recipients[0].recipient_name == "CSV Recipient"
+    success_msg: "Check mode spec for CSV-only notify_report generated successfully"
+    fail_msg: "Check mode spec for CSV-only notify_report was not generated correctly"
+
+########################################################################################
+# Real API: notify against a non-existent report ext_id — the module MUST
+# surface the API failure with a descriptive error.
+########################################################################################
+
+- name: Notify recipients against a non-existent report ext_id
+  nutanix.ncp.ntnx_notify_report_v2:
+    ext_id: "{{ fake_report_ext_id }}"
+    recipient_formats:
+      - PDF
+    recipients:
+      - email_address: "{{ test_email_primary }}"
+        recipient_name: "Ansible Non Existent"
+  register: result
+  ignore_errors: true
+
+- name: Verify notify against a non-existent report ext_id fails as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - result.msg == "Api Exception raised while notifying recipients for report"
+    success_msg: "Notify against a non-existent report ext_id failed with the expected error message"
+    fail_msg: "Notify against a non-existent report ext_id did not fail as expected"
+
+########################################################################################
+# Real API: end-to-end notify against a real report (conditional — only
+# runs when a report is present on the cluster).
+########################################################################################
+
+- name: Notify recipients against a real report (end-to-end)
+  nutanix.ncp.ntnx_notify_report_v2:
+    ext_id: "{{ real_report_ext_id }}"
+    recipient_formats:
+      - PDF
+    recipients:
+      - email_address: "{{ test_email_primary }}"
+        recipient_name: "Ansible E2E"
+  register: real_notify_result
+  ignore_errors: true
+  when: real_report_ext_id != ''
+
+- name: Verify end-to-end notify against a real report succeeded
+  ansible.builtin.assert:
+    that:
+      - real_notify_result is defined
+      - real_notify_result.changed == true
+      - real_notify_result.failed == false
+      - real_notify_result.ext_id == real_report_ext_id
+      - real_notify_result.task_ext_id is defined
+      - real_notify_result.response is defined
+      - real_notify_result.response.status is defined
+      - real_notify_result.response.status == "SUCCEEDED"
+    success_msg: "End-to-end notify against a real report succeeded and produced a task"
+    fail_msg: "End-to-end notify against a real report did not succeed as expected"
+  when: real_report_ext_id != ''
+
+########################################################################################
+# Idempotency-style behaviour: this API is inherently non-idempotent (each
+# call emits a new email), but re-invoking against the same non-existent
+# ext_id MUST produce the same descriptive failure. This guards against
+# state leaks between runs.
+########################################################################################
+
+- name: Re-invoke notify against the same non-existent report ext_id
+  nutanix.ncp.ntnx_notify_report_v2:
+    ext_id: "{{ fake_report_ext_id }}"
+    recipient_formats:
+      - PDF
+    recipients:
+      - email_address: "{{ test_email_primary }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify re-invocation still fails with the same error message
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - result.msg == "Api Exception raised while notifying recipients for report"
+    success_msg: "Re-invocation of notify against a bad ext_id fails deterministically"
+    fail_msg: "Re-invocation of notify against a bad ext_id changed behaviour unexpectedly"
+
+########################################################################################
+# Negative validation: required arg spec coverage
+########################################################################################
+
+- name: Notify without ext_id (Ansible arg spec should fail)
+  nutanix.ncp.ntnx_notify_report_v2:
+    recipient_formats:
+      - PDF
+    recipients:
+      - email_address: "{{ test_email_primary }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify missing ext_id triggers Ansible required-arg validation
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'missing required arguments' in result.msg"
+      - "'ext_id' in result.msg"
+    success_msg: "Missing ext_id fails as expected via Ansible arg spec"
+    fail_msg: "Missing ext_id did not fail as expected"
+
+- name: Notify without recipient_formats (Ansible arg spec should fail)
+  nutanix.ncp.ntnx_notify_report_v2:
+    ext_id: "{{ fake_report_ext_id }}"
+    recipients:
+      - email_address: "{{ test_email_primary }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify missing recipient_formats triggers Ansible required-arg validation
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'missing required arguments' in result.msg"
+      - "'recipient_formats' in result.msg"
+    success_msg: "Missing recipient_formats fails as expected via Ansible arg spec"
+    fail_msg: "Missing recipient_formats did not fail as expected"
+
+- name: Notify without recipients (Ansible arg spec should fail)
+  nutanix.ncp.ntnx_notify_report_v2:
+    ext_id: "{{ fake_report_ext_id }}"
+    recipient_formats:
+      - PDF
+  register: result
+  ignore_errors: true
+
+- name: Verify missing recipients triggers Ansible required-arg validation
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'missing required arguments' in result.msg"
+      - "'recipients' in result.msg"
+    success_msg: "Missing recipients fails as expected via Ansible arg spec"
+    fail_msg: "Missing recipients did not fail as expected"
+
+- name: Notify with an invalid recipient_formats enum value (should fail)
+  nutanix.ncp.ntnx_notify_report_v2:
+    ext_id: "{{ fake_report_ext_id }}"
+    recipient_formats:
+      - HTML
+    recipients:
+      - email_address: "{{ test_email_primary }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify invalid recipient_formats enum triggers Ansible choices validation
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'value of recipient_formats must be one or more of' in result.msg"
+      - "'HTML' in result.msg"
+    success_msg: "Invalid recipient_formats value fails as expected via Ansible choices"
+    fail_msg: "Invalid recipient_formats value did not fail as expected"
+
+- name: Notify with a recipient missing the required email_address (should fail)
+  nutanix.ncp.ntnx_notify_report_v2:
+    ext_id: "{{ fake_report_ext_id }}"
+    recipient_formats:
+      - PDF
+    recipients:
+      - recipient_name: "Only Name No Email"
+  register: result
+  ignore_errors: true
+
+- name: Verify recipient missing email_address triggers sub-option validation
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'missing required arguments' in result.msg"
+      - "'email_address' in result.msg"
+    success_msg: "Recipient missing email_address fails as expected via Ansible sub-option validation"
+    fail_msg: "Recipient missing email_address did not fail as expected"

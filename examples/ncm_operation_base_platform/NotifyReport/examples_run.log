@@ -1,0 +1,21 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+Using /tmp/persistent_ncp_3344827/ansible.cfg as config file
+
+PLAY [Notify Report playbook] **************************************************
+
+TASK [Setting variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"report_ext_id": "9a1c8dfe-9c40-4c5f-8a5e-6f0c3b0d0d75"}, "changed": false}
+
+TASK [Notify a single recipient with the report in PDF format] *****************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while notifying recipients for report", "response": {"message": "The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again."}, "status": 404}
+...ignoring
+
+TASK [Notify multiple recipients with the report in PDF and CSV formats] *******
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while notifying recipients for report", "response": {"message": "The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again."}, "status": 404}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=2   
+

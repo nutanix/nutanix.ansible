@@ -1,0 +1,53 @@
+---
+# Summary:
+# This playbook demonstrates how to notify recipients about a previously
+# generated report in Nutanix Prism Central using the ncm_operation_base_platform
+# (opsmgmt) v4 API. It shows how to:
+#   1. Notify a single recipient with the report in a single format (PDF)
+#   2. Notify multiple recipients with the report in multiple formats (PDF, CSV)
+#
+# Prerequisite:
+#   - A generated report instance must already exist. Its UUID goes into
+#     `report_ext_id` below.
+#   - Prism Central must have a valid SMTP server configured.
+#   - The user invoking this playbook must have the
+#     `OpsMgmt:Notify_Recipients_Report` permission.
+
+- name: Notify Report playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting variables
+      ansible.builtin.set_fact:
+        report_ext_id: "9a1c8dfe-9c40-4c5f-8a5e-6f0c3b0d0d75"
+
+    - name: Notify a single recipient with the report in PDF format
+      nutanix.ncp.ntnx_notify_report_v2:
+        ext_id: "{{ report_ext_id }}"
+        recipient_formats:
+          - PDF
+        recipients:
+          - email_address: "admin@example.com"
+            recipient_name: "Admin User"
+      register: notify_single_result
+      ignore_errors: true
+
+    - name: Notify multiple recipients with the report in PDF and CSV formats
+      nutanix.ncp.ntnx_notify_report_v2:
+        ext_id: "{{ report_ext_id }}"
+        recipient_formats:
+          - PDF
+          - CSV
+        recipients:
+          - email_address: "user1@example.com"
+            recipient_name: "User One"
+          - email_address: "user2@example.com"
+            recipient_name: "User Two"
+      register: notify_multi_result
+      ignore_errors: true
