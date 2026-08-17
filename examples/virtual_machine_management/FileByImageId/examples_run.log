@@ -1,0 +1,37 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [FileByImageId (virtual_machine_management) playbook] *********************
+
+TASK [List DISK_IMAGE images on the cluster (ordered by size ascending)] *******
+ok: [localhost] => {"changed": false, "error": null, "response": [{"category_ext_ids": null, "checksum": null, "cluster_location_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "create_time": "2026-07-02T11:06:09.743896+00:00", "description": "5.3.2", "ext_id": "9ba33498-2b99-4adb-90e6-23a93dc02180", "isSharedWithAllProjects": true, "last_update_time": "2026-07-02T11:06:15.514882+00:00", "links": null, "name": "predeployment_port_vm", "owner_ext_id": "00000000-0000-0000-0000-000000000000", "owner_name": "admin", "placement_policy_status": null, "projectExtId": "00000000-0000-0000-0000-000000000000", "size_bytes": 64487424, "source": null, "tenant_id": null, "type": "DISK_IMAGE"}, {"category_ext_ids": null, "checksum": null, "cluster_location_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "create_time": "2026-07-20T17:59:08.533991+00:00", "description": "Image used to exercise ntnx_file_image_v2", "ext_id": "089d72aa-db93-4cf0-96a3-2de40eec04e4", "isSharedWithAllProjects": true, "last_update_time": "2026-07-20T17:59:08.533991+00:00", "links": null, "name": "LSREhNdwLYTK_file_by_image_id_disk", "owner_ext_id": "00000000-0000-0000-0000-000000000000", "owner_name": "admin", "placement_policy_status": null, "projectExtId": "00000000-0000-0000-0000-000000000000", "size_bytes": 117440512, "source": null, "tenant_id": null, "type": "DISK_IMAGE"}, {"category_ext_ids": null, "checksum": null, "cluster_location_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "create_time": "2026-07-20T18:02:39.903508+00:00", "description": "PE-only image seeded by ntnx_import_image_v2 integration test", "ext_id": "42baad51-20df-4627-8436-26392cdf5f1f", "isSharedWithAllProjects": true, "last_update_time": "2026-07-20T18:02:39.903508+00:00", "links": null, "name": "peonly_ansible_1_HDcxAydVubMg", "owner_ext_id": "00000000-0000-0000-0000-000000000000", "owner_name": "admin", "placement_policy_status": null, "projectExtId": "00000000-0000-0000-0000-000000000000", "size_bytes": 117440512, "source": null, "tenant_id": null, "type": "DISK_IMAGE"}, {"category_ext_ids": null, "checksum": null, "cluster_location_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "create_time": "2026-07-20T18:01:15.953816+00:00", "description": "Image used to exercise ntnx_file_image_v2", "ext_id": "55ac03d9-e272-4fb1-9068-e71851246fa8", "isSharedWithAllProjects": true, "last_update_time": "2026-07-20T18:01:15.953816+00:00", "links": null, "name": "ynJKaNmxmXcA_file_by_image_id_disk", "owner_ext_id": "00000000-0000-0000-0000-000000000000", "owner_name": "admin", "placement_policy_status": null, "projectExtId": "00000000-0000-0000-0000-000000000000", "size_bytes": 117440512, "source": null, "tenant_id": null, "type": "DISK_IMAGE"}, {"category_ext_ids": null, "checksum": null, "cluster_location_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "create_time": "2026-07-20T17:59:27.074387+00:00", "description": "PE-only image seeded by ntnx_import_image_v2 integration test", "ext_id": "81253673-ea07-497f-b8da-1a1bc62ed33d", "isSharedWithAllProjects": true, "last_update_time": "2026-07-20T17:59:27.074387+00:00", "links": null, "name": "peonly_ansible_1_cjeWXuLQVdxI", "owner_ext_id": "00000000-0000-0000-0000-000000000000", "owner_name": "admin", "placement_policy_status": null, "projectExtId": "00000000-0000-0000-0000-000000000000", "size_bytes": 117440512, "source": null, "tenant_id": null, "type": "DISK_IMAGE"}], "total_available_results": 16}
+
+TASK [Pick the smallest image ext_id (to keep the demo download cheap)] ********
+ok: [localhost] => {"ansible_facts": {"image_ext_id": "9ba33498-2b99-4adb-90e6-23a93dc02180", "image_name": "predeployment_port_vm", "image_size_bytes": "64487424"}, "changed": false}
+
+TASK [Show which image we will download] ***************************************
+ok: [localhost] => {
+    "msg": "Using image ext_id=9ba33498-2b99-4adb-90e6-23a93dc02180 name=predeployment_port_vm size_bytes=64487424"
+}
+
+TASK [Download the image file using ntnx_image_download_v2] ********************
+changed: [localhost] => {"changed": true, "ext_id": "9ba33498-2b99-4adb-90e6-23a93dc02180", "response": {"path": "/tmp/codegen/014e15a08bd74ad1943e11c9a3a4e499/repo/examples/virtual_machine_management/FileByImageId/predeployment_port_vm_2026-07-21T04:50:22.727"}}
+
+TASK [Show downloaded file path] ***********************************************
+ok: [localhost] => {
+    "msg": "Downloaded to: /tmp/codegen/014e15a08bd74ad1943e11c9a3a4e499/repo/examples/virtual_machine_management/FileByImageId/predeployment_port_vm_2026-07-21T04:50:22.727"
+}
+
+TASK [Fetch the image file info using ntnx_file_by_image_ids_info_v2] **********
+ok: [localhost] => {"changed": false, "error": null, "ext_id": "9ba33498-2b99-4adb-90e6-23a93dc02180", "response": {"path": "/tmp/codegen/014e15a08bd74ad1943e11c9a3a4e499/repo/examples/virtual_machine_management/FileByImageId/predeployment_port_vm_2026-07-21T04:50:24.069"}}
+
+TASK [Show fetched file info] **************************************************
+ok: [localhost] => {
+    "msg": "File info: {'path': '/tmp/codegen/014e15a08bd74ad1943e11c9a3a4e499/repo/examples/virtual_machine_management/FileByImageId/predeployment_port_vm_2026-07-21T04:50:24.069'}"
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=7    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+

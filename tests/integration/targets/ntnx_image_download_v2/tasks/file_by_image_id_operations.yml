@@ -1,0 +1,243 @@
+---
+# =============================================================================
+# Integration tests for the virtual_machine_management / FileByImageId entity
+# -----------------------------------------------------------------------------
+# Modules under test:
+#   - ntnx_image_download_v2            (action / download)
+#   - ntnx_file_by_image_ids_info_v2    (info / GetFileByImageId)
+#
+# Test plan (why each test exists):
+#   1.  Prerequisite discovery: pick an existing DISK_IMAGE from Prism Central
+#       so we have a valid image_ext_id to download / query. This deliberately
+#       reuses ntnx_images_info_v2 (an existing v2 info module) so we do not
+#       hardcode any ext_id and do not depend on the very slow image-create
+#       lifecycle for a test that is only about the download endpoint.
+#   2.  Argument-spec validation on the DOWNLOAD module (missing required
+#       image_ext_id) — proves the module's own spec catches bad input
+#       BEFORE any API call.
+#   3.  check_mode on the DOWNLOAD module — MUST return changed=False /
+#       failed=False and MUST emit the exact "will be downloaded." msg. Runs
+#       exactly ONE check_mode task per the code-gen reviewer's guidance.
+#   4.  Real download via valid ext_id — MUST return changed=True,
+#       failed=False, and response.path defined.
+#   5.  Repeat download: calling download again must still succeed — proves
+#       the module has no hidden state that would break repeat invocations.
+#   6.  Negative: download with an invalid / non-existent image ext_id —
+#       MUST return changed=False, failed=True, and the exact
+#       "Api Exception raised while downloading image" msg.
+#   7.  Argument-spec validation on the INFO module (missing required
+#       ext_id).
+#   8.  Info fetch with valid ext_id — MUST return changed=False,
+#       failed=False, response.path defined, and the ext_id echoed back.
+#   9.  Negative: info fetch with a non-existent ext_id — MUST return
+#       changed=False, failed=True, and the exact
+#       "Api Exception raised while fetching image file info" msg.
+#  10.  Domain guardrail: the DOWNLOAD module's response.path MUST refer
+#       to a file the SDK actually wrote (we don't check byte content
+#       because the SDK writes to an ephemeral tmp file, but we DO check
+#       the path is a non-empty string that starts with a "/", which is
+#       what pathlib.Path.__str__ returns on Linux and matches what the
+#       OVA download tests assert about their own path).
+# =============================================================================
+
+- name: Start ntnx_image_download_v2 / ntnx_file_by_image_ids_info_v2 tests
+  ansible.builtin.debug:
+    msg: Start FileByImageId (virtual_machine_management) tests
+
+- name: Set fixture variables
+  ansible.builtin.set_fact:
+    invalid_ext_id: "123e4567-e89b-12d3-a456-426614174000"
+    image_ext_id: ""
+
+##############################################################################
+# Prerequisite discovery: pick an existing DISK_IMAGE on the cluster.        #
+##############################################################################
+
+- name: Discover an existing DISK_IMAGE on the cluster to test against
+  nutanix.ncp.ntnx_images_info_v2:
+    filter: "type eq Vmm.Content.ImageType'DISK_IMAGE'"
+  register: images_list_result
+  ignore_errors: true
+
+- name: Assert we found at least one image on the cluster
+  ansible.builtin.assert:
+    that:
+      - images_list_result.failed == false
+      - images_list_result.response is defined
+      - images_list_result.response | length > 0
+      - images_list_result.response[0].ext_id is defined
+    fail_msg: "Prerequisite failed: could not discover a DISK_IMAGE on the cluster. Create one via ntnx_images_v2 first."
+    success_msg: "Prerequisite met: found {{ images_list_result.response | length }} DISK_IMAGE(s) on the cluster"
+
+- name: Save the target image ext_id (first DISK_IMAGE returned)
+  ansible.builtin.set_fact:
+    image_ext_id: "{{ images_list_result.response[0].ext_id }}"
+
+- name: Log the target image ext_id
+  ansible.builtin.debug:
+    msg: "Using image_ext_id = {{ image_ext_id }} (name={{ images_list_result.response[0].name }})"
+
+##############################################################################
+# 2. Argument-spec validation on the DOWNLOAD module (missing image_ext_id) #
+##############################################################################
+
+- name: Negative — call ntnx_image_download_v2 without required image_ext_id
+  nutanix.ncp.ntnx_image_download_v2: {}
+  register: no_ext_id_download
+  ignore_errors: true
+
+- name: Assert download module rejects missing image_ext_id
+  ansible.builtin.assert:
+    that:
+      - no_ext_id_download.failed == true
+      - no_ext_id_download.changed == false
+      - '"image_ext_id" in no_ext_id_download.msg'
+    fail_msg: "Download module did NOT reject missing image_ext_id"
+    success_msg: "Download module correctly rejected missing image_ext_id"
+
+##############################################################################
+# 3. check_mode on the DOWNLOAD module (exactly one check_mode test)         #
+##############################################################################
+
+- name: Download image in check_mode
+  nutanix.ncp.ntnx_image_download_v2:
+    image_ext_id: "{{ image_ext_id }}"
+  register: download_check_mode
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert download check_mode behavior
+  ansible.builtin.assert:
+    that:
+      - download_check_mode.failed == false
+      - download_check_mode.changed == false
+      - download_check_mode.ext_id == image_ext_id
+      - download_check_mode.msg == "Image with ext_id:" ~ image_ext_id ~ " will be downloaded."
+    fail_msg: "Download check_mode did not behave as expected"
+    success_msg: "Download check_mode behaved as expected"
+
+##############################################################################
+# 4. Real download via valid ext_id                                          #
+##############################################################################
+
+- name: Download image using valid ext_id
+  nutanix.ncp.ntnx_image_download_v2:
+    image_ext_id: "{{ image_ext_id }}"
+  register: download_result
+  ignore_errors: true
+
+- name: Assert real download succeeded and populated all return fields
+  ansible.builtin.assert:
+    that:
+      - download_result.failed == false
+      - download_result.changed == true
+      - download_result.ext_id == image_ext_id
+      - download_result.response is defined
+      - download_result.response.path is defined
+      - download_result.response.path | length > 0
+      - download_result.response.path is string
+      - download_result.response.path.startswith("/")
+    fail_msg: "Real image download failed or did not return a valid path"
+    success_msg: "Image downloaded successfully to {{ download_result.response.path | default('<none>') }}"
+
+##############################################################################
+# 5. Repeat download                                                         #
+##############################################################################
+
+- name: Download image a second time using the same valid ext_id
+  nutanix.ncp.ntnx_image_download_v2:
+    image_ext_id: "{{ image_ext_id }}"
+  register: download_repeat_result
+  ignore_errors: true
+
+- name: Assert repeat download still succeeds cleanly
+  ansible.builtin.assert:
+    that:
+      - download_repeat_result.failed == false
+      - download_repeat_result.changed == true
+      - download_repeat_result.ext_id == image_ext_id
+      - download_repeat_result.response is defined
+      - download_repeat_result.response.path is defined
+      - download_repeat_result.response.path | length > 0
+    fail_msg: "Repeat image download did not behave the same way as the first call"
+    success_msg: "Repeat image download succeeded — the module has no unwanted stateful side-effects"
+
+##############################################################################
+# 6. Negative: download with an invalid ext_id                                #
+##############################################################################
+
+- name: Download image using invalid ext_id
+  nutanix.ncp.ntnx_image_download_v2:
+    image_ext_id: "{{ invalid_ext_id }}"
+  register: download_invalid_result
+  ignore_errors: true
+
+- name: Assert download with invalid ext_id fails cleanly
+  ansible.builtin.assert:
+    that:
+      - download_invalid_result.failed == true
+      - download_invalid_result.changed == false
+      - download_invalid_result.msg == "Api Exception raised while downloading image"
+    fail_msg: "Download with invalid ext_id did not fail as expected"
+    success_msg: "Download with invalid ext_id failed as expected"
+
+##############################################################################
+# 7. Argument-spec validation on the INFO module (missing ext_id)             #
+##############################################################################
+
+- name: Negative — call ntnx_file_by_image_ids_info_v2 without required ext_id
+  nutanix.ncp.ntnx_file_by_image_ids_info_v2: {}
+  register: no_ext_id_info
+  ignore_errors: true
+
+- name: Assert info module rejects missing ext_id
+  ansible.builtin.assert:
+    that:
+      - no_ext_id_info.failed == true
+      - no_ext_id_info.changed == false
+      - '"ext_id" in no_ext_id_info.msg'
+    fail_msg: "Info module did NOT reject missing ext_id"
+    success_msg: "Info module correctly rejected missing ext_id"
+
+##############################################################################
+# 8. Info fetch with valid ext_id                                             #
+##############################################################################
+
+- name: Fetch image file info using valid ext_id
+  nutanix.ncp.ntnx_file_by_image_ids_info_v2:
+    ext_id: "{{ image_ext_id }}"
+  register: info_result
+  ignore_errors: true
+
+- name: Assert info fetch succeeded and populated all return fields
+  ansible.builtin.assert:
+    that:
+      - info_result.failed == false
+      - info_result.changed == false
+      - info_result.ext_id == image_ext_id
+      - info_result.response is defined
+      - info_result.response.path is defined
+      - info_result.response.path | length > 0
+      - info_result.response.path is string
+      - info_result.response.path.startswith("/")
+    fail_msg: "Info fetch failed or did not return a valid path"
+    success_msg: "Image file info fetched successfully — path={{ info_result.response.path | default('<none>') }}"
+
+##############################################################################
+# 9. Negative: info fetch with invalid ext_id                                 #
+##############################################################################
+
+- name: Fetch image file info using invalid ext_id
+  nutanix.ncp.ntnx_file_by_image_ids_info_v2:
+    ext_id: "{{ invalid_ext_id }}"
+  register: info_invalid_result
+  ignore_errors: true
+
+- name: Assert info fetch with invalid ext_id fails cleanly
+  ansible.builtin.assert:
+    that:
+      - info_invalid_result.failed == true
+      - info_invalid_result.changed == false
+      - info_invalid_result.msg == "Api Exception raised while fetching image file info"
+    fail_msg: "Info fetch with invalid ext_id did not fail as expected"
+    success_msg: "Info fetch with invalid ext_id failed as expected"
