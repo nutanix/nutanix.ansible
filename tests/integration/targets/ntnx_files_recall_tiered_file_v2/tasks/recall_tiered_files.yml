@@ -1,0 +1,241 @@
+---
+# =============================================================================
+# TEST PLAN — ntnx_files_recall_tiered_file_v2 (action module)
+# =============================================================================
+# RecallTieredFiles is an ACTION on a file server (POST
+# /file-servers/{extId}/$actions/recall-tiered-files). It moves previously
+# tiered file data back to the primary file server. It is asynchronous:
+# the API returns an Ergon task and the tiering engine moves the data.
+#
+# The module argument spec exposes:
+#   - ext_id (required)            -> file server external ID (path param)
+#   - mount_target_ext_id          -> share owning the files (UUID pattern)
+#   - is_single_dir_tree (bool)
+#   - file_paths (list[str])       -> mutually exclusive with i_node_numbers
+#   - i_node_numbers (list[str])   -> mutually exclusive with file_paths
+# Domain rule: exactly one of file_paths / i_node_numbers must be supplied.
+#
+# Scenarios covered below:
+#   1. check_mode recall with ALL attributes via file_paths (spec validation).
+#   2. check_mode recall with ALL attributes via i_node_numbers (spec
+#      validation + state transition: toggles is_single_dir_tree).
+#   3. Negative: missing required ext_id.
+#   4. Negative: neither file_paths nor i_node_numbers (required_one_of).
+#   5. Negative: both file_paths and i_node_numbers (mutually_exclusive).
+#   6. Negative: invalid state value (choices constraint).
+#   7. Live API: real recall call, asserting graceful error handling
+#      (a successful data-movement recall requires a working Files service
+#      plus already-tiered files, which cannot be provisioned by the harness).
+# =============================================================================
+
+- name: Start ntnx_files_recall_tiered_file_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_files_recall_tiered_file_v2 tests
+
+- name: Generate random suffix for test data
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set recall test variables
+  ansible.builtin.set_fact:
+    recall_file_server_ext_id: "{{ recall_file_server_ext_id | default('00000000-0000-0000-0000-000000000000', true) }}"
+    recall_mount_target_ext_id: "{{ recall_mount_target_ext_id | default('7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0', true) }}"
+
+########################################################################################
+# Scenario 1 — check_mode recall with all attributes using file_paths
+########################################################################################
+
+- name: Generate spec for recalling tiered files using check mode with file paths
+  nutanix.ncp.ntnx_files_recall_tiered_file_v2:
+    ext_id: "{{ recall_file_server_ext_id }}"
+    mount_target_ext_id: "{{ recall_mount_target_ext_id }}"
+    is_single_dir_tree: true
+    file_paths:
+      - "/dir1/tiered_file1_{{ random_name }}.dat"
+      - "/dir1/tiered_file2_{{ random_name }}.dat"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for recalling tiered files using check mode with file paths status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == recall_file_server_ext_id
+      - result.response is defined
+      - result.response.is_single_dir_tree == true
+      - result.response.mount_target_ext_id == recall_mount_target_ext_id
+      - result.response.file_paths | length == 2
+      - result.response.file_paths[0] == "/dir1/tiered_file1_" ~ random_name ~ ".dat"
+      - result.response.file_paths[1] == "/dir1/tiered_file2_" ~ random_name ~ ".dat"
+      - result.response.i_node_numbers == None
+    success_msg: "Spec for recalling tiered files using check mode with file paths generated successfully"
+    fail_msg: "Spec for recalling tiered files using check mode with file paths generation failed"
+
+########################################################################################
+# Scenario 2 — check_mode recall with all attributes using inode numbers
+########################################################################################
+
+- name: Generate spec for recalling tiered files using check mode with inode numbers
+  nutanix.ncp.ntnx_files_recall_tiered_file_v2:
+    ext_id: "{{ recall_file_server_ext_id }}"
+    mount_target_ext_id: "{{ recall_mount_target_ext_id }}"
+    is_single_dir_tree: false
+    i_node_numbers:
+      - "1234567"
+      - "1234568"
+      - "1234569"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for recalling tiered files using check mode with inode numbers status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == recall_file_server_ext_id
+      - result.response is defined
+      - result.response.is_single_dir_tree == false
+      - result.response.mount_target_ext_id == recall_mount_target_ext_id
+      - result.response.i_node_numbers | length == 3
+      - result.response.i_node_numbers[0] == "1234567"
+      - result.response.i_node_numbers[1] == "1234568"
+      - result.response.i_node_numbers[2] == "1234569"
+      - result.response.file_paths == None
+    success_msg: "Spec for recalling tiered files using check mode with inode numbers generated successfully"
+    fail_msg: "Spec for recalling tiered files using check mode with inode numbers generation failed"
+
+########################################################################################
+# Scenario 3 — Negative: missing required ext_id
+########################################################################################
+
+- name: Recall tiered files with missing ext_id
+  nutanix.ncp.ntnx_files_recall_tiered_file_v2:
+    mount_target_ext_id: "{{ recall_mount_target_ext_id }}"
+    file_paths:
+      - "/dir1/tiered_file.dat"
+  register: result
+  ignore_errors: true
+
+- name: Recall tiered files with missing ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'missing required arguments: ext_id' in result.msg"
+    success_msg: "Recall tiered files with missing ext_id failed as expected"
+    fail_msg: "Recall tiered files with missing ext_id did not fail as expected"
+
+########################################################################################
+# Scenario 4 — Negative: neither file_paths nor i_node_numbers (required_one_of)
+########################################################################################
+
+- name: Recall tiered files with neither file_paths nor inode numbers
+  nutanix.ncp.ntnx_files_recall_tiered_file_v2:
+    ext_id: "{{ recall_file_server_ext_id }}"
+    mount_target_ext_id: "{{ recall_mount_target_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Recall tiered files with neither file_paths nor inode numbers status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'one of the following is required: file_paths, i_node_numbers' in result.msg"
+    success_msg: "Recall tiered files with neither file_paths nor inode numbers failed as expected"
+    fail_msg: "Recall tiered files with neither file_paths nor inode numbers did not fail as expected"
+
+########################################################################################
+# Scenario 5 — Negative: both file_paths and i_node_numbers (mutually_exclusive)
+########################################################################################
+
+- name: Recall tiered files with both file_paths and inode numbers
+  nutanix.ncp.ntnx_files_recall_tiered_file_v2:
+    ext_id: "{{ recall_file_server_ext_id }}"
+    mount_target_ext_id: "{{ recall_mount_target_ext_id }}"
+    file_paths:
+      - "/dir1/tiered_file.dat"
+    i_node_numbers:
+      - "1234567"
+  register: result
+  ignore_errors: true
+
+- name: Recall tiered files with both file_paths and inode numbers status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'parameters are mutually exclusive: file_paths|i_node_numbers' in result.msg"
+    success_msg: "Recall tiered files with both file_paths and inode numbers failed as expected"
+    fail_msg: "Recall tiered files with both file_paths and inode numbers did not fail as expected"
+
+########################################################################################
+# Scenario 6 — Negative: invalid state value (choices constraint)
+########################################################################################
+
+- name: Recall tiered files with invalid state value
+  nutanix.ncp.ntnx_files_recall_tiered_file_v2:
+    state: absent
+    ext_id: "{{ recall_file_server_ext_id }}"
+    file_paths:
+      - "/dir1/tiered_file.dat"
+  register: result
+  ignore_errors: true
+
+- name: Recall tiered files with invalid state value status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'value of state must be one of: present, got: absent' in result.msg"
+    success_msg: "Recall tiered files with invalid state value failed as expected"
+    fail_msg: "Recall tiered files with invalid state value did not fail as expected"
+
+########################################################################################
+# Scenario 7 — Live API recall (real call to the cluster)
+########################################################################################
+# NOTE: A successful recall requires a working Files service, a file server with
+# tiering configured, and files that have already been tiered to an object store.
+# These prerequisites cannot be provisioned by this harness (there is no file
+# server / tiering-config Ansible module in this collection). This task therefore
+# performs a REAL API call and asserts the module handles the API response
+# gracefully (populating failed/response/error) instead of raising an unhandled
+# exception. Provide `recall_file_server_ext_id` / `recall_mount_target_ext_id`
+# in integration_config.yml (pointing at a real tiered file) to exercise a
+# successful recall.
+
+- name: Recall tiered files via live API call
+  nutanix.ncp.ntnx_files_recall_tiered_file_v2:
+    ext_id: "{{ recall_file_server_ext_id }}"
+    mount_target_ext_id: "{{ recall_mount_target_ext_id }}"
+    file_paths:
+      - "/dir1/tiered_file_{{ random_name }}.dat"
+    read_timeout: 30000
+  register: result
+  ignore_errors: true
+
+- name: Recall tiered files via live API call status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed in [true, false]
+      - result.failed in [true, false]
+      # When the recall is accepted, a task_ext_id is returned and changed is true.
+      # When the file server / files are absent or the service is unavailable, the
+      # module fails gracefully with a populated response/error (no traceback).
+      - (result.failed and result.response is defined) or (result.changed and result.task_ext_id is defined)
+    success_msg: "Live recall tiered files call handled correctly"
+    fail_msg: "Live recall tiered files call was not handled correctly"
+
+- name: Finish ntnx_files_recall_tiered_file_v2 tests
+  ansible.builtin.debug:
+    msg: Finish ntnx_files_recall_tiered_file_v2 tests
