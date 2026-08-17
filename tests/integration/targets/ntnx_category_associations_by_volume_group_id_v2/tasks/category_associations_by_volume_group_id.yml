@@ -1,0 +1,534 @@
+---
+# Test plan for ntnx_category_associations_by_volume_group_id_v2 and
+# ntnx_volume_group_category_info_v2 (CategoryAssociationsByVolumeGroupId entity):
+#
+#  1. Setup prerequisites:
+#     - Create a Volume Group on the cluster.
+#     - Create two categories (key/value pairs) to use in association tests.
+#  2. Check-mode tests (one each per instruction):
+#     - Associate categories with ALL supported attributes in check_mode.
+#     - Disassociate categories with ALL supported attributes in check_mode.
+#  3. CRUD/action tests:
+#     - Associate categories with minimum attributes.
+#     - Associate categories with full attributes (ext_id + entity_type).
+#     - Idempotency: re-run associate with the same categories (task is
+#       still submitted server-side, but changed must remain true because
+#       the SDK does not expose a "no-op" indicator; we still assert that
+#       the info module reports the association).
+#  4. Info module tests:
+#     - List all category associations for a Volume Group (assert both
+#       categories present, total_available_results, response length).
+#     - Get a specific category association by ext_id (assert single entry).
+#     - Pagination via limit (assert length limited to 1).
+#     - Info with invalid volume_group_ext_id (negative).
+#     - Info with a valid VG but non-existent ext_id (negative).
+#  5. Negative tests:
+#     - Missing required parameter `categories` on associate.
+#     - Missing required parameter `ext_id` on associate.
+#     - Invalid enum value for `entity_type`.
+#     - Associate against non-existent Volume Group (API error).
+#  6. Disassociate (delete):
+#     - Disassociate one category, then verify list shows only the other.
+#     - Disassociate remaining category, verify list is empty.
+#  7. Cleanup:
+#     - Delete the Volume Group and both categories.
+
+- name: Start CategoryAssociationsByVolumeGroupId tests
+  ansible.builtin.debug:
+    msg: Start CategoryAssociationsByVolumeGroupId tests
+
+- name: Generate random suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set base names
+  ansible.builtin.set_fact:
+    vg_name: "vg-cat-assoc-{{ random_name }}"
+    category_key1: "ansible-cat-assoc-key1-{{ random_name }}"
+    category_value1: "ansible-cat-assoc-value1-{{ random_name }}"
+    category_key2: "ansible-cat-assoc-key2-{{ random_name }}"
+    category_value2: "ansible-cat-assoc-value2-{{ random_name }}"
+
+########################################################################################
+# Prerequisites: create a Volume Group and two categories
+########################################################################################
+
+- name: Create prerequisite Volume Group
+  nutanix.ncp.ntnx_volume_groups_v2:
+    state: present
+    name: "{{ vg_name }}"
+    description: "Volume group for category association tests"
+    cluster_reference: "{{ cluster.uuid }}"
+  register: vg_result
+  ignore_errors: true
+
+- name: Verify Volume Group creation
+  ansible.builtin.assert:
+    that:
+      - vg_result.changed == true
+      - vg_result.failed == false
+      - vg_result.ext_id is defined
+      - vg_result.response.name == vg_name
+    fail_msg: "Prerequisite Volume Group creation failed"
+    success_msg: "Prerequisite Volume Group created"
+
+- name: Set VG ext_id
+  ansible.builtin.set_fact:
+    vg_ext_id: "{{ vg_result.ext_id }}"
+
+- name: Create first prerequisite category
+  nutanix.ncp.ntnx_categories_v2:
+    state: present
+    key: "{{ category_key1 }}"
+    value: "{{ category_value1 }}"
+    description: "Category 1 for category association tests"
+  register: category1_result
+  ignore_errors: true
+
+- name: Verify first category creation
+  ansible.builtin.assert:
+    that:
+      - category1_result.changed == true
+      - category1_result.failed == false
+      - category1_result.response.ext_id is defined
+      - category1_result.response.key == category_key1
+      - category1_result.response.value == category_value1
+    fail_msg: "First prerequisite category creation failed"
+    success_msg: "First prerequisite category created"
+
+- name: Set first category ext_id
+  ansible.builtin.set_fact:
+    category1_ext_id: "{{ category1_result.response.ext_id }}"
+
+- name: Create second prerequisite category
+  nutanix.ncp.ntnx_categories_v2:
+    state: present
+    key: "{{ category_key2 }}"
+    value: "{{ category_value2 }}"
+    description: "Category 2 for category association tests"
+  register: category2_result
+  ignore_errors: true
+
+- name: Verify second category creation
+  ansible.builtin.assert:
+    that:
+      - category2_result.changed == true
+      - category2_result.failed == false
+      - category2_result.response.ext_id is defined
+    fail_msg: "Second prerequisite category creation failed"
+    success_msg: "Second prerequisite category created"
+
+- name: Set second category ext_id
+  ansible.builtin.set_fact:
+    category2_ext_id: "{{ category2_result.response.ext_id }}"
+
+########################################################################################
+# Check-mode tests
+########################################################################################
+
+- name: Associate categories with all attributes using check_mode
+  nutanix.ncp.ntnx_category_associations_by_volume_group_id_v2:
+    state: present
+    ext_id: "{{ vg_ext_id }}"
+    categories:
+      - ext_id: "{{ category1_ext_id }}"
+        entity_type: "CATEGORY"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Verify associate check_mode spec
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == vg_ext_id
+      - result.response is defined
+      - result.response.categories is defined
+      - result.response.categories | length == 1
+      - result.response.categories[0].ext_id == category1_ext_id
+      - result.response.categories[0].entity_type == "CATEGORY"
+    fail_msg: "Associate check_mode failed to generate the expected spec"
+    success_msg: "Associate check_mode generated the expected spec"
+
+- name: Disassociate categories with all attributes using check_mode
+  nutanix.ncp.ntnx_category_associations_by_volume_group_id_v2:
+    state: absent
+    ext_id: "{{ vg_ext_id }}"
+    categories:
+      - ext_id: "{{ category1_ext_id }}"
+        entity_type: "CATEGORY"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Verify disassociate check_mode spec
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == vg_ext_id
+      - result.msg is defined
+      - "'will be disassociated' in result.msg"
+      - result.response is defined
+      - result.response.categories | length == 1
+      - result.response.categories[0].ext_id == category1_ext_id
+    fail_msg: "Disassociate check_mode failed to generate the expected spec"
+    success_msg: "Disassociate check_mode generated the expected spec"
+
+########################################################################################
+# Associate categories - minimum and full attributes
+########################################################################################
+
+- name: Associate first category with the Volume Group (required attributes only - ext_id + entity_type)
+  nutanix.ncp.ntnx_category_associations_by_volume_group_id_v2:
+    state: present
+    ext_id: "{{ vg_ext_id }}"
+    categories:
+      - ext_id: "{{ category1_ext_id }}"
+        entity_type: "CATEGORY"
+  register: result
+  ignore_errors: true
+
+- name: Verify associate with required attributes
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == vg_ext_id
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+      - result.response.entities_affected is defined
+      - result.response.entities_affected | length >= 1
+    fail_msg: "Associating first category with required attributes failed"
+    success_msg: "Associating first category with required attributes succeeded"
+
+- name: Associate second category with the Volume Group (all attributes)
+  nutanix.ncp.ntnx_category_associations_by_volume_group_id_v2:
+    state: present
+    ext_id: "{{ vg_ext_id }}"
+    categories:
+      - ext_id: "{{ category2_ext_id }}"
+        entity_type: "CATEGORY"
+  register: result
+  ignore_errors: true
+
+- name: Verify associate with all attributes
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == vg_ext_id
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Associating second category with all attributes failed"
+    success_msg: "Associating second category with all attributes succeeded"
+
+########################################################################################
+# Info module tests
+########################################################################################
+
+- name: List all category associations for the Volume Group
+  nutanix.ncp.ntnx_volume_group_category_info_v2:
+    volume_group_ext_id: "{{ vg_ext_id }}"
+  register: list_result
+  ignore_errors: true
+
+- name: Verify list of category associations
+  ansible.builtin.assert:
+    that:
+      - list_result.changed == false
+      - list_result.failed == false
+      - list_result.volume_group_ext_id == vg_ext_id
+      - list_result.response is defined
+      - list_result.response | length >= 2
+      - list_result.total_available_results is defined
+      - list_result.total_available_results >= 2
+      - >-
+        (list_result.response | map(attribute='ext_id') | list)
+        | intersect([category1_ext_id, category2_ext_id]) | length == 2
+    fail_msg: "Listing category associations failed"
+    success_msg: "Listing category associations succeeded"
+
+- name: Get first category association by ext_id
+  nutanix.ncp.ntnx_volume_group_category_info_v2:
+    volume_group_ext_id: "{{ vg_ext_id }}"
+    ext_id: "{{ category1_ext_id }}"
+  register: get_by_id_result
+  ignore_errors: true
+
+- name: Verify get category association by ext_id
+  ansible.builtin.assert:
+    that:
+      - get_by_id_result.changed == false
+      - get_by_id_result.failed == false
+      - get_by_id_result.ext_id == category1_ext_id
+      - get_by_id_result.volume_group_ext_id == vg_ext_id
+      - get_by_id_result.response is defined
+      - get_by_id_result.response.ext_id == category1_ext_id
+    fail_msg: "Fetching category association by ext_id failed"
+    success_msg: "Fetching category association by ext_id succeeded"
+
+- name: List category associations with limit=1
+  nutanix.ncp.ntnx_volume_group_category_info_v2:
+    volume_group_ext_id: "{{ vg_ext_id }}"
+    limit: 1
+  register: limit_result
+  ignore_errors: true
+
+- name: Verify list with limit
+  ansible.builtin.assert:
+    that:
+      - limit_result.changed == false
+      - limit_result.failed == false
+      - limit_result.response is defined
+      - limit_result.response | length == 1
+    fail_msg: "Listing category associations with limit failed"
+    success_msg: "Listing category associations with limit succeeded"
+
+########################################################################################
+# Negative tests
+########################################################################################
+
+- name: Fetch category association info with invalid volume_group_ext_id
+  nutanix.ncp.ntnx_volume_group_category_info_v2:
+    volume_group_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: bad_vg_result
+  ignore_errors: true
+
+- name: Verify invalid volume_group_ext_id fails cleanly
+  ansible.builtin.assert:
+    that:
+      - bad_vg_result.failed == true
+      - bad_vg_result.changed == false
+      - bad_vg_result.msg is defined
+      - "'Api Exception' in bad_vg_result.msg"
+    fail_msg: "Invalid volume_group_ext_id did not fail cleanly"
+    success_msg: "Invalid volume_group_ext_id correctly failed"
+
+- name: Fetch category association info with a non-existent category ext_id
+  nutanix.ncp.ntnx_volume_group_category_info_v2:
+    volume_group_ext_id: "{{ vg_ext_id }}"
+    ext_id: "11111111-1111-1111-1111-111111111111"
+  register: bad_ext_id_result
+  ignore_errors: true
+
+- name: Verify non-existent category ext_id fails cleanly
+  ansible.builtin.assert:
+    that:
+      - bad_ext_id_result.failed == true
+      - bad_ext_id_result.changed == false
+      - bad_ext_id_result.msg is defined
+      - "'was not found' in bad_ext_id_result.msg"
+    fail_msg: "Non-existent category ext_id did not fail cleanly"
+    success_msg: "Non-existent category ext_id correctly failed"
+
+- name: Associate with missing required categories parameter
+  nutanix.ncp.ntnx_category_associations_by_volume_group_id_v2:
+    state: present
+    ext_id: "{{ vg_ext_id }}"
+  register: missing_categories_result
+  ignore_errors: true
+
+- name: Verify associate fails when categories is missing
+  ansible.builtin.assert:
+    that:
+      - missing_categories_result.failed == true
+      - missing_categories_result.changed == false
+      - missing_categories_result.msg is defined
+      - "'categories' in missing_categories_result.msg"
+    fail_msg: "Missing categories did not fail as expected"
+    success_msg: "Missing categories correctly failed"
+
+- name: Associate with missing required ext_id parameter
+  nutanix.ncp.ntnx_category_associations_by_volume_group_id_v2:
+    state: present
+    categories:
+      - ext_id: "{{ category1_ext_id }}"
+        entity_type: "CATEGORY"
+  register: missing_ext_id_result
+  ignore_errors: true
+
+- name: Verify associate fails when ext_id is missing
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id_result.failed == true
+      - missing_ext_id_result.changed == false
+      - missing_ext_id_result.msg is defined
+      - "'ext_id' in missing_ext_id_result.msg"
+    fail_msg: "Missing ext_id did not fail as expected"
+    success_msg: "Missing ext_id correctly failed"
+
+- name: Associate with invalid enum value for entity_type
+  nutanix.ncp.ntnx_category_associations_by_volume_group_id_v2:
+    state: present
+    ext_id: "{{ vg_ext_id }}"
+    categories:
+      - ext_id: "{{ category1_ext_id }}"
+        entity_type: "INVALID_ENTITY_TYPE"
+  register: invalid_enum_result
+  ignore_errors: true
+
+- name: Verify invalid enum value is rejected by argument spec
+  ansible.builtin.assert:
+    that:
+      - invalid_enum_result.failed == true
+      - invalid_enum_result.changed == false
+      - invalid_enum_result.msg is defined
+      - "'value of entity_type must be one of' in invalid_enum_result.msg
+         or 'not one of' in invalid_enum_result.msg"
+    fail_msg: "Invalid entity_type enum was not rejected"
+    success_msg: "Invalid entity_type enum correctly rejected"
+
+- name: Associate against non-existent Volume Group
+  nutanix.ncp.ntnx_category_associations_by_volume_group_id_v2:
+    state: present
+    ext_id: "22222222-2222-2222-2222-222222222222"
+    categories:
+      - ext_id: "{{ category1_ext_id }}"
+        entity_type: "CATEGORY"
+  register: bad_vg_associate_result
+  ignore_errors: true
+
+- name: Verify associate against non-existent VG fails cleanly
+  ansible.builtin.assert:
+    that:
+      - bad_vg_associate_result.failed == true
+      - bad_vg_associate_result.changed == false
+      - bad_vg_associate_result.msg is defined
+      - "'Api Exception' in bad_vg_associate_result.msg"
+    fail_msg: "Associate against non-existent VG did not fail cleanly"
+    success_msg: "Associate against non-existent VG correctly failed"
+
+########################################################################################
+# Disassociate categories
+########################################################################################
+
+- name: Disassociate the first category from the Volume Group
+  nutanix.ncp.ntnx_category_associations_by_volume_group_id_v2:
+    state: absent
+    ext_id: "{{ vg_ext_id }}"
+    categories:
+      - ext_id: "{{ category1_ext_id }}"
+        entity_type: "CATEGORY"
+  register: result
+  ignore_errors: true
+
+- name: Verify disassociate of first category
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == vg_ext_id
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Disassociating first category failed"
+    success_msg: "Disassociating first category succeeded"
+
+- name: Verify only the second category remains associated
+  nutanix.ncp.ntnx_volume_group_category_info_v2:
+    volume_group_ext_id: "{{ vg_ext_id }}"
+  register: after_first_disassociate
+  ignore_errors: true
+
+- name: Assert only the second category remains
+  ansible.builtin.assert:
+    that:
+      - after_first_disassociate.failed == false
+      - after_first_disassociate.response is defined
+      - (after_first_disassociate.response | selectattr('ext_id', 'equalto', category1_ext_id) | list) | length == 0
+      - (after_first_disassociate.response | selectattr('ext_id', 'equalto', category2_ext_id) | list) | length == 1
+    fail_msg: "First category was not properly disassociated"
+    success_msg: "First category successfully disassociated"
+
+- name: Disassociate the second category from the Volume Group
+  nutanix.ncp.ntnx_category_associations_by_volume_group_id_v2:
+    state: absent
+    ext_id: "{{ vg_ext_id }}"
+    categories:
+      - ext_id: "{{ category2_ext_id }}"
+        entity_type: "CATEGORY"
+  register: result
+  ignore_errors: true
+
+- name: Verify disassociate of second category
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == vg_ext_id
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Disassociating second category failed"
+    success_msg: "Disassociating second category succeeded"
+
+- name: List categories after full disassociation
+  nutanix.ncp.ntnx_volume_group_category_info_v2:
+    volume_group_ext_id: "{{ vg_ext_id }}"
+  register: after_all_disassociate
+  ignore_errors: true
+
+- name: Assert no categories remain associated
+  ansible.builtin.assert:
+    that:
+      - after_all_disassociate.failed == false
+      - after_all_disassociate.response is defined
+      - (after_all_disassociate.response | selectattr('ext_id', 'equalto', category1_ext_id) | list) | length == 0
+      - (after_all_disassociate.response | selectattr('ext_id', 'equalto', category2_ext_id) | list) | length == 0
+    fail_msg: "Some categories are still associated after full disassociation"
+    success_msg: "All categories properly disassociated"
+
+########################################################################################
+# Cleanup
+########################################################################################
+
+- name: Delete the Volume Group used for the tests
+  nutanix.ncp.ntnx_volume_groups_v2:
+    state: absent
+    ext_id: "{{ vg_ext_id }}"
+  register: vg_delete_result
+  ignore_errors: true
+
+- name: Verify Volume Group deletion
+  ansible.builtin.assert:
+    that:
+      - vg_delete_result.changed == true
+      - vg_delete_result.failed == false
+      - vg_delete_result.ext_id == vg_ext_id
+      - vg_delete_result.response.status == "SUCCEEDED"
+    fail_msg: "Volume Group cleanup failed"
+    success_msg: "Volume Group deleted"
+
+- name: Delete first category
+  nutanix.ncp.ntnx_categories_v2:
+    state: absent
+    ext_id: "{{ category1_ext_id }}"
+  register: category1_delete_result
+  ignore_errors: true
+
+- name: Verify first category deletion
+  ansible.builtin.assert:
+    that:
+      - category1_delete_result.changed == true
+      - category1_delete_result.failed == false
+    fail_msg: "First category cleanup failed"
+    success_msg: "First category deleted"
+
+- name: Delete second category
+  nutanix.ncp.ntnx_categories_v2:
+    state: absent
+    ext_id: "{{ category2_ext_id }}"
+  register: category2_delete_result
+  ignore_errors: true
+
+- name: Verify second category deletion
+  ansible.builtin.assert:
+    that:
+      - category2_delete_result.changed == true
+      - category2_delete_result.failed == false
+    fail_msg: "Second category cleanup failed"
+    success_msg: "Second category deleted"

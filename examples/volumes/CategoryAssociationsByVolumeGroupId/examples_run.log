@@ -1,0 +1,46 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [CategoryAssociationsByVolumeGroupId playbook] ****************************
+
+TASK [Setting variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"cluster_uuid": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "random_suffix": "JSotZpofoZ"}, "changed": false}
+
+TASK [Set names using random suffix] *******************************************
+ok: [localhost] => {"ansible_facts": {"category_key": "ansible-cat-assoc-key-JSotZpofoZ", "category_value": "ansible-cat-assoc-value-JSotZpofoZ", "volume_group_name": "vg-cat-assoc-example-JSotZpofoZ"}, "changed": false}
+
+TASK [Create the prerequisite Volume Group] ************************************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "8663bc96-28f8-460d-6aef-c2a93fd41fd5", "response": {"attachment_type": "NONE", "attachments": null, "cluster_reference": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "created_by": null, "description": "Volume group used by CategoryAssociationsByVolumeGroupId example", "disks": null, "enabled_authentications": null, "ext_id": "8663bc96-28f8-460d-6aef-c2a93fd41fd5", "hydration_status": null, "is_hidden": false, "iscsi_features": null, "links": null, "name": "vg-cat-assoc-example-JSotZpofoZ", "protocol": "NOT_ASSIGNED", "sharing_status": null, "should_load_balance_vm_attachments": false, "storage_features": null, "target_name": "volumegroup-8663bc96-28f8-460d-6aef-c2a93fd41fd5", "target_prefix": null, "tenant_id": null, "usage_type": null}, "task_ext_id": "ZXJnb24=:1b8f856d-d2e5-46de-b12d-76edcae930a6"}
+
+TASK [Set Volume Group ext_id] *************************************************
+ok: [localhost] => {"ansible_facts": {"volume_group_ext_id": "8663bc96-28f8-460d-6aef-c2a93fd41fd5"}, "changed": false}
+
+TASK [Create the prerequisite Category] ****************************************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "1d75be2f-95d3-44e4-587c-c1883f7d4dd0", "response": {"associations": null, "description": "Category used by CategoryAssociationsByVolumeGroupId example", "detailed_associations": null, "ext_id": "1d75be2f-95d3-44e4-587c-c1883f7d4dd0", "isSharedWithAllProjects": false, "key": "ansible-cat-assoc-key-JSotZpofoZ", "links": null, "owner_uuid": "00000000-0000-0000-0000-000000000000", "projectExtId": "00000000-0000-0000-0000-000000000000", "tenant_id": null, "type": "USER", "value": "ansible-cat-assoc-value-JSotZpofoZ"}}
+
+TASK [Set Category ext_id] *****************************************************
+ok: [localhost] => {"ansible_facts": {"category_ext_id": "1d75be2f-95d3-44e4-587c-c1883f7d4dd0"}, "changed": false}
+
+TASK [Associate a category with a Volume Group] ********************************
+changed: [localhost] => {"changed": true, "ext_id": "8663bc96-28f8-460d-6aef-c2a93fd41fd5", "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": null, "completed_time": "2026-07-21T06:08:08.528558+00:00", "completion_details": null, "created_time": "2026-07-21T06:08:08.498673+00:00", "entities_affected": [{"ext_id": "8663bc96-28f8-460d-6aef-c2a93fd41fd5", "name": null, "rel": "volumes:config:volume-group"}], "error_messages": null, "ext_id": "ZXJnb24=:07bbbb0d-b6fd-4f8a-b966-7883231dced5", "is_background_task": false, "is_cancelable": false, "last_updated_time": "2026-07-21T06:08:08.528557+00:00", "legacy_error_message": null, "number_of_entities_affected": 1, "number_of_subtasks": 0, "operation": "UpdateCategoryAssociations_kOperationAttach", "operation_description": "Associate Category", "owned_by": null, "parent_task": null, "progress_percentage": 100, "projectExtId": "00000000-0000-0000-0000-000000000000", "resource_links": null, "root_task": null, "started_time": "2026-07-21T06:08:08.504477+00:00", "status": "SUCCEEDED", "sub_steps": null, "sub_tasks": null, "warnings": null}, "task_ext_id": "ZXJnb24=:07bbbb0d-b6fd-4f8a-b966-7883231dced5"}
+
+TASK [List all categories associated with the Volume Group] ********************
+ok: [localhost] => {"changed": false, "response": [{"entity_type": "CATEGORY", "ext_id": "1d75be2f-95d3-44e4-587c-c1883f7d4dd0", "name": null, "uris": null}], "total_available_results": 1, "volume_group_ext_id": "8663bc96-28f8-460d-6aef-c2a93fd41fd5"}
+
+TASK [Get a specific category association by ext_id] ***************************
+ok: [localhost] => {"changed": false, "ext_id": "1d75be2f-95d3-44e4-587c-c1883f7d4dd0", "response": {"entity_type": "CATEGORY", "ext_id": "1d75be2f-95d3-44e4-587c-c1883f7d4dd0", "name": null, "uris": null}, "volume_group_ext_id": "8663bc96-28f8-460d-6aef-c2a93fd41fd5"}
+
+TASK [Disassociate the category from the Volume Group] *************************
+changed: [localhost] => {"changed": true, "ext_id": "8663bc96-28f8-460d-6aef-c2a93fd41fd5", "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": null, "completed_time": "2026-07-21T06:08:13.241363+00:00", "completion_details": null, "created_time": "2026-07-21T06:08:13.200360+00:00", "entities_affected": [{"ext_id": "8663bc96-28f8-460d-6aef-c2a93fd41fd5", "name": null, "rel": "volumes:config:volume-group"}], "error_messages": null, "ext_id": "ZXJnb24=:2d3bfac5-ddc3-458d-872e-63325320d65b", "is_background_task": false, "is_cancelable": false, "last_updated_time": "2026-07-21T06:08:13.241362+00:00", "legacy_error_message": null, "number_of_entities_affected": 1, "number_of_subtasks": 0, "operation": "UpdateCategoryAssociations_kOperationDetach", "operation_description": "Disassociate Category", "owned_by": null, "parent_task": null, "progress_percentage": 100, "projectExtId": "00000000-0000-0000-0000-000000000000", "resource_links": null, "root_task": null, "started_time": "2026-07-21T06:08:13.208624+00:00", "status": "SUCCEEDED", "sub_steps": null, "sub_tasks": null, "warnings": null}, "task_ext_id": "ZXJnb24=:2d3bfac5-ddc3-458d-872e-63325320d65b"}
+
+TASK [Cleanup - delete the Volume Group] ***************************************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "8663bc96-28f8-460d-6aef-c2a93fd41fd5", "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "completed_time": "2026-07-21T06:08:17.447955+00:00", "completion_details": null, "created_time": "2026-07-21T06:08:17.188251+00:00", "entities_affected": [{"ext_id": "8663bc96-28f8-460d-6aef-c2a93fd41fd5", "name": "vg-cat-assoc-example-JSotZpofoZ", "rel": "volumes:config:volume-group"}], "error_messages": null, "ext_id": "ZXJnb24=:5875350a-bc85-4c8d-9245-d4b6c2ecd36a", "is_background_task": false, "is_cancelable": false, "last_updated_time": "2026-07-21T06:08:17.447953+00:00", "legacy_error_message": null, "number_of_entities_affected": 1, "number_of_subtasks": 1, "operation": "VolumeGroupDelete", "operation_description": "Delete Volume Group", "owned_by": {"ext_id": "00000000-0000-0000-0000-000000000000", "name": "admin"}, "parent_task": null, "progress_percentage": 100, "projectExtId": "00000000-0000-0000-0000-000000000000", "resource_links": null, "root_task": null, "started_time": "2026-07-21T06:08:17.188251+00:00", "status": "SUCCEEDED", "sub_steps": null, "sub_tasks": [{"ext_id": "ZXJnb24=:d1ce3546-dbdb-41d2-8908-3f0a6b666f9b", "href": "https://10.44.76.28:9440/api/prism/v4.3/config/tasks/ZXJnb24=:d1ce3546-dbdb-41d2-8908-3f0a6b666f9b", "rel": "subtask"}], "warnings": null}, "task_ext_id": "ZXJnb24=:5875350a-bc85-4c8d-9245-d4b6c2ecd36a"}
+
+TASK [Cleanup - delete the Category] *******************************************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "1d75be2f-95d3-44e4-587c-c1883f7d4dd0", "response": null}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=12   changed=6    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
