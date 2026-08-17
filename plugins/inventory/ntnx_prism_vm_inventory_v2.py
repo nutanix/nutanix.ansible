@@ -12,6 +12,12 @@ DOCUMENTATION = r"""
     short_description: Get a list of Nutanix VMs for ansible dynamic inventory using V4 APIs.
     description:
         - Get a list of Nutanix VMs for ansible dynamic inventory using V4 APIs and SDKs.
+        - >
+          C(ansible_host) is set to the first IP address reported for the VM's NICs.
+        - >
+          Hosts with more than one IP address also get a C(vm_ip_addresses) variable listing all of
+          them, so a usable address can be selected with C(compose). It is not set when the VM has
+          a single address or none, since C(ansible_host) already covers that case.
     version_added: "2.4.0"
     author:
         - George Ghawali (@george-ghawali)
@@ -257,6 +263,27 @@ EXAMPLES = r"""
       separator: "_"
       default_value: unassigned
 
+# using compose with vm_ip_addresses to pick a specific IP of a multi homed VM
+# vm_ip_addresses is only set when the VM reports more than one IP address, so
+# default() falls back to the single address already in ansible_host, and
+# select('string') drops it when the VM has no IP at all
+- plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
+  nutanix_host: 10.x.x.x
+  nutanix_username: admin
+  nutanix_password: password
+  validate_certs: false
+  compose:
+    # only the address in the 169.254.0.0/16 (APIPA) range
+    # VMs without such an address are left without the variable rather than with an
+    # empty one, which relies on the default strict: false
+    vm_apipa_ip: >-
+      vm_ip_addresses | default([ansible_host], true) | select('string')
+      | select('match', '169\.254\.') | first
+    # connect over the first address that is not an APIPA one
+    ansible_host: >-
+      (vm_ip_addresses | default([ansible_host], true) | select('string')
+       | reject('match', '169\.254\.') | first) | default(ansible_host, true)
+
 # using custom ansible host for defining the ansible_host for the VMs
 - plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
   nutanix_host: 10.x.x.x
@@ -404,42 +431,40 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
 
         return vms
 
-    def _extract_vm_ip(self, vm):
+    def _extract_vm_ips(self, vm):
         """
-        Extract IP address from VM NICs.
-        Returns the first learned/DHCP IP address found.
+        Collect every IP address reported for the VM's NICs, in NIC order:
+        learned (DHCP) addresses first, then statically configured ones, then IPv6.
+        The first entry is used as ansible_host. When there is more than one the
+        full list is also exposed as vm_ip_addresses, because Prism Central
+        sometimes reports an APIPA address first and callers need to be able to
+        pick a usable address themselves.
         """
-        nics = vm.get("nics") or []
-        for nic in nics:
+        ips = []
+
+        def add(value):
+            if value and value not in ips:
+                ips.append(value)
+
+        for nic in vm.get("nics") or []:
             network_info = nic.get("nic_network_info") or {}
-            if not network_info:
-                continue
             if network_info.get("nic_type") != "NORMAL_NIC":
                 continue
-            ipv4_info = network_info.get("ipv4_info")
-            ipv4_config = network_info.get("ipv4_config")
-            if ipv4_info:
-                learned_ips = ipv4_info.get("learned_ip_addresses", [])
-                if learned_ips and len(learned_ips) > 0:
-                    first_ip = learned_ips[0]
-                    if first_ip and first_ip.get("value"):
-                        return first_ip.get("value")
-            elif ipv4_config:
-                ip_address = ipv4_config.get("ip_address")
-                if ip_address:
-                    value = ip_address.get("value")
-                    if value:
-                        return value
-            else:
-                ipv6_info = network_info.get("ipv6_info")
-                if ipv6_info:
-                    learned_ips = ipv6_info.get("learned_ipv6_addresses", [])
-                    if learned_ips and len(learned_ips) > 0:
-                        first_ip = learned_ips[0]
-                        if first_ip and first_ip.get("value"):
-                            return first_ip.get("value")
 
-        return None
+            ipv4_info = network_info.get("ipv4_info") or {}
+            for address in ipv4_info.get("learned_ip_addresses") or []:
+                add((address or {}).get("value"))
+
+            ipv4_config = network_info.get("ipv4_config") or {}
+            add((ipv4_config.get("ip_address") or {}).get("value"))
+            for address in ipv4_config.get("secondary_ip_address_list") or []:
+                add((address or {}).get("value"))
+
+            ipv6_info = network_info.get("ipv6_info") or {}
+            for address in ipv6_info.get("learned_ipv6_addresses") or []:
+                add((address or {}).get("value"))
+
+        return ips
 
     def _resolve_custom_ansible_host(self, vm, cluster_ext_id_name_map, expr, strict):
         """Resolve ansible_host expression with placeholders if defined."""
@@ -507,9 +532,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         if not vm or not isinstance(vm, dict):
             raise ValueError("Invalid VM data: expected dict, got {0}".format(type(vm)))
 
-        # Extract IP address from NICs for ansible_host
-        vm_ip = None
-
         # Start with all VM attributes
         host_vars = {}
 
@@ -522,8 +544,15 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
 
             host_vars[key] = value
 
+        # Expose every NIC address, since nics is stripped from host_vars below.
+        # Only set when there is more than one, as ansible_host already carries
+        # the single address case.
+        vm_ips = self._extract_vm_ips(vm)
+        if len(vm_ips) > 1:
+            host_vars["vm_ip_addresses"] = vm_ips
+
         # Add ansible_host for SSH connectivity
-        vm_ip = self._extract_vm_ip(vm)
+        vm_ip = vm_ips[0] if vm_ips else None
         host_vars["ansible_host"] = vm_ip
 
         # Convert categories to list of extId and build key/value map

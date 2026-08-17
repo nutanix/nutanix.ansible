@@ -88,7 +88,8 @@
 
 - name: Parse bridges from output
   ansible.builtin.set_fact:
-    cluster_bridges: "{{ bridges_output.stdout_lines | select('match', '^br') | list
+    cluster_bridges:
+      "{{ bridges_output.stdout_lines | select('match', '^br') | list
       | unique }}"
 
 - name: Find bridges and get the highest number
@@ -97,7 +98,8 @@
 
 - name: Calculate next bridge number
   ansible.builtin.set_fact:
-    max_br_num: "{{ br_int_bridges | map('regex_replace', '^br', '') | map('int') |
+    max_br_num:
+      "{{ br_int_bridges | map('regex_replace', '^br', '') | map('int') |
       max | default(-1) }}"
 
 - name: Set new bridge name
@@ -123,7 +125,8 @@
 
 - name: Parse bridges after creation
   ansible.builtin.set_fact:
-    cluster_bridges_after: "{{ bridges_output_after.stdout_lines | select('match',
+    cluster_bridges_after:
+      "{{ bridges_output_after.stdout_lines | select('match',
       '^br') | list | unique }}"
 
 - name: Assert new bridge was created
@@ -142,6 +145,7 @@
   nutanix.ncp.ntnx_virtual_switch_v2:
     name: "check_mode_vs_full"
     description: "Virtual switch created in check mode with all attributes"
+    project_ext_id: "83083083-0000-0000-0000-000000000000"
     bond_mode: "NONE"
     mtu: 9000
     is_default: false
@@ -192,6 +196,8 @@
       - result.response.name == "check_mode_vs_full"
       - result.response.description == "Virtual switch created in check mode
         with all attributes"
+      - result.response.project_ext_id ==
+        "83083083-0000-0000-0000-000000000000"
       - result.response.bond_mode == "NONE"
       - result.response.mtu == 9000
       - result.response.is_default == false
@@ -224,7 +230,8 @@
         result.response.metadata.category_ids"
     success_msg: "Spec for creating virtual switch using check mode with all
       attributes is generated successfully"
-    fail_msg: "Spec for creating virtual switch using check mode with all attributes
+    fail_msg:
+      "Spec for creating virtual switch using check mode with all attributes
       is not generated successfully"
 
 - name: Create virtual switch with minimum attributes
@@ -339,7 +346,7 @@
       - result is defined
       - result.changed == false
       - result.failed == true
-      - result.msg == "state is present but any of the following are missing: name, ext_id"
+      - 'result.msg == "state is present but any of the following are missing: name, ext_id"'
     success_msg: "Create virtual switch with missing name failed as expected"
     fail_msg: "Create virtual switch with missing name did not fail as expected"
 
@@ -359,7 +366,7 @@
       - result is defined
       - result.changed == false
       - result.failed == true
-      - result.msg == "Missing required parameter(s): bond_mode"
+      - 'result.msg == "Missing required parameter(s): bond_mode"'
     success_msg: "Create virtual switch with missing bond_mode failed as expected"
     fail_msg: "Create virtual switch with missing bond_mode did not fail as expected"
 
@@ -376,7 +383,7 @@
       - result is defined
       - result.changed == false
       - result.failed == true
-      - result.msg == "Missing required parameter(s): clusters"
+      - 'result.msg == "Missing required parameter(s): clusters"'
     success_msg: "Create virtual switch with missing clusters failed as expected"
     fail_msg: "Create virtual switch with missing clusters did not fail as expected"
 
@@ -428,7 +435,8 @@
         result.response.metadata.category_ids"
       - "'5e6f7081-9a2b-3c4d-5e6f-7890abcdef34' in
         result.response.metadata.category_ids"
-    success_msg: "Spec for creating virtual switch from existing bridge generated
+    success_msg:
+      "Spec for creating virtual switch from existing bridge generated
       successfully"
     fail_msg: "Spec for creating virtual switch from existing bridge generation failed"
 
@@ -479,7 +487,8 @@
     already in use
   nutanix.ncp.ntnx_virtual_switch_v2:
     name: "{{ new_bridge_name }}"
-    description: "Virtual switch created from existing bridge using bridge that is
+    description:
+      "Virtual switch created from existing bridge using bridge that is
       already in use"
     existing_bridge_name: "{{ new_bridge_name }}"
     cluster_reference: "{{ cluster.uuid }}"
@@ -496,16 +505,19 @@
       - result.response is defined
       - result.response.error_messages | length > 0
       - result.response.status == "FAILED"
-    success_msg: "Creation of virtual switch from existing bridge using bridge that
+    success_msg:
+      "Creation of virtual switch from existing bridge using bridge that
       is already in use failed as expected"
-    fail_msg: "Creation of virtual switch from existing bridge using bridge that is
+    fail_msg:
+      "Creation of virtual switch from existing bridge using bridge that is
       already in use did not fail as expected"
 
 - name: Next bridge name
   ansible.builtin.set_fact:
     new_bridge_name: "br{{ (max_br_num | int) + 2 }}"
 
-- name: Create a virtual switch from an existing bridge with providing external ID
+- name:
+    Create a virtual switch from an existing bridge with providing external ID
     (should fail)
   nutanix.ncp.ntnx_virtual_switch_v2:
     ext_id: "{{ todelete[1] }}"
@@ -516,14 +528,15 @@
   register: result
   ignore_errors: true
 
-- name: Create a virtual switch from an existing bridge with providing external ID
+- name:
+    Create a virtual switch from an existing bridge with providing external ID
     status
   ansible.builtin.assert:
     that:
       - result is defined
       - result.changed == false
       - result.failed == true
-      - result.msg == "parameters are mutually exclusive: ext_id|existing_bridge_name"
+      - 'result.msg == "parameters are mutually exclusive: ext_id|existing_bridge_name"'
     success_msg: "Creation of virtual switch from existing bridge with providing
       external ID failed as expected"
     fail_msg: "Creation of virtual switch from existing bridge with providing
@@ -549,9 +562,11 @@
       - result.response is defined
       - result.response.error_messages | length > 0
       - result.response.status == "FAILED"
-    success_msg: "Creation of virtual switch from existing bridge with wrong cluster
+    success_msg:
+      "Creation of virtual switch from existing bridge with wrong cluster
       reference failed as expected"
-    fail_msg: "Creation of virtual switch from existing bridge with wrong cluster
+    fail_msg:
+      "Creation of virtual switch from existing bridge with wrong cluster
       reference did not fail as expected"
 
 - name: Create virtual switch from existing bridge without providing cluster
@@ -575,7 +590,8 @@
         an existing bridge"
       - result.response is defined
       - result.response.data.error | length > 0
-    success_msg: "Creation of virtual switch from existing bridge without providing
+    success_msg:
+      "Creation of virtual switch from existing bridge without providing
       cluster reference failed as expected"
     fail_msg: "Creation of virtual switch from existing bridge without providing
       cluster reference did not fail as expected"
@@ -605,7 +621,8 @@
         parameters: bond_mode, igmp_spec"
     success_msg: "Creation of virtual switch from existing bridge with wrong
       attributes failed as expected"
-    fail_msg: "Creation of virtual switch from existing bridge with wrong attributes
+    fail_msg:
+      "Creation of virtual switch from existing bridge with wrong attributes
       did not fail as expected"
 
 ########################################################################################
@@ -729,7 +746,8 @@
         result.response.metadata.category_ids"
     success_msg: "Spec for updating virtual switch using check mode with all
       attributes is generated successfully"
-    fail_msg: "Spec for updating virtual switch using check mode with all attributes
+    fail_msg:
+      "Spec for updating virtual switch using check mode with all attributes
       is not generated successfully"
 
 - name: Update virtual switch with all attributes
@@ -959,6 +977,27 @@
       - result.response | length == 1
     success_msg: "List virtual switches with limit passed"
     fail_msg: "List virtual switches with limit failed"
+
+########################################################################################
+# Verify update of project_ext_id is not supported
+########################################################################################
+
+- name: Verify update of project_ext_id is not supported
+  nutanix.ncp.ntnx_virtual_switch_v2:
+    state: present
+    ext_id: "{{ todelete[0] }}"
+    project_ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Verify update of project_ext_id is blocked status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
+    fail_msg: "Update of project_ext_id should have been blocked"
+    success_msg: "Update of project_ext_id is correctly blocked"
 
 ########################################################################################
 # Delete Subnet before deleting virtual switch

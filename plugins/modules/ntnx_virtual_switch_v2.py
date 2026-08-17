@@ -52,6 +52,12 @@ options:
       - Required for update and delete operations.
     type: str
     required: false
+  project_ext_id:
+    description:
+      - External ID (UUID) of the project that owns this virtual switch.
+      - Update of this field is not supported.
+    type: str
+    required: false
   name:
     description:
       - User-visible Virtual Switch name.
@@ -273,7 +279,7 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Create virtual switch
+- name: Create virtual switch owned by a project
   nutanix.ncp.ntnx_virtual_switch_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -282,6 +288,7 @@ EXAMPLES = r"""
     state: present
     name: "virtual_switch_ansible"
     description: "Virtual switch created by Ansible"
+    project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
     bond_mode: "NONE"
     mtu: 1500
     is_default: false
@@ -461,6 +468,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
     validate_required_params,
 )
@@ -550,6 +558,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         name=dict(type="str"),
         description=dict(type="str"),
         existing_bridge_name=dict(type="str"),
@@ -742,18 +751,18 @@ def update_virtual_switch(module, virtual_switches, result):
         result["error"] = err
         module.fail_json(msg="Failed generating update virtual switch spec", **result)
 
+    raise_unsupported_update_fields(module, old_spec, update_spec, ["project_ext_id"])
+
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
 
     if check_for_idempotency(old_spec.to_dict(), update_spec.to_dict()):
         result["skipped"] = True
-        module.exit_json(msg="Nothing to change.")
+        module.exit_json(msg="Nothing to change.", **result)
 
     _remove_read_only_attributes(update_spec)
-
     resp = None
-
     try:
         resp = virtual_switches.update_virtual_switch_by_id(
             extId=ext_id, body=update_spec, **kwargs
@@ -833,8 +842,10 @@ def run_module():
         ) - allowed_with_bridge
         if extra_params:
             module.fail_json(
-                msg="When 'existing_bridge_name' is provided, only 'name', 'description', 'cluster_reference' and 'metadata' are allowed. "
-                "Invalid parameters: {0}".format(", ".join(sorted(extra_params)))
+                msg="When 'existing_bridge_name' is provided, only 'name', "
+                "'description', 'cluster_reference' and 'metadata' are "
+                "allowed. Invalid parameters: "
+                "{0}".format(", ".join(sorted(extra_params)))
             )
     result = {
         "changed": False,

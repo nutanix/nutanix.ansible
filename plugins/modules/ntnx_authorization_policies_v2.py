@@ -44,6 +44,12 @@ options:
             - Required for updating or deleting the auth policy.
         type: str
         required: false
+    project_ext_id:
+        description:
+            - External ID (UUID) of the project that owns this authorization policy.
+            - Update of this field is not supported.
+        required: false
+        type: str
     display_name:
         description:
             - The display name for the Authorization Policy.
@@ -109,6 +115,7 @@ EXAMPLES = r"""
     description: "ansible created acps"
     role: "ebbfbd38-122b-5529-adcc-dcb6b4177382"
     authorization_policy_type: "USER_DEFINED"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     entities:
       - "images":
           "*":
@@ -262,6 +269,7 @@ from ..module_utils.v4.iam.helpers import get_authorization_policy  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 
@@ -280,6 +288,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def get_module_spec():
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         display_name=dict(type="str"),
         description=dict(type="str"),
         identities=dict(type="list", elements="dict"),
@@ -373,6 +382,10 @@ def update_authorization_policy(module, result):
         module.fail_json(
             msg="Failed generating authorization policy update spec", **result
         )
+
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
 
     # handling identities and entities spec creation separately as their dicts are to be passed in $reserved
     identities = module.params.get("identities")

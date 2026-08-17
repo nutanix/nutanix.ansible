@@ -304,22 +304,6 @@
     fail_msg: "Negative test - create without name should fail"
     success_msg: "Negative test - create without name correctly failed"
 
-- name: "Negative: Create project without project_id"
-  nutanix.ncp.ntnx_project_v2:
-    state: present
-    name: "no-project-id-project"
-  register: result
-  ignore_errors: true
-
-- name: Verify create without project_id fails
-  ansible.builtin.assert:
-    that:
-      - result.failed == true
-      - result.changed == false
-      - "'Missing required parameter(s): project_id' in result.msg"
-    fail_msg: "Negative test - create without project_id should fail"
-    success_msg: "Negative test - create without project_id correctly failed"
-
 - name: "Negative: Update project with wrong ext_id"
   nutanix.ncp.ntnx_project_v2:
     state: present

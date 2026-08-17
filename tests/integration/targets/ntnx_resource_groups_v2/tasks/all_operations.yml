@@ -86,7 +86,7 @@
   nutanix.ncp.ntnx_resource_group_v2:
     state: present
     name: "check-mode-rg"
-    project_ext_id: "{{ project1_ext_id }}"
+    project_ext_id: "83083083-0000-0000-0000-000000000000"
     placement_targets:
       - cluster_ext_id: "00064d33-1010-d636-5dc1-525400a68708"
         storage_containers:
@@ -102,7 +102,7 @@
       - result.failed == false
       - result.response is defined
       - result.response.name == "check-mode-rg"
-      - result.response.project_ext_id == project1_ext_id
+      - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
       - result.response.placement_targets | length == 1
       - result.response.placement_targets[0].cluster_ext_id == "00064d33-1010-d636-5dc1-525400a68708"
       - result.response.placement_targets[0].storage_containers | length == 1
@@ -253,6 +253,26 @@
       - result.msg == "Nothing to change."
     fail_msg: "Idempotency check failed"
     success_msg: "Idempotency check passed"
+
+###########################################################
+# UPDATE OF project_ext_id IS BLOCKED
+###########################################################
+- name: Verify update of project_ext_id is not supported
+  nutanix.ncp.ntnx_resource_group_v2:
+    state: present
+    ext_id: "{{ rg_ext_id }}"
+    project_ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Verify update of project_ext_id is blocked status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
+    fail_msg: "Update of project_ext_id should have been blocked"
+    success_msg: "Update of project_ext_id is correctly blocked"
 
 ###########################################################
 # CHECK MODE TESTS - DELETE

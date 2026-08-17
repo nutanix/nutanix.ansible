@@ -124,8 +124,17 @@ options:
                     - The external ID of the category.
                 required: true
                 type: str
+    project_ext_id:
+        description:
+            - External ID (UUID) of the project associated with this VM.
+            - Update of this field is not supported.
+        required: false
+        type: str
     project:
-        description: Reference to a project.
+        description:
+            - Reference to a project.
+            - This field is deprecated and will be removed in a future release.
+            - Use project_ext_id instead.
         type: dict
         suboptions:
             ext_id:
@@ -1207,6 +1216,7 @@ EXAMPLES = r"""
     description: "ansible test"
     cluster:
       ext_id: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     num_sockets: 1
     num_cores_per_socket: 1
     num_threads_per_core: 1
@@ -1435,6 +1445,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 from ..module_utils.v4.vmm.api_client import get_etag, get_vm_api_instance  # noqa: E402
@@ -1522,6 +1533,12 @@ def create_vm(module, result):
             else:
                 resp = get_vm(module, vms, ext_id)
                 result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception("Failed to get entity ext_id from task for VM"),
+                msg="Failed to get entity ext_id from task for VM",
+            )
 
     result["changed"] = True
 
@@ -1609,15 +1626,16 @@ def update_vm(module, result):
     ):
         update_spec.apc_config.cpu_model = None
 
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
+
     vm_update_needed = not check_idempotency(current_spec, update_spec)
     owner_change_needed = module.params.get("wait") and _is_owner_change_needed(
         current_spec, module
     )
 
     if module.check_mode:
-        if not vm_update_needed and not owner_change_needed:
-            result["skipped"] = True
-            module.exit_json(msg="Nothing to change.", **result)
         response = strip_internal_attributes(update_spec.to_dict())
         if owner_change_needed:
             response["ownership_info"] = ownership_info_params

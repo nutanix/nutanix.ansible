@@ -472,6 +472,14 @@ def create_object_store(module, object_stores_api, result):
             resp = get_object_store(module, object_stores_api, ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Object Store"
+                ),
+                msg="Failed to get entity ext_id from task for Object Store",
+            )
 
     result["changed"] = True
 
