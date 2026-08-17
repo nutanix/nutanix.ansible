@@ -1,0 +1,598 @@
+---
+###############################################################################
+# Test plan for ntnx_files_object_store_profile_v2 /
+# ntnx_files_object_store_profiles_info_v2
+#
+# An object store profile ("tiering profile") describes the S3/Azure object
+# store backend used by Nutanix Files Smart Tiering. It is scoped to a file
+# server (fileServerExtId path param) and supports Create / Update / Get /
+# List. The v4 API does NOT expose a Delete operation, so there is no delete
+# test.
+#
+# Scenarios covered:
+#   Argument / spec validation (do NOT need a live Files service):
+#     1.  check_mode Create with ALL attributes (AWS/S3 backend, OneOf branch)
+#     2.  check_mode Create with ALL attributes (Azure backend, OneOf branch)
+#     3.  Negative: missing required `name`
+#     4.  Negative: missing required `object_store_type`
+#     5.  Negative: missing required `object_store_config`
+#     6.  Negative: invalid enum for `object_store_type`
+#     7.  Negative: invalid enum for `mount_targets_enablement_type`
+#     8.  Negative: mutually exclusive `aws` + `azure` under configuration
+#     9.  Negative (info): missing required `file_server_ext_id`
+#
+#   Full lifecycle (need a live Files service + an existing file server; run
+#   only when `file_server_ext_id` is provided via integration_config.yml):
+#     10. check_mode Create (minimal required attributes)
+#     11. Create with minimal required attributes
+#     12. Create with ALL attributes -> capture ext_id
+#     13. Info: get by ext_id (single entity)
+#     14. Info: list all (list of entities)
+#     15. Info: list with filter
+#     16. Info: list with limit
+#     17. check_mode Update with ALL attributes
+#     18. Update with ALL attributes (state transitions)
+#     19. Update idempotency (Nothing to change)
+#     20. Negative: get by invalid ext_id
+###############################################################################
+
+- name: Start ntnx_files_object_store_profile_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_files_object_store_profile_v2 tests
+
+- name: Generate random names
+  ansible.builtin.set_fact:
+    random_name: "{{ 999999999999 | random | string }}"
+    suffix_name: "ansible"
+
+- name: Set profile names and file server ext_id
+  ansible.builtin.set_fact:
+    profile_name: "osp_{{ suffix_name }}_{{ random_name }}"
+    # `file_server_ext_id` is expected to be provided by integration_config.yml
+    # when a Nutanix Files file server exists on the target cluster.
+    fs_ext_id: "{{ file_server_ext_id | default('') }}"
+
+###############################################################################
+# Argument / spec validation tests (no live Files service required)
+###############################################################################
+
+- name: Generate spec for creating AWS object store profile using check mode with all attributes
+  nutanix.ncp.ntnx_files_object_store_profile_v2:
+    state: present
+    file_server_ext_id: "check_mode_fs"
+    name: "check_mode_osp_aws"
+    object_store_type: "AWS"
+    mount_targets_enablement_type: "ALL_CURRENT_MOUNT_TARGETS"
+    mount_target_ext_ids:
+      - "mt-1"
+      - "mt-2"
+    retention_period_days: 1825
+    is_ssl_peer_verfication_enabled: true
+    object_store_config:
+      base_url: "https://s3.us-east-1.amazonaws.com/"
+      ca_cert_content: "CERTDATA"
+      proxy_server:
+        url: "http://proxy.local:8080/"
+        credential:
+          username: "proxy_user"
+          password: "proxy_password"
+      configuration:
+        aws:
+          access_key: "AKIAEXAMPLEACCESSKEY"
+          secret_key: "wJalrXUtnFEMIEXAMPLESECRETKEY"
+          bucket_name: "files-tiering-bucket"
+          bucket_location: "us-east-1"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for creating AWS object store profile using check mode with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "check_mode_osp_aws"
+      - result.response.object_store_type == "AWS"
+      - result.response.mount_targets_enablement_type == "ALL_CURRENT_MOUNT_TARGETS"
+      - result.response.mount_target_ext_ids | length == 2
+      - result.response.mount_target_ext_ids[0] == "mt-1"
+      - result.response.mount_target_ext_ids[1] == "mt-2"
+      - result.response.retention_period_days == 1825
+      - result.response.is_ssl_peer_verfication_enabled == true
+      - result.response.object_store_config.base_url == "https://s3.us-east-1.amazonaws.com/"
+      - result.response.object_store_config.ca_cert_content == "CERTDATA"
+      - result.response.object_store_config.proxy_server.url == "http://proxy.local:8080/"
+      - result.response.object_store_config.proxy_server.credential.username == "proxy_user"
+      - result.response.object_store_config.configuration.bucket_name == "files-tiering-bucket"
+      - result.response.object_store_config.configuration.bucket_location == "us-east-1"
+    success_msg: "Spec for creating AWS object store profile using check mode with all attributes generated successfully"
+    fail_msg: "Spec for creating AWS object store profile using check mode with all attributes generation failed"
+
+- name: Generate spec for creating Azure object store profile using check mode with all attributes
+  nutanix.ncp.ntnx_files_object_store_profile_v2:
+    state: present
+    file_server_ext_id: "check_mode_fs"
+    name: "check_mode_osp_azure"
+    object_store_type: "AZURE"
+    mount_targets_enablement_type: "ALL_CURRENT_FUTURE_MOUNT_TARGETS"
+    retention_period_days: 3650
+    is_ssl_peer_verfication_enabled: false
+    object_store_config:
+      base_url: "https://myaccount.blob.core.windows.net/"
+      configuration:
+        azure:
+          storage_account_name: "myaccount"
+          storage_account_key: "azurestoragekey"
+          container_name: "mycontainer"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for creating Azure object store profile using check mode with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "check_mode_osp_azure"
+      - result.response.object_store_type == "AZURE"
+      - result.response.mount_targets_enablement_type == "ALL_CURRENT_FUTURE_MOUNT_TARGETS"
+      - result.response.retention_period_days == 3650
+      - result.response.is_ssl_peer_verfication_enabled == false
+      - result.response.object_store_config.base_url == "https://myaccount.blob.core.windows.net/"
+      - result.response.object_store_config.configuration.storage_account_name == "myaccount"
+      - result.response.object_store_config.configuration.container_name == "mycontainer"
+    success_msg: "Spec for creating Azure object store profile using check mode with all attributes generated successfully"
+    fail_msg: "Spec for creating Azure object store profile using check mode with all attributes generation failed"
+
+- name: Create object store profile with missing name (should fail)
+  nutanix.ncp.ntnx_files_object_store_profile_v2:
+    state: present
+    file_server_ext_id: "check_mode_fs"
+    object_store_type: "AWS"
+    object_store_config:
+      base_url: "https://s3.us-east-1.amazonaws.com/"
+      configuration:
+        aws:
+          access_key: "AKIAEXAMPLEACCESSKEY"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Create object store profile with missing name status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - 'result.msg == "Missing required parameter(s): name"'
+    success_msg: "Create object store profile with missing name failed as expected"
+    fail_msg: "Create object store profile with missing name did not fail as expected"
+
+- name: Create object store profile with missing object_store_type (should fail)
+  nutanix.ncp.ntnx_files_object_store_profile_v2:
+    state: present
+    file_server_ext_id: "check_mode_fs"
+    name: "missing_type"
+    object_store_config:
+      base_url: "https://s3.us-east-1.amazonaws.com/"
+      configuration:
+        aws:
+          access_key: "AKIAEXAMPLEACCESSKEY"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Create object store profile with missing object_store_type status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - 'result.msg == "Missing required parameter(s): object_store_type"'
+    success_msg: "Create object store profile with missing object_store_type failed as expected"
+    fail_msg: "Create object store profile with missing object_store_type did not fail as expected"
+
+- name: Create object store profile with missing object_store_config (should fail)
+  nutanix.ncp.ntnx_files_object_store_profile_v2:
+    state: present
+    file_server_ext_id: "check_mode_fs"
+    name: "missing_config"
+    object_store_type: "AWS"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Create object store profile with missing object_store_config status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - 'result.msg == "Missing required parameter(s): object_store_config"'
+    success_msg: "Create object store profile with missing object_store_config failed as expected"
+    fail_msg: "Create object store profile with missing object_store_config did not fail as expected"
+
+- name: Create object store profile with invalid object_store_type enum (should fail) # noqa: args[module]
+  nutanix.ncp.ntnx_files_object_store_profile_v2:
+    state: present
+    file_server_ext_id: "check_mode_fs"
+    name: "invalid_enum"
+    object_store_type: "INVALID_TYPE"
+    object_store_config:
+      base_url: "https://s3.us-east-1.amazonaws.com/"
+      configuration:
+        aws:
+          access_key: "AKIAEXAMPLEACCESSKEY"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Create object store profile with invalid object_store_type enum status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'value of object_store_type must be one of' in result.msg"
+    success_msg: "Create object store profile with invalid object_store_type enum failed as expected"
+    fail_msg: "Create object store profile with invalid object_store_type enum did not fail as expected"
+
+- name: Create object store profile with invalid mount_targets_enablement_type enum (should fail) # noqa: args[module]
+  nutanix.ncp.ntnx_files_object_store_profile_v2:
+    state: present
+    file_server_ext_id: "check_mode_fs"
+    name: "invalid_enablement"
+    object_store_type: "AWS"
+    mount_targets_enablement_type: "INVALID_ENABLEMENT"
+    object_store_config:
+      base_url: "https://s3.us-east-1.amazonaws.com/"
+      configuration:
+        aws:
+          access_key: "AKIAEXAMPLEACCESSKEY"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Create object store profile with invalid mount_targets_enablement_type enum status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'value of mount_targets_enablement_type must be one of' in result.msg"
+    success_msg: "Create object store profile with invalid mount_targets_enablement_type enum failed as expected"
+    fail_msg: "Create object store profile with invalid mount_targets_enablement_type enum did not fail as expected"
+
+- name: Create object store profile with mutually exclusive aws and azure (should fail)
+  nutanix.ncp.ntnx_files_object_store_profile_v2:
+    state: present
+    file_server_ext_id: "check_mode_fs"
+    name: "mutually_exclusive"
+    object_store_type: "AWS"
+    object_store_config:
+      base_url: "https://s3.us-east-1.amazonaws.com/"
+      configuration:
+        aws:
+          access_key: "AKIAEXAMPLEACCESSKEY"
+        azure:
+          storage_account_name: "myaccount"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Create object store profile with mutually exclusive aws and azure status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'aws|azure' in result.msg"
+    success_msg: "Create object store profile with mutually exclusive aws and azure failed as expected"
+    fail_msg: "Create object store profile with mutually exclusive aws and azure did not fail as expected"
+
+- name: Fetch object store profiles info with missing file_server_ext_id (should fail) # noqa: args[module]
+  nutanix.ncp.ntnx_files_object_store_profiles_info_v2: {}
+  register: result
+  ignore_errors: true
+
+- name: Fetch object store profiles info with missing file_server_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'missing required arguments: file_server_ext_id' in result.msg"
+    success_msg: "Fetch object store profiles info with missing file_server_ext_id failed as expected"
+    fail_msg: "Fetch object store profiles info with missing file_server_ext_id did not fail as expected"
+
+###############################################################################
+# Full lifecycle tests (require a live Files service and an existing file
+# server). These run only when `file_server_ext_id` is supplied via
+# integration_config.yml. See the PR body for why they are skipped on a
+# cluster without Nutanix Files deployed.
+###############################################################################
+
+- name: Full lifecycle tests
+  when: fs_ext_id | length > 0
+  block:
+    - name: Generate spec for creating object store profile using check mode with minimal attributes
+      nutanix.ncp.ntnx_files_object_store_profile_v2:
+        state: present
+        file_server_ext_id: "{{ fs_ext_id }}"
+        name: "{{ profile_name }}_cm"
+        object_store_type: "AWS"
+        object_store_config:
+          base_url: "https://s3.us-east-1.amazonaws.com/"
+          configuration:
+            aws:
+              access_key: "AKIAEXAMPLEACCESSKEY"
+      check_mode: true
+      register: result
+      ignore_errors: true
+
+    - name: Generate spec for creating object store profile using check mode with minimal attributes status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.response.name == "{{ profile_name }}_cm"
+          - result.response.object_store_type == "AWS"
+        success_msg: "check mode create with minimal attributes passed"
+        fail_msg: "check mode create with minimal attributes failed"
+
+    - name: Create object store profile with minimal attributes
+      nutanix.ncp.ntnx_files_object_store_profile_v2:
+        state: present
+        file_server_ext_id: "{{ fs_ext_id }}"
+        name: "{{ profile_name }}_min"
+        object_store_type: "AWS"
+        object_store_config:
+          base_url: "https://s3.us-east-1.amazonaws.com/"
+          configuration:
+            aws:
+              access_key: "AKIAEXAMPLEACCESSKEY"
+              secret_key: "wJalrXUtnFEMIEXAMPLESECRETKEY"
+              bucket_name: "files-tiering-bucket"
+              bucket_location: "us-east-1"
+      register: result
+      ignore_errors: true
+
+    - name: Create object store profile with minimal attributes status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == true
+          - result.failed == false
+          - result.ext_id is defined
+          - result.task_ext_id is defined
+          - result.response.name == "{{ profile_name }}_min"
+          - result.response.object_store_type == "AWS"
+        success_msg: "Create object store profile with minimal attributes passed"
+        fail_msg: "Create object store profile with minimal attributes failed"
+
+    - name: Create object store profile with all attributes
+      nutanix.ncp.ntnx_files_object_store_profile_v2:
+        state: present
+        file_server_ext_id: "{{ fs_ext_id }}"
+        name: "{{ profile_name }}_all"
+        object_store_type: "AWS"
+        mount_targets_enablement_type: "ALL_CURRENT_MOUNT_TARGETS"
+        retention_period_days: 1825
+        is_ssl_peer_verfication_enabled: true
+        object_store_config:
+          base_url: "https://s3.us-east-1.amazonaws.com/"
+          configuration:
+            aws:
+              access_key: "AKIAEXAMPLEACCESSKEY"
+              secret_key: "wJalrXUtnFEMIEXAMPLESECRETKEY"
+              bucket_name: "files-tiering-bucket"
+              bucket_location: "us-east-1"
+      register: result
+      ignore_errors: true
+
+    - name: Create object store profile with all attributes status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == true
+          - result.failed == false
+          - result.ext_id is defined
+          - result.task_ext_id is defined
+          - result.response.name == "{{ profile_name }}_all"
+          - result.response.object_store_type == "AWS"
+          - result.response.mount_targets_enablement_type == "ALL_CURRENT_MOUNT_TARGETS"
+          - result.response.retention_period_days == 1825
+          - result.response.is_ssl_peer_verfication_enabled == true
+        success_msg: "Create object store profile with all attributes passed"
+        fail_msg: "Create object store profile with all attributes failed"
+
+    - name: Set object store profile ext_id
+      ansible.builtin.set_fact:
+        osp_ext_id: "{{ result.ext_id }}"
+
+    - name: Fetch object store profile using ext_id
+      nutanix.ncp.ntnx_files_object_store_profiles_info_v2:
+        file_server_ext_id: "{{ fs_ext_id }}"
+        ext_id: "{{ osp_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch object store profile using ext_id status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.ext_id == "{{ osp_ext_id }}"
+          - result.response.name == "{{ profile_name }}_all"
+          - result.response.object_store_type == "AWS"
+        success_msg: "Fetch object store profile using ext_id passed"
+        fail_msg: "Fetch object store profile using ext_id failed"
+
+    - name: List all object store profiles
+      nutanix.ncp.ntnx_files_object_store_profiles_info_v2:
+        file_server_ext_id: "{{ fs_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all object store profiles status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.response is defined
+          - result.response | length >= 2
+        success_msg: "List all object store profiles passed"
+        fail_msg: "List all object store profiles failed"
+
+    - name: List object store profiles with filter
+      nutanix.ncp.ntnx_files_object_store_profiles_info_v2:
+        file_server_ext_id: "{{ fs_ext_id }}"
+        filter: "name eq '{{ profile_name }}_all'"
+      register: result
+      ignore_errors: true
+
+    - name: List object store profiles with filter status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.response | length == 1
+          - result.response[0].name == "{{ profile_name }}_all"
+        success_msg: "List object store profiles with filter passed"
+        fail_msg: "List object store profiles with filter failed"
+
+    - name: List object store profiles with limit
+      nutanix.ncp.ntnx_files_object_store_profiles_info_v2:
+        file_server_ext_id: "{{ fs_ext_id }}"
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: List object store profiles with limit status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.response | length == 1
+        success_msg: "List object store profiles with limit passed"
+        fail_msg: "List object store profiles with limit failed"
+
+    - name: Generate spec for updating object store profile using check mode with all attributes
+      nutanix.ncp.ntnx_files_object_store_profile_v2:
+        state: present
+        file_server_ext_id: "{{ fs_ext_id }}"
+        ext_id: "{{ osp_ext_id }}"
+        name: "{{ profile_name }}_updated"
+        object_store_type: "AWS"
+        mount_targets_enablement_type: "ALL_CURRENT_FUTURE_MOUNT_TARGETS"
+        retention_period_days: 3650
+        is_ssl_peer_verfication_enabled: false
+        object_store_config:
+          base_url: "https://s3.us-east-1.amazonaws.com/"
+          configuration:
+            aws:
+              access_key: "AKIAEXAMPLEACCESSKEY"
+              secret_key: "wJalrXUtnFEMIEXAMPLESECRETKEY"
+              bucket_name: "files-tiering-bucket"
+              bucket_location: "us-east-1"
+      check_mode: true
+      register: result
+      ignore_errors: true
+
+    - name: Generate spec for updating object store profile using check mode with all attributes status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.failed == false
+          - result.response.name == "{{ profile_name }}_updated"
+          - result.response.retention_period_days == 3650
+          - result.response.is_ssl_peer_verfication_enabled == false
+          - result.response.mount_targets_enablement_type == "ALL_CURRENT_FUTURE_MOUNT_TARGETS"
+        success_msg: "check mode update with all attributes passed"
+        fail_msg: "check mode update with all attributes failed"
+
+    - name: Update object store profile with all attributes
+      nutanix.ncp.ntnx_files_object_store_profile_v2:
+        state: present
+        file_server_ext_id: "{{ fs_ext_id }}"
+        ext_id: "{{ osp_ext_id }}"
+        name: "{{ profile_name }}_updated"
+        object_store_type: "AWS"
+        mount_targets_enablement_type: "ALL_CURRENT_FUTURE_MOUNT_TARGETS"
+        retention_period_days: 3650
+        is_ssl_peer_verfication_enabled: false
+        object_store_config:
+          base_url: "https://s3.us-east-1.amazonaws.com/"
+          configuration:
+            aws:
+              access_key: "AKIAEXAMPLEACCESSKEY"
+              secret_key: "wJalrXUtnFEMIEXAMPLESECRETKEY"
+              bucket_name: "files-tiering-bucket"
+              bucket_location: "us-east-1"
+      register: result
+      ignore_errors: true
+
+    - name: Update object store profile with all attributes status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == true
+          - result.failed == false
+          - result.response.name == "{{ profile_name }}_updated"
+          - result.response.retention_period_days == 3650
+          - result.response.is_ssl_peer_verfication_enabled == false
+          - result.response.mount_targets_enablement_type == "ALL_CURRENT_FUTURE_MOUNT_TARGETS"
+        success_msg: "Update object store profile with all attributes passed"
+        fail_msg: "Update object store profile with all attributes failed"
+
+    - name: Update object store profile with same values (idempotency)
+      nutanix.ncp.ntnx_files_object_store_profile_v2:
+        state: present
+        file_server_ext_id: "{{ fs_ext_id }}"
+        ext_id: "{{ osp_ext_id }}"
+        name: "{{ profile_name }}_updated"
+        object_store_type: "AWS"
+        mount_targets_enablement_type: "ALL_CURRENT_FUTURE_MOUNT_TARGETS"
+        retention_period_days: 3650
+        is_ssl_peer_verfication_enabled: false
+        object_store_config:
+          base_url: "https://s3.us-east-1.amazonaws.com/"
+          configuration:
+            aws:
+              access_key: "AKIAEXAMPLEACCESSKEY"
+              bucket_name: "files-tiering-bucket"
+              bucket_location: "us-east-1"
+      register: result
+      ignore_errors: true
+
+    - name: Update object store profile with same values (idempotency) status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.msg == "Nothing to change."
+          - result.skipped == true
+        success_msg: "Update object store profile idempotency passed"
+        fail_msg: "Update object store profile idempotency failed"
+
+    - name: Fetch object store profile using wrong external ID (should fail)
+      nutanix.ncp.ntnx_files_object_store_profiles_info_v2:
+        file_server_ext_id: "{{ fs_ext_id }}"
+        ext_id: "00000000-0000-0000-0000-000000000000"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch object store profile using wrong external ID status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == true
+        success_msg: "Fetch object store profile using wrong external ID failed as expected"
+        fail_msg: "Fetch object store profile using wrong external ID did not fail as expected"

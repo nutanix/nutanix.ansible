@@ -1,0 +1,86 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+
+PLAY [Object Store Profiles playbook] ******************************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost]
+
+TASK [Create AWS object store profile] *****************************************
+[ERROR]: Task failed: Module failed: Api Exception raised while creating object store profile
+Origin: /tmp/codegen-artifacts.B21VD9/example_run/object_store_profiles_v2.yml:31:7
+
+29         object_store_profile_ext_id: ""
+30
+31     - name: Create AWS object store profile
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while creating object store profile", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Set object store profile ext_id] *****************************************
+ok: [localhost]
+
+TASK [Update object store profile] *********************************************
+[ERROR]: Task failed: Module failed: Invalid value for `ext_id`, must be a follow pattern or equal to `/^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$/`
+Origin: /tmp/codegen-artifacts.B21VD9/example_run/object_store_profiles_v2.yml:63:7
+
+61         object_store_profile_ext_id: "{{ result.ext_id | default(object_store_profile_ext_id) }}"
+62
+63     - name: Update object store profile
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "Task failed: Module failed: Invalid value for `ext_id`, must be a follow pattern or equal to `/^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$/`"}
+...ignoring
+
+TASK [Get object store profile using ext_id] ***********************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching object store profiles info
+Origin: /tmp/codegen-artifacts.B21VD9/example_run/object_store_profiles_v2.yml:86:7
+
+84       ignore_errors: true
+85
+86     - name: Get object store profile using ext_id
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching object store profiles info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [List all object store profiles for the file server] **********************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching object store profiles info
+Origin: /tmp/codegen-artifacts.B21VD9/example_run/object_store_profiles_v2.yml:93:7
+
+91       ignore_errors: true
+92
+93     - name: List all object store profiles for the file server
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching object store profiles info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [List object store profiles with filter] **********************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching object store profiles info
+Origin: /tmp/codegen-artifacts.B21VD9/example_run/object_store_profiles_v2.yml:99:7
+
+97       ignore_errors: true
+98
+99     - name: List object store profiles with filter
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching object store profiles info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [List object store profiles with limit] ***********************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching object store profiles info
+Origin: /tmp/codegen-artifacts.B21VD9/example_run/object_store_profiles_v2.yml:106:7
+
+104       ignore_errors: true
+105
+106     - name: List object store profiles with limit
+          ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching object store profiles info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=8    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=6   
+
