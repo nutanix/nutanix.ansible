@@ -159,3 +159,15 @@ def get_entity_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_lifecycle_py_client.EntitiesApi(api_client=api_client)
+
+
+def get_recommendations_api_instance(module):
+    """
+    This method will return LCM recommendations API instance
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): v4 LCM recommendations api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_lifecycle_py_client.RecommendationsApi(api_client=api_client)

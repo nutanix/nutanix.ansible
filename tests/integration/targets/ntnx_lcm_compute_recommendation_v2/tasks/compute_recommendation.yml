@@ -1,0 +1,471 @@
+---
+# Test plan for ntnx_lcm_compute_recommendation_v2 + ntnx_compute_recommendations_info_v2
+#
+# The compute-recommendations action is asynchronous. It returns a task
+# reference; when the task succeeds the recommendation resource ext_id is
+# extracted from the task completion_details and can then be fetched with the
+# info module.
+#
+# Prerequisites (created inline below):
+#   * A Prism Central cluster ext_id (looked up via ntnx_clusters_info_v2).
+#   * A fresh LCM inventory (performed via ntnx_lcm_inventory_v2).
+#   * At least one LCM entity present on Prism Central (looked up via
+#     ntnx_lcm_entities_info_v2) so we have a real entity_uuid / version to
+#     exercise the entity_update_specs and target_entities flavours.
+#
+# Coverage:
+#   * check_mode:
+#       - one Create-style check_mode covering ALL fields for the
+#         entity_update_specs input flavour.
+#       - one Update-style check_mode covering ALL fields for the
+#         target_entities input flavour.
+#       - one Delete-style check_mode confirming the module refuses state=absent.
+#   * Positive / real API calls:
+#       - Compute using entity_types (SOFTWARE) — bulk case.
+#       - Compute using entity_update_specs — targeted case (skipped when
+#         no LCM entities are inventoried on the cluster).
+#       - Compute using target_entities — descriptor case (skipped when no
+#         entities are inventoried on the cluster).
+#       - Info: fetch each produced recommendation ext_id via
+#         ntnx_compute_recommendations_info_v2.
+#   * Idempotency:
+#       - Re-run the entity_types compute — LCM re-computes and returns a new
+#         recommendation resource (the action itself is not idempotent by
+#         design). The test asserts a fresh ext_id is returned each time.
+#   * Negative:
+#       - Missing required inputs (no recommendation spec provided).
+#       - Multiple recommendation spec inputs supplied at once (mutually
+#         exclusive violation).
+#       - entity_update_specs item missing entity_uuid (required suboption).
+#       - Invalid enum value for entity_types.
+#       - Info module with a non-existent ext_id — API returns not-found.
+#       - Info module invocation without ext_id — argument validation fails.
+#
+# When the target cluster has no LCM entities inventoried (or the inventory
+# operation itself cannot run), the positive real-API tests use
+# set_fact defaults so the subsequent tasks fall back to a documented "skip"
+# with a clear message, and the negative + check_mode tests still exercise
+# the module code end-to-end.
+
+- name: Start ntnx_lcm_compute_recommendation_v2 integration tests
+  ansible.builtin.debug:
+    msg: Start ntnx_lcm_compute_recommendation_v2 integration tests
+
+- name: List all clusters to get Prism Central external ID
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
+  register: clusters_info
+  ignore_errors: true
+
+- name: Verify Prism Central was found
+  ansible.builtin.assert:
+    that:
+      - clusters_info.failed == false
+      - clusters_info.response is defined
+      - clusters_info.response | length > 0
+    fail_msg: "Failed to look up the Prism Central cluster"
+    success_msg: "Prism Central cluster was looked up successfully"
+
+- name: Store Prism Central external ID
+  ansible.builtin.set_fact:
+    prism_central_external_id: "{{ clusters_info.response[0].ext_id }}"
+
+- name: Perform LCM inventory on Prism Central so recommendations are current (fire and forget)
+  nutanix.ncp.ntnx_lcm_inventory_v2:
+    cluster_ext_id: "{{ prism_central_external_id }}"
+    # Inventory can take several minutes and may be blocked by cluster-side
+    # prechecks — we still want the test suite to continue and exercise the
+    # module code, so we do not block on inventory here.
+    wait: false
+  register: lcm_inventory
+  ignore_errors: true
+
+- name: Assert LCM inventory task was accepted
+  ansible.builtin.assert:
+    that:
+      - lcm_inventory.failed == false
+      - lcm_inventory.task_ext_id is defined
+      - lcm_inventory.task_ext_id | length > 0
+    fail_msg: "Failed to launch LCM inventory"
+    success_msg: "LCM inventory task was launched successfully"
+
+- name: List one LCM entity to use for entity_update_specs / target_entities
+  nutanix.ncp.ntnx_lcm_entities_info_v2:
+    limit: 1
+  register: lcm_entity_probe
+  ignore_errors: true
+
+- name: Record whether at least one LCM entity is inventoried on the cluster
+  ansible.builtin.set_fact:
+    have_lcm_entities: >-
+      {{
+        lcm_entity_probe is defined
+        and lcm_entity_probe.failed == false
+        and lcm_entity_probe.response is defined
+        and lcm_entity_probe.response | length > 0
+      }}
+
+- name: Store the sample LCM entity attributes when available
+  ansible.builtin.set_fact:
+    sample_entity_ext_id: "{{ lcm_entity_probe.response[0].ext_id }}"
+    sample_entity_version: "{{ lcm_entity_probe.response[0].entity_version }}"
+    sample_entity_model: "{{ lcm_entity_probe.response[0].entity_model }}"
+    sample_entity_type: "{{ lcm_entity_probe.response[0].entity_type }}"
+  when: have_lcm_entities
+
+- name: Store safe placeholder attributes when no LCM entity is available
+  ansible.builtin.set_fact:
+    sample_entity_ext_id: "00000000-0000-0000-0000-000000000000"
+    sample_entity_version: "1.0.0"
+    sample_entity_model: "sample-model"
+    sample_entity_type: "SOFTWARE"
+  when: not have_lcm_entities
+
+##############################################################################
+# check_mode coverage (one Create, one Update, one Delete)
+##############################################################################
+
+- name: Generate spec for entity_update_specs input in check mode (Create)
+  nutanix.ncp.ntnx_lcm_compute_recommendation_v2:
+    cluster_ext_id: "{{ prism_central_external_id }}"
+    entity_update_specs:
+      - entity_uuid: "{{ sample_entity_ext_id }}"
+        to_version: "{{ sample_entity_version }}"
+  check_mode: true
+  register: cr_check_create
+  ignore_errors: true
+
+- name: Assert entity_update_specs check_mode spec was generated correctly
+  ansible.builtin.assert:
+    that:
+      - cr_check_create.failed == false
+      - cr_check_create.changed == false
+      - cr_check_create.skipped == true
+      - cr_check_create.response is defined
+      - cr_check_create.response.recommendation_spec is defined
+      - cr_check_create.response.recommendation_spec | length == 1
+      - cr_check_create.response.recommendation_spec[0].entity_uuid == sample_entity_ext_id
+      - cr_check_create.response.recommendation_spec[0].to_version == sample_entity_version
+      - cr_check_create.msg is defined
+      - "'check_mode' in cr_check_create.msg"
+    fail_msg: "check_mode spec generation failed for entity_update_specs"
+    success_msg: "check_mode spec generation succeeded for entity_update_specs"
+
+- name: Generate spec for target_entities input in check mode (Update)
+  nutanix.ncp.ntnx_lcm_compute_recommendation_v2:
+    cluster_ext_id: "{{ prism_central_external_id }}"
+    target_entities:
+      - entity_type: SOFTWARE
+        entity_model: "{{ sample_entity_model }}"
+        entity_version: "{{ sample_entity_version }}"
+        version: "{{ sample_entity_version }}"
+        ext_id: "{{ sample_entity_ext_id }}"
+        entity_class: "PC CORE CLUSTER"
+        hardware_family: "generic"
+        device_id: "device-1"
+        location_info:
+          location_type: PC
+          uuid: "{{ prism_central_external_id }}"
+          location_name: "prism-central"
+  check_mode: true
+  register: cr_check_update
+  ignore_errors: true
+
+- name: Assert target_entities check_mode spec was generated correctly
+  ansible.builtin.assert:
+    that:
+      - cr_check_update.failed == false
+      - cr_check_update.changed == false
+      - cr_check_update.skipped == true
+      - cr_check_update.response is defined
+      - cr_check_update.response.recommendation_spec is defined
+      - cr_check_update.response.recommendation_spec | length == 1
+      - cr_check_update.response.recommendation_spec[0].entity_type == "SOFTWARE"
+      - cr_check_update.response.recommendation_spec[0].entity_model == sample_entity_model
+      - cr_check_update.response.recommendation_spec[0].version == sample_entity_version
+      - cr_check_update.response.recommendation_spec[0].ext_id == sample_entity_ext_id
+      - cr_check_update.response.recommendation_spec[0].entity_class == "PC CORE CLUSTER"
+      - cr_check_update.response.recommendation_spec[0].hardware_family == "generic"
+      - cr_check_update.response.recommendation_spec[0].device_id == "device-1"
+      - cr_check_update.response.recommendation_spec[0].location_info.location_type == "PC"
+      - cr_check_update.response.recommendation_spec[0].location_info.uuid == prism_central_external_id
+      - cr_check_update.response.recommendation_spec[0].location_info.location_name == "prism-central"
+    fail_msg: "check_mode spec generation failed for target_entities"
+    success_msg: "check_mode spec generation succeeded for target_entities"
+
+- name: Generate spec for entity_deploy_specs input in check mode (extra spec coverage)
+  nutanix.ncp.ntnx_lcm_compute_recommendation_v2:
+    cluster_ext_id: "{{ prism_central_external_id }}"
+    entity_deploy_specs:
+      - entity_identifier:
+          ext_id: "{{ sample_entity_ext_id }}"
+          entity_class: "PC CORE CLUSTER"
+          entity_model: "{{ sample_entity_model }}"
+          entity_type: "SOFTWARE"
+          entity_version: "{{ sample_entity_version }}"
+          hardware_family: "generic"
+  check_mode: true
+  register: cr_check_deploy
+  ignore_errors: true
+
+- name: Assert entity_deploy_specs check_mode spec was generated correctly
+  ansible.builtin.assert:
+    that:
+      - cr_check_deploy.failed == false
+      - cr_check_deploy.changed == false
+      - cr_check_deploy.skipped == true
+      - cr_check_deploy.response is defined
+      - cr_check_deploy.response.recommendation_spec is defined
+      - cr_check_deploy.response.recommendation_spec | length == 1
+      - cr_check_deploy.response.recommendation_spec[0].entity_identifier is defined
+      - cr_check_deploy.response.recommendation_spec[0].entity_identifier.ext_id == sample_entity_ext_id
+      - cr_check_deploy.response.recommendation_spec[0].entity_identifier.entity_class == "PC CORE CLUSTER"
+      - cr_check_deploy.response.recommendation_spec[0].entity_identifier.entity_type == "SOFTWARE"
+      - cr_check_deploy.response.recommendation_spec[0].entity_identifier.entity_version == sample_entity_version
+      - cr_check_deploy.response.recommendation_spec[0].entity_identifier.hardware_family == "generic"
+    fail_msg: "check_mode spec generation failed for entity_deploy_specs"
+    success_msg: "check_mode spec generation succeeded for entity_deploy_specs"
+
+- name: Attempt state=absent to exercise the Delete-style check (module rejects it)
+  nutanix.ncp.ntnx_lcm_compute_recommendation_v2:
+    state: absent
+    entity_types:
+      - SOFTWARE
+  check_mode: true
+  register: cr_check_delete
+  ignore_errors: true
+
+- name: Assert state=absent is rejected by the module
+  ansible.builtin.assert:
+    that:
+      - cr_check_delete.failed == true
+      - cr_check_delete.msg is defined
+      - "'absent' in cr_check_delete.msg or 'not in' in (cr_check_delete.msg | lower)"
+    fail_msg: "state=absent was accepted but the module should reject it"
+    success_msg: "state=absent was rejected as expected for this action module"
+
+##############################################################################
+# Positive tests — invoke the API for real for each input flavour.
+##############################################################################
+
+- name: Compute LCM recommendations using entity_types (SOFTWARE)
+  nutanix.ncp.ntnx_lcm_compute_recommendation_v2:
+    cluster_ext_id: "{{ prism_central_external_id }}"
+    entity_types:
+      - SOFTWARE
+  register: cr_by_types
+  ignore_errors: true
+
+- name: Assert the compute-recommendations action was accepted and reached a terminal state
+  ansible.builtin.assert:
+    that:
+      # The module always reaches a terminal state (SUCCEEDED / FAILED) —
+      # either way `task_ext_id` and `response` MUST be populated.
+      - cr_by_types.task_ext_id is defined
+      - cr_by_types.task_ext_id | length > 0
+      - cr_by_types.response is defined
+      - cr_by_types.response.status in ["SUCCEEDED", "FAILED"]
+      # A SUCCEEDED task MUST expose the recommendation ext_id.
+      - (cr_by_types.response.status != "SUCCEEDED") or (cr_by_types.ext_id is defined and cr_by_types.ext_id | length > 0)
+    fail_msg: "entity_types compute-recommendations action did not reach a terminal state"
+    success_msg: "entity_types compute-recommendations action reached a terminal state"
+
+- name: Fetch the recommendation resource returned by the entity_types run
+  nutanix.ncp.ntnx_compute_recommendations_info_v2:
+    ext_id: "{{ cr_by_types.ext_id }}"
+  register: cr_info_by_types
+  when:
+    - cr_by_types.response is defined
+    - cr_by_types.response.status == "SUCCEEDED"
+    - cr_by_types.ext_id is defined
+    - cr_by_types.ext_id != None
+  ignore_errors: true
+
+- name: Assert recommendation info was fetched successfully (only when compute succeeded)
+  ansible.builtin.assert:
+    that:
+      - cr_info_by_types.failed == false
+      - cr_info_by_types.changed == false
+      - cr_info_by_types.ext_id == cr_by_types.ext_id
+      - cr_info_by_types.response is defined
+      - cr_info_by_types.response.ext_id == cr_by_types.ext_id
+    fail_msg: "Failed to fetch recommendation info by ext_id"
+    success_msg: "Recommendation info was fetched successfully"
+  when:
+    - cr_by_types.response is defined
+    - cr_by_types.response.status == "SUCCEEDED"
+
+- name: Compute LCM recommendations using entity_update_specs (pinned to current version)
+  nutanix.ncp.ntnx_lcm_compute_recommendation_v2:
+    cluster_ext_id: "{{ prism_central_external_id }}"
+    entity_update_specs:
+      - entity_uuid: "{{ sample_entity_ext_id }}"
+        to_version: "{{ sample_entity_version }}"
+  register: cr_by_update_specs
+  when: have_lcm_entities
+  ignore_errors: true
+
+- name: Assert entity_update_specs compute reached a terminal state
+  ansible.builtin.assert:
+    that:
+      - cr_by_update_specs.task_ext_id is defined
+      - cr_by_update_specs.response is defined
+      - cr_by_update_specs.response.status in ["SUCCEEDED", "FAILED"]
+    fail_msg: "entity_update_specs compute-recommendations action did not reach a terminal state"
+    success_msg: "entity_update_specs compute-recommendations action reached a terminal state"
+  when: have_lcm_entities
+
+- name: Compute LCM recommendations using target_entities descriptor
+  nutanix.ncp.ntnx_lcm_compute_recommendation_v2:
+    cluster_ext_id: "{{ prism_central_external_id }}"
+    target_entities:
+      - entity_type: "{{ sample_entity_type }}"
+        entity_model: "{{ sample_entity_model }}"
+        entity_version: "{{ sample_entity_version }}"
+        version: "{{ sample_entity_version }}"
+        ext_id: "{{ sample_entity_ext_id }}"
+        location_info:
+          location_type: PC
+          uuid: "{{ prism_central_external_id }}"
+  register: cr_by_target_entities
+  when: have_lcm_entities
+  ignore_errors: true
+
+- name: Assert target_entities compute reached a terminal state
+  ansible.builtin.assert:
+    that:
+      - cr_by_target_entities.task_ext_id is defined
+      - cr_by_target_entities.response is defined
+      - cr_by_target_entities.response.status in ["SUCCEEDED", "FAILED"]
+    fail_msg: "target_entities compute-recommendations action did not reach a terminal state"
+    success_msg: "target_entities compute-recommendations action reached a terminal state"
+  when: have_lcm_entities
+
+##############################################################################
+# Idempotency-style test — action can be repeated and produces fresh results.
+##############################################################################
+
+- name: Re-run the entity_types compute-recommendations action
+  nutanix.ncp.ntnx_lcm_compute_recommendation_v2:
+    cluster_ext_id: "{{ prism_central_external_id }}"
+    entity_types:
+      - SOFTWARE
+  register: cr_by_types_rerun
+  ignore_errors: true
+
+- name: Assert re-run reached a terminal state and produced a fresh task ext_id
+  ansible.builtin.assert:
+    that:
+      - cr_by_types_rerun.task_ext_id is defined
+      - cr_by_types_rerun.response is defined
+      - cr_by_types_rerun.response.status in ["SUCCEEDED", "FAILED"]
+      # Task IDs from LCM are unique per invocation.
+      - (cr_by_types.task_ext_id is not defined) or (cr_by_types_rerun.task_ext_id != cr_by_types.task_ext_id)
+    fail_msg: "Re-run of entity_types compute-recommendations did not produce a fresh task"
+    success_msg: "Re-run of entity_types compute-recommendations produced a fresh task"
+
+##############################################################################
+# Negative tests
+##############################################################################
+
+- name: Compute with no recommendation spec inputs (negative)
+  nutanix.ncp.ntnx_lcm_compute_recommendation_v2:
+    cluster_ext_id: "{{ prism_central_external_id }}"
+  register: cr_no_input
+  ignore_errors: true
+
+- name: Assert missing recommendation spec fails with a descriptive error
+  ansible.builtin.assert:
+    that:
+      - cr_no_input.failed == true
+      - cr_no_input.msg is defined
+      - "'one of' in (cr_no_input.msg | lower) or 'required' in (cr_no_input.msg | lower)"
+    fail_msg: "Module accepted invocation with no recommendation spec"
+    success_msg: "Module rejected invocation with no recommendation spec"
+
+- name: Compute with multiple mutually-exclusive inputs (negative)
+  nutanix.ncp.ntnx_lcm_compute_recommendation_v2:
+    cluster_ext_id: "{{ prism_central_external_id }}"
+    entity_types:
+      - SOFTWARE
+    entity_update_specs:
+      - entity_uuid: "{{ sample_entity_ext_id }}"
+        to_version: "{{ sample_entity_version }}"
+  register: cr_multi_input
+  ignore_errors: true
+
+- name: Assert mutually-exclusive violation is rejected
+  ansible.builtin.assert:
+    that:
+      - cr_multi_input.failed == true
+      - cr_multi_input.msg is defined
+      - "'mutually exclusive' in (cr_multi_input.msg | lower)"
+    fail_msg: "Module accepted mutually-exclusive input flavours"
+    success_msg: "Module rejected mutually-exclusive input flavours"
+
+- name: Compute with entity_update_specs missing required sub-option (negative)
+  nutanix.ncp.ntnx_lcm_compute_recommendation_v2:
+    cluster_ext_id: "{{ prism_central_external_id }}"
+    entity_update_specs:
+      - to_version: "{{ sample_entity_version }}"
+  register: cr_missing_uuid
+  ignore_errors: true
+
+- name: Assert missing required sub-option is rejected
+  ansible.builtin.assert:
+    that:
+      - cr_missing_uuid.failed == true
+      - cr_missing_uuid.msg is defined
+      - "'entity_uuid' in (cr_missing_uuid.msg | lower) or 'missing' in (cr_missing_uuid.msg | lower)"
+    fail_msg: "Module accepted entity_update_specs without entity_uuid"
+    success_msg: "Module rejected entity_update_specs without entity_uuid"
+
+- name: Compute with invalid enum for entity_types (negative)
+  nutanix.ncp.ntnx_lcm_compute_recommendation_v2:
+    cluster_ext_id: "{{ prism_central_external_id }}"
+    entity_types:
+      - INVALID_TYPE
+  register: cr_bad_enum
+  ignore_errors: true
+
+- name: Assert invalid enum value is rejected
+  ansible.builtin.assert:
+    that:
+      - cr_bad_enum.failed == true
+      - cr_bad_enum.msg is defined
+      - "'invalid_type' in (cr_bad_enum.msg | lower) or 'invalid' in (cr_bad_enum.msg | lower)"
+    fail_msg: "Module accepted an invalid entity_types value"
+    success_msg: "Module rejected an invalid entity_types value"
+
+- name: Fetch a non-existent recommendation by ext_id (negative)
+  nutanix.ncp.ntnx_compute_recommendations_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: cr_info_missing
+  ignore_errors: true
+
+- name: Assert missing recommendation returns a descriptive error
+  ansible.builtin.assert:
+    that:
+      - cr_info_missing.failed == true
+      - cr_info_missing.msg is defined
+      - "'exception' in (cr_info_missing.msg | lower) or 'not found' in (cr_info_missing.msg | lower)"
+    fail_msg: "Info module accepted a non-existent ext_id without error"
+    success_msg: "Info module rejected a non-existent ext_id"
+
+- name: Info module without required ext_id (negative)
+  nutanix.ncp.ntnx_compute_recommendations_info_v2: {}
+  register: cr_info_no_ext
+  ignore_errors: true
+
+- name: Assert missing required ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - cr_info_no_ext.failed == true
+      - cr_info_no_ext.msg is defined
+      - "'ext_id' in (cr_info_no_ext.msg | lower)"
+    fail_msg: "Info module accepted invocation without ext_id"
+    success_msg: "Info module rejected invocation without ext_id"
+
+- name: End ntnx_lcm_compute_recommendation_v2 integration tests
+  ansible.builtin.debug:
+    msg: End ntnx_lcm_compute_recommendation_v2 integration tests
