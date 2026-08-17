@@ -1,0 +1,18 @@
+---
+# Iterate SDA policies until one whose ClusterConfig list has at least one
+# entry with `schedule_interval_seconds != null` is found. Some NCC checks are
+# event-driven and have no schedule interval - those cannot be safely used to
+# verify update-of-schedule_interval_seconds.
+
+- name: Try up to 60 SDA policies to find one with schedule-driven ClusterConfigs
+  ansible.builtin.include_tasks: _bootstrap_probe_policy.yml
+  loop: "{{ sda_list_raw.json.data[0:60] }}"
+  loop_control:
+    loop_var: candidate_sda
+    label: "{{ candidate_sda.extId }}"
+  when: >-
+    cluster_configs_list_bootstrap.response is not defined
+    or (cluster_configs_list_bootstrap.response
+        | selectattr('schedule_interval_seconds', 'defined')
+        | selectattr('schedule_interval_seconds', 'ne', None)
+        | list | length) == 0
