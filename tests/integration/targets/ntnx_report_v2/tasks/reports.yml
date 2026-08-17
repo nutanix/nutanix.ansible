@@ -1,0 +1,533 @@
+---
+# TEST PLAN — ntnx_report_v2 / ntnx_reports_info_v2 (namespace: ncm_operation_base_platform)
+#
+# The ncm_operation_base_platform Report entity models a *generated* report
+# instance created from an existing Report Configuration (schedule/template).
+# Reports have Create + Read + Delete lifecycle (no Update — instances are
+# immutable). All checks below combine SDK knowledge (fields, types, enums,
+# validation constraints), module implementation knowledge (argument spec,
+# state dispatch, check_mode handling), and domain knowledge (opsmgmt v4
+# reporting pipeline runs via `vulcan`, generation is async, delivery via
+# recipients/formats, requires PC_REPORTING license and IAM roles).
+#
+# Test coverage:
+#   1. Prerequisite discovery — pick an existing Report Configuration via
+#      REST so tests exercise the real generation pipeline.
+#   2. Create — check_mode with ALL attributes, minimum-required real create,
+#      full-attributes real create, and missing/invalid input failures.
+#   3. Update path — cover the "instances are immutable" fail path.
+#   4. Info — get-by-ext_id, list-all, list with filter, list with limit,
+#      get-by-wrong-ext_id error.
+#   5. Delete — check_mode, real delete of created reports, delete with
+#      wrong/missing ext_id.
+#   6. Negative — invalid enum, malformed UUID, non-existent ext_id.
+
+- name: Start Report tests (namespace ncm_operation_base_platform)
+  ansible.builtin.debug:
+    msg: "Start Report tests (namespace ncm_operation_base_platform / entity Report)"
+
+- name: Generate random suffix so parallel runs don't collide
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    suffix_name: "ansible"
+    todelete: []
+
+- name: Set report names for this test run
+  ansible.builtin.set_fact:
+    report_name_min: "report_{{ suffix_name }}_{{ random_name }}_min"
+    report_name_full: "report_{{ suffix_name }}_{{ random_name }}_full"
+    report_name_check: "report_{{ suffix_name }}_{{ random_name }}_check"
+
+########################################################################################
+# Prerequisite: discover an existing Report Configuration to use as config_ext_id
+########################################################################################
+
+- name: List existing Report Configurations via REST
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:9440/api/opsmgmt/v4.1.b1/config/report-configs?$limit=100"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: false
+    return_content: true
+    headers:
+      Accept: application/json
+    status_code:
+      - 200
+      - 401
+      - 403
+      - 404
+  register: report_configs_resp
+  ignore_errors: true
+
+- name: Extract first report_config_ext_id from response
+  ansible.builtin.set_fact:
+    report_config_ext_id: "{{ (report_configs_resp.json.data | default([]))[0].extId | default('') }}"
+    report_configs_available: "{{ (report_configs_resp.status | default(0)) == 200 and (report_configs_resp.json.data | default([]) | length) > 0 }}"
+
+- name: Show discovered Report Configuration
+  ansible.builtin.debug:
+    msg: >-
+      report_config_ext_id={{ report_config_ext_id }}
+      report_configs_available={{ report_configs_available }}
+      HTTP status={{ report_configs_resp.status | default('N/A') }}
+
+########################################################################################
+# check_mode - Generate spec for Report create with ALL attributes
+########################################################################################
+
+- name: Generate spec for Report create using check mode with all attributes
+  nutanix.ncp.ntnx_report_v2:
+    state: present
+    name: "{{ report_name_check }}"
+    description: "Report generated in check mode with all attributes"
+    config_ext_id: "aaaaaaaa-1111-2222-3333-444444444444"
+    start_time: "2026-01-01T00:00:00Z"
+    end_time: "2026-01-31T23:59:59Z"
+    is_persistent: true
+    timezone: "UTC"
+    owner_ext_id: "00000000-0000-0000-0000-000000000001"
+    override_supported_formats:
+      - PDF
+      - CSV
+    recipient_formats:
+      - PDF
+    recipients:
+      - email_address: "qa-user@example.com"
+        recipient_name: "QA User"
+    entity_selection:
+      entity_type: "VM"
+      entity_ext_id:
+        - "11111111-2222-3333-4444-555555555555"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check_mode Report create spec generation
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == report_name_check
+      - result.response.description == "Report generated in check mode with all attributes"
+      - result.response.config_ext_id == "aaaaaaaa-1111-2222-3333-444444444444"
+      - result.response.start_time == "2026-01-01T00:00:00Z"
+      - result.response.end_time == "2026-01-31T23:59:59Z"
+      - result.response.is_persistent == true
+      - result.response.timezone == "UTC"
+      - result.response.owner_ext_id == "00000000-0000-0000-0000-000000000001"
+      - result.response.override_supported_formats | length == 2
+      - result.response.override_supported_formats[0] == "PDF"
+      - result.response.override_supported_formats[1] == "CSV"
+      - result.response.recipient_formats | length == 1
+      - result.response.recipient_formats[0] == "PDF"
+      - result.response.recipients | length == 1
+      - result.response.recipients[0].email_address == "qa-user@example.com"
+      - result.response.recipients[0].recipient_name == "QA User"
+      - result.response.entity_selection.entity_type == "VM"
+      - result.response.entity_selection.entity_ext_id | length == 1
+      - result.response.entity_selection.entity_ext_id[0] == "11111111-2222-3333-4444-555555555555"
+    success_msg: "check_mode Report create spec generated with all attributes"
+    fail_msg: "check_mode Report create spec did not match expected attributes"
+
+########################################################################################
+# Negative — missing required fields on create
+########################################################################################
+
+- name: Create Report with missing name
+  nutanix.ncp.ntnx_report_v2:
+    state: present
+    config_ext_id: "aaaaaaaa-1111-2222-3333-444444444444"
+    start_time: "2026-01-01T00:00:00Z"
+    end_time: "2026-01-31T23:59:59Z"
+  register: result
+  ignore_errors: true
+
+- name: Assert Report create with missing name fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is present but any of the following are missing: name, ext_id' in result.msg"
+    success_msg: "Report create with missing name failed as expected"
+    fail_msg: "Report create with missing name did not fail as expected"
+
+- name: Create Report with missing config_ext_id
+  nutanix.ncp.ntnx_report_v2:
+    state: present
+    name: "{{ report_name_min }}"
+    start_time: "2026-01-01T00:00:00Z"
+    end_time: "2026-01-31T23:59:59Z"
+  register: result
+  ignore_errors: true
+
+- name: Assert Report create with missing config_ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'Missing required parameter(s): config_ext_id' in result.msg"
+    success_msg: "Report create with missing config_ext_id failed as expected"
+    fail_msg: "Report create with missing config_ext_id did not fail as expected"
+
+- name: Create Report with missing start_time and end_time
+  nutanix.ncp.ntnx_report_v2:
+    state: present
+    name: "{{ report_name_min }}"
+    config_ext_id: "aaaaaaaa-1111-2222-3333-444444444444"
+  register: result
+  ignore_errors: true
+
+- name: Assert Report create with missing start_time/end_time fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'Missing required parameter(s):' in result.msg"
+      - "'start_time' in result.msg"
+      - "'end_time' in result.msg"
+    success_msg: "Report create with missing start_time/end_time failed as expected"
+    fail_msg: "Report create with missing start_time/end_time did not fail as expected"
+
+- name: Create Report with invalid entity_type enum
+  nutanix.ncp.ntnx_report_v2:
+    state: present
+    name: "{{ report_name_min }}"
+    config_ext_id: "aaaaaaaa-1111-2222-3333-444444444444"
+    start_time: "2026-01-01T00:00:00Z"
+    end_time: "2026-01-31T23:59:59Z"
+    entity_selection:
+      entity_type: "NOT_A_VALID_TYPE"
+  register: result
+  ignore_errors: true
+
+- name: Assert Report create with invalid entity_type is rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+    success_msg: "Report create with invalid entity_type failed as expected"
+    fail_msg: "Report create with invalid entity_type did not fail as expected"
+
+- name: Create Report with invalid recipient_formats enum
+  nutanix.ncp.ntnx_report_v2:
+    state: present
+    name: "{{ report_name_min }}"
+    config_ext_id: "aaaaaaaa-1111-2222-3333-444444444444"
+    start_time: "2026-01-01T00:00:00Z"
+    end_time: "2026-01-31T23:59:59Z"
+    recipient_formats:
+      - "HTML"
+  register: result
+  ignore_errors: true
+
+- name: Assert Report create with invalid recipient_formats is rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+    success_msg: "Report create with invalid recipient_formats failed as expected"
+    fail_msg: "Report create with invalid recipient_formats did not fail as expected"
+
+- name: Create Report with malformed config_ext_id (SDK validation)
+  nutanix.ncp.ntnx_report_v2:
+    state: present
+    name: "{{ report_name_min }}"
+    config_ext_id: "not-a-uuid"
+    start_time: "2026-01-01T00:00:00Z"
+    end_time: "2026-01-31T23:59:59Z"
+  register: result
+  ignore_errors: true
+
+- name: Assert Report create with malformed config_ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+    success_msg: "Report create with malformed config_ext_id failed as expected"
+    fail_msg: "Report create with malformed config_ext_id did not fail as expected"
+
+########################################################################################
+# Real Report generation - only runs when a Report Configuration is available
+########################################################################################
+
+- name: Report generation lifecycle (requires an existing Report Configuration)
+  when: report_configs_available | bool
+  block:
+    - name: Generate a Report with the MINIMUM required attributes
+      nutanix.ncp.ntnx_report_v2:
+        state: present
+        name: "{{ report_name_min }}"
+        config_ext_id: "{{ report_config_ext_id }}"
+        start_time: "2026-01-01T00:00:00Z"
+        end_time: "2026-01-31T23:59:59Z"
+      register: result
+      ignore_errors: true
+
+    - name: Assert minimum-attributes Report generation
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.failed == false
+          - result.changed == true
+          - result.ext_id is defined
+          - result.ext_id | length > 0
+          - result.task_ext_id is defined
+          - result.response is defined
+          - result.response.name == report_name_min
+          - result.response.config_ext_id == report_config_ext_id
+        success_msg: "Report generated with minimum required attributes"
+        fail_msg: "Report generation with minimum required attributes failed"
+
+    - name: Track minimum-attributes report for cleanup
+      ansible.builtin.set_fact:
+        todelete: "{{ todelete + [result.ext_id] }}"
+
+    - name: Generate a Report with ALL attributes populated
+      nutanix.ncp.ntnx_report_v2:
+        state: present
+        name: "{{ report_name_full }}"
+        description: "Ansible integration test - full-attribute Report generation"
+        config_ext_id: "{{ report_config_ext_id }}"
+        start_time: "2026-01-01T00:00:00Z"
+        end_time: "2026-01-31T23:59:59Z"
+        is_persistent: true
+        timezone: "UTC"
+        override_supported_formats:
+          - PDF
+          - CSV
+        recipient_formats:
+          - PDF
+        recipients:
+          - email_address: "ansible-qa@example.com"
+            recipient_name: "Ansible QA"
+      register: result
+      ignore_errors: true
+
+    - name: Assert all-attributes Report generation
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.failed == false
+          - result.changed == true
+          - result.ext_id is defined
+          - result.ext_id | length > 0
+          - result.task_ext_id is defined
+          - result.response is defined
+          - result.response.name == report_name_full
+          - result.response.description == "Ansible integration test - full-attribute Report generation"
+          - result.response.config_ext_id == report_config_ext_id
+          - result.response.is_persistent == true
+          - result.response.timezone == "UTC"
+          - result.response.override_supported_formats is defined
+          - result.response.override_supported_formats | length == 2
+          - result.response.recipient_formats is defined
+          - result.response.recipient_formats | length == 1
+          - result.response.recipient_formats[0] == "PDF"
+          - result.response.recipients is defined
+          - result.response.recipients | length == 1
+          - result.response.recipients[0].email_address == "ansible-qa@example.com"
+          - result.response.recipients[0].recipient_name == "Ansible QA"
+        success_msg: "Report generated with all attributes"
+        fail_msg: "Report generation with all attributes failed"
+
+    - name: Track full-attributes report for cleanup
+      ansible.builtin.set_fact:
+        todelete: "{{ todelete + [result.ext_id] }}"
+        report_full_ext_id: "{{ result.ext_id }}"
+
+    ####################################################################################
+    # Update path - Reports are immutable, module MUST reject state=present + ext_id
+    ####################################################################################
+
+    - name: Attempt to update a Report (state=present + ext_id) — must fail
+      nutanix.ncp.ntnx_report_v2:
+        state: present
+        ext_id: "{{ report_full_ext_id }}"
+        name: "{{ report_name_full }}_should_not_update"
+      register: result
+      ignore_errors: true
+
+    - name: Assert update path is rejected with a descriptive error
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.failed == true
+          - result.changed == false
+          - "'immutable' in result.msg"
+        success_msg: "Report update path correctly rejected as immutable"
+        fail_msg: "Report update path did not fail as expected"
+
+    ####################################################################################
+    # Info module - get-by-ext_id, list, filter, limit
+    ####################################################################################
+
+    - name: Fetch generated Report using ext_id
+      nutanix.ncp.ntnx_reports_info_v2:
+        ext_id: "{{ report_full_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Assert Report fetched by ext_id
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.response is defined
+          - result.response.ext_id == report_full_ext_id
+          - result.response.name == report_name_full
+          - result.response.config_ext_id == report_config_ext_id
+        success_msg: "Report fetched successfully by ext_id"
+        fail_msg: "Fetch Report by ext_id failed"
+
+    - name: List all reports
+      nutanix.ncp.ntnx_reports_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Assert list all reports returns generated reports
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.response is defined
+          - result.response | length >= (todelete | length)
+        success_msg: "List all reports returned expected result set"
+        fail_msg: "List all reports did not return expected result set"
+
+    - name: List reports with filter matching generated report name
+      nutanix.ncp.ntnx_reports_info_v2:
+        filter: "name eq '{{ report_name_full }}'"
+      register: result
+      ignore_errors: true
+
+    - name: Assert filtered list returned the generated report
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.response is defined
+          - result.response | length >= 1
+          - result.response[0].name == report_name_full
+        success_msg: "List reports with filter returned expected match"
+        fail_msg: "List reports with filter did not return expected match"
+
+    - name: List reports with limit=1
+      nutanix.ncp.ntnx_reports_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: Assert list limit=1 returns at most 1 report
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.response is defined
+          - result.response | length == 1
+        success_msg: "List reports with limit=1 returned exactly one entry"
+        fail_msg: "List reports with limit=1 did not return exactly one entry"
+
+########################################################################################
+# Info module — negative case (works regardless of prerequisite availability)
+########################################################################################
+
+- name: Fetch Report using a non-existent ext_id
+  nutanix.ncp.ntnx_reports_info_v2:
+    ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+  register: result
+  ignore_errors: true
+
+- name: Assert fetch with non-existent ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Fetch Report with non-existent ext_id failed as expected"
+    fail_msg: "Fetch Report with non-existent ext_id did not fail as expected"
+
+########################################################################################
+# Delete Report tests
+########################################################################################
+
+- name: Delete Report using check mode
+  nutanix.ncp.ntnx_report_v2:
+    state: absent
+    ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check_mode Delete Report
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - "'will be deleted' in result.msg"
+    success_msg: "check_mode Delete Report reported expected message"
+    fail_msg: "check_mode Delete Report did not report expected message"
+
+- name: Delete Report with missing ext_id
+  nutanix.ncp.ntnx_report_v2:
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Assert Delete Report with missing ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is absent but all of the following are missing: ext_id' in result.msg"
+    success_msg: "Delete Report with missing ext_id failed as expected"
+    fail_msg: "Delete Report with missing ext_id did not fail as expected"
+
+- name: Delete Report using a non-existent ext_id
+  nutanix.ncp.ntnx_report_v2:
+    state: absent
+    ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+  register: result
+  ignore_errors: true
+
+- name: Assert Delete Report using a non-existent ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Delete Report with non-existent ext_id failed as expected"
+    fail_msg: "Delete Report with non-existent ext_id did not fail as expected"
+
+- name: Delete all generated Reports (cleanup)
+  nutanix.ncp.ntnx_report_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: cleanup_result
+  ignore_errors: true
+  loop: "{{ todelete }}"
+  when: todelete | length > 0
+
+- name: Assert cleanup deletion status
+  ansible.builtin.assert:
+    that:
+      - cleanup_result is defined
+      - cleanup_result.results | length == todelete | length
+    success_msg: "All generated Reports deleted successfully"
+    fail_msg: "Cleanup deletion did not process every generated report"
+  when: todelete | length > 0
