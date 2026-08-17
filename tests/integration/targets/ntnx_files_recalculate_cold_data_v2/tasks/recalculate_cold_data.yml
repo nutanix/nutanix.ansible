@@ -1,0 +1,154 @@
+---
+##############################################################################
+# Test plan for ntnx_files_recalculate_cold_data_v2
+#
+# RecalculateColdData is an ACTION module. It triggers a background scan on a
+# Nutanix Files file server that recomputes the size of cold data eligible for
+# tiering. It has a single input (ext_id = file server external id) and does
+# NOT create an Ergon task; the API returns application messages immediately
+# once the scan is scheduled.
+#
+# Scenarios covered:
+#   1. check_mode: trigger with ext_id -> no API call, predicted message.
+#   2. Negative  : ext_id omitted -> argument-spec validation failure.
+#   3. Negative  : invalid state value -> argument-spec validation failure.
+#   4. Live      : (gated on `file_server_ext_id`) trigger recalculate against a
+#                  real file server, re-run to prove the action is repeatable,
+#                  and trigger against a non-existent ext_id for the error path.
+#
+# Every assertion block checks `changed` and `failed` first, then the rest.
+##############################################################################
+
+- name: Start ntnx_files_recalculate_cold_data_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_files_recalculate_cold_data_v2 tests
+
+- name: Set a non-existent file server ext_id for negative tests
+  ansible.builtin.set_fact:
+    non_existent_ext_id: "ffffffff-ffff-ffff-ffff-ffffffffffff"
+
+########################################################################
+# 1. check_mode
+########################################################################
+
+- name: Recalculate cold data in check mode
+  nutanix.ncp.ntnx_files_recalculate_cold_data_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Recalculate cold data in check mode - status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "00000000-0000-0000-0000-000000000000"
+      - result.msg is defined
+      - "'will be triggered to recalculate cold data' in result.msg"
+    success_msg: "check_mode returned the predicted message without calling the API"
+    fail_msg: "check_mode did not behave as expected"
+
+########################################################################
+# 2. Negative - missing required ext_id
+########################################################################
+
+- name: Recalculate cold data without ext_id (should fail)
+  nutanix.ncp.ntnx_files_recalculate_cold_data_v2:
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Recalculate cold data without ext_id - status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - "'ext_id' in result.msg"
+    success_msg: "Module correctly rejected the request when ext_id was missing"
+    fail_msg: "Module did not fail when the required ext_id was missing"
+
+########################################################################
+# 3. Negative - invalid state value
+########################################################################
+
+- name: Recalculate cold data with invalid state (should fail)
+  nutanix.ncp.ntnx_files_recalculate_cold_data_v2:
+    state: absent
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Recalculate cold data with invalid state - status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - "'state' in result.msg"
+    success_msg: "Module correctly rejected the unsupported state value"
+    fail_msg: "Module did not fail for an unsupported state value"
+
+########################################################################
+# 4. Live tests - require a real file server (gated)
+#    Provide `file_server_ext_id` in integration_config.yml to enable.
+########################################################################
+
+- name: Skip live tests when no file server is available
+  ansible.builtin.debug:
+    msg: >-
+      Skipping live RecalculateColdData tests because `file_server_ext_id`
+      is not defined. Define it in integration_config.yml to run them against
+      a file server that has a tiering configuration.
+  when: file_server_ext_id is not defined or (file_server_ext_id | length == 0)
+
+- name: Live RecalculateColdData tests
+  when: file_server_ext_id is defined and (file_server_ext_id | length > 0)
+  block:
+    - name: Recalculate cold data for the file server
+      nutanix.ncp.ntnx_files_recalculate_cold_data_v2:
+        ext_id: "{{ file_server_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Recalculate cold data for the file server - status
+      ansible.builtin.assert:
+        that:
+          - result.changed == true
+          - result.failed == false
+          - result.ext_id == file_server_ext_id
+          - result.response is defined
+        success_msg: "Recalculate cold data was triggered successfully"
+        fail_msg: "Recalculate cold data trigger failed"
+
+    - name: Recalculate cold data again (action is repeatable, not idempotent)
+      nutanix.ncp.ntnx_files_recalculate_cold_data_v2:
+        ext_id: "{{ file_server_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Recalculate cold data again - status
+      ansible.builtin.assert:
+        that:
+          - result.changed == true
+          - result.failed == false
+          - result.ext_id == file_server_ext_id
+        success_msg: "Recalculate cold data can be triggered repeatedly"
+        fail_msg: "Re-running recalculate cold data did not behave as expected"
+
+    - name: Recalculate cold data for a non-existent file server (should fail)
+      nutanix.ncp.ntnx_files_recalculate_cold_data_v2:
+        ext_id: "{{ non_existent_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Recalculate cold data for a non-existent file server - status
+      ansible.builtin.assert:
+        that:
+          - result.changed == false
+          - result.failed == true
+        success_msg: "Module correctly failed for a non-existent file server"
+        fail_msg: "Module did not fail for a non-existent file server"
+
+- name: Finish ntnx_files_recalculate_cold_data_v2 tests
+  ansible.builtin.debug:
+    msg: Finish ntnx_files_recalculate_cold_data_v2 tests

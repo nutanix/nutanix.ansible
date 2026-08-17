@@ -1,0 +1,24 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [RecalculateColdData playbook] ********************************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"file_server_ext_id": "b2c3d4e5-6789-4abc-9def-0123456789ab"}, "changed": false}
+
+TASK [Recalculate cold data for a file server] *********************************
+[ERROR]: Task failed: Module failed: Api Exception raised while recalculating cold data for file server
+Origin: /tmp/codegen-artifacts.QDRmWg/run_example.yml:20:7
+
+18         file_server_ext_id: "b2c3d4e5-6789-4abc-9def-0123456789ab"
+19
+20     - name: Recalculate cold data for a file server
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while recalculating cold data for file server", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=1   
+
