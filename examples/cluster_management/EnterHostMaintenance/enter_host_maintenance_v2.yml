@@ -1,0 +1,73 @@
+---
+# Summary:
+# This playbook demonstrates how to put a Nutanix cluster host into
+# maintenance mode using the Planned Outage Manager (POM) v4 API.
+#
+# High level flow:
+#   1. Look up the Prism Element cluster hosted by this Prism Central.
+#   2. Pick a host from that cluster.
+#   3. Put the host into maintenance mode (AHV workflow shown by default).
+#   4. Alternate task showing the ESXi variant with vCenter credentials.
+#
+# NOTE: entering maintenance mode is a disruptive workload-migration event.
+#       In a production cluster you MUST ensure the cluster has enough
+#       failure-domain capacity and that VMs can either migrate or be
+#       shut down before running this playbook.
+
+- name: Enter host maintenance playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "10.44.76.28"
+      nutanix_username: "admin"
+      nutanix_password: "Nutanix.123"
+      validate_certs: false
+  tasks:
+    - name: List Prism Element clusters attached to this Prism Central
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+      register: pe_clusters
+      ignore_errors: true
+
+    - name: Set the target cluster external ID
+      ansible.builtin.set_fact:
+        target_cluster_ext_id: "{{ pe_clusters.response[0].ext_id }}"
+
+    - name: List hosts of the target cluster
+      nutanix.ncp.ntnx_hosts_info_v2:
+        cluster_ext_id: "{{ target_cluster_ext_id }}"
+      register: cluster_hosts
+      ignore_errors: true
+
+    - name: Set the target host external ID
+      ansible.builtin.set_fact:
+        target_host_ext_id: "{{ cluster_hosts.response[0].ext_id }}"
+
+    - name: Enter AHV host into maintenance mode with rollback + shutdown consent
+      nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+        cluster_ext_id: "{{ target_cluster_ext_id }}"
+        ext_id: "{{ target_host_ext_id }}"
+        should_rollback_on_failure: true
+        should_shutdown_non_migratable_uvms: true
+        timeout_seconds: 3600
+      register: enter_maintenance_ahv
+      ignore_errors: true
+
+    - name: Enter ESXi host into maintenance mode with vCenter connection info
+      nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+        cluster_ext_id: "{{ target_cluster_ext_id }}"
+        ext_id: "{{ target_host_ext_id }}"
+        should_rollback_on_failure: true
+        should_shutdown_non_migratable_uvms: false
+        timeout_seconds: 1800
+        vcenter_info:
+          address:
+            ipv4:
+              value: "10.44.76.29"
+          credentials:
+            username: "administrator@vsphere.local"
+            password: "vcenter-password"
+            port: 443
+      register: enter_maintenance_esxi
+      ignore_errors: true
