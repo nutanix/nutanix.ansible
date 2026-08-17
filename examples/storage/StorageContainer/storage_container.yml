@@ -1,0 +1,146 @@
+---
+# Summary:
+# This playbook demonstrates the full lifecycle of a Nutanix v4 Storage
+# Container using the storage-namespace v4 API SDK (ntnx_storage_py_client):
+#   1. Fetch a Prism Element cluster to host the Storage Container.
+#   2. Create the Storage Container with all supported attributes.
+#   3. Fetch it by external ID.
+#   4. Update it with new capacity, whitelist and compression settings.
+#   5. List all Storage Containers, then filter by name and limit.
+#   6. Delete the Storage Container.
+
+- name: Storage Container v4 playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('10.44.76.28', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('admin', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('Nutanix.123', true) }}"
+      nutanix_port: "{{ lookup('env', 'NUTANIX_PORT') | default(9440, true) }}"
+      validate_certs: false
+  tasks:
+    - name: Set example variables
+      ansible.builtin.set_fact:
+        random_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=8)[0] | lower }}"
+
+    - name: Set example names
+      ansible.builtin.set_fact:
+        sc_name: "sc_ansible_example_{{ random_suffix }}"
+
+    - name: Fetch all Prism Element clusters registered with this PC
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+      register: clusters_info
+      ignore_errors: true
+
+    - name: Pick the first non-PC cluster as the target
+      ansible.builtin.set_fact:
+        target_cluster_ext_id: >-
+          {{
+            (clusters_info.response
+             | selectattr('config.cluster_function', 'defined')
+             | rejectattr('config.cluster_function', 'contains', 'PRISM_CENTRAL')
+             | list
+             | first).ext_id
+          }}
+
+    - name: Create a Storage Container with all supported attributes
+      nutanix.ncp.ntnx_storage_container_v2:
+        state: present
+        name: "{{ sc_name }}"
+        cluster_ext_id: "{{ target_cluster_ext_id }}"
+        owner_ext_id: "00000000-0000-0000-0000-000000000000"
+        replication_factor: 2
+        oplog_replication_factor: 2
+        advertised_capacity_bytes: 1073741824000
+        explicit_reserved_capacity_bytes: 0
+        is_nfs_whitelist_inherited: false
+        nfs_whitelist_address:
+          - ipv4:
+              value: "192.168.10.10"
+        random_io_preference:
+          - "SSD-PCIe"
+          - "SSD-SATA"
+        seq_io_preference:
+          - "SSD-PCIe"
+          - "SSD-SATA"
+        erasure_code: "OFF"
+        is_inline_ec_enabled: false
+        has_higher_ec_fault_domain_preference: false
+        erasure_code_delay_secs: 0
+        cache_deduplication: "OFF"
+        on_disk_dedup: "OFF"
+        is_compression_enabled: true
+        compression_delay_secs: 0
+        is_internal: false
+        is_software_encryption_enabled: false
+      register: sc_created
+      ignore_errors: true
+
+    - name: Fetch the created Storage Container by external ID
+      nutanix.ncp.ntnx_storage_containers_info_v2:
+        ext_id: "{{ sc_created.ext_id }}"
+      register: sc_info
+      ignore_errors: true
+
+    - name: Update the Storage Container with all supported attributes
+      nutanix.ncp.ntnx_storage_container_v2:
+        state: present
+        ext_id: "{{ sc_created.ext_id }}"
+        name: "{{ sc_name }}_updated"
+        cluster_ext_id: "{{ target_cluster_ext_id }}"
+        owner_ext_id: "00000000-0000-0000-0000-000000000000"
+        replication_factor: 2
+        oplog_replication_factor: 2
+        advertised_capacity_bytes: 2147483648000
+        explicit_reserved_capacity_bytes: 10737418240
+        is_nfs_whitelist_inherited: false
+        nfs_whitelist_address:
+          - ipv4:
+              value: "192.168.10.11"
+          - ipv4:
+              value: "192.168.10.12"
+        random_io_preference:
+          - "SSD-PCIe"
+          - "SSD-SATA"
+        seq_io_preference:
+          - "SSD-PCIe"
+          - "SSD-SATA"
+        erasure_code: "OFF"
+        is_inline_ec_enabled: false
+        has_higher_ec_fault_domain_preference: false
+        erasure_code_delay_secs: 0
+        cache_deduplication: "OFF"
+        on_disk_dedup: "OFF"
+        is_compression_enabled: true
+        compression_delay_secs: 3600
+        is_internal: false
+        is_software_encryption_enabled: false
+      register: sc_updated
+      ignore_errors: true
+
+    - name: List all Storage Containers
+      nutanix.ncp.ntnx_storage_containers_info_v2:
+      register: sc_list_all
+      ignore_errors: true
+
+    - name: List a specific Storage Container using filter
+      nutanix.ncp.ntnx_storage_containers_info_v2:
+        filter: "name eq '{{ sc_name }}_updated'"
+      register: sc_list_filter
+      ignore_errors: true
+
+    - name: List Storage Containers with limit
+      nutanix.ncp.ntnx_storage_containers_info_v2:
+        limit: 1
+      register: sc_list_limit
+      ignore_errors: true
+
+    - name: Delete the Storage Container
+      nutanix.ncp.ntnx_storage_container_v2:
+        state: absent
+        ext_id: "{{ sc_created.ext_id }}"
+        ignore_small_files: true
+      register: sc_deleted
+      ignore_errors: true
