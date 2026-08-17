@@ -128,6 +128,39 @@ def get_identity_provider(module, api_instance, ext_id):
         )
 
 
+def get_saml_sp_metadata(module, api_instance, ext_id=None):
+    """
+    Fetch SAML Service Provider (SP) metadata from Prism Central.
+
+    Args:
+        module (object): Ansible module object.
+        api_instance (object): ``SAMLIdentityProvidersApi`` instance from
+            ``ntnx_iam_py_client``.
+        ext_id (str | None): External ID of the SAML identity provider.
+            When provided, the newer per-IDP endpoint is used
+            (``get_saml_idp_sp_metadata_by_id``) so the response reflects
+            IDP-specific configuration such as reverse-proxy redirect URLs
+            and signed authentication requests. When ``None`` the legacy
+            cluster-wide endpoint (``get_saml_sp_metadata``) is used.
+
+    Returns:
+        Response object from the SDK.
+    """
+    try:
+        if ext_id:
+            return api_instance.get_saml_idp_sp_metadata_by_id(extId=ext_id)
+        return api_instance.get_saml_sp_metadata()
+    except Exception as e:
+        msg = (
+            "Api Exception raised while fetching SAML SP metadata for ext_id: {0}".format(
+                ext_id
+            )
+            if ext_id
+            else "Api Exception raised while fetching SAML SP metadata"
+        )
+        raise_api_exception(module=module, exception=e, msg=msg)
+
+
 def get_directory_service(module, api_instance, ext_id):
     """
     This method will return directory service info using ext_id.

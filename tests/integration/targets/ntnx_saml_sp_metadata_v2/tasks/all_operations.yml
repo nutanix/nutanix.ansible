@@ -1,0 +1,344 @@
+---
+- name: Announce SamlSpMetadata tests
+  ansible.builtin.debug:
+    msg: "Start ntnx_saml_sp_metadata_v2 and ntnx_saml_sp_metadata_info_v2 tests"
+
+- name: Generate random suffix for artefacts
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set derived fact names
+  ansible.builtin.set_fact:
+    sp_metadata_download_path: "/tmp/sp_metadata_{{ random_name }}.xml"
+    sp_metadata_second_download_path: "/tmp/sp_metadata_{{ random_name }}_second.xml"
+    sp_metadata_bad_dir: "/tmp/does-not-exist-{{ random_name }}/sp.xml"
+
+########################################################################################
+# Prerequisite discovery: pick an existing SAML identity provider on the cluster.
+########################################################################################
+
+- name: Discover existing SAML identity providers on the cluster
+  nutanix.ncp.ntnx_saml_identity_providers_info_v2:
+  register: existing_idps
+
+- name: Verify at least one SAML identity provider is available for testing
+  ansible.builtin.assert:
+    that:
+      - existing_idps is defined
+      - existing_idps.failed == false
+      - existing_idps.changed == false
+      - existing_idps.response is defined
+      - existing_idps.response | length > 0
+    success_msg: "Found {{ existing_idps.response | length }} SAML IDP(s) to run SP metadata tests against."
+    fail_msg: "No SAML identity providers exist on this Prism Central. Create one via ntnx_saml_identity_providers_v2 first."
+
+- name: Capture the first SAML IDP's ext_id for the tests
+  ansible.builtin.set_fact:
+    test_idp_ext_id: "{{ existing_idps.response[0].ext_id }}"
+
+- name: Log the chosen SAML IDP
+  ansible.builtin.debug:
+    msg: "Using SAML IDP ext_id={{ test_idp_ext_id }} name={{ existing_idps.response[0].name }}"
+
+########################################################################################
+# Section 1 — check_mode behavior (mandatory single check_mode per operation)
+########################################################################################
+
+- name: Download SP metadata by ext_id in check_mode
+  nutanix.ncp.ntnx_saml_sp_metadata_v2:
+    ext_id: "{{ test_idp_ext_id }}"
+    dest: "{{ sp_metadata_download_path }}"
+  check_mode: true
+  register: cm_download_by_id
+
+- name: Assert check_mode by-ext_id skipped the API call
+  ansible.builtin.assert:
+    that:
+      - cm_download_by_id is defined
+      - cm_download_by_id.failed == false
+      - cm_download_by_id.changed == false
+      - cm_download_by_id.ext_id == test_idp_ext_id
+      - cm_download_by_id.response is none
+      - cm_download_by_id.msg is defined
+      - cm_download_by_id.msg == "SAML SP metadata for ext_id:" ~ test_idp_ext_id ~ " will be downloaded."
+    success_msg: "check_mode by-ext_id honoured — API skipped, msg reported."
+    fail_msg: "check_mode by-ext_id did not behave as expected."
+
+- name: Assert check_mode did not create a file
+  ansible.builtin.stat:
+    path: "{{ sp_metadata_download_path }}"
+  register: cm_stat
+
+- name: Assert file was not created in check_mode
+  ansible.builtin.assert:
+    that:
+      - cm_stat.stat.exists == false
+    success_msg: "No file written in check_mode."
+    fail_msg: "File was written in check_mode — this is unsafe."
+
+- name: Download legacy SP metadata in check_mode
+  nutanix.ncp.ntnx_saml_sp_metadata_v2:
+  check_mode: true
+  register: cm_download_legacy
+
+- name: Assert check_mode legacy skipped the API call
+  ansible.builtin.assert:
+    that:
+      - cm_download_legacy is defined
+      - cm_download_legacy.failed == false
+      - cm_download_legacy.changed == false
+      - cm_download_legacy.ext_id is none
+      - cm_download_legacy.response is none
+      - cm_download_legacy.msg is defined
+      - cm_download_legacy.msg == "Legacy cluster-wide SAML SP metadata will be downloaded."
+    success_msg: "check_mode legacy honoured — API skipped, msg reported."
+    fail_msg: "check_mode legacy did not behave as expected."
+
+- name: Delete-equivalent (file cleanup) in check_mode
+  ansible.builtin.file:
+    path: "{{ sp_metadata_download_path }}"
+    state: absent
+  check_mode: true
+  register: cm_delete
+
+- name: Assert cleanup check_mode did nothing
+  ansible.builtin.assert:
+    that:
+      - cm_delete is defined
+      - cm_delete.failed == false
+      - cm_delete.changed == false
+    success_msg: "Delete-equivalent check_mode honoured."
+    fail_msg: "Delete-equivalent check_mode did not behave as expected."
+
+########################################################################################
+# Section 2 — Real download operations (Create/Update equivalent for action module)
+########################################################################################
+
+- name: Real download of SAML SP metadata by ext_id (no dest)
+  nutanix.ncp.ntnx_saml_sp_metadata_v2:
+    ext_id: "{{ test_idp_ext_id }}"
+  register: dl_by_id
+
+- name: Assert per-IDP SP metadata download succeeded
+  ansible.builtin.assert:
+    that:
+      - dl_by_id is defined
+      - dl_by_id.failed == false
+      - dl_by_id.changed == true
+      - dl_by_id.ext_id == test_idp_ext_id
+      - dl_by_id.response is defined
+      - dl_by_id.response.ext_id == test_idp_ext_id
+      - dl_by_id.response.path is none
+      - dl_by_id.response.content is defined
+      - dl_by_id.response.content | length > 0
+      - "'<md:EntityDescriptor' in dl_by_id.response.content"
+      - "'SPSSODescriptor' in dl_by_id.response.content"
+    success_msg: "Per-IDP SP metadata fetched successfully."
+    fail_msg: "Per-IDP SP metadata download did not return the expected XML shape."
+
+- name: Real download of legacy cluster-wide SAML SP metadata
+  nutanix.ncp.ntnx_saml_sp_metadata_v2:
+  register: dl_legacy
+
+- name: Assert legacy SP metadata download succeeded
+  ansible.builtin.assert:
+    that:
+      - dl_legacy is defined
+      - dl_legacy.failed == false
+      - dl_legacy.changed == true
+      - dl_legacy.ext_id is none
+      - dl_legacy.response is defined
+      - dl_legacy.response.ext_id is none
+      - dl_legacy.response.path is none
+      - dl_legacy.response.content is defined
+      - dl_legacy.response.content | length > 0
+      - "'<md:EntityDescriptor' in dl_legacy.response.content"
+    success_msg: "Legacy SP metadata fetched successfully."
+    fail_msg: "Legacy SP metadata download did not return the expected XML shape."
+
+- name: Real download to a file with all attributes populated
+  nutanix.ncp.ntnx_saml_sp_metadata_v2:
+    ext_id: "{{ test_idp_ext_id }}"
+    dest: "{{ sp_metadata_download_path }}"
+  register: dl_with_dest
+
+- name: Assert download-to-file succeeded
+  ansible.builtin.assert:
+    that:
+      - dl_with_dest is defined
+      - dl_with_dest.failed == false
+      - dl_with_dest.changed == true
+      - dl_with_dest.ext_id == test_idp_ext_id
+      - dl_with_dest.response is defined
+      - dl_with_dest.response.ext_id == test_idp_ext_id
+      - dl_with_dest.response.path == sp_metadata_download_path
+      - dl_with_dest.response.content is defined
+      - "'<md:EntityDescriptor' in dl_with_dest.response.content"
+    success_msg: "SP metadata downloaded to file successfully."
+    fail_msg: "SP metadata download-to-file did not populate response.path."
+
+- name: Stat the saved SP metadata file
+  ansible.builtin.stat:
+    path: "{{ sp_metadata_download_path }}"
+  register: dl_file_stat
+
+- name: Assert file exists and is non-empty
+  ansible.builtin.assert:
+    that:
+      - dl_file_stat.stat.exists == true
+      - dl_file_stat.stat.isreg == true
+      - dl_file_stat.stat.size > 0
+    success_msg: "SP metadata file written and non-empty."
+    fail_msg: "SP metadata file was not written correctly."
+
+- name: Read saved SP metadata content
+  ansible.builtin.slurp:
+    src: "{{ sp_metadata_download_path }}"
+  register: dl_file_content
+
+- name: Assert saved content equals response.content
+  ansible.builtin.assert:
+    that:
+      - (dl_file_content.content | b64decode) == dl_with_dest.response.content
+    success_msg: "Saved file content matches response.content."
+    fail_msg: "Saved file content diverged from response.content."
+
+########################################################################################
+# Section 3 — Idempotency (repeat fetch yields identical content)
+########################################################################################
+
+- name: Second download of SP metadata for the same IDP
+  nutanix.ncp.ntnx_saml_sp_metadata_v2:
+    ext_id: "{{ test_idp_ext_id }}"
+    dest: "{{ sp_metadata_second_download_path }}"
+  register: dl_second
+
+- name: Assert second download returned identical XML payload
+  ansible.builtin.assert:
+    that:
+      - dl_second is defined
+      - dl_second.failed == false
+      - dl_second.changed == true
+      - dl_second.response is defined
+      - dl_second.response.content == dl_with_dest.response.content
+      - dl_second.response.ext_id == test_idp_ext_id
+    success_msg: "SP metadata is deterministic for a given IDP."
+    fail_msg: "SP metadata unexpectedly differed between two consecutive fetches."
+
+########################################################################################
+# Section 4 — Info module
+########################################################################################
+
+- name: Info — get SP metadata by ext_id
+  nutanix.ncp.ntnx_saml_sp_metadata_info_v2:
+    ext_id: "{{ test_idp_ext_id }}"
+  register: info_by_id
+
+- name: Assert info-by-ext_id result
+  ansible.builtin.assert:
+    that:
+      - info_by_id is defined
+      - info_by_id.failed == false
+      - info_by_id.changed == false
+      - info_by_id.ext_id == test_idp_ext_id
+      - info_by_id.response is defined
+      - info_by_id.response.ext_id == test_idp_ext_id
+      - info_by_id.response.content is defined
+      - info_by_id.response.content | length > 0
+      - "'<md:EntityDescriptor' in info_by_id.response.content"
+      - info_by_id.response.content == dl_with_dest.response.content
+    success_msg: "Info by-ext_id returned the same XML as the action module."
+    fail_msg: "Info by-ext_id did not match action module response."
+
+- name: Info — legacy cluster-wide fetch
+  nutanix.ncp.ntnx_saml_sp_metadata_info_v2:
+  register: info_legacy
+
+- name: Assert info legacy result
+  ansible.builtin.assert:
+    that:
+      - info_legacy is defined
+      - info_legacy.failed == false
+      - info_legacy.changed == false
+      - info_legacy.ext_id is none
+      - info_legacy.response is defined
+      - info_legacy.response.ext_id is none
+      - info_legacy.response.content is defined
+      - info_legacy.response.content | length > 0
+      - "'<md:EntityDescriptor' in info_legacy.response.content"
+    success_msg: "Info legacy fetch succeeded."
+    fail_msg: "Info legacy fetch did not return the expected XML."
+
+########################################################################################
+# Section 5 — Negative / error tests
+########################################################################################
+
+- name: Attempt to download SP metadata with an invalid ext_id
+  nutanix.ncp.ntnx_saml_sp_metadata_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: dl_invalid
+  ignore_errors: true
+
+- name: Assert invalid ext_id surfaces an API error
+  ansible.builtin.assert:
+    that:
+      - dl_invalid is defined
+      - dl_invalid.failed == true
+      - dl_invalid.msg is defined
+    success_msg: "Invalid ext_id surfaced an API error as expected."
+    fail_msg: "Invalid ext_id should have failed but did not."
+
+- name: Attempt to download SP metadata into a non-existent directory
+  nutanix.ncp.ntnx_saml_sp_metadata_v2:
+    ext_id: "{{ test_idp_ext_id }}"
+    dest: "{{ sp_metadata_bad_dir }}"
+  register: dl_bad_dir
+  ignore_errors: true
+
+- name: Assert missing destination directory surfaces a clear error
+  ansible.builtin.assert:
+    that:
+      - dl_bad_dir is defined
+      - dl_bad_dir.failed == true
+      - dl_bad_dir.msg is defined
+      - "'Destination directory does not exist' in dl_bad_dir.msg"
+    success_msg: "Missing destination directory surfaced a descriptive error."
+    fail_msg: "Missing destination directory should have failed with a descriptive error."
+
+- name: Info — attempt fetch with an invalid ext_id
+  nutanix.ncp.ntnx_saml_sp_metadata_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: info_invalid
+  ignore_errors: true
+
+- name: Assert info module surfaces an API error for invalid ext_id
+  ansible.builtin.assert:
+    that:
+      - info_invalid is defined
+      - info_invalid.failed == true
+      - info_invalid.msg is defined
+    success_msg: "Info module invalid ext_id surfaced an API error as expected."
+    fail_msg: "Info module invalid ext_id should have failed but did not."
+
+########################################################################################
+# Cleanup — Delete-equivalent for an action module: remove the saved files.
+########################################################################################
+
+- name: Delete downloaded SP metadata files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ sp_metadata_download_path }}"
+    - "{{ sp_metadata_second_download_path }}"
+  register: cleanup_result
+
+- name: Assert cleanup removed both files
+  ansible.builtin.assert:
+    that:
+      - cleanup_result is defined
+      - cleanup_result.results | length == 2
+      - cleanup_result.results[0].failed == false
+      - cleanup_result.results[1].failed == false
+    success_msg: "SP metadata download artefacts cleaned up."
+    fail_msg: "SP metadata cleanup failed."

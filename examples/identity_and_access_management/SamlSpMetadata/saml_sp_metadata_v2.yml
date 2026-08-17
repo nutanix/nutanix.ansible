@@ -1,0 +1,65 @@
+---
+# Summary:
+# This playbook demonstrates how to fetch (download) Nutanix Prism Central's
+# SAML Service Provider (SP) metadata using the two v4 endpoints exposed by
+# the IAM SDK:
+#
+#   * GET /api/iam/v4.x/authn/saml-identity-providers/{extId}/sp-metadata
+#     - the newer per-IDP endpoint (reverse-proxy / signed-authn friendly)
+#   * GET /api/iam/v4.x/authn/saml-sp-metadata
+#     - the legacy cluster-wide endpoint (deprecated by ENG-729426)
+#
+# The download action module `ntnx_saml_sp_metadata_v2` returns the raw XML
+# and can also persist it to disk. The info module
+# `ntnx_saml_sp_metadata_info_v2` performs the same read and is the natural
+# way to consume SP metadata in read-only workflows.
+
+- name: SAML SP metadata playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ pc_ip | default('<pc_ip>') }}"
+      nutanix_username: "{{ pc_username | default('<user>') }}"
+      nutanix_password: "{{ pc_password | default('<pass>') }}"
+      validate_certs: false
+  tasks:
+    - name: Set common variables
+      ansible.builtin.set_fact:
+        saml_idp_ext_id: "{{ saml_idp_ext_id | default('368169cc-5293-543e-901d-4ba26874967a') }}"
+        local_download_path: "{{ local_download_path | default('/tmp/adfs19-sp-metadata.xml') }}"
+
+    - name: Download SAML SP metadata for a specific identity provider
+      nutanix.ncp.ntnx_saml_sp_metadata_v2:
+        ext_id: "{{ saml_idp_ext_id }}"
+      register: sp_metadata_by_id
+      ignore_errors: true
+
+    - name: Download SAML SP metadata for a specific identity provider and
+            persist it to a local file (equivalent to Update in CRUD parlance)
+      nutanix.ncp.ntnx_saml_sp_metadata_v2:
+        ext_id: "{{ saml_idp_ext_id }}"
+        dest: "{{ local_download_path }}"
+      register: sp_metadata_saved
+      ignore_errors: true
+
+    - name: Download SAML SP metadata using the legacy cluster-wide endpoint
+      nutanix.ncp.ntnx_saml_sp_metadata_v2:
+      register: sp_metadata_legacy
+      ignore_errors: true
+
+    - name: Read SAML SP metadata (info) for a specific identity provider
+      nutanix.ncp.ntnx_saml_sp_metadata_info_v2:
+        ext_id: "{{ saml_idp_ext_id }}"
+      register: sp_metadata_info_by_id
+      ignore_errors: true
+
+    - name: Read SAML SP metadata (info) using the legacy cluster-wide endpoint
+      nutanix.ncp.ntnx_saml_sp_metadata_info_v2:
+      register: sp_metadata_info_legacy
+      ignore_errors: true
+
+    - name: Clean up the locally saved SP metadata file (equivalent to Delete)
+      ansible.builtin.file:
+        path: "{{ local_download_path }}"
+        state: absent
