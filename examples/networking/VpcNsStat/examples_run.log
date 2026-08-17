@@ -1,0 +1,36 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [VPC North-South Stats playbook] ******************************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"external_subnet_uuid": "b63493e0-414b-4f6d-80ae-532ecdb23ef2", "stats_end_time": "2026-07-21T06:00:00.000Z", "stats_start_time": "2026-07-21T05:00:00.000Z", "vpc_uuid": "7097df87-be41-4008-96ca-a5ea7908ed21"}, "changed": false}
+
+TASK [Fetch VPC North-South stats for an external subnet] **********************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching VPC North-South stats
+Origin: /tmp/vpc_ns_stats_v2.live.yml:29:7
+
+27         stats_end_time: "2026-07-21T06:00:00.000Z"
+28
+29     - name: Fetch VPC North-South stats for an external subnet
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "INTERNAL SERVER ERROR", "msg": "Api Exception raised while fetching VPC North-South stats", "response": {"$objectType": "networking.v4.stats.GetVpcNsStatsApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10001", "locale": "en_US", "message": "Failed to get stats of VPC 7097df87-be41-4008-96ca-a5ea7908ed21, ext subnet b63493e0-414b-4f6d-80ae-532ecdb23ef2 due to an internal server error - NS Stats for VPC: 7097df87-be41-4008-96ca-a5ea7908ed21 and External Subnet: b63493e0-414b-4f6d-80ae-532ecdb23ef2 not present.. If the issue persists, check the health of cluster services.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.3/stats/vpc/7097df87-be41-4008-96ca-a5ea7908ed21/external-subnets/b63493e0-414b-4f6d-80ae-532ecdb23ef2", "rel": "self"}], "totalAvailableResults": 0}}, "status": 500}
+...ignoring
+
+TASK [Fetch VPC North-South stats with all attributes] *************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching VPC North-South stats
+Origin: /tmp/vpc_ns_stats_v2.live.yml:38:7
+
+36       ignore_errors: true
+37
+38     - name: Fetch VPC North-South stats with all attributes
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "INTERNAL SERVER ERROR", "msg": "Api Exception raised while fetching VPC North-South stats", "response": {"$objectType": "networking.v4.stats.GetVpcNsStatsApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10001", "locale": "en_US", "message": "Failed to get stats of VPC 7097df87-be41-4008-96ca-a5ea7908ed21, ext subnet b63493e0-414b-4f6d-80ae-532ecdb23ef2 due to an internal server error - NS Stats for VPC: 7097df87-be41-4008-96ca-a5ea7908ed21 and External Subnet: b63493e0-414b-4f6d-80ae-532ecdb23ef2 not present.. If the issue persists, check the health of cluster services.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.3/stats/vpc/7097df87-be41-4008-96ca-a5ea7908ed21/external-subnets/b63493e0-414b-4f6d-80ae-532ecdb23ef2", "rel": "self"}], "totalAvailableResults": 0}}, "status": 500}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=2   
+
