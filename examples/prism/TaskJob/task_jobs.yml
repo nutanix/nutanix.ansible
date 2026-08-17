@@ -1,0 +1,125 @@
+---
+# Summary:
+# This playbook demonstrates how to use the ntnx_task_jobs_info_v2 module.
+# TaskJob is a read-only sub-entity of a Prism Central Task, so the module
+# only supports list and get-by-ext_id operations.
+#
+# 1. Trigger a background task (image create) to obtain a real task_ext_id
+# 2. List all jobs for that task
+# 3. Get a specific job by ext_id
+# 4. List task jobs using pagination (page + limit)
+# 5. List task jobs using $select
+# 6. Cleanup created image
+- name: TaskJob playbook (info-only entity)
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ nutanix_username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ nutanix_password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      nutanix_port: "{{ nutanix_port | default(lookup('env', 'NUTANIX_PORT') or 9440) }}"
+      validate_certs: false
+  tasks:
+    - name: Set variables (edit for your environment)
+      ansible.builtin.set_fact:
+        image_name: "ansible-taskjob-example"
+        iso_url: "https://release.ubuntu.com/22.04/ubuntu-22.04.5-live-server-amd64.iso"
+        iso_checksum: "9bc6028870aef3f74f4e16b900008179e78b130e6b0b9a140635434a46aa98b0"
+
+    - name: List available clusters (for image placement)
+      nutanix.ncp.ntnx_clusters_info_v2:
+      register: clusters_result
+
+    - name: Pick first non-PC cluster ext_id
+      ansible.builtin.set_fact:
+        cluster_uuid: >-
+          {{
+            (clusters_result.response
+              | selectattr('config.cluster_function', 'defined')
+              | rejectattr('config.cluster_function', 'contains', 'PRISM_CENTRAL')
+              | list
+              | first).ext_id
+          }}
+      when: clusters_result.response is defined and (clusters_result.response | length) > 0
+
+    - name: Create an image to generate a real task with jobs
+      nutanix.ncp.ntnx_images_v2:
+        state: present
+        type: ISO_IMAGE
+        name: "{{ image_name }}"
+        description: "TaskJob example - safe to delete"
+        checksum:
+          sha256:
+            hex_digest: "{{ iso_checksum }}"
+        source:
+          url_source:
+            url: "{{ iso_url }}"
+            should_allow_insecure_url: true
+        cluster_location_ext_ids: "{{ cluster_uuid }}"
+        wait: false
+      register: image_result
+      ignore_errors: true
+
+    - name: Store task and image ext ids
+      ansible.builtin.set_fact:
+        task_ext_id: "{{ image_result.task_ext_id }}"
+
+    - name: List all jobs associated with the task
+      nutanix.ncp.ntnx_task_jobs_info_v2:
+        task_ext_id: "{{ task_ext_id }}"
+      register: jobs_list
+      ignore_errors: true
+
+    - name: Store first job ext_id
+      ansible.builtin.set_fact:
+        job_ext_id: "{{ jobs_list.response[0].ext_id }}"
+      when: jobs_list.response | length > 0
+
+    - name: Fetch a specific task job by ext_id
+      nutanix.ncp.ntnx_task_jobs_info_v2:
+        task_ext_id: "{{ task_ext_id }}"
+        ext_id: "{{ job_ext_id }}"
+      register: job_get
+      ignore_errors: true
+      when: job_ext_id is defined
+
+    - name: List task jobs using pagination
+      nutanix.ncp.ntnx_task_jobs_info_v2:
+        task_ext_id: "{{ task_ext_id }}"
+        page: 0
+        limit: 1
+      register: jobs_paged
+      ignore_errors: true
+
+    - name: List task jobs using $select
+      nutanix.ncp.ntnx_task_jobs_info_v2:
+        task_ext_id: "{{ task_ext_id }}"
+        select: "status,name"
+      register: jobs_selected
+      ignore_errors: true
+
+    - name: Wait for parent task to finish before deletion
+      nutanix.ncp.ntnx_pc_tasks_info_v2:
+        ext_id: "{{ task_ext_id }}"
+      register: parent_task
+      until: parent_task.response.status in ['SUCCEEDED', 'FAILED', 'CANCELED']
+      retries: 60
+      delay: 10
+      ignore_errors: true
+
+    - name: Determine image ext_id from parent task
+      ansible.builtin.set_fact:
+        image_ext_id: "{{ parent_task.response.entities_affected[0].ext_id }}"
+      when:
+        - parent_task.response is defined
+        - parent_task.response.entities_affected is defined
+        - parent_task.response.entities_affected | length > 0
+
+    - name: Delete image (cleanup)
+      nutanix.ncp.ntnx_images_v2:
+        state: absent
+        ext_id: "{{ image_ext_id }}"
+      when: image_ext_id is defined
+      register: image_delete_result
+      failed_when: false

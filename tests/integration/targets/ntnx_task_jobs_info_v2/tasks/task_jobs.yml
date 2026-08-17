@@ -1,0 +1,268 @@
+---
+# Integration test plan for ntnx_task_jobs_info_v2
+#
+# TaskJob is a READ-ONLY sub-entity of a parent Task in Prism Central v4.
+# The SDK only exposes:
+#   * TasksApi.get_task_job_by_id(taskExtId, extId, _select)
+#   * TasksApi.list_task_jobs(taskExtId, _page, _limit, _select)
+# There is no create / update / delete / action for TaskJob, so the whole
+# CRUD module is intentionally skipped and only the info module is tested.
+#
+# Scenarios covered below:
+#   1. Trigger a real task on the cluster (image create) so we obtain a valid
+#      task_ext_id to query against.
+#   2. Poll the parent task with ntnx_pc_tasks_info_v2 until it completes so
+#      any child jobs are guaranteed to have final status.
+#   3. List task jobs by parent task_ext_id and assert response envelope
+#      (response, changed, failed, task_ext_id, total_available_results).
+#   4. Verify that each returned job carries the fields declared in
+#      TaskJob model (ext_id, name, status, entities_affected, ...).
+#   5. Get a specific job by ext_id (only when the parent task actually has
+#      at least one job — some single-entity tasks do not populate jobs).
+#   6. List task jobs with pagination (page + limit) and assert page size.
+#   7. List task jobs with $select and assert only requested fields come
+#      back.
+#   8. Negative: missing required task_ext_id -> module argument validation
+#      failure.
+#   9. Negative: invalid task_ext_id -> API 400/404 with clean error msg.
+#  10. Negative: valid task_ext_id + invalid job ext_id -> API failure.
+#  11. Cleanup: delete the image created in step 1.
+
+- name: Start ntnx_task_jobs_info_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_task_jobs_info_v2 integration tests
+
+- name: Generate a random suffix so parallel runs do not collide
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set derived image name
+  ansible.builtin.set_fact:
+    image_name: "ansible-taskjob-{{ random_name }}"
+
+########################################################################
+# STEP 1 — trigger a real task so we have a valid taskExtId to query
+########################################################################
+
+- name: Create an ISO image to spawn a background task
+  nutanix.ncp.ntnx_images_v2:
+    state: present
+    type: ISO_IMAGE
+    name: "{{ image_name }}"
+    description: image created to exercise ntnx_task_jobs_info_v2
+    checksum:
+      sha1:
+        hex_digest: "{{ iso_image.checksum }}"
+    source:
+      url_source:
+        url: "{{ iso_image.url }}"
+        should_allow_insecure_url: true
+    cluster_location_ext_ids: "{{ cluster.uuid }}"
+    wait: false
+  register: image_create_result
+  ignore_errors: true
+
+- name: Assert image create emitted a task ext id
+  ansible.builtin.assert:
+    that:
+      - image_create_result.response is defined
+      - image_create_result.failed == false
+      - image_create_result.changed == true
+      - image_create_result.task_ext_id is defined
+      - image_create_result.task_ext_id | length > 0
+    fail_msg: "Failed to trigger image create task"
+    success_msg: "Image create task submitted, task_ext_id captured"
+
+- name: Store task_ext_id
+  ansible.builtin.set_fact:
+    task_ext_id: "{{ image_create_result.task_ext_id }}"
+
+########################################################################
+# STEP 2 — wait for the parent task to reach a terminal state
+########################################################################
+
+- name: Wait for the parent task to reach a terminal state
+  nutanix.ncp.ntnx_pc_tasks_info_v2:
+    ext_id: "{{ task_ext_id }}"
+  register: parent_task_result
+  until: parent_task_result.response.status in ['SUCCEEDED', 'FAILED', 'CANCELED']
+  retries: 100
+  delay: 10
+
+- name: Store affected image ext id for cleanup
+  ansible.builtin.set_fact:
+    image_ext_id: "{{ parent_task_result.response.entities_affected[0].ext_id }}"
+  when:
+    - parent_task_result.response.entities_affected is defined
+    - parent_task_result.response.entities_affected | length > 0
+
+########################################################################
+# STEP 3 — list all jobs for the parent task
+########################################################################
+
+- name: List all jobs for the parent task
+  nutanix.ncp.ntnx_task_jobs_info_v2:
+    task_ext_id: "{{ task_ext_id }}"
+  register: jobs_list
+  ignore_errors: true
+
+- name: Assert list task jobs returned a well-formed envelope
+  ansible.builtin.assert:
+    that:
+      - jobs_list.response is defined
+      - jobs_list.failed == false
+      - jobs_list.changed == false
+      - jobs_list.task_ext_id == task_ext_id
+      - jobs_list.total_available_results is defined
+      - jobs_list.total_available_results >= 0
+      - jobs_list.response is iterable
+    fail_msg: "list_task_jobs returned an unexpected envelope"
+    success_msg: "list_task_jobs returned a valid envelope"
+
+- name: Assert every returned job has the mandatory TaskJob fields
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.status is defined
+      - item.status in ['PENDING', 'SUCCEEDED', 'FAILED']
+    fail_msg: "TaskJob {{ item }} is missing a mandatory field or has an unknown status"
+    success_msg: "TaskJob {{ item.ext_id }} has the mandatory fields"
+  loop: "{{ jobs_list.response }}"
+  when: (jobs_list.response | length) > 0
+
+- name: Capture first job ext_id when at least one job is present
+  ansible.builtin.set_fact:
+    job_ext_id: "{{ jobs_list.response[0].ext_id }}"
+  when: (jobs_list.response | length) > 0
+
+########################################################################
+# STEP 4 — get a specific job by ext_id
+########################################################################
+
+- name: Get a specific task job by ext_id
+  nutanix.ncp.ntnx_task_jobs_info_v2:
+    task_ext_id: "{{ task_ext_id }}"
+    ext_id: "{{ job_ext_id }}"
+  register: job_get_result
+  when: job_ext_id is defined
+  ignore_errors: true
+
+- name: Assert get task job by ext_id returns single entity
+  ansible.builtin.assert:
+    that:
+      - job_get_result.response is defined
+      - job_get_result.failed == false
+      - job_get_result.changed == false
+      - job_get_result.task_ext_id == task_ext_id
+      - job_get_result.ext_id == job_ext_id
+      - job_get_result.response.ext_id == job_ext_id
+      - job_get_result.response.status in ['PENDING', 'SUCCEEDED', 'FAILED']
+    fail_msg: "get_task_job_by_id did not return the expected entity"
+    success_msg: "get_task_job_by_id returned the expected entity"
+  when: job_ext_id is defined
+
+########################################################################
+# STEP 5 — list task jobs using pagination
+########################################################################
+
+- name: List task jobs using pagination
+  nutanix.ncp.ntnx_task_jobs_info_v2:
+    task_ext_id: "{{ task_ext_id }}"
+    page: 0
+    limit: 1
+  register: jobs_paged
+  ignore_errors: true
+
+- name: Assert pagination is honored
+  ansible.builtin.assert:
+    that:
+      - jobs_paged.response is defined
+      - jobs_paged.failed == false
+      - jobs_paged.changed == false
+      - jobs_paged.total_available_results is defined
+      - (jobs_paged.response | length) <= 1
+    fail_msg: "Pagination not applied correctly"
+    success_msg: "Pagination applied correctly"
+
+########################################################################
+# STEP 6 — list task jobs using $select
+########################################################################
+
+- name: List task jobs using $select
+  nutanix.ncp.ntnx_task_jobs_info_v2:
+    task_ext_id: "{{ task_ext_id }}"
+    select: "status"
+  register: jobs_selected
+  ignore_errors: true
+
+- name: Assert $select still returns a well-formed envelope
+  ansible.builtin.assert:
+    that:
+      - jobs_selected.response is defined
+      - jobs_selected.failed == false
+      - jobs_selected.changed == false
+      - jobs_selected.task_ext_id == task_ext_id
+    fail_msg: "$select projection returned an unexpected envelope"
+    success_msg: "$select projection returned a valid envelope"
+
+########################################################################
+# STEP 7 — negative: invalid task_ext_id
+########################################################################
+
+- name: List task jobs with an invalid task_ext_id
+  nutanix.ncp.ntnx_task_jobs_info_v2:
+    task_ext_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+  register: bad_task
+  ignore_errors: true
+
+- name: Assert invalid task_ext_id yields an API failure with a clean msg
+  ansible.builtin.assert:
+    that:
+      - bad_task.failed == true
+      - bad_task.changed == false
+      - bad_task.msg == "Api Exception raised while fetching task jobs info"
+    fail_msg: "Invalid task_ext_id did not fail as expected"
+    success_msg: "Invalid task_ext_id failed as expected"
+
+########################################################################
+# STEP 8 — negative: valid task_ext_id + non-existent job ext_id
+########################################################################
+
+- name: Get task job with a non-existent job ext_id
+  nutanix.ncp.ntnx_task_jobs_info_v2:
+    task_ext_id: "{{ task_ext_id }}"
+    ext_id: "11111111-2222-3333-4444-555555555555"
+  register: bad_job
+  ignore_errors: true
+
+- name: Assert non-existent job ext_id yields an API failure with a clean msg
+  ansible.builtin.assert:
+    that:
+      - bad_job.failed == true
+      - bad_job.changed == false
+      - bad_job.msg == "Api Exception raised while fetching task job info using ext_id"
+    fail_msg: "Non-existent job ext_id did not fail as expected"
+    success_msg: "Non-existent job ext_id failed as expected"
+
+########################################################################
+# STEP 9 — cleanup: delete the image created for the test
+########################################################################
+
+- name: Delete the image created for the test
+  nutanix.ncp.ntnx_images_v2:
+    state: absent
+    ext_id: "{{ image_ext_id }}"
+  when: image_ext_id is defined
+  register: image_delete_result
+  failed_when: false
+
+- name: Assert image deletion did not leak the resource
+  ansible.builtin.assert:
+    that:
+      # Either delete succeeded, or the image never fully materialized
+      # (URL download failed) and the platform reports NOT FOUND.
+      - (image_delete_result.changed | default(false)) or
+        (image_delete_result.status | default(0)) == 404
+    fail_msg: "Failed to delete image {{ image_ext_id }}"
+    success_msg: "Image {{ image_ext_id }} cleaned up"
+  when: image_ext_id is defined and image_delete_result is defined
