@@ -1,0 +1,228 @@
+---
+###############################################################################
+# Test plan for ntnx_execution_steps_by_recovery_plan_job_ids_info_v2
+#
+# The v4 Data Protection SDK only exposes a *list* API for the execution
+# steps of a Recovery Plan Job — there is no create/update/delete for
+# individual steps (they are auto-populated by the platform while a
+# Recovery Plan Job runs). Consequently the integration coverage focuses on:
+#
+#   1. Argument-spec validation (offline):
+#      - missing required `recovery_plan_job_ext_id` must fail cleanly.
+#   2. Negative live-API cases:
+#      - a well-formed but non-existent `recovery_plan_job_ext_id` must
+#        raise a descriptive API exception (404-style).
+#   3. Positive live-API cases (only when a recovery plan job already
+#      exists on the cluster — discovered via the v1
+#      `ntnx_recovery_plan_jobs_info` module, since a v4 list module for
+#      recovery plan jobs is not yet shipped in this collection):
+#        a. List all execution steps for the job.
+#        b. List execution steps with `limit=1`.
+#        c. List execution steps ordered by `startTime desc`.
+#        d. List execution steps ordered by `startTime asc`.
+#      When no recovery plan job exists on the cluster the positive block
+#      is skipped with an informational message — this is intentional and
+#      documented in the PR body under "Known gaps".
+###############################################################################
+
+- name: Start ntnx_execution_steps_by_recovery_plan_job_ids_info_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_execution_steps_by_recovery_plan_job_ids_info_v2 tests
+
+###############################################################################
+# 1. Argument-spec validation (offline)
+###############################################################################
+
+- name: List execution steps without recovery_plan_job_ext_id (should fail)
+  nutanix.ncp.ntnx_execution_steps_by_recovery_plan_job_ids_info_v2:
+  register: missing_parent
+  ignore_errors: true
+
+- name: Assert missing recovery_plan_job_ext_id fails as expected
+  ansible.builtin.assert:
+    that:
+      - missing_parent is defined
+      - missing_parent.changed == false
+      - missing_parent.failed == true
+      - "'recovery_plan_job_ext_id' in missing_parent.msg"
+    success_msg: "Missing recovery_plan_job_ext_id was rejected as expected"
+    fail_msg: "Missing recovery_plan_job_ext_id was NOT rejected"
+
+- name: List execution steps with wrong type for limit (should fail)
+  nutanix.ncp.ntnx_execution_steps_by_recovery_plan_job_ids_info_v2:
+    recovery_plan_job_ext_id: "8c80727e-8fd7-4c00-83c7-ef0e55b7b236"
+    limit: "not-a-number"
+  register: bad_limit
+  ignore_errors: true
+
+- name: Assert wrong type for limit fails
+  ansible.builtin.assert:
+    that:
+      - bad_limit is defined
+      - bad_limit.failed == true
+      - bad_limit.changed == false
+    success_msg: "limit type validation rejected non-integer input"
+    fail_msg: "limit type validation did NOT reject non-integer input"
+
+###############################################################################
+# 2. Negative live-API cases
+###############################################################################
+
+- name: List execution steps for a non-existent recovery plan job (should fail)
+  nutanix.ncp.ntnx_execution_steps_by_recovery_plan_job_ids_info_v2:
+    recovery_plan_job_ext_id: "00000000-0000-0000-0000-000000000001"
+  register: not_found
+  ignore_errors: true
+
+- name: Assert non-existent recovery plan job returns error
+  ansible.builtin.assert:
+    that:
+      - not_found is defined
+      - not_found.changed == false
+      - not_found.failed == true
+      - not_found.msg is defined
+      - "'Api Exception raised while fetching execution steps of recovery plan job' in not_found.msg"
+    success_msg: "Non-existent recovery plan job ext_id was rejected as expected"
+    fail_msg: "Non-existent recovery plan job ext_id was NOT rejected as expected"
+
+###############################################################################
+# 3. Positive live-API cases (best-effort — depends on cluster state)
+###############################################################################
+
+- name: Discover existing recovery plan jobs on the cluster (v1 info module)
+  nutanix.ncp.ntnx_recovery_plan_jobs_info:
+  register: existing_jobs
+  ignore_errors: true
+
+- name: Set discovered_job_uuid when at least one recovery plan job exists
+  ansible.builtin.set_fact:
+    discovered_job_uuid: >-
+      {{
+        (existing_jobs.response.entities | default([]))
+        | map(attribute='metadata.uuid')
+        | select('defined')
+        | list
+        | first
+        | default('')
+      }}
+  when:
+    - existing_jobs is defined
+    - not (existing_jobs.failed | default(false))
+
+- name: Skip positive tests when no recovery plan job exists on the cluster
+  ansible.builtin.debug:
+    msg: >-
+      No recovery plan job present on the cluster. Positive live-API tests
+      for ntnx_execution_steps_by_recovery_plan_job_ids_info_v2 will be
+      skipped. Trigger a recovery plan failover to populate a job.
+  when: discovered_job_uuid | default('') == ''
+
+- name: Positive tests block (only when a recovery plan job exists)
+  when: discovered_job_uuid | default('') != ''
+  block:
+    - name: List all execution steps for the discovered recovery plan job
+      nutanix.ncp.ntnx_execution_steps_by_recovery_plan_job_ids_info_v2:
+        recovery_plan_job_ext_id: "{{ discovered_job_uuid }}"
+      register: all_steps
+      ignore_errors: true
+
+    - name: Assert list-all response shape
+      ansible.builtin.assert:
+        that:
+          - all_steps is defined
+          - all_steps.changed == false
+          - all_steps.failed == false
+          - all_steps.response is defined
+          - all_steps.response is iterable
+          - all_steps.recovery_plan_job_ext_id == discovered_job_uuid
+          - all_steps.total_available_results is defined
+        success_msg: "Listed execution steps for the discovered recovery plan job"
+        fail_msg: "Failed to list execution steps for the discovered recovery plan job"
+
+    - name: Assert every returned execution step has the expected core fields
+      ansible.builtin.assert:
+        that:
+          - item.ext_id is defined
+          - item.phase is defined
+          - item.status is defined
+        success_msg: "Execution step {{ item.ext_id }} has the expected fields"
+        fail_msg: "Execution step is missing one of the required fields"
+      loop: "{{ all_steps.response }}"
+      loop_control:
+        label: "{{ item.ext_id | default('unknown') }}"
+      when: all_steps.response | length > 0
+
+    - name: List execution steps with limit=1
+      nutanix.ncp.ntnx_execution_steps_by_recovery_plan_job_ids_info_v2:
+        recovery_plan_job_ext_id: "{{ discovered_job_uuid }}"
+        limit: 1
+      register: limited_steps
+      ignore_errors: true
+
+    - name: Assert limit=1 response is limited to at most one item
+      ansible.builtin.assert:
+        that:
+          - limited_steps is defined
+          - limited_steps.changed == false
+          - limited_steps.failed == false
+          - limited_steps.response is defined
+          - (limited_steps.response | length) <= 1
+        success_msg: "limit=1 returned at most one execution step"
+        fail_msg: "limit=1 returned more than one execution step"
+
+    - name: List execution steps ordered by startTime desc
+      nutanix.ncp.ntnx_execution_steps_by_recovery_plan_job_ids_info_v2:
+        recovery_plan_job_ext_id: "{{ discovered_job_uuid }}"
+        orderby: "startTime desc"
+      register: ordered_desc
+      ignore_errors: true
+
+    - name: Assert orderby desc returned successfully
+      ansible.builtin.assert:
+        that:
+          - ordered_desc is defined
+          - ordered_desc.changed == false
+          - ordered_desc.failed == false
+          - ordered_desc.response is defined
+        success_msg: "orderby startTime desc succeeded"
+        fail_msg: "orderby startTime desc failed"
+
+    - name: List execution steps ordered by startTime asc
+      nutanix.ncp.ntnx_execution_steps_by_recovery_plan_job_ids_info_v2:
+        recovery_plan_job_ext_id: "{{ discovered_job_uuid }}"
+        orderby: "startTime asc"
+      register: ordered_asc
+      ignore_errors: true
+
+    - name: Assert orderby asc returned successfully
+      ansible.builtin.assert:
+        that:
+          - ordered_asc is defined
+          - ordered_asc.changed == false
+          - ordered_asc.failed == false
+          - ordered_asc.response is defined
+        success_msg: "orderby startTime asc succeeded"
+        fail_msg: "orderby startTime asc failed"
+
+    - name: List execution steps with page=0
+      nutanix.ncp.ntnx_execution_steps_by_recovery_plan_job_ids_info_v2:
+        recovery_plan_job_ext_id: "{{ discovered_job_uuid }}"
+        page: 0
+        limit: 5
+      register: paged_steps
+      ignore_errors: true
+
+    - name: Assert page=0 with limit=5 returns up to 5 items
+      ansible.builtin.assert:
+        that:
+          - paged_steps is defined
+          - paged_steps.changed == false
+          - paged_steps.failed == false
+          - paged_steps.response is defined
+          - (paged_steps.response | length) <= 5
+        success_msg: "page/limit combination returned at most 5 items"
+        fail_msg: "page/limit combination returned more items than expected"
+
+- name: Finish ntnx_execution_steps_by_recovery_plan_job_ids_info_v2 tests
+  ansible.builtin.debug:
+    msg: Completed ntnx_execution_steps_by_recovery_plan_job_ids_info_v2 tests

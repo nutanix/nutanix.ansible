@@ -248,3 +248,4 @@ action_groups:
     - ntnx_virtual_switches_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
+    - ntnx_execution_steps_by_recovery_plan_job_ids_info_v2
