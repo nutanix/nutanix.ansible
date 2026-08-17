@@ -1,0 +1,111 @@
+---
+# Summary:
+# This playbook demonstrates the PublishTemplate action in Nutanix Prism Central
+# using the `nutanix.ncp.ntnx_publish_template_version_v2` module.
+#
+# It:
+#   1. Creates a source VM
+#   2. Creates a template from that VM
+#   3. Creates a second version of the template
+#   4. Publishes (activates) the first version as the gold version
+#   5. Publishes (activates) the second version as the gold version
+#   6. Cleans up the created template and VM
+
+- name: PublishTemplate example playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: false
+  tasks:
+    - name: Generate a random suffix for entity names
+      ansible.builtin.set_fact:
+        rand_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=10)[0] }}"
+
+    - name: Set example variables
+      ansible.builtin.set_fact:
+        source_vm_name: "ansible-pt-src-{{ rand_suffix }}"
+        template_name: "ansible-pt-tpl-{{ rand_suffix }}"
+        version_2_name: "ansible-pt-v2-{{ rand_suffix }}"
+        cluster_name: "{{ cluster.name | default('auto') }}"
+
+    - name: Discover a cluster (Prism Element) to place the source VM on
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+      register: clusters_info
+
+    - name: Set cluster reference
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ clusters_info.response[0].ext_id }}"
+
+    - name: Create a minimal source VM (prerequisite for the template)
+      nutanix.ncp.ntnx_vms_v2:
+        name: "{{ source_vm_name }}"
+        description: "Source VM for the PublishTemplate example"
+        cluster:
+          ext_id: "{{ cluster_ext_id }}"
+      register: source_vm
+
+    - name: Create a template from the source VM (creates initial version 1)
+      nutanix.ncp.ntnx_templates_v2:
+        template_name: "{{ template_name }}"
+        template_description: "Template for PublishTemplate example"
+        template_version_spec:
+          version_source:
+            template_vm_reference:
+              ext_id: "{{ source_vm.ext_id }}"
+      register: template_create
+
+    - name: Set variables for template and version 1
+      ansible.builtin.set_fact:
+        template_ext_id: "{{ template_create.ext_id }}"
+        version_1_ext_id: "{{ template_create.response.template_version_spec.ext_id }}"
+
+    - name: Create a second version of the template
+      nutanix.ncp.ntnx_templates_v2:
+        ext_id: "{{ template_ext_id }}"
+        template_version_spec:
+          version_name: "{{ version_2_name }}"
+          version_description: "Second version for PublishTemplate example"
+          version_source:
+            template_version_reference:
+              version_id: "{{ version_1_ext_id }}"
+              override_vm_config:
+                num_sockets: 2
+                num_cores_per_socket: 2
+                num_threads_per_core: 1
+                name: "{{ source_vm_name }}-override"
+      register: template_v2
+
+    - name: Set variables for version 2
+      ansible.builtin.set_fact:
+        version_2_ext_id: "{{ template_v2.response.template_version_spec.ext_id }}"
+
+    - name: Publish version 1 of the template as the active/gold version
+      nutanix.ncp.ntnx_publish_template_version_v2:
+        ext_id: "{{ template_ext_id }}"
+        version_id: "{{ version_1_ext_id }}"
+      register: publish_v1
+
+    - name: Publish version 2 of the template as the active/gold version
+      nutanix.ncp.ntnx_publish_template_version_v2:
+        ext_id: "{{ template_ext_id }}"
+        version_id: "{{ version_2_ext_id }}"
+      register: publish_v2
+
+    - name: Cleanup - Delete the template
+      nutanix.ncp.ntnx_templates_v2:
+        state: absent
+        ext_id: "{{ template_ext_id }}"
+      register: cleanup_template
+      failed_when: false
+
+    - name: Cleanup - Delete the source VM
+      nutanix.ncp.ntnx_vms_v2:
+        state: absent
+        ext_id: "{{ source_vm.ext_id }}"
+      register: cleanup_vm
+      failed_when: false
