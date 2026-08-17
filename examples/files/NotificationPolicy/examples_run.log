@@ -1,0 +1,20 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Nutanix Files - NotificationPolicy operations] ***************************
+
+TASK [Create notification policy] **********************************************
+[ERROR]: Task failed: Module failed: Api Exception raised while creating notification policy
+Origin: /tmp/codegen/8f7cd6e3203e41e0ae9151f3903bf9d2/repo/examples/files/NotificationPolicy/notification_policy.yml:19:7
+
+17     partner_server_ext_id: "3c9a1f3b-3ddb-4585-9159-26d2318269e3"
+18   tasks:
+19     - name: Create notification policy
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while creating notification policy", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=0    changed=0    unreachable=0    failed=1    skipped=0    rescued=0    ignored=0   
+

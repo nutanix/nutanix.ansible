@@ -48,6 +48,7 @@ class Tasks:
         NETWORK_FUNCTION = "Networking:config:network-function"
         VIRTUAL_SWITCH = "networking:config:virtual-switch"
         ENTITY_GROUP = "microseg:config:entity-group"
+        NOTIFICATION_POLICY = "files:config:notification-policy"
 
     class CompletetionDetailsName:
         """Completion details name for the task entities affected"""
