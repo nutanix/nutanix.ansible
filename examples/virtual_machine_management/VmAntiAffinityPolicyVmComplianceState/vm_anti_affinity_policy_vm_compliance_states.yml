@@ -1,0 +1,48 @@
+---
+# Summary:
+# Demonstrates fetching VM compliance states under a VM-VM anti-affinity policy
+# using the info module `ntnx_vm_anti_affinity_policy_vm_compliance_states_info_v2`.
+#
+# NOTE:
+#   `VmAntiAffinityPolicyVmComplianceState` is a *read-only* computed entity in
+#   the VMM v4 SDK — it has no create / update / delete API. The SDK only
+#   exposes `list_vm_anti_affinity_policy_vm_compliance_states`, so only the
+#   info module is provided for this entity.
+#
+# Prerequisite: a VM-VM anti-affinity policy already exists on Prism Central
+# and its external identifier is available.
+
+- name: VM-VM Anti-Affinity Policy VM Compliance State info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Set the parent VM-VM anti-affinity policy external identifier
+      ansible.builtin.set_fact:
+        vm_anti_affinity_policy_ext_id: "<vm-anti-affinity-policy-uuid>"
+
+    - name: List VM compliance states for the given anti-affinity policy
+      nutanix.ncp.ntnx_vm_anti_affinity_policy_vm_compliance_states_info_v2:
+        vm_anti_affinity_policy_ext_id: "{{ vm_anti_affinity_policy_ext_id }}"
+      register: all_compliance_states
+      ignore_errors: true
+
+    - name: List VM compliance states with pagination
+      nutanix.ncp.ntnx_vm_anti_affinity_policy_vm_compliance_states_info_v2:
+        vm_anti_affinity_policy_ext_id: "{{ vm_anti_affinity_policy_ext_id }}"
+        page: 0
+        limit: 10
+      register: paginated_compliance_states
+      ignore_errors: true
+
+    - name: Fetch a specific VM compliance state by ext_id (client-side filter)
+      nutanix.ncp.ntnx_vm_anti_affinity_policy_vm_compliance_states_info_v2:
+        vm_anti_affinity_policy_ext_id: "{{ vm_anti_affinity_policy_ext_id }}"
+        ext_id: "<vm-compliance-state-ext-id>"
+      register: specific_compliance_state
+      ignore_errors: true

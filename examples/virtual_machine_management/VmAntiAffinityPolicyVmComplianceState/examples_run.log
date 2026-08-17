@@ -1,0 +1,23 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [VM-VM Anti-Affinity Policy VM Compliance State info playbook] ************
+
+TASK [Set the parent VM-VM anti-affinity policy external identifier] ***********
+ok: [localhost] => {"ansible_facts": {"vm_anti_affinity_policy_ext_id": "008b9775-f8aa-4edc-6d39-f2e24f279fd2"}, "changed": false}
+
+TASK [List VM compliance states for the given anti-affinity policy] ************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0, "vm_anti_affinity_policy_ext_id": "008b9775-f8aa-4edc-6d39-f2e24f279fd2"}
+
+TASK [List VM compliance states with pagination] *******************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0, "vm_anti_affinity_policy_ext_id": "008b9775-f8aa-4edc-6d39-f2e24f279fd2"}
+
+TASK [Fetch a specific VM compliance state by ext_id (client-side filter)] *****
+fatal: [localhost]: FAILED! => {"changed": false, "ext_id": "00000000-0000-0000-0000-000000000000", "msg": "VM compliance state with ext_id '00000000-0000-0000-0000-000000000000' was not found under VM-VM anti-affinity policy '008b9775-f8aa-4edc-6d39-f2e24f279fd2'.", "response": null, "vm_anti_affinity_policy_ext_id": "008b9775-f8aa-4edc-6d39-f2e24f279fd2"}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=4    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=1   
+
