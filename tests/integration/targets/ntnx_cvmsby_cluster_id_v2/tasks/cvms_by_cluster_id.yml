@@ -1,0 +1,431 @@
+---
+# Test plan
+# =========
+# The following scenarios are covered here for the CvmsbyClusterId feature
+# (list_cvmsby_cluster_id, get_cvm_by_id, reconfigure_cvms):
+#
+# Prerequisites:
+#   * A live Prism Central endpoint (ip/username/password/validate_certs).
+#   * `cluster.uuid` is discovered dynamically from the live PC using
+#     ntnx_clusters_info_v2 so tests never assume a hardcoded cluster.
+#
+# Info module (ntnx_cluster_cvms_info_v2):
+#   * List CVMs of a valid cluster - assert >=1 CVM and shape of the response.
+#   * Assert every CVM entry surfaces required fields (name, ext_id, ip_address,
+#     num_vcpus, memory_size_bytes, hypervisor_type, cluster_ext_id, node_ext_id).
+#   * Fetch a specific CVM by ext_id - assert matching ext_id + cluster_ext_id.
+#   * List with limit=1 - assert only 1 CVM is returned.
+#   * List with a filter on numVcpus - assert every returned CVM matches.
+#   * Fetch with wrong CVM ext_id - assert the module fails.
+#   * List with missing cluster_ext_id - assert the module fails at spec time.
+#
+# Action module (ntnx_cvmsby_cluster_id_v2):
+#   * check_mode reconfigure with all attributes - assert changed=false + response spec.
+#   * check_mode reconfigure with only num_vcpus.
+#   * check_mode reconfigure with only memory_size_bytes.
+#   * Reconfigure with NEITHER num_vcpus NOR memory_size_bytes - assert failure.
+#   * Reconfigure with missing cluster_ext_id - assert failure.
+#   * Reconfigure with state=absent - assert failure (state is restricted to present).
+#
+# The tests deliberately DO NOT execute a real reconfigure against the live
+# cluster because that is a rolling / disruptive CVM operation. The check_mode
+# tests exercise the full spec builder and API instance wiring without touching
+# the live CVMs.
+
+- name: Start CvmsbyClusterId tests
+  ansible.builtin.debug:
+    msg: Start CvmsbyClusterId tests
+
+- name: Generate random names for test data
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+########################################################################################
+# Discover a real cluster / CVM to use for the tests
+########################################################################################
+
+- name: Fetch all clusters from PC
+  nutanix.ncp.ntnx_clusters_info_v2:
+  register: clusters_info
+  ignore_errors: true
+
+- name: Assert cluster fetch succeeded
+  ansible.builtin.assert:
+    that:
+      - clusters_info is defined
+      - clusters_info.failed == false
+      - clusters_info.response is defined
+      - clusters_info.response | length > 0
+    success_msg: "Fetched clusters from PC successfully"
+    fail_msg: "Failed to fetch clusters from PC"
+
+- name: Pick a Prism Element cluster (skip PC itself)
+  ansible.builtin.set_fact:
+    pe_clusters: "{{ clusters_info.response
+                     | selectattr('config', 'defined')
+                     | selectattr('config.cluster_function', 'defined')
+                     | rejectattr('config.cluster_function', 'contains', 'PRISM_CENTRAL')
+                     | list }}"
+
+- name: Fallback - if no PE cluster found, use the first non-null cluster
+  ansible.builtin.set_fact:
+    pe_clusters: "{{ clusters_info.response }}"
+  when: pe_clusters | length == 0
+
+- name: Set target cluster ext_id
+  ansible.builtin.set_fact:
+    target_cluster_ext_id: "{{ pe_clusters[0].ext_id }}"
+
+- name: Debug target cluster ext_id
+  ansible.builtin.debug:
+    msg: "Using cluster ext_id: {{ target_cluster_ext_id }}"
+
+########################################################################################
+# Info: list all CVMs on the target cluster
+########################################################################################
+
+- name: List all CVMs of the target cluster
+  nutanix.ncp.ntnx_cluster_cvms_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+  register: cvms_list_result
+  ignore_errors: true
+
+- name: List all CVMs of the target cluster - status
+  ansible.builtin.assert:
+    that:
+      - cvms_list_result is defined
+      - cvms_list_result.changed == false
+      - cvms_list_result.failed == false
+      - cvms_list_result.response is defined
+      - cvms_list_result.response | length > 0
+      - cvms_list_result.total_available_results is defined
+      - cvms_list_result.total_available_results | int >= (cvms_list_result.response | length)
+    success_msg: "List CVMs of cluster succeeded"
+    fail_msg: "List CVMs of cluster did not return expected result"
+
+- name: Assert every CVM entry surfaces required fields
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined and item.ext_id | length > 0
+      - item.cluster_ext_id is defined
+      - item.cluster_ext_id == target_cluster_ext_id
+      - item.node_ext_id is defined
+      - item.num_vcpus is defined and item.num_vcpus | int > 0
+      - item.memory_size_bytes is defined and item.memory_size_bytes | int > 0
+      - item.hypervisor_type is defined
+      - item.ip_address is defined
+    success_msg: "CVM {{ item.ext_id }} has all required fields"
+    fail_msg: "CVM {{ item.ext_id | default('unknown') }} is missing required fields"
+  loop: "{{ cvms_list_result.response }}"
+  loop_control:
+    label: "{{ item.ext_id | default('cvm-no-extid') }}"
+
+- name: Set first CVM ext_id for follow-up tests
+  ansible.builtin.set_fact:
+    first_cvm_ext_id: "{{ cvms_list_result.response[0].ext_id }}"
+    first_cvm_num_vcpus: "{{ cvms_list_result.response[0].num_vcpus }}"
+    first_cvm_memory_size_bytes: "{{ cvms_list_result.response[0].memory_size_bytes }}"
+
+########################################################################################
+# Info: fetch a specific CVM by ext_id
+########################################################################################
+
+- name: Fetch specific CVM by external ID
+  nutanix.ncp.ntnx_cluster_cvms_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    ext_id: "{{ first_cvm_ext_id }}"
+  register: cvm_get_result
+  ignore_errors: true
+
+- name: Fetch specific CVM by external ID - status
+  ansible.builtin.assert:
+    that:
+      - cvm_get_result is defined
+      - cvm_get_result.changed == false
+      - cvm_get_result.failed == false
+      - cvm_get_result.ext_id == first_cvm_ext_id
+      - cvm_get_result.response is defined
+      - cvm_get_result.response.ext_id == first_cvm_ext_id
+      - cvm_get_result.response.cluster_ext_id == target_cluster_ext_id
+      - cvm_get_result.response.num_vcpus | int == first_cvm_num_vcpus | int
+      - cvm_get_result.response.memory_size_bytes | int == first_cvm_memory_size_bytes | int
+    success_msg: "Fetch specific CVM by ext_id passed"
+    fail_msg: "Fetch specific CVM by ext_id failed"
+
+########################################################################################
+# Info: list with limit
+########################################################################################
+
+- name: List CVMs of cluster with limit=1
+  nutanix.ncp.ntnx_cluster_cvms_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    limit: 1
+  register: cvms_limit_result
+  ignore_errors: true
+
+- name: List CVMs of cluster with limit=1 - status
+  ansible.builtin.assert:
+    that:
+      - cvms_limit_result is defined
+      - cvms_limit_result.changed == false
+      - cvms_limit_result.failed == false
+      - cvms_limit_result.response is defined
+      - cvms_limit_result.response | length == 1
+    success_msg: "List CVMs of cluster with limit=1 passed"
+    fail_msg: "List CVMs of cluster with limit=1 failed"
+
+########################################################################################
+# Info: list with filter
+########################################################################################
+
+- name: List CVMs of cluster with numVcpus filter
+  nutanix.ncp.ntnx_cluster_cvms_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    filter: "numVcpus eq {{ first_cvm_num_vcpus | int }}"
+  register: cvms_filter_result
+  ignore_errors: true
+
+- name: List CVMs of cluster with numVcpus filter - status
+  ansible.builtin.assert:
+    that:
+      - cvms_filter_result is defined
+      - cvms_filter_result.changed == false
+      - cvms_filter_result.failed == false
+      - cvms_filter_result.response is defined
+      - cvms_filter_result.response | length > 0
+    success_msg: "List CVMs of cluster with filter passed"
+    fail_msg: "List CVMs of cluster with filter failed"
+
+- name: Assert every CVM matches numVcpus filter
+  ansible.builtin.assert:
+    that:
+      - item.num_vcpus | int == first_cvm_num_vcpus | int
+    success_msg: "CVM {{ item.ext_id }} matches num_vcpus filter"
+    fail_msg: "CVM {{ item.ext_id }} does not match num_vcpus filter"
+  loop: "{{ cvms_filter_result.response }}"
+  loop_control:
+    label: "{{ item.ext_id }}"
+
+########################################################################################
+# Info: negative — fetch by invalid CVM ext_id
+########################################################################################
+
+- name: Fetch CVM with invalid external ID
+  nutanix.ncp.ntnx_cluster_cvms_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: cvm_bad_ext_result
+  ignore_errors: true
+
+- name: Fetch CVM with invalid external ID - status
+  ansible.builtin.assert:
+    that:
+      - cvm_bad_ext_result is defined
+      - cvm_bad_ext_result.failed == true
+    success_msg: "Fetch CVM with invalid ext_id failed as expected"
+    fail_msg: "Fetch CVM with invalid ext_id did not fail as expected"
+
+########################################################################################
+# Info: negative — missing cluster_ext_id
+########################################################################################
+
+- name: Fetch CVMs without cluster_ext_id
+  nutanix.ncp.ntnx_cluster_cvms_info_v2: {}
+  register: cvms_missing_cluster
+  ignore_errors: true
+
+- name: Fetch CVMs without cluster_ext_id - status
+  ansible.builtin.assert:
+    that:
+      - cvms_missing_cluster is defined
+      - cvms_missing_cluster.failed == true
+      - "'missing required arguments' in cvms_missing_cluster.msg or 'cluster_ext_id' in cvms_missing_cluster.msg"
+    success_msg: "Fetch CVMs without cluster_ext_id failed as expected"
+    fail_msg: "Fetch CVMs without cluster_ext_id did not fail as expected"
+
+########################################################################################
+# Info: negative — mutually exclusive ext_id and filter
+########################################################################################
+
+- name: Fetch CVMs with mutually exclusive ext_id and filter
+  nutanix.ncp.ntnx_cluster_cvms_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    ext_id: "{{ first_cvm_ext_id }}"
+    filter: "numVcpus eq 8"
+  register: cvms_me_result
+  ignore_errors: true
+
+- name: Fetch CVMs with mutually exclusive ext_id and filter - status
+  ansible.builtin.assert:
+    that:
+      - cvms_me_result is defined
+      - cvms_me_result.failed == true
+      - "'mutually exclusive' in cvms_me_result.msg"
+    success_msg: "Mutually exclusive ext_id/filter failed as expected"
+    fail_msg: "Mutually exclusive ext_id/filter did not fail as expected"
+
+########################################################################################
+# Reconfigure: check_mode with all attributes (safe on live cluster)
+########################################################################################
+
+- name: Reconfigure CVMs with check mode (all attributes)
+  nutanix.ncp.ntnx_cvmsby_cluster_id_v2:
+    state: present
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    num_vcpus: "{{ first_cvm_num_vcpus | int }}"
+    memory_size_bytes: "{{ first_cvm_memory_size_bytes | int }}"
+  check_mode: true
+  register: reconfigure_check_result
+  ignore_errors: true
+
+- name: Reconfigure CVMs with check mode (all attributes) - status
+  ansible.builtin.assert:
+    that:
+      - reconfigure_check_result is defined
+      - reconfigure_check_result.changed == false
+      - reconfigure_check_result.failed == false
+      - reconfigure_check_result.ext_id == target_cluster_ext_id
+      - reconfigure_check_result.response is defined
+      - reconfigure_check_result.response.num_vcpus | int == first_cvm_num_vcpus | int
+      - reconfigure_check_result.response.memory_size_bytes | int == first_cvm_memory_size_bytes | int
+      - reconfigure_check_result.msg is defined
+      - "'will be reconfigured' in reconfigure_check_result.msg"
+    success_msg: "Reconfigure CVMs check_mode with all attributes passed"
+    fail_msg: "Reconfigure CVMs check_mode with all attributes failed"
+
+########################################################################################
+# Reconfigure: check_mode with only num_vcpus
+########################################################################################
+
+- name: Reconfigure CVMs with check mode (only num_vcpus)
+  nutanix.ncp.ntnx_cvmsby_cluster_id_v2:
+    state: present
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    num_vcpus: "{{ first_cvm_num_vcpus | int }}"
+  check_mode: true
+  register: reconfigure_vcpus_only
+  ignore_errors: true
+
+- name: Reconfigure CVMs with check mode (only num_vcpus) - status
+  ansible.builtin.assert:
+    that:
+      - reconfigure_vcpus_only is defined
+      - reconfigure_vcpus_only.changed == false
+      - reconfigure_vcpus_only.failed == false
+      - reconfigure_vcpus_only.response is defined
+      - reconfigure_vcpus_only.response.num_vcpus | int == first_cvm_num_vcpus | int
+      - reconfigure_vcpus_only.response.memory_size_bytes is none or reconfigure_vcpus_only.response.memory_size_bytes == None
+    success_msg: "Reconfigure CVMs check_mode with only num_vcpus passed"
+    fail_msg: "Reconfigure CVMs check_mode with only num_vcpus failed"
+
+########################################################################################
+# Reconfigure: check_mode with only memory_size_bytes
+########################################################################################
+
+- name: Reconfigure CVMs with check mode (only memory_size_bytes)
+  nutanix.ncp.ntnx_cvmsby_cluster_id_v2:
+    state: present
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    memory_size_bytes: "{{ first_cvm_memory_size_bytes | int }}"
+  check_mode: true
+  register: reconfigure_memory_only
+  ignore_errors: true
+
+- name: Reconfigure CVMs with check mode (only memory_size_bytes) - status
+  ansible.builtin.assert:
+    that:
+      - reconfigure_memory_only is defined
+      - reconfigure_memory_only.changed == false
+      - reconfigure_memory_only.failed == false
+      - reconfigure_memory_only.response is defined
+      - reconfigure_memory_only.response.memory_size_bytes | int == first_cvm_memory_size_bytes | int
+      - reconfigure_memory_only.response.num_vcpus is none or reconfigure_memory_only.response.num_vcpus == None
+    success_msg: "Reconfigure CVMs check_mode with only memory passed"
+    fail_msg: "Reconfigure CVMs check_mode with only memory failed"
+
+########################################################################################
+# Reconfigure: negative — neither num_vcpus nor memory_size_bytes provided
+########################################################################################
+
+- name: Reconfigure CVMs without num_vcpus or memory_size_bytes
+  nutanix.ncp.ntnx_cvmsby_cluster_id_v2:
+    state: present
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+  register: reconfigure_none
+  ignore_errors: true
+
+- name: Reconfigure CVMs without num_vcpus or memory_size_bytes - status
+  ansible.builtin.assert:
+    that:
+      - reconfigure_none is defined
+      - reconfigure_none.failed == true
+      - "'one of the following is required: num_vcpus, memory_size_bytes' in reconfigure_none.msg
+         or 'At least one of' in reconfigure_none.msg
+         or 'required_one_of' in reconfigure_none.msg"
+    success_msg: "Reconfigure CVMs without any attribute failed as expected"
+    fail_msg: "Reconfigure CVMs without any attribute did not fail as expected"
+
+########################################################################################
+# Reconfigure: negative — missing cluster_ext_id
+########################################################################################
+
+- name: Reconfigure CVMs without cluster_ext_id
+  nutanix.ncp.ntnx_cvmsby_cluster_id_v2:
+    state: present
+    num_vcpus: 8
+  register: reconfigure_no_cluster
+  ignore_errors: true
+
+- name: Reconfigure CVMs without cluster_ext_id - status
+  ansible.builtin.assert:
+    that:
+      - reconfigure_no_cluster is defined
+      - reconfigure_no_cluster.failed == true
+      - "'missing required arguments' in reconfigure_no_cluster.msg or 'cluster_ext_id' in reconfigure_no_cluster.msg"
+    success_msg: "Reconfigure CVMs without cluster_ext_id failed as expected"
+    fail_msg: "Reconfigure CVMs without cluster_ext_id did not fail as expected"
+
+########################################################################################
+# Reconfigure: negative — state=absent is not allowed
+########################################################################################
+
+- name: Reconfigure CVMs with state=absent
+  nutanix.ncp.ntnx_cvmsby_cluster_id_v2:
+    state: absent
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    num_vcpus: 8
+  register: reconfigure_absent
+  ignore_errors: true
+
+- name: Reconfigure CVMs with state=absent - status
+  ansible.builtin.assert:
+    that:
+      - reconfigure_absent is defined
+      - reconfigure_absent.failed == true
+      - "'value of state must be one of' in reconfigure_absent.msg or 'absent' in reconfigure_absent.msg"
+    success_msg: "Reconfigure CVMs with state=absent failed as expected"
+    fail_msg: "Reconfigure CVMs with state=absent did not fail as expected"
+
+########################################################################################
+# Reconfigure: negative — invalid types
+########################################################################################
+
+- name: Reconfigure CVMs with invalid num_vcpus type
+  nutanix.ncp.ntnx_cvmsby_cluster_id_v2:
+    state: present
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    num_vcpus: "not_an_int"
+  register: reconfigure_bad_type
+  ignore_errors: true
+
+- name: Reconfigure CVMs with invalid num_vcpus type - status
+  ansible.builtin.assert:
+    that:
+      - reconfigure_bad_type is defined
+      - reconfigure_bad_type.failed == true
+    success_msg: "Reconfigure CVMs with invalid num_vcpus failed as expected"
+    fail_msg: "Reconfigure CVMs with invalid num_vcpus did not fail as expected"
+
+- name: End CvmsbyClusterId tests
+  ansible.builtin.debug:
+    msg: End CvmsbyClusterId tests
